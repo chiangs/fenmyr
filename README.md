@@ -7,7 +7,7 @@ Like cloudberries, ideas only grow where conditions are just right.<br>Myra is a
 
 ---
 
-Myra is a free, open-source canvas for ideas, for the messy part before you open your design tools. It starts on Linux, with other systems and a rapid-prototyping area planned. Drop notes, pictures, links, checklists and colors on an endless board, arrange them however makes sense to *you*, and ask Myra (a little pixel cloudberry who thinks with Claude Code) to sort, plan, explore and build. Made for Arch / CachyOS and Wayland, and at home on Hyprland, KDE Plasma, GNOME, Sway and niri.
+Myra is a free, open-source canvas for ideas. It starts on Linux, with other systems and a rapid-prototyping area planned. Drop notes, pictures, links, checklists and colors on an endless board, arrange them however makes sense to *you*, and ask Myra (a little pixel cloudberry who thinks with Claude Code) to sort, plan, explore and build. Made for Arch / CachyOS and Wayland, and at home on Hyprland, KDE Plasma, GNOME, Sway and niri.
 
 ## What's inside
 
