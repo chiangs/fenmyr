@@ -187,11 +187,7 @@ The two talk through one channel (`window.webkit.messageHandlers.mb`), so the ca
 
 To work on the canvas in a browser, run `python3 -m http.server` inside `web/` (Myra is pretend there). To run the app from the code without installing: `npm install && npm start`.
 
-Icons are [Material Icons](https://fonts.google.com/icons) (Apache 2.0). Fonts are DM Sans and Caveat (OFL).
-
-## Coming from Mochiboard for Linux
-
-Myra is the next version of [Mochiboard for Linux](https://github.com/chiangs/linux-mochiboard). The first time Myra opens, it moves your boards (`~/.local/share/mochiboard`) and settings (`~/.config/Mochiboard`) over to `~/.local/share/myra` and `~/.config/Myra`, as long as Myra has nothing of its own there yet. Myra's `install.sh` also takes the old Mochiboard app out of `~/.local` (its command and launcher entry), so you're left with just Myra.
+Icons are [Material Icons](https://fonts.google.com/icons) (Apache 2.0). Fonts are Figtree and Shantell Sans (OFL).
 
 ## Where Myra came from
 

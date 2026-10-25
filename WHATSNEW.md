@@ -11,4 +11,3 @@ Write them for people, not for code: one line, what changed and why it's nice.
 - Your cursor and its name tag wear Myra's color.
 - Follows your Caelestia colors and light or dark mode out of the box, and updates itself quietly when you quit.
 - Ctrl+, opens Settings. Window buttons are off unless you want them.
-- Coming from Mochiboard for Linux? Your boards and settings move over the first time Myra opens.

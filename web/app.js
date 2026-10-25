@@ -4618,7 +4618,6 @@ ${proseCSS()}
   const NEWS = { '1.0.0': [
     ['<circle cx="10" cy="11" r="5.5"/><path d="M10 5.5V3M7.5 4.5 10 5.5l2.5-1"/>', 'Hello, I’m Myra', 'A little cloudberry. Cloudberries only ripen in just the right spot, and so do ideas, so this board is that spot.'],
     ['<path d="M3 15c3-6 11-6 14 0"/><circle cx="6" cy="7" r="1.5"/><circle cx="10" cy="5.5" r="1.5"/><circle cx="14" cy="7" r="1.5"/>', 'Nordic colors', 'Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch for your cards, with warm amber shadows.'],
-    ['<path d="M4 4h12v12H4z"/><path d="M4 9h12"/>', 'Your Mochiboard boards came along', 'Everything from Mochiboard for Linux is here, just as you left it.'],
   ] };
   // the button on each version's card: try the headline thing
   const NEWS_TRY = { '1.0.0': ['Take the tour', () => startTour()] };

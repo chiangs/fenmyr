@@ -8,8 +8,6 @@ const output = require('./output'), speech = require('./speech'), update = requi
 
 app.setName('Myra');
 if (process.platform === 'linux') app.setDesktopName('myra.desktop');
-// boards and settings from "Mochiboard for Linux" move over the first time (before anything else uses those folders)
-try { require('./migrate')(app.getPath('userData')); } catch (e) { console.error('moving Mochiboard data:', e.message); }
 // one Myra at a time: opening it again brings the open one forward
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
 protocol.registerSchemesAsPrivileged([{ scheme: 'mbmedia', privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true, corsEnabled: true, bypassCSP: true } }]);

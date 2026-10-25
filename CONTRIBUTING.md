@@ -20,12 +20,10 @@ linux/          the host: an Electron main process
   speech.js       voice memo transcription (whisper.cpp)
   update.js       updates for git installs and the AppImage
   paths.js        where things are kept (XDG folders)
-  migrate.js      moves Mochiboard for Linux's boards and settings into Myra, once
   theme.js        reads and watches Caelestia's colour scheme (Follow Caelestia)
 assets/art/      make_art.py draws Myra, her stickers, the stamps and the icon; make_mark.py makes the ✦ cloudberry font
 tests/smoke.js  opens the real app and checks every bridge operation
 tests/zoom.js   Ctrl + wheel steps, touchpad pinch, reset to 100%
-tests/migrate.js  moving over from Mochiboard for Linux
 tests/theme.js  Follow Caelestia: offered only with Caelestia, live restyle, back to your colors
 install.sh  uninstall.sh  make-release.sh  packaging/
 ```
@@ -74,7 +72,7 @@ Myra's name, character and art are reserved (see [TRADEMARKS.md](TRADEMARKS.md))
 
 ## Where it came from
 
-Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by Jessa Wolfe (MIT), by way of [Mochiboard for Linux](https://github.com/chiangs/linux-mochiboard). Mochiboard's name, Mochi and its art and music are hers and aren't part of Myra. Myra doesn't track Mochiboard; ideas from it are ported by hand.
+Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by Jessa Wolfe (MIT). Mochiboard's name, Mochi and its art and music are hers and aren't part of Myra. Myra doesn't track Mochiboard; ideas from it are ported by hand.
 
 
 ## Third-party notices

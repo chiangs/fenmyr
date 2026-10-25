@@ -2,7 +2,7 @@
 //   boards, folders, media, usage:  $XDG_DATA_HOME/myra   (~/.local/share/myra)
 //   the speech model:               $XDG_DATA_HOME/myra/whisper
 // The folder layout inside is the same as Mochiboard's (the Mac app this grew from, ~/Library/Application Support/Mochiboard),
-// so boards copied over from it just work. linux/migrate.js moves "Mochiboard for Linux" folders here once.
+// so boards copied over from it just work.
 const os = require('os'), path = require('path');
 
 const xdg = (v, fallback) => process.env[v] || path.join(os.homedir(), fallback);
