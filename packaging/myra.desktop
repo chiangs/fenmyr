@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Myra
+GenericName=Planning canvas
+Comment=A planning canvas where ideas ripen
+Exec=myra %U
+Icon=myra
+Terminal=false
+Categories=Office;Graphics;
+Keywords=board;canvas;moodboard;notes;wireframe;planning;prototype;claude;
+StartupWMClass=myra
+StartupNotify=true

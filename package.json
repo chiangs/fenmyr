@@ -1,0 +1,55 @@
+{
+  "name": "myra",
+  "productName": "Myra",
+  "version": "1.7.3",
+  "description": "A planning canvas where ideas ripen, with Myra the cloudberry to help",
+  "homepage": "https://github.com/chiangs/myra",
+  "license": "MIT",
+  "author": "Jessa Wolfe (original Mac app), chiangs (Linux port)",
+  "main": "linux/main.js",
+  "desktopName": "myra.desktop",
+  "scripts": {
+    "start": "electron . --ozone-platform-hint=auto",
+    "test": "node tests/smoke.js && node tests/zoom.js && node tests/theme.js",
+    "dist": "electron-builder --linux AppImage"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3",
+    "playwright": "1.63.0"
+  },
+  "build": {
+    "appId": "io.github.chiangs.myra",
+    "productName": "Myra",
+    "files": [
+      "linux/**",
+      "web/**",
+      "assets/icon.png",
+      "package.json",
+      "LICENSE"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office",
+      "icon": "assets/icon.png",
+      "executableArgs": [
+        "--ozone-platform-hint=auto"
+      ],
+      "desktop": {
+        "entry": {
+          "Name": "Myra",
+          "Comment": "A planning canvas where ideas ripen",
+          "StartupWMClass": "Myra"
+        }
+      }
+    },
+    "appImage": {
+      "artifactName": "Myra-${arch}.AppImage"
+    },
+    "directories": {
+      "output": "build/release"
+    }
+  }
+}
