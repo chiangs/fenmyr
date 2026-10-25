@@ -96,15 +96,15 @@ The first memo downloads the speech model (about 140 MB, once) into `~/.local/sh
 
 ## Your stuff
 
-- Each board is one JSON file in `~/.local/share/myra/boards`, with your folders in `folders.json` and pictures and videos in `media/`. You can back them up, copy them or put them in git like any other files. No account, no cloud.
+- Each board is one JSON file in `~/.local/share/myra/boards`, with your folders in `folders.json` and pictures and videos in `media/`. They're ordinary files, so you can back them up or copy them like any others. Myra itself needs no account and uses no cloud.
 - App settings (your name, theme, the tour) live in `~/.config/Myra`.
-- **Keep a history of your boards.** Boards are plain files, so you can turn the Myra folder into a git repo. Run this once:
+- **Keep a history of your boards.** Because boards are ordinary files, you can turn the Myra folder into a git repository to keep every version. That works entirely on your computer, with no GitHub or other remote needed. Run this once:
   ```
   cd ~/.local/share/myra
   printf 'whisper/\nwindow.json\nusage.json\nprefs.json\n*.tmp\n' > .gitignore
   git init && git add -A && git commit -m "My boards"
   ```
-  Then commit now and then, and add a remote to back them up. Use a private repository: boards can hold your notes and pictures. Pictures are saved inside each board's file, so boards with many large pictures make a big repo (the speech model and settings that belong to one computer are left out above; you may want to add `media/` too, since it holds videos). To keep boards in step between computers, a synced folder such as Syncthing or Nextcloud suits better than git.
+  Then commit now and then. If you also want an off-computer backup, add a remote (for example a GitHub repository) and push; make it a private repository: boards can hold your notes and pictures. Pictures are saved inside each board's file, so boards with many large pictures make a big repo (the speech model and settings that belong to one computer are left out above; you may want to add `media/` too, since it holds videos). To keep boards in step between computers, a synced folder such as Syncthing or Nextcloud suits better than git.
 - Myra only thinks when you ask her something. Then the board and your question go to Claude Code on your computer, the same as asking Claude yourself.
 - Switch Myra's thinking off in Settings and the whole canvas still works, with no AI and no internet. (Spell check is Chromium's: it fetches its dictionary from Google once, then works offline.)
 - Myra can use your camera and microphone without asking each time (Linux has no per-app prompt like macOS). It only turns them on when you press Start recording on a voice memo or video card.
