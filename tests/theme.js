@@ -1,5 +1,5 @@
-// Follow Caelestia: with a Caelestia scheme.json present, Settings offers the switch; when it's on, the board takes the
-// scheme's colors and light/dark mode, and follows a new scheme live. Without Caelestia the switch isn't shown.
+// Follow Caelestia: with a Caelestia scheme.json present, Settings offers the switch and it's on from the start; the board takes the
+// scheme's colors and light/dark mode, and follows a new scheme live. Switched off, your own colors come back. Without Caelestia it isn't shown.
 //   xvfb-run -a node tests/theme.js
 const { _electron: electron } = require('playwright');
 const fs = require('fs'), os = require('os'), path = require('path');
@@ -28,9 +28,10 @@ const settle = () => new Promise(r => setTimeout(r, 800));
   const state = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-state-')), dir = path.join(state, 'caelestia'); fs.mkdirSync(dir);
   put(dir, scheme('dark', '#1a1b26', '#bb9af7'));
   const { app, page, errors } = await open({ XDG_STATE_HOME: state });
-  r.before = await look(page);
+  r.on = await look(page);   // on from the start
+  await page.evaluate(() => { const t = document.querySelector('[data-set="caelestia"]'); t.checked = false; t.onchange(); }); await settle();
+  r.before = await look(page);   // switched off: your own colors
   await page.evaluate(() => { const t = document.querySelector('[data-set="caelestia"]'); t.checked = true; t.onchange(); }); await settle();
-  r.on = await look(page);
   put(dir, scheme('light', '#fdf8f0', '#2e7d32')); await settle();   // a new wallpaper
   r.live = await look(page);
   await page.evaluate(() => { const t = document.querySelector('[data-set="caelestia"]'); t.checked = false; t.onchange(); }); await settle();

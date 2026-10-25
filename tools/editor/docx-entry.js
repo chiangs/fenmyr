@@ -1,14 +1,14 @@
-// Mochiboard doc → Word (.docx). Turns the editor's structured content into real Word parts:
-// Word's own Title / Heading styles, real lists, links, tables, pictures, and DM Sans built into the file.
+// Myra doc → Word (.docx). Turns the editor's structured content into real Word parts:
+// Word's own Title / Heading styles, real lists, links, tables, pictures, and Figtree built into the file.
 // Bundled into web/vendor/docx.js as the global `MBDocx`, loaded only when someone downloads a Word file.
 import {
   Document, Packer, Paragraph, TextRun, ExternalHyperlink, ImageRun, Table, TableRow, TableCell,
   HeadingLevel, AlignmentType, LevelFormat, WidthType, BorderStyle, ShadingType, LineRuleType, CharacterSet,
 } from 'docx';
-import dmRegular from './fonts/DMSans-Regular.ttf';
-import dmBold from './fonts/DMSans-Bold.ttf';
+import figRegular from './fonts/Figtree-Regular.ttf';
+import figBold from './fonts/Figtree-Bold.ttf';
 
-const INK = '2B2630', SOFT = '6B6370', PINK = 'E2649A', LINK = 'C4417F', LINE = 'ECE2EA';
+const INK = '2B2630', SOFT = '6B6370', PINK = 'D9771F', LINK = 'B8621A', LINE = 'ECE2EA';
 const PAGES = { letter: { width: 12240, height: 15840 }, a4: { width: 11906, height: 16838 } };   // twips
 const MARGIN = { top: 1152, bottom: 1224, left: 1224, right: 1224 };   // 0.8in top, 0.85in sides and bottom (same as the PDF)
 const hp = px => Math.round(parseFloat(px) * 1.5);   // CSS px → Word half-points (16px = 12pt = 24)
@@ -35,7 +35,7 @@ function runs(nodes = [], extra = {}) {
       else if (m.type === 'strike') o.strike = true;
       else if (m.type === 'superscript') o.superScript = true;
       else if (m.type === 'subscript') o.subScript = true;
-      else if (m.type === 'code') { o.font = 'Menlo'; o.shading = { type: ShadingType.CLEAR, color: 'auto', fill: 'F6EFF5' }; }
+      else if (m.type === 'code') { o.font = 'Menlo'; o.shading = { type: ShadingType.CLEAR, color: 'auto', fill: 'F6F0E8' }; }
       else if (m.type === 'highlight') o.shading = { type: ShadingType.CLEAR, color: 'auto', fill: hex(a.color) || 'FFF1A8' };
       else if (m.type === 'textStyle') { if (a.color) o.color = hex(a.color); if (a.fontFamily) o.font = font(a.fontFamily); if (a.fontSize) o.size = hp(a.fontSize); }
       else if (m.type === 'link') href = a.href;
@@ -126,14 +126,14 @@ export async function toDocx(json, { title = '', paper = 'letter' } = {}) {
 
   const bulletText = ['•', '◦', '▪'], numberFmt = [LevelFormat.DECIMAL, LevelFormat.LOWER_LETTER, LevelFormat.LOWER_ROMAN];
   const doc = new Document({
-    creator: 'Mochiboard', title: title || 'Document',
-    fonts: [{ name: 'DM Sans', data: dmRegular, characterSet: CharacterSet.ANSI }],
+    creator: 'Myra', title: title || 'Document',
+    fonts: [{ name: 'Figtree', data: figRegular, characterSet: CharacterSet.ANSI }],
     styles: {
       default: {
-        document: { run: { font: 'DM Sans', size: 24, color: INK }, paragraph: { spacing: { after: 120, line: 288, lineRule: LineRuleType.AUTO } } },
-        title: { run: { font: 'DM Sans', size: 54, bold: true, color: INK }, paragraph: { spacing: { before: 0, after: 200 } } },
-        heading1: { run: { font: 'DM Sans', size: 39, bold: true, color: INK }, paragraph: { spacing: { before: 360, after: 80 } } },
-        heading2: { run: { font: 'DM Sans', size: 30, bold: true, color: INK }, paragraph: { spacing: { before: 280, after: 60 } } },
+        document: { run: { font: 'Figtree', size: 24, color: INK }, paragraph: { spacing: { after: 120, line: 288, lineRule: LineRuleType.AUTO } } },
+        title: { run: { font: 'Figtree', size: 54, bold: true, color: INK }, paragraph: { spacing: { before: 0, after: 200 } } },
+        heading1: { run: { font: 'Figtree', size: 39, bold: true, color: INK }, paragraph: { spacing: { before: 360, after: 80 } } },
+        heading2: { run: { font: 'Figtree', size: 30, bold: true, color: INK }, paragraph: { spacing: { before: 280, after: 60 } } },
         hyperlink: { run: { color: LINK, underline: {} } },
       },
       paragraphStyles: [

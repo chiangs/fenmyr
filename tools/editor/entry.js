@@ -1,4 +1,4 @@
-// Mochiboard's doc editor: TipTap (ProseMirror) plus the few Word basics it doesn't ship with.
+// Myra's doc editor: TipTap (ProseMirror) plus the few Word basics it doesn't ship with.
 // Bundled into web/vendor/editor.js as the global `MBEditor`, so docs work offline.
 import { Editor, Extension, generateHTML, generateJSON, getHTMLFromFragment } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -71,7 +71,7 @@ const ParaStyle = Extension.create({
   },
 });
 
-// everything a Mochiboard doc can hold
+// everything a Myra doc can hold
 const extensions = (placeholder = 'Start writing…') => [
   StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
   Underline, TextStyle, Color, FontFamily, FontSize, LineHeight, ParaStyle, Subscript, Superscript,

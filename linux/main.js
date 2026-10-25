@@ -29,7 +29,7 @@ function createWindow() {
   const b = bounds();
   win = new BrowserWindow({
     ...b, minWidth: 380, minHeight: 520,   // narrow enough to sit beside other apps; below 700 wide it switches to the phone layout
-    frame: false, show: false, title: 'Myra', backgroundColor: '#fbf8fc',
+    frame: false, show: false, title: 'Myra', backgroundColor: '#faf7f2',
     icon: path.join(__dirname, '..', 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, spellcheck: true },
   });

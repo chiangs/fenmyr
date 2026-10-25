@@ -29,8 +29,10 @@
     new MutationObserver(ms => ms.forEach(m => { if (m.type === 'characterData') fix(m.target); else if (m.type === 'attributes') fix(m.target); else m.addedNodes.forEach(fix); }))
       .observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });
   }
-  const COLORS = { white: '#ffffff', pink: '#ffe0ec', butter: '#fff5c8', mint: '#dcf5e7', lilac: '#eadfff', sky: '#dcedff', peach: '#ffe9d6' };
+  const COLORS = { white: '#ffffff', pink: '#ffdcd8', butter: '#ffe3bd', mint: '#e0edd3', lilac: '#ebe1f2', sky: '#d9e7f3', peach: '#f1ebe2' };
   const COLOR_NAMES = Object.keys(COLORS);
+  const COLOR_LABEL = { white: 'Snow', pink: 'Lingonberry', butter: 'Cloudberry', mint: 'Moss', lilac: 'Heather', sky: 'Fjord', peach: 'Birch', gray: 'Stone', ink: 'Ink', coral: 'Rowan' };
+  const colorLabel = n => COLOR_LABEL[n] || (n[0].toUpperCase() + n.slice(1));
   const uid = () => Math.random().toString(36).slice(2, 10);
   const tilt = () => +(Math.random() * 4 - 2).toFixed(1);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -44,7 +46,7 @@
       card('note', { x: 0, y: 60, text: 'The feeling in three words:', color: 'butter' }),
       card('note', { x: 250, y: 60, text: 'References I love (drop images here)', color: 'pink' }),
       card('note', { x: 500, y: 60, text: 'Colors (pull them from an image ✦)', color: 'mint' }),
-      card('swatch', { x: 0, y: 260, hex: '#ff9ec4', label: 'blush' }), card('swatch', { x: 130, y: 260, hex: '#fff5c8', label: 'butter' }), card('swatch', { x: 260, y: 260, hex: '#7ad3a3', label: 'mint' }),
+      card('swatch', { x: 0, y: 260, hex: '#f6b45e', label: 'blush' }), card('swatch', { x: 130, y: 260, hex: '#ffe3bd', label: 'butter' }), card('swatch', { x: 260, y: 260, hex: '#7fb86a', label: 'mint' }),
       card('todo', { x: 500, y: 240, text: 'next', items: [{ t: 'Find 10 references', done: false }, { t: 'Pick a type pairing', done: false }, { t: 'Share with the team', done: false }] }),
     ], tray: [] }),
     'App plan': () => ({ cards: [
@@ -93,7 +95,7 @@
     return true;
   }
   const looseBoards = () => boardList.filter(b => (!b.folder || !folders.some(f => f.id === b.folder)) && topLevel(b));
-  const tint = c => COLORS[c] && c !== 'white' ? `var(--${c === 'pink' ? 'pink' : c + '-deep'})` : 'var(--pink)';
+  const tint = c => COLORS[c] && c !== 'white' ? `var(--k-${c})` : 'var(--pink)';
   // moving a board into a folder (or out of one). A canvas that lived inside another board comes out on its own.
   async function moveBoard(id, folderId) {
     await unhook(id);
@@ -340,7 +342,7 @@
       const x0 = Math.min(...cs.map(c => c.x)), y0 = Math.min(...cs.map(c => c.y)), x1 = Math.max(...cs.map(c => c.x + c.w)), y1 = Math.max(...cs.map(c => c.y + c.h));
       const fill = c => c.type === 'swatch' ? c.hex : c.type === 'image' ? '#d9cfe0' : c.type === 'title' ? 'transparent' : (COLORS[c.color] || '#fff');
       return `<svg viewBox="${x0 - 40} ${y0 - 40} ${x1 - x0 + 80} ${y1 - y0 + 80}" preserveAspectRatio="xMidYMid meet">` + cs.map(c => c.type === 'title'
-        ? `<rect x="${c.x}" y="${c.y + c.h * .25}" width="${Math.min(c.w, 260)}" height="${c.h * .5}" rx="8" fill="#494848" opacity=".75"/>`
+        ? `<rect x="${c.x}" y="${c.y + c.h * .25}" width="${Math.min(c.w, 260)}" height="${c.h * .5}" rx="8" fill="#3b342d" opacity=".75"/>`
         : `<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="14" fill="${fill(c)}" stroke="rgba(120,80,120,.12)" stroke-width="3" transform="rotate(${c.r || 0} ${c.x + c.w / 2} ${c.y + c.h / 2})"/>`).join('') + '</svg>';
     }));
     return miniCache.get(id);
@@ -615,7 +617,7 @@
       case 'frame': return `<div class="fr-body"></div><div class="fr-name">${esc(c.name || 'Screen')}</div>`;
       case 'section': return `<div class="sec-glass"></div><div class="sec-name"><span class="text">${esc(c.text || 'Section')}</span></div>`;
       case 'box': return `<div class="bx"></div>${c.img && !c.src ? `<div class="bx-ph"><span class="mi">image</span><span class="bx-l">${esc(c.img)}</span></div>` : ''}`;
-      case 'font': { const f = esc(c.font || 'DM Sans'); useFont(c.font); return `<div class="fs-aa" style="font-family:'${f}', system-ui">Aa</div><div class="fs-meta"><b>${f}</b><span class="fs-src">${isLocalFont(c.font) ? 'On your computer' : 'Google Fonts'}</span></div><div class="fs-sample text" style="font-family:'${f}', system-ui">${esc(c.text || 'The quick brown fox jumps over the lazy dog')}</div>`; }
+      case 'font': { const f = esc(c.font || 'Figtree'); useFont(c.font); return `<div class="fs-aa" style="font-family:'${f}', system-ui">Aa</div><div class="fs-meta"><b>${f}</b><span class="fs-src">${isLocalFont(c.font) ? 'On your computer' : 'Google Fonts'}</span></div><div class="fs-sample text" style="font-family:'${f}', system-ui">${esc(c.text || 'The quick brown fox jumps over the lazy dog')}</div>`; }
       case 'icon': return `<span class="mi">${esc(c.name || 'star')}</span>`;
       case 'text': return `<div class="text tx">${esc(c.text || '')}</div>`;
       case 'coll': return `<div class="coll-head"><span class="text">${esc(c.text)}</span></div><div class="coll-frame"></div>${(c.kids || []).length ? '' : '<div class="coll-empty">Drop cards here</div>'}`;
@@ -728,7 +730,7 @@
     link: CI('<path d="M8.5 11.5a3.2 3.2 0 0 0 4.5 0l2.6-2.6a3.2 3.2 0 0 0-4.5-4.5l-.9.9"/><path d="M11.5 8.5a3.2 3.2 0 0 0-4.5 0l-2.6 2.6a3.2 3.2 0 0 0 4.5 4.5l.9-.9"/>'),
   };
   const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
-  const SHAPE_FILL = { gray: '#e4dfe7', pink: '#ffb8d2', butter: '#f8e08a', mint: '#a8e6c3', sky: '#aed3ff', lilac: '#cdb8ff', peach: '#ffc8a6', ink: '#494848' };
+  const SHAPE_FILL = { gray: '#e4dfd8', pink: '#f2a59a', butter: '#f6c47a', mint: '#b5d69e', sky: '#a9c9e6', lilac: '#cdb8e6', peach: '#dccdb8', ink: '#3b342d' };
   // a line can be wavy, zigzag or loopy: waves = how tight, round = sharp → soft (or the loop size), wobble = hand-drawn looseness. Drawn in the 0–100 box
   function squigPath(c) {
     const n = Math.max(.5, c.waves ?? 6), r = (c.round ?? 60) / 100, wob = (c.wobble ?? 0) / 100, A = 46, st = c.squig;
@@ -759,7 +761,7 @@
   }
 
   // ---------- collections: a named header over a frame; cards inside stack in columns and the frame grows to fit ----------
-  const COLL = { pink: ['#ffb8d2', '#ffe3ee'], butter: ['#f8e08a', '#fff6cf'], mint: ['#a8e6c3', '#dff6ea'], lilac: ['#cdb8ff', '#eee6ff'], sky: ['#aed3ff', '#e2efff'], peach: ['#ffc8a6', '#ffeee0'], white: ['#e7e1ea', '#f5f1f6'] };
+  const COLL = { pink: ['#f2a59a', '#ffe6e2'], butter: ['#f6c47a', '#fff0d9'], mint: ['#b5d69e', '#edf5e5'], lilac: ['#cdb8e6', '#f3edf9'], sky: ['#a9c9e6', '#e8f1f9'], peach: ['#dccdb8', '#f6f1ea'], white: ['#e4dfd8', '#f6f3ee'] };
   const CW = 260, CPAD = 14, CGAP = 12, CHEAD = 52;
   const colls = () => board.cards.filter(c => c.type === 'coll');
   const parentOf = id => board.cards.find(s => s.type === 'coll' && (s.kids || []).includes(id));
@@ -899,7 +901,7 @@
     const xs = pts.flatMap(q => [q.x, q.ix ?? q.x, q.ox ?? q.x]), ys = pts.flatMap(q => [q.y, q.iy ?? q.y, q.oy ?? q.y]);
     let x0 = Math.min(...xs), y0 = Math.min(...ys), w = Math.max(...xs) - x0, h = Math.max(...ys) - y0; if (w < 12) { x0 -= (12 - w) / 2; w = 12; } if (h < 12) { y0 -= (12 - h) / 2; h = 12; }
     const sh = q => { const o = { x: q.x - x0, y: q.y - y0 }; if (q.ix != null) Object.assign(o, { ix: q.ix - x0, iy: q.iy - y0, ox: q.ox - x0, oy: q.oy - y0 }); return o; };
-    remember(); const c = card('path', { x: x0, y: y0, w, h, ow: w, oh: h, r: 0, pts: pts.map(sh), closed: closed || undefined, stroke: '#27272a', sw: 2.5, ...(closed ? { fill: '#ffe0ec' } : {}) });
+    remember(); const c = card('path', { x: x0, y: y0, w, h, ow: w, oh: h, r: 0, pts: pts.map(sh), closed: closed || undefined, stroke: '#27272a', sw: 2.5, ...(closed ? { fill: '#ffdcd8' } : {}) });
     addCard(c); selectOnly([c.id]); }
   function drawPen() { if (!penT) return; const z = view.z, P = penT.pts, last = P[P.length - 1], hv = penT.hover;
     const nearFirst = hv && P.length > 2 && Math.hypot(hv.x - P[0].x, hv.y - P[0].y) < 10 / z;
@@ -1030,7 +1032,7 @@
     const t = {
       frame: c.name || 'Screen', coll: c.name || 'Collection', note: lyText(c.name) || lyText(c.text), text: lyText(c.text), title: lyText(c.text), todo: lyText(c.text) || lyText(c.items?.[0]?.t),
       image: c.tagText || 'Image', link: c.title || (c.url ? host(c.url) : 'Link'), doc: c.text || 'Doc', canvas: c.text || 'Canvas', swatch: c.label || (c.hex || '').toUpperCase(),
-      shape: SHAPE_N[c.shape || 'rect'], path: c.closed ? 'Pen shape' : 'Pen line', stamp: 'Stamp', icon: c.name || 'Icon', audio: 'Voice memo', video: c.title || 'Video', spotify: c.title || 'Spotify', ink: 'Drawing', box: c.img ? 'Image spot' : 'Box', font: c.font || 'DM Sans',
+      shape: SHAPE_N[c.shape || 'rect'], path: c.closed ? 'Pen shape' : 'Pen line', stamp: 'Stamp', icon: c.name || 'Icon', audio: 'Voice memo', video: c.title || 'Video', spotify: c.title || 'Spotify', ink: 'Drawing', box: c.img ? 'Image spot' : 'Box', font: c.font || 'Figtree',
     }[c.type];
     return t || ({ note: 'Note', text: 'Text', title: 'Title', todo: 'Checklist' })[c.type] || c.type;
   }
@@ -1692,6 +1694,7 @@
     if ((e.key === 'Backspace' || e.key === 'Delete') && sel.size) removeSelected();
     if ((e.metaKey || e.ctrlKey) && e.altKey && e.code === 'KeyG' && sel.size) { e.preventDefault(); makeSection(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'g' && sel.size) { e.preventDefault(); groupSel(!e.shiftKey); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key === ',') { e.preventDefault(); if (!$('settings').classList.contains('on')) $('gearBtn').click(); return; }   // Ctrl+, opens Settings
     if ((e.metaKey || e.ctrlKey) && !e.altKey && ['=', '+', '-', '_', '0'].includes(e.key)) { e.preventDefault(); return e.key === '0' ? zoomTo(1) : zoomStep(e.key === '=' || e.key === '+' ? 1 : -1); }
     if (e.shiftKey && !e.metaKey && !e.ctrlKey && e.code === 'Digit1') { e.preventDefault(); return zoomFit(); }
     if ((e.metaKey || e.ctrlKey) && (e.code === 'BracketRight' || e.code === 'BracketLeft') && sel.size) { e.preventDefault(); restack(e.code === 'BracketRight' ? (e.shiftKey ? 'front' : 'forward') : (e.shiftKey ? 'back' : 'backward')); return; }
@@ -1848,7 +1851,7 @@
   // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade
   const MOCHI_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
-  const settings = Object.assign({ winButtons: true, claudeHooks: false, caelestia: false, panelH: {}, mochiName: '', mochiCalm: 'lively', mochiChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  mochi: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#ff9ec4', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
+  const settings = Object.assign({ winButtons: false, claudeHooks: false, caelestia: true, autoUpdate: true, panelH: {}, mochiName: '', mochiCalm: 'lively', mochiChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  mochi: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
   settings.wDressup = settings.wMusic = false;   // not in Myra: Mochiboard's Dress up and music widgets (Mochi's outfits and the songs are Mochiboard's own)
   try { if (localStorage.getItem('myra:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
@@ -1920,7 +1923,7 @@
     document.body.classList.toggle('has-caelestia', !!cae); document.body.classList.toggle('following-caelestia', following());
     document.body.classList.toggle('dark', dark); document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
     document.querySelectorAll('[data-seg]').forEach(g => g.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', settings[g.dataset.seg] === b.dataset.v)));
-    $('obNotes').innerHTML = $('noteColors').innerHTML = `<button data-nc="random" class="rand ${settings.noteColor === 'random' ? 'on' : ''}" title="A random pastel"></button>` + COLOR_NAMES.map(n => `<button data-nc="${n}" title="${n}" style="background:${COLORS[n]}" class="${settings.noteColor === n ? 'on' : ''}"></button>`).join('');
+    $('obNotes').innerHTML = $('noteColors').innerHTML = `<button data-nc="random" class="rand ${settings.noteColor === 'random' ? 'on' : ''}" title="A random color"></button>` + COLOR_NAMES.map(n => `<button data-nc="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${settings.noteColor === n ? 'on' : ''}"></button>`).join('');
     // Myra's name, how lively she is, and whether her character shows
     const mn = (settings.mochiName || '').trim() || 'Myra'; window.mochiName = mn;
     [['mName'], ['mcHeadName'], ['coachName']].forEach(([id]) => { const el = $(id); if (el) el.textContent = mn; });
@@ -1933,23 +1936,46 @@
     $('keys').classList.toggle('hide', !settings.keys);
     document.documentElement.classList.toggle('no-win-buttons', settings.winButtons === false);   // tiling compositors place the window themselves
     if (MB.prefs) MB.prefs({ claudeHooks: !!settings.claudeHooks }).catch(() => {});   // the host runs Claude Code, so it needs to know this one
-    $('obMochi').innerHTML = $('mochiColors').innerHTML = Object.entries(MOCHI_COLORS).map(([n, c]) => `<button data-mc="${n}" title="${n}" style="background:${c.B}" class="${settings.mochi === n ? 'on' : ''}"></button>`).join('');
+    $('obMochi').innerHTML = $('mochiColors').innerHTML = Object.entries(MOCHI_COLORS).map(([n, c]) => `<button data-mc="${n}" title="${colorLabel(n)}" style="background:${c.B}" class="${settings.mochi === n ? 'on' : ''}"></button>`).join('');
     document.querySelectorAll('[data-set]').forEach(t => t.checked = !!settings[t.dataset.set]);
     try { localStorage.setItem('myra:settings', JSON.stringify(settings)); localStorage.setItem('myra:keys', settings.keys ? 'show' : 'hide'); } catch (e) {}
   }
   // ---------- your cursor: a little pointer and name tag in Myra's color ----------
   // It follows the mouse; over a card it turns into an open hand, and a fist while you drag. Text and inputs keep the system's own I-beam.
   const myCur = document.createElement('div'); myCur.className = 'mcur'; myCur.setAttribute('aria-hidden', 'true');
-  myCur.innerHTML = `<svg class="tipv" viewBox="-1 -1 12.3 10.9"><path d="M3.4554 0.917919C4.24277 -0.305972 6.03201 -0.305974 6.81938 0.917917L9.94507 5.7765C11.0536 7.49959 9.16221 9.57694 7.34302 8.63439L6.05709 7.96814C5.48011 7.6692 4.79386 7.66921 4.21689 7.96817L2.93214 8.63388C1.11295 9.57651 -0.778528 7.49915 0.330012 5.77603L3.4554 0.917919Z"/></svg>`
+  myCur.innerHTML = `<svg class="tipv" viewBox="0 0 20 22"><path d="M2.6 1.6 17.2 9.9c1 .6.9 1.5-.2 1.8l-6.1 1.8c-.5.2-.9.5-1.1 1l-2.6 6c-.5 1-1.4 1-1.7-.1L1.2 2.9c-.3-1.1.5-1.8 1.4-1.3Z"/></svg><svg class="tagbg" aria-hidden="true"><path/></svg>`
     + `<svg class="grabhand open" viewBox="0 0 34 34"><g class="o"><rect x="8.5" y="15" width="19.5" height="16" rx="7"/><rect x="8" y="4.2" width="5" height="15.5" rx="2.5" transform="rotate(-8 10.5 19)"/><rect x="13.2" y="1.2" width="5" height="17.5" rx="2.5"/><rect x="18.4" y="2.2" width="5" height="16.5" rx="2.5"/><rect x="23.4" y="5.6" width="4.6" height="14" rx="2.3" transform="rotate(8 25.7 19)"/><rect x="7.6" y="15.5" width="3.8" height="9" rx="1.9" transform="rotate(-42 9.5 24)"/></g><g class="f"><rect x="8.5" y="15" width="19.5" height="16" rx="7"/><rect x="8" y="4.2" width="5" height="15.5" rx="2.5" transform="rotate(-8 10.5 19)"/><rect x="13.2" y="1.2" width="5" height="17.5" rx="2.5"/><rect x="18.4" y="2.2" width="5" height="16.5" rx="2.5"/><rect x="23.4" y="5.6" width="4.6" height="14" rx="2.3" transform="rotate(8 25.7 19)"/><rect x="7.6" y="15.5" width="3.8" height="9" rx="1.9" transform="rotate(-42 9.5 24)"/></g></svg>`
     + `<svg class="grabhand fist" viewBox="0 0 34 34"><g class="o"><rect x="7.5" y="13" width="21" height="17" rx="7.5"/><circle cx="11" cy="13.6" r="3"/><circle cx="16" cy="12.6" r="3"/><circle cx="21" cy="12.8" r="3"/><circle cx="25.4" cy="14.4" r="2.7"/><rect x="6" y="17" width="12" height="5" rx="2.5" transform="rotate(-12 12 19.5)"/></g><g class="f"><rect x="7.5" y="13" width="21" height="17" rx="7.5"/><circle cx="11" cy="13.6" r="3"/><circle cx="16" cy="12.6" r="3"/><circle cx="21" cy="12.8" r="3"/><circle cx="25.4" cy="14.4" r="2.7"/><rect x="6" y="17" width="12" height="5" rx="2.5" transform="rotate(-12 12 19.5)"/></g></svg>`
     + `<i class="ring"></i><div class="bub"></div>`;
   document.body.appendChild(myCur);
   const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .handle, #rh, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
+  // the name tag: a rounded rectangle whose straight edges wobble gently (the corners stay clean), drawn to fit the name
+  function tagPath(w, h, phase) {
+    const r = Math.min(8, h / 2 - 1), a = .8, step = 3, wav = (t, len) => a * Math.sin(t / len * Math.PI * Math.max(1, Math.round(len / 22)) + phase) * Math.sin(t / len * Math.PI);
+    const p = [`M${r} 0`];
+    for (let x = r + step; x < w - r; x += step) p.push(`L${x.toFixed(1)} ${(-wav(x - r, w - 2 * r)).toFixed(2)}`);
+    p.push(`L${w - r} 0A${r} ${r} 0 0 1 ${w} ${r}`);
+    for (let y = r + step; y < h - r; y += step) p.push(`L${(w + wav(y - r, h - 2 * r)).toFixed(2)} ${y.toFixed(1)}`);
+    p.push(`L${w} ${h - r}A${r} ${r} 0 0 1 ${w - r} ${h}`);
+    for (let x = w - r - step; x > r; x -= step) p.push(`L${x.toFixed(1)} ${(h + wav(x - r, w - 2 * r)).toFixed(2)}`);
+    p.push(`L${r} ${h}A${r} ${r} 0 0 1 0 ${h - r}`);
+    for (let y = h - r - step; y > r; y -= step) p.push(`L${(-wav(y - r, h - 2 * r)).toFixed(2)} ${y.toFixed(1)}`);
+    return p.join('') + `L0 ${r}A${r} ${r} 0 0 1 ${r} 0Z`;
+  }
+  function shapeTag() {
+    const bub = myCur.querySelector('.bub'), svg = myCur.querySelector('.tagbg'), w = bub.offsetWidth, h = bub.offsetHeight; if (!w || !h) return;
+    svg.setAttribute('width', w + 4); svg.setAttribute('height', h + 4); svg.setAttribute('viewBox', `-2 -2 ${w + 4} ${h + 4}`);
+    Object.assign(svg.style, { left: bub.offsetLeft - 2 + 'px', top: bub.offsetTop - 2 + 'px' });
+    const ps = [0, Math.PI * .66, Math.PI * 1.33].map(ph => tagPath(w, h, ph)), path = svg.querySelector('path');
+    path.setAttribute('d', ps[0]);
+    path.innerHTML = window.mochiCalm ? '' : `<animate attributeName="d" dur="5s" repeatCount="indefinite" values="${ps.join(';')};${ps[0]}" calcMode="spline" keySplines="${'.45 0 .55 1;'.repeat(3).slice(0, -1)}"/>`;
+  }
+  document.fonts?.ready.then(() => requestAnimationFrame(shapeTag));
   function paintCursor() {
-    const c = settings.cursor || '#ff9ec4', edge = mixHex(c, '#000000', lum(c) > .6 ? .28 : .38);
+    const m = MOCHI_COLORS[settings.mochi] || MOCHI_COLORS.golden, c = m.B, edge = m.D;   // your cursor wears Myra's color
     myCur.style.setProperty('--c', c); myCur.style.setProperty('--cs', edge); myCur.style.setProperty('--ct', lum(c) > .4 ? '#3d3640' : '#ffffff');
     myCur.querySelector('.bub').textContent = (settings.name || 'You').slice(0, 24);
+    requestAnimationFrame(shapeTag);
     document.body.classList.toggle('fancy-cursor', settings.fancyCursor !== false && matchMedia('(hover: hover) and (pointer: fine)').matches);
   }
   addEventListener('pointermove', e => {
@@ -1968,7 +1994,7 @@
   addEventListener('blur', () => myCur.classList.remove('show'));
 
   // ---------- your colors: the board, its dots, the panels and the accent, set per light/dark; one board can also have its own background ----------
-  const COLOR_DEFAULTS = { light: { bg: '#fbf8fc', dot: '#e3dcee', panel: '#ffffff', accent: '#f27aa8' }, dark: { bg: '#1c1920', dot: '#35303c', panel: '#26222b', accent: '#f27aa8' } };
+  const COLOR_DEFAULTS = { light: { bg: '#faf7f2', dot: '#e4dccf', panel: '#ffffff', accent: '#e88a24' }, dark: { bg: '#1d1a16', dot: '#3a332b', panel: '#28231d', accent: '#e88a24' } };
   const lum = hex => { const [r, g, b] = [1, 3, 5].map(i => { const c = parseInt(hex.slice(i, i + 2), 16) / 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; };
   const mixHex = (a, b, k) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - k) + parseInt(b.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
   const modeName = () => document.body.classList.contains('dark') ? 'dark' : 'light';
@@ -1984,7 +2010,7 @@
     if (mine.dot) B.setProperty('--dot', mine.dot); else if (darkBg !== (modeName() === 'dark')) B.setProperty('--dot', mixHex(bg, darkBg ? '#ffffff' : '#000000', .13)); else B.removeProperty('--dot');
     document.body.classList.toggle('tint-panels', !!mine.panel); if (mine.panel) B.setProperty('--panel', mine.panel); else B.removeProperty('--panel');
     document.body.classList.toggle('panel-dark', !!mine.panel && lum(mine.panel) < .2);
-    if (mine.accent) { B.setProperty('--pink-deep', mine.accent); B.setProperty('--pink', mixHex(mine.accent, '#ffffff', .3)); B.setProperty('--blush', mixHex(mine.accent, modeName() === 'dark' ? '#1c1920' : '#ffffff', .82)); }
+    if (mine.accent) { B.setProperty('--pink-deep', mine.accent); B.setProperty('--pink', mixHex(mine.accent, '#ffffff', .3)); B.setProperty('--blush', mixHex(mine.accent, modeName() === 'dark' ? '#1d1a16' : '#ffffff', .82)); }
     else ['--pink-deep', '--pink', '--blush'].forEach(v => B.removeProperty(v));
     document.body.classList.toggle('board-dark', darkBg); document.body.classList.toggle('board-light', !darkBg && modeName() === 'dark');
     document.querySelectorAll('[data-col]').forEach(b => b.style.setProperty('--chip', b.dataset.col === 'cursor' ? settings.cursor : colorOf(b.dataset.col)));
@@ -2383,8 +2409,8 @@
     if (placing.type === 'piece') { const n = placing.extra.piece; stopPlacing(); $('dzPieces').querySelectorAll('.on').forEach(x => x.classList.remove('on')); return placePiece(n, w); }
     const type = placing.type, more = placing.extra || {}; stopPlacing();
     const dev = DEVICES[more.device], extra = type === 'icon' ? { name: more.name || 'star', color: '#27272a', w: 28, h: 28, r: 0 } : type === 'frame' ? { name: more.device === 'Desktop' ? 'Desktop' : 'Screen', device: more.device || 'Custom', w: dev ? dev[0] : 393, h: dev ? dev[1] : 852, radius: dev ? dev[2] : 0, fill: '#ffffff', r: 0 }
-      : type === 'text' ? { text: '', size: 18, weight: 500, font: 'DM Sans', color: '#27272a', r: 0 } : type === 'audio' ? { r: 0 } : type === 'doc' ? { text: '', body: '' } : type === 'canvas' ? { text: '' } : type === 'link' ? { url: '' } : type === 'shape' ? { shape: more.shape, fill: 'gray', text: '', r: 0 } : type === 'note' ? { name: '', color: newNoteColor() } : type === 'todo' ? { text: '', items: [{ t: 'first thing', done: false }] } : type === 'title' ? { text: '' }
-      : type === 'coll' ? { text: '', color: 'pink', kids: [], cols: 1 } : type === 'swatch' ? { hex: '#ff9ec4', label: 'Pink' } : {};
+      : type === 'text' ? { text: '', size: 18, weight: 500, font: 'Figtree', color: '#27272a', r: 0 } : type === 'audio' ? { r: 0 } : type === 'doc' ? { text: '', body: '' } : type === 'canvas' ? { text: '' } : type === 'link' ? { url: '' } : type === 'shape' ? { shape: more.shape, fill: 'gray', text: '', r: 0 } : type === 'note' ? { name: '', color: newNoteColor() } : type === 'todo' ? { text: '', items: [{ t: 'first thing', done: false }] } : type === 'title' ? { text: '' }
+      : type === 'coll' ? { text: '', color: 'pink', kids: [], cols: 1 } : type === 'swatch' ? { hex: '#f6b45e', label: 'Pink' } : {};
     const c = card(type, extra); c.x = snapTo(w.x - 14 / view.z); c.y = snapTo(w.y - 14 / view.z);
     if (type === 'coll') c.r = 0;
     if (type === 'link') c.h = 52;
@@ -2750,7 +2776,7 @@
       if (!live.has(c.id)) return; const el = cardsEl.querySelector(`[data-id="${c.id}"]`), canvas = cv();
       if (canvas) { // the canvas matches the size it's shown at, so the bars grow with the card instead of stretching
         const W = Math.round(canvas.clientWidth * 2), H = Math.round(canvas.clientHeight * 2); if (W && H && (canvas.width !== W || canvas.height !== H)) { canvas.width = W; canvas.height = H; }
-        const g = canvas.getContext('2d'); an.getByteTimeDomainData(data); g.clearRect(0, 0, canvas.width, canvas.height); g.fillStyle = '#f27aa8';
+        const g = canvas.getContext('2d'); an.getByteTimeDomainData(data); g.clearRect(0, 0, canvas.width, canvas.height); g.fillStyle = '#e88a24';
         const step = canvas.width / 44, bw = step * .58, r = Math.min(bw / 2, 6);
         for (let i = 0; i < 44; i++) { const v = Math.abs(data[Math.floor(i * data.length / 44)] - 128) / 128, h = Math.min(canvas.height, Math.max(bw, v * canvas.height * 2.2)); g.beginPath(); g.roundRect ? g.roundRect(i * step, (canvas.height - h) / 2, bw, h, r) : g.rect(i * step, (canvas.height - h) / 2, bw, h); g.fill(); } }
       const t = el?.querySelector('.au-time'); if (t && !c.paused) t.textContent = fmtT((Date.now() - L.start - L.paused) / 1000);
@@ -2835,7 +2861,7 @@
   // ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
   const WF = ['frame', 'box', 'text', 'icon'];
   const DEVICES = { iPhone: [393, 852, 44], Android: [412, 915, 28], iPad: [834, 1194, 20], Desktop: [1440, 1024, 10], Watch: [205, 251, 40] };
-  let FONTS = ['DM Sans', 'Caveat']; MB.fonts().then(f => { if (f?.length) FONTS = f; }).catch(() => {});
+  let FONTS = ['Figtree', 'Shantell Sans']; MB.fonts().then(f => { if (f?.length) FONTS = f; }).catch(() => {});
   function styleWF(c, el) {
     el.classList.add('wf'); c.r = 0; el.style.setProperty('--rot', (c.rot || 0) + 'deg'); el.classList.toggle('grouped', !!c.group);
     if (!el.querySelector('.rot-h')) el.insertAdjacentHTML('beforeend', '<i class="rot-h" title="Drag to rotate"></i>');
@@ -2843,7 +2869,7 @@
     if (c.type === 'frame') { el.style.setProperty('--fr-fill', c.fill === 'none' ? 'transparent' : c.fill || '#ffffff'); el.classList.toggle('no-fill', c.fill === 'none'); el.style.setProperty('--fr-r', (c.radius ?? 0) + 'px'); }
     if (c.type === 'box') Object.assign(el.querySelector('.bx').style, { background: c.src ? `center / cover no-repeat url("${c.src}")` : c.fill === 'none' ? 'transparent' : c.fill || '#e4e4e7', borderRadius: (c.radius || 0) + 'px', opacity: c.opacity ?? 1,
       boxShadow: 'none', border: '0' });
-    if (c.type === 'text') { el.style.height = 'auto'; Object.assign(el.querySelector('.tx').style, { fontFamily: `"${c.font || 'DM Sans'}", system-ui`, fontSize: (c.size || 18) + 'px', fontWeight: c.weight || 500,
+    if (c.type === 'text') { el.style.height = 'auto'; Object.assign(el.querySelector('.tx').style, { fontFamily: `"${c.font || 'Figtree'}", system-ui`, fontSize: (c.size || 18) + 'px', fontWeight: c.weight || 500,
       color: c.color && c.color !== 'none' ? c.color : '#27272a', textAlign: c.align || 'left', lineHeight: c.lh || 1.3 }); requestAnimationFrame(() => { const h = el.offsetHeight; if (h && Math.abs(h - c.h) > 1) c.h = h; }); }
     applyStroke(c, el);
   }
@@ -2922,7 +2948,7 @@
   }
   // fonts: use what's on this computer; anything else is fetched from Google Fonts so the real type shows
   const fontsLoaded = new Set();
-  const isLocalFont = f => FONTS.some(x => x.toLowerCase() === String(f || '').toLowerCase()) || ['DM Sans', 'Caveat'].includes(f);
+  const isLocalFont = f => FONTS.some(x => x.toLowerCase() === String(f || '').toLowerCase()) || ['Figtree', 'Shantell Sans'].includes(f);
   function useFont(f) {
     if (!f || isLocalFont(f) || fontsLoaded.has(f)) return; fontsLoaded.add(f);
     const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;700&display=swap`; document.head.appendChild(l);
@@ -2956,7 +2982,7 @@
   function groupSel(on) { const cs = selCards(); if (on && cs.length < 2) return; const g = on ? uid() : null; cs.forEach(c => { if (g) c.group = g; else delete c.group; renderCard(c); }); selectOnly(cs.map(c => c.id)); $('selbar').dataset.key = ''; save(); }
   // ready-made pieces, in clean gray; bars stretch to the screen they land on
   const T = (x, y, w, text, o = {}) => { const sz = o.size || 15, perLine = Math.max(4, Math.floor(w / (sz * .52))), lines = Math.max(1, ...String(text || '').split('\n').map(l => Math.ceil(Math.max(1, l.length) / perLine)));
-    return { type: 'text', x, y, w, h: Math.round(sz * (o.lh || 1.3) * lines), text, size: 15, weight: 500, color: '#27272a', font: 'DM Sans', ...o }; };
+    return { type: 'text', x, y, w, h: Math.round(sz * (o.lh || 1.3) * lines), text, size: 15, weight: 500, color: '#27272a', font: 'Figtree', ...o }; };
   const B = (x, y, w, h, o = {}) => ({ type: 'box', x, y, w, h, fill: '#e4e4e7', radius: 0, ...o });
   const IC = (x, y, name, s = 24, o = {}) => ({ type: 'icon', x, y, w: s, h: s, name, color: '#3f3f46', ...o });
   // each piece can take its own words: (width, { title, text, sub, label, tabs, h, align, style… })
@@ -3017,7 +3043,7 @@
   // a screen's look: colors and fonts swapped onto the gray pieces
   const GRAY = { text: '#27272a', ink: '#18181b', muted: '#71717a', soft: '#52525b', surface: '#f4f4f5', bar: '#fafafa', line: '#e4e4e7' };
   function themeIt(list, th) {
-    if (!th) return list; const t = { bg: '#ffffff', text: '#18181b', muted: '#71717a', primary: '#18181b', onPrimary: '#ffffff', surface: '#f4f4f5', font: 'DM Sans', headFont: '', ...th };
+    if (!th) return list; const t = { bg: '#ffffff', text: '#18181b', muted: '#71717a', primary: '#18181b', onPrimary: '#ffffff', surface: '#f4f4f5', font: 'Figtree', headFont: '', ...th };
     useFont(t.font); if (t.headFont) useFont(t.headFont);
     return list.map(it => { const c = { ...it };
       if (c.type === 'text') { c.font = (c.weight >= 700 && t.headFont) ? t.headFont : t.font;
@@ -3113,7 +3139,7 @@
   const field = (k, label, v, type = 'number', extra = '') => `<label class="dz-f ${extra}"><span>${label}</span><input data-k="${k}" type="${type}" value="${esc(v)}"${type === 'number' ? ' step="1"' : ''}></label>`;
   function renderDesign() {
     const fc = selCards().length === 1 && selCards()[0].type === 'font' ? selCards()[0] : null;
-    if (fc) { $('dzProps').innerHTML = `<div class="dz-sec"><div class="label">Font</div><div class="dz-grid"><label class="dz-f wide"><span>Font</span><select data-k="font">${[...new Set([fc.font || 'DM Sans', ...FONTS])].map(f => `<option${fc.font === f ? ' selected' : ''} style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></label><label class="dz-f wide"><span>Or any Google font</span><input data-k="gfont" placeholder="e.g. Playfair Display" spellcheck="false"></label></div><div class="dz-hint">Double-click the sample line on the card to try your own words.</div></div>`; return; }
+    if (fc) { $('dzProps').innerHTML = `<div class="dz-sec"><div class="label">Font</div><div class="dz-grid"><label class="dz-f wide"><span>Font</span><select data-k="font">${[...new Set([fc.font || 'Figtree', ...FONTS])].map(f => `<option${fc.font === f ? ' selected' : ''} style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></label><label class="dz-f wide"><span>Or any Google font</span><input data-k="gfont" placeholder="e.g. Playfair Display" spellcheck="false"></label></div><div class="dz-hint">Double-click the sample line on the card to try your own words.</div></div>`; return; }
     const cs = selCards().filter(c => WF.includes(c.type)), el = $('dzProps');
     if (!cs.length) { el.innerHTML = selCards().length ? '' : '<div class="dz-hint">Pick a tool or a piece. Drag to draw a box; things snap into line as you move them.</div>'; return; }
     const one = cs.length === 1 ? cs[0] : null; let h = '';
@@ -3124,7 +3150,7 @@
     if (cs.length > 1) h += `<div class="dz-sec"><div class="dz-row"><button data-grp="${groupedSel ? 'off' : 'on'}" style="font:600 11.5px/1 var(--font)">${groupedSel ? 'Ungroup  Ctrl+Shift+G' : 'Group  Ctrl+G'}</button></div></div>`;
     if (one?.type === 'frame') h += `<div class="dz-sec"><div class="dz-grid">${field('name', 'Name', one.name || 'Screen', 'text', 'wide')}<label class="dz-f wide"><span>Device</span><select data-k="device">${['Custom', ...Object.keys(DEVICES)].map(n => `<option${(one.device || 'Custom') === n ? ' selected' : ''}>${n}</option>`).join('')}</select></label>${field('fill', 'Fill', one.fill || '#ffffff', 'color')}${field('radius', 'Corners', one.radius ?? 0)}</div></div>`;
     if (one?.type === 'box') h += `<div class="dz-sec"><div class="label">Look</div><div class="dz-grid">${field('fill', 'Fill', one.fill || '#e4e4e7', 'color')}${field('radius', 'Corners', one.radius || 0)}${field('stroke', 'Border', one.stroke || '#a1a1aa', 'color')}${field('sw', 'Width', one.sw || 0)}${field('opacity', 'Opacity %', Math.round((one.opacity ?? 1) * 100), 'number', 'wide')}</div></div>`;
-    if (one?.type === 'text') h += `<div class="dz-sec"><div class="label">Type</div><div class="dz-grid"><label class="dz-f wide"><span>Font</span><select data-k="font">${[...new Set([one.font || 'DM Sans', ...FONTS])].map(f => `<option${(one.font || 'DM Sans') === f ? ' selected' : ''} style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></label>
+    if (one?.type === 'text') h += `<div class="dz-sec"><div class="label">Type</div><div class="dz-grid"><label class="dz-f wide"><span>Font</span><select data-k="font">${[...new Set([one.font || 'Figtree', ...FONTS])].map(f => `<option${(one.font || 'Figtree') === f ? ' selected' : ''} style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></label>
       ${field('size', 'Size', one.size || 18)}<label class="dz-f"><span>Weight</span><select data-k="weight">${[[300, 'Light'], [400, 'Regular'], [500, 'Medium'], [600, 'Semi'], [700, 'Bold'], [800, 'Extra']].map(([v, n]) => `<option value="${v}"${(+one.weight || 500) === v ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
       ${field('color', 'Color', one.color || '#27272a', 'color')}${field('lh', 'Line', one.lh || 1.3)}</div><div class="dz-row">${['left', 'center', 'right'].map(a => `<button data-talign="${a}" class="${(one.align || 'left') === a ? 'on' : ''}" title="Align ${a}">${ALIGN[a[0]]}</button>`).join('')}</div></div>`;
     const inFrame = one && one.onFrame && byId(one.onFrame);
@@ -3239,7 +3265,7 @@
   addEventListener('pointerup', () => { cropDrag = null; });
 
   // ---------- drawing: a soft ink (it swells when you slow down and tapers at the ends), plus a marker, a highlighter and an easy eraser ----------
-  const INKS = { ink: '#494848', pink: '#f27aa8', coral: '#ff7f6b', butter: '#f3c84a', mint: '#3fbf86', sky: '#4aa3f0', lilac: '#9b7bff', white: '#ffffff' };
+  const INKS = { ink: '#3b342d', pink: '#dc4b3e', coral: '#e07a5f', butter: '#f0b04a', mint: '#6fae5a', sky: '#4f8fc9', lilac: '#a98ad6', white: '#ffffff' };
   const PEN_SIZE = { pen: { s: 5, m: 9, l: 16 }, marker: { s: 4, m: 8, l: 14 }, hi: { s: 14, m: 24, l: 38 } };
   const pen = { tool: 'pen', size: 'm', color: 'ink' };
   let drawOn = false, stroke = null, erasing = false, liveSvg = null;
@@ -3306,7 +3332,7 @@
     return `<path fill="none" style="stroke:${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${tool === 'hi' ? ' opacity=".38" style="mix-blend-mode:multiply"' : ''} d="${centerline(pts)}"/>`;
   }
   function renderDrawbar() {
-    $('dbColors').innerHTML = Object.entries(INKS).map(([n, c]) => `<button data-ink="${n}" title="${n}" style="background:${n === 'ink' ? 'var(--pen-ink)' : c}" class="${pen.color === n ? 'on' : ''}"></button>`).join('');
+    $('dbColors').innerHTML = Object.entries(INKS).map(([n, c]) => `<button data-ink="${n}" title="${colorLabel(n)}" style="background:${n === 'ink' ? 'var(--pen-ink)' : c}" class="${pen.color === n ? 'on' : ''}"></button>`).join('');
     $('drawbar').querySelectorAll('[data-pen]').forEach(b => b.classList.toggle('on', b.dataset.pen === pen.tool));
     paintSize();
     stage.classList.toggle('erasing', drawOn && pen.tool === 'eraser'); stage.classList.toggle('drawing', drawOn && pen.tool !== 'eraser');
@@ -3425,13 +3451,13 @@
   // ---------- docs: a real document editor (styles, fonts, sizes, colors, lists, tables, images, Myra on any words), beside the board ----------
   // A doc keeps its rich content in c.doc (the editor's own structured format) and a plain-text copy in c.body (for the card, search and Myra).
   let docCard = null, ed = null, dvT = 0; const bubbleEl = $('dvBubble');   // the editor's popup moves the floating bar out of the page, so keep hold of it
-  const DOC_FONT = 'DM Sans', SIZES = [9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 60, 72];
+  const DOC_FONT = 'Figtree', SIZES = [9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 60, 72];
   const BLOCKS = [['title', 'Title', 36], ['heading', 'Heading', 26], ['sub', 'Subheading', 20], ['body', 'Body', 16], ['lead', 'Lead', 19], ['caption', 'Caption', 13], ['quote', 'Quote', 18], ['code', 'Code', 14]];
-  const TEXT_COLORS = ['#2b2630', '#6b6370', '#a39aa8', '#e2649a', '#e8590c', '#c99a00', '#1f9d63', '#1f7ae0', '#6b4fe0', '#c0392b'];
+  const TEXT_COLORS = ['#2b2630', '#6b6370', '#a39aa8', '#d9771f', '#e8590c', '#c99a00', '#1f9d63', '#1f7ae0', '#6b4fe0', '#c0392b'];
   const HIGHLIGHTS = ['#fff1a8', '#ffd3e5', '#cdf2df', '#d4e8ff', '#e5dbff', '#ffe0c9', '#e9e4ec'];
   // all on Google Fonts, so they show up on any computer (the Mac list's Helvetica Neue, Avenir Next, Futura, Gill Sans, Baskerville,
   // Palatino, Didot and Menlo are Apple's own; these are their closest free cousins)
-  const SUGGESTED_FONTS = ['DM Sans', 'Inter', 'Nunito Sans', 'Jost', 'Lato', 'Gelasio', 'Libre Baskerville', 'EB Garamond', 'Tinos', 'Bodoni Moda', 'Playfair Display', 'Lora', 'Fraunces', 'Merriweather', 'Space Grotesk', 'IBM Plex Mono', 'JetBrains Mono', 'Caveat'];
+  const SUGGESTED_FONTS = ['Figtree', 'Inter', 'Nunito Sans', 'Jost', 'Lato', 'Gelasio', 'Libre Baskerville', 'EB Garamond', 'Tinos', 'Bodoni Moda', 'Playfair Display', 'Lora', 'Fraunces', 'Merriweather', 'Space Grotesk', 'IBM Plex Mono', 'JetBrains Mono', 'Shantell Sans'];
   const DI = d => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   const DICON = {
     left: DI('<path d="M3.5 5h13M3.5 8.5h9M3.5 12h13M3.5 15.5h9"/>'), center: DI('<path d="M3.5 5h13M5.5 8.5h9M3.5 12h13M5.5 15.5h9"/>'),
@@ -3550,7 +3576,7 @@
 html, body { margin: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { padding: 0; }
 :root { --paper: #ffffff; --paper-ink: #2b2630; --paper-soft: #6b6370; }   /* downloads are always light pages */
-.doc-title { margin: 0 0 18px; font: 800 36px/1.1 "DM Sans", system-ui, sans-serif; letter-spacing: -.035em; color: #2b2630; }
+.doc-title { margin: 0 0 18px; font: 800 36px/1.1 "Figtree", system-ui, sans-serif; letter-spacing: -.035em; color: #2b2630; }
 ${proseCSS()}
 .dv-prose { min-height: 0; }
 .dv-prose h1, .dv-prose h2, .dv-prose h3 { break-after: avoid; page-break-after: avoid; }
@@ -3558,11 +3584,11 @@ ${proseCSS()}
 .dv-prose p { orphans: 3; widows: 3; }
 .dv-prose .keep { break-inside: avoid; page-break-inside: avoid; }
 .dv-prose .keep > :first-child { margin-top: 0; } .dv-prose > .keep { margin-top: 1.5em; } .dv-prose > .keep:first-child { margin-top: 0; }
-.dv-prose a { color: #c4417f; }
+.dv-prose a { color: #b8621a; }
 .dv-prose ul[data-type="taskList"] input[type="checkbox"] { pointer-events: none; }
 </style></head><body>${title ? `<h1 class="doc-title">${escH(title)}</h1>` : ''}<div class="dv-prose">${body}</div></body></html>`;
   }
-  // ---------- a doc as a Word file: real headings, lists, tables and pictures, with DM Sans built in ----------
+  // ---------- a doc as a Word file: real headings, lists, tables and pictures, with Figtree built in ----------
   let docxLoading = null;
   const loadDocx = () => docxLoading || (docxLoading = new Promise((res, rej) => { if (window.MBDocx) return res(); const sc = document.createElement('script'); sc.src = 'vendor/docx.js'; sc.onload = res; sc.onerror = () => { docxLoading = null; rej(new Error("the Word maker didn't load")); }; document.head.appendChild(sc); }));
   async function downloadWord() {
@@ -3597,7 +3623,7 @@ ${proseCSS()}
     $('dvTools').innerHTML = [
       tb('undo', DICON.undo, 'Undo · Ctrl+Z', 'dt-fold f7'), tb('redo', DICON.redo, 'Redo · Ctrl+Shift+Z', 'dt-fold f8'), '<span class="dt-sep"></span>',
       pop('style', '<span class="dt-lbl" id="dtStyle">Body</span><i class="dt-car"></i>', 'Text style', 'dt-style'),
-      pop('font', '<span class="dt-lbl" id="dtFont">DM Sans</span><i class="dt-car"></i>', 'Font', 'dt-font'),
+      pop('font', '<span class="dt-lbl" id="dtFont">Figtree</span><i class="dt-car"></i>', 'Font', 'dt-font'),
       `<span class="dt-size" title="Text size"><button type="button" class="dt-b" data-c="smaller" aria-label="Smaller">−</button><input id="dtSize" inputmode="numeric" aria-label="Text size" value="16"><button type="button" class="dt-b" data-c="bigger" aria-label="Bigger">+</button></span>`,
       '<span class="dt-sep"></span>',
       tb('bold', '<b>B</b>', 'Bold · Ctrl+B', 'dt-t'), tb('italic', '<i>I</i>', 'Italic · Ctrl+I', 'dt-t'), tb('underline', '<u>U</u>', 'Underline · Ctrl+U', 'dt-t'), tb('strike', '<s>S</s>', 'Strikethrough · Ctrl+Shift+S', 'dt-t'),
@@ -3756,7 +3782,7 @@ ${proseCSS()}
     if (d.tc != null) { (d.tc ? c.setColor(d.tc) : c.unsetColor()).run(); return hidePop(); }
     if (d.hl != null) { (d.hl ? c.setHighlight({ color: d.hl }) : c.unsetHighlight()).run(); return hidePop(); }
     if (d.any) { const isHl = d.any === 'hl', r = b.getBoundingClientRect(), sel = { from: ed.state.selection.from, to: ed.state.selection.to }; hidePop();
-      openColor({ tint: true, boardColors: true, title: isHl ? 'Highlight' : 'Text color', hex: (isHl ? ed.getAttributes('highlight').color : ed.getAttributes('textStyle').color) || (isHl ? '#fff1a8' : '#e2649a'), presets: isHl ? HIGHLIGHTS : TEXT_COLORS, at: { x: r.left, y: r.bottom + 8 },
+      openColor({ tint: true, boardColors: true, title: isHl ? 'Highlight' : 'Text color', hex: (isHl ? ed.getAttributes('highlight').color : ed.getAttributes('textStyle').color) || (isHl ? '#fff1a8' : '#d9771f'), presets: isHl ? HIGHLIGHTS : TEXT_COLORS, at: { x: r.left, y: r.bottom + 8 },
         apply: hex => { const k = ed.chain().setTextSelection(sel); (isHl ? k.setHighlight({ color: hex }) : k.setColor(hex)).run(); }, reset: () => { const k = ed.chain().setTextSelection(sel); (isHl ? k.unsetHighlight() : k.unsetColor()).run(); } }); return; }
     if (d.align) { c.setTextAlign(d.align).run(); return hidePop(); }
     if (d.c2) { hidePop(); return run(d.c2); }
@@ -3844,7 +3870,7 @@ ${proseCSS()}
   async function renameChild(c) { if (!c.board) return; const b = await MB.load(c.board); if (b && c.text && b.name !== c.text) { b.name = c.text; await MB.save(b); refreshBoards(); } }
 
   // ---------- colors name themselves (until you name one yourself) ----------
-  const NAMED = { 'Black': '#000000', 'Charcoal': '#36454f', 'Slate': '#708090', 'Gray': '#808080', 'Silver': '#c0c0c0', 'Cloud': '#ecebef', 'White': '#ffffff', 'Ivory': '#fffff0', 'Cream': '#fff5c8', 'Butter': '#f3d96a', 'Lemon': '#fff44f', 'Gold': '#ffd700', 'Mustard': '#e1ad01', 'Amber': '#ffbf00', 'Tangerine': '#f28500', 'Orange': '#ff8c00', 'Peach': '#ffcba4', 'Apricot': '#fbceb1', 'Coral': '#ff7f50', 'Salmon': '#fa8072', 'Tomato': '#ff6347', 'Red': '#e0303a', 'Cherry': '#c2185b', 'Crimson': '#dc143c', 'Brick': '#b22222', 'Maroon': '#800000', 'Wine': '#722f37', 'Rose': '#ff66a3', 'Bubblegum': '#ff9ec4', 'Blush': '#ffd1dc', 'Pink': '#ffc0cb', 'Hot Pink': '#ff69b4', 'Magenta': '#ff00ff', 'Fuchsia': '#c154c1', 'Orchid': '#da70d6', 'Lilac': '#c8a2c8', 'Lavender': '#e6e6fa', 'Periwinkle': '#ccccff', 'Violet': '#8f00ff', 'Purple': '#800080', 'Plum': '#8e4585', 'Grape': '#6f2da8', 'Indigo': '#4b0082', 'Navy': '#000080', 'Midnight': '#191970', 'Royal Blue': '#4169e1', 'Cobalt': '#0047ab', 'Blue': '#1e6fff', 'Steel Blue': '#4682b4', 'Cornflower': '#6495ed', 'Sky': '#87ceeb', 'Baby Blue': '#bfdfff', 'Ice': '#dcedff', 'Powder': '#b0e0e6', 'Teal': '#008080', 'Turquoise': '#40e0d0', 'Aqua': '#00e5e5', 'Mint': '#98ff98', 'Seafoam': '#9fe2bf', 'Sage': '#9caf88', 'Pistachio': '#93c572', 'Lime': '#a4de02', 'Green': '#2e9e4f', 'Emerald': '#50c878', 'Forest': '#228b22', 'Olive': '#808000', 'Khaki': '#c3b091', 'Sand': '#e2c290', 'Tan': '#d2b48c', 'Camel': '#c19a6b', 'Caramel': '#af6f09', 'Brown': '#8b4513', 'Chocolate': '#5c3317', 'Espresso': '#3b2219' };
+  const NAMED = { 'Black': '#000000', 'Charcoal': '#36454f', 'Slate': '#708090', 'Gray': '#808080', 'Silver': '#c0c0c0', 'Cloud': '#ecebef', 'White': '#ffffff', 'Ivory': '#fffff0', 'Cream': '#ffe3bd', 'Butter': '#f0b04a', 'Lemon': '#fff44f', 'Gold': '#ffd700', 'Mustard': '#e1ad01', 'Amber': '#ffbf00', 'Tangerine': '#f28500', 'Orange': '#ff8c00', 'Peach': '#ffcba4', 'Apricot': '#fbceb1', 'Coral': '#ff7f50', 'Salmon': '#fa8072', 'Tomato': '#ff6347', 'Red': '#e0303a', 'Cherry': '#c2185b', 'Crimson': '#dc143c', 'Brick': '#b22222', 'Maroon': '#800000', 'Wine': '#722f37', 'Rose': '#ff66a3', 'Bubblegum': '#f6b45e', 'Blush': '#ffd1dc', 'Pink': '#ffc0cb', 'Hot Pink': '#ff69b4', 'Magenta': '#ff00ff', 'Fuchsia': '#c154c1', 'Orchid': '#da70d6', 'Lilac': '#c8a2c8', 'Lavender': '#e6e6fa', 'Periwinkle': '#ccccff', 'Violet': '#8f00ff', 'Purple': '#800080', 'Plum': '#8e4585', 'Grape': '#6f2da8', 'Indigo': '#4b0082', 'Navy': '#000080', 'Midnight': '#191970', 'Royal Blue': '#4169e1', 'Cobalt': '#0047ab', 'Blue': '#1e6fff', 'Steel Blue': '#4682b4', 'Cornflower': '#6495ed', 'Sky': '#87ceeb', 'Baby Blue': '#bfdfff', 'Ice': '#d9e7f3', 'Powder': '#b0e0e6', 'Teal': '#008080', 'Turquoise': '#40e0d0', 'Aqua': '#00e5e5', 'Mint': '#98ff98', 'Seafoam': '#9fe2bf', 'Sage': '#9caf88', 'Pistachio': '#93c572', 'Lime': '#a4de02', 'Green': '#2e9e4f', 'Emerald': '#50c878', 'Forest': '#228b22', 'Olive': '#808000', 'Khaki': '#c3b091', 'Sand': '#e2c290', 'Tan': '#d2b48c', 'Camel': '#c19a6b', 'Caramel': '#af6f09', 'Brown': '#8b4513', 'Chocolate': '#5c3317', 'Espresso': '#3b2219' };
   function colorName(hex) {
     const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), [r, g, b] = rgb(hex); let best = 'Color', d = Infinity;
     for (const [n, h] of Object.entries(NAMED)) { const [r2, g2, b2] = rgb(h), rm = (r + r2) / 2, dd = (2 + rm / 256) * (r - r2) ** 2 + 4 * (g - g2) ** 2 + (2 + (255 - rm) / 256) * (b - b2) ** 2; if (dd < d) { d = dd; best = n; } }
@@ -3974,8 +4000,8 @@ ${proseCSS()}
       if (cs.length > 2) A.push(['dh', 'Space evenly across'], ['dv', 'Space evenly down']);
       h += G(0, `<div class="sb-sizes sb-style sb-arrange">${A.map(([k, t], i) => (i === 3 || i === 6 ? '<i class="sb-gap"></i>' : '') + `<button data-arr="${k}" title="${t}"><svg viewBox="0 0 24 24">${ARRANGE_IC[k]}</svg></button>`).join('')}</div>`); }
     const fill = cs.filter(c => FILLABLE.includes(c.type));
-    if (one?.type === 'coll') h += G(2, colorPop(COLL[one.color]?.[0] || '#fff', Object.keys(COLL).map(n => `<button data-cc="${n}" title="${n}" style="background:${COLL[n][0]}" class="${one.color === n ? 'on' : ''}"></button>`).join('')) + `<span class="sb-sep"></span>`) + btn('head', 'head', one.head === false ? 'Show the header' : 'Hide the header', one.head !== false);
-    else if (fill.length) h += G(2, colorPop(fill.every(c => c.color === fill[0].color) ? COLORS[fill[0].color] || '#fff' : 'conic-gradient(#ffe0ec 0 25%, #fff5c8 0 50%, #dcf5e7 0 75%, #dcedff 0)', COLOR_NAMES.map(n => `<button data-c="${n}" title="${n}" style="background:${COLORS[n]}" class="${fill.every(c => c.color === n) ? 'on' : ''}"></button>`).join('')) + `<span class="sb-sep"></span>`);
+    if (one?.type === 'coll') h += G(2, colorPop(COLL[one.color]?.[0] || '#fff', Object.keys(COLL).map(n => `<button data-cc="${n}" title="${colorLabel(n)}" style="background:${COLL[n][0]}" class="${one.color === n ? 'on' : ''}"></button>`).join('')) + `<span class="sb-sep"></span>`) + btn('head', 'head', one.head === false ? 'Show the header' : 'Hide the header', one.head !== false);
+    else if (fill.length) h += G(2, colorPop(fill.every(c => c.color === fill[0].color) ? COLORS[fill[0].color] || '#fff' : 'conic-gradient(#ffdcd8 0 25%, #ffe3bd 0 50%, #e0edd3 0 75%, #d9e7f3 0)', COLOR_NAMES.map(n => `<button data-c="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${fill.every(c => c.color === n) ? 'on' : ''}"></button>`).join('')) + `<span class="sb-sep"></span>`);
     if (one?.type === 'swatch') h += btn('pick', 'color', 'Change the color') + btn('hidename', 'name', one.hideName ? 'Show the name' : 'Hide the name', !one.hideName) + btn('hidehex', 'hex', one.hideHex ? 'Show the hex' : 'Hide the hex', !one.hideHex);
     if (one?.type === 'image' && cropping?.c === one) { bar.innerHTML = `<span class="sb-label">Crop</span><button class="sb-txt" data-crop="cancel">Cancel</button><button class="sb-txt" data-crop="reset">Reset</button><button class="sb-txt on" data-crop="done">Done</button>`; return; }
     if (one?.type === 'box' && one.img && !one.src) h += `<button class="sb-txt" data-fill="1" title="Fill this image spot">Fill image ✦</button>`;
@@ -3991,7 +4017,7 @@ ${proseCSS()}
         `<div class="sb-corners sb-squig" data-st="${st}"><div class="sbc-chips sb-sqstyles">${[['straight', 'Straight'], ['wavy', 'Wavy'], ['zigzag', 'Zigzag'], ['loopy', 'Loopy']].map(([k, t]) => `<button data-sqs="${k}" class="${st === k ? 'on' : ''}"><svg viewBox="0 0 24 24"><path d="${ic[k]}"/></svg>${t}</button>`).join('')}</div>
           <div class="sb-sqmore">${sl('waves', 'Tightness', one.waves ?? 6, 1, 30)}${sl('round', st === 'loopy' ? 'Loop size' : 'Roundness', one.round ?? 60, 0, 100, '%')}${sl('height', 'Height', Math.round(one.h), 8, 300, 'px')}${sl('wobble', 'Wobble', one.wobble ?? 0, 0, 100, '%')}</div>
           ${sl('lw', 'Thickness', one.lw ?? 4, 1, 24, 'px')}</div>`, 'Line style')); }
-    if (one?.type === 'shape') h += G(2, pop('color', `<i class="sb-cur" style="background:${SHAPE_FILL[one.fill || 'gray'] ? `var(--sh-${one.fill || 'gray'})` : one.fill}"></i>${CARET}`, `<div class="sb-dots">${one.shape === 'line' ? '' : `<button data-sf="none" title="No fill" class="sb-nofill ${one.fill === 'none' ? 'on' : ''}"></button>`}${Object.keys(SHAPE_FILL).map(n => `<button data-sf="${n}" title="${n}" style="background:var(--sh-${n})" class="${(one.fill || 'gray') === n ? 'on' : ''}"></button>`).join('')}<label class="sf-any ${SHAPE_FILL[one.fill || 'gray'] ? '' : 'on'}" title="Any color"${SHAPE_FILL[one.fill || 'gray'] ? '' : ` style="--any:${one.fill}"`}><input type="color" data-sfany value="${SHAPE_FILL[one.fill || 'gray'] ? '#ff9ec4' : one.fill}"></label></div>`, 'Color') + `<span class="sb-sep"></span>`);
+    if (one?.type === 'shape') h += G(2, pop('color', `<i class="sb-cur" style="background:${SHAPE_FILL[one.fill || 'gray'] ? `var(--sh-${one.fill || 'gray'})` : one.fill}"></i>${CARET}`, `<div class="sb-dots">${one.shape === 'line' ? '' : `<button data-sf="none" title="No fill" class="sb-nofill ${one.fill === 'none' ? 'on' : ''}"></button>`}${Object.keys(SHAPE_FILL).map(n => `<button data-sf="${n}" title="${colorLabel(n)}" style="background:var(--sh-${n})" class="${(one.fill || 'gray') === n ? 'on' : ''}"></button>`).join('')}<label class="sf-any ${SHAPE_FILL[one.fill || 'gray'] ? '' : 'on'}" title="Any color"${SHAPE_FILL[one.fill || 'gray'] ? '' : ` style="--any:${one.fill}"`}><input type="color" data-sfany value="${SHAPE_FILL[one.fill || 'gray'] ? '#f6b45e' : one.fill}"></label></div>`, 'Color') + `<span class="sb-sep"></span>`);
     const sized = cs.filter(c => SIZED.includes(c.type));
     if (sized.length) { const cur = sized.every(c => (c.fs || 'm') === (sized[0].fs || 'm')) ? (sized[0].fs || 'm') : '', px = sized.every(c => fsPx(c) === fsPx(sized[0])) ? fsPx(sized[0]) : '';
       // bold is on by default for titles and collection names, off for everything else
@@ -4012,17 +4038,17 @@ ${proseCSS()}
         `<div class="sb-corners sb-spacing">${row('lh', 'Line height', lh, .8, 3, .05, '×')}${chips('lh', [['Tight', 1.1], ['Normal', 'normal'], ['Airy', 1.8]])}<i class="sb-sprule"></i>${row('ls', 'Letters', ls, -10, 30, .5, '%')}${chips('ls', [['Tight', -3], ['Normal', 'normal'], ['Wide', 8]])}<i class="sb-sprule"></i><div class="sbc-top"><span>Case</span></div><div class="sbc-chips sb-cases">${[['', 'Aa', 'As typed'], ['upper', 'AB', 'UPPERCASE'], ['lower', 'ab', 'lowercase'], ['title', 'Ab', 'Title Case']].map(([k, g, t]) => `<button data-tcase="${k}" title="${t}" class="${(f.tcase || '') === k ? 'on' : ''}"><b>${g}</b><small>${t}</small></button>`).join('')}</div></div>`, 'Line height and letter spacing')); }
     // box (and screen) fill: wireframe grays, your pastels, and any color
     const fillable = cs.filter(c => c.type === 'box' && !c.src || c.type === 'frame' || c.type === 'path' && c.closed);
-    if (fillable.length === cs.length && fillable.length) { const BF = ['#ffffff', '#f4f4f5', '#e4e4e7', '#a1a1aa', '#27272a', '#ffe0ec', '#fff5c8', '#dcf5e7', '#dcedff', '#eadfff', '#ffe9d6', '#ff9ec4'];
+    if (fillable.length === cs.length && fillable.length) { const BF = ['#ffffff', '#f4f4f5', '#e4e4e7', '#a1a1aa', '#27272a', '#ffdcd8', '#ffe3bd', '#e0edd3', '#d9e7f3', '#ebe1f2', '#f1ebe2', '#f6b45e'];
       const cur = fillable[0].fill || (fillable[0].type === 'box' ? '#e4e4e7' : '#ffffff');
       h += G(2, pop('fill', `<i class="sb-cur${cur === 'none' ? ' sb-none' : ''}" style="background:${cur === 'none' ? '' : cur}"></i>${CARET}`, `<div class="sb-dots sb-fills"><button data-bfill="none" title="No fill" class="sb-nofill ${cur === 'none' ? 'on' : ''}"></button>${BF.map(v => `<button data-bfill="${v}" title="${v}" style="background:${v}" class="${cur.toLowerCase() === v ? 'on' : ''}"></button>`).join('')}<button class="sb-anycolor" data-bfwheel="1" title="Any color"></button></div>`, 'Fill')); }
     // text color for titles and wireframe text, with No fill (hollow letters)
     const tfs = cs.filter(c => c.type === 'title' || c.type === 'text');
-    if (tfs.length === cs.length && tfs.length) { const f = tfs[0], cur = f.type === 'title' ? f.tc || '' : f.color || '#27272a', TF = ['#27272a', '#ffffff', '#ff5a6e', '#ff9ec4', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff'];
+    if (tfs.length === cs.length && tfs.length) { const f = tfs[0], cur = f.type === 'title' ? f.tc || '' : f.color || '#27272a', TF = ['#27272a', '#ffffff', '#ff5a6e', '#f6b45e', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff'];
       h += G(2, pop('tfill', `<i class="sb-cur sb-tcur${cur === 'none' ? ' sb-none' : ''}" style="--c:${cur && cur !== 'none' ? cur : 'var(--ink)'}">A</i>${CARET}`,
         `<div class="sb-dots sb-fills"><button data-tf="none" title="No fill" class="sb-nofill ${cur === 'none' ? 'on' : ''}"></button>${TF.map(v => `<button data-tf="${v}" title="${v}" style="background:${v}" class="${cur.toLowerCase() === v ? 'on' : ''}"></button>`).join('')}<button class="sb-anycolor" data-tfwheel="1" title="Any color"></button></div>`, 'Text color')); }
     const stk = cs.filter(c => canStroke(c));
     if (stk.length === cs.length && stk.length) { const f = stk[0], col = f.stroke || '#27272a', w = f.sw || 0, textOnly = stk.every(c => STROKE_TEXT.includes(c.type)), max = textOnly ? 12 : 24, noDash = stk.some(c => ['icon', 'title', 'text'].includes(c.type));   // dashed/dotted is for shapes, boxes and screens
-      const SK = ['#000000', '#ffffff', '#71717a', '#a1a1aa', '#ff5a6e', '#ff9ec4', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff', ...(board.palette || []).map(p => p.hex), ...board.cards.filter(c => c.type === 'swatch' && c.hex).map(c => c.hex)].slice(0, 18);
+      const SK = ['#000000', '#ffffff', '#71717a', '#a1a1aa', '#ff5a6e', '#f6b45e', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff', ...(board.palette || []).map(p => p.hex), ...board.cards.filter(c => c.type === 'swatch' && c.hex).map(c => c.hex)].slice(0, 18);
       h += G(2, pop('stroke', `<i class="sb-cur sb-skcur${w ? '' : ' none'}" style="--c:${col}"></i>${CARET}`,
         `<div class="sb-corners sb-stroke"><div class="sbc-top"><span>Stroke</span><input type="range" min="0" max="${max}" step="0.5" value="${w}" style="--p:${Math.min(100, w / max * 100)}%" data-skw><input type="number" min="0" max="${max}" step="0.5" value="${w}" data-skn aria-label="Stroke width"><b class="sb-unit">px</b></div>
           <div class="sb-dots sb-fills">${[...new Set(SK.map(v => v.toLowerCase()))].map(v => `<button data-skc="${v}" title="${v}" style="background:${v}" class="${w && col.toLowerCase() === v ? 'on' : ''}"></button>`).join('')}<button class="sb-anycolor" data-skwheel="1" title="Any color"></button></div>
@@ -4040,7 +4066,7 @@ ${proseCSS()}
     if (cs.length > 1) h += G(9, `<span class="sb-sep"></span><button class="sb-txt sb-glass" data-sb="section" title="Create section · ⌥⌘G">Create section</button>`);   // these tuck into ··· before the text controls do
     if (one?.type === 'section') h += `<button class="sb-txt" data-sb="rensection" title="Rename">Rename</button>`;
     if (one?.type === 'section') h += `<button class="sb-txt" data-sb="unsection" title="Remove section">Remove section</button><span class="sb-sep"></span>`;
-    if (one?.type === 'section') h += G(2, colorPop(COLORS[one.color] || '#fff', COLOR_NAMES.map(n => `<button data-sc="${n}" title="${n}" style="background:${COLORS[n]}" class="${(one.color || 'white') === n ? 'on' : ''}"></button>`).join('')));
+    if (one?.type === 'section') h += G(2, colorPop(COLORS[one.color] || '#fff', COLOR_NAMES.map(n => `<button data-sc="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${(one.color || 'white') === n ? 'on' : ''}"></button>`).join('')));
     if (cs.length > 1) h += G(8, `<span class="sb-sep"></span><button class="sb-txt" data-sb="${oneGroup ? 'ungroup' : 'group'}" title="${oneGroup ? 'Ungroup · ⇧⌘G' : 'Group · ⌘G'}">${oneGroup ? 'Ungroup' : 'Group'}</button>`);
     h += `<span class="sb-sep sb-moresep"></span>` + pop('more', '<svg viewBox="0 0 24 24" class="sb-l24"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>', `<div class="sb-morebody">${more}</div>`, 'More');
     h += `<span class="sb-sep"></span>` + btn('mochi', 'mochi', 'Ask Myra') + btn('del', 'del', 'Delete');
@@ -4143,7 +4169,7 @@ ${proseCSS()}
   $('selbar').addEventListener('click', e => { const b = e.target.closest('[data-tf], [data-tfwheel]'); if (!b) return; e.stopImmediatePropagation(); remember();
     if (b.dataset.tf != null) return setTextFill(b.dataset.tf);
     const cs = selCards().filter(c => c.type === 'title' || c.type === 'text'), r = $('selbar').getBoundingClientRect(), was = cs.map(c => [c.tc, c.color, c.stroke, c.sw]); closeSbPops();
-    openColor({ tint: true, boardColors: true, title: 'Text color', hex: toHex(cs[0].type === 'title' ? cs[0].tc : cs[0].color) || '#27272a', presets: ['#27272a', '#ffffff', '#ff5a6e', '#ff9ec4', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff'],
+    openColor({ tint: true, boardColors: true, title: 'Text color', hex: toHex(cs[0].type === 'title' ? cs[0].tc : cs[0].color) || '#27272a', presets: ['#27272a', '#ffffff', '#ff5a6e', '#f6b45e', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff'],
       fromBar: true, at: { x: r.left + r.width / 2 - 140, y: r.top - 480 }, apply: hex => setTextFill(hex), reset: () => { cs.forEach((c, i) => { [c.tc, c.color, c.stroke, c.sw] = was[i]; renderCard(c); }); save(); } });
   }, true);
   function setStroke(patch) {
@@ -4170,7 +4196,7 @@ ${proseCSS()}
     if (c) return setStroke({ color: c.dataset.skc });
     if (d) return setStroke(d.dataset.skd === 'none' ? { none: true } : { dash: d.dataset.skd });
     const cs = selCards().filter(k => canStroke(k)); remember(); const was = cs.map(k => [k.stroke, k.sw, k.sdash]), r = $('selbar').getBoundingClientRect(); closeSbPops();
-    openColor({ tint: true, boardColors: true, title: 'Stroke', hex: cs[0].stroke || '#27272a', presets: ['#27272a', '#ffffff', '#ff5a6e', '#ff9ec4', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff'],
+    openColor({ tint: true, boardColors: true, title: 'Stroke', hex: cs[0].stroke || '#27272a', presets: ['#27272a', '#ffffff', '#ff5a6e', '#f6b45e', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff'],
       fromBar: true, at: { x: r.left + r.width / 2 - 140, y: r.top - 480 }, apply: hex => setStroke({ color: hex }), reset: () => { cs.forEach((k, i) => { [k.stroke, k.sw, k.sdash] = was[i]; renderCard(k); }); save(); } });
   }, true);
   function setFill(v, keep) { const cs = selCards().filter(c => c.type === 'box' && !c.src || c.type === 'frame' || c.type === 'path' && c.closed); if (!cs.length) return; cs.forEach(c => { if (v === 'none' && c.fill !== 'none') autoBorder(c, fillOf(c)); c.fill = v; renderCard(c); }); selectOnly(cs.map(c => c.id)); syncDesign(); save();
@@ -4180,7 +4206,7 @@ ${proseCSS()}
     if (!e.target.closest('[data-bfwheel]')) return; e.stopImmediatePropagation();
     const cs = selCards().filter(c => c.type === 'box' && !c.src || c.type === 'frame' || c.type === 'path' && c.closed); if (!cs.length) return; remember();
     const was = cs.map(c => c.fill), r = $('selbar').getBoundingClientRect(); closeSbPops();
-    openColor({ tint: true, boardColors: true, title: 'Fill', hex: cs[0].fill || (cs[0].type === 'box' ? '#e4e4e7' : '#ffffff'), presets: ['#ffffff', '#e4e4e7', '#27272a', '#ffe0ec', '#fff5c8', '#dcf5e7', '#dcedff', '#eadfff', '#ff9ec4'],
+    openColor({ tint: true, boardColors: true, title: 'Fill', hex: cs[0].fill || (cs[0].type === 'box' ? '#e4e4e7' : '#ffffff'), presets: ['#ffffff', '#e4e4e7', '#27272a', '#ffdcd8', '#ffe3bd', '#e0edd3', '#d9e7f3', '#ebe1f2', '#f6b45e'],
       fromBar: true, at: { x: r.left + r.width / 2 - 140, y: r.top - 480 }, apply: hex => setFill(hex, true), reset: () => { cs.forEach((c, i) => { c.fill = was[i]; renderCard(c); }); save(); } });
   }, true);
   let fillMark = false; $('selbar').addEventListener('input', e => { if (!e.target.matches('[data-bfany]')) return; if (!fillMark) { remember(); fillMark = true; } setFill(e.target.value, true); });
@@ -4367,15 +4393,15 @@ ${proseCSS()}
   $('cpDone').onclick = closeColor;
   addEventListener('pointerdown', e => { if ($('cpop').classList.contains('on') && !e.target.closest('.cpop, .card.swatch, [data-col]')) closeColor(); }, true);
   $('cpReset').onclick = () => { if (colorCard && colorCard.tint) { colorCard.reset(); closeColor(); } };
-  const PRESETS = { bg: ['#fbf8fc', '#ffffff', '#fff6f9', '#fffaf0', '#f4fbf6', '#f3f8ff', '#f6f2ff', '#1c1920', '#232733', '#2b2433'], dot: ['#e3dcee', '#f2c9da', '#cfe8d9', '#cfe0f5', '#e6dcff', '#d8d2dd', '#35303c', '#4a4452'],
-    panel: ['#ffffff', '#fff6f9', '#fffaf0', '#f4fbf6', '#f3f8ff', '#f6f2ff', '#26222b', '#2f2a36'], accent: ['#f27aa8', '#ff8a5c', '#f3c84a', '#3fbf86', '#4aa3f0', '#9b7bff', '#494848'],
-    cursor: ['#ff9ec4', '#ffc8a6', '#f8e08a', '#a8e6c3', '#aed3ff', '#cdb8ff', '#ffffff', '#494848'] };
+  const PRESETS = { bg: ['#faf7f2', '#ffffff', '#fff8ef', '#fffaf0', '#f4fbf6', '#f3f8ff', '#f6f2ff', '#1d1a16', '#232733', '#2c2620'], dot: ['#e4dccf', '#f2c9da', '#cfe8d9', '#cfe0f5', '#e6dcff', '#d8d2dd', '#3a332b', '#4a4452'],
+    panel: ['#ffffff', '#fff8ef', '#fffaf0', '#f4fbf6', '#f3f8ff', '#f6f2ff', '#28231d', '#2f2a36'], accent: ['#e88a24', '#ff8a5c', '#f3c84a', '#3fbf86', '#4aa3f0', '#9b7bff', '#3b342d'],
+    cursor: ['#f6b45e', '#ffc8a6', '#f8e08a', '#a8e6c3', '#aed3ff', '#cdb8ff', '#ffffff', '#3b342d'] };
   const COLOR_TITLES = { bg: 'Board background', dot: 'Dots', panel: 'Panels', accent: 'Accent', cursor: 'Your cursor' };
   // open the wheel for a UI color; `forBoard` means just this board's background (from a right-click)
   function tintPicker(key, at, forBoard) {
     const set = hex => { if (key === 'cursor') settings.cursor = hex; else if (forBoard) { board.bg = hex; save(); } else myColors()[key] = hex; applySettings(); };
     openColor({ tint: true, title: forBoard ? 'This board’s background' : COLOR_TITLES[key], hex: key === 'cursor' ? settings.cursor : forBoard ? (board.bg || colorOf('bg')) : colorOf(key), presets: PRESETS[key], at,
-      apply: set, reset: () => { if (key === 'cursor') settings.cursor = '#ff9ec4'; else if (forBoard) { delete board.bg; save(); } else delete myColors()[key]; applySettings(); } });
+      apply: set, reset: () => { if (key === 'cursor') settings.cursor = '#f6b45e'; else if (forBoard) { delete board.bg; save(); } else delete myColors()[key]; applySettings(); } });
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-col]'); if (!b) return; const r = b.getBoundingClientRect(); tintPicker(b.dataset.col, { x: r.left - 270, y: r.top - 120 }); });
   function renderPalette() {

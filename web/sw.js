@@ -4,9 +4,8 @@
 const CACHE = 'myra-v1';
 const FILES = [
   './', 'index.html', 'style.css', 'fonts.css', 'app.js', 'bridge.js', 'goo.js', 'vendor/editor.js', 'vendor/docx.js', 'icons/names.js', 'icons/MaterialIconsOutlined-Regular.otf',
-  'fonts/DMSans-400-latin.woff2', 'fonts/DMSans-500-latin.woff2', 'fonts/DMSans-700-latin.woff2', 'fonts/DMSans-800-latin.woff2',
-  'fonts/DMSans-400-latin-ext.woff2', 'fonts/DMSans-500-latin-ext.woff2', 'fonts/DMSans-700-latin-ext.woff2', 'fonts/DMSans-800-latin-ext.woff2',
-  'fonts/Caveat-500-latin.woff2', 'fonts/Caveat-700-latin.woff2', 'fonts/Caveat-500-latin-ext.woff2', 'fonts/Caveat-700-latin-ext.woff2',
+  'fonts/Figtree-400-latin.woff2', 'fonts/Figtree-400-latin-ext.woff2', 'fonts/Figtree-500-latin.woff2', 'fonts/Figtree-500-latin-ext.woff2', 'fonts/Figtree-600-latin.woff2', 'fonts/Figtree-600-latin-ext.woff2', 'fonts/Figtree-700-latin.woff2', 'fonts/Figtree-700-latin-ext.woff2', 'fonts/Figtree-800-latin.woff2', 'fonts/Figtree-800-latin-ext.woff2',
+  'fonts/ShantellSans-500-latin.woff2', 'fonts/ShantellSans-500-latin-ext.woff2', 'fonts/ShantellSans-700-latin.woff2', 'fonts/ShantellSans-700-latin-ext.woff2', 'fonts/MyraMark.woff2',
   'stamps/myra.png', 'stamps/myra-shook.png', 'stamps/myra-wave.png', 'stamps/myra-happy.png', 'stamps/myra-party.png', 'stamps/myra-love.png',
   'stamps/myra-sigh.gif', 'stamps/myra-sleepy.png', 'stamps/myra-cry.png', 'stamps/myra-sigh.png', 'stamps/myra-bounce.gif',
 ];

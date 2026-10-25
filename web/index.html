@@ -18,13 +18,6 @@
   <button class="wc-max" title="Maximize" onclick="mbWindow.maximize()"><svg viewBox="0 0 10 10"><path d="M2.5 6.5v-4h4M7.5 3.5v4h-4"/></svg></button>
 </div>
 <div class="win-drag" id="winDrag"></div>
-<!-- the wobbly hand-cut edge every frame wears -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <filter id="wob" x="-4%" y="-4%" width="108%" height="108%">
-    <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="7" result="n"/>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
-  </filter>
-</svg>
 
 <aside class="side side-r" id="sideR" aria-label="Right widgets"></aside>
 <aside class="side" id="side">
@@ -317,8 +310,8 @@
       </section>
       <section data-tab="general"><h3>Your cursor</h3>
         <div class="cur-prev" id="curPrev"><div class="mcur show demo"></div></div>
-        <label class="set-row"><div><b>Your name</b><small>It rides along on your cursor</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
-        <div class="set-row"><div><b>Cursor color</b><small>Pick one, or tap the last dot for any color</small></div><div class="mochi-colors cur-colors" id="curColors"></div></div>
+        <label class="set-row"><div><b>Your name</b><small>It rides along on your cursor, in Myra’s color</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
+        <div class="set-row" style="display:none"><div><b>Cursor color</b></div><div class="mochi-colors cur-colors" id="curColors"></div></div>
         <label class="set-row native-only win-only"><div><b>Window buttons</b><small>The close, minimize and maximize dots at the top left. Turn off if your compositor handles windows (Hyprland, Sway, niri)</small></div><input type="checkbox" class="tgl" data-set="winButtons"></label>
         <label class="set-row"><div><b>Myra cursor</b><small>Off uses your system’s regular cursor</small></div><input type="checkbox" class="tgl" data-set="fancyCursor"></label>
       </section>
