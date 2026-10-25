@@ -4614,7 +4614,7 @@ ${proseCSS()}
   // ---------- what's new: a little card, once, the first time a new version opens ----------
   // what's new in Myra: one card per version (each item: [icon svg, title, a line about it])
   const NEWS = { '1.0.0': [
-    ['<circle cx="10" cy="11" r="5.5"/><path d="M10 5.5V3M7.5 4.5 10 5.5l2.5-1"/>', 'Hello, I’m Myra', 'A little cloudberry. Cloudberries only ripen in just the right spot, and so do ideas, so this board is that spot.'],
+    ['<circle cx="10" cy="11" r="5.5"/><path d="M10 5.5V3M7.5 4.5 10 5.5l2.5-1"/>', 'Hello, I’m Myra', 'A little cloudberry. Like cloudberries, ideas only grow where conditions are just right, so this board tries to be that place.'],
     ['<path d="M3 15c3-6 11-6 14 0"/><circle cx="6" cy="7" r="1.5"/><circle cx="10" cy="5.5" r="1.5"/><circle cx="14" cy="7" r="1.5"/>', 'Nordic colors', 'Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch for your cards, with warm amber shadows.'],
   ] };
   // the button on each version's card: try the headline thing

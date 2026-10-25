@@ -5,7 +5,7 @@ Write them for people, not for code: one line, what changed and why it's nice.
 
 ## October 2026 · 1.0.0
 
-- Hello, I'm Myra: a little cloudberry who helps on your boards. Cloudberries only ripen in just the right spot, and so do ideas.
+- Hello, I'm Myra: a little cloudberry who helps on your boards. Like cloudberries, ideas only grow where conditions are just right.
 - Nordic colors for your cards (Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather, Birch), warm amber shadows, squircle corners and crisp card edges.
 - New fonts: Figtree, with Shantell Sans for the handwritten touches. A little cloudberry marks the friendly bits.
 - Your cursor and its name tag wear Myra's color.

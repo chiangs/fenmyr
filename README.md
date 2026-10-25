@@ -1,13 +1,13 @@
 <p align="center"><img src="assets/icon.png" width="140" alt="Myra"></p>
 
 <h1 align="center">Myra</h1>
-<p align="center"><b>Where ideas ripen.</b><br>
-Cloudberries only grow where the bog, the light and the cold are just right. Ideas are the same.<br>Myra is a planning canvas that tries to be that place, with Myra the cloudberry to help.</p>
+<p align="center"><b>Where ideas thrive.</b><br>
+Like cloudberries, ideas only grow where conditions are just right.<br>Myra is a canvas that tries to be that place, with Myra the cloudberry to help.</p>
 <p align="center"><img src="assets/readme-cover.jpg" width="760" alt="A Myra board: notes in cloudberry, lingonberry, fjord, moss and heather, a checklist, two color swatches, and Myra in the corner"></p>
 
 ---
 
-Myra is a free, open-source planning canvas for Linux, for the messy part before you open your design tools. Drop notes, pictures, links, checklists and colors on an endless board, arrange them however makes sense to *you*, and ask Myra (a little pixel cloudberry who thinks with Claude Code) to sort, plan, explore and build. Made for Arch / CachyOS and Wayland, and at home on Hyprland, KDE Plasma, GNOME, Sway and niri.
+Myra is a free, open-source canvas for ideas, for the messy part before you open your design tools. It starts on Linux, with other systems and a rapid-prototyping area planned. Drop notes, pictures, links, checklists and colors on an endless board, arrange them however makes sense to *you*, and ask Myra (a little pixel cloudberry who thinks with Claude Code) to sort, plan, explore and build. Made for Arch / CachyOS and Wayland, and at home on Hyprland, KDE Plasma, GNOME, Sway and niri.
 
 ## What's inside
 
@@ -199,4 +199,4 @@ The code is open source under the [MIT License](LICENSE). The name **Myra**, Myr
 
 ---
 
-<p align="center">Made with care by Stephen Chiang. Where ideas ripen.</p>
+<p align="center">Made with care by Stephen Chiang. Where ideas thrive.</p>

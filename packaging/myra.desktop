@@ -2,7 +2,7 @@
 Type=Application
 Name=Myra
 GenericName=Planning canvas
-Comment=A planning canvas where ideas ripen
+Comment=A canvas where ideas thrive
 Exec=myra %U
 Icon=myra
 Terminal=false

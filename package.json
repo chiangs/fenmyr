@@ -2,7 +2,7 @@
   "name": "myra",
   "productName": "Myra",
   "version": "1.0.0",
-  "description": "A planning canvas where ideas ripen, with Myra the cloudberry to help",
+  "description": "A canvas where ideas thrive, with Myra the cloudberry to help",
   "homepage": "https://github.com/chiangs/myra",
   "license": "MIT",
   "author": "Stephen Chiang",
@@ -42,7 +42,7 @@
       "desktop": {
         "entry": {
           "Name": "Myra",
-          "Comment": "A planning canvas where ideas ripen",
+          "Comment": "A canvas where ideas thrive",
           "StartupWMClass": "Myra"
         }
       }
