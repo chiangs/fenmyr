@@ -1844,7 +1844,7 @@
   const favGoo = MB.native ? null : (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const fg = Goo(c, { manual: true, outfit: 'wear' });
     let link = document.querySelector('link[rel="icon"]'); if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
     setInterval(() => { fg.draw(); link.href = c.toDataURL('image/png'); }, 120); return fg; })();
-  const goo = Goo($('goo'), { headroom: 8 }), duGoo = Goo($('duGoo')), SMALL = { outfit: 'wear', headroom: 8 };   // small Mochis get room above for hats, and skip what she's holding so she stays big enough to see
+  const goo = Goo($('goo'), { headroom: 8 }), duGoo = Goo($('duGoo')), SMALL = { outfit: 'wear', headroom: 8 };   // small Myras get room above thems, and skip what she's holding so she stays big enough to see
   const goos = [goo, duGoo, ...(favGoo ? [favGoo] : []), Goo($('brandGoo'), SMALL), Goo($('aboutGoo'), SMALL), Goo($('chatGoo'), SMALL), Goo($('obGoo'), { headroom: 8 }), Goo($('obGoo2'), { headroom: 8 }), Goo($('coachGoo'), SMALL), Goo($('setGoo'), SMALL)];
 
   // ---------- settings: Myra's color and greeting, her helpers, how the board looks ----------
@@ -2044,7 +2044,7 @@
   $('devAllow').onclick = async () => { try { const st = await openMedia(true); st.getTracks().forEach(t => t.stop()); } catch (e) { try { const st = await openMedia(false); st.getTracks().forEach(t => t.stop()); } catch (e2) {} } fillDevices(); };
   navigator.mediaDevices?.addEventListener?.('devicechange', () => { if ($('settings').classList.contains('on')) fillDevices(); });
   $('gearBtn').onclick = e => { e.stopPropagation(); fillDevices(); paintWhisper(); showConnections(true);   // always a fresh look at Claude's connections
-    if (placing) stopPlacing(); if (sel.size) selectOnly([]); checkUpdate(); showUsage(); $('boardCount').textContent = `${boardList.length} board${boardList.length === 1 ? '' : 's'}, kept on this Mac. They never leave your computer.`; showConnections(true); $('settings').classList.add('on'); };
+    if (placing) stopPlacing(); if (sel.size) selectOnly([]); checkUpdate(); showUsage(); $('boardCount').textContent = `${boardList.length} board${boardList.length === 1 ? '' : 's'}, kept on this computer. They never leave your computer.`; showConnections(true); $('settings').classList.add('on'); };
   const closeSettings = () => $('settings').classList.remove('on');
   // settings tabs: one topic at a time, so it isn't one long scroll
   function setTab(t) { $('setTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.tab === t)); $('settings').querySelectorAll('.set-body section[data-tab]').forEach(sec => sec.classList.toggle('tab-off', sec.dataset.tab !== t)); $('settings').querySelector('.set-body').scrollTop = 0; if (t === 'helpers') showUsage(); }
@@ -2272,8 +2272,8 @@
     if (!confirmed) addMsg('me', q); else addMsg('mochi', 'Making it… this can take a minute ✦');
     $('mochi').classList.add('thinking'); goo.think(true); favGoo?.think(true); typing(true);
     try { const raw = await MB.ask((window.mochiName && window.mochiName !== 'Myra' ? `(The person named you ${window.mochiName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs }); await applyMochi(parse(raw), q); }
-    catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMochi(q, "I need Claude Code on this Mac to think. It's a one-time setup with your Claude account."); }
-      if (SIGNIN.test(err.message)) { offlineMochi.signin = true; return offlineMochi(q, "Claude Code is here, but it isn't signed in yet. Open Terminal, type claude, and sign in with a Claude Pro or Max account."); }
+    catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMochi(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }
+      if (SIGNIN.test(err.message)) { offlineMochi.signin = true; return offlineMochi(q, "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account."); }
       say("Hmm, I couldn't reach Claude: " + err.message); }
     finally { $('mochi').classList.remove('thinking'); goo.think(false); favGoo?.think(false); typing(false); }
   }
@@ -3385,7 +3385,7 @@
     board.cards.push(c); renderCard(c); save();
   });
 
-  // ---------- stamps: Myra's emojis, moving Mochis and regular emoji, stamped with a little burst ----------
+  // ---------- stamps: Myra's emojis, moving Myras and regular emoji, stamped with a little burst ----------
   const M = n => 'stamps/myra' + (n ? '-' + n : '') + '.png';
   const STAMPS = {
     mochi: [['Myra', M('')], ['Happy', M('happy')], ['Love', M('love')], ['Party', M('party')], ['Wave', M('wave')], ['Shook', M('shook')], ['Sleepy', M('sleepy')], ['Cry', M('cry')], ['Sigh', M('sigh')]].map(([n, src]) => ({ n, src })),
@@ -4594,52 +4594,14 @@ ${proseCSS()}
   if (MB.web) document.body.classList.add('web');
   document.querySelectorAll('.get-app').forEach(b => b.onclick = e => { e.stopPropagation(); getApp(); });
   // ---------- what's new: a little card, once, the first time a new version opens ----------
-  const NEWS = { '1.1.0': [
-    ['<rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="11" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="11" width="6" height="6" rx="1.5"/><path d="M14 11.5v5M11.5 14h5"/>', 'Design thinking templates', 'Affinity maps, journey maps, impact / effort and more, from the new button in the toolbar. Each one comes with an example and a how-to note from me.'],
-    ['<path d="M6 15.5h8.2a3.3 3.3 0 0 0 .6-6.5 4.6 4.6 0 0 0-8.9-.9A3.7 3.7 0 0 0 6 15.5z"/><path d="M3.5 3.5l13 13"/>', 'Works without internet', 'Your boards keep working offline. I’ll tell you when I can’t think with Claude and pick back up when you’re online.'],
-    ['<circle cx="5" cy="5" r="1.1" fill="currentColor" stroke="none"/><circle cx="10" cy="5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="5" r="1.1" fill="currentColor" stroke="none"/><circle cx="5" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.1" fill="currentColor" stroke="none"/><circle cx="5" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="10" cy="15" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="15" r="1.1" fill="currentColor" stroke="none"/>', 'Canvases go anywhere', 'Drag a canvas onto another board, into a folder, or right-click to make it its own board.'],
-    ['<circle cx="10" cy="10" r="2.6"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4"/>', 'Tidier Settings', 'Settings has tabs now, and Helpers shows how much Claude I’ve used, with a link to your plan’s limits.'],
-  ], '1.2.0': [
-    ['<path d="M4.5 3.5l11 5.2-4.6 1.4-1.6 4.6z"/><path d="M11 10.2l4 4.3"/>', 'Your own cursor', 'Your name and color follow your mouse around the board. Pick them in Settings → General.'],
-    ['<path d="M10 2.8a7.2 7.2 0 1 0 0 14.4c1.2 0 1.8-.9 1.4-1.9-.5-1.1.2-2.3 1.4-2.3h1.7a2.7 2.7 0 0 0 2.7-2.7c0-4.2-3.2-7.5-7.2-7.5z"/><circle cx="6.6" cy="9" r=".9" fill="currentColor"/><circle cx="9" cy="6.2" r=".9" fill="currentColor"/><circle cx="12.6" cy="6.8" r=".9" fill="currentColor"/>', 'Your colors', 'Change the board, dots, panels and accent. Right-click any board for its own background.'],
-    ['<path d="M10 3l7 3.8-7 3.8-7-3.8z"/><path d="M3 10.2l7 3.8 7-3.8"/><path d="M3 13.6l7 3.8 7-3.8"/>', 'Layers', 'Everything on the board in one list. Pick, rename, hide, lock and restack, like Figma.'],
-    ['<rect x="3.5" y="3.5" width="13" height="13" rx="2"/><path d="M11 16.5h5.5V11M16.5 16.5l-5-5"/>', 'Reshape wireframes', 'Drag any piece’s corner to resize it. Double-click to reach inside a button or input.'],
-    ['<path d="M13.5 3.5l3 3L8 15l-4 1 1-4z"/><path d="M3 18.5h14" stroke-width="1.2"/>', 'Any pen size', 'A slider for every thickness, and [ and ] while you draw. Stamps are all pixel art now too.'],
-    ['<path d="M11 2.5L4.5 11h5l-1 6.5L15.5 9h-5z"/>', 'Smoother', 'Dragging and zooming glide on big boards, and the dots stay the same size as you zoom.'],
-  ], '1.3.0': [
-    ['<path d="M5.5 2.5h6l4 4v11h-10z"/><path d="M11.5 2.5v4h4"/><path d="M8 10h5M8 13h5"/>', 'Real docs', 'Styles, any font on your computer, colors and highlights, lists, tables and pictures. Open any doc to try it.'],
-    ['<path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5l-1.6-4.4L4 8.5l4.4-1.6z"/><path d="M15.5 13.5l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6z"/>', 'Myra edits with you', 'Select words in a doc and ask me to make them shorter, clearer, friendlier, or anything you type.'],
-    ['<path d="M10 3v9.5M6 8.5l4 4 4-4"/><path d="M4 16.5h12"/>', 'PDF and Word', 'Download any doc as a PDF or a Word file, on Letter or A4 pages. Headings, lists and tables come along.'],
-    ['<path d="M7.5 4.5h5a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3h-5a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3z"/><path d="M8 10.5l1.5 1.5L12.5 9"/>', 'Easier to set up', 'I find Claude Code wherever it lives, and a step-by-step guide shows up if I can\u2019t think yet.'],
- ], '1.4.0': [
-    ['<rect x="2.5" y="5.5" width="10.5" height="9" rx="2.2"/><path d="M13 9l4.5-2.6v7.2L13 11"/>', 'Video cards', 'Press V to record yourself, wide or phone-shaped, or drop in a video. It plays right on the board.'],
-    ['<path d="M3.5 15.5L8 4.5l4.5 11M5.2 11.5h5.6"/><path d="M13.5 10.5h4M15.5 8.5v6"/>', 'Your fonts', 'Any font on your computer for notes, titles and checklists, with a live preview as you hover.'],
-    ['<path d="M5 6.2c-.1 0-.2 0-.3-.1C4 5.5 3 4.8 3 3.9c0-.6.4-1 1-1 .4 0 .8.2 1 .5.2-.3.6-.5 1-.5.6 0 1 .4 1 1 0 .9-1 1.6-1.7 2.2-.1.1-.2.1-.3.1z" fill="currentColor" stroke="none"/><circle cx="10" cy="4.5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="4.5" r="1" fill="currentColor" stroke="none"/><circle cx="5" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M15 12.6c-.1 0-.2 0-.3-.1-.7-.6-1.7-1.3-1.7-2.2 0-.6.4-1 1-1 .4 0 .8.2 1 .5.2-.3.6-.5 1-.5.6 0 1 .4 1 1 0 .9-1 1.6-1.7 2.2-.1.1-.2.1-.3.1z" fill="currentColor" stroke="none"/><circle cx="10" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="5" cy="15.5" r="1" fill="currentColor" stroke="none"/><circle cx="10" cy="15.5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="15.5" r="1" fill="currentColor" stroke="none"/>', 'Grid shapes', 'Dots, crosses, hearts, sparkles and more behind your cards. Settings → Board.'],
-    ['<path d="M3.5 6h13M3.5 10h13M3.5 14h13"/><circle cx="7" cy="6" r="1.6" fill="currentColor"/><circle cx="13" cy="10" r="1.6" fill="currentColor"/><circle cx="9" cy="14" r="1.6" fill="currentColor"/>', 'Your toolbar', 'Right-click the toolbar to hide tools you don\u2019t use and drag the rest into your own order.'],
-    ['<rect x="7.5" y="2.5" width="5" height="9.5" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5"/>', 'Memos wait for you', 'Drop a voice memo and press Start recording when you\u2019re ready. Nothing records by surprise.'],
-  ], '1.5.0': [
-    ['<circle cx="10" cy="10" r="7"/><path d="M6.2 8.2c2.6-.8 5.2-.6 7.6.6M6.7 10.8c2-.6 4.2-.4 6 .5M7.3 13.2c1.6-.4 3.1-.3 4.5.4"/>', 'Spotify on your board', 'Paste a Spotify link and it becomes a real player. Songs, playlists, podcasts.'],
-    ['<circle cx="8.5" cy="8.5" r="5"/><path d="M12.2 12.2l4.3 4.3M8.5 6.5v4M6.5 8.5h4"/>', 'Sharp at any zoom', 'Text and pictures stay crisp however close you get, and zooming is smoother.'],
-    ['<rect x="2.5" y="5.5" width="10" height="9" rx="2"/><path d="M12.5 9l5-2.5v7l-5-2.5"/>', 'Pick your camera and mic', 'Choose them in Settings, or from the little menu on video and voice memo cards.'],
-    ['<rect x="2.5" y="3.5" width="15" height="10" rx="1.6"/><path d="M7 16.5h6M10 13.5v3"/>', 'Myra for Windows', 'Share it with friends on a PC. Same board, Ctrl shortcuts, and memos written out right on the computer.'],
-  ], '1.6.0': [
-    ['<rect x="2.5" y="3" width="6" height="14" rx="1.6"/><rect x="11.5" y="3" width="6" height="6" rx="1.6"/><rect x="11.5" y="11" width="6" height="6" rx="1.6"/>', 'Make the sidebars yours', 'Drag any widget by its title to either side, and turn off the ones you don’t use.'],
-    ['<path d="M7 4.5c1.5 1.6 4.5 1.6 6 0l3 2-1.5 3.5H13V16H7V10H5.5L4 6.5z"/>', 'Dress up Myra', 'A closet full of hats, glasses and more. She wears her outfit everywhere.'],
-    ['<path d="M7.5 14.5V5l9-2v9.5"/><circle cx="5.5" cy="14.5" r="2"/><circle cx="14.5" cy="12.5" r="2"/>', 'Myra’s music', 'Three little lo-fi songs that loop softly while you work.'],
-    ['<rect x="3" y="3" width="9" height="9" rx="1.6"/><rect x="8" y="8" width="9" height="9" rx="1.6"/>', 'Front and back', 'Right-click a card to bring it to the front or send it back. Layers follows.'],
-    ['<circle cx="8.5" cy="8.5" r="5"/><path d="M12.2 12.2l4.3 4.3M6.5 8.5h4"/>', 'Zoom menu', 'Click the zoom % for quick sizes, or press ⌘+, ⌘−, ⌘0 and ⇧1.'],
-    ['<rect x="2.5" y="5.5" width="10" height="9" rx="2"/><path d="M12.5 9l5-2.5v7l-5-2.5"/>', 'Videos, flipped and written out', 'Flip your camera like a selfie, and turn what you said in a video into words.'],
-   ], '1.7.0': [
-    ['<path d="M11.7 17.3a.7.7 0 0 1-1 0l-1.1-1.1a.7.7 0 0 1 0-1l3.9-3.9a.7.7 0 0 1 1 0l1.1 1.1a.7.7 0 0 1 0 1z"/><path d="M13.3 10.7 12.3 5.9a.7.7 0 0 0-.5-.5L3.2 3a.7.7 0 0 0-.9.9l2.4 8.6a.7.7 0 0 0 .5.5l4.8 1"/><circle cx="8" cy="8" r="1.4"/>', 'The Pen', 'Draw any shape, then double-click to pull its points, round any corner, or curve it.'],
-    ['<rect x="3" y="3" width="14" height="14" rx="3" stroke-dasharray="2.5 2.5"/>', 'Strokes and no fill', 'Solid, dashed or dotted outlines, and a no-fill option that keeps an outline in its color.'],
-    ['<path d="M3 13c1.5-4 3-4 4.5 0s3 4 4.5 0 3-4 4.5 0"/>', 'Squiggly lines', 'Wavy, zigzag and loopy lines you can tighten, round and wobble.'],
-    ['<path d="M4 15 8 5l4 10M5.5 11.5h5M13 9h4M13 13h4"/>', 'Text, your way', 'Any size, line height, letter spacing, alignment, and UPPERCASE / lowercase / Title Case.'],
-    ['<path d="M3 4h14M3 10h9M3 16h14"/><path d="M15 8l2 2-2 2"/>', 'Line things up', 'Alignment guides for everything, align and space buttons, and rotate or scale many things at once.'],
-    ['<path d="M10 3c3.9 0 7 2.7 7 6 0 2.4-1.6 4.4-4 5.4V17l-3-2h0c-3.9 0-7-2.7-7-6s3.1-6 7-6z"/>', 'Name your Myra, and let her rest', 'Give Myra a name, and try Calm or Calmest when you want her quiet ♡ Calm modes were Nikunj Tyagi’s idea, thank you!'],
-    ['<rect x="2.5" y="12" width="15" height="5" rx="2.5"/><path d="M6 8V3M10 8V5M14 8V4"/>', 'Toolbar and panels', 'Pick your icon size in Settings → Toolbar, and drag any panel to the height you like.'],
+  // what's new in Myra: one card per version (each item: [icon svg, title, a line about it])
+  const NEWS = { '1.0.0': [
+    ['<circle cx="10" cy="11" r="5.5"/><path d="M10 5.5V3M7.5 4.5 10 5.5l2.5-1"/>', 'Hello, I’m Myra', 'A little cloudberry. Cloudberries only ripen in just the right spot, and so do ideas, so this board is that spot.'],
+    ['<path d="M3 15c3-6 11-6 14 0"/><circle cx="6" cy="7" r="1.5"/><circle cx="10" cy="5.5" r="1.5"/><circle cx="14" cy="7" r="1.5"/>', 'Nordic colors', 'Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch for your cards, with warm amber shadows.'],
+    ['<path d="M4 4h12v12H4z"/><path d="M4 9h12"/>', 'Your Mochiboard boards came along', 'Everything from Mochiboard for Linux is here, just as you left it.'],
   ] };
   // the button on each version's card: try the headline thing
-  const NEWS_TRY = { '1.1.0': ['Try a template', () => $('tools').querySelector('[data-add="tpl"]').click()], '1.2.0': ['Make it yours', () => { $('gearBtn').click(); setTab('board'); setTimeout(() => $('settings').querySelector('.col-grid')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120); }], '1.3.0': ['Write a doc', () => openDoc(addAtCenter('doc', { text: 'My first real doc' }))], '1.4.0': ['Record a video', () => startPlacing('video')], '1.5.0': ['Pick your camera', () => { $('gearBtn').click(); setTab('general'); setTimeout(() => $('settings').querySelector('.set-devices')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120); }] };
+  const NEWS_TRY = { '1.0.0': ['Take the tour', () => startTour()] };
   // a bigger update walks through extra steps: [title, subtitle] for each, after the list
   const NEWS_STEPS = {};   // (the Mac version's 1.6.0 steps introduce Dress up and music, which this version doesn't have)
   let nwStep = 0, nwSteps = null, nwHead = null, nwGooT = 0;

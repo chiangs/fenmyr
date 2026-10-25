@@ -1,7 +1,7 @@
 {
   "name": "myra",
   "productName": "Myra",
-  "version": "1.7.3",
+  "version": "1.0.0",
   "description": "A planning canvas where ideas ripen, with Myra the cloudberry to help",
   "homepage": "https://github.com/chiangs/myra",
   "license": "MIT",
@@ -10,7 +10,7 @@
   "desktopName": "myra.desktop",
   "scripts": {
     "start": "electron . --ozone-platform-hint=auto",
-    "test": "node tests/smoke.js && node tests/zoom.js && node tests/theme.js",
+    "test": "node tests/smoke.js && node tests/zoom.js && node tests/theme.js && node tests/migrate.js",
     "dist": "electron-builder --linux AppImage"
   },
   "devDependencies": {

@@ -532,7 +532,7 @@ html.native .dv-bar { padding-top: 14px; }
 @keyframes burst { 0% { opacity: 1; transform: rotate(var(--a)) translateY(-26px) scaleY(.4); } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-44px) scaleY(1); } }
 .card.stamp.pop .st { animation: stampin .35s cubic-bezier(.2, .9, .3, 1.5); }
 @keyframes stampin { from { transform: scale(1.5); } to { transform: none; } }
-/* moving Mochis */
+/* moving Myras */
 .mv-wiggle .st img, .sp-grid .mv-wiggle img, .ws-ring .mv-wiggle img { animation: mv-wiggle 1s ease-in-out infinite; }
 .mv-hop .st img, .sp-grid .mv-hop img, .ws-ring .mv-hop img { animation: mv-hop .9s cubic-bezier(.3, 0, .3, 1) infinite; }
 .mv-shake .st img, .sp-grid .mv-shake img { animation: mv-shake .35s linear infinite; }
@@ -1188,7 +1188,7 @@ body.dark .col-chip { background: rgba(255, 255, 255, .05); }
 .cpop.tint .cp-title { display: block; } .cpop.tint #cpName, .cpop.tint #cpSave { display: none; }
 .cpop .cp-reset { display: none; } .cpop.tint .cp-reset { display: inline-block; }
 
-/* ---------- your cursor (the jessa.art pointer, in your color) ---------- */
+/* ---------- your cursor (a pointer and name tag in Myra's color) ---------- */
 body.fancy-cursor, body.fancy-cursor * { cursor: none !important; }
 body.fancy-cursor.cur-native input:not([type=checkbox]):not([type=radio]):not([type=range]), body.fancy-cursor.cur-native textarea, body.fancy-cursor.cur-native [contenteditable="true"], body.fancy-cursor.cur-native .card.editing * { cursor: text !important; }
 body.fancy-cursor.cur-native .handle { cursor: nwse-resize !important; } body.fancy-cursor.cur-native .knob, body.fancy-cursor.cur-native .wires * { cursor: crosshair !important; }

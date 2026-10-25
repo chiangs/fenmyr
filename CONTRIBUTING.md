@@ -1,11 +1,11 @@
-# Changing Mochiboard
+# Changing Myra
 
-Mochiboard is two layers that talk through one small channel. Most changes only touch one of them.
+Myra is two layers that talk through one small channel. Most changes only touch one of them.
 
 ```
 web/            the canvas: everything you see and do (plain HTML/CSS/JS, no build step)
   index.html      the page: panels, settings, dialogs
-  app.js          the canvas itself: cards, tools, Mochi's chat, settings, updates bar, tour
+  app.js          the canvas itself: cards, tools, Myra's chat, settings, updates bar, tour
   style.css       all the styling (light and dark)
   bridge.js       window.MB: the canvas's only way to reach the host (or a pretend host in a browser)
   vendor/         prebuilt TipTap editor and .docx writer (source in tools/editor/)
@@ -14,14 +14,17 @@ linux/          the host: an Electron main process
   preload.js      provides window.webkit.messageHandlers.mb to the page
   storage.js      boards, folders and videos on disk
   claude.js       finding and running Claude Code, usage tally, connections
-  prompts.js      everything Mochi is told (edit her personality and abilities here)
+  prompts.js      everything Myra is told (edit her personality and abilities here)
   output.js       PNG / PDF export, .docx save, paged doc PDFs
   speech.js       voice memo transcription (whisper.cpp)
   update.js       updates for git installs and the AppImage
   paths.js        where things are kept (XDG folders)
+  migrate.js      moves Mochiboard for Linux's boards and settings into Myra, once
   theme.js        reads and watches Caelestia's colour scheme (Follow Caelestia)
+assets/art/      make_art.py draws Myra, her stickers, the stamps and the icon; make_mark.py makes the ✦ cloudberry font
 tests/smoke.js  opens the real app and checks every bridge operation
 tests/zoom.js   Ctrl + wheel steps, touchpad pinch, reset to 100%
+tests/migrate.js  moving over from Mochiboard for Linux
 tests/theme.js  Follow Caelestia: offered only with Caelestia, live restyle, back to your colors
 install.sh  uninstall.sh  make-release.sh  packaging/
 ```
@@ -38,7 +41,7 @@ install.sh  uninstall.sh  make-release.sh  packaging/
 
 **To change only the canvas** (a card type, a tool, a setting, the look): edit `web/`, then reload the window (F12 → Ctrl+R in DevTools), or work on it in a browser with `python3 -m http.server` in `web/`.
 
-**To change what Mochi does:** her instructions are in `linux/prompts.js`. The JSON she answers with is applied by `applyMochi()` in `web/app.js`.
+**To change what Myra does:** her instructions are in `linux/prompts.js`. The JSON she answers with is applied by `applyMochi()` in `web/app.js`.
 
 ## Running and testing
 
@@ -58,6 +61,17 @@ The smoke test uses a throwaway data folder and stand-in `claude` and `whisper-c
 2. Commit and push.
 3. `./make-release.sh` builds the AppImage and publishes a GitHub Release (needs `gh auth login`). AppImage users get it through their update bar; git installs see the new commits.
 
+## Myra's art
+
+Everything Myra looks like is drawn in code, so it's easy to change and stays consistent:
+
+- `web/goo.js`: Myra herself, live on the page (her pixels, colors, breathing, blinking, hopping).
+- `assets/art/make_art.py`: her stickers and animations, the pixel stamps and the app icon. Run `python3 assets/art/make_art.py` (needs Pillow). To add a stamp, write a `st_…` function, add it to `STAMP_SET`, and map its emoji in `PX` in `web/app.js`.
+- `assets/art/make_mark.py`: the little cloudberry that ✦ turns into (a one-glyph colour font). Needs fontTools and brotli.
+
+Myra's name, character and art are reserved (see [TRADEMARKS.md](TRADEMARKS.md)); the code is MIT.
+
 ## Where it came from
 
-The canvas and Mochi are by [Jessa Wolfe](https://jessa.art), from [jessawolfe-ux/mochiboard](https://github.com/jessawolfe-ux/mochiboard) 1.4.1 (MIT). The Mac app's Swift host was replaced by `linux/`; this repo is now its own project and doesn't track the Mac repo.
+Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by Jessa Wolfe (MIT), by way of [Mochiboard for Linux](https://github.com/chiangs/linux-mochiboard). Mochiboard's name, Mochi and its art and music are hers and aren't part of Myra. Myra doesn't track Mochiboard; ideas from it are ported by hand.
+

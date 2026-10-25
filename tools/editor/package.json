@@ -1,5 +1,5 @@
 {
-  "name": "mochiboard-editor-bundle",
+  "name": "myra-editor-bundle",
   "private": true,
   "description": "Builds web/vendor/editor.js (TipTap, bundled so docs work offline). Run: npm run build",
   "scripts": {

@@ -44,6 +44,13 @@ fi
 command -v fc-list >/dev/null || echo "  (fontconfig isn't installed, so Myra won't list your fonts: sudo pacman -S fontconfig)"
 
 # --- 2. the app itself ---
+# Myra used to be "Mochiboard for Linux": take that app out (its boards and settings move into Myra the first time Myra opens)
+OLD="$HOME/.local/lib/mochiboard"
+if [ -d "$OLD" ]; then
+  pkill -f "lectron[^ ]* .*$OLD/app( |$)" 2>/dev/null && sleep 1 || true
+  rm -rf "$OLD" "$HOME/.local/bin/mochiboard" "$APPS/mochiboard.desktop"
+  echo "  ✓ Took out Mochiboard for Linux (your boards come along into Myra)"
+fi
 pkill -f "lectron[^ ]* .*$LIB/app( |$)" 2>/dev/null && sleep 1 || true   # let the old one finish quitting before replacing it
 rm -rf "$LIB/app"; mkdir -p "$LIB/app/assets"
 cp -R linux web package.json LICENSE "$LIB/app/"

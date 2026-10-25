@@ -24,6 +24,8 @@ jobs:
         run: xvfb-run -a node tests/smoke.js
       - name: Zoom test
         run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/zoom.js
+      - name: Moving over from Mochiboard for Linux
+        run: xvfb-run -a node tests/migrate.js
       - name: Caelestia theme test
         run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/theme.js
       - name: Install, run the installed copy, uninstall

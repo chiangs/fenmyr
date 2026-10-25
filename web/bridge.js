@@ -14,8 +14,9 @@
     : (op, args = {}) => new Promise((res, rej) => { const id = ++seq; waiting.set(id, { res, rej }); window.webkit.messageHandlers.mb.postMessage({ id, op, args }); });
 
   const LS = 'myra:';
-  // the first time: settings saved as "Mochiboard for Linux" (mochiboard:…) carry over to Myra (the host already moved the folder they live in)
-  try { if (!localStorage.getItem(LS + 'migrated')) { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('mochiboard:') && localStorage.getItem(LS + k.slice(11)) === null) localStorage.setItem(LS + k.slice(11), localStorage.getItem(k)); } localStorage.setItem(LS + 'migrated', '1'); } } catch (e) {}
+  // the first time: settings saved as "Mochiboard for Linux" (mochiboard:…) carry over to Myra (the host already moved the folder they live in);
+  // which "what's new" you last saw doesn't, so Myra's own card shows once
+  try { if (!localStorage.getItem(LS + 'migrated')) { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('mochiboard:') && k !== 'mochiboard:newsSeen' && localStorage.getItem(LS + k.slice(11)) === null) localStorage.setItem(LS + k.slice(11), localStorage.getItem(k)); } localStorage.setItem(LS + 'migrated', '1'); } } catch (e) {}
   const extOf = blob => ({ 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'video/x-m4v': 'm4v' }[(blob.type || '').split(';')[0]] || (blob.name || '').split('.').pop() || 'mp4');
   const b64 = slice => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] || ''); fr.onerror = rej; fr.readAsDataURL(slice); });
   async function saveMediaNative(blob, onProgress) {
