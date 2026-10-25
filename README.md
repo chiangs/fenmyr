@@ -80,7 +80,7 @@ Myra thinks with [Claude Code](https://docs.claude.com/en/docs/claude-code) on y
 
 Myra looks for `claude` in `~/.local/bin`, `~/.claude/local`, `/usr/bin`, `/usr/local/bin`, npm / nvm / volta / bun folders, and finally asks your login shell (bash, zsh or fish).
 
-**Hooks.** Myra's requests run with your Claude Code hooks switched off, so hooks meant for your own sessions (for example the [desktop Mochi pet](https://github.com/chiangs/linux-mochi)'s thinking meter and reply bubbles) don't fire while she thinks in Myra. Skills, plugins, connectors and your login work as usual. To let your hooks see her requests, turn on **Settings → Helpers → Let my Claude Code hooks see Myra's requests**.
+**Hooks.** Myra's requests run with your Claude Code hooks switched off, so hooks meant for your own sessions (for example a desktop pet's thinking meter and reply bubbles) don't fire while she thinks in Myra. Skills, plugins, connectors and your login work as usual. To let your hooks see her requests, turn on **Settings → Helpers → Let my Claude Code hooks see Myra's requests**.
 
 **Mobbin and Higgsfield** are connectors in your Claude account: add them at [claude.ai/settings/connectors](https://claude.ai/settings/connectors). Myra sees them through `claude mcp list`.
 
@@ -92,7 +92,7 @@ Myra writes out voice memos on your computer with [whisper.cpp](https://github.c
 yay -S whisper.cpp      # or build it yourself; Myra looks for whisper-cli
 ```
 
-The first memo downloads the speech model (about 140 MB, once) into `~/.local/share/myra/whisper`. To use a different size, set `MB_WHISPER_SIZE=tiny|base|small|medium`, or point `MB_WHISPER_MODEL` at a model file you already have. Without whisper.cpp, memos still record and play.
+The first memo downloads the speech model (about 140 MB, once) into `~/.local/share/myra/whisper`. To use a different size, set `MYRA_WHISPER_SIZE=tiny|base|small|medium`, or point `MYRA_WHISPER_MODEL` at a model file you already have. Without whisper.cpp, memos still record and play.
 
 ## Your stuff
 
@@ -173,7 +173,7 @@ Myra reads `~/.local/state/caelestia/scheme.json`, the file Caelestia's shell an
 - **Force Wayland or X11.** The launcher passes `--ozone-platform-hint=auto` (Wayland when available). Add `--ozone-platform=wayland` or `--ozone-platform=x11` to the flags file to choose.
 - **Camera or microphone not found.** Myra uses the same camera and microphone as your browser (PipeWire). Check `pavucontrol` or your sound settings, and that nothing else holds the camera.
 - **Myra says she needs Claude Code** even though it's installed: run `which claude` in a terminal and make sure that folder is one of the places listed above, or symlink it into `~/.local/bin`.
-- **Follow Caelestia doesn't change anything.** Check that the switch is on (Settings → General → Follow Caelestia), then switch Caelestia to Light: the board should turn light within a second. If it doesn't, press F12 in Myra and run `MB.caelestia().then(s => console.log(s && s.name, s && s.mode, '|', document.body.className))` in the Console. You should see your scheme's name and `following-caelestia`; if the name is missing, check that `~/.local/state/caelestia/scheme.json` exists.
+- **Follow Caelestia doesn't change anything.** Check that the switch is on (Settings → General → Follow Caelestia), then switch Caelestia to Light: the board should turn light within a second. If it doesn't, press F12 in Myra and run `Myra.caelestia().then(s => console.log(s && s.name, s && s.mode, '|', document.body.className))` in the Console. You should see your scheme's name and `following-caelestia`; if the name is missing, check that `~/.local/state/caelestia/scheme.json` exists.
 - **Developer tools:** F12 or Ctrl+Shift+I.
 
 ## How it's built
@@ -183,7 +183,7 @@ Two layers:
 - `web/`: the canvas, plain HTML, CSS and JavaScript with no build step. It grew from Mochiboard's canvas.
 - `linux/`: a small Electron host that does what a web page can't. It saves boards, fetches link previews, exports images and PDFs, writes out voice memos, and runs `claude -p` so Myra can think.
 
-The two talk through one channel (`window.webkit.messageHandlers.mb`), so the canvas doesn't know or care which computer it's on. See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it.
+The two talk through one channel (`window.myraHost`), so the canvas doesn't know or care which computer it's on. See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it.
 
 To work on the canvas in a browser, run `python3 -m http.server` inside `web/` (Myra is pretend there). To run the app from the code without installing: `npm install && npm start`.
 

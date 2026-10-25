@@ -1,5 +1,5 @@
 // Myra's doc editor: TipTap (ProseMirror) plus the few Word basics it doesn't ship with.
-// Bundled into web/vendor/editor.js as the global `MBEditor`, so docs work offline.
+// Bundled into web/vendor/editor.js as the global `MyraEditor`, so docs work offline.
 import { Editor, Extension, generateHTML, generateJSON, getHTMLFromFragment } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';

@@ -3,9 +3,9 @@
 // The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, setColors, draw }.
 
 // Myra has no dress-up wardrobe; the app's widget code still looks these up, so they stay as empty shelves
-window.MOCHI_WARDROBE = { hat: {}, face: {}, neck: {}, held: {} };
-window.MOCHI_PAL = {};
-window.mochiWearing = () => ({});
+window.MYRA_WARDROBE = { hat: {}, face: {}, neck: {}, held: {} };
+window.MYRA_PAL = {};
+window.myraWearing = () => ({});
 
 (() => {
   // her shape: X is berry, the leaves sit on top; the beads are textured in below
@@ -43,14 +43,14 @@ window.mochiWearing = () => ({});
     let hopT = -9, thinking = false, look = 0, lookTo = 0, nextLook = 0;
     // Calmest: her colors softened toward a gentle gray (kept light so she still reads as her color)
     const mutedCache = new Map();
-    const mute = hex => { if (!window.mochiMuted || !/^#[0-9a-f]{6}$/i.test(hex)) return hex; if (mutedCache.has(hex)) return mutedCache.get(hex);
+    const mute = hex => { if (!window.myraMuted || !/^#[0-9a-f]{6}$/i.test(hex)) return hex; if (mutedCache.has(hex)) return mutedCache.get(hex);
       const n = parseInt(hex.slice(1), 16), r = n >> 16 & 255, gg = n >> 8 & 255, b = n & 255, y = .3 * r + .59 * gg + .11 * b, k = .7;
       const out = '#' + [r, gg, b].map(v => Math.round(v + (y + (238 - y) * .25 - v) * k).toString(16).padStart(2, '0')).join(''); mutedCache.set(hex, out); return out; };
     function frame(now) {
       const t = now / 1000, px = px0, P = palette(); g.clearRect(0, 0, W, H);
       if (t > nextLook) { lookTo = [-1, 0, 0, 1][Math.floor(Math.random() * 4)]; nextLook = t + 1.5 + Math.random() * 2.5; }
       look += (lookTo - look) * .2;
-      const calm = window.mochiCalm, hp = t - hopT, lift = !calm && hp < .45 ? Math.sin(hp / .45 * Math.PI) * 3 : 0;   // calm: she sits still (she still blinks)
+      const calm = window.myraCalm, hp = t - hopT, lift = !calm && hp < .45 ? Math.sin(hp / .45 * Math.PI) * 3 : 0;   // calm: she sits still (she still blinks)
       const wig = thinking && !calm ? Math.sin(t * 14) * .6 : 0, breathe = calm ? 0 : Math.sin(t * 2.4) * .04;
       if (calm) look = 0;
       const ox = (W - GW * px) / 2 + wig * px * .5, oy = H - GH * px - Math.round(lift) * px;

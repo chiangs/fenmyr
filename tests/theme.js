@@ -10,7 +10,7 @@ const scheme = (mode, surface, primary) => ({ name: 'dynamic', flavour: 'default
 const put = (dir, s) => { fs.writeFileSync(path.join(dir, 'scheme.json.tmp'), JSON.stringify(s)); fs.renameSync(path.join(dir, 'scheme.json.tmp'), path.join(dir, 'scheme.json')); };
 
 async function open(env) {
-  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-theme-'));
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'myra-theme-'));
   const app = await electron.launch({ args: [path.join(__dirname, '..'), '--no-sandbox'], env: { ...process.env, XDG_DATA_HOME: data, HOME: data, ...env } });
   const page = await app.firstWindow(), errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.waitForTimeout(2500); await page.getByText('Skip setup').click(); await page.waitForTimeout(1000); await page.keyboard.press('Escape');
@@ -22,10 +22,10 @@ const settle = () => new Promise(r => setTimeout(r, 800));
 (async () => {
   const r = {};
   // no Caelestia: nothing offered
-  { const state = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-state-')); const { app, page, errors } = await open({ XDG_STATE_HOME: state });
+  { const state = fs.mkdtempSync(path.join(os.tmpdir(), 'myra-state-')); const { app, page, errors } = await open({ XDG_STATE_HOME: state });
     r.without = await look(page); r.errors1 = errors; await app.close(); }
   // Caelestia, dark
-  const state = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-state-')), dir = path.join(state, 'caelestia'); fs.mkdirSync(dir);
+  const state = fs.mkdtempSync(path.join(os.tmpdir(), 'myra-state-')), dir = path.join(state, 'caelestia'); fs.mkdirSync(dir);
   put(dir, scheme('dark', '#1a1b26', '#bb9af7'));
   const { app, page, errors } = await open({ XDG_STATE_HOME: state });
   r.on = await look(page);   // on from the start

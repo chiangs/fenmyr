@@ -42,7 +42,7 @@ function watchBoards(onChange) {
   } catch (e) {}
 }
 
-// ---- videos: the page sends them in chunks; they're served back through mbmedia:// so big files never pass through JSON again ----
+// ---- videos: the page sends them in chunks; they're served back through myramedia:// so big files never pass through JSON again ----
 function mediaBegin(ext) {
   ext = String(ext || 'mp4').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 5) || 'mp4';
   const name = crypto.randomUUID() + '.' + ext; fs.writeFileSync(path.join(P.mediaDir, name), ''); return name;
@@ -51,10 +51,10 @@ function mediaChunk(name, data) {
   name = String(name || '').replace(/\//g, ''); if (!name || !data) throw new Error("I couldn't save that video.");
   fs.appendFileSync(path.join(P.mediaDir, name), Buffer.from(data, 'base64')); return true;
 }
-const mediaEnd = name => 'mbmedia://media/' + String(name || '').replace(/\//g, '');
+const mediaEnd = name => 'myramedia://media/' + String(name || '').replace(/\//g, '');
 
 const MIME = { mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', jpg: 'image/jpeg', png: 'image/png' };
-// mbmedia://media/<name>, with byte ranges so videos can seek
+// myramedia://media/<name>, with byte ranges so videos can seek
 function serveMedia(req) {
   const name = decodeURIComponent(new URL(req.url).pathname.split('/').pop() || ''), f = path.join(P.mediaDir, name);
   let size = 0; try { size = fs.statSync(f).size; } catch (e) {}

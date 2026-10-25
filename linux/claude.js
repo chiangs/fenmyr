@@ -68,7 +68,7 @@ function usageSummary() {
 function resetUsage() { try { fs.rmSync(P.usageFile, { force: true }); } catch (e) {} return true; }
 
 // Settings → Helpers → "Let my Claude Code hooks see Myra's requests" (off unless switched on).
-// Off: Myra's calls run with hooks switched off, so hooks meant for your own Claude Code sessions (like the desktop Mochi pet's
+// Off: Myra's calls run with hooks switched off, so hooks meant for your own Claude Code sessions (like a desktop pet's
 // thinking meter and reply bubble) don't fire for her background requests. Skills, plugins, connectors and your login are unaffected.
 const readPrefs = () => { try { return JSON.parse(fs.readFileSync(P.prefsFile, 'utf8')) || {}; } catch (e) { return {}; } };
 let prefs = readPrefs();

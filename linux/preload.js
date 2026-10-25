@@ -1,5 +1,5 @@
-// The canvas talks to its host through window.webkit.messageHandlers.mb, like on the Mac (WKWebView).
-// Here that's a small stand-in that hands each {id, op, args} to the main process; the answer arrives as __mbReply(id, ok, value).
+// The canvas talks to its host through window.myraHost.post({id, op, args}), which hands each message to the main process;
+// the answer arrives as __myraReply(id, ok, value).
 const { contextBridge, ipcRenderer } = require('electron');
 
 // voice memos arrive as webm/opus; whisper wants 16 kHz mono WAV, and the page can decode audio itself, so it's converted here
@@ -20,26 +20,22 @@ async function toWav16k(dataURL) {
   return 'data:audio/wav;base64,' + btoa(bin);
 }
 
-contextBridge.exposeInMainWorld('webkit', {
-  messageHandlers: {
-    mb: {
-      postMessage: async msg => {
-        if (msg && msg.op === 'transcribe' && msg.args && msg.args.audio && !String(msg.args.audio).startsWith('data:audio/wav')) {
-          try { msg = { ...msg, args: { ...msg.args, audio: await toWav16k(msg.args.audio) } }; } catch (e) { /* let the host report it */ }
-        }
-        ipcRenderer.send('mb', msg);
-      },
-    },
+contextBridge.exposeInMainWorld('myraHost', {
+  post: async msg => {
+    if (msg && msg.op === 'transcribe' && msg.args && msg.args.audio && !String(msg.args.audio).startsWith('data:audio/wav')) {
+      try { msg = { ...msg, args: { ...msg.args, audio: await toWav16k(msg.args.audio) } }; } catch (e) { /* let the host report it */ }
+    }
+    ipcRenderer.send('myra', msg);
   },
 });
-// answers come back over IPC (structured data, nothing turned into script) and are handed to the page's __mbReply
-ipcRenderer.on('mb-reply', (e, id, ok, value) => contextBridge.executeInMainWorld({ func: (i, o, v) => window.__mbReply && window.__mbReply(i, o, v), args: [id, ok, value] }));
+// answers come back over IPC (structured data, nothing turned into script) and are handed to the page's __myraReply
+ipcRenderer.on('myra-reply', (e, id, ok, value) => contextBridge.executeInMainWorld({ func: (i, o, v) => window.__myraReply && window.__myraReply(i, o, v), args: [id, ok, value] }));
 
-// news from the host that nobody asked for (Caelestia's colours changed) goes to the page's __mbEvent(name, data)
-ipcRenderer.on('mb-event', (e, name, data) => contextBridge.executeInMainWorld({ func: (n, d) => window.__mbEvent && window.__mbEvent(n, d), args: [name, data] }));
+// news from the host that nobody asked for (Caelestia's colours changed) goes to the page's __myraEvent(name, data)
+ipcRenderer.on('myra-event', (e, name, data) => contextBridge.executeInMainWorld({ func: (n, d) => window.__myraEvent && window.__myraEvent(n, d), args: [name, data] }));
 
 // the window buttons the page draws (the window has no title bar of its own)
-contextBridge.exposeInMainWorld('mbWindow', {
+contextBridge.exposeInMainWorld('myraWindow', {
   minimize: () => ipcRenderer.send('win', 'minimize'),
   maximize: () => ipcRenderer.send('win', 'maximize'),
   close: () => ipcRenderer.send('win', 'close'),

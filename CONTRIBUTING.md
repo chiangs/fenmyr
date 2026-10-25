@@ -7,12 +7,12 @@ web/            the canvas: everything you see and do (plain HTML/CSS/JS, no bui
   index.html      the page: panels, settings, dialogs
   app.js          the canvas itself: cards, tools, Myra's chat, settings, updates bar, tour
   style.css       all the styling (light and dark)
-  bridge.js       window.MB: the canvas's only way to reach the host (or a pretend host in a browser)
+  bridge.js       window.Myra: the canvas's only way to reach the host (or a pretend host in a browser)
   vendor/         prebuilt TipTap editor and .docx writer (source in tools/editor/)
   licenses.js     generated third-party notices for About → Licenses (npm run notices)
 linux/          the host: an Electron main process
-  main.js         window, keys, permissions, mbmedia://, and the table of bridge operations (OPS)
-  preload.js      provides window.webkit.messageHandlers.mb to the page
+  main.js         window, keys, permissions, myramedia://, and the table of bridge operations (OPS)
+  preload.js      provides window.myraHost (and myraWindow, for the window buttons) to the page
   storage.js      boards, folders and videos on disk
   claude.js       finding and running Claude Code, usage tally, connections
   prompts.js      everything Myra is told (edit her personality and abilities here)
@@ -30,17 +30,17 @@ install.sh  uninstall.sh  make-release.sh  packaging/
 
 ## How the canvas talks to the host
 
-`web/bridge.js` sends `{id, op, args}` through `window.webkit.messageHandlers.mb.postMessage`. In the app, `linux/preload.js` passes it to `linux/main.js`, which looks the op up in `OPS`. The answer goes back over IPC (`mb-reply`), and preload.js hands it to the page's `__mbReply(id, ok, value)`. Nothing is turned into script, so big boards and pictures pass through quickly. News the page didn't ask for (Caelestia's colours changed) arrives the same way as `__mbEvent(name, data)`. In a plain browser, bridge.js uses localStorage and a pretend Mochi instead.
+`web/bridge.js` sends `{id, op, args}` through `window.myraHost.post`. In the app, `linux/preload.js` passes it to `linux/main.js`, which looks the op up in `OPS`. The answer goes back over IPC (`mb-reply`), and preload.js hands it to the page's `__myraReply(id, ok, value)`. Nothing is turned into script, so big boards and pictures pass through quickly. News the page didn't ask for (Caelestia's colours changed) arrives the same way as `__myraEvent(name, data)`. In a plain browser, bridge.js uses localStorage and a pretend Mochi instead.
 
 **To add a new ability that needs the computer** (a file, a program, the network):
 1. Add the op to `OPS` in `linux/main.js` (put real work in a module next to it).
-2. Add a matching method to the `native` side of `window.MB` in `web/bridge.js`, and a browser fallback.
-3. Call `MB.yourThing()` from `web/app.js`.
+2. Add a matching method to the `native` side of `window.Myra` in `web/bridge.js`, and a browser fallback.
+3. Call `Myra.yourThing()` from `web/app.js`.
 4. Add a check for it in `tests/smoke.js`.
 
 **To change only the canvas** (a card type, a tool, a setting, the look): edit `web/`, then reload the window (F12 → Ctrl+R in DevTools), or work on it in a browser with `python3 -m http.server` in `web/`.
 
-**To change what Myra does:** her instructions are in `linux/prompts.js`. The JSON she answers with is applied by `applyMochi()` in `web/app.js`.
+**To change what Myra does:** her instructions are in `linux/prompts.js`. The JSON she answers with is applied by `applyMyra()` in `web/app.js`.
 
 ## Running and testing
 

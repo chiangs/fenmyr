@@ -1,11 +1,11 @@
 // End-to-end smoke test: opens the real app (under Xvfb in CI) with a throwaway data folder, and drives the bridge.
 //   xvfb-run -a node tests/smoke.js
-//   MB_APP=~/.local/lib/myra/app xvfb-run -a node tests/smoke.js   (an installed copy, with the Electron install.sh chose)
+//   MYRA_APP=~/.local/lib/myra/app xvfb-run -a node tests/smoke.js   (an installed copy, with the Electron install.sh chose)
 const { _electron: electron } = require('playwright');
 const fs = require('fs'), os = require('os'), path = require('path');
 
 (async () => {
-  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'mb-smoke-')), out = path.join(data, 'out');
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'myra-smoke-')), out = path.join(data, 'out');
   fs.mkdirSync(out);
   // stand-ins for Claude Code and whisper.cpp, found where the real ones usually live (~/.local/bin)
   const bin = path.join(data, '.local/bin'); fs.mkdirSync(bin, { recursive: true });
@@ -19,60 +19,60 @@ for a; do case "$a" in *.wav) head -c 4 "$a" > "${data}/wav-magic.txt";; esac; d
 echo " [BLANK_AUDIO] hello from whisper"
 `, { mode: 0o755 });
   fs.writeFileSync(path.join(data, 'model.bin'), 'x');
-  const dir = process.env.MB_APP || path.join(__dirname, '..');
-  const installed = process.env.MB_APP ? JSON.parse(fs.readFileSync(path.join(dir, 'install.json'), 'utf8')) : {};
-  const app = await electron.launch({ ...(installed.electron ? { executablePath: installed.electron } : {}), args: [dir, '--no-sandbox'], env: { ...process.env, XDG_DATA_HOME: data, HOME: data, MB_WHISPER_MODEL: path.join(data, 'model.bin') } });
+  const dir = process.env.MYRA_APP || path.join(__dirname, '..');
+  const installed = process.env.MYRA_APP ? JSON.parse(fs.readFileSync(path.join(dir, 'install.json'), 'utf8')) : {};
+  const app = await electron.launch({ ...(installed.electron ? { executablePath: installed.electron } : {}), args: [dir, '--no-sandbox'], env: { ...process.env, XDG_DATA_HOME: data, HOME: data, MYRA_WHISPER_MODEL: path.join(data, 'model.bin') } });
   // save dialogs answer themselves: everything lands in out/
   await app.evaluate(({ dialog }, out) => { dialog.showSaveDialog = async (w, o) => ({ canceled: false, filePath: out + '/' + o.defaultPath.split('/').pop() }); }, out);
   const page = await app.firstWindow(), errors = [];
   await page.exposeFunction('__readArgs', () => fs.readFileSync(path.join(data, 'args.txt'), 'utf8'));
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => m.type() === 'error' && errors.push(m.text()));
-  await page.waitForFunction(() => window.MB && document.querySelector('#side'));
+  await page.waitForFunction(() => window.Myra && document.querySelector('#side'));
   await page.waitForTimeout(2000);
   const r = await page.evaluate(async () => {
-    const res = { native: MB.native, linux: document.documentElement.classList.contains('linux') };
+    const res = { native: Myra.native, linux: document.documentElement.classList.contains('linux') };
     const board = { id: 'smoke1', name: 'Smoke', color: 'mint', cards: [{ id: 'c1', type: 'note', x: 0, y: 0, w: 220, h: 140, text: 'hi', bad: NaN }] };
-    res.save = await MB.save(board);
-    res.load = (await MB.load('smoke1')).cards[0].bad;
+    res.save = await Myra.save(board);
+    res.load = (await Myra.load('smoke1')).cards[0].bad;
     // a big board (pictures make them many MB) goes there and back intact
     const big = 'x'.repeat(20e6); let t = performance.now();
-    await MB.save({ id: 'big', name: 'Big', cards: [{ id: 'b', type: 'image', src: big }] }); const back = await MB.load('big');
-    res.big = back.cards[0].src.length === big.length; res.bigMs = Math.round(performance.now() - t); await MB.remove('big');
-    res.list = (await MB.list()).some(b => b.id === 'smoke1');
-    res.folders = await MB.saveFolders([{ id: 'f', name: 'F' }]) && (await MB.folders()).length;
-    res.fonts = (await MB.fonts()).length;
-    res.version = await MB.version();
-    res.usage = typeof (await MB.usage()).today.asks;
-    res.speech = await MB.speechAuth();
-    res.unknown = await new Promise(r => { const id = 999999; const o = window.__mbReply; window.__mbReply = (i, ok, v) => { if (i === id) { window.__mbReply = o; r(v); } else o(i, ok, v); }; window.webkit.messageHandlers.mb.postMessage({ id, op: 'nope', args: {} }); });
-    // a video goes in by chunks and comes back through mbmedia:// with byte ranges
+    await Myra.save({ id: 'big', name: 'Big', cards: [{ id: 'b', type: 'image', src: big }] }); const back = await Myra.load('big');
+    res.big = back.cards[0].src.length === big.length; res.bigMs = Math.round(performance.now() - t); await Myra.remove('big');
+    res.list = (await Myra.list()).some(b => b.id === 'smoke1');
+    res.folders = await Myra.saveFolders([{ id: 'f', name: 'F' }]) && (await Myra.folders()).length;
+    res.fonts = (await Myra.fonts()).length;
+    res.version = await Myra.version();
+    res.usage = typeof (await Myra.usage()).today.asks;
+    res.speech = await Myra.speechAuth();
+    res.unknown = await new Promise(r => { const id = 999999; const o = window.__myraReply; window.__myraReply = (i, ok, v) => { if (i === id) { window.__myraReply = o; r(v); } else o(i, ok, v); }; window.myraHost.post({ id, op: 'nope', args: {} }); });
+    // a video goes in by chunks and comes back through myramedia:// with byte ranges
     const blob = new Blob([new Uint8Array(5000).fill(7)], { type: 'video/mp4' });
-    const src = await MB.saveMedia(blob); res.media = src;
+    const src = await Myra.saveMedia(blob); res.media = src;
     const part = await fetch(src, { headers: { Range: 'bytes=100-199' } }); res.range = [part.status, (await part.arrayBuffer()).byteLength];
-    res.png = await MB.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: false, scale: 2 });
-    res.pdf = await MB.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: true, scale: 2 });
-    res.docx = await MB.saveFile(btoa('hello'), 'Doc', 'docx');
-    res.docPDF = await MB.docPDF('<!doctype html><link rel="stylesheet" href="__WEB__/fonts.css"><h1 style="font-family:DM Sans">Hello</h1><p>' + 'words '.repeat(2000) + '</p>', 'Doc', 'a4');
-    res.conn = await MB.connections();
-    res.ask = await MB.ask('sort these', { cards: [], n: Infinity }, false, { mobbin: true, higgs: false });
-    res.usage2 = (await MB.usage()).today;
+    res.png = await Myra.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: false, scale: 2 });
+    res.pdf = await Myra.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: true, scale: 2 });
+    res.docx = await Myra.saveFile(btoa('hello'), 'Doc', 'docx');
+    res.docPDF = await Myra.docPDF('<!doctype html><link rel="stylesheet" href="__WEB__/fonts.css"><h1 style="font-family:DM Sans">Hello</h1><p>' + 'words '.repeat(2000) + '</p>', 'Doc', 'a4');
+    res.conn = await Myra.connections();
+    res.ask = await Myra.ask('sort these', { cards: [], n: Infinity }, false, { mobbin: true, higgs: false });
+    res.usage2 = (await Myra.usage()).today;
     // a real webm voice memo, recorded from a tone, goes through the WAV conversion
     const ac = new AudioContext(), osc = ac.createOscillator(), dst = ac.createMediaStreamDestination(); osc.connect(dst); osc.start();
     const rec = new MediaRecorder(dst.stream), chunks = []; rec.ondataavailable = e => chunks.push(e.data);
     await new Promise(r => { rec.onstop = r; rec.start(); setTimeout(() => rec.stop(), 600); });
     const memo = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(new Blob(chunks, { type: rec.mimeType })); });
-    res.memoType = rec.mimeType; res.speech2 = await MB.speechAuth(); res.transcribe = await MB.transcribe(memo);
+    res.memoType = rec.mimeType; res.speech2 = await Myra.speechAuth(); res.transcribe = await Myra.transcribe(memo);
     return res;
   });
   r.prompt = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8'); r.args = fs.readFileSync(path.join(data, 'args.txt'), 'utf8').slice(-120); r.wav = fs.readFileSync(path.join(data, 'wav-magic.txt'), 'utf8');
   // Claude Code hooks: off for Myra's calls unless Settings → Helpers says otherwise
   Object.assign(r, await page.evaluate(async () => {
     const argsAfter = async fn => { await fn(); return window.__readArgs(); }, res = {};
-    res.hooksOff = await argsAfter(() => MB.ask('again', {}, false, { mobbin: false, higgs: false }));
-    await MB.prefs({ claudeHooks: true });
-    res.hooksOn = await argsAfter(() => MB.rewrite('text', 'shorter', 'Doc', ''));
-    await MB.prefs({ claudeHooks: false });
+    res.hooksOff = await argsAfter(() => Myra.ask('again', {}, false, { mobbin: false, higgs: false }));
+    await Myra.prefs({ claudeHooks: true });
+    res.hooksOn = await argsAfter(() => Myra.rewrite('text', 'shorter', 'Doc', ''));
+    await Myra.prefs({ claudeHooks: false });
     return res;
   }));
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron

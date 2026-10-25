@@ -8,14 +8,14 @@
 <link rel="stylesheet" href="style.css">
 <link rel="icon" type="image/png" href="stamps/myra.png">
 <!-- inside the Linux app (Electron): tell the page right away, so it makes room for the window buttons -->
-<script>if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.mb && window.mbWindow) document.documentElement.classList.add('native', 'linux');</script>
+<script>if (window.myraHost) document.documentElement.classList.add('native', 'linux');</script>
 </head>
 <body>
 <!-- the window has no title bar of its own: these are its buttons, and a strip at the top of the sidebar to drag it by -->
 <div class="win-ctl" id="winCtl" aria-label="Window">
-  <button class="wc-close" title="Close" onclick="mbWindow.close()"><svg viewBox="0 0 10 10"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5"/></svg></button>
-  <button class="wc-min" title="Minimize" onclick="mbWindow.minimize()"><svg viewBox="0 0 10 10"><path d="M2 5h6"/></svg></button>
-  <button class="wc-max" title="Maximize" onclick="mbWindow.maximize()"><svg viewBox="0 0 10 10"><path d="M2.5 6.5v-4h4M7.5 3.5v4h-4"/></svg></button>
+  <button class="wc-close" title="Close" onclick="myraWindow.close()"><svg viewBox="0 0 10 10"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5"/></svg></button>
+  <button class="wc-min" title="Minimize" onclick="myraWindow.minimize()"><svg viewBox="0 0 10 10"><path d="M2 5h6"/></svg></button>
+  <button class="wc-max" title="Maximize" onclick="myraWindow.maximize()"><svg viewBox="0 0 10 10"><path d="M2.5 6.5v-4h4M7.5 3.5v4h-4"/></svg></button>
 </div>
 <div class="win-drag" id="winDrag"></div>
 
@@ -133,14 +133,14 @@
       <div class="db-colors" id="dbColors"></div>
     </div>
   <!-- Myra: her pill, her bar, her bubble -->
-    <div class="mochi" id="mochi">
+    <div class="myra" id="myra">
       <!-- Myra's chat window -->
       <div class="m-chat" id="mChat">
         <div class="mc-head"><canvas id="chatGoo" width="40" height="36"></canvas><b id="mcHeadName">Myra</b><span class="mc-status" id="mcStatus"></span><button class="mc-btn" id="mcNew" title="Start a fresh chat">New chat</button><button class="mc-btn x" id="mcClose" title="Close (Esc)">×</button></div>
         <div class="mc-list" id="mcList"></div>
         <form class="mc-form" id="mcForm"><textarea id="mcInput" rows="1" placeholder="Ask Myra… “group these by theme”" spellcheck="true"></textarea><button class="mc-send" title="Send (Enter)">↑</button></form>
       </div>
-      <div class="m-bubble" id="mBubble"><small>mochi</small><p id="mSay"></p><div class="m-acts" id="mActs"></div></div>
+      <div class="m-bubble" id="mBubble"><small>myra</small><p id="mSay"></p><div class="m-acts" id="mActs"></div></div>
       <div class="m-pill" id="mPill">
         <canvas id="goo" width="64" height="56"></canvas>
         <span class="m-name" id="mName">Myra</span>
@@ -154,7 +154,7 @@
   <!-- stamps: a wheel of favorites; the middle opens every stamp -->
   <div class="wheel-stamps" id="stampWheel"><div class="ws-ring" id="wsRing"></div><button class="ws-mid" id="wsMid" title="All stamps">+</button></div>
   <div class="stamp-pick" id="stampPick">
-    <div class="sp-tabs"><button data-tab="mochi" class="on">Myra</button><button data-tab="moving">Moving Myra</button><button data-tab="emoji">Emoji</button></div>
+    <div class="sp-tabs"><button data-tab="myra" class="on">Myra</button><button data-tab="moving">Moving Myra</button><button data-tab="emoji">Emoji</button></div>
     <div class="sp-grid" id="spGrid"></div>
   </div>
   <!-- shapes: pick one, then place it -->
@@ -220,7 +220,7 @@
 <!-- settings -->
 <!-- what's new: shows once, the first time someone opens a new version -->
 <div class="onboard news" id="news"><div class="ob-panel">
-  <img class="nw-mochi" src="stamps/myra-party.png" alt="">
+  <img class="nw-myra" src="stamps/myra-party.png" alt="">
   <h2>What’s new ✦</h2><p class="nw-v" id="newsV"></p>
   <ul class="nw-list" id="newsList"></ul>
   <!-- a bigger update can walk through a couple of extra steps: new widgets to switch on, and where to find them later -->
@@ -258,7 +258,7 @@
     <section class="ob-step" data-step="1">
       <h2>Make it yours</h2>
       <p>Pick my color and how the app looks. You can change these anytime.</p>
-      <div class="set-row"><div><b>My color</b><small>Me in the dock and the logo</small></div><div class="mochi-colors" id="obMochi"></div></div>
+      <div class="set-row"><div><b>My color</b><small>Me in the dock and the logo</small></div><div class="myra-colors" id="obMyra"></div></div>
       <div class="set-row"><div><b>Theme</b><small>Light, dark, or match your system</small></div><div class="seg" data-seg="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">Match system</button></div></div>
     </section>
     <section class="ob-step" data-step="2">
@@ -280,7 +280,7 @@
     <section class="ob-step" data-step="4">
       <h2>Your board</h2>
       <p>How cards feel when you make them.</p>
-      <div class="set-row"><div><b>New note color</b><small>What a fresh note starts as</small></div><div class="mochi-colors" id="obNotes"></div></div>
+      <div class="set-row"><div><b>New note color</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="obNotes"></div></div>
       <label class="set-row"><div><b>Loose, tilted cards</b><small>Off makes every card sit straight</small></div><input type="checkbox" class="tgl" data-set="tilt"></label>
       <label class="set-row"><div><b>Snap to the dots</b><small>Cards line up with the grid</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
     </section>
@@ -308,7 +308,7 @@
 <div class="settings" id="settings">
   <div class="set-panel">
     <div class="set-head"><h2>Settings</h2><button class="dv-btn" id="setClose" title="Close">×</button></div>
-    <div class="seg set-tabs" id="setTabs"><button data-tab="general" class="on">General</button><button data-tab="mochi">Myra</button><button data-tab="helpers">Helpers</button><button data-tab="board">Board</button><button data-tab="toolbar">Toolbar</button><button data-tab="widgets">Widgets</button><button data-tab="about">About</button></div>
+    <div class="seg set-tabs" id="setTabs"><button data-tab="general" class="on">General</button><button data-tab="myra">Myra</button><button data-tab="helpers">Helpers</button><button data-tab="board">Board</button><button data-tab="toolbar">Toolbar</button><button data-tab="widgets">Widgets</button><button data-tab="about">About</button></div>
     <div class="set-body">
       <section data-tab="general"><h3>Look</h3>
         <div class="set-row"><div><b>Theme</b><small>Light, dark, or whatever your system is using</small></div><div class="seg" data-seg="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">Match my system</button></div></div>
@@ -317,15 +317,15 @@
       <section data-tab="general"><h3>Your cursor</h3>
         <div class="cur-prev" id="curPrev"><div class="mcur show demo"></div></div>
         <label class="set-row"><div><b>Your name</b><small>It rides along on your cursor, in Myra’s color</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
-        <div class="set-row" style="display:none"><div><b>Cursor color</b></div><div class="mochi-colors cur-colors" id="curColors"></div></div>
+        <div class="set-row" style="display:none"><div><b>Cursor color</b></div><div class="myra-colors cur-colors" id="curColors"></div></div>
         <label class="set-row native-only win-only"><div><b>Window buttons</b><small>The close, minimize and maximize dots at the top left. Turn off if your compositor handles windows (Hyprland, Sway, niri)</small></div><input type="checkbox" class="tgl" data-set="winButtons"></label>
         <label class="set-row"><div><b>Myra cursor</b><small>Off uses your system’s regular cursor</small></div><input type="checkbox" class="tgl" data-set="fancyCursor"></label>
       </section>
-      <section data-tab="mochi"><h3>Myra</h3>
-        <div class="set-row"><div><b>Her name</b><small>Call her whatever you like. She answers to it everywhere.</small></div><input class="set-input" id="mochiNameIn" maxlength="18" placeholder="Myra" autocomplete="off" spellcheck="false"></div>
-        <div class="set-row"><div><b>How lively she is</b><small>Calm: she sits still (no hops, wiggles or breathing). Calmest: still, with softer, muted colors.</small></div><div class="seg" data-seg="mochiCalm"><button data-v="lively">Lively</button><button data-v="calm">Calm</button><button data-v="calmest">Calmest</button></div></div>
-        <label class="set-row"><div><b>Show her character</b><small>Off hides the little pixel Myra. Her pill shows just her name, and she still helps.</small></div><input type="checkbox" class="tgl" data-set="mochiChar"></label>
-        <div class="set-row"><div><b>Her color</b><small>Myra in the dock and the logo</small></div><div class="mochi-colors" id="mochiColors"></div></div>
+      <section data-tab="myra"><h3>Myra</h3>
+        <div class="set-row"><div><b>Her name</b><small>Call her whatever you like. She answers to it everywhere.</small></div><input class="set-input" id="myraNameIn" maxlength="18" placeholder="Myra" autocomplete="off" spellcheck="false"></div>
+        <div class="set-row"><div><b>How lively she is</b><small>Calm: she sits still (no hops, wiggles or breathing). Calmest: still, with softer, muted colors.</small></div><div class="seg" data-seg="myraCalm"><button data-v="lively">Lively</button><button data-v="calm">Calm</button><button data-v="calmest">Calmest</button></div></div>
+        <label class="set-row"><div><b>Show her character</b><small>Off hides the little pixel Myra. Her pill shows just her name, and she still helps.</small></div><input type="checkbox" class="tgl" data-set="myraChar"></label>
+        <div class="set-row"><div><b>Her color</b><small>Myra in the dock and the logo</small></div><div class="myra-colors" id="myraColors"></div></div>
         <div class="set-row"><div><b>How chatty she is</b><small>Quiet only talks when you ask. Chatty adds little tips and cheers.</small></div><div class="seg" data-seg="chat"><button data-v="quiet">Quiet</button><button data-v="normal">Normal</button><button data-v="chatty">Chatty</button></div></div>
         <label class="set-row"><div><b>Emojis in her replies</b><small>A few ✨ 🌸 here and there</small></div><input type="checkbox" class="tgl" data-set="emoji"></label>
         <div class="set-row"><div><b>Remember chats</b><small>Chats are saved in your board files on this computer. Off forgets each chat as you go.</small></div><div class="seg" data-seg="chatKeep"><button data-v="off">Off</button><button data-v="session">Until I quit</button><button data-v="board">On each board</button></div></div>
@@ -370,7 +370,7 @@
         </div>
         <label class="set-row"><div><b>Dot grid</b><small>The soft dots behind your cards</small></div><input type="checkbox" class="tgl" data-set="grid"></label>
         <div class="set-row grid-shape-row"><div><b>Grid shape</b><small>Dots, or something a little cuter</small></div><div class="grid-shapes" id="gridShapes"></div></div>
-        <div class="set-row"><div><b>New note color</b><small>What a fresh note starts as</small></div><div class="mochi-colors" id="noteColors"></div></div>
+        <div class="set-row"><div><b>New note color</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="noteColors"></div></div>
         <label class="set-row"><div><b>Double-click to add a note</b><small>Double-click empty board for a new note. Off if stray notes keep popping up</small></div><input type="checkbox" class="tgl" data-set="dblNote"></label>
         <label class="set-row"><div><b>Snap to the dots</b><small>Cards line up with the grid when you drop them</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
         <label class="set-row"><div><b>Loose, tilted cards</b><small>Off makes every card sit perfectly straight</small></div><input type="checkbox" class="tgl" data-set="tilt"></label>

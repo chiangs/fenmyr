@@ -1,12 +1,12 @@
 // Voice memo → words, on this computer, with whisper.cpp (the Mac app uses Apple's speech recognition).
 // Optional: without whisper.cpp, memos still record and play; they just aren't written out.
 //   the program: whisper-cli (or whisper-cpp / whisper.cpp / main), from the AUR package whisper.cpp or built yourself
-//   the model:   $MB_WHISPER_MODEL, or ~/.local/share/myra/whisper/ggml-<size>.bin, downloaded on first use
+//   the model:   $MYRA_WHISPER_MODEL, or ~/.local/share/myra/whisper/ggml-<size>.bin, downloaded on first use
 const fs = require('fs'), os = require('os'), path = require('path'), crypto = require('crypto');
 const P = require('./paths'), { run } = require('./claude'), { download } = require('./net');
 
-const MODEL = process.env.MB_WHISPER_SIZE || 'base';   // tiny, base, small, medium… base is quick on any CPU and good with clear speech
-const modelFile = () => process.env.MB_WHISPER_MODEL || path.join(P.whisperDir, `ggml-${MODEL}.bin`);
+const MODEL = process.env.MYRA_WHISPER_SIZE || 'base';   // tiny, base, small, medium… base is quick on any CPU and good with clear speech
+const modelFile = () => process.env.MYRA_WHISPER_MODEL || path.join(P.whisperDir, `ggml-${MODEL}.bin`);
 const modelURL = () => `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${MODEL}.bin`;
 
 function whisperPath() {

@@ -5,7 +5,7 @@
   "description": "A planning canvas where ideas ripen, with Myra the cloudberry to help",
   "homepage": "https://github.com/chiangs/myra",
   "license": "MIT",
-  "author": "Jessa Wolfe (original Mac app), chiangs (Linux port)",
+  "author": "Stephen Chiang",
   "main": "linux/main.js",
   "desktopName": "myra.desktop",
   "scripts": {

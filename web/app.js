@@ -4,7 +4,7 @@
   const stage = $('stage'), world = $('world'), cardsEl = $('cards'), wires = $('wires'), grid = $('grid');
   // ---------- on Windows and Linux: ⌘K reads Ctrl+K, ⇧⌘G reads Ctrl+Shift+G (the keys themselves already take Ctrl), and the app's own words say PC, not Mac ----------
   // the browser version on a Windows or Linux computer counts too (an iPhone or iPad keeps ⌘)
-  const OS = MB.platform !== 'web' ? MB.platform : /Win/i.test(navigator.userAgentData?.platform || navigator.platform || navigator.userAgent) ? 'windows' : /Linux|X11|CrOS/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent) ? 'linux' : 'mac';
+  const OS = Myra.platform !== 'web' ? Myra.platform : /Win/i.test(navigator.userAgentData?.platform || navigator.platform || navigator.userAgent) ? 'windows' : /Linux|X11|CrOS/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent) ? 'linux' : 'mac';
   if (OS === 'windows' || OS === 'linux') {
     const MOD = { '⌃': 'Ctrl', '⌘': 'Ctrl', '⌥': 'Alt', '⇧': 'Shift' }, ORDER = ['Ctrl', 'Alt', 'Shift'];
     const winKeys = t => t.replace(/([⌃⌥⇧⌘]+)(\s?)([^\s⌃⌥⇧⌘]?)/g, (m, mods, sp, key) => {
@@ -71,7 +71,7 @@
   // ---------- the library: projects hold folders, folders hold boards ----------
   // stored as one small file: { projects: [{id, name, color, open}], folders: [{id, name, project, open}] }
   let projects = [], folders = [], boardList = [];
-  const saveLib = () => MB.saveFolders({ projects, folders });
+  const saveLib = () => Myra.saveFolders({ projects, folders });
   const byName = (arr, name) => arr.find(x => x.name.trim().toLowerCase() === String(name || '').trim().toLowerCase());
   const findFolder = name => byName(folders, name);
   function makeProject(name) { const p = byName(projects, name) || { id: uid(), name: String(name).trim() || 'New project', color: COLOR_NAMES[1 + projects.length % 6], open: true }; if (!projects.includes(p)) projects.push(p); return p; }
@@ -99,14 +99,14 @@
   // moving a board into a folder (or out of one). A canvas that lived inside another board comes out on its own.
   async function moveBoard(id, folderId) {
     await unhook(id);
-    if (board && board.id === id) { board.folder = folderId; delete board.parent; await MB.save(board); renderCrumbsSoon(); return; }
-    const b = await MB.load(id); if (!b) return; b.folder = folderId; delete b.parent; await MB.save(b);
+    if (board && board.id === id) { board.folder = folderId; delete board.parent; await Myra.save(board); renderCrumbsSoon(); return; }
+    const b = await Myra.load(id); if (!b) return; b.folder = folderId; delete b.parent; await Myra.save(b);
   }
   // ---------- canvases can go anywhere: inside another board (as a canvas card there), into a folder, or out on their own ----------
   const insideOf = (id, maybeAncestor) => { let b = boardList.find(x => x.id === id), n = 0; while (b && b.parent && n++ < 40) { if (b.parent === maybeAncestor) return true; b = boardList.find(x => x.id === b.parent); } return false; };
   async function editBoard(id, fn) {
     if (board && board.id === id) { fn(board); renderAll(); save(); return board; }
-    const b = await MB.load(id); if (!b) return null; fn(b); await MB.save(b); return b;
+    const b = await Myra.load(id); if (!b) return null; fn(b); await Myra.save(b); return b;
   }
   // take a canvas's card off the board it sat inside
   async function unhook(id) {
@@ -117,7 +117,7 @@
   async function nestBoard(id, intoId, at) {
     if (id === intoId || insideOf(intoId, id)) { chirp("A board can't go inside itself ✦", 2500); return false; }
     const kid = boardList.find(x => x.id === id) || (board && board.id === id ? board : null); if (!kid || kid.parent === intoId) return false;
-    const into = board && board.id === intoId ? board : await MB.load(intoId); if (!into) return false;
+    const into = board && board.id === intoId ? board : await Myra.load(intoId); if (!into) return false;
     await unhook(id);
     await editBoard(id, b => { b.parent = intoId; b.folder = into.folder || null; });
     await editBoard(intoId, pb => { const x = at ? at.x : pb.cards.length ? Math.max(...pb.cards.map(c => c.x + c.w)) + 60 : 0, y = at ? at.y : pb.cards.length ? Math.min(...pb.cards.map(c => c.y)) : 0; pb.cards.push(card('canvas', { x, y, text: kid.name, board: id })); });
@@ -125,18 +125,18 @@
   }
   const renderCrumbsSoon = () => setTimeout(() => typeof renderCrumbs === 'function' && renderCrumbs(), 50);
   async function loadLib() {
-    const [list, lib] = await Promise.all([MB.list(), MB.folders().catch(() => null)]);
+    const [list, lib] = await Promise.all([Myra.list(), Myra.folders().catch(() => null)]);
     boardList = list;
     if (Array.isArray(lib)) { projects = []; folders = lib; }   // folders saved before projects existed
     else { projects = (lib && lib.projects) || []; folders = (lib && lib.folders) || []; }
   }
   // drag and drop between rows and tiles: boards go into folders, folders go into projects
   const dropZone = (el, kind, onDrop) => {
-    el.addEventListener('dragover', e => { if (!e.dataTransfer.types.includes('mb/' + kind)) return; e.preventDefault(); e.stopPropagation(); el.classList.add('drop'); });
+    el.addEventListener('dragover', e => { if (!e.dataTransfer.types.includes('myra/' + kind)) return; e.preventDefault(); e.stopPropagation(); el.classList.add('drop'); });
     el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop'); });
-    el.addEventListener('drop', async e => { const id = e.dataTransfer.getData('mb/' + kind); if (!id) return; e.preventDefault(); e.stopPropagation(); el.classList.remove('drop'); await onDrop(id); await saveLib(); refreshBoards(); });
+    el.addEventListener('drop', async e => { const id = e.dataTransfer.getData('myra/' + kind); if (!id) return; e.preventDefault(); e.stopPropagation(); el.classList.remove('drop'); await onDrop(id); await saveLib(); refreshBoards(); });
   };
-  const draggable = (el, kind, id) => { el.draggable = true; el.ondragstart = e => { e.stopPropagation(); e.dataTransfer.setData('mb/' + kind, id); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); }; el.ondragend = () => el.classList.remove('dragging'); };
+  const draggable = (el, kind, id) => { el.draggable = true; el.ondragstart = e => { e.stopPropagation(); e.dataTransfer.setData('myra/' + kind, id); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); }; el.ondragend = () => el.classList.remove('dragging'); };
   function inlineRename(el, obj, after) {
     el.contentEditable = 'true'; el.focus(); getSelection().selectAllChildren(el);
     el.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); } if (ev.key === 'Escape') { el.textContent = obj.name; el.blur(); } ev.stopPropagation(); };
@@ -145,17 +145,17 @@
       const liveObj = [...projects, ...folders].find(x => x.id === obj.id) || obj; if (v) { liveObj.name = v; obj.name = v; }
       await (after ? after(v) : saveLib()); refreshBoards(); };
   }
-  async function newBoardIn(folderId) { const b = newBoard(); b.folder = folderId; await MB.save(b); closeHome(); await openBoard(b.id); $('boardName').focus(); $('boardName').select(); }
+  async function newBoardIn(folderId) { const b = newBoard(); b.folder = folderId; await Myra.save(b); closeHome(); await openBoard(b.id); $('boardName').focus(); $('boardName').select(); }
 
   // ---------- right-click in the left box: duplicate or delete a board, folder or project ----------
   // copying a board also copies the canvases inside it, so the copy doesn't share them
   async function copyBoard(id, into = {}) {
-    const b = await MB.load(id); if (!b) return null;
+    const b = await Myra.load(id); if (!b) return null;
     const c = JSON.parse(JSON.stringify(b)); c.id = uid(); Object.assign(c, into);
     for (const k of c.cards) if (k.type === 'canvas' && k.board) { const kid = await copyBoard(k.board, { parent: c.id, folder: c.folder || null }); if (kid) k.board = kid.id; }
-    await MB.save(c); return c;
+    await Myra.save(c); return c;
   }
-  async function dropBoard(id) { for (const k of boardList.filter(x => x.parent === id)) await dropBoard(k.id); await MB.remove(id); }
+  async function dropBoard(id) { for (const k of boardList.filter(x => x.parent === id)) await dropBoard(k.id); await Myra.remove(id); }
   async function duplicate(kind, obj) {
     if (kind === 'board') { const c = await copyBoard(obj.id, { name: obj.name + ' copy' }); await refreshBoards(); if (c) chirp(`Made “${c.name}” ✦`, 3500); return; }
     // copy a folder, the folders inside it and all their boards
@@ -175,7 +175,7 @@
     folders = folders.filter(f => !gone.includes(f));
     if (kind === 'project') projects = projects.filter(p => p !== obj);
     await saveLib(); await refreshBoards();
-    if (board && ids.includes(board.id)) { let list = await MB.list(); if (!list.length) { const b = newBoard('My first board'); await MB.save(b); list = await MB.list(); } await openBoard(list[0].id); }
+    if (board && ids.includes(board.id)) { let list = await Myra.list(); if (!list.length) { const b = newBoard('My first board'); await Myra.save(b); list = await Myra.list(); } await openBoard(list[0].id); }
   }
   // Move to…: a little map of projects and folders; pick where it goes
   function moveMenu(m, kind, obj) {
@@ -201,7 +201,7 @@
       else { putFolder(obj.id, null, to); const p = projects.find(x => x.id === to); if (p) p.open = true; }
       await saveLib(); await refreshBoards(); const dest = folders.find(x => x.id === to || 'f:' + x.id === to) || projects.find(x => x.id === to); chirp(`Moved “${obj.name}” ${dest ? 'to “' + dest.name + '”' : kind === 'board' ? 'out of its folder' : 'out of its project'} ✦`, 3500); };
   }
-  async function renameBoard(b, v) { if (!v) return; if (board && board.id === b.id) { board.name = v; $('boardName').value = v; save(); } else { const bb = await MB.load(b.id); if (bb) { bb.name = v; await MB.save(bb); } } }
+  async function renameBoard(b, v) { if (!v) return; if (board && board.id === b.id) { board.name = v; $('boardName').value = v; save(); } else { const bb = await Myra.load(b.id); if (bb) { bb.name = v; await Myra.save(bb); } } }
   function rowMenu(e, kind, obj, nameEl) {
     e.preventDefault(); e.stopPropagation(); $('rowMenu')?.remove();
     const n = kind === 'board' ? 1 + boardList.filter(x => x.parent === obj.id).length : kind === 'folder' ? boardsUnder(obj) : foldersIn(obj.id).reduce((t, f) => t + boardsUnder(f), 0);
@@ -328,7 +328,7 @@
     const chain = []; let up = board.parent; while (up && chain.length < 4) { const pb = boardList.find(x => x.id === up); if (!pb) break; chain.unshift(pb); up = pb.parent; }
     chain.forEach(pb => { el.insertAdjacentHTML('beforeend', `${el.children.length ? '<i>/</i>' : ''}<button data-board="${pb.id}"></button>`); const bt = el.lastElementChild; bt.textContent = pb.name; bt.title = 'Back to ' + pb.name; });
   }
-  $('crumbs').onclick = async e => { const pb = e.target.closest('[data-board]')?.dataset.board; if (pb) { board.view = view; await MB.save(board); return openBoard(pb); } const g = e.target.closest('[data-go]')?.dataset.go; if (g) openHome(g); };
+  $('crumbs').onclick = async e => { const pb = e.target.closest('[data-board]')?.dataset.board; if (pb) { board.view = view; await Myra.save(board); return openBoard(pb); } const g = e.target.closest('[data-go]')?.dataset.go; if (g) openHome(g); };
   $('homeBtn').onclick = () => openHome('all');
   $('brand').onclick = () => openHome('all');
   $('homeBack').onclick = () => { if (!homeAt) return; const f = homeAt.level === 'folder' && folders.find(x => x.id === homeAt.id); openHome(f && hasParent(f) ? 'folder:' + f.parent : f && f.project && projects.some(p => p.id === f.project) ? 'project:' + f.project : 'all'); };
@@ -337,7 +337,7 @@
   const miniCache = new Map();
   async function mini(id) {
     // a tiny map of the board: every card as a little colored block
-    if (!miniCache.has(id)) miniCache.set(id, MB.load(id).then(b => {
+    if (!miniCache.has(id)) miniCache.set(id, Myra.load(id).then(b => {
       const cs = (b && b.cards) || []; if (!cs.length) return '';
       const x0 = Math.min(...cs.map(c => c.x)), y0 = Math.min(...cs.map(c => c.y)), x1 = Math.max(...cs.map(c => c.x + c.w)), y1 = Math.max(...cs.map(c => c.y + c.h));
       const fill = c => c.type === 'swatch' ? c.hex : c.type === 'image' ? '#d9cfe0' : c.type === 'title' ? 'transparent' : (COLORS[c.color] || '#fff');
@@ -429,8 +429,8 @@
 
   async function openBoard(id) {
     // an edit still waiting to save belongs to the board you're leaving: save it first
-    if (saveT && board) { clearTimeout(saveT); saveT = 0; board.view = view; await MB.save(board); }
-    const b = await MB.load(id); if (!b) return;
+    if (saveT && board) { clearTimeout(saveT); saveT = 0; board.view = view; await Myra.save(board); }
+    const b = await Myra.load(id); if (!b) return;
     miniCache.clear(); board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
     board.cards.forEach(c => { if (c.type === 'audio' && c.rec) { c.rec = false; c.paused = false; if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.'; } });
     board.cards.forEach(c => { if (c.type === 'canvas' && c.board) { const kb = boardList.find(x => x.id === c.board); if (kb && kb.name !== c.text) c.text = kb.name; } });
@@ -455,11 +455,11 @@
     if (!drag && board) { layoutAll(); cleanNumbers(); }
     if (!restoring) { clearTimeout(snapT); snapT = setTimeout(remember, 350); }
     layersSoon(); $('saved').textContent = 'saving…'; clearTimeout(saveT);
-    saveT = setTimeout(async () => { board.view = view; await MB.save(board); $('saved').textContent = 'saved'; refreshBoards(); }, 400);
+    saveT = setTimeout(async () => { board.view = view; await Myra.save(board); $('saved').textContent = 'saved'; refreshBoards(); }, 400);
   }
 
   // after Myra works: glide to what she made (unless it's already in view) and let it glow for a moment
-  function showWhatMochiMade(cs) {
+  function showWhatMyraMade(cs) {
     cs = [...new Set(cs)].filter(c => board.cards.includes(c)); if (!cs.length) return;
     const r = stage.getBoundingClientRect(), L = 270, ch = chatOpen() && $('mChat').getBoundingClientRect(), R = ch && ch.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - L - 520)) : 260, a = toWorld(r.left + L, r.top + 60), b = toWorld(r.right - R, r.bottom - 110);
     const inView = cs.every(c => c.x >= a.x && c.y >= a.y && c.x + c.w <= b.x && c.y + c.h <= b.y) && view.z > .45;
@@ -594,11 +594,11 @@
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function inner(c) {
     switch (c.type) {
-      case 'note': return `${c.mochi ? `<div class="nm-head"><img class="nmochi" src="stamps/myra-wave.png" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : c.name !== undefined ? `<div class="nname">${esc(c.name)}</div>` : ''}<div class="text">${esc(c.text)}</div>`;
+      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra" src="stamps/myra-wave.png" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : c.name !== undefined ? `<div class="nname">${esc(c.name)}</div>` : ''}<div class="text">${esc(c.text)}</div>`;
       case 'doc': return `<div class="pill">${CIC.doc}<span class="text">${esc(c.text)}</span></div>`;
       case 'canvas': return `<div class="cv-head">${CIC.canvas}<span class="text">${esc(c.text)}</span></div><div class="cv-prev"><em>empty canvas</em></div>`;
       case 'shape': return shapeSVG(c) + `<div class="text">${esc(c.text || '')}</div>`;
-      case 'stamp': return `<div class="st">${c.src ? `<img src="${esc(stampSrc(c.src))}" alt="">` : pxSrc(c.emoji || '⭐') ? `<img src="${pxSrc(c.emoji || '⭐')}" alt="">` : `<span>${esc(c.emoji || '⭐')}</span>`}</div>`;
+      case 'stamp': return `<div class="st">${c.src ? `<img src="${esc(c.src)}" alt="">` : pxSrc(c.emoji || '⭐') ? `<img src="${pxSrc(c.emoji || '⭐')}" alt="">` : `<span>${esc(c.emoji || '⭐')}</span>`}</div>`;
       case 'spotify': return `<div class="sp-head"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="11" fill="#1ed760"/><path d="M6.6 9.4c3.6-1.1 7.8-.8 11 1M7.2 12.6c3-.9 6.3-.6 9 .9M7.8 15.6c2.4-.6 4.9-.4 7 .8" stroke="#121212" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg><span>${esc(c.title || 'Spotify')}</span></div>`
         + `<div class="sp-wrap">${c.image ? `<img class="sp-art" src="${esc(c.image)}" alt="">` : ''}<iframe class="sp-frame" data-src="${esc(spEmbed(c))}" src="${esc(spEmbed(c))}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="${esc(c.title || 'Spotify')}"></iframe><div class="sp-shield" title="Click to select, then play"></div></div>`;
       case 'video': {
@@ -1000,7 +1000,7 @@
     refit(c); renderCard(c); drawVec(); save(); }
   function syncCornerPop() { const c = vecCard(), t = document.querySelector('[data-pop="corners"] b'); if (!c || !t) return; const rs = [...vec.sel].map(i => c.pts[i].r ?? c.radius ?? 0);
     const v = rs.length ? (rs.every(r => r === rs[0]) ? rs[0] : '–') : (c.radius || 0); t.textContent = v; const num = document.querySelector('[data-corners-num]'); if (num && v !== '–' && document.activeElement !== num) num.value = v; }
-  stage.addEventListener('pointerdown', e => { if (!vec || e.button !== 0 || space) return; if (e.target.closest('.tools, .selbar, .dock, .side, .top, .cpop, .mochi')) return;
+  stage.addEventListener('pointerdown', e => { if (!vec || e.button !== 0 || space) return; if (e.target.closest('.tools, .selbar, .dock, .side, .top, .cpop, .myra')) return;
     if (vecDown(e)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
   stage.addEventListener('pointermove', e => { if (vec && vec.drag) { e.stopImmediatePropagation(); vecMove(e); } }, true);
   stage.addEventListener('pointerup', e => { if (vec && vec.drag) { e.stopImmediatePropagation(); vecUp(); } }, true);
@@ -1038,7 +1038,7 @@
   }
   function layerIcon(c) {
     if (c.type === 'section') return LICON.section;
-    if (c.type === 'stamp') { const s = stampSrc(c.src) || pxSrc(c.emoji || '⭐'); return s ? `<img src="${esc(s)}" alt="">` : `<span class="ly-emo">${esc(c.emoji || '⭐')}</span>`; }
+    if (c.type === 'stamp') { const s = c.src || pxSrc(c.emoji || '⭐'); return s ? `<img src="${esc(s)}" alt="">` : `<span class="ly-emo">${esc(c.emoji || '⭐')}</span>`; }
     if (c.type === 'swatch') return `<i class="ly-sw" style="background:${esc(c.hex)}"></i>`;
     if (c.type === 'icon') return `<span class="mi">${esc(c.name || 'star')}</span>`;
     return toolIcon(c.type) || LICON[c.type] || CIC[c.type] || LICON.box;
@@ -1164,7 +1164,7 @@
     const pad = 10 / view.z, x0 = Math.min(...cs.map(c => c.x)) - pad, y0 = Math.min(...cs.map(c => c.y)) - pad, x1 = Math.max(...cs.map(c => c.x + c.w)) + pad, y1 = Math.max(...cs.map(c => c.y + c.h)) + pad;
     const f = document.createElement('div'); f.className = 'ly-flash'; f.style.setProperty('--iz', (1 / view.z).toFixed(4));
     Object.assign(f.style, { left: x0 + 'px', top: y0 + 'px', width: x1 - x0 + 'px', height: y1 - y0 + 'px' });
-    f.innerHTML = '<i class="lf-ring"></i><i class="lf-ring two"></i><img class="lf-mochi" src="stamps/myra-wave.png" alt=""><b class="lf-spark">✦</b>';
+    f.innerHTML = '<i class="lf-ring"></i><i class="lf-ring two"></i><img class="lf-myra" src="stamps/myra-wave.png" alt=""><b class="lf-spark">✦</b>';
     world.appendChild(f); setTimeout(() => f.classList.add('out'), 1500); setTimeout(() => f.remove(), 1900);
   }
   function lyBringIntoView(ids) {
@@ -1218,7 +1218,7 @@
     renderCard(c); save();
     // Spotify's own public info (no account needed): the real name and cover art, kept on the card for offline, Layers and Myra
     try { const r = await fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(c.url)); if (r.ok) { const o = await r.json(); if (o.title) c.title = o.title; if (o.thumbnail_url) c.image = o.thumbnail_url; } } catch (e) {}
-    if (!c.title || c.title === 'Spotify') try { const p = await MB.linkPreview(c.url); if (p.title && !/^open\.spotify\.com$/i.test(p.title)) c.title = p.title.replace(/\s*[|·-]\s*Spotify\s*$/i, ''); if (!c.image && p.image) c.image = p.image; } catch (e) {}
+    if (!c.title || c.title === 'Spotify') try { const p = await Myra.linkPreview(c.url); if (p.title && !/^open\.spotify\.com$/i.test(p.title)) c.title = p.title.replace(/\s*[|·-]\s*Spotify\s*$/i, ''); if (!c.image && p.image) c.image = p.image; } catch (e) {}
     c.desc = { track: 'Song', album: 'Album', playlist: 'Playlist', episode: 'Podcast episode', show: 'Podcast', artist: 'Artist' }[c.kind] + ' on Spotify'; renderCard(c); save();
     return true;
   }
@@ -1226,7 +1226,7 @@
     if (spotifyOf(url)) { const c = card('spotify', { url, title: 'Spotify' }); if (toTray) { board.tray.unshift(c); renderTray(); } else { Object.assign(c, at || {}); addCard(c); } await spotifyFill(c, url); if (toTray) renderTray(); return c; }
     const c = card('link', { url, title: url, desc: '' });
     if (toTray) board.tray.unshift(c); else { Object.assign(c, at || {}); addCard(c); }
-    try { const p = await MB.linkPreview(url); Object.assign(c, { title: p.title || url, desc: p.desc || url, image: p.image || '' }); toTray ? renderTray() : renderCard(c); save(); } catch (e) {}
+    try { const p = await Myra.linkPreview(url); Object.assign(c, { title: p.title || url, desc: p.desc || url, image: p.image || '' }); toTray ? renderTray() : renderCard(c); save(); } catch (e) {}
     if (toTray) { renderTray(); save(); }
     return c;
   }
@@ -1336,7 +1336,7 @@
   stage.addEventListener('pointercancel', () => { if (drag?.mode === 'move') { drag.start?.forEach(s => { const el = s.el || cardsEl.querySelector(`[data-id="${s.c.id}"]`); if (el) { el.style.left = s.c.x + 'px'; el.style.top = s.c.y + 'px'; } }); } drag = null; clearStuckDrag(); placeSelbar(); });
   stage.addEventListener('pointerdown', e => {
     if (!drag) clearStuckDrag();
-    if (e.target.closest('.tools, .tray, .mochi, .top, .capture, .side, .keys, .cpop, .home, .selbar, .dock, .docview, .shapepick, .tplpick')) return;
+    if (e.target.closest('.tools, .tray, .myra, .top, .capture, .side, .keys, .cpop, .home, .selbar, .dock, .docview, .shapepick, .tplpick')) return;
     const el = e.target.closest('.card'), w = toWorld(e.clientX, e.clientY);
     if (e.button === 2) return;   // right-click opens the menu, it doesn't drag
     if (board) { clearTimeout(snapT); remember(); }   // lock in the last change before a new one starts, so undo steps stay separate
@@ -1533,7 +1533,7 @@
     if (settings.dblNote === false) return;   // only the setting turns this off
     const hitEl = document.elementFromPoint(e.clientX, e.clientY);
     if (hitEl?.closest('.selbar') || hitEl?.closest('.card:not(.section)') || hitEl?.closest('.sec-name, [contenteditable="true"]')) return;
-    if (e.target.closest('.card:not(.section), .tools, .tray, .mochi, .top, .capture, .side, .keys, .cpop, .home, .selbar, .docview, .hub, .sheet')) return;
+    if (e.target.closest('.card:not(.section), .tools, .tray, .myra, .top, .capture, .side, .keys, .cpop, .home, .selbar, .docview, .hub, .sheet')) return;
     const w = toWorld(e.clientX, e.clientY), c = card('note', { color: newNoteColor() }); c.x = snapTo(w.x - c.w / 2); c.y = snapTo(w.y - c.h / 2); addCard(c); selectOnly([c.id]); startEdit(c.id);
   });
   // card buttons: pull colours, checklist items
@@ -1640,7 +1640,7 @@
   function fitToolbar() {
     const box = $('tools'), more = $('tbMore'), dock = $('dock'); if (!box || !more) return;
     box.querySelectorAll(':scope > .tb-over').forEach(b => b.classList.remove('tb-over')); more.hidden = true;
-    const m = $('mochi'), others = m && m.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.offsetWidth + 10 : 0;   // only Myra's pill shares the row
+    const m = $('myra'), others = m && m.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.offsetWidth + 10 : 0;   // only Myra's pill shares the row
     const room = innerWidth - 32 - others;
     if (box.offsetWidth <= room) return;
     more.hidden = false; const shown = [...box.querySelectorAll(':scope > [data-add]')].filter(b => !b.hidden);
@@ -1657,7 +1657,7 @@
   function setClean(on) {
     if (on === document.body.classList.contains('clean') || (on && document.body.classList.contains('phone'))) return;
     const fade = (from, to) => CLEAN_EL.forEach(el => el.animate?.([{ opacity: from }, { opacity: to }], { duration: 220, easing: 'ease' }));
-    if (on) { closeColor(); mochiOpen(false); fade(1, 0); setTimeout(() => document.body.classList.add('clean'), 200); }
+    if (on) { closeColor(); myraOpen(false); fade(1, 0); setTimeout(() => document.body.classList.add('clean'), 200); }
     else { document.body.classList.remove('clean'); fade(0, 1); }
   }
   $('cleanBtn').onclick = () => setClean(true);
@@ -1687,7 +1687,7 @@
     if (e.key === 'Escape' && docCard) { closeDoc(); return; }
     if (e.key === 'Escape' && (placing || $('shapePick').classList.contains('on') || $('tplPick').classList.contains('on') || $('stampWheel').classList.contains('on') || $('stampPick').classList.contains('on'))) { stopPlacing(); return; }
     if (e.key === 'Escape' && selWire) { selectWire(null); return; }
-    if (e.key === 'Escape') { closeColor(); capture(false); endEdit(); setFocus(false); selectOnly([]); mochiOpen(false); document.activeElement.blur(); return; }
+    if (e.key === 'Escape') { closeColor(); capture(false); endEdit(); setFocus(false); selectOnly([]); myraOpen(false); document.activeElement.blur(); return; }
     if (typing || homeAt || $('capture').classList.contains('on')) return;   // never fire board shortcuts while quick capture is open
     if (e.key === ' ') { space = true; stage.classList.add('space'); e.preventDefault(); }
     if ((e.key === 'Backspace' || e.key === 'Delete') && selWire) { board.links = board.links.filter(l => l.id !== selWire); selWire = null; renderWires(); save(); return; }
@@ -1722,7 +1722,7 @@
     if (k === 'v') { if (e.shiftKey) startPlacing('video'); else toPointer(); }
     if (k === 'i') $('filePick').click();
     if (k === '0') fit(board.cards);
-    if (k === 'm') { e.preventDefault(); mochiOpen(true); }
+    if (k === 'm') { e.preventDefault(); myraOpen(true); }
   });
   addEventListener('keyup', e => { if (e.key === ' ') { space = false; stage.classList.remove('space'); } });
   // links get a little paste box under the toolbar (the app can't show the browser's prompt)
@@ -1756,7 +1756,7 @@
     const p = homeAt?.level === 'project' ? projects.find(x => x.id === homeAt.id) : homeAt?.level === 'all' ? null : f && projects.find(x => x.id === f.project);
     return { f, p };
   }
-  $('newBoard').onclick = async () => { const { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) return newBoardIn(into.id); const b = newBoard(); await MB.save(b); closeHome(); openBoard(b.id); };
+  $('newBoard').onclick = async () => { const { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) return newBoardIn(into.id); const b = newBoard(); await Myra.save(b); closeHome(); openBoard(b.id); };
   $('newFolder').onclick = async () => { const f = makeFolder(uniqueName(folders, 'New folder'), scope().p?.id || null); await saveLib(); await refreshBoards(); renameNewest('.node.folder', f); };
   $('newProject').onclick = async () => { const p = makeProject(uniqueName(projects, 'New project')); await saveLib(); await refreshBoards(); renameNewest('.node.project', p); };
 
@@ -1833,15 +1833,15 @@
   });
   stage.addEventListener('dragover', e => e.preventDefault());
   stage.addEventListener('drop', e => { e.preventDefault(); const files = [...e.dataTransfer.files], w = toWorld(e.clientX, e.clientY);
-    const bid = e.dataTransfer.getData('mb/board'); if (bid && board) return nestBoard(bid, board.id, { x: w.x - 130, y: w.y - 90 }).then(ok => ok && refreshBoards());
+    const bid = e.dataTransfer.getData('myra/board'); if (bid && board) return nestBoard(bid, board.id, { x: w.x - 130, y: w.y - 90 }).then(ok => ok && refreshBoards());
     if (files.length) return addImages(files, w, overTray(e));
     const u = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain'); if (/^https?:/.test(u)) linkCard(u.trim(), w); });
 
   // ---------- Myra on the board ----------
   // her hop: she jumps right up out of her pill, then squishes a little as she lands
-  function hopMochi() { goo.hop(); favGoo?.hop(); const c = $('goo'); c.classList.remove('hopping'); void c.offsetWidth; c.classList.add('hopping'); }
+  function hopMyra() { goo.hop(); favGoo?.hop(); const c = $('goo'); c.classList.remove('hopping'); void c.offsetWidth; c.classList.add('hopping'); }
   // in a browser, the tab's icon is a tiny Myra who breathes, blinks and hops along with the real one
-  const favGoo = MB.native ? null : (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const fg = Goo(c, { manual: true, outfit: 'wear' });
+  const favGoo = Myra.native ? null : (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const fg = Goo(c, { manual: true, outfit: 'wear' });
     let link = document.querySelector('link[rel="icon"]'); if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
     setInterval(() => { fg.draw(); link.href = c.toDataURL('image/png'); }, 120); return fg; })();
   const goo = Goo($('goo'), { headroom: 8 }), duGoo = Goo($('duGoo')), SMALL = { outfit: 'wear', headroom: 8 };   // small Myras get room above thems, and skip what she's holding so she stays big enough to see
@@ -1849,9 +1849,9 @@
 
   // ---------- settings: Myra's color and greeting, her helpers, how the board looks ----------
   // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade
-  const MOCHI_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
+  const MYRA_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
-  const settings = Object.assign({ winButtons: false, claudeHooks: false, caelestia: true, autoUpdate: true, panelH: {}, mochiName: '', mochiCalm: 'lively', mochiChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  mochi: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
+  const settings = Object.assign({ winButtons: false, claudeHooks: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
   settings.wDressup = settings.wMusic = false;   // not in Myra: Mochiboard's Dress up and music widgets (Mochi's outfits and the songs are Mochiboard's own)
   try { if (localStorage.getItem('myra:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
@@ -1913,8 +1913,8 @@
     ['wDressup', () => document.querySelector('.box[data-box="dressup"]')], ['wMusic', () => document.querySelector('.box[data-box="music"]')], ['wDesign', () => $('design')], ['wTray', () => $('tray')]];
   function applySettings() {
     queueMicrotask(() => applyColors()); queueMicrotask(() => applyGridShape()); queueMicrotask(() => applyToolbar());
-    goos.forEach(g => g.setColors(MOCHI_COLORS[settings.mochi] || MOCHI_COLORS.golden));
-    window.MochiOutfit = settings.outfit || {}; queueMicrotask(() => renderDressup());
+    goos.forEach(g => g.setColors(MYRA_COLORS[settings.myra] || MYRA_COLORS.golden));
+    window.MyraOutfit = settings.outfit || {}; queueMicrotask(() => renderDressup());
     // widgets: the panels people can turn off (the Boards panel always stays: it holds their boards and Settings)
     WIDGETS.forEach(([k, el]) => el()?.classList.toggle('wg-off', settings[k] === false));
     [['layers', 'wLayers'], ['tray', 'wTray']].forEach(([sh, k]) => document.querySelector(`#hub [data-sheet="${sh}"]`)?.classList.toggle('wg-off', settings[k] === false));
@@ -1925,18 +1925,18 @@
     document.querySelectorAll('[data-seg]').forEach(g => g.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', settings[g.dataset.seg] === b.dataset.v)));
     $('obNotes').innerHTML = $('noteColors').innerHTML = `<button data-nc="random" class="rand ${settings.noteColor === 'random' ? 'on' : ''}" title="A random color"></button>` + COLOR_NAMES.map(n => `<button data-nc="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${settings.noteColor === n ? 'on' : ''}"></button>`).join('');
     // Myra's name, how lively she is, and whether her character shows
-    const mn = (settings.mochiName || '').trim() || 'Myra'; window.mochiName = mn;
+    const mn = (settings.myraName || '').trim() || 'Myra'; window.myraName = mn;
     [['mName'], ['mcHeadName'], ['coachName']].forEach(([id]) => { const el = $(id); if (el) el.textContent = mn; });
     ['mInput', 'mcInput'].forEach(id => { const el = $(id); if (el) el.placeholder = `Ask ${mn}… “group these by theme”`; });
     const bs = $('mBubble')?.querySelector('small'); if (bs) bs.textContent = mn.toLowerCase();
     document.querySelectorAll('[data-mname]').forEach(el => el.textContent = el.dataset.mname.replace('{name}', mn));
-    if ($('mochiNameIn') && document.activeElement !== $('mochiNameIn')) $('mochiNameIn').value = settings.mochiName || '';
-    window.mochiCalm = settings.mochiCalm !== 'lively'; document.body.classList.toggle('mochi-calm', window.mochiCalm); window.mochiMuted = settings.mochiCalm === 'calmest'; goos.forEach(gg => gg.draw?.()); document.body.classList.toggle('mochi-hidden', settings.mochiChar === false);
+    if ($('myraNameIn') && document.activeElement !== $('myraNameIn')) $('myraNameIn').value = settings.myraName || '';
+    window.myraCalm = settings.myraCalm !== 'lively'; document.body.classList.toggle('myra-calm', window.myraCalm); window.myraMuted = settings.myraCalm === 'calmest'; goos.forEach(gg => gg.draw?.()); document.body.classList.toggle('myra-hidden', settings.myraChar === false);
     document.body.classList.toggle('no-grid', !settings.grid); document.body.classList.toggle('neat', !settings.tilt); document.body.classList.toggle('calm', !settings.motion);
     $('keys').classList.toggle('hide', !settings.keys);
     document.documentElement.classList.toggle('no-win-buttons', settings.winButtons === false);   // tiling compositors place the window themselves
-    if (MB.prefs) MB.prefs({ claudeHooks: !!settings.claudeHooks }).catch(() => {});   // the host runs Claude Code, so it needs to know this one
-    $('obMochi').innerHTML = $('mochiColors').innerHTML = Object.entries(MOCHI_COLORS).map(([n, c]) => `<button data-mc="${n}" title="${colorLabel(n)}" style="background:${c.B}" class="${settings.mochi === n ? 'on' : ''}"></button>`).join('');
+    if (Myra.prefs) Myra.prefs({ claudeHooks: !!settings.claudeHooks }).catch(() => {});   // the host runs Claude Code, so it needs to know this one
+    $('obMyra').innerHTML = $('myraColors').innerHTML = Object.entries(MYRA_COLORS).map(([n, c]) => `<button data-mc="${n}" title="${colorLabel(n)}" style="background:${c.B}" class="${settings.myra === n ? 'on' : ''}"></button>`).join('');
     document.querySelectorAll('[data-set]').forEach(t => t.checked = !!settings[t.dataset.set]);
     try { localStorage.setItem('myra:settings', JSON.stringify(settings)); localStorage.setItem('myra:keys', settings.keys ? 'show' : 'hide'); } catch (e) {}
   }
@@ -1968,11 +1968,11 @@
     Object.assign(svg.style, { left: bub.offsetLeft - 2 + 'px', top: bub.offsetTop - 2 + 'px' });
     const ps = [0, Math.PI * .66, Math.PI * 1.33].map(ph => tagPath(w, h, ph)), path = svg.querySelector('path');
     path.setAttribute('d', ps[0]);
-    path.innerHTML = window.mochiCalm ? '' : `<animate attributeName="d" dur="5s" repeatCount="indefinite" values="${ps.join(';')};${ps[0]}" calcMode="spline" keySplines="${'.45 0 .55 1;'.repeat(3).slice(0, -1)}"/>`;
+    path.innerHTML = window.myraCalm ? '' : `<animate attributeName="d" dur="5s" repeatCount="indefinite" values="${ps.join(';')};${ps[0]}" calcMode="spline" keySplines="${'.45 0 .55 1;'.repeat(3).slice(0, -1)}"/>`;
   }
   document.fonts?.ready.then(() => requestAnimationFrame(shapeTag));
   function paintCursor() {
-    const m = MOCHI_COLORS[settings.mochi] || MOCHI_COLORS.golden, c = m.B, edge = m.D;   // your cursor wears Myra's color
+    const m = MYRA_COLORS[settings.myra] || MYRA_COLORS.golden, c = m.B, edge = m.D;   // your cursor wears Myra's color
     myCur.style.setProperty('--c', c); myCur.style.setProperty('--cs', edge); myCur.style.setProperty('--ct', lum(c) > .4 ? '#3d3640' : '#ffffff');
     myCur.querySelector('.bub').textContent = (settings.name || 'You').slice(0, 24);
     requestAnimationFrame(shapeTag);
@@ -1982,7 +1982,7 @@
     if (e.pointerType !== 'mouse' || !document.body.classList.contains('fancy-cursor')) return;
     myCur.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`; myCur.classList.add('show');
     // at the window's edges, hand back the system's own cursor so its resize arrows show (and you can see where to grab)
-    const edge = MB.native && (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8); document.body.classList.toggle('cur-edge', edge);
+    const edge = Myra.native && (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8); document.body.classList.toggle('cur-edge', edge);
     const t = e.target, native = edge || !!(t.closest && t.closest(NATIVE));
     myCur.classList.toggle('hide', native); document.body.classList.toggle('cur-native', native);
     const onCard = !native && !placing && !drawOn && t.closest && t.closest('.card') && !t.closest('button, a, input');
@@ -2060,21 +2060,21 @@
       grip.addEventListener('pointermove', mv); grip.addEventListener('pointerup', up); });
     grip.addEventListener('dblclick', e => { e.stopPropagation(); const p = { ...(settings.panelH || {}) }; delete p[k]; settings.panelH = p; applyPanelH(); applySettings(); }); });
   applyPanelH();
-  $('mochiNameIn').oninput = e => { settings.mochiName = e.target.value.slice(0, 18); applySettings(); };
-  $('mochiNameIn').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') e.target.blur(); };
+  $('myraNameIn').oninput = e => { settings.myraName = e.target.value.slice(0, 18); applySettings(); };
+  $('myraNameIn').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') e.target.blur(); };
   $('setTabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { setTab(b.dataset.tab); if (b.dataset.tab === 'toolbar') renderTbList(); } };
   setTab('general');
   // Claude usage (desktop app): Myra's own tally, plus a door to the plan limits page
   const kTok = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(Math.round(n));
   const usLine = u => !u || !u.asks ? 'No asks yet' : `${u.asks} ask${u.asks === 1 ? '' : 's'} · ${kTok(u.tokensIn + u.tokensOut)} tokens`;
   async function showUsage() {
-    if (!MB.native) return; let u = null; try { u = await MB.usage(); } catch (e) {}
+    if (!Myra.native) return; let u = null; try { u = await Myra.usage(); } catch (e) {}
     if (!u) return; $('usToday').textContent = usLine(u.today); $('usWeek').textContent = usLine(u.week); $('usAll').textContent = usLine(u.all);
     $('usNote').textContent = (u.week.cost >= .01 ? `About $${u.week.cost.toFixed(2)} this week if you paid per request (on a Pro or Max plan you don't). ` : '') + "Just Myra's share, counted on this computer. Your plan's limits cover everything you do with Claude.";
   }
-  $('usLimits').onclick = () => MB.openURL('https://claude.ai/settings/usage');
-  $('sendFeedback').onclick = () => MB.openURL('https://github.com/chiangs/myra/issues/new');   // ideas and bugs go to this version's GitHub issues
-  $('usReset').onclick = async () => { await MB.resetUsage(); showUsage(); };
+  $('usLimits').onclick = () => Myra.openURL('https://claude.ai/settings/usage');
+  $('sendFeedback').onclick = () => Myra.openURL('https://github.com/chiangs/myra/issues/new');   // ideas and bugs go to this version's GitHub issues
+  $('usReset').onclick = async () => { await Myra.resetUsage(); showUsage(); };
 
   $('setClose').onclick = closeSettings;
   // ---------- About → Licenses: Myra's license and every third-party notice (web/licenses.js, made by tools/notices.js) ----------
@@ -2086,12 +2086,12 @@
     if ($('licBody').dataset.done) return;
     const L = window.MYRA_LICENSES, row = i => `<details class="lic-item"><summary><b>${esc(i.name)}</b>${i.version ? ` <span>${esc(i.version)}</span>` : ''}<em>${esc(i.license)}</em></summary>
       <p class="lic-meta">${esc(i.where)}${i.url ? ` · <button class="set-link" data-url="${esc(i.url)}">${esc(i.url.replace(/^https?:\/\//, ''))}</button>` : ''}</p>${i.note ? `<p class="lic-note">${esc(i.note)}</p>` : ''}
-      ${i.name === 'Electron' && MB.native ? '<p><button class="set-btn" id="licChromium">Open Chromium’s licenses</button></p>' : ''}<pre>${esc(i.text)}</pre></details>`;
+      ${i.name === 'Electron' && Myra.native ? '<p><button class="set-btn" id="licChromium">Open Chromium’s licenses</button></p>' : ''}<pre>${esc(i.text)}</pre></details>`;
     $('licBody').innerHTML = `<p class="lic-intro">Myra is open source under the MIT License. Its name, Myra the cloudberry and her art are reserved by Stephen Chiang. It includes ${L.items.length} pieces of software made by others, each listed with its license.</p>
       <details class="lic-item lic-myra" open><summary><b>Myra</b><em>MIT</em></summary><pre>${esc(L.myra)}</pre></details>` + L.items.map(row).join('');
     $('licBody').dataset.done = '1';
-    $('licBody').querySelectorAll('[data-url]').forEach(b => b.onclick = () => MB.openURL(b.dataset.url));
-    $('licChromium') && ($('licChromium').onclick = () => MB.chromiumLicenses().catch(e => say(e.message, 5000)));
+    $('licBody').querySelectorAll('[data-url]').forEach(b => b.onclick = () => Myra.openURL(b.dataset.url));
+    $('licChromium') && ($('licChromium').onclick = () => Myra.chromiumLicenses().catch(e => say(e.message, 5000)));
   }
   const closeLicenses = () => $('licView').classList.remove('on');
   $('openLicenses').onclick = openLicenses; $('licClose').onclick = closeLicenses;
@@ -2103,29 +2103,29 @@
   let duTab = 'hat';
   const duThumb = (kind, key) => {   // the piece as big as fits, whole pixels only, with a little shadow so white things show
     const c = document.createElement('canvas'), S = 72; c.width = c.height = S; const x = c.getContext('2d');
-    const rows = MOCHI_WARDROBE[kind][key][3], w = Math.max(...rows.map(r => r.length)), h = rows.length, cell = Math.max(2, Math.floor(Math.min(60 / w, 54 / h)));
+    const rows = MYRA_WARDROBE[kind][key][3], w = Math.max(...rows.map(r => r.length)), h = rows.length, cell = Math.max(2, Math.floor(Math.min(60 / w, 54 / h)));
     const ox = Math.round((S - w * cell) / 2), oy = Math.round((S - h * cell) / 2);
     x.shadowColor = 'rgba(110, 60, 100, .22)'; x.shadowOffsetY = Math.max(1, cell / 3);
-    rows.forEach((r, yy) => [...r].forEach((ch, xx) => { if (ch !== '.' && MOCHI_PAL[ch]) { x.fillStyle = MOCHI_PAL[ch]; x.fillRect(ox + xx * cell, oy + yy * cell, cell, cell); } }));
+    rows.forEach((r, yy) => [...r].forEach((ch, xx) => { if (ch !== '.' && MYRA_PAL[ch]) { x.fillStyle = MYRA_PAL[ch]; x.fillRect(ox + xx * cell, oy + yy * cell, cell, cell); } }));
     return c;
   };
   function renderDressup() {
     const fit = settings.outfit || {};
     $('duTabs').innerHTML = DU_TABS.map(([k, l]) => `<button role="tab" data-du="${k}" class="${k === duTab ? 'on' : ''}" aria-selected="${k === duTab}">${l}</button>`).join('');
     const box = $('duItems'); box.innerHTML = '';
-    if (duTab === 'color') Object.entries(MOCHI_COLORS).forEach(([k, c]) => box.insertAdjacentHTML('beforeend', `<button class="du-item du-color${settings.mochi === k ? ' on' : ''}" data-kind="color" data-key="${k}" title="${k[0].toUpperCase() + k.slice(1)}" aria-pressed="${settings.mochi === k}"><span style="background:linear-gradient(160deg, ${c.S} 0 22%, ${c.B} 22% 78%, ${c.D} 78%)"></span></button>`));
-    else Object.entries(MOCHI_WARDROBE[duTab]).forEach(([k, sp]) => { const b = document.createElement('button'); b.className = 'du-item' + (fit[duTab] === k ? ' on' : ''); Object.assign(b.dataset, { kind: duTab, key: k }); b.title = sp[0]; b.setAttribute('aria-pressed', fit[duTab] === k); b.append(duThumb(duTab, k)); box.append(b); });
+    if (duTab === 'color') Object.entries(MYRA_COLORS).forEach(([k, c]) => box.insertAdjacentHTML('beforeend', `<button class="du-item du-color${settings.myra === k ? ' on' : ''}" data-kind="color" data-key="${k}" title="${k[0].toUpperCase() + k.slice(1)}" aria-pressed="${settings.myra === k}"><span style="background:linear-gradient(160deg, ${c.S} 0 22%, ${c.B} 22% 78%, ${c.D} 78%)"></span></button>`));
+    else Object.entries(MYRA_WARDROBE[duTab]).forEach(([k, sp]) => { const b = document.createElement('button'); b.className = 'du-item' + (fit[duTab] === k ? ' on' : ''); Object.assign(b.dataset, { kind: duTab, key: k }); b.title = sp[0]; b.setAttribute('aria-pressed', fit[duTab] === k); b.append(duThumb(duTab, k)); box.append(b); });
     $('duOff').hidden = !Object.values(fit).some(Boolean);
   }
   $('duTabs').onclick = e => { const b = e.target.closest('[data-du]'); if (b) { duTab = b.dataset.du; renderDressup(); } };
   $('duItems').addEventListener('pointerover', e => { const b = e.target.closest('.du-item'); if (!b || e.pointerType === 'touch') return;
-    if (b.dataset.kind === 'color') goos.forEach(g => g.setColors(MOCHI_COLORS[b.dataset.key])); else window.MochiPreview = { [b.dataset.kind]: b.dataset.key }; });
-  $('duItems').addEventListener('pointerleave', () => { window.MochiPreview = null; goos.forEach(g => g.setColors(MOCHI_COLORS[settings.mochi] || MOCHI_COLORS.golden)); });
+    if (b.dataset.kind === 'color') goos.forEach(g => g.setColors(MYRA_COLORS[b.dataset.key])); else window.MyraPreview = { [b.dataset.kind]: b.dataset.key }; });
+  $('duItems').addEventListener('pointerleave', () => { window.MyraPreview = null; goos.forEach(g => g.setColors(MYRA_COLORS[settings.myra] || MYRA_COLORS.golden)); });
   $('duItems').onclick = e => {
     const b = e.target.closest('.du-item'); if (!b) return; const { kind, key } = b.dataset;
-    if (kind === 'color') settings.mochi = key;
+    if (kind === 'color') settings.myra = key;
     else { const fit = { ...(settings.outfit || {}) }; fit[kind] = fit[kind] === key ? null : key; settings.outfit = fit; }
-    window.MochiPreview = null; applySettings(); hopMochi(); duGoo.hop();
+    window.MyraPreview = null; applySettings(); hopMyra(); duGoo.hop();
   };
   // ---------- Myra's music: three little lo-fi songs. Each one softens at the end, takes a breath, and starts again ----------
   // It never starts on its own. It remembers the song and volume, and keeps playing when you switch boards.
@@ -2191,37 +2191,37 @@
   $('wgReset').onclick = () => { settings.layout = null; applySettings(); chirp('Widgets are back where they started ✦', 2600); };
   $('duOff').onclick = () => { settings.outfit = {}; applySettings(); duGoo.hop(); };
 
-  $('obMochi').onclick = $('mochiColors').onclick = e => { const b = e.target.closest('[data-mc]'); if (b) { settings.mochi = b.dataset.mc; applySettings(); hopMochi(); } };
+  $('obMyra').onclick = $('myraColors').onclick = e => { const b = e.target.closest('[data-mc]'); if (b) { settings.myra = b.dataset.mc; applySettings(); hopMyra(); } };
   document.querySelectorAll('[data-set]').forEach(t => t.onchange = () => { settings[t.dataset.set] = t.checked; applySettings(); if (t.dataset.set === 'autoUpdate') { showUpdate.answered = true; if (t.checked && updInfo) showUpdate(); } });
   $('recheck').onclick = () => showConnections(true);
   // switching chats off (or to "until I quit") removes what's saved in the board files right away
-  async function clearSavedChats() { const list = await MB.list(); for (const b of list) { const bb = b.id === board?.id ? board : await MB.load(b.id); if (bb?.chat?.length) { bb.chat = []; await MB.save(bb); } } }
+  async function clearSavedChats() { const list = await Myra.list(); for (const b of list) { const bb = b.id === board?.id ? board : await Myra.load(b.id); if (bb?.chat?.length) { bb.chat = []; await Myra.save(bb); } } }
   $('clearChats').onclick = async () => { await clearSavedChats(); Object.keys(sessionChats).forEach(k => delete sessionChats[k]); renderChat(); $('clearChats').textContent = 'Cleared ✓'; setTimeout(() => $('clearChats').textContent = 'Clear all chats', 1800); };
   document.querySelectorAll('[data-seg]').forEach(g => g.onclick = e => { const b = e.target.closest('[data-v]'); if (!b) return; settings[g.dataset.seg] = b.dataset.v; applySettings();
     if (g.dataset.seg === 'chatKeep' && b.dataset.v !== 'board') clearSavedChats(); if (g.dataset.seg === 'chatKeep') renderChat(); });
   $('obNotes').onclick = $('noteColors').onclick = e => { const b = e.target.closest('[data-nc]'); if (b) { settings.noteColor = b.dataset.nc; applySettings(); } };
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => settings.theme === 'system' && applySettings());
-  window.__mbEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } };   // a new wallpaper or scheme: restyle right away
-  if (MB.caelestia) MB.caelestia().then(d => { cae = d; if (d) applySettings(); }).catch(() => {});
+  window.__myraEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } };   // a new wallpaper or scheme: restyle right away
+  if (Myra.caelestia) Myra.caelestia().then(d => { cae = d; if (d) applySettings(); }).catch(() => {});
   const newNoteColor = () => settings.noteColor === 'random' ? COLOR_NAMES[1 + Math.floor(Math.random() * 6)] : settings.noteColor;
   let deselectAt = 0;
   const snapTo = v => settings.snap ? Math.round(v / 26) * 26 : v;
-  $('revealBoards').onclick = () => MB.reveal();
+  $('revealBoards').onclick = () => Myra.reveal();
   let sayT = 0;
   // the little extras: skipped when she's set to Quiet
   function chirp(text, ms, acts) { if (settings.chat !== 'quiet') say(text, ms, acts); }
   function tip(text) { if (settings.chat === 'chatty') say(text, 6000); }
   function say(text, ms = 6000, acts = []) {
-    if (chatOpen()) { if (text) addMsg('mochi', text, acts); return; }
+    if (chatOpen()) { if (text) addMsg('myra', text, acts); return; }
     $('mSay').textContent = text; $('mActs').innerHTML = '';
     acts.forEach(a => { const b = document.createElement('button'); b.textContent = a.label; b.className = a.cls || (a.ghost ? 'ghost' : ''); b.onclick = () => { $('mBubble').classList.remove('on'); a.run(); }; $('mActs').appendChild(b); });
-    $('mBubble').classList.add('on'); hopMochi(); clearTimeout(sayT); if (ms) sayT = setTimeout(() => $('mBubble').classList.remove('on'), ms);
+    $('mBubble').classList.add('on'); hopMyra(); clearTimeout(sayT); if (ms) sayT = setTimeout(() => $('mBubble').classList.remove('on'), ms);
   }
   // ---------- Myra's chat window: click her to open it, click again (or Esc) to close ----------
-  const chatOpen = () => $('mochi').classList.contains('chat');
-  function mochiOpen(on) { $('mochi').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); $('mcInput').focus(); } }
-  $('mPill').onclick = () => mochiOpen(!chatOpen());
-  $('mcClose').onclick = () => mochiOpen(false);
+  const chatOpen = () => $('myra').classList.contains('chat');
+  function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); $('mcInput').focus(); } }
+  $('mPill').onclick = () => myraOpen(!chatOpen());
+  $('mcClose').onclick = () => myraOpen(false);
   $('mcNew').onclick = () => { chatLog().length = 0; if (settings.chatKeep === 'board') { board.chat = []; save(); } renderChat(); $('mcInput').focus(); };
   const IDEAS = ['Group these by theme', 'What am I missing?', 'Make a checklist from this', 'Find onboarding screens on Mobbin'];
   function msgEl(m) {
@@ -2245,9 +2245,9 @@
     const list = $('mcList'); list.querySelector('.mc-empty')?.remove(); list.appendChild(msgEl({ ...m, acts })); list.scrollTop = list.scrollHeight;
   }
   function typing(on) { $('mcList').querySelector('.typing')?.remove(); $('mcStatus').textContent = on ? 'thinking…' : '';
-    if (on) { const d = document.createElement('div'); d.className = 'mc-msg mochi typing'; d.innerHTML = '<i></i><i></i><i></i>'; $('mcList').appendChild(d); $('mcList').scrollTop = 1e9; } }
+    if (on) { const d = document.createElement('div'); d.className = 'mc-msg myra typing'; d.innerHTML = '<i></i><i></i><i></i>'; $('mcList').appendChild(d); $('mcList').scrollTop = 1e9; } }
   $('mcForm').onsubmit = e => { e.preventDefault(); const q = $('mcInput').value.trim(); if (!q) return; $('mcInput').value = ''; $('mcInput').style.height = ''; $('mcInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
-  $('mcInput').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('mcForm').requestSubmit(); } if (e.key === 'Escape') { mochiOpen(false); e.stopPropagation(); } };
+  $('mcInput').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('mcForm').requestSubmit(); } if (e.key === 'Escape') { myraOpen(false); e.stopPropagation(); } };
   $('mcInput').oninput = () => { const t = $('mcInput'); t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; };
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());
   // what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
@@ -2257,50 +2257,50 @@
     return { name: board.name, cards: board.cards.map(brief), links: board.links.map(l => [l.a, l.b]), unsorted: board.tray.map(brief), boardColors: board.palette,
       fontsOnThisComputer: FONTS.filter(f => !/^(\.|Apple |System|STIX|Noto Sans [A-Z][a-z]+ [A-Z])/.test(f)).slice(0, 400),
       recentChat: (settings.chatKeep === 'off' ? chatLog().slice(-2) : chatLog().slice(-8)).map(m => `${m.who === 'me' ? 'Person' : 'Myra'}: ${m.text}`),
-      mochiStyle: (settings.name ? `The person's name is ${settings.name}; use it now and then, not in every reply. ` : '') + ({ quiet: 'Keep "say" to one short sentence.', normal: 'Keep "say" short and warm.', chatty: 'Be warm, playful and encouraging in "say" (2 to 3 sentences, a little cheer is welcome).' }[settings.chat] || '') + (settings.emoji ? ' A couple of fitting emojis in "say" are welcome.' : ' Never use emojis.'),
+      myraStyle: (settings.name ? `The person's name is ${settings.name}; use it now and then, not in every reply. ` : '') + ({ quiet: 'Keep "say" to one short sentence.', normal: 'Keep "say" short and warm.', chatty: 'Be warm, playful and encouraging in "say" (2 to 3 sentences, a little cheer is welcome).' }[settings.chat] || '') + (settings.emoji ? ' A couple of fitting emojis in "say" are welcome.' : ' Never use emojis.'),
       library: { projects: projects.map(p => ({ name: p.name, folders: foldersIn(p.id).map(f => f.name) })), foldersNotInAProject: looseFolders().map(f => f.name), boards: boardList.map(b => ({ id: b.id, name: b.name, folder: (folders.find(f => f.id === b.folder) || {}).name || null, current: b.id === board.id || undefined })) } };
   }
   // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
-  function offlineMochi(q, why) {
+  function offlineMyra(q, why) {
     const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
     if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) {
       const x0 = Math.min(...notes.map(c => c.x)), y0 = Math.min(...notes.map(c => c.y));
       notes.forEach((c, i) => { c.x = x0 + (i % 4) * 250; c.y = y0 + Math.floor(i / 4) * 180; c.r = tilt(); renderCard(c); }); renderWires(); save();
       return say(`I lined your ${notes.length} notes up in tidy rows ✦ ${why}`, 9000);
     }
-    say(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMochi.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => MB.openURL(GUIDE) }] : []); offlineMochi.signin = false;
+    say(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Myra.openURL(GUIDE) }] : []); offlineMyra.signin = false;
   }
   let haveClaude = null;
   const GUIDE = 'https://github.com/chiangs/myra#connect-claude-code';   // the step-by-step page for connecting Claude Code
   const SIGNIN = /log ?in|api key|auth|credential|subscription|not (signed|logged)|oauth|unauthori[sz]ed|401|403/i;
   // the web demo: Myra tidies for real, and for anything that needs AI she points you to the desktop app
-  const getApp = () => MB.openURL(MB.getURL || 'https://github.com/chiangs/myra/releases/latest');
+  const getApp = () => Myra.openURL(Myra.getURL || 'https://github.com/chiangs/myra/releases/latest');
   const DL = [{ label: 'Download Myra ✦', run: getApp }, { label: 'Keep playing', ghost: true, run: () => {} }];
-  function webMochi(q) {
+  function webMyra(q) {
     const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
-    if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) return offlineMochi(q, 'In the desktop app I can sort them by theme too, with Claude.');
+    if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) return offlineMyra(q, 'In the desktop app I can sort them by theme too, with Claude.');
     const what = /mobbin/i.test(q) ? 'Mobbin lives in your Claude account, and I can only reach it from the desktop app.' : /higgsfield|photo|picture|image/i.test(q) ? 'Making pictures with Higgsfield happens in the desktop app, where I can check the price with you first.' : 'I think with Claude Code, and that lives in the desktop app.';
     say(`I'd love to help with that! ${what} Download me and I'll connect to your Claude, Mobbin and Higgsfield ✦`, 0, DL);
   }
   async function ask(q, confirmed = false) {
-    if (MB.web) { if (!chatOpen()) mochiOpen(true); addMsg('me', q); return webMochi(q); }
-    if (!settings.ai || haveClaude === false) { if (!chatOpen()) mochiOpen(true); addMsg('me', q); }
-    if (!settings.ai) return offlineMochi(q, "My thinking is switched off in Settings, so I can only do simple tidying.");
-    if (haveClaude === false) { await showConnections(true); if (haveClaude === false) return offlineMochi(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }   // look again first: they may have just set it up
-    if (!navigator.onLine) { if (!chatOpen()) mochiOpen(true); addMsg('me', q); return offlineMochi(q, "You're offline, so I can't think with Claude right now. I'll be back when the internet is."); }
-    if (!chatOpen()) mochiOpen(true);
-    if (!confirmed) addMsg('me', q); else addMsg('mochi', 'Making it… this can take a minute ✦');
-    $('mochi').classList.add('thinking'); goo.think(true); favGoo?.think(true); typing(true);
-    try { const raw = await MB.ask((window.mochiName && window.mochiName !== 'Myra' ? `(The person named you ${window.mochiName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs }); await applyMochi(parse(raw), q); }
-    catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMochi(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }
-      if (SIGNIN.test(err.message)) { offlineMochi.signin = true; return offlineMochi(q, "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account."); }
+    if (Myra.web) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return webMyra(q); }
+    if (!settings.ai || haveClaude === false) { if (!chatOpen()) myraOpen(true); addMsg('me', q); }
+    if (!settings.ai) return offlineMyra(q, "My thinking is switched off in Settings, so I can only do simple tidying.");
+    if (haveClaude === false) { await showConnections(true); if (haveClaude === false) return offlineMyra(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }   // look again first: they may have just set it up
+    if (!navigator.onLine) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return offlineMyra(q, "You're offline, so I can't think with Claude right now. I'll be back when the internet is."); }
+    if (!chatOpen()) myraOpen(true);
+    if (!confirmed) addMsg('me', q); else addMsg('myra', 'Making it… this can take a minute ✦');
+    $('myra').classList.add('thinking'); goo.think(true); favGoo?.think(true); typing(true);
+    try { const raw = await Myra.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs }); await applyMyra(parse(raw), q); }
+    catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMyra(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }
+      if (SIGNIN.test(err.message)) { offlineMyra.signin = true; return offlineMyra(q, "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account."); }
       say("Hmm, I couldn't reach Claude: " + err.message); }
-    finally { $('mochi').classList.remove('thinking'); goo.think(false); favGoo?.think(false); typing(false); }
+    finally { $('myra').classList.remove('thinking'); goo.think(false); favGoo?.think(false); typing(false); }
   }
-  $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; mochiOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
+  $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
   const parse = raw => { const s = String(raw), a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0) return { say: s.trim() }; try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return { say: s.trim() }; } };
   // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
-  async function applyMochi(r, q) {
+  async function applyMyra(r, q) {
     // folders first: create, rename, and move boards around the library
     const fo = r.folders, pr = r.projects;
     if (fo || pr) {
@@ -2357,7 +2357,7 @@
       let k = 0;
       for (const im of imgs) {
         try {
-          const data = await MB.fetchImage(im.url), dims = await new Promise(res => { const t = new Image(); t.onload = () => res([t.width, t.height]); t.onerror = () => res([3, 4]); t.src = data; });
+          const data = await Myra.fetchImage(im.url), dims = await new Promise(res => { const t = new Image(); t.onload = () => res([t.width, t.height]); t.onerror = () => res([3, 4]); t.src = data; });
           const w = 240, h = Math.min(520, Math.round(w * dims[1] / dims[0])) + 16;
           const c = card('image', { src: data, w, h, x: im.x ?? base.x + (k % 4) * 270, y: im.y ?? base.y + Math.floor(k / 4) * 560, tagText: im.caption || '' });
           addCard(c); added.push(c); k++;
@@ -2366,7 +2366,7 @@
     }
     layoutAll();
     renderTray(); renderWires(); save();
-    if (added.length) setTimeout(() => showWhatMochiMade(added), 250);
+    if (added.length) setTimeout(() => showWhatMyraMade(added), 250);
     const acts = r.confirm ? [{ label: (r.confirm || 'Yes, make it') + ' ✦', run: () => ask(q, true) }, { label: 'Not now', ghost: true, run: () => {} }] : [];
     // what next: Myra's own ideas, or a sensible guess from what she just made
     const next = acts.length ? [] : (Array.isArray(r.next) && r.next.length ? r.next : guessNext(r, added)).filter(t => typeof t === 'string' && t.trim()).slice(0, 3);
@@ -2389,13 +2389,13 @@
     if (!force && Date.now() - lastConn < 5 * 60 * 1000) return; lastConn = Date.now();
     const els = [...document.querySelectorAll('.conns')];
     els.forEach(el => { if (!el.children.length) el.innerHTML = ['Claude Code', 'Mobbin', 'Higgsfield'].map(n => `<div class="conn"><span class="dot"></span>${n}<em style="color:var(--ink-faint)">checking…</em></div>`).join(''); });
-    const c = await MB.connections().catch(() => ({})); if (!c.browser) haveClaude = !!c.claude;
+    const c = await Myra.connections().catch(() => ({})); if (!c.browser) haveClaude = !!c.claude;
     const rows = [['claude', 'Claude Code', GUIDE, 'Set up'], ['mobbin', 'Mobbin', 'https://claude.ai/settings/connectors', 'Connect'], ['higgsfield', 'Higgsfield', 'https://claude.ai/settings/connectors', 'Connect']];
     els.forEach(el => { el.innerHTML = '';
     // Connect clears the 5-minute wait, so the app looks again the moment they come back from claude.ai
     rows.forEach(([k, name, url, verb]) => { const r = document.createElement('div'); r.className = 'conn' + (c[k] ? ' on' : ''); r.innerHTML = `<span class="dot"></span>${name}`;
       if (c[k]) r.insertAdjacentHTML('beforeend', '<em>ready</em>');
-      else if (!c.browser) { const b = document.createElement('button'); b.textContent = verb; b.onclick = () => { lastConn = 0; MB.openURL(url); say(k === 'claude' ? 'Follow the steps on that page, then come back. I’ll notice as soon as Claude Code is ready!' : `Connect ${name} in your Claude settings (Connectors), then come back. I'll check again when you reopen me ✦`, 9000); }; r.appendChild(b); }
+      else if (!c.browser) { const b = document.createElement('button'); b.textContent = verb; b.onclick = () => { lastConn = 0; Myra.openURL(url); say(k === 'claude' ? 'Follow the steps on that page, then come back. I’ll notice as soon as Claude Code is ready!' : `Connect ${name} in your Claude settings (Connectors), then come back. I'll check again when you reopen me ✦`, 9000); }; r.appendChild(b); }
       el.appendChild(r); }); });
   }
   addEventListener('focus', () => showConnections());
@@ -2439,7 +2439,7 @@
       const r = stage.getBoundingClientRect(), z = view.z, wl = (r.left + 12 - view.x) / z, wr = (r.right - 12 - view.x) / z, wt = (r.top + 70 - view.y) / z, wb = (r.bottom - 100 - view.y) / z;
       c.x = snapTo(clamp(w.x - c.w / 2, wl, Math.max(wl, wr - c.w))); c.y = snapTo(clamp(w.y - c.h / 2, wt, Math.max(wt, wb - c.h))); }
     if (type === 'swatch') { c.label = colorName(c.hex); c.autoName = true; }
-    if (type === 'canvas') { const child = newBoard('Untitled canvas'); child.parent = board.id; child.folder = board.folder || null; c.board = child.id; MB.save(child).then(refreshBoards); }
+    if (type === 'canvas') { const child = newBoard('Untitled canvas'); child.parent = board.id; child.folder = board.folder || null; c.board = child.id; Myra.save(child).then(refreshBoards); }
     addCard(c); selectOnly([c.id]);
     if (type === 'note' && board.cards.filter(x => x.type === 'note' && !parentOf(x.id)).length === 6) tip('That\'s a lot of loose notes! Want me to sort them into collections? Just ask ✦');
     const t = type !== 'coll' && collAt(w, new Set([c.id])); if (t) { dropInto(t, [c.id], w); save(); }
@@ -2519,7 +2519,7 @@
       const at = { x: x0 + it.x, y: y0 + it.y };
       if (it.t === 'title') made.push(addCard(card('title', { ...at, text: it.text }), true));
       if (it.t === 'note') { const c = addCard(card('note', { ...at, text: it.text, name: it.name, color: it.color || 'white' }), true); made.push(c); if (it.key) keyed[it.key] = c; }
-      if (it.t === 'how') made.push(addCard(card('note', { ...at, w: 280, h: 300, r: 1.5, name: 'Myra’s how-to', text: it.text, color: 'white', mochi: true }), true));
+      if (it.t === 'how') made.push(addCard(card('note', { ...at, w: 280, h: 300, r: 1.5, name: 'Myra’s how-to', text: it.text, color: 'white', myra: true }), true));
       if (it.t === 'coll') {
         const kids = it.notes.map(n => card('note', { text: n.text, color: n.color || 'white', r: 0 }));
         const s2 = card('coll', { ...at, text: it.name, color: it.color, kids: kids.map(k => k.id), cols: 1, r: 0 });
@@ -2551,14 +2551,14 @@
   $('tplPick').innerHTML = '<div class="tp-h">Add to this board</div>' + Object.entries(FRAMEWORKS).map(([k, F]) => `<button data-tpl="${k}"><span class="tp-e"><svg viewBox="0 0 20 20">${TPL_IC[k]}</svg></span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`).join('')
     + '<div class="tp-h">Start a new board</div>' + Object.entries(STARTERS).filter(([k]) => TEMPLATES[k]).map(([k, [line, ic]]) => `<button data-starter="${esc(k)}"><span class="tp-e"><svg viewBox="0 0 20 20">${ic}</svg></span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small></span><span class="tp-new">New ↗</span></button>`).join('');
   $('tplPick').onclick = async e => { const st = e.target.closest('[data-starter]');
-    if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name); await MB.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
+    if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name); await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
     const b = e.target.closest('[data-tpl]'); if (!b) return; $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); placeFramework(b.dataset.tpl); };
 
   // ---------- export: right-click a card (or the empty board) to save it as an image or PDF ----------
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   async function exportCards(cs, name, pdf) {
     if (!cs.length) return say('Nothing to export yet ✦', 2500);
-    if (MB.web) return say('Saving images and PDFs works in the desktop app ✦', 0, DL);
+    if (Myra.web) return say('Saving images and PDFs works in the desktop app ✦', 0, DL);
     const all = new Set(cs); cs.forEach(c => { if (c.type === 'coll') (c.kids || []).forEach(k => byId(k) && all.add(byId(k))); if (c.type === 'frame') onFrame(c).forEach(k => all.add(k)); });
     const list = [...all], x0 = Math.min(...list.map(c => c.x)) - 24, y0 = Math.min(...list.map(c => c.y)) - 40, x1 = Math.max(...list.map(c => c.x + c.w)) + 24, y1 = Math.max(...list.map(c => c.y + c.h)) + 24;
     const keep = { ...view }, keepSel = [...sel], r = stage.getBoundingClientRect(), bw = x1 - x0, bh = y1 - y0;
@@ -2566,7 +2566,7 @@
     const z = Math.min((r.width - 60) / bw, (r.height - 60) / bh, 2); view = { x: (r.width - bw * z) / 2 - x0 * z, y: (r.height - bh * z) / 2 - y0 * z, z }; applyView();
     await nextFrame(); await new Promise(res => setTimeout(res, 150));
     try {
-      const saved = await MB.exportRect({ x: r.left + (r.width - bw * z) / 2, y: r.top + (r.height - bh * z) / 2, w: bw * z, h: bh * z, name, pdf, scale: Math.min(4, 2 / Math.min(z, 1)) });
+      const saved = await Myra.exportRect({ x: r.left + (r.width - bw * z) / 2, y: r.top + (r.height - bh * z) / 2, w: bw * z, h: bh * z, name, pdf, scale: Math.min(4, 2 / Math.min(z, 1)) });
       if (saved) chirp(`Saved “${saved}” ✦`, 3500);
     } catch (e) { say(e.message, 4000); }
     finally { document.body.classList.remove('exporting'); view = keep; applyView(); selectOnly(keepSel); }
@@ -2635,7 +2635,7 @@
     if (c.src) {
       let v = vids.get(c.id);
       if (!v) { v = document.createElement('video'); v.className = 'vd-v'; v.playsInline = true; v.preload = 'metadata'; if (c.poster) v.poster = c.poster; vids.set(c.id, v);
-        MB.mediaURL(c.src).then(u => { if (u) v.src = u; });
+        Myra.mediaURL(c.src).then(u => { if (u) v.src = u; });
         const paint = () => { const e2 = vEl(c.id); if (!e2) return; const f = (v.currentTime || 0) / (v.duration || c.dur || 1);
           const bar = e2.querySelector('.vd-prog i'); if (bar) bar.style.width = (f * 100).toFixed(2) + '%';
           const t = e2.querySelector('.vd-time'); if (t) t.textContent = v.paused && !v.currentTime ? fmtT(c.dur || v.duration || 0) : `${fmtT(v.currentTime)} / ${fmtT(c.dur || v.duration || 0)}`; };
@@ -2698,7 +2698,7 @@
     if (blob.size > 1024 * 1024 * 1024) return say('That video is over 1 GB, which is too big for a board. Try a shorter clip ✦', 7000);
     c.rec = false; c.ready = false; c.count = 0; c.saving = true; c.pct = 0; c.title = c.title || (blob.name ? blob.name.replace(/\.[^.]+$/, '') : 'Video'); renderCard(c);
     const local = URL.createObjectURL(blob), info = await videoInfo(local); URL.revokeObjectURL(local);
-    let src; try { src = await MB.saveMedia(blob, f => { c.pct = f; const s2 = vEl(c.id)?.querySelector('.vd-msg span'); if (s2) s2.textContent = Math.round(f * 100) + '%'; }); }
+    let src; try { src = await Myra.saveMedia(blob, f => { c.pct = f; const s2 = vEl(c.id)?.querySelector('.vd-msg span'); if (s2) s2.textContent = Math.round(f * 100) + '%'; }); }
     catch (e) { c.saving = false; c.ready = true; renderCard(c); return say("I couldn't save that video: " + e.message, 8000); }
     vids.get(c.id)?.pause(); vids.delete(c.id);
     Object.assign(c, { saving: false, pct: 0, src, poster: info.poster, dur: info.dur || secs || 0, vw: info.vw, vh: info.vh });
@@ -2729,7 +2729,7 @@
     if (act === 'vd-file') { $('filePick').dataset.into = c.id; $('filePick').click(); }
   }
 
-  const privacy = what => MB.platform === 'windows' ? `Windows Settings → Privacy & security → ${what}` : `System Settings → Privacy & Security → ${what}`;
+  const privacy = what => Myra.platform === 'windows' ? `Windows Settings → Privacy & security → ${what}` : `System Settings → Privacy & Security → ${what}`;
   // ---------- which camera and microphone: the person picks, Myra remembers, and falls back to the default if one is unplugged ----------
   const micC = () => settings.micId ? { deviceId: { exact: settings.micId } } : true;
   async function openMedia(video) {
@@ -2759,7 +2759,7 @@
     try { warmMic(await openMedia(false)); }
     catch (e) { say(`Myra needs the microphone for voice memos. Turn it on in ${privacy('Microphone')}, then try again ✦`, 10000); return false; }
     micOK = true;
-    const sp = await MB.speechAuth().catch(() => 'off');
+    const sp = await Myra.speechAuth().catch(() => 'off');
     if (sp === 'off') say("Recording works! To have me write memos out, install whisper.cpp (yay -S whisper.cpp) and I’ll do it on your computer.", 9000);
     return true;
   }
@@ -2806,7 +2806,7 @@
   // a video's sound, as a plain 16 kHz mono WAV: what the Mac's speech recognizer and Whisper both read
   async function videoAudio(c) {
     let buf;
-    try { const ab = await (await fetch(await MB.mediaURL(c.src))).arrayBuffer(), ac = new (window.AudioContext || window.webkitAudioContext)(); buf = await ac.decodeAudioData(ab); ac.close?.(); }
+    try { const ab = await (await fetch(await Myra.mediaURL(c.src))).arrayBuffer(), ac = new (window.AudioContext || window.webkitAudioContext)(); buf = await ac.decodeAudioData(ab); ac.close?.(); }
     catch (e) { throw new Error('This video has no sound to write out.'); }
     const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * 16000)), 16000), s = off.createBufferSource(); s.buffer = buf; s.connect(off.destination); s.start();
     const pcm = (await off.startRendering()).getChannelData(0), n = pcm.length, out = new DataView(new ArrayBuffer(44 + n * 2));
@@ -2818,8 +2818,8 @@
     return 'data:audio/wav;base64,' + btoa(bin);
   }
   async function transcribe(c, asked) {
-    if (MB.whisperStatus) { c.txNote = 'Myra is writing it out…'; renderCard(c); }
-    try { const text = await MB.transcribe(c.type === 'video' ? await videoAudio(c) : c.src); c.text = (text || '').trim(); c.txNote = c.text ? '' : "I couldn't make out any words in that one."; }
+    if (Myra.whisperStatus) { c.txNote = 'Myra is writing it out…'; renderCard(c); }
+    try { const text = await Myra.transcribe(c.type === 'video' ? await videoAudio(c) : c.src); c.text = (text || '').trim(); c.txNote = c.text ? '' : "I couldn't make out any words in that one."; }
     catch (e) {
       if (e.message === 'NEED_WHISPER') { c.txNote = 'Not written out yet.'; c.needTx = true; renderCard(c); save(); offerWhisper(asked); return; }
       c.txNote = e.message; }
@@ -2838,10 +2838,10 @@
       [{ label: 'Yes, set it up', run: setupWhisper }, { label: 'Not now', ghost: true, run: () => say('No problem! Your memos still record and play. Tap “Write it out” on one anytime, or turn it on in Settings → Helpers.', 7000) }]);
   }
   async function setupWhisper() {
-    if (whisperBusy || !MB.whisperGet) return; whisperBusy = true;
-    try { await MB.whisperGet(); } catch (e) {}
+    if (whisperBusy || !Myra.whisperGet) return; whisperBusy = true;
+    try { await Myra.whisperGet(); } catch (e) {}
     for (;;) {
-      await new Promise(r => setTimeout(r, 600)); let st = {}; try { st = await MB.whisperStatus(); } catch (e) { break; }
+      await new Promise(r => setTimeout(r, 600)); let st = {}; try { st = await Myra.whisperStatus(); } catch (e) { break; }
       paintWhisper(st);
       if (st.ready) { whisperBusy = false; say("All set! I’ll write out your voice memos from now on ✦", 5000); board.cards.filter(c => (c.type === 'audio' || (c.type === 'video' && c.needTx)) && c.src && !c.text).forEach(c => transcribe(c)); return; }
       if (st.error) { whisperBusy = false; say(st.error, 8000, [{ label: 'Try again', run: setupWhisper }]); return; }
@@ -2850,8 +2850,8 @@
     whisperBusy = false;
   }
   async function paintWhisper(st) {
-    const row = $('whRow'); if (!row || !MB.whisperStatus) return; row.hidden = false;
-    if (!st) try { st = await MB.whisperStatus(); } catch (e) { st = {}; }
+    const row = $('whRow'); if (!row || !Myra.whisperStatus) return; row.hidden = false;
+    if (!st) try { st = await Myra.whisperStatus(); } catch (e) { st = {}; }
     $('whState').textContent = st.ready ? 'Ready. Memos are written out on this computer.' : st.downloading ? `Downloading… ${Math.round((st.progress || 0) * 100)}%` : 'Off. A one-time 140 MB download, then it works offline.';
     $('whGo').hidden = !!st.ready || !!st.downloading;
   }
@@ -2881,7 +2881,7 @@
   // ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
   const WF = ['frame', 'box', 'text', 'icon'];
   const DEVICES = { iPhone: [393, 852, 44], Android: [412, 915, 28], iPad: [834, 1194, 20], Desktop: [1440, 1024, 10], Watch: [205, 251, 40] };
-  let FONTS = ['Figtree', 'Shantell Sans']; MB.fonts().then(f => { if (f?.length) FONTS = f; }).catch(() => {});
+  let FONTS = ['Figtree', 'Shantell Sans']; Myra.fonts().then(f => { if (f?.length) FONTS = f; }).catch(() => {});
   function styleWF(c, el) {
     el.classList.add('wf'); c.r = 0; el.style.setProperty('--rot', (c.rot || 0) + 'deg'); el.classList.toggle('grouped', !!c.group);
     if (!el.querySelector('.rot-h')) el.insertAdjacentHTML('beforeend', '<i class="rot-h" title="Drag to rotate"></i>');
@@ -3213,7 +3213,7 @@
   const styleHint = spots => { const f = byId(spots[0]?.onFrame); return [board.name, f?.name].filter(Boolean).join(', '); };
   function offerFill(spots, where = 'chat') {
     if (!spots.length) return;
-    if (MB.web) return say(`There ${spots.length === 1 ? 'is 1 image spot' : `are ${spots.length} image spots`} waiting for pictures. In the desktop app I can fill them with Higgsfield or draw them for you ✦`, 0, DL);
+    if (Myra.web) return say(`There ${spots.length === 1 ? 'is 1 image spot' : `are ${spots.length} image spots`} waiting for pictures. In the desktop app I can fill them with Higgsfield or draw them for you ✦`, 0, DL);
     const n = spots.length, acts = [];
     if (settings.ai && settings.higgs) acts.push({ label: `Fill ${n} with Higgsfield ✦`, run: () => quoteFill(spots) });
     if (settings.ai) acts.push({ label: 'Draw simple illustrations (free)', ghost: !!(settings.ai && settings.higgs), run: () => drawFill(spots) });
@@ -3221,9 +3221,9 @@
     say(`There ${n === 1 ? 'is 1 image spot' : `are ${n} image spots`} waiting for pictures. ${settings.higgs ? 'Higgsfield makes real photos (that uses credits, and I check the price with you first), or I can draw simple illustrations for free.' : 'I can draw simple illustrations for them, free.'}`, 0, [...acts, { label: 'Leave them empty', ghost: true, run: () => {} }]);
   }
   async function quoteFill(spots) {
-    if (!chatOpen()) mochiOpen(true); addMsg('mochi', 'Checking your Higgsfield balance and the price per image…'); typing(true);
+    if (!chatOpen()) myraOpen(true); addMsg('myra', 'Checking your Higgsfield balance and the price per image…'); typing(true);
     try {
-      const q = parse(await MB.higgsQuote({ model: 'nano_banana_2' })); typing(false);
+      const q = parse(await Myra.higgsQuote({ model: 'nano_banana_2' })); typing(false);
       const per = +q.perImage, bal = +q.balance, total = Number.isFinite(per) ? Math.ceil(per * spots.length) : null;
       const line = total != null ? `That's ${spots.length} image${spots.length > 1 ? 's' : ''} × about ${per} credits ≈ ${total} credits.` : `I couldn't find the exact price, so check Higgsfield before saying yes.`;
       const balLine = Number.isFinite(bal) ? ` You have ${bal} credits.` : '', short = Number.isFinite(bal) && total != null && total > bal;
@@ -3235,22 +3235,22 @@
   async function placeImages(spots, list, key) {
     let n = 0;
     for (const it of list || []) { const c = spots.find(s => s.id === it.id); if (!c) continue;
-      try { c.src = key === 'svg' ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(it.svg) : await MB.fetchImage(it.url); renderCard(c); n++; } catch (e) {} }
+      try { c.src = key === 'svg' ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(it.svg) : await Myra.fetchImage(it.url); renderCard(c); n++; } catch (e) {} }
     save(); return n;
   }
   async function makeFill(spots) {
-    addMsg('mochi', `Making ${spots.length} image${spots.length > 1 ? 's' : ''} with Higgsfield… this can take a minute or two ✦`); typing(true); $('mochi').classList.add('thinking'); goo.think(true); favGoo?.think(true);
-    try { const r = parse(await MB.higgsMake({ model: 'nano_banana_2', style: styleHint(spots), images: spots.map(c => ({ id: c.id, label: c.img, aspect: aspect(c) })) }));
-      const n = await placeImages(spots, r.images, 'url'); typing(false); say(n ? `Done! ${n} image${n > 1 ? 's are' : ' is'} in place ✦` : "Hmm, the images didn't come back. Nothing was placed."); if (n) showWhatMochiMade(spots.filter(c => c.src)); }
+    addMsg('myra', `Making ${spots.length} image${spots.length > 1 ? 's' : ''} with Higgsfield… this can take a minute or two ✦`); typing(true); $('myra').classList.add('thinking'); goo.think(true); favGoo?.think(true);
+    try { const r = parse(await Myra.higgsMake({ model: 'nano_banana_2', style: styleHint(spots), images: spots.map(c => ({ id: c.id, label: c.img, aspect: aspect(c) })) }));
+      const n = await placeImages(spots, r.images, 'url'); typing(false); say(n ? `Done! ${n} image${n > 1 ? 's are' : ' is'} in place ✦` : "Hmm, the images didn't come back. Nothing was placed."); if (n) showWhatMyraMade(spots.filter(c => c.src)); }
     catch (e) { typing(false); say("Something went wrong making those: " + e.message); }
-    finally { $('mochi').classList.remove('thinking'); goo.think(false); favGoo?.think(false); }
+    finally { $('myra').classList.remove('thinking'); goo.think(false); favGoo?.think(false); }
   }
   async function drawFill(spots) {
-    if (!chatOpen()) mochiOpen(true); addMsg('mochi', `Drawing ${spots.length} little illustration${spots.length > 1 ? 's' : ''}…`); typing(true); $('mochi').classList.add('thinking'); goo.think(true); favGoo?.think(true);
-    try { const r = parse(await MB.drawFill({ style: 'soft pastel, rounded, friendly, minimal', images: spots.map(c => ({ id: c.id, label: c.img, w: Math.round(c.w), h: Math.round(c.h) })) }));
-      const n = await placeImages(spots, r.images, 'svg'); typing(false); say(n ? `Drew ${n} ✦ (want real photos later? that's Higgsfield)` : "I couldn't draw those this time."); if (n) showWhatMochiMade(spots.filter(c => c.src)); }
+    if (!chatOpen()) myraOpen(true); addMsg('myra', `Drawing ${spots.length} little illustration${spots.length > 1 ? 's' : ''}…`); typing(true); $('myra').classList.add('thinking'); goo.think(true); favGoo?.think(true);
+    try { const r = parse(await Myra.drawFill({ style: 'soft pastel, rounded, friendly, minimal', images: spots.map(c => ({ id: c.id, label: c.img, w: Math.round(c.w), h: Math.round(c.h) })) }));
+      const n = await placeImages(spots, r.images, 'svg'); typing(false); say(n ? `Drew ${n} ✦ (want real photos later? that's Higgsfield)` : "I couldn't draw those this time."); if (n) showWhatMyraMade(spots.filter(c => c.src)); }
     catch (e) { typing(false); say("I couldn't draw those: " + e.message); }
-    finally { $('mochi').classList.remove('thinking'); goo.think(false); favGoo?.think(false); }
+    finally { $('myra').classList.remove('thinking'); goo.think(false); favGoo?.think(false); }
   }
 
   // ---------- crop an image: see the whole picture, drag the box or its corners, then Done ----------
@@ -3408,7 +3408,7 @@
   // ---------- stamps: Myra's emojis, moving Myras and regular emoji, stamped with a little burst ----------
   const M = n => 'stamps/myra' + (n ? '-' + n : '') + '.png';
   const STAMPS = {
-    mochi: [['Myra', M('')], ['Happy', M('happy')], ['Love', M('love')], ['Party', M('party')], ['Wave', M('wave')], ['Shook', M('shook')], ['Sleepy', M('sleepy')], ['Cry', M('cry')], ['Sigh', M('sigh')]].map(([n, src]) => ({ n, src })),
+    myra: [['Myra', M('')], ['Happy', M('happy')], ['Love', M('love')], ['Party', M('party')], ['Wave', M('wave')], ['Shook', M('shook')], ['Sleepy', M('sleepy')], ['Cry', M('cry')], ['Sigh', M('sigh')]].map(([n, src]) => ({ n, src })),
     moving: [{ n: 'Bounce', src: 'stamps/myra-bounce.gif' }, { n: 'Sigh', src: 'stamps/myra-sigh.gif' }, { n: 'Hi!', src: M('wave'), mv: 'wiggle' }, { n: 'Love', src: M('love'), mv: 'pulse' },
       { n: 'Party', src: M('party'), mv: 'spin' }, { n: 'Shook', src: M('shook'), mv: 'shake' }, { n: 'Sleepy', src: M('sleepy'), mv: 'float' }, { n: 'Happy', src: M('happy'), mv: 'squish' }, { n: 'Hop', src: M(''), mv: 'hop' }],
     emoji: [...'❤️ 👍 👎 ⭐ ✨ 🌈 🔥 🎉 💯 ✅ ❌ ❓ ❗ 💡 👀 🙌 👏 🤔 😍 😂 🥹 😭 😅 🫶 💖 🩷 💜 💙 🌸 🌷 🍓 🍑 🧁 ☕ 🚀 📌 📍 🎯 🏆 🧠 💬 🗓️ ⏰ 🔗 🎨 🖍️ 📸 🎧'.split(' ')].map(e => ({ n: e, emoji: e })),
@@ -3419,14 +3419,12 @@
   // Myra's own pixel stamps (drawn by assets/art/make_art.py); every other emoji shows as your system's emoji until it has one
   const PX = { '❤️': 'heart', '⭐': 'star', '✨': 'sparkles', '🌈': 'rainbow', '🔥': 'fire', '✅': 'check', '❌': 'cross', '❓': 'question', '❗': 'exclaim', '💡': 'bulb', '💙': 'blueheart', '🌸': 'blossom', '☕': 'coffee', '📌': 'pushpin', '🎯': 'target', '💬': 'speech' };
   const pxSrc = e => PX[e] ? `stamps/px/${PX[e]}.png` : null;
-  // boards from before Myra may hold Mochi's stickers (stamps/mochi-…): show Myra's matching one
-  const stampSrc = src => String(src || '').replace(/^stamps\/mochi(?=[-.])/, 'stamps/myra');
-  const stampHTML = st => st.src ? `<img src="${esc(stampSrc(st.src))}" alt="">` : pxSrc(st.emoji) ? `<img src="${pxSrc(st.emoji)}" alt="${esc(st.emoji)}">` : esc(st.emoji);
+  const stampHTML = st => st.src ? `<img src="${esc(st.src)}" alt="">` : pxSrc(st.emoji) ? `<img src="${pxSrc(st.emoji)}" alt="${esc(st.emoji)}">` : esc(st.emoji);
   function renderWheel() {
     $('wsRing').innerHTML = wheel.map((st, i) => { const a = (i / 8) * Math.PI * 2 - Math.PI / 2, x = 110 + Math.cos(a) * 76, y = 110 + Math.sin(a) * 76;
       return `<button data-w="${i}" class="${st.mv ? 'mv-' + st.mv : ''}" style="left:${x}px;top:${y}px">${stampHTML(st)}</button>`; }).join('');
   }
-  function renderPick(tab = 'mochi') {
+  function renderPick(tab = 'myra') {
     $('stampPick').querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     $('spGrid').innerHTML = STAMPS[tab].map((st, i) => `<button data-p="${tab}:${i}" title="${esc(st.n)}" class="${st.mv ? 'mv-' + st.mv : ''}">${stampHTML(st)}</button>`).join('');
   }
@@ -3462,7 +3460,7 @@
       const u = inp.value.trim(), url = /^https?:/i.test(u) || /^spotify:/i.test(u) ? u : 'https://' + u;
       if (spotifyOf(url)) { await spotifyFill(c, url); selectOnly([c.id]); return; }
       c.loading = true; renderCard(c); selectOnly([c.id]);
-      let p = {}; try { p = await MB.linkPreview(url); } catch (e2) {}
+      let p = {}; try { p = await Myra.linkPreview(url); } catch (e2) {}
       Object.assign(c, { url, title: p.title || host(url), desc: p.desc || host(url), image: p.image || '', loading: false, draft: '' });
       c.h = c.image ? 210 : 52; renderCard(c); selectOnly([c.id]); save();
     };
@@ -3488,7 +3486,7 @@
     link: CIC.link, image: DI('<rect x="3" y="4" width="14" height="12" rx="2"/><circle cx="7.5" cy="8.5" r="1.4"/><path d="M3.5 14.5l4-3.5 3 2.5 2.5-2 3.5 3"/>'),
     more: DI('<circle cx="5" cy="10" r="1.1" fill="currentColor"/><circle cx="10" cy="10" r="1.1" fill="currentColor"/><circle cx="15" cy="10" r="1.1" fill="currentColor"/>'),
     hl: DI('<path d="M11.5 3.5l5 5-6 6H6v-4.5z"/><path d="M4 18h12" stroke-width="3" class="bar"/>'), undo: DI('<path d="M7.5 7.5H13a3.5 3.5 0 0 1 0 7H8"/><path d="M10 4.5l-3 3 3 3"/>'), redo: DI('<path d="M12.5 7.5H7a3.5 3.5 0 0 0 0 7h5"/><path d="M10 4.5l3 3-3 3"/>'),
-    mochi: DI('<path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5l-1.6-4.4L4 8.5l4.4-1.6z"/><path d="M15.5 13.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>'),
+    myra: DI('<path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5l-1.6-4.4L4 8.5l4.4-1.6z"/><path d="M15.5 13.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>'),
     table: DI('<rect x="3" y="4" width="14" height="12" rx="1.6"/><path d="M3 8h14M3 12h14M8 4v12M12.5 4v12"/>'), hr: DI('<path d="M3 10h14"/><path d="M6 6h8M6 14h8" opacity=".4"/>'),
     clear: DI('<path d="M5 4.5h10M10 4.5L7.5 16"/><path d="M12.5 12l4 4M16.5 12l-4 4"/>'),
   };
@@ -3514,16 +3512,16 @@
     }
     close(); return out || '<p></p>';
   }
-  const docHTML = c => c.doc && window.MBEditor ? MBEditor.generateHTML(c.doc, MBEditor.extensions()) : mdToHTML(c.body);
+  const docHTML = c => c.doc && window.MyraEditor ? MyraEditor.generateHTML(c.doc, MyraEditor.extensions()) : mdToHTML(c.body);
   // load any web fonts a doc uses, so it looks right on this computer
   function fontsIn(json) { const out = new Set(); (function walk(n) { (n?.marks || []).forEach(m => m.type === 'textStyle' && m.attrs?.fontFamily && out.add(fontName(m.attrs.fontFamily))); (n?.content || []).forEach(walk); })(json); return [...out]; }
 
   function ensureEditor() {
-    if (ed) return ed; if (!window.MBEditor) return null;
-    ed = new MBEditor.Editor({
+    if (ed) return ed; if (!window.MyraEditor) return null;
+    ed = new MyraEditor.Editor({
       element: $('dvBody'),
-      extensions: [...MBEditor.extensions('Start writing, or drag cards here from the board…'),
-        MBEditor.BubbleMenu.configure({ element: bubbleEl, tippyOptions: { duration: [140, 90], placement: 'top', offset: [0, 10], maxWidth: 'none', zIndex: 60, appendTo: () => document.body, popperOptions: { strategy: 'fixed' } },
+      extensions: [...MyraEditor.extensions('Start writing, or drag cards here from the board…'),
+        MyraEditor.BubbleMenu.configure({ element: bubbleEl, tippyOptions: { duration: [140, 90], placement: 'top', offset: [0, 10], maxWidth: 'none', zIndex: 60, appendTo: () => document.body, popperOptions: { strategy: 'fixed' } },
           shouldShow: ({ editor, state }) => !state.selection.empty && editor.isEditable && !editor.isActive('image') && !document.querySelector('#dvPop:not([hidden])') })],
       editorProps: {
         attributes: { class: 'dv-prose', spellcheck: 'true' },
@@ -3610,16 +3608,16 @@ ${proseCSS()}
   }
   // ---------- a doc as a Word file: real headings, lists, tables and pictures, with Figtree built in ----------
   let docxLoading = null;
-  const loadDocx = () => docxLoading || (docxLoading = new Promise((res, rej) => { if (window.MBDocx) return res(); const sc = document.createElement('script'); sc.src = 'vendor/docx.js'; sc.onload = res; sc.onerror = () => { docxLoading = null; rej(new Error("the Word maker didn't load")); }; document.head.appendChild(sc); }));
+  const loadDocx = () => docxLoading || (docxLoading = new Promise((res, rej) => { if (window.MyraDocx) return res(); const sc = document.createElement('script'); sc.src = 'vendor/docx.js'; sc.onload = res; sc.onerror = () => { docxLoading = null; rej(new Error("the Word maker didn't load")); }; document.head.appendChild(sc); }));
   async function downloadWord() {
     if (!docCard) return; syncDoc();
     const paper = (() => { try { return localStorage.getItem('myra:paper') || 'letter'; } catch (e) { return 'letter'; } })();
     $('dvSaved').textContent = 'making your Word file…';
     try {
       await loadDocx();
-      const bytes = await MBDocx.toDocx(ed ? ed.getJSON() : docCard.doc || MBEditor.generateJSON(docHTML(docCard), MBEditor.extensions()), { title: (docCard.text || '').trim(), paper });
+      const bytes = await MyraDocx.toDocx(ed ? ed.getJSON() : docCard.doc || MyraEditor.generateJSON(docHTML(docCard), MyraEditor.extensions()), { title: (docCard.text || '').trim(), paper });
       let b64 = ''; for (let i = 0; i < bytes.length; i += 0x8000) b64 += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); b64 = btoa(b64);
-      const name = await MB.saveFile(b64, (docCard.text || 'Document').trim() || 'Document', 'docx');
+      const name = await Myra.saveFile(b64, (docCard.text || 'Document').trim() || 'Document', 'docx');
       if (name) say(`Saved “${name}” ✦`, 5000);
     } catch (err) { say("I couldn't make the Word file: " + err.message, 8000); }
     finally { $('dvSaved').textContent = ''; }
@@ -3629,7 +3627,7 @@ ${proseCSS()}
     const paper = (() => { try { return localStorage.getItem('myra:paper') || 'letter'; } catch (e) { return 'letter'; } })();
     $('dvSaved').textContent = 'making your PDF…';
     try {
-      const name = await MB.docPDF(docPrintHTML(paper), (docCard.text || 'Document').trim() || 'Document', paper);
+      const name = await Myra.docPDF(docPrintHTML(paper), (docCard.text || 'Document').trim() || 'Document', paper);
       if (name) say(`Saved “${name}” ✦`, 5000);
     } catch (err) { say("I couldn't make the PDF: " + err.message, 8000); }
     finally { $('dvSaved').textContent = ''; }
@@ -3653,11 +3651,11 @@ ${proseCSS()}
       tb('bullet', DICON.bullet, 'Bulleted list', 'dt-fold f5'), tb('ordered', DICON.ordered, 'Numbered list', 'dt-fold f4'), tb('task', DICON.task, 'Checklist', 'dt-fold f3'),
       '<span class="dt-sep"></span>',
       pop('link', DICON.link, 'Link · Ctrl+K', 'dt-fold f2'), tb('image', DICON.image, 'Add a picture', 'dt-fold f1'), pop('more', DICON.more, 'More: line spacing, tables, dividers…'),
-      `<button type="button" class="dt-mochi dt-round" data-pop="mochi" data-tip="Myra" aria-label="Ask Myra about your selection">${DICON.mochi}</button>`,
+      `<button type="button" class="dt-myra dt-round" data-pop="myra" data-tip="Myra" aria-label="Ask Myra about your selection">${DICON.myra}</button>`,
     ].join('');
     bubbleEl.innerHTML = [tb('bold', '<b>B</b>', 'Bold', 'dt-t'), tb('italic', '<i>I</i>', 'Italic', 'dt-t'), tb('underline', '<u>U</u>', 'Underline', 'dt-t'), tb('strike', '<s>S</s>', 'Strikethrough', 'dt-t'),
       pop('color', '<span class="dt-a">A<i class="dtBar"></i></span>', 'Text color'), pop('hl', DICON.hl, 'Highlight', 'dt-hl'), pop('link', DICON.link, 'Link'),
-      `<button type="button" class="dt-mochi" data-pop="mochi" title="Ask Myra to rewrite this">${DICON.mochi}<span>Myra</span></button>`].join('');
+      `<button type="button" class="dt-myra" data-pop="myra" title="Ask Myra to rewrite this">${DICON.myra}<span>Myra</span></button>`].join('');
     [$('dvTools'), bubbleEl].forEach(bar => {
       bar.addEventListener('mousedown', e => { if (!e.target.closest('input')) e.preventDefault(); });   // keep the text selected while using the bar
       bar.addEventListener('click', e => { const b = e.target.closest('[data-c], [data-pop]'); if (!b) return; if (b.dataset.pop) return showPop(b.dataset.pop, b); run(b.dataset.c); });
@@ -3719,7 +3717,7 @@ ${proseCSS()}
 
   // ---------- the drop-down menus ----------
   let popKind = null;
-  function hidePop() { $('dvPop').hidden = true; popKind = null; document.querySelectorAll('.dt-b.open, .dt-mochi.open').forEach(b => b.classList.remove('open')); }
+  function hidePop() { $('dvPop').hidden = true; popKind = null; document.querySelectorAll('.dt-b.open, .dt-myra.open').forEach(b => b.classList.remove('open')); }
   function showPop(kind, btn) {
     if (popKind === kind && !$('dvPop').hidden) return hidePop();
     hidePop(); popKind = kind; btn.classList.add('open'); const p = $('dvPop'); p.className = 'dv-pop pop-' + kind;
@@ -3780,7 +3778,7 @@ ${proseCSS()}
       p.innerHTML = `<div class="dp-h">Paper</div><div class="dp-seg">${[['letter', 'Letter'], ['a4', 'A4']].map(([v, l]) => `<button type="button" class="${paper === v ? 'on' : ''}" data-paper="${v}">${l}</button>`).join('')}</div>
         <button type="button" class="dp-row dp-pdf" data-pdf="1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2.5h6l3.5 3.5v10.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z"/><path d="M11.5 2.5V6H15"/></svg><span>Download PDF<small>Real pages, ready to send or print</small></span></button>
         <button type="button" class="dp-row dp-pdf dp-word" data-word="1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2.5h6l3.5 3.5v10.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z"/><path d="M11.5 2.5V6H15M7 9.5l1.2 5 1.8-3.6 1.8 3.6 1.2-5"/></svg><span>Download Word<small>A .docx you can keep editing in Word or Pages</small></span></button>`;
-    } else if (kind === 'mochi') {
+    } else if (kind === 'myra') {
       const has = !ed.state.selection.empty;
       p.innerHTML = has ? `<div class="dp-h">Myra, make this…</div>${[['Shorter', 'Make it shorter and tighter'], ['Clearer', 'Make it clearer and easier to read'], ['Friendlier', 'Make it warmer and friendlier'], ['More confident', 'Make it more confident and direct'], ['More professional', 'Make it more polished and professional'], ['Fix spelling & grammar', 'Fix spelling, grammar and punctuation only. Change nothing else'], ['Into bullet points', 'Turn it into a short bulleted list']].map(([l, how]) => `<button type="button" class="dp-row" data-how="${escH(how)}">${l}</button>`).join('')}
         <form class="dp-link" id="dpAsk"><input id="dpAskIn" placeholder="Or tell Myra what to do…" autocomplete="off"><button class="dp-go" type="submit">✦</button></form>`
@@ -3807,7 +3805,7 @@ ${proseCSS()}
     if (d.align) { c.setTextAlign(d.align).run(); return hidePop(); }
     if (d.c2) { hidePop(); return run(d.c2); }
     if (d.flink) { const more = $('dvTools').querySelector('[data-pop="more"]'); hidePop(); return showPop('link', more); }
-    if (d.link === 'open') { MB.openURL(ed.getAttributes('link').href); return hidePop(); }
+    if (d.link === 'open') { Myra.openURL(ed.getAttributes('link').href); return hidePop(); }
     if (d.link === 'remove') { c.extendMarkRange('link').unsetLink().run(); return hidePop(); }
     if (d.lh) { (ed.getAttributes('paragraph').lineHeight === d.lh || ed.getAttributes('heading').lineHeight === d.lh ? c.unsetLineHeight() : c.setLineHeight(d.lh)).run(); return hidePop(); }
     if (d.ins) { ({ table: () => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }), hr: () => c.setHorizontalRule(), sup: () => c.toggleSuperscript(), sub: () => c.toggleSubscript(), clear: () => c.unsetAllMarks().clearNodes() })[d.ins]().run(); return hidePop(); }
@@ -3818,7 +3816,7 @@ ${proseCSS()}
     if (d.word) { hidePop(); return downloadWord(); }
     if (d.how) rewrite(d.how);
   });
-  addEventListener('pointerdown', e => { if (!$('dvPop').hidden && !e.target.closest('#dvPop, .dt-drop, .dt-mochi, #cpop')) hidePop(); }, true);
+  addEventListener('pointerdown', e => { if (!$('dvPop').hidden && !e.target.closest('#dvPop, .dt-drop, .dt-myra, #cpop')) hidePop(); }, true);
   $('docview').addEventListener('keydown', e => { if (e.key === 'Escape' && !$('dvPop').hidden) { e.stopPropagation(); hidePop(); ed?.commands.focus(); } }, true);
 
   // ---------- Myra rewrites the words you selected ----------
@@ -3826,19 +3824,19 @@ ${proseCSS()}
     hidePop(); if (!ed) return; const { from, to } = ed.state.selection; if (from === to) return;
     const text = ed.state.doc.textBetween(from, to, '\n'), size = ed.state.doc.content.size;
     const around = ed.state.doc.textBetween(Math.max(0, from - 700), Math.min(size, to + 700), '\n');
-    $('docview').classList.add('mochi-busy'); goo.think(true); $('dvSaved').textContent = 'Myra is rewriting…';
+    $('docview').classList.add('myra-busy'); goo.think(true); $('dvSaved').textContent = 'Myra is rewriting…';
     try {
-      const out = (await MB.rewrite(text, how, docCard?.text || '', around) || '').trim(); if (!out) throw new Error('Myra came back empty-handed');
+      const out = (await Myra.rewrite(text, how, docCard?.text || '', around) || '').trim(); if (!out) throw new Error('Myra came back empty-handed');
       const multi = /\n/.test(out);
       ed.chain().focus().insertContentAt({ from, to }, multi ? mdToHTML(out) : escH(out)).run();
       const end = ed.state.selection.from; ed.commands.setTextSelection({ from, to: end });
       say('Rewritten ✦ Undo brings back your words.', 6000, [{ label: 'Undo', run: () => ed.chain().focus().undo().run() }]);
     } catch (err) {
       const m = err.message || '';
-      if (/Claude Code/.test(m)) say("I need Claude Code to rewrite things. It's a one-time setup with your Claude account.", 0, [{ label: 'Show me how to connect', run: () => MB.openURL(GUIDE) }]);
-      else if (SIGNIN.test(m)) say("Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in.", 0, [{ label: 'Show me how', run: () => MB.openURL(GUIDE) }]);
-      else say(MB.native ? "Hmm, I couldn't rewrite that: " + m : 'Myra rewrites text with Claude in the desktop app ✦', 8000);
-    } finally { $('docview').classList.remove('mochi-busy'); goo.think(false); $('dvSaved').textContent = ''; }
+      if (/Claude Code/.test(m)) say("I need Claude Code to rewrite things. It's a one-time setup with your Claude account.", 0, [{ label: 'Show me how to connect', run: () => Myra.openURL(GUIDE) }]);
+      else if (SIGNIN.test(m)) say("Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in.", 0, [{ label: 'Show me how', run: () => Myra.openURL(GUIDE) }]);
+      else say(Myra.native ? "Hmm, I couldn't rewrite that: " + m : 'Myra rewrites text with Claude in the desktop app ✦', 8000);
+    } finally { $('docview').classList.remove('myra-busy'); goo.think(false); $('dvSaved').textContent = ''; }
   }
 
   // ---------- dropping cards into a doc: they arrive as real content (a checklist stays a checklist) ----------
@@ -3875,7 +3873,7 @@ ${proseCSS()}
       const at = ed.view.posAtCoords({ left: e.clientX, top: e.clientY }); const $p = at && ed.state.doc.resolve(at.pos);
       const pos = $p ? ($p.depth ? $p.after(1) : at.pos) : ed.state.doc.content.size;
       ed.chain().focus().insertContentAt(pos, html).run(); syncDoc();
-    } else { doc.doc = MBEditor.generateJSON(docHTML(doc) + html, MBEditor.extensions()); doc.body = [doc.body, ...cs.map(cardWords)].filter(x => (x || '').trim()).join('\n\n'); }
+    } else { doc.doc = MyraEditor.generateJSON(docHTML(doc) + html, MyraEditor.extensions()); doc.body = [doc.body, ...cs.map(cardWords)].filter(x => (x || '').trim()).join('\n\n'); }
     selectOnly(cs.map(c => c.id)); renderCard(doc); renderWires(); save();
     say(`Copied ${cs.length === 1 ? 'that' : cs.length + ' cards'} into “${doc.text || 'Untitled'}” ✦`, 6000, [{ label: 'Undo', run: () => {
       if (t === 'page' && ed && docCard === doc) { ed.commands.undo(); syncDoc(); } else { doc.body = before.body; doc.doc = before.doc; if (docCard === doc && ed) ed.commands.setContent(docHTML(doc), false); }
@@ -3884,10 +3882,10 @@ ${proseCSS()}
 
   // ---------- canvases: a board inside this board, like a folder you can open ----------
   async function openCanvas(c) {
-    if (!c.board) { const child = newBoard(c.text || 'Untitled canvas'); child.parent = board.id; child.folder = board.folder || null; c.board = child.id; await MB.save(child); }
-    board.view = view; await MB.save(board); miniCache.delete(c.board); await openBoard(c.board); fit(board.cards);
+    if (!c.board) { const child = newBoard(c.text || 'Untitled canvas'); child.parent = board.id; child.folder = board.folder || null; c.board = child.id; await Myra.save(child); }
+    board.view = view; await Myra.save(board); miniCache.delete(c.board); await openBoard(c.board); fit(board.cards);
   }
-  async function renameChild(c) { if (!c.board) return; const b = await MB.load(c.board); if (b && c.text && b.name !== c.text) { b.name = c.text; await MB.save(b); refreshBoards(); } }
+  async function renameChild(c) { if (!c.board) return; const b = await Myra.load(c.board); if (b && c.text && b.name !== c.text) { b.name = c.text; await Myra.save(b); refreshBoards(); } }
 
   // ---------- colors name themselves (until you name one yourself) ----------
   const NAMED = { 'Black': '#000000', 'Charcoal': '#36454f', 'Slate': '#708090', 'Gray': '#808080', 'Silver': '#c0c0c0', 'Cloud': '#ecebef', 'White': '#ffffff', 'Ivory': '#fffff0', 'Cream': '#ffe3bd', 'Butter': '#f0b04a', 'Lemon': '#fff44f', 'Gold': '#ffd700', 'Mustard': '#e1ad01', 'Amber': '#ffbf00', 'Tangerine': '#f28500', 'Orange': '#ff8c00', 'Peach': '#ffcba4', 'Apricot': '#fbceb1', 'Coral': '#ff7f50', 'Salmon': '#fa8072', 'Tomato': '#ff6347', 'Red': '#e0303a', 'Cherry': '#c2185b', 'Crimson': '#dc143c', 'Brick': '#b22222', 'Maroon': '#800000', 'Wine': '#722f37', 'Rose': '#ff66a3', 'Bubblegum': '#f6b45e', 'Blush': '#ffd1dc', 'Pink': '#ffc0cb', 'Hot Pink': '#ff69b4', 'Magenta': '#ff00ff', 'Fuchsia': '#c154c1', 'Orchid': '#da70d6', 'Lilac': '#c8a2c8', 'Lavender': '#e6e6fa', 'Periwinkle': '#ccccff', 'Violet': '#8f00ff', 'Purple': '#800080', 'Plum': '#8e4585', 'Grape': '#6f2da8', 'Indigo': '#4b0082', 'Navy': '#000080', 'Midnight': '#191970', 'Royal Blue': '#4169e1', 'Cobalt': '#0047ab', 'Blue': '#1e6fff', 'Steel Blue': '#4682b4', 'Cornflower': '#6495ed', 'Sky': '#87ceeb', 'Baby Blue': '#bfdfff', 'Ice': '#d9e7f3', 'Powder': '#b0e0e6', 'Teal': '#008080', 'Turquoise': '#40e0d0', 'Aqua': '#00e5e5', 'Mint': '#98ff98', 'Seafoam': '#9fe2bf', 'Sage': '#9caf88', 'Pistachio': '#93c572', 'Lime': '#a4de02', 'Green': '#2e9e4f', 'Emerald': '#50c878', 'Forest': '#228b22', 'Olive': '#808000', 'Khaki': '#c3b091', 'Sand': '#e2c290', 'Tan': '#d2b48c', 'Camel': '#c19a6b', 'Caramel': '#af6f09', 'Brown': '#8b4513', 'Chocolate': '#5c3317', 'Espresso': '#3b2219' };
@@ -3929,7 +3927,7 @@ ${proseCSS()}
   const ICON = {
     tag: I('<g data-l24="1"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" /><circle cx="7.5" cy="7.5" r=".5" fill="currentColor" /></g>'),
     edit: I('<g data-l24="1"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></g>'),
-    mochi: I('<g data-l24="1"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" /></g>'),
+    myra: I('<g data-l24="1"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" /></g>'),
     del: I('<g data-l24="1"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></g>'),
     head: I('<g data-l24="1"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 9h18" /></g>'),
     caption: I('<g data-l24="1"><rect width="18" height="14" x="3" y="5" rx="2" ry="2" /><path d="M7 15h4M15 15h2M7 11h2M13 11h4" /></g>'),
@@ -4089,7 +4087,7 @@ ${proseCSS()}
     if (one?.type === 'section') h += G(2, colorPop(COLORS[one.color] || '#fff', COLOR_NAMES.map(n => `<button data-sc="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${(one.color || 'white') === n ? 'on' : ''}"></button>`).join('')));
     if (cs.length > 1) h += G(8, `<span class="sb-sep"></span><button class="sb-txt" data-sb="${oneGroup ? 'ungroup' : 'group'}" title="${oneGroup ? 'Ungroup · ⇧⌘G' : 'Group · ⌘G'}">${oneGroup ? 'Ungroup' : 'Group'}</button>`);
     h += `<span class="sb-sep sb-moresep"></span>` + pop('more', '<svg viewBox="0 0 24 24" class="sb-l24"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>', `<div class="sb-morebody">${more}</div>`, 'More');
-    h += `<span class="sb-sep"></span>` + btn('mochi', 'mochi', 'Ask Myra') + btn('del', 'del', 'Delete');
+    h += `<span class="sb-sep"></span>` + btn('myra', 'myra', 'Ask Myra') + btn('del', 'del', 'Delete');
     bar.innerHTML = h; foldSelbar(bar); snapSoon();
   }
   let coverT = 0;
@@ -4306,7 +4304,7 @@ ${proseCSS()}
     const cr = e.target.closest('[data-crop]')?.dataset.crop; if (cr) return endCrop(cr);
     if (e.target.closest('[data-fill]')) return offerFill(spotsIn(cs));
     if (a === 'open') one.type === 'doc' ? openDoc(one) : openCanvas(one);
-    if (a === 'visit') MB.openURL(one.url);
+    if (a === 'visit') Myra.openURL(one.url);
     if (a === 'relink') { one.draft = one.url; one.url = ''; one.image = ''; one.h = 52; redraw(); }
     if (a === 'head') { one.head = one.head === false ? true : false; redraw(); }
     if (a === 'hidename') { one.hideName = !one.hideName; redraw(); }
@@ -4315,7 +4313,7 @@ ${proseCSS()}
     if (a === 'tag') { if (one.tagText) { delete one.tagText; redraw(); } else editTag(one); }   // tap again to take the label off
     if (a === 'edit') startEdit(one.id);
     if (a === 'del') removeSelected();
-    if (a === 'mochi') { mochiOpen(true); $('mcInput').placeholder = cs.length === 1 ? 'Change this… “make it say…”, “turn it mint”' : `Change these ${cs.length}… “rename to step 1, 2, 3”`; }
+    if (a === 'myra') { myraOpen(true); $('mcInput').placeholder = cs.length === 1 ? 'Change this… “make it say…”, “turn it mint”' : `Change these ${cs.length}… “rename to step 1, 2, 3”`; }
   };
 
   // ---------- colors: the editor beside a color card, and the board's own palette ----------
@@ -4467,13 +4465,13 @@ ${proseCSS()}
   world.appendChild($('guides')); setTimeout(placeTray, 0); renderDesign();
   // ---------- updates: check GitHub for a newer Myra (about once a day), show what's new, update with one tap ----------
   let updInfo = null;
-  if (!MB.native) $('setUpdate').style.display = 'none';   // updating is a desktop app thing: the web version changes when the site does
+  if (!Myra.native) $('setUpdate').style.display = 'none';   // updating is a desktop app thing: the web version changes when the site does
   async function checkUpdate(force) {
-    if (!MB.native) return;
+    if (!Myra.native) return;
     let last = 0; try { last = +localStorage.getItem('myra:updChecked') || 0; } catch (e) {}
     if (!force && Date.now() - last < 15 * 60 * 1000 && updInfo) return showUpdate();   // at most every 15 minutes (it used to wait 20 hours, so an app left open never noticed)
     $('suSub').textContent = 'Checking for a new version…';
-    try { updInfo = await MB.updateCheck(); localStorage.setItem('myra:updChecked', Date.now()); } catch (e) { updInfo = { error: true }; }
+    try { updInfo = await Myra.updateCheck(); localStorage.setItem('myra:updChecked', Date.now()); } catch (e) { updInfo = { error: true }; }
     showUpdate(true);
   }
   function showUpdate(fresh) {
@@ -4519,20 +4517,20 @@ ${proseCSS()}
   addEventListener('resize', () => fitUpBar());   // the board mustn't grab presses on the bar
   // automatic updates: get the new version ready quietly; it goes in when Myra quits
   let preparing = null;
-  function prepareUpdate() { if (preparing || !MB.updatePrepare) return; preparing = MB.updatePrepare().catch(() => { preparing = null; }); }
+  function prepareUpdate() { if (preparing || !Myra.updatePrepare) return; preparing = Myra.updatePrepare().catch(() => { preparing = null; }); }
   $('ubYes').onclick = () => { showUpdate.answered = true; settings.autoUpdate = true; applySettings(); showUpdate(); prepareUpdate(); $('ubText').textContent = 'Lovely ✦ I’ll update when you quit Myra, or'; fitUpBar(); };
   $('ubNo').onclick = () => { showUpdate.answered = true; settings.autoUpdate = false; applySettings(); showUpdate(); };
   $('ubX').onclick = () => { try { localStorage.setItem('myra:upbarHidden', $('upBar').dataset.key || ''); } catch (e) {} $('upBar').hidden = true; };
   $('ubNotes').onclick = () => { $('gearBtn').click(); setTab('about'); setTimeout(() => $('setUpdate').scrollIntoView({ block: 'center', behavior: 'smooth' }), 120); };
   $('ubGo').onclick = async () => {
     $('ubGo').disabled = true; $('ubGo').textContent = 'Updating…'; $('upBar').classList.add('busy'); $('ubText').textContent = 'Getting the new version. Myra will reopen in a moment';
-    try { await MB.updateNow(); } catch (e) { $('ubText').textContent = e.message; $('ubGo').textContent = 'Update now'; $('ubGo').disabled = false; $('upBar').classList.remove('busy'); }
+    try { await Myra.updateNow(); } catch (e) { $('ubText').textContent = e.message; $('ubGo').textContent = 'Update now'; $('ubGo').disabled = false; $('upBar').classList.remove('busy'); }
   };
   $('suGo').onclick = async () => {
     $('suGo').disabled = true; $('suGo').textContent = 'Updating…'; $('suSub').textContent = 'Getting the new version and rebuilding. Myra will close and reopen in about 30 seconds.';
-    try { await MB.updateNow(); } catch (e) { $('suGo').disabled = false; $('suGo').textContent = 'Update now'; $('suSub').textContent = e.message; }
+    try { await Myra.updateNow(); } catch (e) { $('suGo').disabled = false; $('suGo').textContent = 'Update now'; $('suSub').textContent = e.message; }
   };
-  document.querySelectorAll('[data-url]').forEach(b => b.onclick = () => MB.openURL(b.dataset.url));
+  document.querySelectorAll('[data-url]').forEach(b => b.onclick = () => Myra.openURL(b.dataset.url));
 
   // ---------- first run: set up with Myra, then an optional hands-on tour ----------
   const OB_N = 6; let obAt = 0;
@@ -4580,20 +4578,20 @@ ${proseCSS()}
     { el: '#gearBtn', side: 'right', text: 'Everything from setup lives in Settings, and you can replay this tour there anytime. Have fun! ✦' },
   ];
   let tourAt = -1, tourPoll = 0;
-  function startTour() { if (homeAt) closeHome(); if (chatOpen()) mochiOpen(false); $('mBubble').classList.remove('on'); $('coach').classList.add('on'); tourGo(0); }
+  function startTour() { if (homeAt) closeHome(); if (chatOpen()) myraOpen(false); $('mBubble').classList.remove('on'); $('coach').classList.add('on'); tourGo(0); }
   function endTour() { clearInterval(tourPoll); tourAt = -1; $('coach').classList.remove('on'); }
   function tourGo(i) {
     clearInterval(tourPoll);
     if (i >= TOUR.length) { endTour(); say(`You're ready${settings.name ? ', ' + settings.name : ''}! Click me whenever you want help ✦`, 0,
       [{ label: 'Brainstorm with me', cls: 'next', run: () => ask('Help me brainstorm a new project. Ask me one question to start.') },
-       { label: 'Build me a landing page', cls: 'next', run: () => { mochiOpen(true); $('mcInput').value = 'Build me a landing page for '; $('mcInput').focus(); } }]); return; }
+       { label: 'Build me a landing page', cls: 'next', run: () => { myraOpen(true); $('mcInput').value = 'Build me a landing page for '; $('mcInput').focus(); } }]); return; }
     tourAt = i; const st = TOUR[i], start = { cards: board.cards.length, tray: board.tray.length };
     $('coachStep').textContent = `${i + 1} of ${TOUR.length}`; $('coachText').textContent = st.text;
     $('coachTry').textContent = st.try || ''; $('coachTry').classList.remove('yay'); $('coachTry').style.display = st.try ? '' : 'none';
     $('coachNext').textContent = i === TOUR.length - 1 ? 'Done ✦' : 'Continue';
     placeCoach(); goos[6].hop();
     if (st.done) tourPoll = setInterval(() => { if (tourAt !== i || !st.done(start)) return; clearInterval(tourPoll);
-      $('coachTry').textContent = 'Nice! ✦'; $('coachTry').classList.add('yay'); hopMochi(); setTimeout(() => tourAt === i && tourGo(i + 1), 1200); }, 250);
+      $('coachTry').textContent = 'Nice! ✦'; $('coachTry').classList.add('yay'); hopMyra(); setTimeout(() => tourAt === i && tourGo(i + 1), 1200); }, 250);
   }
   function placeCoach() {
     if (tourAt < 0) return; const st = TOUR[tourAt], t = st.el && document.querySelector(st.el), card = $('coachCard'), ring = $('coachRing');
@@ -4611,7 +4609,7 @@ ${proseCSS()}
   $('coachSkip').onclick = endTour;
   $('coachCard').addEventListener('pointerdown', e => e.stopPropagation());
 
-  if (MB.web) document.body.classList.add('web');
+  if (Myra.web) document.body.classList.add('web');
   document.querySelectorAll('.get-app').forEach(b => b.onclick = e => { e.stopPropagation(); getApp(); });
   // ---------- what's new: a little card, once, the first time a new version opens ----------
   // what's new in Myra: one card per version (each item: [icon svg, title, a line about it])
@@ -4630,7 +4628,7 @@ ${proseCSS()}
     nwStep = n; const steps = nwSteps || [];
     $('newsList').hidden = n > 0; document.querySelectorAll('#news .nw-step').forEach(s => s.hidden = +s.dataset.s !== n);
     $('news').querySelector('h2').textContent = n ? steps[n - 1][0] : nwHead[0]; $('newsV').textContent = n ? steps[n - 1][1] : nwHead[1];
-    $('news').querySelector('.nw-mochi').hidden = n > 0;
+    $('news').querySelector('.nw-myra').hidden = n > 0;
     $('nwDots').hidden = !steps.length; [...$('nwDots').children].forEach((d, i) => { d.hidden = i > steps.length; d.classList.toggle('on', i === n); });
     const last = n >= steps.length;
     $('newsOk').textContent = last ? 'Love it' : 'Next →';
@@ -4643,7 +4641,7 @@ ${proseCSS()}
   $('nwListen').onclick = () => { if (music.playing) music.pause(); else music.play(0); $('nwListen').textContent = music.playing ? '❚❚ Pause' : '▶ Listen'; };
   const newsKey = 'myra:newsSeen';
   async function maybeNews() {
-    let v = null; try { v = await MB.version(); } catch (e) {} if (!v) v = Object.keys(NEWS).pop();
+    let v = null; try { v = await Myra.version(); } catch (e) {} if (!v) v = Object.keys(NEWS).pop();
     let seen = null; try { seen = localStorage.getItem(newsKey); } catch (e) {}
     try { localStorage.setItem(newsKey, v); } catch (e) {}
     // everything new since the version you last saw (a small fix release has no card of its own)
@@ -4671,7 +4669,7 @@ ${proseCSS()}
       + `<button data-sheet="layers">${PI('<path d="M10 3l7 3.8-7 3.8-7-3.8z"/><path d="M3 10.2l7 3.8 7-3.8"/><path d="M3 13.6l7 3.8 7-3.8"/>')}<span>Layers</span></button>`
       + `<button class="hub-add" data-sheet="add" aria-label="Add something">${PI('<path d="M10 4v12M4 10h12" stroke-width="2.4"/>')}</button>`
       + `<button data-sheet="tray">${PI('<path d="M3 11.5l2.2-6.3A1.5 1.5 0 0 1 6.6 4h6.8a1.5 1.5 0 0 1 1.4 1.2l2.2 6.3V15a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 15z"/><path d="M3 11.5h4l1 2h4l1-2h4"/>')}<span>Unsorted</span><b class="hub-n" id="hubN"></b></button>`
-      + `<button data-hub="mochi"><canvas id="hubGoo" width="64" height="56"></canvas><span>Myra</span></button>`;
+      + `<button data-hub="myra"><canvas id="hubGoo" width="64" height="56"></canvas><span>Myra</span></button>`;
     const sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'sheet';
     sh.innerHTML = '<div class="sh-veil"></div><div class="sh-panel" role="dialog"><div class="sh-grab"><i></i></div><div class="sh-head"><b id="shTitle"></b><div class="sh-tabs" id="shTabs"></div><button class="sh-x" aria-label="Close">×</button></div><div class="sh-body" id="shBody"></div></div>';
     document.body.appendChild(sh);
@@ -4701,9 +4699,9 @@ ${proseCSS()}
     function hide() { open = null; sh.classList.remove('on'); sh.querySelector('.sh-panel').style.transform = ''; hub.querySelectorAll('[data-sheet]').forEach(b => b.classList.remove('on')); }
     hub.addEventListener('click', e => {
       const b = e.target.closest('[data-sheet], [data-hub]'); if (!b) return;
-      if (b.dataset.hub === 'mochi') { hide(); hubGoo.hop(); return mochiOpen(!$('mochi').classList.contains('chat')); }
+      if (b.dataset.hub === 'myra') { hide(); hubGoo.hop(); return myraOpen(!$('myra').classList.contains('chat')); }
       if (open === b.dataset.sheet) return hide();
-      mochiOpen(false); show(b.dataset.sheet);
+      myraOpen(false); show(b.dataset.sheet);
     });
     $('shTabs').onclick = e => { const b = e.target.closest('[data-t]'); if (b) show(open, +b.dataset.t); };
     sh.querySelector('.sh-veil').onclick = hide; sh.querySelector('.sh-x').onclick = hide;
@@ -4766,17 +4764,17 @@ ${proseCSS()}
 
   // ---------- start ----------
   (async () => {
-    let list = await MB.list();
-    if (!list.length) { const b = newBoard('Brain dump', 'Brain dump'); b.name = 'My first board'; await MB.save(b); list = await MB.list(); }
+    let list = await Myra.list();
+    if (!list.length) { const b = newBoard('Brain dump', 'Brain dump'); b.name = 'My first board'; await Myra.save(b); list = await Myra.list(); }
     let last = null; try { last = localStorage.getItem('myra:last'); } catch (e) {}
     await openBoard(list.some(b => b.id === last) ? last : list[0].id);
     applySettings(); phone.init();
     let onboarded = true; try { onboarded = !!localStorage.getItem('myra:onboarded'); } catch (e) {}
-    if (!onboarded) { try { localStorage.setItem(newsKey, (await MB.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
+    if (!onboarded) { try { localStorage.setItem(newsKey, (await Myra.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
     setTimeout(() => { fit(board.cards); if (settings.greet && settings.chat !== 'quiet') say(`Hi${settings.name ? ' ' + settings.name : ''}, it's Myra! Dump ideas with Ctrl+K, then ask me to sort them ✦`, 7000); }, 400);
     showConnections(true);
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__mb = { selectOnly, restack, music, openSetup, startTour, get board() { return board; }, applyMochi, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__myra = { selectOnly, restack, music, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

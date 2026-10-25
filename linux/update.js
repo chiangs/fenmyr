@@ -7,9 +7,9 @@ const { app } = require('electron');
 const P = require('./paths'), { run } = require('./claude'), { get, download: fetchTo } = require('./net');
 
 const REPO = 'chiangs/myra';
-const releaseAPI = process.env.MB_RELEASE_API || `https://api.github.com/repos/${REPO}/releases/latest`;   // the override is only for testing updates
+const releaseAPI = process.env.MYRA_RELEASE_API || `https://api.github.com/repos/${REPO}/releases/latest`;   // the override is only for testing updates
 const assetName = () => `Myra-${process.arch === 'x64' ? 'x86_64' : process.arch}.AppImage`;   // x86_64 or arm64, as make-release.sh names them
-const preview = () => process.env.MB_PREVIEW_UPDATE === '1';   // a preview of the update bar for testing
+const preview = () => process.env.MYRA_PREVIEW_UPDATE === '1';   // a preview of the update bar for testing
 const appRoot = path.join(__dirname, '..');
 const appVersion = () => app.getVersion();
 

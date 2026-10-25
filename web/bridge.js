@@ -2,16 +2,12 @@
 // Inside the desktop app, calls go to its host (linux/main.js: saving board files, link previews, asking Myra through Claude Code).
 // In a plain browser (for building and demos) it falls back to localStorage and a pretend Myra.
 (() => {
-  const native = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.mb);
-  // the Windows (and Linux) app: the same messages, answered by Rust through Tauri
-  const tauri = !native && !!window.__TAURI_INTERNALS__;
-  // native here is the Linux app (Electron, whose preload also provides window.mbWindow); the Mac app has no mbWindow
-  const platform = native ? (window.mbWindow ? 'linux' : 'mac') : tauri ? (/Windows/i.test(navigator.userAgent) ? 'windows' : /Macintosh|Mac OS X/i.test(navigator.userAgent) ? 'mac' : 'linux') : 'web';
+  const native = !!window.myraHost;
+  const platform = native ? 'linux' : 'web';
   const waiting = new Map(); let seq = 0;
-  // the host answers with window.__mbReply(id, ok, value)
-  window.__mbReply = (id, ok, value) => { const w = waiting.get(id); if (!w) return; waiting.delete(id); ok ? w.res(value) : w.rej(new Error(value)); };
-  const call = tauri ? (op, args = {}) => window.__TAURI_INTERNALS__.invoke('mb', { op, args }).catch(e => { throw new Error(typeof e === 'string' ? e : (e && e.message) || String(e)); })
-    : (op, args = {}) => new Promise((res, rej) => { const id = ++seq; waiting.set(id, { res, rej }); window.webkit.messageHandlers.mb.postMessage({ id, op, args }); });
+  // the host answers with window.__myraReply(id, ok, value)
+  window.__myraReply = (id, ok, value) => { const w = waiting.get(id); if (!w) return; waiting.delete(id); ok ? w.res(value) : w.rej(new Error(value)); };
+  const call = (op, args = {}) => new Promise((res, rej) => { const id = ++seq; waiting.set(id, { res, rej }); window.myraHost.post({ id, op, args }); });
 
   const LS = 'myra:';
   const extOf = blob => ({ 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'video/x-m4v': 'm4v' }[(blob.type || '').split(';')[0]] || (blob.name || '').split('.').pop() || 'mp4');
@@ -32,7 +28,7 @@
     const db = await idb(), blob = await new Promise(res => { const r = db.transaction('media').objectStore('media').get(src.slice(9)); r.onsuccess = () => res(r.result); r.onerror = () => res(null); });
     if (!blob) return ''; const u = URL.createObjectURL(blob); blobURLs.set(src, u); return u; }
   // the web demo: a real website (or ?web) can't reach Claude Code, Mobbin or Higgsfield on the visitor's computer
-  const web = !native && !tauri && (!/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname) || /[?&]web\b/.test(location.search));
+  const web = !native && (!/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname) || /[?&]web\b/.test(location.search));
   const browser = {
     async list() { return JSON.parse(localStorage.getItem(LS + 'index') || '[]'); },
     async load(id) { const s = localStorage.getItem(LS + 'board:' + id); return s ? JSON.parse(s) : null; },
@@ -81,30 +77,13 @@
         add: [{ type: 'note', text: 'What is this for?', color: 'butter' }, { type: 'note', text: 'Who will see it?', color: 'mint' }, { type: 'note', text: 'What does done look like?', color: 'lilac' }] });
     },
   };
-  // saved videos are "mbmedia://media/<name>" on every computer; on Windows the web view reaches that address as http://mbmedia.localhost
-  const mediaAddr = src => !tauri || !String(src).startsWith('mbmedia://') ? src : platform === 'windows' ? String(src).replace(/^mbmedia:\/\//, 'http://mbmedia.localhost/') : String(src).replace(/^mbmedia:\/\//, 'mbmedia://localhost/');
-  window.MB = native || tauri ? {
+  window.Myra = native ? {
     native: true, platform,
     list: () => call('list'), load: id => call('load', { id }), save: board => call('save', { board }), remove: id => call('remove', { id }),
     folders: () => call('folders'), saveFolders: folders => call('saveFolders', { folders }),
     prefs: p => call('prefs', p), caelestia: () => call('caelestia'), chromiumLicenses: () => call('chromiumLicenses'), usage: () => call('usage'), resetUsage: () => call('resetUsage'), version: () => call('version'),
     linkPreview: url => call('linkPreview', { url }), rewrite: (text, how, title, around) => call('rewrite', { text, how, title, around }), docPDF: (html, name, paper) => call('docPDF', { html, name, paper }), saveFile: (data, name, ext) => call('saveFile', { data, name, ext }), ask: (prompt, board, confirmed = false, opts = {}) => call('ask', { prompt, board, confirmed, ...opts }),
-    saveMedia: (blob, onProgress) => saveMediaNative(blob, onProgress), mediaURL: async src => mediaAddr(src),
+    saveMedia: (blob, onProgress) => saveMediaNative(blob, onProgress), mediaURL: async src => src,
     connections: () => call('connections'), fetchImage: url => call('fetchImage', { url }), openURL: url => call('openURL', { url }), reveal: () => call('reveal'), transcribe: audio => call('transcribe', { audio }), speechAuth: () => call('speechAuth'), exportRect: o => call('export', o), fonts: () => call('fonts'), higgsQuote: o => call('higgsQuote', o || {}), updateCheck: () => call('updateCheck'), updateNow: () => call('updateNow'), updatePrepare: () => call('updatePrepare'), higgsMake: o => call('higgsMake', o), drawFill: o => call('drawFill', o),
   } : Object.assign({ native: false, platform }, browser);
-  // Windows prints a doc to PDF through its own "Microsoft Print to PDF" (the Mac app lays pages out itself)
-  if (tauri) window.MB.docPDF = browser.docPDF;
-  // Windows/Linux voice memos: turn the recording into 16 kHz mono sound (what Whisper listens to) right here, then hand it over
-  async function pcm16k(dataURL) {
-    const buf = await (await fetch(dataURL)).arrayBuffer(), ac = new AudioContext(), dec = await ac.decodeAudioData(buf); ac.close();
-    const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(dec.duration * 16000)), 16000), src = off.createBufferSource();
-    src.buffer = dec; src.connect(off.destination); src.start(); const f = (await off.startRendering()).getChannelData(0);
-    const u8 = new Uint8Array(f.buffer, f.byteOffset, f.byteLength); let bin = '';
-    for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
-    return btoa(bin);
-  }
-  if (tauri) Object.assign(window.MB, {
-    transcribe: async audio => call('transcribe', { pcm: await pcm16k(audio) }),
-    whisperStatus: () => call('whisperStatus'), whisperGet: () => call('whisperGet'),
-  });
 })();
