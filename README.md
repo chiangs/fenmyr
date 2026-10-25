@@ -96,7 +96,7 @@ The first memo downloads the speech model (about 140 MB, once) into `~/.local/sh
 
 ## Your stuff
 
-- Boards are plain files in `~/.local/share/myra` (the same files as Mochiboard, so boards from it open as they are). No account, no cloud.
+- Each board is one JSON file in `~/.local/share/myra/boards`, with your folders in `folders.json` and pictures and videos in `media/`. You can back them up, copy them or put them in git like any other files. No account, no cloud.
 - App settings (your name, theme, the tour) live in `~/.config/Myra`.
 - Myra only thinks when you ask her something. Then the board and your question go to Claude Code on your computer, the same as asking Claude yourself.
 - Switch Myra's thinking off in Settings and the whole canvas still works, with no AI and no internet. (Spell check is Chromium's: it fetches its dictionary from Google once, then works offline.)
@@ -180,7 +180,7 @@ Myra reads `~/.local/state/caelestia/scheme.json`, the file Caelestia's shell an
 
 Two layers:
 
-- `web/`: the canvas, plain HTML, CSS and JavaScript with no build step. It grew from Mochiboard's canvas.
+- `web/`: the canvas, plain HTML, CSS and JavaScript with no build step.
 - `linux/`: a small Electron host that does what a web page can't. It saves boards, fetches link previews, exports images and PDFs, writes out voice memos, and runs `claude -p` so Myra can think.
 
 The two talk through one channel (`window.myraHost`), so the canvas doesn't know or care which computer it's on. See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it.

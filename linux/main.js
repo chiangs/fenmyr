@@ -1,6 +1,6 @@
 // Myra for Linux: an Electron window around the canvas in web/. This side handles what a web page can't:
 // saving boards as files, fetching link previews, exporting, writing out voice memos, and asking Myra (Claude Code, run locally with `claude -p`).
-// It answers the page's messages (web/bridge.js → window.myraHost); the canvas grew from Mochiboard, whose Mac app has a Swift host.
+// It answers the page's messages (web/bridge.js → window.myraHost).
 const fs = require('fs'), path = require('path'), { execFile } = require('child_process');
 const { app, BrowserWindow, ipcMain, shell, protocol, Menu, session } = require('electron');
 const P = require('./paths'), storage = require('./storage'), claude = require('./claude'), net = require('./net');
