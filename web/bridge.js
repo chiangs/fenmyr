@@ -90,7 +90,7 @@
     native: true, platform,
     list: () => call('list'), load: id => call('load', { id }), save: board => call('save', { board }), remove: id => call('remove', { id }),
     folders: () => call('folders'), saveFolders: folders => call('saveFolders', { folders }),
-    prefs: p => call('prefs', p), caelestia: () => call('caelestia'), usage: () => call('usage'), resetUsage: () => call('resetUsage'), version: () => call('version'),
+    prefs: p => call('prefs', p), caelestia: () => call('caelestia'), chromiumLicenses: () => call('chromiumLicenses'), usage: () => call('usage'), resetUsage: () => call('resetUsage'), version: () => call('version'),
     linkPreview: url => call('linkPreview', { url }), rewrite: (text, how, title, around) => call('rewrite', { text, how, title, around }), docPDF: (html, name, paper) => call('docPDF', { html, name, paper }), saveFile: (data, name, ext) => call('saveFile', { data, name, ext }), ask: (prompt, board, confirmed = false, opts = {}) => call('ask', { prompt, board, confirmed, ...opts }),
     saveMedia: (blob, onProgress) => saveMediaNative(blob, onProgress), mediaURL: async src => mediaAddr(src),
     connections: () => call('connections'), fetchImage: url => call('fetchImage', { url }), openURL: url => call('openURL', { url }), reveal: () => call('reveal'), transcribe: audio => call('transcribe', { audio }), speechAuth: () => call('speechAuth'), exportRect: o => call('export', o), fonts: () => call('fonts'), higgsQuote: o => call('higgsQuote', o || {}), updateCheck: () => call('updateCheck'), updateNow: () => call('updateNow'), updatePrepare: () => call('updatePrepare'), higgsMake: o => call('higgsMake', o), drawFill: o => call('drawFill', o),

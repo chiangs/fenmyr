@@ -2077,6 +2077,26 @@
   $('usReset').onclick = async () => { await MB.resetUsage(); showUsage(); };
 
   $('setClose').onclick = closeSettings;
+  // ---------- About → Licenses: Myra's license and every third-party notice (web/licenses.js, made by tools/notices.js) ----------
+  let licLoading = null;
+  const loadLicenses = () => licLoading || (licLoading = new Promise((res, rej) => { if (window.MYRA_LICENSES) return res(); const sc = document.createElement('script'); sc.src = 'licenses.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }));
+  async function openLicenses() {
+    $('licView').classList.add('on');
+    try { await loadLicenses(); } catch (e) { $('licBody').innerHTML = '<p class="lic-loading">The license list is missing from this copy.</p>'; return; }
+    if ($('licBody').dataset.done) return;
+    const L = window.MYRA_LICENSES, row = i => `<details class="lic-item"><summary><b>${esc(i.name)}</b>${i.version ? ` <span>${esc(i.version)}</span>` : ''}<em>${esc(i.license)}</em></summary>
+      <p class="lic-meta">${esc(i.where)}${i.url ? ` · <button class="set-link" data-url="${esc(i.url)}">${esc(i.url.replace(/^https?:\/\//, ''))}</button>` : ''}</p>${i.note ? `<p class="lic-note">${esc(i.note)}</p>` : ''}
+      ${i.name === 'Electron' && MB.native ? '<p><button class="set-btn" id="licChromium">Open Chromium’s licenses</button></p>' : ''}<pre>${esc(i.text)}</pre></details>`;
+    $('licBody').innerHTML = `<p class="lic-intro">Myra is open source under the MIT License. Its name, Myra the cloudberry and her art are reserved by Stephen Chiang. It includes ${L.items.length} pieces of software made by others, each listed with its license.</p>
+      <details class="lic-item lic-myra" open><summary><b>Myra</b><em>MIT</em></summary><pre>${esc(L.myra)}</pre></details>` + L.items.map(row).join('');
+    $('licBody').dataset.done = '1';
+    $('licBody').querySelectorAll('[data-url]').forEach(b => b.onclick = () => MB.openURL(b.dataset.url));
+    $('licChromium') && ($('licChromium').onclick = () => MB.chromiumLicenses().catch(e => say(e.message, 5000)));
+  }
+  const closeLicenses = () => $('licView').classList.remove('on');
+  $('openLicenses').onclick = openLicenses; $('licClose').onclick = closeLicenses;
+  $('licView').onclick = e => { if (e.target === $('licView')) closeLicenses(); };
+  addEventListener('keydown', e => { if (e.key === 'Escape' && $('licView').classList.contains('on')) { e.stopImmediatePropagation(); closeLicenses(); } }, true);
   $('settings').onclick = e => { if (e.target === $('settings')) closeSettings(); };
   // ---------- Dress up Myra: hover to try things on, click to wear them. She wears it everywhere she shows up ----------
   const DU_TABS = [['hat', 'Hats'], ['face', 'Face'], ['neck', 'Neck'], ['held', 'Hold'], ['color', 'Color']];

@@ -2382,3 +2382,20 @@ body.dark .mu-volpop { background: #302c27; }
 /* a perfectly flat line has no height, and Safari draws the wobble effect at that size: nothing. Straight lines skip the wobble */
 .card.shape svg.sh.is-line { filter: none; }   /* lines have their own Wobble slider; the board's wobble effect misdraws them in Safari's sharp zoom */
 .set-feedback { background: #fef7f0; } .set-feedback .sf-ic { font-size: 24px; flex: none; } body.dark .set-feedback { background: rgba(248, 189, 130, .14); }
+
+/* About → Licenses: the same panel as Settings, above it */
+.lic-view { z-index: 95; }
+.lic-panel { width: min(720px, calc(100vw - 40px)); }
+.lic-body { padding: 4px 26px 24px; overflow: auto; }
+.lic-intro, .lic-loading { margin: 6px 0 14px; font: 500 13.5px/1.55 var(--font); color: var(--ink-soft); }
+.lic-item { border-top: 1px solid rgba(150, 95, 35, .12); padding: 10px 0; }
+.lic-item summary { display: flex; align-items: baseline; gap: 8px; cursor: pointer; font: 500 14px/1.3 var(--font); list-style: none; }
+.lic-item summary::-webkit-details-marker { display: none; }
+.lic-item summary::before { content: "›"; color: var(--ink-faint); transition: rotate .15s; display: inline-block; width: 10px; }
+.lic-item[open] summary::before { rotate: 90deg; }
+.lic-item summary span { color: var(--ink-faint); font-size: 12.5px; }
+.lic-item summary em { margin-left: auto; font: 600 11.5px/1 var(--font); font-style: normal; color: var(--pink-deep); }
+.lic-meta, .lic-note { margin: 8px 0 0 18px; font: 500 12.5px/1.5 var(--font); color: var(--ink-soft); }
+.lic-item pre { margin: 10px 0 4px 18px; padding: 12px 14px; max-height: 320px; overflow: auto; white-space: pre-wrap; font: 400 11.5px/1.5 ui-monospace, monospace; color: var(--ink-soft); background: var(--blush); border-radius: 14px; corner-shape: squircle; user-select: text; -webkit-user-select: text; }
+.lic-item p .set-btn { margin-left: 18px; }
+body.dark .lic-item pre { background: var(--surface-2); }

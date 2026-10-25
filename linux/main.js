@@ -58,6 +58,11 @@ const OPS = {
   list: () => storage.list(), load: a => storage.load(a.id), save: a => storage.save(a.board), remove: a => storage.remove(a.id),
   folders: () => storage.folders(), saveFolders: a => storage.saveFolders(a.folders),
   prefs: a => claude.setPrefs(a), caelestia: () => theme.read(),
+  // Chromium's (and Node's) licenses ship with Electron as LICENSES.chromium.html, next to the Electron program
+  chromiumLicenses: async () => {
+    const f = [path.dirname(process.execPath), process.resourcesPath && path.dirname(process.resourcesPath)].filter(Boolean).map(d => path.join(d, 'LICENSES.chromium.html')).find(f => fs.existsSync(f));
+    if (!f) throw new Error("Chromium's license file isn't next to Electron in this copy."); const err = await shell.openPath(f); if (err) throw new Error(err); return true;
+  },
   usage: () => claude.usageSummary(), resetUsage: () => claude.resetUsage(), version: () => update.appVersion(),
   linkPreview: a => net.linkPreview(a.url || ''),
   fetchImage: async a => { const d = await net.fetchImage(a.url || ''); if (!d) throw new Error("couldn't load that image"); return d; },

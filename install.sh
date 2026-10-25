@@ -53,7 +53,7 @@ if [ -d "$OLD" ]; then
 fi
 pkill -f "lectron[^ ]* .*$LIB/app( |$)" 2>/dev/null && sleep 1 || true   # let the old one finish quitting before replacing it
 rm -rf "$LIB/app"; mkdir -p "$LIB/app/assets"
-cp -R linux web package.json LICENSE "$LIB/app/"
+cp -R linux web package.json LICENSE THIRD-PARTY-NOTICES.md "$LIB/app/"
 cp assets/icon.png "$LIB/app/assets/icon.png"
 # remember where this copy came from, so Settings → Update now can pull and reinstall from here
 printf '{ "repo": "%s", "electron": "%s" }\n' "$REPO" "$ELECTRON" > "$LIB/app/install.json"

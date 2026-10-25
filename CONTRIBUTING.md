@@ -9,6 +9,7 @@ web/            the canvas: everything you see and do (plain HTML/CSS/JS, no bui
   style.css       all the styling (light and dark)
   bridge.js       window.MB: the canvas's only way to reach the host (or a pretend host in a browser)
   vendor/         prebuilt TipTap editor and .docx writer (source in tools/editor/)
+  licenses.js     generated third-party notices for About → Licenses (npm run notices)
 linux/          the host: an Electron main process
   main.js         window, keys, permissions, mbmedia://, and the table of bridge operations (OPS)
   preload.js      provides window.webkit.messageHandlers.mb to the page
@@ -75,3 +76,7 @@ Myra's name, character and art are reserved (see [TRADEMARKS.md](TRADEMARKS.md))
 
 Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by Jessa Wolfe (MIT), by way of [Mochiboard for Linux](https://github.com/chiangs/linux-mochiboard). Mochiboard's name, Mochi and its art and music are hers and aren't part of Myra. Myra doesn't track Mochiboard; ideas from it are ported by hand.
 
+
+## Third-party notices
+
+`THIRD-PARTY-NOTICES.md` and `web/licenses.js` are generated. After rebuilding the editor bundles in `tools/editor/` (or adding anything someone else made), run `npm run notices` and commit both files. The script asks esbuild what actually goes into `web/vendor/`, so the list matches what ships.

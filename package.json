@@ -11,7 +11,8 @@
   "scripts": {
     "start": "electron . --ozone-platform-hint=auto",
     "test": "node tests/smoke.js && node tests/zoom.js && node tests/theme.js && node tests/migrate.js",
-    "dist": "electron-builder --linux AppImage"
+    "dist": "electron-builder --linux AppImage",
+    "notices": "node tools/notices.js"
   },
   "devDependencies": {
     "electron": "44.7.0",
@@ -26,7 +27,8 @@
       "web/**",
       "assets/icon.png",
       "package.json",
-      "LICENSE"
+      "LICENSE",
+      "THIRD-PARTY-NOTICES.md"
     ],
     "linux": {
       "target": [

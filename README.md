@@ -199,7 +199,7 @@ Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) 
 
 ## License
 
-The code is open source under the [MIT License](LICENSE). The name **Myra**, Myra the cloudberry, her art, the stamps and the icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Icons are [Material Icons](https://fonts.google.com/icons) (Apache 2.0). Fonts are Figtree and Shantell Sans (OFL).
+The code is open source under the [MIT License](LICENSE). The name **Myra**, Myra the cloudberry, her art, the stamps and the icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Myra also includes software made by others (Mochiboard, Electron, Material Icons, Figtree and Shantell Sans, and the libraries inside the docs editor); every one is listed with its license in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licenses**.
 
 ---
 

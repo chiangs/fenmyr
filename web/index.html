@@ -299,6 +299,12 @@
   <div class="coach-card" id="coachCard"><div class="coach-top"><canvas id="coachGoo" width="40" height="36"></canvas><b id="coachName">Myra</b><span id="coachStep"></span></div><p id="coachText"></p><div class="coach-try" id="coachTry"></div>
     <div class="coach-acts"><button class="ob-ghost" id="coachSkip">End tour</button><button class="ob-primary" id="coachNext">Next</button></div></div>
 </div>
+<div class="settings lic-view" id="licView" role="dialog" aria-label="Licenses">
+  <div class="set-panel lic-panel">
+    <div class="set-head"><h2>Licenses</h2><button class="dv-btn" id="licClose" title="Close">×</button></div>
+    <div class="set-body lic-body" id="licBody"><p class="lic-loading">Loading…</p></div>
+  </div>
+</div>
 <div class="settings" id="settings">
   <div class="set-panel">
     <div class="set-head"><h2>Settings</h2><button class="dv-btn" id="setClose" title="Close">×</button></div>
@@ -390,6 +396,7 @@
       <section class="set-maker" data-tab="about"><div class="sm-sig">made with care by</div><div class="sm-name">Stephen Chiang</div><small>Cloudberries only ripen where the bog, the light and the cold are just right. Ideas are the same, so Myra tries to be that place.</small>
         <div class="sm-links"><button class="set-btn hot" data-url="https://github.com/chiangs/myra">Myra on GitHub ↗</button></div></section>
       <section class="set-start set-credit" data-tab="about"><div><b>Built on Mochiboard</b><small>Myra grew from Mochiboard, Jessa Wolfe's open-source planning canvas (MIT). Mochiboard, Mochi and their art are hers and aren't part of Myra.</small></div><div class="set-btns"><button class="set-btn" data-url="https://github.com/jessawolfe-ux/mochiboard">Mochiboard ↗</button><button class="set-btn" data-url="https://jessa.art">jessa.art ↗</button></div></section>
+      <section class="set-start set-lic" data-tab="about"><div><b>Open-source licenses</b><small>Myra's own license, and the software made by others that Myra includes.</small></div><div class="set-btns"><button class="set-btn" id="openLicenses">View licenses</button></div></section>
     </div>
   </div>
 </div>
