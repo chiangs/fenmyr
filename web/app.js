@@ -43,18 +43,21 @@
   const TEMPLATES = {
     'Moodboard': () => ({ cards: [
       card('title', { x: 0, y: -40, text: 'Moodboard' }),
-      card('note', { x: 0, y: 60, text: 'The feeling in three words:', color: 'butter' }),
-      card('note', { x: 250, y: 60, text: 'References I love (drop images here)', color: 'pink' }),
-      card('note', { x: 500, y: 60, text: 'Colors (pull them from an image ✦)', color: 'mint' }),
-      card('swatch', { x: 0, y: 260, hex: '#f6b45e', label: 'blush' }), card('swatch', { x: 130, y: 260, hex: '#ffe3bd', label: 'butter' }), card('swatch', { x: 260, y: 260, hex: '#7fb86a', label: 'mint' }),
-      card('todo', { x: 500, y: 240, text: 'next', items: [{ t: 'Find 10 references', done: false }, { t: 'Pick a type pairing', done: false }, { t: 'Share with the team', done: false }] }),
+      card('note', { x: 0, y: 60, name: 'The feeling', text: 'Three words for how this should feel', color: 'butter' }),
+      card('note', { x: 250, y: 60, name: 'Things I love', text: 'Drop images here, or paste them in ✦', color: 'pink' }),
+      card('note', { x: 500, y: 60, name: 'Colours', text: 'Pull them straight from an image ✦', color: 'mint' }),
+      card('swatch', { x: 0, y: 260, hex: '#f0b04a', label: 'cloudberry' }), card('swatch', { x: 130, y: 260, hex: '#7fb86a', label: 'moss' }), card('swatch', { x: 260, y: 260, hex: '#6fa3d6', label: 'fjord' }),
+      card('todo', { x: 500, y: 240, text: 'Next', items: [{ t: 'Find ten references', done: false }, { t: 'Pick a pair of fonts', done: false }, { t: 'Show someone', done: false }] }),
+      card('note', { x: 780, y: 60, w: 280, h: 230, r: 1.5, name: 'Myra’s how-to', text: 'Gather what feels right before you decide anything.\n\nDrop images in, pull colours from them, and write the feeling in three words. Then ask me to find what the pictures have in common.', color: 'white', myra: true }),
     ], tray: [] }),
     'App plan': () => ({ cards: [
       card('title', { x: 0, y: -40, text: 'App plan' }),
-      card('note', { x: 0, y: 60, text: 'Who is it for?', color: 'sky' }), card('note', { x: 250, y: 60, text: 'What problem does it solve?', color: 'pink' }),
-      card('note', { x: 500, y: 60, text: 'The one thing it does best', color: 'butter' }),
-      card('todo', { x: 0, y: 260, text: 'screens', items: [{ t: 'Onboarding', done: false }, { t: 'Home', done: false }, { t: 'Settings', done: false }] }),
-      card('note', { x: 280, y: 260, text: 'Competitors + what they miss', color: 'lilac' }),
+      card('note', { x: 0, y: 60, name: 'Who it’s for', text: 'The one kind of person you picture using it', color: 'sky' }),
+      card('note', { x: 250, y: 60, name: 'The problem', text: 'What is hard for them right now, in their words?', color: 'pink' }),
+      card('note', { x: 500, y: 60, name: 'The one thing', text: 'What it does better than anything else', color: 'butter' }),
+      card('todo', { x: 0, y: 260, text: 'Screens', items: [{ t: 'First open', done: false }, { t: 'Home', done: false }, { t: 'Settings', done: false }] }),
+      card('note', { x: 280, y: 260, name: 'Others like it', text: 'What they do well, and what they miss', color: 'lilac' }),
+      card('note', { x: 780, y: 60, w: 280, h: 230, r: 1.5, name: 'Myra’s how-to', text: 'Start with the person, then the problem, then the one thing. Keep the screens list short: just the ones someone sees in their first minute.\n\nWhen it feels right, turn each screen into a wireframe.', color: 'white', myra: true }),
     ], tray: [] }),
     'OKRs and opportunities': () => {
       // a vision, the objective under it, key results, then one result opened up into an opportunity solution tree
@@ -104,8 +107,8 @@
       ];
       return { cards, tray: [] };
     },
-    'Brain dump': () => ({ cards: [card('title', { x: 0, y: -40, text: 'Brain dump' }), card('note', { x: 0, y: 60, text: 'Dump everything in Unsorted with Ctrl+K, then ask Myra to sort it ✦', color: 'butter' })],
-      tray: ['call the printer', 'idea: animated logo', 'that font from the cafe menu', 'reply to Sam', 'moodboard for spring'].map(t => card('note', { text: t })) }),
+    'Brain dump': () => ({ cards: [card('title', { x: 0, y: -40, text: 'Brain dump' }), card('note', { x: 0, y: 60, name: 'Myra’s how-to', text: 'Empty your head into Unsorted with Ctrl+K: one thought each, no tidying.\n\nWhen you’re done, ask me to sort them into groups ✦', color: 'butter', myra: true, w: 260, h: 170 })],
+      tray: ['call the printer', 'idea: a map of my favourite bogs', 'that font from the cafe menu', 'reply to Sam', 'plan the spring trip'].map(t => card('note', { text: t })) }),
   };
   function card(type, o = {}) {
     const size = { note: [220, 140], title: [320, 50], image: [260, 220], link: [260, 210], todo: [240, 180], swatch: [120, 150], coll: [288, 200], doc: [240, 52], canvas: [260, 180], shape: [160, 160], stamp: [56, 56], audio: [290, 150], video: [360, 246], ink: [10, 10], frame: [393, 852], box: [160, 100], text: [220, 24], icon: [28, 28], font: [300, 210] }[type] || [220, 140];
@@ -2518,8 +2521,8 @@
   };
   // the old "Start from" boards live here now too, under the frameworks: each opens as its own new board
   const STARTERS = {
-    'Moodboard': ['References, colors and type for a feeling', 'palette'],
-    'Brain dump': ['Empty your head, then let Myra sort it', 'brain'],
+    'Moodboard': ['Pictures, colours and fonts for a feeling', 'palette'],
+    'Brain dump': ['Empty your head, then I’ll sort it', 'brain'],
     'OKRs and opportunities': ['A vision, its key results and an opportunity tree', 'tree'],
     'Product kickoff': ['Why, who for, the edges and the first steps', 'rocket'],
     'App plan': ['Who it\'s for, the problem, the screens', 'screen'],
