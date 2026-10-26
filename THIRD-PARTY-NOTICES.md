@@ -8,6 +8,7 @@ It includes software made by others, listed here with their licenses. This file 
 | [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) | 1.7.3 | MIT | The canvas Myra grew from (web/, parts of linux/) |
 | [Electron](https://www.electronjs.org) | 44.7.0 | MIT | The window Myra runs in |
 | [Material Icons](https://fonts.google.com/icons) |  | Apache-2.0 | Wireframe icons (web/icons) |
+| [Lucide](https://lucide.dev) |  | ISC (some icons MIT, from Feather) | Many of the icons on the toolbar and panels (the ones drawn on a 24 px grid) |
 | [Figtree and Shantell Sans](https://openfontlicense.org) |  | OFL-1.1 | Fonts (web/fonts) |
 | [@popperjs/core](https://github.com/popperjs/popper-core) | 2.11.8 | MIT | Docs editor and Word export (web/vendor) |
 | [@tiptap/core](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
@@ -345,6 +346,54 @@ Apache License
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+```
+
+## Lucide
+
+The icons Myra inherited from Mochiboard include Lucide icons. Some Lucide icons come from the Feather project and are under the MIT License below the ISC License.
+
+```
+ISC License
+
+Copyright (c) 2026 Lucide Icons and Contributors
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+---
+
+Some Lucide icons are derived from the Feather project (for example type, trash, plus, x, link, search, target and others):
+
+MIT License
+
+Copyright (c) 2013-present Cole Bemis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
 ## Figtree and Shantell Sans

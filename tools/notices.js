@@ -10,6 +10,28 @@ const esbuild = require(path.join(NM, 'esbuild'));
 const read = f => { try { return fs.readFileSync(f, 'utf8'); } catch (e) { return null; } };
 const MIT = holder => `MIT License\n\nCopyright (c) ${holder}\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.`;
 
+const LUCIDE = `ISC License
+
+Copyright (c) 2026 Lucide Icons and Contributors
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+---
+
+Some Lucide icons are derived from the Feather project (for example type, trash, plus, x, link, search, target and others):
+
+${MIT('2013-present Cole Bemis')}`;
+
 // ---- the libraries inside web/vendor/*.js ----
 async function bundled() {
   const names = new Set();
@@ -41,6 +63,8 @@ async function bundled() {
       note: 'Electron includes Chromium and Node.js, which use many open-source licenses (BSD-style, MIT, Apache 2.0 and others). Their full texts ship with Electron as LICENSES.chromium.html, next to the Electron program; Settings → About → Licenses can open it.',
       text: (read(path.join(ROOT, 'node_modules', 'electron', 'dist', 'LICENSE')) || read(path.join(ROOT, 'node_modules', 'electron', 'LICENSE')) || MIT('Electron contributors, Copyright (c) 2013-2020 GitHub Inc.')).trim() },
     { name: 'Material Icons', version: '', license: 'Apache-2.0', where: 'Wireframe icons (web/icons)', url: 'https://fonts.google.com/icons', copyright: 'Copyright Google', text: read(path.join(ROOT, 'web', 'icons', 'LICENSE.txt')).trim() },
+    { name: 'Lucide', version: '', license: 'ISC (some icons MIT, from Feather)', where: 'Many of the icons on the toolbar and panels (the ones drawn on a 24 px grid)', url: 'https://lucide.dev', copyright: 'Copyright (c) 2026 Lucide Icons and Contributors; Feather icons Copyright (c) 2013-present Cole Bemis',
+      note: 'The icons Myra inherited from Mochiboard include Lucide icons. Some Lucide icons come from the Feather project and are under the MIT License below the ISC License.', text: LUCIDE },
     { name: 'Figtree and Shantell Sans', version: '', license: 'OFL-1.1', where: 'Fonts (web/fonts)', url: 'https://openfontlicense.org', text: read(path.join(ROOT, 'web', 'fonts', 'OFL.txt')).trim() },
     ...(await bundled()),
   ];
