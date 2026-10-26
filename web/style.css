@@ -2477,3 +2477,9 @@ body.dark .tdlg .seg { background: rgba(255, 255, 255, .08); }
 .tdlg label.vg-sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink); }
 .tdlg input[type="checkbox"]:not(.tgl) { padding: 0; width: auto; border: 0; }
 .tdlg input.tgl { border-width: 0; padding: 0; }
+/* a Snow vault note turns dark in dark mode, like a regular note: light words and light tints on it */
+body.dark .card.vnote.c-white .body { color: var(--ink); }
+body.dark .card.vnote.c-white :is(.vn-flip, .vn-btn, .vn-tags i, .vn-md code) { background: rgba(255, 255, 255, .12); }
+body.dark .card.vnote.c-white :is(.vn-flip, .vn-btn):hover { background: rgba(255, 255, 255, .22); }
+body.dark .card.vnote.c-white .vn-md blockquote { border-left-color: rgba(255, 255, 255, .3); }
+body.dark .card.vnote.c-white .vn-md hr { border-top-color: rgba(255, 255, 255, .25); }
