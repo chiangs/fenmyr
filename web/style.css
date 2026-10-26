@@ -708,6 +708,7 @@ body.dark .home { background-color: #1d1a16; background-image: radial-gradient(#
 body.dark .settings { background: rgba(0, 0, 0, .45); }
 body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: #3c3731; }
 body.dark .pill-btn, body.dark .tile.add { border-color: #524c44; }
+body.dark .tile .cover-btn { background: var(--surface-2); color: var(--ink); box-shadow: 0 4px 12px rgba(0, 0, 0, .35); }
 body.dark .dv-back, body.dark .db-done { background: #f0ebe4; color: #1d1a16; }
 body.dark .tgl { background: #464038; }
 body.dark .cp-fields input, body.dark .capture input { background: var(--surface-2); color: var(--ink); border-color: #464038; }

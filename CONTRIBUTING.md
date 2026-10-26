@@ -56,6 +56,8 @@ The smoke test uses a throwaway data folder and stand-in `claude` and `whisper-c
 
 ## Releasing
 
+Versions: nothing has been released yet, so Myra stays at 1.0.0 until the first release. After that, bump the patch number (1.0.1) for fixes and small changes, the minor number (1.1.0) for new features, and add a matching entry to `NEWS` in `web/app.js` for anything people should hear about.
+
 1. Bump `version` in `package.json` and add a section at the top of `WHATSNEW.md` (lines starting with `- ` become the notes people see in the app).
 2. Commit and push.
 3. `./make-release.sh` builds the AppImage and publishes a GitHub Release (needs `gh auth login`). AppImage users get it through their update bar; git installs see the new commits.
