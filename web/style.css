@@ -1423,7 +1423,7 @@ html.native .side { top: 18px; }
   box-shadow: 0 1px 2px rgba(58, 45, 31, .06), 0 14px 40px rgba(108, 85, 63, .12); }
 .dv-sheet .dv-title { color: var(--paper-ink); }
 .dv-body { min-height: 0; white-space: normal; font: inherit; color: inherit; }
-.dv-prose { outline: none; min-height: 700px; font: 400 16px/1.7 "Figtree", system-ui, sans-serif; color: var(--paper-ink); caret-color: #d9771f; word-wrap: break-word; }
+.dv-prose { outline: none; min-height: 700px; font: 400 16px/1.7 var(--board-font, "Figtree", system-ui, sans-serif); color: var(--paper-ink); caret-color: #d9771f; word-wrap: break-word; }
 .dv-prose > * + * { margin-top: .55em; }
 .dv-prose p { margin: 0; }
 .dv-prose h1 { margin: .7em 0 .25em; font-size: 36px; line-height: 1.12; font-weight: 800; letter-spacing: -.03em; }
@@ -2366,3 +2366,7 @@ body.dark svg.ico .ico-d { color: var(--ink); }
 @media (prefers-contrast: more) { :root { --ico-tint-op: .7; } body.dark { --ico-tint-op: .7; } }
 /* a toolbar button with no tip text (the zoom %) shows no empty tooltip */
 .tools button:not([data-tip])::after { content: none; display: none; }
+/* the default font (Settings → Board): text on the board and in docs; panels and menus keep Myra's font */
+#world, .dv-title, .dv-body { --font: var(--board-font, "Myra Mark", "Figtree", system-ui, -apple-system, sans-serif); }
+#world { font-family: var(--font); }
+.set-font { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

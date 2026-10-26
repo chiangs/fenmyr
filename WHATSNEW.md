@@ -11,4 +11,5 @@ Write them for people, not for code: one line, what changed and why it's nice.
 - Your cursor and its name tag wear Myra's color.
 - Follows your Caelestia colors and light or dark mode out of the box, and updates itself quietly when you quit.
 - New icons everywhere, with a plain or Duotone bottom bar (Settings → General → Icon style).
+- A default font for text on the board and in docs (Settings → Board → Default font).
 - Ctrl+, opens Settings. Window buttons are off unless you want them.

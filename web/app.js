@@ -1835,7 +1835,7 @@
   // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade
   const MYRA_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
-  const settings = Object.assign({ iconStyle: 'regular', winButtons: false, claudeHooks: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
+  const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, claudeHooks: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
   settings.wDressup = false;   // not in Myra: Mochiboard's Dress up widget (Mochi's outfits are Mochiboard's own)
   try { if (localStorage.getItem('myra:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
@@ -1905,6 +1905,9 @@
     queueMicrotask(() => { applyLayout(); placeTray(); });
     const dark = following() ? cae.mode === 'dark' : settings.theme === 'dark' || (settings.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
     document.body.classList.toggle('has-caelestia', !!cae); document.body.classList.toggle('following-caelestia', following());
+    // the font for text on the board (and in docs) that has no font of its own; Myra's glyph font stays first so ✦ is still a cloudberry
+    { const df = (settings.defaultFont || '').trim().replace(/"/g, ''); if (df) document.documentElement.style.setProperty('--board-font', `"Myra Mark", "${df}", "Figtree", system-ui, sans-serif`); else document.documentElement.style.removeProperty('--board-font');
+      queueMicrotask(() => { if (df) useFont(df); const b = $('defaultFontBtn'); if (b) { b.textContent = df || 'Figtree'; b.style.fontFamily = df ? `"${df}", "Figtree", system-ui, sans-serif` : ''; } }); }
     document.body.classList.toggle('icons-duo', settings.iconStyle === 'duotone'); document.body.classList.toggle('dark', dark); document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
     document.querySelectorAll('[data-seg]').forEach(g => g.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', settings[g.dataset.seg] === b.dataset.v)));
     $('obNotes').innerHTML = $('noteColors').innerHTML = `<button data-nc="random" class="rand ${settings.noteColor === 'random' ? 'on' : ''}" title="A random color"></button>` + COLOR_NAMES.map(n => `<button data-nc="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${settings.noteColor === n ? 'on' : ''}"></button>`).join('');
@@ -3389,7 +3392,7 @@
   // ---------- docs: a real document editor (styles, fonts, sizes, colors, lists, tables, images, Myra on any words), beside the board ----------
   // A doc keeps its rich content in c.doc (the editor's own structured format) and a plain-text copy in c.body (for the card, search and Myra).
   let docCard = null, ed = null, dvT = 0; const bubbleEl = $('dvBubble');   // the editor's popup moves the floating bar out of the page, so keep hold of it
-  const DOC_FONT = 'Figtree', SIZES = [9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 60, 72];
+  const DOC_FONT = 'Figtree', docDefault = () => (settings.defaultFont || '').trim() || DOC_FONT, SIZES = [9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 60, 72];
   const BLOCKS = [['title', 'Title', 36], ['heading', 'Heading', 26], ['sub', 'Subheading', 20], ['body', 'Body', 16], ['lead', 'Lead', 19], ['caption', 'Caption', 13], ['quote', 'Quote', 18], ['code', 'Code', 14]];
   const TEXT_COLORS = ['#2b2630', '#6b6370', '#a39aa8', '#d9771f', '#e8590c', '#c99a00', '#1f9d63', '#1f7ae0', '#6b4fe0', '#c0392b'];
   const HIGHLIGHTS = ['#fff1a8', '#ffd3e5', '#cdf2df', '#d4e8ff', '#e5dbff', '#ffe0c9', '#e9e4ec'];
@@ -3496,7 +3499,7 @@
       return r.innerHTML; };
     const body = glue(ed ? ed.getHTML() : docHTML(docCard)), first = (ed ? ed.state.doc.firstChild?.textContent : '') || '';
     const title = (docCard?.text || '').trim() && first.trim().toLowerCase() !== (docCard.text || '').trim().toLowerCase() ? docCard.text.trim() : '';   // no double title when the doc already starts with it
-    const web = [...new Set(fontsIn(ed ? ed.getJSON() : docCard.doc || {}))].filter(f => !isLocalFont(f));
+    const dfont = (settings.defaultFont || '').trim().replace(/"/g, ''), web = [...new Set([...fontsIn(ed ? ed.getJSON() : docCard.doc || {}), ...(dfont ? [dfont] : [])])].filter(f => !isLocalFont(f));
     const size = paper === 'a4' ? '210mm 297mm' : '8.5in 11in';
     return `<!doctype html><html><head><meta charset="utf-8"><title>${escH(title || 'Document')}</title>
 <link rel="stylesheet" href="__WEB__/fonts.css">${web.map(f => `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(f).replace(/%20/g, '+')}:ital,wght@0,400;0,700;1,400&display=swap">`).join('')}
@@ -3504,8 +3507,8 @@
 @page { size: ${size}; margin: 0.8in 0.85in 0.85in; }   /* browsers use these; the desktop app sets the same margins when it prints */
 html, body { margin: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { padding: 0; }
-:root { --paper: #ffffff; --paper-ink: #2b2630; --paper-soft: #6b6370; }   /* downloads are always light pages */
-.doc-title { margin: 0 0 18px; font: 800 36px/1.1 "Figtree", system-ui, sans-serif; letter-spacing: -.035em; color: #2b2630; }
+:root { --paper: #ffffff; --paper-ink: #2b2630; --paper-soft: #6b6370;${dfont ? ` --board-font: "${dfont}", "Figtree", system-ui, sans-serif;` : ''} }   /* downloads are always light pages */
+.doc-title { margin: 0 0 18px; font: 800 36px/1.1 var(--board-font, "Figtree", system-ui, sans-serif); letter-spacing: -.035em; color: #2b2630; }
 ${proseCSS()}
 .dv-prose { min-height: 0; }
 .dv-prose h1, .dv-prose h2, .dv-prose h3 { break-after: avoid; page-break-after: avoid; }
@@ -3616,7 +3619,7 @@ ${proseCSS()}
     if (!ed || !docCard) return;
     const k = blockOf(), st = ed.getAttributes('textStyle');
     $('dtStyle').textContent = (BLOCKS.find(b => b[0] === k) || BLOCKS[3])[1];
-    const f = fontName(st.fontFamily) || DOC_FONT; $('dtFont').textContent = f; $('dtFont').style.fontFamily = `"${f}", ${DOC_FONT}, system-ui`;
+    const f = fontName(st.fontFamily) || docDefault(); $('dtFont').textContent = f; $('dtFont').style.fontFamily = `"${f}", ${DOC_FONT}, system-ui`;
     if (document.activeElement !== $('dtSize')) $('dtSize').value = Math.round(docSize());
     const on = { bold: 'bold', italic: 'italic', underline: 'underline', strike: 'strike', bullet: 'bulletList', ordered: 'orderedList', task: 'taskList' };
     [$('dvTools'), bubbleEl].forEach(bar => bar.querySelectorAll('[data-c]').forEach(b => { const n = on[b.dataset.c]; if (n) b.classList.toggle('on', ed.isActive(n)); }));
@@ -3637,7 +3640,7 @@ ${proseCSS()}
     if (kind === 'style') {
       const k = blockOf(); p.innerHTML = BLOCKS.map(([id, name]) => `<button type="button" class="dp-row dp-st st-${id} ${id === k ? 'on' : ''}" data-block="${id}">${name}</button>`).join('');
     } else if (kind === 'font') {
-      const cur = fontName(ed.getAttributes('textStyle').fontFamily) || DOC_FONT;
+      const cur = fontName(ed.getAttributes('textStyle').fontFamily) || docDefault();
       const onBoard = boardFonts();
       const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-font="${escH(f)}" style="font-family:'${escH(f)}', ${DOC_FONT}, system-ui">${escH(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
       p.innerHTML = `<input class="dp-search" id="dpFontQ" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
@@ -3707,7 +3710,7 @@ ${proseCSS()}
   $('dvPop').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.type === 'submit') return; const d = b.dataset, c = ed.chain().focus();
     if (d.block) { setBlock(d.block); return hidePop(); }
-    if (d.font != null) { useFont(d.font); (d.font === DOC_FONT ? c.unsetFontFamily() : c.setFontFamily(`"${d.font}"`)).run(); return hidePop(); }
+    if (d.font != null) { useFont(d.font); (d.font === docDefault() ? c.unsetFontFamily() : c.setFontFamily(`"${d.font}"`)).run(); return hidePop(); }
     if (d.tc != null) { (d.tc ? c.setColor(d.tc) : c.unsetColor()).run(); return hidePop(); }
     if (d.hl != null) { (d.hl ? c.setHighlight({ color: d.hl }) : c.unsetHighlight()).run(); return hidePop(); }
     if (d.any) { const isHl = d.any === 'hl', r = b.getBoundingClientRect(), sel = { from: ed.state.selection.from, to: ed.state.selection.to }; hidePop();
@@ -3845,7 +3848,7 @@ ${proseCSS()}
     let p = $('fontPop'); if (p && !p.hidden && p.dataset.for === list.map(c => c.id).join()) { p.hidden = true; return; }
     if (!p) { p = document.createElement('div'); p.id = 'fontPop'; p.className = 'dv-pop pop-font board-font'; document.body.appendChild(p);
       ['pointerdown', 'mousedown', 'wheel', 'dblclick'].forEach(t => p.addEventListener(t, e => e.stopPropagation(), { passive: true })); }
-    p.dataset.for = list.map(c => c.id).join();
+    p.dataset.for = list.map(c => c.id).join(); p.style.zIndex = '';
     const cur = list.every(c => (c.font || '') === (list[0].font || '')) ? (list[0].font || '') : null;
     const onBoard = boardFonts();
     const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-bfont="${escH(f)}" style="font-family:'${escH(f)}', ${DOC_FONT}, system-ui">${escH(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
@@ -3870,6 +3873,29 @@ ${proseCSS()}
     setTimeout(() => q.focus(), 30);
   }
   document.addEventListener('pointerdown', e => { const p = $('fontPop'); if (p && !p.hidden && !e.target.closest('#fontPop, [data-sbfont]')) p.hidden = true; }, true);
+  // Settings → Board → Default font: the same list as the font picker, applied to every board
+  function defaultFontPop(btn) {
+    let p = $('fontPop'); if (p && !p.hidden && p.dataset.for === 'default') { p.hidden = true; return; }
+    if (!p) { p = document.createElement('div'); p.id = 'fontPop'; p.className = 'dv-pop pop-font board-font'; document.body.appendChild(p);
+      ['pointerdown', 'mousedown', 'wheel', 'dblclick'].forEach(t => p.addEventListener(t, e => e.stopPropagation(), { passive: true })); }
+    p.dataset.for = 'default'; p.style.zIndex = '120';   // above the Settings window
+    const cur = (settings.defaultFont || '').trim();
+    const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-bfont="${escH(f)}" style="font-family:'${escH(f)}', ${DOC_FONT}, system-ui">${escH(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
+    p.innerHTML = `<input class="dp-search" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
+      <div class="dp-scroll"><button type="button" class="dp-row dp-font ${cur === '' ? 'on' : ''}" data-bfont="">${DOC_FONT}<small>Myra’s own</small></button>
+      <div class="dp-h">Suggested</div>${SUGGESTED_FONTS.filter(f => f !== DOC_FONT).map(row).join('')}
+      <div class="dp-h">On your computer</div>${FONTS.filter(f => !SUGGESTED_FONTS.includes(f)).slice(0, 400).map(row).join('')}</div>`;
+    SUGGESTED_FONTS.forEach(useFont);
+    const r = btn.getBoundingClientRect(); p.hidden = false; p.style.position = 'fixed'; p.style.width = '260px';
+    p.style.left = Math.max(10, Math.min(innerWidth - 270, r.right - 260)) + 'px'; p.style.bottom = '';
+    const below = innerHeight - r.bottom > 340; p.style.top = below ? (r.bottom + 8) + 'px' : Math.max(10, r.top - 8 - 330) + 'px';
+    const q = p.querySelector('.dp-search'); q.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') p.hidden = true; if (e.key === 'Enter') p.querySelector('.dp-font:not([hidden])')?.click(); });
+    q.addEventListener('input', () => { const v = q.value.trim().toLowerCase(); p.querySelectorAll('.dp-font').forEach(b => b.hidden = !!v && !(b.dataset.bfont || DOC_FONT).toLowerCase().includes(v)); p.querySelectorAll('.dp-h').forEach(h => h.hidden = !!v); });
+    p.onmouseover = null; p.onmouseleave = null;
+    p.onclick = e => { const b = e.target.closest('[data-bfont]'); if (!b) return; settings.defaultFont = b.dataset.bfont; applySettings(); p.hidden = true; };
+    setTimeout(() => q.focus(), 30);
+  }
+  $('defaultFontBtn').onclick = e => { e.stopPropagation(); defaultFontPop(e.currentTarget); };
   // when the bar runs out of room (a narrow window, or bigger icons), groups move into the ··· menu, least important first
   function foldSelbar(bar) {
     const body = bar.querySelector('.sb-morebody'), wrap = bar.querySelector('[data-popw="more"]'); if (!body) return;

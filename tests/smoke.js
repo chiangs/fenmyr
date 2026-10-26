@@ -27,7 +27,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   const page = await app.firstWindow(), errors = [];
   await page.exposeFunction('__readArgs', () => fs.readFileSync(path.join(data, 'args.txt'), 'utf8'));
   page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => m.type() === 'error' && errors.push(m.text()));
+  page.on('console', m => m.type() === 'error' && !/fonts\.(googleapis|gstatic)\.com/.test(m.location().url || '') && errors.push(m.text()));   // Google Fonts can't be reached from every test machine
   await page.waitForFunction(() => window.Myra && document.querySelector('#side'));
   await page.waitForTimeout(2000);
   const r = await page.evaluate(async () => {
@@ -87,6 +87,19 @@ echo " [BLANK_AUDIO] hello from whisper"
     document.querySelector('[data-seg="iconStyle"] [data-v="regular"]').click();
     return res;
   }));
+  // Settings → Board → Default font: board text and docs change, the app's own panels don't, and choosing Myra's own puts it back
+  Object.assign(r, await page.evaluate(async () => {
+    const wait = ms => new Promise(res => setTimeout(res, ms)), fam = sel => getComputedStyle(document.querySelector(sel)).fontFamily, res = {};
+    document.getElementById('gearBtn').click(); await wait(300); document.querySelector('#setTabs [data-tab="board"]').click(); await wait(200);
+    res.fontBefore = fam('.card.title .text'); document.getElementById('defaultFontBtn').click(); await wait(200);
+    const pick = [...document.querySelectorAll('#fontPop .dp-font')].find(b => b.dataset.bfont && b.dataset.bfont !== 'Figtree' && !b.querySelector('small'));   // a font installed here (no network in the test)
+    const name = pick.dataset.bfont; pick.click(); await wait(300);
+    res.fontLora = fam('.card.title .text').includes(name) && fam('.box').includes('Figtree') && !fam('.box').includes(name) && document.getElementById('defaultFontBtn').textContent === name;
+    document.getElementById('defaultFontBtn').click(); await wait(200); document.querySelector('#fontPop [data-bfont=""]').click(); await wait(300);
+    res.fontBack = fam('.card.title .text') === res.fontBefore;
+    document.getElementById('setClose').click(); await wait(200);
+    return res;
+  }));
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
     document.getElementById('openLicenses').click(); await new Promise(res => setTimeout(res, 700));
@@ -104,7 +117,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), hooksOn: r.hooksOn.slice(-120) }, null, 1));
   await app.close();
   const ok = r.native && r.linux && r.save && r.load === 0 && r.list && r.folders === 1 && r.fonts > 0 && r.unknown === 'unknown op nope' && r.range[0] === 206 && r.range[1] === 100
-    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 70 && r.licMochiboard && r.licJszip && r.licPhosphor && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
+    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 70 && r.licMochiboard && r.licJszip && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
     && r.conn.mobbin === true && r.conn.higgsfield === false && JSON.parse(r.ask).say === 'hi from fake claude' && r.usage2.asks === 1 && r.usage2.tokensIn === 15
     && r.prompt.includes('The person asked you: sort these') && r.prompt.includes('Icons are names from this list') && r.prompt.includes('"n":0') && r.prompt.includes('Higgsfield is TURNED OFF') && r.args.includes('mcp__claude_ai_Mobbin__search_screens')
     && r.hooksOff.includes('disableAllHooks') && !r.hooksOn.includes('disableAllHooks')
