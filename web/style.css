@@ -2491,3 +2491,4 @@ body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0
 .mc-vault[hidden] { display: none; }
 .mc-vault svg { width: 14px; height: 14px; }
 .mc-vault.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+body.dark .mc-vault.on { background: #f0ebe4; border-color: #f0ebe4; color: #1d1a16; }
