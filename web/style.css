@@ -2497,3 +2497,9 @@ body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0
 .sb-wcustom { background: conic-gradient(#ff5a6e, #f6b45e, #f7e055, #5fc795, #4f9dff, #9b7bff, #ff5a6e) !important; }
 .sb-pop-wwt .sb-sizelist button { gap: 10px; align-items: center; }
 .sb-pop-wwt .sb-sizelist button.on { background: var(--blush); }
+/* wireframe panel: a little room between the buttons and the scrollbar */
+#design .dz-body { padding-right: 12px; }
+/* following Caelestia: the wireframe buttons are the panel colour tinted with the scheme's accent */
+body.following-caelestia .dz-tools button, body.following-caelestia .dz-piece-grid button { background: color-mix(in srgb, var(--panel) 86%, var(--pink-deep) 14%); color: color-mix(in srgb, var(--ink) 80%, var(--pink-deep)); }
+body.following-caelestia .dz-tools button:hover, body.following-caelestia .dz-piece-grid button:hover, body.following-caelestia .dz-tools button.on, body.following-caelestia .dz-piece-grid button.on { background: color-mix(in srgb, var(--panel) 70%, var(--pink-deep) 30%); color: var(--ink); }
+body.following-caelestia .dz-tools button.on, body.following-caelestia .dz-piece-grid button.on { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
