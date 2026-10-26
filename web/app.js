@@ -3334,9 +3334,12 @@
       { n: 'Party', src: M('party'), mv: 'spin' }, { n: 'Shook', src: M('shook'), mv: 'shake' }, { n: 'Sleepy', src: M('sleepy'), mv: 'float' }, { n: 'Happy', src: M('happy'), mv: 'squish' }, { n: 'Hop', src: M(''), mv: 'hop' }],
     emoji: [...'❤️ 👍 👎 ⭐ ✨ 🌈 🔥 🎉 💯 ✅ ❌ ❓ ❗ 💡 👀 🙌 👏 🤔 😍 😂 🥹 😭 😅 🫶 💖 🩷 💜 💙 🌸 🌷 🍓 🍑 🧁 ☕ 🚀 📌 📍 🎯 🏆 🧠 💬 🗓️ ⏰ 🔗 🎨 🖍️ 📸 🎧'.split(' ')].map(e => ({ n: e, emoji: e })),
   };
-  const WHEEL_DEFAULT = [{ emoji: '❤️' }, { emoji: '👍' }, { src: M('love') }, { emoji: '⭐' }, { src: 'stamps/myra-bounce.gif' }, { emoji: '❓' }, { emoji: '🌈' }, { src: M('happy'), mv: 'squish' }];
+  // from the top, clockwise: Myra, thumbs up, thumbs down, Myra in love, a look, a question, a red cross, a green check
+  const WHEEL_DEFAULT = [{ src: 'stamps/myra-bounce.gif' }, { emoji: '👍' }, { emoji: '👎' }, { src: M('love'), mv: 'pulse' }, { emoji: '👀' }, { emoji: '❓' }, { emoji: '❌' }, { emoji: '✅' }];
+  // people who never changed the wheel get the new one; a wheel you made your own stays as you left it
+  const WHEEL_OLD_DEFAULT = JSON.stringify([{ emoji: '❤️' }, { emoji: '👍' }, { src: M('love') }, { emoji: '⭐' }, { src: 'stamps/myra-bounce.gif' }, { emoji: '❓' }, { emoji: '🌈' }, { src: M('happy'), mv: 'squish' }]);
   // the wheel keeps your favorites; anything you pick from the full list joins it
-  let wheel = WHEEL_DEFAULT; try { const w0 = JSON.parse(localStorage.getItem('myra:wheel') || 'null'); if (Array.isArray(w0) && w0.length === 8) wheel = w0; } catch (e) {}
+  let wheel = WHEEL_DEFAULT; try { const w0 = JSON.parse(localStorage.getItem('myra:wheel') || 'null'); if (Array.isArray(w0) && w0.length === 8 && JSON.stringify(w0) !== WHEEL_OLD_DEFAULT) wheel = w0; } catch (e) {}
   // Myra's own pixel stamps (drawn by assets/art/make_art.py); every other emoji shows as your system's emoji until it has one
   const PX = { '❤️': 'heart', '⭐': 'star', '✨': 'sparkles', '🌈': 'rainbow', '🔥': 'fire', '✅': 'check', '❌': 'cross', '❓': 'question', '❗': 'exclaim', '💡': 'bulb', '💙': 'blueheart', '🌸': 'blossom', '☕': 'coffee', '📌': 'pushpin', '🎯': 'target', '💬': 'speech' };
   const pxSrc = e => PX[e] ? `stamps/px/${PX[e]}.png` : null;
