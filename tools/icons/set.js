@@ -1,7 +1,33 @@
 // Myra's icon names, and which icon of the current pack draws each one. The app only ever asks for the Myra name (Icon('note')),
 // so changing the icon pack means changing this file (or writing a new one) and running `npm run icons`: nothing in the app changes.
 // Format: [myraName, packName, "extra search words"]. Names marked custom live in custom.js (Myra's own drawings, in both weights).
+// Icons people can pick for their wireframes and icon cards: the picker offers exactly these. A bare name is the same in the pack;
+// [name, packName] differs; a third item adds search words.
+const pickable = [
+  // arrows and navigation
+  'arrow-left', 'arrow-right', 'arrow-up', 'arrow-down', 'caret-left', 'caret-right', 'caret-up', 'caret-down', ['menu', 'list'], 'compass', ['location', 'map-pin'], ['map', 'map-trifold'], ['navigation', 'navigation-arrow'],
+  ['sidebar', 'sidebar-simple'], ['more-vertical', 'dots-three-vertical'], 'home', 'house-line', 'buildings',
+  // actions
+  'plus', 'minus', 'check', 'close', ['search', 'magnifying-glass'], ['filter', 'funnel'], ['sort', 'sort-ascending'], 'refresh', 'upload', 'download', ['share', 'share-network'], 'copy', 'trash', 'edit',
+  ['save', 'floppy-disk'], ['send', 'paper-plane-tilt'], 'link', 'paperclip', 'printer', 'qr-code', ['sign-in', 'sign-in'], ['sign-out', 'sign-out'], 'power', 'scissors', 'magic-wand', 'sparkle',
+  // people and talking
+  'user', 'users', 'user-circle', 'user-plus', 'user-gear', ['chat', 'chat-circle'], ['chat-text', 'chat-circle-text'], ['mail', 'envelope'], 'phone', 'phone-call', 'bell', 'bell-ringing', 'heart', 'thumbs-up', 'thumbs-down', 'star', 'smiley', 'smiley-sad', 'hand-waving', 'handshake',
+  // shopping and money
+  ['cart', 'shopping-cart'], 'shopping-bag', 'credit-card', 'wallet', 'tag', 'receipt', ['store', 'storefront'], 'package', 'truck', 'gift', 'percent', ['dollar', 'currency-dollar'], 'coins', 'barcode',
+  // content and media
+  'image', 'images', 'camera', 'video', ['music', 'music-notes'], 'play', 'pause', 'play-circle', 'volume', 'volume-off', 'microphone', 'file', 'file-text', 'folder', 'folder-open', 'note', 'notebook', ['book', 'book-open'], 'newspaper',
+  'bookmark', 'calendar', 'calendar-check', 'clock', 'timer', 'hourglass', 'quotes', 'text', 'title', 'bullets', 'checklist', 'table', 'chart-bar', 'chart-line', 'chart-pie', ['insights', 'chart-line-up'], 'palette', 'paint-brush', 'pen', 'pencil-simple',
+  // status and safety
+  'check-circle', 'x-circle', 'warning', 'warning-circle', 'info', 'question', 'lightbulb', 'flag', 'shield-check', 'lock', ['unlock', 'lock-simple-open'], 'key', 'fingerprint', 'eye', ['eye-off', 'eye-slash'], 'seal-check',
+  // devices and tech
+  ['phone-screen', 'device-mobile'], ['tablet', 'device-tablet'], 'desktop', 'laptop', ['wifi', 'wifi-high'], 'battery-full', 'bluetooth', 'cloud', ['cloud-up', 'cloud-arrow-up'], 'database', 'code', ['terminal', 'terminal-window'], 'git-branch', 'bug', 'sliders', ['toggle', 'toggle-right'],
+  ['input', 'textbox'], 'plug', 'cpu', 'globe', ['rocket', 'rocket-launch'], ['bolt', 'lightning'], 'gear', 'wrench', 'browser', 'browsers', 'columns', 'rows', 'squares-four', 'list', 'cursor-click', 'lifebuoy', ['workspaces', 'circles-three'], 'stack',
+  // places, nature, life
+  'megaphone', 'sun', 'moon', 'cloud-sun', 'thermometer', 'drop', 'leaf', 'tree', 'flower', 'coffee', ['food', 'fork-knife'], 'car', 'airplane', 'bicycle', 'briefcase', ['education', 'graduation-cap'], 'trophy', 'medal', 'target', 'heartbeat', 'barbell', 'paw-print',
+];
+
 module.exports = {
+  pickable,
   pack: { id: 'phosphor', name: 'Phosphor', package: '@phosphor-icons/core' },
   icons: [
     // the toolbar

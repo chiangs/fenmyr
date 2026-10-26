@@ -194,7 +194,7 @@ The two talk through one channel (`window.myraHost`), so the canvas doesn't know
 
 To work on the canvas in a browser, run `python3 -m http.server` inside `web/` (Myra is pretend there). To run the app from the code without installing: `npm install && npm start`.
 
-Icons are [Material Icons](https://fonts.google.com/icons) (Apache 2.0) for wireframes, and [Lucide](https://lucide.dev) (ISC) for many of the toolbar and panel icons. Fonts are Figtree and Shantell Sans (OFL).
+Icons are [Phosphor Icons](https://phosphoricons.com) (MIT), plus Myra's own cloudberry icons. Fonts are Figtree and Shantell Sans (OFL).
 
 ## Where Myra came from
 

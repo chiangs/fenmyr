@@ -75,12 +75,24 @@ echo " [BLANK_AUDIO] hello from whisper"
     await Myra.prefs({ claudeHooks: false });
     return res;
   }));
+  // icons: everything the page draws is in the icon set, the Icon style setting switches the weight, and a name nobody drew shows a placeholder
+  Object.assign(r, await page.evaluate(async () => {
+    const shown = sel => [...document.querySelectorAll(sel)].some(g => getComputedStyle(g).display !== 'none'), res = {};
+    res.icoMissing = [...new Set([...document.querySelectorAll('svg[data-ico]')].map(s => s.dataset.ico).filter(n => !window.iconKnown(n) || n === 'missing'))];
+    res.icoCount = document.querySelectorAll('#tools svg.ico').length; res.icoPick = window.iconList().length;
+    res.icoPlaceholder = /data-ico="move_horiz"[^>]*><title>move_horiz/.test(window.Icon('move_horiz'));
+    res.icoRegular = shown('#tools .ico-r') && !shown('#tools .ico-d');
+    document.querySelector('[data-seg="iconStyle"] [data-v="duotone"]').click(); await new Promise(res => setTimeout(res, 100));
+    res.icoDuo = document.body.classList.contains('icons-duo') && shown('#tools .ico-d') && !shown('#tools .ico-r');
+    document.querySelector('[data-seg="iconStyle"] [data-v="regular"]').click();
+    return res;
+  }));
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
     document.getElementById('openLicenses').click(); await new Promise(res => setTimeout(res, 700));
     const items = [...document.querySelectorAll('#licBody .lic-item summary b')].map(b => b.textContent);
     document.getElementById('licClose').click();
-    return { licenses: items.length, licMochiboard: items.includes('Mochiboard'), licJszip: items.includes('jszip') };
+    return { licenses: items.length, licMochiboard: items.includes('Mochiboard'), licJszip: items.includes('jszip'), licPhosphor: items.includes('Phosphor Icons') && !items.includes('Lucide') };
   }));
   r.chromiumFile = fs.existsSync(path.join(path.dirname(await app.evaluate(({ app }) => app.getPath('exe'))), 'LICENSES.chromium.html'));
   await page.screenshot({ path: path.join(out, 'window.png') });
@@ -92,9 +104,9 @@ echo " [BLANK_AUDIO] hello from whisper"
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), hooksOn: r.hooksOn.slice(-120) }, null, 1));
   await app.close();
   const ok = r.native && r.linux && r.save && r.load === 0 && r.list && r.folders === 1 && r.fonts > 0 && r.unknown === 'unknown op nope' && r.range[0] === 206 && r.range[1] === 100
-    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 70 && r.licMochiboard && r.licJszip && r.chromiumFile && !errors.length
+    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 70 && r.licMochiboard && r.licJszip && r.licPhosphor && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
     && r.conn.mobbin === true && r.conn.higgsfield === false && JSON.parse(r.ask).say === 'hi from fake claude' && r.usage2.asks === 1 && r.usage2.tokensIn === 15
-    && r.prompt.includes('The person asked you: sort these') && r.prompt.includes('"n":0') && r.prompt.includes('Higgsfield is TURNED OFF') && r.args.includes('mcp__claude_ai_Mobbin__search_screens')
+    && r.prompt.includes('The person asked you: sort these') && r.prompt.includes('Icons are names from this list') && r.prompt.includes('"n":0') && r.prompt.includes('Higgsfield is TURNED OFF') && r.args.includes('mcp__claude_ai_Mobbin__search_screens')
     && r.hooksOff.includes('disableAllHooks') && !r.hooksOn.includes('disableAllHooks')
     && r.wav === 'RIFF' && r.transcribe === 'hello from whisper';
   if (process.env.KEEP) console.log('output in', out); else fs.rmSync(data, { recursive: true, force: true });

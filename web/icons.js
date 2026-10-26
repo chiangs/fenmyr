@@ -15,6 +15,6 @@
   });
   window.iconKnown = name => !!ICONS[name];
   // for the picker: every name with the words people might search for
-  window.iconList = () => Object.entries(ICONS).filter(([n]) => n !== 'missing').map(([name, e]) => ({ name, kw: e.kw || name }));
+  window.iconList = () => Object.entries(ICONS).filter(([, e]) => e.p).sort((a, b) => a[1].p - b[1].p).map(([name, e]) => ({ name, kw: (e.kw || name).toLowerCase() }));
   window.hydrateIcons();
 })();

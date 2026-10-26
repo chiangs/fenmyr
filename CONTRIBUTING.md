@@ -8,6 +8,7 @@ web/            the canvas: everything you see and do (plain HTML/CSS/JS, no bui
   app.js          the canvas itself: cards, tools, Myra's chat, settings, updates bar, tour
   style.css       all the styling (light and dark)
   bridge.js       window.Myra: the canvas's only way to reach the host (or a pretend host in a browser)
+  icons.js        the Icon() facade; icons/pack.js is built by `npm run icons`
   vendor/         prebuilt TipTap editor and .docx writer (source in tools/editor/)
   licenses.js     generated third-party notices for About → Licenses (npm run notices)
 linux/          the host: an Electron main process
@@ -80,3 +81,9 @@ Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) 
 ## Third-party notices
 
 `THIRD-PARTY-NOTICES.md` and `web/licenses.js` are generated. After rebuilding the editor bundles in `tools/editor/` (or adding anything someone else made), run `npm run notices` and commit both files. The script asks esbuild what actually goes into `web/vendor/`, so the list matches what ships.
+
+## Icons
+
+The app never names an icon pack directly. It asks for a Myra icon name through `Icon('note')` (`web/icons.js`), or marks a placeholder in the HTML with `<svg data-ico="note"></svg>`. `tools/icons/set.js` says which icon of the current pack (Phosphor) draws each name and which names the wireframe picker offers; `tools/icons/custom.js` holds Myra's own icons (the cloudberry mark, the Myra tool, chat). Run `npm run icons` after changing either: it builds `web/icons/pack.js` (both the Regular and the Duotone drawing of every icon) and `linux/icon-names.json` (the names Myra may use in wireframes).
+
+To use another icon pack, add it as a dependency and change `pack` and the second column of `set.js`; nothing else in the app changes. A name with no icon shows a dashed placeholder, so old boards never break. Wireframe pieces and icon cards always draw as plain outlines, whatever the Icon style setting is.

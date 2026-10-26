@@ -931,11 +931,8 @@ body.dark .card.box { background: none !important; }
 .dz-f > span { flex: none; }
 .dz-row { flex-wrap: wrap; } .dz-row button { min-width: 28px; }
 
-/* Material Icons, built in so they work offline (© Google, Apache 2.0) */
-@font-face { font-family: "Material Icons Outlined"; src: url("icons/MaterialIconsOutlined-Regular.otf") format("opentype"); font-display: block; }
-.mi { font-family: "Material Icons Outlined"; font-weight: normal; font-style: normal; line-height: 1; letter-spacing: normal; text-transform: none; white-space: nowrap; direction: ltr; -webkit-font-feature-settings: "liga"; font-feature-settings: "liga"; -webkit-font-smoothing: antialiased; display: inline-block; }
 .card.icon .body { display: grid; place-items: center; }
-.card.icon .mi { font-size: var(--isz, 24px); color: var(--ic, #27272a); }
+.card.icon svg.ci { width: var(--isz, 24px); height: var(--isz, 24px); color: var(--ic, #27272a); }
 .dz-icons { display: none; margin-top: 8px; }
 .dz-icons.on { display: block; }
 .dz-icons input { width: 100%; padding: 8px 10px; border: 1.5px solid #efebe6; border-radius: 14px; corner-shape: squircle; background: #fff; font: 500 12.5px/1 var(--font); color: var(--ink); outline: none; user-select: text; -webkit-user-select: text; }
@@ -943,13 +940,13 @@ body.dark .card.box { background: none !important; }
 .dz-icon-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; max-height: 210px; overflow: auto; margin-top: 6px; }
 .dz-icon-grid button { aspect-ratio: 1; border: 0; border-radius: 8px; background: none; cursor: pointer; display: grid; place-items: center; color: var(--ink); }
 .dz-icon-grid button:hover, .dz-icon-grid button.on { background: var(--blush); }
-.dz-icon-grid .mi { font-size: 20px; }
+.dz-icon-grid svg.ico { width: 20px; height: 20px; }
 .dz-icon-grid .more { grid-column: 1 / -1; aspect-ratio: auto; padding: 6px; font: 500 11px/1.3 var(--font); color: var(--ink-soft); cursor: default; }
 .dz-pieces { margin-top: 12px; }
 .dz-pieces > .label { margin: 0 2px 6px; }
 .dz-piece-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .dz-piece-grid button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 7px; border: 0; border-radius: 14px; corner-shape: squircle; background: #f8f5f3; color: var(--ink-soft); font: 600 10.5px/1.1 var(--font); cursor: pointer; }
-.dz-piece-grid button .mi { font-size: 19px; }
+.dz-piece-grid button svg.ico { width: 19px; height: 19px; }
 .dz-piece-grid button:hover, .dz-piece-grid button.on { background: var(--blush); color: var(--ink); }
 body.dark .dz-piece-grid button { background: #322c25; } body.dark .dz-icons input { background: #322c25; border-color: #464038; }
 /* rotation: wireframe things turn freely; a little handle sits above the selection */
@@ -982,7 +979,7 @@ body.dark .card.font.c-white > .frame { background: #38332d !important; }
 
 /* image spots: what picture goes here, until it's filled */
 .bx-ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 14px; text-align: center; color: #a1a1aa; pointer-events: none; overflow: hidden; }
-.bx-ph .mi { font-size: 28px; }
+.bx-ph svg.ico { width: 28px; height: 28px; }
 .bx-l { font: 500 12px/1.35 var(--font); max-width: 90%; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .dz-sub { grid-column: 1 / -1; margin: 8px 2px 2px; }
 /* Myra's quieter answer buttons share the .ghost name with the drag preview: keep them visible */
@@ -1242,7 +1239,7 @@ body.exporting #rh { display: none !important; }
 .ly-ic { flex: none; width: 18px; height: 18px; display: grid; place-items: center; color: var(--ink-soft); }
 .ly-ic svg { width: 15px; height: 15px; }
 .ly-ic img { width: 16px; height: 16px; object-fit: contain; image-rendering: pixelated; }
-.ly-ic .mi { font-size: 16px; }
+.ly-ic svg.ico { width: 16px; height: 16px; }
 .ly-emo { font-size: 13px; line-height: 1; }
 .ly-sw { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .1); }
 .ly-n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; outline: none; line-height: 30px; }
@@ -1660,7 +1657,7 @@ body.dark .ub-yes { background: #f6f2ee; color: #302c26; }
 html.native .upbar.low { top: 80px; }
 
 /* a font picked for board text: everything inside the card wears it (icons keep theirs) */
-.card.has-font, .card.has-font *:not(.mi):not(svg):not(svg *) { font-family: var(--cf), var(--font), system-ui !important; }
+.card.has-font, .card.has-font *:not(svg):not(svg *) { font-family: var(--cf), var(--font), system-ui !important; }
 .sb-font { display: inline-flex; align-items: center; gap: 6px; max-width: 150px; }
 .sb-font span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .board-font { z-index: 60; }
@@ -2272,7 +2269,7 @@ body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .row-menu.tb-menu .tbm-row { display: flex; align-items: center; gap: 10px; } .row-menu.tb-menu .tbm-row svg { width: 18px; height: 18px; flex: none; }
 .set-tblist { max-height: none; margin-top: 4px; }
 /* strokes: screens get a border on the screen itself; letters (titles, wireframe text, icons) get an outline drawn behind the fill, so the letters stay full weight */
-.card.title.has-stroke .text, .card.text.has-stroke .tx, .card.icon.has-stroke .mi { -webkit-text-stroke: calc(var(--skw) * 2) var(--sk); paint-order: stroke fill; }
+.card.title.has-stroke .text, .card.text.has-stroke .tx { -webkit-text-stroke: calc(var(--skw) * 2) var(--sk); paint-order: stroke fill; }
 .sb-skcur { background: none !important; box-shadow: inset 0 0 0 3px var(--c, #27272a) !important; }
 .sb-skcur.none { box-shadow: inset 0 0 0 1.5px var(--ink-faint) !important; background: linear-gradient(135deg, transparent 46%, #ff5a6e 46% 54%, transparent 54%) !important; }
 .sb-stroke { gap: 12px; } .sb-stroke .sb-fills { justify-content: flex-start; }
@@ -2412,3 +2409,6 @@ svg.ico.ico.ico.ico .f { fill: currentColor !important; stroke: none !important;
 svg.ico.ico.ico.ico .t { fill: var(--ico-tint) !important; fill-opacity: var(--ico-tint-op); }
 svg.ico.ico.ico.ico .t2 { fill: var(--ico-tint2) !important; fill-opacity: var(--ico-tint-op); }
 :root { --ico-tint: #f6a63c; --ico-tint2: #5fb04c; --ico-tint-op: .4; }
+/* icons that are part of what someone is designing (wireframe pieces, icon cards) always draw as plain outlines, whatever the app's Icon style is */
+body.icons-duo .card svg.ico .ico-d { display: none; }
+body.icons-duo .card svg.ico .ico-r { display: revert; }
