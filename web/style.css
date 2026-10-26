@@ -2400,3 +2400,14 @@ body.dark .mu-volpop { background: #302c27; }
 .lic-item pre { margin: 10px 0 4px 18px; padding: 12px 14px; max-height: 320px; overflow: auto; white-space: pre-wrap; font: 400 11.5px/1.5 ui-monospace, monospace; color: var(--ink-soft); background: var(--blush); border-radius: 14px; corner-shape: squircle; user-select: text; -webkit-user-select: text; }
 .lic-item p .set-btn { margin-left: 18px; }
 body.dark .lic-item pre { background: var(--surface-2); }
+
+/* ---------- icons (web/icons.js): one drawing per weight; the Icon style setting switches which one shows ---------- */
+svg.ico { display: inline-block; flex: none; width: 1em; height: 1em; }
+body:not(.icons-duo) svg.ico .ico-d, body.icons-duo svg.ico .ico-r { display: none; }
+/* the page has many older rules for svg fills and strokes; these are specific enough to win over all of them */
+svg.ico.ico.ico.ico :is(path, circle, rect, ellipse, polygon, polyline, line) { fill: currentColor !important; stroke: none !important; }
+svg.ico.ico.ico.ico .s { fill: none !important; stroke: currentColor !important; stroke-width: 1.5 !important; stroke-linecap: round; stroke-linejoin: round; }
+svg.ico.ico.ico.ico .f { fill: currentColor !important; stroke: none !important; }
+svg.ico.ico.ico.ico .t { fill: var(--ico-tint) !important; fill-opacity: var(--ico-tint-op); }
+svg.ico.ico.ico.ico .t2 { fill: var(--ico-tint2) !important; fill-opacity: var(--ico-tint-op); }
+:root { --ico-tint: #f6a63c; --ico-tint2: #5fb04c; --ico-tint-op: .4; }
