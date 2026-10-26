@@ -1733,7 +1733,7 @@
     const c = tgt && byId(tgt), v = fs.find(f => f.type.startsWith('video/'));
     if (c && v) return fillVideo(c, v); addImages(fs); };
   $('boardName').oninput = e => { board.name = e.target.value || 'Untitled board'; save(); };
-  // + Board / + Folder add into wherever you are: the folder you're in, or the project you're in
+  // + Project / + Folder / + Board: the folder and board add into wherever you are: the folder you're in, or the project you're in
   function scope() {
     const f = homeAt ? (homeAt.level === 'folder' ? folders.find(x => x.id === homeAt.id) : null) : folders.find(x => x.id === board?.folder);
     const p = homeAt?.level === 'project' ? projects.find(x => x.id === homeAt.id) : homeAt?.level === 'all' ? null : f && projects.find(x => x.id === f.project);
