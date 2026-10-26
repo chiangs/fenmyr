@@ -2490,8 +2490,7 @@
           if (!g) continue;
           const body = document.createElement('div'); body.className = 'vg-body'; body.innerHTML = '<div class="vr-h">Folders Myra may use</div>'; blk.appendChild(body);
           body.appendChild(folderChecklist(info.folders.filter(f => !(v.off || []).some(o => f === o || f.startsWith(o + '/'))), g.folders, f => { g.folders = f; }, { whole: true }));
-          body.insertAdjacentHTML('beforeend', `<label class="vg-sw"><span>Let Myra read these with AI<small>When you tick “Search my vault” in her chat, she finds notes in these folders that match your question and sends their text to Claude (a cloud service). Never #private notes or off-limits folders.</small></span><input type="checkbox" class="tgl" data-k="ai" ${g.ai ? 'checked' : ''}></label>
-            <label class="vg-sw"><span>Let Myra write to this vault<small>Only to one folder, only when you say “send to vault”. Coming in a later update; your choice is kept.</small></span><input type="checkbox" class="tgl" data-k="write" ${g.write ? 'checked' : ''}></label>`);
+          body.insertAdjacentHTML('beforeend', `<label class="vg-sw"><span>Let Myra read these with AI<small>When you tick “Search my vault” in her chat, she finds notes in these folders that match your question and sends their text to Claude (a cloud service). Never #private notes or off-limits folders.</small></span><input type="checkbox" class="tgl" data-k="ai" ${g.ai ? 'checked' : ''}></label>`);
           body.onchange = e => { const k = e.target.dataset.k; if (k) g[k] = e.target.checked; };
         }
       };
