@@ -39,12 +39,12 @@ function createWindow() {
   // links on the board open in the browser, not inside the app
   wc.on('will-navigate', (e, url) => { if (/^https?:/i.test(url)) { e.preventDefault(); shell.openExternal(url); } });
   wc.setWindowOpenHandler(({ url }) => { if (/^(https?|mailto):/i.test(url)) shell.openExternal(url); return { action: 'deny' }; });
-  // keys a Linux app is expected to know (there's no menu bar); everything else goes to the canvas
+  // keys a Linux app is expected to know (there's no menu bar); everything else goes to the canvas.
+  // (No Ctrl+M to minimize: tiling compositors like Hyprland have no minimize, and Chromium then thinks the window is hidden and stops painting it.)
   wc.on('before-input-event', (e, i) => {
     if (i.type !== 'keyDown') return;
     const k = i.key.toLowerCase();
     if (i.control && !i.shift && k === 'q') { e.preventDefault(); app.quit(); }
-    else if (i.control && !i.shift && k === 'm') { e.preventDefault(); win.minimize(); }
     else if (k === 'f12' || (i.control && i.shift && k === 'i')) { e.preventDefault(); wc.toggleDevTools(); }
     else if (k === 'f11') { e.preventDefault(); win.setFullScreen(!win.isFullScreen()); }
   });

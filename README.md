@@ -139,7 +139,7 @@ The first memo downloads the speech model (about 140 MB, once) into `~/.local/sh
 | **Ctrl+\\** | Just the board (hide the panels) |
 | **space + drag** | Pan |
 | **Ctrl+,** | Settings |
-| **Ctrl+M · Ctrl+Q · F11** | Minimize · quit · full screen |
+| **Ctrl+Q · F11** | Quit · full screen |
 
 ## The window
 
