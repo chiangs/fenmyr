@@ -21,7 +21,7 @@ const dots = (list, r, cls) => list.map(([x, y]) => `<circle class="${cls}" cx="
 
 function mark(cx, cy, s, duo) {
   const { d, top } = berry(cx, cy, s), L = leaf(cx, top + .3 * s, s, -1) + leaf(cx, top + .3 * s, s, 1);
-  const beads = dots([[cx - 1.9 * s, cy - .6 * s], [cx + 1.8 * s, cy - 1.1 * s], [cx - .1 * s, cy + 2.3 * s]], .55 * s, 'f');
+  const beads = dots([[cx - 1.9 * s, cy - .6 * s], [cx + 1.8 * s, cy - 1.1 * s], [cx - .1 * s, cy + 2.3 * s]], .8 * s, 'f');   // big enough to still show at 16 px
   return `<path class="s${duo ? ' t' : ''}" d="${d}"/><path class="s${duo ? ' t2' : ''}" d="${L}"/>` + beads;
 }
 const STAR = 'M18.6 2.6l.85 2.35 2.35.85-2.35.85-.85 2.35-.85-2.35-2.35-.85 2.35-.85z';
@@ -37,5 +37,5 @@ module.exports = {
   // ask Myra: a smaller berry with a sparkle
   'myra-tool': { ...both(duo => mark(10.6, 15, .8, duo) + `<path class="s${duo ? ' t' : ''}" d="${STAR}"/>`), kw: 'ask myra ai assistant sparkle' },
   // chat with Myra: a bubble with a leaf crown and three beads
-  'myra-chat': { ...both(duo => `<path class="s${duo ? ' t' : ''}" d="${BUBBLE}"/><path class="s${duo ? ' t2' : ''}" d="${leaf(11.6, 7, .62, -1) + leaf(12.4, 7, .62, 1)}"/>` + dots([[9.2, 11.4], [14.8, 11.4], [12, 14.6]], 1.1, 'f')), kw: 'chat talk message myra' },
+  'myra-chat': { ...both(duo => `<path class="s${duo ? ' t' : ''}" d="${BUBBLE}"/><path class="s${duo ? ' t2' : ''}" d="${leaf(11.3, 6.6, .72, -1) + leaf(12.7, 6.6, .72, 1)}"/>` + dots([[9.2, 11.6], [14.8, 11.6], [12, 14.8]], 1.25, 'f')), kw: 'chat talk message myra' },
 };

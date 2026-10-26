@@ -6,7 +6,7 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   // a name nobody has drawn shows a neutral placeholder, with the name as its tooltip, so nothing is ever blank
   const entry = name => ICONS[name] || ICONS.missing;
-  const inside = (name, title) => { const e = entry(name); return (!ICONS[name] || title ? `<title>${esc(title || name)}</title>` : '') + `<g class="ico-r">${e ? e.r : ''}</g><g class="ico-d">${e ? e.d : ''}</g>`; };
+  const inside = (name, title) => { const e = entry(name); return (!ICONS[name] || title ? `<title>${esc(title || name)}</title>` : '') + `<g class="ico-r">${e ? e.r : ''}</g><g class="ico-d">${e ? (e.d ?? e.t + e.r) : ''}</g>`; };
   // Icon('note', { cls: 'ic', size: 18, title: 'Note' }) → an <svg> string
   window.Icon = (name, o = {}) => `<svg class="ico${o.cls ? ' ' + o.cls : ''}" viewBox="0 0 256 256" aria-hidden="true" data-ico="${esc(name)}"${o.size ? ` width="${o.size}" height="${o.size}"` : ''}>${inside(name, o.title)}</svg>`;
   // fills the empty <svg data-ico="note"> placeholders in the page (or in a part of it)

@@ -39,17 +39,6 @@
     <header><div class="label">Board colors</div><button class="mini" title="Minimize">–</button></header>
     <div class="box-body"><div class="palette" id="palette"></div></div>
   </section>
-  <section class="box" data-box="music">
-    <header><div class="label" data-mname="{name}'s music">Myra's music</div><span class="mu-volw"><button class="mu-volbtn" id="muVolBtn" title="Volume" aria-label="Volume"><svg data-ico="volume" width="15" height="15"></svg></button><div class="mu-volpop" id="muVolPop"><label class="mu-vol" title="Volume"><input type="range" id="muVol" min="0" max="1" step="0.01" value="0.6" aria-label="Volume"></label></div></span><button class="mini" title="Minimize">–</button></header>
-    <div class="box-body">
-      <div class="mu-now" id="muNow">
-        <span class="mu-artw"><img class="mu-art" id="muArt" src="stamps/px/sparkles.png" alt=""><button class="mu-play" id="muPlay" aria-label="Play"><svg viewBox="0 0 20 20"><path class="i-play" d="M6.5 4.2v11.6L16 10z"/><g class="i-pause"><rect x="5" y="4" width="3.6" height="12" rx="1.2"/><rect x="11.4" y="4" width="3.6" height="12" rx="1.2"/></g></svg></button></span>
-        <div class="mu-meta"><b id="muName">Strawberry Milk Beats</b><small id="muVibe">Cozy</small></div>
-        <span class="mu-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-      </div>
-      <div class="mu-list" id="muList" role="list"></div>
-    </div>
-  </section>
   <section class="box" data-box="dressup">
     <header><div class="label" data-mname="Dress up {name}">Dress up Myra</div><button class="mini" title="Minimize">–</button></header>
     <div class="box-body">
@@ -229,9 +218,6 @@
       <div class="nw-card"><div class="nw-stage"><canvas id="nwGoo" width="120" height="120" aria-label="Myra trying on outfits"></canvas></div>
         <b>Dress up Myra</b><small>Hats, glasses, a balloon… and she wears her outfit everywhere she shows up.</small>
         <label class="nw-add"><input type="checkbox" class="tgl" id="nwDress"><span>Add to my board</span></label></div>
-      <div class="nw-card"><div class="nw-stage nw-mu"><img src="stamps/myra.png" alt=""><img src="stamps/px/rainbow.png" alt=""><img src="stamps/px/heart.png" alt=""><button class="nw-listen" id="nwListen" type="button">▶ Listen</button></div>
-        <b>Myra's music</b><small>Three little lo-fi songs that loop softly while you work.</small>
-        <label class="nw-add"><input type="checkbox" class="tgl" id="nwMusic"><span>Add to my board</span></label></div>
     </div>
   </section>
   <section class="nw-step" data-s="2" hidden>
@@ -239,7 +225,7 @@
       <div class="dm-side"><span class="dm-gear"><svg data-ico="settings" width="15" height="15"></svg></span><i></i><i></i><i></i></div>
       <div class="dm-win"><div class="dm-tabs"><i>General</i><i>Myra</i><i>Board</i><i class="dm-w">Widgets</i></div>
         <div class="dm-row"><b>Dress up Myra</b><span class="dm-sw dm-s1"></span></div>
-        <div class="dm-row"><b>Myra's music</b><span class="dm-sw dm-s2"></span></div></div>
+        </div>
       <svg class="dm-cur" data-ico="select"></svg>
     </div>
     <p class="nw-tip">Drag any widget by its title to move it to either side.</p>

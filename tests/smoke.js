@@ -83,7 +83,7 @@ echo " [BLANK_AUDIO] hello from whisper"
     res.icoPlaceholder = /data-ico="move_horiz"[^>]*><title>move_horiz/.test(window.Icon('move_horiz'));
     res.icoRegular = shown('#tools .ico-r') && !shown('#tools .ico-d');
     document.querySelector('[data-seg="iconStyle"] [data-v="duotone"]').click(); await new Promise(res => setTimeout(res, 100));
-    res.icoDuo = document.body.classList.contains('icons-duo') && shown('#tools .ico-d') && !shown('#tools .ico-r');
+    res.icoDuo = document.body.classList.contains('icons-duo') && shown('#tools .ico-d') && !shown('#tools .ico-r') && document.querySelectorAll('#tools svg.ico .ico-d .t').length > 10;
     document.querySelector('[data-seg="iconStyle"] [data-v="regular"]').click();
     return res;
   }));

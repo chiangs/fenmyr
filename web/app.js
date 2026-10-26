@@ -1836,12 +1836,12 @@
   const MYRA_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
   const settings = Object.assign({ iconStyle: 'regular', winButtons: false, claudeHooks: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
-  settings.wDressup = settings.wMusic = false;   // not in Myra: Mochiboard's Dress up and music widgets (Mochi's outfits and the songs are Mochiboard's own)
+  settings.wDressup = false;   // not in Myra: Mochiboard's Dress up widget (Mochi's outfits are Mochiboard's own)
   try { if (localStorage.getItem('myra:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
   // the Boards panel is pinned at the top left (it's home to your boards and Settings), everything else can move
-  const WG_DEFAULT = { left: ['layers', 'colors', 'music'], right: ['design', 'tray', 'dressup'] };
-  const WG_ALL = ['layers', 'colors', 'music', 'dressup', 'design', 'tray'];
+  const WG_DEFAULT = { left: ['layers', 'colors'], right: ['design', 'tray', 'dressup'] };
+  const WG_ALL = ['layers', 'colors', 'dressup', 'design', 'tray'];
   const wgEl = k => k === 'design' ? $('design') : k === 'tray' ? $('tray') : document.querySelector(`.box[data-box="${k}"]`);
   const wgKey = el => el.id === 'design' ? 'design' : el.id === 'tray' ? 'tray' : el.dataset.box;
   function wgLayout() {   // the saved layout, with anything missing (a new widget) added where it belongs by default
@@ -1894,7 +1894,7 @@
     addEventListener('pointermove', go); addEventListener('pointerup', stop);
   }, true);   // listen first: some widgets (Wireframe) keep their clicks to themselves
   const WIDGETS = [['wLayers', () => document.querySelector('.box[data-box="layers"]')], ['wColors', () => document.querySelector('.box[data-box="colors"]')],
-    ['wDressup', () => document.querySelector('.box[data-box="dressup"]')], ['wMusic', () => document.querySelector('.box[data-box="music"]')], ['wDesign', () => $('design')], ['wTray', () => $('tray')]];
+    ['wDressup', () => document.querySelector('.box[data-box="dressup"]')], ['wDesign', () => $('design')], ['wTray', () => $('tray')]];
   function applySettings() {
     queueMicrotask(() => applyColors()); queueMicrotask(() => applyGridShape()); queueMicrotask(() => applyToolbar());
     goos.forEach(g => g.setColors(MYRA_COLORS[settings.myra] || MYRA_COLORS.golden));
@@ -2111,67 +2111,6 @@
     else { const fit = { ...(settings.outfit || {}) }; fit[kind] = fit[kind] === key ? null : key; settings.outfit = fit; }
     window.MyraPreview = null; applySettings(); hopMyra(); duGoo.hop();
   };
-  // ---------- Myra's music: three little lo-fi songs. Each one softens at the end, takes a breath, and starts again ----------
-  // It never starts on its own. It remembers the song and volume, and keeps playing when you switch boards.
-  const TRACKS = [
-    { id: 'strawberry-milk-beats', name: 'Strawberry Milk Beats', vibe: 'Cozy, Myra’s everyday groove', art: 'heart' },
-    { id: 'cloud-desk', name: 'Cloud Desk', vibe: 'Calm, for focusing', art: 'rainbow' },
-    { id: 'jelly-jog', name: 'Jelly Jog', vibe: 'Bouncy, for getting things done', art: 'blossom' },
-  ];
-  const music = (() => {
-    // Perfect loops: the song is loaded into memory and loops right at its last bar, no fade, no gap.
-    // Volume and the tiny click-free start/stop run on the audio system's own clock, so a hidden window can't pause anything.
-    // If loading ever fails, the plain player's own repeat takes over (it has a hair of a gap at the seam).
-    const BAR = 3;   // 80 BPM, 4 beats: every song is a whole number of 3-second bars
-    let mine = {}; try { mine = JSON.parse(localStorage.getItem('myra:music') || '{}'); } catch (e) {}
-    let cur = TRACKS.findIndex(t => t.id === mine.track); if (cur < 0) cur = 0;
-    let vol = typeof mine.vol === 'number' ? mine.vol : .6, playing = false, ctx = null, gain = null, src = null, startedAt = 0, offset = 0, loopLen = 0, el = null, mode = '';
-    const bufs = {};
-    const keep = () => { try { localStorage.setItem('myra:music', JSON.stringify({ track: TRACKS[cur].id, vol })); } catch (e) {} };
-    const url = () => `music/${TRACKS[cur].id}.mp3`;
-    const fetchBuf = id => bufs[id] || (bufs[id] = new Promise((ok, no) => {   // XHR, because the Mac app's page is a local file
-      const x = new XMLHttpRequest(); x.open('GET', `music/${id}.mp3`); x.responseType = 'arraybuffer';
-      x.onload = () => (x.status === 200 || x.status === 0) && x.response?.byteLength ? ok(x.response) : no(new Error('empty'));
-      x.onerror = () => no(new Error('blocked')); x.send();
-    }).then(ab => ctx.decodeAudioData(ab)).catch(e => { delete bufs[id]; throw e; }));
-    function stopNow(soft) {
-      if (src) { const s = src, t = ctx.currentTime; gain.gain.cancelScheduledValues(t); gain.gain.setValueAtTime(gain.gain.value, t); gain.gain.linearRampToValueAtTime(0, t + (soft ? .12 : .02)); s.stop(t + (soft ? .13 : .03)); src = null; }
-      if (el) el.pause();
-    }
-    async function play(i = cur) {
-      if (i !== cur) { stopNow(); cur = i; offset = 0; keep(); }
-      playing = true; paint();
-      try {
-        ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (!gain) { gain = ctx.createGain(); gain.connect(ctx.destination); }
-        await ctx.resume();
-        const id = TRACKS[cur].id, b = await fetchBuf(id); if (!playing || TRACKS[cur].id !== id) return;
-        const bars = Math.round(b.duration / BAR) * BAR; loopLen = Math.abs(bars - b.duration) < .3 && bars > 0 ? Math.min(bars, b.duration) : b.duration;
-        stopNow(); src = ctx.createBufferSource(); src.buffer = b; src.loop = true; src.loopStart = 0; src.loopEnd = loopLen; src.connect(gain);
-        const t = ctx.currentTime; gain.gain.cancelScheduledValues(t); gain.gain.setValueAtTime(0, t); gain.gain.linearRampToValueAtTime(vol, t + .15);
-        src.start(t, offset % loopLen); startedAt = t - offset % loopLen; mode = 'loop';
-      } catch (e) {
-        if (!playing) return;
-        el = el || Object.assign(new Audio(), { loop: true }); if (!el.src.endsWith(url())) { el.src = url(); el.currentTime = 0; }
-        el.volume = vol; mode = 'element'; el.play().catch(() => { playing = false; paint(); });
-      }
-    }
-    function pause() { if (src) offset = (ctx.currentTime - startedAt) % loopLen; playing = false; stopNow(true); setTimeout(() => { if (!playing && ctx) ctx.suspend(); }, 200); paint(); }   // the audio engine sleeps while paused
-    function paint() {
-      const t = TRACKS[cur];
-      $('muName').textContent = t.name; $('muVibe').textContent = t.vibe; $('muArt').src = `stamps/px/${t.art}.png`;
-      $('muNow').dataset.track = t.id; $('muNow').classList.toggle('on', playing);
-      $('muPlay').classList.toggle('on', playing); $('muPlay').setAttribute('aria-label', playing ? 'Pause' : 'Play');
-      $('muList').innerHTML = TRACKS.map((x, i) => `<button class="mu-row${i === cur ? ' cur' : ''}${i === cur && playing ? ' on' : ''}" data-i="${i}" role="listitem"><img src="stamps/px/${x.art}.png" alt=""><span><b>${esc(x.name)}</b><small>${esc(x.vibe.split(',')[0])}</small></span></button>`).join('');
-    }
-    $('muPlay').onclick = e => { e.stopPropagation(); playing ? pause() : play(); };
-    $('muVolBtn').onclick = e => { e.stopPropagation(); $('muVolPop').classList.toggle('on'); };   // the volume lives up by the minimize button
-    document.addEventListener('pointerdown', e => { if (!e.target.closest('.mu-volw')) $('muVolPop').classList.remove('on'); }, true);
-    $('muList').onclick = e => { const b = e.target.closest('[data-i]'); if (!b) return; const i = +b.dataset.i; if (i === cur && playing) return pause(); play(i); };
-    $('muVol').value = vol; $('muVol').oninput = () => { vol = +$('muVol').value; if (gain) gain.gain.setTargetAtTime(playing ? vol : 0, ctx.currentTime, .04); if (el) el.volume = vol; keep(); };
-    paint();
-    return { play, pause, get playing() { return playing; }, get mode() { return mode; }, get position() { return src ? (ctx.currentTime - startedAt) % loopLen : el ? el.currentTime : 0; }, get loopLen() { return loopLen; } };
-  })();
-
   $('wgReset').onclick = () => { settings.layout = null; applySettings(); chirp('Widgets are back where they started ✦', 2600); };
   $('duOff').onclick = () => { settings.outfit = {}; applySettings(); duGoo.hop(); };
 
@@ -4590,12 +4529,10 @@ ${proseCSS()}
     const last = n >= steps.length;
     $('newsOk').textContent = last ? 'Love it' : 'Next →';
     if (steps.length) { $('newsTry').textContent = n === 0 ? 'Skip' : last ? 'Show me' : '← Back'; }
-    $('nwDress').checked = settings.wDressup !== false; $('nwMusic').checked = settings.wMusic !== false;
+    $('nwDress').checked = settings.wDressup !== false;
     clearInterval(nwGooT); if (n === 1) { let i = 0; window.__nwFit = NW_FITS[0]; nwGooT = setInterval(() => { window.__nwFit = NW_FITS[++i % NW_FITS.length]; nwGoo.hop(); }, 1300); }
   }
   $('nwDress').onchange = () => { settings.wDressup = $('nwDress').checked; applySettings(); if (settings.wDressup) nwGoo.hop(); };
-  $('nwMusic').onchange = () => { settings.wMusic = $('nwMusic').checked; applySettings(); };
-  $('nwListen').onclick = () => { if (music.playing) music.pause(); else music.play(0); $('nwListen').textContent = music.playing ? '❚❚ Pause' : '▶ Listen'; };
   const newsKey = 'myra:newsSeen';
   async function maybeNews() {
     let v = null; try { v = await Myra.version(); } catch (e) {} if (!v) v = Object.keys(NEWS).pop();
@@ -4603,7 +4540,7 @@ ${proseCSS()}
     try { localStorage.setItem(newsKey, v); } catch (e) {}
     // everything new since the version you last saw (a small fix release has no card of its own)
     const num = x => String(x || '0').replace(/^v/, '').split('.').map(n => +n || 0), after = (x, y) => { const a = num(x), b = num(y); for (let i = 0; i < 3; i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0); return false; };
-    const items = Object.keys(NEWS).filter(k => (!seen || after(k, seen)) && !after(k, v)).flatMap(k => NEWS[k]).filter(([, t]) => !/dress up|music|for windows|written out/i.test(t));   // things this version doesn't have
+    const items = Object.keys(NEWS).filter(k => (!seen || after(k, seen)) && !after(k, v)).flatMap(k => NEWS[k]).filter(([, t]) => !/dress up|for windows|written out/i.test(t));   // things this version doesn't have
     if (seen === v || !items.length) return;
     $('newsV').textContent = `Myra ${v}`; nwHead = ['What’s new ✦', `Myra ${v}`];
     nwSteps = Object.keys(NEWS_STEPS).filter(k => (!seen || after(k, seen)) && !after(k, v)).flatMap(k => NEWS_STEPS[k]); if (!nwSteps.length) nwSteps = null;
@@ -4612,7 +4549,7 @@ ${proseCSS()}
     $('news').classList.add('on'); newsShow(0);
     if (nwSteps) $('newsTry').onclick = () => { if (nwStep === 0) closeNews(); else if (nwStep >= nwSteps.length) { closeNews(); $('gearBtn').click(); setTab('widgets'); } else newsShow(nwStep - 1); };
   }
-  const closeNews = () => { $('news').classList.remove('on'); clearInterval(nwGooT); if (music.playing && settings.wMusic === false) music.pause(); $('nwListen').textContent = '▶ Listen'; };   // a song they only previewed stops with the card
+  const closeNews = () => { $('news').classList.remove('on'); clearInterval(nwGooT); };   // a song they only previewed stops with the card
   $('newsOk').onclick = () => nwSteps && nwStep < nwSteps.length ? newsShow(nwStep + 1) : closeNews();
   $('news').onclick = e => { if (e.target === $('news')) closeNews(); };
 
@@ -4632,7 +4569,7 @@ ${proseCSS()}
     const hubGoo = Goo(hub.querySelector('#hubGoo'), { outfit: 'wear' }); goos.push(hubGoo);
     const box = k => document.querySelector(`.box[data-box="${k}"]`);
     const SHEETS = {
-      boards: { title: 'Boards', tabs: [['Boards', () => box('boards')], ['Dress up Myra', () => box('dressup')], ['Music', () => box('music')]] },
+      boards: { title: 'Boards', tabs: [['Boards', () => box('boards')], ['Dress up Myra', () => box('dressup')]] },
       layers: { title: 'Layers', tabs: [['Layers', () => box('layers')]] },
       add: { title: 'Add', tabs: [['Basics', () => $('tools')], ['Wireframe', () => $('design')], ['Colors', () => box('colors')]] },
       tray: { title: 'Unsorted', tabs: [['Ideas', () => $('tray')]] },
@@ -4732,5 +4669,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__myra = { selectOnly, restack, music, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__myra = { selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

@@ -19,7 +19,9 @@ const pickNames = new Map(pick.map((p, i) => [p[0], i + 1]));
 for (const [name, packName, kw] of all) {
   const r = file('regular', packName), d = file('duotone', packName);
   if (!fs.existsSync(r) || !fs.existsSync(d)) { missing.push(`${name} → ${packName}`); continue; }
-  icons[name] = { r: inner(r), d: inner(d), kw: [name.replace(/-/g, ' '), packName.replace(/-/g, ' '), kw || ''].join(' ').trim(), ...(pickNames.has(name) ? { p: pickNames.get(name) } : {}) };
+  const rr = inner(r), dd = inner(d);
+  // most duotone drawings are the regular outline with a tint layer in front: keep only the tint layer (the app puts them together)
+  icons[name] = { r: rr, ...(dd.endsWith(rr) ? { t: dd.slice(0, dd.length - rr.length) } : { d: dd }), kw: [name.replace(/-/g, ' '), packName.replace(/-/g, ' '), kw || ''].join(' ').trim(), ...(pickNames.has(name) ? { p: pickNames.get(name) } : {}) };
 }
 if (missing.length) { console.error('The pack has no icon for:\n  ' + missing.join('\n  ')); process.exit(1); }
 for (const [name, c] of Object.entries(custom)) icons[name] = { r: c.r, d: c.d, kw: (name.replace(/-/g, ' ') + ' ' + (c.kw || '')).trim() };
