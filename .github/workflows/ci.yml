@@ -23,7 +23,7 @@ jobs:
       - name: Vault test (reading notes, privacy rules)
         run: node tests/vault.js
       - name: Smoke test (the real app, with stand-in claude and whisper)
-        run: xvfb-run -a node tests/smoke.js
+        run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/smoke.js
       - name: Zoom test
         run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/zoom.js
       - name: Docs editor test
@@ -37,7 +37,7 @@ jobs:
           useradd -m tester && cp -r . /home/tester/myra && chown -R tester /home/tester/myra
           su tester -c 'cd ~/myra && ./install.sh --yes --no-open' > install.log 2>&1 || report install install.log
           cat /home/tester/.local/lib/myra/app/install.json; echo "::notice title=Arch electron::$(pacman -Q $(pacman -Qq | grep -E "^electron[0-9]+$") 2>&1 | tr "\n" " ")"
-          su tester -c 'cd ~/myra && MYRA_APP=$HOME/.local/lib/myra/app xvfb-run -a node tests/smoke.js' > smoke.log 2>&1 || report installed-smoke smoke.log
+          su tester -c "cd ~/myra && MYRA_APP=\$HOME/.local/lib/myra/app xvfb-run -a -s '-screen 0 1440x900x24' node tests/smoke.js" > smoke.log 2>&1 || report installed-smoke smoke.log
           su tester -c 'cd ~/myra && ./uninstall.sh --purge' > uninstall.log 2>&1 || report uninstall uninstall.log
           test ! -e /home/tester/.local/bin/myra
       - name: Build the AppImage
