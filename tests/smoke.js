@@ -231,6 +231,6 @@ echo " [BLANK_AUDIO] hello from whisper"
     && r.wav === 'RIFF' && r.transcribe === 'hello from whisper';
   if (process.env.KEEP) console.log('output in', out); else fs.rmSync(data, { recursive: true, force: true });
   // on GitHub, a failure also becomes an annotation with the results, since the job log isn't always at hand
-  if (!ok && process.env.GITHUB_ACTIONS) { const { prompt, args, ...brief } = r; console.log('::error title=Smoke test failed::' + JSON.stringify(brief).replace(/%/g, '%25').replace(/\n/g, ' ').slice(0, 6000)); }
+  if (!ok && process.env.GITHUB_ACTIONS) { const { prompt, args, ...brief } = r; console.log('::error title=Smoke test failed::' + JSON.stringify(brief, (k, v) => typeof v === 'string' && v.length > 160 ? v.slice(0, 60) + '…' : v).replace(/%/g, '%25').replace(/\n/g, ' ').slice(0, 6000)); }
   console.log(ok ? 'SMOKE OK' : 'SMOKE FAILED'); process.exit(ok ? 0 : 1);
 })().catch(e => { console.error(e); if (process.env.GITHUB_ACTIONS) console.log('::error title=Smoke test crashed::' + String(e && e.stack || e).replace(/%/g, '%25').replace(/\n/g, '%0A').slice(0, 4000)); process.exit(1); });
