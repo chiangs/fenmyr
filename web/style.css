@@ -794,6 +794,7 @@ body.dark .mc-ideas button { border-color: #464038; }
 /* Myra is drawn at the bottom of her canvas (headroom for her hop), so lift her to sit visually centered */
 .m-pill canvas { transform: translateY(-4px); }
 .mc-head canvas { margin-top: -9px; }
+.mc-head .mc-ic { flex: none; color: var(--ink); }
 .m-pill { overflow: visible; }
 #goo.hopping { animation: myra-hop .62s cubic-bezier(.3, .7, .4, 1) both; transform-origin: 50% 100%; }
 @keyframes myra-hop {
@@ -2322,7 +2323,7 @@ body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .stage.vec-mode, .stage.vec-mode .card { cursor: default; }
 /* Calmest: Myra in soft, muted colors */
 /* her character hidden: the pill shows just her name */
-body.myra-hidden :is(#goo, #chatGoo, #coachGoo, #brandGoo, #hubGoo) { display: none !important; }
+body.myra-hidden :is(#goo, #coachGoo, #brandGoo, #hubGoo) { display: none !important; }
 .set-input { width: 150px; padding: 9px 12px; border: 0; border-radius: 16px; corner-shape: squircle; background: rgba(0, 0, 0, .05); font: 600 13px/1 var(--font); color: var(--ink); outline: none; }
 .set-input:focus { box-shadow: inset 0 0 0 2px var(--select); } body.dark .set-input { background: rgba(255, 255, 255, .08); }
 body.myra-calm :is(#goo, .m-pill, #mPill).hopping, body.myra-calm #goo.hopping, body.myra-calm .m-pill { animation: none !important; }
@@ -2401,7 +2402,10 @@ body.dark .lic-item pre { background: var(--surface-2); }
 /* ---------- icons (web/icons.js): one drawing per weight; the Icon style setting switches which one shows ---------- */
 svg.ico { display: inline-block; flex: none; }
 svg.ico:not([width]) { width: 1em; height: 1em; }
-body:not(.icons-duo) svg.ico .ico-d, body.icons-duo svg.ico .ico-r { display: none; }
+svg.ico .ico-d { display: none; }
+/* Duotone is only for the toolbar at the bottom; panels and wireframes stay plain outlines */
+body.icons-duo .tools svg.ico .ico-r { display: none; }
+body.icons-duo .tools svg.ico .ico-d { display: revert; }
 /* the page has many older rules for svg fills and strokes; these are specific enough to win over all of them */
 svg.ico.ico.ico.ico :is(path, circle, rect, ellipse, polygon, polyline, line) { fill: currentColor !important; stroke: none !important; }
 svg.ico.ico.ico.ico .s { fill: none !important; stroke: currentColor !important; stroke-width: 1.5 !important; stroke-linecap: round; stroke-linejoin: round; }
@@ -2409,6 +2413,3 @@ svg.ico.ico.ico.ico .f { fill: currentColor !important; stroke: none !important;
 svg.ico.ico.ico.ico .t { fill: var(--ico-tint) !important; fill-opacity: var(--ico-tint-op); }
 svg.ico.ico.ico.ico .t2 { fill: var(--ico-tint2) !important; fill-opacity: var(--ico-tint-op); }
 :root { --ico-tint: #f6a63c; --ico-tint2: #5fb04c; --ico-tint-op: .4; }
-/* icons that are part of what someone is designing (wireframe pieces, icon cards) always draw as plain outlines, whatever the app's Icon style is */
-body.icons-duo .card svg.ico .ico-d { display: none; }
-body.icons-duo .card svg.ico .ico-r { display: revert; }

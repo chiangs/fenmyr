@@ -1829,7 +1829,7 @@
     let link = document.querySelector('link[rel="icon"]'); if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
     setInterval(() => { fg.draw(); link.href = c.toDataURL('image/png'); }, 120); return fg; })();
   const goo = Goo($('goo'), { headroom: 8 }), duGoo = Goo($('duGoo')), SMALL = { outfit: 'wear', headroom: 8 };   // small Myras get room above thems, and skip what she's holding so she stays big enough to see
-  const goos = [goo, duGoo, ...(favGoo ? [favGoo] : []), Goo($('brandGoo'), SMALL), Goo($('aboutGoo'), SMALL), Goo($('chatGoo'), SMALL), Goo($('obGoo'), { headroom: 8 }), Goo($('obGoo2'), { headroom: 8 }), Goo($('coachGoo'), SMALL), Goo($('setGoo'), SMALL)];
+  const goos = [goo, duGoo, ...(favGoo ? [favGoo] : []), Goo($('brandGoo'), SMALL), Goo($('aboutGoo'), SMALL), Goo($('obGoo'), { headroom: 8 }), Goo($('obGoo2'), { headroom: 8 }), Goo($('coachGoo'), SMALL), Goo($('setGoo'), SMALL)];
 
   // ---------- settings: Myra's color and greeting, her helpers, how the board looks ----------
   // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade

@@ -1,6 +1,6 @@
 // The icon facade. The app asks for a Myra icon name (Icon('note')); the pack in web/icons/pack.js (built by tools/icons.js from
 // tools/icons/set.js) says what it looks like, so the icon pack can be swapped without touching the app.
-// Every icon carries both weights; the Icon style setting (Regular or Duotone) just switches a class on <body>.
+// Every icon carries both weights; the Icon style setting (Regular or Duotone) switches a class on <body>, and only the toolbar shows Duotone.
 (() => {
   const PACK = window.MYRA_ICON_PACK || { icons: {} }, ICONS = PACK.icons;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
