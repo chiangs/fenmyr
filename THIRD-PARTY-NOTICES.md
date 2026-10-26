@@ -6,51 +6,42 @@ It includes software made by others, listed here with their licenses. This file 
 | Component | Version | License | Used for |
 |---|---|---|---|
 | [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) | 1.7.3 | MIT | The canvas Myra grew from (web/, parts of linux/) |
-| [Electron](https://www.electronjs.org) | 44.7.0 | MIT | The window Myra runs in |
+| [Electron](https://www.electronjs.org) | 44.9.1 | MIT | The window Myra runs in |
 | [Phosphor Icons](https://phosphoricons.com) | 2.1.1 | MIT | Every icon in the app that is not one of Myra's own (web/icons/pack.js is built from it) |
 | [Figtree and Shantell Sans](https://openfontlicense.org) |  | OFL-1.1 | Fonts (web/fonts) |
-| [@popperjs/core](https://github.com/popperjs/popper-core) | 2.11.8 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/core](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-blockquote](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-bold](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-bubble-menu](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-bullet-list](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-character-count](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-code](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-code-block](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-color](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-document](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-dropcursor](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-font-family](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-gapcursor](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-hard-break](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-heading](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-highlight](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-history](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-horizontal-rule](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-image](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-italic](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-link](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-list-item](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-ordered-list](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-paragraph](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-placeholder](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-strike](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-subscript](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-superscript](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-table](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-table-cell](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-table-header](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-table-row](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-task-item](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-task-list](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-text](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-text-align](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-text-style](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-typography](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/extension-underline](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/pm](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
-| [@tiptap/starter-kit](https://tiptap.dev) | 2.27.3 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/core](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-bold](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-character-count](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-code](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-color](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-document](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-font-family](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-hard-break](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-heading](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-highlight](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-image](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-italic](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-link](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-list](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-paragraph](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-placeholder](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-strike](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-subscript](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-superscript](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-table](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-table-cell](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-table-header](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-table-row](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-task-item](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-task-list](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-text](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-text-align](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-text-style](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-typography](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extension-underline](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/extensions](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/pm](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
+| [@tiptap/starter-kit](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
 | [core-util-is](git://github.com/isaacs/core-util-is) | 1.0.3 | MIT | Docs editor and Word export (web/vendor) |
 | [docx](https://docx.js.org) | 9.13.0 | MIT | Docs editor and Word export (web/vendor) |
 | [hash.js](https://github.com/indutny/hash.js) | 1.1.7 | MIT | Docs editor and Word export (web/vendor) |
@@ -81,7 +72,6 @@ It includes software made by others, listed here with their licenses. This file 
 | [safe-buffer](https://github.com/feross/safe-buffer) | 5.1.2 | MIT | Docs editor and Word export (web/vendor) |
 | [setimmediate](YuzuJS/setImmediate) | 1.0.5 | MIT | Docs editor and Word export (web/vendor) |
 | [string_decoder](https://github.com/nodejs/string_decoder) | 1.1.1 | MIT | Docs editor and Word export (web/vendor) |
-| [tippy.js](https://atomiks.github.io/tippyjs/) | 6.3.7 | MIT | Docs editor and Word export (web/vendor) |
 | [util-deprecate](https://github.com/TooTallNate/util-deprecate) | 1.0.2 | MIT | Docs editor and Word export (web/vendor) |
 | [w3c-keyname](https://github.com/marijnh/w3c-keyname#readme) | 2.2.8 | MIT | Docs editor and Word export (web/vendor) |
 
@@ -113,7 +103,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Electron 44.7.0
+## Electron 44.9.1
 
 Electron includes Chromium and Node.js, which use many open-source licenses (BSD-style, MIT, Apache 2.0 and others). Their full texts ship with Electron as LICENSES.chromium.html, next to the Electron program; Settings → About → Licenses can open it.
 
@@ -263,37 +253,12 @@ FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 ```
 
-## @popperjs/core 2.11.8
-
-```
-The MIT License (MIT)
-
-Copyright (c) 2019 Federico Zivolo
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
-
-## @tiptap/core 2.27.3
+## @tiptap/core 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/core
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -314,12 +279,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-blockquote 2.27.3
+## @tiptap/extension-bold 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-blockquote
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -340,12 +305,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-bold 2.27.3
+## @tiptap/extension-character-count 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-bold
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -366,12 +331,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-bubble-menu 2.27.3
+## @tiptap/extension-code 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-bubble-menu
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -392,12 +357,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-bullet-list 2.27.3
+## @tiptap/extension-color 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-bullet-list
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -418,12 +383,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-character-count 2.27.3
+## @tiptap/extension-document 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-character-count
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -444,12 +409,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-code 2.27.3
+## @tiptap/extension-font-family 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-code
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -470,12 +435,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-code-block 2.27.3
+## @tiptap/extension-hard-break 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-code-block
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -496,12 +461,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-color 2.27.3
+## @tiptap/extension-heading 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-color
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -522,12 +487,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-document 2.27.3
+## @tiptap/extension-highlight 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-document
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -548,12 +513,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-dropcursor 2.27.3
+## @tiptap/extension-image 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-dropcursor
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -574,12 +539,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-font-family 2.27.3
+## @tiptap/extension-italic 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-font-family
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -600,12 +565,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-gapcursor 2.27.3
+## @tiptap/extension-link 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-gapcursor
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -626,12 +591,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-hard-break 2.27.3
+## @tiptap/extension-list 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-hard-break
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -652,12 +617,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-heading 2.27.3
+## @tiptap/extension-paragraph 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-heading
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -678,12 +643,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-highlight 2.27.3
+## @tiptap/extension-placeholder 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-highlight
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -704,12 +669,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-history 2.27.3
+## @tiptap/extension-strike 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-history
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -730,12 +695,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-horizontal-rule 2.27.3
+## @tiptap/extension-subscript 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-horizontal-rule
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -756,12 +721,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-image 2.27.3
+## @tiptap/extension-superscript 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-image
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -782,12 +747,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-italic 2.27.3
+## @tiptap/extension-table 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-italic
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -808,12 +773,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-link 2.27.3
+## @tiptap/extension-table-cell 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-link
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -834,12 +799,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-list-item 2.27.3
+## @tiptap/extension-table-header 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-list-item
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -860,12 +825,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-ordered-list 2.27.3
+## @tiptap/extension-table-row 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-ordered-list
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -886,12 +851,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-paragraph 2.27.3
+## @tiptap/extension-task-item 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-paragraph
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -912,12 +877,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-placeholder 2.27.3
+## @tiptap/extension-task-list 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-placeholder
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -938,12 +903,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-strike 2.27.3
+## @tiptap/extension-text 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-strike
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -964,12 +929,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-subscript 2.27.3
+## @tiptap/extension-text-align 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-subscript
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -990,12 +955,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-superscript 2.27.3
+## @tiptap/extension-text-style 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-superscript
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1016,12 +981,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-table 2.27.3
+## @tiptap/extension-typography 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-table
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1042,12 +1007,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-table-cell 2.27.3
+## @tiptap/extension-underline 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-table-cell
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1068,12 +1033,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-table-header 2.27.3
+## @tiptap/extensions 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-table-header
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1094,12 +1059,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-table-row 2.27.3
+## @tiptap/pm 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-table-row
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1120,220 +1085,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## @tiptap/extension-task-item 2.27.3
+## @tiptap/starter-kit 3.32.0
 
 ```
 MIT License
 
-Copyright (c) @tiptap/extension-task-item
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## @tiptap/extension-task-list 2.27.3
-
-```
-MIT License
-
-Copyright (c) @tiptap/extension-task-list
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## @tiptap/extension-text 2.27.3
-
-```
-MIT License
-
-Copyright (c) @tiptap/extension-text
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## @tiptap/extension-text-align 2.27.3
-
-```
-MIT License
-
-Copyright (c) @tiptap/extension-text-align
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## @tiptap/extension-text-style 2.27.3
-
-```
-MIT License
-
-Copyright (c) @tiptap/extension-text-style
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## @tiptap/extension-typography 2.27.3
-
-```
-MIT License
-
-Copyright (c) @tiptap/extension-typography
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## @tiptap/extension-underline 2.27.3
-
-```
-MIT License
-
-Copyright (c) @tiptap/extension-underline
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## @tiptap/pm 2.27.3
-
-```
-MIT License
-
-Copyright (c) @tiptap/pm
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## @tiptap/starter-kit 2.27.3
-
-```
-MIT License
-
-Copyright (c) @tiptap/starter-kit
+Copyright (c) 2025, Tiptap GmbH
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -2103,32 +1860,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 """
-```
-
-## tippy.js 6.3.7
-
-```
-MIT License
-
-Copyright (c) 2017-present atomiks
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 ```
 
 ## util-deprecate 1.0.2

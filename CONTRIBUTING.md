@@ -26,6 +26,7 @@ assets/art/      make_art.py draws Myra, her stickers, the stamps and the icon; 
 tests/smoke.js  opens the real app and checks every bridge operation
 tests/zoom.js   Ctrl + wheel steps, touchpad pinch, reset to 100%
 tests/theme.js  Follow Caelestia: offered only with Caelestia, live restyle, back to your colors
+tests/docs.js   the docs editor: every kind of formatting, shortcuts, the floating bar, Word download
 install.sh  uninstall.sh  make-release.sh  packaging/
 ```
 
