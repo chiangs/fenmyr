@@ -200,11 +200,13 @@ echo " [BLANK_AUDIO] hello from whisper"
     b.links = b.links.filter(x => x.id !== 'WL'); b.cards = b.cards.filter(c => !['wA', 'wB'].includes(c.id)); M.selectWire(null); return res;
   });
   // sidebar rows: hovering shows the row's buttons without making the row taller than its neighbours, and their icons have a real size
-  { await page.waitForFunction(() => [...document.querySelectorAll('.board-row')].some(r => r.parentElement.querySelectorAll(':scope > .board-row').length > 1) && document.querySelector('.board-row').getBoundingClientRect().height > 0);
-    await page.locator('.board-row').first().hover(); await page.waitForTimeout(250);
-    r.rowHover = await page.evaluate(() => { const e = document.querySelector('.board-row:hover'); if (!e) return { same: false, shown: false, icon: false };
+  { const pt = await page.waitForFunction(() => {
+      const all = [...document.querySelectorAll('.board-row')], seen = r => r.getBoundingClientRect().height > 0, row = all.filter(seen).find(x => [...x.parentElement.querySelectorAll(':scope > .board-row')].some(y => y !== x && seen(y)));
+      return row ? { i: all.indexOf(row) } : null; }, null, { timeout: 15000 }).then(h => h.jsonValue()).catch(() => null);
+    if (pt) { await page.locator('.board-row').nth(pt.i).hover(); await page.waitForTimeout(250); }
+    r.rowHover = await page.evaluate(found => { const e = document.querySelector('.board-row:hover'); if (!e) return { found, same: false, shown: false, icon: false };
       const b = e.querySelector('.f-btn'), sv = b && b.querySelector('svg'), h = e.getBoundingClientRect().height, others = [...e.parentElement.querySelectorAll(':scope > .board-row')].filter(x => x !== e).map(x => x.getBoundingClientRect().height).filter(x => x > 0);
-      return { same: others.every(x => Math.abs(x - h) < 1.5), shown: !!b && getComputedStyle(b).display !== 'none', icon: !!sv && sv.getBoundingClientRect().width >= 12 }; }); }
+      return { found, h, others, same: others.every(x => Math.abs(x - h) < 1.5), shown: !!b && getComputedStyle(b).display !== 'none', icon: !!sv && sv.getBoundingClientRect().width >= 12 }; }, !!pt); }
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
     document.getElementById('openLicenses').click(); await new Promise(res => setTimeout(res, 700));
@@ -231,4 +233,4 @@ echo " [BLANK_AUDIO] hello from whisper"
   // on GitHub, a failure also becomes an annotation with the results, since the job log isn't always at hand
   if (!ok && process.env.GITHUB_ACTIONS) { const { prompt, args, ...brief } = r; console.log('::error title=Smoke test failed::' + JSON.stringify(brief).replace(/%/g, '%25').replace(/\n/g, ' ').slice(0, 6000)); }
   console.log(ok ? 'SMOKE OK' : 'SMOKE FAILED'); process.exit(ok ? 0 : 1);
-})().catch(e => { console.error(e); process.exit(1); });
+})().catch(e => { console.error(e); if (process.env.GITHUB_ACTIONS) console.log('::error title=Smoke test crashed::' + String(e && e.stack || e).replace(/%/g, '%25').replace(/\n/g, '%0A').slice(0, 4000)); process.exit(1); });
