@@ -788,7 +788,7 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-form { display: flex; align-items: flex-end; gap: 8px; margin: 8px 10px 10px; padding: 6px 6px 6px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: #f7f4f1; }
 .mc-form textarea { flex: 1; border: 0; background: none; resize: none; outline: none; font: 400 14px/1.4 var(--font); color: var(--ink); max-height: 120px; padding: 6px 0; user-select: text; -webkit-user-select: text; }
 .mc-form textarea::placeholder { color: var(--ink-faint); }
-.mc-send { width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; background: var(--pink-deep); color: #fff; font: 700 15px/1 var(--font); cursor: pointer; }
+.mc-send { width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; background: var(--butter-deep); color: #3f3a34; font: 700 15px/1 var(--font); cursor: pointer; }
 .m-form { display: none !important; }
 .myra.open .m-name { display: inline; }
 body.dark .m-chat { background: rgba(43, 39, 34, .98); box-shadow: 0 20px 50px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06); }
@@ -2489,5 +2489,5 @@ body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0
 .mc-vault { flex: none; display: flex; align-items: center; gap: 5px; padding: 0 10px; height: 30px; border: 1.5px solid rgba(150, 95, 35, .3); border-radius: 15px; corner-shape: squircle; background: none; font: 600 11.5px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .mc-vault[hidden] { display: none; }
 .mc-vault svg { width: 14px; height: 14px; }
-.mc-vault.on { border-color: rgba(150, 95, 35, .8); color: var(--pink-deep); }
-body.dark .mc-vault.on { border-color: rgba(255, 255, 255, .7); color: var(--pink-deep); }
+.mc-vault.on { border-color: rgba(150, 95, 35, .8); color: var(--butter-deep); }
+body.dark .mc-vault.on { border-color: rgba(255, 255, 255, .7); color: var(--butter-deep); }
