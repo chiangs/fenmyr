@@ -19,7 +19,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
   for (const dy of [-120, -120, -120, 120, 120, 120, 120]) { await page.mouse.wheel(0, dy); await page.waitForTimeout(300); steps.push(await pct()); }
   // a high-resolution wheel: small events that add up to one notch
   await page.keyboard.up('Control'); await page.keyboard.press('Control+0'); await page.waitForTimeout(400); await page.keyboard.down('Control');
-  for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -15);   // 45px: one notch
+  for (let i = 0; i < 3; i++) { await page.mouse.wheel(0, -15); await page.waitForTimeout(25); }   // 45px: one notch
   await page.waitForTimeout(300); r.hires = await pct();
   await page.keyboard.up('Control');
   // a touchpad pinch: ctrl + wheel without Ctrl held, small deltas
