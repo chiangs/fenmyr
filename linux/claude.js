@@ -84,14 +84,14 @@ async function runClaude(prompt, tools, timeout, need = 'I need Claude Code to d
 
 const NEED = 'I need Claude Code to think. Set it up (Settings → Helpers shows how), then try again.';
 function ask(a) {
-  const { prompt: request = '', board = {}, confirmed = false, mobbin = true, higgs = true, web = false } = a;
+  const { prompt: request = '', board = {}, confirmed = false, mobbin = true, higgs = true, web = false, vaultNotes = [], canVault = false } = a;
   // only the helpers the person has switched on in Settings
   const tools = mobbin ? ['mcp__claude_ai_Mobbin__search_screens', 'mcp__claude_ai_Mobbin__search_flows', 'mcp__claude_ai_Mobbin__search_sections'] : [];
   // the generator is only switched on after the person taps "yes" in the app: spending credits needs their say-so
   // searching the web and reading public pages (and public GitHub repos) is only on when the person switched it on in Settings → Helpers
   if (web) tools.push('WebSearch', 'WebFetch');
   if (confirmed && higgs) tools.push('mcp__claude_ai_higgsfield__generate_image_batch', 'mcp__claude_ai_higgsfield__jobs_wait', 'mcp__claude_ai_higgsfield__models_explore');
-  return runClaude(prompts.ask({ request, boardJSON: jsonSafe(board), confirmed, mobbin, higgs, web }), tools, 300, NEED);
+  return runClaude(prompts.ask({ request, boardJSON: jsonSafe(board), confirmed, mobbin, higgs, web, vaultNotes: (Array.isArray(vaultNotes) ? vaultNotes : []).slice(0, 8), canVault: !!canVault }), tools, 300, NEED);
 }
 // Myra in a doc: rewrite just the selected words ("shorter", "friendlier", or anything typed) and hand back only the new words
 async function rewrite(a) {

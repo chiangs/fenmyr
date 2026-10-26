@@ -97,6 +97,24 @@ function note(vault, rel, allow, full) {
   if (full) { out.body = p.body.slice(0, FULL_MAX); out.truncated = p.body.length > FULL_MAX; }
   return out;
 }
+// notes for Myra to read, chosen by the words of a question: only reachable, non-private notes, a few of them, each cut short
+const STOP = new Set('the and for are was were what when where which who why how can you your about with that this from have has had not but any all there their them they his her its our out into over also does did doing should would could know wrote note notes vault obsidian say said tell give show find look search please'.split(' '));
+function search(vault, allow, query, { max = 8, per = 1500, total = 12000, budgetMs = 2500 } = {}) {
+  const terms = [...new Set(String(query || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(t => t.length >= 3 && !STOP.has(t)))]; if (!terms.length) return [];
+  const t0 = Date.now(), hits = [];
+  walk(vault, x => {
+    if (x.dir || Date.now() - t0 > budgetMs || !reachable(vault, x.rel, allow)) return;
+    let text = ''; try { text = fs.readFileSync(x.full, 'utf8').slice(0, 65536); } catch (e) { return; }
+    const p = parseNote(text); if (isPrivate(p.tags)) return;
+    const title = titleOf(x.rel).toLowerCase(), tags = p.tags.join(' ').toLowerCase(), path_ = x.rel.toLowerCase(), body = p.body.toLowerCase();
+    let score = 0; for (const t of terms) score += (title.includes(t) ? 5 : 0) + (tags.includes(t) ? 3 : 0) + (path_.includes(t) ? 2 : 0) + (body.includes(t) ? 1 + Math.min(2, body.split(t).length - 2) : 0);
+    if (score > 0) hits.push({ rel: x.rel, title: titleOf(x.rel), tags: p.tags.slice(0, 12), props: shortProps(p.props), excerpt: p.excerpt, body: p.body, score, mtime: fs.statSync(x.full).mtimeMs });
+  });
+  hits.sort((a, b) => b.score - a.score || b.mtime - a.mtime);
+  const out = []; let used = 0;
+  for (const h of hits) { if (out.length >= max || used >= total) break; const text = h.body.slice(0, Math.min(per, total - used)); used += text.length; const { body, ...rest } = h; out.push({ ...rest, text }); }
+  return out;
+}
 const obsidianURL = (vault, rel) => 'obsidian://open?vault=' + encodeURIComponent(vault.obsidian || path.basename(vault.path)) + '&file=' + encodeURIComponent(norm(rel).replace(/\.md$/i, ''));
 
 // ---- the list of connected vaults (kept next to the boards, never inside them) ----
@@ -119,4 +137,4 @@ function update(id, patch) {
 const remove = id => { saveVaults(vaults().filter(v => v.id !== id)); return true; };
 const byId = id => { const v = vaults().find(x => x.id === id); if (!v) throw new Error('That vault is not connected.'); return v; };
 
-module.exports = { vaults, add, update, remove, byId, scan, list, note, obsidianURL, parseNote, isPrivate, reachable, realFile, norm };
+module.exports = { vaults, add, update, remove, byId, scan, list, note, search, obsidianURL, parseNote, isPrivate, reachable, realFile, norm };

@@ -1716,7 +1716,7 @@
     const box = $('tools'), cfg = settings.toolbar || {}, hidden = new Set(cfg.hidden || []);
     const order = (cfg.order || []).filter(k => TB_DEFAULT.includes(k)); TB_DEFAULT.forEach((k, i) => { if (!order.includes(k)) order.splice(Math.min(i, order.length), 0, k); });   // tools added in a later version slot in where they belong
     const end = $('zoom'); order.forEach(k => { const b = box.querySelector(`:scope > [data-add="${k}"]`); if (b) { box.insertBefore(b, end); b.hidden = hidden.has(k) || (k === 'vnote' && !vaultToolOn()); } });
-    document.body.dataset.tb = settings.tbSize || 'm'; requestAnimationFrame(fitToolbar);
+    document.body.dataset.tb = settings.tbSize || 'm'; requestAnimationFrame(fitToolbar); try { updateVaultChip(); } catch (e) {}
     return order;
   }
   // Settings → Toolbar: the tool list (switches + drag to reorder) and the icon size
@@ -2335,7 +2335,10 @@
     if (!chatOpen()) myraOpen(true);
     if (!confirmed) addMsg('me', q); else addMsg('myra', 'Making it… this can take a minute ✦');
     $('myra').classList.add('thinking'); goo.think(true); favGoo?.think(true); typing(true);
-    try { const raw = await Myra.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs, web: !!settings.webAccess }); await applyMyra(parse(raw), q); }
+    const ctx = { asked: false, used: [] };
+    if (vaultChip && aiGrants(board).length) { ctx.asked = true; try { ctx.used = await gatherVault(q); } catch (e) {} }
+    const canVault = !ctx.asked && aiGrants(board).length > 0; vaultChip = false; updateVaultChip();
+    try { const raw = await Myra.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs, web: !!settings.webAccess, canVault, vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })) }); await applyMyra(parse(raw), q, ctx); }
     catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMyra(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }
       if (SIGNIN.test(err.message)) { offlineMyra.signin = true; return offlineMyra(q, "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account."); }
       say("Hmm, I couldn't reach Claude: " + err.message); }
@@ -2344,7 +2347,7 @@
   $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
   const parse = raw => { const s = String(raw), a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0) return { say: s.trim() }; try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return { say: s.trim() }; } };
   // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
-  async function applyMyra(r, q) {
+  async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     // her templates: use one of theirs, or keep what's on the board as one
     if (r.useTemplate) { const o = r.useTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) await useTemplate(t, o.mode === 'new' || o.mode === 'add' ? o.mode : undefined); }
     // folders first: create, rename, and move boards around the library
@@ -2415,11 +2418,18 @@
     if (r.saveTemplate) { const o = r.saveTemplate, ids = Array.isArray(o.ids) && o.ids.length ? o.ids : o.fromNew ? [...new Set(added.map(c => c.id))] : null; await saveAsTemplate(o.name, ids, { desc: o.description, mode: o.mode }); }
     if (r.editTemplate) { const o = r.editTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) { if (o.newName) t.name = freeName(o.newName, t.id); if (o.description != null) t.desc = String(o.description).slice(0, 140); if (o.mode === 'new' || o.mode === 'add') t.mode = o.mode; await Myra.saveTemplate(t); buildTplPick(); } }
     if (added.length) setTimeout(() => showWhatMyraMade(added), 250);
+    // notes she says she used (only ones she was actually given) land on the board as vault note cards
+    const given = (r.vaultNotes || []).map(x => ctx.used.find(n => n.vault === x.vault && n.rel === x.path)).filter((n, i, a) => n && a.indexOf(n) === i);
+    given.forEach((n, k) => { const w = centerWorld(), c = card('vnote', { vault: n.vaultId, path: n.rel, title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, color: 'lilac' });
+      c.x = snapTo(w.x - 460 + (k % 3) * (c.w + 20)); c.y = snapTo(w.y + 140 + Math.floor(k / 3) * (c.h + 20)); addCard(c, true); added.push(c); });
+    const read = !ctx.asked ? '' : ctx.used.length ? ` I read ${ctx.used.length} note${ctx.used.length === 1 ? '' : 's'} from your vault: ${ctx.used.map(n => n.title).join(', ')}.` : ' I looked in your vault, but found no notes matching that in the folders you allowed.';
+    if (given.length) save();
     const acts = r.confirm ? [{ label: (r.confirm || 'Yes, make it') + ' ✦', run: () => ask(q, true) }, { label: 'Not now', ghost: true, run: () => {} }] : [];
+    if (r.offerVault && !ctx.asked && aiGrants(board).length) acts.push({ label: 'Search my vault ✦', cls: 'next', run: () => { vaultChip = true; updateVaultChip(); ask(q); } });
     // what next: Myra's own ideas, or a sensible guess from what she just made
     const next = acts.length ? [] : (Array.isArray(r.next) && r.next.length ? r.next : guessNext(r, added)).filter(t => typeof t === 'string' && t.trim()).slice(0, 3);
     next.forEach(t => acts.push({ label: t.trim(), cls: 'next', run: () => ask(t.trim()) }));
-    say(r.say || (added.length ? `Done! I touched ${added.length} cards.` : 'Done!'), r.confirm ? 0 : next.length ? 16000 : 9000, acts);
+    say((r.say || (added.length ? `Done! I touched ${added.length} cards.` : 'Done!')) + read, r.confirm ? 0 : next.length ? 16000 : 9000, acts);
   }
   function guessNext(r, added) {
     const has = t => added.some(c => c.type === t);
@@ -2480,7 +2490,7 @@
           if (!g) continue;
           const body = document.createElement('div'); body.className = 'vg-body'; body.innerHTML = '<div class="vr-h">Folders Myra may use</div>'; blk.appendChild(body);
           body.appendChild(folderChecklist(info.folders.filter(f => !(v.off || []).some(o => f === o || f.startsWith(o + '/'))), g.folders, f => { g.folders = f; }, { whole: true }));
-          body.insertAdjacentHTML('beforeend', `<label class="vg-sw"><span>Let Myra read these with AI<small>Sends the notes she reads to Claude. Coming in a later update; your choice is kept.</small></span><input type="checkbox" class="tgl" data-k="ai" ${g.ai ? 'checked' : ''}></label>
+          body.insertAdjacentHTML('beforeend', `<label class="vg-sw"><span>Let Myra read these with AI<small>When you tick “Search my vault” in her chat, she finds notes in these folders that match your question and sends their text to Claude (a cloud service). Never #private notes or off-limits folders.</small></span><input type="checkbox" class="tgl" data-k="ai" ${g.ai ? 'checked' : ''}></label>
             <label class="vg-sw"><span>Let Myra write to this vault<small>Only to one folder, only when you say “send to vault”. Coming in a later update; your choice is kept.</small></span><input type="checkbox" class="tgl" data-k="write" ${g.write ? 'checked' : ''}></label>`);
           body.onchange = e => { const k = e.target.dataset.k; if (k) g[k] = e.target.checked; };
         }
@@ -2553,6 +2563,23 @@
   async function addVaultNote(g, rel) {
     const n = await Myra.vaultNote(g.vault, rel, g.folders), w = centerWorld(), c = card('vnote', { vault: g.vault, path: rel, title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, color: 'lilac' });
     c.x = snapTo(w.x - c.w / 2); c.y = snapTo(w.y - c.h / 2); remember(); addCard(c, true); selectOnly([c.id]); save();
+  }
+  // ---------- Myra reads notes with AI: only from grants with the switch on, only when you tick "Search my vault" for that question ----------
+  let vaultChip = false;
+  const aiGrants = b => { try { return activeGrants(b).filter(g => g.ai); } catch (e) { return []; } };
+  function updateVaultChip() {
+    const b = $('mcVault'); if (!b) return; const can = !!(Myra.native && board && aiGrants(board).length);
+    b.hidden = !can; if (!can) vaultChip = false; b.classList.toggle('on', vaultChip); b.setAttribute('aria-pressed', vaultChip ? 'true' : 'false');
+  }
+  $('mcVault').onclick = () => { vaultChip = !vaultChip; updateVaultChip(); $('mcInput').focus(); };
+  // the app (never Claude) finds the notes: the best few across the allowed folders, cut short
+  async function gatherVault(q) {
+    const all = [];
+    for (const g of aiGrants(board)) { const v = vaultById(g.vault); if (!v) continue;
+      try { (await Myra.vaultSearch(g.vault, g.folders, q)).forEach(h => all.push({ ...h, vault: v.name, vaultId: g.vault })); } catch (e) {} }
+    all.sort((a, b) => b.score - a.score); const out = []; let total = 0;
+    for (const n of all) { if (out.length >= 8 || total >= 12000) break; const text = n.text.slice(0, 12000 - total); total += text.length; out.push({ ...n, text }); }
+    return out;
   }
   async function openVaultPicker() {
     await loadVaults(); const gs = activeGrants(board); $('vaultPick')?.remove();
@@ -5108,5 +5135,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__myra = { renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__myra = { ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

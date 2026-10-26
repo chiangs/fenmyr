@@ -59,6 +59,7 @@ const OPS = {
   vaults: () => vault.vaults(),
   vaultPick: async () => { const r = await dialog.showOpenDialog(win, { title: 'Choose your Obsidian vault', properties: ['openDirectory'] }); return r.canceled ? null : r.filePaths[0]; },
   vaultAdd: a => vault.add(a.path), vaultUpdate: a => vault.update(a.id, a.patch || {}), vaultRemove: a => vault.remove(a.id), vaultScan: a => vault.scan(vault.byId(a.id)),
+  vaultSearch: a => vault.search(vault.byId(a.id), a.allow, a.query),
   vaultNotes: a => vault.list(vault.byId(a.id), a.allow, a.query),
   vaultNote: a => { const v = vault.byId(a.id), n = vault.note(v, a.rel, a.allow, !!a.full); n.url = vault.obsidianURL(v, a.rel); return n; },
   folders: () => storage.folders(), saveFolders: a => storage.saveFolders(a.folders),

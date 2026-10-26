@@ -36,5 +36,16 @@ fs.writeFileSync(path.join(data, 'outside.md'), 'outside'); fs.symlinkSync(path.
 assert.throws(() => V.note(v2, 'Daily/link.md', ['']), /missing/, 'a symlink out of the vault is not followed');
 // the Obsidian link
 assert.strictEqual(V.obsidianURL(v2, 'Projects/Bog Notes/Trip plan.md'), 'obsidian://open?vault=vault&file=Projects%2FBog%20Notes%2FTrip%20plan');
+// search for Myra: only reachable, non-private notes matching the question, a few of them, each cut short
+const sr = V.search(v2, ['Projects'], 'what do I know about cloudberries and the east bog?');
+assert.deepStrictEqual(sr.map(x => x.title).sort(), ['East bog', 'Trip plan'], sr.map(x => x.title).join());
+assert(sr.every(x => x.text.length <= 1500 && !('body' in x)));
+assert.deepStrictEqual(V.search(v2, [''], 'cloudberries').map(x => x.title).sort(), ['Cloudberries', 'East bog', 'Trip plan'], 'the private note and the off-limits folder never come back');
+assert.deepStrictEqual(V.search(v2, [''], 'diary'), [], 'off-limits');
+assert(!V.search(v2, [''], 'nobody should read this even though its folder is open').some(x => x.title === 'Secret'), '#private');
+assert.deepStrictEqual(V.search(v2, [], 'cloudberries'), [], 'no folders allowed means nothing');
+assert.deepStrictEqual(V.search(v2, [''], 'what is the'), [], 'only filler words');
+assert.strictEqual(V.search(v2, [''], 'cloudberries', { max: 1 }).length, 1);
+assert.strictEqual(V.search(v2, [''], 'cloudberries', { total: 40 }).reduce((n, x) => n + x.text.length, 0) <= 40, true);
 V.remove(v.id); assert.strictEqual(V.vaults().length, 0);
 console.log('VAULT OK');

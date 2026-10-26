@@ -163,6 +163,26 @@ echo " [BLANK_AUDIO] hello from whisper"
   { await page.evaluate(async () => { const M = window.__myra, v = (await Myra.vaults())[0]; M.board.vaultAccess = [{ vault: v.id, folders: [''], ai: false, write: false }]; });
     await page.mouse.click(5, 300); await page.keyboard.press('Alt+n'); await page.waitForTimeout(500);
     r.vault.altN = await page.evaluate(() => !!document.getElementById('vaultPick')); await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  // Myra reads vault notes with AI: only with the grant's switch on and the chip ticked for that question; only allowed folders; and she says what she read
+  { const promptNow = () => fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8');
+    r.vaultAI = await page.evaluate(async () => {
+      const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, v = (await Myra.vaults())[0], res = {}, chip = () => document.getElementById('mcVault');
+      M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: false, write: false }]; M.applyToolbar(); res.chipHiddenWhenOff = chip().hidden;
+      M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: true, write: false }]; M.applyToolbar(); res.chipShown = !chip().hidden;
+      await M.ask('what do I know about cloudberries?'); return res; });
+    r.vaultAI.withoutChip = !promptNow().includes('dries out by August') && !promptNow().includes('FROM THEIR OBSIDIAN VAULT') && promptNow().includes('did not ask you to this time');
+    Object.assign(r.vaultAI, await page.evaluate(async () => {
+      const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {};
+      document.getElementById('mcVault').click(); res.chipOn = document.getElementById('mcVault').classList.contains('on');
+      await M.ask('what do I know about cloudberries?'); await wait(300);
+      res.said = document.body.innerText.includes('I read 2 notes from your vault'); res.chipReset = !document.getElementById('mcVault').classList.contains('on');
+      return res; }));
+    const p = promptNow();
+    r.vaultAI.withChip = p.includes('FROM THEIR OBSIDIAN VAULT') && p.includes('dries out by August') && p.includes('Pack boots') && !p.includes('Cloudberries ripen from amber') && !p.includes('Nobody should read this') && !p.includes('Dear diary');
+    // notes she lists become cards, but only ones she was given
+    r.vaultAI.cards = await page.evaluate(async () => { const M = window.__myra, v = (await Myra.vaults())[0], n = M.board.cards.filter(c => c.type === 'vnote').length;
+      await M.applyMyra({ say: 'ok', vaultNotes: [{ vault: v.name, path: 'Projects/Bog Notes/East bog.md' }, { vault: v.name, path: 'Private/Diary.md' }] }, 'q', { asked: true, used: [{ vault: v.name, vaultId: v.id, rel: 'Projects/Bog Notes/East bog.md', title: 'East bog', tags: ['place'], props: [], excerpt: 'x', text: 'x' }] });
+      const now = M.board.cards.filter(c => c.type === 'vnote').length; M.board.vaultAccess = []; M.applyToolbar(); return now - n; }); }
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
     document.getElementById('openLicenses').click(); await new Promise(res => setTimeout(res, 700));
@@ -180,7 +200,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), webOn: r.webOn.slice(-120), webOff: r.webOff.slice(-120), hooksRewrite: r.hooksRewrite.slice(-100) }, null, 1));
   await app.close();
   const ok = r.native && r.linux && r.save && r.load === 0 && r.list && r.folders === 1 && r.fonts > 0 && r.unknown === 'unknown op nope' && r.range[0] === 206 && r.range[1] === 100
-    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.tree.name && r.tree.cards >= 12 && r.kickoff.name && r.kickoff.cards >= 18 && r.kanban.cols.join() === 'To do,Doing,Done' && r.kanban.counts.join() === '2,1 / 3,1' && r.first.name === 'My first board' && r.first.cards === 15 && r.first.tray === 5 && r.first.kanban && r.kanban.menu && r.vault.names === '2026-10-20,Cloudberries,East bog,Long,Trip plan' && r.vault.title === 'Trip plan' && r.vault.tags === 'trip,cloudberries,today' && r.vault.shown && r.vault.tool && r.vault.side && r.vault.beforeFull && r.vault.fullShown && !r.vault.fullSaved && r.vault.lessAgain && r.vault.blocked && r.vault.altN && r.tplSaved && r.tplRow && r.tplAdds && r.tplNew && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
+    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.tree.name && r.tree.cards >= 12 && r.kickoff.name && r.kickoff.cards >= 18 && r.kanban.cols.join() === 'To do,Doing,Done' && r.kanban.counts.join() === '2,1 / 3,1' && r.first.name === 'My first board' && r.first.cards === 15 && r.first.tray === 5 && r.first.kanban && r.kanban.menu && r.vault.names === '2026-10-20,Cloudberries,East bog,Long,Trip plan' && r.vault.title === 'Trip plan' && r.vault.tags === 'trip,cloudberries,today' && r.vault.shown && r.vault.tool && r.vault.side && r.vault.beforeFull && r.vault.fullShown && !r.vault.fullSaved && r.vault.lessAgain && r.vault.blocked && r.vault.altN && r.vaultAI.chipHiddenWhenOff && r.vaultAI.chipShown && r.vaultAI.withoutChip && r.vaultAI.chipOn && r.vaultAI.withChip && r.vaultAI.said && r.vaultAI.chipReset && r.vaultAI.cards === 1 && r.tplSaved && r.tplRow && r.tplAdds && r.tplNew && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
     && r.conn.mobbin === true && r.conn.higgsfield === false && JSON.parse(r.ask).say === 'hi from fake claude' && r.usage2.asks === 1 && r.usage2.tokensIn === 15
     && r.prompt.includes('The person asked you: sort these') && r.prompt.includes('Icons are names from this list') && r.prompt.includes('"n":0') && r.prompt.includes('Higgsfield is TURNED OFF') && r.args.includes('mcp__claude_ai_Mobbin__search_screens')
     && r.hooksOff.includes('disableAllHooks') && r.hooksRewrite.includes('disableAllHooks') && !r.hooksOff.includes('WebSearch') && r.webOn.includes('WebSearch') && r.webOn.includes('WebFetch') && r.webOn.includes('disableAllHooks') && !r.webOff.includes('WebSearch') && r.webPromptOn && r.webPromptOff
