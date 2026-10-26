@@ -295,7 +295,7 @@
 <div class="settings" id="settings">
   <div class="set-panel">
     <div class="set-head"><h2>Settings</h2><button class="dv-btn" id="setClose" title="Close">×</button></div>
-    <div class="seg set-tabs" id="setTabs"><button data-tab="general" class="on">General</button><button data-tab="myra">Myra</button><button data-tab="helpers">Helpers</button><button data-tab="board">Board</button><button data-tab="toolbar">Toolbar</button><button data-tab="widgets">Widgets</button><button data-tab="about">About</button></div>
+    <div class="seg set-tabs" id="setTabs"><button data-tab="general" class="on">General</button><button data-tab="myra">Myra</button><button data-tab="helpers">Helpers</button><button data-tab="vaults" class="native-only">Vaults</button><button data-tab="board">Board</button><button data-tab="toolbar">Toolbar</button><button data-tab="widgets">Widgets</button><button data-tab="about">About</button></div>
     <div class="set-body">
       <section data-tab="general"><h3>Look</h3>
         <div class="set-row"><div><b>Theme</b><small>Light, dark, or whatever your system is using</small></div><div class="seg" data-seg="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">Match my system</button></div></div>
@@ -321,6 +321,11 @@
         <div class="set-row"><div><b>Saved chats</b><small>Deletes Myra's chat history from every board</small></div><button class="set-btn" id="clearChats">Clear all chats</button></div>
         <label class="set-row"><div><b>Say hi when I open the app</b><small>Myra's little welcome bubble</small></div><input type="checkbox" class="tgl" data-set="greet"></label>
         <label class="set-row native-only"><div><b>Myra's thinking (AI)</b><small>Uses Claude Code on your computer to sort, write and edit for you. Off: Myra works fully on its own, no AI, no accounts, no internet.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
+      </section>
+      <section class="native-only" data-tab="vaults"><h3>Obsidian vaults</h3>
+        <p class="set-note">Myra can show notes from your Obsidian vaults on a board. She only reads, and only where you allow it: connect a vault here, then give a project or a board access from its right-click menu (Vault access). A folder you mark off-limits, and any note tagged <b>#private</b>, is never read.</p>
+        <div id="vaultList"></div>
+        <div class="set-btns"><button class="set-btn hot" id="vaultAdd">Connect a vault…</button></div>
       </section>
       <section class="native-only" data-tab="helpers"><h3>Claude usage</h3>
         <div class="usage" id="usageCard">

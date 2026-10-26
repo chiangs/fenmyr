@@ -2,8 +2,8 @@
 // saving boards as files, fetching link previews, exporting, writing out voice memos, and asking Myra (Claude Code, run locally with `claude -p`).
 // It answers the page's messages (web/bridge.js → window.myraHost).
 const fs = require('fs'), path = require('path'), { execFile } = require('child_process');
-const { app, BrowserWindow, ipcMain, shell, protocol, Menu, session } = require('electron');
-const P = require('./paths'), storage = require('./storage'), claude = require('./claude'), net = require('./net');
+const { app, BrowserWindow, ipcMain, shell, protocol, Menu, session, dialog } = require('electron');
+const P = require('./paths'), storage = require('./storage'), vault = require('./vault'), claude = require('./claude'), net = require('./net');
 const output = require('./output'), speech = require('./speech'), update = require('./update'), theme = require('./theme');
 
 app.setName('Myra');
@@ -55,6 +55,12 @@ const reply = (wc, id, ok, value) => { if (!wc.isDestroyed()) wc.send('myra-repl
 const OPS = {
   list: () => storage.list(), load: a => storage.load(a.id), save: a => storage.save(a.board), remove: a => storage.remove(a.id),
   templates: () => storage.templates(), saveTemplate: a => storage.saveTemplate(a.template), removeTemplate: a => storage.removeTemplate(a.id),
+  // Obsidian vaults (read-only): connect folders, and read notes only where a grant allows
+  vaults: () => vault.vaults(),
+  vaultPick: async () => { const r = await dialog.showOpenDialog(win, { title: 'Choose your Obsidian vault', properties: ['openDirectory'] }); return r.canceled ? null : r.filePaths[0]; },
+  vaultAdd: a => vault.add(a.path), vaultUpdate: a => vault.update(a.id, a.patch || {}), vaultRemove: a => vault.remove(a.id), vaultScan: a => vault.scan(vault.byId(a.id)),
+  vaultNotes: a => vault.list(vault.byId(a.id), a.allow, a.query),
+  vaultNote: a => { const v = vault.byId(a.id), n = vault.note(v, a.rel, a.allow); n.url = vault.obsidianURL(v, a.rel); return n; },
   folders: () => storage.folders(), saveFolders: a => storage.saveFolders(a.folders),
   caelestia: () => theme.read(),
   // Chromium's (and Node's) licenses ship with Electron as LICENSES.chromium.html, next to the Electron program
@@ -73,7 +79,7 @@ const OPS = {
   mediaBegin: a => storage.mediaBegin(a.ext), mediaChunk: a => storage.mediaChunk(a.name, a.data), mediaEnd: a => storage.mediaEnd(a.name),
   updateCheck: () => update.check(), updatePrepare: () => update.prepare(), updateNow: () => update.now(),
   reveal: () => { shell.showItemInFolder(P.boardsDir); return true; },
-  openURL: a => { const u = String(a.url || ''); if (/^(https?|mailto):/i.test(u)) shell.openExternal(u); return true; },
+  openURL: a => { const u = String(a.url || ''); if (/^(https?|mailto|obsidian):/i.test(u)) shell.openExternal(u); return true; },
 };
 ipcMain.on('myra', async (e, m) => {
   if (!m || typeof m.id !== 'number' || typeof m.op !== 'string') return;

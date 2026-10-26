@@ -10,7 +10,7 @@
   "desktopName": "myra.desktop",
   "scripts": {
     "start": "electron . --ozone-platform-hint=auto",
-    "test": "node tests/smoke.js && node tests/zoom.js && node tests/theme.js && node tests/docs.js",
+    "test": "node tests/vault.js && node tests/smoke.js && node tests/zoom.js && node tests/theme.js && node tests/docs.js",
     "dist": "electron-builder --linux AppImage",
     "notices": "node tools/notices.js",
     "icons": "node tools/icons.js"

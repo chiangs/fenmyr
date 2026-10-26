@@ -127,7 +127,7 @@
       tray: ['call the printer', 'idea: a map of my favourite bogs', 'that font from the cafe menu', 'reply to Sam', 'plan the spring trip'].map(t => card('note', { text: t })) }),
   };
   function card(type, o = {}) {
-    const size = { note: [220, 140], title: [320, 50], image: [260, 220], link: [260, 210], todo: [240, 180], swatch: [120, 150], coll: [288, 200], doc: [240, 52], canvas: [260, 180], shape: [160, 160], stamp: [56, 56], audio: [290, 150], video: [360, 246], ink: [10, 10], frame: [393, 852], box: [160, 100], text: [220, 24], icon: [28, 28], font: [300, 210] }[type] || [220, 140];
+    const size = { note: [220, 140], title: [320, 50], image: [260, 220], link: [260, 210], todo: [240, 180], swatch: [120, 150], coll: [288, 200], doc: [240, 52], canvas: [260, 180], shape: [160, 160], stamp: [56, 56], audio: [290, 150], video: [360, 246], ink: [10, 10], frame: [393, 852], box: [160, 100], text: [220, 24], icon: [28, 28], font: [300, 210], vnote: [270, 210] }[type] || [220, 140];
     return Object.assign({ id: uid(), type, x: 0, y: 0, w: size[0], h: size[1], r: type === 'title' ? 0 : tilt(), color: 'white' }, o);
   }
   function newBoard(name = 'Untitled board', tpl) {
@@ -273,13 +273,14 @@
     e.preventDefault(); e.stopPropagation(); $('rowMenu')?.remove();
     const n = kind === 'board' ? 1 + boardList.filter(x => x.parent === obj.id).length : kind === 'folder' ? boardsUnder(obj) : foldersIn(obj.id).reduce((t, f) => t + boardsUnder(f), 0);
     const m = document.createElement('div'); m.id = 'rowMenu'; m.className = 'row-menu'; m.style.left = e.clientX + 'px'; m.style.top = e.clientY + 'px';
-    m.innerHTML = `${nameEl ? '<button data-m="ren">Rename</button>' : ''}${kind !== 'project' ? '<button data-m="move">Move to…</button>' : ''}${kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : ''}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
+    m.innerHTML = `${nameEl ? '<button data-m="ren">Rename</button>' : ''}${kind !== 'project' ? '<button data-m="move">Move to…</button>' : ''}${kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : ''}${kind !== 'folder' && Myra.native ? '<button data-m="vault">Vault access…</button>' : ''}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
     document.body.appendChild(m);
     const r = m.getBoundingClientRect(); if (r.bottom > innerHeight - 10) m.style.top = innerHeight - r.height - 10 + 'px';
     m.onclick = async ev => {
       const a = ev.target.closest('[data-m]')?.dataset.m; if (!a) return;
       if (a === 'ren') { m.remove(); return inlineRename(nameEl, obj, kind === 'board' ? v => renameBoard(obj, v) : undefined); }
       if (a === 'dup') { m.remove(); return duplicate(kind, obj); }
+      if (a === 'vault') { m.remove(); return editVaultAccess(kind, obj); }
       if (a === 'move') return moveMenu(m, kind, obj);
       if (a === 'out') { m.remove(); const pb = boardList.find(x => x.id === obj.parent); await moveBoard(obj.id, pb ? pb.folder || null : null); await refreshBoards(); return chirp(`“${obj.name}” is its own board now ✦`, 3000); }
       if (a === 'del') { // ask first: deleting can't be undone
@@ -500,7 +501,7 @@
     miniCache.clear(); board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
     board.cards.forEach(c => { if (c.type === 'audio' && c.rec) { c.rec = false; c.paused = false; if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.'; } });
     board.cards.forEach(c => { if (c.type === 'canvas' && c.board) { const kb = boardList.find(x => x.id === c.board); if (kb && kb.name !== c.text) c.text = kb.name; } });
-    $('boardName').value = board.name; renderAll(); refreshBoards(); try { localStorage.setItem('myra:last', id); } catch (e) {}
+    $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); try { localStorage.setItem('myra:last', id); } catch (e) {}
   }
   let saveT = 0;
   // ---------- undo / redo: a snapshot of the board after each change settles ----------
@@ -692,6 +693,10 @@
         const k = !c.cropEdit && c.crop, st = k ? `position:absolute;width:${100 / k.w}%;height:${100 / k.h}%;left:${-k.x / k.w * 100}%;top:${-k.y / k.h * 100}%;object-fit:fill;border-radius:0` : '';
         const ui = c.cropEdit && cropping ? `<div class="crop-ui"><div class="crop-box" style="left:${cropping.box.x * 100}%;top:${cropping.box.y * 100}%;width:${cropping.box.w * 100}%;height:${cropping.box.h * 100}%">${['nw', 'ne', 'sw', 'se'].map(h => `<i data-h="${h}"></i>`).join('')}</div></div>` : '';
         return `<div class="imgwrap"><img src="${esc(c.src)}" alt="" style="${st}">${ui}</div>${c.cropEdit ? '' : '<button class="chip" data-act="colors">pull colors ✦</button>'}`; }
+      case 'vnote': { const gone = c.blocked || c.missing, sm = c.props || [];
+        return `<div class="vn-head">${Icon('notebook')}<span class="vn-title">${esc(c.title || 'Note')}</span></div>${gone ? `<div class="vn-gone">${c.missing ? 'I can’t find this note any more.' : 'Not available: this board isn’t allowed to read it.'}</div>`
+          : `${(c.tags || []).length ? `<div class="vn-tags">${c.tags.slice(0, 5).map(t => `<i>#${esc(t)}</i>`).join('')}</div>` : ''}${sm.length ? `<div class="vn-props">${sm.slice(0, 3).map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`).join('')}</div>` : ''}<div class="vn-ex">${esc(c.excerpt || '')}</div>`}
+          <button class="vn-open" data-act="vn-open">${Icon('open')}<span>Open in Obsidian</span></button>`; }
       case 'link': return !c.url ? `<div class="link-in${c.loading ? ' loading' : ''}">${CIC.link}<input placeholder="Add a link…" value="${esc(c.draft || '')}" spellcheck="false"></div>`
         : `<div class="thumb" style="${c.image ? `background-image:url('${esc(c.image)}')` : ''}"></div><div class="meta"><i class="fav" style="background-image:url('https://www.google.com/s2/favicons?sz=64&domain=${esc(host(c.url))}')"></i><div><b>${esc(c.title || c.url)}</b><span>${esc(c.desc || host(c.url))}</span></div></div>`;
       case 'todo': return `<div class="head">${esc(c.text)}</div><ul>${(c.items || []).map((it, i) => `<li class="${it.done ? 'done' : ''}" data-i="${i}"><input type="checkbox" ${it.done ? 'checked' : ''}><span>${esc(it.t)}</span><button class="li-x" data-act="item-x" title="Remove" aria-label="Remove this item">${Icon('close')}</button></li>`).join('')}</ul><button class="add-item" data-act="item">+ add</button>`;
@@ -1109,7 +1114,7 @@
     if (c.type === 'section') return lyText(c.text) || 'Section';
     if (c.ln) return c.ln;
     const t = {
-      frame: c.name || 'Screen', coll: c.name || c.text || (c.kanban ? 'Kanban' : 'Collection'), note: lyText(c.name) || lyText(c.text), text: lyText(c.text), title: lyText(c.text), todo: lyText(c.text) || lyText(c.items?.[0]?.t),
+      frame: c.name || 'Screen', coll: c.name || c.text || (c.kanban ? 'Kanban' : 'Collection'), vnote: c.title || 'Vault note', note: lyText(c.name) || lyText(c.text), text: lyText(c.text), title: lyText(c.text), todo: lyText(c.text) || lyText(c.items?.[0]?.t),
       image: c.tagText || 'Image', link: c.title || (c.url ? host(c.url) : 'Link'), doc: c.text || 'Doc', canvas: c.text || 'Canvas', swatch: c.label || (c.hex || '').toUpperCase(),
       shape: SHAPE_N[c.shape || 'rect'], path: c.closed ? 'Pen shape' : 'Pen line', stamp: 'Stamp', icon: c.name || 'Icon', audio: 'Voice memo', video: c.title || 'Video', spotify: c.title || 'Spotify', ink: 'Drawing', box: c.img ? 'Image spot' : 'Box', font: c.font || 'Figtree',
     }[c.type];
@@ -1383,6 +1388,7 @@
     if (c.type === 'font') return editField(el, el.querySelector('.fs-sample'), v => c.text = v);
     if ((c.type === 'doc' || c.type === 'canvas') && target && !target.closest('.text')) return c.type === 'doc' ? openDoc(c) : openCanvas(c);
     if (c.type === 'doc') return editField(el, el.querySelector('.text'), v => c.text = v);
+    if (c.type === 'vnote') return openVNote(c);
     if (c.type === 'canvas') return editField(el, el.querySelector('.text'), v => c.text = v, () => renameChild(c));
     if (c.type === 'link' && !c.url) return wireLinkInput(c);
     if (c.type === 'audio') { if (target && target.closest('.au-tx') && c.text) return editField(el, el.querySelector('.au-tx'), v => c.text = v); return editField(el, el.querySelector('.au-top .text'), v => c.title = v); }
@@ -1622,6 +1628,7 @@
     if (act && act.startsWith('vd-')) return videoAct(c, act, e);
     if (act && act.startsWith('au-')) return audioAct(c, act, e);
     if (act === 'colors') pullColors(c);
+    if (act === 'vn-open') return openVNote(c);
     if (act === 'item') { c.items = c.items || []; c.items.push({ t: 'new thing', done: false }); renderCard(c); fitText(c); save(); }
     if (act === 'item-x') { const i = +e.target.closest('li').dataset.i; remember(); endEdit(); c.items.splice(i, 1); renderCard(c); fitText(c); selectOnly([c.id]); save(); return; }
     const li = e.target.closest('li'); if (li && c.type === 'todo') {
@@ -2144,7 +2151,7 @@
   applyPanelH();
   $('myraNameIn').oninput = e => { settings.myraName = e.target.value.slice(0, 18); applySettings(); };
   $('myraNameIn').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') e.target.blur(); };
-  $('setTabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { setTab(b.dataset.tab); if (b.dataset.tab === 'toolbar') renderTbList(); } };
+  $('setTabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { setTab(b.dataset.tab); if (b.dataset.tab === 'toolbar') renderTbList(); if (b.dataset.tab === 'vaults') renderVaults(); } };
   setTab('general');
   // Claude usage (desktop app): Myra's own tally, plus a door to the plan limits page
   const kTok = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(Math.round(n));
@@ -2273,7 +2280,7 @@
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());
   // what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
   function snapshot() {
-    const brief = c => ({ id: c.id, type: c.type, x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h), color: c.color,
+    const brief = c => c.type === 'vnote' ? { id: c.id, type: 'vnote', x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h) } : ({ id: c.id, type: c.type, x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h), color: c.color,
       text: (c.text || c.title || c.label || '').slice(0, 300), font: c.font, name: c.name, kids: c.kids, desc: c.desc, body: c.body ? c.body.slice(0, 600) : undefined, shape: c.shape, tag: c.tagText, items: c.items ? c.items.map(i => i.t) : undefined, hex: c.hex, url: c.url, selected: sel.has(c.id) || undefined });
     return { name: board.name, myTemplates: myTpls.map(t => t.name), cards: board.cards.map(brief), links: board.links.map(l => [l.a, l.b]), unsorted: board.tray.map(brief), boardColors: board.palette,
       fontsOnThisComputer: FONTS.filter(f => !/^(\.|Apple |System|STIX|Noto Sans [A-Z][a-z]+ [A-Z])/.test(f)).slice(0, 400),
@@ -2408,6 +2415,133 @@
     return [];
   }
 
+  // ---------- Obsidian vaults: connect folders here; a project or board is then granted what it may see (read-only) ----------
+  let vaults = []; const vaultInfo = {};   // vaultInfo[id] = { folders, notes } from the last scan
+  const vaultById = id => vaults.find(v => v.id === id);
+  async function loadVaults() { vaults = await Myra.vaults().catch(() => []); }
+  // a scrollable list of a vault's folders with a tick each. A ticked folder includes the ones inside it. whole: a first row that ticks the whole vault ('')
+  function folderChecklist(folders, chosen, onChange, { whole = false } = {}) {
+    const box = document.createElement('div'); box.className = 'fchk';
+    const set = new Set(chosen), paint = () => {
+      const wholeOn = set.has('');
+      box.innerHTML = (whole ? `<label class="fc-row"><input type="checkbox" data-f="" ${wholeOn ? 'checked' : ''}><span><b>The whole vault</b></span></label>` : '')
+        + folders.map(f => { const depth = f.split('/').length - 1, covered = wholeOn && whole || [...set].some(c => c !== '' && f.startsWith(c + '/'));
+          return `<label class="fc-row${covered ? ' cov' : ''}" style="padding-left:${10 + depth * 16}px"><input type="checkbox" data-f="${esc(f)}" ${set.has(f) || covered ? 'checked' : ''} ${covered ? 'disabled' : ''}><span>${esc(f.split('/').pop())}</span></label>`; }).join('')
+        + (folders.length ? '' : '<div class="fc-none">No folders yet. Notes in the top of the vault are covered by “the whole vault”.</div>');
+    };
+    paint(); box.onchange = e => { const i = e.target.closest('[data-f]'); if (!i) return; i.checked ? set.add(i.dataset.f) : set.delete(i.dataset.f); onChange([...set]); paint(); };
+    return box;
+  }
+  async function renderVaults() {
+    await loadVaults(); const host = $('vaultList');
+    host.innerHTML = vaults.length ? vaults.map(v => `<div class="vrow" data-id="${esc(v.id)}"><div class="vr-top"><div><b class="vr-name">${esc(v.name)}</b><small>${esc(v.path)}<span class="vr-c"></span>${v.obsidianFolder === false ? ' · doesn’t look like an Obsidian vault (no .obsidian folder), but I can still read its notes' : ''}</small></div>
+        <div class="set-btns"><button class="set-btn" data-vb="more">Edit</button><button class="set-btn" data-vb="scan">Rescan</button><button class="set-btn" data-vb="rm">Disconnect</button></div></div><div class="vr-more" hidden></div></div>`).join('') : '<div class="vr-none">No vault connected yet.</div>';
+    paintVaultCounts(); vaults.forEach(v => Myra.vaultScan(v.id).then(info => { vaultInfo[v.id] = info; paintVaultCounts(); }).catch(() => {}));
+  }
+  const countText = i => ` · ${i.notes} note${i.notes === 1 ? '' : 's'}, ${i.folders.length} folder${i.folders.length === 1 ? '' : 's'}`;
+  function paintVaultCounts() { vaults.forEach(v => { const c = $('vaultList').querySelector(`[data-id="${v.id}"] .vr-c`), i = vaultInfo[v.id]; if (c && i) c.textContent = countText(i); }); }
+  // what a board may read: its own choice, or else its project's. A grant: { vault, folders: ['' = the whole vault, or folder paths], ai, write, writeTo }
+  function grantsFor(b = board) {
+    if (Array.isArray(b.vaultAccess)) return b.vaultAccess;
+    const f = folders.find(x => x.id === b.folder), p = f && projects.find(x => x.id === f.project); return (p && p.vaults) || [];
+  }
+  const activeGrants = b => grantsFor(b).filter(g => vaultById(g.vault) && (g.folders || []).length);
+  function vaultAccessDialog({ title, grants, inherit }) {   // inherit: null, or the project's name (a board can follow its project)
+    return new Promise(async res => {
+      await loadVaults(); const mine = JSON.parse(JSON.stringify(grants || [])); let follow = inherit != null;
+      const d = document.createElement('div'); d.className = 'tdlg-wrap'; d.innerHTML = `<div class="tdlg vdlg" role="dialog"><h3>Vault access</h3><p class="set-note">${esc(title)}. Notes are only read, and only from the folders you tick. Off-limits folders and #private notes are never read.</p>
+        ${inherit != null ? `<div class="tdlg-row"><span>Who decides</span><div class="seg" id="vaFollow"><button data-v="1">${inherit ? 'Same as “' + esc(inherit) + '”' : 'Same as its project'}</button><button data-v="0">This board only</button></div></div>` : ''}
+        <div class="va-list" id="vaList"></div><div class="tdlg-btns"><button class="set-btn" id="vaNo">Cancel</button><button class="set-btn hot" id="vaOk">Save</button></div></div>`;
+      document.body.appendChild(d); const list = d.querySelector('#vaList');
+      const paint = async () => {
+        d.querySelectorAll('#vaFollow [data-v]').forEach(b => b.classList.toggle('on', (b.dataset.v === '1') === follow)); list.hidden = follow; if (follow) return;
+        list.innerHTML = vaults.length ? '' : '<div class="vr-none">No vault is connected yet. <button class="set-link" id="vaGo">Connect one in Settings</button></div>';
+        for (const v of vaults) {
+          let g = mine.find(x => x.vault === v.id); const info = vaultInfo[v.id] || (vaultInfo[v.id] = await Myra.vaultScan(v.id).catch(() => ({ folders: [], notes: 0 })));
+          const blk = document.createElement('div'); blk.className = 'vg';
+          blk.innerHTML = `<label class="vg-use"><input type="checkbox" ${g ? 'checked' : ''}><b>${esc(v.name)}</b></label>`; list.appendChild(blk);
+          blk.querySelector('input').onchange = e => { if (e.target.checked) mine.push({ vault: v.id, folders: [], ai: false, write: false, writeTo: 'Myra' }); else mine.splice(mine.findIndex(x => x.vault === v.id), 1); paint(); };
+          if (!g) continue;
+          const body = document.createElement('div'); body.className = 'vg-body'; body.innerHTML = '<div class="vr-h">Folders Myra may use</div>'; blk.appendChild(body);
+          body.appendChild(folderChecklist(info.folders.filter(f => !(v.off || []).some(o => f === o || f.startsWith(o + '/'))), g.folders, f => { g.folders = f; }, { whole: true }));
+          body.insertAdjacentHTML('beforeend', `<label class="vg-sw"><span>Let Myra read these with AI<small>Sends the notes she reads to Claude. Coming in a later update; your choice is kept.</small></span><input type="checkbox" class="tgl" data-k="ai" ${g.ai ? 'checked' : ''}></label>
+            <label class="vg-sw"><span>Let Myra write to this vault<small>Only to one folder, only when you say “send to vault”. Coming in a later update; your choice is kept.</small></span><input type="checkbox" class="tgl" data-k="write" ${g.write ? 'checked' : ''}></label>`);
+          body.onchange = e => { const k = e.target.dataset.k; if (k) g[k] = e.target.checked; };
+        }
+      };
+      const done = v => { d.remove(); res(v); };
+      d.onclick = e => { const b = e.target.closest('#vaFollow [data-v]'); if (b) { follow = b.dataset.v === '1'; paint(); }
+        if (e.target.id === 'vaGo') { done(null); $('gearBtn').click(); setTab('vaults'); renderVaults(); }
+        if (e.target === d || e.target.id === 'vaNo') done(null);
+        if (e.target.id === 'vaOk') done({ follow, grants: mine.filter(g => (g.folders || []).length) }); };
+      d.onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') done(null); };
+      paint();
+    });
+  }
+  async function editVaultAccess(kind, obj) {
+    if (kind === 'project') {
+      const r = await vaultAccessDialog({ title: `What “${obj.name}” and its boards may read`, grants: obj.vaults || [] }); if (!r) return;
+      obj.vaults = r.grants; await saveLib(); refreshVNotes(); return chirp(r.grants.length ? `Saved: “${obj.name}” can read ${r.grants.length} vault${r.grants.length === 1 ? '' : 's'} ✦` : `“${obj.name}” can’t read any vault ✦`, 3500);
+    }
+    const b = board && board.id === obj.id ? board : await Myra.load(obj.id); if (!b) return;
+    const f = folders.find(x => x.id === b.folder), p = f && projects.find(x => x.id === f.project);
+    const r = await vaultAccessDialog({ title: `What “${b.name}” may read`, grants: Array.isArray(b.vaultAccess) ? b.vaultAccess : (p && p.vaults) || [], inherit: p ? p.name : null }); if (!r) return;
+    if (r.follow) delete b.vaultAccess; else b.vaultAccess = r.grants;
+    if (board && board.id === b.id) { save(); refreshVNotes(); } else await Myra.save(b);
+    chirp(r.follow ? `“${b.name}” follows its project ✦` : `Saved: “${b.name}” has its own vault access ✦`, 3500);
+  }
+  // ---------- vault notes on a board: a card that shows a note's title, tags, properties and first lines, and opens it in Obsidian ----------
+  const obsLink = (v, rel) => 'obsidian://open?vault=' + encodeURIComponent(v.obsidian || v.name) + '&file=' + encodeURIComponent(String(rel).replace(/\.md$/i, ''));
+  function openVNote(c) { const v = vaultById(c.vault); if (!v) return say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000); Myra.openURL(obsLink(v, c.path)); }
+  const grantFor = (b, vaultId, rel) => activeGrants(b).find(g => g.vault === vaultId && g.folders.some(f => f === '' || rel === f || rel.startsWith(f + '/')));
+  // each card re-reads its note when the board opens. If the board may no longer read it (or it became private), the card forgets what it had shown
+  async function refreshVNotes(b = board) {
+    const cs = b.cards.filter(c => c.type === 'vnote'); if (!cs.length) return; await loadVaults(); let changed = false;
+    for (const c of cs) {
+      const before = JSON.stringify([c.title, c.tags, c.props, c.excerpt, c.blocked, c.missing]), g = grantFor(b, c.vault, c.path);
+      try { if (!g) throw new Error('blocked'); const n = await Myra.vaultNote(c.vault, c.path, g.folders); Object.assign(c, { title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, blocked: false, missing: false }); }
+      catch (e) { const miss = /missing/.test(e.message); Object.assign(c, { blocked: !miss, missing: miss, tags: [], props: [], excerpt: '' }); }
+      if (before !== JSON.stringify([c.title, c.tags, c.props, c.excerpt, c.blocked, c.missing])) { changed = true; if (b === board) renderCard(c); }
+    }
+    if (changed && b === board) save();
+  }
+  async function addVaultNote(g, rel) {
+    const n = await Myra.vaultNote(g.vault, rel, g.folders), w = centerWorld(), c = card('vnote', { vault: g.vault, path: rel, title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, color: 'lilac' });
+    c.x = snapTo(w.x - c.w / 2); c.y = snapTo(w.y - c.h / 2); remember(); addCard(c, true); selectOnly([c.id]); save();
+  }
+  async function openVaultPicker() {
+    await loadVaults(); const gs = activeGrants(board); $('vaultPick')?.remove();
+    if (!gs.length) { say('This board can’t read any vault yet. Connect one in Settings → Vaults, then give this board or its project access (right-click → Vault access) ✦', 7000); return; }
+    const d = document.createElement('div'); d.id = 'vaultPick'; d.className = 'tdlg-wrap';
+    d.innerHTML = '<div class="tdlg vdlg"><h3>Add a note from a vault</h3><input id="vpQ" placeholder="Search by name or folder…" autocomplete="off" spellcheck="false"><div class="vp-list" id="vpList"></div><div class="tdlg-btns"><button class="set-btn" id="vpNo">Close</button></div></div>';
+    document.body.appendChild(d); const q = d.querySelector('#vpQ'), list = d.querySelector('#vpList'); let seq = 0, rows = [];
+    const run = async () => { const my = ++seq, text = q.value.trim();
+      const all = (await Promise.all(gs.map(g => Myra.vaultNotes(g.vault, g.folders, text).then(r => r.map(x => ({ ...x, g })), () => [])))).flat(); if (my !== seq) return;
+      rows = all.sort((a, b) => b.mtime - a.mtime).slice(0, 40);
+      list.innerHTML = rows.length ? rows.map((r, i) => `<button class="vp-row" data-i="${i}"><b>${esc(r.title)}</b><small>${esc((gs.length > 1 ? (vaultById(r.g.vault)?.name || '') + (r.folder ? ' · ' : '') : '') + r.folder)}</small></button>`).join('') : '<div class="vr-none">No notes found.</div>'; };
+    let t = 0; q.oninput = () => { clearTimeout(t); t = setTimeout(run, 120); }; run(); q.focus();
+    const close = () => d.remove();
+    d.onclick = async e => { if (e.target === d || e.target.id === 'vpNo') return close(); const b = e.target.closest('.vp-row'); if (!b) return; const r = rows[+b.dataset.i]; close(); try { await addVaultNote(r.g, r.rel); } catch (err) { say('Hmm: ' + err.message, 3500); } };
+    d.onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') close(); if (e.key === 'Enter' && rows[0]) { e.preventDefault(); const r = rows[0]; close(); addVaultNote(r.g, r.rel).catch(err => say('Hmm: ' + err.message, 3500)); } };
+  }
+  $('vaultAdd').onclick = async () => {
+    try { const dir = await Myra.vaultPick(); if (!dir) return; const v = await Myra.vaultAdd(dir); await renderVaults(); say(`Connected “${v.name}”. Nobody can see it yet: give a project or board access from its right-click menu ✦`, 6000); }
+    catch (e) { say('Hmm: ' + e.message, 4000); }
+  };
+  $('vaultList').onclick = async e => {
+    const b = e.target.closest('[data-vb]'), row = e.target.closest('.vrow'); if (!b || !row) return; const v = vaultById(row.dataset.id); if (!v) return; const more = row.querySelector('.vr-more');
+    if (b.dataset.vb === 'scan') { delete vaultInfo[v.id]; return renderVaults(); }
+    if (b.dataset.vb === 'rm') { if (!b.classList.contains('sure')) { b.classList.add('sure'); b.textContent = 'Disconnect? Click again'; setTimeout(() => { b.classList.remove('sure'); b.textContent = 'Disconnect'; }, 3000); return; }
+      await Myra.vaultRemove(v.id); delete vaultInfo[v.id]; projects.forEach(p => { if (p.vaults) p.vaults = p.vaults.filter(g => g.vault !== v.id); }); await saveLib(); return renderVaults(); }
+    if (b.dataset.vb === 'more') {
+      if (!more.hidden) { more.hidden = true; return; }
+      const info = vaultInfo[v.id] || await Myra.vaultScan(v.id).catch(() => ({ folders: [], notes: 0 })); vaultInfo[v.id] = info;
+      more.innerHTML = `<label class="vr-f">Name here<input data-k="name" value="${esc(v.name)}" maxlength="60"></label><label class="vr-f">Name in Obsidian<input data-k="obsidian" value="${esc(v.obsidian || '')}" maxlength="120"><small>Used for the “Open in Obsidian” link. It's the vault's name in Obsidian, normally its folder name.</small></label><div class="vr-h">Off-limits folders<small>Never read, whatever a project or board allows.</small></div>`;
+      more.appendChild(folderChecklist(info.folders, v.off || [], async off => { v.off = off; await Myra.vaultUpdate(v.id, { off }); }));
+      more.onchange = async ev => { const i = ev.target.closest('input[data-k]'); if (!i) return; const patch = { [i.dataset.k]: i.value }; const nv = await Myra.vaultUpdate(v.id, patch); Object.assign(v, nv); if (i.dataset.k === 'name') row.querySelector('.vr-name').textContent = v.name; };
+      more.onkeydown = ev => { ev.stopPropagation(); if (ev.key === 'Enter') ev.target.blur(); }; more.hidden = false;
+    }
+  };
   // ---------- Myra's helpers: Claude Code, Mobbin, Higgsfield ----------
   let lastConn = 0;
   async function showConnections(force) {
@@ -2590,7 +2724,7 @@
   };
   // ---------- your own templates: save a selection (or the whole board); use it on a board or as a new one (Settings decides) ----------
   let myTpls = [];
-  const NO_KEEP = ['video', 'audio', 'doc', 'canvas', 'spotify'];   // files and other boards stay out of templates; pictures become empty image spots
+  const NO_KEEP = ['video', 'audio', 'doc', 'canvas', 'spotify', 'vnote'];   // files and other boards stay out of templates; pictures become empty image spots
   function templateFrom(cs) {
     const all = new Set(cs); cs.forEach(c => { if (c.type === 'coll') (c.kids || []).forEach(k => byId(k) && all.add(byId(k))); if (c.type === 'frame') onFrame(c).forEach(k => all.add(k)); });
     const kept = [...all].filter(c => !NO_KEEP.includes(c.type)), ids = new Set(kept.map(c => c.id));
@@ -2740,6 +2874,7 @@
       ...(board.bg ? [{ label: 'Use the default background', run: () => { delete board.bg; save(); applyColors(); } }] : []),
       '-',
       { label: 'Save board as template', run: () => saveWithDialog(null) },
+      ...(Myra.native ? [{ label: 'Add a note from a vault…', run: openVaultPicker }, { label: 'Vault access for this board…', run: () => editVaultAccess('board', board) }] : []),
       { label: 'Export board as image', run: () => exportCards(board.cards, board.name, false) },
       { label: 'Export board as PDF', run: () => exportCards(board.cards, board.name, true) }]);
   });
@@ -4155,7 +4290,7 @@ ${proseCSS()}
     const CARET = Icon('caret-down', { cls: 'sb-caret' });
     const colorPop = (cur, dots) => pop('color', `<i class="sb-cur" style="background:${cur}"></i>${CARET}`, `<div class="sb-dots">${dots}</div>`, 'Color');
     let more = '';
-    let h = `<span class="sb-label">${one ? ({ section: 'Section', note: 'Note', todo: 'Checklist', title: 'Title', image: 'Image', link: 'Link', swatch: 'Color', coll: one.kanban ? 'Kanban' : 'Collection', doc: 'Doc', canvas: 'Canvas', shape: 'Shape', path: 'Pen shape', stamp: 'Stamp', audio: 'Voice memo', video: 'Video', spotify: 'Spotify', ink: 'Drawing', frame: 'Screen', box: 'Box', text: 'Text', font: 'Font' }[one.type] || 'Card') : cs.length + ' selected'}</span>`;
+    let h = `<span class="sb-label">${one ? ({ section: 'Section', note: 'Note', todo: 'Checklist', title: 'Title', image: 'Image', link: 'Link', swatch: 'Color', coll: one.kanban ? 'Kanban' : 'Collection', vnote: 'Vault note', doc: 'Doc', canvas: 'Canvas', shape: 'Shape', path: 'Pen shape', stamp: 'Stamp', audio: 'Voice memo', video: 'Video', spotify: 'Spotify', ink: 'Drawing', frame: 'Screen', box: 'Box', text: 'Text', font: 'Font' }[one.type] || 'Card') : cs.length + ' selected'}</span>`;
     if (cs.length > 1) { const A = [['left', 'Align left edges'], ['hcenter', 'Align centers'], ['right', 'Align right edges'], ['top', 'Align tops'], ['vcenter', 'Align middles'], ['bottom', 'Align bottoms']];
       if (cs.length > 2) A.push(['dh', 'Space evenly across'], ['dv', 'Space evenly down']);
       h += G(0, `<div class="sb-sizes sb-style sb-arrange">${A.map(([k, t], i) => (i === 3 || i === 6 ? '<i class="sb-gap"></i>' : '') + `<button data-arr="${k}" title="${t}">${Icon(ARRANGE_NAME[k])}</button>`).join('')}</div>`); }
@@ -4911,7 +5046,7 @@ ${proseCSS()}
 
   // ---------- start ----------
   (async () => {
-    loadTemplates();
+    loadTemplates(); loadVaults();
     let list = await Myra.list();
     if (!list.length) { const b = newBoard('My first board', 'My first board'); await Myra.save(b); list = await Myra.list(); }
     let last = null; try { last = localStorage.getItem('myra:last'); } catch (e) {}
@@ -4924,5 +5059,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__myra = { saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__myra = { openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

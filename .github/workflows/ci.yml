@@ -20,6 +20,8 @@ jobs:
         run: for f in linux/*.js web/app.js web/bridge.js tests/*.js; do node --check "$f"; done
       - name: Dependencies
         run: npm ci --no-audit --no-fund && node node_modules/electron/install.js
+      - name: Vault test (reading notes, privacy rules)
+        run: node tests/vault.js
       - name: Smoke test (the real app, with stand-in claude and whisper)
         run: xvfb-run -a node tests/smoke.js
       - name: Zoom test

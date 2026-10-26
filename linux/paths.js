@@ -10,6 +10,7 @@ module.exports = {
   support,
   boardsDir: path.join(support, 'boards'),
   mediaDir: path.join(support, 'media'),
+  vaultsFile: path.join(support, 'vaults.json'),
   templatesDir: path.join(support, 'templates'),
   usageFile: path.join(support, 'usage.json'),
   foldersFile: path.join(support, 'folders.json'),
