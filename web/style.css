@@ -2391,3 +2391,15 @@ body.dark svg.ico .ico-d { color: var(--ink); }
 .keys { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 5px; width: auto; max-width: none; }
 .keys button { padding: 0; margin-left: 2px; }
 @media (min-height: 801px) { body:has(.keys:not(.hide)) .side { bottom: 190px; } }
+
+/* the template form */
+.tdlg-wrap { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; background: rgba(60, 40, 20, .28); }
+.tdlg { width: min(420px, calc(100vw - 32px)); padding: 22px; border-radius: 26px; corner-shape: squircle; background: var(--panel, #fff); box-shadow: 0 18px 50px rgba(60, 40, 20, .28); display: grid; gap: 14px; color: var(--ink); }
+.tdlg h3 { margin: 0; font: 700 16px/1.2 var(--font); }
+.tdlg label { display: grid; gap: 6px; font: 600 12px/1 var(--font); color: var(--ink-soft); }
+.tdlg input { padding: 10px 12px; border-radius: 12px; corner-shape: squircle; border: 1.5px solid rgba(150, 95, 35, .25); background: transparent; font: 500 14px/1.2 var(--font); color: var(--ink); outline: none; }
+.tdlg input:focus { border-color: var(--select); }
+.tdlg-row { display: grid; gap: 6px; font: 600 12px/1 var(--font); color: var(--ink-soft); }
+.tdlg-row .seg { justify-self: start; }
+.tdlg-btns { display: flex; justify-content: flex-end; gap: 8px; }
+body.dark .tdlg .seg { background: rgba(255, 255, 255, .08); }

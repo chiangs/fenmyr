@@ -127,9 +127,9 @@ echo " [BLANK_AUDIO] hello from whisper"
   // your own templates: save the board, see it under Yours, add it to a board (twice: new ids each time) and open it as a new board
   Object.assign(r, await page.evaluate(async () => {
     const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {};
-    const t = await M.saveAsTemplate('Smoke template', null); res.tplSaved = !!t && t.name === 'Smoke template' && t.cards.length > 3;
+    const t = await M.saveAsTemplate('Smoke template', null, { desc: 'For testing', mode: 'add' }); res.tplSaved = !!t && t.name === 'Smoke template' && t.cards.length > 3;
     document.querySelector('#tools [data-add="tpl"]').click(); await wait(200);
-    const row = document.querySelector('[data-mine]'); res.tplRow = !!row && row.textContent.includes('Smoke template') && row.textContent.includes('Adds to this board');
+    const row = document.querySelector('[data-mine]'); res.tplRow = !!row && row.textContent.includes('Smoke template') && row.textContent.includes('For testing') && row.textContent.includes('Adds to this board');
     const before = M.board.cards.length; row.click(); await wait(800); const mid = M.board.cards.length;
     document.querySelector('#tools [data-add="tpl"]').click(); await wait(200); document.querySelector('[data-mine]').click(); await wait(800);
     res.tplAdds = mid > before && M.board.cards.length === mid + (mid - before) && new Set(M.board.cards.map(c => c.id)).size === M.board.cards.length;

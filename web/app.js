@@ -1915,7 +1915,7 @@
   // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade
   const MYRA_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, moss: { B: '#8fc65a', S: '#e4f4c4', D: '#5c9a35', L: '#2f9e72', l: '#1f6e50' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
-  const settings = Object.assign({ tplUse: 'add', defaultFont: '', iconStyle: 'regular', winButtons: false, webAccess: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
+  const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, webAccess: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
   settings.wDressup = false;   // not in Myra: Mochiboard's Dress up widget (Mochi's outfits are Mochiboard's own)
   try { if (localStorage.getItem('myra:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
@@ -2203,7 +2203,6 @@
   async function clearSavedChats() { const list = await Myra.list(); for (const b of list) { const bb = b.id === board?.id ? board : await Myra.load(b.id); if (bb?.chat?.length) { bb.chat = []; await Myra.save(bb); } } }
   $('clearChats').onclick = async () => { await clearSavedChats(); Object.keys(sessionChats).forEach(k => delete sessionChats[k]); renderChat(); $('clearChats').textContent = 'Cleared ✓'; setTimeout(() => $('clearChats').textContent = 'Clear all chats', 1800); };
   document.querySelectorAll('[data-seg]').forEach(g => g.onclick = e => { const b = e.target.closest('[data-v]'); if (!b) return; settings[g.dataset.seg] = b.dataset.v; applySettings();
-    if (g.dataset.seg === 'tplUse') buildTplPick();
     if (g.dataset.seg === 'chatKeep' && b.dataset.v !== 'board') clearSavedChats(); if (g.dataset.seg === 'chatKeep') renderChat(); });
   $('obNotes').onclick = $('noteColors').onclick = e => { const b = e.target.closest('[data-nc]'); if (b) { settings.noteColor = b.dataset.nc; applySettings(); } };
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => settings.theme === 'system' && applySettings());
@@ -2374,7 +2373,8 @@
     }
     layoutAll();
     renderTray(); renderWires(); save();
-    if (r.saveTemplate) { const o = r.saveTemplate, ids = Array.isArray(o.ids) && o.ids.length ? o.ids : o.fromNew ? [...new Set(added.map(c => c.id))] : null; await saveAsTemplate(o.name, ids); }
+    if (r.saveTemplate) { const o = r.saveTemplate, ids = Array.isArray(o.ids) && o.ids.length ? o.ids : o.fromNew ? [...new Set(added.map(c => c.id))] : null; await saveAsTemplate(o.name, ids, { desc: o.description, mode: o.mode }); }
+    if (r.editTemplate) { const o = r.editTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) { if (o.newName) t.name = freeName(o.newName, t.id); if (o.description != null) t.desc = String(o.description).slice(0, 140); if (o.mode === 'new' || o.mode === 'add') t.mode = o.mode; await Myra.saveTemplate(t); buildTplPick(); } }
     if (added.length) setTimeout(() => showWhatMyraMade(added), 250);
     const acts = r.confirm ? [{ label: (r.confirm || 'Yes, make it') + ' ✦', run: () => ask(q, true) }, { label: 'Not now', ghost: true, run: () => {} }] : [];
     // what next: Myra's own ideas, or a sensible guess from what she just made
@@ -2599,18 +2599,43 @@
       if (o.group) o.group = grp[o.group] || (grp[o.group] = uid()); return o; });
     return { cards, links: (t.links || []).filter(l => ids[l.a] && ids[l.b]).map(l => ({ ...l, id: uid(), a: ids[l.a], b: ids[l.b] })) };
   }
-  const freeName = name => { let n = String(name || 'My template').trim().slice(0, 60) || 'My template', k = 2; const base = n; while (myTpls.some(t => t.name.toLowerCase() === n.toLowerCase())) n = `${base} ${k++}`; return n; };
+  const freeName = (name, except) => { let n = String(name || 'My template').trim().slice(0, 60) || 'My template', k = 2; const base = n; while (myTpls.some(t => t.id !== except && t.name.toLowerCase() === n.toLowerCase())) n = `${base} ${k++}`; return n; };
   // ids = the cards to keep (none: the whole board)
-  async function saveAsTemplate(name, ids) {
+  async function saveAsTemplate(name, ids, opts = {}) {
     const cs = ids && ids.length ? ids.map(byId).filter(Boolean) : board.cards;
     if (!cs.some(c => !NO_KEEP.includes(c.type))) { say('There’s nothing here I can keep in a template yet ✦', 3000); return null; }
     const guess = name || (cs.length === board.cards.length ? board.name : cs.find(c => c.type === 'title')?.text || (cs.length === 1 ? cardName(cs) : 'My template'));
-    const t = Object.assign(templateFrom(cs), { id: uid(), name: freeName(guess), made: Date.now() });
+    const t = Object.assign(templateFrom(cs), { id: uid(), name: freeName(guess), desc: String(opts.desc || '').trim().slice(0, 140), mode: opts.mode === 'new' ? 'new' : 'add', made: Date.now() });
     await Myra.saveTemplate(t); myTpls.push(t); buildTplPick(); return t;
+  }
+  // the little form for a template's name, description and how it opens (when you save it, and again whenever you edit it)
+  function templateDialog(t, editing) {
+    return new Promise(res => {
+      const d = document.createElement('div'); d.className = 'tdlg-wrap'; let mode = t.mode === 'new' ? 'new' : 'add';
+      d.innerHTML = `<div class="tdlg" role="dialog"><h3>${editing ? 'Edit template' : 'Save as a template'}</h3>
+        <label>Name<input id="tdName" maxlength="60" value="${esc(t.name || '')}"></label>
+        <label>Description<input id="tdDesc" maxlength="140" placeholder="A few words on when to use it" value="${esc(t.desc || '')}"></label>
+        <div class="tdlg-row"><span>When you use it</span><div class="seg" id="tdMode"><button data-v="add">Add to a board</button><button data-v="new">Open a new board</button></div></div>
+        <div class="tdlg-btns"><button class="set-btn" id="tdNo">Cancel</button><button class="set-btn hot" id="tdOk">${editing ? 'Save' : 'Save template'}</button></div></div>`;
+      document.body.appendChild(d);
+      const paint = () => d.querySelectorAll('#tdMode [data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === mode)); paint();
+      const done = v => { d.remove(); res(v); };
+      d.onclick = e => { const b = e.target.closest('#tdMode [data-v]'); if (b) { mode = b.dataset.v; paint(); } if (e.target === d || e.target.id === 'tdNo') done(null); if (e.target.id === 'tdOk') ok(); };
+      const ok = () => done({ name: d.querySelector('#tdName').value.trim() || t.name || 'My template', desc: d.querySelector('#tdDesc').value.trim().slice(0, 140), mode });
+      d.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); ok(); } if (e.key === 'Escape') done(null); };
+      const n = d.querySelector('#tdName'); n.focus(); n.select();
+    });
+  }
+  // right-click → ask how it should be kept → save
+  async function saveWithDialog(ids) {
+    const cs = ids && ids.length ? ids.map(byId).filter(Boolean) : board.cards;
+    if (!cs.some(c => !NO_KEEP.includes(c.type))) { say('There’s nothing here I can keep in a template yet ✦', 3000); return; }
+    const whole = cs.length === board.cards.length, d = await templateDialog({ name: whole ? board.name : cs.find(c => c.type === 'title')?.text || (cs.length === 1 ? cardName(cs) : ''), mode: whole ? 'new' : 'add' }); if (!d) return;
+    const t = await saveAsTemplate(d.name, ids, d); if (t) say(`Saved “${t.name}”. You’ll find it under Yours in the template picker ✦`, 5000);
   }
   async function deleteTemplate(t) { await Myra.removeTemplate(t.id); myTpls = myTpls.filter(x => x.id !== t.id); buildTplPick(); say(`Removed “${t.name}” from your templates ✦`, 3000); }
   async function useTemplate(t, mode) {
-    mode = mode || settings.tplUse;
+    mode = mode || t.mode || 'add';
     if (mode === 'new') {
       const b = newBoard(t.name), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id;
       Object.assign(b, instantiate(t, 0, 0)); await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return board; }
@@ -2628,7 +2653,7 @@
     const [line, ic] = STARTERS[k] || []; if (!TEMPLATES[k] || !line) return '';
     return `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small><em class="tp-k new">Opens a new board ↗</em></span></button>`;
   };
-  const mineRow = t => { const nw = settings.tplUse === 'new'; return `<button data-mine="${esc(t.id)}"><span class="tp-e">${Icon('templates')}</span><span class="tp-t"><b>${esc(t.name)}</b><small>${t.cards.length} card${t.cards.length === 1 ? '' : 's'}</small><em class="tp-k${nw ? ' new' : ''}">${nw ? 'Opens a new board ↗' : 'Adds to this board'}</em></span><span class="tp-x"><i data-tm="ren" title="Rename">${Icon('edit')}</i><i data-tm="del" title="Delete">${Icon('trash')}</i></span></button>`; };
+  const mineRow = t => { const nw = t.mode === 'new'; return `<button data-mine="${esc(t.id)}"><span class="tp-e">${Icon('templates')}</span><span class="tp-t"><b>${esc(t.name)}</b><small>${esc(t.desc || `${t.cards.length} card${t.cards.length === 1 ? '' : 's'}`)}</small><em class="tp-k${nw ? ' new' : ''}">${nw ? 'Opens a new board ↗' : 'Adds to this board'}</em></span><span class="tp-x"><i data-tm="ren" title="Edit name, description and how it opens">${Icon('edit')}</i><i data-tm="del" title="Delete">${Icon('trash')}</i></span></button>`; };
   function buildTplPick() { $('tplPick').innerHTML = TPL_GROUPS.map(([g, keys]) => `<div class="tp-h">${g}</div>` + keys.map(tplRow).join('')).join('') + (myTpls.length ? '<div class="tp-h">Yours</div>' + myTpls.map(mineRow).join('') : ''); }
   buildTplPick();
   $('tplPick').onclick = async e => { const st = e.target.closest('[data-starter]');
@@ -2637,10 +2662,7 @@
     if (mine) {
       const t = myTpls.find(x => x.id === mine.dataset.mine), act = e.target.closest('[data-tm]')?.dataset.tm; if (!t) return;
       if (act === 'del') { if (!mine.classList.contains('sure')) { mine.classList.add('sure'); e.target.closest('[data-tm]').title = 'Click again to delete'; setTimeout(() => mine.classList.remove('sure'), 3000); return; } return deleteTemplate(t); }
-      if (act === 'ren') { const nm = mine.querySelector('b'); nm.contentEditable = 'true'; nm.focus(); getSelection().selectAllChildren(nm);
-        nm.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); nm.blur(); } if (ev.key === 'Escape') { nm.textContent = t.name; nm.blur(); } ev.stopPropagation(); };
-        nm.onblur = async () => { nm.contentEditable = 'false'; const v = nm.textContent.trim(); if (v && v !== t.name) { t.name = v; await Myra.saveTemplate(t); } buildTplPick(); }; return; }
-      if (mine.querySelector('b').isContentEditable) return;
+      if (act === 'ren') { const d = await templateDialog(t, true); if (d) { Object.assign(t, d); t.name = freeName(d.name, t.id); await Myra.saveTemplate(t); buildTplPick(); } return; }
       $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); return useTemplate(t); }
     const b = e.target.closest('[data-tpl]'); if (!b) return; $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); placeFramework(b.dataset.tpl); };
 
@@ -2691,7 +2713,7 @@
         { label: 'Bring forward  ⌘]', run: () => restack('forward') },
         { label: 'Send backward  ⌘[', run: () => restack('backward') },
         { label: 'Send to back  ⇧⌘[', run: () => restack('back') }, '-',
-        { label: 'Save as template', run: async () => { const t = await saveAsTemplate(null, cs.map(c => c.id)); if (t) say(`Saved “${t.name}”. You’ll find it under Yours in the template picker ✦`, 5000); } },
+        { label: 'Save as template', run: () => saveWithDialog(cs.map(c => c.id)) },
         { label: 'Export as image', run: () => exportCards(cs, cardName(cs), false) },
         { label: 'Export as PDF', run: () => exportCards(cs, cardName(cs), true) },
         ...(spotsIn(cs).length ? [{ label: `Fill ${spotsIn(cs).length} image spot${spotsIn(cs).length > 1 ? 's' : ''}…`, run: () => offerFill(spotsIn(cs)) }] : []), '-',
@@ -2701,7 +2723,7 @@
       { label: 'Background color…', run: () => tintPicker('bg', { x: e.clientX + 12, y: e.clientY - 40 }, true) },
       ...(board.bg ? [{ label: 'Use the default background', run: () => { delete board.bg; save(); applyColors(); } }] : []),
       '-',
-      { label: 'Save board as template', run: async () => { const t = await saveAsTemplate(); if (t) say(`Saved “${t.name}”. You’ll find it under Yours in the template picker ✦`, 5000); } },
+      { label: 'Save board as template', run: () => saveWithDialog(null) },
       { label: 'Export board as image', run: () => exportCards(board.cards, board.name, false) },
       { label: 'Export board as PDF', run: () => exportCards(board.cards, board.name, true) }]);
   });
@@ -4878,5 +4900,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__myra = { saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__myra = { saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
