@@ -56,6 +56,54 @@
       card('todo', { x: 0, y: 260, text: 'screens', items: [{ t: 'Onboarding', done: false }, { t: 'Home', done: false }, { t: 'Settings', done: false }] }),
       card('note', { x: 280, y: 260, text: 'Competitors + what they miss', color: 'lilac' }),
     ], tray: [] }),
+    'Vision → OKRs → Opportunities': () => {
+      // a vision, the objective under it, key results, then one result opened up into an opportunity solution tree
+      const how = 'Start at the top: one sentence for where this is all going.\n\nUnder it, this quarter’s objective and three key results you can measure. Then pick ONE key result and grow its tree: the opportunities you heard from people, a few solutions for each, and a small test to run first.\n\nDrag from a card’s edge to draw more lines. Ask me to fill it in for your product and I’ll swap my examples for yours.';
+      const C = {}, n = (key, o) => (C[key] = card('note', { w: 220, ...o }));
+      const cards = [
+        card('title', { x: 120, y: -40, text: 'Vision to opportunities' }),
+        n('v', { x: 450, y: 60, w: 300, h: 150, name: 'Vision', text: 'Anyone who loves picking berries can find their way back to the good spots, every season.', color: 'sky' }),
+        n('o', { x: 450, y: 260, w: 300, h: 130, name: 'Objective · this quarter', text: 'Make the first trip with Bog Notes feel effortless', color: 'butter' }),
+        n('k1', { x: 240, y: 450, name: 'Key result 1', text: '70% of new people save a spot on their first trip', color: 'mint' }),
+        n('k2', { x: 480, y: 450, name: 'Key result 2', text: '8 in 10 say the first trip was easy', color: 'mint' }),
+        n('k3', { x: 720, y: 450, name: 'Key result 3', text: 'Fewer than 5% give up when the signal drops', color: 'mint' }),
+        n('p1', { x: 110, y: 690, name: 'Opportunity', text: '“My hands are full, I forget to save the spot”', color: 'lilac' }),
+        n('p2', { x: 350, y: 690, name: 'Opportunity', text: '“I can’t tell if a spot is worth saving”', color: 'lilac' }),
+        n('s1', { x: 0, y: 900, name: 'Solution', text: 'Save with one tap, or a shake', color: 'peach' }),
+        n('s2', { x: 240, y: 900, name: 'Solution', text: 'Save automatically where you stop for a while', color: 'peach' }),
+        n('s3', { x: 480, y: 900, name: 'Solution', text: 'Rate the spot after you pick', color: 'peach' }),
+        n('e1', { x: 0, y: 1110, name: 'Test first', text: 'Try auto-save with 5 pickers this weekend', color: 'pink' }),
+        card('note', { x: 900, y: 60, w: 280, h: 390, r: 1.5, name: 'Myra’s how-to', text: how, color: 'white', myra: true }),
+      ];
+      const links = [['v', 'o'], ['o', 'k1'], ['o', 'k2'], ['o', 'k3'], ['k1', 'p1'], ['k1', 'p2'], ['p1', 's1'], ['p1', 's2'], ['p2', 's3'], ['s1', 'e1']].map(([x, y]) => ({ id: uid(), a: C[x].id, b: C[y].id, arrow: true }));
+      return { cards, links, tray: [] };
+    },
+    'Product kickoff': () => {
+      // the questions a team answers together before building anything; the starter prompts are meant to be written over
+      const how = 'Fill the boxes together, one note per thought. Write over my prompts with your own words.\n\nThe top two rows say why this exists and who it’s for. The middle row sets the edges: what’s in, what’s out, and what could go wrong. The bottom row is how you’ll start.\n\nWhen something is unclear, put it in Decisions needed and give it an owner. Ask me to tidy it up or draft a first version from a few sentences.';
+      const note = (x, y, name, text, color, o = {}) => card('note', { x, y, w: 230, name, text, color, ...o });
+      const coll = (x, y, name, color, texts) => { const kids = texts.map(t => card('note', { text: t, color, r: 0 })); return [card('coll', { x, y, text: name, color, kids: kids.map(k => k.id), cols: 1, r: 0 }), ...kids]; };
+      const todo = (x, y, text, items) => card('todo', { x, y, text, items: items.map(t => ({ t, done: false })) });
+      const cards = [
+        card('title', { x: 0, y: -40, text: 'Product kickoff' }),
+        note(0, 60, 'Why now', 'What changed that makes this worth doing this quarter?', 'butter'),
+        note(260, 60, 'The one-line pitch', 'For [who], who [need], [product] is a [what] that [benefit].', 'sky'),
+        note(520, 60, 'What success looks like', 'In six months, what will be true that isn’t today?', 'mint'),
+        note(0, 270, 'Who it’s for', 'The one kind of person this is really for.', 'lilac'),
+        note(260, 270, 'The problem', 'In their words: what is hard or annoying right now?', 'pink'),
+        note(520, 270, 'Goals', 'Three things we want, in order of importance.', 'mint'),
+        note(780, 270, 'Not doing', 'What we are deliberately leaving out, and why.', 'peach'),
+        ...coll(0, 500, 'In scope', 'mint', ['The smallest version that solves the problem']),
+        ...coll(330, 500, 'Out of scope', 'pink', ['Everything we can add later']),
+        ...coll(660, 500, 'Risks and open questions', 'butter', ['What could make this fail?', 'What do we still not know?']),
+        todo(0, 800, 'Decisions needed', ['Name the owner for each open question', 'Pick the date for the first review']),
+        note(270, 800, 'Team and roles', 'Who does what, and who decides when we disagree?', 'white'),
+        todo(540, 800, 'Milestones', ['First clickable version', 'First test with real people', 'Launch']),
+        todo(810, 800, 'First tasks', ['Book the next meeting', 'Share this board with the team']),
+        card('note', { x: 1090, y: 60, w: 280, h: 390, r: 1.5, name: 'Myra’s how-to', text: how, color: 'white', myra: true }),
+      ];
+      return { cards, tray: [] };
+    },
     'Brain dump': () => ({ cards: [card('title', { x: 0, y: -40, text: 'Brain dump' }), card('note', { x: 0, y: 60, text: 'Dump everything in Unsorted with Ctrl+K, then ask Myra to sort it ✦', color: 'butter' })],
       tray: ['call the printer', 'idea: animated logo', 'that font from the cafe menu', 'reply to Sam', 'moodboard for spring'].map(t => card('note', { text: t })) }),
   };
@@ -65,7 +113,7 @@
   }
   function newBoard(name = 'Untitled board', tpl) {
     const b = { id: uid(), name, color: COLOR_NAMES[1 + Math.floor(Math.random() * 6)], cards: [], links: [], tray: [], view: { x: 160, y: 140, z: 1 } };
-    if (tpl) { const t = TEMPLATES[tpl](); b.cards = t.cards; b.tray = t.tray; b.name = tpl; }
+    if (tpl) { const t = TEMPLATES[tpl](); b.cards = t.cards; b.links = t.links || []; b.tray = t.tray; b.name = tpl; }
     return b;
   }
   // ---------- the library: projects hold folders, folders hold boards ----------
@@ -2380,51 +2428,51 @@
   const FRAMEWORKS = {
     affinity: { emoji: '🧩', name: 'Affinity map', line: 'Cluster notes into themes', items: [
       { t: 'title', x: 0, y: 0, text: 'Affinity map' },
-      { t: 'coll', x: 0, y: 90, name: 'Raw notes', color: 'white', notes: [{ text: '“I never know if my payment went through”' }, { text: '“I check my balance three times a day”' }, { text: 'Skipped the tutorial, then got lost' }, { text: '“The fees feel hidden”' }] },
-      { t: 'coll', x: 330, y: 90, name: 'People don’t trust the numbers', color: 'pink', notes: [{ text: '“I never know if my payment went through”', color: 'pink' }, { text: '“The fees feel hidden”', color: 'pink' }] },
+      { t: 'coll', x: 0, y: 90, name: 'Raw notes', color: 'white', notes: [{ text: '“I never know which bog has berries this week”' }, { text: '“I lose signal halfway up the hill”' }, { text: 'Skipped the tutorial, then got lost' }, { text: '“I forget where my good spot was”' }] },
+      { t: 'coll', x: 330, y: 90, name: 'People can’t find their way back', color: 'pink', notes: [{ text: '“I lose signal halfway up the hill”', color: 'pink' }, { text: '“I forget where my good spot was”', color: 'pink' }] },
       { t: 'coll', x: 660, y: 90, name: 'Name a theme', color: 'mint', notes: [{ text: 'Drag notes that feel alike in here', color: 'mint' }] },
-      { t: 'how', x: 990, y: 90, text: 'Write one observation per note, in Raw notes. Then drag notes that feel alike into the same group.\n\nName each group as an insight, like “People don’t trust the numbers”, not just “Trust”.\n\nStuck? Ask me to group them by theme.' },
+      { t: 'how', x: 990, y: 90, text: 'Write one observation per note, in Raw notes. Then drag the ones that feel alike into a group.\n\nName each group as an insight, like “People can’t find their way back”, not just “Navigation”.\n\nStuck? Ask me to group them by theme.' },
     ] },
     opportunity: { emoji: '🌳', name: 'Opportunity map', line: 'Outcome → opportunities → solutions', items: [
       { t: 'title', x: 0, y: 0, text: 'Opportunity map' },
-      { t: 'note', key: 'o', x: 330, y: 90, name: 'Outcome', text: 'More people finish signing up', color: 'sky' },
-      { t: 'note', key: 'p1', x: 120, y: 300, name: 'Opportunity', text: '“I don’t know why it needs my ID”', color: 'butter' },
-      { t: 'note', key: 'p2', x: 540, y: 300, name: 'Opportunity', text: '“Setting up takes too long”', color: 'butter' },
-      { t: 'note', key: 's1', x: 0, y: 510, name: 'Solution', text: 'Explain why, right on that screen', color: 'mint' },
-      { t: 'note', key: 's2', x: 240, y: 510, name: 'Solution', text: 'Let people add their ID later', color: 'mint' },
-      { t: 'note', key: 's3', x: 540, y: 510, name: 'Solution', text: 'Save progress so they can come back', color: 'mint' },
-      { t: 'note', key: 'e1', x: 0, y: 720, name: 'Test', text: 'Show the new copy to 5 people', color: 'lilac' },
+      { t: 'note', key: 'o', x: 330, y: 90, name: 'Outcome', text: 'More first trips end with a saved spot', color: 'sky' },
+      { t: 'note', key: 'p1', x: 120, y: 300, name: 'Opportunity', text: '“My hands are full, I forget to save the spot”', color: 'butter' },
+      { t: 'note', key: 'p2', x: 540, y: 300, name: 'Opportunity', text: '“I can’t tell if a spot is worth saving”', color: 'butter' },
+      { t: 'note', key: 's1', x: 0, y: 510, name: 'Solution', text: 'Save with one tap, or a shake', color: 'mint' },
+      { t: 'note', key: 's2', x: 240, y: 510, name: 'Solution', text: 'Save automatically where you stop for a while', color: 'mint' },
+      { t: 'note', key: 's3', x: 540, y: 510, name: 'Solution', text: 'Rate the spot after you pick', color: 'mint' },
+      { t: 'note', key: 'e1', x: 0, y: 720, name: 'Test', text: 'Try auto-save with 5 pickers this weekend', color: 'lilac' },
       { t: 'how', x: 900, y: 90, text: 'Start at the top with the outcome you want.\n\nUnder it, add opportunities: needs and pains you heard from real people, in their words.\n\nUnder each one, a few solutions, then a small test to try first.\n\nDrag from a card’s edge to draw the lines, so you always know why you’re building something.' },
     ], links: [['o', 'p1'], ['o', 'p2'], ['p1', 's1'], ['p1', 's2'], ['p2', 's3'], ['s1', 'e1']] },
     matrix: { emoji: '⚖️', name: 'Impact / effort', line: 'Sort ideas into four boxes', items: [
       { t: 'title', x: 0, y: 0, text: 'Impact / effort' },
-      { t: 'coll', x: 0, y: 90, name: '⚡ Quick wins', color: 'mint', notes: [{ text: 'Add a “save for later” button', color: 'mint' }] },
-      { t: 'coll', x: 330, y: 90, name: '🚀 Big bets', color: 'sky', notes: [{ text: 'Rebuild search', color: 'sky' }] },
-      { t: 'coll', x: 0, y: 360, name: '🧺 Fill-ins', color: 'butter', notes: [{ text: 'New empty-state art', color: 'butter' }] },
-      { t: 'coll', x: 330, y: 360, name: '💤 Skip for now', color: 'pink', notes: [{ text: 'Custom themes', color: 'pink' }] },
+      { t: 'coll', x: 0, y: 90, name: '⚡ Quick wins', color: 'mint', notes: [{ text: 'A “save this spot” button', color: 'mint' }] },
+      { t: 'coll', x: 330, y: 90, name: '🚀 Big bets', color: 'sky', notes: [{ text: 'Maps that work offline', color: 'sky' }] },
+      { t: 'coll', x: 0, y: 360, name: '🧺 Fill-ins', color: 'butter', notes: [{ text: 'Berry stamps for the map', color: 'butter' }] },
+      { t: 'coll', x: 330, y: 360, name: '💤 Skip for now', color: 'pink', notes: [{ text: 'Custom map themes', color: 'pink' }] },
       { t: 'how', x: 660, y: 90, text: 'Write every idea on its own note, then drop each one into a box.\n\nQuick wins: big impact, little effort. Big bets: big impact, lots of effort. Fill-ins: small and easy. Skip for now: small and hard.\n\nDo the quick wins first. Plan the big bets. Fill-ins are for slow days. Be honest about the last box.\n\nNot sure where one goes? Compare it to its neighbors, not to a perfect score.' },
     ] },
     empathy: { emoji: '💭', name: 'Empathy map', line: 'What they say, think, do and feel', items: [
       { t: 'title', x: 0, y: 0, text: 'Empathy map' },
-      { t: 'note', x: 245, y: 90, name: 'Who', text: 'Maya, saving for her first apartment', color: 'lilac' },
-      { t: 'coll', x: 0, y: 270, name: 'Says', color: 'sky', notes: [{ text: '“I just want to know I’m on track”', color: 'sky' }] },
-      { t: 'coll', x: 330, y: 270, name: 'Thinks', color: 'lilac', notes: [{ text: 'Am I doing this wrong?', color: 'lilac' }] },
-      { t: 'coll', x: 0, y: 520, name: 'Does', color: 'butter', notes: [{ text: 'Checks the app every morning', color: 'butter' }] },
-      { t: 'coll', x: 330, y: 520, name: 'Feels', color: 'pink', notes: [{ text: 'Nervous before payday', color: 'pink' }] },
+      { t: 'note', x: 245, y: 90, name: 'Who', text: 'Liv, who picks cloudberries every August', color: 'lilac' },
+      { t: 'coll', x: 0, y: 270, name: 'Says', color: 'sky', notes: [{ text: '“I just want to find my spot again”', color: 'sky' }] },
+      { t: 'coll', x: 330, y: 270, name: 'Thinks', color: 'lilac', notes: [{ text: 'Will the berries still be there?', color: 'lilac' }] },
+      { t: 'coll', x: 0, y: 520, name: 'Does', color: 'butter', notes: [{ text: 'Takes photos of trees as landmarks', color: 'butter' }] },
+      { t: 'coll', x: 330, y: 520, name: 'Feels', color: 'pink', notes: [{ text: 'Anxious when the signal drops', color: 'pink' }] },
       { t: 'how', x: 660, y: 90, text: 'Pick one real person (or a clear type of person) and write who they are up top.\n\nFill each box from interviews and research, not guesses. Quotes go in Says.\n\nThe gold is where Says and Thinks don’t match. That gap is usually the real problem.' },
     ] },
     journey: { emoji: '🗺️', name: 'Journey map', line: 'Steps, feelings and pain points', items: [
       { t: 'title', x: 0, y: 0, text: 'Journey map' },
-      { t: 'coll', x: 0, y: 90, name: '1 · Hears about it', color: 'sky', notes: [{ text: 'Sees a friend’s post', color: 'white' }, { text: '😊 Curious', color: 'mint' }] },
-      { t: 'coll', x: 300, y: 90, name: '2 · Signs up', color: 'lilac', notes: [{ text: 'Fills out 4 screens', color: 'white' }, { text: '😩 “Why do you need my ID?”', color: 'pink' }] },
-      { t: 'coll', x: 600, y: 90, name: '3 · First use', color: 'butter', notes: [{ text: 'Sets a savings goal', color: 'white' }] },
-      { t: 'coll', x: 900, y: 90, name: '4 · Comes back', color: 'mint', notes: [{ text: 'What brings them back?', color: 'white' }] },
-      { t: 'how', x: 1200, y: 90, text: 'One column per step, in order. In each, add what they do (white), how they feel (green = good, pink = rough) and what gets in the way.\n\nThe pink notes are your opportunities.\n\nRename the steps to fit your product.' },
+      { t: 'coll', x: 0, y: 90, name: '1 · Hears berries are ripe', color: 'sky', notes: [{ text: 'A friend posts a full bucket', color: 'white' }, { text: '😊 Excited', color: 'mint' }] },
+      { t: 'coll', x: 300, y: 90, name: '2 · Plans the trip', color: 'lilac', notes: [{ text: 'Checks three forums', color: 'white' }, { text: '😩 “Which bog is best?”', color: 'pink' }] },
+      { t: 'coll', x: 600, y: 90, name: '3 · On the bog', color: 'butter', notes: [{ text: 'Picks until the bucket is full', color: 'white' }] },
+      { t: 'coll', x: 900, y: 90, name: '4 · Back home', color: 'mint', notes: [{ text: 'Wants to remember the spot', color: 'white' }] },
+      { t: 'how', x: 1200, y: 90, text: 'One column per step, in order. In each, add what they do (Snow), how they feel (Moss = good, Lingonberry = rough) and what gets in the way.\n\nThe pink notes are your opportunities.\n\nRename the steps to fit your product.' },
     ] },
     hmw: { emoji: '💡', name: 'How might we', line: 'Turn problems into questions', items: [
       { t: 'title', x: 0, y: 0, text: 'How might we…' },
-      { t: 'coll', x: 0, y: 90, name: 'Problems we heard', color: 'pink', notes: [{ text: 'People abandon sign up at the ID step', color: 'pink' }] },
-      { t: 'coll', x: 330, y: 90, name: 'How might we…', color: 'butter', notes: [{ text: 'HMW make the ID step feel safe?', color: 'butter' }, { text: 'HMW let people start before the ID step?', color: 'butter' }] },
+      { t: 'coll', x: 0, y: 90, name: 'Problems we heard', color: 'pink', notes: [{ text: 'People lose their good spots between seasons', color: 'pink' }] },
+      { t: 'coll', x: 330, y: 90, name: 'How might we…', color: 'butter', notes: [{ text: 'HMW help people remember a spot without stopping to pick up the phone?', color: 'butter' }, { text: 'HMW make coming back next year feel easy?', color: 'butter' }] },
       { t: 'how', x: 660, y: 90, text: 'Write each problem on its own note. Then flip it into a question that starts with “How might we…”.\n\nGood ones are wide enough to have many answers, but narrow enough to start on today.\n\nWrite a few versions of each, then vote with stamps.' },
     ] },
     rtb: { emoji: '🌹', name: 'Rose, thorn, bud', line: 'A quick, kind retro', items: [
@@ -2471,6 +2519,8 @@
     'Moodboard': ['References, colors and type for a feeling', 'palette'],
     'App plan': ['Who it\'s for, the problem, the screens', 'screen'],
     'Brain dump': ['Empty your head, then let Myra sort it', 'brain'],
+    'Vision → OKRs → Opportunities': ['A vision, its key results and an opportunity tree', 'tree'],
+    'Product kickoff': ['Why, who for, the edges and the first steps', 'rocket'],
   };
   $('tplPick').innerHTML = '<div class="tp-h">Add to this board</div>' + Object.entries(FRAMEWORKS).map(([k, F]) => `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`).join('')
     + '<div class="tp-h">Start a new board</div>' + Object.entries(STARTERS).filter(([k]) => TEMPLATES[k]).map(([k, [line, ic]]) => `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small></span><span class="tp-new">New ↗</span></button>`).join('');

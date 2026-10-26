@@ -12,5 +12,6 @@ Write them for people, not for code: one line, what changed and why it's nice.
 - Follows your Caelestia colors and light or dark mode out of the box, and updates itself quietly when you quit.
 - New icons everywhere, with a plain or Duotone bottom bar (Settings → General → Icon style).
 - Myra can search the web and read public pages and GitHub repos, once you switch it on (Settings → Helpers).
+- Two new starter boards (Vision → OKRs → Opportunities, Product kickoff), and the design templates now use cloudberry-picking examples.
 - A default font for text on the board and in docs (Settings → Board → Default font).
 - Ctrl+, opens Settings. Window buttons are off unless you want them.
