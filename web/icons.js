@@ -1,4 +1,4 @@
-// The icon facade. The app asks for a Myra icon name (icon('note')); the pack in web/icons/pack.js (built by tools/icons.js from
+// The icon facade. The app asks for a Myra icon name (Icon('note')); the pack in web/icons/pack.js (built by tools/icons.js from
 // tools/icons/set.js) says what it looks like, so the icon pack can be swapped without touching the app.
 // Every icon carries both weights; the Icon style setting (Regular or Duotone) just switches a class on <body>.
 (() => {
@@ -7,8 +7,8 @@
   // a name nobody has drawn shows a neutral placeholder, with the name as its tooltip, so nothing is ever blank
   const entry = name => ICONS[name] || ICONS.missing;
   const inside = (name, title) => { const e = entry(name); return (!ICONS[name] || title ? `<title>${esc(title || name)}</title>` : '') + `<g class="ico-r">${e ? e.r : ''}</g><g class="ico-d">${e ? e.d : ''}</g>`; };
-  // icon('note', { cls: 'ic', size: 18, title: 'Note' }) → an <svg> string
-  window.icon = (name, o = {}) => `<svg class="ico${o.cls ? ' ' + o.cls : ''}" viewBox="0 0 256 256" aria-hidden="true" data-ico="${esc(name)}"${o.size ? ` width="${o.size}" height="${o.size}"` : ''}>${inside(name, o.title)}</svg>`;
+  // Icon('note', { cls: 'ic', size: 18, title: 'Note' }) → an <svg> string
+  window.Icon = (name, o = {}) => `<svg class="ico${o.cls ? ' ' + o.cls : ''}" viewBox="0 0 256 256" aria-hidden="true" data-ico="${esc(name)}"${o.size ? ` width="${o.size}" height="${o.size}"` : ''}>${inside(name, o.title)}</svg>`;
   // fills the empty <svg data-ico="note"> placeholders in the page (or in a part of it)
   window.hydrateIcons = (root = document) => root.querySelectorAll('svg[data-ico]:not(.ico)').forEach(s => {
     s.setAttribute('viewBox', '0 0 256 256'); s.setAttribute('aria-hidden', 'true'); s.classList.add('ico'); s.innerHTML = inside(s.dataset.ico);

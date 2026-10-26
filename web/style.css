@@ -1485,7 +1485,7 @@ html.native .side { top: 18px; }
 .dt-size input:focus { background: #fffbf6; border-radius: 6px; box-shadow: 0 0 0 1.5px #e88a24; }
 .dt-a { display: grid; justify-items: center; gap: 1px; font: 700 15px/1 Georgia, serif; color: var(--ink); }
 .dt-a i { width: 15px; height: 3px; border-radius: 2px; background: var(--ink); }
-.dt-hl svg .bar { stroke: #f4dc6c; }
+
 .dt-myra { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; margin-left: auto; padding: 0 12px 0 10px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: #fff; font: 700 12.5px/1 var(--font); cursor: pointer; }
 .dt-myra svg { width: 16px; height: 16px; }
 .dt-myra:hover, .dt-myra.open { background: #d9771f; }
@@ -1709,7 +1709,7 @@ body.no-grid .grid-shape-row { opacity: .5; }
 .vd-prog i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: inherit; background: var(--accent, #e88a24); }
 .vd-time { font: 600 11.5px/1 var(--font); color: var(--ink-soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .vd-mute { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-soft) !important; }
-.vd-mute.off .w { display: none; } .vd-mute.off svg { opacity: .5; }
+.vd-mute svg:nth-child(2), .vd-mute.off svg:nth-child(1) { display: none; } .vd-mute.off svg:nth-child(2) { display: inline-block; opacity: .6; }
 .vd-title { font: 600 12.5px/1 var(--font); color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vd-start { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; height: 30px; border-radius: var(--pill-r); corner-shape: squircle; background: #ff5a6e !important; color: #fff !important; font-weight: 700 !important; box-shadow: 0 5px 14px rgba(255, 90, 110, .28); }
 .vd-file { padding: 0 6px; height: 30px; color: var(--ink-soft) !important; text-decoration: underline; text-underline-offset: 3px; }
@@ -2402,7 +2402,8 @@ body.dark .mu-volpop { background: #302c27; }
 body.dark .lic-item pre { background: var(--surface-2); }
 
 /* ---------- icons (web/icons.js): one drawing per weight; the Icon style setting switches which one shows ---------- */
-svg.ico { display: inline-block; flex: none; width: 1em; height: 1em; }
+svg.ico { display: inline-block; flex: none; }
+svg.ico:not([width]) { width: 1em; height: 1em; }
 body:not(.icons-duo) svg.ico .ico-d, body.icons-duo svg.ico .ico-r { display: none; }
 /* the page has many older rules for svg fills and strokes; these are specific enough to win over all of them */
 svg.ico.ico.ico.ico :is(path, circle, rect, ellipse, polygon, polyline, line) { fill: currentColor !important; stroke: none !important; }

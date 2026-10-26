@@ -225,8 +225,7 @@
   }
 
   // the little row buttons use the same line icons as the toolbar
-  const FB = d => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-  const FBTN = { add: FB('<path d="M10 4.5v11M4.5 10h11"/>'), ren: FB('<path d="M13.5 3.5l3 3L8 15l-4 1 1-4z"/><path d="M11.5 5.5l3 3"/>'), del: FB('<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>') };
+  const FBTN = { add: Icon('plus'), ren: Icon('edit'), del: Icon('close') };
   // the left box: a small tree (projects ▸ folders ▸ boards)
   function boardRow(b) {
     const r = document.createElement('div'); r.className = 'board-row' + (board && b.id === board.id ? ' on' : '');
@@ -602,11 +601,11 @@
       case 'spotify': return `<div class="sp-head"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="11" fill="#1ed760"/><path d="M6.6 9.4c3.6-1.1 7.8-.8 11 1M7.2 12.6c3-.9 6.3-.6 9 .9M7.8 15.6c2.4-.6 4.9-.4 7 .8" stroke="#121212" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg><span>${esc(c.title || 'Spotify')}</span></div>`
         + `<div class="sp-wrap">${c.image ? `<img class="sp-art" src="${esc(c.image)}" alt="">` : ''}<iframe class="sp-frame" data-src="${esc(spEmbed(c))}" src="${esc(spEmbed(c))}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="${esc(c.title || 'Spotify')}"></iframe><div class="sp-shield" title="Click to select, then play"></div></div>`;
       case 'video': {
-        if (c.src) return `<div class="vd-stage"><video class="vd-v"></video><button class="vd-play" data-act="vd-play" aria-label="Play">${PLAY}</button></div><div class="vd-bar"><button class="vd-pp" data-act="vd-play" aria-label="Play or pause">${PLAY}</button><div class="vd-prog" data-act="vd-seek"><i></i></div><span class="vd-time">${fmtT(c.dur || 0)}</span><button class="vd-mute${c.muted ? ' off' : ''}" data-act="vd-mute" aria-label="Sound">${SPK}</button><button class="vd-txb${c.text ? ' on' : ''}" data-act="vd-tx" aria-label="Write it out" data-tip="Write it out"><svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="2.5" y="4" width="15" height="12" rx="2.5"/><path d="M5.5 9h3M10.5 9h4M5.5 12.5h6M13.5 12.5h1"/></svg></button></div>`
+        if (c.src) return `<div class="vd-stage"><video class="vd-v"></video><button class="vd-play" data-act="vd-play" aria-label="Play">${PLAY}</button></div><div class="vd-bar"><button class="vd-pp" data-act="vd-play" aria-label="Play or pause">${PLAY}</button><div class="vd-prog" data-act="vd-seek"><i></i></div><span class="vd-time">${fmtT(c.dur || 0)}</span><button class="vd-mute${c.muted ? ' off' : ''}" data-act="vd-mute" aria-label="Sound">${SPK}</button><button class="vd-txb${c.text ? ' on' : ''}" data-act="vd-tx" aria-label="Write it out" data-tip="Write it out">${Icon('captions', { size: 15 })}</button></div>`
           + (c.txShown ? `<div class="vd-txt"><div class="vd-txt-body${c.text ? '' : ' wait'}">${esc(c.text || c.txNote || 'Myra is writing it out…')}</div>${c.text ? `<div class="vd-txt-acts">${settings.ai && haveClaude !== false ? '<button data-act="vd-notes">✦ Turn into notes</button>' : ''}<button data-act="vd-copy">Copy</button></div>` : c.needTx ? '<div class="vd-txt-acts"><button data-act="vd-tx">✦ Write it out</button></div>' : ''}</div>` : '');
         if (c.saving) return `<div class="vd-stage"><div class="vd-msg"><b>Saving your video…</b><span>${Math.round((c.pct || 0) * 100)}%</span></div></div><div class="vd-bar"><span class="vd-title">${esc(c.title || 'Video')}</span></div>`;
-        return `<div class="vd-stage live"><video class="vd-live"></video>${c.camErr ? `<div class="vd-msg"><b>${esc(c.camErr)}</b></div>` : c.camRest ? `<button class="vd-msg vd-wake" data-act="vd-wake"><b>Your camera is resting</b><span>Click to turn it on</span></button>` : ''}${c.count ? `<div class="vd-count">${c.count}</div>` : ''}${c.rec && !c.count ? `<div class="vd-recdot"><i></i><span class="vd-rtime">0:00</span></div>` : ''}${!c.rec && !c.camErr && cams.get(c.id) ? `<button class="vd-dev" data-act="vd-dev"><svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="10.5" height="9" rx="2.2"/><path d="M13 9l4.5-2.6v7.2L13 11"/></svg><span>${esc(devName(cams.get(c.id).stream.getVideoTracks()[0], 'Camera'))}</span><i>▾</i></button>` : ''}${!c.rec && !c.camErr && cams.get(c.id) ? `<div class="vd-look"><button class="${settings.camFlip === false ? '' : 'on'}" data-act="vd-flip" data-tip="Flip" aria-label="Flip the camera"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v14"/><path d="M7.5 5.5L3 14h4.5zM12.5 5.5L17 14h-4.5z"/></svg></button></div>` : ''}${!c.rec && !c.camErr ? `<div class="vd-shape"><button data-act="vd-wide" class="${c.vert ? '' : 'on'}"><i class="w"></i>Wide</button><button data-act="vd-tall" class="${c.vert ? 'on' : ''}"><i class="t"></i>Phone</button></div>` : ''}</div>`
-          + `<div class="vd-bar">${c.rec ? `<button class="vd-stop" data-act="vd-stop"><i></i>Stop</button>` : `<button class="vd-start" data-act="vd-start"><span class="au-rec"></span>${c.vert ? 'Record' : 'Start recording'}</button><button class="vd-file" data-act="vd-file" title="Use a video file">${c.vert ? '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 13.5v1.5a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-1.5M10 3.5v9M6.5 7L10 3.5 13.5 7"/></svg>' : 'Use a video file'}</button>`}</div>`;
+        return `<div class="vd-stage live"><video class="vd-live"></video>${c.camErr ? `<div class="vd-msg"><b>${esc(c.camErr)}</b></div>` : c.camRest ? `<button class="vd-msg vd-wake" data-act="vd-wake"><b>Your camera is resting</b><span>Click to turn it on</span></button>` : ''}${c.count ? `<div class="vd-count">${c.count}</div>` : ''}${c.rec && !c.count ? `<div class="vd-recdot"><i></i><span class="vd-rtime">0:00</span></div>` : ''}${!c.rec && !c.camErr && cams.get(c.id) ? `<button class="vd-dev" data-act="vd-dev">${Icon('camera', { size: 13 })}<span>${esc(devName(cams.get(c.id).stream.getVideoTracks()[0], 'Camera'))}</span><i>▾</i></button>` : ''}${!c.rec && !c.camErr && cams.get(c.id) ? `<div class="vd-look"><button class="${settings.camFlip === false ? '' : 'on'}" data-act="vd-flip" data-tip="Flip" aria-label="Flip the camera">${Icon('flip')}</button></div>` : ''}${!c.rec && !c.camErr ? `<div class="vd-shape"><button data-act="vd-wide" class="${c.vert ? '' : 'on'}"><i class="w"></i>Wide</button><button data-act="vd-tall" class="${c.vert ? 'on' : ''}"><i class="t"></i>Phone</button></div>` : ''}</div>`
+          + `<div class="vd-bar">${c.rec ? `<button class="vd-stop" data-act="vd-stop"><i></i>Stop</button>` : `<button class="vd-start" data-act="vd-start"><span class="au-rec"></span>${c.vert ? 'Record' : 'Start recording'}</button><button class="vd-file" data-act="vd-file" title="Use a video file">${c.vert ? Icon('upload', { size: 16 }) : 'Use a video file'}</button>`}</div>`;
       }
       case 'audio': return c.ready && !c.rec && !c.src ? `<div class="au-top"><span class="au-mic">${MIC}</span><span class="text">${esc(c.title || 'Voice memo')}</span></div><button class="au-start" data-act="au-start"><span class="au-rec"></span>Start recording</button><button class="au-dev" data-act="au-dev">${MIC}<span>${esc(devName(warm?.getAudioTracks?.()[0], 'Microphone'))}</span><i>▾</i></button>`
         : c.rec ? `<div class="au-top"><span class="au-dot${c.count || c.starting ? ' wait' : ''}"></span><b>${c.count === 'connecting' ? 'Myra is connecting to voice…' : c.count ? 'Start talking in…' : c.starting ? 'Starting…' : c.paused ? 'Paused' : 'Recording…'}</b><span class="au-time">0:00</span></div>${c.count || c.starting ? `<div class="au-count${typeof c.count === 'string' ? ' soft' : ''}">${c.count === 'connecting' ? '<i></i><i></i><i></i>' : c.count || ''}</div>` : '<canvas class="au-live" width="520" height="68"></canvas>'}<div class="au-acts"><button data-act="au-pause">${c.paused ? 'Resume' : 'Pause'}</button><button data-act="au-stop" class="solid">Stop</button></div>`
@@ -629,7 +628,7 @@
         return `<div class="imgwrap"><img src="${esc(c.src)}" alt="" style="${st}">${ui}</div>${c.cropEdit ? '' : '<button class="chip" data-act="colors">pull colors ✦</button>'}`; }
       case 'link': return !c.url ? `<div class="link-in${c.loading ? ' loading' : ''}">${CIC.link}<input placeholder="Add a link…" value="${esc(c.draft || '')}" spellcheck="false"></div>`
         : `<div class="thumb" style="${c.image ? `background-image:url('${esc(c.image)}')` : ''}"></div><div class="meta"><i class="fav" style="background-image:url('https://www.google.com/s2/favicons?sz=64&domain=${esc(host(c.url))}')"></i><div><b>${esc(c.title || c.url)}</b><span>${esc(c.desc || host(c.url))}</span></div></div>`;
-      case 'todo': return `<div class="head">${esc(c.text)}</div><ul>${(c.items || []).map((it, i) => `<li class="${it.done ? 'done' : ''}" data-i="${i}"><input type="checkbox" ${it.done ? 'checked' : ''}><span>${esc(it.t)}</span><button class="li-x" data-act="item-x" title="Remove" aria-label="Remove this item"><svg viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></li>`).join('')}</ul><button class="add-item" data-act="item">+ add</button>`;
+      case 'todo': return `<div class="head">${esc(c.text)}</div><ul>${(c.items || []).map((it, i) => `<li class="${it.done ? 'done' : ''}" data-i="${i}"><input type="checkbox" ${it.done ? 'checked' : ''}><span>${esc(it.t)}</span><button class="li-x" data-act="item-x" title="Remove" aria-label="Remove this item">${Icon('close')}</button></li>`).join('')}</ul><button class="add-item" data-act="item">+ add</button>`;
       case 'swatch': return `<div class="chipcol"></div><div class="hex">${c.hideName ? '' : `<b>${esc(c.label || c.hex.toUpperCase())}</b>`}${c.hideHex ? '' : `<span>${esc(c.hex.toUpperCase())}</span>`}</div>`;
     }
     return '';
@@ -723,12 +722,7 @@
   function renderAll() { keepOnScreens(); wireLayers(); layersSoon(); applyColors(); cardsEl.innerHTML = ''; board.cards.filter(c => c.type === 'coll').forEach(c => renderCard(c)); board.cards.filter(c => c.type !== 'coll').forEach(c => renderCard(c)); layoutAll(); renderWires(); renderTray(); applyView(); }
 
   // ---------- round 2 pieces: icons, shapes, link hosts ----------
-  const CI = d => `<svg class="cic" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-  const CIC = {
-    doc: CI('<path d="M5.5 2.5h6l3.5 3.5v10.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z"/><path d="M11.5 2.5V6H15M7.5 10h5M7.5 13h5"/>'),
-    canvas: CI([5, 10, 15].map(y => [5, 10, 15].map(x => `<circle cx="${x}" cy="${y}" r="1.1" fill="currentColor" stroke="none"/>`).join('')).join('')),
-    link: CI('<path d="M8.5 11.5a3.2 3.2 0 0 0 4.5 0l2.6-2.6a3.2 3.2 0 0 0-4.5-4.5l-.9.9"/><path d="M11.5 8.5a3.2 3.2 0 0 0-4.5 0l-2.6 2.6a3.2 3.2 0 0 0 4.5 4.5l.9-.9"/>'),
-  };
+  const CIC = { doc: Icon('doc', { cls: 'cic' }), canvas: Icon('grid', { cls: 'cic' }), link: Icon('link', { cls: 'cic' }) };
   const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
   const SHAPE_FILL = { gray: '#e4dfd8', pink: '#f2a59a', butter: '#f6c47a', mint: '#b5d69e', sky: '#a9c9e6', lilac: '#cdb8e6', peach: '#dccdb8', ink: '#3b342d' };
   // a line can be wavy, zigzag or loopy: waves = how tight, round = sharp → soft (or the loop size), wobble = hand-drawn looseness. Drawn in the 0–100 box
@@ -1012,18 +1006,8 @@
   function addCard(c, pop = true) { board.cards.push(c); renderCard(c, pop); save(); return c; }
   // ---------- layers: every piece on the board, top of the stack first (like Figma). Frames and collections fold open, groups stay together ----------
   const LY = { open: new Set(), t: 0, drag: null };
-  const LI = d => `<svg viewBox="0 0 ${d.includes('data-l24') ? 24 : 20} ${d.includes('data-l24') ? 24 : 20}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-  const LICON = {
-    path: LI('<g data-l24="1"><path d=\"M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z\"/><path d=\"m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18\"/><path d=\"m2.3 2.3 7.286 7.286\"/><circle cx=\"11\" cy=\"11\" r=\"2\"/></g>'),
-    section: LI('<g data-l24="1"><path d="M5 3a2 2 0 0 0-2 2" /><path d="M19 3a2 2 0 0 1 2 2" /><path d="M21 19a2 2 0 0 1-2 2" /><path d="M5 21a2 2 0 0 1-2-2" /><path d="M9 3h1" /><path d="M9 21h1" /><path d="M14 3h1" /><path d="M14 21h1" /><path d="M3 9v1" /><path d="M21 9v1" /><path d="M3 14v1" /><path d="M21 14v1" /></g>'),
-    note: LI('<g data-l24="1"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z" /><path d="M15 3v4a2 2 0 0 0 2 2h4" /></g>'), todo: LI('<g data-l24="1"><path d="m3 17 2 2 4-4" /><path d="m3 7 2 2 4-4" /><path d="M13 6h8" /><path d="M13 12h8" /><path d="M13 18h8" /></g>'),
-    title: LI('<g data-l24="1"><polyline points="4 7 4 4 20 4 20 7" /><line x1="9" x2="15" y1="20" y2="20" /><line x1="12" x2="12" y1="4" y2="20" /></g>'), text: LI('<g data-l24="1"><path d="M17 22h-1a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4h1" /><path d="M7 22h1a4 4 0 0 0 4-4v-1" /><path d="M7 2h1a4 4 0 0 1 4 4v1" /></g>'), image: LI('<g data-l24="1"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></g>'),
-    audio: LI('<g data-l24="1"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></g>'), ink: LI('<g data-l24="1"><path d="M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z" /><path d="m18 13-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18" /><path d="m2.3 2.3 7.286 7.286" /><circle cx="11" cy="11" r="2" /></g>'),
-    frame: LI('<g data-l24="1"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /><path d="M12 18h.01" /></g>'), box: LI('<g data-l24="1"><rect width="18" height="18" x="3" y="3" rx="2" /></g>'), font: LI('<g data-l24="1"><path d="M14 16.5a.5.5 0 0 0 .5.5h.5a2 2 0 0 1 0 4H9a2 2 0 0 1 0-4h.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5V8a2 2 0 0 1-4 0V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-4 0v-.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5Z" /></g>'),
-    coll: LI('<g data-l24="1"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" /><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" /><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" /></g>'),
-    group: LI('<g data-l24="1"><path d="M3 7V5c0-1.1.9-2 2-2h2" /><path d="M17 3h2c1.1 0 2 .9 2 2v2" /><path d="M21 17v2c0 1.1-.9 2-2 2h-2" /><path d="M7 21H5c-1.1 0-2-.9-2-2v-2" /><rect width="7" height="5" x="7" y="7" rx="1" /><rect width="7" height="5" x="10" y="12" rx="1" /></g>'),
-    shape: LI('<g data-l24="1"><path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z" /><rect x="3" y="14" width="7" height="7" rx="1" /><circle cx="17.5" cy="17.5" r="3.5" /></g>'), icon: LI('<g data-l24="1"><circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" /><line x1="9" x2="9.01" y1="9" y2="9" /><line x1="15" x2="15.01" y1="9" y2="9" /></g>'),
-  };
+  const LICON = { path: Icon('path'), section: Icon('section'), note: Icon('note'), todo: Icon('checklist'), title: Icon('title'), text: Icon('text'), image: Icon('image'), audio: Icon('mic'), ink: Icon('draw'),
+    frame: Icon('screen'), box: Icon('rectangle'), font: Icon('font'), coll: Icon('collection'), group: Icon('group'), shape: Icon('shapes'), icon: Icon('smiley') };
   const lyText = s => String(s || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
   const SHAPE_N = { rect: 'Rectangle', circle: 'Circle', tri: 'Triangle', star: 'Star', heart: 'Heart', line: 'Line' };
   function layerName(c) {
@@ -1088,10 +1072,10 @@
       const c = n.c, kids = n.kids.length, open = LY.open.has(n.key), ids = lyAll(n), hidden = ids.length && ids.every(i => byId(i)?.hidden), locked = ids.length && ids.every(i => byId(i)?.locked);
       const name = n.kind === 'group' ? groupName(n.ids) : layerName(c), icon = n.kind === 'group' ? LICON.group : layerIcon(c);
       return `<div class="ly${n.ids.every(i => sel.has(i)) ? ' on' : ''}${hidden ? ' off' : ''}${locked ? ' lk' : ''}${c?.type === 'frame' || c?.type === 'coll' || c?.type === 'section' || n.kind === 'group' ? ' parent' : ''}" data-key="${esc(n.key)}" draggable="true" style="--d:${depth}">
-        <button class="ly-tw${kids ? '' : ' none'}${open ? ' open' : ''}" tabindex="-1" aria-label="${open ? 'Close' : 'Open'}"><svg viewBox="0 0 10 10"><path d="M3.5 2l3 3-3 3"/></svg></button>
+        <button class="ly-tw${kids ? '' : ' none'}${open ? ' open' : ''}" tabindex="-1" aria-label="${open ? 'Close' : 'Open'}">${Icon('caret-right')}</button>
         <span class="ly-ic">${icon}</span><span class="ly-n">${esc(name)}</span>
-        <button class="ly-b ly-lock" title="${locked ? 'Unlock' : 'Lock'}">${locked ? LI('<rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/>') : LI('<rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 5.8-1"/>')}</button>
-        <button class="ly-b ly-eye" title="${hidden ? 'Show' : 'Hide'}">${hidden ? LI('<path d="M3 3l14 14M8.3 5.2A8 8 0 0 1 10 5c4.5 0 7.5 5 7.5 5a14 14 0 0 1-2.2 2.8M12.1 14.7A6 6 0 0 1 10 15c-4.5 0-7.5-5-7.5-5a14 14 0 0 1 3-3.4"/>') : LI('<path d="M2.5 10S5.5 5 10 5s7.5 5 7.5 5-3 5-7.5 5-7.5-5-7.5-5z"/><circle cx="10" cy="10" r="2.3"/>')}</button>
+        <button class="ly-b ly-lock" title="${locked ? 'Unlock' : 'Lock'}">${Icon(locked ? 'lock' : 'unlock')}</button>
+        <button class="ly-b ly-eye" title="${hidden ? 'Show' : 'Hide'}">${Icon(hidden ? 'eye-off' : 'eye')}</button>
       </div>` + (kids && open ? n.kids.map(k => row(k, depth + 1)).join('') : '');
     };
     const st = list.scrollTop;
@@ -2534,22 +2518,22 @@
   }
   // little line icons for the menu, drawn like the toolbar's
   const TPL_IC = {
-    affinity: '<rect x="2.5" y="3" width="5" height="5" rx="1.2"/><rect x="4.5" y="9.5" width="5" height="5" rx="1.2"/><rect x="12" y="3.5" width="5" height="5" rx="1.2"/><rect x="11.5" y="11" width="5" height="5" rx="1.2"/>',
-    opportunity: '<rect x="7.5" y="2.5" width="5" height="3.5" rx="1"/><rect x="2.5" y="9" width="5" height="3.5" rx="1"/><rect x="12.5" y="9" width="5" height="3.5" rx="1"/><rect x="2.5" y="15" width="5" height="2.5" rx="1"/><path d="M10 6v1.5M5 9V7.5h10V9M5 12.5V15"/>',
-    matrix: '<rect x="3" y="3" width="14" height="14" rx="2"/><path d="M10 3v14M3 10h14"/><circle cx="13.5" cy="6.5" r="1" fill="currentColor"/>',
-    empathy: '<path d="M4 4.5h12a1.5 1.5 0 0 1 1.5 1.5v6.5a1.5 1.5 0 0 1-1.5 1.5H9l-3.5 3v-3H4a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 4 4.5z"/><path d="M10 11.5s-2.6-1.5-2.6-3.1a1.3 1.3 0 0 1 2.6-.4 1.3 1.3 0 0 1 2.6.4c0 1.6-2.6 3.1-2.6 3.1z"/>',
-    journey: '<circle cx="4.5" cy="15" r="1.8"/><circle cx="15.5" cy="5" r="1.8"/><path d="M6.2 14.4c3-1 1.5-4.4 4.3-5.4 1.6-.6 2.7-1.4 3.4-2.6"/><path d="M15.5 9.5v.01M11 16h.01M14 13.5h.01" stroke-width="2.2"/>',
-    hmw: '<path d="M7.5 14.5h5M8.3 17h3.4M10 2.8a5 5 0 0 0-3 9c.6.5 1 1.2 1 2v.7h4v-.7c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z"/>',
-    rtb: '<circle cx="10" cy="7" r="3.6"/><path d="M10 5.3c-.9.4-1.2 1.4-.6 2.1M10 10.6V17.5M10 14c-2.3 0-3.8-1.2-4.2-3 2 0 3.6.9 4.2 3zM10 15.5c1.8 0 3.2-1 3.6-2.6-1.7 0-3.1.8-3.6 2.6z"/>',
+    affinity: 'tpl-affinity',
+    opportunity: 'tpl-opportunity',
+    matrix: 'tpl-matrix',
+    empathy: 'tpl-empathy',
+    journey: 'tpl-journey',
+    hmw: 'tpl-hmw',
+    rtb: 'tpl-rtb',
   };
   // the old "Start from" boards live here now too, under the frameworks: each opens as its own new board
   const STARTERS = {
-    'Moodboard': ['References, colors and type for a feeling', '<path d="M10 2.8a7.2 7.2 0 1 0 0 14.4c1.2 0 1.8-.9 1.4-1.9-.5-1.1.2-2.3 1.4-2.3h1.7a2.7 2.7 0 0 0 2.7-2.7c0-4.2-3.2-7.5-7.2-7.5z"/><circle cx="6.6" cy="9" r=".9" fill="currentColor"/><circle cx="9" cy="6.2" r=".9" fill="currentColor"/><circle cx="12.6" cy="6.8" r=".9" fill="currentColor"/>'],
-    'App plan': ['Who it\'s for, the problem, the screens', '<rect x="6" y="2.5" width="8" height="15" rx="2"/><path d="M8.5 6h3M8.5 9h3M8.5 12h2"/>'],
-    'Brain dump': ['Empty your head, then let Myra sort it', '<path d="M10 3.5c-3.6 0-6.5 2.4-6.5 5.5 0 1.9 1.1 3.5 2.8 4.5l-.6 3 3-1.8c.4.1.9.1 1.3.1 3.6 0 6.5-2.4 6.5-5.8S13.6 3.5 10 3.5z"/><path d="M7.5 8.5h5M7.5 11h3"/>'],
+    'Moodboard': ['References, colors and type for a feeling', 'palette'],
+    'App plan': ['Who it\'s for, the problem, the screens', 'screen'],
+    'Brain dump': ['Empty your head, then let Myra sort it', 'brain'],
   };
-  $('tplPick').innerHTML = '<div class="tp-h">Add to this board</div>' + Object.entries(FRAMEWORKS).map(([k, F]) => `<button data-tpl="${k}"><span class="tp-e"><svg viewBox="0 0 20 20">${TPL_IC[k]}</svg></span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`).join('')
-    + '<div class="tp-h">Start a new board</div>' + Object.entries(STARTERS).filter(([k]) => TEMPLATES[k]).map(([k, [line, ic]]) => `<button data-starter="${esc(k)}"><span class="tp-e"><svg viewBox="0 0 20 20">${ic}</svg></span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small></span><span class="tp-new">New ↗</span></button>`).join('');
+  $('tplPick').innerHTML = '<div class="tp-h">Add to this board</div>' + Object.entries(FRAMEWORKS).map(([k, F]) => `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`).join('')
+    + '<div class="tp-h">Start a new board</div>' + Object.entries(STARTERS).filter(([k]) => TEMPLATES[k]).map(([k, [line, ic]]) => `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small></span><span class="tp-new">New ↗</span></button>`).join('');
   $('tplPick').onclick = async e => { const st = e.target.closest('[data-starter]');
     if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name); await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
     const b = e.target.closest('[data-tpl]'); if (!b) return; $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); placeFramework(b.dataset.tpl); };
@@ -2613,11 +2597,11 @@
   });
 
   // ---------- voice memos: record straight onto the board, play them back, and Myra writes them out ----------
-  const PLAY = '<svg viewBox="0 0 12 12"><path d="M3 1.6v8.8L10.2 6z"/></svg>', PAUSE = '<svg viewBox="0 0 12 12"><rect x="2.2" y="1.8" width="2.6" height="8.4" rx=".8"/><rect x="7.2" y="1.8" width="2.6" height="8.4" rx=".8"/></svg>';
+  const PLAY = Icon('play'), PAUSE = Icon('pause');
   const fmtT = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
   const live = new Map();     // card id → { recorder, stream, timer, ... } while recording
   const players = new Map();  // card id → Audio
-  const MIC = '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7.5" y="2.5" width="5" height="9.5" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5"/></svg>';
+  const MIC = Icon('mic', { size: 15 });
   function fitAudio(c, el) { const b = el.querySelector('.body'); if (!b) return; b.style.height = 'auto'; const h = Math.max(150, b.offsetHeight); b.style.height = ''; if (Math.abs(h - c.h) > 2) { c.h = h; el.style.height = h + 'px'; renderWires(); } }
   // the first time someone picks the voice memo tool, ask for the mic (and speech) right then; macOS remembers the answer
   let micOK = false, warm = null, warmT = 0;
@@ -2625,7 +2609,7 @@
   function warmMic(st) { clearTimeout(warmT); if (warm && warm !== st) warm.getTracks().forEach(t => t.stop()); warm = st; warmT = setTimeout(coolMic, 60000); }
   function coolMic() { if (warm && !live.size) { warm.getTracks().forEach(t => t.stop()); warm = null; } }
   // ---------- video cards: record yourself with the camera, or drop in a video file ----------
-  const SPK = '<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8v4h3l4 3.5v-11l-4 3.5z"/><path class="w" d="M13.5 7.5a3.5 3.5 0 0 1 0 5M15.5 5.5a6.5 6.5 0 0 1 0 9"/></svg>';
+  const SPK = Icon('volume', { size: 15 }) + Icon('volume-off', { size: 15 });   // the second one shows while it is muted
   const vids = new Map(), cams = new Map(), VBAR = 44;
   // flip: what you see is what you record. On (the default) mirrors you like a selfie; off shows the room the right way round, so writing reads normally
   const camFlip = () => settings.camFlip !== false;
@@ -2921,7 +2905,7 @@
   }
   function openTiltPop(c, btn) {
     const pop = $('tiltPop'), cur = c.type === 'stamp' && !c.tilted ? 0 : Math.round(c.r || 0);
-    pop.innerHTML = `<div class="tp-row"><label class="tp-in"><span>Tilt</span><input type="number" min="-180" max="180" step="1" value="${cur}" aria-label="Tilt in degrees"><b>°</b></label><button class="tp-reset" data-deg="0" title="Straighten it"><svg viewBox="0 0 20 20"><path d="M4.5 8.5a6 6 0 1 1 1 5.5"/><path d="M4 4v4.5h4.5"/></svg>Reset</button></div>
+    pop.innerHTML = `<div class="tp-row"><label class="tp-in"><span>Tilt</span><input type="number" min="-180" max="180" step="1" value="${cur}" aria-label="Tilt in degrees"><b>°</b></label><button class="tp-reset" data-deg="0" title="Straighten it">${Icon('refresh')}Reset</button></div>
       <div class="tp-chips">${[0, 5, 10, 15, 30, 45, 90, -5, -10, -15, -30, -45, -90].map(d => `<button data-deg="${d}" class="${d === cur ? 'on' : ''}">${d}°</button>`).join('')}</div>`;
     const r = btn.getBoundingClientRect(); pop.classList.add('on'); pop.style.left = Math.min(innerWidth - pop.offsetWidth - 10, Math.max(10, r.left + r.width / 2 - pop.offsetWidth / 2)) + 'px'; pop.style.top = r.top - pop.offsetHeight - 10 + 'px';
     const inp = pop.querySelector('input'); setTimeout(() => { inp.focus(); inp.select(); }, 60);   // after the click that opened it has finished
@@ -3152,10 +3136,7 @@
   }
   addEventListener('resize', placeTray);
   new ResizeObserver(placeTray).observe($('design'));
-  const AL = d => `<svg viewBox="0 0 20 20">${d}</svg>`;
-  const ALIGN = { l: AL('<path d="M4 3v14M7 6h9M7 13h5"/>'), c: AL('<path d="M10 3v14M5 6h10M7 13h6"/>'), r: AL('<path d="M16 3v14M4 6h9M8 13h5"/>'),
-    t: AL('<path d="M3 4h14M6 7v9M13 7v5"/>'), m: AL('<path d="M3 10h14M6 5v10M13 7v6"/>'), b: AL('<path d="M3 16h14M6 4v9M13 8v5"/>'),
-    dh: AL('<path d="M3 4v12M17 4v12M8 7v6M12 7v6"/>'), dv: AL('<path d="M4 3h12M4 17h12M7 8h6M7 12h6"/>') };
+  const ALIGN = { l: Icon('align-l'), c: Icon('align-c'), r: Icon('align-r'), t: Icon('align-t'), m: Icon('align-m'), b: Icon('align-b'), dh: Icon('distribute-h'), dv: Icon('distribute-v') };
   const field = (k, label, v, type = 'number', extra = '') => `<label class="dz-f ${extra}"><span>${label}</span><input data-k="${k}" type="${type}" value="${esc(v)}"${type === 'number' ? ' step="1"' : ''}></label>`;
   function renderDesign() {
     const fc = selCards().length === 1 && selCards()[0].type === 'font' ? selCards()[0] : null;
@@ -3476,19 +3457,10 @@
   // all on Google Fonts, so they show up on any computer (the Mac list's Helvetica Neue, Avenir Next, Futura, Gill Sans, Baskerville,
   // Palatino, Didot and Menlo are Apple's own; these are their closest free cousins)
   const SUGGESTED_FONTS = ['Figtree', 'Inter', 'Nunito Sans', 'Jost', 'Lato', 'Gelasio', 'Libre Baskerville', 'EB Garamond', 'Tinos', 'Bodoni Moda', 'Playfair Display', 'Lora', 'Fraunces', 'Merriweather', 'Space Grotesk', 'IBM Plex Mono', 'JetBrains Mono', 'Shantell Sans'];
-  const DI = d => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   const DICON = {
-    left: DI('<path d="M3.5 5h13M3.5 8.5h9M3.5 12h13M3.5 15.5h9"/>'), center: DI('<path d="M3.5 5h13M5.5 8.5h9M3.5 12h13M5.5 15.5h9"/>'),
-    right: DI('<path d="M3.5 5h13M7.5 8.5h9M3.5 12h13M7.5 15.5h9"/>'), justify: DI('<path d="M3.5 5h13M3.5 8.5h13M3.5 12h13M3.5 15.5h13"/>'),
-    bullet: DI('<circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="10" r="1" fill="currentColor"/><circle cx="4.5" cy="14" r="1" fill="currentColor"/><path d="M8 6h8.5M8 10h8.5M8 14h8.5"/>'),
-    ordered: DI('<path d="M3.5 4.5h1.2v3.2M3.4 7.7h2.2M3.4 12.2c.2-.7 2.2-.8 2.2.3 0 .8-2.2 1.4-2.2 2.2h2.3M8.5 6h8M8.5 13.5h8"/>'),
-    task: DI('<rect x="3" y="4" width="5" height="5" rx="1.3"/><path d="M4.3 6.5l1 1 1.6-2"/><rect x="3" y="11.5" width="5" height="5" rx="1.3"/><path d="M10.5 6.5h6M10.5 14h6"/>'),
-    link: CIC.link, image: DI('<rect x="3" y="4" width="14" height="12" rx="2"/><circle cx="7.5" cy="8.5" r="1.4"/><path d="M3.5 14.5l4-3.5 3 2.5 2.5-2 3.5 3"/>'),
-    more: DI('<circle cx="5" cy="10" r="1.1" fill="currentColor"/><circle cx="10" cy="10" r="1.1" fill="currentColor"/><circle cx="15" cy="10" r="1.1" fill="currentColor"/>'),
-    hl: DI('<path d="M11.5 3.5l5 5-6 6H6v-4.5z"/><path d="M4 18h12" stroke-width="3" class="bar"/>'), undo: DI('<path d="M7.5 7.5H13a3.5 3.5 0 0 1 0 7H8"/><path d="M10 4.5l-3 3 3 3"/>'), redo: DI('<path d="M12.5 7.5H7a3.5 3.5 0 0 0 0 7h5"/><path d="M10 4.5l3 3-3 3"/>'),
-    myra: DI('<path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5l-1.6-4.4L4 8.5l4.4-1.6z"/><path d="M15.5 13.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>'),
-    table: DI('<rect x="3" y="4" width="14" height="12" rx="1.6"/><path d="M3 8h14M3 12h14M8 4v12M12.5 4v12"/>'), hr: DI('<path d="M3 10h14"/><path d="M6 6h8M6 14h8" opacity=".4"/>'),
-    clear: DI('<path d="M5 4.5h10M10 4.5L7.5 16"/><path d="M12.5 12l4 4M16.5 12l-4 4"/>'),
+    left: Icon('text-left'), center: Icon('text-center'), right: Icon('text-right'), justify: Icon('text-justify'), bullet: Icon('bullets'), ordered: Icon('numbered'), task: Icon('task'),
+    link: CIC.link, image: Icon('image'), more: Icon('more'), hl: Icon('highlight'), undo: Icon('undo'), redo: Icon('redo'), myra: Icon('myra-tool'),
+    table: Icon('table'), hr: Icon('divider'), clear: Icon('clear-format'),
   };
   const fontName = f => String(f || '').replace(/["']/g, '').split(',')[0].trim();
   const escH = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -3776,8 +3748,8 @@ ${proseCSS()}
     } else if (kind === 'export') {
       const paper = (() => { try { return localStorage.getItem('myra:paper') || 'letter'; } catch (e) { return 'letter'; } })();
       p.innerHTML = `<div class="dp-h">Paper</div><div class="dp-seg">${[['letter', 'Letter'], ['a4', 'A4']].map(([v, l]) => `<button type="button" class="${paper === v ? 'on' : ''}" data-paper="${v}">${l}</button>`).join('')}</div>
-        <button type="button" class="dp-row dp-pdf" data-pdf="1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2.5h6l3.5 3.5v10.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z"/><path d="M11.5 2.5V6H15"/></svg><span>Download PDF<small>Real pages, ready to send or print</small></span></button>
-        <button type="button" class="dp-row dp-pdf dp-word" data-word="1"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2.5h6l3.5 3.5v10.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z"/><path d="M11.5 2.5V6H15M7 9.5l1.2 5 1.8-3.6 1.8 3.6 1.2-5"/></svg><span>Download Word<small>A .docx you can keep editing in Word or Pages</small></span></button>`;
+        <button type="button" class="dp-row dp-pdf" data-pdf="1">${Icon('file-pdf')}<span>Download PDF<small>Real pages, ready to send or print</small></span></button>
+        <button type="button" class="dp-row dp-pdf dp-word" data-word="1">${Icon('file-word')}<span>Download Word<small>A .docx you can keep editing in Word or Pages</small></span></button>`;
     } else if (kind === 'myra') {
       const has = !ed.state.selection.empty;
       p.innerHTML = has ? `<div class="dp-h">Myra, make this…</div>${[['Shorter', 'Make it shorter and tighter'], ['Clearer', 'Make it clearer and easier to read'], ['Friendlier', 'Make it warmer and friendlier'], ['More confident', 'Make it more confident and direct'], ['More professional', 'Make it more polished and professional'], ['Fix spelling & grammar', 'Fix spelling, grammar and punctuation only. Change nothing else'], ['Into bullet points', 'Turn it into a short bulleted list']].map(([l, how]) => `<button type="button" class="dp-row" data-how="${escH(how)}">${l}</button>`).join('')}
@@ -3897,8 +3869,7 @@ ${proseCSS()}
 
   // ---------- the dock swaps to tools for whatever is selected ----------
   const FILLABLE = ['note', 'todo', 'link'];
-  const ARRANGE_IC = {"left": "<rect width=\"9\" height=\"6\" x=\"6\" y=\"14\" rx=\"2\" /><rect width=\"16\" height=\"6\" x=\"6\" y=\"4\" rx=\"2\" /><path d=\"M2 2v20\" />", "hcenter": "<path d=\"M12 2v20\" /><path d=\"M8 10H4a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h4\" /><path d=\"M16 10h4a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4\" /><path d=\"M8 20H7a2 2 0 0 1-2-2v-2c0-1.1.9-2 2-2h1\" /><path d=\"M16 14h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-1\" />", "right": "<rect width=\"16\" height=\"6\" x=\"2\" y=\"4\" rx=\"2\" /><rect width=\"9\" height=\"6\" x=\"9\" y=\"14\" rx=\"2\" /><path d=\"M22 22V2\" />", "top": "<rect width=\"6\" height=\"16\" x=\"4\" y=\"6\" rx=\"2\" /><rect width=\"6\" height=\"9\" x=\"14\" y=\"6\" rx=\"2\" /><path d=\"M22 2H2\" />", "vcenter": "<path d=\"M2 12h20\" /><path d=\"M10 16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4\" /><path d=\"M10 8V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v4\" /><path d=\"M20 16v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-1\" /><path d=\"M14 8V7c0-1.1.9-2 2-2h2a2 2 0 0 1 2 2v1\" />", "bottom": "<rect width=\"6\" height=\"16\" x=\"4\" y=\"2\" rx=\"2\" /><rect width=\"6\" height=\"9\" x=\"14\" y=\"9\" rx=\"2\" /><path d=\"M22 22H2\" />", "dh": "<rect width=\"6\" height=\"14\" x=\"4\" y=\"5\" rx=\"2\" /><rect width=\"6\" height=\"10\" x=\"14\" y=\"7\" rx=\"2\" /><path d=\"M17 22v-5\" /><path d=\"M17 7V2\" /><path d=\"M7 22v-3\" /><path d=\"M7 5V2\" />", "dv": "<path d=\"M22 17h-3\" /><path d=\"M22 7h-5\" /><path d=\"M5 17H2\" /><path d=\"M7 7H2\" /><rect x=\"5\" y=\"14\" width=\"14\" height=\"6\" rx=\"2\" /><rect x=\"7\" y=\"4\" width=\"10\" height=\"6\" rx=\"2\" />"};
-  const ALIGN_IC = {"left": "<path d=\"M15 12H3\" /><path d=\"M17 18H3\" /><path d=\"M21 6H3\" />", "center": "<path d=\"M17 12H7\" /><path d=\"M19 18H5\" /><path d=\"M21 6H3\" />", "right": "<path d=\"M21 12H9\" /><path d=\"M21 18H7\" /><path d=\"M21 6H3\" />"};
+  const ARRANGE_NAME = { left: 'align-l', hcenter: 'align-c', right: 'align-r', top: 'align-t', vcenter: 'align-m', bottom: 'align-b', dh: 'distribute-h', dv: 'distribute-v' };
   // each card's normal text size in px, so a size can be shown and typed as real pixels
   let fsMark = false, skMark = false, spMark = false, sqMark = false;   // one undo step per visit to the size / stroke dropdown
   const FS_BASE = { note: 15, title: 44, todo: 22, shape: 15, coll: 15 };
@@ -3913,7 +3884,6 @@ ${proseCSS()}
   // line height (a multiple of the text size) and letter spacing (% of the text size); each kind of card has its own normal
   const LH0 = { note: 1.45, title: 1, todo: 1.35, shape: 1.3, coll: 1.2 }, LS0 = { title: -4 };
   const lhOf = c => c.lh ?? LH0[c.type] ?? 1.4, lsOf = c => c.ls ?? LS0[c.type] ?? 0;
-  const SPACING_IC = "<path d=\"M15 12h6\" /><path d=\"M15 6h6\" /><path d=\"m3 13 3.553-7.724a.5.5 0 0 1 .894 0L11 13\" /><path d=\"M3 18h18\" /><path d=\"M4 11h6\" />";
   function setSpacing(kind, v) {
     selCards().filter(c => SIZED.includes(c.type)).forEach(c => {
       const def = kind === 'lh' ? (LH0[c.type] ?? 1.4) : (LS0[c.type] ?? 0), n = v === 'normal' ? def : +v;
@@ -3923,21 +3893,8 @@ ${proseCSS()}
   }
   const FS = { s: .8, m: 1, l: 1.4, xl: 2 }, SIZED = ['note', 'todo', 'title', 'shape', 'coll'];
   function selCards() { return [...sel].map(byId).filter(Boolean); }
-  const I = d => `<svg viewBox="0 0 ${d.includes('data-l24') ? 24 : 20} ${d.includes('data-l24') ? 24 : 20}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-  const ICON = {
-    tag: I('<g data-l24="1"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" /><circle cx="7.5" cy="7.5" r=".5" fill="currentColor" /></g>'),
-    edit: I('<g data-l24="1"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></g>'),
-    myra: I('<g data-l24="1"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" /></g>'),
-    del: I('<g data-l24="1"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></g>'),
-    head: I('<g data-l24="1"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 9h18" /></g>'),
-    caption: I('<g data-l24="1"><rect width="18" height="14" x="3" y="5" rx="2" ry="2" /><path d="M7 15h4M15 15h2M7 11h2M13 11h4" /></g>'),
-    color: I('<g data-l24="1"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" /></g>'),
-    name: I('<g data-l24="1"><path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1" /><path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5" /><path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1" /><path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7" /><path d="M9 7v10" /></g>'),
-    hex: I('<g data-l24="1"><line x1="4" x2="20" y1="9" y2="9" /><line x1="4" x2="20" y1="15" y2="15" /><line x1="10" x2="8" y1="3" y2="21" /><line x1="16" x2="14" y1="3" y2="21" /></g>'),
-    crop: I('<g data-l24="1"><path d="M6 2v14a2 2 0 0 0 2 2h14" /><path d="M18 22V8a2 2 0 0 0-2-2H2" /></g>'),
-    open: I('<g data-l24="1"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></g>'),
-    link: I('<g data-l24="1"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></g>'),
-  };
+  const ICON = { tag: Icon('tag'), edit: Icon('edit'), myra: Icon('myra-tool'), del: Icon('trash'), head: Icon('header'), caption: Icon('captions'), color: Icon('palette'),
+    name: Icon('name'), hex: Icon('hex'), crop: Icon('crop'), open: Icon('open'), link: Icon('link') };
   // fonts for board text: the same list as docs (fonts on this board first, then suggestions, then everything on this computer)
   // every font this board uses: picked for notes and titles, wireframe text, font cards, and fonts set inside docs (most used first)
   function boardFonts() {
@@ -4010,13 +3967,13 @@ ${proseCSS()}
     const pop = (id, trig, body, tip) => `<span class="sb-popw" data-popw="${id}"><button class="sb-poptrig" data-pop="${id}" title="${tip}">${trig}</button><div class="sb-pop sb-pop-${id}">${body}</div></span>`;
     // a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first)
     const G = (fold, html) => `<span class="sb-g" data-fold="${fold}">${html}</span>`;
-    const CARET = '<svg class="sb-caret" viewBox="0 0 12 12"><path d="M3 4.5l3 3 3-3"/></svg>';
+    const CARET = Icon('caret-down', { cls: 'sb-caret' });
     const colorPop = (cur, dots) => pop('color', `<i class="sb-cur" style="background:${cur}"></i>${CARET}`, `<div class="sb-dots">${dots}</div>`, 'Color');
     let more = '';
     let h = `<span class="sb-label">${one ? ({ section: 'Section', note: 'Note', todo: 'Checklist', title: 'Title', image: 'Image', link: 'Link', swatch: 'Color', coll: 'Collection', doc: 'Doc', canvas: 'Canvas', shape: 'Shape', path: 'Pen shape', stamp: 'Stamp', audio: 'Voice memo', video: 'Video', spotify: 'Spotify', ink: 'Drawing', frame: 'Screen', box: 'Box', text: 'Text', font: 'Font' }[one.type] || 'Card') : cs.length + ' selected'}</span>`;
     if (cs.length > 1) { const A = [['left', 'Align left edges'], ['hcenter', 'Align centers'], ['right', 'Align right edges'], ['top', 'Align tops'], ['vcenter', 'Align middles'], ['bottom', 'Align bottoms']];
       if (cs.length > 2) A.push(['dh', 'Space evenly across'], ['dv', 'Space evenly down']);
-      h += G(0, `<div class="sb-sizes sb-style sb-arrange">${A.map(([k, t], i) => (i === 3 || i === 6 ? '<i class="sb-gap"></i>' : '') + `<button data-arr="${k}" title="${t}"><svg viewBox="0 0 24 24">${ARRANGE_IC[k]}</svg></button>`).join('')}</div>`); }
+      h += G(0, `<div class="sb-sizes sb-style sb-arrange">${A.map(([k, t], i) => (i === 3 || i === 6 ? '<i class="sb-gap"></i>' : '') + `<button data-arr="${k}" title="${t}">${Icon(ARRANGE_NAME[k])}</button>`).join('')}</div>`); }
     const fill = cs.filter(c => FILLABLE.includes(c.type));
     if (one?.type === 'coll') h += G(2, colorPop(COLL[one.color]?.[0] || '#fff', Object.keys(COLL).map(n => `<button data-cc="${n}" title="${colorLabel(n)}" style="background:${COLL[n][0]}" class="${one.color === n ? 'on' : ''}"></button>`).join('')) + `<span class="sb-sep"></span>`) + btn('head', 'head', one.head === false ? 'Show the header' : 'Hide the header', one.head !== false);
     else if (fill.length) h += G(2, colorPop(fill.every(c => c.color === fill[0].color) ? COLORS[fill[0].color] || '#fff' : 'conic-gradient(#ffdcd8 0 25%, #ffe3bd 0 50%, #e0edd3 0 75%, #d9e7f3 0)', COLOR_NAMES.map(n => `<button data-c="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${fill.every(c => c.color === n) ? 'on' : ''}"></button>`).join('')) + `<span class="sb-sep"></span>`);
@@ -4044,15 +4001,15 @@ ${proseCSS()}
       const stb = ([k, l, t]) => `<button data-ts="${k}" title="${t}" class="${sized.every(c => isOn(c, k)) ? 'on' : ''}">${l}</button>`;
       h += G(1, `<span class="sb-sep"></span><div class="sb-sizes sb-style">${ST.map(stb).join('')}</div>`);   // B I U S stay together
       const al = sized.every(c => (c.align || 'left') === (sized[0].align || 'left')) ? (sized[0].align || 'left') : '';
-      h += G(1, `<div class="sb-sizes sb-style sb-align">${[['left','Align left'],['center','Center'],['right','Align right']].map(([k, t]) => `<button data-al="${k}" title="${t}" class="${al === k ? 'on' : ''}"><svg viewBox="0 0 24 24">${ALIGN_IC[k]}</svg></button>`).join('')}</div>`);
+      h += G(1, `<div class="sb-sizes sb-style sb-align">${[['left','Align left'],['center','Center'],['right','Align right']].map(([k, t]) => `<button data-al="${k}" title="${t}" class="${al === k ? 'on' : ''}">${Icon('text-' + k)}</button>`).join('')}</div>`);
       const fnt = sized.every(c => (c.font || '') === (sized[0].font || '')) ? (sized[0].font || '') : null;
-      h += G(5, `<span class="sb-sep"></span><button class="sb-txt sb-font" data-sbfont="1" title="Font"><span style="${fnt ? `font-family:'${esc(fnt)}', var(--font)` : ''}">${fnt === null ? 'Mixed fonts' : esc(fnt || 'Default font')}</span><svg class="sb-caret" viewBox="0 0 12 12" width="10" height="10"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`);
+      h += G(5, `<span class="sb-sep"></span><button class="sb-txt sb-font" data-sbfont="1" title="Font"><span style="${fnt ? `font-family:'${esc(fnt)}', var(--font)` : ''}">${fnt === null ? 'Mixed fonts' : esc(fnt || 'Default font')}</span>${Icon('caret-down', { cls: 'sb-caret', size: 10 })}</button>`);
       const SZ = { s: 'Small', m: 'Medium', l: 'Large', xl: 'Extra large' };
       h += G(4, `<span class="sb-sep"></span>` + pop('size', `<b>${px || 'Size'}</b>${CARET}`, `<div class="sb-fsbox"><div class="sbc-top sb-fsrow"><span>Size</span><button class="sb-fsstep" data-fsstep="-1" title="Smaller (⇧ for 10)">−</button><input type="number" min="6" max="400" step="1" value="${px}" placeholder="–" data-fsnum aria-label="Text size in pixels"><span class="sb-fspx">px</span><button class="sb-fsstep" data-fsstep="1" title="Bigger (⇧ for 10)">+</button></div><div class="sb-sizelist">${Object.entries(SZ).map(([z, n]) => `<button data-fs="${z}" class="sz-${z} ${cur === z ? 'on' : ''}"><b>Aa</b><span>${n}</span><em>${Math.round((FS_BASE[sized[0].type] || 15) * FS[z])}</em></button>`).join('')}</div></div>`, 'Text size')); }
     if (sized.length) { const f = sized[0], lh = lhOf(f), ls = lsOf(f), pct = (v, a, b) => Math.max(0, Math.min(100, (v - a) / (b - a) * 100)) + '%';
       const row = (k, label, v, min, max, step, unit) => `<div class="sbc-top"><span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" style="--p:${pct(v, min, max)}" data-sp="${k}"><input type="number" min="${min}" max="${max}" step="${step}" value="${v}" data-spn="${k}" aria-label="${label}"><b class="sb-unit">${unit}</b></div>`;
       const chips = (k, list) => `<div class="sbc-chips sb-spchips">${list.map(([t, v]) => `<button data-spq="${k}:${v}">${t}</button>`).join('')}</div>`;
-      h += G(6, pop('spacing', `<svg class="sb-l24" viewBox="0 0 24 24">${SPACING_IC}</svg>${CARET}`,
+      h += G(6, pop('spacing', `${Icon('spacing', { cls: 'sb-l24' })}${CARET}`,
         `<div class="sb-corners sb-spacing">${row('lh', 'Line height', lh, .8, 3, .05, '×')}${chips('lh', [['Tight', 1.1], ['Normal', 'normal'], ['Airy', 1.8]])}<i class="sb-sprule"></i>${row('ls', 'Letters', ls, -10, 30, .5, '%')}${chips('ls', [['Tight', -3], ['Normal', 'normal'], ['Wide', 8]])}<i class="sb-sprule"></i><div class="sbc-top"><span>Case</span></div><div class="sbc-chips sb-cases">${[['', 'Aa', 'As typed'], ['upper', 'AB', 'UPPERCASE'], ['lower', 'ab', 'lowercase'], ['title', 'Ab', 'Title Case']].map(([k, g, t]) => `<button data-tcase="${k}" title="${t}" class="${(f.tcase || '') === k ? 'on' : ''}"><b>${g}</b><small>${t}</small></button>`).join('')}</div></div>`, 'Line height and letter spacing')); }
     // box (and screen) fill: wireframe grays, your pastels, and any color
     const fillable = cs.filter(c => c.type === 'box' && !c.src || c.type === 'frame' || c.type === 'path' && c.closed);
@@ -4075,18 +4032,18 @@ ${proseCSS()}
               + `<div class="sb-skdash${w && st !== 'solid' ? '' : ' off'}" data-skst="${st}">${sl('dl', 'Dash', f.dl ?? 8, 40)}${sl('dg', 'Gap', f.dg ?? 6, 40)}</div>`; })()}</div>`, 'Stroke')); }
     const rnd = cs.filter(c => (['frame', 'box', 'image'].includes(c.type) || c.type === 'path' || c.type === 'shape' && ['rect', 'tri', 'star'].includes(c.shape || 'rect')));
     if (rnd.length === cs.length && rnd.length) { const cr = rnd[0].radius ?? (rnd[0].type === 'image' ? 12 : 0), same = rnd.every(c => (c.radius ?? (c.type === 'image' ? 12 : 0)) === cr);
-      h += G(3, pop('corners', `<svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /></svg><b>${same ? (cr >= 999 ? 'Pill' : cr) : '–'}</b>${CARET}`,
+      h += G(3, pop('corners', `${Icon('corners')}<b>${same ? (cr >= 999 ? 'Pill' : cr) : '–'}</b>${CARET}`,
         `<div class="sb-corners"><div class="sbc-top"><span>Corners</span><input type="range" min="0" max="80" step="1" value="${Math.min(80, cr)}" style="--p:${Math.min(100, cr / 80 * 100)}%" data-corners-range><input type="number" min="0" max="999" value="${cr >= 999 ? 0 : cr}" data-corners-num></div>
          <div class="sbc-chips">${[0, 4, 8, 12, 16, 24, 32].map(v => `<button data-corners="${v}" class="${same && cr === v ? 'on' : ''}"><i style="border-top-left-radius:${Math.min(v, 14)}px"></i>${v}</button>`).join('')}<button data-corners="999" class="${same && cr >= 999 ? 'on' : ''}"><i style="border-top-left-radius:14px"></i>Pill</button></div></div>`, 'Corners')); }
     const seen = one && (one.type === 'stamp' && !one.tilted ? 0 : Math.round(one.r || 0));
-    if (one && TILTS(one)) h += G(3, `<span class="sb-sep"></span><button class="sb-tilt" data-sb="tiltpop" title="Tilt"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></svg><span class="sb-deg">${seen}°</span></button>`);   // Reset lives in the tilt box
+    if (one && TILTS(one)) h += G(3, `<span class="sb-sep"></span><button class="sb-tilt" data-sb="tiltpop" title="Tilt">${Icon('refresh')}<span class="sb-deg">${seen}°</span></button>`);   // Reset lives in the tilt box
     const oneGroup = cs.length > 1 && cs.every(c => c.group && c.group === cs[0].group);
     if (cs.length > 1) h += G(9, `<span class="sb-sep"></span><button class="sb-txt sb-glass" data-sb="section" title="Create section · ⌥⌘G">Create section</button>`);   // these tuck into ··· before the text controls do
     if (one?.type === 'section') h += `<button class="sb-txt" data-sb="rensection" title="Rename">Rename</button>`;
     if (one?.type === 'section') h += `<button class="sb-txt" data-sb="unsection" title="Remove section">Remove section</button><span class="sb-sep"></span>`;
     if (one?.type === 'section') h += G(2, colorPop(COLORS[one.color] || '#fff', COLOR_NAMES.map(n => `<button data-sc="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${(one.color || 'white') === n ? 'on' : ''}"></button>`).join('')));
     if (cs.length > 1) h += G(8, `<span class="sb-sep"></span><button class="sb-txt" data-sb="${oneGroup ? 'ungroup' : 'group'}" title="${oneGroup ? 'Ungroup · ⇧⌘G' : 'Group · ⌘G'}">${oneGroup ? 'Ungroup' : 'Group'}</button>`);
-    h += `<span class="sb-sep sb-moresep"></span>` + pop('more', '<svg viewBox="0 0 24 24" class="sb-l24"><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" /></svg>', `<div class="sb-morebody">${more}</div>`, 'More');
+    h += `<span class="sb-sep sb-moresep"></span>` + pop('more', Icon('more', { cls: 'sb-l24' }), `<div class="sb-morebody">${more}</div>`, 'More');
     h += `<span class="sb-sep"></span>` + btn('myra', 'myra', 'Ask Myra') + btn('del', 'del', 'Delete');
     bar.innerHTML = h; foldSelbar(bar); snapSoon();
   }
@@ -4612,10 +4569,10 @@ ${proseCSS()}
   if (Myra.web) document.body.classList.add('web');
   document.querySelectorAll('.get-app').forEach(b => b.onclick = e => { e.stopPropagation(); getApp(); });
   // ---------- what's new: a little card, once, the first time a new version opens ----------
-  // what's new in Myra: one card per version (each item: [icon svg, title, a line about it])
+  // what's new in Myra: one card per version (each item: [icon name, title, a line about it])
   const NEWS = { '1.0.0': [
-    ['<circle cx="10" cy="11" r="5.5"/><path d="M10 5.5V3M7.5 4.5 10 5.5l2.5-1"/>', 'Hello, I’m Myra', 'A little cloudberry. Like cloudberries, ideas only grow where conditions are just right, so this board tries to be that place.'],
-    ['<path d="M3 15c3-6 11-6 14 0"/><circle cx="6" cy="7" r="1.5"/><circle cx="10" cy="5.5" r="1.5"/><circle cx="14" cy="7" r="1.5"/>', 'Nordic colors', 'Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch for your cards, with warm amber shadows.'],
+    ['myra-mark', 'Hello, I’m Myra', 'A little cloudberry. Like cloudberries, ideas only grow where conditions are just right, so this board tries to be that place.'],
+    ['palette', 'Nordic colors', 'Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch for your cards, with warm amber shadows.'],
   ] };
   // the button on each version's card: try the headline thing
   const NEWS_TRY = { '1.0.0': ['Take the tour', () => startTour()] };
@@ -4650,7 +4607,7 @@ ${proseCSS()}
     if (seen === v || !items.length) return;
     $('newsV').textContent = `Myra ${v}`; nwHead = ['What’s new ✦', `Myra ${v}`];
     nwSteps = Object.keys(NEWS_STEPS).filter(k => (!seen || after(k, seen)) && !after(k, v)).flatMap(k => NEWS_STEPS[k]); if (!nwSteps.length) nwSteps = null;
-    $('newsList').innerHTML = items.map(([e, t, d]) => `<li><span class="nw-e"><svg viewBox="0 0 20 20">${e}</svg></span><div><b>${esc(t)}</b><small>${esc(d)}</small></div></li>`).join('');
+    $('newsList').innerHTML = items.map(([e, t, d]) => `<li><span class="nw-e">${Icon(e)}</span><div><b>${esc(t)}</b><small>${esc(d)}</small></div></li>`).join('');
     const tryK = Object.keys(NEWS_TRY).filter(k => !after(k, v)).pop(), tr = NEWS_TRY[tryK]; $('newsTry').textContent = tr[0]; $('newsTry').onclick = () => { closeNews(); tr[1](); };
     $('news').classList.add('on'); newsShow(0);
     if (nwSteps) $('newsTry').onclick = () => { if (nwStep === 0) closeNews(); else if (nwStep >= nwSteps.length) { closeNews(); $('gearBtn').click(); setTab('widgets'); } else newsShow(nwStep - 1); };
@@ -4663,12 +4620,11 @@ ${proseCSS()}
   // The sheets hold the app's real panels (moved in while on a phone, put back on a bigger screen), so everything works the same.
   const phone = (() => {
     const mq = matchMedia('(max-width: 700px)'), home = new Map();
-    const PI = d => `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
     const hub = document.createElement('div'); hub.className = 'hub'; hub.id = 'hub';
-    hub.innerHTML = `<button data-sheet="boards">${PI('<rect x="3" y="3" width="6" height="6" rx="1.6"/><rect x="11" y="3" width="6" height="6" rx="1.6"/><rect x="3" y="11" width="6" height="6" rx="1.6"/><rect x="11" y="11" width="6" height="6" rx="1.6"/>')}<span>Boards</span></button>`
-      + `<button data-sheet="layers">${PI('<path d="M10 3l7 3.8-7 3.8-7-3.8z"/><path d="M3 10.2l7 3.8 7-3.8"/><path d="M3 13.6l7 3.8 7-3.8"/>')}<span>Layers</span></button>`
-      + `<button class="hub-add" data-sheet="add" aria-label="Add something">${PI('<path d="M10 4v12M4 10h12" stroke-width="2.4"/>')}</button>`
-      + `<button data-sheet="tray">${PI('<path d="M3 11.5l2.2-6.3A1.5 1.5 0 0 1 6.6 4h6.8a1.5 1.5 0 0 1 1.4 1.2l2.2 6.3V15a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 15z"/><path d="M3 11.5h4l1 2h4l1-2h4"/>')}<span>Unsorted</span><b class="hub-n" id="hubN"></b></button>`
+    hub.innerHTML = `<button data-sheet="boards">${Icon('boards')}<span>Boards</span></button>`
+      + `<button data-sheet="layers">${Icon('layers')}<span>Layers</span></button>`
+      + `<button class="hub-add" data-sheet="add" aria-label="Add something">${Icon('plus')}</button>`
+      + `<button data-sheet="tray">${Icon('tray')}<span>Unsorted</span><b class="hub-n" id="hubN"></b></button>`
       + `<button data-hub="myra"><canvas id="hubGoo" width="64" height="56"></canvas><span>Myra</span></button>`;
     const sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'sheet';
     sh.innerHTML = '<div class="sh-veil"></div><div class="sh-panel" role="dialog"><div class="sh-grab"><i></i></div><div class="sh-head"><b id="shTitle"></b><div class="sh-tabs" id="shTabs"></div><button class="sh-x" aria-label="Close">×</button></div><div class="sh-body" id="shBody"></div></div>';
