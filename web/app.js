@@ -107,6 +107,22 @@
       ];
       return { cards, tray: [] };
     },
+    // the first board: ideas ripening into a plan, with a few things to try. Short enough that nobody feels they must tidy it up.
+    'My first board': () => {
+      const n = (text, color, o = {}) => card('note', { text, color, ...o }), raw = [n('A map of my favourite bogs', 'butter', { r: 0 }), n('Which boots stay dry?', 'butter', { r: 0 }), n('Photos of the first ripe berries', 'butter', { r: 0 })], ripe = [n('Plan the first trip with Bog Notes', 'mint', { r: 0 })];
+      const todo = n('Scout the east bog', 'butter', { r: 0 }), doing = n('Mark last year’s good spots', 'sky', { r: 0 }), done = n('Pack boots and a mosquito net', 'mint', { r: 0 });
+      const coll = (x, y, text, color, kids) => card('coll', { x, y, text, color, kids: kids.map(k => k.id), cols: 1, r: 0 });
+      const kb = card('coll', { x: 300, y: 470, text: 'This week', color: 'white', kanban: true, kids: [todo.id, doing.id, done.id], colOf: { [todo.id]: 0, [doing.id]: 1, [done.id]: 2 }, cols: 3, colNames: ['To do', 'Doing', 'Done'], colLimit: [0, 3, 0], r: 0 });
+      return { cards: [
+        card('title', { x: 0, y: -40, text: 'My first board' }),
+        n('Hi, I’m Myra! This is a board: a place for ideas to ripen. Drag a berry from Unsorted onto it when an idea has found its spot, then group the rest into a plan. Or ask me to do it with you.', 'butter', { x: 0, y: 60, w: 260, h: 230, r: -1.5, name: 'Myra’s how-to', myra: true }),
+        coll(300, 60, 'Raw ideas', 'butter', raw), ...raw, coll(630, 60, 'Ripe', 'mint', ripe), ...ripe,
+        card('stamp', { x: 905, y: 70, src: 'stamps/myra-love.png', mv: 'pulse', r: 6 }),
+        n('Try me: open my chat and ask “Sort my unsorted ideas”.', 'sky', { x: 990, y: 60, name: 'Next', r: 1 }),
+        n('Try a template: the button next to the stamps has thinking tools, a Kanban and starter boards. Right-click anything to save your own.', 'lilac', { x: 990, y: 240, name: 'Next', r: -1, h: 200 }),
+        kb, todo, doing, done,
+      ], tray: ['call Sam about the east bog', 'idea: berries by the season', 'a name for the app?', 'buy a bigger bucket', 'plan the spring trip'].map(t => card('note', { text: t })) };
+    },
     'Brain dump': () => ({ cards: [card('title', { x: 0, y: -40, text: 'Brain dump' }), card('note', { x: 0, y: 60, name: 'Myra’s how-to', text: 'Empty your head into Unsorted with Ctrl+K: one thought each, no tidying.\n\nWhen you’re done, ask me to sort them into groups ✦', color: 'butter', myra: true, w: 260, h: 170 })],
       tray: ['call the printer', 'idea: a map of my favourite bogs', 'that font from the cafe menu', 'reply to Sam', 'plan the spring trip'].map(t => card('note', { text: t })) }),
   };
@@ -1093,7 +1109,7 @@
     if (c.type === 'section') return lyText(c.text) || 'Section';
     if (c.ln) return c.ln;
     const t = {
-      frame: c.name || 'Screen', coll: c.name || (c.kanban ? c.text || 'Kanban' : 'Collection'), note: lyText(c.name) || lyText(c.text), text: lyText(c.text), title: lyText(c.text), todo: lyText(c.text) || lyText(c.items?.[0]?.t),
+      frame: c.name || 'Screen', coll: c.name || c.text || (c.kanban ? 'Kanban' : 'Collection'), note: lyText(c.name) || lyText(c.text), text: lyText(c.text), title: lyText(c.text), todo: lyText(c.text) || lyText(c.items?.[0]?.t),
       image: c.tagText || 'Image', link: c.title || (c.url ? host(c.url) : 'Link'), doc: c.text || 'Doc', canvas: c.text || 'Canvas', swatch: c.label || (c.hex || '').toUpperCase(),
       shape: SHAPE_N[c.shape || 'rect'], path: c.closed ? 'Pen shape' : 'Pen line', stamp: 'Stamp', icon: c.name || 'Icon', audio: 'Voice memo', video: c.title || 'Video', spotify: c.title || 'Spotify', ink: 'Drawing', box: c.img ? 'Image spot' : 'Box', font: c.font || 'Figtree',
     }[c.type];
@@ -4671,8 +4687,14 @@ ${proseCSS()}
     if (obAt === 0) setTimeout(() => $('obName').focus(), 50);
     goos[4].hop(); goos[5].hop();
   }
-  function openSetup() { closeSettings(); $('obName').value = settings.name || ''; applySettings(); $('onboard').classList.add('on'); obGo(0); }
+  let firstRunSetup = false, firstChoice = 'example';
+  function openSetup() { closeSettings(); $('obFirstRow').hidden = !firstRunSetup; firstChoice = 'example'; paintFirst(); $('obName').value = settings.name || ''; applySettings(); $('onboard').classList.add('on'); obGo(0); }
+  const paintFirst = () => document.querySelectorAll('#obFirst [data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === firstChoice));
+  $('obFirst').onclick = e => { const b = e.target.closest('[data-v]'); if (b) { firstChoice = b.dataset.v; paintFirst(); } };
   function finishSetup(tour) {
+    // first run only: the example board can be swapped for an empty one
+    if (firstRunSetup && firstChoice === 'empty' && board.name === 'My first board') { board.cards = []; board.links = []; board.tray = []; renderAll(); renderTray(); renderWires(); save(); }
+    firstRunSetup = false;
     settings.name = $('obName').value.trim().slice(0, 40); applySettings();
     try { localStorage.setItem('myra:onboarded', '1'); } catch (e) {}
     $('onboard').classList.remove('on');
@@ -4691,13 +4713,15 @@ ${proseCSS()}
     if (e.key === 'Enter' && !e.target.closest?.('button')) { e.preventDefault(); obAt < OB_N - 1 ? $('obNext').click() : $('obTour').click(); }
   }
   $('redoSetup').onclick = openSetup;
+  $('addExample').onclick = async () => { closeSettings(); const b = newBoard('My first board', 'My first board'), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id; await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); };
   $('redoTour').onclick = () => { closeSettings(); setTimeout(startTour, 250); };
 
   // the tour: Myra points at each part; some steps you try for real and she notices
   const TOUR = [
     { el: '#tools', side: 'top', text: 'These are your tools: notes, docs, checklists, titles, collections, links, images, voice memos, colors, shapes, stamps and drawing. Pick one, then click the board to place it.', try: 'Try it: add a note (or double-click the board).', done: t => board.cards.length > t.cards },
+    { el: '#tools [data-add="tpl"]', side: 'top', text: 'Templates live here: thinking tools you add to a board, starter boards, and a Kanban with columns you can name. Right-click a selection or the board to save your own.' },
     { el: null, text: 'Got an idea mid-thought? Press Ctrl+K, type it, hit Enter. It goes to Unsorted so you never lose your place.', try: 'Try it: press Ctrl+K and jot something down.', done: t => board.tray.length > t.tray },
-    { el: '#tray', side: 'left', text: 'Unsorted holds your quick ideas. Drag one onto the board when it finds a home, or ask me to sort them all.' },
+    { el: '#tray', side: 'left', text: 'Unsorted holds your quick ideas. Drag one onto the board when it finds a home, or ask me to sort them all.', try: 'Try it: drag a berry onto the board.', done: t => board.tray.length < t.tray },
     { el: '#side .box', side: 'right', text: 'Your boards live here. Group them into projects and folders. Right-click anything to rename, move, duplicate or delete it.' },
     { el: '#design', side: 'left', text: 'Wireframes: screens, boxes, text, icons, and ready-made pieces, from nav bars to whole website sections. Things snap into line as you move them.' },
     { el: '#mPill', side: 'top', text: "And that's me! Click me to chat. Ask me to sort your notes, plan a project, explore fonts, or build screens and whole landing pages. I'll take you right to whatever I make." },
@@ -4889,12 +4913,12 @@ ${proseCSS()}
   (async () => {
     loadTemplates();
     let list = await Myra.list();
-    if (!list.length) { const b = newBoard('Brain dump', 'Brain dump'); b.name = 'My first board'; await Myra.save(b); list = await Myra.list(); }
+    if (!list.length) { const b = newBoard('My first board', 'My first board'); await Myra.save(b); list = await Myra.list(); }
     let last = null; try { last = localStorage.getItem('myra:last'); } catch (e) {}
     await openBoard(list.some(b => b.id === last) ? last : list[0].id);
     applySettings(); phone.init();
     let onboarded = true; try { onboarded = !!localStorage.getItem('myra:onboarded'); } catch (e) {}
-    if (!onboarded) { try { localStorage.setItem(newsKey, (await Myra.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
+    if (!onboarded) { firstRunSetup = true; try { localStorage.setItem(newsKey, (await Myra.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
     setTimeout(() => { fit(board.cards); if (settings.greet && settings.chat !== 'quiet') say(`Hi${settings.name ? ' ' + settings.name : ''}, it's Myra! Dump ideas with Ctrl+K, then ask me to sort them ✦`, 7000); }, 400);
     showConnections(true);
     setTimeout(maybeNews, 700);

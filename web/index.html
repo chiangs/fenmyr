@@ -274,6 +274,7 @@
       <canvas id="obGoo2" width="64" height="56"></canvas>
       <h2 id="obDoneTitle">You're all set!</h2>
       <p>Want a quick tour? I'll show you around and you can try things as we go. About a minute.</p>
+      <div class="set-row" id="obFirstRow"><div><b>Your first board</b><small>An example to look at, or a clean start</small></div><div class="seg" id="obFirst"><button data-v="example">The example</button><button data-v="empty">Empty</button></div></div>
       <div class="ob-big"><button class="ob-primary" id="obTour">Show me around ✦</button><button class="ob-ghost" id="obExplore">I'll explore on my own</button></div>
       <p class="ob-small">Everything here lives in Settings (the ⚙ next to Myra), including this tour.</p>
     </section>
@@ -379,7 +380,7 @@
         <div class="set-row"><div><b>Microphone</b><small>For voice memos and videos</small></div><select class="dev-sel" id="devMic" aria-label="Microphone"></select></div>
         <button class="set-btn" id="devAllow" hidden>Show my devices</button></section>
       <section class="set-auto native-only" data-tab="about"><label class="set-row"><div><b>Update automatically</b><small>New versions install quietly when you quit Myra. Your boards never change.</small></div><input type="checkbox" class="tgl" data-set="autoUpdate"></label></section>
-      <section class="set-start" data-tab="about"><canvas id="setGoo" width="40" height="36"></canvas><div><b>New here, or need a refresher?</b><small>Myra shows you around in about a minute</small></div><div class="set-btns"><button class="set-btn hot" id="redoTour">Take the tour ✦</button><button class="set-btn" id="redoSetup">Redo setup</button></div></section>
+      <section class="set-start" data-tab="about"><canvas id="setGoo" width="40" height="36"></canvas><div><b>New here, or need a refresher?</b><small>Myra shows you around in about a minute</small></div><div class="set-btns"><button class="set-btn hot" id="redoTour">Take the tour ✦</button><button class="set-btn" id="redoSetup">Redo setup</button><button class="set-btn" id="addExample">Add the example board</button></div></section>
       <section class="set-start set-feedback" data-tab="about"><span class="sf-ic" aria-hidden="true">💌</span><div><b>Tell me what you think</b><small>Ideas, bugs, little wishes: they go to this version’s GitHub issues.</small></div><div class="set-btns"><button class="set-btn hot" id="sendFeedback">Send feedback ♡</button></div></section>
       <section class="set-maker" data-tab="about"><div class="sm-sig">made with care by</div><div class="sm-name">Stephen Chiang</div><small>Like cloudberries, ideas only grow where conditions are just right. Myra tries to be that place.</small>
         <div class="sm-links"><button class="set-btn hot" data-url="https://github.com/chiangs/myra">Myra on GitHub ↗</button></div></section>
