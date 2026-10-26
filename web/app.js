@@ -2105,7 +2105,7 @@
   addEventListener('blur', () => myCur.classList.remove('show'));
 
   // ---------- your colors: the board, its dots, the panels and the accent, set per light/dark; one board can also have its own background ----------
-  const COLOR_DEFAULTS = { light: { bg: '#faf7f2', dot: '#e4dccf', panel: '#ffffff', accent: '#e88a24' }, dark: { bg: '#1d1a16', dot: '#3a332b', panel: '#28231d', accent: '#e88a24' } };
+  const COLOR_DEFAULTS = { light: { bg: '#faf7f2', dot: '#e4dccf', panel: '#ffffff', accent: '#e88a24' }, dark: { bg: '#12100d', dot: '#332d25', panel: '#242019', accent: '#e88a24' } };
   const lum = hex => { const [r, g, b] = [1, 3, 5].map(i => { const c = parseInt(hex.slice(i, i + 2), 16) / 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; };
   const mixHex = (a, b, k) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - k) + parseInt(b.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
   const modeName = () => document.body.classList.contains('dark') ? 'dark' : 'light';

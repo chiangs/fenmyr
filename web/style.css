@@ -704,17 +704,17 @@ body.exporting .card.sel::after { display: none; }
 
 /* ---------- dark mode ---------- */
 body.dark { --sh: 0, 0, 0; --sh-k: 2.2;   /* dark mode: plain dark shadows, not an amber glow */
-  --ink: #f0ebe4; --ink-soft: #ada396; --ink-faint: #73695d; --blush: #3d2f22; --dot: #3a332b; --surface: #28231d; --surface-2: #322c25; color-scheme: dark; }
-body.dark, body.dark .stage { background: #1d1a16; }
+  --ink: #f6f2ec; --ink-soft: #c6bcae; --ink-faint: #8f8576; --blush: #3d2f22; --dot: #332d25; --surface: #242019; --surface-2: #2e2922; color-scheme: dark; }
+body.dark, body.dark .stage { background: #12100d; }
 body.dark .box, body.dark .tools, body.dark .tray, body.dark .selbar, body.dark .drawbar, body.dark .cpop, body.dark .capture, body.dark .shapepick, body.dark .wheel-stamps,
 body.dark .stamp-pick, body.dark .row-menu, body.dark .cover-menu, body.dark .set-panel, body.dark .docview, body.dark .tile, body.dark .tile.folder .paper, body.dark .tile.project .mf,
 body.dark .tray-item, body.dark .ghost, body.dark kbd, body.dark .home-back, body.dark .sc-mark { background: var(--surface) !important; color: var(--ink); }
-body.dark .box { background: rgba(43, 39, 34, .92) !important; }
+body.dark .box { background: rgba(38, 33, 28, .96) !important; }
 body.dark .board-row:hover, body.dark .node-head:hover, body.dark .brand:hover, body.dark .pal:hover, body.dark .home-row, body.dark .dv-btn, body.dark .tile-art, body.dark .seg,
 body.dark .card.canvas .cv-prev, body.dark .au-tx, body.dark .tile.folder .tile-art .back, body.dark .tile.folder .tile-art .tab, body.dark .b-url { background: var(--surface-2) !important; }
 body.dark .tile.folder .tile-art .tab::after { background: radial-gradient(circle at 100% 0, transparent 17px, var(--surface-2) 17.5px); }
 body.dark .tile.folder .tile-art .front, body.dark .seg button.on, body.dark .au-acts button, body.dark .card .tag, body.dark .crumbs button:hover, body.dark .home-crumbs button:hover { background: #403b35 !important; color: var(--ink); }
-body.dark .home { background-color: #1d1a16; background-image: radial-gradient(#3a332b 1.2px, transparent 1.2px); }
+body.dark .home { background-color: #12100d; background-image: radial-gradient(#332d25 1.2px, transparent 1.2px); }
 body.dark .settings { background: rgba(0, 0, 0, .45); }
 body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: #3c3731; }
 body.dark .pill-btn, body.dark .tile.add { border-color: #524c44; }
@@ -921,7 +921,7 @@ body.dark .home-back:hover { background: #f0ebe4; color: #1d1a16; }
 .draw-rect { position: absolute; border: 1.5px solid var(--select); background: rgba(13, 153, 255, .06); pointer-events: none; z-index: 60; }
 .guides { position: absolute; left: -5000px; top: -5000px; width: 10000px; height: 10000px; overflow: visible; pointer-events: none; z-index: 70; }
 .guides line { stroke: #f6a758; stroke-width: 1; vector-effect: non-scaling-stroke; }
-body.dark .design { background: rgba(43, 39, 34, .92); }
+body.dark .design { background: rgba(38, 33, 28, .96); }
 body.dark .dz-tools button, body.dark .dz-f, body.dark .dz-row button { background: #322c25; }
 body.dark .dz-props { border-color: #3c3731; }
 body.dark .dz-presets button { border-color: #464038; }
@@ -1180,10 +1180,10 @@ body.dark .ws-mid:hover { background: #34404f; }
 
 /* ---------- your colors ---------- */
 html, body { background: var(--board, #faf7f2); }
-body.dark, body.dark .stage { background: var(--board, #1d1a16); }
-body.tint-panels .box, body.tint-panels .tools, body.tint-panels .tray, body.tint-panels .selbar, body.tint-panels .drawbar, body.tint-panels .capture,
+body.dark, body.dark .stage { background: var(--board, #12100d); }
+body.tint-panels .box, body.tint-panels .design, body.tint-panels .tools, body.tint-panels .tray, body.tint-panels .selbar, body.tint-panels .drawbar, body.tint-panels .capture,
 body.tint-panels .shapepick, body.tint-panels .tplpick, body.tint-panels .wheel-stamps, body.tint-panels .stamp-pick, body.tint-panels .row-menu, body.tint-panels .m-pill, body.tint-panels .m-chat, body.tint-panels .m-bubble { background: var(--panel) !important; }
-body.tint-panels.panel-dark .box, body.tint-panels.panel-dark .tools, body.tint-panels.panel-dark .tray, body.tint-panels.panel-dark .m-pill { color: #f0ebe4; }
+body.tint-panels.panel-dark .box, body.tint-panels.panel-dark .design, body.tint-panels.panel-dark .tools, body.tint-panels.panel-dark .tray, body.tint-panels.panel-dark .m-pill { color: #f0ebe4; }
 /* a dark board in light mode (or a light one in dark mode): the words that sit right on the board follow it */
 body.board-dark #boardName, body.board-dark .card.title .text, body.board-dark .crumbs, body.board-dark .saved { color: #f6f2ef; }
 body.board-light #boardName, body.board-light .card.title .text, body.board-light .crumbs { color: #403c36; }
