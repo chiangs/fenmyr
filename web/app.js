@@ -2157,7 +2157,7 @@
   const PANELS = { boards: () => $('boards'), layers: () => $('layers'), tray: () => $('trayList'), design: () => document.querySelector('#design .dz-body') };
   const panelMin = k => k === 'layers' ? Math.max(30, $('layers').querySelector('.ly')?.offsetHeight || 30) : k === 'boards' ? Math.max(30, $('boards').querySelector('.board-row, .folder-row, .proj-row')?.offsetHeight || 32) : k === 'tray' ? 60 : 120;
   function applyPanelH() { Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const v = (settings.panelH || {})[k];
-    if (v) Object.assign(el.style, { height: Math.max(panelMin(k), v) + 'px', maxHeight: 'none', flex: 'none', overflowY: 'auto' }); else Object.assign(el.style, { height: '', maxHeight: '', flex: '', overflowY: '' }); }); }
+    if (v) { const h = Math.max(panelMin(k), v); Object.assign(el.style, { height: h + 'px', minHeight: '0', maxHeight: 'none', flex: `0 1 ${h}px`, overflowY: 'auto' }); } else Object.assign(el.style, { height: '', minHeight: '', maxHeight: '', flex: '', overflowY: '' }); }); }   // a saved height is a wish: on a short window the panel shrinks to fit instead of spilling out of its column
   Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const grip = document.createElement('div'); grip.className = 'rz-grip'; grip.title = 'Drag to change the height · double-click for automatic'; grip.dataset.panel = k; el.insertAdjacentElement('afterend', grip);
     grip.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const y0 = e.clientY, h0 = el.getBoundingClientRect().height; grip.setPointerCapture(e.pointerId); grip.classList.add('on');
       const mv = ev => { settings.panelH = { ...(settings.panelH || {}), [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))) }; applyPanelH(); };
@@ -5135,5 +5135,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__myra = { ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__myra = { renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

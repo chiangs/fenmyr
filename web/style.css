@@ -357,7 +357,7 @@ html.native .home-in { padding-top: 40px; }
 .cover-menu button { padding: 9px 12px; border: 0; border-radius: 14px; corner-shape: squircle; background: none; text-align: left; font: 600 12px/1 var(--font); color: var(--ink); cursor: pointer; white-space: nowrap; }
 .cover-menu button:hover { background: var(--blush); }
 /* Unsorted hugs its ideas: small when empty, grows as ideas come in, scrolls once it reaches the bottom */
-.tray { bottom: auto; max-height: calc(100% - 32px); }
+.tray { bottom: auto; max-height: calc(100% - 32px); min-height: 0; }
 .tray-list { flex: 0 1 auto; min-height: 0; overflow: auto; }
 /* the shortcut hints sit in one quiet line at the far bottom left, under the floating boxes */
 .side { bottom: 50px; }
