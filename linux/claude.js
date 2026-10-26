@@ -67,18 +67,9 @@ function usageSummary() {
 }
 function resetUsage() { try { fs.rmSync(P.usageFile, { force: true }); } catch (e) {} return true; }
 
-// Settings → Helpers → "Let my Claude Code hooks see Myra's requests" (off unless switched on).
-// Off: Myra's calls run with hooks switched off, so hooks meant for your own Claude Code sessions (like a desktop pet's
-// thinking meter and reply bubble) don't fire for her background requests. Skills, plugins, connectors and your login are unaffected.
-const readPrefs = () => { try { return JSON.parse(fs.readFileSync(P.prefsFile, 'utf8')) || {}; } catch (e) { return {}; } };
-let prefs = readPrefs();
-function setPrefs(p) {
-  const claudeHooks = !!(p && p.claudeHooks); if (claudeHooks === !!prefs.claudeHooks) return true;
-  prefs = { ...prefs, claudeHooks };
-  try { fs.writeFileSync(P.prefsFile, JSON.stringify(prefs)); } catch (e) {}
-  return true;
-}
-const hookArgs = () => prefs.claudeHooks ? [] : ['--settings', JSON.stringify({ disableAllHooks: true })];
+// Myra's calls always run with Claude Code hooks switched off, so hooks meant for the person's own Claude Code sessions (a desktop pet's
+// thinking meter, reply bubbles…) don't fire for her background requests. Skills, plugins, connectors and the login are unaffected.
+const hookArgs = () => ['--settings', JSON.stringify({ disableAllHooks: true })];
 
 // run Claude Code with a prompt and a short list of allowed tools; resolves with its text, rejects with a short reason
 async function runClaude(prompt, tools, timeout, need = 'I need Claude Code to do that.') {
@@ -93,12 +84,14 @@ async function runClaude(prompt, tools, timeout, need = 'I need Claude Code to d
 
 const NEED = 'I need Claude Code to think. Set it up (Settings → Helpers shows how), then try again.';
 function ask(a) {
-  const { prompt: request = '', board = {}, confirmed = false, mobbin = true, higgs = true } = a;
+  const { prompt: request = '', board = {}, confirmed = false, mobbin = true, higgs = true, web = false } = a;
   // only the helpers the person has switched on in Settings
   const tools = mobbin ? ['mcp__claude_ai_Mobbin__search_screens', 'mcp__claude_ai_Mobbin__search_flows', 'mcp__claude_ai_Mobbin__search_sections'] : [];
   // the generator is only switched on after the person taps "yes" in the app: spending credits needs their say-so
+  // searching the web and reading public pages (and public GitHub repos) is only on when the person switched it on in Settings → Helpers
+  if (web) tools.push('WebSearch', 'WebFetch');
   if (confirmed && higgs) tools.push('mcp__claude_ai_higgsfield__generate_image_batch', 'mcp__claude_ai_higgsfield__jobs_wait', 'mcp__claude_ai_higgsfield__models_explore');
-  return runClaude(prompts.ask({ request, boardJSON: jsonSafe(board), confirmed, mobbin, higgs }), tools, 300, NEED);
+  return runClaude(prompts.ask({ request, boardJSON: jsonSafe(board), confirmed, mobbin, higgs, web }), tools, 300, NEED);
 }
 // Myra in a doc: rewrite just the selected words ("shorter", "friendlier", or anything typed) and hand back only the new words
 async function rewrite(a) {
@@ -124,4 +117,4 @@ async function connections() {
 // JSON can't hold "not a number" or infinity; the Mac app swaps them for 0, so this does too
 function jsonSafe(v) { return JSON.stringify(v, (k, x) => typeof x === 'number' && !isFinite(x) ? 0 : x); }
 
-module.exports = { setPrefs, claudePath, ask, rewrite, higgsQuote, higgsMake, drawFill, connections, usageSummary, resetUsage, jsonSafe, run };
+module.exports = { claudePath, ask, rewrite, higgsQuote, higgsMake, drawFill, connections, usageSummary, resetUsage, jsonSafe, run };

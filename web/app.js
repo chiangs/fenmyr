@@ -1834,7 +1834,7 @@
   // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade
   const MYRA_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
-  const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, claudeHooks: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
+  const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, webAccess: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
   settings.wDressup = false;   // not in Myra: Mochiboard's Dress up widget (Mochi's outfits are Mochiboard's own)
   try { if (localStorage.getItem('myra:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
@@ -1921,7 +1921,6 @@
     document.body.classList.toggle('no-grid', !settings.grid); document.body.classList.toggle('neat', !settings.tilt); document.body.classList.toggle('calm', !settings.motion);
     $('keys').classList.toggle('hide', !settings.keys);
     document.documentElement.classList.toggle('no-win-buttons', settings.winButtons === false);   // tiling compositors place the window themselves
-    if (Myra.prefs) Myra.prefs({ claudeHooks: !!settings.claudeHooks }).catch(() => {});   // the host runs Claude Code, so it needs to know this one
     $('obMyra').innerHTML = $('myraColors').innerHTML = Object.entries(MYRA_COLORS).map(([n, c]) => `<button data-mc="${n}" title="${colorLabel(n)}" style="background:${c.B}" class="${settings.myra === n ? 'on' : ''}"></button>`).join('');
     document.querySelectorAll('[data-set]').forEach(t => t.checked = !!settings[t.dataset.set]);
     try { localStorage.setItem('myra:settings', JSON.stringify(settings)); localStorage.setItem('myra:keys', settings.keys ? 'show' : 'hide'); } catch (e) {}
@@ -2216,7 +2215,7 @@
     if (!chatOpen()) myraOpen(true);
     if (!confirmed) addMsg('me', q); else addMsg('myra', 'Making it… this can take a minute ✦');
     $('myra').classList.add('thinking'); goo.think(true); favGoo?.think(true); typing(true);
-    try { const raw = await Myra.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs }); await applyMyra(parse(raw), q); }
+    try { const raw = await Myra.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs, web: !!settings.webAccess }); await applyMyra(parse(raw), q); }
     catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMyra(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }
       if (SIGNIN.test(err.message)) { offlineMyra.signin = true; return offlineMyra(q, "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account."); }
       say("Hmm, I couldn't reach Claude: " + err.message); }

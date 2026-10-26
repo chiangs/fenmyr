@@ -80,7 +80,9 @@ Myra thinks with [Claude Code](https://docs.claude.com/en/docs/claude-code) on y
 
 Myra looks for `claude` in `~/.local/bin`, `~/.claude/local`, `/usr/bin`, `/usr/local/bin`, npm / nvm / volta / bun folders, and finally asks your login shell (bash, zsh or fish).
 
-**Hooks.** Myra's requests run with your Claude Code hooks switched off, so hooks meant for your own sessions (for example a desktop pet's thinking meter and reply bubbles) don't fire while she thinks in Myra. Skills, plugins, connectors and your login work as usual. To let your hooks see her requests, turn on **Settings → Helpers → Let my Claude Code hooks see Myra's requests**.
+**Hooks.** Myra's requests always run with your Claude Code hooks switched off, so hooks meant for your own sessions (for example a desktop pet's thinking meter) don't fire while she thinks in Myra. Skills, plugins, connectors and your login work as usual.
+
+**The web.** Off by default. Turn on **Settings → Helpers → Let Myra search the web** and she can look things up and read public pages, including public GitHub repositories. What she searches for can include words from your board.
 
 **Mobbin and Higgsfield** are connectors in your Claude account: add them at [claude.ai/settings/connectors](https://claude.ai/settings/connectors). Myra sees them through `claude mcp list`.
 
@@ -101,7 +103,7 @@ The first memo downloads the speech model (about 140 MB, once) into `~/.local/sh
 - **Keep a history of your boards.** Because boards are ordinary files, you can turn the Myra folder into a git repository to keep every version. That works entirely on your computer, with no GitHub or other remote needed. Run this once:
   ```
   cd ~/.local/share/myra
-  printf 'whisper/\nwindow.json\nusage.json\nprefs.json\n*.tmp\n' > .gitignore
+  printf 'whisper/\nwindow.json\nusage.json\n*.tmp\n' > .gitignore
   git init && git add -A && git commit -m "My boards"
   ```
   Then commit now and then. If you also want an off-computer backup, add a remote (for example a GitHub repository) and push; make it a private repository: boards can hold your notes and pictures. Pictures are saved inside each board's file, so boards with many large pictures make a big repo (the speech model and settings that belong to one computer are left out above; you may want to add `media/` too, since it holds videos). To keep boards in step between computers, a synced folder such as Syncthing or Nextcloud suits better than git.

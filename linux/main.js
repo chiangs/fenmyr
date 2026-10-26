@@ -55,7 +55,7 @@ const reply = (wc, id, ok, value) => { if (!wc.isDestroyed()) wc.send('myra-repl
 const OPS = {
   list: () => storage.list(), load: a => storage.load(a.id), save: a => storage.save(a.board), remove: a => storage.remove(a.id),
   folders: () => storage.folders(), saveFolders: a => storage.saveFolders(a.folders),
-  prefs: a => claude.setPrefs(a), caelestia: () => theme.read(),
+  caelestia: () => theme.read(),
   // Chromium's (and Node's) licenses ship with Electron as LICENSES.chromium.html, next to the Electron program
   chromiumLicenses: async () => {
     const f = [path.dirname(process.execPath), process.resourcesPath && path.dirname(process.resourcesPath)].filter(Boolean).map(d => path.join(d, 'LICENSES.chromium.html')).find(f => fs.existsSync(f));

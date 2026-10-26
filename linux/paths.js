@@ -13,7 +13,6 @@ module.exports = {
   usageFile: path.join(support, 'usage.json'),
   foldersFile: path.join(support, 'folders.json'),
   windowFile: path.join(support, 'window.json'),
-  prefsFile: path.join(support, 'prefs.json'),   // the few settings the host needs to know (the page keeps the rest)
   pendingDir: path.join(support, 'pending-update'),
   whisperDir: path.join(support, 'whisper'),
   updateLog: path.join(support, 'update.log'),

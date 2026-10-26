@@ -66,15 +66,17 @@ echo " [BLANK_AUDIO] hello from whisper"
     return res;
   });
   r.prompt = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8'); r.args = fs.readFileSync(path.join(data, 'args.txt'), 'utf8').slice(-120); r.wav = fs.readFileSync(path.join(data, 'wav-magic.txt'), 'utf8');
-  // Claude Code hooks: off for Myra's calls unless Settings → Helpers says otherwise
+  // Claude Code hooks are always off for Myra's calls; the web (search and public pages) is only on when Settings → Helpers says so
   Object.assign(r, await page.evaluate(async () => {
     const argsAfter = async fn => { await fn(); return window.__readArgs(); }, res = {};
     res.hooksOff = await argsAfter(() => Myra.ask('again', {}, false, { mobbin: false, higgs: false }));
-    await Myra.prefs({ claudeHooks: true });
-    res.hooksOn = await argsAfter(() => Myra.rewrite('text', 'shorter', 'Doc', ''));
-    await Myra.prefs({ claudeHooks: false });
+    res.hooksRewrite = await argsAfter(() => Myra.rewrite('text', 'shorter', 'Doc', ''));
+    res.webOn = await argsAfter(() => Myra.ask('look this up', {}, false, { mobbin: false, higgs: false, web: true }));
     return res;
   }));
+  r.webPromptOn = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8').includes('search the web and read public pages');
+  r.webOff = await page.evaluate(async () => (await Myra.ask('and this', {}, false, { mobbin: false, higgs: false }), window.__readArgs()));
+  r.webPromptOff = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8').includes('switched off in Settings');
   // icons: everything the page draws is in the icon set, the Icon style setting switches the weight, and a name nobody drew shows a placeholder
   Object.assign(r, await page.evaluate(async () => {
     const shown = sel => [...document.querySelectorAll(sel)].some(g => getComputedStyle(g).display !== 'none'), res = {};
@@ -115,13 +117,13 @@ echo " [BLANK_AUDIO] hello from whisper"
   r.pngSize = [png.readUInt32BE(16), png.readUInt32BE(20)];
   r.pdfPages = (fs.readFileSync(path.join(out, 'Doc.pdf'), 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
   r.files = files; r.errors = errors; r.boardOnDisk = fs.existsSync(path.join(data, 'myra/boards/smoke1.json'));
-  console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), hooksOn: r.hooksOn.slice(-120) }, null, 1));
+  console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), webOn: r.webOn.slice(-120), webOff: r.webOff.slice(-120), hooksRewrite: r.hooksRewrite.slice(-100) }, null, 1));
   await app.close();
   const ok = r.native && r.linux && r.save && r.load === 0 && r.list && r.folders === 1 && r.fonts > 0 && r.unknown === 'unknown op nope' && r.range[0] === 206 && r.range[1] === 100
     && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
     && r.conn.mobbin === true && r.conn.higgsfield === false && JSON.parse(r.ask).say === 'hi from fake claude' && r.usage2.asks === 1 && r.usage2.tokensIn === 15
     && r.prompt.includes('The person asked you: sort these') && r.prompt.includes('Icons are names from this list') && r.prompt.includes('"n":0') && r.prompt.includes('Higgsfield is TURNED OFF') && r.args.includes('mcp__claude_ai_Mobbin__search_screens')
-    && r.hooksOff.includes('disableAllHooks') && !r.hooksOn.includes('disableAllHooks')
+    && r.hooksOff.includes('disableAllHooks') && r.hooksRewrite.includes('disableAllHooks') && !r.hooksOff.includes('WebSearch') && r.webOn.includes('WebSearch') && r.webOn.includes('WebFetch') && r.webOn.includes('disableAllHooks') && !r.webOff.includes('WebSearch') && r.webPromptOn && r.webPromptOff
     && r.wav === 'RIFF' && r.transcribe === 'hello from whisper';
   if (process.env.KEEP) console.log('output in', out); else fs.rmSync(data, { recursive: true, force: true });
   console.log(ok ? 'SMOKE OK' : 'SMOKE FAILED'); process.exit(ok ? 0 : 1);
