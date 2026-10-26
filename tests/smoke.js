@@ -106,7 +106,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   // the new starter boards open as their own boards, with their cards (and, for the tree, its lines)
   Object.assign(r, await page.evaluate(async () => {
     const wait = ms => new Promise(res => setTimeout(res, ms)), res = {};
-    for (const [name, key] of [['Vision → OKRs → Opportunities', 'tree'], ['Product kickoff', 'kickoff']]) {
+    for (const [name, key] of [['OKRs and opportunities', 'tree'], ['Product kickoff', 'kickoff']]) {
       document.querySelector('#tools [data-add="tpl"]').click(); await wait(200); document.querySelector(`[data-starter="${name}"]`).click(); await wait(1500);
       res[key] = { name: document.getElementById('boardName').value === name, cards: document.querySelectorAll('.card').length };
     }

@@ -88,7 +88,7 @@ module.exports = {
     ['tpl-empathy', 'chat-teardrop-text', 'empathy map'],
     ['tpl-journey', 'flow-arrow', 'journey path steps'],
     ['tpl-hmw', 'lightbulb', 'how might we idea'],
-    ['tpl-rtb', 'flower-lotus', 'rose thorn bud'],
+    ['tpl-retro', 'arrows-clockwise', 'start stop continue'],
     ['brain', 'brain', 'brain dump thinking'],
     ['play', 'play', 'start'],
     ['pause', 'pause', 'stop'],

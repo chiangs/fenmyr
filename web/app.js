@@ -56,7 +56,7 @@
       card('todo', { x: 0, y: 260, text: 'screens', items: [{ t: 'Onboarding', done: false }, { t: 'Home', done: false }, { t: 'Settings', done: false }] }),
       card('note', { x: 280, y: 260, text: 'Competitors + what they miss', color: 'lilac' }),
     ], tray: [] }),
-    'Vision → OKRs → Opportunities': () => {
+    'OKRs and opportunities': () => {
       // a vision, the objective under it, key results, then one result opened up into an opportunity solution tree
       const how = 'Start at the top: one sentence for where this is all going.\n\nUnder it, this quarter’s objective and three key results you can measure. Then pick ONE key result and grow its tree: the opportunities you heard from people, a few solutions for each, and a small test to run first.\n\nDrag from a card’s edge to draw more lines. Ask me to fill it in for your product and I’ll swap my examples for yours.';
       const C = {}, n = (key, o) => (C[key] = card('note', { w: 220, ...o }));
@@ -2475,14 +2475,16 @@
       { t: 'coll', x: 330, y: 90, name: 'How might we…', color: 'butter', notes: [{ text: 'HMW help people remember a spot without stopping to pick up the phone?', color: 'butter' }, { text: 'HMW make coming back next year feel easy?', color: 'butter' }] },
       { t: 'how', x: 660, y: 90, text: 'Write each problem on its own note. Then flip it into a question that starts with “How might we…”.\n\nGood ones are wide enough to have many answers, but narrow enough to start on today.\n\nWrite a few versions of each, then vote with stamps.' },
     ] },
-    rtb: { emoji: '🌹', name: 'Rose, thorn, bud', line: 'A quick, kind retro', items: [
-      { t: 'title', x: 0, y: 0, text: 'Rose, thorn, bud' },
-      { t: 'coll', x: 0, y: 90, name: '🌹 Rose · what’s working', color: 'pink', notes: [{ text: 'Testing every Friday kept us honest', color: 'pink' }] },
-      { t: 'coll', x: 330, y: 90, name: '🌵 Thorn · what hurt', color: 'peach', notes: [{ text: 'Handoff to engineering was rushed', color: 'peach' }] },
-      { t: 'coll', x: 660, y: 90, name: '🌱 Bud · what could grow', color: 'mint', notes: [{ text: 'Share the research earlier', color: 'mint' }] },
-      { t: 'how', x: 990, y: 90, text: 'Everyone writes quietly for 5 minutes: one note per thought.\n\nRoses are wins, thorns are pains, buds are ideas worth trying.\n\nThen read them out, group the alike ones, and pick one bud to try next.' },
+    retro: { emoji: '🔁', name: 'Start, stop, continue', line: 'A quick, kind retro', items: [
+      { t: 'title', x: 0, y: 0, text: 'Start, stop, continue' },
+      { t: 'coll', x: 0, y: 90, name: '🌱 Start · what to try', color: 'mint', notes: [{ text: 'Share the research earlier', color: 'mint' }] },
+      { t: 'coll', x: 330, y: 90, name: '✋ Stop · what to drop', color: 'peach', notes: [{ text: 'Rushed handoffs to engineering', color: 'peach' }] },
+      { t: 'coll', x: 660, y: 90, name: '🫐 Continue · what’s working', color: 'pink', notes: [{ text: 'Testing every Friday kept us honest', color: 'pink' }] },
+      { t: 'how', x: 990, y: 90, text: 'Everyone writes quietly for 5 minutes: one note per thought.\n\nStart is something new to try, stop is something to let go of, continue is something worth keeping.\n\nThen read them out, group the alike ones, and pick one thing to start next.' },
     ] },
   };
+  // the order of the design process: understand, make sense of it, frame it, spread out, narrow down, look back
+  const FW_ORDER = ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix', 'retro'];
   function placeFramework(key) {
     const F = FRAMEWORKS[key]; if (!F) return; remember(); stopPlacing();
     const c0 = centerWorld(), x0 = board.cards.length ? Math.max(...board.cards.map(c => c.x + c.w)) + 200 : c0.x - 500, y0 = board.cards.length ? Math.min(...board.cards.map(c => c.y)) : c0.y - 300;
@@ -2512,20 +2514,20 @@
     empathy: 'tpl-empathy',
     journey: 'tpl-journey',
     hmw: 'tpl-hmw',
-    rtb: 'tpl-rtb',
+    retro: 'tpl-retro',
   };
   // the old "Start from" boards live here now too, under the frameworks: each opens as its own new board
   const STARTERS = {
     'Moodboard': ['References, colors and type for a feeling', 'palette'],
-    'App plan': ['Who it\'s for, the problem, the screens', 'screen'],
     'Brain dump': ['Empty your head, then let Myra sort it', 'brain'],
-    'Vision → OKRs → Opportunities': ['A vision, its key results and an opportunity tree', 'tree'],
+    'OKRs and opportunities': ['A vision, its key results and an opportunity tree', 'tree'],
     'Product kickoff': ['Why, who for, the edges and the first steps', 'rocket'],
+    'App plan': ['Who it\'s for, the problem, the screens', 'screen'],
   };
-  $('tplPick').innerHTML = '<div class="tp-h">Add to this board</div>' + Object.entries(FRAMEWORKS).map(([k, F]) => `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`).join('')
+  $('tplPick').innerHTML = '<div class="tp-h">Add to this board</div>' + FW_ORDER.map(k => [k, FRAMEWORKS[k]]).map(([k, F]) => `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`).join('')
     + '<div class="tp-h">Start a new board</div>' + Object.entries(STARTERS).filter(([k]) => TEMPLATES[k]).map(([k, [line, ic]]) => `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small></span><span class="tp-new">New ↗</span></button>`).join('');
   $('tplPick').onclick = async e => { const st = e.target.closest('[data-starter]');
-    if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name); await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
+    if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id; await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
     const b = e.target.closest('[data-tpl]'); if (!b) return; $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); placeFramework(b.dataset.tpl); };
 
   // ---------- export: right-click a card (or the empty board) to save it as an image or PDF ----------
