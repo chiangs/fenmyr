@@ -471,11 +471,10 @@
   const GRID_SHAPES = {
     dot: ['Dots', '<circle cx="13" cy="13" r="1.6"/>'],
     cross: ['Crosses', '<rect x="9.6" y="12.25" width="6.8" height="1.5" rx=".75"/><rect x="12.25" y="9.6" width="1.5" height="6.8" rx=".75"/>'],
-    x: ['X marks', '<g transform="rotate(45 13 13)"><rect x="9.8" y="12.3" width="6.4" height="1.4" rx=".7"/><rect x="12.3" y="9.8" width="1.4" height="6.4" rx=".7"/></g>'],
-    heart: ['Hearts', '<path d="M13 16.2c-.2 0-.4-.1-.5-.2-1.4-1.2-3.2-2.6-3.2-4.3 0-1.1.8-2 1.9-2 .8 0 1.4.4 1.8 1 .4-.6 1-1 1.8-1 1.1 0 1.9.9 1.9 2 0 1.7-1.8 3.1-3.2 4.3-.1.1-.3.2-.5.2z"/>'],
-    tri: ['Triangles', '<path d="M13 10.3l3 5.2h-6z" stroke-linejoin="round"/>'],
     square: ['Squares', '<rect x="10.9" y="10.9" width="4.2" height="4.2" rx=".9"/>'],
-    sparkle: ['Sparkles', '<path d="M13 9.4c.3 1.9 1.7 3.3 3.6 3.6-1.9.3-3.3 1.7-3.6 3.6-.3-1.9-1.7-3.3-3.6-3.6 1.9-.3 3.3-1.7 3.6-3.6z"/>'],
+    cloudberry: ['Cloudberries', '<path d="M11.48 11.45A1.61 1.61 0 0 1 14.52 11.45A1.61 1.61 0 0 1 16.41 13.82A1.61 1.61 0 0 1 15.73 16.78A1.61 1.61 0 0 1 13 18.1A1.61 1.61 0 0 1 10.27 16.78A1.61 1.61 0 0 1 9.59 13.82A1.61 1.61 0 0 1 11.48 11.45Z"/><path d="M13 10.63C11.88 10.7 10.77 10.14 10.52 8.9C11.88 8.84 12.94 9.39 13 10.63ZM13 10.63C14.12 10.7 15.23 10.14 15.48 8.9C14.12 8.84 13.06 9.39 13 10.63Z"/>'],
+    berry: ['Berries', '<path d="M11.53 9.95A1.56 1.56 0 0 1 14.47 9.95A1.56 1.56 0 0 1 16.3 12.25A1.56 1.56 0 0 1 15.65 15.11A1.56 1.56 0 0 1 13 16.38A1.56 1.56 0 0 1 10.35 15.11A1.56 1.56 0 0 1 9.7 12.25A1.56 1.56 0 0 1 11.53 9.95Z"/>'],
+    leaf: ['Leaves', '<path d="M9.2 15.2C12.8 15.4 16.4 13.6 17.2 9.6C12.8 9.4 9.4 11.2 9.2 15.2Z" transform="rotate(55 13 13)"/>'],
   };
   const gridMask = k => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" fill="#000">${(GRID_SHAPES[k] || GRID_SHAPES.dot)[1]}</svg>`)}")`;
   function applyGridShape() {
