@@ -60,7 +60,9 @@ const OPS = {
   vaultPick: async () => { const r = await dialog.showOpenDialog(win, { title: 'Choose your Obsidian vault', properties: ['openDirectory'] }); return r.canceled ? null : r.filePaths[0]; },
   vaultAdd: a => vault.add(a.path), vaultUpdate: a => vault.update(a.id, a.patch || {}), vaultRemove: a => vault.remove(a.id), vaultScan: a => vault.scan(vault.byId(a.id)),
   vaultNotes: a => vault.list(vault.byId(a.id), a.allow, a.query),
-  vaultNote: a => { const v = vault.byId(a.id), n = vault.note(v, a.rel, a.allow); n.url = vault.obsidianURL(v, a.rel); return n; },
+  vaultNote: a => { const v = vault.byId(a.id), n = vault.note(v, a.rel, a.allow, !!a.full); n.url = vault.obsidianURL(v, a.rel); return n; },
+  // opens the note in whatever the system uses for markdown files
+  vaultOpen: async a => { const err = await shell.openPath(vault.fileFor(vault.byId(a.id), a.rel, a.allow)); if (err) throw new Error(err); return true; },
   folders: () => storage.folders(), saveFolders: a => storage.saveFolders(a.folders),
   caelestia: () => theme.read(),
   // Chromium's (and Node's) licenses ship with Electron as LICENSES.chromium.html, next to the Electron program

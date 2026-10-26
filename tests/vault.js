@@ -15,6 +15,11 @@ assert.deepStrictEqual(n.props.map(p => p[0]), ['status', 'project', 'due']); as
 assert.deepStrictEqual(V.note(v, 'Projects/Bog Notes/East bog.md', ['']).tags.sort(), ['cloudberries', 'place']);
 assert.deepStrictEqual(V.note(v, 'Reading/Cloudberries.md', ['']).tags, ['reading']);
 
+// full text only when asked for: frontmatter stripped, capped
+assert.strictEqual(n.body, undefined, 'the preview never carries the whole note');
+const nf = V.note(v, 'Projects/Bog Notes/Trip plan.md', [''], true); assert(nf.body.startsWith('# Trip plan') && !nf.body.includes('status: doing') && nf.body.includes('Related: [[Cloudberries]]') && !nf.truncated);
+fs.writeFileSync(path.join(copy, 'Reading', 'Long.md'), 'x'.repeat(30000)); const nl = V.note(v, 'Reading/Long.md', [''], true); assert.strictEqual(nl.body.length, 20000); assert(nl.truncated);
+fs.rmSync(path.join(copy, 'Reading', 'Long.md'));
 // grants: only the folders allowed
 assert.throws(() => V.note(v, 'Daily/2026-10-20.md', ['Projects']), /blocked/);
 assert.doesNotThrow(() => V.note(v, 'Projects/Bog Notes/East bog.md', ['Projects']));
@@ -31,5 +36,8 @@ fs.writeFileSync(path.join(data, 'outside.md'), 'outside'); fs.symlinkSync(path.
 assert.throws(() => V.note(v2, 'Daily/link.md', ['']), /missing/, 'a symlink out of the vault is not followed');
 // the Obsidian link
 assert.strictEqual(V.obsidianURL(v2, 'Projects/Bog Notes/Trip plan.md'), 'obsidian://open?vault=vault&file=Projects%2FBog%20Notes%2FTrip%20plan');
+// opening a file follows the same rules
+assert.strictEqual(path.basename(V.fileFor(v2, 'Projects/Bog Notes/Trip plan.md', [''])), 'Trip plan.md');
+assert.throws(() => V.fileFor(v2, 'Ideas/Secret.md', ['']), /blocked/); assert.throws(() => V.fileFor(v2, 'Private/Diary.md', ['']), /blocked/); assert.throws(() => V.fileFor(v2, 'Daily/2026-10-20.md', ['Projects']), /blocked/);
 V.remove(v.id); assert.strictEqual(V.vaults().length, 0);
 console.log('VAULT OK');

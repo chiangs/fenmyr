@@ -2437,28 +2437,41 @@ body.dark .tdlg .seg { background: rgba(255, 255, 255, .08); }
 .vg-sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; font: 600 13px/1.3 var(--font); }
 .vg-sw small { display: block; margin-top: 2px; font: 400 11.5px/1.4 var(--font); color: var(--ink-soft); }
 
-/* a vault note card */
-.card.vnote .body { padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 7px; overflow: hidden; }
+/* a vault note card: dark words on the pastel card in light and dark mode, like a regular note */
+.card.vnote .body { padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 7px; overflow: hidden; color: #3f3a34; }
 .vn-head { display: flex; align-items: center; gap: 7px; }
-.vn-head svg { flex: none; width: 16px; height: 16px; opacity: .7; }
-.vn-title { font: 700 calc(15px * var(--fs, 1))/1.25 var(--font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vn-head > svg { flex: none; width: 16px; height: 16px; opacity: .7; }
+.vn-title { flex: 1; min-width: 0; font: 700 calc(15px * var(--fs, 1))/1.25 var(--font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vn-flip { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 8px; corner-shape: squircle; background: rgba(63, 58, 52, .09); color: inherit; cursor: pointer; }
+.vn-flip:hover { background: rgba(63, 58, 52, .18); }
+.vn-flip svg { width: 14px; height: 14px; }
 .vn-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.vn-tags i { font: 600 10.5px/1 var(--font); font-style: normal; padding: 3px 7px; border-radius: 8px; corner-shape: squircle; background: rgba(60, 40, 20, .09); }
-.vn-props { display: grid; gap: 2px; font: 500 11.5px/1.3 var(--font); }
+.vn-tags i { font: 600 calc(10.5px * var(--fs, 1))/1 var(--font); font-style: normal; padding: 3px 7px; border-radius: 8px; corner-shape: squircle; background: rgba(63, 58, 52, .1); }
+.vn-props { display: grid; gap: 2px; font: 500 calc(11.5px * var(--fs, 1))/1.3 var(--font); }
 .vn-props span { display: flex; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.vn-props em { font-style: normal; color: var(--ink-soft); }
-.vn-ex { flex: 1; min-height: 0; overflow: hidden; font: 400 calc(12.5px * var(--fs, 1))/1.4 var(--font); color: var(--ink-soft); white-space: pre-wrap; }
-.vn-gone { flex: 1; font: 500 12.5px/1.4 var(--font); color: var(--ink-soft); }
-.vn-open { align-self: flex-start; display: flex; align-items: center; gap: 5px; padding: 6px 10px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgba(60, 40, 20, .09); font: 600 11.5px/1 var(--font); color: inherit; cursor: pointer; }
-.vn-open svg { width: 13px; height: 13px; }
-.vn-open:hover { background: rgba(60, 40, 20, .16); }
+.vn-props em { font-style: normal; opacity: .65; }
+.vn-fill { flex: 1; }
+.vn-ex, .vn-md { flex: 1; min-height: 0; overflow: auto; font: 400 calc(13px * var(--fs, 1))/1.45 var(--font); white-space: pre-wrap; }
+.vn-md { white-space: normal; }
+.vn-md h4 { margin: 8px 0 3px; font: 700 calc(13.5px * var(--fs, 1))/1.3 var(--font); }
+.vn-md p, .vn-md blockquote { margin: 0 0 6px; }
+.vn-md ul, .vn-md ol { margin: 0 0 6px; padding-left: 18px; }
+.vn-md li.vn-task { list-style: none; margin-left: -18px; }
+.vn-md blockquote { padding-left: 8px; border-left: 3px solid rgba(63, 58, 52, .25); }
+.vn-md code { padding: 1px 4px; border-radius: 4px; background: rgba(63, 58, 52, .1); font-size: .92em; }
+.vn-md hr { border: 0; border-top: 1px solid rgba(63, 58, 52, .2); }
+.vn-cut { opacity: .65; font-style: italic; }
+.vn-gone { flex: 1; font: 500 calc(12.5px * var(--fs, 1))/1.4 var(--font); opacity: .75; }
+.vn-foot { display: flex; flex-wrap: wrap; gap: 6px; }
+.vn-btn { display: flex; align-items: center; gap: 5px; padding: 6px 10px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgba(63, 58, 52, .1); font: 600 11.5px/1 var(--font); color: inherit; cursor: pointer; }
+.vn-btn svg { width: 13px; height: 13px; }
+.vn-btn:hover { background: rgba(63, 58, 52, .18); }
 #vpQ { padding: 10px 12px; border-radius: 12px; corner-shape: squircle; border: 1.5px solid rgba(150, 95, 35, .25); background: transparent; font: 500 14px/1.2 var(--font); color: var(--ink); outline: none; }
 #vpQ:focus { border-color: var(--select); }
 .vp-list { display: grid; gap: 2px; max-height: 320px; overflow: auto; }
 .vp-row { display: grid; gap: 2px; text-align: left; padding: 8px 10px; border: 0; border-radius: 10px; corner-shape: squircle; background: none; font: 600 13.5px/1.2 var(--font); color: inherit; cursor: pointer; }
 .vp-row small { font: 400 11.5px/1.2 var(--font); color: var(--ink-soft); }
 .vp-row:hover { background: rgba(150, 95, 35, .1); }
-body.dark .vn-tags i, body.dark .vn-open { background: rgba(255, 255, 255, .1); }
 .tdlg label.fc-row, .tdlg label.vg-use { display: flex; align-items: center; gap: 8px; font: 500 13px/1.2 var(--font); color: var(--ink); }
 .tdlg label.vg-use { font: 600 14px/1.2 var(--font); }
 .tdlg label.vg-sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink); }

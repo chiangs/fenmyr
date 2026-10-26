@@ -127,7 +127,7 @@
       tray: ['call the printer', 'idea: a map of my favourite bogs', 'that font from the cafe menu', 'reply to Sam', 'plan the spring trip'].map(t => card('note', { text: t })) }),
   };
   function card(type, o = {}) {
-    const size = { note: [220, 140], title: [320, 50], image: [260, 220], link: [260, 210], todo: [240, 180], swatch: [120, 150], coll: [288, 200], doc: [240, 52], canvas: [260, 180], shape: [160, 160], stamp: [56, 56], audio: [290, 150], video: [360, 246], ink: [10, 10], frame: [393, 852], box: [160, 100], text: [220, 24], icon: [28, 28], font: [300, 210], vnote: [270, 210] }[type] || [220, 140];
+    const size = { note: [220, 140], title: [320, 50], image: [260, 220], link: [260, 210], todo: [240, 180], swatch: [120, 150], coll: [288, 200], doc: [240, 52], canvas: [260, 180], shape: [160, 160], stamp: [56, 56], audio: [290, 150], video: [360, 246], ink: [10, 10], frame: [393, 852], box: [160, 100], text: [220, 24], icon: [28, 28], font: [300, 210], vnote: [300, 270] }[type] || [220, 140];
     return Object.assign({ id: uid(), type, x: 0, y: 0, w: size[0], h: size[1], r: type === 'title' ? 0 : tilt(), color: 'white' }, o);
   }
   function newBoard(name = 'Untitled board', tpl) {
@@ -498,10 +498,10 @@
     // an edit still waiting to save belongs to the board you're leaving: save it first
     if (saveT && board) { clearTimeout(saveT); saveT = 0; board.view = view; await Myra.save(board); }
     const b = await Myra.load(id); if (!b) return;
-    miniCache.clear(); board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
+    miniCache.clear(); vnFull.clear(); board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
     board.cards.forEach(c => { if (c.type === 'audio' && c.rec) { c.rec = false; c.paused = false; if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.'; } });
     board.cards.forEach(c => { if (c.type === 'canvas' && c.board) { const kb = boardList.find(x => x.id === c.board); if (kb && kb.name !== c.text) c.text = kb.name; } });
-    $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); try { localStorage.setItem('myra:last', id); } catch (e) {}
+    $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); applyToolbar(); try { localStorage.setItem('myra:last', id); } catch (e) {}
   }
   let saveT = 0;
   // ---------- undo / redo: a snapshot of the board after each change settles ----------
@@ -693,10 +693,14 @@
         const k = !c.cropEdit && c.crop, st = k ? `position:absolute;width:${100 / k.w}%;height:${100 / k.h}%;left:${-k.x / k.w * 100}%;top:${-k.y / k.h * 100}%;object-fit:fill;border-radius:0` : '';
         const ui = c.cropEdit && cropping ? `<div class="crop-ui"><div class="crop-box" style="left:${cropping.box.x * 100}%;top:${cropping.box.y * 100}%;width:${cropping.box.w * 100}%;height:${cropping.box.h * 100}%">${['nw', 'ne', 'sw', 'se'].map(h => `<i data-h="${h}"></i>`).join('')}</div></div>` : '';
         return `<div class="imgwrap"><img src="${esc(c.src)}" alt="" style="${st}">${ui}</div>${c.cropEdit ? '' : '<button class="chip" data-act="colors">pull colors ✦</button>'}`; }
-      case 'vnote': { const gone = c.blocked || c.missing, sm = c.props || [];
-        return `<div class="vn-head">${Icon('notebook')}<span class="vn-title">${esc(c.title || 'Note')}</span></div>${gone ? `<div class="vn-gone">${c.missing ? 'I can’t find this note any more.' : 'Not available: this board isn’t allowed to read it.'}</div>`
-          : `${(c.tags || []).length ? `<div class="vn-tags">${c.tags.slice(0, 5).map(t => `<i>#${esc(t)}</i>`).join('')}</div>` : ''}${sm.length ? `<div class="vn-props">${sm.slice(0, 3).map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`).join('')}</div>` : ''}<div class="vn-ex">${esc(c.excerpt || '')}</div>`}
-          <button class="vn-open" data-act="vn-open">${Icon('open')}<span>Open in Obsidian</span></button>`; }
+      case 'vnote': {
+        const gone = c.blocked || c.missing, back = c.side === 'back', full = vnFull.get(c.id), sm = c.props || [];
+        const head = `<div class="vn-head">${Icon('notebook')}<span class="vn-title text">${esc(c.title || 'Note')}</span><button class="vn-flip" data-act="vn-flip" title="${back ? 'Show the title and tags' : 'Show the content'}">${Icon('refresh')}</button></div>`;
+        const btns = `${back && !gone ? `<button class="vn-btn" data-act="vn-full">${full ? 'Show less' : 'Show full text'}</button>` : ''}<button class="vn-btn" data-act="vn-open" title="Open in Obsidian">${Icon('open')}<span>Obsidian</span></button><button class="vn-btn" data-act="vn-file" title="Open the note in your default app">${Icon('doc')}<span>Open note</span></button>`;
+        const foot = `<div class="vn-foot">${btns}</div>`;
+        if (gone) return `${head}<div class="vn-gone text">${c.missing ? 'I can’t find this note any more.' : 'Not available: this board isn’t allowed to read it.'}</div>${foot}`;
+        if (!back) return `${head}${(c.tags || []).length ? `<div class="vn-tags">${c.tags.slice(0, 6).map(t => `<i>#${esc(t)}</i>`).join('')}</div>` : ''}${sm.length ? `<div class="vn-props text">${sm.slice(0, 5).map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`).join('')}</div>` : ''}<div class="vn-fill"></div>${foot}`;
+        return `${head}${full ? `<div class="vn-md text">${vnMd(full.body)}${full.truncated ? '<p class="vn-cut">That is the first part. The rest is in the note.</p>' : ''}</div>` : `<div class="vn-ex text">${esc(c.excerpt || '')}</div>`}${foot}`; }
       case 'link': return !c.url ? `<div class="link-in${c.loading ? ' loading' : ''}">${CIC.link}<input placeholder="Add a link…" value="${esc(c.draft || '')}" spellcheck="false"></div>`
         : `<div class="thumb" style="${c.image ? `background-image:url('${esc(c.image)}')` : ''}"></div><div class="meta"><i class="fav" style="background-image:url('https://www.google.com/s2/favicons?sz=64&domain=${esc(host(c.url))}')"></i><div><b>${esc(c.title || c.url)}</b><span>${esc(c.desc || host(c.url))}</span></div></div>`;
       case 'todo': return `<div class="head">${esc(c.text)}</div><ul>${(c.items || []).map((it, i) => `<li class="${it.done ? 'done' : ''}" data-i="${i}"><input type="checkbox" ${it.done ? 'checked' : ''}><span>${esc(it.t)}</span><button class="li-x" data-act="item-x" title="Remove" aria-label="Remove this item">${Icon('close')}</button></li>`).join('')}</ul><button class="add-item" data-act="item">+ add</button>`;
@@ -706,7 +710,7 @@
   }
   // which cards can be tilted by hand: everything except the things that hold other things (sections, screens, collections) and wireframe pieces (they rotate their own way)
   const TILTS = c => !['section', 'frame', 'coll', 'ink', 'box', 'text', 'icon'].includes(c.type);   // (the wireframe list WF isn't set up yet when the first cards draw)
-  const SIZED_T = ['note', 'todo', 'title', 'shape', 'coll'];
+  const SIZED_T = ['note', 'todo', 'title', 'shape', 'coll', 'vnote'];
   // strokes: boxes and screens get a border (solid or dashed); titles, wireframe text and icons get an outline around the letters
   const STROKABLE = ['box', 'frame', 'title', 'text', 'icon', 'path', 'shape'], STROKE_TEXT = ['title', 'text', 'icon'];
   const canStroke = c => STROKABLE.includes(c.type) && !(c.type === 'shape' && c.shape === 'line');
@@ -1629,6 +1633,9 @@
     if (act && act.startsWith('au-')) return audioAct(c, act, e);
     if (act === 'colors') pullColors(c);
     if (act === 'vn-open') return openVNote(c);
+    if (act === 'vn-file') return openVNoteFile(c);
+    if (act === 'vn-flip') return flipVNote(c);
+    if (act === 'vn-full') return toggleVNFull(c);
     if (act === 'item') { c.items = c.items || []; c.items.push({ t: 'new thing', done: false }); renderCard(c); fitText(c); save(); }
     if (act === 'item-x') { const i = +e.target.closest('li').dataset.i; remember(); endEdit(); c.items.splice(i, 1); renderCard(c); fitText(c); selectOnly([c.id]); save(); return; }
     const li = e.target.closest('li'); if (li && c.type === 'todo') {
@@ -1674,6 +1681,12 @@
 
   // no system beep: keys pressed on the board (not while typing) are Myra's own, so tell the system they were handled.
   // Otherwise Delete, Escape, arrows and the letter shortcuts fall through to the window, and macOS beeps.
+  // Alt+N: a note from a vault (the letter shortcuts below ignore Alt)
+  addEventListener('keydown', e => {
+    if (!e.altKey || e.metaKey || e.ctrlKey || e.shiftKey || e.code !== 'KeyN' || homeAt || !Myra.native) return;
+    if (e.target.closest?.('input, textarea, select, [contenteditable="true"]') || $('vaultPick')) return;
+    e.preventDefault(); openVaultPicker();
+  });
   addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
     if (e.key === ' ' && e.target.closest?.('button, a, [role="button"]')) return;   // Space still presses a focused button
@@ -1697,10 +1710,12 @@
   // ---------- your toolbar: pick which tools show at the bottom and in what order (shortcuts keep working for hidden ones) ----------
   const TB_DEFAULT = [...$('tools').querySelectorAll(':scope > [data-add]')].map(b => b.dataset.add);
   const tbName = b => (b.dataset.tip || b.getAttribute('aria-label') || '').split('·')[0].trim();
+  // the Vault note tool only shows on a board that can read a vault
+  const vaultToolOn = () => { try { return !!(Myra.native && board && vaults.length && activeGrants(board).length); } catch (e) { return false; } };
   function applyToolbar() {
     const box = $('tools'), cfg = settings.toolbar || {}, hidden = new Set(cfg.hidden || []);
     const order = (cfg.order || []).filter(k => TB_DEFAULT.includes(k)); TB_DEFAULT.forEach((k, i) => { if (!order.includes(k)) order.splice(Math.min(i, order.length), 0, k); });   // tools added in a later version slot in where they belong
-    const end = $('zoom'); order.forEach(k => { const b = box.querySelector(`:scope > [data-add="${k}"]`); if (b) { box.insertBefore(b, end); b.hidden = hidden.has(k); } });
+    const end = $('zoom'); order.forEach(k => { const b = box.querySelector(`:scope > [data-add="${k}"]`); if (b) { box.insertBefore(b, end); b.hidden = hidden.has(k) || (k === 'vnote' && !vaultToolOn()); } });
     document.body.dataset.tb = settings.tbSize || 'm'; requestAnimationFrame(fitToolbar);
     return order;
   }
@@ -1826,6 +1841,7 @@
     if (t === 'pointer') return toPointer();
     if (t === 'pen') return penT ? endPen(true) : startPen();
     if (penT) endPen(true);   // picking another tool finishes the pen line
+    if (t === 'vnote') { stopPlacing(); return openVaultPicker(); }
     if (t === 'image') return $('filePick').click();
     if (t === 'draw') return drawOn ? exitDraw() : enterDraw();
     if (t === 'stamp') { const on = !$('stampWheel').classList.contains('on'); stopPlacing(); const r = tbRect(b), sr = stage.getBoundingClientRect(); ['stampWheel', 'stampPick'].forEach(id => $(id).style.left = (r.left + r.width / 2 - sr.left) + 'px'); renderWheel(); $('stampWheel').classList.toggle('on', on); b.classList.toggle('on', on); $('mBubble').classList.remove('on'); return; }
@@ -2418,7 +2434,7 @@
   // ---------- Obsidian vaults: connect folders here; a project or board is then granted what it may see (read-only) ----------
   let vaults = []; const vaultInfo = {};   // vaultInfo[id] = { folders, notes } from the last scan
   const vaultById = id => vaults.find(v => v.id === id);
-  async function loadVaults() { vaults = await Myra.vaults().catch(() => []); }
+  async function loadVaults() { vaults = await Myra.vaults().catch(() => []); if (typeof applyToolbar === 'function' && board) applyToolbar(); }
   // a scrollable list of a vault's folders with a tick each. A ticked folder includes the ones inside it. whole: a first row that ticks the whole vault ('')
   function folderChecklist(folders, chosen, onChange, { whole = false } = {}) {
     const box = document.createElement('div'); box.className = 'fchk';
@@ -2481,18 +2497,49 @@
   async function editVaultAccess(kind, obj) {
     if (kind === 'project') {
       const r = await vaultAccessDialog({ title: `What “${obj.name}” and its boards may read`, grants: obj.vaults || [] }); if (!r) return;
-      obj.vaults = r.grants; await saveLib(); refreshVNotes(); return chirp(r.grants.length ? `Saved: “${obj.name}” can read ${r.grants.length} vault${r.grants.length === 1 ? '' : 's'} ✦` : `“${obj.name}” can’t read any vault ✦`, 3500);
+      obj.vaults = r.grants; await saveLib(); refreshVNotes(); applyToolbar(); return chirp(r.grants.length ? `Saved: “${obj.name}” can read ${r.grants.length} vault${r.grants.length === 1 ? '' : 's'} ✦` : `“${obj.name}” can’t read any vault ✦`, 3500);
     }
     const b = board && board.id === obj.id ? board : await Myra.load(obj.id); if (!b) return;
     const f = folders.find(x => x.id === b.folder), p = f && projects.find(x => x.id === f.project);
     const r = await vaultAccessDialog({ title: `What “${b.name}” may read`, grants: Array.isArray(b.vaultAccess) ? b.vaultAccess : (p && p.vaults) || [], inherit: p ? p.name : null }); if (!r) return;
     if (r.follow) delete b.vaultAccess; else b.vaultAccess = r.grants;
-    if (board && board.id === b.id) { save(); refreshVNotes(); } else await Myra.save(b);
+    if (board && board.id === b.id) { save(); refreshVNotes(); applyToolbar(); } else await Myra.save(b);
     chirp(r.follow ? `“${b.name}” follows its project ✦` : `Saved: “${b.name}” has its own vault access ✦`, 3500);
   }
   // ---------- vault notes on a board: a card that shows a note's title, tags, properties and first lines, and opens it in Obsidian ----------
   const obsLink = (v, rel) => 'obsidian://open?vault=' + encodeURIComponent(v.obsidian || v.name) + '&file=' + encodeURIComponent(String(rel).replace(/\.md$/i, ''));
   function openVNote(c) { const v = vaultById(c.vault); if (!v) return say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000); Myra.openURL(obsLink(v, c.path)); }
+  async function openVNoteFile(c) { const g = grantFor(board, c.vault, c.path); if (!g) return say('This board isn’t allowed to read that note.', 3500);
+    try { await Myra.vaultOpen(c.vault, c.path, g.folders); } catch (e) { say(/missing/.test(e.message) ? 'I can’t find that note any more.' : 'Hmm: ' + e.message, 3500); } }
+  // each card remembers its own side; the back holds the stored excerpt, and the full text only while you ask for it (never saved)
+  const vnFull = new Map();
+  function flipVNote(c) {
+    remember(); const body = cardsEl.querySelector(`[data-id="${c.id}"] .body`);
+    const swap = () => { c.side = c.side === 'back' ? 'front' : 'back'; renderCard(c); cardsEl.querySelector(`[data-id="${c.id}"] .body`)?.animate([{ transform: 'rotateY(-90deg)' }, { transform: 'rotateY(0)' }], { duration: 140 }); save(); $('selbar').dataset.key = ''; };
+    if (body) body.animate([{ transform: 'rotateY(0)' }, { transform: 'rotateY(90deg)' }], { duration: 120 }).finished.then(swap, swap); else swap();
+  }
+  async function toggleVNFull(c) {
+    if (vnFull.has(c.id)) { vnFull.delete(c.id); return renderCard(c); }
+    const g = grantFor(board, c.vault, c.path); if (!g) return say('This board isn’t allowed to read that note.', 3500);
+    try { const n = await Myra.vaultNote(c.vault, c.path, g.folders, true); vnFull.set(c.id, { body: n.body || '', truncated: !!n.truncated }); renderCard(c); }
+    catch (e) { say(/missing/.test(e.message) ? 'I can’t find that note any more.' : 'Hmm: ' + e.message, 3500); }
+  }
+  // a small, safe markdown for the back of the card: headings, lists, tasks, quotes, bold, italic, code; [[links]] show as their words
+  function vnMd(src) {
+    const inl = t => esc(t).replace(/!\[\[[^\]]*\]\]/g, '').replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, '$1').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1<em>$2</em>').replace(/`(.+?)`/g, '<code>$1</code>');
+    let out = '', list = null; const close = () => { if (list) { out += `</${list}>`; list = null; } }, open = k => { if (list !== k) { close(); out += `<${k}>`; list = k; } };
+    for (const raw of String(src || '').replace(/\r/g, '').split('\n')) {
+      const l = raw.trimEnd(); let m; if (!l.trim()) { close(); continue; }
+      if ((m = l.match(/^(#{1,6})\s+(.*)/))) { close(); out += `<h4>${inl(m[2])}</h4>`; }
+      else if ((m = l.match(/^\s*[-*+]\s+\[( |x|X)\]\s*(.*)/))) { open('ul'); out += `<li class="vn-task">${m[1] === ' ' ? '☐' : '☑'} ${inl(m[2])}</li>`; }
+      else if ((m = l.match(/^\s*[-*+]\s+(.*)/))) { open('ul'); out += `<li>${inl(m[1])}</li>`; }
+      else if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { open('ol'); out += `<li>${inl(m[1])}</li>`; }
+      else if ((m = l.match(/^>\s?(.*)/))) { close(); out += `<blockquote>${inl(m[1])}</blockquote>`; }
+      else if (/^(---+|\*\*\*+)$/.test(l.trim())) { close(); out += '<hr>'; }
+      else { close(); out += `<p>${inl(l)}</p>`; }
+    }
+    close(); return out;
+  }
   const grantFor = (b, vaultId, rel) => activeGrants(b).find(g => g.vault === vaultId && g.folders.some(f => f === '' || rel === f || rel.startsWith(f + '/')));
   // each card re-reads its note when the board opens. If the board may no longer read it (or it became private), the card forgets what it had shown
   async function refreshVNotes(b = board) {
@@ -2500,7 +2547,7 @@
     for (const c of cs) {
       const before = JSON.stringify([c.title, c.tags, c.props, c.excerpt, c.blocked, c.missing]), g = grantFor(b, c.vault, c.path);
       try { if (!g) throw new Error('blocked'); const n = await Myra.vaultNote(c.vault, c.path, g.folders); Object.assign(c, { title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, blocked: false, missing: false }); }
-      catch (e) { const miss = /missing/.test(e.message); Object.assign(c, { blocked: !miss, missing: miss, tags: [], props: [], excerpt: '' }); }
+      catch (e) { vnFull.delete(c.id); const miss = /missing/.test(e.message); Object.assign(c, { blocked: !miss, missing: miss, tags: [], props: [], excerpt: '' }); }
       if (before !== JSON.stringify([c.title, c.tags, c.props, c.excerpt, c.blocked, c.missing])) { changed = true; if (b === board) renderCard(c); }
     }
     if (changed && b === board) save();
@@ -4165,7 +4212,7 @@ ${proseCSS()}
   }
 
   // ---------- the dock swaps to tools for whatever is selected ----------
-  const FILLABLE = ['note', 'todo', 'link'];
+  const FILLABLE = ['note', 'todo', 'link', 'vnote'];
   const ARRANGE_NAME = { left: 'align-l', hcenter: 'align-c', right: 'align-r', top: 'align-t', vcenter: 'align-m', bottom: 'align-b', dh: 'distribute-h', dv: 'distribute-v' };
   // each card's normal text size in px, so a size can be shown and typed as real pixels
   let fsMark = false, skMark = false, spMark = false, sqMark = false;   // one undo step per visit to the size / stroke dropdown
@@ -4188,10 +4235,10 @@ ${proseCSS()}
       renderCard(c); fitText(c); if (c.type === 'title') { const el = cardsEl.querySelector(`[data-id="${c.id}"]`); if (el) c.h = el.offsetHeight; } });
     renderWires(); save();
   }
-  const FS = { s: .8, m: 1, l: 1.4, xl: 2 }, SIZED = ['note', 'todo', 'title', 'shape', 'coll'];
+  const FS = { s: .8, m: 1, l: 1.4, xl: 2 }, SIZED = ['note', 'todo', 'title', 'shape', 'coll', 'vnote'];
   function selCards() { return [...sel].map(byId).filter(Boolean); }
   const ICON = { tag: Icon('tag'), edit: Icon('edit'), myra: Icon('myra-tool'), del: Icon('trash'), head: Icon('header'), caption: Icon('captions'), color: Icon('palette'),
-    name: Icon('name'), hex: Icon('hex'), crop: Icon('crop'), open: Icon('open'), link: Icon('link') };
+    name: Icon('name'), hex: Icon('hex'), crop: Icon('crop'), open: Icon('open'), link: Icon('link'), flip: Icon('refresh'), file: Icon('doc') };
   // fonts for board text: the same list as docs (fonts on this board first, then suggestions, then everything on this computer)
   // every font this board uses: picked for notes and titles, wireframe text, font cards, and fonts set inside docs (most used first)
   function boardFonts() {
@@ -4303,6 +4350,7 @@ ${proseCSS()}
     if (one?.type === 'image') h += btn('crop', 'crop', 'Crop') + btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText);
     else if (one && !['coll', 'swatch', 'stamp', 'ink'].includes(one.type)) h += G(6, btn('tag', 'tag', one.tagText ? 'Remove the label' : 'Add a label', !!one.tagText));
     if (one?.type === 'doc') h += btn('open', 'open', 'Open the doc');
+    if (one?.type === 'vnote') h += btn('vnflip', 'flip', 'Flip the card') + btn('vnopen', 'open', 'Open in Obsidian') + btn('vnfile', 'file', 'Open the note in your default app');
     if (one?.type === 'canvas') h += btn('open', 'open', 'Open this canvas');
     if (one?.type === 'link' && one.url) h += btn('visit', 'open', 'Open the link') + btn('relink', 'link', 'Change the link');
     if (one?.type === 'spotify') h += btn('visit', 'open', 'Open in Spotify');
@@ -4582,6 +4630,7 @@ ${proseCSS()}
     if (e.target.closest('[data-fill]')) return offerFill(spotsIn(cs));
     if (a === 'open') one.type === 'doc' ? openDoc(one) : openCanvas(one);
     if (a === 'visit') Myra.openURL(one.url);
+    if (a === 'vnflip') flipVNote(one); if (a === 'vnopen') openVNote(one); if (a === 'vnfile') openVNoteFile(one);
     if (a === 'relink') { one.draft = one.url; one.url = ''; one.image = ''; one.h = 52; redraw(); }
     if (a === 'head') { one.head = one.head === false ? true : false; redraw(); }
     if (a === 'hidename') { one.hideName = !one.hideName; redraw(); }

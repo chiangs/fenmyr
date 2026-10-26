@@ -46,7 +46,7 @@ function parseNote(text) {
   const links = [...prose.matchAll(/\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/g)].map(x => x[1].trim());
   const lines = prose.split(/\r?\n/).map(l => l.trim()).filter(l => l && !/^(#{1,6}\s.*|---+|\*\*\*+|!\[\[.*\]\]|(#[\p{L}\p{N}_\/-]+\s*)+)$/u.test(l));
   const excerpt = lines.slice(0, 4).join('\n').replace(/\[\[([^\]|]+\|)?([^\]]+)\]\]/g, '$2').slice(0, 280);
-  return { props, tags: [...tags], links, excerpt };
+  return { props, tags: [...tags], links, excerpt, body: body.trim() };
 }
 const isPrivate = tags => tags.some(t => /^private(\/|$)/i.test(t));
 const shortProps = props => Object.entries(props).filter(([k]) => !/^tags?$/i.test(k)).slice(0, 6).map(([k, v]) => [k, Array.isArray(v) ? v.join(', ') : String(v)]);
@@ -88,11 +88,20 @@ function list(vault, allow, query, max = 40) {
   }
   return out;
 }
-function note(vault, rel, allow) {
+const FULL_MAX = 20000;   // the most of a note's text a card will ever hold, and only while it is open
+function note(vault, rel, allow, full) {
   rel = norm(rel); if (!reachable(vault, rel, allow)) throw new Error('blocked');
   const f = realFile(vault, rel); if (!f) throw new Error('missing');
   const p = parseNote(fs.readFileSync(f, 'utf8')); if (isPrivate(p.tags)) throw new Error('blocked');
-  return { rel, title: titleOf(rel), props: shortProps(p.props), tags: p.tags.slice(0, 12), excerpt: p.excerpt, links: p.links.length, mtime: fs.statSync(f).mtimeMs };
+  const out = { rel, title: titleOf(rel), props: shortProps(p.props), tags: p.tags.slice(0, 12), excerpt: p.excerpt, links: p.links.length, mtime: fs.statSync(f).mtimeMs };
+  if (full) { out.body = p.body.slice(0, FULL_MAX); out.truncated = p.body.length > FULL_MAX; }
+  return out;
+}
+// the real file of a note the grant allows, for opening it in the system's app
+function fileFor(vault, rel, allow) {
+  rel = norm(rel); if (!reachable(vault, rel, allow)) throw new Error('blocked');
+  const f = realFile(vault, rel); if (!f) throw new Error('missing');
+  if (isPrivate(parseNote(fs.readFileSync(f, 'utf8')).tags)) throw new Error('blocked'); return f;
 }
 const obsidianURL = (vault, rel) => 'obsidian://open?vault=' + encodeURIComponent(vault.obsidian || path.basename(vault.path)) + '&file=' + encodeURIComponent(norm(rel).replace(/\.md$/i, ''));
 
@@ -116,4 +125,4 @@ function update(id, patch) {
 const remove = id => { saveVaults(vaults().filter(v => v.id !== id)); return true; };
 const byId = id => { const v = vaults().find(x => x.id === id); if (!v) throw new Error('That vault is not connected.'); return v; };
 
-module.exports = { vaults, add, update, remove, byId, scan, list, note, obsidianURL, parseNote, isPrivate, reachable, realFile, norm };
+module.exports = { vaults, add, update, remove, byId, scan, list, note, fileFor, obsidianURL, parseNote, isPrivate, reachable, realFile, norm };

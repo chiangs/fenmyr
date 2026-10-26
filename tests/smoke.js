@@ -137,21 +137,32 @@ echo " [BLANK_AUDIO] hello from whisper"
     const id = M.board.id; await M.useTemplate(t, 'new'); await wait(800); res.tplNew = M.board.id !== id && M.board.name === 'Smoke template' && M.board.cards.length === t.cards.length;
     return res;
   }));
-  // Obsidian vaults: connect one, give this board access, add a note (private ones stay out), then take access away
-  { const vp = path.join(data, 'vault'); fs.cpSync(path.join(__dirname, 'sample-vault'), vp, { recursive: true });
+  // Obsidian vaults: connect one, give this board access, add a note (private ones stay out), flip it, load its full text (never saved), then take access away
+  { const vp = path.join(data, 'vault'); fs.cpSync(path.join(__dirname, 'sample-vault'), vp, { recursive: true }); fs.writeFileSync(path.join(vp, 'Reading', 'Long.md'), '# Long\n\n' + Array.from({ length: 40 }, (_, i) => `Paragraph ${i + 1} of a long note, long enough to push the end well past the preview.`).join('\n\n') + '\n\nZZ-END\n');
     Object.assign(r, await page.evaluate(async vp => {
       const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {};
       const v = await Myra.vaultAdd(vp); await Myra.vaultUpdate(v.id, { off: ['Private'] });
       M.board.vaultAccess = [{ vault: v.id, folders: [''], ai: false, write: false }];
+      const tool0 = !document.querySelector('[data-add="vnote"]').hidden;
       M.openVaultPicker(); await wait(500);
-      const names = [...document.querySelectorAll('#vaultPick .vp-row b')].map(b => b.textContent);
-      document.getElementById('vpQ').value = 'trip'; document.getElementById('vpQ').dispatchEvent(new Event('input')); await wait(500);
-      document.querySelector('#vaultPick .vp-row').click(); await wait(600);
-      const c = M.board.cards.find(x => x.type === 'vnote');
-      res.vault = { names: names.join(), title: c && c.title, tags: c && c.tags.join(), shown: !!document.querySelector('.card.vnote .vn-ex')?.textContent };
+      const names = [...document.querySelectorAll('#vaultPick .vp-row b')].map(b => b.textContent).sort();
+      const add = async q => { document.getElementById('vpQ').value = q; document.getElementById('vpQ').dispatchEvent(new Event('input')); await wait(500); document.querySelector('#vaultPick .vp-row').click(); await wait(600); };
+      await add('trip'); const c = M.board.cards.find(x => x.type === 'vnote');
+      res.vault = { names: names.join(), title: c && c.title, tags: c && c.tags.join(), shown: !!document.querySelector('.card.vnote .vn-title')?.textContent, tool: !document.querySelector('[data-add="vnote"]').hidden && !tool0 || !document.querySelector('[data-add="vnote"]').hidden };
+      // flip to the back, ask for the full text: shown, but never stored on the card
+      M.openVaultPicker(); await wait(400); await add('long'); const lc = M.board.cards.filter(x => x.type === 'vnote').find(x => x.title === 'Long'), el = () => document.querySelector(`[data-id="${lc.id}"]`);
+      el().querySelector('.vn-flip').click(); await wait(500); res.vault.side = lc.side === 'back' && !!el().querySelector('.vn-ex');
+      res.vault.beforeFull = !el().innerText.includes('ZZ-END');
+      el().querySelector('[data-act="vn-full"]').click(); await wait(700);
+      res.vault.fullShown = el().innerText.includes('ZZ-END'); res.vault.fullSaved = JSON.stringify(M.board).includes('ZZ-END');
+      el().querySelector('[data-act="vn-full"]').click(); await wait(300); res.vault.lessAgain = !el().innerText.includes('ZZ-END');
       M.board.vaultAccess = []; await M.refreshVNotes(); res.vault.blocked = c.blocked && !c.excerpt && !c.tags.length;
       return res;
     }, vp)); }
+  // Alt+N opens the vault note picker on a board that can read a vault
+  { await page.evaluate(async () => { const M = window.__myra, v = (await Myra.vaults())[0]; M.board.vaultAccess = [{ vault: v.id, folders: [''], ai: false, write: false }]; });
+    await page.mouse.click(5, 300); await page.keyboard.press('Alt+n'); await page.waitForTimeout(500);
+    r.vault.altN = await page.evaluate(() => !!document.getElementById('vaultPick')); await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
     document.getElementById('openLicenses').click(); await new Promise(res => setTimeout(res, 700));
@@ -169,7 +180,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), webOn: r.webOn.slice(-120), webOff: r.webOff.slice(-120), hooksRewrite: r.hooksRewrite.slice(-100) }, null, 1));
   await app.close();
   const ok = r.native && r.linux && r.save && r.load === 0 && r.list && r.folders === 1 && r.fonts > 0 && r.unknown === 'unknown op nope' && r.range[0] === 206 && r.range[1] === 100
-    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.tree.name && r.tree.cards >= 12 && r.kickoff.name && r.kickoff.cards >= 18 && r.kanban.cols.join() === 'To do,Doing,Done' && r.kanban.counts.join() === '2,1 / 3,1' && r.first.name === 'My first board' && r.first.cards === 15 && r.first.tray === 5 && r.first.kanban && r.kanban.menu && r.vault.names === '2026-10-20,East bog,Trip plan,Cloudberries' && r.vault.title === 'Trip plan' && r.vault.tags === 'trip,cloudberries,today' && r.vault.shown && r.vault.blocked && r.tplSaved && r.tplRow && r.tplAdds && r.tplNew && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
+    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.tree.name && r.tree.cards >= 12 && r.kickoff.name && r.kickoff.cards >= 18 && r.kanban.cols.join() === 'To do,Doing,Done' && r.kanban.counts.join() === '2,1 / 3,1' && r.first.name === 'My first board' && r.first.cards === 15 && r.first.tray === 5 && r.first.kanban && r.kanban.menu && r.vault.names === '2026-10-20,Cloudberries,East bog,Long,Trip plan' && r.vault.title === 'Trip plan' && r.vault.tags === 'trip,cloudberries,today' && r.vault.shown && r.vault.tool && r.vault.side && r.vault.beforeFull && r.vault.fullShown && !r.vault.fullSaved && r.vault.lessAgain && r.vault.blocked && r.vault.altN && r.tplSaved && r.tplRow && r.tplAdds && r.tplNew && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
     && r.conn.mobbin === true && r.conn.higgsfield === false && JSON.parse(r.ask).say === 'hi from fake claude' && r.usage2.asks === 1 && r.usage2.tokensIn === 15
     && r.prompt.includes('The person asked you: sort these') && r.prompt.includes('Icons are names from this list') && r.prompt.includes('"n":0') && r.prompt.includes('Higgsfield is TURNED OFF') && r.args.includes('mcp__claude_ai_Mobbin__search_screens')
     && r.hooksOff.includes('disableAllHooks') && r.hooksRewrite.includes('disableAllHooks') && !r.hooksOff.includes('WebSearch') && r.webOn.includes('WebSearch') && r.webOn.includes('WebFetch') && r.webOn.includes('disableAllHooks') && !r.webOff.includes('WebSearch') && r.webPromptOn && r.webPromptOff
