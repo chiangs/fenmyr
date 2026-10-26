@@ -54,6 +54,7 @@ function createWindow() {
 const reply = (wc, id, ok, value) => { if (!wc.isDestroyed()) wc.send('myra-reply', id, ok, value === undefined ? null : value); };
 const OPS = {
   list: () => storage.list(), load: a => storage.load(a.id), save: a => storage.save(a.board), remove: a => storage.remove(a.id),
+  templates: () => storage.templates(), saveTemplate: a => storage.saveTemplate(a.template), removeTemplate: a => storage.removeTemplate(a.id),
   folders: () => storage.folders(), saveFolders: a => storage.saveFolders(a.folders),
   caelestia: () => theme.read(),
   // Chromium's (and Node's) licenses ship with Electron as LICENSES.chromium.html, next to the Electron program
@@ -100,7 +101,7 @@ function fonts() {
 }
 
 app.whenReady().then(() => {
-  fs.mkdirSync(P.boardsDir, { recursive: true }); fs.mkdirSync(P.mediaDir, { recursive: true });
+  fs.mkdirSync(P.boardsDir, { recursive: true }); fs.mkdirSync(P.templatesDir, { recursive: true }); fs.mkdirSync(P.mediaDir, { recursive: true });
   setTimeout(() => storage.sweepMedia(), 3000);
   Menu.setApplicationMenu(null);
   protocol.handle('myramedia', req => storage.serveMedia(req));

@@ -38,6 +38,9 @@
       idx.unshift({ id: board.id, name: board.name, color: board.color, folder: board.folder || null, parent: board.parent || null, updated: Date.now() });
       localStorage.setItem(LS + 'index', JSON.stringify(idx)); return true;
     },
+    async templates() { return JSON.parse(localStorage.getItem(LS + 'templates') || '[]'); },
+    async saveTemplate(t) { const all = JSON.parse(localStorage.getItem(LS + 'templates') || '[]').filter(x => x.id !== t.id); all.push(t); localStorage.setItem(LS + 'templates', JSON.stringify(all)); return true; },
+    async removeTemplate(id) { localStorage.setItem(LS + 'templates', JSON.stringify(JSON.parse(localStorage.getItem(LS + 'templates') || '[]').filter(x => x.id !== id))); return true; },
     async folders() { return JSON.parse(localStorage.getItem(LS + 'folders') || '[]'); },
     async saveFolders(folders) { localStorage.setItem(LS + 'folders', JSON.stringify(folders)); return true; },
     async remove(id) { localStorage.removeItem(LS + 'board:' + id); localStorage.setItem(LS + 'index', JSON.stringify(JSON.parse(localStorage.getItem(LS + 'index') || '[]').filter(b => b.id !== id))); return true; },
@@ -80,6 +83,7 @@
   window.Myra = native ? {
     native: true, platform,
     list: () => call('list'), load: id => call('load', { id }), save: board => call('save', { board }), remove: id => call('remove', { id }),
+    templates: () => call('templates'), saveTemplate: template => call('saveTemplate', { template }), removeTemplate: id => call('removeTemplate', { id }),
     folders: () => call('folders'), saveFolders: folders => call('saveFolders', { folders }),
     caelestia: () => call('caelestia'), chromiumLicenses: () => call('chromiumLicenses'), usage: () => call('usage'), resetUsage: () => call('resetUsage'), version: () => call('version'),
     linkPreview: url => call('linkPreview', { url }), rewrite: (text, how, title, around) => call('rewrite', { text, how, title, around }), docPDF: (html, name, paper) => call('docPDF', { html, name, paper }), saveFile: (data, name, ext) => call('saveFile', { data, name, ext }), ask: (prompt, board, confirmed = false, opts = {}) => call('ask', { prompt, board, confirmed, ...opts }),

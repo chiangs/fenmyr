@@ -27,6 +27,16 @@ function save(board) {
   writeAtomic(path.join(P.boardsDir, safe(board.id) + '.json'), jsonSafe(board)); return true;
 }
 function remove(id) { fs.rmSync(path.join(P.boardsDir, safe(id) + '.json'), { force: true }); return true; }
+// your own templates: one small JSON file each, in a Templates folder next to the boards
+function templates() {
+  let files = []; try { files = fs.readdirSync(P.templatesDir).filter(f => f.endsWith('.json')); } catch (e) {}
+  return files.map(f => readJSON(path.join(P.templatesDir, f), null)).filter(t => t && t.id && Array.isArray(t.cards)).sort((a, b) => (a.made || 0) - (b.made || 0));
+}
+function saveTemplate(t) {
+  if (!t || typeof t !== 'object' || !t.id) throw new Error('bad template');
+  fs.mkdirSync(P.templatesDir, { recursive: true }); writeAtomic(path.join(P.templatesDir, safe(t.id) + '.json'), jsonSafe(t)); return true;
+}
+function removeTemplate(id) { fs.rmSync(path.join(P.templatesDir, safe(id) + '.json'), { force: true }); return true; }
 const folders = () => readJSON(P.foldersFile, []);
 function saveFolders(f) { writeAtomic(P.foldersFile, jsonSafe(f ?? [])); return true; }
 
@@ -81,4 +91,4 @@ function sweepMedia() {
   for (const f of files) if (!used.includes(f)) { try { const full = path.join(P.mediaDir, f); if (fs.statSync(full).mtimeMs < old) fs.rmSync(full); } catch (e) {} }
 }
 
-module.exports = { list, load, save, remove, folders, saveFolders, watchBoards, mediaBegin, mediaChunk, mediaEnd, serveMedia, sweepMedia };
+module.exports = { list, load, save, remove, templates, saveTemplate, removeTemplate, folders, saveFolders, watchBoards, mediaBegin, mediaChunk, mediaEnd, serveMedia, sweepMedia };

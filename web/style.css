@@ -1132,6 +1132,13 @@ body.dark .set-maker { background: #3b2d1f; } body.dark .sm-sig { color: #f6c38a
 .tplpick .tp-h + button { margin-top: 1px; }
 .tplpick .tp-h:not(:first-child) { margin-top: 4px; border-top: 1px solid rgba(150, 95, 35, .1); padding-top: 12px; }
 .tplpick .tp-k { display: block; margin-top: 3px; font: 600 10.5px/1.2 var(--font); font-style: normal; color: var(--muted, #8a8076); opacity: .8; }
+.tplpick .tp-x { flex: none; display: flex; gap: 2px; opacity: 0; transition: opacity .15s; }
+.tplpick button:hover .tp-x, .tplpick button:focus-within .tp-x { opacity: 1; }
+.tplpick .tp-x i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; corner-shape: squircle; cursor: pointer; }
+.tplpick .tp-x i:hover { background: rgba(150, 95, 35, .14); }
+.tplpick button.sure .tp-x { opacity: 1; }
+.tplpick button.sure .tp-x i[data-tm="del"] { background: var(--coral); color: #fff; }
+.tplpick b[contenteditable="true"] { outline: 2px solid var(--select); border-radius: 4px; }
 .tplpick .tp-k.new { color: var(--pink-deep); opacity: 1; }
 body.dark .tplpick .tp-h:not(:first-child) { border-top-color: rgba(255, 255, 255, .08); }
 .tplpick b { font: 700 14px/1.2 var(--font); }

@@ -13,5 +13,7 @@ Write them for people, not for code: one line, what changed and why it's nice.
 - New icons everywhere, with a plain or Duotone bottom bar (Settings → General → Icon style).
 - Myra can search the web and read public pages and GitHub repos, once you switch it on (Settings → Helpers).
 - Two new starter boards (OKRs and opportunities, Product kickoff), and the design templates now use cloudberry-picking examples.
+- Kanban: columns you can name, with counts and limits, added to any board from the template picker.
+- Your own templates: right-click a selection or the board to save it, then find it under Yours in the template picker. Settings choose whether it adds to the board or opens a new one, and Myra can save and use them too.
 - A default font for text on the board and in docs (Settings → Board → Default font).
 - Ctrl+, opens Settings. Window buttons are off unless you want them.
