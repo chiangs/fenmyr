@@ -923,7 +923,7 @@ body.dark .dz-presets button { border-color: #464038; }
 .keys span { display: inline-flex; align-items: center; gap: 4px; height: 20px; white-space: nowrap; }
 .keys kbd { line-height: 1; display: inline-block; }
 /* short windows: the hints step aside so they don't crowd the left boxes */
-@media (max-height: 760px) { .keys { display: none; } .side { bottom: 16px; } }
+@media (max-height: 800px) { .keys { display: none; } .side { bottom: 16px; } }
 /* a wireframe box is just its shape (not one of the floating side boxes, which share the name) */
 .card.box { background: none; padding: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; border-radius: 0; flex: initial; }
 body.dark .card.box { background: none !important; }
@@ -2372,3 +2372,8 @@ body.dark svg.ico .ico-d { color: var(--ink); }
 #world, .dv-title, .dv-body { --font: var(--board-font, "Myra Mark", "Figtree", system-ui, -apple-system, sans-serif); }
 #world { font-family: var(--font); }
 .set-font { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* shortcut hints: a short list down the left, left aligned, with the keys lined up; the side boxes stop above it */
+.keys { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 5px; width: auto; max-width: none; }
+.keys kbd { min-width: 5.6em; text-align: center; }
+.keys button { padding: 0; margin-left: 2px; }
+@media (min-height: 801px) { body:has(.keys:not(.hide)) .side { bottom: 190px; } }
