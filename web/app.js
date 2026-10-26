@@ -837,6 +837,7 @@
   }
   // ---------- kanban: a collection whose columns have names, counts and (optionally) a limit ----------
   function drawKanban(s, el) {
+    if (el.querySelector('.kb-h .text[contenteditable="true"]')) return;   // typing a column name: leave the box alone, or it loses focus after each letter
     const host = el.querySelector('.kb-heads') || el.querySelector('.body').appendChild(Object.assign(document.createElement('div'), { className: 'kb-heads' })), top = (s.head === false ? 0 : CHEAD);
     host.innerHTML = s.colNames.map((nm, k) => {
       const n = (s.kids || []).filter(id => s.colOf?.[id] === k).length, lim = s.colLimit[k] || 0, left = CPAD + k * (CW + CGAP);
