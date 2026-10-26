@@ -48,7 +48,7 @@ kbd { font: 500 11px/1 var(--font); padding: 3px 6px; border-radius: 6px; backgr
 .wires { position: absolute; left: -5000px; top: -5000px; width: 10000px; height: 10000px; overflow: visible; pointer-events: none; z-index: 4; }   /* lines sit on top of everything (like FigJam connectors), so one can never get lost under a card or a section */
 .wires path { fill: none; stroke: var(--ink-soft); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .wires path.dash { stroke-dasharray: 6 7; }
-.wires path.on, .wires path.w-arrow.on { stroke: var(--select); }
+.wires path.w-halo { stroke: var(--select); opacity: .35; stroke-dasharray: none; }
 .wires path.w-hit { stroke: transparent; stroke-width: 16; pointer-events: stroke; cursor: pointer; }
 .wires path.w-hit:hover + path, .wires path.w:hover { stroke: var(--ink); }
 .wires circle.w-end, .wires circle.w-bend { fill: #fff; stroke: var(--select); stroke-width: 2.5; pointer-events: all; cursor: grab; }
@@ -2490,3 +2490,10 @@ body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0
 .mc-vault[hidden] { display: none; }
 .mc-vault svg { width: 14px; height: 14px; }
 .mc-vault.on { color: var(--butter-deep); }
+
+/* connector weight and colour in the selection bar */
+.sb-wl { display: block; flex: none; }
+.sb-wdef { background: linear-gradient(135deg, #fff 50%, #3b342d 50%) !important; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); }
+.sb-wcustom { background: conic-gradient(#ff5a6e, #f6b45e, #f7e055, #5fc795, #4f9dff, #9b7bff, #ff5a6e) !important; }
+.sb-pop-wwt .sb-sizelist button { gap: 10px; align-items: center; }
+.sb-pop-wwt .sb-sizelist button.on { background: var(--blush); }

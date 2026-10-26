@@ -930,14 +930,20 @@
     const c1 = { x: mid.x + n.x * bend, y: mid.y + n.y * bend }, handle = { x: mid.x + n.x * bend / 2, y: mid.y + n.y * bend / 2 };
     return { p0, p2, c1, handle, mid, n };
   }
+  // connector weight and colour; a colour from a board file is checked before it goes into the page
+  const wireW = l => l.w === 4 || l.w === 6 ? l.w : 2, wireColor = l => /^#[0-9a-f]{3,8}$/i.test(l.color || '') ? l.color : '';
   function renderWires(live) {
     const O = 5000; let h = '';
     board.links.forEach(l => { const a = byId(l.a), b = byId(l.b); if (!a || !b) return; const g = wireGeom(l, a, b);
       const d = `M${g.p0.x + O} ${g.p0.y + O} Q${g.c1.x + O} ${g.c1.y + O} ${g.p2.x + O} ${g.p2.y + O}`, on = selWire === l.id;
-      let arrow = '';
-      if (l.arrow) { const ux = g.p2.x - g.c1.x, uy = g.p2.y - g.c1.y, ul = Math.hypot(ux, uy) || 1, ax = ux / ul, ay = uy / ul, tip = { x: g.p2.x + O, y: g.p2.y + O };
-        arrow = `<path class="w-arrow${on ? ' on' : ''}" d="M${tip.x - ax * 11 - ay * 7} ${tip.y - ay * 11 + ax * 7} L${tip.x} ${tip.y} L${tip.x - ax * 11 + ay * 7} ${tip.y - ay * 11 - ax * 7}"/>`; }
-      h += `<path class="w${l.dash ? ' dash' : ''}${on ? ' on' : ''}" d="${d}"/>${arrow}<path class="w-hit" data-wire="${l.id}" d="${d}"/>`;
+      // weight (regular 2, medium 4, bold 6) and colour; unset means the defaults, which follow the theme
+      const ww = wireW(l), k = ww / 2, sty = `${wireColor(l) ? `stroke:${wireColor(l)};` : ''}${ww !== 2 ? `stroke-width:${ww};` : ''}`, ds = l.dash && ww !== 2 ? `stroke-dasharray:${6 * k} ${7 * k};` : '';
+      let arrow = '', halo = '';
+      if (l.arrow) { const ux = g.p2.x - g.c1.x, uy = g.p2.y - g.c1.y, ul = Math.hypot(ux, uy) || 1, ax = ux / ul, ay = uy / ul, tip = { x: g.p2.x + O, y: g.p2.y + O }, hl = 11 + (ww - 2) * 2, hw = 7 + (ww - 2) * 1.2;
+        const ad = `M${tip.x - ax * hl - ay * hw} ${tip.y - ay * hl + ax * hw} L${tip.x} ${tip.y} L${tip.x - ax * hl + ay * hw} ${tip.y - ay * hl - ax * hw}`;
+        arrow = `<path class="w-arrow" style="${sty}" d="${ad}"/>`; if (on) halo += `<path class="w-halo" style="stroke-width:${ww + 6}" d="${ad}"/>`; }
+      if (on) halo = `<path class="w-halo" style="stroke-width:${ww + 6}" d="${d}"/>` + halo;   // selected: a soft blue glow behind the line, so its real colour stays visible
+      h += `${halo}<path class="w${l.dash ? ' dash' : ''}" style="${sty}${ds}" d="${d}"/>${arrow}<path class="w-hit" style="stroke-width:${Math.max(16, ww + 12)}" data-wire="${l.id}" d="${d}"/>`;
       if (on) h += `<circle class="w-end" data-end="a" data-wire="${l.id}" cx="${g.p0.x + O}" cy="${g.p0.y + O}" r="6"/><circle class="w-end" data-end="b" data-wire="${l.id}" cx="${g.p2.x + O}" cy="${g.p2.y + O}" r="6"/><circle class="w-bend" data-wire="${l.id}" cx="${g.handle.x + O}" cy="${g.handle.y + O}" r="7"/>`;
     });
     if (live) { const a = live.a, b = live.b; h += `<path class="live" d="M${a.x + O} ${a.y + O} Q${(a.x + b.x) / 2 + O} ${(a.y + b.y) / 2 - 30 + O} ${b.x + O} ${b.y + O}"/>`; }
@@ -1614,7 +1620,7 @@
     }
     if (d.mode === 'wire') {
       const w = toWorld(e.clientX, e.clientY), t = [...board.cards].reverse().find(c => c.id !== d.id && w.x > c.x && w.x < c.x + c.w && w.y > c.y && w.y < c.y + c.h);
-      if (t && !board.links.some(l => (l.a === d.id && l.b === t.id) || (l.b === d.id && l.a === t.id))) { board.links.push({ id: uid(), a: d.id, b: t.id }); save(); }
+      if (t && !board.links.some(l => (l.a === d.id && l.b === t.id) || (l.b === d.id && l.a === t.id))) { board.links.push({ id: uid(), a: d.id, b: t.id, ...(settings.wireStyle || {}) }); save(); }
       renderWires();
     }
   });
@@ -4340,10 +4346,17 @@ ${proseCSS()}
   addEventListener('resize', snapSoon); setTimeout(snapSoon, 300);
   function placeSelbar() {
     const bar = $('selbar'), dock = $('dock'), cs = selCards(), lw = selWire && linkById(selWire);
-    if (lw && !homeAt) { dock.classList.add('ctx'); bar.classList.add('on'); const key = 'w' + lw.id + lw.bend + lw.dash + lw.arrow + !!(lw.pa || lw.pb); if (bar.dataset.key === key) return; bar.dataset.key = key;
+    if (lw && !homeAt) { dock.classList.add('ctx'); bar.classList.add('on'); const key = 'w' + lw.id + lw.bend + lw.dash + lw.arrow + !!(lw.pa || lw.pb) + lw.w + lw.color; if (bar.dataset.key === key) return; bar.dataset.key = key;
       const tb = (a, label, on, tip) => `<button class="sb-txt ${on ? 'on' : ''}" data-wb="${a}" title="${tip}">${label}</button>`;
-      bar.innerHTML = `<span class="sb-label">Connector</span>` + tb('curve', 'Curved', lw.bend !== 0, 'Curved line (drag the middle dot to bend it)') + tb('straight', 'Straight', lw.bend === 0, 'Straight line')
-        + `<span class="sb-sep"></span>` + tb('dash', 'Dashed', !!lw.dash, 'Dashed line') + tb('arrow', 'Arrow', !!lw.arrow, 'Arrow at the end') + tb('flip', 'Flip', false, 'Swap which end has the arrow') + (lw.pa || lw.pb ? `<span class="sb-sep"></span>` + tb('auto', 'Auto ends', false, 'Let the line choose where it meets each card again') : '') + `<span class="sb-sep"></span><button class="sb-ic" data-wb="del" title="Delete">${ICON.del}</button>`;
+      const WCARET = Icon('caret-down', { cls: 'sb-caret' });
+      const WCOL = [['Default (follows the theme)', ''], ['Ink', '#3b342d'], ['Snow', '#ffffff'], ['Lingonberry', '#dc4b3e'], ['Cloudberry', '#f0b04a'], ['Moss', '#6fae5a'], ['Fjord', '#4f8fc9'], ['Heather', '#a98ad6'], ['Birch', '#c9b49a']], cw = wireColor(lw), ww = wireW(lw);
+      const wp = (id, trig, body, tip) => `<span class="sb-popw" data-popw="${id}"><button class="sb-poptrig" data-pop="${id}" title="${tip}">${trig}</button><div class="sb-pop sb-pop-${id}">${body}</div></span>`;
+      const wline = n => `<svg class="sb-wl" width="26" height="14" viewBox="0 0 26 14"><line x1="3" y1="7" x2="23" y2="7" stroke="currentColor" stroke-width="${n}" stroke-linecap="round"/></svg>`;
+      const dots = WCOL.map(([n, hex]) => `<button data-wb="col:${hex}" title="${n}" class="${cw === hex ? 'on' : ''}${hex ? '' : ' sb-wdef'}" style="${hex ? `background:${hex}` : ''}"></button>`).join('') + `<button data-wb="colcustom" title="Pick another colour…" class="sb-wcustom"></button>`;
+      const colorTrig = wp('wcol', `<i class="sb-cur${cw ? '' : ' sb-wdef'}" style="${cw ? `background:${cw}` : ''}"></i>${WCARET}`, `<div class="sb-dots">${dots}</div>`, 'Line colour');
+      const weightTrig = wp('wwt', `${wline(ww)}${WCARET}`, `<div class="sb-sizelist">${[[2, 'Regular'], [4, 'Medium'], [6, 'Bold']].map(([n, t]) => `<button data-wb="w:${n}" class="${ww === n ? 'on' : ''}">${wline(n)}<span>${t}</span></button>`).join('')}</div>`, 'Line weight');
+      bar.innerHTML = `<span class="sb-label">Connector</span>` + colorTrig + weightTrig + `<span class="sb-sep"></span>` + tb('curve', 'Curved', lw.bend !== 0, 'Curved line (drag the middle dot to bend it)') + tb('straight', 'Straight', lw.bend === 0, 'Straight line')
+        + `<span class="sb-sep"></span>` + tb('dash', 'Dashed', !!lw.dash, 'Dashed line') + tb('arrow', 'Arrow', !!lw.arrow, 'Arrow at the end') + tb('flip', 'Flip', false, 'Swap which end has the arrow') + (lw.pa || lw.pb ? `<span class="sb-sep"></span>` + tb('auto', 'Auto ends', false, 'Let the line choose where it meets each card again') : '') + (lw.w || lw.color ? `<span class="sb-sep"></span>` + tb('reset', 'Reset', false, 'Back to the default weight and colour') : '') + `<span class="sb-sep"></span><button class="sb-ic" data-wb="del" title="Delete">${ICON.del}</button>`;
       return; }
     // hidden only while a drag is really happening, or a wheel that isn't from this bar is really on screen (left-over state never hides the bar)
     const wheelUp = $('cpop').classList.contains('on') && $('cpop').classList.contains('tint') && !$('cpop').classList.contains('from-bar') && $('cpop').offsetParent && $('settings').classList.contains('on');
@@ -4465,12 +4478,18 @@ ${proseCSS()}
     const a = e.target.closest('[data-wb]')?.dataset.wb, l = selWire && linkById(selWire); if (!a || !l) return; e.stopImmediatePropagation();
     if (a === 'curve') l.bend = l.bend === 0 ? undefined : l.bend; if (a === 'curve' && l.bend === undefined) delete l.bend;
     if (a === 'straight') l.bend = 0;
+    const keepStyle = () => { settings.wireStyle = { ...(l.w ? { w: l.w } : {}), ...(l.color ? { color: l.color } : {}) }; if (!Object.keys(settings.wireStyle).length) delete settings.wireStyle; try { localStorage.setItem('myra:settings', JSON.stringify(settings)); } catch (e) {} };   // the next connector you draw starts like this one
+    if (a.startsWith('col:')) { const hex = a.slice(4); if (hex) l.color = hex; else delete l.color; keepStyle(); closeSbPops(); }
+    if (a.startsWith('w:')) { const n = +a.slice(2); if (n === 4 || n === 6) l.w = n; else delete l.w; keepStyle(); closeSbPops(); }
+    if (a === 'reset') { delete l.w; delete l.color; delete settings.wireStyle; try { localStorage.setItem('myra:settings', JSON.stringify(settings)); } catch (e) {} }
+    if (a === 'colcustom') { const r = $('selbar').getBoundingClientRect(); closeSbPops(); openColor({ tint: true, boardColors: true, title: 'Line colour', hex: wireColor(l) || '#6b6259', presets: ['#3b342d', '#ffffff', '#dc4b3e', '#f0b04a', '#6fae5a', '#4f8fc9', '#a98ad6', '#c9b49a'],
+      fromBar: true, at: { x: r.left + r.width / 2 - 140, y: r.top - 480 }, apply: hex => { l.color = hex; keepStyle(); renderWires(); save(); }, reset: () => { delete l.color; keepStyle(); renderWires(); save(); } }); return; }
     if (a === 'dash') l.dash = !l.dash;
     if (a === 'arrow') l.arrow = !l.arrow;
     if (a === 'flip') { [l.a, l.b] = [l.b, l.a]; [l.pa, l.pb] = [l.pb, l.pa]; if (!l.pa) delete l.pa; if (!l.pb) delete l.pb; if (l.bend) l.bend = -l.bend; }
     if (a === 'auto') { delete l.pa; delete l.pb; }
     if (a === 'del') { board.links = board.links.filter(x => x !== l); selWire = null; }
-    $('selbar').dataset.key = ''; renderWires(); save();
+    $('selbar').dataset.key = ''; renderWires(); save(); placeSelbar();
   }, true);
   // hover a button in the selection bar: a quick little name bubble above it (the same look as the main toolbar's)
   (() => {
@@ -5134,5 +5153,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__myra = { renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__myra = { selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
