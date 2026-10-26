@@ -10,7 +10,7 @@ const modelFile = () => process.env.MYRA_WHISPER_MODEL || path.join(P.whisperDir
 const modelURL = () => `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${MODEL}.bin`;
 
 function whisperPath() {
-  const dirs = (process.env.PATH || '').split(':').concat([path.join(os.homedir(), '.local/bin'), '/usr/local/bin', '/usr/bin']);
+  const dirs = (process.env.PATH || '').split(':').concat([path.join(os.homedir(), '.local/bin'), '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin']);
   for (const name of ['whisper-cli', 'whisper-cpp', 'whisper.cpp', 'whisper-main']) {
     for (const d of dirs) { const f = path.join(d, name); try { fs.accessSync(f, fs.constants.X_OK); return f; } catch (e) {} }
   }

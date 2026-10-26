@@ -181,6 +181,7 @@ html.linux.no-win-buttons .win-ctl { display: none; }
 .cae-only { display: none !important; } body.has-caelestia .cae-only { display: flex !important; }
 body.following-caelestia [data-seg="theme"], body.following-caelestia .col-grid, body.following-caelestia #colReset { opacity: .45; pointer-events: none; }
 .win-only { display: none !important; } html.linux .win-only { display: flex !important; }
+html.mac .win-drag { display: block; position: fixed; left: 76px; top: 0; width: 156px; height: 36px; z-index: 9999; -webkit-app-region: drag; }   /* the Mac draws its own traffic lights there */
 html.linux .win-drag { display: block; position: fixed; left: 76px; top: 0; width: 156px; height: 36px; z-index: 9999; -webkit-app-region: drag; }
 
 /* Myra's helpers in the sidebar */

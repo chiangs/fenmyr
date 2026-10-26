@@ -21,6 +21,7 @@ async function toWav16k(dataURL) {
 }
 
 contextBridge.exposeInMainWorld('myraHost', {
+  platform: process.platform === 'darwin' ? 'mac' : 'linux',
   post: async msg => {
     if (msg && msg.op === 'transcribe' && msg.args && msg.args.audio && !String(msg.args.audio).startsWith('data:audio/wav')) {
       try { msg = { ...msg, args: { ...msg.args, audio: await toWav16k(msg.args.audio) } }; } catch (e) { /* let the host report it */ }

@@ -13,7 +13,8 @@
     "test": "node tests/vault.js && node tests/smoke.js && node tests/zoom.js && node tests/theme.js && node tests/docs.js",
     "dist": "electron-builder --linux AppImage",
     "notices": "node tools/notices.js",
-    "icons": "node tools/icons.js"
+    "icons": "node tools/icons.js",
+    "dist:mac": "electron-builder --mac dir"
   },
   "devDependencies": {
     "@phosphor-icons/core": "^2.1.1",
@@ -54,6 +55,19 @@
     },
     "directories": {
       "output": "build/release"
+    },
+    "mac": {
+      "target": [
+        "dir"
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.productivity",
+      "identity": null,
+      "darkModeSupport": true,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Myra records voice memos on your board.",
+        "NSCameraUsageDescription": "Myra can record video cards on your board."
+      }
     }
   }
 }

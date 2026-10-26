@@ -3,7 +3,7 @@
 // In a plain browser (for building and demos) it falls back to localStorage and a pretend Myra.
 (() => {
   const native = !!window.myraHost;
-  const platform = native ? 'linux' : 'web';
+  const platform = native ? (window.myraHost.platform || 'linux') : 'web';   // 'linux' or 'mac'
   const waiting = new Map(); let seq = 0;
   // the host answers with window.__myraReply(id, ok, value)
   window.__myraReply = (id, ok, value) => { const w = waiting.get(id); if (!w) return; waiting.delete(id); ok ? w.res(value) : w.rej(new Error(value)); };

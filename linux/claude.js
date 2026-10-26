@@ -16,7 +16,7 @@ async function claudePath() {
 }
 async function findClaude() {
   // the usual homes first: the official installer, the older local install, the system, npm / nvm / volta / bun
-  const spots = [`${home}/.local/bin/claude`, `${home}/.claude/local/claude`, '/usr/bin/claude', '/usr/local/bin/claude',
+  const spots = [`${home}/.local/bin/claude`, `${home}/.claude/local/claude`, '/usr/bin/claude', '/usr/local/bin/claude', '/opt/homebrew/bin/claude',
     `${home}/.npm-global/bin/claude`, `${home}/.volta/bin/claude`, `${home}/.bun/bin/claude`];
   try { spots.push(...fs.readdirSync(`${home}/.nvm/versions/node`).sort().reverse().map(v => `${home}/.nvm/versions/node/${v}/bin/claude`)); } catch (e) {}
   const hit = spots.find(isExe); if (hit) return hit;
@@ -30,7 +30,7 @@ async function findClaude() {
   return null;
 }
 
-const env = () => ({ ...process.env, PATH: [process.env.PATH || '', `${home}/.local/bin`, '/usr/local/bin', '/usr/bin'].join(':') });
+const env = () => ({ ...process.env, PATH: [process.env.PATH || '', `${home}/.local/bin`, '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin'].join(':') });
 
 // run a program, collect what it prints, stop it after `timeout` seconds
 function run(cmd, args, timeout) {

@@ -27,7 +27,8 @@ function createWindow() {
   const b = bounds();
   win = new BrowserWindow({
     ...b, minWidth: 380, minHeight: 520,   // narrow enough to sit beside other apps; below 700 wide it switches to the phone layout
-    frame: false, show: false, title: 'Myra', backgroundColor: '#faf7f2',
+    // Linux: no frame, the page draws its own dots. Mac: the real traffic lights, sitting where those dots would be
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 14, y: 12 } } : { frame: false }), show: false, title: 'Myra', backgroundColor: '#faf7f2',
     icon: path.join(__dirname, '..', 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, spellcheck: true },
   });
@@ -100,6 +101,11 @@ ipcMain.on('win', (e, what) => {
 let fontCache = null;
 function fonts() {
   if (fontCache) return fontCache;
+  if (process.platform === 'darwin') return fontCache = new Promise(res => execFile('system_profiler', ['SPFontsDataType', '-json', '-detailLevel', 'mini'], { maxBuffer: 256 << 20, timeout: 30000 }, (err, out) => {
+    const names = new Set(['DM Sans', 'Caveat']);
+    try { (JSON.parse(String(out)).SPFontsDataType || []).forEach(f => (f.typefaces || []).forEach(t => t.family && !t.family.startsWith('.') && names.add(t.family))); } catch (e) {}
+    res([...names].sort((a, b) => a.localeCompare(b)));
+  }));
   return fontCache = new Promise(res => execFile('fc-list', [':', 'family'], { maxBuffer: 16 << 20 }, (err, out) => {
     const names = new Set(String(out || '').split('\n').map(l => l.split(',')[0].replace(/\\-/g, '-').trim()).filter(n => n && !n.startsWith('.')));
     ['DM Sans', 'Caveat'].forEach(n => names.add(n));   // the app's own fonts are always there
@@ -110,7 +116,8 @@ function fonts() {
 app.whenReady().then(() => {
   fs.mkdirSync(P.boardsDir, { recursive: true }); fs.mkdirSync(P.templatesDir, { recursive: true }); fs.mkdirSync(P.mediaDir, { recursive: true });
   setTimeout(() => storage.sweepMedia(), 3000);
-  Menu.setApplicationMenu(null);
+  // the Mac needs a menu bar: it's where ⌘Q, ⌘C/⌘V/⌘Z in text and the window keys live. Linux has none
+  Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]) : null);
   protocol.handle('myramedia', req => storage.serveMedia(req));
   // the microphone for voice memos, the camera for video cards, and the clipboard for copy/paste between boards
   const allowed = new Set(['media', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen']);

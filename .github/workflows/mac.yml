@@ -1,0 +1,37 @@
+name: Mac build
+# A test build of Myra for macOS: an unsigned (ad-hoc signed) .dmg for Apple Silicon and for Intel, uploaded as artifacts of the run.
+on:
+  push:
+    branches: [mac-build]
+  workflow_dispatch:
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x64]
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build the app
+        run: npx electron-builder --mac dir --${{ matrix.arch }} --publish never
+      - name: Ad-hoc sign and make the .dmg
+        run: |
+          app=$(ls -d build/release/mac*/Myra.app | head -1)
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict "$app"
+          mkdir -p dmg && cp -R "$app" dmg/ && ln -s /Applications dmg/Applications
+          hdiutil create -volname Myra -srcfolder dmg -ov -format UDZO "Myra-${{ matrix.arch }}.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Myra-mac-${{ matrix.arch }}
+          path: Myra-${{ matrix.arch }}.dmg
+          retention-days: 14
