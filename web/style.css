@@ -2412,6 +2412,9 @@ svg.ico.ico.ico.ico .s { fill: none !important; stroke: currentColor !important;
 svg.ico.ico.ico.ico .f { fill: currentColor !important; stroke: none !important; }
 svg.ico.ico.ico.ico .t { fill: var(--ico-tint) !important; fill-opacity: var(--ico-tint-op); }
 svg.ico.ico.ico.ico .t2 { fill: var(--ico-tint2) !important; fill-opacity: var(--ico-tint-op); }
-:root { --ico-tint: #f6a63c; --ico-tint2: #5fb04c; --ico-tint-op: .4; }
+:root { --ico-tint: #e8912a; --ico-tint2: #4f9a3d; --ico-tint-op: .55; }
+/* tuned so the outline keeps strong contrast against the tint (at least 4:1) and the tint stands out from the background */
+body.dark { --ico-tint: #ffcf8e; --ico-tint2: #a8dc94; --ico-tint-op: .45; }
+@media (prefers-contrast: more) { :root { --ico-tint-op: .7; } body.dark { --ico-tint-op: .6; } }
 /* a toolbar button with no tip text (the zoom %) shows no empty tooltip */
 .tools button:not([data-tip])::after { content: none; display: none; }
