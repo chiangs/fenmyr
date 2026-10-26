@@ -14,7 +14,7 @@ Write them for people, not for code: one line, what changed and why it's nice.
 - Myra can search the web and read public pages and GitHub repos, once you switch it on (Settings → Helpers).
 - Two new starter boards (OKRs and opportunities, Product kickoff), and the design templates now use cloudberry-picking examples.
 - A new first board that shows ideas ripening into a plan, with things to try. Pick an empty start at the end of setup, or add the example later from Settings.
-- Obsidian vaults (read-only): connect a vault in Settings, choose which folders each project or board may read, and add notes to a board (Alt+N) as cards you can flip between title and tags and the content, and open in Obsidian or your default app. A #private tag and off-limits folders are never read.
+- Obsidian vaults (read-only): connect a vault in Settings, choose which folders each project or board may read, and add notes to a board (Alt+N) as cards you can flip between title and tags and the content, and open in Obsidian. A #private tag and off-limits folders are never read.
 - Kanban: columns you can name, with counts and limits, added to any board from the template picker.
 - Your own templates: right-click a selection or the board to save it, then find it under Yours in the template picker. you choose whether it adds to a board or opens a new one, and can edit its name, description and that choice later. Myra can save and use them too.
 - A default font for text on the board and in docs (Settings → Board → Default font).

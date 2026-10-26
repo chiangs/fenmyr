@@ -696,7 +696,7 @@
       case 'vnote': {
         const gone = c.blocked || c.missing, back = c.side === 'back', full = vnFull.get(c.id), sm = c.props || [];
         const head = `<div class="vn-head">${Icon('notebook')}<span class="vn-title text">${esc(c.title || 'Note')}</span><button class="vn-flip" data-act="vn-flip" title="${back ? 'Show the title and tags' : 'Show the content'}">${Icon('refresh')}</button></div>`;
-        const btns = `${back && !gone ? `<button class="vn-btn" data-act="vn-full">${full ? 'Show less' : 'Show full text'}</button>` : ''}<button class="vn-btn" data-act="vn-open" title="Open in Obsidian">${Icon('open')}<span>Obsidian</span></button><button class="vn-btn" data-act="vn-file" title="Open the note in your default app">${Icon('doc')}<span>Open note</span></button>`;
+        const btns = `${back && !gone ? `<button class="vn-btn" data-act="vn-full">${full ? 'Show less' : 'Show full text'}</button>` : ''}<button class="vn-btn" data-act="vn-open" title="Open in Obsidian">${Icon('open')}<span>Obsidian</span></button>`;
         const foot = `<div class="vn-foot">${btns}</div>`;
         if (gone) return `${head}<div class="vn-gone text">${c.missing ? 'I can’t find this note any more.' : 'Not available: this board isn’t allowed to read it.'}</div>${foot}`;
         if (!back) return `${head}${(c.tags || []).length ? `<div class="vn-tags">${c.tags.slice(0, 6).map(t => `<i>#${esc(t)}</i>`).join('')}</div>` : ''}${sm.length ? `<div class="vn-props text">${sm.slice(0, 5).map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`).join('')}</div>` : ''}<div class="vn-fill"></div>${foot}`;
@@ -1633,7 +1633,6 @@
     if (act && act.startsWith('au-')) return audioAct(c, act, e);
     if (act === 'colors') pullColors(c);
     if (act === 'vn-open') return openVNote(c);
-    if (act === 'vn-file') return openVNoteFile(c);
     if (act === 'vn-flip') return flipVNote(c);
     if (act === 'vn-full') return toggleVNFull(c);
     if (act === 'item') { c.items = c.items || []; c.items.push({ t: 'new thing', done: false }); renderCard(c); fitText(c); save(); }
@@ -2509,8 +2508,6 @@
   // ---------- vault notes on a board: a card that shows a note's title, tags, properties and first lines, and opens it in Obsidian ----------
   const obsLink = (v, rel) => 'obsidian://open?vault=' + encodeURIComponent(v.obsidian || v.name) + '&file=' + encodeURIComponent(String(rel).replace(/\.md$/i, ''));
   function openVNote(c) { const v = vaultById(c.vault); if (!v) return say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000); Myra.openURL(obsLink(v, c.path)); }
-  async function openVNoteFile(c) { const g = grantFor(board, c.vault, c.path); if (!g) return say('This board isn’t allowed to read that note.', 3500);
-    try { await Myra.vaultOpen(c.vault, c.path, g.folders); } catch (e) { say(/missing/.test(e.message) ? 'I can’t find that note any more.' : 'Hmm: ' + e.message, 3500); } }
   // each card remembers its own side; the back holds the stored excerpt, and the full text only while you ask for it (never saved)
   const vnFull = new Map();
   function flipVNote(c) {
@@ -4238,7 +4235,7 @@ ${proseCSS()}
   const FS = { s: .8, m: 1, l: 1.4, xl: 2 }, SIZED = ['note', 'todo', 'title', 'shape', 'coll', 'vnote'];
   function selCards() { return [...sel].map(byId).filter(Boolean); }
   const ICON = { tag: Icon('tag'), edit: Icon('edit'), myra: Icon('myra-tool'), del: Icon('trash'), head: Icon('header'), caption: Icon('captions'), color: Icon('palette'),
-    name: Icon('name'), hex: Icon('hex'), crop: Icon('crop'), open: Icon('open'), link: Icon('link'), flip: Icon('refresh'), file: Icon('doc') };
+    name: Icon('name'), hex: Icon('hex'), crop: Icon('crop'), open: Icon('open'), link: Icon('link'), flip: Icon('refresh') };
   // fonts for board text: the same list as docs (fonts on this board first, then suggestions, then everything on this computer)
   // every font this board uses: picked for notes and titles, wireframe text, font cards, and fonts set inside docs (most used first)
   function boardFonts() {
@@ -4350,7 +4347,7 @@ ${proseCSS()}
     if (one?.type === 'image') h += btn('crop', 'crop', 'Crop') + btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText);
     else if (one && !['coll', 'swatch', 'stamp', 'ink'].includes(one.type)) h += G(6, btn('tag', 'tag', one.tagText ? 'Remove the label' : 'Add a label', !!one.tagText));
     if (one?.type === 'doc') h += btn('open', 'open', 'Open the doc');
-    if (one?.type === 'vnote') h += btn('vnflip', 'flip', 'Flip the card') + btn('vnopen', 'open', 'Open in Obsidian') + btn('vnfile', 'file', 'Open the note in your default app');
+    if (one?.type === 'vnote') h += btn('vnflip', 'flip', 'Flip the card') + btn('vnopen', 'open', 'Open in Obsidian');
     if (one?.type === 'canvas') h += btn('open', 'open', 'Open this canvas');
     if (one?.type === 'link' && one.url) h += btn('visit', 'open', 'Open the link') + btn('relink', 'link', 'Change the link');
     if (one?.type === 'spotify') h += btn('visit', 'open', 'Open in Spotify');
@@ -4630,7 +4627,7 @@ ${proseCSS()}
     if (e.target.closest('[data-fill]')) return offerFill(spotsIn(cs));
     if (a === 'open') one.type === 'doc' ? openDoc(one) : openCanvas(one);
     if (a === 'visit') Myra.openURL(one.url);
-    if (a === 'vnflip') flipVNote(one); if (a === 'vnopen') openVNote(one); if (a === 'vnfile') openVNoteFile(one);
+    if (a === 'vnflip') flipVNote(one); if (a === 'vnopen') openVNote(one);
     if (a === 'relink') { one.draft = one.url; one.url = ''; one.image = ''; one.h = 52; redraw(); }
     if (a === 'head') { one.head = one.head === false ? true : false; redraw(); }
     if (a === 'hidename') { one.hideName = !one.hideName; redraw(); }

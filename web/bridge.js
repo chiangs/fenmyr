@@ -43,7 +43,7 @@
     async removeTemplate(id) { localStorage.setItem(LS + 'templates', JSON.stringify(JSON.parse(localStorage.getItem(LS + 'templates') || '[]').filter(x => x.id !== id))); return true; },
     // vaults are folders on a computer; a browser can't read them
     async vaults() { return []; }, async vaultPick() { return null; }, async vaultAdd() { throw new Error('Connecting a vault works in the desktop app'); }, async vaultUpdate() { return null; }, async vaultRemove() { return true; },
-    async vaultScan() { return { folders: [], notes: 0 }; }, async vaultNotes() { return []; }, async vaultNote() { throw new Error('Vault notes work in the desktop app'); }, async vaultOpen() { throw new Error('Vault notes work in the desktop app'); },
+    async vaultScan() { return { folders: [], notes: 0 }; }, async vaultNotes() { return []; }, async vaultNote() { throw new Error('Vault notes work in the desktop app'); },
     async folders() { return JSON.parse(localStorage.getItem(LS + 'folders') || '[]'); },
     async saveFolders(folders) { localStorage.setItem(LS + 'folders', JSON.stringify(folders)); return true; },
     async remove(id) { localStorage.removeItem(LS + 'board:' + id); localStorage.setItem(LS + 'index', JSON.stringify(JSON.parse(localStorage.getItem(LS + 'index') || '[]').filter(b => b.id !== id))); return true; },
@@ -88,7 +88,7 @@
     list: () => call('list'), load: id => call('load', { id }), save: board => call('save', { board }), remove: id => call('remove', { id }),
     templates: () => call('templates'), saveTemplate: template => call('saveTemplate', { template }), removeTemplate: id => call('removeTemplate', { id }),
     vaults: () => call('vaults'), vaultPick: () => call('vaultPick'), vaultAdd: path => call('vaultAdd', { path }), vaultUpdate: (id, patch) => call('vaultUpdate', { id, patch }), vaultRemove: id => call('vaultRemove', { id }),
-    vaultScan: id => call('vaultScan', { id }), vaultNotes: (id, allow, query) => call('vaultNotes', { id, allow, query }), vaultNote: (id, rel, allow, full) => call('vaultNote', { id, rel, allow, full }), vaultOpen: (id, rel, allow) => call('vaultOpen', { id, rel, allow }),
+    vaultScan: id => call('vaultScan', { id }), vaultNotes: (id, allow, query) => call('vaultNotes', { id, allow, query }), vaultNote: (id, rel, allow, full) => call('vaultNote', { id, rel, allow, full }),
     folders: () => call('folders'), saveFolders: folders => call('saveFolders', { folders }),
     caelestia: () => call('caelestia'), chromiumLicenses: () => call('chromiumLicenses'), usage: () => call('usage'), resetUsage: () => call('resetUsage'), version: () => call('version'),
     linkPreview: url => call('linkPreview', { url }), rewrite: (text, how, title, around) => call('rewrite', { text, how, title, around }), docPDF: (html, name, paper) => call('docPDF', { html, name, paper }), saveFile: (data, name, ext) => call('saveFile', { data, name, ext }), ask: (prompt, board, confirmed = false, opts = {}) => call('ask', { prompt, board, confirmed, ...opts }),

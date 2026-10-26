@@ -97,12 +97,6 @@ function note(vault, rel, allow, full) {
   if (full) { out.body = p.body.slice(0, FULL_MAX); out.truncated = p.body.length > FULL_MAX; }
   return out;
 }
-// the real file of a note the grant allows, for opening it in the system's app
-function fileFor(vault, rel, allow) {
-  rel = norm(rel); if (!reachable(vault, rel, allow)) throw new Error('blocked');
-  const f = realFile(vault, rel); if (!f) throw new Error('missing');
-  if (isPrivate(parseNote(fs.readFileSync(f, 'utf8')).tags)) throw new Error('blocked'); return f;
-}
 const obsidianURL = (vault, rel) => 'obsidian://open?vault=' + encodeURIComponent(vault.obsidian || path.basename(vault.path)) + '&file=' + encodeURIComponent(norm(rel).replace(/\.md$/i, ''));
 
 // ---- the list of connected vaults (kept next to the boards, never inside them) ----
@@ -125,4 +119,4 @@ function update(id, patch) {
 const remove = id => { saveVaults(vaults().filter(v => v.id !== id)); return true; };
 const byId = id => { const v = vaults().find(x => x.id === id); if (!v) throw new Error('That vault is not connected.'); return v; };
 
-module.exports = { vaults, add, update, remove, byId, scan, list, note, fileFor, obsidianURL, parseNote, isPrivate, reachable, realFile, norm };
+module.exports = { vaults, add, update, remove, byId, scan, list, note, obsidianURL, parseNote, isPrivate, reachable, realFile, norm };
