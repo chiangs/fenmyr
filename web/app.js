@@ -2529,9 +2529,9 @@
   const TPL_GROUPS = [['Think', ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix']], ['Capture', ['Moodboard', 'Brain dump']], ['Plan', ['OKRs and opportunities', 'Product kickoff', 'App plan']], ['Look back', ['retro']]];
   const tplRow = k => {
     const F = FRAMEWORKS[k];
-    if (F) return `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`;
+    if (F) return `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small><em class="tp-k">Adds to this board</em></span></button>`;
     const [line, ic] = STARTERS[k] || []; if (!TEMPLATES[k] || !line) return '';
-    return `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small></span><span class="tp-new">New ↗</span></button>`;
+    return `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small><em class="tp-k new">Opens a new board ↗</em></span></button>`;
   };
   $('tplPick').innerHTML = TPL_GROUPS.map(([g, keys]) => `<div class="tp-h">${g}</div>` + keys.map(tplRow).join('')).join('');
   $('tplPick').onclick = async e => { const st = e.target.closest('[data-starter]');
