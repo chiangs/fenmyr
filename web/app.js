@@ -2486,8 +2486,6 @@
       { t: 'how', x: 990, y: 90, text: 'Everyone writes quietly for 5 minutes: one note per thought.\n\nStart is something new to try, stop is something to let go of, continue is something worth keeping.\n\nThen read them out, group the alike ones, and pick one thing to start next.' },
     ] },
   };
-  // the order of the design process: understand, make sense of it, frame it, spread out, narrow down, look back
-  const FW_ORDER = ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix', 'retro'];
   function placeFramework(key) {
     const F = FRAMEWORKS[key]; if (!F) return; remember(); stopPlacing();
     const c0 = centerWorld(), x0 = board.cards.length ? Math.max(...board.cards.map(c => c.x + c.w)) + 200 : c0.x - 500, y0 = board.cards.length ? Math.min(...board.cards.map(c => c.y)) : c0.y - 300;
@@ -2527,8 +2525,15 @@
     'Product kickoff': ['Why, who for, the edges and the first steps', 'rocket'],
     'App plan': ['Who it\'s for, the problem, the screens', 'screen'],
   };
-  $('tplPick').innerHTML = '<div class="tp-h">Add to this board</div>' + FW_ORDER.map(k => [k, FRAMEWORKS[k]]).map(([k, F]) => `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`).join('')
-    + '<div class="tp-h">Start a new board</div>' + Object.entries(STARTERS).filter(([k]) => TEMPLATES[k]).map(([k, [line, ic]]) => `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small></span><span class="tp-new">New ↗</span></button>`).join('');
+  // grouped by what you're doing; frameworks add to this board, starters open a new one (tagged "New ↗")
+  const TPL_GROUPS = [['Think', ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix']], ['Capture', ['Moodboard', 'Brain dump']], ['Plan', ['OKRs and opportunities', 'Product kickoff', 'App plan']], ['Look back', ['retro']]];
+  const tplRow = k => {
+    const F = FRAMEWORKS[k];
+    if (F) return `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small></span></button>`;
+    const [line, ic] = STARTERS[k] || []; if (!TEMPLATES[k] || !line) return '';
+    return `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small></span><span class="tp-new">New ↗</span></button>`;
+  };
+  $('tplPick').innerHTML = TPL_GROUPS.map(([g, keys]) => `<div class="tp-h">${g}</div>` + keys.map(tplRow).join('')).join('');
   $('tplPick').onclick = async e => { const st = e.target.closest('[data-starter]');
     if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id; await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
     const b = e.target.closest('[data-tpl]'); if (!b) return; $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); placeFramework(b.dataset.tpl); };
