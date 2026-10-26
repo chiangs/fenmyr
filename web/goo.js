@@ -39,7 +39,7 @@ window.myraWearing = () => ({});
     }
     const g = canvas.getContext('2d'), H = canvas.height;
     let col = opts.colors || { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, pal = null;
-    const palette = () => pal || (pal = { B: col.B, S: col.S, s: mix(col.B, col.S, .45), D: col.D, d: mix(col.D, '#000000', .22), L: '#7cc95e', l: '#3f8f3c' });
+    const palette = () => pal || (pal = { B: col.B, S: col.S, s: mix(col.B, col.S, .45), D: col.D, d: mix(col.D, '#000000', .22), L: col.L || '#7cc95e', l: col.l || '#3f8f3c' })   // a color can bring its own leaves (a green Myra gets teal ones, so the crown still shows);
     let hopT = -9, thinking = false, look = 0, lookTo = 0, nextLook = 0;
     // Calmest: her colors softened toward a gentle gray (kept light so she still reads as her color)
     const mutedCache = new Map();
