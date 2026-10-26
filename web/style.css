@@ -2372,8 +2372,7 @@ body.dark svg.ico .ico-d { color: var(--ink); }
 #world, .dv-title, .dv-body { --font: var(--board-font, "Myra Mark", "Figtree", system-ui, -apple-system, sans-serif); }
 #world { font-family: var(--font); }
 .set-font { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* shortcut hints: a short list down the left, left aligned, with the keys lined up; the side boxes stop above it */
+/* shortcut hints: a short list down the left, left aligned; the side boxes stop above it */
 .keys { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: 5px; width: auto; max-width: none; }
-.keys kbd { min-width: 5.6em; text-align: center; }
 .keys button { padding: 0; margin-left: 2px; }
 @media (min-height: 801px) { body:has(.keys:not(.hide)) .side { bottom: 190px; } }
