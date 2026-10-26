@@ -16,7 +16,7 @@ async function open(env) {
   await page.waitForTimeout(2500); await page.getByText('Skip setup').click(); await page.waitForTimeout(1000); await page.keyboard.press('Escape');
   return { app, page, errors };
 }
-const look = page => page.evaluate(() => { const b = getComputedStyle(document.body); return { dark: document.body.classList.contains('dark'), board: b.getPropertyValue('--board').trim(), accent: b.getPropertyValue('--pink-deep').trim(), panel: b.getPropertyValue('--panel').trim(), offered: getComputedStyle(document.querySelector('[data-set="caelestia"]').closest('label')).display !== 'none' }; });
+const look = page => page.evaluate(() => { const b = getComputedStyle(document.body); return { dark: document.body.classList.contains('dark'), board: b.getPropertyValue('--board').trim(), accent: b.getPropertyValue('--pink-deep').trim(), panel: b.getPropertyValue('--panel').trim(), offered: getComputedStyle(document.querySelector('[data-set="caelestia"]').closest('label')).display !== 'none', home: getComputedStyle(document.getElementById('homeBtn')).backgroundColor, rowOnRing: getComputedStyle(document.querySelector('.board-row.on')).boxShadow !== 'none' }; });
 const settle = () => new Promise(r => setTimeout(r, 800));
 
 (async () => {
@@ -39,7 +39,7 @@ const settle = () => new Promise(r => setTimeout(r, 800));
   r.errors = errors; await app.close();
   console.log(JSON.stringify(r, null, 1));
   const ok = !r.without.offered && r.before.offered && r.before.board !== '#1a1b26'
-    && r.on.dark && r.on.board === '#1a1b26' && r.on.accent === '#bb9af7' && r.on.panel === '#bb9af7'
+    && r.on.dark && r.on.home === 'rgb(240, 176, 74)' && r.on.rowOnRing && r.off.home !== 'rgb(240, 176, 74)' && !r.off.rowOnRing && r.on.board === '#1a1b26' && r.on.accent === '#bb9af7' && r.on.panel === '#bb9af7'
     && !r.live.dark && r.live.board === '#fdf8f0' && r.live.accent === '#2e7d32'
     && r.off.board !== '#fdf8f0' && r.off.accent !== '#2e7d32' && !r.errors.length && !r.errors1.length;
   console.log(ok ? 'THEME OK' : 'THEME FAILED'); process.exit(ok ? 0 : 1);

@@ -818,11 +818,13 @@ body.calm #goo.hopping { animation: none; }
 
 /* row buttons in the left box and on Home tiles: toolbar-style line icons, bigger, with a soft circle on hover */
 .f-btn { width: 26px; height: 26px; padding: 0; border-radius: var(--pill-r); corner-shape: squircle; place-items: center; flex: none; color: var(--ink-soft); font-size: 0; }
-.f-btn svg { width: 16px; height: 16px; }
+.f-btn svg.ico.ico { width: 16px; height: 16px; }   /* these buttons have font-size 0, which would shrink an icon sized in em to nothing */
 .f-btn:hover { background: var(--blush); color: var(--ink); }
 .node-head:hover > .f-btn, .tile:hover .f-btn { display: grid; }
 .f-btn[data-a="del"]:hover { color: #d6455d; }
-.tile .f-btn { width: 30px; height: 30px; } .tile .f-btn svg { width: 17px; height: 17px; }
+.tile .f-btn { width: 30px; height: 30px; } .tile .f-btn svg.ico.ico { width: 17px; height: 17px; }
+/* a row stays the same height with or without its buttons, so hovering never moves what's below */
+.board-row .f-btn, .node-head .f-btn { margin-top: -5px; margin-bottom: -5px; }
 
 .board-row .f-btn { margin-left: auto; }
 .board-row:hover > .f-btn { display: grid; }
@@ -2503,3 +2505,10 @@ body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0
 body.following-caelestia .dz-tools button, body.following-caelestia .dz-piece-grid button { background: color-mix(in srgb, var(--panel) 86%, var(--pink-deep) 14%); color: color-mix(in srgb, var(--ink) 80%, var(--pink-deep)); }
 body.following-caelestia .dz-tools button:hover, body.following-caelestia .dz-piece-grid button:hover, body.following-caelestia .dz-tools button.on, body.following-caelestia .dz-piece-grid button.on { background: color-mix(in srgb, var(--panel) 70%, var(--pink-deep) 30%); color: var(--ink); }
 body.following-caelestia .dz-tools button.on, body.following-caelestia .dz-piece-grid button.on { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
+
+/* following Caelestia: the sidebar. All projects is the cloudberry amber; the open board is the panel tinted with the accent (like a selected wireframe button); other rows pick up the scheme's outline colour on hover */
+body.following-caelestia .home-row { background: var(--butter-deep) !important; color: #3f3a34; }
+body.following-caelestia .home-row:hover { background: color-mix(in srgb, var(--butter-deep) 84%, #fff) !important; }
+body.following-caelestia .board-row:hover, body.following-caelestia .node-head:hover { background: color-mix(in srgb, var(--panel) 45%, var(--dot)) !important; }
+body.following-caelestia .board-row.on { background: color-mix(in srgb, var(--panel) 70%, var(--pink-deep) 30%) !important; box-shadow: inset 0 0 0 1.5px var(--pink-deep); color: var(--ink); }
+body.following-caelestia .board-row.on:hover { background: color-mix(in srgb, var(--panel) 58%, var(--pink-deep) 42%) !important; }
