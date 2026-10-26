@@ -1643,7 +1643,7 @@
       else if (e.target.matches('span') && !e.target.isContentEditable) startEdit(c.id, e.target);
     }
   });
-  // trackpad: two fingers pan, pinch (or ctrl + scroll) zooms
+  // trackpad: two fingers pan, pinch (or ctrl + scroll) zooms; the wheel pans up and down, Shift + wheel sideways
   stage.addEventListener('wheel', e => {
     if (e.target.closest('.tray, .m-bubble, .cpop, .home, .m-chat, .design, .side, .row-menu, .stamp-pick, .wheel-stamps, .docview, .settings, .shapepick, .tplpick')) return; e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
@@ -1655,6 +1655,7 @@
       wheelSum += d; wheelAt = performance.now();
       if (Math.abs(wheelSum) >= 40) { stepZoom(e.clientX, e.clientY, wheelSum < 0 ? 1 : -1); wheelSum = 0; }
     }
+    else if (e.shiftKey) { view.x -= Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY; viewSoon(); }   // Shift + wheel pans sideways, as the wheel alone pans up and down
     else { view.x -= e.deltaX; view.y -= e.deltaY; viewSoon(); }
   }, { passive: false });
   let ctrlHeld = false, wheelSum = 0, wheelAt = 0;

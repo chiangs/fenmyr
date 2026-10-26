@@ -13,6 +13,11 @@ const fs = require('fs'), os = require('os'), path = require('path');
   const pct = () => page.evaluate(() => document.getElementById('zoom').textContent);
   const r = {};
   await page.keyboard.press('Control+0'); await page.waitForTimeout(400); r.reset = await pct();
+  // the wheel pans up and down; Shift + wheel pans sideways
+  { const at = () => page.evaluate(() => { const m = new DOMMatrix(getComputedStyle(document.getElementById('world')).transform); return [Math.round(m.e), Math.round(m.f)]; });
+    await page.mouse.move(700, 400); const p0 = await at(); await page.mouse.wheel(0, 100); await page.waitForTimeout(300); const p1 = await at();
+    await page.keyboard.down('Shift'); await page.mouse.wheel(0, 100); await page.waitForTimeout(300); await page.keyboard.up('Shift'); const p2 = await at();
+    r.pan = { wheel: [p1[0] - p0[0], p1[1] - p0[1]], shift: [p2[0] - p1[0], p2[1] - p1[1]] }; }
   // a mouse wheel: Ctrl held, one notch at a time (Chromium on Linux reports ~120px per notch)
   await page.mouse.move(700, 400); await page.keyboard.down('Control');
   const steps = [];
@@ -39,7 +44,7 @@ const fs = require('fs'), os = require('os'), path = require('path');
   await page.screenshot({ path: path.join(data, 'zoom.png'), clip: { x: 250, y: 800, width: 900, height: 100 } });
   console.log(JSON.stringify(r), '\n  toolbar:', path.join(data, 'zoom.png'));
   await app.close();
-  const ok = r.reset === '100%' && JSON.stringify(steps) === JSON.stringify(['110%', '125%', '150%', '125%', '110%', '100%', '90%'])
+  const ok = r.reset === '100%' && r.pan.wheel[0] === 0 && r.pan.wheel[1] === -100 && r.pan.shift[0] === -100 && r.pan.shift[1] === 0 && JSON.stringify(steps) === JSON.stringify(['110%', '125%', '150%', '125%', '110%', '100%', '90%'])
     && r.hires === '110%' && r.pinch === '113%' && r.flick === '119%' && r.click === '100%' && r.plus === '110%' && r.menu.includes('Zoom in Ctrl++') && r.menu.includes('Zoom to 100% Ctrl+0') && !r.menu.join().includes('⌘') && !errors.length;
   console.log(ok ? 'ZOOM OK' : 'ZOOM FAILED'); process.exit(ok ? 0 : 1);
 })().catch(e => { console.error(e); process.exit(1); });
