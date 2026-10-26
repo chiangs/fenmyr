@@ -1058,7 +1058,7 @@ body.dark .tgl::after { background: #ded9d3; }
 body.dark .tgl:checked::after { background: #fff; }
 
 /* the tour, always at the top of Settings */
-.set-start { display: flex; align-items: center; gap: 12px; padding: 14px 16px !important; border-radius: 24px; corner-shape: squircle; background: #fdf1e2; border: 0 !important; margin-bottom: 6px; }
+.set-start { display: flex; align-items: center; gap: 12px; padding: 14px 16px !important; border-radius: var(--pill-r); corner-shape: squircle; background: #fdf1e2; border: 0 !important; margin-bottom: 6px; }
 .set-start canvas { width: 34px; height: 30px; image-rendering: pixelated; flex: none; margin-top: -4px; }
 .set-start > div { flex: 1; min-width: 0; display: grid; gap: 3px; }
 .set-start b { font: 700 14px/1.2 var(--font); color: var(--ink); } .set-start small { font: 500 12px/1.35 var(--font); color: var(--ink-soft); }
@@ -1095,7 +1095,7 @@ body.web .conns { display: none; }
 .gear.has-update { position: relative; } .gear.has-update::after { content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #3fc48a; box-shadow: 0 0 0 2px #fff; }
 body.dark .set-update { background: #322c25; } body.dark .set-update.ready { background: #1f3529; } body.dark .su-icon { background: #403b35; }
 /* the person who made it */
-.set-maker { text-align: center; padding: 22px 18px 20px !important; border-radius: 27px; corner-shape: squircle; background: #fdf1e2; border: 0 !important; margin-top: 6px; }
+.set-maker { text-align: center; padding: 22px 18px 20px !important; border-radius: var(--pill-r); corner-shape: squircle; background: #fdf1e2; border: 0 !important; margin: 6px 0; }
 .sm-sig { font: 700 22px/1 'Shantell Sans', cursive; color: #ca925b; }
 .sm-name { font: 800 26px/1.1 var(--font); color: var(--ink); margin: 6px 0 8px; letter-spacing: -.01em; }
 .set-maker small { display: block; max-width: 340px; margin: 0 auto 14px; font: 500 13px/1.5 var(--font); color: var(--ink-soft); }
