@@ -1489,7 +1489,7 @@ html.native .side { top: 18px; }
 .dt-myra:hover, .dt-myra.open { background: #d9771f; }
 
 /* the floating bar over selected words */
-.dv-bubble { display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; box-shadow: 0 10px 28px rgba(88, 70, 52, .22), 0 0 0 1px rgba(150, 95, 35, .06); }
+.dv-bubble { position: fixed; z-index: 60; display: none; align-items: center; gap: 2px; padding: 4px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; box-shadow: 0 10px 28px rgba(88, 70, 52, .22), 0 0 0 1px rgba(150, 95, 35, .06); }
 .dv-bubble .dt-myra { margin-left: 4px; height: 30px; }
 
 /* the dropdowns */

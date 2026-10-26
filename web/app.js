@@ -3434,9 +3434,7 @@
     if (ed) return ed; if (!window.MyraEditor) return null;
     ed = new MyraEditor.Editor({
       element: $('dvBody'),
-      extensions: [...MyraEditor.extensions('Start writing, or drag cards here from the board…'),
-        MyraEditor.BubbleMenu.configure({ element: bubbleEl, tippyOptions: { duration: [140, 90], placement: 'top', offset: [0, 10], maxWidth: 'none', zIndex: 60, appendTo: () => document.body, popperOptions: { strategy: 'fixed' } },
-          shouldShow: ({ editor, state }) => !state.selection.empty && editor.isEditable && !editor.isActive('image') && !document.querySelector('#dvPop:not([hidden])') })],
+      extensions: MyraEditor.extensions('Start writing, or drag cards here from the board…'),
       editorProps: {
         attributes: { class: 'dv-prose', spellcheck: 'true' },
         handleKeyDown: (v, e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); showPop('link', $('dvTools').querySelector('[data-pop="link"]')); return true; } return false; },
@@ -3445,10 +3443,23 @@
         handlePaste: (v, e) => { const fs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/')); if (!fs.length) return false; fs.forEach(f => addDocImage(f)); return true; },
       },
       onUpdate: () => { if (!docCard) return; clearTimeout(dvT); $('dvSaved').textContent = 'saving…'; dvT = setTimeout(syncDoc, 350); paintCount(); },
-      onSelectionUpdate: () => paintTools(), onTransaction: () => requestAnimationFrame(paintTools),
+      onSelectionUpdate: () => { paintTools(); placeBubble(); }, onTransaction: () => requestAnimationFrame(() => { paintTools(); placeBubble(); }),
+      onFocus: () => placeBubble(), onBlur: () => setTimeout(placeBubble, 0),
     });
     buildTools(); return ed;
   }
+  // the floating bar over selected words (TipTap's own bubble menu is not used): above the selection, or below it when there is no room
+  function placeBubble() {
+    const on = ed && docCard && !ed.state.selection.empty && ed.isEditable && !ed.isActive('image') && !document.querySelector('#dvPop:not([hidden])') && (ed.isFocused || bubbleEl.contains(document.activeElement));
+    if (!on) { bubbleEl.style.display = 'none'; return; }
+    const sel = getSelection(); let rc = sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;   // where the selected words really are on screen
+    if (!rc || !rc.width) { const { from, to } = ed.state.selection, a = ed.view.coordsAtPos(from), b = ed.view.coordsAtPos(to); rc = { left: Math.min(a.left, b.left), right: Math.max(a.right, b.right), top: Math.min(a.top, b.top), bottom: Math.max(a.bottom, b.bottom) }; }
+    bubbleEl.style.display = 'flex'; const w = bubbleEl.offsetWidth, h = bubbleEl.offsetHeight;
+    const cx = (rc.left + rc.right) / 2, top = rc.top - h - 10;
+    bubbleEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, cx - w / 2)) + 'px'; bubbleEl.style.top = Math.max(8, Math.min(innerHeight - h - 8, top < 8 ? rc.bottom + 10 : top)) + 'px';
+  }
+  bubbleEl.addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });   // using the bar must not take the selection away from the text
+  document.addEventListener('scroll', () => { if (docCard) placeBubble(); }, true); addEventListener('resize', () => placeBubble());
   function syncDoc() {
     clearTimeout(dvT); if (!docCard || !ed) return;
     docCard.doc = ed.getJSON(); docCard.body = ed.getText({ blockSeparator: '\n' }).replace(/\n{3,}/g, '\n\n').trim();
@@ -3472,7 +3483,7 @@
     $('dvPage').scrollTop = 0;
     setTimeout(() => c.text ? e?.commands.focus('end') : $('dvTitle').focus(), 250);
   }
-  function closeDoc() { if (!docCard) return; syncDoc(); hidePop(); const c = docCard; docCard = null; $('docview').classList.remove('on', 'wide'); stage.classList.remove('doc-open'); document.activeElement.blur(); renderCard(c); selectOnly([c.id]); save(); }
+  function closeDoc() { if (!docCard) return; syncDoc(); hidePop(); bubbleEl.style.display = 'none'; const c = docCard; docCard = null; $('docview').classList.remove('on', 'wide'); stage.classList.remove('doc-open'); document.activeElement.blur(); renderCard(c); selectOnly([c.id]); save(); }
   $('dvTitle').oninput = () => { if (!docCard) return; docCard.text = $('dvTitle').value; $('dvWhere').textContent = `${board.name} › ${docCard.text || 'Untitled'}`; renderCard(docCard); save(); };
   $('dvTitle').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); ed?.commands.focus('start'); } };
   $('dvBack').onclick = closeDoc; $('dvClose').onclick = closeDoc;

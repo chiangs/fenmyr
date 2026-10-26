@@ -3,7 +3,7 @@
 import { Editor, Extension, generateHTML, generateJSON, getHTMLFromFragment } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
-import TextStyle from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import FontFamily from '@tiptap/extension-font-family';
@@ -13,13 +13,12 @@ import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import Image from '@tiptap/extension-image';
-import Table from '@tiptap/extension-table';
+import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import Typography from '@tiptap/extension-typography';
 import CharacterCount from '@tiptap/extension-character-count';
-import BubbleMenu from '@tiptap/extension-bubble-menu';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 
@@ -73,7 +72,7 @@ const ParaStyle = Extension.create({
 
 // everything a Myra doc can hold
 const extensions = (placeholder = 'Start writing…') => [
-  StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+  StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false, underline: false }),   // TipTap 3's starter kit brings its own Link and Underline; ours are configured below
   Underline, TextStyle, Color, FontFamily, FontSize, LineHeight, ParaStyle, Subscript, Superscript,
   Highlight.configure({ multicolor: true }),
   TextAlign.configure({ types: ['heading', 'paragraph'] }),
@@ -85,4 +84,4 @@ const extensions = (placeholder = 'Start writing…') => [
   Typography, CharacterCount,
 ];
 
-export { Editor, BubbleMenu, extensions, generateHTML, generateJSON, getHTMLFromFragment };
+export { Editor, extensions, generateHTML, generateJSON, getHTMLFromFragment };
