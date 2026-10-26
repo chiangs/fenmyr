@@ -200,10 +200,10 @@ echo " [BLANK_AUDIO] hello from whisper"
     b.links = b.links.filter(x => x.id !== 'WL'); b.cards = b.cards.filter(c => !['wA', 'wB'].includes(c.id)); M.selectWire(null); return res;
   });
   // sidebar rows: hovering shows the row's buttons without making the row taller than its neighbours, and their icons have a real size
-  { await page.waitForFunction(() => document.querySelectorAll('.board-row').length > 1 && document.querySelector('.board-row').getBoundingClientRect().height > 0);
+  { await page.waitForFunction(() => [...document.querySelectorAll('.board-row')].some(r => r.parentElement.querySelectorAll(':scope > .board-row').length > 1) && document.querySelector('.board-row').getBoundingClientRect().height > 0);
     await page.locator('.board-row').first().hover(); await page.waitForTimeout(250);
     r.rowHover = await page.evaluate(() => { const e = document.querySelector('.board-row:hover'); if (!e) return { same: false, shown: false, icon: false };
-      const b = e.querySelector('.f-btn'), sv = b && b.querySelector('svg'), h = e.getBoundingClientRect().height, others = [...document.querySelectorAll('.board-row')].filter(x => x !== e).map(x => x.getBoundingClientRect().height).filter(x => x > 0);
+      const b = e.querySelector('.f-btn'), sv = b && b.querySelector('svg'), h = e.getBoundingClientRect().height, others = [...e.parentElement.querySelectorAll(':scope > .board-row')].filter(x => x !== e).map(x => x.getBoundingClientRect().height).filter(x => x > 0);
       return { same: others.every(x => Math.abs(x - h) < 1.5), shown: !!b && getComputedStyle(b).display !== 'none', icon: !!sv && sv.getBoundingClientRect().width >= 12 }; }); }
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
@@ -228,5 +228,7 @@ echo " [BLANK_AUDIO] hello from whisper"
     && r.hooksOff.includes('disableAllHooks') && r.hooksRewrite.includes('disableAllHooks') && !r.hooksOff.includes('WebSearch') && r.webOn.includes('WebSearch') && r.webOn.includes('WebFetch') && r.webOn.includes('disableAllHooks') && !r.webOff.includes('WebSearch') && r.webPromptOn && r.webPromptOff
     && r.wav === 'RIFF' && r.transcribe === 'hello from whisper';
   if (process.env.KEEP) console.log('output in', out); else fs.rmSync(data, { recursive: true, force: true });
+  // on GitHub, a failure also becomes an annotation with the results, since the job log isn't always at hand
+  if (!ok && process.env.GITHUB_ACTIONS) { const { prompt, args, ...brief } = r; console.log('::error title=Smoke test failed::' + JSON.stringify(brief).replace(/%/g, '%25').replace(/\n/g, ' ').slice(0, 6000)); }
   console.log(ok ? 'SMOKE OK' : 'SMOKE FAILED'); process.exit(ok ? 0 : 1);
 })().catch(e => { console.error(e); process.exit(1); });
