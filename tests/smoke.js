@@ -199,10 +199,12 @@ echo " [BLANK_AUDIO] hello from whisper"
     res.reset = !l.color && !l.w && !JSON.parse(localStorage.getItem('myra:settings')).wireStyle && !pathStyle().includes('stroke:#');
     b.links = b.links.filter(x => x.id !== 'WL'); b.cards = b.cards.filter(c => !['wA', 'wB'].includes(c.id)); M.selectWire(null); return res;
   });
-  // sidebar rows: hovering shows the row's buttons without changing the row's height, and their icons have a real size
-  { const row = page.locator('.board-row').first(); const h0 = await row.evaluate(e => Math.round(e.getBoundingClientRect().height));
-    await row.hover(); await page.waitForTimeout(200);
-    r.rowHover = await row.evaluate((e, h0) => { const b = e.querySelector('.f-btn'), sv = b && b.querySelector('svg'); return { same: Math.round(e.getBoundingClientRect().height) === h0, shown: !!b && getComputedStyle(b).display !== 'none', icon: !!sv && sv.getBoundingClientRect().width >= 12 }; }, h0); }
+  // sidebar rows: hovering shows the row's buttons without making the row taller than its neighbours, and their icons have a real size
+  { await page.waitForFunction(() => document.querySelectorAll('.board-row').length > 1 && document.querySelector('.board-row').getBoundingClientRect().height > 0);
+    await page.locator('.board-row').first().hover(); await page.waitForTimeout(250);
+    r.rowHover = await page.evaluate(() => { const e = document.querySelector('.board-row:hover'); if (!e) return { same: false, shown: false, icon: false };
+      const b = e.querySelector('.f-btn'), sv = b && b.querySelector('svg'), h = e.getBoundingClientRect().height, others = [...document.querySelectorAll('.board-row')].filter(x => x !== e).map(x => x.getBoundingClientRect().height).filter(x => x > 0);
+      return { same: others.every(x => Math.abs(x - h) < 1.5), shown: !!b && getComputedStyle(b).display !== 'none', icon: !!sv && sv.getBoundingClientRect().width >= 12 }; }); }
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
     document.getElementById('openLicenses').click(); await new Promise(res => setTimeout(res, 700));

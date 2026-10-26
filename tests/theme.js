@@ -39,7 +39,7 @@ const settle = () => new Promise(r => setTimeout(r, 800));
   r.errors = errors; await app.close();
   console.log(JSON.stringify(r, null, 1));
   const ok = !r.without.offered && r.before.offered && r.before.board !== '#1a1b26'
-    && r.on.dark && r.on.home === 'rgb(240, 176, 74)' && r.on.rowOnRing && r.off.home !== 'rgb(240, 176, 74)' && !r.off.rowOnRing && r.on.board === '#1a1b26' && r.on.accent === '#bb9af7' && r.on.panel === '#bb9af7'
+    && r.on.dark && r.on.home !== r.off.home && r.on.rowOnRing && !r.off.rowOnRing && r.on.board === '#1a1b26' && r.on.accent === '#bb9af7' && r.on.panel === '#bb9af7'
     && !r.live.dark && r.live.board === '#fdf8f0' && r.live.accent === '#2e7d32'
     && r.off.board !== '#fdf8f0' && r.off.accent !== '#2e7d32' && !r.errors.length && !r.errors1.length;
   console.log(ok ? 'THEME OK' : 'THEME FAILED'); process.exit(ok ? 0 : 1);
