@@ -15,7 +15,7 @@ Myra is a free, open-source canvas for ideas. It starts on Linux, with other sys
 - 🗺️ Infinite board. Pan with two fingers, pinch to zoom, cards tilt a little like paper (or sit straight, your call).
 - 🗒️ Notes, titles, checklists, docs, collections, links, images (with crop), voice memos that write themselves out, videos, colors that name themselves, shapes, stamps, drawing, the Pen, squiggly lines and curvy connectors.
 - 🧠 ADHD-friendly: **Ctrl+K** drops an idea into **Unsorted** without losing your place, and **F** focuses on just what you're working on.
-- 📐 Wireframes: screens, boxes, text, Material icons, ready-made pieces (nav bars, tab bars, inputs, cards…) and whole website sections, with alignment guides and strokes.
+- 📐 Wireframes: screens, boxes, text, icons, ready-made pieces (nav bars, tab bars, inputs, cards…) and whole website sections, with alignment guides and strokes.
 - 🗂️ Projects, folders and boards, with a home page for all of them. Move the sidebar widgets wherever you like.
 - 🌙 Light and dark mode, or your [Caelestia](#follow-your-caelestia-theme) colors. Undo (Ctrl+Z), and export any card or board as an image or PDF. Docs download as PDF or Word.
 - 🎨 Nordic colors for your cards: Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch.
@@ -202,7 +202,7 @@ Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) 
 
 ## License
 
-The code is open source under the [MIT License](LICENSE). The name **Myra**, Myra the cloudberry, her art, the stamps and the icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Myra also includes software made by others (Mochiboard, Electron, Material Icons, Figtree and Shantell Sans, and the libraries inside the docs editor); every one is listed with its license in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licenses**.
+The code is open source under the [MIT License](LICENSE). The name **Myra**, Myra the cloudberry, her art, her own icons, the stamps and the app icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Myra also includes software made by others (Mochiboard, Electron, Material Icons, Figtree and Shantell Sans, and the libraries inside the docs editor); every one is listed with its license in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licenses**.
 
 ---
 
