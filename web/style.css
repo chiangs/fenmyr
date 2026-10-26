@@ -2403,9 +2403,9 @@ body.dark .lic-item pre { background: var(--surface-2); }
 svg.ico { display: inline-block; flex: none; }
 svg.ico:not([width]) { width: 1em; height: 1em; }
 svg.ico .ico-d { display: none; }
-/* Duotone is only for the toolbar at the bottom; panels and wireframes stay plain outlines */
-body.icons-duo .tools svg.ico .ico-r { display: none; }
-body.icons-duo .tools svg.ico .ico-d { display: revert; }
+/* Duotone is for the bar at the bottom (toolbar, selection bar, pen bar, shape picker, the phone hub) and Myra's chat header; panels and wireframes stay plain outlines */
+body.icons-duo :is(.tools, .dock, .shapepick, .hub, .mc-head) svg.ico .ico-r { display: none; }
+body.icons-duo :is(.tools, .dock, .shapepick, .hub, .mc-head) svg.ico .ico-d { display: revert; }
 /* the page has many older rules for svg fills and strokes; these are specific enough to win over all of them */
 svg.ico.ico.ico.ico :is(path, circle, rect, ellipse, polygon, polyline, line) { fill: currentColor !important; stroke: none !important; }
 svg.ico.ico.ico.ico .s { fill: none !important; stroke: currentColor !important; stroke-width: 1.5 !important; stroke-linecap: round; stroke-linejoin: round; }
@@ -2413,3 +2413,5 @@ svg.ico.ico.ico.ico .f { fill: currentColor !important; stroke: none !important;
 svg.ico.ico.ico.ico .t { fill: var(--ico-tint) !important; fill-opacity: var(--ico-tint-op); }
 svg.ico.ico.ico.ico .t2 { fill: var(--ico-tint2) !important; fill-opacity: var(--ico-tint-op); }
 :root { --ico-tint: #f6a63c; --ico-tint2: #5fb04c; --ico-tint-op: .4; }
+/* a toolbar button with no tip text (the zoom %) shows no empty tooltip */
+.tools button:not([data-tip])::after { content: none; display: none; }
