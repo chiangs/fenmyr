@@ -420,6 +420,14 @@ html.native .home-in { padding-top: 40px; }
 .card.coll.nohead .coll-empty { top: 0; }
 .card.coll.drop-in .coll-frame { box-shadow: 0 0 0 3px var(--select); }
 .card.coll.drop-col .coll-frame { box-shadow: 6px 0 0 0 var(--select); }
+.kb-heads { position: absolute; inset: 0; pointer-events: none; }
+.kb-lane { position: absolute; border-radius: 22px; corner-shape: squircle; background: color-mix(in srgb, var(--chead) 22%, transparent); }
+.kb-h { position: absolute; height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 12px; pointer-events: auto; cursor: grab; font: 700 calc(13px * var(--fs, 1))/1 var(--font); color: #3f3a34; }
+.kb-h .text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; outline: none; }
+.kb-n { flex: none; font: 600 11px/1 var(--font); padding: 4px 8px; border-radius: 10px; corner-shape: squircle; background: color-mix(in srgb, var(--chead) 55%, white); }
+.kb-h.over .kb-n { background: var(--coral); color: #fff; }
+body.dark .kb-h { color: #f0ebe4; }
+body.dark .kb-n { background: color-mix(in srgb, var(--chead) 40%, #26231e); }
 .card.coll.sel::after { inset: -6px; }
 .card.inside { rotate: 0deg !important; }
 .card.inside.dragging { rotate: -1.5deg !important; }

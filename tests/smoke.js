@@ -112,6 +112,18 @@ echo " [BLANK_AUDIO] hello from whisper"
     }
     return res;
   }));
+  // Kanban adds columns with names and counts to the board; right-clicking a name offers the column menu
+  Object.assign(r, await page.evaluate(async () => {
+    const wait = ms => new Promise(res => setTimeout(res, ms));
+    document.querySelector('#tools [data-add="tpl"]').click(); await wait(200); document.querySelector('[data-tpl="kanban"]').click(); await wait(1200);
+    const hs = [...document.querySelectorAll('.kb-h')];
+    return { kanban: { cols: hs.map(h => h.querySelector('.text').textContent), counts: hs.map(h => h.querySelector('.kb-n').textContent) } };
+  }));
+  await page.evaluate(() => { document.getElementById('newsOk')?.click(); document.getElementById('onboard')?.classList.remove('on'); }); await page.waitForTimeout(800);
+  { const bb = await page.evaluate(() => { const q = document.querySelectorAll('.kb-h')[1].getBoundingClientRect(); return [q.x + 20, q.y + 12]; });
+    await page.mouse.click(bb[0], bb[1], { button: 'right' }); await page.waitForTimeout(300);
+    const menu = await page.evaluate(() => [...document.querySelectorAll('#rowMenu button')].map(b => b.textContent));
+    r.kanban.menu = menu.includes('Rename column') && menu.includes('Delete column') && menu.includes('Limit 5'); await page.keyboard.press('Escape'); await page.mouse.click(5, 300); }
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
     document.getElementById('openLicenses').click(); await new Promise(res => setTimeout(res, 700));
@@ -129,7 +141,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), webOn: r.webOn.slice(-120), webOff: r.webOff.slice(-120), hooksRewrite: r.hooksRewrite.slice(-100) }, null, 1));
   await app.close();
   const ok = r.native && r.linux && r.save && r.load === 0 && r.list && r.folders === 1 && r.fonts > 0 && r.unknown === 'unknown op nope' && r.range[0] === 206 && r.range[1] === 100
-    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.tree.name && r.tree.cards >= 12 && r.kickoff.name && r.kickoff.cards >= 18 && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
+    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.tree.name && r.tree.cards >= 12 && r.kickoff.name && r.kickoff.cards >= 18 && r.kanban.cols.join() === 'To do,Doing,Done' && r.kanban.counts.join() === '2,1 / 3,1' && r.kanban.menu && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
     && r.conn.mobbin === true && r.conn.higgsfield === false && JSON.parse(r.ask).say === 'hi from fake claude' && r.usage2.asks === 1 && r.usage2.tokensIn === 15
     && r.prompt.includes('The person asked you: sort these') && r.prompt.includes('Icons are names from this list') && r.prompt.includes('"n":0') && r.prompt.includes('Higgsfield is TURNED OFF') && r.args.includes('mcp__claude_ai_Mobbin__search_screens')
     && r.hooksOff.includes('disableAllHooks') && r.hooksRewrite.includes('disableAllHooks') && !r.hooksOff.includes('WebSearch') && r.webOn.includes('WebSearch') && r.webOn.includes('WebFetch') && r.webOn.includes('disableAllHooks') && !r.webOff.includes('WebSearch') && r.webPromptOn && r.webPromptOff

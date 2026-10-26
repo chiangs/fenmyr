@@ -669,7 +669,7 @@
       case 'font': { const f = esc(c.font || 'Figtree'); useFont(c.font); return `<div class="fs-aa" style="font-family:'${f}', system-ui">Aa</div><div class="fs-meta"><b>${f}</b><span class="fs-src">${isLocalFont(c.font) ? 'On your computer' : 'Google Fonts'}</span></div><div class="fs-sample text" style="font-family:'${f}', system-ui">${esc(c.text || 'The quick brown fox jumps over the lazy dog')}</div>`; }
       case 'icon': return Icon(c.name || 'star', { cls: 'ci' });
       case 'text': return `<div class="text tx">${esc(c.text || '')}</div>`;
-      case 'coll': return `<div class="coll-head"><span class="text">${esc(c.text)}</span></div><div class="coll-frame"></div>${(c.kids || []).length ? '' : '<div class="coll-empty">Drop cards here</div>'}`;
+      case 'coll': return `<div class="coll-head"><span class="text">${esc(c.text)}</span></div><div class="coll-frame"></div>${c.kanban ? '<div class="kb-heads"></div>' : ''}${(c.kids || []).length || c.kanban ? '' : '<div class="coll-empty">Drop cards here</div>'}`;
       case 'title': return `<div class="text">${esc(c.text)}</div>`;
       case 'image': {
         // a crop shows a window onto the picture: the picture is scaled up and shifted so only the kept part shows
@@ -806,7 +806,7 @@
 
   // ---------- collections: a named header over a frame; cards inside stack in columns and the frame grows to fit ----------
   const COLL = { pink: ['#f2a59a', '#ffe6e2'], butter: ['#f6c47a', '#fff0d9'], mint: ['#b5d69e', '#edf5e5'], lilac: ['#cdb8e6', '#f3edf9'], sky: ['#a9c9e6', '#e8f1f9'], peach: ['#dccdb8', '#f6f1ea'], white: ['#e4dfd8', '#f6f3ee'] };
-  const CW = 260, CPAD = 14, CGAP = 12, CHEAD = 52;
+  const CW = 260, CPAD = 14, CGAP = 12, CHEAD = 52, KHEAD = 44;   // KHEAD: the row of column names a kanban carries under its title
   const colls = () => board.cards.filter(c => c.type === 'coll');
   const parentOf = id => board.cards.find(s => s.type === 'coll' && (s.kids || []).includes(id));
   function naturalHeight(c, el) {
@@ -818,7 +818,8 @@
   function layoutColl(s) {
     s.kids = (s.kids || []).filter(id => byId(id) && id !== s.id); s.cols = Math.max(1, s.cols || 1);
     s.w = s.cols * CW + (s.cols - 1) * CGAP + CPAD * 2;
-    const top = s.head === false ? 0 : CHEAD, colH = Array(s.cols).fill(0);
+    if (s.kanban) { s.colNames = Array.from({ length: s.cols }, (_, i) => s.colNames?.[i] ?? 'Column ' + (i + 1)); s.colLimit = Array.from({ length: s.cols }, (_, i) => s.colLimit?.[i] || 0); }
+    const top = (s.head === false ? 0 : CHEAD) + (s.kanban ? KHEAD : 0), colH = Array(s.cols).fill(0);
     s.kids.forEach(id => {
       const c = byId(id), el = cardsEl.querySelector(`[data-id="${id}"]`); if (!el) return;
       const h = naturalHeight(c, el); if (c.type === 'image') { c.h = h; }
@@ -828,11 +829,38 @@
       colH[k] += c.h + CGAP;
       Object.assign(el.style, { left: c.x + 'px', top: c.y + 'px', width: titleW(c), height: c.type === 'title' ? 'auto' : c.h + 'px' }); el.classList.add('inside');
     });
-    s.h = top + CPAD * 2 + Math.max(90, Math.max(...colH) - CGAP);
+    s.h = top + CPAD * 2 + Math.max(s.kanban ? 240 : 90, Math.max(...colH) - CGAP);
     const el = cardsEl.querySelector(`[data-id="${s.id}"]`);
     // cards inside always sit on top of their collection (a card made before the collection would otherwise hide under it)
     if (el) { let after = el; s.kids.forEach(id => { const k = cardsEl.querySelector(`[data-id="${id}"]`); if (k && (k.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)) { after.after(k); after = k; } }); }
-    if (el) { Object.assign(el.style, { left: s.x + 'px', top: s.y + 'px', width: s.w + 'px', height: s.h + 'px' }); el.querySelector('.coll-empty')?.remove(); if (!s.kids.length) el.querySelector('.body').insertAdjacentHTML('beforeend', '<div class="coll-empty">Drop cards here</div>'); }
+    if (el) { Object.assign(el.style, { left: s.x + 'px', top: s.y + 'px', width: s.w + 'px', height: s.h + 'px' }); el.querySelector('.coll-empty')?.remove(); if (s.kanban) drawKanban(s, el); else if (!s.kids.length) el.querySelector('.body').insertAdjacentHTML('beforeend', '<div class="coll-empty">Drop cards here</div>'); }
+  }
+  // ---------- kanban: a collection whose columns have names, counts and (optionally) a limit ----------
+  function drawKanban(s, el) {
+    const host = el.querySelector('.kb-heads') || el.querySelector('.body').appendChild(Object.assign(document.createElement('div'), { className: 'kb-heads' })), top = (s.head === false ? 0 : CHEAD);
+    host.innerHTML = s.colNames.map((nm, k) => {
+      const n = (s.kids || []).filter(id => s.colOf?.[id] === k).length, lim = s.colLimit[k] || 0, left = CPAD + k * (CW + CGAP);
+      return `<i class="kb-lane" style="left:${left - 6}px;top:${top + KHEAD - 4}px;width:${CW + 12}px;bottom:8px"></i><div class="kb-h${lim && n > lim ? ' over' : ''}" data-k="${k}" style="left:${left}px;top:${top + 4}px;width:${CW}px"><span class="text">${esc(nm)}</span><b class="kb-n" title="${lim ? `${n} of ${lim} allowed` : `${n} card${n === 1 ? '' : 's'}`}">${n}${lim ? ' / ' + lim : ''}</b></div>`;
+    }).join('');
+  }
+  function kanbanOp(s, fn) { remember(); fn(); layoutColl(s); renderWires(); save(); }
+  function kanbanMenu(e, s, k) {
+    const last = s.cols - 1, move = d => kanbanOp(s, () => {
+      const j = k + d, swap = a => { [a[k], a[j]] = [a[j], a[k]]; };
+      swap(s.colNames); swap(s.colLimit); Object.keys(s.colOf || {}).forEach(id => { if (s.colOf[id] === k) s.colOf[id] = j; else if (s.colOf[id] === j) s.colOf[id] = k; });
+    });
+    boardMenu(e, [
+      { label: 'Rename column', run: () => { const el = cardsEl.querySelector(`[data-id="${s.id}"]`), t = el?.querySelector(`.kb-h[data-k="${k}"] .text`); if (t) { remember(); editField(el, t, v => s.colNames[k] = v, () => { s.colNames[k] = s.colNames[k] || 'Column ' + (k + 1); layoutColl(s); save(); }); } } },
+      ...(k > 0 ? [{ label: 'Move left', run: () => move(-1) }] : []), ...(k < last ? [{ label: 'Move right', run: () => move(1) }] : []),
+      { label: 'Add a column after', run: () => kanbanOp(s, () => {
+        s.cols++; s.colNames.splice(k + 1, 0, 'New column'); s.colLimit.splice(k + 1, 0, 0);
+        Object.keys(s.colOf || {}).forEach(id => { if (s.colOf[id] > k) s.colOf[id]++; }); }) }, '-',
+      ...[0, 1, 2, 3, 5, 8].map(n => ({ label: (s.colLimit[k] || 0) === n ? `✓ ${n ? 'Limit ' + n : 'No limit'}` : n ? `Limit ${n}` : 'No limit', run: () => kanbanOp(s, () => s.colLimit[k] = n) })),
+      ...(s.cols > 1 ? ['-', { label: 'Delete column', danger: true, run: () => kanbanOp(s, () => {
+        const into = k > 0 ? k - 1 : 1;   // its cards move to the neighbour
+        Object.keys(s.colOf || {}).forEach(id => { if (s.colOf[id] === k) s.colOf[id] = into; });
+        Object.keys(s.colOf || {}).forEach(id => { if (s.colOf[id] > k) s.colOf[id]--; });
+        s.colNames.splice(k, 1); s.colLimit.splice(k, 1); s.cols--; }) }] : [])]);
   }
   function layoutAll() { if (!board) return; colls().forEach(layoutColl); cardsEl.querySelectorAll('.card.inside').forEach(el => { if (!parentOf(el.dataset.id)) el.classList.remove('inside'); }); }
   // which collection is under a point (or just to its right: dropping there adds a column)
@@ -1064,7 +1092,7 @@
     if (c.type === 'section') return lyText(c.text) || 'Section';
     if (c.ln) return c.ln;
     const t = {
-      frame: c.name || 'Screen', coll: c.name || 'Collection', note: lyText(c.name) || lyText(c.text), text: lyText(c.text), title: lyText(c.text), todo: lyText(c.text) || lyText(c.items?.[0]?.t),
+      frame: c.name || 'Screen', coll: c.name || (c.kanban ? c.text || 'Kanban' : 'Collection'), note: lyText(c.name) || lyText(c.text), text: lyText(c.text), title: lyText(c.text), todo: lyText(c.text) || lyText(c.items?.[0]?.t),
       image: c.tagText || 'Image', link: c.title || (c.url ? host(c.url) : 'Link'), doc: c.text || 'Doc', canvas: c.text || 'Canvas', swatch: c.label || (c.hex || '').toUpperCase(),
       shape: SHAPE_N[c.shape || 'rect'], path: c.closed ? 'Pen shape' : 'Pen line', stamp: 'Stamp', icon: c.name || 'Icon', audio: 'Voice memo', video: c.title || 'Video', spotify: c.title || 'Spotify', ink: 'Drawing', box: c.img ? 'Image spot' : 'Box', font: c.font || 'Figtree',
     }[c.type];
@@ -1331,6 +1359,7 @@
     const el = cardsEl.querySelector(`[data-id="${id}"]`), c = byId(id); if (!el || !c) return;
     if (target && target.closest('.tag')) return editTag(c);
     if (target && target.closest('.nname')) return editField(el, el.querySelector('.nname'), v => c.name = v);
+    const kh = target && target.closest('.kb-h'); if (c.kanban && kh) { const k = +kh.dataset.k; return editField(el, kh.querySelector('.text'), v => c.colNames[k] = v, () => { c.colNames[k] = c.colNames[k] || 'Column ' + (k + 1); layoutColl(c); save(); }); }
     if (c.type === 'coll') return editField(el, el.querySelector('.coll-head .text'), v => c.text = v);
     if (c.type === 'frame') return editField(el, el.querySelector('.fr-name'), v => c.name = v);
     if (c.type === 'section') return editField(el, el.querySelector('.sec-name .text'), v => c.text = v);
@@ -1455,7 +1484,7 @@
       if (dt && dt !== 'page') { cardsEl.querySelector(`[data-id="${dt.id}"]`)?.classList.add('drop-in'); }
       else if (loose.length && !skip.size) { const t = collAt(w, skip); if (t) cardsEl.querySelector(`[data-id="${t.s.id}"]`)?.classList.add(t.side ? 'drop-col' : 'drop-in'); }
     }
-    if (drag.mode === 'resize' && byId(drag.id).type === 'coll') { const c = byId(drag.id); c.cols = Math.max(1, Math.round((drag.w0 + w.x - drag.sx - CPAD * 2 + CGAP) / (CW + CGAP))); layoutColl(c); renderWires(); return; }
+    if (drag.mode === 'resize' && byId(drag.id).type === 'coll' && !byId(drag.id).kanban) { const c = byId(drag.id); c.cols = Math.max(1, Math.round((drag.w0 + w.x - drag.sx - CPAD * 2 + CGAP) / (CW + CGAP))); layoutColl(c); renderWires(); return; }
     if (drag.mode === 'resize' && ['stamp', 'icon'].includes(byId(drag.id).type)) { const c = byId(drag.id); c.w = c.h = clamp(drag.w0 + Math.max(w.x - drag.sx, w.y - drag.sy), 24, 400); const el = cardsEl.querySelector(`[data-id="${c.id}"]`); Object.assign(el.style, { width: c.w + 'px', height: c.h + 'px' }); el.style.setProperty('--sz', c.w + 'px'); return; }
     // Shift + resize scales the whole thing: same shape, and the words (and everything inside) grow or shrink with it
     if (drag.mode === 'resize' && e.shiftKey && !['coll', 'frame', 'section'].includes(byId(drag.id).type)) {
@@ -2478,6 +2507,13 @@
       { t: 'coll', x: 330, y: 90, name: 'How might we…', color: 'butter', notes: [{ text: 'HMW help people remember a spot without stopping to pick up the phone?', color: 'butter' }, { text: 'HMW make coming back next year feel easy?', color: 'butter' }] },
       { t: 'how', x: 660, y: 90, text: 'Write each problem on its own note. Then flip it into a question that starts with “How might we…”.\n\nGood ones are wide enough to have many answers, but narrow enough to start on today.\n\nWrite a few versions of each, then vote with stamps.' },
     ] },
+    kanban: { emoji: '🗂️', name: 'Kanban', line: 'Cards move from to do to done', items: [
+      { t: 'kanban', x: 0, y: 0, name: 'Berry season', color: 'white', cols: [
+        { name: 'To do', notes: [{ text: 'Scout the east bog', color: 'butter' }, { text: 'Buy a second bucket', color: 'white' }] },
+        { name: 'Doing', limit: 3, notes: [{ text: 'Mark last year’s good spots', color: 'sky' }] },
+        { name: 'Done', notes: [{ text: 'Pack boots and mosquito net', color: 'mint' }] }] },
+      { t: 'how', x: 880, y: 0, text: 'Each column is a step. Drag a card from one to the next as it moves along.\n\nRight-click a column name to rename it, move it, add a column, or set a limit. Drop a card just to the right of the last column to add another.\n\nKeep “Doing” short: a limit stops it filling up.' },
+    ] },
     retro: { emoji: '🔁', name: 'Start, stop, continue', line: 'A quick, kind retro', items: [
       { t: 'title', x: 0, y: 0, text: 'Start, stop, continue' },
       { t: 'coll', x: 0, y: 90, name: '🌱 Start · what to try', color: 'mint', notes: [{ text: 'Share the research earlier', color: 'mint' }] },
@@ -2495,6 +2531,11 @@
       if (it.t === 'title') made.push(addCard(card('title', { ...at, text: it.text }), true));
       if (it.t === 'note') { const c = addCard(card('note', { ...at, text: it.text, name: it.name, color: it.color || 'white' }), true); made.push(c); if (it.key) keyed[it.key] = c; }
       if (it.t === 'how') made.push(addCard(card('note', { ...at, w: 280, h: 300, r: 1.5, name: 'Myra’s how-to', text: it.text, color: 'white', myra: true }), true));
+      if (it.t === 'kanban') {
+        const kids = [], colOf = {}; it.cols.forEach((col, k) => (col.notes || []).forEach(n => { const kid = card('note', { text: n.text, color: n.color || 'white', r: 0 }); kids.push(kid); colOf[kid.id] = k; }));
+        const kb = card('coll', { ...at, text: it.name, color: it.color || 'white', kanban: true, kids: kids.map(k => k.id), colOf, cols: it.cols.length, colNames: it.cols.map(c => c.name), colLimit: it.cols.map(c => c.limit || 0), r: 0 });
+        board.cards.push(kb); renderCard(kb, true); kids.forEach(k => { board.cards.push(k); renderCard(k, true); }); made.push(kb, ...kids);
+      }
       if (it.t === 'coll') {
         const kids = it.notes.map(n => card('note', { text: n.text, color: n.color || 'white', r: 0 }));
         const s2 = card('coll', { ...at, text: it.name, color: it.color, kids: kids.map(k => k.id), cols: 1, r: 0 });
@@ -2515,6 +2556,7 @@
     empathy: 'tpl-empathy',
     journey: 'tpl-journey',
     hmw: 'tpl-hmw',
+    kanban: 'tpl-kanban',
     retro: 'tpl-retro',
   };
   // the old "Start from" boards live here now too, under the frameworks: each opens as its own new board
@@ -2526,7 +2568,7 @@
     'App plan': ['Who it\'s for, the problem, the screens', 'screen'],
   };
   // grouped by what you're doing; frameworks add to this board, starters open a new one (tagged "New ↗")
-  const TPL_GROUPS = [['Think', ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix']], ['Capture', ['Moodboard', 'Brain dump']], ['Plan', ['OKRs and opportunities', 'Product kickoff', 'App plan']], ['Look back', ['retro']]];
+  const TPL_GROUPS = [['Think', ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix']], ['Capture', ['Moodboard', 'Brain dump']], ['Plan', ['kanban', 'OKRs and opportunities', 'Product kickoff', 'App plan']], ['Look back', ['retro']]];
   const tplRow = k => {
     const F = FRAMEWORKS[k];
     if (F) return `<button data-tpl="${k}"><span class="tp-e">${Icon(TPL_IC[k])}</span><span class="tp-t"><b>${esc(F.name)}</b><small>${esc(F.line)}</small><em class="tp-k">Adds to this board</em></span></button>`;
@@ -2570,6 +2612,8 @@
     e.preventDefault(); let el = document.elementFromPoint(e.clientX, e.clientY)?.closest('.card');   // the pointer may be captured, so look at what's really under it
     // things are selected and you right-click empty board: the menu is still about what you selected (click empty board first to get the board's own menu)
     if (!el && sel.size) el = cardsEl.querySelector(`[data-id="${[...sel][0]}"]`);
+    const kh = el && document.elementFromPoint(e.clientX, e.clientY)?.closest('.kb-h'), ks = kh && byId(el.dataset.id);
+    if (ks?.kanban) { selectOnly([ks.id]); return kanbanMenu(e, ks, +kh.dataset.k); }
     if (el) {
       if (!sel.has(el.dataset.id)) selectOnly(groupOf(el.dataset.id)); const cs = selCards();   // like a click: a grouped piece means its group, unless you picked the piece
       boardMenu(e, [
@@ -4007,7 +4051,7 @@ ${proseCSS()}
     const CARET = Icon('caret-down', { cls: 'sb-caret' });
     const colorPop = (cur, dots) => pop('color', `<i class="sb-cur" style="background:${cur}"></i>${CARET}`, `<div class="sb-dots">${dots}</div>`, 'Color');
     let more = '';
-    let h = `<span class="sb-label">${one ? ({ section: 'Section', note: 'Note', todo: 'Checklist', title: 'Title', image: 'Image', link: 'Link', swatch: 'Color', coll: 'Collection', doc: 'Doc', canvas: 'Canvas', shape: 'Shape', path: 'Pen shape', stamp: 'Stamp', audio: 'Voice memo', video: 'Video', spotify: 'Spotify', ink: 'Drawing', frame: 'Screen', box: 'Box', text: 'Text', font: 'Font' }[one.type] || 'Card') : cs.length + ' selected'}</span>`;
+    let h = `<span class="sb-label">${one ? ({ section: 'Section', note: 'Note', todo: 'Checklist', title: 'Title', image: 'Image', link: 'Link', swatch: 'Color', coll: one.kanban ? 'Kanban' : 'Collection', doc: 'Doc', canvas: 'Canvas', shape: 'Shape', path: 'Pen shape', stamp: 'Stamp', audio: 'Voice memo', video: 'Video', spotify: 'Spotify', ink: 'Drawing', frame: 'Screen', box: 'Box', text: 'Text', font: 'Font' }[one.type] || 'Card') : cs.length + ' selected'}</span>`;
     if (cs.length > 1) { const A = [['left', 'Align left edges'], ['hcenter', 'Align centers'], ['right', 'Align right edges'], ['top', 'Align tops'], ['vcenter', 'Align middles'], ['bottom', 'Align bottoms']];
       if (cs.length > 2) A.push(['dh', 'Space evenly across'], ['dv', 'Space evenly down']);
       h += G(0, `<div class="sb-sizes sb-style sb-arrange">${A.map(([k, t], i) => (i === 3 || i === 6 ? '<i class="sb-gap"></i>' : '') + `<button data-arr="${k}" title="${t}">${Icon(ARRANGE_NAME[k])}</button>`).join('')}</div>`); }
