@@ -14,15 +14,15 @@
 <!-- the window has no title bar of its own: these are its buttons, and a strip at the top of the sidebar to drag it by -->
 <div class="win-ctl" id="winCtl" aria-label="Window">
   <button class="wc-close" title="Close" onclick="myraWindow.close()"><svg viewBox="0 0 10 10"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5"/></svg></button>
-  <button class="wc-min" title="Minimize" onclick="myraWindow.minimize()"><svg viewBox="0 0 10 10"><path d="M2 5h6"/></svg></button>
-  <button class="wc-max" title="Maximize" onclick="myraWindow.maximize()"><svg viewBox="0 0 10 10"><path d="M2.5 6.5v-4h4M7.5 3.5v4h-4"/></svg></button>
+  <button class="wc-min" title="Minimise" onclick="myraWindow.minimize()"><svg viewBox="0 0 10 10"><path d="M2 5h6"/></svg></button>
+  <button class="wc-max" title="Maximise" onclick="myraWindow.maximize()"><svg viewBox="0 0 10 10"><path d="M2.5 6.5v-4h4M7.5 3.5v4h-4"/></svg></button>
 </div>
 <div class="win-drag" id="winDrag"></div>
 
 <aside class="side side-r" id="sideR" aria-label="Right widgets"></aside>
 <aside class="side" id="side">
   <section class="box" data-box="boards">
-    <header><div class="brand" id="brand" title="Home: all projects"><canvas id="brandGoo" width="40" height="36"></canvas><span>Myra</span></div><button class="mini gear" id="gearBtn" aria-label="Settings" data-tip="Settings"><svg data-ico="settings" width="17" height="17"></svg></button><button class="mini" title="Minimize">–</button></header>
+    <header><div class="brand" id="brand" title="Home: all projects"><canvas id="brandGoo" width="40" height="36"></canvas><span>Myra</span></div><button class="mini gear" id="gearBtn" aria-label="Settings" data-tip="Settings"><svg data-ico="settings" width="17" height="17"></svg></button><button class="mini" title="Minimise">–</button></header>
       <button class="web-pill web-only get-app" title="Download the desktop app">Web demo · <b>Get the app ↗</b></button>
     <div class="box-body">
       <button class="home-row" id="homeBtn"><svg data-ico="home" width="16" height="16"></svg>All projects</button>
@@ -32,15 +32,15 @@
     </div>
   </section>
   <section class="box" data-box="layers">
-    <header><div class="label">Layers <b class="ly-count" id="layerCount"></b></div><button class="mini" title="Minimize">–</button></header>
+    <header><div class="label">Layers <b class="ly-count" id="layerCount"></b></div><button class="mini" title="Minimise">–</button></header>
     <div class="box-body"><div class="layers" id="layers"></div></div>
   </section>
   <section class="box" data-box="colors">
-    <header><div class="label">Board colors</div><button class="mini" title="Minimize">–</button></header>
+    <header><div class="label">Board colours</div><button class="mini" title="Minimise">–</button></header>
     <div class="box-body"><div class="palette" id="palette"></div></div>
   </section>
   <section class="box" data-box="dressup">
-    <header><div class="label" data-mname="Dress up {name}">Dress up Myra</div><button class="mini" title="Minimize">–</button></header>
+    <header><div class="label" data-mname="Dress up {name}">Dress up Myra</div><button class="mini" title="Minimise">–</button></header>
     <div class="box-body">
       <div class="du-stage" id="duStage"><canvas id="duGoo" width="168" height="150" aria-label="Myra in her outfit"></canvas><button class="du-off" id="duOff" hidden>Take it all off</button></div>
       <div class="seg du-tabs" id="duTabs" role="tablist"></div>
@@ -70,7 +70,7 @@
 
 
   <aside class="tray" id="tray">
-    <div class="tray-head"><span class="label">Unsorted</span><b id="trayCount">0</b><button class="mini" id="trayMin" title="Minimize">–</button></div>
+    <div class="tray-head"><span class="label">Unsorted</span><b id="trayCount">0</b><button class="mini" id="trayMin" title="Minimise">–</button></div>
     <div class="tray-hint">Your berries are waiting to grow. Drag one onto the board ✦</div>
     <div class="tray-list" id="trayList"></div>
   </aside>
@@ -99,7 +99,7 @@
       <button data-add="image" aria-label="Image · I" data-tip="Image · I"><svg class="ic" data-ico="image" width="18" height="18"></svg></button>
       <button data-add="audio" aria-label="Voice memo · A" data-tip="Voice memo · A"><svg class="ic" data-ico="mic" width="18" height="18"></svg></button>
       <button data-add="video" aria-label="Video · ⇧V" data-tip="Video · ⇧V"><svg class="ic" data-ico="video" width="18" height="18"></svg></button>
-    <button data-add="swatch" aria-label="Color" data-tip="Color"><svg class="ic" data-ico="palette" width="18" height="18"></svg></button>
+    <button data-add="swatch" aria-label="Colour" data-tip="Colour"><svg class="ic" data-ico="palette" width="18" height="18"></svg></button>
       <button data-add="shape" aria-label="Shapes · S" data-tip="Shapes · S"><svg class="ic" data-ico="shapes" width="18" height="18"></svg></button>
     <button data-add="stamp" aria-label="Stamps · E" data-tip="Stamps · E"><svg class="ic" data-ico="stamp" width="18" height="18"></svg></button>
     <button data-add="tpl" aria-label="Templates" data-tip="Templates"><svg class="ic" data-ico="templates" width="18" height="18"></svg></button>
@@ -160,7 +160,7 @@
   </div>
   <!-- a doc opens beside the board (or full page), with a clear way back -->
   <aside class="docview" id="docview">
-    <div class="dv-bar"><button class="dv-back" id="dvBack">← Back to board</button><span class="dv-where" id="dvWhere"></span><button class="dv-btn dv-pagebtn" id="dvPageMode" title="Page color" aria-label="Page color"><svg data-ico="page-color"></svg></button><button class="dv-dl" id="dvExport" title="Download this doc as a PDF"><svg data-ico="download"></svg>Download</button><button class="dv-btn" id="dvWide" title="Full page">⤢</button><button class="dv-btn" id="dvClose" title="Close">×</button></div>
+    <div class="dv-bar"><button class="dv-back" id="dvBack">← Back to board</button><span class="dv-where" id="dvWhere"></span><button class="dv-btn dv-pagebtn" id="dvPageMode" title="Page colour" aria-label="Page colour"><svg data-ico="page-color"></svg></button><button class="dv-dl" id="dvExport" title="Download this doc as a PDF"><svg data-ico="download"></svg>Download</button><button class="dv-btn" id="dvWide" title="Full page">⤢</button><button class="dv-btn" id="dvClose" title="Close">×</button></div>
     <!-- the formatting toolbar: the Word basics in one slim row, the rest behind "More" -->
     <div class="dv-tools" id="dvTools" role="toolbar" aria-label="Formatting"></div>
     <div class="dv-page" id="dvPage"><div class="dv-sheet" id="dvSheet"><input class="dv-title" id="dvTitle" placeholder="Untitled" spellcheck="false"><div class="dv-body" id="dvBody"></div></div></div>
@@ -178,7 +178,7 @@
   <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>Ctrl+K</kbd> quick capture</span><span><kbd>space</kbd> drag to pan</span><span><kbd>Ctrl+\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
   <!-- wireframes: screens, boxes and text, plus a design panel for the selection -->
   <aside class="design" id="design">
-    <div class="dz-head"><span class="label">Wireframe</span><button class="mini" id="dzMin" title="Minimize">–</button></div>
+    <div class="dz-head"><span class="label">Wireframe</span><button class="mini" id="dzMin" title="Minimise">–</button></div>
     <div class="dz-body">
       <div class="dz-tools">
         <button data-wf="frame" title="Screen: pick a device, then click to place"><svg data-ico="screen" width="18" height="18"></svg><span>Screen</span></button>
@@ -199,9 +199,9 @@
     <div class="wheel" id="wheel"><canvas id="wheelCv" width="440" height="440"></canvas><i class="ring" id="wheelRing"></i></div>
     <div class="bright" id="bright"><i class="ring" id="brightRing"></i></div>
     <div class="cp-row"><span class="cp-dot" id="cpDot"></span>
-      <div class="cp-fields"><input id="cpHex" maxlength="7" spellcheck="false" aria-label="Hex"><input id="cpName" placeholder="Name it (e.g. Blush Pop)" spellcheck="false" aria-label="Color name"></div></div>
+      <div class="cp-fields"><input id="cpHex" maxlength="7" spellcheck="false" aria-label="Hex"><input id="cpName" placeholder="Name it (e.g. Blush Pop)" spellcheck="false" aria-label="Colour name"></div></div>
     <div class="cp-quick" id="cpQuick"></div>
-    <div class="cp-acts"><button id="cpSave" class="solid">Save to board colors</button><button id="cpReset" class="cp-reset">Use the default</button><button id="cpDone">Done</button></div>
+    <div class="cp-acts"><button id="cpSave" class="solid">Save to board colours</button><button id="cpReset" class="cp-reset">Use the default</button><button id="cpDone">Done</button></div>
   </div>
   <input type="file" id="filePick" accept="image/*,video/*" multiple hidden>
   <input type="file" id="coverPick" accept="image/*" hidden>
@@ -244,8 +244,8 @@
     </section>
     <section class="ob-step" data-step="1">
       <h2>Make it yours</h2>
-      <p>Pick my color and how the app looks. You can change these anytime.</p>
-      <div class="set-row"><div><b>My color</b><small>Me in the dock and the logo</small></div><div class="myra-colors" id="obMyra"></div></div>
+      <p>Pick my colour and how the app looks. You can change these anytime.</p>
+      <div class="set-row"><div><b>My colour</b><small>Me in the dock and the logo</small></div><div class="myra-colors" id="obMyra"></div></div>
       <div class="set-row"><div><b>Theme</b><small>Light, dark, or match your system</small></div><div class="seg" data-seg="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">Match system</button></div></div>
     </section>
     <section class="ob-step" data-step="2">
@@ -267,7 +267,7 @@
     <section class="ob-step" data-step="4">
       <h2>Your board</h2>
       <p>How cards feel when you make them.</p>
-      <div class="set-row"><div><b>New note color</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="obNotes"></div></div>
+      <div class="set-row"><div><b>New note colour</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="obNotes"></div></div>
       <label class="set-row"><div><b>Loose, tilted cards</b><small>Off makes every card sit straight</small></div><input type="checkbox" class="tgl" data-set="tilt"></label>
       <label class="set-row"><div><b>Snap to the dots</b><small>Cards line up with the grid</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
     </section>
@@ -287,9 +287,9 @@
   <div class="coach-card" id="coachCard"><div class="coach-top"><canvas id="coachGoo" width="40" height="36"></canvas><b id="coachName">Myra</b><span id="coachStep"></span></div><p id="coachText"></p><div class="coach-try" id="coachTry"></div>
     <div class="coach-acts"><button class="ob-ghost" id="coachSkip">End tour</button><button class="ob-primary" id="coachNext">Next</button></div></div>
 </div>
-<div class="settings lic-view" id="licView" role="dialog" aria-label="Licenses">
+<div class="settings lic-view" id="licView" role="dialog" aria-label="Licences">
   <div class="set-panel lic-panel">
-    <div class="set-head"><h2>Licenses</h2><button class="dv-btn" id="licClose" title="Close">×</button></div>
+    <div class="set-head"><h2>Licences</h2><button class="dv-btn" id="licClose" title="Close">×</button></div>
     <div class="set-body lic-body" id="licBody"><p class="lic-loading">Loading…</p></div>
   </div>
 </div>
@@ -301,20 +301,20 @@
       <section data-tab="general"><h3>Look</h3>
         <div class="set-row"><div><b>Theme</b><small>Light, dark, or whatever your system is using</small></div><div class="seg" data-seg="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">Match my system</button></div></div>
         <div class="set-row"><div><b>Icon style</b><small>Regular is plain outlines. Duotone adds a soft tint to the icons in the bottom bar and Myra's chat header.</small></div><div class="seg" data-seg="iconStyle"><button data-v="regular">Regular</button><button data-v="duotone">Duotone</button></div></div>
-        <label class="set-row native-only cae-only"><div><b>Follow Caelestia</b><small>Use your desktop's colors and light or dark mode, and change with your wallpaper. Your own colors come back when you turn it off.</small></div><input type="checkbox" class="tgl" data-set="caelestia"></label>
+        <label class="set-row native-only cae-only"><div><b>Follow Caelestia</b><small>Use your desktop's colours and light or dark mode, and change with your wallpaper. Your own colours come back when you turn it off.</small></div><input type="checkbox" class="tgl" data-set="caelestia"></label>
       </section>
       <section data-tab="general"><h3>Your cursor</h3>
         <div class="cur-prev" id="curPrev"><div class="mcur show demo"></div></div>
-        <label class="set-row"><div><b>Your name</b><small>It rides along on your cursor, in Myra’s color</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
-        <div class="set-row" style="display:none"><div><b>Cursor color</b></div><div class="myra-colors cur-colors" id="curColors"></div></div>
-        <label class="set-row native-only win-only"><div><b>Window buttons</b><small>The close, minimize and maximize dots at the top left. Turn off if your compositor handles windows (Hyprland, Sway, niri)</small></div><input type="checkbox" class="tgl" data-set="winButtons"></label>
+        <label class="set-row"><div><b>Your name</b><small>It rides along on your cursor, in Myra’s colour</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
+        <div class="set-row" style="display:none"><div><b>Cursor colour</b></div><div class="myra-colors cur-colors" id="curColors"></div></div>
+        <label class="set-row native-only win-only"><div><b>Window buttons</b><small>The close, minimise and maximise dots at the top left. Turn off if your compositor handles windows (Hyprland, Sway, niri)</small></div><input type="checkbox" class="tgl" data-set="winButtons"></label>
         <label class="set-row"><div><b>Myra cursor</b><small>Off uses your system’s regular cursor</small></div><input type="checkbox" class="tgl" data-set="fancyCursor"></label>
       </section>
       <section data-tab="myra"><h3>Myra</h3>
         <div class="set-row"><div><b>Her name</b><small>Call her whatever you like. She answers to it everywhere.</small></div><input class="set-input" id="myraNameIn" maxlength="18" placeholder="Myra" autocomplete="off" spellcheck="false"></div>
-        <div class="set-row"><div><b>How lively she is</b><small>Calm: she sits still (no hops, wiggles or breathing). Calmest: still, with softer, muted colors.</small></div><div class="seg" data-seg="myraCalm"><button data-v="lively">Lively</button><button data-v="calm">Calm</button><button data-v="calmest">Calmest</button></div></div>
+        <div class="set-row"><div><b>How lively she is</b><small>Calm: she sits still (no hops, wiggles or breathing). Calmest: still, with softer, muted colours.</small></div><div class="seg" data-seg="myraCalm"><button data-v="lively">Lively</button><button data-v="calm">Calm</button><button data-v="calmest">Calmest</button></div></div>
         <label class="set-row"><div><b>Show her character</b><small>Off hides the little pixel Myra. Her pill shows just her name, and she still helps.</small></div><input type="checkbox" class="tgl" data-set="myraChar"></label>
-        <div class="set-row"><div><b>Her color</b><small>Myra in the dock and the logo</small></div><div class="myra-colors" id="myraColors"></div></div>
+        <div class="set-row"><div><b>Her colour</b><small>Myra in the dock and the logo</small></div><div class="myra-colors" id="myraColors"></div></div>
         <div class="set-row"><div><b>How chatty she is</b><small>Quiet only talks when you ask. Chatty adds little tips and cheers.</small></div><div class="seg" data-seg="chat"><button data-v="quiet">Quiet</button><button data-v="normal">Normal</button><button data-v="chatty">Chatty</button></div></div>
         <label class="set-row"><div><b>Emojis in her replies</b><small>A few ✨ 🌸 here and there</small></div><input type="checkbox" class="tgl" data-set="emoji"></label>
         <div class="set-row"><div><b>Remember chats</b><small>Chats are saved in your board files on this computer. Off forgets each chat as you go.</small></div><div class="seg" data-seg="chatKeep"><button data-v="off">Off</button><button data-v="session">Until I quit</button><button data-v="board">On each board</button></div></div>
@@ -349,14 +349,14 @@
       <section data-tab="widgets"><h3>Widgets</h3>
         <p class="set-lead">Turn on the ones you use. The Boards panel always stays, since it's home to your boards and Settings.</p>
         <label class="set-row"><div><b>Layers</b><small>Everything on the board, top first. Rename, hide, lock and restack</small></div><input type="checkbox" class="tgl" data-set="wLayers"></label>
-        <label class="set-row"><div><b>Board colors</b><small>The colors you've saved for this board</small></div><input type="checkbox" class="tgl" data-set="wColors"></label>
+        <label class="set-row"><div><b>Board colours</b><small>The colours you've saved for this board</small></div><input type="checkbox" class="tgl" data-set="wColors"></label>
         <label class="set-row"><div><b>Wireframe</b><small>Screens, boxes and ready-made pieces to sketch with</small></div><input type="checkbox" class="tgl" data-set="wDesign"></label>
         <label class="set-row"><div><b>Unsorted</b><small>Ideas waiting for a spot. ⌘K still saves there when it's off</small></div><input type="checkbox" class="tgl" data-set="wTray"></label>
         <div class="set-row"><div><b>Arrange them</b><small>Drag a widget by its title into any spot on either side</small></div><button class="set-btn" id="wgReset">Reset layout</button></div>
       </section>
       <section data-tab="board"><h3>The board</h3>
         <div class="set-row"><div><b>Default font</b><small>For notes, titles, checklists, collections and docs that don't have a font of their own. Menus and panels keep Myra's font.</small></div><button class="set-btn set-font" id="defaultFontBtn" data-sbfont="default" type="button"></button></div>
-        <div class="set-row"><div><b>Colors</b><small>The background, dots, panels and accent. Right-click any board to give just that board its own background.</small></div><button class="set-btn" id="colReset" hidden>Reset colors</button></div>
+        <div class="set-row"><div><b>Colours</b><small>The background, dots, panels and accent. Right-click any board to give just that board its own background.</small></div><button class="set-btn" id="colReset" hidden>Reset colours</button></div>
         <div class="col-grid">
           <button class="col-chip" data-col="bg"><i></i><span>Background</span></button>
           <button class="col-chip" data-col="dot"><i></i><span>Dots</span></button>
@@ -365,7 +365,7 @@
         </div>
         <label class="set-row"><div><b>Dot grid</b><small>The soft dots behind your cards</small></div><input type="checkbox" class="tgl" data-set="grid"></label>
         <div class="set-row grid-shape-row"><div><b>Grid shape</b><small>Dots, or something a little cuter</small></div><div class="grid-shapes" id="gridShapes"></div></div>
-        <div class="set-row"><div><b>New note color</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="noteColors"></div></div>
+        <div class="set-row"><div><b>New note colour</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="noteColors"></div></div>
         <label class="set-row"><div><b>Double-click to add a note</b><small>Double-click empty board for a new note. Off if stray notes keep popping up</small></div><input type="checkbox" class="tgl" data-set="dblNote"></label>
         <label class="set-row"><div><b>Snap to the dots</b><small>Cards line up with the grid when you drop them</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
         <label class="set-row"><div><b>Loose, tilted cards</b><small>Off makes every card sit perfectly straight</small></div><input type="checkbox" class="tgl" data-set="tilt"></label>
@@ -391,7 +391,7 @@
       <section class="set-maker" data-tab="about"><div class="sm-sig">made with care by</div><div class="sm-name">Stephen Chiang</div><small>Like cloudberries, ideas only grow where conditions are just right. Myra tries to be that place.</small>
         <div class="sm-links"><button class="set-btn hot" data-url="https://github.com/chiangs/myra">Myra on GitHub ↗</button></div></section>
       <section class="set-start set-credit" data-tab="about"><div><b>Built on Mochiboard</b><small>Myra grew from Mochiboard, Jessa Wolfe's open-source planning canvas (MIT). Mochiboard, Mochi and their art are hers and aren't part of Myra.</small></div><div class="set-btns"><button class="set-btn" data-url="https://github.com/jessawolfe-ux/mochiboard">Mochiboard ↗</button><button class="set-btn" data-url="https://jessa.art">jessa.art ↗</button></div></section>
-      <section class="set-start set-lic" data-tab="about"><div><b>Open-source licenses</b><small>Myra's own license, and the software made by others that Myra includes.</small></div><div class="set-btns"><button class="set-btn" id="openLicenses">View licenses</button></div></section>
+      <section class="set-start set-lic" data-tab="about"><div><b>Open-source licences</b><small>Myra's own licence, and the software made by others that Myra includes.</small></div><div class="set-btns"><button class="set-btn" id="openLicenses">View licences</button></div></section>
     </div>
   </div>
 </div>
