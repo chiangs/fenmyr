@@ -403,7 +403,7 @@ html.native .home-in { padding-top: 40px; }
 .card.note .nname { font: 700 calc(15px * var(--fs, 1))/1.3 var(--font); margin-bottom: 6px; outline: none; min-height: 1em; }
 .card.note .nname:empty { display: none; }
 .card.note.sel .nname:empty, .card.note.editing .nname:empty { display: block; }
-.card.note .nname:empty::before { content: "Card name"; color: var(--ink-faint); font-weight: 600; }
+.card.note .nname:empty::before { content: "Name (optional)"; color: var(--ink-faint); font-weight: 600; }
 .card.note .text:empty::before { content: "Type something…"; }
 /* ---------- collections: a named header over a frame that stacks its cards ---------- */
 .card.coll { z-index: 0 !important; rotate: 0deg !important; }
@@ -2555,3 +2555,8 @@ body.dark .tag-pop { background: var(--surface); }
 .te-sug:empty { display: none; }
 .te-sug button { padding: 4px 8px; border: 0; border-radius: 8px; background: rgba(150, 95, 35, .1); font: 600 11.5px/1 var(--font); color: var(--ink); cursor: pointer; }
 .te-sug button:hover { background: var(--blush); }
+
+/* a note's tags sit at the bottom, however tall the note gets, so the words keep the room above */
+.card.note > .body { display: flex; flex-direction: column; }
+.card.note > .body > .ntags { margin-top: auto; padding-top: 8px; }
+.card.note > .body > .text { flex: none; }

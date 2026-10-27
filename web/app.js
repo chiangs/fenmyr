@@ -660,7 +660,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function inner(c) {
     switch (c.type) {
-      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra" src="stamps/myra-wave.png" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : c.name !== undefined ? `<div class="nname">${esc(c.name)}</div>` : ''}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
+      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra" src="stamps/myra-wave.png" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : `<div class="nname">${esc(c.name || '')}</div>`}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
       case 'doc': return `<div class="pill">${CIC.doc}<span class="text">${esc(c.text)}</span></div>`;
       case 'canvas': return `<div class="cv-head">${CIC.canvas}<span class="text">${esc(c.text)}</span></div><div class="cv-prev"><em>empty canvas</em></div>`;
       case 'shape': return shapeSVG(c) + `<div class="text">${esc(c.text || '')}</div>`;
@@ -1460,7 +1460,8 @@
   function startEdit(id, target) {
     const el = cardsEl.querySelector(`[data-id="${id}"]`), c = byId(id); if (!el || !c) return;
     if (target && target.closest('.tag')) return editTag(c);
-    if (target && target.closest('.nname')) return editField(el, el.querySelector('.nname'), v => c.name = v);
+    if (target && target.closest('.nname')) { const nm = el.querySelector('.nname'); editField(el, nm, v => c.name = v);
+      nm.addEventListener('keydown', ev => { if ((ev.key === 'Enter' || ev.key === 'Tab') && !ev.shiftKey && c.type === 'note') { ev.preventDefault(); ev.stopImmediatePropagation(); nm.onblur = null; endEdit(); save(); startEdit(c.id); } }, { capture: true, once: false }); return; }
     const kh = target && target.closest('.kb-h'); if (c.kanban && kh) { const k = +kh.dataset.k; return editField(el, kh.querySelector('.text'), v => c.colNames[k] = v, () => { c.colNames[k] = c.colNames[k] || 'Column ' + (k + 1); layoutColl(c); save(); }); }
     if (c.type === 'coll') return editField(el, el.querySelector('.coll-head .text'), v => c.text = v);
     if (c.type === 'frame') return editField(el, el.querySelector('.fr-name'), v => c.name = v);
@@ -1492,7 +1493,8 @@
       fitText(c);
       save(); };
     t.onblur = () => endEdit();
-    if (c.type === 'note') wireTagTyping(c, t);
+    if (c.type === 'note') { wireTagTyping(c, t);
+      if (!t._nameHop) { t._nameHop = true; t.addEventListener('keydown', ev => { if (ev.key === 'Tab' && ev.shiftKey && !c.myra) { ev.preventDefault(); ev.stopImmediatePropagation(); t.onblur = null; endEdit(); save(); startEdit(c.id, cardsEl.querySelector(`[data-id="${c.id}"] .nname`)); } }, true); } }
   }
   function endEdit() { if (!editing) return; { const c0 = byId(editing), e0 = cardsEl.querySelector(`[data-id="${editing}"]`); if (c0 && e0 && ['title', 'text'].includes(c0.type)) setTimeout(() => textStrokeSVG(c0, e0), 0); }
     const el = cardsEl.querySelector(`[data-id="${editing}"]`); if (el) { el.classList.remove('editing'); el.querySelectorAll('[contenteditable]').forEach(n => n.contentEditable = 'false'); } editing = null; }
@@ -1701,7 +1703,7 @@
     const hitEl = document.elementFromPoint(e.clientX, e.clientY);
     if (hitEl?.closest('.selbar') || hitEl?.closest('.card:not(.section)') || hitEl?.closest('.sec-name, [contenteditable="true"]')) return;
     if (e.target.closest('.card:not(.section), .tools, .tray, .myra, .top, .capture, .side, .keys, .cpop, .home, .selbar, .docview, .hub, .sheet')) return;
-    const w = toWorld(e.clientX, e.clientY), c = card('note', { color: newNoteColor() }); c.x = snapTo(w.x - c.w / 2); c.y = snapTo(w.y - c.h / 2); addCard(c); selectOnly([c.id]); startEdit(c.id);
+    const w = toWorld(e.clientX, e.clientY), c = card('note', { name: '', color: newNoteColor() }); c.x = snapTo(w.x - c.w / 2); c.y = snapTo(w.y - c.h / 2); addCard(c); selectOnly([c.id]); startEdit(c.id);
   });
   // card buttons: pull colours, checklist items
   cardsEl.addEventListener('click', e => {
