@@ -2259,10 +2259,13 @@
   $('revealBoards').onclick = () => Myra.reveal();
   let sayT = 0;
   // the little extras: skipped when she's set to Quiet
+  const reply = (text, ms, acts) => say(text, ms, acts, true);
   function chirp(text, ms, acts) { if (settings.chat !== 'quiet') say(text, ms, acts); }
   function tip(text) { if (settings.chat === 'chatty') say(text, 6000); }
-  function say(text, ms = 6000, acts = []) {
+  // keep: an answer to something you asked, so it also goes into the chat even when the chat window is closed
+  function say(text, ms = 6000, acts = [], keep = false) {
     if (chatOpen()) { if (text) addMsg('myra', text, acts); return; }
+    if (keep && text) addMsg('myra', text, acts);
     $('mSay').textContent = text; $('mActs').innerHTML = '';
     acts.forEach(a => { const b = document.createElement('button'); b.textContent = a.label; b.className = a.cls || (a.ghost ? 'ghost' : ''); b.onclick = () => { $('mBubble').classList.remove('on'); a.run(); }; $('mActs').appendChild(b); });
     $('mBubble').classList.add('on'); hopMyra(); clearTimeout(sayT); if (ms) sayT = setTimeout(() => $('mBubble').classList.remove('on'), ms);
@@ -2338,9 +2341,9 @@
     if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) {
       const x0 = Math.min(...notes.map(c => c.x)), y0 = Math.min(...notes.map(c => c.y));
       notes.forEach((c, i) => { c.x = x0 + (i % 4) * 250; c.y = y0 + Math.floor(i / 4) * 180; c.r = tilt(); renderCard(c); }); renderWires(); save();
-      return say(`I lined your ${notes.length} notes up in tidy rows ✦ ${why}`, 9000);
+      return reply(`I lined your ${notes.length} notes up in tidy rows ✦ ${why}`, 9000);
     }
-    say(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Myra.openURL(GUIDE) }] : []); offlineMyra.signin = false;
+    reply(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Myra.openURL(GUIDE) }] : []); offlineMyra.signin = false;
   }
   let haveClaude = null;
   const GUIDE = 'https://github.com/chiangs/myra#connect-claude-code';   // the step-by-step page for connecting Claude Code
@@ -2352,7 +2355,7 @@
     const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
     if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) return offlineMyra(q, 'In the desktop app I can sort them by theme too, with Claude.');
     const what = /mobbin/i.test(q) ? 'Mobbin lives in your Claude account, and I can only reach it from the desktop app.' : /higgsfield|photo|picture|image/i.test(q) ? 'Making pictures with Higgsfield happens in the desktop app, where I can check the price with you first.' : 'I think with Claude Code, and that lives in the desktop app.';
-    say(`I'd love to help with that! ${what} Download me and I'll connect to your Claude, Mobbin and Higgsfield ✦`, 0, DL);
+    reply(`I'd love to help with that! ${what} Download me and I'll connect to your Claude, Mobbin and Higgsfield ✦`, 0, DL);
   }
   async function ask(q, confirmed = false) {
     if (Myra.web) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return webMyra(q); }
@@ -2369,7 +2372,7 @@
     try { const raw = await Myra.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs, web: !!settings.webAccess, canVault, vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })) }); await applyMyra(parse(raw), q, ctx); }
     catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMyra(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }
       if (SIGNIN.test(err.message)) { offlineMyra.signin = true; return offlineMyra(q, "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account."); }
-      say("Hmm, I couldn't reach Claude: " + err.message); }
+      reply("Hmm, I couldn't reach Claude: " + err.message); }
     finally { $('myra').classList.remove('thinking'); goo.think(false); favGoo?.think(false); typing(false); }
   }
   $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
@@ -2457,7 +2460,7 @@
     // what next: Myra's own ideas, or a sensible guess from what she just made
     const next = acts.length ? [] : (Array.isArray(r.next) && r.next.length ? r.next : guessNext(r, added)).filter(t => typeof t === 'string' && t.trim()).slice(0, 3);
     next.forEach(t => acts.push({ label: t.trim(), cls: 'next', run: () => ask(t.trim()) }));
-    say((r.say || (added.length ? `Done! I touched ${added.length} cards.` : 'Done!')) + read, r.confirm ? 0 : next.length ? 16000 : 9000, acts);
+    reply((r.say || (added.length ? `Done! I touched ${added.length} cards.` : 'Done!')) + read, r.confirm ? 0 : next.length ? 16000 : 9000, acts);
   }
   function guessNext(r, added) {
     const has = t => added.some(c => c.type === t);
