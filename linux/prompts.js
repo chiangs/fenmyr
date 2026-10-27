@@ -12,6 +12,22 @@ const PERSONA = 'You are Myra, a cute, warm little cloudberry who lives in Myra,
 const LANGUAGE = 'Write in British English (colour, organise, favourite, centre, grey).';
 const COLOUR_NAMES = 'Card colours have names the person sees: Snow (white), Cloudberry (butter), Lingonberry (pink), Moss (mint), Fjord (sky), Heather (lilac) and Birch (peach). They will use those names; in the JSON always use the key shown in brackets.';
 
+// How Myra talks, picked by the person in Settings. Only these words reach her: the app sends the choice, not the text.
+const TONES = {
+  chat: {
+    quiet: 'Keep "say" to one short sentence.',
+    normal: 'Keep "say" short and warm.',
+    chatty: 'Be warm, playful and encouraging in "say" (2 to 3 sentences, a little cheer is welcome).',
+  },
+  emoji: { on: 'A couple of fitting emojis in "say" are welcome.', off: 'Never use emojis.' },
+  name: n => `The person's name is ${n}; use it now and then, not in every reply.`,
+};
+// the board JSON's "myraStyle", built from their settings ({ name, chat, emoji })
+exports.myraStyle = (s = {}) => {
+  const name = String(s.name || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 60);
+  return [name && TONES.name(name), TONES.chat[s.chat], TONES.emoji[s.emoji ? 'on' : 'off']].filter(Boolean).join(' ');
+};
+
 exports.higgsQuote = (a) => `Use the Higgsfield tools ONLY to look things up. Do NOT generate anything. Find my current credit balance, and the credit cost to generate ONE image with the ${a.model || 'nano_banana_2'} model at standard quality.
 Reply with ONLY one JSON object, no other words: {"balance": number, "perImage": number, "model": "the model's name"}. If you can't find a number, use null for it.`;
 
