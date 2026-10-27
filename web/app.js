@@ -498,7 +498,7 @@
     // an edit still waiting to save belongs to the board you're leaving: save it first
     if (saveT && board) { clearTimeout(saveT); saveT = 0; board.view = view; await Myra.save(board); }
     const b = await Myra.load(id); if (!b) return;
-    miniCache.clear(); vnFull.clear(); board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
+    miniCache.clear(); vnFull.clear(); histOpen = false; board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
     board.cards.forEach(c => { if (c.type === 'audio' && c.rec) { c.rec = false; c.paused = false; if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.'; } });
     board.cards.forEach(c => { if (c.type === 'canvas' && c.board) { const kb = boardList.find(x => x.id === c.board); if (kb && kb.name !== c.text) c.text = kb.name; } });
     $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); applyToolbar(); try { localStorage.setItem('myra:last', id); } catch (e) {}
@@ -2245,7 +2245,7 @@
   document.querySelectorAll('[data-set]').forEach(t => t.onchange = () => { settings[t.dataset.set] = t.checked; applySettings(); if (t.dataset.set === 'autoUpdate') { showUpdate.answered = true; if (t.checked && updInfo) showUpdate(); } });
   $('recheck').onclick = () => showConnections(true);
   // switching chats off (or to "until I quit") removes what's saved in the board files right away
-  async function clearSavedChats() { const list = await Myra.list(); for (const b of list) { const bb = b.id === board?.id ? board : await Myra.load(b.id); if (bb?.chat?.length) { bb.chat = []; await Myra.save(bb); } } }
+  async function clearSavedChats() { const list = await Myra.list(); for (const b of list) { const bb = b.id === board?.id ? board : await Myra.load(b.id); if (bb?.chat?.length || bb?.chats?.length) { bb.chat = []; delete bb.chats; await Myra.save(bb); } } }
   $('clearChats').onclick = async () => { await clearSavedChats(); Object.keys(sessionChats).forEach(k => delete sessionChats[k]); renderChat(); $('clearChats').textContent = 'Cleared ✓'; setTimeout(() => $('clearChats').textContent = 'Clear all chats', 1800); };
   document.querySelectorAll('[data-seg]').forEach(g => g.onclick = e => { const b = e.target.closest('[data-v]'); if (!b) return; settings[g.dataset.seg] = b.dataset.v; applySettings();
     if (g.dataset.seg === 'chatKeep' && b.dataset.v !== 'board') clearSavedChats(); if (g.dataset.seg === 'chatKeep') renderChat(); });
@@ -2272,7 +2272,27 @@
   function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); $('mcInput').focus(); } }
   $('mPill').onclick = () => myraOpen(!chatOpen());
   $('mcClose').onclick = () => myraOpen(false);
-  $('mcNew').onclick = () => { chatLog().length = 0; if (settings.chatKeep === 'board') { board.chat = []; save(); } renderChat(); $('mcInput').focus(); };
+  // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
+  const CHATS_KEPT = 10; let histOpen = false;
+  const keepsHistory = () => settings.chatKeep === 'board' && !!board;
+  function archiveChat() {
+    if (!keepsHistory() || !(board.chat || []).length) return;
+    const msgs = board.chat, first = msgs.find(m => m.who === 'me') || msgs[0];
+    board.chats = [{ id: uid(), title: String(first.text || 'Chat').replace(/\s+/g, ' ').trim().slice(0, 70), t: msgs[msgs.length - 1].t || Date.now(), msgs }, ...(board.chats || [])].slice(0, CHATS_KEPT);
+  }
+  $('mcNew').onclick = () => { archiveChat(); if (settings.chatKeep === 'board') { board.chat = []; save(); } else chatLog().length = 0; histOpen = false; renderChat(); $('mcInput').focus(); };
+  $('mcHist').onclick = () => { histOpen = !histOpen; renderChat(); };
+  const whenText = t => { const d = new Date(t), days = Math.floor((Date.now() - t) / 864e5); return days < 1 ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : days < 7 ? d.toLocaleDateString([], { weekday: 'short' }) : d.toLocaleDateString([], { day: 'numeric', month: 'short' }); };
+  function renderHistory() {
+    const list = $('mcList'), chats = board.chats || [];
+    list.innerHTML = `<div class="mc-hist"><div class="mh-top"><button class="mc-btn" data-h="back">← Back to this chat</button><span>Earlier chats on this board</span></div>`
+      + (chats.length ? chats.map((c, i) => `<div class="mh-row" data-i="${i}"><button class="mh-open" data-h="open"><b></b><small>${esc(whenText(c.t))} · ${c.msgs.length} message${c.msgs.length === 1 ? '' : 's'}</small></button><button class="mh-del" data-h="del" title="Delete this chat">×</button></div>`).join('') : '<div class="mc-empty">No earlier chats yet. New chat puts the current one here.</div>') + '</div>';
+    list.querySelectorAll('.mh-row').forEach(r => r.querySelector('b').textContent = chats[+r.dataset.i].title);
+    list.onclick = e => { const a = e.target.closest('[data-h]')?.dataset.h; if (!a) return; e.stopPropagation(); const i = +e.target.closest('.mh-row')?.dataset.i;
+      if (a === 'back') { histOpen = false; return renderChat(); }
+      if (a === 'del') { const del = e.target.closest('.mh-del'); if (!del.classList.contains('sure')) { del.classList.add('sure'); del.textContent = 'Delete?'; return; } board.chats.splice(i, 1); save(); return renderChat(); }
+      if (a === 'open') { const c = board.chats.splice(i, 1)[0]; archiveChat(); board.chat = c.msgs; save(); histOpen = false; renderChat(); $('mcInput').focus(); } };
+  }
   const IDEAS = ['Group these by theme', 'What am I missing?', 'Make a checklist from this', 'Find onboarding screens on Mobbin'];
   function msgEl(m) {
     const d = document.createElement('div'); d.className = 'mc-msg ' + m.who; d.textContent = m.text;
@@ -2281,7 +2301,9 @@
     return d;
   }
   function renderChat() {
-    const list = $('mcList'); list.innerHTML = ''; const msgs = chatLog();
+    $('mcHist').hidden = !(keepsHistory() && ((board.chats || []).length || histOpen)); $('mcHist').classList.toggle('on', histOpen);
+    if (histOpen && keepsHistory()) return renderHistory();
+    histOpen = false; const list = $('mcList'); list.onclick = null; list.innerHTML = ''; const msgs = chatLog();
     if (!msgs.length) { list.innerHTML = `<div class="mc-empty"><b>Hi! I'm Myra ✦</b>Ask me to sort, write, plan or find things for this board.<div class="mc-ideas">${IDEAS.filter(i => settings.mobbin || !/Mobbin/.test(i)).map(i => `<button>${i}</button>`).join('')}</div></div>`;
       list.querySelectorAll('.mc-ideas button').forEach(b => b.onclick = () => { ask(b.textContent); }); return; }
     msgs.forEach(m => list.appendChild(msgEl(m))); list.scrollTop = list.scrollHeight;
@@ -2290,7 +2312,7 @@
   const sessionChats = {};
   function chatLog() { if (!board) return []; if (settings.chatKeep === 'board') return (board.chat = board.chat || []); return (sessionChats[board.id] = sessionChats[board.id] || []); }
   function addMsg(who, text, acts = []) {
-    if (!board) return; const log = chatLog(), m = { who, text, t: Date.now() }, max = +settings.chatMax || 60;
+    if (!board) return; if (histOpen) { histOpen = false; renderChat(); } const log = chatLog(), m = { who, text, t: Date.now() }, max = +settings.chatMax || 60;
     log.push(m); if (log.length > max) log.splice(0, log.length - max); if (settings.chatKeep === 'board') save();
     const list = $('mcList'); list.querySelector('.mc-empty')?.remove(); list.appendChild(msgEl({ ...m, acts })); list.scrollTop = list.scrollHeight;
   }

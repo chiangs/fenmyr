@@ -2519,3 +2519,16 @@ body.following-caelestia .ly.on { background: color-mix(in srgb, var(--panel) 70
 body.following-caelestia .ly.on:hover { background: color-mix(in srgb, var(--panel) 58%, var(--pink-deep) 42%) !important; }
 body.following-caelestia .tray-item, body.following-caelestia .mc-msg.myra { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)) !important; color: var(--ink); }
 body.following-caelestia .mc-msg.me { background: color-mix(in srgb, var(--panel) 86%, var(--pink-deep) 14%) !important; color: var(--ink); }
+
+/* earlier chats in Myra's chat window */
+#mcHist { display: inline-flex; align-items: center; gap: 5px; } #mcHist[hidden] { display: none; } #mcHist svg { width: 15px; height: 15px; }
+#mcHist.on { background: var(--blush); color: var(--ink); }
+.mc-hist { display: grid; gap: 4px; align-content: start; }
+.mh-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font: 600 11px/1.2 var(--font); color: var(--ink-soft); }
+.mh-row { display: flex; align-items: center; gap: 4px; border-radius: 14px; corner-shape: squircle; }
+.mh-row:hover { background: var(--blush); }
+.mh-open { flex: 1; min-width: 0; display: grid; gap: 3px; text-align: left; padding: 9px 10px; border: 0; background: none; color: var(--ink); cursor: pointer; }
+.mh-open b { font: 600 13px/1.3 var(--font); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mh-open small { font: 400 11.5px/1 var(--font); color: var(--ink-soft); }
+.mh-del { flex: none; border: 0; background: none; color: var(--ink-faint); font: 600 15px/1 var(--font); padding: 6px 10px; border-radius: 10px; cursor: pointer; }
+.mh-del:hover { color: #d6455d; } .mh-del.sure { font-size: 11.5px; color: #fff; background: #d6455d; }
