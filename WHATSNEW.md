@@ -23,3 +23,5 @@ Write them for people, not for code: one line, what changed and why it's nice.
 - Your own templates: right-click a selection or the board to save it, then find it under Yours in the template picker. you choose whether it adds to a board or opens a new one, and can edit its name, description and that choice later. Myra can save and use them too.
 - A default font for text on the board and in docs (Settings → Board → Default font).
 - Ctrl+, opens Settings. Window buttons are off unless you want them.
+- Myra has a dry, tart wit to go with her warmth. How much shows depends on Settings → Myra → How chatty she is, and she drops it when you're having a hard time.
+- With emojis off, Myra really never uses them.
