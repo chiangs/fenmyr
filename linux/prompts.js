@@ -1,6 +1,4 @@
-// Myra's prompts. They started as the Mac app's (Sources/Mochiboard.swift in jessawolfe-ux/mochiboard); Myra has her own
-// character, the board's font list is called fontsOnThisComputer, and card colors have Nordic names.
-// Kept in one place so they're easy to find and change.
+// Myra's prompts: everything she is told, in one place. Her voice is at the top; her abilities are below it.
 
 // the icon names Myra may use in wireframes (built with the icon set: npm run icons)
 const ICON_NAMES = require('./icon-names.json');

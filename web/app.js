@@ -2023,23 +2023,23 @@
   // her hop: she jumps right up out of her pill, then squishes a little as she lands
   function hopMyra() { goo.hop(); favGoo?.hop(); const c = $('goo'); c.classList.remove('hopping'); void c.offsetWidth; c.classList.add('hopping'); }
   // in a browser, the tab's icon is a tiny Myra who breathes, blinks and hops along with the real one
-  const favGoo = Myra.native ? null : (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const fg = Goo(c, { manual: true, outfit: 'wear' });
+  const favGoo = Myra.native ? null : (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const fg = Goo(c, { manual: true });
     let link = document.querySelector('link[rel="icon"]'); if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
     setInterval(() => { fg.draw(); link.href = c.toDataURL('image/png'); }, 120); return fg; })();
-  const goo = Goo($('goo'), { headroom: 8 }), duGoo = Goo($('duGoo')), SMALL = { outfit: 'wear', headroom: 8 };   // small Myras get room above thems, and skip what she's holding so she stays big enough to see
-  const goos = [goo, duGoo, ...(favGoo ? [favGoo] : []), Goo($('brandGoo'), SMALL), Goo($('aboutGoo'), SMALL), Goo($('obGoo'), { headroom: 8 }), Goo($('obGoo2'), { headroom: 8 }), Goo($('coachGoo'), SMALL), Goo($('setGoo'), SMALL)];
+  const goo = Goo($('goo'), { headroom: 8 }), SMALL = { headroom: 8 };   // small Myras get room above them
+  const goos = [goo, ...(favGoo ? [favGoo] : []), Goo($('brandGoo'), SMALL), Goo($('aboutGoo'), SMALL), Goo($('obGoo'), { headroom: 8 }), Goo($('obGoo2'), { headroom: 8 }), Goo($('coachGoo'), SMALL), Goo($('setGoo'), SMALL)];
 
   // ---------- settings: Myra's color and greeting, her helpers, how the board looks ----------
   // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade
   const MYRA_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, moss: { B: '#8fc65a', S: '#e4f4c4', D: '#5c9a35', L: '#2f9e72', l: '#1f6e50' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
-  const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, webAccess: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDressup: false, wMusic: false,   /* the playful widgets wait until someone switches them on */ wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
-  settings.wDressup = false;   // not in Myra: Mochiboard's Dress up widget (Mochi's outfits are Mochiboard's own)
+  const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, webAccess: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
+  delete settings.wDressup; delete settings.wMusic; delete settings.outfit;   // left in saved settings by the old Dress up and music widgets
   try { if (localStorage.getItem('myra:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
   // the Boards panel is pinned at the top left (it's home to your boards and Settings), everything else can move
-  const WG_DEFAULT = { left: ['layers', 'colors'], right: ['design', 'tray', 'dressup'] };
-  const WG_ALL = ['layers', 'colors', 'dressup', 'design', 'tray'];
+  const WG_DEFAULT = { left: ['layers', 'colors'], right: ['design', 'tray'] };
+  const WG_ALL = ['layers', 'colors', 'design', 'tray'];
   const wgEl = k => k === 'design' ? $('design') : k === 'tray' ? $('tray') : document.querySelector(`.box[data-box="${k}"]`);
   const wgKey = el => el.id === 'design' ? 'design' : el.id === 'tray' ? 'tray' : el.dataset.box;
   function wgLayout() {   // the saved layout, with anything missing (a new widget) added where it belongs by default
@@ -2091,12 +2091,10 @@
     const stop = () => { removeEventListener('pointermove', go); removeEventListener('pointerup', stop); };
     addEventListener('pointermove', go); addEventListener('pointerup', stop);
   }, true);   // listen first: some widgets (Wireframe) keep their clicks to themselves
-  const WIDGETS = [['wLayers', () => document.querySelector('.box[data-box="layers"]')], ['wColors', () => document.querySelector('.box[data-box="colors"]')],
-    ['wDressup', () => document.querySelector('.box[data-box="dressup"]')], ['wDesign', () => $('design')], ['wTray', () => $('tray')]];
+  const WIDGETS = [['wLayers', () => document.querySelector('.box[data-box="layers"]')], ['wColors', () => document.querySelector('.box[data-box="colors"]')], ['wDesign', () => $('design')], ['wTray', () => $('tray')]];
   function applySettings() {
     queueMicrotask(() => applyColors()); queueMicrotask(() => applyGridShape()); queueMicrotask(() => applyToolbar());
     goos.forEach(g => g.setColors(MYRA_COLORS[settings.myra] || MYRA_COLORS.golden));
-    window.MyraOutfit = settings.outfit || {}; queueMicrotask(() => renderDressup());
     // widgets: the panels people can turn off (the Boards panel always stays: it holds their boards and Settings)
     WIDGETS.forEach(([k, el]) => el()?.classList.toggle('wg-off', settings[k] === false));
     [['layers', 'wLayers'], ['tray', 'wTray']].forEach(([sh, k]) => document.querySelector(`#hub [data-sheet="${sh}"]`)?.classList.toggle('wg-off', settings[k] === false));
@@ -2282,37 +2280,7 @@
   $('licView').onclick = e => { if (e.target === $('licView')) closeLicenses(); };
   addEventListener('keydown', e => { if (e.key === 'Escape' && $('licView').classList.contains('on')) { e.stopImmediatePropagation(); closeLicenses(); } }, true);
   $('settings').onclick = e => { if (e.target === $('settings')) closeSettings(); };
-  // ---------- Dress up Myra: hover to try things on, click to wear them. She wears it everywhere she shows up ----------
-  const DU_TABS = [['hat', 'Hats'], ['face', 'Face'], ['neck', 'Neck'], ['held', 'Hold'], ['color', 'Colour']];
-  let duTab = 'hat';
-  const duThumb = (kind, key) => {   // the piece as big as fits, whole pixels only, with a little shadow so white things show
-    const c = document.createElement('canvas'), S = 72; c.width = c.height = S; const x = c.getContext('2d');
-    const rows = MYRA_WARDROBE[kind][key][3], w = Math.max(...rows.map(r => r.length)), h = rows.length, cell = Math.max(2, Math.floor(Math.min(60 / w, 54 / h)));
-    const ox = Math.round((S - w * cell) / 2), oy = Math.round((S - h * cell) / 2);
-    x.shadowColor = 'rgba(110, 60, 100, .22)'; x.shadowOffsetY = Math.max(1, cell / 3);
-    rows.forEach((r, yy) => [...r].forEach((ch, xx) => { if (ch !== '.' && MYRA_PAL[ch]) { x.fillStyle = MYRA_PAL[ch]; x.fillRect(ox + xx * cell, oy + yy * cell, cell, cell); } }));
-    return c;
-  };
-  function renderDressup() {
-    const fit = settings.outfit || {};
-    $('duTabs').innerHTML = DU_TABS.map(([k, l]) => `<button role="tab" data-du="${k}" class="${k === duTab ? 'on' : ''}" aria-selected="${k === duTab}">${l}</button>`).join('');
-    const box = $('duItems'); box.innerHTML = '';
-    if (duTab === 'color') Object.entries(MYRA_COLORS).forEach(([k, c]) => box.insertAdjacentHTML('beforeend', `<button class="du-item du-color${settings.myra === k ? ' on' : ''}" data-kind="color" data-key="${k}" title="${k[0].toUpperCase() + k.slice(1)}" aria-pressed="${settings.myra === k}"><span style="background:linear-gradient(160deg, ${c.S} 0 22%, ${c.B} 22% 78%, ${c.D} 78%)"></span></button>`));
-    else Object.entries(MYRA_WARDROBE[duTab]).forEach(([k, sp]) => { const b = document.createElement('button'); b.className = 'du-item' + (fit[duTab] === k ? ' on' : ''); Object.assign(b.dataset, { kind: duTab, key: k }); b.title = sp[0]; b.setAttribute('aria-pressed', fit[duTab] === k); b.append(duThumb(duTab, k)); box.append(b); });
-    $('duOff').hidden = !Object.values(fit).some(Boolean);
-  }
-  $('duTabs').onclick = e => { const b = e.target.closest('[data-du]'); if (b) { duTab = b.dataset.du; renderDressup(); } };
-  $('duItems').addEventListener('pointerover', e => { const b = e.target.closest('.du-item'); if (!b || e.pointerType === 'touch') return;
-    if (b.dataset.kind === 'color') goos.forEach(g => g.setColors(MYRA_COLORS[b.dataset.key])); else window.MyraPreview = { [b.dataset.kind]: b.dataset.key }; });
-  $('duItems').addEventListener('pointerleave', () => { window.MyraPreview = null; goos.forEach(g => g.setColors(MYRA_COLORS[settings.myra] || MYRA_COLORS.golden)); });
-  $('duItems').onclick = e => {
-    const b = e.target.closest('.du-item'); if (!b) return; const { kind, key } = b.dataset;
-    if (kind === 'color') settings.myra = key;
-    else { const fit = { ...(settings.outfit || {}) }; fit[kind] = fit[kind] === key ? null : key; settings.outfit = fit; }
-    window.MyraPreview = null; applySettings(); hopMyra(); duGoo.hop();
-  };
   $('wgReset').onclick = () => { settings.layout = null; applySettings(); chirp('Widgets are back where they started ✦', 2600); };
-  $('duOff').onclick = () => { settings.outfit = {}; applySettings(); duGoo.hop(); };
 
   $('obMyra').onclick = $('myraColors').onclick = e => { const b = e.target.closest('[data-mc]'); if (b) { settings.myra = b.dataset.mc; applySettings(); hopMyra(); } };
   document.querySelectorAll('[data-set]').forEach(t => t.onchange = () => { settings[t.dataset.set] = t.checked; applySettings(); if (t.dataset.set === 'autoUpdate') { showUpdate.answered = true; if (t.checked && updInfo) showUpdate(); } });
@@ -5100,24 +5068,6 @@ ${proseCSS()}
   ] };
   // the button on each version's card: try the headline thing
   const NEWS_TRY = { '1.0.0': ['Take the tour', () => startTour()] };
-  // a bigger update walks through extra steps: [title, subtitle] for each, after the list
-  const NEWS_STEPS = {};   // (the Mac version's 1.6.0 steps introduce Dress up and music, which this version doesn't have)
-  let nwStep = 0, nwSteps = null, nwHead = null, nwGooT = 0;
-  const nwGoo = Goo($('nwGoo'), { wearing: () => window.__nwFit || {} });
-  const NW_FITS = [{ hat: 'party', held: 'balloon' }, { hat: 'crown', face: 'hearts' }, { hat: 'witch', neck: 'scarf', held: 'wand' }, { hat: 'frog' }, { hat: 'beanie', face: 'round', held: 'boba' }, { hat: 'bow', neck: 'pearls' }];
-  function newsShow(n) {
-    nwStep = n; const steps = nwSteps || [];
-    $('newsList').hidden = n > 0; document.querySelectorAll('#news .nw-step').forEach(s => s.hidden = +s.dataset.s !== n);
-    $('news').querySelector('h2').textContent = n ? steps[n - 1][0] : nwHead[0]; $('newsV').textContent = n ? steps[n - 1][1] : nwHead[1];
-    $('news').querySelector('.nw-myra').hidden = n > 0;
-    $('nwDots').hidden = !steps.length; [...$('nwDots').children].forEach((d, i) => { d.hidden = i > steps.length; d.classList.toggle('on', i === n); });
-    const last = n >= steps.length;
-    $('newsOk').textContent = last ? 'Love it' : 'Next →';
-    if (steps.length) { $('newsTry').textContent = n === 0 ? 'Skip' : last ? 'Show me' : '← Back'; }
-    $('nwDress').checked = settings.wDressup !== false;
-    clearInterval(nwGooT); if (n === 1) { let i = 0; window.__nwFit = NW_FITS[0]; nwGooT = setInterval(() => { window.__nwFit = NW_FITS[++i % NW_FITS.length]; nwGoo.hop(); }, 1300); }
-  }
-  $('nwDress').onchange = () => { settings.wDressup = $('nwDress').checked; applySettings(); if (settings.wDressup) nwGoo.hop(); };
   const newsKey = 'myra:newsSeen';
   async function maybeNews() {
     let v = null; try { v = await Myra.version(); } catch (e) {} if (!v) v = Object.keys(NEWS).pop();
@@ -5125,17 +5075,15 @@ ${proseCSS()}
     try { localStorage.setItem(newsKey, v); } catch (e) {}
     // everything new since the version you last saw (a small fix release has no card of its own)
     const num = x => String(x || '0').replace(/^v/, '').split('.').map(n => +n || 0), after = (x, y) => { const a = num(x), b = num(y); for (let i = 0; i < 3; i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0); return false; };
-    const items = Object.keys(NEWS).filter(k => (!seen || after(k, seen)) && !after(k, v)).flatMap(k => NEWS[k]).filter(([, t]) => !/dress up|for windows|written out/i.test(t));   // things this version doesn't have
+    const items = Object.keys(NEWS).filter(k => (!seen || after(k, seen)) && !after(k, v)).flatMap(k => NEWS[k]);
     if (seen === v || !items.length) return;
-    $('newsV').textContent = `Myra ${v}`; nwHead = ['What’s new ✦', `Myra ${v}`];
-    nwSteps = Object.keys(NEWS_STEPS).filter(k => (!seen || after(k, seen)) && !after(k, v)).flatMap(k => NEWS_STEPS[k]); if (!nwSteps.length) nwSteps = null;
+    $('newsV').textContent = `Myra ${v}`;
     $('newsList').innerHTML = items.map(([e, t, d]) => `<li><span class="nw-e">${Icon(e)}</span><div><b>${esc(t)}</b><small>${esc(d)}</small></div></li>`).join('');
     const tryK = Object.keys(NEWS_TRY).filter(k => !after(k, v)).pop(), tr = NEWS_TRY[tryK]; $('newsTry').textContent = tr[0]; $('newsTry').onclick = () => { closeNews(); tr[1](); };
-    $('news').classList.add('on'); newsShow(0);
-    if (nwSteps) $('newsTry').onclick = () => { if (nwStep === 0) closeNews(); else if (nwStep >= nwSteps.length) { closeNews(); $('gearBtn').click(); setTab('widgets'); } else newsShow(nwStep - 1); };
+    $('news').classList.add('on');
   }
-  const closeNews = () => { $('news').classList.remove('on'); clearInterval(nwGooT); };   // a song they only previewed stops with the card
-  $('newsOk').onclick = () => nwSteps && nwStep < nwSteps.length ? newsShow(nwStep + 1) : closeNews();
+  const closeNews = () => $('news').classList.remove('on');
+  $('newsOk').onclick = closeNews;
   $('news').onclick = e => { if (e.target === $('news')) closeNews(); };
 
   // ---------- phone: the board gets the whole screen. Panels slide up as bottom sheets, and the bottom bar becomes a hub ----------
@@ -5151,10 +5099,10 @@ ${proseCSS()}
     const sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'sheet';
     sh.innerHTML = '<div class="sh-veil"></div><div class="sh-panel" role="dialog"><div class="sh-grab"><i></i></div><div class="sh-head"><b id="shTitle"></b><div class="sh-tabs" id="shTabs"></div><button class="sh-x" aria-label="Close">×</button></div><div class="sh-body" id="shBody"></div></div>';
     document.body.appendChild(sh);
-    const hubGoo = Goo(hub.querySelector('#hubGoo'), { outfit: 'wear' }); goos.push(hubGoo);
+    const hubGoo = Goo(hub.querySelector('#hubGoo')); goos.push(hubGoo);
     const box = k => document.querySelector(`.box[data-box="${k}"]`);
     const SHEETS = {
-      boards: { title: 'Boards', tabs: [['Boards', () => box('boards')], ['Dress up Myra', () => box('dressup')]] },
+      boards: { title: 'Boards', tabs: [['Boards', () => box('boards')]] },
       layers: { title: 'Layers', tabs: [['Layers', () => box('layers')]] },
       add: { title: 'Add', tabs: [['Basics', () => $('tools')], ['Wireframe', () => $('design')], ['Colours', () => box('colors')]] },
       tray: { title: 'Unsorted', tabs: [['Ideas', () => $('tray')]] },

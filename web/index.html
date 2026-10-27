@@ -39,14 +39,6 @@
     <header><div class="label">Board colours</div><button class="mini" title="Minimise">–</button></header>
     <div class="box-body"><div class="palette" id="palette"></div></div>
   </section>
-  <section class="box" data-box="dressup">
-    <header><div class="label" data-mname="Dress up {name}">Dress up Myra</div><button class="mini" title="Minimise">–</button></header>
-    <div class="box-body">
-      <div class="du-stage" id="duStage"><canvas id="duGoo" width="168" height="150" aria-label="Myra in her outfit"></canvas><button class="du-off" id="duOff" hidden>Take it all off</button></div>
-      <div class="seg du-tabs" id="duTabs" role="tablist"></div>
-      <div class="du-items" id="duItems"></div>
-    </div>
-  </section>
 </aside>
 
 <main class="stage" id="stage">
@@ -213,25 +205,6 @@
   <img class="nw-myra" src="stamps/myra-party.png" alt="">
   <h2>What’s new ✦</h2><p class="nw-v" id="newsV"></p>
   <ul class="nw-list" id="newsList"></ul>
-  <!-- a bigger update can walk through a couple of extra steps: new widgets to switch on, and where to find them later -->
-  <section class="nw-step" data-s="1" hidden>
-    <div class="nw-pick">
-      <div class="nw-card"><div class="nw-stage"><canvas id="nwGoo" width="120" height="120" aria-label="Myra trying on outfits"></canvas></div>
-        <b>Dress up Myra</b><small>Hats, glasses, a balloon… and she wears her outfit everywhere she shows up.</small>
-        <label class="nw-add"><input type="checkbox" class="tgl" id="nwDress"><span>Add to my board</span></label></div>
-    </div>
-  </section>
-  <section class="nw-step" data-s="2" hidden>
-    <div class="nw-demo" aria-hidden="true">
-      <div class="dm-side"><span class="dm-gear"><svg data-ico="settings" width="15" height="15"></svg></span><i></i><i></i><i></i></div>
-      <div class="dm-win"><div class="dm-tabs"><i>General</i><i>Myra</i><i>Board</i><i class="dm-w">Widgets</i></div>
-        <div class="dm-row"><b>Dress up Myra</b><span class="dm-sw dm-s1"></span></div>
-        </div>
-      <svg class="dm-cur" data-ico="select"></svg>
-    </div>
-    <p class="nw-tip">Drag any widget by its title to move it to either side.</p>
-  </section>
-  <div class="nw-dots" id="nwDots" hidden><i></i><i></i><i></i></div>
   <div class="ob-foot"><button class="set-btn" id="newsTry">Try a template</button><button class="set-btn hot" id="newsOk">Love it</button></div>
 </div></div>
 <div class="onboard" id="onboard">
