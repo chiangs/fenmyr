@@ -2449,6 +2449,8 @@
     finally { $('myra').classList.remove('thinking'); goo.think(false); favGoo?.think(false); typing(false); }
   }
   $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
+  // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
+  const noEmoji = t => settings.emoji ? t : String(t).replace(/(\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}])(\uFE0F|\u200D|\u20E3|[\u{1F3FB}-\u{1F3FF}])*/gu, '').replace(/ {2,}/g, ' ').trim();
   const parse = raw => { const s = String(raw), a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0) return { say: s.trim() }; try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return { say: s.trim() }; } };
   // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
   async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
@@ -2532,9 +2534,9 @@
     const acts = r.confirm ? [{ label: (r.confirm || 'Yes, make it') + ' ✦', run: () => ask(q, true) }, { label: 'Not now', ghost: true, run: () => {} }] : [];
     if (r.offerVault && !ctx.asked && aiGrants(board).length) acts.push({ label: 'Search my vault ✦', cls: 'next', run: () => { vaultChip = true; updateVaultChip(); ask(q); } });
     // what next: Myra's own ideas, or a sensible guess from what she just made
-    const next = acts.length ? [] : (Array.isArray(r.next) && r.next.length ? r.next : guessNext(r, added)).filter(t => typeof t === 'string' && t.trim()).slice(0, 3);
+    const next = acts.length ? [] : (Array.isArray(r.next) && r.next.length ? r.next : guessNext(r, added)).filter(t => typeof t === 'string').map(noEmoji).filter(Boolean).slice(0, 3);
     next.forEach(t => acts.push({ label: t.trim(), cls: 'next', run: () => ask(t.trim()) }));
-    reply((r.say || (added.length ? `Done! I touched ${added.length} cards.` : 'Done!')) + read, r.confirm ? 0 : next.length ? 16000 : 9000, acts);
+    reply(((r.say && noEmoji(r.say)) || (added.length ? `Done! I touched ${added.length} cards.` : 'Done!')) + read, r.confirm ? 0 : next.length ? 16000 : 9000, acts);
   }
   function guessNext(r, added) {
     const has = t => added.some(c => c.type === t);
