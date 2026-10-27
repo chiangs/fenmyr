@@ -200,11 +200,49 @@ echo " [BLANK_AUDIO] hello from whisper"
     b.links = b.links.filter(x => x.id !== 'WL'); b.cards = b.cards.filter(c => !['wA', 'wB'].includes(c.id)); M.selectWire(null); return res;
   });
   // sidebar rows: hovering shows the row's buttons without making the row taller than its neighbours, and their icons have a real size
-  { await page.waitForFunction(() => [...document.querySelectorAll('.board-row')].some(r => r.parentElement.querySelectorAll(':scope > .board-row').length > 1) && document.querySelector('.board-row').getBoundingClientRect().height > 0);
-    await page.locator('.board-row').first().hover(); await page.waitForTimeout(250);
-    r.rowHover = await page.evaluate(() => { const e = document.querySelector('.board-row:hover'); if (!e) return { same: false, shown: false, icon: false };
+  { const pt = await page.waitForFunction(() => {
+      const all = [...document.querySelectorAll('.board-row')], seen = r => r.getBoundingClientRect().height > 0, row = all.filter(seen).find(x => [...x.parentElement.querySelectorAll(':scope > .board-row')].some(y => y !== x && seen(y)));
+      return row ? { i: all.indexOf(row) } : null; }, null, { timeout: 15000 }).then(h => h.jsonValue()).catch(() => null);
+    if (pt) { await page.locator('.board-row').nth(pt.i).hover(); await page.waitForTimeout(250); }
+    r.rowHover = await page.evaluate(found => { const e = document.querySelector('.board-row:hover'); if (!e) return { found, sidebar: !!document.querySelector('.board-row') && [...document.querySelectorAll('.board-row')].some(x => x.getBoundingClientRect().height > 0), same: false, shown: false, icon: false };
       const b = e.querySelector('.f-btn'), sv = b && b.querySelector('svg'), h = e.getBoundingClientRect().height, others = [...e.parentElement.querySelectorAll(':scope > .board-row')].filter(x => x !== e).map(x => x.getBoundingClientRect().height).filter(x => x > 0);
-      return { same: others.every(x => Math.abs(x - h) < 1.5), shown: !!b && getComputedStyle(b).display !== 'none', icon: !!sv && sv.getBoundingClientRect().width >= 12 }; }); }
+      return { found, h, others, same: others.every(x => Math.abs(x - h) < 1.5), shown: !!b && getComputedStyle(b).display !== 'none', icon: !!sv && sv.getBoundingClientRect().width >= 12 }; }, !!pt); }
+  // tags on notes: "#word" + space makes a tag (out of the words), "#" suggests the board's tags, "#24" stays words, Myra's tags land in tags
+  { await page.evaluate(() => { window.__myra.selectOnly([]); window.__myra.board.cards.filter(c => c.type === 'note').forEach(c => delete c.tags); });
+    await page.evaluate(() => window.__myra.newNote(-400, 600)); await page.waitForTimeout(300);
+    await page.keyboard.type('Fix the login #bug and issue #24 later', { delay: 15 }); await page.keyboard.press('Space'); await page.waitForTimeout(200);
+    r.tags = await page.evaluate(() => { const M = window.__myra, c = M.board.cards.find(x => x.id === M.editing); return { text: c && c.text, tags: c && c.tags, board: M.board.tags }; });
+    // a second note: "#b" suggests "#bug"; Enter picks it
+    await page.keyboard.press('Escape'); await page.evaluate(() => window.__myra.newNote(-100, 600)); await page.waitForTimeout(300);
+    await page.keyboard.type('Second #b', { delay: 20 }); await page.waitForTimeout(250);
+    r.tags.pop = await page.evaluate(() => [...document.querySelectorAll('#tagPop.on button')].map(b => b.textContent));
+    await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+    Object.assign(r.tags, await page.evaluate(async () => { const M = window.__myra, c = M.board.cards.find(x => x.id === M.editing);
+      const res = { text2: c && c.text, tags2: c && c.tags, chips: document.querySelectorAll(`[data-id="${c.id}"] .ntags i`).length };
+      await M.applyMyra({ say: 'ok', add: [{ type: 'note', name: 'Login fails', text: 'Steps to reproduce', tags: ['BUG', '#ui', '12'], tag: '#31' }] }, 'q');
+      const m = M.board.cards.find(x => x.name === 'Login fails'); res.myra = m && { tags: m.tags, label: m.tagText, text: m.text }; res.board2 = M.board.tags;
+      return res; }));
+    await page.keyboard.press('Escape'); }
+  // earlier chats: with chats saved on the board, New chat files the conversation away (last 10 kept) and History brings it back
+  r.chatHist = await page.evaluate(async () => {
+    const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {};
+    document.querySelector('[data-seg="chatKeep"] [data-v="board"]').click(); await wait(100);
+    document.getElementById('mPill').click(); await wait(300);
+    const mk = (q, a) => [{ who: 'me', text: q, t: Date.now() }, { who: 'myra', text: a, t: Date.now() }];
+    for (let i = 0; i < 12; i++) { M.board.chat = mk('question ' + i, 'answer ' + i); document.getElementById('mcNew').click(); await wait(30); }
+    res.kept = M.board.chats.length; res.newest = M.board.chats[0].title; res.btn = !document.getElementById('mcHist').hidden;
+    M.board.chat = mk('the current one', 'still here');
+    document.getElementById('mcHist').click(); await wait(200);
+    res.rows = document.querySelectorAll('#mcList .mh-row').length;
+    document.querySelector('#mcList .mh-row:nth-child(3) .mh-open').click(); await wait(200);   // the second-newest (row 1 is the header)
+    res.restored = M.board.chat[0].text; res.filed = M.board.chats[0].title; res.view = !!document.querySelector('#mcList .mc-msg');
+    // an answer that arrives while the chat is closed still lands in the chat
+    document.getElementById('mcClose').click(); await wait(100); await M.applyMyra({ say: 'Your board has three saved colours.' }, 'what colours are saved?');
+    res.closedReply = M.board.chat.some(m => m.who === 'myra' && m.text.startsWith('Your board has three saved colours'));
+    document.getElementById('mPill').click(); await wait(300); res.closedShown = document.getElementById('mcList').textContent.includes('Your board has three saved colours');
+        document.getElementById('mcClose').click(); M.board.chat = []; M.board.chats = []; document.querySelector('[data-seg="chatKeep"] [data-v="session"]')?.click();
+    return res;
+  });
   // About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
   Object.assign(r, await page.evaluate(async () => {
     document.getElementById('openLicenses').click(); await new Promise(res => setTimeout(res, 700));
@@ -222,13 +260,13 @@ echo " [BLANK_AUDIO] hello from whisper"
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), webOn: r.webOn.slice(-120), webOff: r.webOff.slice(-120), hooksRewrite: r.hooksRewrite.slice(-100) }, null, 1));
   await app.close();
   const ok = r.native && r.linux && r.save && r.load === 0 && r.list && r.folders === 1 && r.fonts > 0 && r.unknown === 'unknown op nope' && r.range[0] === 206 && r.range[1] === 100
-    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.tree.name && r.tree.cards >= 12 && r.kickoff.name && r.kickoff.cards >= 18 && r.kanban.cols.join() === 'To do,Doing,Done' && r.kanban.counts.join() === '2,1 / 3,1' && r.first.name === 'My first board' && r.first.cards === 15 && r.first.tray === 5 && r.first.kanban && r.kanban.menu && r.vault.names === '2026-10-20,Cloudberries,East bog,Long,Trip plan' && r.vault.title === 'Trip plan' && r.vault.tags === 'trip,cloudberries,today' && r.vault.shown && r.vault.tool && r.vault.side && r.vault.beforeFull && r.vault.fullShown && !r.vault.fullSaved && r.vault.lessAgain && r.vault.blocked && r.vault.altN && r.rowHover.same && r.rowHover.shown && r.rowHover.icon && r.wire.order === 'Connector,wcol,wwt,,Curved' && r.wire.weights === 'Regular,Medium,Bold' && r.wire.set && r.wire.drawn && r.wire.last === '{"w":6,"color":"#4f8fc9"}' && r.wire.halo && r.wire.reset && r.vaultAI.chipHiddenWhenOff && r.vaultAI.chipShown && r.vaultAI.withoutChip && r.vaultAI.chipOn && r.vaultAI.withChip && r.vaultAI.said && r.vaultAI.chipReset && r.vaultAI.cards === 1 && r.tplSaved && r.tplRow && r.tplAdds && r.tplNew && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
+    && r.pngSize[0] === 600 && r.pdfPages >= 2 && files.includes('shot.pdf') && files.includes('Doc.docx') && r.boardOnDisk && r.big && r.licenses > 60 && r.licMochiboard && r.licJszip && r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' && r.tree.name && r.tree.cards >= 12 && r.kickoff.name && r.kickoff.cards >= 18 && r.kanban.cols.join() === 'To do,Doing,Done' && r.kanban.counts.join() === '2,1 / 3,1' && r.first.name === 'My first board' && r.first.cards === 15 && r.first.tray === 5 && r.first.kanban && r.kanban.menu && r.vault.names === '2026-10-20,Cloudberries,East bog,Long,Trip plan' && r.vault.title === 'Trip plan' && r.vault.tags === 'trip,cloudberries,today' && r.vault.shown && r.vault.tool && r.vault.side && r.vault.beforeFull && r.vault.fullShown && !r.vault.fullSaved && r.vault.lessAgain && r.vault.blocked && r.vault.altN && r.chatHist.kept === 10 && r.chatHist.newest === 'question 11' && r.chatHist.btn && r.chatHist.rows === 10 && r.chatHist.restored === 'question 10' && r.chatHist.filed === 'the current one' && r.chatHist.view && r.tags.text.trim() === 'Fix the login and issue #24 later' && JSON.stringify(r.tags.tags) === '["bug"]' && r.tags.pop.includes('#bug') && r.tags.text2.trim() === 'Second' && JSON.stringify(r.tags.tags2) === '["bug"]' && r.tags.chips === 1 && JSON.stringify(r.tags.myra.tags) === '["bug","ui"]' && r.tags.myra.label === '#31' && JSON.stringify(r.tags.board2) === '["bug","ui"]' && r.chatHist.closedReply && r.chatHist.closedShown && (!r.rowHover.found && !r.rowHover.sidebar || r.rowHover.same && r.rowHover.shown && r.rowHover.icon) && r.wire.order === 'Connector,wcol,wwt,,Curved' && r.wire.weights === 'Regular,Medium,Bold' && r.wire.set && r.wire.drawn && r.wire.last === '{"w":6,"color":"#4f8fc9"}' && r.wire.halo && r.wire.reset && r.vaultAI.chipHiddenWhenOff && r.vaultAI.chipShown && r.vaultAI.withoutChip && r.vaultAI.chipOn && r.vaultAI.withChip && r.vaultAI.said && r.vaultAI.chipReset && r.vaultAI.cards === 1 && r.tplSaved && r.tplRow && r.tplAdds && r.tplNew && r.licPhosphor && r.fontLora && r.fontBack && !r.icoMissing.length && r.icoCount >= 19 && r.icoPick > 150 && r.icoPlaceholder && r.icoRegular && r.icoDuo && r.chromiumFile && !errors.length
     && r.conn.mobbin === true && r.conn.higgsfield === false && JSON.parse(r.ask).say === 'hi from fake claude' && r.usage2.asks === 1 && r.usage2.tokensIn === 15
     && r.prompt.includes('The person asked you: sort these') && r.prompt.includes('Icons are names from this list') && r.prompt.includes('"n":0') && r.prompt.includes('Higgsfield is TURNED OFF') && r.args.includes('mcp__claude_ai_Mobbin__search_screens')
     && r.hooksOff.includes('disableAllHooks') && r.hooksRewrite.includes('disableAllHooks') && !r.hooksOff.includes('WebSearch') && r.webOn.includes('WebSearch') && r.webOn.includes('WebFetch') && r.webOn.includes('disableAllHooks') && !r.webOff.includes('WebSearch') && r.webPromptOn && r.webPromptOff
     && r.wav === 'RIFF' && r.transcribe === 'hello from whisper';
   if (process.env.KEEP) console.log('output in', out); else fs.rmSync(data, { recursive: true, force: true });
   // on GitHub, a failure also becomes an annotation with the results, since the job log isn't always at hand
-  if (!ok && process.env.GITHUB_ACTIONS) { const { prompt, args, ...brief } = r; console.log('::error title=Smoke test failed::' + JSON.stringify(brief).replace(/%/g, '%25').replace(/\n/g, ' ').slice(0, 6000)); }
+  if (!ok && process.env.GITHUB_ACTIONS) { const { prompt, args, ...brief } = r; console.log('::error title=Smoke test failed::' + JSON.stringify(brief, (k, v) => typeof v === 'string' && v.length > 160 ? v.slice(0, 60) + '…' : v).replace(/%/g, '%25').replace(/\n/g, ' ').slice(0, 6000)); }
   console.log(ok ? 'SMOKE OK' : 'SMOKE FAILED'); process.exit(ok ? 0 : 1);
-})().catch(e => { console.error(e); process.exit(1); });
+})().catch(e => { console.error(e); if (process.env.GITHUB_ACTIONS) console.log('::error title=Smoke test crashed::' + String(e && e.stack || e).replace(/%/g, '%25').replace(/\n/g, '%0A').slice(0, 4000)); process.exit(1); });

@@ -68,7 +68,7 @@ const OPS = {
   // Chromium's (and Node's) licenses ship with Electron as LICENSES.chromium.html, next to the Electron program
   chromiumLicenses: async () => {
     const f = [path.dirname(process.execPath), process.resourcesPath && path.dirname(process.resourcesPath)].filter(Boolean).map(d => path.join(d, 'LICENSES.chromium.html')).find(f => fs.existsSync(f));
-    if (!f) throw new Error("Chromium's license file isn't next to Electron in this copy."); const err = await shell.openPath(f); if (err) throw new Error(err); return true;
+    if (!f) throw new Error("Chromium's licence file isn't next to Electron in this copy."); const err = await shell.openPath(f); if (err) throw new Error(err); return true;
   },
   usage: () => claude.usageSummary(), resetUsage: () => claude.resetUsage(), version: () => update.appVersion(),
   linkPreview: a => net.linkPreview(a.url || ''),
