@@ -16,6 +16,7 @@ Write them for people, not for code: one line, what changed and why it's nice.
 - A new first board that shows ideas ripening into a plan, with things to try. Pick an empty start at the end of setup, or add the example later from Settings.
 - Obsidian vaults (read-only): connect a vault in Settings, choose which folders each project or board may read, and add notes to a board (Alt+N) as cards you can flip between title and tags and the content, and open in Obsidian. A #private tag and off-limits folders are never read.
 - Ask Myra about your notes: switch on “read with AI” for a vault grant, tick Vault in her chat for a question, and she reads the best few matching notes (never #private ones or off-limits folders), tells you which, and can put them on the board.
+- Tags on notes: type #word in a note (suggestions come from the board's tags) or use Tags in the bar. Tags stay apart from the words, and Myra uses them, including labels from GitHub issues.
 - Earlier chats: when chats are saved with the board, New chat keeps the conversation, and History in Myra's chat brings back any of the last 10.
 - Connectors: pick a colour and a weight (regular, medium or bold) from the bar; the next connector you draw starts the same way, and Reset puts it back.
 - Kanban: columns you can name, with counts and limits, added to any board from the template picker.

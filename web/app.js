@@ -519,7 +519,7 @@
   // every card keeps real numbers for its place and size (a bad one would break saving)
   function cleanNumbers() { board.cards.forEach(c => { ['x', 'y'].forEach(k => { if (!Number.isFinite(c[k])) c[k] = 0; }); ['w', 'h'].forEach(k => { if (!Number.isFinite(c[k]) || c[k] <= 0) c[k] = k === 'w' ? 200 : 100; }); ['r', 'rot'].forEach(k => { if (c[k] != null && !Number.isFinite(c[k])) c[k] = 0; }); }); }
   function save() {
-    if (!drag && board) { layoutAll(); cleanNumbers(); }
+    if (!drag && board) { layoutAll(); cleanNumbers(); syncBoardTags(); }
     if (!restoring) { clearTimeout(snapT); snapT = setTimeout(remember, 350); }
     layersSoon(); $('saved').textContent = 'saving…'; clearTimeout(saveT);
     saveT = setTimeout(async () => { board.view = view; await Myra.save(board); $('saved').textContent = 'saved'; refreshBoards(); }, 400);
@@ -660,7 +660,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function inner(c) {
     switch (c.type) {
-      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra" src="stamps/myra-wave.png" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : c.name !== undefined ? `<div class="nname">${esc(c.name)}</div>` : ''}<div class="text">${esc(c.text)}</div>`;
+      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra" src="stamps/myra-wave.png" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : c.name !== undefined ? `<div class="nname">${esc(c.name)}</div>` : ''}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
       case 'doc': return `<div class="pill">${CIC.doc}<span class="text">${esc(c.text)}</span></div>`;
       case 'canvas': return `<div class="cv-head">${CIC.canvas}<span class="text">${esc(c.text)}</span></div><div class="cv-prev"><em>empty canvas</em></div>`;
       case 'shape': return shapeSVG(c) + `<div class="text">${esc(c.text || '')}</div>`;
@@ -1386,6 +1386,76 @@
     const e2 = cardsEl.querySelector(`[data-id="${c.id}"]`);
     editField(e2, e2.querySelector('.tag'), v => c.tagText = v.trim(), () => { if (!c.tagText) { delete c.tagText; renderCard(c); selectOnly([c.id]); save(); } });
   }
+  // ---------- tags on notes: kept apart from the words. Each board keeps a list of its tags, which the suggestions come from ----------
+  const cleanTag = t => String(t || '').replace(/^#+/, '').trim().replace(/\s+/g, '-').replace(/[^\p{L}\p{N}_\-\/]/gu, '').slice(0, 30);
+  const realTag = t => !!t && !/^\d+$/.test(t);   // "#24" is an issue number, not a tag
+  const cleanTags = list => [...new Map((Array.isArray(list) ? list : []).map(cleanTag).filter(realTag).map(t => [t.toLowerCase(), t])).values()].slice(0, 10);
+  function syncBoardTags() {   // the tags in use, in the order they first appeared; one nobody uses any more drops off
+    if (!board) return; const used = new Map(); board.cards.forEach(c => c.type === 'note' && (c.tags || []).forEach(t => used.has(t.toLowerCase()) || used.set(t.toLowerCase(), t)));
+    const keep = (board.tags || []).filter(t => used.has(t.toLowerCase())); used.forEach((t, k) => { if (!keep.some(x => x.toLowerCase() === k)) keep.push(t); });
+    if (keep.length) board.tags = keep; else delete board.tags;
+  }
+  function tagSuggestions(q, exclude = []) {
+    q = String(q || '').toLowerCase(); const n = {}, ex = new Set(exclude.map(x => x.toLowerCase()));
+    board.cards.forEach(c => c.type === 'note' && (c.tags || []).forEach(t => n[t.toLowerCase()] = (n[t.toLowerCase()] || 0) + 1));
+    return (board.tags || []).filter(t => !ex.has(t.toLowerCase()) && t.toLowerCase().includes(q))
+      .sort((a, b) => (b.toLowerCase().startsWith(q) - a.toLowerCase().startsWith(q)) || (n[b.toLowerCase()] || 0) - (n[a.toLowerCase()] || 0)).slice(0, 6);
+  }
+  // the Tags editor in the selection bar: chips with ×, a box to add one, and the board's tags as suggestions
+  function tagEditor(c) {
+    const sug = tagSuggestions('', c.tags || []);
+    return `<div class="te-chips">${(c.tags || []).map(t => `<span class="te-chip">#${esc(t)}<button data-tagx="${esc(t)}" title="Remove">×</button></span>`).join('') || '<span class="te-none">No tags yet</span>'}</div>`
+      + `<input class="te-in" placeholder="Add a tag…" spellcheck="false" maxlength="30"><div class="te-sug">${sug.map(t => `<button data-tagadd="${esc(t)}">#${esc(t)}</button>`).join('')}</div>`;
+  }
+  function tagChips(c) { return `<div class="ntags">${c.tags.map(t => `<i>#${esc(t)}</i>`).join('')}</div>`; }
+  function refreshTagChips(c) { const b = cardsEl.querySelector(`[data-id="${c.id}"] .body`); if (!b) return; b.querySelector('.ntags')?.remove(); if ((c.tags || []).length) b.insertAdjacentHTML('beforeend', tagChips(c)); fitText(c); }
+  // an existing tag keeps its spelling: "UI" typed when the board has "ui" becomes "ui"
+  const existingTag = t => (board.tags || []).find(x => x.toLowerCase() === cleanTag(t).toLowerCase()) || cleanTag(t);
+  function addTag(c, t) { t = existingTag(t); if (!realTag(t)) return; c.tags = cleanTags([...(c.tags || []), t]); syncBoardTags(); refreshTagChips(c); save(); }
+  function removeTag(c, t) { c.tags = (c.tags || []).filter(x => x.toLowerCase() !== String(t).toLowerCase()); if (!c.tags.length) delete c.tags; syncBoardTags(); refreshTagChips(c); save(); }
+  // typing "#" in a note: suggestions from the board's tags; picking one (or a space after a new word) turns it into a tag, out of the words
+  const tagBox = e => { const box = e.target.closest('.sb-tags'); return box && { box, c: byId(box.dataset.for) }; };
+  const redrawTags = ({ box, c }) => { box.innerHTML = tagEditor(c); const n = (c.tags || []).length, b = $('selbar').querySelector('[data-pop="tags"] b'); if (b) b.textContent = n || ''; box.querySelector('.te-in').focus(); };
+  $('selbar').addEventListener('click', e => { const tb = tagBox(e); if (!tb || !tb.c) return; const x = e.target.closest('[data-tagx]'), a = e.target.closest('[data-tagadd]'); if (!x && !a) return;
+    e.stopImmediatePropagation(); x ? removeTag(tb.c, x.dataset.tagx) : addTag(tb.c, a.dataset.tagadd); redrawTags(tb); }, true);
+  $('selbar').addEventListener('keydown', e => { if (!e.target.matches?.('.te-in')) return; e.stopPropagation(); const tb = tagBox(e); if (!tb?.c) return;
+    if ((e.key === 'Enter' || e.key === ',') && e.target.value.trim()) { e.preventDefault(); addTag(tb.c, e.target.value); redrawTags(tb); }
+    else if (e.key === 'Backspace' && !e.target.value && (tb.c.tags || []).length) { removeTag(tb.c, tb.c.tags[tb.c.tags.length - 1]); redrawTags(tb); } });
+  $('selbar').addEventListener('input', e => { if (!e.target.matches?.('.te-in')) return; const tb = tagBox(e); if (!tb?.c) return;
+    tb.box.querySelector('.te-sug').innerHTML = tagSuggestions(e.target.value, tb.c.tags || []).map(t => `<button data-tagadd="${esc(t)}">#${esc(t)}</button>`).join(''); });
+  let tagPop = null;
+  function wireTagTyping(c, t) {
+    if (t._tags) return; t._tags = true;
+    let items = [], at = 0, token = null, skip = -1;
+    const pop = () => tagPop || (tagPop = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'tag-pop', id: 'tagPop' })));
+    const close = () => { tagPop?.classList.remove('on'); token = null; };
+    const tokenAtCaret = () => { const sl = getSelection(); if (!sl.rangeCount || sl.anchorNode?.nodeType !== 3 || !t.contains(sl.anchorNode)) return null;
+      const node = sl.anchorNode, off = sl.anchorOffset, m = /(^|\s)#([\p{L}\p{N}_\-\/]*)$/u.exec(node.data.slice(0, off));
+      return m ? { node, start: off - m[2].length - 1, end: off, word: m[2] } : null; };
+    const show = () => {
+      token = tokenAtCaret(); if (!token || token.start === skip || /^\d+$/.test(token.word)) return close();
+      const nw = cleanTag(token.word); items = tagSuggestions(token.word, c.tags || []);
+      if (realTag(nw) && !(board.tags || []).some(x => x.toLowerCase() === nw.toLowerCase())) items.push({ create: nw });
+      if (!items.length) return close(); at = Math.min(at, items.length - 1);
+      const p = pop(); p.innerHTML = items.map((x, i) => `<button data-i="${i}" class="${i === at ? 'on' : ''}">${x.create ? `New tag <b>#${esc(x.create)}</b>` : `#${esc(x)}`}</button>`).join('');
+      const r = document.createRange(); r.setStart(token.node, token.start); r.setEnd(token.node, token.end); const bx = r.getBoundingClientRect();
+      p.style.left = bx.left + 'px'; p.style.top = bx.bottom + 6 + 'px'; p.classList.add('on');
+      p.onmousedown = e => { e.preventDefault(); const bt = e.target.closest('[data-i]'); if (bt) pick(items[+bt.dataset.i]); };
+    };
+    const pick = x => { if (!token) return; const { node, start, end } = token, name = x.create || x;
+      node.data = node.data.slice(0, start) + node.data.slice(end).replace(/^ /, '');
+      const r = document.createRange(); r.setStart(node, Math.min(start, node.data.length)); r.collapse(true); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r);
+      close(); c.text = t.innerText.replace(/\n$/, ''); addTag(c, name); };
+    t.addEventListener('input', () => { at = 0; show(); });
+    t.addEventListener('keydown', e => {
+      if (e.key === ' ') { const tk = tokenAtCaret(); if (tk && tk.start !== skip && realTag(cleanTag(tk.word))) { token = tk; e.preventDefault(); e.stopImmediatePropagation(); return pick({ create: tk.word }); } }
+      if (!token || !tagPop?.classList.contains('on')) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); at = (at + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length; show(); }
+      else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); e.stopImmediatePropagation(); pick(items[at]); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); skip = token.start; close(); }
+    }, true);
+    t.addEventListener('blur', () => setTimeout(close, 120));
+  }
   let lastTap = {};
   function startEdit(id, target) {
     const el = cardsEl.querySelector(`[data-id="${id}"]`), c = byId(id); if (!el || !c) return;
@@ -1422,6 +1492,7 @@
       fitText(c);
       save(); };
     t.onblur = () => endEdit();
+    if (c.type === 'note') wireTagTyping(c, t);
   }
   function endEdit() { if (!editing) return; { const c0 = byId(editing), e0 = cardsEl.querySelector(`[data-id="${editing}"]`); if (c0 && e0 && ['title', 'text'].includes(c0.type)) setTimeout(() => textStrokeSVG(c0, e0), 0); }
     const el = cardsEl.querySelector(`[data-id="${editing}"]`); if (el) { el.classList.remove('editing'); el.querySelectorAll('[contenteditable]').forEach(n => n.contentEditable = 'false'); } editing = null; }
@@ -2328,8 +2399,8 @@
   // what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
   function snapshot() {
     const brief = c => c.type === 'vnote' ? { id: c.id, type: 'vnote', x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h) } : ({ id: c.id, type: c.type, x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h), color: c.color,
-      text: (c.text || c.title || c.label || '').slice(0, 300), font: c.font, name: c.name, kids: c.kids, desc: c.desc, body: c.body ? c.body.slice(0, 600) : undefined, shape: c.shape, tag: c.tagText, items: c.items ? c.items.map(i => i.t) : undefined, hex: c.hex, url: c.url, selected: sel.has(c.id) || undefined });
-    return { name: board.name, myTemplates: myTpls.map(t => t.name), cards: board.cards.map(brief), links: board.links.map(l => [l.a, l.b]), unsorted: board.tray.map(brief), boardColors: board.palette,
+      text: (c.text || c.title || c.label || '').slice(0, 300), font: c.font, name: c.name, kids: c.kids, desc: c.desc, body: c.body ? c.body.slice(0, 600) : undefined, shape: c.shape, label: c.tagText, tags: (c.tags || []).length ? c.tags : undefined, items: c.items ? c.items.map(i => i.t) : undefined, hex: c.hex, url: c.url, selected: sel.has(c.id) || undefined });
+    return { name: board.name, boardTags: board.tags || [], myTemplates: myTpls.map(t => t.name), cards: board.cards.map(brief), links: board.links.map(l => [l.a, l.b]), unsorted: board.tray.map(brief), boardColors: board.palette,
       fontsOnThisComputer: FONTS.filter(f => !/^(\.|Apple |System|STIX|Noto Sans [A-Z][a-z]+ [A-Z])/.test(f)).slice(0, 400),
       recentChat: (settings.chatKeep === 'off' ? chatLog().slice(-2) : chatLog().slice(-8)).map(m => `${m.who === 'me' ? 'Person' : 'Myra'}: ${m.text}`),
       myraStyle: (settings.name ? `The person's name is ${settings.name}; use it now and then, not in every reply. ` : '') + ({ quiet: 'Keep "say" to one short sentence.', normal: 'Keep "say" short and warm.', chatty: 'Be warm, playful and encouraging in "say" (2 to 3 sentences, a little cheer is welcome).' }[settings.chat] || '') + (settings.emoji ? ' A couple of fitting emojis in "say" are welcome.' : ' Never use emojis.'),
@@ -2403,7 +2474,7 @@
     const file = (c, k) => { const s2 = collFor(k); if (!s2 || c.id === s2.id) return; const from = parentOf(c.id); if (from) from.kids = from.kids.filter(x => x !== c.id); s2.kids.push(c.id); };
     (r.add || []).forEach(o => { place(o); const c = card(['todo', 'title', 'swatch', 'doc', 'font'].includes(o.type) ? o.type : 'note', { font: o.type === 'font' ? (o.font || o.text) : (o.font ? String(o.font) : undefined), body: o.type === 'doc' ? (o.body || '') : undefined,
       x: o.x, y: o.y, text: o.type === 'font' ? (o.sample || '') : o.text || '', color: COLOR_NAMES.includes(o.color) ? o.color : 'white', hex: o.hex, label: o.label,
-      items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined, tagText: o.tag, name: o.name }); addCard(c); added.push(c); if (o.in) file(c, o.in); });
+      items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined, tagText: o.tag, name: o.name }); if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag); addCard(c); added.push(c); if (o.in) file(c, o.in); });
     (r.titles || []).forEach(o => { place(o); added.push(addCard(card('title', { x: o.x, y: o.y, text: o.text }))); });
     (r.place || []).forEach(o => { const c = board.tray.find(x => x.id === o.id); if (!c) return; place(o); c.x = o.x; c.y = o.y; board.tray = board.tray.filter(x => x !== c); addCard(c); added.push(c); });
     (r.move || []).forEach(o => { const c = byId(o.id); if (!c || o.x == null) return; c.x = o.x; c.y = o.y; if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
@@ -2415,6 +2486,7 @@
       if (o.items) c.items = o.items.map((t, k) => ({ t: typeof t === 'string' ? t : t.t, done: (typeof t === 'object' && t.done) || (c.items?.[k]?.t === t && c.items[k].done) || false }));
       if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
       if (o.tag !== undefined) { if (o.tag) c.tagText = o.tag; else delete c.tagText; }
+      if (Array.isArray(o.tags) && c.type === 'note') { c.tags = cleanTags(o.tags).map(existingTag); if (!c.tags.length) delete c.tags; }
       if (o.hex && /^#[0-9a-f]{6}$/i.test(o.hex)) c.hex = o.hex.toLowerCase();
       if (o.label != null) c.label = o.label;
       ['bold', 'italic', 'under', 'strike'].forEach(k => { if (typeof o[k] === 'boolean') c[k] = o[k]; });
@@ -4292,7 +4364,7 @@ ${proseCSS()}
   }
   const FS = { s: .8, m: 1, l: 1.4, xl: 2 }, SIZED = ['note', 'todo', 'title', 'shape', 'coll', 'vnote'];
   function selCards() { return [...sel].map(byId).filter(Boolean); }
-  const ICON = { tag: Icon('tag'), edit: Icon('edit'), myra: Icon('myra-tool'), del: Icon('trash'), head: Icon('header'), caption: Icon('captions'), color: Icon('palette'),
+  const ICON = { tags: Icon('tag'), tag: Icon('berry-label'), edit: Icon('edit'), myra: Icon('myra-tool'), del: Icon('trash'), head: Icon('header'), caption: Icon('captions'), color: Icon('palette'),
     name: Icon('name'), hex: Icon('hex'), crop: Icon('crop'), open: Icon('open'), link: Icon('link'), flip: Icon('refresh') };
   // fonts for board text: the same list as docs (fonts on this board first, then suggestions, then everything on this computer)
   // every font this board uses: picked for notes and titles, wireframe text, font cards, and fonts set inside docs (most used first)
@@ -4387,7 +4459,7 @@ ${proseCSS()}
     const wheelUp = $('cpop').classList.contains('on') && $('cpop').classList.contains('tint') && !$('cpop').classList.contains('from-bar') && $('cpop').offsetParent && $('settings').classList.contains('on');
     const show = cs.length && !homeAt && !(drag && drag.mode === 'move' && drag.moved) && !wheelUp;   // a wheel opened from this bar keeps the bar   // a color card's own bar shows right away, next to its wheel
     dock.classList.toggle('ctx', !!show); bar.classList.toggle('on', !!show); if (!show) { closeSbPops(); bar.dataset.ids = ''; if (bar.dataset.key !== '') { bar.dataset.key = ''; renderDesign(); } return; }
-    const key = (document.body.classList.contains('dark') ? 'd' : 'l') + Math.round(innerWidth / 30) + cs.map(c => c.id + c.tcase + c.tc + (c.type === 'text' ? c.color : '') + c.fill + c.squig + c.align + c.lh + c.ls + c.stroke + c.sw + c.sdash + c.dl + c.dg + c.radius + c.fill + Math.round(c.r || 0) + !!c.tilted + c.color + c.head + c.tagText + c.hideName + c.hideHex + c.fill + c.url + c.fs + c.font + c.bold + c.italic + c.under + c.strike + !!c.cropEdit + !!c.src + c.group).join();
+    const key = (document.body.classList.contains('dark') ? 'd' : 'l') + Math.round(innerWidth / 30) + cs.map(c => c.id + (c.tags || []).join('|') + c.tcase + c.tc + (c.type === 'text' ? c.color : '') + c.fill + c.squig + c.align + c.lh + c.ls + c.stroke + c.sw + c.sdash + c.dl + c.dg + c.radius + c.fill + Math.round(c.r || 0) + !!c.tilted + c.color + c.head + c.tagText + c.hideName + c.hideHex + c.fill + c.url + c.fs + c.font + c.bold + c.italic + c.under + c.strike + !!c.cropEdit + !!c.src + c.group).join();
     // never rebuild under an open dropdown for the SAME things (it would yank the slider out from under you); a new selection always gets a fresh bar
     const ids = cs.map(c => c.id).join(); if (bar.dataset.ids !== ids) { closeSbPops(); bar.dataset.ids = ids; }
     if (bar.dataset.key === key || bar.querySelector('.sb-popw.open')) { syncDesign(); return; } bar.dataset.key = key; renderDesign();   // never rebuild under an open dropdown (it would yank the slider out from under you)
@@ -4413,6 +4485,7 @@ ${proseCSS()}
     if (one?.type === 'box' && one.img && !one.src) h += `<button class="sb-txt" data-fill="1" title="Fill this image spot">Fill image ✦</button>`;
     if (one?.type === 'image') h += btn('crop', 'crop', 'Crop') + btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText);
     else if (one && !['coll', 'swatch', 'stamp', 'ink'].includes(one.type)) h += G(6, btn('tag', 'tag', one.tagText ? 'Remove the label' : 'Add a label', !!one.tagText));
+    if (one?.type === 'note') h += pop('tags', `${ICON.tags}${(one.tags || []).length ? `<b>${one.tags.length}</b>` : ''}${CARET}`, `<div class="sb-tags" data-for="${one.id}">${tagEditor(one)}</div>`, 'Tags');
     if (one?.type === 'doc') h += btn('open', 'open', 'Open the doc');
     if (one?.type === 'vnote') h += btn('vnflip', 'flip', 'Flip the card') + btn('vnopen', 'open', 'Open in Obsidian');
     if (one?.type === 'canvas') h += btn('open', 'open', 'Open this canvas');
@@ -5178,5 +5251,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__myra = { selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__myra = { newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

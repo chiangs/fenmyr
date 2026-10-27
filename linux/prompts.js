@@ -32,7 +32,7 @@ Reply with ONLY one JSON object, no other words before or after it. Use only the
 {"say": "a short, friendly reply in first person (1 to 3 sentences, no em dashes)",
  "next": ["2 or 3 things they might want next, written as short requests they can tap (under 6 words each, e.g. 'Make the mobile version'), specific to what you just did"],
  "add": [{"type": "note" | "todo" | "title" | "swatch" | "doc" | "font", "text": "... (a doc's title)", "items": ["for todo"], "hex": "#rrggbb for swatch", "label": "swatch name",
-          "color": "white|pink|butter|mint|lilac|sky|peach", "x": 0, "y": 0, "tag": "optional tiny handwritten label", "body": "for a doc: its full text",
+          "color": "white|pink|butter|mint|lilac|sky|peach", "x": 0, "y": 0, "tag": "optional tiny handwritten label above the card (e.g. an issue number like #24)", "tags": ["optional, notes only: short keywords"], "body": "for a doc: its full text",
           "name": "optional bold name above a note's words", "in": "optional: a collection id, or the name of a collection in this reply, to stack it inside"}],
  "titles": [{"text": "group name", "x": 0, "y": 0}],
  "collections": [{"name": "Loading", "color": "white|pink|butter|mint|lilac|sky|peach", "x": 0, "y": 0}],
@@ -41,7 +41,7 @@ Reply with ONLY one JSON object, no other words before or after it. Use only the
                         {"piece": "Input", "label": "Email", "text": "you@example.com"}, {"piece": "Button", "text": "Log in"}, {"piece": "Tab bar", "tabs": [["home", "Home"], ["person_outline", "Profile"]]}]}],
  "move": [{"id": "existing card id", "x": 0, "y": 0, "color": "optional new color"}],
  "edit": [{"id": "existing card id", "text": "new words (a note, title, list heading, or a link's title)", "items": ["the full new list, for a todo"], "desc": "a link's note",
-           "color": "white|pink|butter|mint|lilac|sky|peach", "tag": "the little handwritten label above a card ("" removes it)", "hex": "#rrggbb", "label": "swatch name",
+           "color": "white|pink|butter|mint|lilac|sky|peach", "tag": "the little handwritten label above a card ("" removes it)", "tags": ["notes only: the full new list of tags ([] removes them)"], "hex": "#rrggbb", "label": "swatch name",
            "name": "a note's bold name", "in": "a collection id to move it into (null takes it out)", "size": "text size: s|m|l|xl", "bold": true, "italic": false, "under": false, "strike": false}],
  "vaultNotes": [{"vault": "vault name", "path": "note path exactly as given"}], "offerVault": true,
  "useTemplate": {"name": "one of myTemplates", "mode": "add or new; leave out to use how it was saved"},
@@ -63,7 +63,7 @@ ${web ? 'You can search the web and read public pages, including public GitHub r
     ? 'they have CONFIRMED. Generate what they asked for with Higgsfield (one image unless they asked for more; use the nano_banana_2 model), wait for it to finish, and return it in "images" with a short caption.'
     : 'they have NOT confirmed spending credits yet. Do NOT generate. If their request needs a generated image, describe in "say" what you would make and that it uses a few Higgsfield credits, and add "confirm": "a 2 to 5 word label for the button". Everything else in the request you can still do now.'}
 If a helper isn't available, say so kindly in "say" and suggest connecting it in Myra's Settings → Helpers.
-Write in British English (colour, organise, favourite, centre, grey). Card colours have names the person sees: Snow (white), Cloudberry (butter), Lingonberry (pink), Moss (mint), Fjord (sky), Heather (lilac) and Birch (peach). They will use those names; in the JSON always use the key shown in brackets.`;
+TAGS: a note can have "tags", short keywords kept apart from its words (shown as #chips). In the board JSON a note's "tags" are its tags, not part of its text, and "boardTags" lists the tags already used on this board: reuse those names (same spelling) before inventing new ones. Never write #tags into a note's text; put them in "tags". When you make notes from an outside source (GitHub issues, pull requests, Obsidian notes, Linear and the like), put the item's title in "name", the description in "text", its labels or tags in "tags", and its number or id in "tag". "label" in the board JSON is that handwritten label. Write in British English (colour, organise, favourite, centre, grey). Card colours have names the person sees: Snow (white), Cloudberry (butter), Lingonberry (pink), Moss (mint), Fjord (sky), Heather (lilac) and Birch (peach). They will use those names; in the JSON always use the key shown in brackets.`;
 
 exports.rewrite = ({ text, how, title, around }) => `You are Myra, a warm little cloudberry who helps inside a document editor. Rewrite the selected text from the person's document "${title || 'Untitled'}".
 

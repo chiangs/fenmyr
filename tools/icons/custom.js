@@ -37,5 +37,7 @@ module.exports = {
   // ask Myra: a smaller berry with a sparkle
   'myra-tool': { ...both(duo => mark(10.6, 15, .8, duo) + `<path class="s${duo ? ' t' : ''}" d="${STAR}"/>`), kw: 'ask myra ai assistant sparkle' },
   // chat with Myra: a bubble with a leaf crown and three beads
+  // a card's label (the small handwritten word above it): a berry over a scribble
+  'berry-label': { ...both(duo => { const { d } = berry(12, 8.6, .68); return `<path class="s${duo ? ' t' : ''}" d="${d}"/><path class="s" d="M4 19.6c2-1.7 3.2-1.7 4 0s2 1.7 4 0 3.2-1.7 4 0 2 1.7 4 0"/>`; }), kw: 'label handwritten note word' },
   'myra-chat': { ...both(duo => `<path class="s${duo ? ' t' : ''}" d="${BUBBLE}"/><path class="s${duo ? ' t2' : ''}" d="${leaf(11.3, 6.6, .72, -1) + leaf(12.7, 6.6, .72, 1)}"/>` + dots([[9.2, 11.6], [14.8, 11.6], [12, 14.8]], 1.25, 'f')), kw: 'chat talk message myra' },
 };
