@@ -2,11 +2,6 @@
 // She breathes, blinks, glances around, hops when she does something, and wiggles while she's thinking.
 // The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, setColors, draw }.
 
-// Myra has no dress-up wardrobe; the app's widget code still looks these up, so they stay as empty shelves
-window.MYRA_WARDROBE = { hat: {}, face: {}, neck: {}, held: {} };
-window.MYRA_PAL = {};
-window.myraWearing = () => ({});
-
 (() => {
   // her shape: X is berry, the leaves sit on top; the beads are textured in below
   const SIL = [

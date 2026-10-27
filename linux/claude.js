@@ -91,7 +91,9 @@ function ask(a) {
   // searching the web and reading public pages (and public GitHub repos) is only on when the person switched it on in Settings → Helpers
   if (web) tools.push('WebSearch', 'WebFetch');
   if (confirmed && higgs) tools.push('mcp__claude_ai_higgsfield__generate_image_batch', 'mcp__claude_ai_higgsfield__jobs_wait', 'mcp__claude_ai_higgsfield__models_explore');
-  return runClaude(prompts.ask({ request, boardJSON: jsonSafe(board), confirmed, mobbin, higgs, web, vaultNotes: (Array.isArray(vaultNotes) ? vaultNotes : []).slice(0, 8), canVault: !!canVault }), tools, 300, NEED);
+  // her tone settings go in the prompt as YOUR TONE, not in the board data
+  const { myraStyle: style, ...brd } = board;
+  return runClaude(prompts.ask({ request, boardJSON: jsonSafe(brd), style, confirmed, mobbin, higgs, web, vaultNotes: (Array.isArray(vaultNotes) ? vaultNotes : []).slice(0, 8), canVault: !!canVault }), tools, 300, NEED);
 }
 // Myra in a doc: rewrite just the selected words ("shorter", "friendlier", or anything typed) and hand back only the new words
 async function rewrite(a) {
