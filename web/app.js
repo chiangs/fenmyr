@@ -4817,7 +4817,7 @@ ${proseCSS()}
   document.addEventListener('click', e => { const b = e.target.closest('[data-col]'); if (!b) return; const r = b.getBoundingClientRect(); tintPicker(b.dataset.col, { x: r.left - 270, y: r.top - 120 }); });
   function renderPalette() {
     const el = $('palette'); el.innerHTML = '';
-    if (!board.palette.length) { el.innerHTML = '<div class="palette-empty">Colours you save for this board. Add a Colour card from the toolbar, click it, then choose Save to board colours. They show up in every colour picker on this board, and Myra uses them too.</div>'; return; }
+    if (!board.palette.length) { el.innerHTML = '<div class="palette-empty">Custom colours for this board and Myra to use.<br>Add a Colour card from the toolbar, then choose Save to board colours</div>'; return; }
     board.palette.forEach((p, i) => {
       const r = document.createElement('div'); r.className = 'pal'; r.title = 'Click to add to the board';
       r.innerHTML = `<i style="background:${p.hex}"></i><span></span><small>${p.hex.slice(1)}</small>`;
