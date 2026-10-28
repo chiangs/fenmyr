@@ -2622,3 +2622,13 @@ body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-
 .confetti { position: absolute; left: 50%; bottom: 40px; width: 9px; height: 9px; border-radius: 3px; background: var(--c); pointer-events: none; opacity: 0; z-index: 20; animation: confetti 1.7s cubic-bezier(.2, .7, .3, 1) forwards; }
 @keyframes confetti { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 110px)) rotate(var(--rot)); } }
 @media (prefers-reduced-motion: reduce) { .timer-chip { animation: none; } .myra.partying .m-pill, .confetti { animation: none; } }
+
+/* the end of a timer: the pill glows red (work and focus) or green (a break) until you dismiss it, and the chip pulses through the last two minutes */
+.m-pill.glow-red { --m-glow: #e5484d; } .m-pill.glow-green { --m-glow: #3fae6a; }
+.m-pill.glow-red, .m-pill.glow-green { box-shadow: var(--m-base), 0 0 24px 4px color-mix(in srgb, var(--m-glow) 62%, transparent); animation: m-glow-hot 1.3s ease-in-out infinite; }
+@keyframes m-glow-hot { 0%, 100% { box-shadow: var(--m-base), 0 0 16px 2px color-mix(in srgb, var(--m-glow) 44%, transparent); } 50% { box-shadow: var(--m-base), 0 0 32px 7px color-mix(in srgb, var(--m-glow) 78%, transparent); } }
+body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: none; }
+.timer-chip.soon { animation: fb-in .18s ease-out, chip-soon 1.4s .2s ease-in-out infinite; }
+.timer-chip.soon b { color: var(--butter-deep, #c2701a); }
+@keyframes chip-soon { 0%, 100% { box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))), 0 0 0 0 color-mix(in srgb, var(--butter-deep, #f0b04a) 0%, transparent); } 50% { box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))), 0 0 0 5px color-mix(in srgb, var(--butter-deep, #f0b04a) 45%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .m-pill.glow-red, .m-pill.glow-green, .timer-chip.soon { animation: none; } }

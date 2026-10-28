@@ -2391,7 +2391,7 @@
   $('mcSel').onclick = e => { if (e.target.closest('.mcs-x')) { selectOnly([]); renderSelChip(); } };
   ['pointerup', 'keyup'].forEach(ev => document.addEventListener(ev, () => { if (chatOpen()) setTimeout(renderSelChip, 0); }, true));
   function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); selChipKey = null; renderSelChip(); $('mcInput').focus(); } }
-  $('mPill').onclick = () => myraOpen(!chatOpen());
+  $('mPill').onclick = () => { clearGlow(); myraOpen(!chatOpen()); };
   $('mcClose').onclick = () => myraOpen(false);
   // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
   const CHATS_KEPT = 10; let histOpen = false;
@@ -2569,7 +2569,7 @@
     const el = $(slashMenu.dataset.for), it = el && slashMatches(el).find(x => x.key === key); hideSlash(); if (!it) return;
     if (it.fill) { el.value = it.fill; el.closest('form').requestSubmit(); return; }
     const c = it.cmd; el.value = '/' + c.cmd + (c.arg ? ' ' : ''); el.focus(); el.setSelectionRange(el.value.length, el.value.length);
-    if (!c.arg) el.closest('form').requestSubmit();
+    if (!c.arg) el.closest('form').requestSubmit(); else { slashSel = 0; showSlash(el); }   // /timer then lists its ready-made timers
   }
   slashMenu.addEventListener('pointerdown', e => e.preventDefault());   // keep the focus in the box
   slashMenu.onclick = e => { const b = e.target.closest('[data-key]'); if (b) pickSlash(b.dataset.key); };
@@ -2602,14 +2602,19 @@
     return minutes >= 1 && minutes <= 600 ? { minutes, purpose } : null;
   }
   const timerWhat = t => t.purpose || `your ${t.minutes}-minute timer`;
+  // what the glow says when it runs out: red for work and focus, green for a break. With thinking on the model decides (t.kind, from its warning), otherwise a break or a breather is green and everything else is red
+  const timerKind = t => t.kind || (/^(break|breather)$/.test((t.purpose || '').trim().toLowerCase().replace(/^(a|the|my|some)\s+/, '')) ? 'break' : 'focus');
+  let glowT = 0;
+  const clearGlow = () => { clearTimeout(glowT); $('mPill').classList.remove('glow-red', 'glow-green'); };
+  const setGlow = kind => { clearGlow(); $('mPill').classList.add(kind === 'break' ? 'glow-green' : 'glow-red'); glowT = setTimeout(clearGlow, 120000); };
   function paintTimer() {
     const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); if (!timer) { chip.hidden = true; return; }
     chip.hidden = false; $('tcTime').textContent = clock(timer.end - Date.now()); $('tcWhat').textContent = timer.purpose || `${timer.minutes} min`;
-    chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.minutes * 60000))));
+    chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.minutes * 60000)))); chip.classList.toggle('soon', timer.minutes >= 3 && timer.end - Date.now() <= 120000);
   }
   function startTimer(t, replace) {
     if (timer && !replace) return reply(`You already have ${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. Start this one instead?`, 0, [{ label: 'Replace it', cls: 'next', run: () => startTimer(t, true) }, { label: 'Keep it', ghost: true, run: () => {} }]);
-    timer = { end: Date.now() + t.minutes * 60000, minutes: t.minutes, purpose: t.purpose, warned: t.minutes < 3 }; saveTimer(); paintTimer(); hopMyra();
+    clearGlow(); timer = { end: Date.now() + t.minutes * 60000, minutes: t.minutes, purpose: t.purpose, warned: t.minutes < 3 }; saveTimer(); paintTimer(); hopMyra();
     reply(`Timer set: ${t.minutes} minutes${t.purpose ? ` (${t.purpose})` : ''}. I'll tell you when it's time ✦`);
   }
   function stopTimer(say = true) { if (!timer) return say && reply('No timer is running ✦'); const t = timer; timer = null; saveTimer(); paintTimer(); say && reply(`Stopped the timer for ${timerWhat(t)} ✦`); }
@@ -2624,8 +2629,9 @@
   async function timerLine(kind, t) {
     if (Fenmyr.web || !settings.ai || haveClaude === false || !navigator.onLine) return null;
     const what = `${t.minutes}-minute timer${t.purpose ? ` for "${t.purpose}"` : ''}`;
-    const prompt = `(This is a timer notice, not a request. The person's ${what} ${kind === 'warn' ? 'has two minutes left' : 'has just run out'}. Say one short line in your own voice that fits what they are doing${kind === 'warn' ? '' : ', and if it fits suggest what comes next, like a break after focus time or getting back to it after a break'}. Do not change the board.)`;
-    try { const raw = await Promise.race([Fenmyr.ask(prompt, { ...snapshot(), cards: [], links: [], unsorted: [], recentChat: [] }, false, { mobbin: false, higgs: false, web: false, canVault: false, vaultNotes: [] }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 12000))]); return parse(raw).say || null; }
+    const prompt = `(This is a timer notice, not a request. The person's ${what} ${kind === 'warn' ? 'has two minutes left' : 'has just run out'}. Say one short line in your own voice that fits what they are doing${kind === 'warn' ? '' : ', and if it fits suggest what comes next, like a break after focus time or getting back to it after a break'}. Do not change the board. Also add a "kind" field: "break" if the timer is for rest or a pause, "focus" if it is for work or concentration.)`;
+    try { const raw = await Promise.race([Fenmyr.ask(prompt, { ...snapshot(), cards: [], links: [], unsorted: [], recentChat: [] }, false, { mobbin: false, higgs: false, web: false, canVault: false, vaultNotes: [] }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 12000))]);
+      const r = parse(raw); return { say: r.say || null, kind: r.kind === 'break' || r.kind === 'focus' ? r.kind : null }; }
     catch (e) { return null; }
   }
   const osNotify = (title, body) => { if (Fenmyr.web || document.hasFocus() || typeof Notification === 'undefined') return; try { new Notification(title, { body }); } catch (e) {} };
@@ -2639,14 +2645,14 @@
   }
   async function timerWarn() {
     const t = timer; t.warned = true; saveTimer(); hopMyra();
-    const plain = `Two minutes left${t.purpose ? ` (${t.purpose})` : ''} ✦`; reply(plain, 9000); osNotify('Two minutes left', t.purpose || `${t.minutes}-minute timer`);
-    const line = await timerLine('warn', t); if (line && timer === t) reply(noEmoji(line), 9000);
+    const plain = `Two minutes left${t.purpose ? ` (${t.purpose})` : ''} ✦`; reply(plain, 20000); osNotify('Two minutes left', t.purpose || `${t.minutes}-minute timer`);
+    const r = await timerLine('warn', t); if (r?.kind && timer === t) { t.kind = r.kind; saveTimer(); } if (r?.say && timer === t) reply(noEmoji(r.say), 20000);
   }
   async function timerDone() {
     const t = timer; timer = null; saveTimer(); paintTimer();
-    const plain = `Time's up! ${t.minutes} minutes${t.purpose ? ` (${t.purpose})` : ''} ✦`, acts = [{ label: '5 more minutes', cls: 'next', run: () => startTimer({ minutes: 5, purpose: t.purpose }, true) }, { label: 'Thanks', ghost: true, run: () => {} }];
-    reply(plain, 0, acts); $('mBubble').classList.add('party'); partyMyra(); osNotify("Time's up", t.purpose || `${t.minutes}-minute timer`);
-    const line = await timerLine('done', t); if (line && $('mBubble').classList.contains('on') && $('mBubble').classList.contains('party')) { $('mSay').textContent = noEmoji(line); }
+    const plain = `Time's up! ${t.minutes} minutes${t.purpose ? ` (${t.purpose})` : ''} ✦`, acts = [{ label: '5 more minutes', cls: 'next', run: () => startTimer({ minutes: 5, purpose: t.purpose }, true) }, { label: 'Thanks', ghost: true, run: clearGlow }];
+    reply(plain, 0, acts); $('mBubble').classList.add('party'); setGlow(timerKind(t)); partyMyra(); osNotify("Time's up", t.purpose || `${t.minutes}-minute timer`);
+    const r = await timerLine('done', t); if (r?.kind && r.kind !== timerKind(t)) setGlow(r.kind); if (r?.say && $('mBubble').classList.contains('on') && $('mBubble').classList.contains('party')) $('mSay').textContent = noEmoji(r.say);
   }
   function timerCheck() { if (!timer) return; const left = timer.end - Date.now(); if (left <= 0) return timerDone(); paintTimer(); if (!timer.warned && left <= 120000) timerWarn(); }
   $('tcX').onclick = e => { e.stopPropagation(); stopTimer(); };
