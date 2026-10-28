@@ -2654,3 +2654,14 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 .bd-clear:hover { background: var(--blush); color: var(--ink); }
 body.dark .bd-pick select, body.tint-panels .bd-pick select { background: rgba(255, 255, 255, .08); color: inherit; }
 .ob-field small { color: var(--ink-faint); font-weight: 500; }
+
+/* the birthday note's Myra spins (her moving party stamp) */
+.card.note .nmyra.mv-spin { animation: mv-spin 1.6s cubic-bezier(.5, 0, .5, 1) infinite; }
+@media (prefers-reduced-motion: reduce) { .card.note .nmyra.mv-spin { animation: none; } }
+/* the month and day lists follow the theme (the open list is the system's, so it needs its own colours in dark and Caelestia) */
+.bd-pick select { color-scheme: light; }
+body.dark .bd-pick select, body.tint-panels.panel-dark .bd-pick select { color-scheme: dark; }
+.bd-pick select option { background: #fff; color: #3b342d; }
+body.dark .bd-pick select option { background: #2b2722; color: #f6f2ec; }
+body.tint-panels .bd-pick select option { background: var(--panel); color: #3b342d; }
+body.tint-panels.panel-dark .bd-pick select option { background: var(--panel); color: #f0ebe4; }
