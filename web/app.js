@@ -510,7 +510,7 @@
   let saveT = 0;
   // ---------- undo / redo: a snapshot of the board after each change settles ----------
   let past = [], future = [], restoring = false, snapT = 0;
-  const stateOf = () => JSON.stringify({ cards: board.cards, links: board.links, tray: board.tray, palette: board.palette });
+  const stateOf = () => JSON.stringify({ cards: board.cards, links: board.links, tray: board.tray, trayLinks: board.trayLinks, palette: board.palette });
   function remember() { if (restoring || !board) return; const st = stateOf(); if (past[past.length - 1] !== st) { past.push(st); if (past.length > 80) past.shift(); future = []; } }
   function resetHistory() { past = board ? [stateOf()] : []; future = []; }
   function travel(dir) {
@@ -518,7 +518,7 @@
     if (dir < 0 ? past.length < 2 : !future.length) return say(dir < 0 ? 'Nothing left to undo' : 'Nothing to redo', 1800);
     if (dir < 0) future.push(past.pop()); else past.push(future.pop());
     const st = JSON.parse(past[past.length - 1]); restoring = true;
-    Object.assign(board, st); sel.clear(); selWire = null; endEdit(); renderAll(); renderPalette(); save(); restoring = false;
+    Object.assign(board, st); if (!st.trayLinks) delete board.trayLinks; sel.clear(); selWire = null; endEdit(); renderAll(); renderPalette(); save(); restoring = false;
   }
   // every card keeps real numbers for its place and size (a bad one would break saving)
   function cleanNumbers() { board.cards.forEach(c => { ['x', 'y'].forEach(k => { if (!Number.isFinite(c[k])) c[k] = 0; }); ['w', 'h'].forEach(k => { if (!Number.isFinite(c[k]) || c[k] <= 0) c[k] = k === 'w' ? 200 : 100; }); ['r', 'rot'].forEach(k => { if (c[k] != null && !Number.isFinite(c[k])) c[k] = 0; }); }); }
@@ -1387,12 +1387,13 @@
     if (editing === c.id) endEdit();
     const pics = []; for (const f of files) if (f.type.startsWith('image/')) pics.push(await imageCardFrom(f)); if (!pics.length) return;
     let anchor = c; const made = [];
-    if (!hasWords) { const p = pics.shift(); p.x = c.x + c.w / 2 - p.w / 2; p.y = c.y + c.h / 2 - p.h / 2; sel = new Set([c.id]); removeSelected(); addCard(p); anchor = p; made.push(p); }
+    if (!hasWords) { const p = pics.shift(), ties = board.links.filter(l => l.a === c.id || l.b === c.id); p.x = c.x + c.w / 2 - p.w / 2; p.y = c.y + c.h / 2 - p.h / 2; if (c.group) p.group = c.group;
+      sel = new Set([c.id]); removeSelected(); addCard(p); ties.forEach(l => board.links.push({ ...l, id: uid(), a: l.a === c.id ? p.id : l.a, b: l.b === c.id ? p.id : l.b })); anchor = p; made.push(p); }
     const busy = (x, y, w, h) => board.cards.some(k => k.type !== 'frame' && k.type !== 'section' && x < k.x + k.w + 12 && x + w + 12 > k.x && y < k.y + k.h + 12 && y + h + 12 > k.y);
     for (const p of pics) {
       let x = anchor.x + anchor.w + 70, y = anchor.y;
       for (let k = 0; k < 10 && busy(x, y, p.w, p.h); k++) y = anchor.y + (k + 1) * (p.h + 24);
-      p.x = x; p.y = y; addCard(p); made.push(p); board.links.push({ id: uid(), a: anchor.id, b: p.id, ...(settings.wireStyle || {}) });
+      p.x = x; p.y = y; if (anchor.group) p.group = anchor.group; addCard(p); made.push(p); board.links.push({ id: uid(), a: anchor.id, b: p.id, ...(settings.wireStyle || {}) });
     }
     renderWires(); save(); selectOnly([made[made.length - 1].id]); revealCards(made);
   }
