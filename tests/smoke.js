@@ -300,6 +300,7 @@ echo " [BLANK_AUDIO] hello from whisper"
     await page.fill('#fbQ', 'trip'); await page.waitForTimeout(400); const b4 = await bar();
     await page.fill('#fbQ', 'zebra'); await page.waitForTimeout(400); const b5 = await bar();
     await page.keyboard.press('Escape'); await page.waitForTimeout(100); const b6 = await bar();
+    await page.click('#mPill'); await page.waitForTimeout(200);
     await page.fill('#mcInput', '/'); const menu = await page.evaluate(() => [...document.querySelectorAll('.slash-menu button')].map(b => b.dataset.cmd).join());
     await page.keyboard.press('Escape'); const closed = await page.evaluate(() => document.querySelector('.slash-menu').hidden && document.getElementById('myra').classList.contains('chat'));
     await page.fill('#mcInput', '/tidy'); await page.keyboard.press('Enter'); await page.waitForTimeout(200);
