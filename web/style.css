@@ -490,7 +490,7 @@ html.native .dv-bar { padding-top: 14px; }
 .dv-body:empty::before { content: attr(data-ph); color: var(--ink-faint); }
 /* with a doc open, the tools step aside but Myra's bubble (and its Undo) still shows on top */
 .stage.doc-open .dock { z-index: 24; }
-.stage.doc-open .dock .tools, .stage.doc-open .dock .selbar, .stage.doc-open .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
+.stage.doc-open .dock .tools, .stage.doc-open .dock .find-bar, .stage.doc-open .dock .selbar, .stage.doc-open .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
 /* on the All projects pages the board tools hide; Myra stays to help organize */
 .stage.at-home .dock .tools, .stage.at-home .dock .selbar, .stage.at-home .shapepick { display: none; }
 .sub-boards { margin-left: 16px; padding-left: 8px; border-left: 1.5px dashed #ede6e0; display: flex; flex-direction: column; gap: 1px; }
@@ -710,7 +710,7 @@ body.exporting .card.sel::after { display: none; }
 body.dark { --sh: 0, 0, 0; --sh-k: 2.2;   /* dark mode: plain dark shadows, not an amber glow */
   --ink: #f6f2ec; --ink-soft: #c6bcae; --ink-faint: #8f8576; --blush: #3d2f22; --dot: #332d25; --surface: #242019; --surface-2: #2e2922; color-scheme: dark; }
 body.dark, body.dark .stage { background: #12100d; }
-body.dark .box, body.dark .tools, body.dark .tray, body.dark .selbar, body.dark .drawbar, body.dark .cpop, body.dark .capture, body.dark .shapepick, body.dark .wheel-stamps,
+body.dark .box, body.dark .tools, body.dark .tray, body.dark .selbar, body.dark .find-bar, body.dark .drawbar, body.dark .cpop, body.dark .capture, body.dark .shapepick, body.dark .wheel-stamps,
 body.dark .stamp-pick, body.dark .row-menu, body.dark .cover-menu, body.dark .set-panel, body.dark .docview, body.dark .tile, body.dark .tile.folder .paper, body.dark .tile.project .mf,
 body.dark .tray-item, body.dark .ghost, body.dark kbd, body.dark .home-back, body.dark .sc-mark { background: var(--surface) !important; color: var(--ink); }
 body.dark .box { background: rgba(38, 33, 28, .96) !important; }
@@ -1214,9 +1214,9 @@ body.dark .ws-mid:hover { background: #34404f; }
 /* ---------- your colors ---------- */
 html, body { background: var(--board, #faf7f2); }
 body.dark, body.dark .stage { background: var(--board, #12100d); }
-body.tint-panels .box, body.tint-panels .design, body.tint-panels .tools, body.tint-panels .tray, body.tint-panels .selbar, body.tint-panels .drawbar, body.tint-panels .capture,
+body.tint-panels .box, body.tint-panels .design, body.tint-panels .tools, body.tint-panels .tray, body.tint-panels .selbar, body.tint-panels .find-bar, body.tint-panels .drawbar, body.tint-panels .capture,
 body.tint-panels .shapepick, body.tint-panels .tplpick, body.tint-panels .wheel-stamps, body.tint-panels .stamp-pick, body.tint-panels .row-menu, body.tint-panels .m-pill, body.tint-panels .m-chat, body.tint-panels .m-bubble { background: var(--panel) !important; }
-body.tint-panels.panel-dark .box, body.tint-panels.panel-dark .design, body.tint-panels.panel-dark .tools, body.tint-panels.panel-dark .tray, body.tint-panels.panel-dark .m-pill { color: #f0ebe4; }
+body.tint-panels.panel-dark .box, body.tint-panels.panel-dark .design, body.tint-panels.panel-dark .tools, body.tint-panels.panel-dark .tray, body.tint-panels.panel-dark .find-bar, body.tint-panels.panel-dark .m-pill { color: #f0ebe4; }
 /* a dark board in light mode (or a light one in dark mode): the words that sit right on the board follow it */
 body.board-dark #boardName, body.board-dark .card.title .text, body.board-dark .crumbs, body.board-dark .saved { color: #f6f2ef; }
 body.board-light #boardName, body.board-light .card.title .text, body.board-light .crumbs { color: #403c36; }
@@ -1384,7 +1384,7 @@ body.phone .dock .selbar::-webkit-scrollbar, body.phone .dock .drawbar::-webkit-
 body.phone .dock .selbar > *, body.phone .dock .drawbar > * { flex: none; }
 /* Myra: her pill is the hub's button; her chat and bubble sit above it */
 body.phone .dock .myra { position: static; }
-body.phone .m-pill { display: none; }
+body.phone .m-pill, body.phone .find-bar { display: none; }
 body.phone .dock .m-bubble { position: fixed; left: 14px; right: 14px; bottom: calc(var(--hub-h) + 24px + var(--safe)); width: auto; max-width: none; }
 body.phone .m-chat { position: fixed; left: 8px; right: 8px; bottom: calc(8px + var(--safe)); top: auto; width: auto; height: min(78vh, 640px); z-index: 60; border-radius: var(--pill-r); corner-shape: squircle; }
 /* pickers float centered over the hub */
@@ -2580,3 +2580,27 @@ body.dz-dragging, body.dz-dragging * { cursor: grabbing !important; }
 .slash-menu button span { color: var(--ink-faint); min-width: 0; }
 .slash-menu button.on, .slash-menu button:hover { background: rgba(0, 0, 0, .06); }
 body.dark .slash-menu button.on, body.dark .slash-menu button:hover { background: rgba(255, 255, 255, .1); }
+
+/* the find bar: sits to the right of Myra's pill on the same line, the toolbar's height and look */
+.find-bar { position: absolute; left: calc(100% + 10px); bottom: 0; height: 50px; display: flex; align-items: center; gap: 4px; padding: 0 6px 0 7px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink); white-space: nowrap; box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); animation: fb-in .18s ease-out; }
+.find-bar[hidden] { display: none; }
+body[data-tb="s"] .find-bar { height: 46px; } body[data-tb="l"] .find-bar { height: 58px; }
+@keyframes fb-in { from { opacity: 0; transform: translateX(-6px); } }
+.fb-field { display: flex; align-items: center; gap: 8px; height: 34px; width: 190px; padding: 0 10px; border-radius: 11px; corner-shape: squircle; background: #f8f5f3; color: var(--ink-soft); cursor: text; }
+.fb-field svg { width: 15px; height: 15px; flex: none; }
+.fb-field input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: 500 13px/1.2 var(--font); color: var(--ink); user-select: text; -webkit-user-select: text; }
+.fb-field:focus-within { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
+.fb-count { min-width: 64px; padding: 0 6px; text-align: center; font: 600 12px/1 var(--font); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.fb-count.none { color: var(--butter-deep, #c2701a); }
+.fb-b { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; color: var(--ink-soft); cursor: pointer; }
+.fb-b svg { width: 16px; height: 16px; }
+.fb-b:hover:not(:disabled) { background: var(--blush); color: var(--ink); }
+.fb-b:disabled { opacity: .35; cursor: default; }
+.fb-sep { width: 1px; height: 22px; margin: 0 2px; background: rgba(0, 0, 0, .1); }
+body.dark .find-bar .fb-field, body.tint-panels .find-bar .fb-field { background: rgba(255, 255, 255, .08); }
+body.dark .find-bar .fb-sep { background: rgba(255, 255, 255, .14); }
+/* the card you are on gets a ring (the ones that don't match fade, as in Focus mode) */
+.card.find-cur { outline: 2.5px solid var(--select); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
+.find-bar.up { left: auto; right: 0; bottom: calc(100% + 12px); }
+.dock.finding .tools, .dock.finding .selbar.on { display: none !important; }

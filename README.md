@@ -117,7 +117,7 @@ The first memo downloads the speech model (about 140 MB, once) into `~/.local/sh
 | | |
 |---|---|
 | **Ctrl+K** | Quick capture into Unsorted |
-| **Ctrl+F** | Find on the board: opens Myra's chat with `/find` ready (works without AI) |
+| **Ctrl+F** | Find on the board: opens Myra's chat with `/find` ready (works without AI); the find bar then lets you edit the search and step through matches (Enter, Shift+Enter, Esc) |
 | **double-click** | New note |
 | **N · C · T · D · G** | Note, checklist, title, doc, collection |
 | **V** | Select |

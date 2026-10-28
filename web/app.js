@@ -36,8 +36,12 @@
   const uid = () => Math.random().toString(36).slice(2, 10);
   const tilt = () => +(Math.random() * 4 - 2).toFixed(1);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // search: the words in a query, and whether a text has all of them (the palette, templates, icons and Find all use these)
+  const queryWords = q => String(q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const hasAll = (words, text) => words.every(w => text.includes(w));
 
   let board = null, view = { x: 0, y: 0, z: 1 }, sel = new Set(), editing = null, space = false, focusSet = null;
+  const find = { on: false, hits: [], i: 0, set: null, cur: null };   // the find bar next to Myra
 
   // ---------- boards ----------
   const TEMPLATES = {
@@ -399,7 +403,7 @@
   $('homeBtn').onclick = () => openHome('all');
   $('brand').onclick = () => openHome('all');
   $('homeBack').onclick = () => { if (!homeAt) return; const f = homeAt.level === 'folder' && folders.find(x => x.id === homeAt.id); openHome(f && hasParent(f) ? 'folder:' + f.parent : f && f.project && projects.some(p => p.id === f.project) ? 'project:' + f.project : 'all'); };
-  function openHome(go = 'all') { const [level, id] = go.split(':'); homeAt = { level, id }; $('home').classList.add('on'); stage.classList.add('at-home'); stopPlacing(); refreshBoards(); }
+  function openHome(go = 'all') { const [level, id] = go.split(':'); findClose(); homeAt = { level, id }; $('home').classList.add('on'); stage.classList.add('at-home'); stopPlacing(); refreshBoards(); }
   function closeHome() { if (!homeAt) return; homeAt = null; $('home').classList.remove('on'); stage.classList.remove('at-home'); refreshBoards(); }
   const miniCache = new Map();
   async function mini(id) {
@@ -498,7 +502,7 @@
     // an edit still waiting to save belongs to the board you're leaving: save it first
     if (saveT && board) { clearTimeout(saveT); saveT = 0; board.view = view; await Fenmyr.save(board); }
     const b = await Fenmyr.load(id); if (!b) return;
-    miniCache.clear(); vnFull.clear(); histOpen = false; board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
+    miniCache.clear(); vnFull.clear(); histOpen = false; findClose(); board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
     board.cards.forEach(c => { if (c.type === 'audio' && c.rec) { c.rec = false; c.paused = false; if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.'; } });
     board.cards.forEach(c => { if (c.type === 'canvas' && c.board) { const kb = boardList.find(x => x.id === c.board); if (kb && kb.name !== c.text) c.text = kb.name; } });
     $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); applyToolbar(); try { localStorage.setItem('fenmyr:last', id); } catch (e) {}
@@ -761,7 +765,7 @@
   function renderCard(c, pop) {
     let el = cardsEl.querySelector(`[data-id="${c.id}"]`);
     if (!el) { el = document.createElement('div'); el.dataset.id = c.id; cardsEl.appendChild(el); if (pop) el.classList.add('pop'); }
-    el.className = `card ${c.type}` + (sel.has(c.id) ? ' sel' : '') + (focusSet && !focusSet.has(c.id) ? ' dim' : '') + (pop ? ' pop' : '');
+    el.className = `card ${c.type}` + (sel.has(c.id) ? ' sel' : '') + (isDim(c) ? ' dim' : '') + (find.cur === c.id ? ' find-cur' : '') + (pop ? ' pop' : '');
     Object.assign(el.style, { left: c.x + 'px', top: c.y + 'px', width: titleW(c), height: c.type === 'title' ? 'auto' : c.h + 'px' });
     el.classList.toggle('ly-off', !!c.hidden); el.classList.toggle('ly-lock', !!c.locked); el.classList.toggle('fixedw', !!c.fixedW); applyStroke(c, el);
     if (c.type === 'title' || c.type === 'text') el.classList.toggle('no-fill', (c.type === 'title' ? c.tc : c.color) === 'none'); if (SIZED_T.includes(c.type)) { el.style.setProperty('--ta', c.align || 'left');
@@ -1784,10 +1788,13 @@
   $('capForm').onsubmit = e => { e.preventDefault(); const v = $('capInput').value.trim(); if (v) { if (/^https?:\/\//.test(v)) linkCard(v, null, true); else { board.tray.unshift(card('note', { text: v })); renderTray(); save(); } $('tray').classList.remove('closed'); } capture(false); };
 
   // ---------- focus mode ----------
+  // a card fades when Focus mode or Find leaves it out
+  const isDim = c => !!(focusSet && !focusSet.has(c.id)) || !!(find.set && !find.set.has(c.id));
+  function applyDim() { board.cards.forEach(c => { const el = cardsEl.querySelector(`[data-id="${c.id}"]`); el?.classList.toggle('dim', isDim(c)); el?.classList.toggle('find-cur', find.cur === c.id); }); }
   function setFocus(on) {
     focusSet = on && sel.size ? new Set(sel) : null;
     if (focusSet) board.links.forEach(l => { if (focusSet.has(l.a)) focusSet.add(l.b); if (focusSet.has(l.b)) focusSet.add(l.a); });
-    board.cards.forEach(c => cardsEl.querySelector(`[data-id="${c.id}"]`)?.classList.toggle('dim', !!focusSet && !focusSet.has(c.id)));
+    applyDim();
     if (focusSet) { fit(board.cards.filter(c => focusSet.has(c.id)), 160); say('Focus mode: just these. Press Esc when you want everything back.'); }
   }
 
@@ -2449,20 +2456,41 @@
   const helpText = (lead = 'Here is what I can do right here, no thinking needed:') => lead + '\n' + SLASH.filter(c => c.cmd !== 'help').map(c => `/${c.cmd}${c.arg ? ' ' + c.arg : ''}  ${c.desc}`).join('\n') + '\nAsk me anything else in your own words ✦';
   const wordsOf = c => [c.text, c.name, c.label, c.title, ...(c.items || []).map(i => i.t), ...(c.tags || []).map(t => '#' + t), String(c.body || '').replace(/<[^>]+>/g, ' ')].filter(Boolean).join(' ').toLowerCase();
   function glideTo(cs) { const from = { ...view }; fit(cs, 200, 1.2); const to = { ...view }; Object.assign(view, from); applyView(); glideView(to); }
-  function showHits(hits, what, extra = '') {
-    selectOnly(hits.map(c => c.id)); if (hits.length) glideTo(hits);
-    const acts = hits.length > 1 ? [{ label: 'Next one', cls: 'next', run: () => { showHits.i = ((showHits.i ?? -1) + 1) % hits.length; selectOnly([hits[showHits.i].id]); glideTo([hits[showHits.i]]); } }] : []; showHits.i = -1;
-    reply(hits.length ? `Found ${hits.length} ${hits.length === 1 ? 'card' : 'cards'} for ${what}${extra} ✦` : `Nothing for ${what}${extra}.`, 0, acts);
+  // ---------- the find bar: opens next to Myra when /find or /tag runs; searches as you type, steps through the matches, closes with Esc ----------
+  const readingOrder = (a, b) => Math.round(a.y / 90) - Math.round(b.y / 90) || a.x - b.x;
+  function findRun(keep) {
+    const words = queryWords($('fbQ').value);
+    find.hits = words.length ? board.cards.filter(c => !c.hidden && hasAll(words, wordsOf(c))).sort(readingOrder) : [];
+    find.i = keep && find.i < find.hits.length ? find.i : 0; find.cur = find.hits[find.i]?.id || null; find.set = find.hits.length ? new Set(find.hits.map(c => c.id)) : null;
+    const tray = words.length ? board.tray.filter(c => hasAll(words, wordsOf(c))).length : 0;
+    $('fbCount').textContent = !words.length ? 'Type to find' : find.hits.length ? `${find.i + 1} of ${find.hits.length}` + (tray ? ` · +${tray} in Unsorted` : '') : tray ? `${tray} in Unsorted` : 'No matches';
+    $('fbCount').classList.toggle('none', !!words.length && !find.hits.length);
+    $('fbPrev').disabled = $('fbNext').disabled = find.hits.length < 2;
+    applyDim(); if (find.cur) glideTo([byId(find.cur)]); findFit();
+    return find.hits.length;
   }
+  function findStep(d) { if (find.hits.length < 2) return; find.i = (find.i + d + find.hits.length) % find.hits.length; findRun(true); }
+  function findOpen(query = '') { find.on = true; myraOpen(false); selectOnly([]); $('findBar').hidden = false; $('fbQ').value = query; const n = findRun(false); $('fbQ').focus(); $('fbQ').select(); return n; }
+  function findClose(keep) { if (!find.on) return; if (keep && find.cur && byId(find.cur)) selectOnly([find.cur]); find.on = false; find.set = find.cur = null; find.hits = []; $('findBar').hidden = true; findFit(); applyDim(); }
+  let findT = 0;
+  $('fbQ').addEventListener('input', () => { clearTimeout(findT); findT = setTimeout(() => findRun(false), 120); });
+  $('fbQ').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); clearTimeout(findT); findStep(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') findClose(true); });
+  $('fbNext').onclick = () => findStep(1); $('fbPrev').onclick = () => findStep(-1); $('fbX').onclick = () => findClose(true);
+  // the bar always sits right of Myra's pill. When the toolbar leaves no room for it, the toolbar steps aside while you search (a very narrow window puts the bar just above her instead)
+  function findFit() {
+    const b = $('findBar'), d = $('dock'), over = () => b.getBoundingClientRect().right > innerWidth - 12;
+    d.classList.remove('finding'); b.classList.remove('up'); if (b.hidden) return;
+    if (over()) { d.classList.add('finding'); if (over()) b.classList.add('up'); }
+  }
+  addEventListener('resize', () => { if (find.on) findFit(); });
   function slashFind(arg) {
-    const q = arg.trim().toLowerCase(); if (!q) return reply('Tell me what to look for, like /find berries ✦');
-    const words = q.split(/\s+/), hits = board.cards.filter(c => !c.hidden && words.every(w => wordsOf(c).includes(w))), inTray = board.tray.filter(c => words.every(w => wordsOf(c).includes(w))).length;
-    showHits(hits, `“${arg.trim()}”`, inTray ? `, and ${inTray} in Unsorted` : '');
+    const q = arg.trim(); if (!q) { findOpen(); return reply('Type what to look for in the bar next to me ✦'); }
+    const n = findOpen(q); reply(n ? `Found ${n} ${n === 1 ? 'card' : 'cards'} for “${q}”. Step through them with the bar next to me ✦` : `Nothing for “${q}”.`);
   }
   function slashTag(arg) {
     const t = cleanTag(arg).toLowerCase(), all = board.tags || [];
     if (!t) return reply(all.length ? 'Tags on this board: ' + all.map(x => `#${x} (${board.cards.filter(c => (c.tags || []).some(y => y.toLowerCase() === x.toLowerCase())).length})`).join(', ') + '. Try /tag ' + all[0] + ' ✦' : 'No tags on this board yet. Type # in a note to add one ✦');
-    showHits(board.cards.filter(c => (c.tags || []).some(x => x.toLowerCase() === t)), `#${t}`);
+    const n = findOpen('#' + t); reply(n ? `Found ${n} ${n === 1 ? 'card' : 'cards'} tagged #${t}. Step through them with the bar next to me ✦` : `Nothing tagged #${t}.`);
   }
   function slash(text) {
     if (!board) return; if (!chatOpen()) myraOpen(true);
@@ -2500,7 +2528,7 @@
   });
   // Ctrl+F: Myra's chat opens ready to search
   function startFind() {
-    if (!board) return; myraOpen(true); const el = $('mcInput'), had = /^\/find /i.test(el.value);
+    if (!board) return; if (find.on) { $('fbQ').focus(); $('fbQ').select(); return; } myraOpen(true); const el = $('mcInput'), had = /^\/find /i.test(el.value);
     if (!had) el.value = '/find '; el.focus(); el.dispatchEvent(new Event('input')); had ? el.setSelectionRange(6, el.value.length) : el.setSelectionRange(el.value.length, el.value.length);
   }
   // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
@@ -3046,11 +3074,11 @@
   }
   // every word you type has to appear in a template's name or description; a group's heading hides when none of its templates match
   function filterTpl() {
-    const words = ($('tpSearch')?.value || '').toLowerCase().split(/\s+/).filter(Boolean); let head = null, headHas = false, shown = 0;
+    const words = queryWords($('tpSearch')?.value); let head = null, headHas = false, shown = 0;
     const closeHead = () => { if (head) head.hidden = !headHas && words.length > 0; };
     $('tplPick').querySelectorAll('.tp-list > :not(.tp-none)').forEach(el => {
       if (el.classList.contains('tp-h')) { closeHead(); head = el; headHas = false; return; }
-      const txt = ((el.querySelector('.tp-t b')?.textContent || '') + ' ' + (el.querySelector('.tp-t small')?.textContent || '')).toLowerCase(), ok = words.every(w => txt.includes(w));
+      const txt = ((el.querySelector('.tp-t b')?.textContent || '') + ' ' + (el.querySelector('.tp-t small')?.textContent || '')).toLowerCase(), ok = hasAll(words, txt);
       el.hidden = !ok; if (ok) { headHas = true; shown++; } });
     closeHead(); $('tplPick').querySelector('.tp-none').hidden = shown > 0 || !words.length;
   }
@@ -3679,12 +3707,12 @@
   GROUPS.forEach(([g, names]) => { $('design').querySelector(`.dz-piece-grid[data-g="${g}"]`).innerHTML = names.map(pieceBtn).join(''); });
   // the groups fold (Layouts starts folded), and the choice is remembered
   let dzOpen = { layouts: false }; try { dzOpen = { layouts: false, ...JSON.parse(localStorage.getItem('fenmyr:dzOpen') || '{}') }; } catch (e) {}
-  const dzWords = () => $('dzSearch').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const dzWords = () => queryWords($('dzSearch').value);
   function dzApply() { const q = dzWords().length > 0; $('design').querySelectorAll('.dz-group').forEach(g => { const open = dzOpen[g.dataset.g] !== false || q; g.classList.toggle('closed', !open); g.querySelector('.dz-gh').setAttribute('aria-expanded', open); }); }
   // typing narrows every group to what matches (a search opens the groups it finds things in)
   function dzFilter() { const words = dzWords(); let any = false;
     $('design').querySelectorAll('.dz-group').forEach(g => { let has = false;
-      g.querySelectorAll('.dz-tools button, .dz-piece-grid button').forEach(b => { const ok = !words.length || words.every(w => b.dataset.kw.includes(w)); b.hidden = !ok; if (ok) has = true; });
+      g.querySelectorAll('.dz-tools button, .dz-piece-grid button').forEach(b => { const ok = !words.length || hasAll(words, b.dataset.kw); b.hidden = !ok; if (ok) has = true; });
       g.hidden = words.length > 0 && !has; if (has) any = true; });
     $('dzNone').hidden = !words.length || any; dzApply(); }
   $('dzSearch').oninput = dzFilter;
@@ -3735,7 +3763,7 @@
   // icons: search Myra's icon set, then click to place (or swap the selected icon)
   let iconSwap = null;
   function renderIcons() {
-    const words = $('iconSearch').value.trim().toLowerCase().split(/\s+/).filter(Boolean), all = window.iconList(), hits = words.length ? all.filter(i => words.every(w => i.kw.includes(w))) : all;
+    const words = queryWords($('iconSearch').value), all = window.iconList(), hits = words.length ? all.filter(i => hasAll(words, i.kw)) : all;
     $('iconGrid').innerHTML = hits.map(i => `<button data-icon="${i.name}" title="${i.name.replace(/-/g, ' ')}">${Icon(i.name)}</button>`).join('') + (hits.length ? '' : '<div class="more">No icons match that</div>');
   }
   $('iconSearch').oninput = renderIcons;
