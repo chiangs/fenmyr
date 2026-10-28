@@ -2178,6 +2178,9 @@ body[data-tb="l"] #tools svg[viewBox="0 0 24 24"], body[data-tb="l"] .tools .ic 
 /* the Myra pill is as tall as the toolbar at every size: small 46, medium 50, large 58 */
 body[data-tb="s"] .m-pill { height: 46px; }
 body[data-tb="l"] .m-pill { height: 58px; }
+/* no outline ring on the pill: it made her look 2px taller than the toolbar. Same soft shadow as the toolbar */
+.m-pill { box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); }
+body.dark .m-pill { box-shadow: 0 8px 26px rgba(0, 0, 0, .31); }
 body[data-tb="l"] .tools .zoom { font-size: 15px; }
 body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .tools .tb-over { display: none !important; }
