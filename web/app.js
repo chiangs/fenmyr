@@ -2749,7 +2749,7 @@
   addEventListener('pointermove', e => { mouse = { x: e.clientX, y: e.clientY }; moveGhost(); }, true);
   function placeAt(w) {
     if (placing.type === 'stamp') return stampAt(w, placing.extra.stamp);
-    if (placing.type === 'piece') { const n = placing.extra.piece; stopPlacing(); $('dzPieces').querySelectorAll('.on').forEach(x => x.classList.remove('on')); return placePiece(n, w); }
+    if (placing.type === 'piece') { const n = placing.extra.piece; stopPlacing(); document.querySelectorAll('.dz-piece-grid .on').forEach(x => x.classList.remove('on')); return placePiece(n, w); }
     const type = placing.type, more = placing.extra || {}; stopPlacing();
     const dev = DEVICES[more.device], extra = type === 'icon' ? { name: more.name || 'star', color: '#27272a', w: 28, h: 28, r: 0 } : type === 'frame' ? { name: more.device === 'Desktop' ? 'Desktop' : 'Screen', device: more.device || 'Custom', w: dev ? dev[0] : 393, h: dev ? dev[1] : 852, radius: dev ? dev[2] : 0, fill: '#ffffff', r: 0 }
       : type === 'text' ? { text: '', size: 18, weight: 500, font: 'Figtree', color: '#27272a', r: 0 } : type === 'audio' ? { r: 0 } : type === 'doc' ? { text: '', body: '' } : type === 'canvas' ? { text: '' } : type === 'link' ? { url: '' } : type === 'shape' ? { shape: more.shape, fill: 'gray', text: '', r: 0 } : type === 'note' ? { name: '', color: newNoteColor() } : type === 'todo' ? { text: '', items: [{ t: 'first thing', done: false }] } : type === 'title' ? { text: '' }
@@ -3473,7 +3473,41 @@
     'Heading': { icon: 'title', w: 300, make: (W, o = {}) => [T(0, 0, W, o.text || o.title || 'Heading', { size: o.size || 28, weight: 800, align: o.align || 'left' }), ...(o.sub === '' ? [] : [T(0, (o.size || 28) * 1.3 + 6, W, o.sub || 'A little line underneath it.', { size: 15, color: '#71717a', align: o.align || 'left' })])] },
   };
   const PH = (x, y, w, h, label, o = {}) => ({ ...B(x, y, w, h, { radius: 16, ...o }), img: label || 'Image' });
+  // more elements: media, form fields, tabs, a table, an accordion and a dialog (a person can search all of them in the panel)
+  const FIELD_LABEL = (o, W) => o.label ? [T(0, 0, W, o.label, { size: 13, weight: 600, color: '#3f3f46' })] : [];
+  const MORE = {
+    'Video': { icon: 'play-circle', w: 320, make: (W, o = {}) => { const h = o.h || Math.round(W * 9 / 16);
+      return [B(0, 0, W, h, { radius: 12 }), B(W / 2 - 28, h / 2 - 28, 56, 56, { fill: '#ffffff', radius: 28 }), IC(W / 2 - 14, h / 2 - 14, 'play', 28, { color: '#27272a' }), B(16, h - 22, W - 32, 4, { fill: '#d4d4d8', radius: 2 }), B(16, h - 22, (W - 32) * .35, 4, { fill: '#27272a', radius: 2 })]; } },
+    'Map': { icon: 'map', w: 320, make: (W, o = {}) => { const h = o.h || 200;
+      return [B(0, 0, W, h, { radius: 12 }), B(0, h * .3, W, 12, { fill: '#f4f4f5' }), B(0, h * .66, W, 8, { fill: '#f4f4f5' }), B(W * .28, 0, 10, h, { fill: '#f4f4f5' }), B(W * .7, 0, 8, h, { fill: '#f4f4f5' }), IC(W / 2 - 16, h / 2 - 28, 'location', 32, { color: '#27272a' })]; } },
+    'Divider': { icon: 'divider', w: 300, make: (W, o = {}) => [B(0, 0, W, 1, { fill: '#e4e4e7' })] },
+    // a gap on a screen Myra builds; in the panel it's a dashed-looking placeholder so there is something to place
+    'Space': { icon: 'space', w: 300, make: (W, o = {}) => o.panel ? [B(0, 0, W, o.h || 32, { fill: '#f4f4f5', stroke: '#d4d4d8', sw: 1, radius: 8 })] : [] },
+    'Textarea': { icon: 'textarea', w: 300, make: (W, o = {}) => { const top = o.label ? 22 : 0, h = o.h || 110;
+      return [...FIELD_LABEL(o, W), B(0, top, W, h, { fill: '#ffffff', stroke: '#d4d4d8', sw: 1.5, radius: 10 }), T(14, top + 14, W - 28, o.text || 'Write something…', { color: '#a1a1aa' })]; } },
+    'Dropdown': { icon: 'dropdown', w: 300, make: (W, o = {}) => { const top = o.label ? 22 : 0;
+      return [...FIELD_LABEL(o, W), B(0, top, W, 48, { fill: '#ffffff', stroke: '#d4d4d8', sw: 1.5, radius: 10 }), T(14, top + 14, W - 56, o.text || 'Choose one', { color: '#71717a' }), IC(W - 38, top + 12, 'caret-down', 24, { color: '#71717a' })]; } },
+    'Radio': { icon: 'radio', w: 240, make: (W, o = {}) => { const opts = Array.isArray(o.options) && o.options.length ? o.options.slice(0, 6).map(String) : [o.text || 'Option'], single = opts.length === 1, sel = Math.min(opts.length - 1, Math.max(0, +o.selected || 0));
+      return opts.flatMap((t, i) => { const y = i * 34, on = i === sel && !(single && o.on === false);
+        return [B(0, y, 22, 22, { fill: '#ffffff', stroke: '#27272a', sw: 1.5, radius: 11 }), ...(on ? [B(5, y + 5, 12, 12, { fill: '#27272a', radius: 6 })] : []), T(32, y + 2, W - 32, t)]; }); } },
+    'Tabs': { icon: 'tabs', w: 320, make: (W, o = {}) => { const tabs = (o.tabs || ['Overview', 'Details', 'Reviews']).slice(0, 5).map(t => typeof t === 'string' ? t : (t.label || t.text || '')), cw = W / tabs.length, act = Math.min(tabs.length - 1, Math.max(0, +o.active || 0));
+      return [B(0, 41, W, 1, { fill: '#e4e4e7' }), ...tabs.flatMap((t, i) => [T(i * cw, 12, cw, t, { size: 14, weight: i === act ? 700 : 500, align: 'center', color: i === act ? '#18181b' : '#71717a' }), ...(i === act ? [B(i * cw + 8, 39, cw - 16, 3, { fill: '#18181b', radius: 2 })] : [])])]; } },
+    'Table': { icon: 'table', w: 420, make: (W, o = {}) => { const cols = (o.cols || ['Name', 'Role', 'Status']).slice(0, 6).map(String), cells = Array.isArray(o.cells) ? o.cells : [['Ada', 'Lead', 'Active'], ['Sam', 'Design', 'Away'], ['Jo', 'Support', 'Active']], n = Math.min(cells.length, 10), cw = W / cols.length, H = 44 + n * 48;
+      return [B(0, 0, W, H, { fill: '#ffffff', stroke: '#e4e4e7', sw: 1, radius: 12 }), B(1, 1, W - 2, 43, { fill: '#f4f4f5', radius: 11 }), B(1, 30, W - 2, 14, { fill: '#f4f4f5' }), ...cols.map((c, i) => T(16 + i * cw, 13, cw - 24, c, { size: 13, weight: 700, color: '#3f3f46' })),
+        ...cells.slice(0, n).flatMap((r, k) => [B(1, 44 + k * 48, W - 2, 1, { fill: '#e4e4e7' }), ...cols.map((_, i) => T(16 + i * cw, 44 + k * 48 + 15, cw - 24, String((Array.isArray(r) ? r[i] : '') ?? ''), { size: 14, color: '#3f3f46' }))])]; } },
+    'Accordion': { icon: 'accordion', w: 360, make: (W, o = {}) => { const items = (o.items || [{ title: 'How does it work?', text: 'A short, friendly answer goes here.', open: true }, { title: 'Is there a free plan?' }, { title: 'Can I cancel any time?' }]).slice(0, 6), out = [B(0, 0, W, 1, { fill: '#e4e4e7' })]; let y = 0;
+      items.forEach(it => { const t = T(0, y + 18, W - 44, it.title || 'Question', { size: 16, weight: 700 }), open = !!it.open; out.push(t, IC(W - 28, y + 18, open ? 'caret-up' : 'caret-down', 22, { color: '#71717a' })); let h = 18 + t.h + 18;
+        if (open) { const b = T(0, y + h - 6, W - 44, it.text || '', { size: 14, color: '#71717a', lh: 1.5 }); out.push(b); h += b.h + 8; } y += h; out.push(B(0, y, W, 1, { fill: '#e4e4e7' })); }); return out; } },
+    'Modal': { icon: 'modal', w: 340, make: (W, o = {}) => { const t = T(24, 24, W - 80, o.title || 'Are you sure?', { size: 20, weight: 800 }), x = T(24, 24 + t.h + 10, W - 48, o.text || 'A sentence that explains what happens next.', { size: 15, color: '#71717a', lh: 1.45 }), by = x.y + x.h + 28, bw = (W - 48 - 12) / 2;
+      return [B(0, 0, W, by + 48 + 24, { fill: '#ffffff', stroke: '#e4e4e7', sw: 1, radius: 20 }), t, IC(W - 44, 24, 'close', 22, { color: '#71717a' }), x, B(24, by, bw, 48, { fill: '#ffffff', stroke: '#27272a', sw: 1.5, radius: 24 }), T(24, by + 14, bw, o.cancel || 'Cancel', { size: 15, weight: 600, align: 'center' }),
+        B(24 + bw + 12, by, bw, 48, { fill: '#27272a', radius: 24 }), T(24 + bw + 12, by + 14, bw, o.button || 'Confirm', { size: 15, weight: 600, color: '#ffffff', align: 'center' })]; } },
+  };
+  Object.assign(PIECES, MORE);
   const WEB = {
+    'Card grid': { icon: 'card-grid', web: 1, make: (W, o = {}) => { const M = 64, cols = Math.max(2, Math.min(4, +o.cols || 3)), items = (o.items || Array.from({ length: cols * 2 }, () => ({ title: 'Card title', text: 'A short line about it.' }))).slice(0, cols * 3), gap = 24, cw = (W - M * 2 - gap * (cols - 1)) / cols, ch = 300;
+      const title = T(M, 96, W - M * 2, o.title || 'Pick something', { size: 36, weight: 800, align: 'center' }), y0 = 96 + title.h + 48, rows = Math.ceil(items.length / cols);
+      return [B(0, 0, W, y0 + rows * (ch + gap) - gap + 96, { fill: '#ffffff' }), title, ...items.flatMap((it, i) => { const x = M + (i % cols) * (cw + gap), y = y0 + Math.floor(i / cols) * (ch + gap);
+        return [B(x, y, cw, ch, { fill: '#ffffff', stroke: '#e4e4e7', sw: 1, radius: 16 }), PH(x + 10, y + 10, cw - 20, 150, it.img || 'Card image', { radius: 10 }), T(x + 18, y + 176, cw - 36, it.title || 'Card title', { size: 18, weight: 700 }), T(x + 18, y + 206, cw - 36, it.text || '', { size: 14, color: '#71717a', lh: 1.4 })]; })]; } },
     'Header': { icon: 'globe', web: 1, make: (W, o = {}) => { const links = o.links || ['Product', 'Pricing', 'About', 'Blog'], M = 64;
       return [B(0, 0, W, 80, { fill: '#ffffff' }), T(M, 26, 260, o.logo || o.title || 'Brand', { size: 22, weight: 800 }), ...links.slice(0, 5).map((l, i) => T(W / 2 - links.length * 55 + i * 110, 30, 110, l, { size: 15, align: 'center', color: '#52525b' })),
         B(W - M - 150, 18, 150, 44, { fill: '#18181b', radius: 22 }), T(W - M - 150, 30, 150, o.cta || 'Get started', { size: 14, weight: 600, color: '#ffffff', align: 'center' }), B(0, 79, W, 1, { fill: '#e4e4e7' })]; } },
@@ -3521,12 +3555,10 @@
       if (c.type === 'icon' && [GRAY.text, '#3f3f46'].includes(c.color)) c.color = t.text;
       return c; });
   }
-  // pieces only Myra asks for by name (not in the panel)
+  // elements only Myra asks for by name (they are the panel's Text and Icon tools)
   const EXTRA = {
     'Text': (W, o = {}) => [T(0, 0, W, o.text || '', { size: o.size || 15, weight: o.weight || 500, align: o.align || 'left', color: o.color || '#3f3f46' })],
     'Icon': (W, o = {}) => { const s = o.size || 32; return [IC(o.align === 'center' ? W / 2 - s / 2 : 0, 0, o.name || o.icon || 'star', s, { color: o.color || '#27272a' })]; },
-    'Space': (W, o = {}) => [],
-    'Divider': (W, o = {}) => [B(0, 0, W, 1, { fill: '#e4e4e7' })],
   };
   const pieceH = (items, o) => Math.max(o.h && !items.length ? o.h : 0, ...items.map(i => i.y + i.h));
   // a whole screen from a list of pieces, top to bottom: bars hug the edges, the rest stacks with even gaps
@@ -3540,9 +3572,10 @@
     const items = spec.items || [], M = spec.device === 'Desktop' ? 64 : 24, CW = W - M * 2, GAP = spec.gap || 16, made = [f];
     let top = y + (phone ? 44 : 0), bottom = y + f.h;
     const put = (list, ox, oy) => { const g = uid(); list.forEach(it => { const c = card(it.type, { ...it, x: ox + it.x, y: oy + it.y, r: 0, group: list.length > 1 ? g : undefined, onFrame: f.id }); if (!c.group) delete c.group; board.cards.push(c); renderCard(c, true); made.push(c); }); };
-    const nav = items.find(it => /nav/i.test(it.piece || '')), tab = items.find(it => /tab/i.test(it.piece || ''));
+    const nav = items.find(it => /^nav ?(bar)?$/i.test(String(it.piece || '').trim())), tab = items.find(it => /^tab ?bar$/i.test(String(it.piece || '').trim()));   // exact names: Tabs and Table are their own elements
     if (nav) { const l = themeIt(PIECES['Nav bar'].make(W, nav), spec.theme); put(l, x, top); top += 56; }
-    if (tab) { const l = themeIt(PIECES['Tab bar'].make(W, tab), spec.theme); bottom -= 64 + (phone ? 20 : 0); put(l, x, bottom); }
+    let tabMade = [];   // the tab bar's cards: the only things that move down when a long screen grows
+    if (tab) { const l = themeIt(PIECES['Tab bar'].make(W, tab), spec.theme); bottom -= 64 + (phone ? 20 : 0); const n0 = made.length; put(l, x, bottom); tabMade = made.slice(n0); }
     const isWeb = (spec.items || []).some(it => WEB[Object.keys(WEB).find(k => k.toLowerCase() === String(it.piece || '').toLowerCase())]);
     if (spec.theme?.bg) { f.fill = spec.theme.bg; renderCard(f); }
     let cur = top + (spec.padTop ?? (isWeb ? 0 : 20));
@@ -3557,16 +3590,43 @@
       }
     });
     if (webFirst && !tab) { f.h = Math.max(200, cur - y); renderCard(f); }
-    else if (cur > bottom - 12) { const grow = cur - bottom + 24; f.h += grow; renderCard(f); made.filter(c => c.y >= bottom - 1 && c !== f).forEach(c => { c.y += grow; renderCard(c); }); }
+    else if (cur > bottom - 12) { const grow = cur - bottom + 24; f.h += grow; renderCard(f); tabMade.forEach(c => { c.y += grow; renderCard(c); }); }
     if (spec.note) { const n = card('note', { x, y: y + f.h + 28, w: W, h: 120, text: spec.note, name: spec.name || '', color: 'butter', r: 0 }); board.cards.push(n); renderCard(n, true); made.push(n); }
     return { f, made };
   }
-  const pieceBtn = ([n, p]) => `<button data-piece="${n}" title="Add ${n.toLowerCase()}">${Icon(p.icon)}${n}</button>`;
-  $('dzPieces').innerHTML = Object.entries(PIECES).filter(([, p]) => !p.web).map(pieceBtn).join('') + '<div class="label dz-sub">Website</div>' + Object.entries(PIECES).filter(([, p]) => p.web).map(pieceBtn).join('');
-  $('dzPieces').onclick = e => { const b = e.target.closest('[data-piece]'); if (!b) return; pickWF(null); $('dzPieces').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); startPlacing('piece', { piece: b.dataset.piece }); };
+  // the panel, by what things are: Basics (with the Screen, Box, Text and Icon tools), Buttons & inputs, Building blocks and Layouts
+  const GROUPS = [
+    ['basics', ['Heading', 'Image', 'Video', 'Map', 'Avatar', 'Divider', 'Space']],
+    ['controls', ['Button', 'Input', 'Textarea', 'Search', 'Dropdown', 'Radio', 'Checkbox', 'Toggle']],
+    ['blocks', ['Nav bar', 'Tab bar', 'Tabs', 'Card', 'List row', 'Table', 'Accordion', 'Modal']],
+    ['layouts', ['Header', 'Hero', 'Logos', 'Features', 'Gallery', 'Stats', 'Testimonials', 'Pricing', 'Card grid', 'CTA', 'Footer']],
+  ];
+  // other words people might type to find an element
+  const PIECE_KW = { Heading: 'title headline', Image: 'picture photo placeholder', Video: 'player movie clip media', Map: 'location pin place', Avatar: 'profile user person picture', Divider: 'line rule separator', Space: 'gap spacer margin padding',
+    Button: 'cta action', Input: 'text field form', Textarea: 'multiline message comment form', Search: 'find field', Dropdown: 'select combobox menu picker', Radio: 'option choice select', Checkbox: 'tick check', Toggle: 'switch on off',
+    'Nav bar': 'navigation top bar header', 'Tab bar': 'bottom navigation tabs', Tabs: 'segmented tab switch', Card: 'tile panel', 'List row': 'cell item list', Table: 'grid data rows columns spreadsheet', Accordion: 'faq collapse expand', Modal: 'dialog popup overlay sheet',
+    Header: 'site navigation top', Hero: 'banner headline landing', Logos: 'brands clients partners strip', Features: 'benefits grid', Gallery: 'photos images', Stats: 'numbers metrics figures', Testimonials: 'quotes reviews customers', Pricing: 'plans tiers cost', 'Card grid': 'cards grid columns', CTA: 'call to action button banner', Footer: 'links bottom' };
+  const pieceBtn = n => `<button data-piece="${n}" data-kw="${n.toLowerCase()} ${PIECE_KW[n] || ''}" title="Add ${n.toLowerCase()}">${Icon(PIECES[n].icon)}${n}</button>`;
+  GROUPS.forEach(([g, names]) => { $('design').querySelector(`.dz-piece-grid[data-g="${g}"]`).innerHTML = names.map(pieceBtn).join(''); });
+  // the groups fold (Layouts starts folded), and the choice is remembered
+  let dzOpen = { layouts: false }; try { dzOpen = { layouts: false, ...JSON.parse(localStorage.getItem('fenmyr:dzOpen') || '{}') }; } catch (e) {}
+  const dzWords = () => $('dzSearch').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  function dzApply() { const q = dzWords().length > 0; $('design').querySelectorAll('.dz-group').forEach(g => { const open = dzOpen[g.dataset.g] !== false || q; g.classList.toggle('closed', !open); g.querySelector('.dz-gh').setAttribute('aria-expanded', open); }); }
+  // typing narrows every group to what matches (a search opens the groups it finds things in)
+  function dzFilter() { const words = dzWords(); let any = false;
+    $('design').querySelectorAll('.dz-group').forEach(g => { let has = false;
+      g.querySelectorAll('.dz-tools button, .dz-piece-grid button').forEach(b => { const ok = !words.length || words.every(w => b.dataset.kw.includes(w)); b.hidden = !ok; if (ok) has = true; });
+      g.hidden = words.length > 0 && !has; if (has) any = true; });
+    $('dzNone').hidden = !words.length || any; dzApply(); }
+  $('dzSearch').oninput = dzFilter;
+  $('dzSearch').onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') { $('dzSearch').value = ''; dzFilter(); } if (e.key === 'Enter') { e.preventDefault(); $('design').querySelector('.dz-group:not([hidden]) :is(.dz-tools, .dz-piece-grid) button:not([hidden])')?.click(); } };
+  $('design').addEventListener('click', e => {
+    const h = e.target.closest('.dz-gh'); if (h) { const g = h.parentElement.dataset.g; dzOpen[g] = dzOpen[g] === false; try { localStorage.setItem('fenmyr:dzOpen', JSON.stringify(dzOpen)); } catch (e2) {} dzApply(); return; }
+    const b = e.target.closest('[data-piece]'); if (!b) return; pickWF(null); document.querySelectorAll('.dz-piece-grid button').forEach(x => x.classList.toggle('on', x === b)); startPlacing('piece', { piece: b.dataset.piece }); });
+  dzApply();
   function placePiece(name, w) {
     const P = PIECES[name], f = [...board.cards].reverse().find(f => f.type === 'frame' && w.x > f.x && w.x < f.x + f.w && w.y > f.y && w.y < f.y + f.h);
-    const W = (P.bar || P.web) && f ? f.w : P.web ? 1200 : P.w || 360, items = P.make(W); let ox = w.x - 14 / view.z, oy = w.y - 14 / view.z;
+    const W = (P.bar || P.web) && f ? f.w : P.web ? 1200 : P.w || 360, items = P.make(W, { panel: true }); let ox = w.x - 14 / view.z, oy = w.y - 14 / view.z;
     if ((P.bar || P.web) && f) { ox = f.x; if (P.bar === 'top') oy = Math.max(f.y, oy); if (P.bar === 'bottom') oy = Math.min(f.y + f.h - 64, Math.max(f.y, oy)); }
     const g = uid(), made = items.map(it => { const c = card(it.type, { ...it, x: ox + it.x, y: oy + it.y, r: 0, group: g }); board.cards.push(c); renderCard(c, true); return c; });
     fileIntoFrame(made); selectOnly(made.map(c => c.id)); renderWires(); save();
@@ -3588,7 +3648,7 @@
     document.querySelectorAll('[data-wf]').forEach(b => b.classList.toggle('on', b.dataset.wf === t));
     $('dzPresets').classList.toggle('on', t === 'frame');
     $('dzIcons').classList.toggle('on', t === 'icon'); if (t === 'icon') { renderIcons(); setTimeout(() => $('iconSearch').focus(), 20); return; }
-    if (t !== 'icon') iconSwap = null; if (t) $('dzPieces').querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+    if (t !== 'icon') iconSwap = null; if (t) document.querySelectorAll('.dz-piece-grid .on').forEach(x => x.classList.remove('on'));
     if (t === 'frame') { $('dzPresets').innerHTML = Object.keys(DEVICES).map(n => `<button data-dev="${n}">${n}</button>`).join(''); return; }
     if (t) startPlacing(t);
   }
@@ -5238,5 +5298,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

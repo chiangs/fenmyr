@@ -15,7 +15,7 @@ Fenmyr is a free, open-source canvas for ideas. It starts on Linux, with other s
 - 🗺️ Infinite board. Pan with two fingers, pinch to zoom, cards tilt a little like paper (or sit straight, your call).
 - 🗒️ Notes, titles, checklists, docs, collections, links, images (with crop), voice memos that write themselves out, videos, colors that name themselves, shapes, stamps, drawing, the Pen, squiggly lines and curvy connectors.
 - 🧠 ADHD-friendly: **Ctrl+K** drops an idea into **Unsorted** without losing your place, and **F** focuses on just what you're working on.
-- 📐 Wireframes: screens, boxes, text, icons, ready-made pieces (nav bars, tab bars, inputs, cards…) and whole website sections, with alignment guides and strokes.
+- 📐 Wireframes: screens, boxes, text and icons, plus ready-made elements (buttons and inputs, dropdowns, tables, modals, nav and tab bars, cards…) and full layouts (hero, features, pricing, card grids…). The panel has groups that fold, and a search that understands words like “dialog” or “FAQ”. With alignment guides and strokes.
 - 🗂️ Projects, folders and boards, with a home page for all of them. Move the sidebar widgets wherever you like.
 - 🌙 Light and dark mode, or your [Caelestia](#follow-your-caelestia-theme) colors. Undo (Ctrl+Z), and export any card or board as an image or PDF. Docs download as PDF or Word.
 - 🎨 Nordic colors for your cards: Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch.
