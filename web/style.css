@@ -2439,6 +2439,13 @@ body.dark .sb-dots button[data-c="white"] { box-shadow: inset 0 0 0 1px rgba(255
 body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--select), inset 0 0 0 1px rgba(255, 255, 255, .3); }
 
 /* the "Search my vault" chip in Myra's chat */
+/* what "this" means: the cards selected right now, which go along with whatever you send */
+.mc-sel { display: flex; align-items: center; gap: 4px; width: fit-content; max-width: calc(100% - 24px); margin: 8px 12px 0; padding: 4px 5px 4px 11px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--blush); color: var(--ink); font: 600 11.5px/1.2 var(--font); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pink-deep) 55%, transparent); }
+.mc-sel[hidden] { display: none; }
+.mcs-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcs-x { flex: none; width: 18px; height: 18px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: inherit; font: 700 14px/1 var(--font); opacity: .65; cursor: pointer; }
+.mcs-x:hover { opacity: 1; background: rgba(0, 0, 0, .08); }
+body.dark .mcs-x:hover { background: rgba(255, 255, 255, .12); }
 .mc-vault { flex: none; display: flex; align-items: center; gap: 5px; padding: 0 10px; height: 30px; border: 1.5px solid currentColor; border-radius: 15px; corner-shape: squircle; background: none; font: 600 11.5px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .mc-vault[hidden] { display: none; }
 .mc-vault svg { width: 14px; height: 14px; }

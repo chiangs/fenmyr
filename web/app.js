@@ -2311,7 +2311,22 @@
   const chatOpen = () => $('myra').classList.contains('chat');
   // with cards selected, the chat's hint says what "this" will mean: they go along with whatever you send
   const askHint = () => sel.size === 1 ? 'Change this… “make it say…”, “turn it mint”' : sel.size > 1 ? `Change these ${sel.size}… “rename to step 1, 2, 3”` : 'Ask Myra… “group these by theme”';
-  function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); $('mcInput').placeholder = askHint(); $('mcInput').focus(); } }
+  // a little chip above the box says which cards are selected (they go along with what you send); it follows the selection while the chat is open
+  const TYPE_NAMES = { note: 'Note', todo: 'Checklist', title: 'Title', image: 'Picture', swatch: 'Colour', font: 'Font', coll: 'Collection', frame: 'Frame', section: 'Section', doc: 'Doc', link: 'Link', audio: 'Voice memo', video: 'Video', stamp: 'Stamp', shape: 'Shape', screen: 'Screen', canvas: 'Drawing', vnote: 'Vault note', spotify: 'Spotify', icon: 'Icon' };
+  let selChipKey = null;
+  function renderSelChip() {
+    const el = $('mcSel'); if (!el || !board) return;
+    const cs = board.cards.filter(c => sel.has(c.id)), one = cs.length === 1 ? cs[0] : null;
+    const words = one ? String(one.name || one.text || one.title || one.label || '').replace(/\s+/g, ' ').trim().slice(0, 34) : '';
+    const key = cs.map(c => c.id).join(',') + '|' + words; if (key === selChipKey) return; selChipKey = key;
+    $('mcInput').placeholder = askHint();
+    if (!cs.length) { el.hidden = true; el.innerHTML = ''; return; }
+    el.innerHTML = `<span class="mcs-t">${one ? `${esc(TYPE_NAMES[one.type] || one.type)}${words ? ` · “${esc(words)}”` : ''}` : `${cs.length} cards selected`}</span><button type="button" class="mcs-x" title="Deselect" aria-label="Deselect">×</button>`;
+    el.hidden = false;
+  }
+  $('mcSel').onclick = e => { if (e.target.closest('.mcs-x')) { selectOnly([]); renderSelChip(); } };
+  ['pointerup', 'keyup'].forEach(ev => document.addEventListener(ev, () => { if (chatOpen()) setTimeout(renderSelChip, 0); }, true));
+  function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); selChipKey = null; renderSelChip(); $('mcInput').focus(); } }
   $('mPill').onclick = () => myraOpen(!chatOpen());
   $('mcClose').onclick = () => myraOpen(false);
   // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
