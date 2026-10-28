@@ -2646,3 +2646,11 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 /* a closed chat can't be focused or tabbed into (its fade still plays), so M and typing work after Esc */
 .m-chat { visibility: hidden; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2), visibility 0s .3s; }
 .myra.chat .m-chat { visibility: visible; transition-delay: 0s; }
+
+/* birthday inputs: month and day, nothing else */
+.bd-pick { display: inline-flex; align-items: center; gap: 6px; }
+.bd-pick select { font: 500 13px/1.2 var(--font); padding: 7px 9px; border: 0; border-radius: 11px; corner-shape: squircle; background: #f8f5f3; color: var(--ink); cursor: pointer; }
+.bd-clear { width: 26px; height: 26px; border: 0; border-radius: 9px; background: none; color: var(--ink-soft); cursor: pointer; font: 600 16px/1 var(--font); }
+.bd-clear:hover { background: var(--blush); color: var(--ink); }
+body.dark .bd-pick select, body.tint-panels .bd-pick select { background: rgba(255, 255, 255, .08); color: inherit; }
+.ob-field small { color: var(--ink-faint); font-weight: 500; }

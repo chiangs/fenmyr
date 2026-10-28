@@ -2259,6 +2259,7 @@
     paintCursor();
     // settings: name, cursor colors and the little preview
     if ($('setName') && document.activeElement !== $('setName')) $('setName').value = settings.name || '';
+    paintBd();
     if ($('curColors')) $('curColors').innerHTML = PRESETS.cursor.map(h => `<button data-cc="${h}" title="${h.toUpperCase()}" style="background:${h}" class="${settings.cursor === h ? 'on' : ''}"></button>`).join('')
       + `<button class="rand${PRESETS.cursor.includes(settings.cursor) ? '' : ' on'}" data-col="cursor" title="Any colour"></button>`;
     const pv = document.querySelector('#curPrev .mcur'); if (pv) { pv.innerHTML = myCur.innerHTML; pv.setAttribute('style', myCur.getAttribute('style') || ''); pv.style.transform = ''; }
@@ -2505,7 +2506,8 @@
       fontsOnThisComputer: FONTS.filter(f => !/^(\.|Apple |System|STIX|Noto Sans [A-Z][a-z]+ [A-Z])/.test(f)).slice(0, 400),
       recentChat: (settings.chatKeep === 'off' ? chatLog().slice(-2) : chatLog().slice(-8)).map(m => `${m.who === 'me' ? 'Person' : 'Myra'}: ${m.text}`),
       myraStyle: { name: settings.name || '', chat: settings.chat, emoji: !!settings.emoji }, // the host turns these into words (TONES in linux/prompts.js)
-      commands: SLASH.map(c => ({ cmd: c.cmd, arg: c.arg, desc: c.desc, ex: c.ex, opts: c.opts })),   // the slash commands, so she knows every one (the host puts them in her instructions)
+      commands: SLASH.filter(c => !c.dev).map(c => ({ cmd: c.cmd, arg: c.arg, desc: c.desc, ex: c.ex, opts: c.opts })),
+      person: birthdayFacts(),   // the slash commands, so she knows every one (the host puts them in her instructions)
       library: { projects: projects.map(p => ({ name: p.name, folders: foldersIn(p.id).map(f => f.name) })), foldersNotInAProject: looseFolders().map(f => f.name), boards: boardList.map(b => ({ id: b.id, name: b.name, folder: (folders.find(f => f.id === b.folder) || {}).name || null, current: b.id === board.id || undefined })) } };
   }
   // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
@@ -2568,11 +2570,12 @@
     { cmd: 'tidy', desc: 'Line the loose notes up in rows', run: () => { const n = tidyNotes(); reply(n ? `Lined ${n} notes up in tidy rows ✦` : 'No loose notes to tidy ✦'); } },
     { cmd: 'fit', desc: 'Zoom to see everything', run: () => { zoomFit(); reply('Everything is in view ✦'); } },
     { cmd: 'timer', arg: '<minutes> <purpose>', desc: 'A timer; the purpose is optional (/timer stop cancels, /timer alone shows the time left)', ex: ['/timer 25 write the intro', '/timer 2m10s tea', '/timer 1h30'], opts: ['15 break', '50 focus', '5 breather'], run: slashTimer },
+    { cmd: 'birthday', desc: '(demo, temporary) play the birthday celebration; /birthday belated plays the belated one', dev: true, run: a => slashBirthday(a) },
     { cmd: 'animate', arg: '<name>', desc: 'Make me move: a surprise, or pick one', ex: '/animate love', get opts() { return ANIMS.map(a => a.name); }, run: slashAnimate },
     { cmd: 'clear', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
     { cmd: 'help', desc: 'What I can do without thinking', run: () => reply(helpText()) },
   ];
-  const helpText = (lead = 'Here is what I can do right here, no thinking needed:') => lead + '\n' + SLASH.filter(c => c.cmd !== 'help').map(c => `/${c.cmd}${c.arg ? ' ' + c.arg : ''}  ${c.desc}`).join('\n') + '\nAsk me anything else in your own words ✦';
+  const helpText = (lead = 'Here is what I can do right here, no thinking needed:') => lead + '\n' + SLASH.filter(c => c.cmd !== 'help' && !c.dev).map(c => `/${c.cmd}${c.arg ? ' ' + c.arg : ''}  ${c.desc}`).join('\n') + '\nAsk me anything else in your own words ✦';
   const wordsOf = c => [c.text, c.name, c.label, c.title, ...(c.items || []).map(i => i.t), ...(c.tags || []).map(t => '#' + t), String(c.body || '').replace(/<[^>]+>/g, ' ')].filter(Boolean).join(' ').toLowerCase();
   function glideTo(cs) { const from = { ...view }; fit(cs, 200, 1.2); const to = { ...view }; Object.assign(view, from); applyView(); glideView(to); }
   // ---------- the find bar: opens next to Myra when /find or /tag runs; searches as you type, steps through the matches, closes with Esc ----------
@@ -2720,6 +2723,95 @@
     saveIdle({ last: now, next: now + idleGap() }); return name;
   }
   idleT = setInterval(idleCheck, 300000);
+  // ---------- birthday: set in Settings (or at setup), kept as month and day only. On the day Myra celebrates once you are really there (the window focused, you active in the last minute, not mid-sentence). Miss it and she wishes you a belated one for up to 14 days ----------
+  const BD_KEY = 'fenmyr:birthday', MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function bdState() { try { return JSON.parse(localStorage.getItem(BD_KEY) || 'null') || {}; } catch (e) { return {}; } }
+  function saveBd(st) { try { localStorage.setItem(BD_KEY, JSON.stringify(st)); } catch (e) {} }
+  function bdNow() { return window.__bdNow ? new Date(window.__bdNow) : new Date(); }
+  function dayKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  function bdParts() { const m = /^(\d\d)-(\d\d)$/.exec(settings.birthday || ''); return m ? { m: +m[1], d: +m[2] } : null; }
+  function bdDate(year) {   // this year's birthday; February 29 is February 28 in a year without one
+    const b = bdParts(); if (!b) return null;
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    return new Date(year, b.m - 1, b.m === 2 && b.d === 29 && !leap ? 28 : b.d);
+  }
+  function birthdayDue(now = bdNow()) {
+    const st = bdState(), y = now.getFullYear(), thisYear = bdDate(y); if (!thisYear) return null;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()), setAt = st.setAt || '0000-00-00';
+    if (dayKey(thisYear) === dayKey(today)) return st.last === y ? null : { kind: 'today', year: y, date: thisYear };
+    const recent = thisYear <= today ? thisYear : bdDate(y - 1), days = Math.round((today - recent) / 86400000);
+    // belated: within 14 days, not already celebrated, and only for a birthday that was set before it came round (not one you typed in afterwards)
+    return days >= 1 && days <= 14 && st.last !== recent.getFullYear() && dayKey(recent) >= setAt ? { kind: 'belated', year: recent.getFullYear(), days, date: recent } : null;
+  }
+  function birthdayFacts() {   // what she is told about it: the day, and whether it is today
+    const b = bdParts(); if (!b) return undefined;
+    const d = bdDate(bdNow().getFullYear());
+    return { birthday: `${MONTHS[b.m - 1]} ${b.d}`, birthdayToday: !!d && dayKey(d) === dayKey(bdNow()) };
+  }
+  function setBirthday(m, d) {
+    m = +m; d = +d; const max = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
+    const next = m >= 1 && m <= 12 && d >= 1 && d <= max ? `${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : '';
+    if (next === (settings.birthday || '')) return;
+    settings.birthday = next; const st = bdState(); st.setAt = dayKey(bdNow()); saveBd(st); applySettings();   // (the year's celebration, once done, stays done if you change the date)
+  }
+  function fillBd(mSel, dSel) {
+    mSel.innerHTML = '<option value="">Month</option>' + MONTHS.map((n, i) => `<option value="${i + 1}">${n}</option>`).join('');
+    dSel.innerHTML = '<option value="">Day</option>' + Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+  }
+  function paintBd() {
+    const b = bdParts();
+    [['setBdMonth', 'setBdDay'], ['obBdMonth', 'obBdDay']].forEach(([a, c]) => { if ($(a) && $(a).options.length) { $(a).value = b ? b.m : ''; $(c).value = b ? b.d : ''; } });
+  }
+  [['setBdMonth', 'setBdDay'], ['obBdMonth', 'obBdDay']].forEach(([a, c]) => {
+    fillBd($(a), $(c)); $(a).onchange = $(c).onchange = () => setBirthday($(a).value, $(c).value);
+    [$(a), $(c)].forEach(el => el.addEventListener('keydown', e => e.stopPropagation()));
+  });
+  $('setBdClear').onclick = () => { $('setBdMonth').value = $('setBdDay').value = ''; setBirthday('', ''); };
+  paintBd();
+
+  // she wears the hat all day, once she has celebrated
+  let hatOn = false, celebrating = false, hatDemoUntil = 0;
+  function syncHat() { const on = bdState().hat === dayKey(bdNow()) || Date.now() < hatDemoUntil; if (on !== hatOn) { hatOn = on; goo.hat(on); } }
+  // paying attention: the window is focused, there was real input in the last minute, and nothing was typed in the last few seconds; and nothing else is going on with her
+  const focusedNow = () => window.__bdFocus ?? (!document.hidden && document.hasFocus());
+  const attentive = anyway => !!anyway || (focusedNow() && Date.now() - lastActive < 60000 && Date.now() - lastKey > 4000);
+  const BD_LINES = [who => `Happy birthday${who}! I put on my best hat for you ✦`, who => `It's your birthday${who}! Berries for everyone ✦`, who => `Happy birthday${who}! The board can wait a little today ✦`];
+  async function birthdayLine(due) {   // with thinking on, a line written for the moment; otherwise (or if it is slow) the written ones
+    if (window.__birthdayLineStub) return window.__birthdayLineStub(due);
+    if (Fenmyr.web || !settings.ai || haveClaude === false || !navigator.onLine) return null;
+    const prompt = `(This is a birthday notice, not a request. ${due.kind === 'belated' ? `The person's birthday was ${due.days} day${due.days === 1 ? '' : 's'} ago and you missed it, so wish them a happy belated birthday` : "It is the person's birthday today, so wish them a happy birthday"}. Say one short, warm line in your own voice and nothing else. Do not change the board.)`;
+    try {
+      const raw = await Promise.race([Fenmyr.ask(prompt, { ...snapshot(), cards: [], links: [], unsorted: [], recentChat: [], commands: undefined }, false, { mobbin: false, higgs: false, web: false, canVault: false, vaultNotes: [] }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 6000))]);
+      return parse(raw).say || null;
+    } catch (e) { return null; }
+  }
+  async function celebrateBirthday(due, demo) {
+    celebrating = true;
+    const who = settings.name ? `, ${settings.name}` : '', belated = due.kind === 'belated';
+    if (!demo) { const st = bdState(); st.last = due.year; st.hat = dayKey(bdNow()); saveBd(st); }
+    if (demo) hatDemoUntil = Date.now() + 90000;   // (the demo's hat lasts a minute and a half)
+    hatOn = true; goo.hat(true);
+    if (!chatOpen()) myraOpen(true);
+    [500, 2000, 3500].forEach(ms => setTimeout(() => partyMyra(true), ms));   // waves of berry confetti, whatever her calm setting
+    const when = due.date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+    const canned = belated ? `Happy belated birthday${who}! I missed you on ${when}, so I saved the confetti ✦` : BD_LINES[Math.floor(Math.random() * BD_LINES.length)](who);
+    const line = await Promise.race([birthdayLine(due), new Promise(r => setTimeout(() => r(null), 2200))]);
+    reply(noEmoji(line || canned), 0);
+    const p = centerWorld(), title = belated ? 'Happy belated birthday' : 'Happy birthday', c = card('note', { myra: true, name: title, text: `${title}${who}! Keep this note or delete it, whichever you like.`, color: 'butter', w: 260, h: 170 });
+    c.x = p.x - c.w / 2; c.y = p.y - c.h / 2 - 40; addCard(c);
+    celebrating = false;
+  }
+  function birthdayCheck(anyway) {
+    syncHat(); if (celebrating) return false;
+    const due = birthdayDue(); if (!due || !attentive(anyway) || !idleOK(true)) return false;
+    celebrateBirthday(due); return true;
+  }
+  // (temporary, for trying it out) /birthday plays the celebration now; /birthday belated plays the belated one. It stores nothing.
+  function slashBirthday(arg) {
+    const belated = /^belated/i.test((arg || '').trim()), d = new Date(); if (belated) d.setDate(d.getDate() - 3);
+    celebrateBirthday({ kind: belated ? 'belated' : 'today', year: d.getFullYear(), days: 3, date: d }, true);
+  }
+  setInterval(() => birthdayCheck(), 10000); addEventListener('focus', () => setTimeout(() => birthdayCheck(), 3000)); setTimeout(() => birthdayCheck(), 6000); syncHat();
   // ---------- the timer: /timer 25 write the intro. It counts down by the clock (so it survives sleep, restarts and switching boards), warns at two minutes, and Myra makes a fuss when it's up ----------
   const TIMER_KEY = 'fenmyr:timer';
   let timer = null, timerTick = 0;
@@ -5731,5 +5823,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { stopAnim, slashNames: () => SLASH.map(c => c.cmd), timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { stopAnim, slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd), birthdayDue, birthdayCheck, setBirthday, bdSetting: () => settings.birthday, birthdayFacts, bdState, celebrateBirthday, bdActive: (ms, keyMs = 99999) => { lastActive = Date.now() - ms; lastKey = Date.now() - keyMs; }, hatOn: () => hatOn, timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
