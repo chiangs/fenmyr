@@ -386,6 +386,11 @@ echo " [BLANK_AUDIO] hello from whisper"
     const overTimer = await page.evaluate(() => window.__fenmyr.idleCheck(true));
     await page.evaluate(() => { document.getElementById('myra').classList.add('chat'); }); await page.fill('#mcInput', '/timer stop'); await page.keyboard.press('Enter'); await page.waitForTimeout(300); await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); document.getElementById('mcInput').blur(); });
     r.idleAnim = { aliases: nm === 'love|hop|party|', requests: rq === 'hop|||*', plays: ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'].includes(idle.first), once: idle.second === false, gap: idle.gapMin >= 59.9 && idle.gapMin <= 91, notOverTimer: overTimer === false }; }
+  // the height grips: the pointer shows the system's resize cursor over them, and the bar swells into a peak on hover
+  { const g = await page.locator('.rz-grip').first().boundingBox(), h = () => page.evaluate(() => document.querySelector('.rz-grip path').getBBox().height);
+    const rest = await h(); await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.waitForTimeout(900);
+    const hot = await h(), native = await page.evaluate(() => document.body.classList.contains('cur-native') && getComputedStyle(document.querySelector('.rz-grip')).cursor === 'ns-resize');
+    await page.mouse.move(5, 400); await page.waitForTimeout(900); r.grip = { peaks: hot > rest + 5, cursor: native, settles: Math.abs(await h() - rest) < .5 }; }
   // with the chat open she hops out of her button and perches on the input's top right; closing sends her home; toggling it over and over makes her dizzy; clicking her makes her do something
   { const R = () => page.evaluate(() => { const g = id => { const b = document.getElementById(id).getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; }; return { slot: g('gooSlot'), form: g('mcForm'), name: g('mName'), perched: window.__fenmyr.perched() }; });
     await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); document.getElementById('mcInput').blur(); window.__fenmyr.perchGoo(false); window.__fenmyr.dizzyAuto(true); }); await page.waitForTimeout(1300); const home = await R();
