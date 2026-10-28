@@ -2056,6 +2056,7 @@
 
   // ---------- paste and drop ----------
   addEventListener('paste', e => {
+    pendingPaste = false;   // a real paste arrived, so Ctrl+V's fallback (pasting the cards you last copied) must stand down, whichever way this paste goes
     // pictures never go inside a card's text: a note gets a connected picture card, anything else you were typing in gets one on the board
     const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/')), one = !editing && sel.size === 1 && !e.target.closest('input, textarea, [contenteditable="true"]') ? byId([...sel][0]) : null;
     if (imgs.length && !$('capture').classList.contains('on')) {
