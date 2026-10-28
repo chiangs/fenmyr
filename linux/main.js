@@ -113,7 +113,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   protocol.handle('fenmyrmedia', req => storage.serveMedia(req));
   // the microphone for voice memos, the camera for video cards, and the clipboard for copy/paste between boards
-  const allowed = new Set(['media', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen']);
+  const allowed = new Set(['media', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'notifications']);
   session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(allowed.has(perm)));
   session.defaultSession.setPermissionCheckHandler((wc, perm) => allowed.has(perm));
   createWindow();
