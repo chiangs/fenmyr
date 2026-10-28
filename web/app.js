@@ -2461,6 +2461,7 @@
     return notes.length;
   }
   function offlineMyra(q, why) {
+    const an = animIntent(q); if (an) return void playAnim(an === '*' ? pickAnim() : an);
     if (/group|sort|organi[sz]e|tidy|line up/i.test(q)) { const n = tidyNotes(); if (n) return reply(`I lined your ${n} notes up in tidy rows ✦ ${why}`, 9000); }
     reply(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Fenmyr.openURL(GUIDE) }] : []); offlineMyra.signin = false;
   }
@@ -2471,6 +2472,7 @@
   const getApp = () => Fenmyr.openURL(Fenmyr.getURL || 'https://github.com/chiangs/fenmyr/releases/latest');
   const DL = [{ label: 'Download Fenmyr ✦', run: getApp }, { label: 'Keep playing', ghost: true, run: () => {} }];
   function webMyra(q) {
+    const an = animIntent(q); if (an) return void playAnim(an === '*' ? pickAnim() : an);
     const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
     if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) return offlineMyra(q, 'In the desktop app I can sort them by theme too, with Claude.');
     const what = /mobbin/i.test(q) ? 'Mobbin lives in your Claude account, and I can only reach it from the desktop app.' : /higgsfield|photo|picture|image/i.test(q) ? 'Making pictures with Higgsfield happens in the desktop app, where I can check the price with you first.' : 'I think with Claude Code, and that lives in the desktop app.';
@@ -2502,6 +2504,7 @@
     { cmd: 'tidy', desc: 'Line the loose notes up in rows', run: () => { const n = tidyNotes(); reply(n ? `Lined ${n} notes up in tidy rows ✦` : 'No loose notes to tidy ✦'); } },
     { cmd: 'fit', desc: 'Zoom to see everything', run: () => { zoomFit(); reply('Everything is in view ✦'); } },
     { cmd: 'timer', arg: '<minutes> <purpose>', desc: 'A timer; the purpose is optional (/timer stop cancels)', run: slashTimer },
+    { cmd: 'animate', arg: '<name>', desc: 'Make me move: a surprise, or pick one', run: slashAnimate },
     { cmd: 'clear', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
     { cmd: 'help', desc: 'What I can do without thinking', run: () => reply(helpText()) },
   ];
@@ -2557,6 +2560,7 @@
   const TIMER_PRESETS = [{ fill: '/timer 15 break', title: '15 min break', desc: 'A short break' }, { fill: '/timer 50 focus', title: '50 min focus', desc: 'A long stretch of focus' }, { fill: '/timer 5 breather', title: '5 min breather', desc: 'Stand up, look away, stretch' }];
   const slashMatches = el => {
     if (/^\/timer\s*$/i.test(el.value) && !timer) return TIMER_PRESETS.map(p => ({ key: p.fill, title: `<b>/timer</b> ${esc(p.title)}`, desc: p.desc, fill: p.fill }));
+    if (/^\/animate\s*$/i.test(el.value)) return [{ key: '/animate', title: '<b>/animate</b> Surprise me', desc: 'A random one', fill: '/animate' }, ...ANIMS.map(a => ({ key: '/animate ' + a.name, title: `<b>/animate</b> ${a.name}`, desc: a.desc, fill: '/animate ' + a.name }))];
     const m = /^\/(\w*)$/.exec(el.value); return m ? SLASH.filter(c => c.cmd.startsWith(m[1].toLowerCase())).map(c => ({ key: c.cmd, title: `<b>/${c.cmd}${c.arg ? ` <i>${esc(c.arg)}</i>` : ''}</b>`, desc: c.desc, cmd: c })) : [];
   };
   function showSlash(el) {
@@ -2589,6 +2593,37 @@
     if (!board) return; if (find.on) { $('fbQ').focus(); $('fbQ').select(); return; } myraOpen(true); const el = $('mcInput'), had = /^\/find /i.test(el.value);
     if (!had) el.value = '/find '; el.focus(); el.dispatchEvent(new Event('input')); had ? el.setSelectionRange(6, el.value.length) : el.setSelectionRange(el.value.length, el.value.length);
   }
+  // ---------- animate: what she can do with her sprite when asked (/animate, plain words like "can you jump?", or her own choice with thinking on). Always plays, even in calm mode ----------
+  const ANIMS = [
+    { name: 'hop', desc: 'A little jump', line: 'Boing!', ms: 1300, play: () => { hopMyra(); setTimeout(hopMyra, 520); } },
+    { name: 'wiggle', desc: 'A happy wiggle', line: '*wiggle wiggle*', ms: 2400, play: () => goo.think(true), end: () => goo.think(false) },
+    { name: 'party', desc: 'Hops and berry confetti', line: 'Party time!', ms: 3800, play: () => partyMyra(true) },
+    { name: 'sleepy', desc: 'A big yawn and a nap', line: '*yawn*', ms: 4500, pose: 'sleepy' },
+    { name: 'shook', desc: 'Startled', line: 'Whoa!', ms: 3000, pose: 'shook' },
+    { name: 'sigh', desc: 'A long sigh', line: '*sigh*', ms: 3200, pose: 'sigh' },
+    { name: 'happy', desc: 'Beaming, with sparkles', line: 'Yay!', ms: 3600, pose: 'happy' },
+    { name: 'love', desc: 'Heart eyes', line: 'Aww, I love it here.', ms: 4000, pose: 'love' },
+    { name: 'dizzy', desc: 'Stars circling', line: 'Wheee, the room is spinning.', ms: 4000, pose: 'dizzy' },
+  ];
+  let animT = 0, lastAnim = '';
+  const pickAnim = () => { const pool = ANIMS.filter(a => a.name !== lastAnim); return pool[Math.floor(Math.random() * pool.length)].name; };
+  function playAnim(name, say = true) {
+    const a = ANIMS.find(x => x.name === String(name).toLowerCase()); if (!a) return false;
+    if (timerPose()) { if (say) reply('My face is busy with the timer right now. Ask me again in a moment ✦'); return false; }
+    clearTimeout(animT); ANIMS.forEach(x => x.end && x.end()); lastAnim = a.name; goo.lively(true);
+    if (a.pose) { animPose = a.pose; setPose(wantedPose()); } else a.play();
+    animT = setTimeout(() => { animPose = null; goo.lively(false); a.end && a.end(); setPose(wantedPose()); }, a.ms);
+    if (say) reply(`${a.line} ✦`, 5000);
+    return true;
+  }
+  function slashAnimate(arg) {
+    const n = (arg || '').trim().toLowerCase(); if (!n || n === 'random' || n === 'surprise') return void playAnim(pickAnim());
+    if (!playAnim(n) && !ANIMS.some(a => a.name === n)) reply(`I don't know that one. I can do: ${ANIMS.map(a => a.name).join(', ')} ✦`);
+  }
+  // plain words, with thinking off (or on the web demo): "can you jump?", "do a little dance", "show me your moves"
+  const ANIM_WORDS = [['hop', /\b(jump|hop|bounce)\b/i], ['wiggle', /\b(wiggle|wobble)\b/i], ['party', /\b(party|celebrate|confetti|cheer)\b/i], ['sleepy', /\b(sleepy|yawn|nap|sleep)\b/i], ['shook', /\b(shook|startled|surprised|scared)\b/i],
+    ['sigh', /\bsigh\b/i], ['happy', /\b(happy|smile|beam|sparkle)\b/i], ['love', /\b(love|heart)\b/i], ['dizzy', /\b(dizzy|spin)\b/i], ['*', /\b(animat\w*|dance|dancing|tricks?|show me your moves|do something|show me something)\b/i]];
+  const animIntent = q => /group|sort|organi[sz]e|tidy|line up/i.test(q) ? '' : (ANIM_WORDS.find(([, re]) => re.test(q)) || [''])[0];
   // ---------- the timer: /timer 25 write the intro. It counts down by the clock (so it survives sleep, restarts and switching boards), warns at two minutes, and Myra makes a fuss when it's up ----------
   const TIMER_KEY = 'fenmyr:timer';
   let timer = null, timerTick = 0;
@@ -2604,13 +2639,18 @@
   const timerWhat = t => t.purpose || `your ${t.minutes}-minute timer`;
   // what the glow says when it runs out: red for work and focus, green for a break. With thinking on the model decides (t.kind, from its warning), otherwise a break or a breather is green and everything else is red
   const timerKind = t => t.kind || (/^(break|breather)$/.test((t.purpose || '').trim().toLowerCase().replace(/^(a|the|my|some)\s+/, '')) ? 'break' : 'focus');
-  let glowT = 0;
-  const clearGlow = () => { clearTimeout(glowT); $('mPill').classList.remove('glow-red', 'glow-green'); };
+  // her faces follow the timer: sleepy through a break, shook in the last two minutes, and after a focus timer ends she sighs until you answer
+  let glowT = 0, sighing = false, currentPose = null;
+  const setPose = p => { if (p !== currentPose) { currentPose = p; goo.pose(p); } };
+  const timerPose = () => sighing ? 'sigh' : timer && timer.minutes >= 3 && timer.end - Date.now() <= 120000 ? 'shook' : timer && timerKind(timer) === 'break' ? 'sleepy' : null;
+  let animPose = null;   // a face she was asked to make (/animate, plain words); the timer's own faces win
+  const wantedPose = () => timerPose() || animPose;
+  const clearGlow = () => { clearTimeout(glowT); sighing = false; $('mPill').classList.remove('glow-red', 'glow-green'); setPose(wantedPose()); };
   const setGlow = kind => { clearGlow(); $('mPill').classList.add(kind === 'break' ? 'glow-green' : 'glow-red'); glowT = setTimeout(clearGlow, 120000); };
   function paintTimer() {
-    const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); if (!timer) { chip.hidden = true; return; }
+    const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); if (!timer) { chip.hidden = true; $('mPill').classList.remove('hurry'); setPose(wantedPose()); return; }
     chip.hidden = false; $('tcTime').textContent = clock(timer.end - Date.now()); $('tcWhat').textContent = timer.purpose || `${timer.minutes} min`;
-    chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.minutes * 60000)))); chip.classList.toggle('soon', timer.minutes >= 3 && timer.end - Date.now() <= 120000);
+    chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.minutes * 60000)))); $('mPill').classList.toggle('hurry', timer.minutes >= 3 && timer.end - Date.now() <= 120000); setPose(wantedPose());
   }
   function startTimer(t, replace) {
     if (timer && !replace) return reply(`You already have ${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. Start this one instead?`, 0, [{ label: 'Replace it', cls: 'next', run: () => startTimer(t, true) }, { label: 'Keep it', ghost: true, run: () => {} }]);
@@ -2637,8 +2677,8 @@
   const osNotify = (title, body) => { if (Fenmyr.web || document.hasFocus() || typeof Notification === 'undefined') return; try { new Notification(title, { body }); } catch (e) {} };
   const CONFETTI = ['#f2a339', '#e07a5f', '#ffdcd8', '#e0edd3', '#d9e7f3', '#ebe1f2'];
   // when it's up: she hops, her pill wiggles and berry confetti bursts out (calmer if she is set to calm, nothing at all if calmest)
-  function partyMyra() {
-    if (window.myraMuted) return; hopMyra(); if (window.myraCalm || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  function partyMyra(force) {
+    if (window.myraMuted && !force) return; hopMyra(); if ((window.myraCalm && !force) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let n = 0; const iv = setInterval(() => { hopMyra(); if (++n >= 5) clearInterval(iv); }, 520);
     const my = $('myra'); my.classList.add('partying'); setTimeout(() => my.classList.remove('partying'), 3400);
     for (let i = 0; i < 26; i++) { const c = document.createElement('i'), a = (Math.random() * 160 - 80) * Math.PI / 180, d = 90 + Math.random() * 150; c.className = 'confetti'; c.style.cssText = `--dx:${Math.round(Math.sin(a) * d)}px;--dy:${-Math.round(Math.cos(a) * d + 20)}px;--rot:${Math.round(Math.random() * 720 - 360)}deg;--c:${CONFETTI[i % CONFETTI.length]};animation-delay:${Math.round(Math.random() * 300)}ms`; $('myra').appendChild(c); setTimeout(() => c.remove(), 2400); }
@@ -2651,7 +2691,8 @@
   async function timerDone() {
     const t = timer; timer = null; saveTimer(); paintTimer();
     const plain = `Time's up! ${t.minutes} minutes${t.purpose ? ` (${t.purpose})` : ''} ✦`, acts = [{ label: '5 more minutes', cls: 'next', run: () => startTimer({ minutes: 5, purpose: t.purpose }, true) }, { label: 'Thanks', ghost: true, run: clearGlow }];
-    reply(plain, 0, acts); $('mBubble').classList.add('party'); setGlow(timerKind(t)); partyMyra(); osNotify("Time's up", t.purpose || `${t.minutes}-minute timer`);
+    reply(plain, 0, acts); $('mBubble').classList.add('party'); setGlow(timerKind(t)); partyMyra();
+    if (timerKind(t) !== 'break') setTimeout(() => { if ($('mPill').classList.contains('glow-red')) { sighing = true; setPose('sigh'); } }, window.myraMuted ? 600 : 3600); osNotify("Time's up", t.purpose || `${t.minutes}-minute timer`);
     const r = await timerLine('done', t); if (r?.kind && r.kind !== timerKind(t)) setGlow(r.kind); if (r?.say && $('mBubble').classList.contains('on') && $('mBubble').classList.contains('party')) $('mSay').textContent = noEmoji(r.say);
   }
   function timerCheck() { if (!timer) return; const left = timer.end - Date.now(); if (left <= 0) return timerDone(); paintTimer(); if (!timer.warned && left <= 120000) timerWarn(); }
@@ -2663,6 +2704,7 @@
   // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
   async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     // her templates: use one of theirs, or keep what's on the board as one
+    if (r.animate) playAnim(r.animate, false);
     if (r.useTemplate) { const o = r.useTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) await useTemplate(t, o.mode === 'new' || o.mode === 'add' ? o.mode : undefined); }
     // folders first: create, rename, and move boards around the library
     const fo = r.folders, pr = r.projects;
@@ -5553,5 +5595,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { playAnim, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
