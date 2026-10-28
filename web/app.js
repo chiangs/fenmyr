@@ -2407,7 +2407,7 @@
     gooMove(from); if (!flightLive) { flightLive = true; liveOn(); } hopMyra();
     const mid = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 40 }, tf = p => `translate(${p.x}px, ${p.y}px)`;
     const a = gooAnim = gooSlot.animate([{ transform: tf(from) }, { transform: tf(mid), offset: .5 }, { transform: tf(to) }], { duration: 560, easing: 'cubic-bezier(.3, .6, .4, 1)' });
-    a.onfinish = () => { if (gooAnim === a) { gooMove(to); gooAnim = null; if (flightLive) { flightLive = false; liveOff(); } } };
+    a.onfinish = () => { if (gooAnim === a) { gooAnim = null; gooMove(perched ? perchTarget() : to); if (flightLive) { flightLive = false; liveOff(); } } };   // (where the input is now, in case the button changed width on the way)
   }
   function perchGoo(on) {
     const hidden = document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none'; if (hidden) return;
@@ -2417,7 +2417,7 @@
     flyGoo(on ? perchTarget() : { x: 0, y: 0 }, window.myraMuted || matchMedia('(prefers-reduced-motion: reduce)').matches);   // calmest and reduced motion: she just appears
   }
   const keepPerch = () => { if (perched && !gooAnim) gooMove(perchTarget()); };
-  addEventListener('resize', keepPerch); new ResizeObserver(keepPerch).observe($('mChat'));
+  addEventListener('resize', keepPerch); const perchWatch = new ResizeObserver(keepPerch); [$('mChat'), $('mPill'), $('myra')].forEach(el => perchWatch.observe(el));   // the button changing width (a label appearing) moves the whole bar, and the chat with it
   gooSlot.addEventListener('click', e => { if (!perched) return; e.stopPropagation(); playAnim(pickAnim(), false); });   // click her in the chat and she does something
   $('mPill').onclick = () => { clearGlow(); myraOpen(!chatOpen()); };
   $('mcClose').onclick = () => myraOpen(false);

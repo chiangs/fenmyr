@@ -394,7 +394,15 @@ echo " [BLANK_AUDIO] hello from whisper"
     await page.waitForTimeout(4200); await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(900); const back = await R();
     for (let i = 0; i < 5; i++) { await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(150); } await page.waitForTimeout(700); const dizzy = await page.evaluate(() => window.__fenmyr.currentPose());
     await page.waitForTimeout(4500); if (await page.evaluate(() => window.__fenmyr.perched())) { await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(900); }
-    r.perch = { hopsUp: up.perched && up.slot.b > up.form.t - 12 && up.slot.b < up.form.t + 14 && up.slot.r <= up.form.r && up.slot.l > up.form.l + 200, namesStay: Math.abs(up.name.l - home.name.l) < 1 && Math.abs(up.name.t - home.name.t) < 1, backHome: !back.perched && Math.abs(back.slot.l - home.slot.l) < 2 && Math.abs(back.slot.t - home.slot.t) < 2, click: clicked !== '' && (clicked !== was || true), dizzy: dizzy === 'dizzy' }; }
+    // while she is thinking the button does not change width, so the chat stays put and she stays on the input
+    await page.click('#mPill'); await page.waitForTimeout(900); const calmSnap = await R(), chatBox = () => page.evaluate(() => { const b = document.getElementById('mChat').getBoundingClientRect(); return { l: b.left, r: b.right }; }), chat0 = await chatBox();
+    await page.evaluate(() => document.getElementById('myra').classList.add('thinking')); await page.waitForTimeout(700); const thinkSnap = await R(), chat1 = await chatBox();
+    await page.evaluate(() => { document.getElementById('myra').classList.remove('thinking'); document.getElementById('mPill').click(); }); await page.waitForTimeout(900);
+    await page.evaluate(() => { document.getElementById('myra').classList.add('thinking'); }); await page.click('#mPill'); await page.waitForTimeout(1000); const lateSnap = await R(), chat2 = await chatBox();
+    await page.evaluate(() => { document.getElementById('myra').classList.remove('thinking'); }); await page.waitForTimeout(700); const afterSnap = await R();
+    await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(900);
+    const onInput = s => Math.abs(s.slot.r - (s.form.r - 12)) < 3 && Math.abs(s.slot.b - (s.form.t + 6)) < 4;
+    r.perch = { hopsUp: up.perched && up.slot.b > up.form.t - 12 && up.slot.b < up.form.t + 14 && up.slot.r <= up.form.r && up.slot.l > up.form.l + 200, namesStay: Math.abs(up.name.l - home.name.l) < 1 && Math.abs(up.name.t - home.name.t) < 1, backHome: !back.perched && Math.abs(back.slot.l - home.slot.l) < 2 && Math.abs(back.slot.t - home.slot.t) < 2, click: clicked !== '' && (clicked !== was || true), dizzy: dizzy === 'dizzy', stillWhenThinking: onInput(thinkSnap) && Math.abs(chat1.l - chat0.l) < 1 && onInput(lateSnap) && onInput(afterSnap) && Math.abs(chat2.l - chat0.l) < 1 }; }
   r.files = files; r.errors = errors; r.boardOnDisk = fs.existsSync(path.join(data, 'fenmyr/boards/smoke1.json'));
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), webOn: r.webOn.slice(-120), webOff: r.webOff.slice(-120), hooksRewrite: r.hooksRewrite.slice(-100) }, null, 1));
   await app.close();
