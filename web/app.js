@@ -127,7 +127,7 @@
         kb, todo, doing, done,
       ], tray: ['call Sam about the east bog', 'idea: berries by the season', 'a name for the app?', 'buy a bigger bucket', 'plan the spring trip'].map(t => card('note', { text: t })) };
     },
-    'Brain dump': () => ({ cards: [card('title', { x: 0, y: -40, text: 'Brain dump' }), card('note', { x: 0, y: 60, name: 'Myra’s how-to', text: 'Empty your head into Unsorted with Ctrl+K: one thought each, no tidying.\n\nWhen you’re done, ask me to sort them into groups ✦', color: 'butter', myra: true, w: 260, h: 170 })],
+    'Brain dump': () => ({ cards: [card('title', { x: 0, y: -40, text: 'Brain dump' }), card('note', { x: 0, y: 60, name: 'Myra’s how-to', text: `Empty your head into Unsorted with ${OS === 'mac' ? '⌘' : 'Ctrl+'}K: one thought each, no tidying.\n\nWhen you’re done, ask me to sort them into groups ✦`, color: 'butter', myra: true, w: 260, h: 170 })],
       tray: ['call the printer', 'idea: a map of my favourite bogs', 'that font from the cafe menu', 'reply to Sam', 'plan the spring trip'].map(t => card('note', { text: t })) }),
   };
   function card(type, o = {}) {
@@ -1898,10 +1898,12 @@
   $('cleanBack').onclick = () => setClean(false);
   ['pointerdown', 'mousedown', 'dblclick'].forEach(t => $('cleanBack').addEventListener(t, e => e.stopPropagation()));   // the board mustn't grab presses on the pill
 
+  const openSettingsKey = () => { if (!$('settings').classList.contains('on') && !$('onboard').classList.contains('on')) $('gearBtn').click(); };
   addEventListener('keydown', e => {
     const typing = e.target.closest('input, textarea, [contenteditable="true"]');
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); capture(true); return; }
     if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f' && !homeAt && !$('settings').classList.contains('on')) { e.preventDefault(); startFind(); return; }
+    if ((e.metaKey || e.ctrlKey) && e.key === ',' && !e.altKey) { e.preventDefault(); openSettingsKey(); return; }   // ⌘, opens Settings, even while typing or at Home
     if ((e.metaKey || e.ctrlKey) && (e.key === '\\' || e.code === 'Backslash') && !homeAt && !docCard) { e.preventDefault(); setClean(!document.body.classList.contains('clean')); return; }
     if (e.key === 'Escape' && document.body.classList.contains('clean') && !editing && !drawOn) { setClean(false); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.target.closest('input, textarea, [contenteditable="true"]') && !homeAt) { e.preventDefault(); travel(e.shiftKey ? 1 : -1); return; }   // inside text, ⌘Z undoes typing as usual
@@ -1929,7 +1931,6 @@
     if ((e.key === 'Backspace' || e.key === 'Delete') && sel.size) removeSelected();
     if ((e.metaKey || e.ctrlKey) && e.altKey && e.code === 'KeyG' && sel.size) { e.preventDefault(); makeSection(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'g' && sel.size) { e.preventDefault(); groupSel(!e.shiftKey); return; }
-    if ((e.metaKey || e.ctrlKey) && e.key === ',') { e.preventDefault(); if (!$('settings').classList.contains('on')) $('gearBtn').click(); return; }   // Ctrl+, opens Settings
     if ((e.metaKey || e.ctrlKey) && !e.altKey && ['=', '+', '-', '_', '0'].includes(e.key)) { e.preventDefault(); return e.key === '0' ? zoomTo(1) : zoomStep(e.key === '=' || e.key === '+' ? 1 : -1); }
     if (e.shiftKey && !e.metaKey && !e.ctrlKey && e.code === 'Digit1') { e.preventDefault(); return zoomFit(); }
     if ((e.metaKey || e.ctrlKey) && (e.code === 'BracketRight' || e.code === 'BracketLeft') && sel.size) { e.preventDefault(); restack(e.code === 'BracketRight' ? (e.shiftKey ? 'front' : 'forward') : (e.shiftKey ? 'back' : 'backward')); return; }
@@ -2222,7 +2223,7 @@
     if (e.pointerType !== 'mouse' || !document.body.classList.contains('fancy-cursor')) return;
     myCur.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`; myCur.classList.add('show');
     // at the window's edges, hand back the system's own cursor so its resize arrows show (and you can see where to grab)
-    const edge = Fenmyr.native && (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8); document.body.classList.toggle('cur-edge', edge);
+    const edge = Fenmyr.native && (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8 || (OS === 'mac' && e.clientX < 96 && e.clientY < 44));   // (the close, minimise and zoom buttons sit at the top left on a Mac, and the page never sees the pointer over them) document.body.classList.toggle('cur-edge', edge);
     const t = e.target, native = edge || !!(t.closest && t.closest(NATIVE));
     myCur.classList.toggle('hide', native); document.body.classList.toggle('cur-native', native);
     const onCard = !native && !placing && !drawOn && t.closest && t.closest('.card') && !t.closest('button, a, input');
@@ -2350,7 +2351,7 @@
     if (g.dataset.seg === 'chatKeep' && b.dataset.v !== 'board') clearSavedChats(); if (g.dataset.seg === 'chatKeep') renderChat(); });
   $('obNotes').onclick = $('noteColors').onclick = e => { const b = e.target.closest('[data-nc]'); if (b) { settings.noteColor = b.dataset.nc; applySettings(); } };
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => settings.theme === 'system' && applySettings());
-  window.__fenmyrEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } };   // a new wallpaper or scheme: restyle right away
+  window.__fenmyrEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } else if (name === 'settings') openSettingsKey(); };   // a new wallpaper or scheme: restyle right away
   if (Fenmyr.caelestia) Fenmyr.caelestia().then(d => { cae = d; if (d) applySettings(); }).catch(() => {});
   const newNoteColor = () => settings.noteColor === 'random' ? COLOR_NAMES[1 + Math.floor(Math.random() * 6)] : settings.noteColor;
   let deselectAt = 0;
@@ -3851,7 +3852,7 @@
     if (one && one.type !== 'frame') h += `<div class="dz-sec"><div class="dz-grid">${field('rot', 'Rotate°', one.rot || 0, 'number', 'wide')}</div></div>`;
     if (one?.type === 'icon') h += `<div class="dz-sec"><div class="label">Icon</div><div class="dz-grid">${field('isz', 'Size', Math.round(one.w))}${field('color', 'Colour', one.color || '#27272a', 'color')}</div><div class="dz-row"><button data-swap="1" style="font:600 11.5px/1 var(--font);gap:6px;display:flex;align-items:center;justify-content:center">${Icon(one.name, { size: 16 })} Change icon</button></div></div>`;
     const groupedSel = cs.length > 1 && cs.every(c => c.group && c.group === cs[0].group);
-    if (cs.length > 1) h += `<div class="dz-sec"><div class="dz-row"><button data-grp="${groupedSel ? 'off' : 'on'}" style="font:600 11.5px/1 var(--font)">${groupedSel ? 'Ungroup  Ctrl+Shift+G' : 'Group  Ctrl+G'}</button></div></div>`;
+    if (cs.length > 1) h += `<div class="dz-sec"><div class="dz-row"><button data-grp="${groupedSel ? 'off' : 'on'}" style="font:600 11.5px/1 var(--font)">${groupedSel ? 'Ungroup  ⇧⌘G' : 'Group  ⌘G'}</button></div></div>`;
     if (one?.type === 'frame') h += `<div class="dz-sec"><div class="dz-grid">${field('name', 'Name', one.name || 'Screen', 'text', 'wide')}<label class="dz-f wide"><span>Device</span><select data-k="device">${['Custom', ...Object.keys(DEVICES)].map(n => `<option${(one.device || 'Custom') === n ? ' selected' : ''}>${n}</option>`).join('')}</select></label>${field('fill', 'Fill', one.fill || '#ffffff', 'color')}${field('radius', 'Corners', one.radius ?? 0)}</div></div>`;
     if (one?.type === 'box') h += `<div class="dz-sec"><div class="label">Look</div><div class="dz-grid">${field('fill', 'Fill', one.fill || '#e4e4e7', 'color')}${field('radius', 'Corners', one.radius || 0)}${field('stroke', 'Border', one.stroke || '#a1a1aa', 'color')}${field('sw', 'Width', one.sw || 0)}${field('opacity', 'Opacity %', Math.round((one.opacity ?? 1) * 100), 'number', 'wide')}</div></div>`;
     if (one?.type === 'text') h += `<div class="dz-sec"><div class="label">Type</div><div class="dz-grid"><label class="dz-f wide"><span>Font</span><select data-k="font">${[...new Set([one.font || 'Figtree', ...FONTS])].map(f => `<option${(one.font || 'Figtree') === f ? ' selected' : ''} style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></label>
@@ -4328,18 +4329,18 @@ ${proseCSS()}
     const tb = (c, label, tip, cls = '') => `<button type="button" class="dt-b ${cls}" data-c="${c}" title="${tip}" aria-label="${tip}">${label}</button>`;
     const pop = (p, label, tip, cls = '') => `<button type="button" class="dt-b dt-drop ${cls}" data-pop="${p}" title="${tip}" aria-label="${tip}" aria-haspopup="true">${label}</button>`;
     $('dvTools').innerHTML = [
-      tb('undo', DICON.undo, 'Undo · Ctrl+Z', 'dt-fold f7'), tb('redo', DICON.redo, 'Redo · Ctrl+Shift+Z', 'dt-fold f8'), '<span class="dt-sep"></span>',
+      tb('undo', DICON.undo, 'Undo · ⌘Z', 'dt-fold f7'), tb('redo', DICON.redo, 'Redo · ⇧⌘Z', 'dt-fold f8'), '<span class="dt-sep"></span>',
       pop('style', '<span class="dt-lbl" id="dtStyle">Body</span><i class="dt-car"></i>', 'Text style', 'dt-style'),
       pop('font', '<span class="dt-lbl" id="dtFont">Figtree</span><i class="dt-car"></i>', 'Font', 'dt-font'),
       `<span class="dt-size" title="Text size"><button type="button" class="dt-b" data-c="smaller" aria-label="Smaller">−</button><input id="dtSize" inputmode="numeric" aria-label="Text size" value="16"><button type="button" class="dt-b" data-c="bigger" aria-label="Bigger">+</button></span>`,
       '<span class="dt-sep"></span>',
-      tb('bold', '<b>B</b>', 'Bold · Ctrl+B', 'dt-t'), tb('italic', '<i>I</i>', 'Italic · Ctrl+I', 'dt-t'), tb('underline', '<u>U</u>', 'Underline · Ctrl+U', 'dt-t'), tb('strike', '<s>S</s>', 'Strikethrough · Ctrl+Shift+S', 'dt-t'),
+      tb('bold', '<b>B</b>', 'Bold · ⌘B', 'dt-t'), tb('italic', '<i>I</i>', 'Italic · ⌘I', 'dt-t'), tb('underline', '<u>U</u>', 'Underline · ⌘U', 'dt-t'), tb('strike', '<s>S</s>', 'Strikethrough · ⇧⌘S', 'dt-t'),
       pop('color', '<span class="dt-a">A<i id="dtColorBar"></i></span>', 'Text colour'), pop('hl', DICON.hl, 'Highlight', 'dt-hl'),
       '<span class="dt-sep"></span>',
       pop('align', `<span id="dtAlign">${DICON.left}</span>`, 'Alignment', 'dt-fold f6'),
       tb('bullet', DICON.bullet, 'Bulleted list', 'dt-fold f5'), tb('ordered', DICON.ordered, 'Numbered list', 'dt-fold f4'), tb('task', DICON.task, 'Checklist', 'dt-fold f3'),
       '<span class="dt-sep"></span>',
-      pop('link', DICON.link, 'Link · Ctrl+K', 'dt-fold f2'), tb('image', DICON.image, 'Add a picture', 'dt-fold f1'), pop('more', DICON.more, 'More: line spacing, tables, dividers…'),
+      pop('link', DICON.link, 'Link · ⌘K', 'dt-fold f2'), tb('image', DICON.image, 'Add a picture', 'dt-fold f1'), pop('more', DICON.more, 'More: line spacing, tables, dividers…'),
       `<button type="button" class="dt-myra dt-round" data-pop="myra" data-tip="Myra" aria-label="Ask Myra about your selection">${DICON.myra}</button>`,
     ].join('');
     bubbleEl.innerHTML = [tb('bold', '<b>B</b>', 'Bold', 'dt-t'), tb('italic', '<i>I</i>', 'Italic', 'dt-t'), tb('underline', '<u>U</u>', 'Underline', 'dt-t'), tb('strike', '<s>S</s>', 'Strikethrough', 'dt-t'),
@@ -5292,7 +5293,7 @@ ${proseCSS()}
   const TOUR = [
     { el: '#tools', side: 'top', text: 'These are your tools: notes, docs, checklists, titles, collections, links, images, voice memos, colours, shapes, stamps and drawing. Pick one, then click the board to place it.', try: 'Try it: add a note (or double-click the board).', done: t => board.cards.length > t.cards },
     { el: '#tools [data-add="tpl"]', side: 'top', text: 'Templates live here: thinking tools you add to a board, starter boards, and a Kanban with columns you can name. Right-click a selection or the board to save your own.' },
-    { el: null, text: 'Got an idea mid-thought? Press Ctrl+K, type it, hit Enter. It goes to Unsorted so you never lose your place.', try: 'Try it: press Ctrl+K and jot something down.', done: t => board.tray.length > t.tray },
+    { el: null, text: 'Got an idea mid-thought? Press ⌘K, type it, hit Enter. It goes to Unsorted so you never lose your place.', try: 'Try it: press ⌘K and jot something down.', done: t => board.tray.length > t.tray },
     { el: '#tray', side: 'left', text: 'Unsorted holds your quick ideas. Drag one onto the board when it finds a home, or ask me to sort them all.', try: 'Try it: drag a berry onto the board.', done: t => board.tray.length < t.tray },
     { el: '#side .box', side: 'right', text: 'Your boards live here. Group them into projects and folders. Right-click anything to rename, move, duplicate or delete it.' },
     { el: '#design', side: 'left', text: 'Wireframes: screens, boxes, text, icons, and ready-made pieces, from nav bars to whole website sections. Things snap into line as you move them.' },
@@ -5471,7 +5472,7 @@ ${proseCSS()}
     applySettings(); phone.init();
     let onboarded = true; try { onboarded = !!localStorage.getItem('fenmyr:onboarded'); } catch (e) {}
     if (!onboarded) { firstRunSetup = true; try { localStorage.setItem(newsKey, (await Fenmyr.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
-    setTimeout(() => { fit(board.cards); if (settings.greet && settings.chat !== 'quiet') say(`Hi${settings.name ? ' ' + settings.name : ''}, it's Myra! Dump ideas with Ctrl+K, then ask me to sort them ✦`, 7000); }, 400);
+    setTimeout(() => { fit(board.cards); if (settings.greet && settings.chat !== 'quiet') say(`Hi${settings.name ? ' ' + settings.name : ''}, it's Myra! Dump ideas with ⌘K, then ask me to sort them ✦`, 7000); }, 400);
     showConnections(true);
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
