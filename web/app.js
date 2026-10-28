@@ -2429,7 +2429,7 @@
     const msgs = board.chat, first = msgs.find(m => m.who === 'me') || msgs[0];
     board.chats = [{ id: uid(), title: String(first.text || 'Chat').replace(/\s+/g, ' ').trim().slice(0, 70), t: msgs[msgs.length - 1].t || Date.now(), msgs }, ...(board.chats || [])].slice(0, CHATS_KEPT);
   }
-  $('mcNew').onclick = () => { archiveChat(); if (settings.chatKeep === 'board') { board.chat = []; save(); } else chatLog().length = 0; histOpen = false; renderChat(); $('mcInput').focus(); };
+  $('mcNew').onclick = () => { archiveChat(); if (settings.chatKeep === 'board') { board.chat = []; save(); } else chatLog().length = 0; histOpen = false; renderChat(); $('mcInput').focus(); if (!chatLog().length) playAnim('curious', false); };   // a fresh, empty chat: she tilts her head and wonders what you will ask
   $('mcHist').onclick = () => { histOpen = !histOpen; renderChat(); };
   const whenText = t => { const d = new Date(t), days = Math.floor((Date.now() - t) / 864e5); return days < 1 ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : days < 7 ? d.toLocaleDateString([], { weekday: 'short' }) : d.toLocaleDateString([], { day: 'numeric', month: 'short' }); };
   function renderHistory() {
@@ -2616,7 +2616,7 @@
   ['mInput', 'mcInput'].forEach(id => {
     const el = $(id);
     el.addEventListener('input', () => { slashSel = 0; showSlash(el); });
-    el.addEventListener('blur', () => setTimeout(hideSlash, 120));
+    el.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== el) hideSlash(); }, 120));   // (not if it has the cursor again by then)
     el.addEventListener('keydown', e => {
       if (slashMenu.hidden || slashMenu.dataset.for !== id) return; const list = slashMatches(el);
       if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); return hideSlash(); }
@@ -2640,11 +2640,12 @@
     { name: 'happy', desc: 'Beaming, with sparkles', line: 'Yay!', ms: 3600, pose: 'happy' },
     { name: 'love', desc: 'Heart eyes', line: 'Aww, I love it here.', ms: 4000, pose: 'love' },
     { name: 'dizzy', desc: 'Stars circling', line: 'Wheee, the room is spinning.', ms: 4000, pose: 'dizzy' },
+    { name: 'curious', desc: 'Head tilts, a floating question mark', line: 'Hmm?', ms: 3400, pose: 'curious' },
   ];
   let animT = 0, lastAnim = '', animLive = false, flightLive = false, liveN = 0;
   const liveOn = () => { liveN++; goo.lively(true); }, liveOff = () => { liveN = Math.max(0, liveN - 1); goo.lively(liveN > 0); };
   const pickAnim = () => { const pool = ANIMS.filter(a => a.name !== lastAnim); return pool[Math.floor(Math.random() * pool.length)].name; };
-  const ANIM_ALIAS = { jump: 'hop', bounce: 'hop', wobble: 'wiggle', dance: 'party', celebrate: 'party', confetti: 'party', yawn: 'sleepy', sleep: 'sleepy', nap: 'sleepy', startled: 'shook', surprised: 'shook', smile: 'happy', beam: 'happy', sparkle: 'happy', heart: 'love', hearts: 'love', 'heart eyes': 'love', spin: 'dizzy' };
+  const ANIM_ALIAS = { jump: 'hop', bounce: 'hop', wobble: 'wiggle', dance: 'party', celebrate: 'party', confetti: 'party', yawn: 'sleepy', sleep: 'sleepy', nap: 'sleepy', startled: 'shook', surprised: 'shook', smile: 'happy', beam: 'happy', sparkle: 'happy', heart: 'love', hearts: 'love', 'heart eyes': 'love', spin: 'dizzy', question: 'curious', wonder: 'curious', confused: 'curious', puzzled: 'curious', hmm: 'curious' };
   const animName = n => { const k = String(n || '').toLowerCase().trim(); return ANIMS.some(a => a.name === k) ? k : ANIM_ALIAS[k] || ''; };
   function playAnim(name, say = true) {
     const a = ANIMS.find(x => x.name === animName(name)); if (!a) return false;
@@ -2655,13 +2656,14 @@
     if (say) reply(`${a.line} ✦`, 5000);
     return true;
   }
+  const stopAnim = () => { clearTimeout(animT); animPose = null; if (animLive) { animLive = false; liveOff(); } setPose(wantedPose()); };
   function slashAnimate(arg) {
     const n = (arg || '').trim().toLowerCase(); if (!n || n === 'random' || n === 'surprise') return void playAnim(pickAnim());
     if (!playAnim(n) && !ANIMS.some(a => a.name === n)) reply(`I don't know that one. I can do: ${ANIMS.map(a => a.name).join(', ')} ✦`);
   }
   // plain words, with thinking off (or on the web demo): "can you jump?", "do a little dance", "show me your moves"
   const ANIM_WORDS = [['hop', /\b(jump|hop|bounce)\b/i], ['wiggle', /\b(wiggle|wobble)\b/i], ['party', /\b(party|celebrate|confetti|cheer)\b/i], ['sleepy', /\b(sleepy|yawn|nap|sleep)\b/i], ['shook', /\b(shook|startled|surprised|scared)\b/i],
-    ['sigh', /\bsigh\b/i], ['happy', /\b(happy|smile|beam|sparkle)\b/i], ['love', /\b(love|heart)\b/i], ['dizzy', /\b(dizzy|spin)\b/i], ['*', /\b(animat\w*|dance|dancing|tricks?|show me your moves|do something|show me something)\b/i]];
+    ['sigh', /\bsigh\b/i], ['happy', /\b(happy|smile|beam|sparkle)\b/i], ['love', /\b(love|heart)\b/i], ['dizzy', /\b(dizzy|spin)\b/i], ['curious', /\b(curious|puzzled|confused)\b/i], ['*', /\b(animat\w*|dance|dancing|tricks?|show me your moves|do something|show me something)\b/i]];
   const ANIM_ASK = /\b(can|could|would|will)\s+(you|u)\b|\bplease\b|\b(show|give|do|make)\b/i;
   const animRequest = q => { const an = animIntent(q); return an && (ANIM_ASK.test(q) || q.trim().split(/\s+/).length <= 3) ? an : ''; };   // with thinking on, only sentences that ask for it (so "I love how this board looks" is left to the model)
   const animIntent = q => /group|sort|organi[sz]e|tidy|line up/i.test(q) ? '' : (ANIM_WORDS.find(([, re]) => re.test(q)) || [''])[0];
@@ -2729,7 +2731,7 @@
   }
   const timerWhat = t => t.purpose || `your ${durText(t.secs)} timer`;
   // what the glow says when it runs out: red for work and focus, green for a break. With thinking on the model decides (t.kind, from its warning), otherwise a break or a breather is green and everything else is red
-  const timerKind = t => t.kind || (/^(break|breather)$/.test((t.purpose || '').trim().toLowerCase().replace(/^(a|the|my|some)\s+/, '')) ? 'break' : 'focus');
+  const timerKind = t => t.kind || (/\b(break(?!\s*(down|through|into|up|out|in|open)\b)|breather)\b/i.test(t.purpose || '') ? 'break' : 'focus');   // 'break', 'coffee break', 'quick breather'; not 'break down the plan'
   // her faces follow the timer: sleepy through a break, shook in the last two minutes, and after a focus timer ends she sighs until you answer
   let glowT = 0, sighing = false, currentPose = null;
   const setPose = p => { if (p !== currentPose) { currentPose = p; goo.pose(p); } };
@@ -2764,6 +2766,7 @@
   }
   // with thinking on, one short model call gives the warning and the finish a line that fits what you're doing (the plain line shows first and is replaced if it arrives in time)
   async function timerLine(kind, t) {
+    if (window.__timerLineStub) return window.__timerLineStub(kind, t);   // (tests)
     if (Fenmyr.web || !settings.ai || haveClaude === false || !navigator.onLine) return null;
     const what = `timer of ${durText(t.secs)}${t.purpose ? ` for "${t.purpose}"` : ''}`;
     const prompt = `(This is a timer notice, not a request. The person's ${what} ${kind === 'warn' ? 'has two minutes left' : 'has just run out'}. Say one short line in your own voice that fits what they are doing${kind === 'warn' ? '' : ', and if it fits suggest what comes next, like a break after focus time or getting back to it after a break'}. Do not change the board. Also add a "kind" field: "break" if the timer is for rest or a pause, "focus" if it is for work or concentration.)`;
@@ -2778,7 +2781,8 @@
     if (window.myraMuted && !force) return; hopMyra(); if ((window.myraCalm && !force) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let n = 0; const iv = setInterval(() => { hopMyra(); if (++n >= 5) clearInterval(iv); }, 520);
     const my = $('myra'); my.classList.add('partying'); setTimeout(() => my.classList.remove('partying'), 3400);
-    for (let i = 0; i < 26; i++) { const c = document.createElement('i'), a = (Math.random() * 160 - 80) * Math.PI / 180, d = 90 + Math.random() * 150; c.className = 'confetti'; c.style.cssText = `--dx:${Math.round(Math.sin(a) * d)}px;--dy:${-Math.round(Math.cos(a) * d + 20)}px;--rot:${Math.round(Math.random() * 720 - 360)}deg;--c:${CONFETTI[i % CONFETTI.length]};animation-delay:${Math.round(Math.random() * 300)}ms`; $('myra').appendChild(c); setTimeout(() => c.remove(), 2400); }
+    const sr = gooSlot.getBoundingClientRect(), mr = $('myra').getBoundingClientRect(), ox = Math.round(sr.left + sr.width / 2 - mr.left), oy = Math.round(sr.top + sr.height * .45 - mr.top);   // from where she is: her button, or the chat when she is perched there
+    for (let i = 0; i < 26; i++) { const c = document.createElement('i'), a = (Math.random() * 160 - 80) * Math.PI / 180, d = 90 + Math.random() * 150; c.className = 'confetti'; c.style.cssText = `--dx:${Math.round(Math.sin(a) * d)}px;--dy:${-Math.round(Math.cos(a) * d + 20)}px;--rot:${Math.round(Math.random() * 720 - 360)}deg;--c:${CONFETTI[i % CONFETTI.length]};animation-delay:${Math.round(Math.random() * 300)}ms`; c.style.left = ox + 'px'; c.style.top = oy + 'px'; c.style.bottom = 'auto'; $('myra').appendChild(c); setTimeout(() => c.remove(), 2400); }
   }
   async function timerWarn() {
     const t = timer; t.warned = true; saveTimer(); hopMyra();
@@ -2788,9 +2792,14 @@
   async function timerDone() {
     const t = timer; timer = null; saveTimer(); paintTimer();
     const plain = `Time's up! ${durText(t.secs)}${t.purpose ? ` (${t.purpose})` : ''} ✦`, acts = [{ label: '5 more minutes', cls: 'next', run: () => startTimer({ secs: 300, purpose: t.purpose }, true) }, { label: 'Thanks', ghost: true, run: clearGlow }];
-    reply(plain, 0, acts); $('mBubble').classList.add('party'); setGlow(timerKind(t)); partyMyra();
-    if (timerKind(t) !== 'break') setTimeout(() => { if ($('mPill').classList.contains('glow-red')) { sighing = true; setPose('sigh'); } }, window.myraMuted ? 600 : 3600); osNotify("Time's up", t.purpose || `${durText(t.secs)} timer`);
-    const r = await timerLine('done', t); if (r?.kind && r.kind !== timerKind(t)) setGlow(r.kind); if (r?.say && $('mBubble').classList.contains('on') && $('mBubble').classList.contains('party')) $('mSay').textContent = noEmoji(r.say);
+    reply(plain, 0, acts); $('mBubble').classList.add('party'); partyMyra(); osNotify("Time's up", t.purpose || `${durText(t.secs)} timer`);
+    // the glow (and the sigh after focus) is decided once and never flips: when the rules are sure (a break by its words, or the model already said at the two-minute warning) it is at once; when not, the model gets a couple of seconds, then the rules decide
+    const doneAt = Date.now(); let decided = false;
+    const decide = kind => { if (decided) return; decided = true; setGlow(kind); if (kind !== 'break') setTimeout(() => { if ($('mPill').classList.contains('glow-red')) { sighing = true; setPose('sigh'); } }, Math.max(0, (window.myraMuted ? 600 : 3600) - (Date.now() - doneAt))); };
+    const aiOn = !!window.__timerLineStub || (!Fenmyr.web && settings.ai && haveClaude !== false && navigator.onLine);
+    if (t.kind || timerKind(t) === 'break' || !t.purpose || !aiOn) decide(timerKind(t)); else setTimeout(() => decide(timerKind(t)), 2500);
+    const r = await timerLine('done', t); if (r?.kind) decide(r.kind); else decide(timerKind(t));
+    if (r?.say && $('mBubble').classList.contains('on') && $('mBubble').classList.contains('party')) $('mSay').textContent = noEmoji(r.say);
   }
   function timerCheck() { if (!timer) return; const left = timer.end - Date.now(); if (left <= 0) return timerDone(); paintTimer(); if (!timer.warned && left <= 120000) timerWarn(); }
   $('tcX').onclick = e => { e.stopPropagation(); stopTimer(); };
@@ -5694,5 +5703,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { stopAnim, timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
