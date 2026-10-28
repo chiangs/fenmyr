@@ -1,5 +1,5 @@
 name: Mac build
-# A test build of Myra for macOS: an unsigned (ad-hoc signed) .dmg for Apple Silicon and for Intel, uploaded as artifacts of the run.
+# A test build of Fenmyr for macOS: an unsigned (ad-hoc signed) .dmg for Apple Silicon and for Intel, uploaded as artifacts of the run.
 on:
   push:
     branches: [mac-build]
@@ -25,13 +25,13 @@ jobs:
         run: npx electron-builder --mac dir --${{ matrix.arch }} --publish never
       - name: Ad-hoc sign and make the .dmg
         run: |
-          app=$(ls -d build/release/mac*/Myra.app | head -1)
+          app=$(ls -d build/release/mac*/Fenmyr.app | head -1)
           codesign --force --deep --sign - "$app"
           codesign --verify --deep --strict "$app"
           mkdir -p dmg && cp -R "$app" dmg/ && ln -s /Applications dmg/Applications
-          hdiutil create -volname Myra -srcfolder dmg -ov -format UDZO "Myra-${{ matrix.arch }}.dmg"
+          hdiutil create -volname Fenmyr -srcfolder dmg -ov -format UDZO "Fenmyr-${{ matrix.arch }}.dmg"
       - uses: actions/upload-artifact@v4
         with:
-          name: Myra-mac-${{ matrix.arch }}
-          path: Myra-${{ matrix.arch }}.dmg
+          name: Fenmyr-mac-${{ matrix.arch }}
+          path: Fenmyr-${{ matrix.arch }}.dmg
           retention-days: 14

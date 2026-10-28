@@ -1,19 +1,19 @@
-# Changing Myra
+# Changing Fenmyr
 
-Myra is two layers that talk through one small channel. Most changes only touch one of them.
+Fenmyr is two layers that talk through one small channel. Most changes only touch one of them.
 
 ```
 web/            the canvas: everything you see and do (plain HTML/CSS/JS, no build step)
   index.html      the page: panels, settings, dialogs
   app.js          the canvas itself: cards, tools, Myra's chat, settings, updates bar, tour
   style.css       all the styling (light and dark)
-  bridge.js       window.Myra: the canvas's only way to reach the host (or a pretend host in a browser)
+  bridge.js       window.Fenmyr: the canvas's only way to reach the host (or a pretend host in a browser)
   icons.js        the Icon() facade; icons/pack.js is built by `npm run icons`
   vendor/         prebuilt TipTap editor and .docx writer (source in tools/editor/)
   licenses.js     generated third-party notices for About → Licenses (npm run notices)
 linux/          the host: an Electron main process
-  main.js         window, keys, permissions, myramedia://, and the table of bridge operations (OPS)
-  preload.js      provides window.myraHost (and myraWindow, for the window buttons) to the page
+  main.js         window, keys, permissions, fenmyrmedia://, and the table of bridge operations (OPS)
+  preload.js      provides window.fenmyrHost (and fenmyrWindow, for the window buttons) to the page
   storage.js      boards, folders and videos on disk
   claude.js       finding and running Claude Code, usage tally, connections
   prompts.js      everything Myra is told: her voice at the top (PERSONA, BEHAVIOUR, SCOPE, EXAMPLES, TONES), her abilities below
@@ -22,7 +22,8 @@ linux/          the host: an Electron main process
   update.js       updates for git installs and the AppImage
   paths.js        where things are kept (XDG folders)
   theme.js        reads and watches Caelestia's colour scheme (Follow Caelestia)
-assets/art/      make_art.py draws Myra, her stickers, the stamps and the icon; make_mark.py makes the ✦ cloudberry font
+assets/art/      make_art.py draws Myra, her stickers and the stamps; make_mark.py makes the ✦ cloudberry font
+tools/make_icon.js  the app icon and the browser tab icon (the cloudberry mark on a birch squircle)
 tests/smoke.js  opens the real app and checks every bridge operation
 tests/zoom.js   Ctrl + wheel steps, touchpad pinch, reset to 100%
 tests/theme.js  Follow Caelestia: offered only with Caelestia, live restyle, back to your colors
@@ -34,12 +35,12 @@ install.sh  uninstall.sh  make-release.sh  packaging/
 
 ## How the canvas talks to the host
 
-`web/bridge.js` sends `{id, op, args}` through `window.myraHost.post`. In the app, `linux/preload.js` passes it to `linux/main.js`, which looks the op up in `OPS`. The answer goes back over IPC (`myra-reply`), and preload.js hands it to the page's `__myraReply(id, ok, value)`. Nothing is turned into script, so big boards and pictures pass through quickly. News the page didn't ask for (Caelestia's colours changed) arrives the same way as `__myraEvent(name, data)`. In a plain browser, bridge.js uses localStorage and a pretend Myra instead.
+`web/bridge.js` sends `{id, op, args}` through `window.fenmyrHost.post`. In the app, `linux/preload.js` passes it to `linux/main.js`, which looks the op up in `OPS`. The answer goes back over IPC (`fenmyr-reply`), and preload.js hands it to the page's `__fenmyrReply(id, ok, value)`. Nothing is turned into script, so big boards and pictures pass through quickly. News the page didn't ask for (Caelestia's colours changed) arrives the same way as `__fenmyrEvent(name, data)`. In a plain browser, bridge.js uses localStorage and a pretend Myra instead.
 
 **To add a new ability that needs the computer** (a file, a program, the network):
 1. Add the op to `OPS` in `linux/main.js` (put real work in a module next to it).
-2. Add a matching method to the `native` side of `window.Myra` in `web/bridge.js`, and a browser fallback.
-3. Call `Myra.yourThing()` from `web/app.js`.
+2. Add a matching method to the `native` side of `window.Fenmyr` in `web/bridge.js`, and a browser fallback.
+3. Call `Fenmyr.yourThing()` from `web/app.js`.
 4. Add a check for it in `tests/smoke.js`.
 
 **To change only the canvas** (a card type, a tool, a setting, the look): edit `web/`, then reload the window (F12 → Ctrl+R in DevTools), or work on it in a browser with `python3 -m http.server` in `web/`.
@@ -64,7 +65,7 @@ The smoke test uses a throwaway data folder and stand-in `claude` and `whisper-c
 
 ## Releasing
 
-Versions: nothing has been released yet, so Myra stays at 1.0.0 until the first release. After that, bump the patch number (1.0.1) for fixes and small changes, the minor number (1.1.0) for new features, and add a matching entry to `NEWS` in `web/app.js` for anything people should hear about.
+Versions: nothing has been released yet, so Fenmyr stays at 1.0.0 until the first release. After that, bump the patch number (1.0.1) for fixes and small changes, the minor number (1.1.0) for new features, and add a matching entry to `NEWS` in `web/app.js` for anything people should hear about.
 
 1. Bump `version` in `package.json` and add a section at the top of `WHATSNEW.md` (lines starting with `- ` become the notes people see in the app).
 2. Commit and push.
@@ -78,11 +79,11 @@ Everything Myra looks like is drawn in code, so it's easy to change and stays co
 - `assets/art/make_art.py`: her stickers and animations, the pixel stamps and the app icon. Run `python3 assets/art/make_art.py` (needs Pillow). To add a stamp, write a `st_…` function, add it to `STAMP_SET`, and map its emoji in `PX` in `web/app.js`.
 - `assets/art/make_mark.py`: the little cloudberry that ✦ turns into (a one-glyph colour font). Needs fontTools and brotli.
 
-Myra's name, character and art are reserved (see [TRADEMARKS.md](TRADEMARKS.md)); the code is MIT.
+Fenmyr's name, and Myra's character and art, are reserved (see [TRADEMARKS.md](TRADEMARKS.md)); the code is MIT.
 
 ## Where it came from
 
-Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by Jessa Wolfe (MIT). Mochiboard's name, Mochi and its art and music are hers and aren't part of Myra. Myra doesn't track Mochiboard.
+Fenmyr's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by Jessa Wolfe (MIT). Mochiboard's name, Mochi and its art and music are hers and aren't part of Fenmyr. Fenmyr doesn't track Mochiboard.
 
 
 ## Third-party notices
@@ -91,6 +92,6 @@ Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) 
 
 ## Icons
 
-The app never names an icon pack directly. It asks for a Myra icon name through `Icon('note')` (`web/icons.js`), or marks a placeholder in the HTML with `<svg data-ico="note"></svg>`. `tools/icons/set.js` says which icon of the current pack (Phosphor) draws each name and which names the wireframe picker offers; `tools/icons/custom.js` holds Myra's own icons (the cloudberry mark, the Myra tool, chat). Run `npm run icons` after changing either: it builds `web/icons/pack.js` (both the Regular and the Duotone drawing of every icon) and `linux/icon-names.json` (the names Myra may use in wireframes).
+The app never names an icon pack directly. It asks for a Fenmyr icon name through `Icon('note')` (`web/icons.js`), or marks a placeholder in the HTML with `<svg data-ico="note"></svg>`. `tools/icons/set.js` says which icon of the current pack (Phosphor) draws each name and which names the wireframe picker offers; `tools/icons/custom.js` holds Myra's own icons (the cloudberry mark, the Myra tool, chat). Run `npm run icons` after changing either: it builds `web/icons/pack.js` (both the Regular and the Duotone drawing of every icon) and `linux/icon-names.json` (the names Myra may use in wireframes).
 
 To use another icon pack, add it as a dependency and change `pack` and the second column of `set.js`; nothing else in the app changes. A name with no icon shows a dashed placeholder, so old boards never break. Only the bottom bar (toolbar, selection bar, pen bar, shape picker) and Myra's chat header show Duotone; panels, wireframe pieces and icon cards always draw as plain outlines.

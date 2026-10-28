@@ -3,26 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Myra</title>
+<title>Fenmyr</title>
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="style.css">
-<link rel="icon" type="image/png" href="stamps/myra.png">
+<link rel="icon" type="image/png" href="favicon.png">
 <!-- inside the Linux app (Electron): tell the page right away, so it makes room for the window buttons -->
-<script>if (window.myraHost) document.documentElement.classList.add('native', window.myraHost.platform || 'linux');</script>
+<script>if (window.fenmyrHost) document.documentElement.classList.add('native', window.fenmyrHost.platform || 'linux');</script>
 </head>
 <body>
 <!-- the window has no title bar of its own: these are its buttons, and a strip at the top of the sidebar to drag it by -->
 <div class="win-ctl" id="winCtl" aria-label="Window">
-  <button class="wc-close" title="Close" onclick="myraWindow.close()"><svg viewBox="0 0 10 10"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5"/></svg></button>
-  <button class="wc-min" title="Minimise" onclick="myraWindow.minimize()"><svg viewBox="0 0 10 10"><path d="M2 5h6"/></svg></button>
-  <button class="wc-max" title="Maximise" onclick="myraWindow.maximize()"><svg viewBox="0 0 10 10"><path d="M2.5 6.5v-4h4M7.5 3.5v4h-4"/></svg></button>
+  <button class="wc-close" title="Close" onclick="fenmyrWindow.close()"><svg viewBox="0 0 10 10"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5"/></svg></button>
+  <button class="wc-min" title="Minimise" onclick="fenmyrWindow.minimize()"><svg viewBox="0 0 10 10"><path d="M2 5h6"/></svg></button>
+  <button class="wc-max" title="Maximise" onclick="fenmyrWindow.maximize()"><svg viewBox="0 0 10 10"><path d="M2.5 6.5v-4h4M7.5 3.5v4h-4"/></svg></button>
 </div>
 <div class="win-drag" id="winDrag"></div>
 
 <aside class="side side-r" id="sideR" aria-label="Right widgets"></aside>
 <aside class="side" id="side">
   <section class="box" data-box="boards">
-    <header><div class="brand" id="brand" title="Home: all projects"><canvas id="brandGoo" width="40" height="36"></canvas><span>Myra</span></div><button class="mini gear" id="gearBtn" aria-label="Settings" data-tip="Settings"><svg data-ico="settings" width="17" height="17"></svg></button><button class="mini" title="Minimise">–</button></header>
+    <header><div class="brand" id="brand" title="Home: all projects"><svg class="brand-mark" data-ico="fenmyr-mark" width="28" height="28"></svg><span>Fenmyr</span></div><button class="mini gear" id="gearBtn" aria-label="Settings" data-tip="Settings"><svg data-ico="settings" width="17" height="17"></svg></button><button class="mini" title="Minimise">–</button></header>
       <button class="web-pill web-only get-app" title="Download the desktop app">Web demo · <b>Get the app ↗</b></button>
     <div class="box-body">
       <button class="home-row" id="homeBtn"><svg data-ico="home" width="16" height="16"></svg>All projects</button>
@@ -52,7 +52,7 @@
   <div class="focus-veil" id="veil"></div>
 
   <!-- a quiet bar when there's a new version: it never pops up or interrupts, it just waits here until you want it -->
-  <div class="upbar" id="upBar" hidden><span class="ub-spark">✦</span><span class="ub-text" id="ubText">A new Myra is ready</span><button class="ub-yes" id="ubYes" type="button" hidden>Yes, automatically</button><button class="ub-link" id="ubNo" type="button" hidden>I’ll do it myself</button><button class="ub-link" id="ubNotes" type="button">What’s new</button><button class="ub-go" id="ubGo" type="button">Update now</button><button class="ub-x" id="ubX" type="button" aria-label="Hide until the next version">×</button></div>
+  <div class="upbar" id="upBar" hidden><span class="ub-spark">✦</span><span class="ub-text" id="ubText">A new Fenmyr is ready</span><button class="ub-yes" id="ubYes" type="button" hidden>Yes, automatically</button><button class="ub-link" id="ubNo" type="button" hidden>I’ll do it myself</button><button class="ub-link" id="ubNotes" type="button">What’s new</button><button class="ub-go" id="ubGo" type="button">Update now</button><button class="ub-x" id="ubX" type="button" aria-label="Hide until the next version">×</button></div>
   <header class="top">
     <nav class="crumbs" id="crumbs"></nav>
     <input class="board-name" id="boardName" spellcheck="false" aria-label="Board name">
@@ -225,10 +225,10 @@
       <h2>My thinking</h2>
       <p>I think with <b>Claude Code</b> on your computer. My helpers are connections in your Claude account: <b>Mobbin</b> finds real app screens, <b>Higgsfield</b> makes images (it costs credits, so I always ask first).</p>
       <div class="conns" id="obConns"></div>
-      <label class="set-row native-only"><div><b>Let me think (AI)</b><small>Off: Myra still works fully on its own, no AI or internet.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
+      <label class="set-row native-only"><div><b>Let me think (AI)</b><small>Off: I can still tidy things, and Fenmyr works fully on its own. No AI, no internet.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
       <label class="set-row native-only"><div><b>Use Mobbin</b><small>When it's connected</small></div><input type="checkbox" class="tgl" data-set="mobbin"></label>
       <label class="set-row native-only"><div><b>Use Higgsfield</b><small>Only after you say yes to the price</small></div><input type="checkbox" class="tgl" data-set="higgs"></label>
-      <div class="web-note web-only">You're trying the web version, so I can't connect to Claude, Mobbin or Higgsfield here. Everything else works! Download the desktop app and I'll connect to all three. <button class="set-link get-app">Get Myra ↗</button></div><div class="set-note native-only">Not ready yet? That's fine, skip it. Connect later, then tap <button class="set-link" id="obRecheck">check again</button> here or in Settings.</div>
+      <div class="web-note web-only">You're trying the web version, so I can't connect to Claude, Mobbin or Higgsfield here. Everything else works! Download the desktop app and I'll connect to all three. <button class="set-link get-app">Get Fenmyr ↗</button></div><div class="set-note native-only">Not ready yet? That's fine, skip it. Connect later, then tap <button class="set-link" id="obRecheck">check again</button> here or in Settings.</div>
     </section>
     <section class="ob-step" data-step="3">
       <h2>How I talk</h2>
@@ -250,7 +250,7 @@
       <p>Want a quick tour? I'll show you around and you can try things as we go. About a minute.</p>
       <div class="set-row" id="obFirstRow"><div><b>Your first board</b><small>An example to look at, or a clean start</small></div><div class="seg" id="obFirst"><button data-v="example">The example</button><button data-v="empty">Empty</button></div></div>
       <div class="ob-big"><button class="ob-primary" id="obTour">Show me around ✦</button><button class="ob-ghost" id="obExplore">I'll explore on my own</button></div>
-      <p class="ob-small">Everything here lives in Settings (the ⚙ next to Myra), including this tour.</p>
+      <p class="ob-small">Everything here lives in Settings (the ⚙ next to Fenmyr), including this tour.</p>
     </section>
     <footer class="ob-foot"><button class="ob-ghost" id="obBack">Back</button><div class="ob-dots" id="obDots"></div><button class="ob-primary" id="obNext">Let's go</button></footer>
     <button class="ob-skip" id="obSkip">Skip setup</button>
@@ -281,7 +281,7 @@
         <label class="set-row"><div><b>Your name</b><small>It rides along on your cursor, in Myra’s colour</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
         <div class="set-row" style="display:none"><div><b>Cursor colour</b></div><div class="myra-colors cur-colors" id="curColors"></div></div>
         <label class="set-row native-only win-only"><div><b>Window buttons</b><small>The close, minimise and maximise dots at the top left. Turn off if your compositor handles windows (Hyprland, Sway, niri)</small></div><input type="checkbox" class="tgl" data-set="winButtons"></label>
-        <label class="set-row"><div><b>Myra cursor</b><small>Off uses your system’s regular cursor</small></div><input type="checkbox" class="tgl" data-set="fancyCursor"></label>
+        <label class="set-row"><div><b>Cursor</b><small>Off uses your system’s regular cursor</small></div><input type="checkbox" class="tgl" data-set="fancyCursor"></label>
       </section>
       <section data-tab="myra"><h3>Myra</h3>
         <div class="set-row"><div><b>Her name</b><small>Call her whatever you like. She answers to it everywhere.</small></div><input class="set-input" id="myraNameIn" maxlength="18" placeholder="Myra" autocomplete="off" spellcheck="false"></div>
@@ -294,7 +294,7 @@
         <div class="set-row"><div><b>How many messages to keep</b><small>Older messages fall off the top</small></div><div class="seg" data-seg="chatMax"><button data-v="20">20</button><button data-v="60">60</button><button data-v="200">200</button></div></div>
         <div class="set-row"><div><b>Saved chats</b><small>Deletes Myra's chat history from every board</small></div><button class="set-btn" id="clearChats">Clear all chats</button></div>
         <label class="set-row"><div><b>Say hi when I open the app</b><small>Myra's little welcome bubble</small></div><input type="checkbox" class="tgl" data-set="greet"></label>
-        <label class="set-row native-only"><div><b>Myra's thinking (AI)</b><small>Uses Claude Code on your computer to sort, write and edit for you. Off: Myra works fully on its own, no AI, no accounts, no internet.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
+        <label class="set-row native-only"><div><b>Myra's thinking (AI)</b><small>Uses Claude Code on your computer to sort, write and edit for you. Off: Fenmyr works fully on its own and Myra can still tidy simple things. No AI, no accounts, no internet.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
       </section>
       <section class="native-only" data-tab="vaults"><h3>Obsidian vaults</h3>
         <p class="set-note">Myra can show notes from your Obsidian vaults on a board. She only reads, and only where you allow it: connect a vault here, then give a project or a board access from its right-click menu (Vault access). A folder you mark off-limits, and any note tagged <b>#private</b>, is never read.</p>
@@ -317,7 +317,7 @@
         <label class="set-row native-only"><div><b>Let Myra use Mobbin</b><small>Real app screenshots for inspiration (free with your Mobbin account)</small></div><input type="checkbox" class="tgl" data-set="mobbin"></label>
         <label class="set-row native-only"><div><b>Let Myra use Higgsfield</b><small>Image generation. It costs credits, so Myra always asks first, every time. That check can't be turned off.</small></div><input type="checkbox" class="tgl" data-set="higgs"></label>
         <label class="set-row native-only"><div><b>Let Myra search the web</b><small>She can look things up and read public pages, including public GitHub repos. What she searches for can include words from your board. Off until you switch it on.</small></div><input type="checkbox" class="tgl" data-set="webAccess"></label>
-        <div class="web-note web-only">This is the web version, so Myra can't reach Claude Code or your helpers from here. Download the desktop app to connect them. <button class="set-link get-app">Get Myra ↗</button></div><div class="set-note native-only">Helpers are the connections in your Claude account. Connect one in Claude's settings, then come back and tap <button class="set-link" id="recheck">check again</button>.</div>
+        <div class="web-note web-only">This is the web version, so Myra can't reach Claude Code or your helpers from here. Download the desktop app to connect them. <button class="set-link get-app">Get Fenmyr ↗</button></div><div class="set-note native-only">Helpers are the connections in your Claude account. Connect one in Claude's settings, then come back and tap <button class="set-link" id="recheck">check again</button>.</div>
       </section>
       <section data-tab="widgets"><h3>Widgets</h3>
         <p class="set-lead">Turn on the ones you use. The Boards panel always stays, since it's home to your boards and Settings.</p>
@@ -348,7 +348,7 @@
       <section data-tab="general"><h3>Your boards</h3>
         <div class="set-row native-only"><div><b>Saved on this computer</b><small id="boardCount">Your boards never leave your computer</small></div><button class="set-btn" id="revealBoards">Show folder</button></div>
       </section>
-      <section class="set-about" data-tab="about"><canvas id="aboutGoo" width="40" height="36"></canvas><div class="sa-text"><b>Myra</b><small>Where ideas thrive. A canvas with Myra the cloudberry to help. Free and open source (MIT).</small></div></section>
+      <section class="set-about" data-tab="about"><svg class="brand-mark" data-ico="fenmyr-mark" width="34" height="34"></svg><div class="sa-text"><b>Fenmyr</b><small>Where ideas thrive. A canvas with Myra the cloudberry to help. Free and open source (MIT).</small></div></section>
       <section class="set-update native-only" id="setUpdate" data-tab="about"><div class="su-top"><div class="su-icon"><svg data-ico="refresh" width="18" height="18"></svg></div><div class="su-text"><b id="suTitle">Updates</b><small id="suSub">Checking for a new version…</small></div><button class="set-btn hot" id="suGo" hidden>Update now</button><button class="set-btn" id="suCheck">Check now</button></div><ul class="su-notes" id="suNotes" hidden></ul></section>
       <section data-tab="toolbar"><h3>Toolbar</h3>
         <div class="set-row"><div><b>Icon size</b><small>How big the tools at the bottom are. If they don't all fit on your screen, the extras tuck into a ··· menu at the end.</small></div><div class="seg" data-seg="tbSize"><button data-v="s">Small</button><button data-v="m">Medium</button><button data-v="l">Large</button></div></div>
@@ -358,13 +358,13 @@
         <div class="set-row"><div><b>Camera</b><small>For video cards</small></div><select class="dev-sel" id="devCam" aria-label="Camera"></select></div>
         <div class="set-row"><div><b>Microphone</b><small>For voice memos and videos</small></div><select class="dev-sel" id="devMic" aria-label="Microphone"></select></div>
         <button class="set-btn" id="devAllow" hidden>Show my devices</button></section>
-      <section class="set-auto native-only" data-tab="about"><label class="set-row"><div><b>Update automatically</b><small>New versions install quietly when you quit Myra. Your boards never change.</small></div><input type="checkbox" class="tgl" data-set="autoUpdate"></label></section>
+      <section class="set-auto native-only" data-tab="about"><label class="set-row"><div><b>Update automatically</b><small>New versions install quietly when you quit Fenmyr. Your boards never change.</small></div><input type="checkbox" class="tgl" data-set="autoUpdate"></label></section>
       <section class="set-start" data-tab="about"><canvas id="setGoo" width="40" height="36"></canvas><div><b>New here, or need a refresher?</b><small>Myra shows you around in about a minute</small></div><div class="set-btns"><button class="set-btn hot" id="redoTour">Take the tour ✦</button><button class="set-btn" id="redoSetup">Redo setup</button><button class="set-btn" id="addExample">Add the example board</button></div></section>
       <section class="set-start set-feedback" data-tab="about"><span class="sf-ic" aria-hidden="true">💌</span><div><b>Tell me what you think</b><small>Ideas, bugs, little wishes: they go to this version’s GitHub issues.</small></div><div class="set-btns"><button class="set-btn hot" id="sendFeedback">Send feedback ♡</button></div></section>
-      <section class="set-maker" data-tab="about"><div class="sm-sig">made with care by</div><div class="sm-name">Stephen Chiang</div><small>Like cloudberries, ideas only grow where conditions are just right. Myra tries to be that place.</small>
-        <div class="sm-links"><button class="set-btn hot" data-url="https://github.com/chiangs/myra">Myra on GitHub ↗</button></div></section>
-      <section class="set-start set-credit" data-tab="about"><div><b>Built on Mochiboard</b><small>Myra grew from Mochiboard, Jessa Wolfe's open-source planning canvas (MIT). Mochiboard, Mochi and their art are hers and aren't part of Myra.</small></div><div class="set-btns"><button class="set-btn" data-url="https://github.com/jessawolfe-ux/mochiboard">Mochiboard ↗</button><button class="set-btn" data-url="https://jessa.art">jessa.art ↗</button></div></section>
-      <section class="set-start set-lic" data-tab="about"><div><b>Open-source licences</b><small>Myra's own licence, and the software made by others that Myra includes.</small></div><div class="set-btns"><button class="set-btn" id="openLicenses">View licences</button></div></section>
+      <section class="set-maker" data-tab="about"><div class="sm-sig">made with care by</div><div class="sm-name">Stephen Chiang</div><small>Like cloudberries, ideas only grow where conditions are just right. Fenmyr tries to be that place.</small>
+        <div class="sm-links"><button class="set-btn hot" data-url="https://github.com/chiangs/fenmyr">Fenmyr on GitHub ↗</button></div></section>
+      <section class="set-start set-credit" data-tab="about"><div><b>Built on Mochiboard</b><small>Fenmyr grew from Mochiboard, Jessa Wolfe's open-source planning canvas (MIT). Mochiboard, Mochi and their art are hers and aren't part of Fenmyr.</small></div><div class="set-btns"><button class="set-btn" data-url="https://github.com/jessawolfe-ux/mochiboard">Mochiboard ↗</button><button class="set-btn" data-url="https://jessa.art">jessa.art ↗</button></div></section>
+      <section class="set-start set-lic" data-tab="about"><div><b>Open-source licences</b><small>Fenmyr's own licence, and the software made by others that Fenmyr includes.</small></div><div class="set-btns"><button class="set-btn" id="openLicenses">View licences</button></div></section>
     </div>
   </div>
 </div>

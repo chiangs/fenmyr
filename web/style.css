@@ -27,7 +27,8 @@ kbd { font: 500 11px/1 var(--font); padding: 3px 6px; border-radius: 6px; backgr
 .label { font: 700 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
 .box-body > .label { margin: 4px 6px 8px; }
 .brand { display: flex; align-items: center; gap: 9px; font: 800 17px/1 var(--font); letter-spacing: -.03em; }
-.brand canvas { display: block; width: 26px; height: 23px; image-rendering: pixelated; margin-top: -5px; }   /* the goo sits low in her canvas, so lift her to line up with the word */
+.brand svg { display: block; width: 28px; height: 28px; flex: none; }   /* the app's cloudberry mark (duotone, always) */
+svg.brand-mark.ico .ico-r { display: none; } svg.brand-mark.ico .ico-d { display: revert; }
 .boards, .templates { display: flex; flex-direction: column; gap: 1px; }
 .board-row { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 14px; corner-shape: squircle; cursor: pointer; font-size: 13.5px; }
 .board-row i { width: 9px; height: 9px; border-radius: 3px; flex: none; rotate: -6deg; }
@@ -613,7 +614,7 @@ label.set-row { cursor: pointer; }
 .set-btn { flex: none; padding: 9px 15px; border-radius: var(--pill-r); corner-shape: squircle; border: 1.5px solid var(--ink); background: none; font: 600 12.5px/1 var(--font); cursor: pointer; }
 .set-btn:hover { background: var(--ink); color: #fff; }
 .set-about { display: flex; gap: 12px; align-items: center; }
-.set-about canvas { width: 34px; height: 30px; image-rendering: pixelated; flex: none; }
+.set-about svg { width: 34px; height: 34px; flex: none; }
 .set-about b { font: 800 14px/1.3 var(--font); } .set-about small { display: block; font: 400 12.5px/1.45 var(--font); color: var(--ink-soft); }
 /* what the settings switch */
 body.no-grid .grid { display: none; }
@@ -692,7 +693,7 @@ body.exporting .card.sel::after { display: none; }
 .seg { display: flex; flex: none; padding: 3px; border-radius: var(--pill-r); corner-shape: squircle; background: #f4f0ed; }
 .seg button { padding: 7px 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
 .seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
-#noteColors button.rand { background: conic-gradient(#fbdcbc, #f8e08a, #a8e6c3, #aed3ff, #fbdcbc, #fbdcbc); }
+#noteColors button.rand, #obNotes button.rand { background: conic-gradient(#fbdcbc, #f8e08a, #a8e6c3, #aed3ff, #fbdcbc, #fbdcbc); }
 
 /* Myra's chat: white in light mode, dark in dark mode */
 .m-pill { background: #fff; color: var(--ink); box-shadow: 0 12px 30px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
@@ -864,6 +865,8 @@ body.dark .card.shape .text { color: #fff; }
 .top { transition: background .2s, box-shadow .2s, padding .2s; border-radius: var(--pill-r); corner-shape: squircle; }
 .top.covered { background: rgba(252, 250, 248, .86); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(var(--sh), calc(.12 * var(--sh-k))); padding: 8px 14px 10px; margin: -8px 0 0 -14px; }
 body.dark .top.covered { background: rgba(43, 39, 34, .88); box-shadow: 0 6px 20px rgba(0, 0, 0, .35); }
+/* following Caelestia: the title bar over cards takes the panel colour, like the other panels */
+body.following-caelestia .top.covered { background: color-mix(in srgb, var(--panel) 88%, transparent); color: var(--ink); }
 .top.covered { padding-bottom: 26px; }
 .top.covered .saved { top: auto; bottom: 9px; left: 15px; }
 .au-count.soft { display: flex; gap: 5px; align-items: center; justify-content: center; }
@@ -2231,7 +2234,7 @@ body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .stage.vec-mode, .stage.vec-mode .card { cursor: default; }
 /* Calmest: Myra in soft, muted colors */
 /* her character hidden: the pill shows just her name */
-body.myra-hidden :is(#goo, #coachGoo, #brandGoo, #hubGoo) { display: none !important; }
+body.myra-hidden :is(#goo, #coachGoo, #hubGoo) { display: none !important; }
 .set-input { width: 150px; padding: 9px 12px; border: 0; border-radius: 16px; corner-shape: squircle; background: rgba(0, 0, 0, .05); font: 600 13px/1 var(--font); color: var(--ink); outline: none; }
 .set-input:focus { box-shadow: inset 0 0 0 2px var(--select); } body.dark .set-input { background: rgba(255, 255, 255, .08); }
 body.myra-calm :is(#goo, .m-pill, #mPill).hopping, body.myra-calm #goo.hopping, body.myra-calm .m-pill { animation: none !important; }
@@ -2451,6 +2454,26 @@ body.following-caelestia .ly.on { background: color-mix(in srgb, var(--panel) 70
 body.following-caelestia .ly.on:hover { background: color-mix(in srgb, var(--panel) 58%, var(--pink-deep) 42%) !important; }
 body.following-caelestia .tray-item, body.following-caelestia .mc-msg.myra { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)) !important; color: var(--ink); }
 body.following-caelestia .mc-msg.me { background: color-mix(in srgb, var(--panel) 86%, var(--pink-deep) 14%) !important; color: var(--ink); }
+
+/* following Caelestia: Settings and the setup tour are the panel colour, and what sits in them is tonal like the sidebar: segmented buttons, inputs and
+   toggles take the scheme's outline colour, the chosen option and switched-on toggles take its accent, and the warm cards are the muted cloudberry amber */
+body.following-caelestia .set-panel, body.following-caelestia .ob-panel { background: var(--panel) !important; color: var(--ink); }
+body.following-caelestia .set-body section { border-color: color-mix(in srgb, var(--panel) 78%, var(--dot)); }
+body.following-caelestia .seg { background: color-mix(in srgb, var(--panel) 78%, var(--dot)) !important; }
+body.following-caelestia .seg button { color: var(--ink-soft); }
+body.following-caelestia .seg button.on { background: color-mix(in srgb, var(--panel) 68%, var(--pink-deep) 32%) !important; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
+body.following-caelestia .set-input { background: color-mix(in srgb, var(--panel) 80%, var(--dot)); color: var(--ink); }
+body.following-caelestia .tgl { background: color-mix(in srgb, var(--panel) 62%, var(--dot)); }
+body.following-caelestia .tgl:checked { background: var(--pink-deep); }
+body.following-caelestia .tgl::after, body.following-caelestia .tgl:checked::after { background: var(--panel); }
+body.following-caelestia .set-btn { border-color: var(--ink); color: var(--ink); }
+body.following-caelestia .set-btn:hover, body.following-caelestia .set-btn.hot { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+body.following-caelestia .set-start, body.following-caelestia .set-maker, body.following-caelestia .set-feedback { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)); color: var(--ink); }
+body.following-caelestia .sm-sig { color: var(--ink-soft); }
+body.following-caelestia .set-update { background: color-mix(in srgb, var(--panel) 80%, var(--dot)); }
+body.following-caelestia .set-update.ready { background: color-mix(in srgb, var(--panel) 70%, var(--mint-deep) 30%); }
+body.following-caelestia .su-icon { background: color-mix(in srgb, var(--panel) 65%, var(--dot)); }
+body.following-caelestia .set-head .dv-btn { background: color-mix(in srgb, var(--panel) 78%, var(--dot)) !important; color: var(--ink); }
 
 /* earlier chats in Myra's chat window */
 #mcHist { display: inline-flex; align-items: center; gap: 5px; } #mcHist[hidden] { display: none; } #mcHist svg { width: 15px; height: 15px; }

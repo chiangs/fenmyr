@@ -1,13 +1,13 @@
-<p align="center"><img src="assets/icon.png" width="140" alt="Myra"></p>
+<p align="center"><img src="assets/icon.png" width="140" alt="Fenmyr"></p>
 
-<h1 align="center">Myra</h1>
+<h1 align="center">Fenmyr</h1>
 <p align="center"><b>Where ideas thrive.</b><br>
-Like cloudberries, ideas only grow where conditions are just right.<br>Myra is a canvas that tries to be that place, with Myra the cloudberry to help.</p>
-<p align="center"><img src="assets/readme-cover.jpg" width="760" alt="A Myra board: notes in cloudberry, lingonberry, fjord, moss and heather, a checklist, two color swatches, and Myra in the corner"></p>
+Like cloudberries, ideas only grow where conditions are just right.<br>Fenmyr is a canvas that tries to be that place, with Myra the cloudberry to help.</p>
+<p align="center"><img src="assets/readme-cover.jpg" width="760" alt="A Fenmyr board: notes in cloudberry, lingonberry, fjord, moss and heather, a checklist, two color swatches, and Myra in the corner"></p>
 
 ---
 
-Myra is a free, open-source canvas for ideas. It starts on Linux, with other systems and a rapid-prototyping area planned. Drop notes, pictures, links, checklists and colors on an endless board, arrange them however makes sense to *you*, and ask Myra (a little pixel cloudberry who thinks with Claude Code) to sort, plan, explore and build. Made for Arch / CachyOS and Wayland, and at home on Hyprland, KDE Plasma, GNOME, Sway and niri.
+Fenmyr is a free, open-source canvas for ideas. It starts on Linux, with other systems and a rapid-prototyping area planned. Drop notes, pictures, links, checklists and colors on an endless board, arrange them however makes sense to *you*, and ask Myra (a little pixel cloudberry who thinks with Claude Code) to sort, plan, explore and build. Made for Arch / CachyOS and Wayland, and at home on Hyprland, KDE Plasma, GNOME, Sway and niri.
 
 ## What's inside
 
@@ -36,27 +36,27 @@ Myra is a free, open-source canvas for ideas. It starts on Linux, with other sys
 ### From the code (recommended on Arch / CachyOS)
 
 ```bash
-git clone https://github.com/chiangs/myra.git
-cd myra
+git clone https://github.com/chiangs/fenmyr.git
+cd fenmyr
 ./install.sh
 ```
 
 The installer:
 1. Uses Arch's `electron` package for the window (it offers to `sudo pacman -S electron` if it's missing). On other distros, or if you say no, it downloads a private copy of Electron instead.
-2. Puts Myra in `~/.local/lib/myra`, the `myra` command in `~/.local/bin`, and an entry in your app launcher.
+2. Puts Fenmyr in `~/.local/lib/fenmyr`, the `fenmyr` command in `~/.local/bin`, and an entry in your app launcher.
 3. Opens it. The first time, Myra walks you through setup and a short tour.
 
-After that, Myra checks for new versions on its own. When one is ready, a little dot shows on the ⚙ and Settings lists what's new, with an **Update now** button (it pulls from GitHub, reinstalls and reopens; your boards are never touched). From a terminal: `./install.sh --update`.
+After that, Fenmyr checks for new versions on its own. When one is ready, a little dot shows on the ⚙ and Settings lists what's new, with an **Update now** button (it pulls from GitHub, reinstalls and reopens; your boards are never touched). From a terminal: `./install.sh --update`.
 
 Installer options: `--update` (pull first), `--yes` (no questions), `--no-open`.
 
 ### AppImage
 
-**[⬇ Download the latest AppImage](https://github.com/chiangs/myra/releases/latest)** (`Myra-x86_64.AppImage`)
+**[⬇ Download the latest AppImage](https://github.com/chiangs/fenmyr/releases/latest)** (`Fenmyr-x86_64.AppImage`)
 
 ```bash
-chmod +x Myra-x86_64.AppImage
-./Myra-x86_64.AppImage
+chmod +x Fenmyr-x86_64.AppImage
+./Fenmyr-x86_64.AppImage
 ```
 
 AppImages need FUSE 2 (`sudo pacman -S fuse2` on Arch). The AppImage updates itself from GitHub Releases: say yes once and new versions slip in when you quit. To add it to your app launcher, use [Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) or AppImageLauncher, or keep it in `~/Applications`.
@@ -68,7 +68,7 @@ AppImages need FUSE 2 (`sudo pacman -S fuse2` on Arch). The AppImage updates its
 ./uninstall.sh --purge    # also deletes your boards and settings
 ```
 
-It removes everything `install.sh` added (and any `~/Applications/Myra*.AppImage`). Electron from pacman stays, since other apps may use it: `sudo pacman -Rs electron`.
+It removes everything `install.sh` added (and any `~/Applications/Fenmyr*.AppImage`). Electron from pacman stays, since other apps may use it: `sudo pacman -Rs electron`.
 
 ## Connect Claude Code
 
@@ -76,11 +76,11 @@ Myra thinks with [Claude Code](https://docs.claude.com/en/docs/claude-code) on y
 
 1. Install it: `curl -fsSL https://claude.ai/install.sh | bash` (or see the [setup guide](https://docs.claude.com/en/docs/claude-code/setup)).
 2. Run `claude` once in a terminal and sign in with your Claude account.
-3. Back in Myra, open the ⚙ → **Helpers**. Claude Code shows **ready** as soon as Myra finds it (no restart needed).
+3. Back in Fenmyr, open the ⚙ → **Helpers**. Claude Code shows **ready** as soon as Fenmyr finds it (no restart needed).
 
-Myra looks for `claude` in `~/.local/bin`, `~/.claude/local`, `/usr/bin`, `/usr/local/bin`, npm / nvm / volta / bun folders, and finally asks your login shell (bash, zsh or fish).
+Fenmyr looks for `claude` in `~/.local/bin`, `~/.claude/local`, `/usr/bin`, `/usr/local/bin`, npm / nvm / volta / bun folders, and finally asks your login shell (bash, zsh or fish).
 
-**Hooks.** Myra's requests always run with your Claude Code hooks switched off, so hooks meant for your own sessions (for example a desktop pet's thinking meter) don't fire while she thinks in Myra. Skills, plugins, connectors and your login work as usual.
+**Hooks.** Myra's requests always run with your Claude Code hooks switched off, so hooks meant for your own sessions (for example a desktop pet's thinking meter) don't fire while she thinks in Fenmyr. Skills, plugins, connectors and your login work as usual.
 
 **The web.** Off by default. Turn on **Settings → Helpers → Let Myra search the web** and she can look things up and read public pages, including public GitHub repositories. What she searches for can include words from your board.
 
@@ -88,28 +88,28 @@ Myra looks for `claude` in `~/.local/bin`, `~/.claude/local`, `/usr/bin`, `/usr/
 
 ## Voice memos written out (optional)
 
-Myra writes out voice memos on your computer with [whisper.cpp](https://github.com/ggml-org/whisper.cpp):
+Fenmyr writes out voice memos on your computer with [whisper.cpp](https://github.com/ggml-org/whisper.cpp):
 
 ```bash
-yay -S whisper.cpp      # or build it yourself; Myra looks for whisper-cli
+yay -S whisper.cpp      # or build it yourself; Fenmyr looks for whisper-cli
 ```
 
-The first memo downloads the speech model (about 140 MB, once) into `~/.local/share/myra/whisper`. To use a different size, set `MYRA_WHISPER_SIZE=tiny|base|small|medium`, or point `MYRA_WHISPER_MODEL` at a model file you already have. Without whisper.cpp, memos still record and play.
+The first memo downloads the speech model (about 140 MB, once) into `~/.local/share/fenmyr/whisper`. To use a different size, set `FENMYR_WHISPER_SIZE=tiny|base|small|medium`, or point `FENMYR_WHISPER_MODEL` at a model file you already have. Without whisper.cpp, memos still record and play.
 
 ## Your stuff
 
-- Each board is one JSON file in `~/.local/share/myra/boards`, with your folders in `folders.json` and pictures and videos in `media/`. They're ordinary files, so you can back them up or copy them like any others. Myra itself needs no account and uses no cloud.
-- App settings (your name, theme, the tour) live in `~/.config/Myra`.
-- **Keep a history of your boards.** Because boards are ordinary files, you can turn the Myra folder into a git repository to keep every version. That works entirely on your computer, with no GitHub or other remote needed. Run this once:
+- Each board is one JSON file in `~/.local/share/fenmyr/boards`, with your folders in `folders.json` and pictures and videos in `media/`. They're ordinary files, so you can back them up or copy them like any others. Fenmyr itself needs no account and uses no cloud.
+- App settings (your name, theme, the tour) live in `~/.config/Fenmyr`.
+- **Keep a history of your boards.** Because boards are ordinary files, you can turn the Fenmyr folder into a git repository to keep every version. That works entirely on your computer, with no GitHub or other remote needed. Run this once:
   ```
-  cd ~/.local/share/myra
+  cd ~/.local/share/fenmyr
   printf 'whisper/\nwindow.json\nusage.json\n*.tmp\n' > .gitignore
   git init && git add -A && git commit -m "My boards"
   ```
   Then commit now and then. If you also want an off-computer backup, add a remote (for example a GitHub repository) and push; make it a private repository: boards can hold your notes and pictures. Pictures are saved inside each board's file, so boards with many large pictures make a big repo (the speech model and settings that belong to one computer are left out above; you may want to add `media/` too, since it holds videos). To keep boards in step between computers, a synced folder such as Syncthing or Nextcloud suits better than git.
 - Myra only thinks when you ask her something. Then the board and your question go to Claude Code on your computer, the same as asking Claude yourself.
 - Switch Myra's thinking off in Settings and the whole canvas still works, with no AI and no internet. (Spell check is Chromium's: it fetches its dictionary from Google once, then works offline.)
-- Myra can use your camera and microphone without asking each time (Linux has no per-app prompt like macOS). It only turns them on when you press Start recording on a voice memo or video card.
+- Fenmyr can use your camera and microphone without asking each time (Linux has no per-app prompt like macOS). It only turns them on when you press Start recording on a voice memo or video card.
 - Chats are kept the way you choose: on each board, until you quit, or not at all.
 
 ## Shortcuts
@@ -147,13 +147,13 @@ The board fills the window, with no title bar. Move it and resize it the way you
 
 ## Follow your Caelestia theme
 
-If you use the [Caelestia](https://github.com/caelestia-dots/shell) Hyprland shell, Myra can take on your desktop's colors and change with them.
+If you use the [Caelestia](https://github.com/caelestia-dots/shell) Hyprland shell, Fenmyr can take on your desktop's colors and change with them.
 
 **It's on by default** when Caelestia is installed: Settings (⚙) → General → under *Look*, **Follow Caelestia** (the switch only shows up with Caelestia). While it's on, the Theme buttons and Settings → Board → Colors are dimmed, because Caelestia decides them. Switch it off and your own colors and theme come back.
 
 **What changes:**
 
-| In Myra | Comes from Caelestia's |
+| In Fenmyr | Comes from Caelestia's |
 |---|---|
 | Board background | `surface` |
 | Grid dots | `outlineVariant` |
@@ -165,7 +165,7 @@ Card colors (your notes' butter, mint, lilac…) are part of your boards and sta
 
 **Which Caelestia actions restyle it** (within about a second, no restart):
 
-| Caelestia | Myra |
+| Caelestia | Fenmyr |
 |---|---|
 | **Scheme** | New colors |
 | **Variant** | New shades of the same scheme |
@@ -174,15 +174,15 @@ Card colors (your notes' butter, mint, lilac…) are part of your boards and sta
 
 Changing between two *dark* schemes mostly shows in the accent, panels and dots, since most dark backgrounds are close to black. A board with its own background (right-click a board → background) keeps it; the rest still follows.
 
-Myra reads `~/.local/state/caelestia/scheme.json`, the file Caelestia's shell and `caelestia scheme set` keep up to date, so there's nothing to set up.
+Fenmyr reads `~/.local/state/caelestia/scheme.json`, the file Caelestia's shell and `caelestia scheme set` keep up to date, so there's nothing to set up.
 
 ## Troubleshooting
 
-- **Blank or flickering window on NVIDIA.** Put extra Electron flags in `~/.config/myra-flags.conf`, one per line, e.g. `--disable-gpu-compositing` or `--ozone-platform=x11`.
+- **Blank or flickering window on NVIDIA.** Put extra Electron flags in `~/.config/fenmyr-flags.conf`, one per line, e.g. `--disable-gpu-compositing` or `--ozone-platform=x11`.
 - **Force Wayland or X11.** The launcher passes `--ozone-platform-hint=auto` (Wayland when available). Add `--ozone-platform=wayland` or `--ozone-platform=x11` to the flags file to choose.
-- **Camera or microphone not found.** Myra uses the same camera and microphone as your browser (PipeWire). Check `pavucontrol` or your sound settings, and that nothing else holds the camera.
+- **Camera or microphone not found.** Fenmyr uses the same camera and microphone as your browser (PipeWire). Check `pavucontrol` or your sound settings, and that nothing else holds the camera.
 - **Myra says she needs Claude Code** even though it's installed: run `which claude` in a terminal and make sure that folder is one of the places listed above, or symlink it into `~/.local/bin`.
-- **Follow Caelestia doesn't change anything.** Check that the switch is on (Settings → General → Follow Caelestia), then switch Caelestia to Light: the board should turn light within a second. If it doesn't, press F12 in Myra and run `Myra.caelestia().then(s => console.log(s && s.name, s && s.mode, '|', document.body.className))` in the Console. You should see your scheme's name and `following-caelestia`; if the name is missing, check that `~/.local/state/caelestia/scheme.json` exists.
+- **Follow Caelestia doesn't change anything.** Check that the switch is on (Settings → General → Follow Caelestia), then switch Caelestia to Light: the board should turn light within a second. If it doesn't, press F12 in Fenmyr and run `Fenmyr.caelestia().then(s => console.log(s && s.name, s && s.mode, '|', document.body.className))` in the Console. You should see your scheme's name and `following-caelestia`; if the name is missing, check that `~/.local/state/caelestia/scheme.json` exists.
 - **Developer tools:** F12 or Ctrl+Shift+I.
 
 ## How it's built
@@ -192,19 +192,19 @@ Two layers:
 - `web/`: the canvas, plain HTML, CSS and JavaScript with no build step.
 - `linux/`: a small Electron host that does what a web page can't. It saves boards, fetches link previews, exports images and PDFs, writes out voice memos, and runs `claude -p` so Myra can think.
 
-The two talk through one channel (`window.myraHost`), so the canvas doesn't know or care which computer it's on. See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it.
+The two talk through one channel (`window.fenmyrHost`), so the canvas doesn't know or care which computer it's on. See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it.
 
 To work on the canvas in a browser, run `python3 -m http.server` inside `web/` (Myra is pretend there). To run the app from the code without installing: `npm install && npm start`.
 
-Icons are [Phosphor Icons](https://phosphoricons.com) (MIT), plus Myra's own cloudberry icons. Fonts are Figtree and Shantell Sans (OFL).
+Icons are [Phosphor Icons](https://phosphoricons.com) (MIT), plus Fenmyr's own cloudberry icons. Fonts are Figtree and Shantell Sans (OFL).
 
-## Where Myra came from
+## Where Fenmyr came from
 
-Myra's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by [Jessa Wolfe](https://jessa.art), an open-source planning canvas for the Mac (MIT). Thank you, Jessa. Mochiboard's name, its character Mochi, its stamps, art and music are hers; they aren't part of Myra, and Myra doesn't use them.
+Fenmyr's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by [Jessa Wolfe](https://jessa.art), an open-source planning canvas for the Mac (MIT). Thank you, Jessa. Mochiboard's name, its character Mochi, its stamps, art and music are hers; they aren't part of Fenmyr, and Fenmyr doesn't use them.
 
 ## License
 
-The code is open source under the [MIT License](LICENSE). The name **Myra**, Myra the cloudberry, her art, her own icons, the stamps and the app icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Myra also includes software made by others (Mochiboard, Electron, Material Icons, Figtree and Shantell Sans, and the libraries inside the docs editor); every one is listed with its license in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licenses**.
+The code is open source under the [MIT License](LICENSE). The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons, the stamps, the logo and the app icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Fenmyr also includes software made by others (Mochiboard, Electron, Material Icons, Figtree and Shantell Sans, and the libraries inside the docs editor); every one is listed with its license in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licenses**.
 
 ---
 

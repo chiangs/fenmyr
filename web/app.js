@@ -1,10 +1,10 @@
-// Myra: the canvas. Cards live in "world" coordinates; the view is a pan (x, y) and a zoom (z).
+// Fenmyr: the canvas. Cards live in "world" coordinates; the view is a pan (x, y) and a zoom (z).
 (() => {
   const $ = id => document.getElementById(id);
   const stage = $('stage'), world = $('world'), cardsEl = $('cards'), wires = $('wires'), grid = $('grid');
   // ---------- on Windows and Linux: ⌘K reads Ctrl+K, ⇧⌘G reads Ctrl+Shift+G (the keys themselves already take Ctrl), and the app's own words say PC, not Mac ----------
   // the browser version on a Windows or Linux computer counts too (an iPhone or iPad keeps ⌘)
-  const OS = Myra.platform !== 'web' ? Myra.platform : /Win/i.test(navigator.userAgentData?.platform || navigator.platform || navigator.userAgent) ? 'windows' : /Linux|X11|CrOS/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent) ? 'linux' : 'mac';
+  const OS = Fenmyr.platform !== 'web' ? Fenmyr.platform : /Win/i.test(navigator.userAgentData?.platform || navigator.platform || navigator.userAgent) ? 'windows' : /Linux|X11|CrOS/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent) ? 'linux' : 'mac';
   if (OS === 'windows' || OS === 'linux') {
     const MOD = { '⌃': 'Ctrl', '⌘': 'Ctrl', '⌥': 'Alt', '⇧': 'Shift' }, ORDER = ['Ctrl', 'Alt', 'Shift'];
     const winKeys = t => t.replace(/([⌃⌥⇧⌘]+)(\s?)([^\s⌃⌥⇧⌘]?)/g, (m, mods, sp, key) => {
@@ -138,7 +138,7 @@
   // ---------- the library: projects hold folders, folders hold boards ----------
   // stored as one small file: { projects: [{id, name, color, open}], folders: [{id, name, project, open}] }
   let projects = [], folders = [], boardList = [];
-  const saveLib = () => Myra.saveFolders({ projects, folders });
+  const saveLib = () => Fenmyr.saveFolders({ projects, folders });
   const byName = (arr, name) => arr.find(x => x.name.trim().toLowerCase() === String(name || '').trim().toLowerCase());
   const findFolder = name => byName(folders, name);
   function makeProject(name) { const p = byName(projects, name) || { id: uid(), name: String(name).trim() || 'New project', color: COLOR_NAMES[1 + projects.length % 6], open: true }; if (!projects.includes(p)) projects.push(p); return p; }
@@ -166,14 +166,14 @@
   // moving a board into a folder (or out of one). A canvas that lived inside another board comes out on its own.
   async function moveBoard(id, folderId) {
     await unhook(id);
-    if (board && board.id === id) { board.folder = folderId; delete board.parent; await Myra.save(board); renderCrumbsSoon(); return; }
-    const b = await Myra.load(id); if (!b) return; b.folder = folderId; delete b.parent; await Myra.save(b);
+    if (board && board.id === id) { board.folder = folderId; delete board.parent; await Fenmyr.save(board); renderCrumbsSoon(); return; }
+    const b = await Fenmyr.load(id); if (!b) return; b.folder = folderId; delete b.parent; await Fenmyr.save(b);
   }
   // ---------- canvases can go anywhere: inside another board (as a canvas card there), into a folder, or out on their own ----------
   const insideOf = (id, maybeAncestor) => { let b = boardList.find(x => x.id === id), n = 0; while (b && b.parent && n++ < 40) { if (b.parent === maybeAncestor) return true; b = boardList.find(x => x.id === b.parent); } return false; };
   async function editBoard(id, fn) {
     if (board && board.id === id) { fn(board); renderAll(); save(); return board; }
-    const b = await Myra.load(id); if (!b) return null; fn(b); await Myra.save(b); return b;
+    const b = await Fenmyr.load(id); if (!b) return null; fn(b); await Fenmyr.save(b); return b;
   }
   // take a canvas's card off the board it sat inside
   async function unhook(id) {
@@ -184,7 +184,7 @@
   async function nestBoard(id, intoId, at) {
     if (id === intoId || insideOf(intoId, id)) { chirp("A board can't go inside itself ✦", 2500); return false; }
     const kid = boardList.find(x => x.id === id) || (board && board.id === id ? board : null); if (!kid || kid.parent === intoId) return false;
-    const into = board && board.id === intoId ? board : await Myra.load(intoId); if (!into) return false;
+    const into = board && board.id === intoId ? board : await Fenmyr.load(intoId); if (!into) return false;
     await unhook(id);
     await editBoard(id, b => { b.parent = intoId; b.folder = into.folder || null; });
     await editBoard(intoId, pb => { const x = at ? at.x : pb.cards.length ? Math.max(...pb.cards.map(c => c.x + c.w)) + 60 : 0, y = at ? at.y : pb.cards.length ? Math.min(...pb.cards.map(c => c.y)) : 0; pb.cards.push(card('canvas', { x, y, text: kid.name, board: id })); });
@@ -192,18 +192,18 @@
   }
   const renderCrumbsSoon = () => setTimeout(() => typeof renderCrumbs === 'function' && renderCrumbs(), 50);
   async function loadLib() {
-    const [list, lib] = await Promise.all([Myra.list(), Myra.folders().catch(() => null)]);
+    const [list, lib] = await Promise.all([Fenmyr.list(), Fenmyr.folders().catch(() => null)]);
     boardList = list;
     if (Array.isArray(lib)) { projects = []; folders = lib; }   // folders saved before projects existed
     else { projects = (lib && lib.projects) || []; folders = (lib && lib.folders) || []; }
   }
   // drag and drop between rows and tiles: boards go into folders, folders go into projects
   const dropZone = (el, kind, onDrop) => {
-    el.addEventListener('dragover', e => { if (!e.dataTransfer.types.includes('myra/' + kind)) return; e.preventDefault(); e.stopPropagation(); el.classList.add('drop'); });
+    el.addEventListener('dragover', e => { if (!e.dataTransfer.types.includes('fenmyr/' + kind)) return; e.preventDefault(); e.stopPropagation(); el.classList.add('drop'); });
     el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop'); });
-    el.addEventListener('drop', async e => { const id = e.dataTransfer.getData('myra/' + kind); if (!id) return; e.preventDefault(); e.stopPropagation(); el.classList.remove('drop'); await onDrop(id); await saveLib(); refreshBoards(); });
+    el.addEventListener('drop', async e => { const id = e.dataTransfer.getData('fenmyr/' + kind); if (!id) return; e.preventDefault(); e.stopPropagation(); el.classList.remove('drop'); await onDrop(id); await saveLib(); refreshBoards(); });
   };
-  const draggable = (el, kind, id) => { el.draggable = true; el.ondragstart = e => { e.stopPropagation(); e.dataTransfer.setData('myra/' + kind, id); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); }; el.ondragend = () => el.classList.remove('dragging'); };
+  const draggable = (el, kind, id) => { el.draggable = true; el.ondragstart = e => { e.stopPropagation(); e.dataTransfer.setData('fenmyr/' + kind, id); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); }; el.ondragend = () => el.classList.remove('dragging'); };
   function inlineRename(el, obj, after) {
     el.contentEditable = 'true'; el.focus(); getSelection().selectAllChildren(el);
     el.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); } if (ev.key === 'Escape') { el.textContent = obj.name; el.blur(); } ev.stopPropagation(); };
@@ -212,17 +212,17 @@
       const liveObj = [...projects, ...folders].find(x => x.id === obj.id) || obj; if (v) { liveObj.name = v; obj.name = v; }
       await (after ? after(v) : saveLib()); refreshBoards(); };
   }
-  async function newBoardIn(folderId) { const b = newBoard(); b.folder = folderId; await Myra.save(b); closeHome(); await openBoard(b.id); $('boardName').focus(); $('boardName').select(); }
+  async function newBoardIn(folderId) { const b = newBoard(); b.folder = folderId; await Fenmyr.save(b); closeHome(); await openBoard(b.id); $('boardName').focus(); $('boardName').select(); }
 
   // ---------- right-click in the left box: duplicate or delete a board, folder or project ----------
   // copying a board also copies the canvases inside it, so the copy doesn't share them
   async function copyBoard(id, into = {}) {
-    const b = await Myra.load(id); if (!b) return null;
+    const b = await Fenmyr.load(id); if (!b) return null;
     const c = JSON.parse(JSON.stringify(b)); c.id = uid(); Object.assign(c, into);
     for (const k of c.cards) if (k.type === 'canvas' && k.board) { const kid = await copyBoard(k.board, { parent: c.id, folder: c.folder || null }); if (kid) k.board = kid.id; }
-    await Myra.save(c); return c;
+    await Fenmyr.save(c); return c;
   }
-  async function dropBoard(id) { for (const k of boardList.filter(x => x.parent === id)) await dropBoard(k.id); await Myra.remove(id); }
+  async function dropBoard(id) { for (const k of boardList.filter(x => x.parent === id)) await dropBoard(k.id); await Fenmyr.remove(id); }
   async function duplicate(kind, obj) {
     if (kind === 'board') { const c = await copyBoard(obj.id, { name: obj.name + ' copy' }); await refreshBoards(); if (c) chirp(`Made “${c.name}” ✦`, 3500); return; }
     // copy a folder, the folders inside it and all their boards
@@ -242,7 +242,7 @@
     folders = folders.filter(f => !gone.includes(f));
     if (kind === 'project') projects = projects.filter(p => p !== obj);
     await saveLib(); await refreshBoards();
-    if (board && ids.includes(board.id)) { let list = await Myra.list(); if (!list.length) { const b = newBoard('My first board'); await Myra.save(b); list = await Myra.list(); } await openBoard(list[0].id); }
+    if (board && ids.includes(board.id)) { let list = await Fenmyr.list(); if (!list.length) { const b = newBoard('My first board'); await Fenmyr.save(b); list = await Fenmyr.list(); } await openBoard(list[0].id); }
   }
   // Move to…: a little map of projects and folders; pick where it goes
   function moveMenu(m, kind, obj) {
@@ -268,12 +268,12 @@
       else { putFolder(obj.id, null, to); const p = projects.find(x => x.id === to); if (p) p.open = true; }
       await saveLib(); await refreshBoards(); const dest = folders.find(x => x.id === to || 'f:' + x.id === to) || projects.find(x => x.id === to); chirp(`Moved “${obj.name}” ${dest ? 'to “' + dest.name + '”' : kind === 'board' ? 'out of its folder' : 'out of its project'} ✦`, 3500); };
   }
-  async function renameBoard(b, v) { if (!v) return; if (board && board.id === b.id) { board.name = v; $('boardName').value = v; save(); } else { const bb = await Myra.load(b.id); if (bb) { bb.name = v; await Myra.save(bb); } } }
+  async function renameBoard(b, v) { if (!v) return; if (board && board.id === b.id) { board.name = v; $('boardName').value = v; save(); } else { const bb = await Fenmyr.load(b.id); if (bb) { bb.name = v; await Fenmyr.save(bb); } } }
   function rowMenu(e, kind, obj, nameEl) {
     e.preventDefault(); e.stopPropagation(); $('rowMenu')?.remove();
     const n = kind === 'board' ? 1 + boardList.filter(x => x.parent === obj.id).length : kind === 'folder' ? boardsUnder(obj) : foldersIn(obj.id).reduce((t, f) => t + boardsUnder(f), 0);
     const m = document.createElement('div'); m.id = 'rowMenu'; m.className = 'row-menu'; m.style.left = e.clientX + 'px'; m.style.top = e.clientY + 'px';
-    m.innerHTML = `${nameEl ? '<button data-m="ren">Rename</button>' : ''}${kind !== 'project' ? '<button data-m="move">Move to…</button>' : ''}${kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : ''}${kind !== 'folder' && Myra.native ? '<button data-m="vault">Vault access…</button>' : ''}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
+    m.innerHTML = `${nameEl ? '<button data-m="ren">Rename</button>' : ''}${kind !== 'project' ? '<button data-m="move">Move to…</button>' : ''}${kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : ''}${kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : ''}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
     document.body.appendChild(m);
     const r = m.getBoundingClientRect(); if (r.bottom > innerHeight - 10) m.style.top = innerHeight - r.height - 10 + 'px';
     m.onclick = async ev => {
@@ -395,7 +395,7 @@
     const chain = []; let up = board.parent; while (up && chain.length < 4) { const pb = boardList.find(x => x.id === up); if (!pb) break; chain.unshift(pb); up = pb.parent; }
     chain.forEach(pb => { el.insertAdjacentHTML('beforeend', `${el.children.length ? '<i>/</i>' : ''}<button data-board="${pb.id}"></button>`); const bt = el.lastElementChild; bt.textContent = pb.name; bt.title = 'Back to ' + pb.name; });
   }
-  $('crumbs').onclick = async e => { const pb = e.target.closest('[data-board]')?.dataset.board; if (pb) { board.view = view; await Myra.save(board); return openBoard(pb); } const g = e.target.closest('[data-go]')?.dataset.go; if (g) openHome(g); };
+  $('crumbs').onclick = async e => { const pb = e.target.closest('[data-board]')?.dataset.board; if (pb) { board.view = view; await Fenmyr.save(board); return openBoard(pb); } const g = e.target.closest('[data-go]')?.dataset.go; if (g) openHome(g); };
   $('homeBtn').onclick = () => openHome('all');
   $('brand').onclick = () => openHome('all');
   $('homeBack').onclick = () => { if (!homeAt) return; const f = homeAt.level === 'folder' && folders.find(x => x.id === homeAt.id); openHome(f && hasParent(f) ? 'folder:' + f.parent : f && f.project && projects.some(p => p.id === f.project) ? 'project:' + f.project : 'all'); };
@@ -404,7 +404,7 @@
   const miniCache = new Map();
   async function mini(id) {
     // a tiny map of the board: every card as a little colored block
-    if (!miniCache.has(id)) miniCache.set(id, Myra.load(id).then(b => {
+    if (!miniCache.has(id)) miniCache.set(id, Fenmyr.load(id).then(b => {
       const cs = (b && b.cards) || []; if (!cs.length) return '';
       const x0 = Math.min(...cs.map(c => c.x)), y0 = Math.min(...cs.map(c => c.y)), x1 = Math.max(...cs.map(c => c.x + c.w)), y1 = Math.max(...cs.map(c => c.y + c.h));
       const fill = c => c.type === 'swatch' ? c.hex : c.type === 'image' ? '#d9cfe0' : c.type === 'title' ? 'transparent' : (COLORS[c.color] || '#fff');
@@ -496,12 +496,12 @@
 
   async function openBoard(id) {
     // an edit still waiting to save belongs to the board you're leaving: save it first
-    if (saveT && board) { clearTimeout(saveT); saveT = 0; board.view = view; await Myra.save(board); }
-    const b = await Myra.load(id); if (!b) return;
+    if (saveT && board) { clearTimeout(saveT); saveT = 0; board.view = view; await Fenmyr.save(board); }
+    const b = await Fenmyr.load(id); if (!b) return;
     miniCache.clear(); vnFull.clear(); histOpen = false; board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
     board.cards.forEach(c => { if (c.type === 'audio' && c.rec) { c.rec = false; c.paused = false; if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.'; } });
     board.cards.forEach(c => { if (c.type === 'canvas' && c.board) { const kb = boardList.find(x => x.id === c.board); if (kb && kb.name !== c.text) c.text = kb.name; } });
-    $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); applyToolbar(); try { localStorage.setItem('myra:last', id); } catch (e) {}
+    $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); applyToolbar(); try { localStorage.setItem('fenmyr:last', id); } catch (e) {}
   }
   let saveT = 0;
   // ---------- undo / redo: a snapshot of the board after each change settles ----------
@@ -522,7 +522,7 @@
     if (!drag && board) { layoutAll(); cleanNumbers(); syncBoardTags(); }
     if (!restoring) { clearTimeout(snapT); snapT = setTimeout(remember, 350); }
     layersSoon(); $('saved').textContent = 'saving…'; clearTimeout(saveT);
-    saveT = setTimeout(async () => { board.view = view; await Myra.save(board); $('saved').textContent = 'saved'; refreshBoards(); }, 400);
+    saveT = setTimeout(async () => { board.view = view; await Fenmyr.save(board); $('saved').textContent = 'saved'; refreshBoards(); }, 400);
   }
 
   // after Myra works: glide to what she made (unless it's already in view) and let it glow for a moment
@@ -669,15 +669,15 @@
         + `<div class="sp-wrap">${c.image ? `<img class="sp-art" src="${esc(c.image)}" alt="">` : ''}<iframe class="sp-frame" data-src="${esc(spEmbed(c))}" src="${esc(spEmbed(c))}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="${esc(c.title || 'Spotify')}"></iframe><div class="sp-shield" title="Click to select, then play"></div></div>`;
       case 'video': {
         if (c.src) return `<div class="vd-stage"><video class="vd-v"></video><button class="vd-play" data-act="vd-play" aria-label="Play">${PLAY}</button></div><div class="vd-bar"><button class="vd-pp" data-act="vd-play" aria-label="Play or pause">${PLAY}</button><div class="vd-prog" data-act="vd-seek"><i></i></div><span class="vd-time">${fmtT(c.dur || 0)}</span><button class="vd-mute${c.muted ? ' off' : ''}" data-act="vd-mute" aria-label="Sound">${SPK}</button><button class="vd-txb${c.text ? ' on' : ''}" data-act="vd-tx" aria-label="Write it out" data-tip="Write it out">${Icon('captions', { size: 15 })}</button></div>`
-          + (c.txShown ? `<div class="vd-txt"><div class="vd-txt-body${c.text ? '' : ' wait'}">${esc(c.text || c.txNote || 'Myra is writing it out…')}</div>${c.text ? `<div class="vd-txt-acts">${settings.ai && haveClaude !== false ? '<button data-act="vd-notes">✦ Turn into notes</button>' : ''}<button data-act="vd-copy">Copy</button></div>` : c.needTx ? '<div class="vd-txt-acts"><button data-act="vd-tx">✦ Write it out</button></div>' : ''}</div>` : '');
+          + (c.txShown ? `<div class="vd-txt"><div class="vd-txt-body${c.text ? '' : ' wait'}">${esc(c.text || c.txNote || 'Writing it out…')}</div>${c.text ? `<div class="vd-txt-acts">${settings.ai && haveClaude !== false ? '<button data-act="vd-notes">✦ Turn into notes</button>' : ''}<button data-act="vd-copy">Copy</button></div>` : c.needTx ? '<div class="vd-txt-acts"><button data-act="vd-tx">✦ Write it out</button></div>' : ''}</div>` : '');
         if (c.saving) return `<div class="vd-stage"><div class="vd-msg"><b>Saving your video…</b><span>${Math.round((c.pct || 0) * 100)}%</span></div></div><div class="vd-bar"><span class="vd-title">${esc(c.title || 'Video')}</span></div>`;
         return `<div class="vd-stage live"><video class="vd-live"></video>${c.camErr ? `<div class="vd-msg"><b>${esc(c.camErr)}</b></div>` : c.camRest ? `<button class="vd-msg vd-wake" data-act="vd-wake"><b>Your camera is resting</b><span>Click to turn it on</span></button>` : ''}${c.count ? `<div class="vd-count">${c.count}</div>` : ''}${c.rec && !c.count ? `<div class="vd-recdot"><i></i><span class="vd-rtime">0:00</span></div>` : ''}${!c.rec && !c.camErr && cams.get(c.id) ? `<button class="vd-dev" data-act="vd-dev">${Icon('camera', { size: 13 })}<span>${esc(devName(cams.get(c.id).stream.getVideoTracks()[0], 'Camera'))}</span><i>▾</i></button>` : ''}${!c.rec && !c.camErr && cams.get(c.id) ? `<div class="vd-look"><button class="${settings.camFlip === false ? '' : 'on'}" data-act="vd-flip" data-tip="Flip" aria-label="Flip the camera">${Icon('flip')}</button></div>` : ''}${!c.rec && !c.camErr ? `<div class="vd-shape"><button data-act="vd-wide" class="${c.vert ? '' : 'on'}"><i class="w"></i>Wide</button><button data-act="vd-tall" class="${c.vert ? 'on' : ''}"><i class="t"></i>Phone</button></div>` : ''}</div>`
           + `<div class="vd-bar">${c.rec ? `<button class="vd-stop" data-act="vd-stop"><i></i>Stop</button>` : `<button class="vd-start" data-act="vd-start"><span class="au-rec"></span>${c.vert ? 'Record' : 'Start recording'}</button><button class="vd-file" data-act="vd-file" title="Use a video file">${c.vert ? Icon('upload', { size: 16 }) : 'Use a video file'}</button>`}</div>`;
       }
       case 'audio': return c.ready && !c.rec && !c.src ? `<div class="au-top"><span class="au-mic">${MIC}</span><span class="text">${esc(c.title || 'Voice memo')}</span></div><button class="au-start" data-act="au-start"><span class="au-rec"></span>Start recording</button><button class="au-dev" data-act="au-dev">${MIC}<span>${esc(devName(warm?.getAudioTracks?.()[0], 'Microphone'))}</span><i>▾</i></button>`
-        : c.rec ? `<div class="au-top"><span class="au-dot${c.count || c.starting ? ' wait' : ''}"></span><b>${c.count === 'connecting' ? 'Myra is connecting to voice…' : c.count ? 'Start talking in…' : c.starting ? 'Starting…' : c.paused ? 'Paused' : 'Recording…'}</b><span class="au-time">0:00</span></div>${c.count || c.starting ? `<div class="au-count${typeof c.count === 'string' ? ' soft' : ''}">${c.count === 'connecting' ? '<i></i><i></i><i></i>' : c.count || ''}</div>` : '<canvas class="au-live" width="520" height="68"></canvas>'}<div class="au-acts"><button data-act="au-pause">${c.paused ? 'Resume' : 'Pause'}</button><button data-act="au-stop" class="solid">Stop</button></div>`
+        : c.rec ? `<div class="au-top"><span class="au-dot${c.count || c.starting ? ' wait' : ''}"></span><b>${c.count === 'connecting' ? 'Connecting to voice…' : c.count ? 'Start talking in…' : c.starting ? 'Starting…' : c.paused ? 'Paused' : 'Recording…'}</b><span class="au-time">0:00</span></div>${c.count || c.starting ? `<div class="au-count${typeof c.count === 'string' ? ' soft' : ''}">${c.count === 'connecting' ? '<i></i><i></i><i></i>' : c.count || ''}</div>` : '<canvas class="au-live" width="520" height="68"></canvas>'}<div class="au-acts"><button data-act="au-pause">${c.paused ? 'Resume' : 'Pause'}</button><button data-act="au-stop" class="solid">Stop</button></div>`
         : `<div class="au-top"><span class="text">${esc(c.title || 'Voice memo')}</span></div><div class="au-row"><button class="au-play" data-act="au-play">${PLAY}</button><div class="au-wave" data-act="au-seek">${(c.wave || Array(40).fill(.2)).map(v => `<i style="height:${Math.max(8, v * 100)}%"></i>`).join('')}</div><span class="au-time">${fmtT(c.dur || 0)}</span></div>`
-          + `<div class="au-tx${c.text ? '' : ' wait'}">${c.text ? esc(c.text) : esc(c.txNote || 'Myra is writing it out…')}</div><div class="au-acts"><button data-act="au-replace">Replace</button>${c.text ? '<button data-act="au-notes">✦ Turn into notes</button>' : c.needTx ? '<button data-act="au-tx">✦ Write it out</button>' : ''}</div>`;
+          + `<div class="au-tx${c.text ? '' : ' wait'}">${c.text ? esc(c.text) : esc(c.txNote || 'Writing it out…')}</div><div class="au-acts"><button data-act="au-replace">Replace</button>${c.text ? '<button data-act="au-notes">✦ Turn into notes</button>' : c.needTx ? '<button data-act="au-tx">✦ Write it out</button>' : ''}</div>`;
       case 'path': return `<svg class="pth" viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none"><path d="${pathD(c.pts, c.closed, c.radius || 0, c.ow / Math.max(1, c.w))}" fill="${c.closed && c.fill ? c.fill : 'none'}" stroke="${c.stroke && c.sw > 0 ? c.stroke : 'none'}" stroke-width="${c.sw || 0}" stroke-linecap="round" stroke-linejoin="round"${skStyle(c) === 'dash' ? ` stroke-dasharray="${c.dl ?? 8} ${c.dg ?? 6}"` : skStyle(c) === 'dot' ? ` stroke-dasharray="0 ${(c.dg ?? 6) + (c.sw || 0)}"` : ''} vector-effect="non-scaling-stroke"/></svg>`;
       case 'ink': return `<svg viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none">${inkPath(c.pts, c.pen, c.size, c.ink, true)}</svg>`;
       case 'frame': return `<div class="fr-body"></div><div class="fr-name">${esc(c.name || 'Screen')}</div>`;
@@ -1305,14 +1305,14 @@
     return m && SP_KINDS.includes(m[1].toLowerCase()) ? { kind: m[1].toLowerCase(), sid: m[2] } : null;
   }
   const SP_HEAD = 28, spH = kind => (['track', 'episode'].includes(kind) ? 152 : 352) + SP_HEAD + 6;   // Spotify's player only shows its full layout at exactly 152 / 352 tall
-  const spEmbed = c => `https://open.spotify.com/embed/${c.kind}/${c.sid}?utm_source=myra`;
+  const spEmbed = c => `https://open.spotify.com/embed/${c.kind}/${c.sid}?utm_source=fenmyr`;
   async function spotifyFill(c, url) {
     const s2 = spotifyOf(url); if (!s2) return false;
     Object.assign(c, { type: 'spotify', url: `https://open.spotify.com/${s2.kind}/${s2.sid}`, kind: s2.kind, sid: s2.sid, w: 320, h: spH(s2.kind), title: c.title && !/^https?:/.test(c.title) ? c.title : 'Spotify', loading: false, draft: '' });
     renderCard(c); save();
     // Spotify's own public info (no account needed): the real name and cover art, kept on the card for offline, Layers and Myra
     try { const r = await fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(c.url)); if (r.ok) { const o = await r.json(); if (o.title) c.title = o.title; if (o.thumbnail_url) c.image = o.thumbnail_url; } } catch (e) {}
-    if (!c.title || c.title === 'Spotify') try { const p = await Myra.linkPreview(c.url); if (p.title && !/^open\.spotify\.com$/i.test(p.title)) c.title = p.title.replace(/\s*[|·-]\s*Spotify\s*$/i, ''); if (!c.image && p.image) c.image = p.image; } catch (e) {}
+    if (!c.title || c.title === 'Spotify') try { const p = await Fenmyr.linkPreview(c.url); if (p.title && !/^open\.spotify\.com$/i.test(p.title)) c.title = p.title.replace(/\s*[|·-]\s*Spotify\s*$/i, ''); if (!c.image && p.image) c.image = p.image; } catch (e) {}
     c.desc = { track: 'Song', album: 'Album', playlist: 'Playlist', episode: 'Podcast episode', show: 'Podcast', artist: 'Artist' }[c.kind] + ' on Spotify'; renderCard(c); save();
     return true;
   }
@@ -1320,7 +1320,7 @@
     if (spotifyOf(url)) { const c = card('spotify', { url, title: 'Spotify' }); if (toTray) { board.tray.unshift(c); renderTray(); } else { Object.assign(c, at || {}); addCard(c); } await spotifyFill(c, url); if (toTray) renderTray(); return c; }
     const c = card('link', { url, title: url, desc: '' });
     if (toTray) board.tray.unshift(c); else { Object.assign(c, at || {}); addCard(c); }
-    try { const p = await Myra.linkPreview(url); Object.assign(c, { title: p.title || url, desc: p.desc || url, image: p.image || '' }); toTray ? renderTray() : renderCard(c); save(); } catch (e) {}
+    try { const p = await Fenmyr.linkPreview(url); Object.assign(c, { title: p.title || url, desc: p.desc || url, image: p.image || '' }); toTray ? renderTray() : renderCard(c); save(); } catch (e) {}
     if (toTray) { renderTray(); save(); }
     return c;
   }
@@ -1744,8 +1744,8 @@
 
   // ---------- the tray: drag ideas out onto the board ----------
   // Unsorted collapses to its title with its – button, like the other widgets, and remembers it
-  const trayMin = min => { $('tray').classList.toggle('closed', min); $('trayMin').textContent = min ? '+' : '–'; $('trayMin').title = min ? 'Open' : 'Minimise'; try { localStorage.setItem('myra:trayMin', min ? '1' : ''); } catch (e) {} };
-  try { trayMin(!!localStorage.getItem('myra:trayMin')); } catch (e) {}
+  const trayMin = min => { $('tray').classList.toggle('closed', min); $('trayMin').textContent = min ? '+' : '–'; $('trayMin').title = min ? 'Open' : 'Minimise'; try { localStorage.setItem('fenmyr:trayMin', min ? '1' : ''); } catch (e) {} };
+  try { trayMin(!!localStorage.getItem('fenmyr:trayMin')); } catch (e) {}
   $('trayMin').onclick = e => { e.stopPropagation(); trayMin(!$('tray').classList.contains('closed')); };
   $('trayList').addEventListener('pointerdown', e => {
     const it = e.target.closest('.tray-item'); if (!it) return; e.preventDefault();
@@ -1762,7 +1762,7 @@
   // Otherwise Delete, Escape, arrows and the letter shortcuts fall through to the window, and macOS beeps.
   // Alt+N: a note from a vault (the letter shortcuts below ignore Alt)
   addEventListener('keydown', e => {
-    if (!e.altKey || e.metaKey || e.ctrlKey || e.shiftKey || e.code !== 'KeyN' || homeAt || !Myra.native) return;
+    if (!e.altKey || e.metaKey || e.ctrlKey || e.shiftKey || e.code !== 'KeyN' || homeAt || !Fenmyr.native) return;
     if (e.target.closest?.('input, textarea, select, [contenteditable="true"]') || $('vaultPick')) return;
     e.preventDefault(); openVaultPicker();
   });
@@ -1790,7 +1790,7 @@
   const TB_DEFAULT = [...$('tools').querySelectorAll(':scope > [data-add]')].map(b => b.dataset.add);
   const tbName = b => (b.dataset.tip || b.getAttribute('aria-label') || '').split('·')[0].trim();
   // the Vault note tool only shows on a board that can read a vault
-  const vaultToolOn = () => { try { return !!(Myra.native && board && vaults.length && activeGrants(board).length); } catch (e) { return false; } };
+  const vaultToolOn = () => { try { return !!(Fenmyr.native && board && vaults.length && activeGrants(board).length); } catch (e) { return false; } };
   function applyToolbar() {
     const box = $('tools'), cfg = settings.toolbar || {}, hidden = new Set(cfg.hidden || []);
     const order = (cfg.order || []).filter(k => TB_DEFAULT.includes(k)); TB_DEFAULT.forEach((k, i) => { if (!order.includes(k)) order.splice(Math.min(i, order.length), 0, k); });   // tools added in a later version slot in where they belong
@@ -1938,12 +1938,12 @@
     const p = homeAt?.level === 'project' ? projects.find(x => x.id === homeAt.id) : homeAt?.level === 'all' ? null : f && projects.find(x => x.id === f.project);
     return { f, p };
   }
-  $('newBoard').onclick = async () => { const { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) return newBoardIn(into.id); const b = newBoard(); await Myra.save(b); closeHome(); openBoard(b.id); };
+  $('newBoard').onclick = async () => { const { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) return newBoardIn(into.id); const b = newBoard(); await Fenmyr.save(b); closeHome(); openBoard(b.id); };
   $('newFolder').onclick = async () => { const f = makeFolder(uniqueName(folders, 'New folder'), scope().p?.id || null); await saveLib(); await refreshBoards(); renameNewest('.node.folder', f); };
   $('newProject').onclick = async () => { const p = makeProject(uniqueName(projects, 'New project')); await saveLib(); await refreshBoards(); renameNewest('.node.project', p); };
 
-  // ---------- copy, cut and paste cards: works across boards (the clip lives in Myra, plus their words go to the system clipboard) ----------
-  const CLIP = 'myra:clip';
+  // ---------- copy, cut and paste cards: works across boards (the clip lives in Fenmyr, plus their words go to the system clipboard) ----------
+  const CLIP = 'fenmyr:clip';
   let lastClip = null, pendingPaste = false, pasteN = 0;
   try { lastClip = JSON.parse(localStorage.getItem(CLIP) || 'null'); } catch (e) {}
   function copyCards() {
@@ -1955,7 +1955,7 @@
     selCards().forEach(take); if (!ids.size) return null;
     const cards = board.cards.filter(c => ids.has(c.id)).map(c => JSON.parse(JSON.stringify(c)));
     const links = board.links.filter(l => ids.has(l.a) && ids.has(l.b)).map(l => ({ ...l }));
-    const text = cards.map(c => c.text || c.title || c.name || c.label || '').filter(Boolean).join('\n') || `${cards.length} Myra card${cards.length > 1 ? 's' : ''}`;
+    const text = cards.map(c => c.text || c.title || c.name || c.label || '').filter(Boolean).join('\n') || `${cards.length} Fenmyr card${cards.length > 1 ? 's' : ''}`;
     lastClip = { cards, links, from: board.id, text }; pasteN = 0;
     try { localStorage.setItem(CLIP, JSON.stringify(lastClip)); } catch (e) {}   // big pictures may not fit; the copy still works while the app is open
     return lastClip;
@@ -1997,17 +1997,17 @@
     if (c0.from !== board.id) chirp(`Pasted ${fresh.length} card${fresh.length > 1 ? 's' : ''} ✦`, 2200);
   }
   addEventListener('copy', e => { if (e.target.closest?.('input, textarea, [contenteditable="true"]') || !sel.size || homeAt) return;
-    const r = copyCards(); if (!r) return; e.preventDefault(); e.clipboardData.setData('text/plain', r.text); e.clipboardData.setData('text/x-myra', '1'); });
+    const r = copyCards(); if (!r) return; e.preventDefault(); e.clipboardData.setData('text/plain', r.text); e.clipboardData.setData('text/x-fenmyr', '1'); });
   addEventListener('cut', e => { if (e.target.closest?.('input, textarea, [contenteditable="true"]') || !sel.size || homeAt) return;
-    const r = copyCards(); if (!r) return; e.preventDefault(); e.clipboardData.setData('text/plain', r.text); e.clipboardData.setData('text/x-myra', '1'); removeSelected(); });
+    const r = copyCards(); if (!r) return; e.preventDefault(); e.clipboardData.setData('text/plain', r.text); e.clipboardData.setData('text/x-fenmyr', '1'); removeSelected(); });
 
   // ---------- paste and drop ----------
   addEventListener('paste', e => {
     if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
     pendingPaste = false;
-    // cards copied in Myra (on this board or another one) come back as cards
+    // cards copied in Fenmyr (on this board or another one) come back as cards
     const tx = e.clipboardData.getData('text/plain');
-    if (lastClip && !e.clipboardData.files?.length && (e.clipboardData.getData('text/x-myra') || tx === lastClip.text)) { e.preventDefault(); return pasteCards(); }
+    if (lastClip && !e.clipboardData.files?.length && (e.clipboardData.getData('text/x-fenmyr') || tx === lastClip.text)) { e.preventDefault(); return pasteCards(); }
     const files = [...(e.clipboardData.files || [])]; const intoTray = $('capture').classList.contains('on');
     if (files.length) { e.preventDefault(); addImages(files, null, intoTray); capture(false); return; }
     const t = e.clipboardData.getData('text/plain').trim(); if (!t) return; e.preventDefault();
@@ -2015,27 +2015,23 @@
   });
   stage.addEventListener('dragover', e => e.preventDefault());
   stage.addEventListener('drop', e => { e.preventDefault(); const files = [...e.dataTransfer.files], w = toWorld(e.clientX, e.clientY);
-    const bid = e.dataTransfer.getData('myra/board'); if (bid && board) return nestBoard(bid, board.id, { x: w.x - 130, y: w.y - 90 }).then(ok => ok && refreshBoards());
+    const bid = e.dataTransfer.getData('fenmyr/board'); if (bid && board) return nestBoard(bid, board.id, { x: w.x - 130, y: w.y - 90 }).then(ok => ok && refreshBoards());
     if (files.length) return addImages(files, w, overTray(e));
     const u = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain'); if (/^https?:/.test(u)) linkCard(u.trim(), w); });
 
   // ---------- Myra on the board ----------
   // her hop: she jumps right up out of her pill, then squishes a little as she lands
-  function hopMyra() { goo.hop(); favGoo?.hop(); const c = $('goo'); c.classList.remove('hopping'); void c.offsetWidth; c.classList.add('hopping'); }
-  // in a browser, the tab's icon is a tiny Myra who breathes, blinks and hops along with the real one
-  const favGoo = Myra.native ? null : (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const fg = Goo(c, { manual: true });
-    let link = document.querySelector('link[rel="icon"]'); if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
-    setInterval(() => { fg.draw(); link.href = c.toDataURL('image/png'); }, 120); return fg; })();
+  function hopMyra() { goo.hop(); const c = $('goo'); c.classList.remove('hopping'); void c.offsetWidth; c.classList.add('hopping'); }
   const goo = Goo($('goo'), { headroom: 8 }), SMALL = { headroom: 8 };   // small Myras get room above them
-  const goos = [goo, ...(favGoo ? [favGoo] : []), Goo($('brandGoo'), SMALL), Goo($('aboutGoo'), SMALL), Goo($('obGoo'), { headroom: 8 }), Goo($('obGoo2'), { headroom: 8 }), Goo($('coachGoo'), SMALL), Goo($('setGoo'), SMALL)];
+  const goos = [goo, Goo($('obGoo'), { headroom: 8 }), Goo($('obGoo2'), { headroom: 8 }), Goo($('coachGoo'), SMALL), Goo($('setGoo'), SMALL)];
 
   // ---------- settings: Myra's color and greeting, her helpers, how the board looks ----------
   // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade
   const MYRA_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, moss: { B: '#8fc65a', S: '#e4f4c4', D: '#5c9a35', L: '#2f9e72', l: '#1f6e50' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
-  const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, webAccess: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('myra:settings') || '{}'); } catch (e) { return {}; } })());
+  const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, webAccess: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('fenmyr:settings') || '{}'); } catch (e) { return {}; } })());
   delete settings.wDressup; delete settings.wMusic; delete settings.outfit;   // left in saved settings by the old Dress up and music widgets
-  try { if (localStorage.getItem('myra:keys') === 'hide') settings.keys = false; } catch (e) {}
+  try { if (localStorage.getItem('fenmyr:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
   // the Boards panel is pinned at the top left (it's home to your boards and Settings), everything else can move
   const WG_DEFAULT = { left: ['layers', 'colors'], right: ['design', 'tray'] };
@@ -2120,7 +2116,7 @@
     document.documentElement.classList.toggle('no-win-buttons', settings.winButtons === false);   // tiling compositors place the window themselves
     $('obMyra').innerHTML = $('myraColors').innerHTML = Object.entries(MYRA_COLORS).map(([n, c]) => `<button data-mc="${n}" title="${colorLabel(n)}" style="background:${c.B}" class="${settings.myra === n ? 'on' : ''}"></button>`).join('');
     document.querySelectorAll('[data-set]').forEach(t => t.checked = !!settings[t.dataset.set]);
-    try { localStorage.setItem('myra:settings', JSON.stringify(settings)); localStorage.setItem('myra:keys', settings.keys ? 'show' : 'hide'); } catch (e) {}
+    try { localStorage.setItem('fenmyr:settings', JSON.stringify(settings)); localStorage.setItem('fenmyr:keys', settings.keys ? 'show' : 'hide'); } catch (e) {}
   }
   // ---------- your cursor: a little pointer and name tag in Myra's color ----------
   // It follows the mouse; over a card it turns into an open hand, and a fist while you drag. Text and inputs keep the system's own I-beam.
@@ -2164,7 +2160,7 @@
     if (e.pointerType !== 'mouse' || !document.body.classList.contains('fancy-cursor')) return;
     myCur.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`; myCur.classList.add('show');
     // at the window's edges, hand back the system's own cursor so its resize arrows show (and you can see where to grab)
-    const edge = Myra.native && (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8); document.body.classList.toggle('cur-edge', edge);
+    const edge = Fenmyr.native && (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8); document.body.classList.toggle('cur-edge', edge);
     const t = e.target, native = edge || !!(t.closest && t.closest(NATIVE));
     myCur.classList.toggle('hide', native); document.body.classList.toggle('cur-native', native);
     const onCard = !native && !placing && !drawOn && t.closest && t.closest('.card') && !t.closest('button, a, input');
@@ -2250,30 +2246,30 @@
   const kTok = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(Math.round(n));
   const usLine = u => !u || !u.asks ? 'No asks yet' : `${u.asks} ask${u.asks === 1 ? '' : 's'} · ${kTok(u.tokensIn + u.tokensOut)} tokens`;
   async function showUsage() {
-    if (!Myra.native) return; let u = null; try { u = await Myra.usage(); } catch (e) {}
+    if (!Fenmyr.native) return; let u = null; try { u = await Fenmyr.usage(); } catch (e) {}
     if (!u) return; $('usToday').textContent = usLine(u.today); $('usWeek').textContent = usLine(u.week); $('usAll').textContent = usLine(u.all);
     $('usNote').textContent = (u.week.cost >= .01 ? `About $${u.week.cost.toFixed(2)} this week if you paid per request (on a Pro or Max plan you don't). ` : '') + "Just Myra's share, counted on this computer. Your plan's limits cover everything you do with Claude.";
   }
-  $('usLimits').onclick = () => Myra.openURL('https://claude.ai/settings/usage');
-  $('sendFeedback').onclick = () => Myra.openURL('https://github.com/chiangs/myra/issues/new');   // ideas and bugs go to this version's GitHub issues
-  $('usReset').onclick = async () => { await Myra.resetUsage(); showUsage(); };
+  $('usLimits').onclick = () => Fenmyr.openURL('https://claude.ai/settings/usage');
+  $('sendFeedback').onclick = () => Fenmyr.openURL('https://github.com/chiangs/fenmyr/issues/new');   // ideas and bugs go to this version's GitHub issues
+  $('usReset').onclick = async () => { await Fenmyr.resetUsage(); showUsage(); };
 
   $('setClose').onclick = closeSettings;
   // ---------- About → Licenses: Myra's license and every third-party notice (web/licenses.js, made by tools/notices.js) ----------
   let licLoading = null;
-  const loadLicenses = () => licLoading || (licLoading = new Promise((res, rej) => { if (window.MYRA_LICENSES) return res(); const sc = document.createElement('script'); sc.src = 'licenses.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }));
+  const loadLicenses = () => licLoading || (licLoading = new Promise((res, rej) => { if (window.FENMYR_LICENSES) return res(); const sc = document.createElement('script'); sc.src = 'licenses.js'; sc.onload = res; sc.onerror = rej; document.head.appendChild(sc); }));
   async function openLicenses() {
     $('licView').classList.add('on');
     try { await loadLicenses(); } catch (e) { $('licBody').innerHTML = '<p class="lic-loading">The licence list is missing from this copy.</p>'; return; }
     if ($('licBody').dataset.done) return;
-    const L = window.MYRA_LICENSES, row = i => `<details class="lic-item"><summary><b>${esc(i.name)}</b>${i.version ? ` <span>${esc(i.version)}</span>` : ''}<em>${esc(i.license)}</em></summary>
+    const L = window.FENMYR_LICENSES, row = i => `<details class="lic-item"><summary><b>${esc(i.name)}</b>${i.version ? ` <span>${esc(i.version)}</span>` : ''}<em>${esc(i.license)}</em></summary>
       <p class="lic-meta">${esc(i.where)}${i.url ? ` · <button class="set-link" data-url="${esc(i.url)}">${esc(i.url.replace(/^https?:\/\//, ''))}</button>` : ''}</p>${i.note ? `<p class="lic-note">${esc(i.note)}</p>` : ''}
-      ${i.name === 'Electron' && Myra.native ? '<p><button class="set-btn" id="licChromium">Open Chromium’s licences</button></p>' : ''}<pre>${esc(i.text)}</pre></details>`;
-    $('licBody').innerHTML = `<p class="lic-intro">Myra is open source under the MIT License. Its name, Myra the cloudberry and her art are reserved by Stephen Chiang. It includes ${L.items.length} pieces of software made by others, each listed with its licence.</p>
-      <details class="lic-item lic-myra" open><summary><b>Myra</b><em>MIT</em></summary><pre>${esc(L.myra)}</pre></details>` + L.items.map(row).join('');
+      ${i.name === 'Electron' && Fenmyr.native ? '<p><button class="set-btn" id="licChromium">Open Chromium’s licences</button></p>' : ''}<pre>${esc(i.text)}</pre></details>`;
+    $('licBody').innerHTML = `<p class="lic-intro">Fenmyr is open source under the MIT License. The name Fenmyr, its logo, Myra the cloudberry and her art are reserved by Stephen Chiang. It includes ${L.items.length} pieces of software made by others, each listed with its licence.</p>
+      <details class="lic-item lic-fenmyr" open><summary><b>Fenmyr</b><em>MIT</em></summary><pre>${esc(L.fenmyr)}</pre></details>` + L.items.map(row).join('');
     $('licBody').dataset.done = '1';
-    $('licBody').querySelectorAll('[data-url]').forEach(b => b.onclick = () => Myra.openURL(b.dataset.url));
-    $('licChromium') && ($('licChromium').onclick = () => Myra.chromiumLicenses().catch(e => say(e.message, 5000)));
+    $('licBody').querySelectorAll('[data-url]').forEach(b => b.onclick = () => Fenmyr.openURL(b.dataset.url));
+    $('licChromium') && ($('licChromium').onclick = () => Fenmyr.chromiumLicenses().catch(e => say(e.message, 5000)));
   }
   const closeLicenses = () => $('licView').classList.remove('on');
   $('openLicenses').onclick = openLicenses; $('licClose').onclick = closeLicenses;
@@ -2286,18 +2282,18 @@
   document.querySelectorAll('[data-set]').forEach(t => t.onchange = () => { settings[t.dataset.set] = t.checked; applySettings(); if (t.dataset.set === 'autoUpdate') { showUpdate.answered = true; if (t.checked && updInfo) showUpdate(); } });
   $('recheck').onclick = () => showConnections(true);
   // switching chats off (or to "until I quit") removes what's saved in the board files right away
-  async function clearSavedChats() { const list = await Myra.list(); for (const b of list) { const bb = b.id === board?.id ? board : await Myra.load(b.id); if (bb?.chat?.length || bb?.chats?.length) { bb.chat = []; delete bb.chats; await Myra.save(bb); } } }
+  async function clearSavedChats() { const list = await Fenmyr.list(); for (const b of list) { const bb = b.id === board?.id ? board : await Fenmyr.load(b.id); if (bb?.chat?.length || bb?.chats?.length) { bb.chat = []; delete bb.chats; await Fenmyr.save(bb); } } }
   $('clearChats').onclick = async () => { await clearSavedChats(); Object.keys(sessionChats).forEach(k => delete sessionChats[k]); renderChat(); $('clearChats').textContent = 'Cleared ✓'; setTimeout(() => $('clearChats').textContent = 'Clear all chats', 1800); };
   document.querySelectorAll('[data-seg]').forEach(g => g.onclick = e => { const b = e.target.closest('[data-v]'); if (!b) return; settings[g.dataset.seg] = b.dataset.v; applySettings();
     if (g.dataset.seg === 'chatKeep' && b.dataset.v !== 'board') clearSavedChats(); if (g.dataset.seg === 'chatKeep') renderChat(); });
   $('obNotes').onclick = $('noteColors').onclick = e => { const b = e.target.closest('[data-nc]'); if (b) { settings.noteColor = b.dataset.nc; applySettings(); } };
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => settings.theme === 'system' && applySettings());
-  window.__myraEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } };   // a new wallpaper or scheme: restyle right away
-  if (Myra.caelestia) Myra.caelestia().then(d => { cae = d; if (d) applySettings(); }).catch(() => {});
+  window.__fenmyrEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } };   // a new wallpaper or scheme: restyle right away
+  if (Fenmyr.caelestia) Fenmyr.caelestia().then(d => { cae = d; if (d) applySettings(); }).catch(() => {});
   const newNoteColor = () => settings.noteColor === 'random' ? COLOR_NAMES[1 + Math.floor(Math.random() * 6)] : settings.noteColor;
   let deselectAt = 0;
   const snapTo = v => settings.snap ? Math.round(v / 26) * 26 : v;
-  $('revealBoards').onclick = () => Myra.reveal();
+  $('revealBoards').onclick = () => Fenmyr.reveal();
   let sayT = 0;
   // the little extras: skipped when she's set to Quiet
   const reply = (text, ms, acts) => say(text, ms, acts, true);
@@ -2384,14 +2380,14 @@
       notes.forEach((c, i) => { c.x = x0 + (i % 4) * 250; c.y = y0 + Math.floor(i / 4) * 180; c.r = tilt(); renderCard(c); }); renderWires(); save();
       return reply(`I lined your ${notes.length} notes up in tidy rows ✦ ${why}`, 9000);
     }
-    reply(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Myra.openURL(GUIDE) }] : []); offlineMyra.signin = false;
+    reply(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Fenmyr.openURL(GUIDE) }] : []); offlineMyra.signin = false;
   }
   let haveClaude = null;
-  const GUIDE = 'https://github.com/chiangs/myra#connect-claude-code';   // the step-by-step page for connecting Claude Code
+  const GUIDE = 'https://github.com/chiangs/fenmyr#connect-claude-code';   // the step-by-step page for connecting Claude Code
   const SIGNIN = /log ?in|api key|auth|credential|subscription|not (signed|logged)|oauth|unauthori[sz]ed|401|403/i;
   // the web demo: Myra tidies for real, and for anything that needs AI she points you to the desktop app
-  const getApp = () => Myra.openURL(Myra.getURL || 'https://github.com/chiangs/myra/releases/latest');
-  const DL = [{ label: 'Download Myra ✦', run: getApp }, { label: 'Keep playing', ghost: true, run: () => {} }];
+  const getApp = () => Fenmyr.openURL(Fenmyr.getURL || 'https://github.com/chiangs/fenmyr/releases/latest');
+  const DL = [{ label: 'Download Fenmyr ✦', run: getApp }, { label: 'Keep playing', ghost: true, run: () => {} }];
   function webMyra(q) {
     const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
     if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) return offlineMyra(q, 'In the desktop app I can sort them by theme too, with Claude.');
@@ -2399,22 +2395,22 @@
     reply(`I'd love to help with that! ${what} Download me and I'll connect to your Claude, Mobbin and Higgsfield ✦`, 0, DL);
   }
   async function ask(q, confirmed = false) {
-    if (Myra.web) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return webMyra(q); }
+    if (Fenmyr.web) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return webMyra(q); }
     if (!settings.ai || haveClaude === false) { if (!chatOpen()) myraOpen(true); addMsg('me', q); }
     if (!settings.ai) return offlineMyra(q, "My thinking is switched off in Settings, so I can only do simple tidying.");
     if (haveClaude === false) { await showConnections(true); if (haveClaude === false) return offlineMyra(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }   // look again first: they may have just set it up
     if (!navigator.onLine) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return offlineMyra(q, "You're offline, so I can't think with Claude right now. I'll be back when the internet is."); }
     if (!chatOpen()) myraOpen(true);
     if (!confirmed) addMsg('me', q); else addMsg('myra', 'Making it… this can take a minute ✦');
-    $('myra').classList.add('thinking'); goo.think(true); favGoo?.think(true); typing(true);
+    $('myra').classList.add('thinking'); goo.think(true); typing(true);
     const ctx = { asked: false, used: [] };
     if (vaultChip && aiGrants(board).length) { ctx.asked = true; try { ctx.used = await gatherVault(q); } catch (e) {} }
     const canVault = !ctx.asked && aiGrants(board).length > 0; vaultChip = false; updateVaultChip();
-    try { const raw = await Myra.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs, web: !!settings.webAccess, canVault, vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })) }); await applyMyra(parse(raw), q, ctx); }
+    try { const raw = await Fenmyr.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs, web: !!settings.webAccess, canVault, vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })) }); await applyMyra(parse(raw), q, ctx); }
     catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMyra(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }
       if (SIGNIN.test(err.message)) { offlineMyra.signin = true; return offlineMyra(q, "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account."); }
       reply("Hmm, I couldn't reach Claude: " + err.message); }
-    finally { $('myra').classList.remove('thinking'); goo.think(false); favGoo?.think(false); typing(false); }
+    finally { $('myra').classList.remove('thinking'); goo.think(false); typing(false); }
   }
   $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
   // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
@@ -2481,7 +2477,7 @@
       let k = 0;
       for (const im of imgs) {
         try {
-          const data = await Myra.fetchImage(im.url), dims = await new Promise(res => { const t = new Image(); t.onload = () => res([t.width, t.height]); t.onerror = () => res([3, 4]); t.src = data; });
+          const data = await Fenmyr.fetchImage(im.url), dims = await new Promise(res => { const t = new Image(); t.onload = () => res([t.width, t.height]); t.onerror = () => res([3, 4]); t.src = data; });
           const w = 240, h = Math.min(520, Math.round(w * dims[1] / dims[0])) + 16;
           const c = card('image', { src: data, w, h, x: im.x ?? base.x + (k % 4) * 270, y: im.y ?? base.y + Math.floor(k / 4) * 560, tagText: im.caption || '' });
           addCard(c); added.push(c); k++;
@@ -2491,7 +2487,7 @@
     layoutAll();
     renderTray(); renderWires(); save();
     if (r.saveTemplate) { const o = r.saveTemplate, ids = Array.isArray(o.ids) && o.ids.length ? o.ids : o.fromNew ? [...new Set(added.map(c => c.id))] : null; await saveAsTemplate(o.name, ids, { desc: o.description, mode: o.mode }); }
-    if (r.editTemplate) { const o = r.editTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) { if (o.newName) t.name = freeName(o.newName, t.id); if (o.description != null) t.desc = String(o.description).slice(0, 140); if (o.mode === 'new' || o.mode === 'add') t.mode = o.mode; await Myra.saveTemplate(t); buildTplPick(); } }
+    if (r.editTemplate) { const o = r.editTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) { if (o.newName) t.name = freeName(o.newName, t.id); if (o.description != null) t.desc = String(o.description).slice(0, 140); if (o.mode === 'new' || o.mode === 'add') t.mode = o.mode; await Fenmyr.saveTemplate(t); buildTplPick(); } }
     if (added.length) setTimeout(() => showWhatMyraMade(added), 250);
     // notes she says she used (only ones she was actually given) land on the board as vault note cards
     const given = (r.vaultNotes || []).map(x => ctx.used.find(n => n.vault === x.vault && n.rel === x.path)).filter((n, i, a) => n && a.indexOf(n) === i);
@@ -2519,7 +2515,7 @@
   // ---------- Obsidian vaults: connect folders here; a project or board is then granted what it may see (read-only) ----------
   let vaults = []; const vaultInfo = {};   // vaultInfo[id] = { folders, notes } from the last scan
   const vaultById = id => vaults.find(v => v.id === id);
-  async function loadVaults() { vaults = await Myra.vaults().catch(() => []); if (typeof applyToolbar === 'function' && board) applyToolbar(); }
+  async function loadVaults() { vaults = await Fenmyr.vaults().catch(() => []); if (typeof applyToolbar === 'function' && board) applyToolbar(); }
   // a scrollable list of a vault's folders with a tick each. A ticked folder includes the ones inside it. whole: a first row that ticks the whole vault ('')
   function folderChecklist(folders, chosen, onChange, { whole = false } = {}) {
     const box = document.createElement('div'); box.className = 'fchk';
@@ -2537,7 +2533,7 @@
     await loadVaults(); const host = $('vaultList');
     host.innerHTML = vaults.length ? vaults.map(v => `<div class="vrow" data-id="${esc(v.id)}"><div class="vr-top"><div><b class="vr-name">${esc(v.name)}</b><small>${esc(v.path)}<span class="vr-c"></span>${v.obsidianFolder === false ? ' · doesn’t look like an Obsidian vault (no .obsidian folder), but I can still read its notes' : ''}</small></div>
         <div class="set-btns"><button class="set-btn" data-vb="more">Edit</button><button class="set-btn" data-vb="scan">Rescan</button><button class="set-btn" data-vb="rm">Disconnect</button></div></div><div class="vr-more" hidden></div></div>`).join('') : '<div class="vr-none">No vault connected yet.</div>';
-    paintVaultCounts(); vaults.forEach(v => Myra.vaultScan(v.id).then(info => { vaultInfo[v.id] = info; paintVaultCounts(); }).catch(() => {}));
+    paintVaultCounts(); vaults.forEach(v => Fenmyr.vaultScan(v.id).then(info => { vaultInfo[v.id] = info; paintVaultCounts(); }).catch(() => {}));
   }
   const countText = i => ` · ${i.notes} note${i.notes === 1 ? '' : 's'}, ${i.folders.length} folder${i.folders.length === 1 ? '' : 's'}`;
   function paintVaultCounts() { vaults.forEach(v => { const c = $('vaultList').querySelector(`[data-id="${v.id}"] .vr-c`), i = vaultInfo[v.id]; if (c && i) c.textContent = countText(i); }); }
@@ -2558,7 +2554,7 @@
         d.querySelectorAll('#vaFollow [data-v]').forEach(b => b.classList.toggle('on', (b.dataset.v === '1') === follow)); list.hidden = follow; if (follow) return;
         list.innerHTML = vaults.length ? '' : '<div class="vr-none">No vault is connected yet. <button class="set-link" id="vaGo">Connect one in Settings</button></div>';
         for (const v of vaults) {
-          let g = mine.find(x => x.vault === v.id); const info = vaultInfo[v.id] || (vaultInfo[v.id] = await Myra.vaultScan(v.id).catch(() => ({ folders: [], notes: 0 })));
+          let g = mine.find(x => x.vault === v.id); const info = vaultInfo[v.id] || (vaultInfo[v.id] = await Fenmyr.vaultScan(v.id).catch(() => ({ folders: [], notes: 0 })));
           const blk = document.createElement('div'); blk.className = 'vg';
           blk.innerHTML = `<label class="vg-use"><input type="checkbox" ${g ? 'checked' : ''}><b>${esc(v.name)}</b></label>`; list.appendChild(blk);
           blk.querySelector('input').onchange = e => { if (e.target.checked) mine.push({ vault: v.id, folders: [], ai: false, write: false, writeTo: 'Myra' }); else mine.splice(mine.findIndex(x => x.vault === v.id), 1); paint(); };
@@ -2583,16 +2579,16 @@
       const r = await vaultAccessDialog({ title: `What “${obj.name}” and its boards may read`, grants: obj.vaults || [] }); if (!r) return;
       obj.vaults = r.grants; await saveLib(); refreshVNotes(); applyToolbar(); return chirp(r.grants.length ? `Saved: “${obj.name}” can read ${r.grants.length} vault${r.grants.length === 1 ? '' : 's'} ✦` : `“${obj.name}” can’t read any vault ✦`, 3500);
     }
-    const b = board && board.id === obj.id ? board : await Myra.load(obj.id); if (!b) return;
+    const b = board && board.id === obj.id ? board : await Fenmyr.load(obj.id); if (!b) return;
     const f = folders.find(x => x.id === b.folder), p = f && projects.find(x => x.id === f.project);
     const r = await vaultAccessDialog({ title: `What “${b.name}” may read`, grants: Array.isArray(b.vaultAccess) ? b.vaultAccess : (p && p.vaults) || [], inherit: p ? p.name : null }); if (!r) return;
     if (r.follow) delete b.vaultAccess; else b.vaultAccess = r.grants;
-    if (board && board.id === b.id) { save(); refreshVNotes(); applyToolbar(); } else await Myra.save(b);
+    if (board && board.id === b.id) { save(); refreshVNotes(); applyToolbar(); } else await Fenmyr.save(b);
     chirp(r.follow ? `“${b.name}” follows its project ✦` : `Saved: “${b.name}” has its own vault access ✦`, 3500);
   }
   // ---------- vault notes on a board: a card that shows a note's title, tags, properties and first lines, and opens it in Obsidian ----------
   const obsLink = (v, rel) => 'obsidian://open?vault=' + encodeURIComponent(v.obsidian || v.name) + '&file=' + encodeURIComponent(String(rel).replace(/\.md$/i, ''));
-  function openVNote(c) { const v = vaultById(c.vault); if (!v) return say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000); Myra.openURL(obsLink(v, c.path)); }
+  function openVNote(c) { const v = vaultById(c.vault); if (!v) return say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000); Fenmyr.openURL(obsLink(v, c.path)); }
   // each card remembers its own side; the back holds the stored excerpt, and the full text only while you ask for it (never saved)
   const vnFull = new Map();
   function flipVNote(c) {
@@ -2603,7 +2599,7 @@
   async function toggleVNFull(c) {
     if (vnFull.has(c.id)) { vnFull.delete(c.id); return renderCard(c); }
     const g = grantFor(board, c.vault, c.path); if (!g) return say('This board isn’t allowed to read that note.', 3500);
-    try { const n = await Myra.vaultNote(c.vault, c.path, g.folders, true); vnFull.set(c.id, { body: n.body || '', truncated: !!n.truncated }); renderCard(c); }
+    try { const n = await Fenmyr.vaultNote(c.vault, c.path, g.folders, true); vnFull.set(c.id, { body: n.body || '', truncated: !!n.truncated }); renderCard(c); }
     catch (e) { say(/missing/.test(e.message) ? 'I can’t find that note any more.' : 'Hmm: ' + e.message, 3500); }
   }
   // a small, safe markdown for the back of the card: headings, lists, tasks, quotes, bold, italic, code; [[links]] show as their words
@@ -2628,21 +2624,21 @@
     const cs = b.cards.filter(c => c.type === 'vnote'); if (!cs.length) return; await loadVaults(); let changed = false;
     for (const c of cs) {
       const before = JSON.stringify([c.title, c.tags, c.props, c.excerpt, c.blocked, c.missing]), g = grantFor(b, c.vault, c.path);
-      try { if (!g) throw new Error('blocked'); const n = await Myra.vaultNote(c.vault, c.path, g.folders); Object.assign(c, { title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, blocked: false, missing: false }); }
+      try { if (!g) throw new Error('blocked'); const n = await Fenmyr.vaultNote(c.vault, c.path, g.folders); Object.assign(c, { title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, blocked: false, missing: false }); }
       catch (e) { vnFull.delete(c.id); const miss = /missing/.test(e.message); Object.assign(c, { blocked: !miss, missing: miss, tags: [], props: [], excerpt: '' }); }
       if (before !== JSON.stringify([c.title, c.tags, c.props, c.excerpt, c.blocked, c.missing])) { changed = true; if (b === board) renderCard(c); }
     }
     if (changed && b === board) save();
   }
   async function addVaultNote(g, rel) {
-    const n = await Myra.vaultNote(g.vault, rel, g.folders), w = centerWorld(), c = card('vnote', { vault: g.vault, path: rel, title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, color: 'lilac' });
+    const n = await Fenmyr.vaultNote(g.vault, rel, g.folders), w = centerWorld(), c = card('vnote', { vault: g.vault, path: rel, title: n.title, tags: n.tags, props: n.props, excerpt: n.excerpt, color: 'lilac' });
     c.x = snapTo(w.x - c.w / 2); c.y = snapTo(w.y - c.h / 2); remember(); addCard(c, true); selectOnly([c.id]); save();
   }
   // ---------- Myra reads notes with AI: only from grants with the switch on, only when you tick "Search my vault" for that question ----------
   let vaultChip = false;
   const aiGrants = b => { try { return activeGrants(b).filter(g => g.ai); } catch (e) { return []; } };
   function updateVaultChip() {
-    const b = $('mcVault'); if (!b) return; const can = !!(Myra.native && board && aiGrants(board).length);
+    const b = $('mcVault'); if (!b) return; const can = !!(Fenmyr.native && board && aiGrants(board).length);
     b.hidden = !can; if (!can) vaultChip = false; b.classList.toggle('on', vaultChip); b.setAttribute('aria-pressed', vaultChip ? 'true' : 'false');
   }
   $('mcVault').onclick = () => { vaultChip = !vaultChip; updateVaultChip(); $('mcInput').focus(); };
@@ -2650,7 +2646,7 @@
   async function gatherVault(q) {
     const all = [];
     for (const g of aiGrants(board)) { const v = vaultById(g.vault); if (!v) continue;
-      try { (await Myra.vaultSearch(g.vault, g.folders, q)).forEach(h => all.push({ ...h, vault: v.name, vaultId: g.vault })); } catch (e) {} }
+      try { (await Fenmyr.vaultSearch(g.vault, g.folders, q)).forEach(h => all.push({ ...h, vault: v.name, vaultId: g.vault })); } catch (e) {} }
     all.sort((a, b) => b.score - a.score); const out = []; let total = 0;
     for (const n of all) { if (out.length >= 8 || total >= 12000) break; const text = n.text.slice(0, 12000 - total); total += text.length; out.push({ ...n, text }); }
     return out;
@@ -2662,7 +2658,7 @@
     d.innerHTML = '<div class="tdlg vdlg"><h3>Add a note from a vault</h3><input id="vpQ" placeholder="Search by name or folder…" autocomplete="off" spellcheck="false"><div class="vp-list" id="vpList"></div><div class="tdlg-btns"><button class="set-btn" id="vpNo">Close</button></div></div>';
     document.body.appendChild(d); const q = d.querySelector('#vpQ'), list = d.querySelector('#vpList'); let seq = 0, rows = [];
     const run = async () => { const my = ++seq, text = q.value.trim();
-      const all = (await Promise.all(gs.map(g => Myra.vaultNotes(g.vault, g.folders, text).then(r => r.map(x => ({ ...x, g })), () => [])))).flat(); if (my !== seq) return;
+      const all = (await Promise.all(gs.map(g => Fenmyr.vaultNotes(g.vault, g.folders, text).then(r => r.map(x => ({ ...x, g })), () => [])))).flat(); if (my !== seq) return;
       rows = all.sort((a, b) => b.mtime - a.mtime).slice(0, 40);
       list.innerHTML = rows.length ? rows.map((r, i) => `<button class="vp-row" data-i="${i}"><b>${esc(r.title)}</b><small>${esc((gs.length > 1 ? (vaultById(r.g.vault)?.name || '') + (r.folder ? ' · ' : '') : '') + r.folder)}</small></button>`).join('') : '<div class="vr-none">No notes found.</div>'; };
     let t = 0; q.oninput = () => { clearTimeout(t); t = setTimeout(run, 120); }; run(); q.focus();
@@ -2671,20 +2667,20 @@
     d.onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') close(); if (e.key === 'Enter' && rows[0]) { e.preventDefault(); const r = rows[0]; close(); addVaultNote(r.g, r.rel).catch(err => say('Hmm: ' + err.message, 3500)); } };
   }
   $('vaultAdd').onclick = async () => {
-    try { const dir = await Myra.vaultPick(); if (!dir) return; const v = await Myra.vaultAdd(dir); await renderVaults(); say(`Connected “${v.name}”. Nobody can see it yet: give a project or board access from its right-click menu ✦`, 6000); }
+    try { const dir = await Fenmyr.vaultPick(); if (!dir) return; const v = await Fenmyr.vaultAdd(dir); await renderVaults(); say(`Connected “${v.name}”. Nobody can see it yet: give a project or board access from its right-click menu ✦`, 6000); }
     catch (e) { say('Hmm: ' + e.message, 4000); }
   };
   $('vaultList').onclick = async e => {
     const b = e.target.closest('[data-vb]'), row = e.target.closest('.vrow'); if (!b || !row) return; const v = vaultById(row.dataset.id); if (!v) return; const more = row.querySelector('.vr-more');
     if (b.dataset.vb === 'scan') { delete vaultInfo[v.id]; return renderVaults(); }
     if (b.dataset.vb === 'rm') { if (!b.classList.contains('sure')) { b.classList.add('sure'); b.textContent = 'Disconnect? Click again'; setTimeout(() => { b.classList.remove('sure'); b.textContent = 'Disconnect'; }, 3000); return; }
-      await Myra.vaultRemove(v.id); delete vaultInfo[v.id]; projects.forEach(p => { if (p.vaults) p.vaults = p.vaults.filter(g => g.vault !== v.id); }); await saveLib(); return renderVaults(); }
+      await Fenmyr.vaultRemove(v.id); delete vaultInfo[v.id]; projects.forEach(p => { if (p.vaults) p.vaults = p.vaults.filter(g => g.vault !== v.id); }); await saveLib(); return renderVaults(); }
     if (b.dataset.vb === 'more') {
       if (!more.hidden) { more.hidden = true; return; }
-      const info = vaultInfo[v.id] || await Myra.vaultScan(v.id).catch(() => ({ folders: [], notes: 0 })); vaultInfo[v.id] = info;
+      const info = vaultInfo[v.id] || await Fenmyr.vaultScan(v.id).catch(() => ({ folders: [], notes: 0 })); vaultInfo[v.id] = info;
       more.innerHTML = `<label class="vr-f">Name here<input data-k="name" value="${esc(v.name)}" maxlength="60"></label><label class="vr-f">Name in Obsidian<input data-k="obsidian" value="${esc(v.obsidian || '')}" maxlength="120"><small>Used for the “Open in Obsidian” link. It's the vault's name in Obsidian, normally its folder name.</small></label><div class="vr-h">Off-limits folders<small>Never read, whatever a project or board allows.</small></div>`;
-      more.appendChild(folderChecklist(info.folders, v.off || [], async off => { v.off = off; await Myra.vaultUpdate(v.id, { off }); }));
-      more.onchange = async ev => { const i = ev.target.closest('input[data-k]'); if (!i) return; const patch = { [i.dataset.k]: i.value }; const nv = await Myra.vaultUpdate(v.id, patch); Object.assign(v, nv); if (i.dataset.k === 'name') row.querySelector('.vr-name').textContent = v.name; };
+      more.appendChild(folderChecklist(info.folders, v.off || [], async off => { v.off = off; await Fenmyr.vaultUpdate(v.id, { off }); }));
+      more.onchange = async ev => { const i = ev.target.closest('input[data-k]'); if (!i) return; const patch = { [i.dataset.k]: i.value }; const nv = await Fenmyr.vaultUpdate(v.id, patch); Object.assign(v, nv); if (i.dataset.k === 'name') row.querySelector('.vr-name').textContent = v.name; };
       more.onkeydown = ev => { ev.stopPropagation(); if (ev.key === 'Enter') ev.target.blur(); }; more.hidden = false;
     }
   };
@@ -2694,13 +2690,13 @@
     if (!force && Date.now() - lastConn < 5 * 60 * 1000) return; lastConn = Date.now();
     const els = [...document.querySelectorAll('.conns')];
     els.forEach(el => { if (!el.children.length) el.innerHTML = ['Claude Code', 'Mobbin', 'Higgsfield'].map(n => `<div class="conn"><span class="dot"></span>${n}<em style="color:var(--ink-faint)">checking…</em></div>`).join(''); });
-    const c = await Myra.connections().catch(() => ({})); if (!c.browser) haveClaude = !!c.claude;
+    const c = await Fenmyr.connections().catch(() => ({})); if (!c.browser) haveClaude = !!c.claude;
     const rows = [['claude', 'Claude Code', GUIDE, 'Set up'], ['mobbin', 'Mobbin', 'https://claude.ai/settings/connectors', 'Connect'], ['higgsfield', 'Higgsfield', 'https://claude.ai/settings/connectors', 'Connect']];
     els.forEach(el => { el.innerHTML = '';
     // Connect clears the 5-minute wait, so the app looks again the moment they come back from claude.ai
     rows.forEach(([k, name, url, verb]) => { const r = document.createElement('div'); r.className = 'conn' + (c[k] ? ' on' : ''); r.innerHTML = `<span class="dot"></span>${name}`;
       if (c[k]) r.insertAdjacentHTML('beforeend', '<em>ready</em>');
-      else if (!c.browser) { const b = document.createElement('button'); b.textContent = verb; b.onclick = () => { lastConn = 0; Myra.openURL(url); say(k === 'claude' ? 'Follow the steps on that page, then come back. I’ll notice as soon as Claude Code is ready!' : `Connect ${name} in your Claude settings (Connectors), then come back. I'll check again when you reopen me ✦`, 9000); }; r.appendChild(b); }
+      else if (!c.browser) { const b = document.createElement('button'); b.textContent = verb; b.onclick = () => { lastConn = 0; Fenmyr.openURL(url); say(k === 'claude' ? 'Follow the steps on that page, then come back. I’ll notice as soon as Claude Code is ready!' : `Connect ${name} in your Claude settings (Connectors), then come back. I'll check again when you reopen me ✦`, 9000); }; r.appendChild(b); }
       el.appendChild(r); }); });
   }
   addEventListener('focus', () => showConnections());
@@ -2744,7 +2740,7 @@
       const r = stage.getBoundingClientRect(), z = view.z, wl = (r.left + 12 - view.x) / z, wr = (r.right - 12 - view.x) / z, wt = (r.top + 70 - view.y) / z, wb = (r.bottom - 100 - view.y) / z;
       c.x = snapTo(clamp(w.x - c.w / 2, wl, Math.max(wl, wr - c.w))); c.y = snapTo(clamp(w.y - c.h / 2, wt, Math.max(wt, wb - c.h))); }
     if (type === 'swatch') { c.label = colorName(c.hex); c.autoName = true; }
-    if (type === 'canvas') { const child = newBoard('Untitled canvas'); child.parent = board.id; child.folder = board.folder || null; c.board = child.id; Myra.save(child).then(refreshBoards); }
+    if (type === 'canvas') { const child = newBoard('Untitled canvas'); child.parent = board.id; child.folder = board.folder || null; c.board = child.id; Fenmyr.save(child).then(refreshBoards); }
     addCard(c); selectOnly([c.id]);
     if (type === 'note' && board.cards.filter(x => x.type === 'note' && !parentOf(x.id)).length === 6) tip('That\'s a lot of loose notes! Want me to sort them into collections? Just ask ✦');
     const t = type !== 'coll' && collAt(w, new Set([c.id])); if (t) { dropInto(t, [c.id], w); save(); }
@@ -2902,7 +2898,7 @@
     if (!cs.some(c => !NO_KEEP.includes(c.type))) { say('There’s nothing here I can keep in a template yet ✦', 3000); return null; }
     const guess = name || (cs.length === board.cards.length ? board.name : cs.find(c => c.type === 'title')?.text || (cs.length === 1 ? cardName(cs) : 'My template'));
     const t = Object.assign(templateFrom(cs), { id: uid(), name: freeName(guess), desc: String(opts.desc || '').trim().slice(0, 140), mode: opts.mode === 'new' ? 'new' : 'add', made: Date.now() });
-    await Myra.saveTemplate(t); myTpls.push(t); buildTplPick(); return t;
+    await Fenmyr.saveTemplate(t); myTpls.push(t); buildTplPick(); return t;
   }
   // the little form for a template's name, description and how it opens (when you save it, and again whenever you edit it)
   function templateDialog(t, editing) {
@@ -2929,18 +2925,18 @@
     const whole = cs.length === board.cards.length, d = await templateDialog({ name: whole ? board.name : cs.find(c => c.type === 'title')?.text || (cs.length === 1 ? cardName(cs) : ''), mode: whole ? 'new' : 'add' }); if (!d) return;
     const t = await saveAsTemplate(d.name, ids, d); if (t) say(`Saved “${t.name}”. You’ll find it under Yours in the template picker ✦`, 5000);
   }
-  async function deleteTemplate(t) { await Myra.removeTemplate(t.id); myTpls = myTpls.filter(x => x.id !== t.id); buildTplPick(); say(`Removed “${t.name}” from your templates ✦`, 3000); }
+  async function deleteTemplate(t) { await Fenmyr.removeTemplate(t.id); myTpls = myTpls.filter(x => x.id !== t.id); buildTplPick(); say(`Removed “${t.name}” from your templates ✦`, 3000); }
   async function useTemplate(t, mode) {
     mode = mode || t.mode || 'add';
     if (mode === 'new') {
       const b = newBoard(t.name), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id;
-      Object.assign(b, instantiate(t, 0, 0)); await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return board; }
+      Object.assign(b, instantiate(t, 0, 0)); await Fenmyr.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return board; }
     remember(); stopPlacing();
     const c0 = centerWorld(), x0 = board.cards.length ? Math.max(...board.cards.map(c => c.x + c.w)) + 200 : c0.x - 300, y0 = board.cards.length ? Math.min(...board.cards.map(c => c.y)) : c0.y - 200;
     const inst = instantiate(t, x0, y0); board.cards.push(...inst.cards); board.links.push(...inst.links); inst.cards.forEach(c => renderCard(c, true));
     layoutAll(); renderWires(); save(); fit(inst.cards); say(`Here’s “${t.name}” ✦ It’s all yours to change.`, 4000); return board;
   }
-  async function loadTemplates() { myTpls = await Myra.templates().catch(() => []); buildTplPick(); }
+  async function loadTemplates() { myTpls = await Fenmyr.templates().catch(() => []); buildTplPick(); }
   // grouped by what you're doing; frameworks add to this board, starters open a new one (tagged "New ↗")
   const TPL_GROUPS = [['Think', ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix']], ['Capture', ['Moodboard', 'Brain dump']], ['Plan', ['OKRs and opportunities', 'Product kickoff', 'App plan', 'kanban']], ['Look back', ['retro']]];
   const tplRow = k => {
@@ -2953,12 +2949,12 @@
   function buildTplPick() { $('tplPick').innerHTML = TPL_GROUPS.map(([g, keys]) => `<div class="tp-h">${g}</div>` + keys.map(tplRow).join('')).join('') + (myTpls.length ? '<div class="tp-h">Yours</div>' + myTpls.map(mineRow).join('') : ''); }
   buildTplPick();
   $('tplPick').onclick = async e => { const st = e.target.closest('[data-starter]');
-    if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id; await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
+    if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id; await Fenmyr.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
     const mine = e.target.closest('[data-mine]');
     if (mine) {
       const t = myTpls.find(x => x.id === mine.dataset.mine), act = e.target.closest('[data-tm]')?.dataset.tm; if (!t) return;
       if (act === 'del') { if (!mine.classList.contains('sure')) { mine.classList.add('sure'); e.target.closest('[data-tm]').title = 'Click again to delete'; setTimeout(() => mine.classList.remove('sure'), 3000); return; } return deleteTemplate(t); }
-      if (act === 'ren') { const d = await templateDialog(t, true); if (d) { Object.assign(t, d); t.name = freeName(d.name, t.id); await Myra.saveTemplate(t); buildTplPick(); } return; }
+      if (act === 'ren') { const d = await templateDialog(t, true); if (d) { Object.assign(t, d); t.name = freeName(d.name, t.id); await Fenmyr.saveTemplate(t); buildTplPick(); } return; }
       $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); return useTemplate(t); }
     const b = e.target.closest('[data-tpl]'); if (!b) return; $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); placeFramework(b.dataset.tpl); };
 
@@ -2966,7 +2962,7 @@
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   async function exportCards(cs, name, pdf) {
     if (!cs.length) return say('Nothing to export yet ✦', 2500);
-    if (Myra.web) return say('Saving images and PDFs works in the desktop app ✦', 0, DL);
+    if (Fenmyr.web) return say('Saving images and PDFs works in the desktop app ✦', 0, DL);
     const all = new Set(cs); cs.forEach(c => { if (c.type === 'coll') (c.kids || []).forEach(k => byId(k) && all.add(byId(k))); if (c.type === 'frame') onFrame(c).forEach(k => all.add(k)); });
     const list = [...all], x0 = Math.min(...list.map(c => c.x)) - 24, y0 = Math.min(...list.map(c => c.y)) - 40, x1 = Math.max(...list.map(c => c.x + c.w)) + 24, y1 = Math.max(...list.map(c => c.y + c.h)) + 24;
     const keep = { ...view }, keepSel = [...sel], r = stage.getBoundingClientRect(), bw = x1 - x0, bh = y1 - y0;
@@ -2974,7 +2970,7 @@
     const z = Math.min((r.width - 60) / bw, (r.height - 60) / bh, 2); view = { x: (r.width - bw * z) / 2 - x0 * z, y: (r.height - bh * z) / 2 - y0 * z, z }; applyView();
     await nextFrame(); await new Promise(res => setTimeout(res, 150));
     try {
-      const saved = await Myra.exportRect({ x: r.left + (r.width - bw * z) / 2, y: r.top + (r.height - bh * z) / 2, w: bw * z, h: bh * z, name, pdf, scale: Math.min(4, 2 / Math.min(z, 1)) });
+      const saved = await Fenmyr.exportRect({ x: r.left + (r.width - bw * z) / 2, y: r.top + (r.height - bh * z) / 2, w: bw * z, h: bh * z, name, pdf, scale: Math.min(4, 2 / Math.min(z, 1)) });
       if (saved) chirp(`Saved “${saved}” ✦`, 3500);
     } catch (e) { say(e.message, 4000); }
     finally { document.body.classList.remove('exporting'); view = keep; applyView(); selectOnly(keepSel); }
@@ -3020,7 +3016,7 @@
       ...(board.bg ? [{ label: 'Use the default background', run: () => { delete board.bg; save(); applyColors(); } }] : []),
       '-',
       { label: 'Save board as template', run: () => saveWithDialog(null) },
-      ...(Myra.native ? [{ label: 'Add a note from a vault…', run: openVaultPicker }, { label: 'Vault access for this board…', run: () => editVaultAccess('board', board) }] : []),
+      ...(Fenmyr.native ? [{ label: 'Add a note from a vault…', run: openVaultPicker }, { label: 'Vault access for this board…', run: () => editVaultAccess('board', board) }] : []),
       { label: 'Export board as image', run: () => exportCards(board.cards, board.name, false) },
       { label: 'Export board as PDF', run: () => exportCards(board.cards, board.name, true) }]);
   });
@@ -3048,7 +3044,7 @@
     if (c.src) {
       let v = vids.get(c.id);
       if (!v) { v = document.createElement('video'); v.className = 'vd-v'; v.playsInline = true; v.preload = 'metadata'; if (c.poster) v.poster = c.poster; vids.set(c.id, v);
-        Myra.mediaURL(c.src).then(u => { if (u) v.src = u; });
+        Fenmyr.mediaURL(c.src).then(u => { if (u) v.src = u; });
         const paint = () => { const e2 = vEl(c.id); if (!e2) return; const f = (v.currentTime || 0) / (v.duration || c.dur || 1);
           const bar = e2.querySelector('.vd-prog i'); if (bar) bar.style.width = (f * 100).toFixed(2) + '%';
           const t = e2.querySelector('.vd-time'); if (t) t.textContent = v.paused && !v.currentTime ? fmtT(c.dur || v.duration || 0) : `${fmtT(v.currentTime)} / ${fmtT(c.dur || v.duration || 0)}`; };
@@ -3064,7 +3060,7 @@
   async function camOn(c) {
     if (cams.has(c.id)) return cams.get(c.id);
     let stream; try { stream = await openMedia(true); }
-    catch (e) { c.camErr = `Myra needs the camera. Turn it on in ${privacy('Camera')}, then click Start recording again.`; c.camRest = false; renderCard(c); return null; }
+    catch (e) { c.camErr = `Fenmyr needs the camera. Turn it on in ${privacy('Camera')}, then click Start recording again.`; c.camRest = false; renderCard(c); return null; }
     const view = document.createElement('video'); view.className = 'vd-live'; view.muted = true; view.playsInline = true; view.autoplay = true; view.srcObject = stream;
     view.style.transform = camFlip() ? 'scaleX(-1)' : 'none';
     const cam = { stream, view, idle: 0 }; cams.set(c.id, cam); c.camErr = ''; c.camRest = false;
@@ -3111,7 +3107,7 @@
     if (blob.size > 1024 * 1024 * 1024) return say('That video is over 1 GB, which is too big for a board. Try a shorter clip ✦', 7000);
     c.rec = false; c.ready = false; c.count = 0; c.saving = true; c.pct = 0; c.title = c.title || (blob.name ? blob.name.replace(/\.[^.]+$/, '') : 'Video'); renderCard(c);
     const local = URL.createObjectURL(blob), info = await videoInfo(local); URL.revokeObjectURL(local);
-    let src; try { src = await Myra.saveMedia(blob, f => { c.pct = f; const s2 = vEl(c.id)?.querySelector('.vd-msg span'); if (s2) s2.textContent = Math.round(f * 100) + '%'; }); }
+    let src; try { src = await Fenmyr.saveMedia(blob, f => { c.pct = f; const s2 = vEl(c.id)?.querySelector('.vd-msg span'); if (s2) s2.textContent = Math.round(f * 100) + '%'; }); }
     catch (e) { c.saving = false; c.ready = true; renderCard(c); return say("I couldn't save that video: " + e.message, 8000); }
     vids.get(c.id)?.pause(); vids.delete(c.id);
     Object.assign(c, { saving: false, pct: 0, src, poster: info.poster, dur: info.dur || secs || 0, vw: info.vw, vh: info.vh });
@@ -3128,7 +3124,7 @@
     if (act === 'vd-mute') { c.muted = !c.muted; if (v) v.muted = c.muted; renderCard(c); save(); }
     if (act === 'vd-wake') camOn(c);
     // writing out what was said: the words open under the video, with Turn into notes and Copy
-    if (act === 'vd-tx') { if (c.text) return; if (!c.txShown) { c.txShown = true; c.h += 120; } c.txNote = 'Myra is writing it out…'; c.needTx = false; renderCard(c); save(); return transcribe(c, true); }
+    if (act === 'vd-tx') { if (c.text) return; if (!c.txShown) { c.txShown = true; c.h += 120; } c.txNote = 'Writing it out…'; c.needTx = false; renderCard(c); save(); return transcribe(c, true); }
     if (act === 'vd-notes') return ask(`This is what I said in a video I recorded (card ${c.id}). Turn it into short notes on the board, placed just to the right of that card, grouped if there are a few ideas:\n"${c.text}"`);
     if (act === 'vd-copy') { navigator.clipboard?.writeText(c.text || '').then(() => chirp('Copied ✦', 1600), () => {}); return; }
     if (act === 'vd-flip') { settings.camFlip = settings.camFlip === false; applySettings(); paintLook(); renderCard(c); }
@@ -3142,7 +3138,7 @@
     if (act === 'vd-file') { $('filePick').dataset.into = c.id; $('filePick').click(); }
   }
 
-  const privacy = what => Myra.platform === 'windows' ? `Windows Settings → Privacy & security → ${what}` : `System Settings → Privacy & Security → ${what}`;
+  const privacy = what => Fenmyr.platform === 'windows' ? `Windows Settings → Privacy & security → ${what}` : `System Settings → Privacy & Security → ${what}`;
   // ---------- which camera and microphone: the person picks, Myra remembers, and falls back to the default if one is unplugged ----------
   const micC = () => settings.micId ? { deviceId: { exact: settings.micId } } : true;
   async function openMedia(video) {
@@ -3170,16 +3166,16 @@
   async function readyToRecord() {
     if (micOK) { if (!warm) try { warmMic(await openMedia(false)); } catch (e) {} return true; }
     try { warmMic(await openMedia(false)); }
-    catch (e) { say(`Myra needs the microphone for voice memos. Turn it on in ${privacy('Microphone')}, then try again ✦`, 10000); return false; }
+    catch (e) { say(`Fenmyr needs the microphone for voice memos. Turn it on in ${privacy('Microphone')}, then try again ✦`, 10000); return false; }
     micOK = true;
-    const sp = await Myra.speechAuth().catch(() => 'off');
+    const sp = await Fenmyr.speechAuth().catch(() => 'off');
     if (sp === 'off') say("Recording works! To have me write memos out, install whisper.cpp (yay -S whisper.cpp) and I’ll do it on your computer.", 9000);
     return true;
   }
   async function record(c) {
     let stream = warm && warm.active ? warm : null; warm = null; clearTimeout(warmT);
     try { if (!stream) stream = await openMedia(false); }
-    catch (e) { say(`I can't hear you yet. Let Myra use the microphone (${privacy('Microphone')}), then try again.`, 9000); if (!c.src) { sel = new Set([c.id]); removeSelected(); } return; }
+    catch (e) { say(`I can't hear you yet. Let Fenmyr use the microphone (${privacy('Microphone')}), then try again.`, 9000); if (!c.src) { sel = new Set([c.id]); removeSelected(); } return; }
     const chunks = [], recorder = new MediaRecorder(stream), ac = new AudioContext(), an = ac.createAnalyser(); an.fftSize = 256; ac.createMediaStreamSource(stream).connect(an);
     const L = { recorder, stream, ac, start: Date.now(), paused: 0, pausedAt: 0 }; live.set(c.id, L);
     c.rec = true; c.ready = false; c.paused = false; c.starting = true; renderCard(c); selectOnly([c.id]);
@@ -3219,7 +3215,7 @@
   // a video's sound, as a plain 16 kHz mono WAV: what the Mac's speech recognizer and Whisper both read
   async function videoAudio(c) {
     let buf;
-    try { const ab = await (await fetch(await Myra.mediaURL(c.src))).arrayBuffer(), ac = new (window.AudioContext || window.webkitAudioContext)(); buf = await ac.decodeAudioData(ab); ac.close?.(); }
+    try { const ab = await (await fetch(await Fenmyr.mediaURL(c.src))).arrayBuffer(), ac = new (window.AudioContext || window.webkitAudioContext)(); buf = await ac.decodeAudioData(ab); ac.close?.(); }
     catch (e) { throw new Error('This video has no sound to write out.'); }
     const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * 16000)), 16000), s = off.createBufferSource(); s.buffer = buf; s.connect(off.destination); s.start();
     const pcm = (await off.startRendering()).getChannelData(0), n = pcm.length, out = new DataView(new ArrayBuffer(44 + n * 2));
@@ -3231,40 +3227,40 @@
     return 'data:audio/wav;base64,' + btoa(bin);
   }
   async function transcribe(c, asked) {
-    if (Myra.whisperStatus) { c.txNote = 'Myra is writing it out…'; renderCard(c); }
-    try { const text = await Myra.transcribe(c.type === 'video' ? await videoAudio(c) : c.src); c.text = (text || '').trim(); c.txNote = c.text ? '' : "I couldn't make out any words in that one."; }
+    if (Fenmyr.whisperStatus) { c.txNote = 'Writing it out…'; renderCard(c); }
+    try { const text = await Fenmyr.transcribe(c.type === 'video' ? await videoAudio(c) : c.src); c.text = (text || '').trim(); c.txNote = c.text ? '' : "I couldn't make out any words in that one."; }
     catch (e) {
       if (e.message === 'NEED_WHISPER') { c.txNote = 'Not written out yet.'; c.needTx = true; renderCard(c); save(); offerWhisper(asked); return; }
       c.txNote = e.message; }
     c.needTx = false;
     renderCard(c); save();
     const what = c.type === 'video' ? 'video' : 'voice memo';
-    if (c.text && (!settings.ai || haveClaude === false)) say(`I wrote out your ${what} ✦`, 4000);
-    else if (c.text) say(`I wrote out your ${what} ✦ Want me to turn it into notes?`, 6000, [{ label: 'Turn into notes', run: () => c.type === 'video' ? videoAct(c, 'vd-notes') : audioAct(c, 'au-notes') }, { label: 'Not now', ghost: true, run: () => {} }]);
+    if (c.text && (!settings.ai || haveClaude === false)) say(`Your ${what} is written out ✦`, 4000);
+    else if (c.text) say(`Your ${what} is written out ✦ Want me to turn it into notes?`, 6000, [{ label: 'Turn into notes', run: () => c.type === 'video' ? videoAct(c, 'vd-notes') : audioAct(c, 'au-notes') }, { label: 'Not now', ghost: true, run: () => {} }]);
   }
   // Windows/Linux: Whisper writes memos out on this computer. The first memo asks once; after that it just happens.
   let whisperBusy = false;
   function offerWhisper(force) {
-    let asked = false; try { asked = !!localStorage.getItem('myra:whisperAsked'); } catch (e) {}
-    if (asked && !force) return; try { localStorage.setItem('myra:whisperAsked', '1'); } catch (e) {}
+    let asked = false; try { asked = !!localStorage.getItem('fenmyr:whisperAsked'); } catch (e) {}
+    if (asked && !force) return; try { localStorage.setItem('fenmyr:whisperAsked', '1'); } catch (e) {}
     say("Want me to write out your voice memos? I learn once (a 140 MB download), then it all happens right here on your computer, privately ✦", 0,
       [{ label: 'Yes, set it up', run: setupWhisper }, { label: 'Not now', ghost: true, run: () => say('No problem! Your memos still record and play. Tap “Write it out” on one anytime, or turn it on in Settings → Helpers.', 7000) }]);
   }
   async function setupWhisper() {
-    if (whisperBusy || !Myra.whisperGet) return; whisperBusy = true;
-    try { await Myra.whisperGet(); } catch (e) {}
+    if (whisperBusy || !Fenmyr.whisperGet) return; whisperBusy = true;
+    try { await Fenmyr.whisperGet(); } catch (e) {}
     for (;;) {
-      await new Promise(r => setTimeout(r, 600)); let st = {}; try { st = await Myra.whisperStatus(); } catch (e) { break; }
+      await new Promise(r => setTimeout(r, 600)); let st = {}; try { st = await Fenmyr.whisperStatus(); } catch (e) { break; }
       paintWhisper(st);
-      if (st.ready) { whisperBusy = false; say("All set! I’ll write out your voice memos from now on ✦", 5000); board.cards.filter(c => (c.type === 'audio' || (c.type === 'video' && c.needTx)) && c.src && !c.text).forEach(c => transcribe(c)); return; }
+      if (st.ready) { whisperBusy = false; say("All set! Voice memos will be written out from now on ✦", 5000); board.cards.filter(c => (c.type === 'audio' || (c.type === 'video' && c.needTx)) && c.src && !c.text).forEach(c => transcribe(c)); return; }
       if (st.error) { whisperBusy = false; say(st.error, 8000, [{ label: 'Try again', run: setupWhisper }]); return; }
       if (st.downloading) say(`Learning to listen… ${Math.round((st.progress || 0) * 100)}%`, 0);
     }
     whisperBusy = false;
   }
   async function paintWhisper(st) {
-    const row = $('whRow'); if (!row || !Myra.whisperStatus) return; row.hidden = false;
-    if (!st) try { st = await Myra.whisperStatus(); } catch (e) { st = {}; }
+    const row = $('whRow'); if (!row || !Fenmyr.whisperStatus) return; row.hidden = false;
+    if (!st) try { st = await Fenmyr.whisperStatus(); } catch (e) { st = {}; }
     $('whState').textContent = st.ready ? 'Ready. Memos are written out on this computer.' : st.downloading ? `Downloading… ${Math.round((st.progress || 0) * 100)}%` : 'Off. A one-time 140 MB download, then it works offline.';
     $('whGo').hidden = !!st.ready || !!st.downloading;
   }
@@ -3294,7 +3290,7 @@
   // ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
   const WF = ['frame', 'box', 'text', 'icon'];
   const DEVICES = { iPhone: [393, 852, 44], Android: [412, 915, 28], iPad: [834, 1194, 20], Desktop: [1440, 1024, 10], Watch: [205, 251, 40] };
-  let FONTS = ['Figtree', 'Shantell Sans']; Myra.fonts().then(f => { if (f?.length) FONTS = f; }).catch(() => {});
+  let FONTS = ['Figtree', 'Shantell Sans']; Fenmyr.fonts().then(f => { if (f?.length) FONTS = f; }).catch(() => {});
   function styleWF(c, el) {
     el.classList.add('wf'); c.r = 0; el.style.setProperty('--rot', (c.rot || 0) + 'deg'); el.classList.toggle('grouped', !!c.group);
     if (!el.querySelector('.rot-h')) el.insertAdjacentHTML('beforeend', '<i class="rot-h" title="Drag to rotate"></i>');
@@ -3623,7 +3619,7 @@
   const styleHint = spots => { const f = byId(spots[0]?.onFrame); return [board.name, f?.name].filter(Boolean).join(', '); };
   function offerFill(spots, where = 'chat') {
     if (!spots.length) return;
-    if (Myra.web) return say(`There ${spots.length === 1 ? 'is 1 image spot' : `are ${spots.length} image spots`} waiting for pictures. In the desktop app I can fill them with Higgsfield or draw them for you ✦`, 0, DL);
+    if (Fenmyr.web) return say(`There ${spots.length === 1 ? 'is 1 image spot' : `are ${spots.length} image spots`} waiting for pictures. In the desktop app I can fill them with Higgsfield or draw them for you ✦`, 0, DL);
     const n = spots.length, acts = [];
     if (settings.ai && settings.higgs) acts.push({ label: `Fill ${n} with Higgsfield ✦`, run: () => quoteFill(spots) });
     if (settings.ai) acts.push({ label: 'Draw simple illustrations (free)', ghost: !!(settings.ai && settings.higgs), run: () => drawFill(spots) });
@@ -3633,7 +3629,7 @@
   async function quoteFill(spots) {
     if (!chatOpen()) myraOpen(true); addMsg('myra', 'Checking your Higgsfield balance and the price per image…'); typing(true);
     try {
-      const q = parse(await Myra.higgsQuote({ model: 'nano_banana_2' })); typing(false);
+      const q = parse(await Fenmyr.higgsQuote({ model: 'nano_banana_2' })); typing(false);
       const per = +q.perImage, bal = +q.balance, total = Number.isFinite(per) ? Math.ceil(per * spots.length) : null;
       const line = total != null ? `That's ${spots.length} image${spots.length > 1 ? 's' : ''} × about ${per} credits ≈ ${total} credits.` : `I couldn't find the exact price, so check Higgsfield before saying yes.`;
       const balLine = Number.isFinite(bal) ? ` You have ${bal} credits.` : '', short = Number.isFinite(bal) && total != null && total > bal;
@@ -3645,22 +3641,22 @@
   async function placeImages(spots, list, key) {
     let n = 0;
     for (const it of list || []) { const c = spots.find(s => s.id === it.id); if (!c) continue;
-      try { c.src = key === 'svg' ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(it.svg) : await Myra.fetchImage(it.url); renderCard(c); n++; } catch (e) {} }
+      try { c.src = key === 'svg' ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(it.svg) : await Fenmyr.fetchImage(it.url); renderCard(c); n++; } catch (e) {} }
     save(); return n;
   }
   async function makeFill(spots) {
-    addMsg('myra', `Making ${spots.length} image${spots.length > 1 ? 's' : ''} with Higgsfield… this can take a minute or two ✦`); typing(true); $('myra').classList.add('thinking'); goo.think(true); favGoo?.think(true);
-    try { const r = parse(await Myra.higgsMake({ model: 'nano_banana_2', style: styleHint(spots), images: spots.map(c => ({ id: c.id, label: c.img, aspect: aspect(c) })) }));
+    addMsg('myra', `Making ${spots.length} image${spots.length > 1 ? 's' : ''} with Higgsfield… this can take a minute or two ✦`); typing(true); $('myra').classList.add('thinking'); goo.think(true);
+    try { const r = parse(await Fenmyr.higgsMake({ model: 'nano_banana_2', style: styleHint(spots), images: spots.map(c => ({ id: c.id, label: c.img, aspect: aspect(c) })) }));
       const n = await placeImages(spots, r.images, 'url'); typing(false); say(n ? `Done! ${n} image${n > 1 ? 's are' : ' is'} in place ✦` : "Hmm, the images didn't come back. Nothing was placed."); if (n) showWhatMyraMade(spots.filter(c => c.src)); }
     catch (e) { typing(false); say("Something went wrong making those: " + e.message); }
-    finally { $('myra').classList.remove('thinking'); goo.think(false); favGoo?.think(false); }
+    finally { $('myra').classList.remove('thinking'); goo.think(false); }
   }
   async function drawFill(spots) {
-    if (!chatOpen()) myraOpen(true); addMsg('myra', `Drawing ${spots.length} little illustration${spots.length > 1 ? 's' : ''}…`); typing(true); $('myra').classList.add('thinking'); goo.think(true); favGoo?.think(true);
-    try { const r = parse(await Myra.drawFill({ style: 'soft pastel, rounded, friendly, minimal', images: spots.map(c => ({ id: c.id, label: c.img, w: Math.round(c.w), h: Math.round(c.h) })) }));
+    if (!chatOpen()) myraOpen(true); addMsg('myra', `Drawing ${spots.length} little illustration${spots.length > 1 ? 's' : ''}…`); typing(true); $('myra').classList.add('thinking'); goo.think(true);
+    try { const r = parse(await Fenmyr.drawFill({ style: 'soft pastel, rounded, friendly, minimal', images: spots.map(c => ({ id: c.id, label: c.img, w: Math.round(c.w), h: Math.round(c.h) })) }));
       const n = await placeImages(spots, r.images, 'svg'); typing(false); say(n ? `Drew ${n} ✦ (want real photos later? that's Higgsfield)` : "I couldn't draw those this time."); if (n) showWhatMyraMade(spots.filter(c => c.src)); }
     catch (e) { typing(false); say("I couldn't draw those: " + e.message); }
-    finally { $('myra').classList.remove('thinking'); goo.think(false); favGoo?.think(false); }
+    finally { $('myra').classList.remove('thinking'); goo.think(false); }
   }
 
   // ---------- crop an image: see the whole picture, drag the box or its corners, then Done ----------
@@ -3699,7 +3695,7 @@
   const PEN_SIZE = { pen: { s: 5, m: 9, l: 16 }, marker: { s: 4, m: 8, l: 14 }, hi: { s: 14, m: 24, l: 38 } };
   const pen = { tool: 'pen', size: 'm', color: 'ink' };
   let drawOn = false, stroke = null, erasing = false, liveSvg = null;
-  try { Object.assign(pen, JSON.parse(localStorage.getItem('myra:pen') || '{}')); } catch (e) {}
+  try { Object.assign(pen, JSON.parse(localStorage.getItem('fenmyr:pen') || '{}')); } catch (e) {}
   // any thickness, not just three: each tool keeps its own (old drawings saved as s / m / l still read from PEN_SIZE)
   const PEN_RANGE = { pen: [2, 48], marker: [2, 40], hi: [8, 72], eraser: [10, 90] };
   pen.sizes = Object.assign({ pen: PEN_SIZE.pen[pen.size] || 9, marker: PEN_SIZE.marker[pen.size] || 8, hi: PEN_SIZE.hi[pen.size] || 24, eraser: 28 }, pen.sizes || {});
@@ -3707,7 +3703,7 @@
   const curSize = () => pen.sizes[pen.tool] || 9;
   const sizeToT = v => { const [a, b] = PEN_RANGE[pen.tool] || PEN_RANGE.pen; return Math.pow((v - a) / (b - a), 1 / 1.7); };   // a gentle curve: fine control at the thin end
   const tToSize = t => { const [a, b] = PEN_RANGE[pen.tool] || PEN_RANGE.pen; return Math.round(a + (b - a) * Math.pow(Math.min(1, Math.max(0, t)), 1.7)); };
-  function setSize(v) { const [a, b] = PEN_RANGE[pen.tool] || PEN_RANGE.pen; pen.sizes[pen.tool] = Math.min(b, Math.max(a, Math.round(v))); paintSize(); try { localStorage.setItem('myra:pen', JSON.stringify(pen)); } catch (e) {} }
+  function setSize(v) { const [a, b] = PEN_RANGE[pen.tool] || PEN_RANGE.pen; pen.sizes[pen.tool] = Math.min(b, Math.max(a, Math.round(v))); paintSize(); try { localStorage.setItem('fenmyr:pen', JSON.stringify(pen)); } catch (e) {} }
   function paintSize() {
     const v = curSize(), t = sizeToT(v), er = pen.tool === 'eraser', col = er ? 'transparent' : pen.color === 'ink' ? 'var(--pen-ink)' : INKS[pen.color] || pen.color;
     $('dbsFill').style.width = `calc(${t * 100}% + ${9 - t * 18}px)`; $('dbsKnob').style.left = `calc(${t * 100}% + ${9 - t * 18}px)`; $('dbsVal').textContent = v;
@@ -3766,7 +3762,7 @@
     $('drawbar').querySelectorAll('[data-pen]').forEach(b => b.classList.toggle('on', b.dataset.pen === pen.tool));
     paintSize();
     stage.classList.toggle('erasing', drawOn && pen.tool === 'eraser'); stage.classList.toggle('drawing', drawOn && pen.tool !== 'eraser');
-    try { localStorage.setItem('myra:pen', JSON.stringify(pen)); } catch (e) {}
+    try { localStorage.setItem('fenmyr:pen', JSON.stringify(pen)); } catch (e) {}
   }
   function enterDraw() { if (pen.tool === 'eraser') pen.tool = 'pen'; stopPlacing(); selectOnly([]); selWire = null; drawOn = true; $('dock').classList.add('drawing'); renderDrawbar();
     if (!liveSvg) { liveSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); liveSvg.classList.add('live-ink'); world.appendChild(liveSvg); const ring = document.createElement('div'); ring.className = 'erase-ring'; ring.id = 'eraseRing'; stage.appendChild(ring); } }
@@ -3828,7 +3824,7 @@
   // people who never changed the wheel get the new one; a wheel you made your own stays as you left it
   const WHEEL_OLD_DEFAULT = JSON.stringify([{ emoji: '❤️' }, { emoji: '👍' }, { src: M('love') }, { emoji: '⭐' }, { src: 'stamps/myra-bounce.gif' }, { emoji: '❓' }, { emoji: '🌈' }, { src: M('happy'), mv: 'squish' }]);
   // the wheel keeps your favorites; anything you pick from the full list joins it
-  let wheel = WHEEL_DEFAULT; try { const w0 = JSON.parse(localStorage.getItem('myra:wheel') || 'null'); if (Array.isArray(w0) && w0.length === 8 && JSON.stringify(w0) !== WHEEL_OLD_DEFAULT) wheel = w0; } catch (e) {}
+  let wheel = WHEEL_DEFAULT; try { const w0 = JSON.parse(localStorage.getItem('fenmyr:wheel') || 'null'); if (Array.isArray(w0) && w0.length === 8 && JSON.stringify(w0) !== WHEEL_OLD_DEFAULT) wheel = w0; } catch (e) {}
   // Myra's own pixel stamps (drawn by assets/art/make_art.py); every other emoji shows as your system's emoji until it has one
   const PX = { '❤️': 'heart', '⭐': 'star', '✨': 'sparkles', '🌈': 'rainbow', '🔥': 'fire', '✅': 'check', '❌': 'cross', '❓': 'question', '❗': 'exclaim', '💡': 'bulb', '💙': 'blueheart', '🌸': 'blossom', '☕': 'coffee', '📌': 'pushpin', '🎯': 'target', '💬': 'speech' };
   const pxSrc = e => PX[e] ? `stamps/px/${PX[e]}.png` : null;
@@ -3847,7 +3843,7 @@
   $('stampPick').onclick = e => {
     const t = e.target.closest('[data-tab]'); if (t) return renderPick(t.dataset.tab);
     const b = e.target.closest('[data-p]'); if (!b) return; const [tab, i] = b.dataset.p.split(':'), st = STAMPS[tab][+i], clean = { src: st.src, emoji: st.emoji, mv: st.mv };
-    if (!wheel.some(w2 => w2.src === clean.src && w2.emoji === clean.emoji && w2.mv === clean.mv)) { wheel = [clean, ...wheel].slice(0, 8); try { localStorage.setItem('myra:wheel', JSON.stringify(wheel)); } catch (e2) {} }
+    if (!wheel.some(w2 => w2.src === clean.src && w2.emoji === clean.emoji && w2.mv === clean.mv)) { wheel = [clean, ...wheel].slice(0, 8); try { localStorage.setItem('fenmyr:wheel', JSON.stringify(wheel)); } catch (e2) {} }
     pickStamp(clean);
   };
   ['stampWheel', 'stampPick'].forEach(id => $(id).addEventListener('pointerdown', e => e.stopPropagation()));
@@ -3873,7 +3869,7 @@
       const u = inp.value.trim(), url = /^https?:/i.test(u) || /^spotify:/i.test(u) ? u : 'https://' + u;
       if (spotifyOf(url)) { await spotifyFill(c, url); selectOnly([c.id]); return; }
       c.loading = true; renderCard(c); selectOnly([c.id]);
-      let p = {}; try { p = await Myra.linkPreview(url); } catch (e2) {}
+      let p = {}; try { p = await Fenmyr.linkPreview(url); } catch (e2) {}
       Object.assign(c, { url, title: p.title || host(url), desc: p.desc || host(url), image: p.image || '', loading: false, draft: '' });
       c.h = c.image ? 210 : 52; renderCard(c); selectOnly([c.id]); save();
     };
@@ -3916,15 +3912,15 @@
     }
     close(); return out || '<p></p>';
   }
-  const docHTML = c => c.doc && window.MyraEditor ? MyraEditor.generateHTML(c.doc, MyraEditor.extensions()) : mdToHTML(c.body);
+  const docHTML = c => c.doc && window.FenmyrEditor ? FenmyrEditor.generateHTML(c.doc, FenmyrEditor.extensions()) : mdToHTML(c.body);
   // load any web fonts a doc uses, so it looks right on this computer
   function fontsIn(json) { const out = new Set(); (function walk(n) { (n?.marks || []).forEach(m => m.type === 'textStyle' && m.attrs?.fontFamily && out.add(fontName(m.attrs.fontFamily))); (n?.content || []).forEach(walk); })(json); return [...out]; }
 
   function ensureEditor() {
-    if (ed) return ed; if (!window.MyraEditor) return null;
-    ed = new MyraEditor.Editor({
+    if (ed) return ed; if (!window.FenmyrEditor) return null;
+    ed = new FenmyrEditor.Editor({
       element: $('dvBody'),
-      extensions: MyraEditor.extensions('Start writing, or drag cards here from the board…'),
+      extensions: FenmyrEditor.extensions('Start writing, or drag cards here from the board…'),
       editorProps: {
         attributes: { class: 'dv-prose', spellcheck: 'true' },
         handleKeyDown: (v, e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); showPop('link', $('dvTools').querySelector('[data-pop="link"]')); return true; } return false; },
@@ -3979,7 +3975,7 @@
   $('dvBack').onclick = closeDoc; $('dvClose').onclick = closeDoc;
   $('dvExport').onclick = e => { ensureEditor(); showPop('export', e.currentTarget); };
   // writing on a dark page: only the view changes, never what gets saved or downloaded
-  const pagePref = () => { try { return localStorage.getItem('myra:docPage') || 'auto'; } catch (e) { return 'auto'; } };
+  const pagePref = () => { try { return localStorage.getItem('fenmyr:docPage') || 'auto'; } catch (e) { return 'auto'; } };
   function applyDocPage() { const p = pagePref(), dark = p === 'dark' || (p === 'auto' && document.body.classList.contains('dark')); $('docview').classList.toggle('page-dark', dark); }
   $('dvPageMode').onclick = e => { ensureEditor(); showPop('page', e.currentTarget); };
   new MutationObserver(applyDocPage).observe(document.body, { attributes: true, attributeFilter: ['class'] });
@@ -4023,26 +4019,26 @@ ${proseCSS()}
   }
   // ---------- a doc as a Word file: real headings, lists, tables and pictures, with Figtree built in ----------
   let docxLoading = null;
-  const loadDocx = () => docxLoading || (docxLoading = new Promise((res, rej) => { if (window.MyraDocx) return res(); const sc = document.createElement('script'); sc.src = 'vendor/docx.js'; sc.onload = res; sc.onerror = () => { docxLoading = null; rej(new Error("the Word maker didn't load")); }; document.head.appendChild(sc); }));
+  const loadDocx = () => docxLoading || (docxLoading = new Promise((res, rej) => { if (window.FenmyrDocx) return res(); const sc = document.createElement('script'); sc.src = 'vendor/docx.js'; sc.onload = res; sc.onerror = () => { docxLoading = null; rej(new Error("the Word maker didn't load")); }; document.head.appendChild(sc); }));
   async function downloadWord() {
     if (!docCard) return; syncDoc();
-    const paper = (() => { try { return localStorage.getItem('myra:paper') || 'letter'; } catch (e) { return 'letter'; } })();
+    const paper = (() => { try { return localStorage.getItem('fenmyr:paper') || 'letter'; } catch (e) { return 'letter'; } })();
     $('dvSaved').textContent = 'making your Word file…';
     try {
       await loadDocx();
-      const bytes = await MyraDocx.toDocx(ed ? ed.getJSON() : docCard.doc || MyraEditor.generateJSON(docHTML(docCard), MyraEditor.extensions()), { title: (docCard.text || '').trim(), paper });
+      const bytes = await FenmyrDocx.toDocx(ed ? ed.getJSON() : docCard.doc || FenmyrEditor.generateJSON(docHTML(docCard), FenmyrEditor.extensions()), { title: (docCard.text || '').trim(), paper });
       let b64 = ''; for (let i = 0; i < bytes.length; i += 0x8000) b64 += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); b64 = btoa(b64);
-      const name = await Myra.saveFile(b64, (docCard.text || 'Document').trim() || 'Document', 'docx');
+      const name = await Fenmyr.saveFile(b64, (docCard.text || 'Document').trim() || 'Document', 'docx');
       if (name) say(`Saved “${name}” ✦`, 5000);
     } catch (err) { say("I couldn't make the Word file: " + err.message, 8000); }
     finally { $('dvSaved').textContent = ''; }
   }
   async function downloadPDF() {
     if (!docCard) return; syncDoc();
-    const paper = (() => { try { return localStorage.getItem('myra:paper') || 'letter'; } catch (e) { return 'letter'; } })();
+    const paper = (() => { try { return localStorage.getItem('fenmyr:paper') || 'letter'; } catch (e) { return 'letter'; } })();
     $('dvSaved').textContent = 'making your PDF…';
     try {
-      const name = await Myra.docPDF(docPrintHTML(paper), (docCard.text || 'Document').trim() || 'Document', paper);
+      const name = await Fenmyr.docPDF(docPrintHTML(paper), (docCard.text || 'Document').trim() || 'Document', paper);
       if (name) say(`Saved “${name}” ✦`, 5000);
     } catch (err) { say("I couldn't make the PDF: " + err.message, 8000); }
     finally { $('dvSaved').textContent = ''; }
@@ -4186,10 +4182,10 @@ ${proseCSS()}
         <div class="dp-h"></div><button type="button" class="dp-row dp-irow" data-ins="clear">${DICON.clear}Clear formatting</button>`;
     } else if (kind === 'page') {
       const cur = pagePref();
-      p.innerHTML = `<div class="dp-h">Page colour</div>${[['auto', 'Match Myra', 'Light or dark, with the app'], ['light', 'Light paper', 'Always white'], ['dark', 'Dark', 'Easy on the eyes at night']].map(([v, l, sub]) => `<button type="button" class="dp-row dp-page ${cur === v ? 'on' : ''}" data-page="${v}"><i class="pg-sw pg-${v}"></i><span>${l}<small>${sub}</small></span></button>`).join('')}
+      p.innerHTML = `<div class="dp-h">Page colour</div>${[['auto', 'Match Fenmyr', 'Light or dark, with the app'], ['light', 'Light paper', 'Always white'], ['dark', 'Dark', 'Easy on the eyes at night']].map(([v, l, sub]) => `<button type="button" class="dp-row dp-page ${cur === v ? 'on' : ''}" data-page="${v}"><i class="pg-sw pg-${v}"></i><span>${l}<small>${sub}</small></span></button>`).join('')}
         <p class="dp-tip">Only how it looks while you write. Downloads are always regular light pages.</p>`;
     } else if (kind === 'export') {
-      const paper = (() => { try { return localStorage.getItem('myra:paper') || 'letter'; } catch (e) { return 'letter'; } })();
+      const paper = (() => { try { return localStorage.getItem('fenmyr:paper') || 'letter'; } catch (e) { return 'letter'; } })();
       p.innerHTML = `<div class="dp-h">Paper</div><div class="dp-seg">${[['letter', 'Letter'], ['a4', 'A4']].map(([v, l]) => `<button type="button" class="${paper === v ? 'on' : ''}" data-paper="${v}">${l}</button>`).join('')}</div>
         <button type="button" class="dp-row dp-pdf" data-pdf="1">${Icon('file-pdf')}<span>Download PDF<small>Real pages, ready to send or print</small></span></button>
         <button type="button" class="dp-row dp-pdf dp-word" data-word="1">${Icon('file-word')}<span>Download Word<small>A .docx you can keep editing in Word or Pages</small></span></button>`;
@@ -4220,13 +4216,13 @@ ${proseCSS()}
     if (d.align) { c.setTextAlign(d.align).run(); return hidePop(); }
     if (d.c2) { hidePop(); return run(d.c2); }
     if (d.flink) { const more = $('dvTools').querySelector('[data-pop="more"]'); hidePop(); return showPop('link', more); }
-    if (d.link === 'open') { Myra.openURL(ed.getAttributes('link').href); return hidePop(); }
+    if (d.link === 'open') { Fenmyr.openURL(ed.getAttributes('link').href); return hidePop(); }
     if (d.link === 'remove') { c.extendMarkRange('link').unsetLink().run(); return hidePop(); }
     if (d.lh) { (ed.getAttributes('paragraph').lineHeight === d.lh || ed.getAttributes('heading').lineHeight === d.lh ? c.unsetLineHeight() : c.setLineHeight(d.lh)).run(); return hidePop(); }
     if (d.ins) { ({ table: () => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }), hr: () => c.setHorizontalRule(), sup: () => c.toggleSuperscript(), sub: () => c.toggleSubscript(), clear: () => c.unsetAllMarks().clearNodes() })[d.ins]().run(); return hidePop(); }
     if (d.tbl) { ({ rowAfter: () => c.addRowAfter(), colAfter: () => c.addColumnAfter(), delRow: () => c.deleteRow(), delCol: () => c.deleteColumn(), header: () => c.toggleHeaderRow(), delTable: () => c.deleteTable() })[d.tbl]().run(); return hidePop(); }
-    if (d.page) { try { localStorage.setItem('myra:docPage', d.page); } catch (er) {} applyDocPage(); return hidePop(); }
-    if (d.paper) { try { localStorage.setItem('myra:paper', d.paper); } catch (er) {} p_seg(b); return; }
+    if (d.page) { try { localStorage.setItem('fenmyr:docPage', d.page); } catch (er) {} applyDocPage(); return hidePop(); }
+    if (d.paper) { try { localStorage.setItem('fenmyr:paper', d.paper); } catch (er) {} p_seg(b); return; }
     if (d.pdf) { hidePop(); return downloadPDF(); }
     if (d.word) { hidePop(); return downloadWord(); }
     if (d.how) rewrite(d.how);
@@ -4241,16 +4237,16 @@ ${proseCSS()}
     const around = ed.state.doc.textBetween(Math.max(0, from - 700), Math.min(size, to + 700), '\n');
     $('docview').classList.add('myra-busy'); goo.think(true); $('dvSaved').textContent = 'Myra is rewriting…';
     try {
-      const out = (await Myra.rewrite(text, how, docCard?.text || '', around) || '').trim(); if (!out) throw new Error('Myra came back empty-handed');
+      const out = (await Fenmyr.rewrite(text, how, docCard?.text || '', around) || '').trim(); if (!out) throw new Error('Myra came back empty-handed');
       const multi = /\n/.test(out);
       ed.chain().focus().insertContentAt({ from, to }, multi ? mdToHTML(out) : escH(out)).run();
       const end = ed.state.selection.from; ed.commands.setTextSelection({ from, to: end });
       say('Rewritten ✦ Undo brings back your words.', 6000, [{ label: 'Undo', run: () => ed.chain().focus().undo().run() }]);
     } catch (err) {
       const m = err.message || '';
-      if (/Claude Code/.test(m)) say("I need Claude Code to rewrite things. It's a one-time setup with your Claude account.", 0, [{ label: 'Show me how to connect', run: () => Myra.openURL(GUIDE) }]);
-      else if (SIGNIN.test(m)) say("Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in.", 0, [{ label: 'Show me how', run: () => Myra.openURL(GUIDE) }]);
-      else say(Myra.native ? "Hmm, I couldn't rewrite that: " + m : 'Myra rewrites text with Claude in the desktop app ✦', 8000);
+      if (/Claude Code/.test(m)) say("I need Claude Code to rewrite things. It's a one-time setup with your Claude account.", 0, [{ label: 'Show me how to connect', run: () => Fenmyr.openURL(GUIDE) }]);
+      else if (SIGNIN.test(m)) say("Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in.", 0, [{ label: 'Show me how', run: () => Fenmyr.openURL(GUIDE) }]);
+      else say(Fenmyr.native ? "Hmm, I couldn't rewrite that: " + m : 'Myra rewrites text with Claude in the desktop app ✦', 8000);
     } finally { $('docview').classList.remove('myra-busy'); goo.think(false); $('dvSaved').textContent = ''; }
   }
 
@@ -4288,7 +4284,7 @@ ${proseCSS()}
       const at = ed.view.posAtCoords({ left: e.clientX, top: e.clientY }); const $p = at && ed.state.doc.resolve(at.pos);
       const pos = $p ? ($p.depth ? $p.after(1) : at.pos) : ed.state.doc.content.size;
       ed.chain().focus().insertContentAt(pos, html).run(); syncDoc();
-    } else { doc.doc = MyraEditor.generateJSON(docHTML(doc) + html, MyraEditor.extensions()); doc.body = [doc.body, ...cs.map(cardWords)].filter(x => (x || '').trim()).join('\n\n'); }
+    } else { doc.doc = FenmyrEditor.generateJSON(docHTML(doc) + html, FenmyrEditor.extensions()); doc.body = [doc.body, ...cs.map(cardWords)].filter(x => (x || '').trim()).join('\n\n'); }
     selectOnly(cs.map(c => c.id)); renderCard(doc); renderWires(); save();
     say(`Copied ${cs.length === 1 ? 'that' : cs.length + ' cards'} into “${doc.text || 'Untitled'}” ✦`, 6000, [{ label: 'Undo', run: () => {
       if (t === 'page' && ed && docCard === doc) { ed.commands.undo(); syncDoc(); } else { doc.body = before.body; doc.doc = before.doc; if (docCard === doc && ed) ed.commands.setContent(docHTML(doc), false); }
@@ -4297,10 +4293,10 @@ ${proseCSS()}
 
   // ---------- canvases: a board inside this board, like a folder you can open ----------
   async function openCanvas(c) {
-    if (!c.board) { const child = newBoard(c.text || 'Untitled canvas'); child.parent = board.id; child.folder = board.folder || null; c.board = child.id; await Myra.save(child); }
-    board.view = view; await Myra.save(board); miniCache.delete(c.board); await openBoard(c.board); fit(board.cards);
+    if (!c.board) { const child = newBoard(c.text || 'Untitled canvas'); child.parent = board.id; child.folder = board.folder || null; c.board = child.id; await Fenmyr.save(child); }
+    board.view = view; await Fenmyr.save(board); miniCache.delete(c.board); await openBoard(c.board); fit(board.cards);
   }
-  async function renameChild(c) { if (!c.board) return; const b = await Myra.load(c.board); if (b && c.text && b.name !== c.text) { b.name = c.text; await Myra.save(b); refreshBoards(); } }
+  async function renameChild(c) { if (!c.board) return; const b = await Fenmyr.load(c.board); if (b && c.text && b.name !== c.text) { b.name = c.text; await Fenmyr.save(b); refreshBoards(); } }
 
   // ---------- colors name themselves (until you name one yourself) ----------
   const NAMED = { 'Black': '#000000', 'Charcoal': '#36454f', 'Slate': '#708090', 'Grey': '#808080', 'Silver': '#c0c0c0', 'Cloud': '#ecebef', 'White': '#ffffff', 'Ivory': '#fffff0', 'Cream': '#ffe3bd', 'Butter': '#f0b04a', 'Lemon': '#fff44f', 'Gold': '#ffd700', 'Mustard': '#e1ad01', 'Amber': '#ffbf00', 'Tangerine': '#f28500', 'Orange': '#ff8c00', 'Peach': '#ffcba4', 'Apricot': '#fbceb1', 'Coral': '#ff7f50', 'Salmon': '#fa8072', 'Tomato': '#ff6347', 'Red': '#e0303a', 'Cherry': '#c2185b', 'Crimson': '#dc143c', 'Brick': '#b22222', 'Maroon': '#800000', 'Wine': '#722f37', 'Rose': '#ff66a3', 'Bubblegum': '#f6b45e', 'Blush': '#ffd1dc', 'Pink': '#ffc0cb', 'Hot Pink': '#ff69b4', 'Magenta': '#ff00ff', 'Fuchsia': '#c154c1', 'Orchid': '#da70d6', 'Lilac': '#c8a2c8', 'Lavender': '#e6e6fa', 'Periwinkle': '#ccccff', 'Violet': '#8f00ff', 'Purple': '#800080', 'Plum': '#8e4585', 'Grape': '#6f2da8', 'Indigo': '#4b0082', 'Navy': '#000080', 'Midnight': '#191970', 'Royal Blue': '#4169e1', 'Cobalt': '#0047ab', 'Blue': '#1e6fff', 'Steel Blue': '#4682b4', 'Cornflower': '#6495ed', 'Sky': '#87ceeb', 'Baby Blue': '#bfdfff', 'Ice': '#d9e7f3', 'Powder': '#b0e0e6', 'Teal': '#008080', 'Turquoise': '#40e0d0', 'Aqua': '#00e5e5', 'Mint': '#98ff98', 'Seafoam': '#9fe2bf', 'Sage': '#9caf88', 'Pistachio': '#93c572', 'Lime': '#a4de02', 'Green': '#2e9e4f', 'Emerald': '#50c878', 'Forest': '#228b22', 'Olive': '#808000', 'Khaki': '#c3b091', 'Sand': '#e2c290', 'Tan': '#d2b48c', 'Camel': '#c19a6b', 'Caramel': '#af6f09', 'Brown': '#8b4513', 'Chocolate': '#5c3317', 'Espresso': '#3b2219' };
@@ -4354,7 +4350,7 @@ ${proseCSS()}
     const onBoard = boardFonts();
     const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-bfont="${escH(f)}" style="font-family:'${escH(f)}', ${DOC_FONT}, system-ui">${escH(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
     p.innerHTML = `<input class="dp-search" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
-      <div class="dp-scroll"><button type="button" class="dp-row dp-font ${cur === '' ? 'on' : ''}" data-bfont="">Default font<small>Myra’s own</small></button>
+      <div class="dp-scroll"><button type="button" class="dp-row dp-font ${cur === '' ? 'on' : ''}" data-bfont="">Default font<small>Fenmyr’s own</small></button>
       ${onBoard.length ? `<div class="dp-h">Used on this board</div>${onBoard.map(row).join('')}` : ''}<div class="dp-h">Suggested</div>${SUGGESTED_FONTS.filter(f => !onBoard.includes(f)).map(row).join('')}
       <div class="dp-h">On your computer</div>${FONTS.filter(f => !SUGGESTED_FONTS.includes(f) && !onBoard.includes(f)).slice(0, 400).map(row).join('')}</div>`;
     SUGGESTED_FONTS.concat(onBoard).forEach(useFont);
@@ -4383,7 +4379,7 @@ ${proseCSS()}
     const cur = (settings.defaultFont || '').trim();
     const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-bfont="${escH(f)}" style="font-family:'${escH(f)}', ${DOC_FONT}, system-ui">${escH(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
     p.innerHTML = `<input class="dp-search" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
-      <div class="dp-scroll"><button type="button" class="dp-row dp-font ${cur === '' ? 'on' : ''}" data-bfont="">${DOC_FONT}<small>Myra’s own</small></button>
+      <div class="dp-scroll"><button type="button" class="dp-row dp-font ${cur === '' ? 'on' : ''}" data-bfont="">${DOC_FONT}<small>Fenmyr’s own</small></button>
       <div class="dp-h">Suggested</div>${SUGGESTED_FONTS.filter(f => f !== DOC_FONT).map(row).join('')}
       <div class="dp-h">On your computer</div>${FONTS.filter(f => !SUGGESTED_FONTS.includes(f)).slice(0, 400).map(row).join('')}</div>`;
     SUGGESTED_FONTS.forEach(useFont);
@@ -4548,10 +4544,10 @@ ${proseCSS()}
     const a = e.target.closest('[data-wb]')?.dataset.wb, l = selWire && linkById(selWire); if (!a || !l) return; e.stopImmediatePropagation();
     if (a === 'curve') l.bend = l.bend === 0 ? undefined : l.bend; if (a === 'curve' && l.bend === undefined) delete l.bend;
     if (a === 'straight') l.bend = 0;
-    const keepStyle = () => { settings.wireStyle = { ...(l.w ? { w: l.w } : {}), ...(l.color ? { color: l.color } : {}) }; if (!Object.keys(settings.wireStyle).length) delete settings.wireStyle; try { localStorage.setItem('myra:settings', JSON.stringify(settings)); } catch (e) {} };   // the next connector you draw starts like this one
+    const keepStyle = () => { settings.wireStyle = { ...(l.w ? { w: l.w } : {}), ...(l.color ? { color: l.color } : {}) }; if (!Object.keys(settings.wireStyle).length) delete settings.wireStyle; try { localStorage.setItem('fenmyr:settings', JSON.stringify(settings)); } catch (e) {} };   // the next connector you draw starts like this one
     if (a.startsWith('col:')) { const hex = a.slice(4); if (hex) l.color = hex; else delete l.color; keepStyle(); closeSbPops(); }
     if (a.startsWith('w:')) { const n = +a.slice(2); if (n === 4 || n === 6) l.w = n; else delete l.w; keepStyle(); closeSbPops(); }
-    if (a === 'reset') { delete l.w; delete l.color; delete settings.wireStyle; try { localStorage.setItem('myra:settings', JSON.stringify(settings)); } catch (e) {} }
+    if (a === 'reset') { delete l.w; delete l.color; delete settings.wireStyle; try { localStorage.setItem('fenmyr:settings', JSON.stringify(settings)); } catch (e) {} }
     if (a === 'colcustom') { const r = $('selbar').getBoundingClientRect(); closeSbPops(); openColor({ tint: true, boardColors: true, title: 'Line colour', hex: wireColor(l) || '#6b6259', presets: ['#3b342d', '#ffffff', '#dc4b3e', '#f0b04a', '#6fae5a', '#4f8fc9', '#a98ad6', '#c9b49a'],
       fromBar: true, at: { x: r.left + r.width / 2 - 140, y: r.top - 480 }, apply: hex => { l.color = hex; keepStyle(); renderWires(); save(); }, reset: () => { delete l.color; keepStyle(); renderWires(); save(); } }); return; }
     if (a === 'dash') l.dash = !l.dash;
@@ -4744,7 +4740,7 @@ ${proseCSS()}
     const cr = e.target.closest('[data-crop]')?.dataset.crop; if (cr) return endCrop(cr);
     if (e.target.closest('[data-fill]')) return offerFill(spotsIn(cs));
     if (a === 'open') one.type === 'doc' ? openDoc(one) : openCanvas(one);
-    if (a === 'visit') Myra.openURL(one.url);
+    if (a === 'visit') Fenmyr.openURL(one.url);
     if (a === 'vnflip') flipVNote(one); if (a === 'vnopen') openVNote(one);
     if (a === 'relink') { one.draft = one.url; one.url = ''; one.image = ''; one.h = 52; redraw(); }
     if (a === 'head') { one.head = one.head === false ? true : false; redraw(); }
@@ -4891,10 +4887,10 @@ ${proseCSS()}
   }
 
   // ---------- the floating boxes: minimize to their title, remembered between launches ----------
-  const boxState = (() => { try { return JSON.parse(localStorage.getItem('myra:boxes') || '{}'); } catch (e) { return {}; } })();
+  const boxState = (() => { try { return JSON.parse(localStorage.getItem('fenmyr:boxes') || '{}'); } catch (e) { return {}; } })();
   document.querySelectorAll('.box').forEach(b => {
     const k = b.dataset.box, btn = b.querySelector('.mini:not(.home-btn):not(.gear)');
-    const set = min => { b.classList.toggle('min', min); btn.textContent = min ? '+' : '–'; btn.title = min ? 'Open' : 'Minimise'; boxState[k] = min; try { localStorage.setItem('myra:boxes', JSON.stringify(boxState)); } catch (e) {} };
+    const set = min => { b.classList.toggle('min', min); btn.textContent = min ? '+' : '–'; btn.title = min ? 'Open' : 'Minimise'; boxState[k] = min; try { localStorage.setItem('fenmyr:boxes', JSON.stringify(boxState)); } catch (e) {} };
     set(!!boxState[k]); btn.onclick = () => set(!b.classList.contains('min'));
   });
   $('keysX').onclick = () => { settings.keys = false; applySettings(); };
@@ -4904,15 +4900,15 @@ ${proseCSS()}
   addEventListener('scroll', () => { if (scrollX || scrollY) scrollTo(0, 0); });
 
   world.appendChild($('guides')); setTimeout(placeTray, 0); renderDesign();
-  // ---------- updates: check GitHub for a newer Myra (about once a day), show what's new, update with one tap ----------
+  // ---------- updates: check GitHub for a newer Fenmyr (about once a day), show what's new, update with one tap ----------
   let updInfo = null;
-  if (!Myra.native) $('setUpdate').style.display = 'none';   // updating is a desktop app thing: the web version changes when the site does
+  if (!Fenmyr.native) $('setUpdate').style.display = 'none';   // updating is a desktop app thing: the web version changes when the site does
   async function checkUpdate(force) {
-    if (!Myra.native) return;
-    let last = 0; try { last = +localStorage.getItem('myra:updChecked') || 0; } catch (e) {}
+    if (!Fenmyr.native) return;
+    let last = 0; try { last = +localStorage.getItem('fenmyr:updChecked') || 0; } catch (e) {}
     if (!force && Date.now() - last < 15 * 60 * 1000 && updInfo) return showUpdate();   // at most every 15 minutes (it used to wait 20 hours, so an app left open never noticed)
     $('suSub').textContent = 'Checking for a new version…';
-    try { updInfo = await Myra.updateCheck(); localStorage.setItem('myra:updChecked', Date.now()); } catch (e) { updInfo = { error: true }; }
+    try { updInfo = await Fenmyr.updateCheck(); localStorage.setItem('fenmyr:updChecked', Date.now()); } catch (e) { updInfo = { error: true }; }
     showUpdate(true);
   }
   function showUpdate(fresh) {
@@ -4921,8 +4917,8 @@ ${proseCSS()}
     $('gearBtn').classList.toggle('has-update', n > 0);
     $('setUpdate').classList.toggle('ready', n > 0);
     $('suGo').hidden = !(n > 0);
-    $('suTitle').textContent = n > 0 ? `A new Myra is ready ✦` : 'Updates';
-    $('suSub').textContent = !u.repo && !u.release ? 'To get updates, run ./install.sh --update once in a terminal from your Myra folder. After that it works from here.'
+    $('suTitle').textContent = n > 0 ? `A new Fenmyr is ready ✦` : 'Updates';
+    $('suSub').textContent = !u.repo && !u.release ? 'To get updates, run ./install.sh --update once in a terminal from your Fenmyr folder. After that it works from here.'
       : u.offline ? 'I couldn’t reach GitHub just now. I’ll try again later.'
       : u.release ? (n > 0 ? `Version ${String(u.latest || '').replace(/^v/, '')} is ready (you have ${u.since}). Your boards and settings stay just as they are.` : `You’re up to date (version ${u.since}).`)
       : n > 0 ? `${n} update${n > 1 ? 's' : ''} since your version${u.since ? ' from ' + u.since : ''}. Your boards and settings stay just as they are.`
@@ -4931,14 +4927,14 @@ ${proseCSS()}
     $('suNotes').hidden = !(n > 0 && notes.length);
     $('suNotes').innerHTML = notes.map(t => `<li>${esc(t)}</li>`).join('');
     // a quiet bar on the board instead of a pop-up: shown once there's a new version, hidden with × until the next one
-    const ver = String(u.latest || u.since || '').replace(/^v/, '').replace(/\.0$/, ''), key = (u.latest || '') + ':' + (u.since || '') + ':' + n; let hid = ''; try { hid = localStorage.getItem('myra:upbarHidden') || ''; } catch (e) {}
-    $('ubText').textContent = u.latest ? `Myra ${ver} is ready` : 'A new Myra is ready';
+    const ver = String(u.latest || u.since || '').replace(/^v/, '').replace(/\.0$/, ''), key = (u.latest || '') + ':' + (u.since || '') + ':' + n; let hid = ''; try { hid = localStorage.getItem('fenmyr:upbarHidden') || ''; } catch (e) {}
+    $('ubText').textContent = u.latest ? `Fenmyr ${ver} is ready` : 'A new Fenmyr is ready';
     $('ubGo').disabled = false; $('ubGo').textContent = 'Update now'; $('upBar').classList.remove('busy');
-    // the first time there's an update, the bar asks once if Myra may keep things up to date; the answer becomes a switch in Settings
+    // the first time there's an update, the bar asks once if Fenmyr may keep things up to date; the answer becomes a switch in Settings
     const asking = n > 0 && (settings.autoUpdate === undefined || (u.preview && !showUpdate.answered));   // the preview always asks, so it can be shown again
     $('upBar').classList.toggle('ask', asking); requestAnimationFrame(fitUpBar); $('ubYes').hidden = $('ubNo').hidden = !asking; $('ubNotes').hidden = $('ubGo').hidden = asking;
-    if (asking) $('ubText').textContent = `Myra ${ver} is ready. Keep it up to date for you?`;
-    else if (n > 0 && settings.autoUpdate) $('ubText').textContent = `Myra ${ver} is ready. I’ll put it in when you quit, or`;
+    if (asking) $('ubText').textContent = `Fenmyr ${ver} is ready. Keep it up to date for you?`;
+    else if (n > 0 && settings.autoUpdate) $('ubText').textContent = `Fenmyr ${ver} is ready. I’ll put it in when you quit, or`;
     if (n > 0 && settings.autoUpdate && !asking) prepareUpdate();
     $('upBar').hidden = !(n > 0) || (!asking && hid === key && !u.preview); $('upBar').dataset.key = key;
     fitUpBar();
@@ -4956,22 +4952,22 @@ ${proseCSS()}
     if (to - from >= w) b.style.left = (from + to) / 2 - st.left + 'px';
     else if (t) { const r = b.getBoundingClientRect(); if (r.left < t.right + 16 && r.right > t.left - 16) b.classList.add('low'); } }
   addEventListener('resize', () => fitUpBar());   // the board mustn't grab presses on the bar
-  // automatic updates: get the new version ready quietly; it goes in when Myra quits
+  // automatic updates: get the new version ready quietly; it goes in when Fenmyr quits
   let preparing = null;
-  function prepareUpdate() { if (preparing || !Myra.updatePrepare) return; preparing = Myra.updatePrepare().catch(() => { preparing = null; }); }
-  $('ubYes').onclick = () => { showUpdate.answered = true; settings.autoUpdate = true; applySettings(); showUpdate(); prepareUpdate(); $('ubText').textContent = 'Lovely ✦ I’ll update when you quit Myra, or'; fitUpBar(); };
+  function prepareUpdate() { if (preparing || !Fenmyr.updatePrepare) return; preparing = Fenmyr.updatePrepare().catch(() => { preparing = null; }); }
+  $('ubYes').onclick = () => { showUpdate.answered = true; settings.autoUpdate = true; applySettings(); showUpdate(); prepareUpdate(); $('ubText').textContent = 'Lovely ✦ I’ll update when you quit Fenmyr, or'; fitUpBar(); };
   $('ubNo').onclick = () => { showUpdate.answered = true; settings.autoUpdate = false; applySettings(); showUpdate(); };
-  $('ubX').onclick = () => { try { localStorage.setItem('myra:upbarHidden', $('upBar').dataset.key || ''); } catch (e) {} $('upBar').hidden = true; };
+  $('ubX').onclick = () => { try { localStorage.setItem('fenmyr:upbarHidden', $('upBar').dataset.key || ''); } catch (e) {} $('upBar').hidden = true; };
   $('ubNotes').onclick = () => { $('gearBtn').click(); setTab('about'); setTimeout(() => $('setUpdate').scrollIntoView({ block: 'center', behavior: 'smooth' }), 120); };
   $('ubGo').onclick = async () => {
-    $('ubGo').disabled = true; $('ubGo').textContent = 'Updating…'; $('upBar').classList.add('busy'); $('ubText').textContent = 'Getting the new version. Myra will reopen in a moment';
-    try { await Myra.updateNow(); } catch (e) { $('ubText').textContent = e.message; $('ubGo').textContent = 'Update now'; $('ubGo').disabled = false; $('upBar').classList.remove('busy'); }
+    $('ubGo').disabled = true; $('ubGo').textContent = 'Updating…'; $('upBar').classList.add('busy'); $('ubText').textContent = 'Getting the new version. Fenmyr will reopen in a moment';
+    try { await Fenmyr.updateNow(); } catch (e) { $('ubText').textContent = e.message; $('ubGo').textContent = 'Update now'; $('ubGo').disabled = false; $('upBar').classList.remove('busy'); }
   };
   $('suGo').onclick = async () => {
-    $('suGo').disabled = true; $('suGo').textContent = 'Updating…'; $('suSub').textContent = 'Getting the new version and rebuilding. Myra will close and reopen in about 30 seconds.';
-    try { await Myra.updateNow(); } catch (e) { $('suGo').disabled = false; $('suGo').textContent = 'Update now'; $('suSub').textContent = e.message; }
+    $('suGo').disabled = true; $('suGo').textContent = 'Updating…'; $('suSub').textContent = 'Getting the new version and rebuilding. Fenmyr will close and reopen in about 30 seconds.';
+    try { await Fenmyr.updateNow(); } catch (e) { $('suGo').disabled = false; $('suGo').textContent = 'Update now'; $('suSub').textContent = e.message; }
   };
-  document.querySelectorAll('[data-url]').forEach(b => b.onclick = () => Myra.openURL(b.dataset.url));
+  document.querySelectorAll('[data-url]').forEach(b => b.onclick = () => Fenmyr.openURL(b.dataset.url));
 
   // ---------- first run: set up with Myra, then an optional hands-on tour ----------
   const OB_N = 6; let obAt = 0;
@@ -4995,7 +4991,7 @@ ${proseCSS()}
     if (firstRunSetup && firstChoice === 'empty' && board.name === 'My first board') { board.cards = []; board.links = []; board.tray = []; renderAll(); renderTray(); renderWires(); save(); }
     firstRunSetup = false;
     settings.name = $('obName').value.trim().slice(0, 40); applySettings();
-    try { localStorage.setItem('myra:onboarded', '1'); } catch (e) {}
+    try { localStorage.setItem('fenmyr:onboarded', '1'); } catch (e) {}
     $('onboard').classList.remove('on');
     if (tour) setTimeout(startTour, 350); else say(`Have fun${settings.name ? ', ' + settings.name : ''}! Click me anytime to chat ✦`, 6000);
   }
@@ -5012,7 +5008,7 @@ ${proseCSS()}
     if (e.key === 'Enter' && !e.target.closest?.('button')) { e.preventDefault(); obAt < OB_N - 1 ? $('obNext').click() : $('obTour').click(); }
   }
   $('redoSetup').onclick = openSetup;
-  $('addExample').onclick = async () => { closeSettings(); const b = newBoard('My first board', 'My first board'), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id; await Myra.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); };
+  $('addExample').onclick = async () => { closeSettings(); const b = newBoard('My first board', 'My first board'), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id; await Fenmyr.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); };
   $('redoTour').onclick = () => { closeSettings(); setTimeout(startTour, 250); };
 
   // the tour: Myra points at each part; some steps you try for real and she notices
@@ -5058,26 +5054,26 @@ ${proseCSS()}
   $('coachSkip').onclick = endTour;
   $('coachCard').addEventListener('pointerdown', e => e.stopPropagation());
 
-  if (Myra.web) document.body.classList.add('web');
+  if (Fenmyr.web) document.body.classList.add('web');
   document.querySelectorAll('.get-app').forEach(b => b.onclick = e => { e.stopPropagation(); getApp(); });
   // ---------- what's new: a little card, once, the first time a new version opens ----------
-  // what's new in Myra: one card per version (each item: [icon name, title, a line about it])
+  // what's new in Fenmyr: one card per version (each item: [icon name, title, a line about it])
   const NEWS = { '1.0.0': [
-    ['myra-mark', 'Hello, I’m Myra', 'A little cloudberry. Like cloudberries, ideas only grow where conditions are just right, so this board tries to be that place.'],
+    ['myra-tool', 'Hello, I’m Myra', 'A little cloudberry. Like cloudberries, ideas only grow where conditions are just right, so this board tries to be that place.'],
     ['palette', 'Nordic colours', 'Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch for your cards, with warm amber shadows.'],
   ] };
   // the button on each version's card: try the headline thing
   const NEWS_TRY = { '1.0.0': ['Take the tour', () => startTour()] };
-  const newsKey = 'myra:newsSeen';
+  const newsKey = 'fenmyr:newsSeen';
   async function maybeNews() {
-    let v = null; try { v = await Myra.version(); } catch (e) {} if (!v) v = Object.keys(NEWS).pop();
+    let v = null; try { v = await Fenmyr.version(); } catch (e) {} if (!v) v = Object.keys(NEWS).pop();
     let seen = null; try { seen = localStorage.getItem(newsKey); } catch (e) {}
     try { localStorage.setItem(newsKey, v); } catch (e) {}
     // everything new since the version you last saw (a small fix release has no card of its own)
     const num = x => String(x || '0').replace(/^v/, '').split('.').map(n => +n || 0), after = (x, y) => { const a = num(x), b = num(y); for (let i = 0; i < 3; i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0); return false; };
     const items = Object.keys(NEWS).filter(k => (!seen || after(k, seen)) && !after(k, v)).flatMap(k => NEWS[k]);
     if (seen === v || !items.length) return;
-    $('newsV').textContent = `Myra ${v}`;
+    $('newsV').textContent = `Fenmyr ${v}`;
     $('newsList').innerHTML = items.map(([e, t, d]) => `<li><span class="nw-e">${Icon(e)}</span><div><b>${esc(t)}</b><small>${esc(d)}</small></div></li>`).join('');
     const tryK = Object.keys(NEWS_TRY).filter(k => !after(k, v)).pop(), tr = NEWS_TRY[tryK]; $('newsTry').textContent = tr[0]; $('newsTry').onclick = () => { closeNews(); tr[1](); };
     $('news').classList.add('on');
@@ -5191,17 +5187,17 @@ ${proseCSS()}
   // ---------- start ----------
   (async () => {
     loadTemplates(); loadVaults();
-    let list = await Myra.list();
-    if (!list.length) { const b = newBoard('My first board', 'My first board'); await Myra.save(b); list = await Myra.list(); }
-    let last = null; try { last = localStorage.getItem('myra:last'); } catch (e) {}
+    let list = await Fenmyr.list();
+    if (!list.length) { const b = newBoard('My first board', 'My first board'); await Fenmyr.save(b); list = await Fenmyr.list(); }
+    let last = null; try { last = localStorage.getItem('fenmyr:last'); } catch (e) {}
     await openBoard(list.some(b => b.id === last) ? last : list[0].id);
     applySettings(); phone.init();
-    let onboarded = true; try { onboarded = !!localStorage.getItem('myra:onboarded'); } catch (e) {}
-    if (!onboarded) { firstRunSetup = true; try { localStorage.setItem(newsKey, (await Myra.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
+    let onboarded = true; try { onboarded = !!localStorage.getItem('fenmyr:onboarded'); } catch (e) {}
+    if (!onboarded) { firstRunSetup = true; try { localStorage.setItem(newsKey, (await Fenmyr.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
     setTimeout(() => { fit(board.cards); if (settings.greet && settings.chat !== 'quiet') say(`Hi${settings.name ? ' ' + settings.name : ''}, it's Myra! Dump ideas with Ctrl+K, then ask me to sort them ✦`, 7000); }, 400);
     showConnections(true);
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__myra = { newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

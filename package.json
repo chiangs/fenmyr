@@ -1,13 +1,13 @@
 {
-  "name": "myra",
-  "productName": "Myra",
+  "name": "fenmyr",
+  "productName": "Fenmyr",
   "version": "1.0.0",
   "description": "A canvas where ideas thrive, with Myra the cloudberry to help",
-  "homepage": "https://github.com/chiangs/myra",
+  "homepage": "https://github.com/chiangs/fenmyr",
   "license": "MIT",
   "author": "Stephen Chiang",
   "main": "linux/main.js",
-  "desktopName": "myra.desktop",
+  "desktopName": "fenmyr.desktop",
   "scripts": {
     "start": "electron . --ozone-platform-hint=auto",
     "test": "node tests/vault.js && node tests/smoke.js && node tests/zoom.js && node tests/theme.js && node tests/docs.js",
@@ -24,8 +24,8 @@
     "playwright": "1.63.0"
   },
   "build": {
-    "appId": "io.github.chiangs.myra",
-    "productName": "Myra",
+    "appId": "io.github.chiangs.fenmyr",
+    "productName": "Fenmyr",
     "files": [
       "linux/**",
       "web/**",
@@ -45,14 +45,14 @@
       ],
       "desktop": {
         "entry": {
-          "Name": "Myra",
+          "Name": "Fenmyr",
           "Comment": "A canvas where ideas thrive",
-          "StartupWMClass": "Myra"
+          "StartupWMClass": "Fenmyr"
         }
       }
     },
     "appImage": {
-      "artifactName": "Myra-${arch}.AppImage"
+      "artifactName": "Fenmyr-${arch}.AppImage"
     },
     "directories": {
       "output": "build/release"
@@ -66,8 +66,8 @@
       "identity": null,
       "darkModeSupport": true,
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Myra records voice memos on your board.",
-        "NSCameraUsageDescription": "Myra can record video cards on your board."
+        "NSMicrophoneUsageDescription": "Fenmyr records voice memos on your board.",
+        "NSCameraUsageDescription": "Fenmyr can record video cards on your board."
       }
     }
   }

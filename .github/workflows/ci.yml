@@ -34,15 +34,15 @@ jobs:
         run: |
           # each part's output goes to a file; on failure its last lines become annotations, so they're readable without the full log
           report() { echo "::error title=$1::$(tail -c 3000 "$2" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"; exit 1; }
-          useradd -m tester && cp -r . /home/tester/myra && chown -R tester /home/tester/myra
-          su tester -c 'cd ~/myra && ./install.sh --yes --no-open' > install.log 2>&1 || report install install.log
-          cat /home/tester/.local/lib/myra/app/install.json; echo "::notice title=Arch electron::$(pacman -Q $(pacman -Qq | grep -E "^electron[0-9]+$") 2>&1 | tr "\n" " ")"
-          su tester -c "cd ~/myra && MYRA_APP=\$HOME/.local/lib/myra/app xvfb-run -a -s '-screen 0 1440x900x24' node tests/smoke.js" > smoke.log 2>&1 || report installed-smoke smoke.log
-          su tester -c 'cd ~/myra && ./uninstall.sh --purge' > uninstall.log 2>&1 || report uninstall uninstall.log
-          test ! -e /home/tester/.local/bin/myra
+          useradd -m tester && cp -r . /home/tester/fenmyr && chown -R tester /home/tester/fenmyr
+          su tester -c 'cd ~/fenmyr && ./install.sh --yes --no-open' > install.log 2>&1 || report install install.log
+          cat /home/tester/.local/lib/fenmyr/app/install.json; echo "::notice title=Arch electron::$(pacman -Q $(pacman -Qq | grep -E "^electron[0-9]+$") 2>&1 | tr "\n" " ")"
+          su tester -c "cd ~/fenmyr && FENMYR_APP=\$HOME/.local/lib/fenmyr/app xvfb-run -a -s '-screen 0 1440x900x24' node tests/smoke.js" > smoke.log 2>&1 || report installed-smoke smoke.log
+          su tester -c 'cd ~/fenmyr && ./uninstall.sh --purge' > uninstall.log 2>&1 || report uninstall uninstall.log
+          test ! -e /home/tester/.local/bin/fenmyr
       - name: Build the AppImage
         run: npx electron-builder --linux AppImage --x64 --publish never
       - uses: actions/upload-artifact@v5
         with:
-          name: Myra-x86_64.AppImage
+          name: Fenmyr-x86_64.AppImage
           path: build/release/*.AppImage

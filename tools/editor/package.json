@@ -1,10 +1,10 @@
 {
-  "name": "myra-editor-bundle",
+  "name": "fenmyr-editor-bundle",
   "private": true,
   "description": "Builds web/vendor/editor.js (TipTap, bundled so docs work offline). Run: npm run build",
   "scripts": {
-    "build": "esbuild entry.js --bundle --format=iife --global-name=MyraEditor --minify --target=safari15 --outfile=../../web/vendor/editor.js && npm run build:docx",
-    "build:docx": "esbuild docx-entry.js --bundle --format=iife --global-name=MyraDocx --minify --target=safari15 --loader:.ttf=binary --define:global=globalThis --outfile=../../web/vendor/docx.js"
+    "build": "esbuild entry.js --bundle --format=iife --global-name=FenmyrEditor --minify --target=safari15 --outfile=../../web/vendor/editor.js && npm run build:docx",
+    "build:docx": "esbuild docx-entry.js --bundle --format=iife --global-name=FenmyrDocx --minify --target=safari15 --loader:.ttf=binary --define:global=globalThis --outfile=../../web/vendor/docx.js"
   },
   "dependencies": {
     "@tiptap/core": "^3.32.0",

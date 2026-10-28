@@ -1,5 +1,5 @@
-// Myra's doc editor: TipTap (ProseMirror) plus the few Word basics it doesn't ship with.
-// Bundled into web/vendor/editor.js as the global `MyraEditor`, so docs work offline.
+// Fenmyr's doc editor: TipTap (ProseMirror) plus the few Word basics it doesn't ship with.
+// Bundled into web/vendor/editor.js as the global `FenmyrEditor`, so docs work offline.
 import { Editor, Extension, generateHTML, generateJSON, getHTMLFromFragment } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -70,7 +70,7 @@ const ParaStyle = Extension.create({
   },
 });
 
-// everything a Myra doc can hold
+// everything a Fenmyr doc can hold
 const extensions = (placeholder = 'Start writing…') => [
   StarterKit.configure({ heading: { levels: [1, 2, 3] }, link: false, underline: false }),   // TipTap 3's starter kit brings its own Link and Underline; ours are configured below
   Underline, TextStyle, Color, FontFamily, FontSize, LineHeight, ParaStyle, Subscript, Superscript,

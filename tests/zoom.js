@@ -5,7 +5,7 @@ const { _electron: electron } = require('playwright');
 const fs = require('fs'), os = require('os'), path = require('path');
 
 (async () => {
-  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'myra-zoom-'));
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-zoom-'));
   const app = await electron.launch({ args: [path.join(__dirname, '..'), '--no-sandbox'], env: { ...process.env, XDG_DATA_HOME: data, HOME: data } });
   const page = await app.firstWindow(), errors = [];
   page.on('pageerror', e => errors.push(e.message));

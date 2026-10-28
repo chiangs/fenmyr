@@ -42,7 +42,7 @@ const tmpFile = (ext) => path.join(P.support, `print-${crypto.randomUUID()}.${ex
 // export what's on screen inside a rectangle as a crisp PNG or a PDF, then let the person pick where to save it
 async function exportRect(win, a) {
   const r = { x: +a.x || 0, y: +a.y || 0, width: Math.max(1, +a.w || 1), height: Math.max(1, +a.h || 1) };
-  const pdf = !!a.pdf, name = clean(a.name, 'Myra');
+  const pdf = !!a.pdf, name = clean(a.name, 'Fenmyr');
   const png = await snapshot(win.webContents, r, +a.scale || 2);
   if (!png || !png.length) throw new Error("I couldn't capture that");
   if (!pdf) return saveAs(win, name + '.png', 'png', png);

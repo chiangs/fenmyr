@@ -36,6 +36,7 @@ const env = () => ({ ...process.env, PATH: [process.env.PATH || '', `${home}/.lo
 function run(cmd, args, timeout) {
   return new Promise(resolve => {
     let out = [], err = [], p;
+    try { fs.mkdirSync(P.support, { recursive: true }); } catch (e) {}   // the folder we run in has to exist (a fresh install, or a test)
     try { p = spawn(cmd, args, { cwd: P.support, env: env(), stdio: ['ignore', 'pipe', 'pipe'] }); }
     catch (e) { return resolve({ code: -1, out: Buffer.alloc(0), err: Buffer.from(e.message) }); }
     const killer = setTimeout(() => p.kill('SIGTERM'), timeout * 1000);

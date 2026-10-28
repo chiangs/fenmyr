@@ -1,6 +1,6 @@
-# What's new in Myra
+# What's new in Fenmyr
 
-Each update gets a short line here. Myra shows the new ones in Settings when an update is ready.
+Each update gets a short line here. Fenmyr shows the new ones in Settings when an update is ready.
 Write them for people, not for code: one line, what changed and why it's nice.
 
 ## October 2026 · 1.0.0

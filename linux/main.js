@@ -1,16 +1,16 @@
-// Myra for Linux: an Electron window around the canvas in web/. This side handles what a web page can't:
+// Fenmyr for Linux: an Electron window around the canvas in web/. This side handles what a web page can't:
 // saving boards as files, fetching link previews, exporting, writing out voice memos, and asking Myra (Claude Code, run locally with `claude -p`).
-// It answers the page's messages (web/bridge.js → window.myraHost).
+// It answers the page's messages (web/bridge.js → window.fenmyrHost).
 const fs = require('fs'), path = require('path'), { execFile } = require('child_process');
 const { app, BrowserWindow, ipcMain, shell, protocol, Menu, session, dialog } = require('electron');
 const P = require('./paths'), storage = require('./storage'), vault = require('./vault'), claude = require('./claude'), net = require('./net');
 const output = require('./output'), speech = require('./speech'), update = require('./update'), theme = require('./theme');
 
-app.setName('Myra');
-if (process.platform === 'linux') app.setDesktopName('myra.desktop');
-// one Myra at a time: opening it again brings the open one forward
+app.setName('Fenmyr');
+if (process.platform === 'linux') app.setDesktopName('fenmyr.desktop');
+// one Fenmyr at a time: opening it again brings the open one forward
 if (!app.requestSingleInstanceLock()) { app.quit(); process.exit(0); }
-protocol.registerSchemesAsPrivileged([{ scheme: 'myramedia', privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true, corsEnabled: true, bypassCSP: true } }]);
+protocol.registerSchemesAsPrivileged([{ scheme: 'fenmyrmedia', privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true, corsEnabled: true, bypassCSP: true } }]);
 
 let win = null;
 
@@ -28,7 +28,7 @@ function createWindow() {
   win = new BrowserWindow({
     ...b, minWidth: 380, minHeight: 520,   // narrow enough to sit beside other apps; below 700 wide it switches to the phone layout
     // Linux: no frame, the page draws its own dots. Mac: the real traffic lights, sitting where those dots would be
-    ...(process.platform === 'darwin' ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 14, y: 12 } } : { frame: false }), show: false, title: 'Myra', backgroundColor: '#faf7f2',
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 14, y: 12 } } : { frame: false }), show: false, title: 'Fenmyr', backgroundColor: '#faf7f2',
     icon: path.join(__dirname, '..', 'assets', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, spellcheck: true },
   });
@@ -51,8 +51,8 @@ function createWindow() {
   });
 }
 
-// ---- messages from the page: {id, op, args}; answered with __myraReply(id, ok, value) (preload.js passes it in) ----
-const reply = (wc, id, ok, value) => { if (!wc.isDestroyed()) wc.send('myra-reply', id, ok, value === undefined ? null : value); };
+// ---- messages from the page: {id, op, args}; answered with __fenmyrReply(id, ok, value) (preload.js passes it in) ----
+const reply = (wc, id, ok, value) => { if (!wc.isDestroyed()) wc.send('fenmyr-reply', id, ok, value === undefined ? null : value); };
 const OPS = {
   list: () => storage.list(), load: a => storage.load(a.id), save: a => storage.save(a.board), remove: a => storage.remove(a.id),
   templates: () => storage.templates(), saveTemplate: a => storage.saveTemplate(a.template), removeTemplate: a => storage.removeTemplate(a.id),
@@ -83,7 +83,7 @@ const OPS = {
   reveal: () => { shell.showItemInFolder(P.boardsDir); return true; },
   openURL: a => { const u = String(a.url || ''); if (/^(https?|mailto|obsidian):/i.test(u)) shell.openExternal(u); return true; },
 };
-ipcMain.on('myra', async (e, m) => {
+ipcMain.on('fenmyr', async (e, m) => {
   if (!m || typeof m.id !== 'number' || typeof m.op !== 'string') return;
   const fn = OPS[m.op];
   if (!fn) return reply(e.sender, m.id, false, `unknown op ${m.op}`);
@@ -118,13 +118,13 @@ app.whenReady().then(() => {
   setTimeout(() => storage.sweepMedia(), 3000);
   // the Mac needs a menu bar: it's where ⌘Q, ⌘C/⌘V/⌘Z in text and the window keys live. Linux has none
   Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]) : null);
-  protocol.handle('myramedia', req => storage.serveMedia(req));
+  protocol.handle('fenmyrmedia', req => storage.serveMedia(req));
   // the microphone for voice memos, the camera for video cards, and the clipboard for copy/paste between boards
   const allowed = new Set(['media', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen']);
   session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(allowed.has(perm)));
   session.defaultSession.setPermissionCheckHandler((wc, perm) => allowed.has(perm));
   createWindow();
-  theme.watch(s => win && !win.isDestroyed() && win.webContents.send('myra-event', 'caelestia', s));
+  theme.watch(s => win && !win.isDestroyed() && win.webContents.send('fenmyr-event', 'caelestia', s));
   storage.watchBoards(() => win && win.webContents.executeJavaScript('window.__boardsChanged && __boardsChanged()').catch(() => {}));
 });
 app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });

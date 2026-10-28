@@ -1,21 +1,21 @@
 #!/bin/bash
-# Removes Myra. Your boards and settings stay unless you say otherwise.
+# Removes Fenmyr. Your boards and settings stay unless you say otherwise.
 #   ./uninstall.sh          remove the app, then ask about your boards and settings
 #   ./uninstall.sh --purge  also delete your boards and settings, without asking
 #   ./uninstall.sh --yes    remove the app, keep your boards and settings, no questions
-LIB="$HOME/.local/lib/myra"
-DATA="${XDG_DATA_HOME:-$HOME/.local/share}/myra"
-CONF="${XDG_CONFIG_HOME:-$HOME/.config}/Myra"    # Electron keeps the app's settings here (name, theme, the tour…)
+LIB="$HOME/.local/lib/fenmyr"
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}/fenmyr"
+CONF="${XDG_CONFIG_HOME:-$HOME/.config}/Fenmyr"    # Electron keeps the app's settings here (name, theme, the tour…)
 PURGE=0; YES=0
 for a in "$@"; do case "$a" in --purge) PURGE=1;; --yes|-y) YES=1;; esac; done
 
 echo ""
-echo "  Removing Myra…"
+echo "  Removing Fenmyr…"
 pkill -f "lectron[^ ]* .*$LIB/app( |$)" 2>/dev/null || true
-pkill -x myra 2>/dev/null || true   # the AppImage
+pkill -x fenmyr 2>/dev/null || true   # the AppImage
 rm -rf "$LIB"
-rm -f "$HOME/.local/bin/myra" "$HOME/.local/share/applications/myra.desktop"
-for f in "$HOME"/Applications/Myra*.AppImage; do [ -e "$f" ] && rm -f "$f" && echo "  ✓ Removed $f"; done
+rm -f "$HOME/.local/bin/fenmyr" "$HOME/.local/share/applications/fenmyr.desktop"
+for f in "$HOME"/Applications/Fenmyr*.AppImage; do [ -e "$f" ] && rm -f "$f" && echo "  ✓ Removed $f"; done
 command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 echo "  ✓ The app is gone."
 

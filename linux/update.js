@@ -1,15 +1,15 @@
-// Updates, three ways depending on how Myra was installed:
+// Updates, three ways depending on how Fenmyr was installed:
 //   from a git clone with install.sh:  check GitHub for new commits; "Update now" runs ./install.sh --update (pull, reinstall, reopen)
-//   the AppImage:                      check GitHub Releases; download the new AppImage and swap it in when Myra quits
+//   the AppImage:                      check GitHub Releases; download the new AppImage and swap it in when Fenmyr quits
 //   anything else (a distro package):  nothing to do here, the package manager updates it
 const fs = require('fs'), path = require('path'), { spawn } = require('child_process');
 const { app } = require('electron');
 const P = require('./paths'), { run } = require('./claude'), { get, download: fetchTo } = require('./net');
 
-const REPO = 'chiangs/myra';
-const releaseAPI = process.env.MYRA_RELEASE_API || `https://api.github.com/repos/${REPO}/releases/latest`;   // the override is only for testing updates
-const assetName = () => `Myra-${process.arch === 'x64' ? 'x86_64' : process.arch}.AppImage`;   // x86_64 or arm64, as make-release.sh names them
-const preview = () => process.env.MYRA_PREVIEW_UPDATE === '1';   // a preview of the update bar for testing
+const REPO = 'chiangs/fenmyr';
+const releaseAPI = process.env.FENMYR_RELEASE_API || `https://api.github.com/repos/${REPO}/releases/latest`;   // the override is only for testing updates
+const assetName = () => `Fenmyr-${process.arch === 'x64' ? 'x86_64' : process.arch}.AppImage`;   // x86_64 or arm64, as make-release.sh names them
+const preview = () => process.env.FENMYR_PREVIEW_UPDATE === '1';   // a preview of the update bar for testing
 const appRoot = path.join(__dirname, '..');
 const appVersion = () => app.getVersion();
 
@@ -32,7 +32,7 @@ function newer(a, b) {
   return false;
 }
 async function latestRelease() {
-  try { const r = await get(releaseAPI, 30, { Accept: 'application/vnd.github+json', 'User-Agent': 'Myra' }); return r.ok ? await r.json() : null; } catch (e) { return null; }
+  try { const r = await get(releaseAPI, 30, { Accept: 'application/vnd.github+json', 'User-Agent': 'Fenmyr' }); return r.ok ? await r.json() : null; } catch (e) { return null; }
 }
 
 async function check() {
@@ -53,7 +53,7 @@ async function check() {
   return { release: true, behind: newer(r.tag_name, appVersion()) ? 1 : 0, notes, since: appVersion(), latest: r.tag_name };
 }
 
-// ---- the AppImage: the new one waits in pending-update/ until Myra quits ----
+// ---- the AppImage: the new one waits in pending-update/ until Fenmyr quits ----
 const pendingFile = () => path.join(P.pendingDir, assetName()), pendingVersion = () => { try { return fs.readFileSync(pendingFile() + '.version', 'utf8').trim(); } catch (e) { return null; } };
 async function download() {
   const r = await latestRelease();
@@ -61,12 +61,12 @@ async function download() {
   const v = pendingVersion(); if (v && !newer(r.tag_name, v) && fs.existsSync(pendingFile())) return v;   // already waiting
   const asset = (r.assets || []).find(a => a.name === assetName()); if (!asset) throw new Error("The new version isn't there yet.");
   fs.rmSync(P.pendingDir, { recursive: true, force: true }); fs.mkdirSync(P.pendingDir, { recursive: true });
-  try { await fetchTo(asset.browser_download_url, pendingFile(), 1800, { 'User-Agent': 'Myra' }); } catch (e) { throw new Error("The download didn't finish."); }
+  try { await fetchTo(asset.browser_download_url, pendingFile(), 1800, { 'User-Agent': 'Fenmyr' }); } catch (e) { throw new Error("The download didn't finish."); }
   fs.chmodSync(pendingFile(), 0o755);
   fs.writeFileSync(pendingFile() + '.version', r.tag_name.replace(/^v/, ''));
   return r.tag_name.replace(/^v/, '');
 }
-// a tiny helper that waits for this Myra to close, puts the new AppImage in place, and (if asked) opens it
+// a tiny helper that waits for this Fenmyr to close, puts the new AppImage in place, and (if asked) opens it
 let swapping = false;
 function swapOnExit(reopen) {
   swapping = true;
@@ -76,7 +76,7 @@ function swapOnExit(reopen) {
 
 async function prepare() {
   if (preview()) return 'preview';
-  if (!appImage()) throw new Error(repoDir() ? 'This copy updates from its folder, so it can\'t update by itself.' : 'Update Myra with the tool you installed it with.');
+  if (!appImage()) throw new Error(repoDir() ? 'This copy updates from its folder, so it can\'t update by itself.' : 'Update Fenmyr with the tool you installed it with.');
   return download();
 }
 async function now() {
@@ -84,14 +84,14 @@ async function now() {
   const dir = repoDir();
   if (dir) {
     // only a clean fast-forward: never touch someone's own changes
-    if ((await git(['status', '--porcelain', '--untracked-files=no'], dir)).out) throw new Error('Your Myra folder has changes of its own, so I won\'t update over them. Run ./install.sh --update in a terminal to see what\'s up.');
+    if ((await git(['status', '--porcelain', '--untracked-files=no'], dir)).out) throw new Error('Your Fenmyr folder has changes of its own, so I won\'t update over them. Run ./install.sh --update in a terminal to see what\'s up.');
     if (!(await git(['merge-base', '--is-ancestor', 'HEAD', '@{u}'], dir)).ok) throw new Error('This copy has gone its own way from GitHub, so I\'ll leave it alone.');
     // the installer pulls, reinstalls and reopens the app; it runs on its own so it can close this one
     const log = fs.openSync(P.updateLog, 'w');
     spawn('/bin/bash', ['-c', 'cd "$0" && exec ./install.sh --update', dir], { detached: true, stdio: ['ignore', log, log] }).unref();
     return 'updating';
   }
-  if (!appImage()) throw new Error('Update Myra with the tool you installed it with.');
+  if (!appImage()) throw new Error('Update Fenmyr with the tool you installed it with.');
   await download();
   swapOnExit(true); setTimeout(() => app.quit(), 400);
   return 'updating';

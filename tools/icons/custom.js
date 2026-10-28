@@ -32,8 +32,8 @@ const wrap = inner => `<g transform="scale(10.6667)">${inner}</g>`;
 const both = (fn) => ({ r: wrap(fn(false)), d: wrap(fn(true)) });
 
 module.exports = {
-  // the cloudberry itself: Myra's mark
-  'myra-mark': { ...both(duo => mark(12, 14.2, 1, duo)), kw: 'myra cloudberry berry logo' },
+  // the cloudberry itself: Fenmyr's mark (the app's logo; Myra's own face is the pixel art)
+  'fenmyr-mark': { ...both(duo => mark(12, 14.2, 1, duo)), kw: 'fenmyr cloudberry berry logo' },
   // ask Myra: a smaller berry with a sparkle
   'myra-tool': { ...both(duo => mark(10.6, 15, .8, duo) + `<path class="s${duo ? ' t' : ''}" d="${STAR}"/>`), kw: 'ask myra ai assistant sparkle' },
   // chat with Myra: a bubble with a leaf crown and three beads
