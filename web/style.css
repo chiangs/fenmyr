@@ -864,6 +864,8 @@ body.dark .card.shape .text { color: #fff; }
 .top { transition: background .2s, box-shadow .2s, padding .2s; border-radius: var(--pill-r); corner-shape: squircle; }
 .top.covered { background: rgba(252, 250, 248, .86); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(var(--sh), calc(.12 * var(--sh-k))); padding: 8px 14px 10px; margin: -8px 0 0 -14px; }
 body.dark .top.covered { background: rgba(43, 39, 34, .88); box-shadow: 0 6px 20px rgba(0, 0, 0, .35); }
+/* following Caelestia: the title bar over cards takes the panel colour, like the other panels */
+body.following-caelestia .top.covered { background: color-mix(in srgb, var(--panel) 88%, transparent); color: var(--ink); }
 .top.covered { padding-bottom: 26px; }
 .top.covered .saved { top: auto; bottom: 9px; left: 15px; }
 .au-count.soft { display: flex; gap: 5px; align-items: center; justify-content: center; }
