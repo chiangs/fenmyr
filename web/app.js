@@ -36,8 +36,12 @@
   const uid = () => Math.random().toString(36).slice(2, 10);
   const tilt = () => +(Math.random() * 4 - 2).toFixed(1);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // search: the words in a query, and whether a text has all of them (the palette, templates, icons and Find all use these)
+  const queryWords = q => String(q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const hasAll = (words, text) => words.every(w => text.includes(w));
 
   let board = null, view = { x: 0, y: 0, z: 1 }, sel = new Set(), editing = null, space = false, focusSet = null;
+  const find = { on: false, hits: [], i: 0, set: null, cur: null };   // the find bar next to Myra
 
   // ---------- boards ----------
   const TEMPLATES = {
@@ -399,7 +403,7 @@
   $('homeBtn').onclick = () => openHome('all');
   $('brand').onclick = () => openHome('all');
   $('homeBack').onclick = () => { if (!homeAt) return; const f = homeAt.level === 'folder' && folders.find(x => x.id === homeAt.id); openHome(f && hasParent(f) ? 'folder:' + f.parent : f && f.project && projects.some(p => p.id === f.project) ? 'project:' + f.project : 'all'); };
-  function openHome(go = 'all') { const [level, id] = go.split(':'); homeAt = { level, id }; $('home').classList.add('on'); stage.classList.add('at-home'); stopPlacing(); refreshBoards(); }
+  function openHome(go = 'all') { const [level, id] = go.split(':'); findClose(); homeAt = { level, id }; $('home').classList.add('on'); stage.classList.add('at-home'); stopPlacing(); refreshBoards(); }
   function closeHome() { if (!homeAt) return; homeAt = null; $('home').classList.remove('on'); stage.classList.remove('at-home'); refreshBoards(); }
   const miniCache = new Map();
   async function mini(id) {
@@ -498,7 +502,7 @@
     // an edit still waiting to save belongs to the board you're leaving: save it first
     if (saveT && board) { clearTimeout(saveT); saveT = 0; board.view = view; await Fenmyr.save(board); }
     const b = await Fenmyr.load(id); if (!b) return;
-    miniCache.clear(); vnFull.clear(); histOpen = false; board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
+    miniCache.clear(); vnFull.clear(); histOpen = false; findClose(); board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
     board.cards.forEach(c => { if (c.type === 'audio' && c.rec) { c.rec = false; c.paused = false; if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.'; } });
     board.cards.forEach(c => { if (c.type === 'canvas' && c.board) { const kb = boardList.find(x => x.id === c.board); if (kb && kb.name !== c.text) c.text = kb.name; } });
     $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); applyToolbar(); try { localStorage.setItem('fenmyr:last', id); } catch (e) {}
@@ -506,7 +510,7 @@
   let saveT = 0;
   // ---------- undo / redo: a snapshot of the board after each change settles ----------
   let past = [], future = [], restoring = false, snapT = 0;
-  const stateOf = () => JSON.stringify({ cards: board.cards, links: board.links, tray: board.tray, palette: board.palette });
+  const stateOf = () => JSON.stringify({ cards: board.cards, links: board.links, tray: board.tray, trayLinks: board.trayLinks, palette: board.palette });
   function remember() { if (restoring || !board) return; const st = stateOf(); if (past[past.length - 1] !== st) { past.push(st); if (past.length > 80) past.shift(); future = []; } }
   function resetHistory() { past = board ? [stateOf()] : []; future = []; }
   function travel(dir) {
@@ -514,7 +518,7 @@
     if (dir < 0 ? past.length < 2 : !future.length) return say(dir < 0 ? 'Nothing left to undo' : 'Nothing to redo', 1800);
     if (dir < 0) future.push(past.pop()); else past.push(future.pop());
     const st = JSON.parse(past[past.length - 1]); restoring = true;
-    Object.assign(board, st); sel.clear(); selWire = null; endEdit(); renderAll(); renderPalette(); save(); restoring = false;
+    Object.assign(board, st); if (!st.trayLinks) delete board.trayLinks; sel.clear(); selWire = null; endEdit(); renderAll(); renderPalette(); save(); restoring = false;
   }
   // every card keeps real numbers for its place and size (a bad one would break saving)
   function cleanNumbers() { board.cards.forEach(c => { ['x', 'y'].forEach(k => { if (!Number.isFinite(c[k])) c[k] = 0; }); ['w', 'h'].forEach(k => { if (!Number.isFinite(c[k]) || c[k] <= 0) c[k] = k === 'w' ? 200 : 100; }); ['r', 'rot'].forEach(k => { if (c[k] != null && !Number.isFinite(c[k])) c[k] = 0; }); }); }
@@ -761,7 +765,7 @@
   function renderCard(c, pop) {
     let el = cardsEl.querySelector(`[data-id="${c.id}"]`);
     if (!el) { el = document.createElement('div'); el.dataset.id = c.id; cardsEl.appendChild(el); if (pop) el.classList.add('pop'); }
-    el.className = `card ${c.type}` + (sel.has(c.id) ? ' sel' : '') + (focusSet && !focusSet.has(c.id) ? ' dim' : '') + (pop ? ' pop' : '');
+    el.className = `card ${c.type}` + (sel.has(c.id) ? ' sel' : '') + (isDim(c) ? ' dim' : '') + (find.cur === c.id ? ' find-cur' : '') + (pop ? ' pop' : '');
     Object.assign(el.style, { left: c.x + 'px', top: c.y + 'px', width: titleW(c), height: c.type === 'title' ? 'auto' : c.h + 'px' });
     el.classList.toggle('ly-off', !!c.hidden); el.classList.toggle('ly-lock', !!c.locked); el.classList.toggle('fixedw', !!c.fixedW); applyStroke(c, el);
     if (c.type === 'title' || c.type === 'text') el.classList.toggle('no-fill', (c.type === 'title' ? c.tc : c.color) === 'none'); if (SIZED_T.includes(c.type)) { el.style.setProperty('--ta', c.align || 'left');
@@ -966,6 +970,31 @@
     const list = $('trayList'); list.innerHTML = ''; $('trayCount').textContent = board.tray.length;
     board.tray.forEach(c => { const d = document.createElement('div'); d.className = 'tray-item'; d.dataset.id = c.id; d.style.setProperty('--tilt', (c.r / 2) + 'deg');
       d.innerHTML = c.type === 'image' ? `<img src="${esc(c.src)}">` : esc(c.type === 'link' ? (c.title || c.url) : c.text); list.appendChild(d); });
+  }
+  // Unsorted keeps ideas simple: every card is its own item. But cards that were joined by connectors when they went in stay tied (c.tie, and their
+  // connectors wait in board.trayLinks), so pulling one back out brings the others with it, laid out as they were, reconnected
+  function sendToTray(cards) {
+    const ids = new Set(cards.map(c => c.id)), joined = board.links.filter(l => ids.has(l.a) && ids.has(l.b)), up = new Map(cards.map(c => [c.id, c.id]));
+    const root = id => { while (up.get(id) !== id) id = up.get(id); return id; }; joined.forEach(l => up.set(root(l.a), root(l.b)));
+    const size = {}; cards.forEach(c => { const r = root(c.id); size[r] = (size[r] || 0) + 1; });
+    cards.forEach(c => { const r = root(c.id); if (size[r] > 1) c.tie = r; else delete c.tie; });
+    board.trayLinks = [...(board.trayLinks || []), ...joined];
+    board.cards = board.cards.filter(c => !ids.has(c.id)); board.links = board.links.filter(l => !ids.has(l.a) && !ids.has(l.b));
+    cards.forEach(c => { board.tray.unshift(c); cardsEl.querySelector(`[data-id="${c.id}"]`)?.remove(); });
+  }
+  // back onto the board with c's top-left at `at`; the rest of its group follows. Returns everything that came out.
+  function takeFromTray(c, at) {
+    const members = c.tie ? board.tray.filter(m => m.tie === c.tie) : [c]; if (!members.includes(c)) members.push(c);
+    const dx = c.x == null ? 0 : at.x - c.x, dy = c.y == null ? 0 : at.y - c.y, ids = new Set(members.map(m => m.id));
+    members.forEach(m => { if (m === c) { m.x = at.x; m.y = at.y; } else if (m.x != null) { m.x += dx; m.y += dy; } });
+    const back = (board.trayLinks || []).filter(l => ids.has(l.a) && ids.has(l.b)); board.trayLinks = (board.trayLinks || []).filter(l => !back.includes(l)); board.links.push(...back);
+    board.tray = board.tray.filter(m => !ids.has(m.id)); members.forEach(m => { delete m.tie; addCard(m); });
+    if (back.length) renderWires(); return members;
+  }
+  // a tied card that lost its partners (Myra removed them) is just an ordinary item again
+  function tidyTies() {
+    const n = {}; board.tray.forEach(c => c.tie && (n[c.tie] = (n[c.tie] || 0) + 1)); board.tray.forEach(c => { if (c.tie && n[c.tie] < 2) delete c.tie; });
+    const ids = new Set(board.tray.map(c => c.id)); board.trayLinks = (board.trayLinks || []).filter(l => ids.has(l.a) && ids.has(l.b)); if (!board.trayLinks.length) delete board.trayLinks;
   }
   // (the stage gets a 'multi' class when more than one thing is selected: tilt handles only show for one thing at a time)
   function selectOnly(ids) { if (ids.length && selWire) { selWire = null; renderWires(); } sel = new Set(ids); stage.classList.toggle('multi', sel.size > 1); LY.reveal = true; layersSoon(); board.cards.forEach(c => { const el = cardsEl.querySelector(`[data-id="${c.id}"]`); el && el.classList.toggle('sel', sel.has(c.id)); }); }
@@ -1342,16 +1371,32 @@
       const png = file.type === 'image/png' || file.type === 'image/svg+xml', out = png ? cv.toDataURL('image/png') : '';
       res({ src: png && out.length < 6e6 ? out : cv.toDataURL('image/jpeg', .9), w: cv.width, h: cv.height }); }; im.src = fr.result; }; fr.readAsDataURL(file); });
   }
+  const imageCardFrom = async f => { const im = await imageFromFile(f), w = 260; return card('image', { src: im.src, w, h: Math.round(w * im.h / im.w) + 16 }); };
   async function addImages(files, at, toTray) {
     files = [...files]; const vfs = files.filter(f => f.type.startsWith('video/')); files = files.filter(f => !f.type.startsWith('video/'));
     vfs.forEach((f, n) => addVideo(f, at ? { x: at.x + n * 30, y: at.y + n * 30 } : null));
     let i = 0;
-    for (const f of files) { if (!f.type.startsWith('image/')) continue; const im = await imageFromFile(f);
-      const w = 260, h = Math.round(w * im.h / im.w) + 16, c = card('image', { src: im.src, w, h });
+    for (const f of files) { if (!f.type.startsWith('image/')) continue; const c = await imageCardFrom(f);
       if (toTray) { board.tray.unshift(c); renderTray(); save(); continue; }
-      const p = at || centerWorld(); c.x = p.x - w / 2 + i * 30; c.y = p.y - h / 2 + i * 30; i++; addCard(c); }
+      const p = at || centerWorld(); c.x = p.x - c.w / 2 + i * 30; c.y = p.y - c.h / 2 + i * 30; i++; addCard(c); }
   }
-
+  // a picture meant for a note becomes a card of its own, so a card never mixes kinds: an empty note turns into the picture,
+  // a note with words gets it beside it, joined by a connector (in the connector style you last chose)
+  async function pictureForNote(c, files) {
+    const el = cardsEl.querySelector(`[data-id="${c.id}"]`), hasWords = !![el?.querySelector('.text')?.innerText ?? c.text, el?.querySelector('.nname')?.innerText ?? c.name].join('').trim() || (c.tags || []).length;
+    if (editing === c.id) endEdit();
+    const pics = []; for (const f of files) if (f.type.startsWith('image/')) pics.push(await imageCardFrom(f)); if (!pics.length) return;
+    let anchor = c; const made = [];
+    if (!hasWords) { const p = pics.shift(), ties = board.links.filter(l => l.a === c.id || l.b === c.id); p.x = c.x + c.w / 2 - p.w / 2; p.y = c.y + c.h / 2 - p.h / 2; if (c.group) p.group = c.group;
+      sel = new Set([c.id]); removeSelected(); addCard(p); ties.forEach(l => board.links.push({ ...l, id: uid(), a: l.a === c.id ? p.id : l.a, b: l.b === c.id ? p.id : l.b })); anchor = p; made.push(p); }
+    const busy = (x, y, w, h) => board.cards.some(k => k.type !== 'frame' && k.type !== 'section' && x < k.x + k.w + 12 && x + w + 12 > k.x && y < k.y + k.h + 12 && y + h + 12 > k.y);
+    for (const p of pics) {
+      let x = anchor.x + anchor.w + 70, y = anchor.y;
+      for (let k = 0; k < 10 && busy(x, y, p.w, p.h); k++) y = anchor.y + (k + 1) * (p.h + 24);
+      p.x = x; p.y = y; if (anchor.group) p.group = anchor.group; addCard(p); made.push(p); board.links.push({ id: uid(), a: anchor.id, b: p.id, ...(settings.wireStyle || {}) });
+    }
+    renderWires(); save(); selectOnly([made[made.length - 1].id]); revealCards(made);
+  }
   // ---------- pulling colours out of an image ----------
   function pullColors(c) {
     const im = new Image(); im.onload = () => {
@@ -1655,7 +1700,7 @@
       // set it down: the transform becomes its real position again
       d.start.forEach(s => { const el = s.el || cardsEl.querySelector(`[data-id="${s.c.id}"]`); if (!el) return; el.style.left = s.c.x + 'px'; el.style.top = s.c.y + 'px'; el.style.transform = ''; el.style.willChange = ''; el.classList.remove('dragging'); });
       if (d.moved && overTray(e)) {                       // dropped on the tray: back to Unsorted
-        d.start.forEach(s => { board.cards = board.cards.filter(c => c !== s.c); board.links = board.links.filter(l => l.a !== s.c.id && l.b !== s.c.id); board.tray.unshift(s.c); cardsEl.querySelector(`[data-id="${s.c.id}"]`)?.remove(); });
+        sendToTray(d.start.map(s => s.c));
         sel.clear(); renderTray(); renderWires(); save(); return;
       }
       cardsEl.querySelectorAll('.drop-in, .drop-col').forEach(n => n.classList.remove('drop-in', 'drop-col'));
@@ -1759,7 +1804,7 @@
     document.body.appendChild(ghost); it.style.opacity = .3;
     const mv = ev => { ghost.style.left = ev.clientX - 40 + 'px'; ghost.style.top = ev.clientY - 20 + 'px'; };
     const up = ev => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); ghost.remove(); it.style.opacity = '';
-      if (!overTray(ev) && !ev.target.closest('.side, .box')) { const w = toWorld(ev.clientX, ev.clientY); c.x = w.x - c.w / 2; c.y = w.y - 20; board.tray = board.tray.filter(x => x !== c); addCard(c); renderTray(); } };
+      if (!overTray(ev) && !ev.target.closest('.side, .box')) { const w = toWorld(ev.clientX, ev.clientY); takeFromTray(c, { x: w.x - c.w / 2, y: w.y - 20 }); renderTray(); } };
     addEventListener('pointermove', mv); addEventListener('pointerup', up);
   });
 
@@ -1784,10 +1829,13 @@
   $('capForm').onsubmit = e => { e.preventDefault(); const v = $('capInput').value.trim(); if (v) { if (/^https?:\/\//.test(v)) linkCard(v, null, true); else { board.tray.unshift(card('note', { text: v })); renderTray(); save(); } $('tray').classList.remove('closed'); } capture(false); };
 
   // ---------- focus mode ----------
+  // a card fades when Focus mode or Find leaves it out
+  const isDim = c => !!(focusSet && !focusSet.has(c.id)) || !!(find.set && !find.set.has(c.id));
+  function applyDim() { board.cards.forEach(c => { const el = cardsEl.querySelector(`[data-id="${c.id}"]`); el?.classList.toggle('dim', isDim(c)); el?.classList.toggle('find-cur', find.cur === c.id); }); }
   function setFocus(on) {
     focusSet = on && sel.size ? new Set(sel) : null;
     if (focusSet) board.links.forEach(l => { if (focusSet.has(l.a)) focusSet.add(l.b); if (focusSet.has(l.b)) focusSet.add(l.a); });
-    board.cards.forEach(c => cardsEl.querySelector(`[data-id="${c.id}"]`)?.classList.toggle('dim', !!focusSet && !focusSet.has(c.id)));
+    applyDim();
     if (focusSet) { fit(board.cards.filter(c => focusSet.has(c.id)), 160); say('Focus mode: just these. Press Esc when you want everything back.'); }
   }
 
@@ -1853,6 +1901,7 @@
   addEventListener('keydown', e => {
     const typing = e.target.closest('input, textarea, [contenteditable="true"]');
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); capture(true); return; }
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f' && !homeAt && !$('settings').classList.contains('on')) { e.preventDefault(); startFind(); return; }
     if ((e.metaKey || e.ctrlKey) && (e.key === '\\' || e.code === 'Backslash') && !homeAt && !docCard) { e.preventDefault(); setClean(!document.body.classList.contains('clean')); return; }
     if (e.key === 'Escape' && document.body.classList.contains('clean') && !editing && !drawOn) { setClean(false); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.target.closest('input, textarea, [contenteditable="true"]') && !homeAt) { e.preventDefault(); travel(e.shiftKey ? 1 : -1); return; }   // inside text, ⌘Z undoes typing as usual
@@ -2008,6 +2057,14 @@
 
   // ---------- paste and drop ----------
   addEventListener('paste', e => {
+    pendingPaste = false;   // a real paste arrived, so Ctrl+V's fallback (pasting the cards you last copied) must stand down, whichever way this paste goes
+    // pictures never go inside a card's text: a note gets a connected picture card, anything else you were typing in gets one on the board
+    const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/')), one = !editing && sel.size === 1 && !e.target.closest('input, textarea, [contenteditable="true"]') ? byId([...sel][0]) : null;
+    if (imgs.length && !$('capture').classList.contains('on')) {
+      const into = editing && e.target.closest?.('.card.editing') ? byId(editing) : one;
+      if (into?.type === 'note') { e.preventDefault(); pictureForNote(into, imgs); return; }
+      if (editing && e.target.closest?.('.card.editing')) { e.preventDefault(); addImages(imgs, null); return; }
+    }
     if (e.target.closest('input, textarea, [contenteditable="true"]') && !(e.target.id === 'capInput' && e.clipboardData.files?.length)) return;   // a picture pasted into quick capture goes to Unsorted
     pendingPaste = false;
     // cards copied in Fenmyr (on this board or another one) come back as cards
@@ -2021,7 +2078,7 @@
   stage.addEventListener('dragover', e => e.preventDefault());
   stage.addEventListener('drop', e => { e.preventDefault(); const files = [...e.dataTransfer.files], w = toWorld(e.clientX, e.clientY);
     const bid = e.dataTransfer.getData('fenmyr/board'); if (bid && board) return nestBoard(bid, board.id, { x: w.x - 130, y: w.y - 90 }).then(ok => ok && refreshBoards());
-    if (files.length) return addImages(files, w, overTray(e));
+    if (files.length) { const ed = editing && e.target.closest?.('.card.editing') ? byId(editing) : null; if (ed?.type === 'note') return pictureForNote(ed, files); return addImages(files, w, overTray(e)); }
     const u = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain'); if (/^https?:/.test(u)) linkCard(u.trim(), w); });
 
   // ---------- Myra on the board ----------
@@ -2380,7 +2437,7 @@
   }
   function typing(on) { $('mcList').querySelector('.typing')?.remove(); $('mcStatus').textContent = on ? 'thinking…' : '';
     if (on) { const d = document.createElement('div'); d.className = 'mc-msg myra typing'; d.innerHTML = '<i></i><i></i><i></i>'; $('mcList').appendChild(d); $('mcList').scrollTop = 1e9; } }
-  $('mcForm').onsubmit = e => { e.preventDefault(); const q = $('mcInput').value.trim(); if (!q) return; $('mcInput').value = ''; $('mcInput').style.height = ''; $('mcInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
+  $('mcForm').onsubmit = e => { e.preventDefault(); const q = $('mcInput').value.trim(); if (!q) return; $('mcInput').value = ''; $('mcInput').style.height = ''; hideSlash(); if (q[0] === '/') return slash(q); $('mcInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
   $('mcInput').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('mcForm').requestSubmit(); } if (e.key === 'Escape') { myraOpen(false); e.stopPropagation(); } };
   $('mcInput').oninput = () => { const t = $('mcInput'); t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; };
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());
@@ -2395,13 +2452,14 @@
       library: { projects: projects.map(p => ({ name: p.name, folders: foldersIn(p.id).map(f => f.name) })), foldersNotInAProject: looseFolders().map(f => f.name), boards: boardList.map(b => ({ id: b.id, name: b.name, folder: (folders.find(f => f.id === b.folder) || {}).name || null, current: b.id === board.id || undefined })) } };
   }
   // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
+  function tidyNotes() {
+    const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id)); if (!notes.length) return 0;
+    const x0 = Math.min(...notes.map(c => c.x)), y0 = Math.min(...notes.map(c => c.y));
+    notes.forEach((c, i) => { c.x = x0 + (i % 4) * 250; c.y = y0 + Math.floor(i / 4) * 180; c.r = tilt(); renderCard(c); }); renderWires(); save();
+    return notes.length;
+  }
   function offlineMyra(q, why) {
-    const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
-    if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) {
-      const x0 = Math.min(...notes.map(c => c.x)), y0 = Math.min(...notes.map(c => c.y));
-      notes.forEach((c, i) => { c.x = x0 + (i % 4) * 250; c.y = y0 + Math.floor(i / 4) * 180; c.r = tilt(); renderCard(c); }); renderWires(); save();
-      return reply(`I lined your ${notes.length} notes up in tidy rows ✦ ${why}`, 9000);
-    }
+    if (/group|sort|organi[sz]e|tidy|line up/i.test(q)) { const n = tidyNotes(); if (n) return reply(`I lined your ${n} notes up in tidy rows ✦ ${why}`, 9000); }
     reply(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Fenmyr.openURL(GUIDE) }] : []); offlineMyra.signin = false;
   }
   let haveClaude = null;
@@ -2434,7 +2492,94 @@
       reply("Hmm, I couldn't reach Claude: " + err.message); }
     finally { $('myra').classList.remove('thinking'); goo.think(false); typing(false); }
   }
-  $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
+  $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; if (q[0] === '/') return slash(q); myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
+  // ---------- slash commands: a list of what Myra can do right here, no thinking needed (typing / opens it; Ctrl+F starts /find) ----------
+  const SLASH = [
+    { cmd: 'find', arg: '<words>', desc: 'Find cards that mention something', run: slashFind },
+    { cmd: 'tag', arg: '<tag>', desc: 'Show the cards with a tag', run: slashTag },
+    { cmd: 'tidy', desc: 'Line the loose notes up in rows', run: () => { const n = tidyNotes(); reply(n ? `Lined ${n} notes up in tidy rows ✦` : 'No loose notes to tidy ✦'); } },
+    { cmd: 'fit', desc: 'Zoom to see everything', run: () => { zoomFit(); reply('Everything is in view ✦'); } },
+    { cmd: 'clear', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
+    { cmd: 'help', desc: 'What I can do without thinking', run: () => reply(helpText()) },
+  ];
+  const helpText = (lead = 'Here is what I can do right here, no thinking needed:') => lead + '\n' + SLASH.filter(c => c.cmd !== 'help').map(c => `/${c.cmd}${c.arg ? ' ' + c.arg : ''}  ${c.desc}`).join('\n') + '\nAsk me anything else in your own words ✦';
+  const wordsOf = c => [c.text, c.name, c.label, c.title, ...(c.items || []).map(i => i.t), ...(c.tags || []).map(t => '#' + t), String(c.body || '').replace(/<[^>]+>/g, ' ')].filter(Boolean).join(' ').toLowerCase();
+  function glideTo(cs) { const from = { ...view }; fit(cs, 200, 1.2); const to = { ...view }; Object.assign(view, from); applyView(); glideView(to); }
+  // ---------- the find bar: opens next to Myra when /find or /tag runs; searches as you type, steps through the matches, closes with Esc ----------
+  const readingOrder = (a, b) => Math.round(a.y / 90) - Math.round(b.y / 90) || a.x - b.x;
+  function findRun(keep) {
+    const words = queryWords($('fbQ').value);
+    find.hits = words.length ? board.cards.filter(c => !c.hidden && hasAll(words, wordsOf(c))).sort(readingOrder) : [];
+    find.i = keep && find.i < find.hits.length ? find.i : 0; find.cur = find.hits[find.i]?.id || null; find.set = find.hits.length ? new Set(find.hits.map(c => c.id)) : null;
+    const tray = words.length ? board.tray.filter(c => hasAll(words, wordsOf(c))).length : 0;
+    $('fbCount').textContent = !words.length ? 'Type to find' : find.hits.length ? `${find.i + 1} of ${find.hits.length}` + (tray ? ` · +${tray} in Unsorted` : '') : tray ? `${tray} in Unsorted` : 'No matches';
+    $('fbCount').classList.toggle('none', !!words.length && !find.hits.length);
+    $('fbPrev').disabled = $('fbNext').disabled = find.hits.length < 2;
+    applyDim(); if (find.cur) glideTo([byId(find.cur)]); findFit();
+    return find.hits.length;
+  }
+  function findStep(d) { if (find.hits.length < 2) return; find.i = (find.i + d + find.hits.length) % find.hits.length; findRun(true); }
+  function findOpen(query = '') { find.on = true; myraOpen(false); selectOnly([]); $('findBar').hidden = false; $('fbQ').value = query; const n = findRun(false); $('fbQ').focus(); $('fbQ').select(); return n; }
+  function findClose(keep) { if (!find.on) return; if (keep && find.cur && byId(find.cur)) selectOnly([find.cur]); find.on = false; find.set = find.cur = null; find.hits = []; $('findBar').hidden = true; findFit(); applyDim(); }
+  let findT = 0;
+  $('fbQ').addEventListener('input', () => { clearTimeout(findT); findT = setTimeout(() => findRun(false), 120); });
+  $('fbQ').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); clearTimeout(findT); findStep(e.shiftKey ? -1 : 1); } if (e.key === 'Escape') findClose(true); });
+  $('fbNext').onclick = () => findStep(1); $('fbPrev').onclick = () => findStep(-1); $('fbX').onclick = () => findClose(true);
+  // the bar always sits right of Myra's pill. When the toolbar leaves no room for it, the toolbar steps aside while you search (a very narrow window puts the bar just above her instead)
+  function findFit() {
+    const b = $('findBar'), d = $('dock'), over = () => b.getBoundingClientRect().right > innerWidth - 12;
+    d.classList.remove('finding'); b.classList.remove('up'); if (b.hidden) return;
+    if (over()) { d.classList.add('finding'); if (over()) b.classList.add('up'); }
+  }
+  addEventListener('resize', () => { if (find.on) findFit(); });
+  function slashFind(arg) {
+    const q = arg.trim(); if (!q) { findOpen(); return reply('Type what to look for in the bar next to me ✦'); }
+    const n = findOpen(q); reply(n ? `Found ${n} ${n === 1 ? 'card' : 'cards'} for “${q}”. Step through them with the bar next to me ✦` : `Nothing for “${q}”.`);
+  }
+  function slashTag(arg) {
+    const t = cleanTag(arg).toLowerCase(), all = board.tags || [];
+    if (!t) return reply(all.length ? 'Tags on this board: ' + all.map(x => `#${x} (${board.cards.filter(c => (c.tags || []).some(y => y.toLowerCase() === x.toLowerCase())).length})`).join(', ') + '. Try /tag ' + all[0] + ' ✦' : 'No tags on this board yet. Type # in a note to add one ✦');
+    const n = findOpen('#' + t); reply(n ? `Found ${n} ${n === 1 ? 'card' : 'cards'} tagged #${t}. Step through them with the bar next to me ✦` : `Nothing tagged #${t}.`);
+  }
+  function slash(text) {
+    if (!board) return; if (!chatOpen()) myraOpen(true);
+    const m = /^\/(\w*)\s*(.*)$/s.exec(text.trim()), c = m && SLASH.find(x => x.cmd === m[1].toLowerCase());
+    if (!c) { addMsg('me', text); return reply(helpText(`I don't know /${m ? m[1] : ''}. Here is what I can do:`)); }
+    if (!c.quiet) addMsg('me', text); c.run(m[2]);
+  }
+  let slashSel = 0;
+  const slashMenu = document.createElement('div'); slashMenu.className = 'slash-menu'; slashMenu.hidden = true; document.body.appendChild(slashMenu);
+  const hideSlash = () => { slashMenu.hidden = true; };
+  const slashMatches = el => { const m = /^\/(\w*)$/.exec(el.value); return m ? SLASH.filter(c => c.cmd.startsWith(m[1].toLowerCase())) : []; };
+  function showSlash(el) {
+    const list = slashMatches(el); if (!list.length) return hideSlash(); slashSel = Math.min(slashSel, list.length - 1);
+    slashMenu.innerHTML = list.map((c, i) => `<button type="button" data-cmd="${c.cmd}" class="${i === slashSel ? 'on' : ''}"><b>/${c.cmd}${c.arg ? ` <i>${esc(c.arg)}</i>` : ''}</b><span>${esc(c.desc)}</span></button>`).join('');
+    const r = (el.closest('form') || el).getBoundingClientRect(); slashMenu.hidden = false; slashMenu.style.left = r.left + 'px'; slashMenu.style.width = Math.max(260, r.width) + 'px'; slashMenu.style.bottom = (innerHeight - r.top + 6) + 'px';
+    slashMenu.dataset.for = el.id;
+  }
+  function pickSlash(cmd) {
+    const el = $(slashMenu.dataset.for), c = SLASH.find(x => x.cmd === cmd); hideSlash(); if (!el || !c) return;
+    el.value = '/' + c.cmd + (c.arg ? ' ' : ''); el.focus(); el.setSelectionRange(el.value.length, el.value.length);
+    if (!c.arg) el.closest('form').requestSubmit();
+  }
+  slashMenu.addEventListener('pointerdown', e => e.preventDefault());   // keep the focus in the box
+  slashMenu.onclick = e => { const b = e.target.closest('[data-cmd]'); if (b) pickSlash(b.dataset.cmd); };
+  ['mInput', 'mcInput'].forEach(id => {
+    const el = $(id);
+    el.addEventListener('input', () => { slashSel = 0; showSlash(el); });
+    el.addEventListener('blur', () => setTimeout(hideSlash, 120));
+    el.addEventListener('keydown', e => {
+      if (slashMenu.hidden || slashMenu.dataset.for !== id) return; const list = slashMatches(el);
+      if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); return hideSlash(); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); slashSel = (slashSel + (e.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length; return showSlash(el); }
+      if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && list[slashSel] && !(e.key === 'Enter' && el.value.slice(1).toLowerCase() === list[slashSel].cmd && !list[slashSel].arg)) { e.preventDefault(); e.stopImmediatePropagation(); pickSlash(list[slashSel].cmd); }
+    }, true);
+  });
+  // Ctrl+F: Myra's chat opens ready to search
+  function startFind() {
+    if (!board) return; if (find.on) { $('fbQ').focus(); $('fbQ').select(); return; } myraOpen(true); const el = $('mcInput'), had = /^\/find /i.test(el.value);
+    if (!had) el.value = '/find '; el.focus(); el.dispatchEvent(new Event('input')); had ? el.setSelectionRange(6, el.value.length) : el.setSelectionRange(el.value.length, el.value.length);
+  }
   // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
   const noEmoji = t => settings.emoji ? t : String(t).replace(/(\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}])(\uFE0F|\u200D|\u20E3|[\u{1F3FB}-\u{1F3FF}])*/gu, '').replace(/ {2,}/g, ' ').trim();
   const parse = raw => { const s = String(raw), a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0) return { say: s.trim() }; try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return { say: s.trim() }; } };
@@ -2466,7 +2611,7 @@
       x: o.x, y: o.y, text: o.type === 'font' ? (o.sample || '') : o.text || '', color: COLOR_NAMES.includes(o.color) ? o.color : 'white', hex: o.hex, label: o.label,
       items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined, tagText: o.tag, name: o.name }); if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag); addCard(c); added.push(c); if (o.in) file(c, o.in); });
     (r.titles || []).forEach(o => { place(o); added.push(addCard(card('title', { x: o.x, y: o.y, text: o.text }))); });
-    (r.place || []).forEach(o => { const c = board.tray.find(x => x.id === o.id); if (!c) return; place(o); c.x = o.x; c.y = o.y; board.tray = board.tray.filter(x => x !== c); addCard(c); added.push(c); });
+    (r.place || []).forEach(o => { const c = board.tray.find(x => x.id === o.id); if (!c) return; place(o); takeFromTray(c, { x: o.x, y: o.y }).forEach(m => added.push(m)); });
     (r.move || []).forEach(o => { const c = byId(o.id); if (!c || o.x == null) return; c.x = o.x; c.y = o.y; if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
       const el = cardsEl.querySelector(`[data-id="${c.id}"]`); if (el) { el.style.transition = 'left .6s cubic-bezier(.2,.8,.3,1), top .6s cubic-bezier(.2,.8,.3,1)'; renderCard(c); setTimeout(() => el.style.transition = '', 650); } added.push(c); });
     (r.edit || []).forEach(o => { const c = byId(o.id) || board.tray.find(x => x.id === o.id); if (!c) return;
@@ -2484,7 +2629,7 @@
       if (o.name != null && c.type === 'note') c.name = o.name;
       if (o.in !== undefined) { if (o.in) file(c, o.in); else { const from = parentOf(c.id); if (from) from.kids = from.kids.filter(x => x !== c.id); } }
       if (board.cards.includes(c)) { renderCard(c, true); added.push(c); } else renderTray(); });
-    if (r.remove && r.remove.length) { const gone = new Set(r.remove); board.cards = board.cards.filter(c => !gone.has(c.id)); board.tray = board.tray.filter(c => !gone.has(c.id)); board.links = board.links.filter(l => !gone.has(l.a) && !gone.has(l.b)); gone.forEach(id => cardsEl.querySelector(`[data-id="${id}"]`)?.remove()); }
+    if (r.remove && r.remove.length) { const gone = new Set(r.remove); board.cards = board.cards.filter(c => !gone.has(c.id)); board.tray = board.tray.filter(c => !gone.has(c.id)); tidyTies(); board.links = board.links.filter(l => !gone.has(l.a) && !gone.has(l.b)); gone.forEach(id => cardsEl.querySelector(`[data-id="${id}"]`)?.remove()); }
     (r.connect || []).forEach(p => { const [a, b] = Array.isArray(p) ? p : [p.a, p.b]; if (byId(a) && byId(b)) board.links.push({ id: uid(), a, b }); });
     // wireframes: real screens built from the pieces, left to right, with arrows for the flow
     if (Array.isArray(r.screens) && r.screens.length) {
@@ -2733,7 +2878,7 @@
   // ---------- placing: pick a tool, the new thing rides on your cursor, click to drop it, then type ----------
   let placing = null, mouse = { x: 0, y: 0 };
   const PLACE = { note: ['Note', [220, 120]], todo: ['Checklist', [240, 170]], title: ['Title', [300, 56]], coll: ['Collection', [288, 200]], swatch: ['Colour', [120, 150]], doc: ['Doc', [240, 52]], canvas: ['Canvas', [260, 180]], link: ['Paste a link', [260, 52]], shape: ['', [160, 160]], stamp: ['', [56, 56]], audio: ['Voice memo', [290, 150]], piece: ['', [300, 60]], icon: ['', [28, 28]], frame: ['Screen', [393, 852]], text: ['Text', [220, 26]], box: ['Drag to draw a box', [160, 100]] , video: ['Video', [360, 246]] };
-  function startPlacing(type, extra = {}) {
+  function startPlacing(type, extra = {}, quiet = false) {
     if (placing?.type === type && placing.extra?.shape === extra.shape) return stopPlacing();
     stopPlacing(); placing = { type, extra }; selectOnly([]);
     const g = $('ghost'), [label, [w, h]] = PLACE[type]; g.className = 'ghost on ' + type; g.innerHTML = `<span>${label}</span>`;
@@ -2742,14 +2887,15 @@
     if (type === 'icon') { g.innerHTML = Icon(extra.name, { cls: 'ci', size: 28 }); g.style.width = g.style.height = '28px'; }
     if (type === 'frame' && DEVICES[extra.device]) { g.style.width = DEVICES[extra.device][0] + 'px'; g.style.height = DEVICES[extra.device][1] + 'px'; g.querySelector('span').textContent = extra.device; }
     if (type === 'stamp') { const st = extra.stamp; g.innerHTML = stampHTML(st); g.style.width = g.style.height = '56px'; } moveGhost(); stage.classList.add('placing');
+    if (!quiet) { const h = $('placeHint'); h.textContent = (type === 'box' ? 'Drag on the board to draw it' : 'Click the board to place it') + ' · Esc to cancel'; h.hidden = false; }
     $('tools').querySelector(`[data-add="${type}"]`)?.classList.add('on');
   }
-  function stopPlacing() { if (placing?.type === 'audio') setTimeout(coolMic, 15000); $('shapePick').classList.remove('on'); $('tplPick').classList.remove('on'); $('stampWheel').classList.remove('on'); $('stampPick').classList.remove('on'); placing = null; $('ghost').className = 'ghost'; stage.classList.remove('placing'); $('tools').querySelectorAll('.on').forEach(b => b.classList.remove('on')); }
-  function moveGhost() { if (!placing) return; const r = stage.getBoundingClientRect(), g = $('ghost'), o = placing.type === 'stamp' ? 28 * view.z : 14; g.style.left = mouse.x - r.left - o + 'px'; g.style.top = mouse.y - r.top - o + 'px'; g.style.transform = `scale(${view.z})`; }
+  function stopPlacing() { if (placing?.type === 'audio') setTimeout(coolMic, 15000); $('shapePick').classList.remove('on'); $('tplPick').classList.remove('on'); $('stampWheel').classList.remove('on'); $('stampPick').classList.remove('on'); placing = null; $('ghost').className = 'ghost'; $('placeHint').hidden = true; document.body.classList.remove('dz-dragging'); stage.classList.remove('placing'); $('tools').querySelectorAll('.on').forEach(b => b.classList.remove('on')); }
+  function moveGhost() { if (!placing) return; const g = $('ghost'), o = placing.type === 'stamp' ? 28 * view.z : 14; g.style.left = mouse.x - o + 'px'; g.style.top = mouse.y - o + 'px'; g.style.transform = `scale(${view.z})`; }
   addEventListener('pointermove', e => { mouse = { x: e.clientX, y: e.clientY }; moveGhost(); }, true);
   function placeAt(w) {
     if (placing.type === 'stamp') return stampAt(w, placing.extra.stamp);
-    if (placing.type === 'piece') { const n = placing.extra.piece; stopPlacing(); $('dzPieces').querySelectorAll('.on').forEach(x => x.classList.remove('on')); return placePiece(n, w); }
+    if (placing.type === 'piece') { const n = placing.extra.piece; stopPlacing(); document.querySelectorAll('.dz-piece-grid .on').forEach(x => x.classList.remove('on')); return placePiece(n, w); }
     const type = placing.type, more = placing.extra || {}; stopPlacing();
     const dev = DEVICES[more.device], extra = type === 'icon' ? { name: more.name || 'star', color: '#27272a', w: 28, h: 28, r: 0 } : type === 'frame' ? { name: more.device === 'Desktop' ? 'Desktop' : 'Screen', device: more.device || 'Custom', w: dev ? dev[0] : 393, h: dev ? dev[1] : 852, radius: dev ? dev[2] : 0, fill: '#ffffff', r: 0 }
       : type === 'text' ? { text: '', size: 18, weight: 500, font: 'Figtree', color: '#27272a', r: 0 } : type === 'audio' ? { r: 0 } : type === 'doc' ? { text: '', body: '' } : type === 'canvas' ? { text: '' } : type === 'link' ? { url: '' } : type === 'shape' ? { shape: more.shape, fill: 'gray', text: '', r: 0 } : type === 'note' ? { name: '', color: newNoteColor() } : type === 'todo' ? { text: '', items: [{ t: 'first thing', done: false }] } : type === 'title' ? { text: '' }
@@ -2977,11 +3123,11 @@
   }
   // every word you type has to appear in a template's name or description; a group's heading hides when none of its templates match
   function filterTpl() {
-    const words = ($('tpSearch')?.value || '').toLowerCase().split(/\s+/).filter(Boolean); let head = null, headHas = false, shown = 0;
+    const words = queryWords($('tpSearch')?.value); let head = null, headHas = false, shown = 0;
     const closeHead = () => { if (head) head.hidden = !headHas && words.length > 0; };
     $('tplPick').querySelectorAll('.tp-list > :not(.tp-none)').forEach(el => {
       if (el.classList.contains('tp-h')) { closeHead(); head = el; headHas = false; return; }
-      const txt = ((el.querySelector('.tp-t b')?.textContent || '') + ' ' + (el.querySelector('.tp-t small')?.textContent || '')).toLowerCase(), ok = words.every(w => txt.includes(w));
+      const txt = ((el.querySelector('.tp-t b')?.textContent || '') + ' ' + (el.querySelector('.tp-t small')?.textContent || '')).toLowerCase(), ok = hasAll(words, txt);
       el.hidden = !ok; if (ok) { headHas = true; shown++; } });
     closeHead(); $('tplPick').querySelector('.tp-none').hidden = shown > 0 || !words.length;
   }
@@ -3473,7 +3619,41 @@
     'Heading': { icon: 'title', w: 300, make: (W, o = {}) => [T(0, 0, W, o.text || o.title || 'Heading', { size: o.size || 28, weight: 800, align: o.align || 'left' }), ...(o.sub === '' ? [] : [T(0, (o.size || 28) * 1.3 + 6, W, o.sub || 'A little line underneath it.', { size: 15, color: '#71717a', align: o.align || 'left' })])] },
   };
   const PH = (x, y, w, h, label, o = {}) => ({ ...B(x, y, w, h, { radius: 16, ...o }), img: label || 'Image' });
+  // more elements: media, form fields, tabs, a table, an accordion and a dialog (a person can search all of them in the panel)
+  const FIELD_LABEL = (o, W) => o.label ? [T(0, 0, W, o.label, { size: 13, weight: 600, color: '#3f3f46' })] : [];
+  const MORE = {
+    'Video': { icon: 'play-circle', w: 320, make: (W, o = {}) => { const h = o.h || Math.round(W * 9 / 16);
+      return [B(0, 0, W, h, { radius: 12 }), B(W / 2 - 28, h / 2 - 28, 56, 56, { fill: '#ffffff', radius: 28 }), IC(W / 2 - 14, h / 2 - 14, 'play', 28, { color: '#27272a' }), B(16, h - 22, W - 32, 4, { fill: '#d4d4d8', radius: 2 }), B(16, h - 22, (W - 32) * .35, 4, { fill: '#27272a', radius: 2 })]; } },
+    'Map': { icon: 'map', w: 320, make: (W, o = {}) => { const h = o.h || 200;
+      return [B(0, 0, W, h, { radius: 12 }), B(0, h * .3, W, 12, { fill: '#f4f4f5' }), B(0, h * .66, W, 8, { fill: '#f4f4f5' }), B(W * .28, 0, 10, h, { fill: '#f4f4f5' }), B(W * .7, 0, 8, h, { fill: '#f4f4f5' }), IC(W / 2 - 16, h / 2 - 28, 'location', 32, { color: '#27272a' })]; } },
+    'Divider': { icon: 'divider', w: 300, make: (W, o = {}) => [B(0, 0, W, 1, { fill: '#e4e4e7' })] },
+    // a gap on a screen Myra builds; in the panel it's a dashed-looking placeholder so there is something to place
+    'Space': { icon: 'space', w: 300, make: (W, o = {}) => o.panel ? [B(0, 0, W, o.h || 32, { fill: '#f4f4f5', stroke: '#d4d4d8', sw: 1, radius: 8 })] : [] },
+    'Textarea': { icon: 'textarea', w: 300, make: (W, o = {}) => { const top = o.label ? 22 : 0, h = o.h || 110;
+      return [...FIELD_LABEL(o, W), B(0, top, W, h, { fill: '#ffffff', stroke: '#d4d4d8', sw: 1.5, radius: 10 }), T(14, top + 14, W - 28, o.text || 'Write something…', { color: '#a1a1aa' })]; } },
+    'Dropdown': { icon: 'dropdown', w: 300, make: (W, o = {}) => { const top = o.label ? 22 : 0;
+      return [...FIELD_LABEL(o, W), B(0, top, W, 48, { fill: '#ffffff', stroke: '#d4d4d8', sw: 1.5, radius: 10 }), T(14, top + 14, W - 56, o.text || 'Choose one', { color: '#71717a' }), IC(W - 38, top + 12, 'caret-down', 24, { color: '#71717a' })]; } },
+    'Radio': { icon: 'radio', w: 240, make: (W, o = {}) => { const opts = Array.isArray(o.options) && o.options.length ? o.options.slice(0, 6).map(String) : [o.text || 'Option'], single = opts.length === 1, sel = Math.min(opts.length - 1, Math.max(0, +o.selected || 0));
+      return opts.flatMap((t, i) => { const y = i * 34, on = i === sel && !(single && o.on === false);
+        return [B(0, y, 22, 22, { fill: '#ffffff', stroke: '#27272a', sw: 1.5, radius: 11 }), ...(on ? [B(5, y + 5, 12, 12, { fill: '#27272a', radius: 6 })] : []), T(32, y + 2, W - 32, t)]; }); } },
+    'Tabs': { icon: 'tabs', w: 320, make: (W, o = {}) => { const tabs = (o.tabs || ['Overview', 'Details', 'Reviews']).slice(0, 5).map(t => typeof t === 'string' ? t : (t.label || t.text || '')), cw = W / tabs.length, act = Math.min(tabs.length - 1, Math.max(0, +o.active || 0));
+      return [B(0, 41, W, 1, { fill: '#e4e4e7' }), ...tabs.flatMap((t, i) => [T(i * cw, 12, cw, t, { size: 14, weight: i === act ? 700 : 500, align: 'center', color: i === act ? '#18181b' : '#71717a' }), ...(i === act ? [B(i * cw + 8, 39, cw - 16, 3, { fill: '#18181b', radius: 2 })] : [])])]; } },
+    'Table': { icon: 'table', w: 420, make: (W, o = {}) => { const cols = (o.cols || ['Name', 'Role', 'Status']).slice(0, 6).map(String), cells = Array.isArray(o.cells) ? o.cells : [['Ada', 'Lead', 'Active'], ['Sam', 'Design', 'Away'], ['Jo', 'Support', 'Active']], n = Math.min(cells.length, 10), cw = W / cols.length, H = 44 + n * 48;
+      return [B(0, 0, W, H, { fill: '#ffffff', stroke: '#e4e4e7', sw: 1, radius: 12 }), B(1, 1, W - 2, 43, { fill: '#f4f4f5', radius: 11 }), B(1, 30, W - 2, 14, { fill: '#f4f4f5' }), ...cols.map((c, i) => T(16 + i * cw, 13, cw - 24, c, { size: 13, weight: 700, color: '#3f3f46' })),
+        ...cells.slice(0, n).flatMap((r, k) => [B(1, 44 + k * 48, W - 2, 1, { fill: '#e4e4e7' }), ...cols.map((_, i) => T(16 + i * cw, 44 + k * 48 + 15, cw - 24, String((Array.isArray(r) ? r[i] : '') ?? ''), { size: 14, color: '#3f3f46' }))])]; } },
+    'Accordion': { icon: 'accordion', w: 360, make: (W, o = {}) => { const items = (o.items || [{ title: 'How does it work?', text: 'A short, friendly answer goes here.', open: true }, { title: 'Is there a free plan?' }, { title: 'Can I cancel any time?' }]).slice(0, 6), out = [B(0, 0, W, 1, { fill: '#e4e4e7' })]; let y = 0;
+      items.forEach(it => { const t = T(0, y + 18, W - 44, it.title || 'Question', { size: 16, weight: 700 }), open = !!it.open; out.push(t, IC(W - 28, y + 18, open ? 'caret-up' : 'caret-down', 22, { color: '#71717a' })); let h = 18 + t.h + 18;
+        if (open) { const b = T(0, y + h - 6, W - 44, it.text || '', { size: 14, color: '#71717a', lh: 1.5 }); out.push(b); h += b.h + 8; } y += h; out.push(B(0, y, W, 1, { fill: '#e4e4e7' })); }); return out; } },
+    'Modal': { icon: 'modal', w: 340, make: (W, o = {}) => { const t = T(24, 24, W - 80, o.title || 'Are you sure?', { size: 20, weight: 800 }), x = T(24, 24 + t.h + 10, W - 48, o.text || 'A sentence that explains what happens next.', { size: 15, color: '#71717a', lh: 1.45 }), by = x.y + x.h + 28, bw = (W - 48 - 12) / 2;
+      return [B(0, 0, W, by + 48 + 24, { fill: '#ffffff', stroke: '#e4e4e7', sw: 1, radius: 20 }), t, IC(W - 44, 24, 'close', 22, { color: '#71717a' }), x, B(24, by, bw, 48, { fill: '#ffffff', stroke: '#27272a', sw: 1.5, radius: 24 }), T(24, by + 14, bw, o.cancel || 'Cancel', { size: 15, weight: 600, align: 'center' }),
+        B(24 + bw + 12, by, bw, 48, { fill: '#27272a', radius: 24 }), T(24 + bw + 12, by + 14, bw, o.button || 'Confirm', { size: 15, weight: 600, color: '#ffffff', align: 'center' })]; } },
+  };
+  Object.assign(PIECES, MORE);
   const WEB = {
+    'Card grid': { icon: 'card-grid', web: 1, make: (W, o = {}) => { const M = 64, cols = Math.max(2, Math.min(4, +o.cols || 3)), items = (o.items || Array.from({ length: cols * 2 }, () => ({ title: 'Card title', text: 'A short line about it.' }))).slice(0, cols * 3), gap = 24, cw = (W - M * 2 - gap * (cols - 1)) / cols, ch = 300;
+      const title = T(M, 96, W - M * 2, o.title || 'Pick something', { size: 36, weight: 800, align: 'center' }), y0 = 96 + title.h + 48, rows = Math.ceil(items.length / cols);
+      return [B(0, 0, W, y0 + rows * (ch + gap) - gap + 96, { fill: '#ffffff' }), title, ...items.flatMap((it, i) => { const x = M + (i % cols) * (cw + gap), y = y0 + Math.floor(i / cols) * (ch + gap);
+        return [B(x, y, cw, ch, { fill: '#ffffff', stroke: '#e4e4e7', sw: 1, radius: 16 }), PH(x + 10, y + 10, cw - 20, 150, it.img || 'Card image', { radius: 10 }), T(x + 18, y + 176, cw - 36, it.title || 'Card title', { size: 18, weight: 700 }), T(x + 18, y + 206, cw - 36, it.text || '', { size: 14, color: '#71717a', lh: 1.4 })]; })]; } },
     'Header': { icon: 'globe', web: 1, make: (W, o = {}) => { const links = o.links || ['Product', 'Pricing', 'About', 'Blog'], M = 64;
       return [B(0, 0, W, 80, { fill: '#ffffff' }), T(M, 26, 260, o.logo || o.title || 'Brand', { size: 22, weight: 800 }), ...links.slice(0, 5).map((l, i) => T(W / 2 - links.length * 55 + i * 110, 30, 110, l, { size: 15, align: 'center', color: '#52525b' })),
         B(W - M - 150, 18, 150, 44, { fill: '#18181b', radius: 22 }), T(W - M - 150, 30, 150, o.cta || 'Get started', { size: 14, weight: 600, color: '#ffffff', align: 'center' }), B(0, 79, W, 1, { fill: '#e4e4e7' })]; } },
@@ -3521,12 +3701,10 @@
       if (c.type === 'icon' && [GRAY.text, '#3f3f46'].includes(c.color)) c.color = t.text;
       return c; });
   }
-  // pieces only Myra asks for by name (not in the panel)
+  // elements only Myra asks for by name (they are the panel's Text and Icon tools)
   const EXTRA = {
     'Text': (W, o = {}) => [T(0, 0, W, o.text || '', { size: o.size || 15, weight: o.weight || 500, align: o.align || 'left', color: o.color || '#3f3f46' })],
     'Icon': (W, o = {}) => { const s = o.size || 32; return [IC(o.align === 'center' ? W / 2 - s / 2 : 0, 0, o.name || o.icon || 'star', s, { color: o.color || '#27272a' })]; },
-    'Space': (W, o = {}) => [],
-    'Divider': (W, o = {}) => [B(0, 0, W, 1, { fill: '#e4e4e7' })],
   };
   const pieceH = (items, o) => Math.max(o.h && !items.length ? o.h : 0, ...items.map(i => i.y + i.h));
   // a whole screen from a list of pieces, top to bottom: bars hug the edges, the rest stacks with even gaps
@@ -3540,9 +3718,10 @@
     const items = spec.items || [], M = spec.device === 'Desktop' ? 64 : 24, CW = W - M * 2, GAP = spec.gap || 16, made = [f];
     let top = y + (phone ? 44 : 0), bottom = y + f.h;
     const put = (list, ox, oy) => { const g = uid(); list.forEach(it => { const c = card(it.type, { ...it, x: ox + it.x, y: oy + it.y, r: 0, group: list.length > 1 ? g : undefined, onFrame: f.id }); if (!c.group) delete c.group; board.cards.push(c); renderCard(c, true); made.push(c); }); };
-    const nav = items.find(it => /nav/i.test(it.piece || '')), tab = items.find(it => /tab/i.test(it.piece || ''));
+    const nav = items.find(it => /^nav ?(bar)?$/i.test(String(it.piece || '').trim())), tab = items.find(it => /^tab ?bar$/i.test(String(it.piece || '').trim()));   // exact names: Tabs and Table are their own elements
     if (nav) { const l = themeIt(PIECES['Nav bar'].make(W, nav), spec.theme); put(l, x, top); top += 56; }
-    if (tab) { const l = themeIt(PIECES['Tab bar'].make(W, tab), spec.theme); bottom -= 64 + (phone ? 20 : 0); put(l, x, bottom); }
+    let tabMade = [];   // the tab bar's cards: the only things that move down when a long screen grows
+    if (tab) { const l = themeIt(PIECES['Tab bar'].make(W, tab), spec.theme); bottom -= 64 + (phone ? 20 : 0); const n0 = made.length; put(l, x, bottom); tabMade = made.slice(n0); }
     const isWeb = (spec.items || []).some(it => WEB[Object.keys(WEB).find(k => k.toLowerCase() === String(it.piece || '').toLowerCase())]);
     if (spec.theme?.bg) { f.fill = spec.theme.bg; renderCard(f); }
     let cur = top + (spec.padTop ?? (isWeb ? 0 : 20));
@@ -3557,24 +3736,83 @@
       }
     });
     if (webFirst && !tab) { f.h = Math.max(200, cur - y); renderCard(f); }
-    else if (cur > bottom - 12) { const grow = cur - bottom + 24; f.h += grow; renderCard(f); made.filter(c => c.y >= bottom - 1 && c !== f).forEach(c => { c.y += grow; renderCard(c); }); }
+    else if (cur > bottom - 12) { const grow = cur - bottom + 24; f.h += grow; renderCard(f); tabMade.forEach(c => { c.y += grow; renderCard(c); }); }
     if (spec.note) { const n = card('note', { x, y: y + f.h + 28, w: W, h: 120, text: spec.note, name: spec.name || '', color: 'butter', r: 0 }); board.cards.push(n); renderCard(n, true); made.push(n); }
     return { f, made };
   }
-  const pieceBtn = ([n, p]) => `<button data-piece="${n}" title="Add ${n.toLowerCase()}">${Icon(p.icon)}${n}</button>`;
-  $('dzPieces').innerHTML = Object.entries(PIECES).filter(([, p]) => !p.web).map(pieceBtn).join('') + '<div class="label dz-sub">Website</div>' + Object.entries(PIECES).filter(([, p]) => p.web).map(pieceBtn).join('');
-  $('dzPieces').onclick = e => { const b = e.target.closest('[data-piece]'); if (!b) return; pickWF(null); $('dzPieces').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); startPlacing('piece', { piece: b.dataset.piece }); };
-  function placePiece(name, w) {
-    const P = PIECES[name], f = [...board.cards].reverse().find(f => f.type === 'frame' && w.x > f.x && w.x < f.x + f.w && w.y > f.y && w.y < f.y + f.h);
-    const W = (P.bar || P.web) && f ? f.w : P.web ? 1200 : P.w || 360, items = P.make(W); let ox = w.x - 14 / view.z, oy = w.y - 14 / view.z;
+  // the panel, by what things are: Basics (with the Screen, Box, Text and Icon tools), Buttons & inputs, Building blocks and Layouts
+  const GROUPS = [
+    ['basics', ['Heading', 'Image', 'Video', 'Map', 'Avatar', 'Divider', 'Space']],
+    ['controls', ['Button', 'Input', 'Textarea', 'Search', 'Dropdown', 'Radio', 'Checkbox', 'Toggle']],
+    ['blocks', ['Nav bar', 'Tab bar', 'Tabs', 'Card', 'List row', 'Table', 'Accordion', 'Modal']],
+    ['layouts', ['Header', 'Hero', 'Logos', 'Features', 'Gallery', 'Stats', 'Testimonials', 'Pricing', 'Card grid', 'CTA', 'Footer']],
+  ];
+  // other words people might type to find an element
+  const PIECE_KW = { Heading: 'title headline', Image: 'picture photo placeholder', Video: 'player movie clip media', Map: 'location pin place', Avatar: 'profile user person picture', Divider: 'line rule separator', Space: 'gap spacer margin padding',
+    Button: 'cta action', Input: 'text field form', Textarea: 'multiline message comment form', Search: 'find field', Dropdown: 'select combobox menu picker', Radio: 'option choice select', Checkbox: 'tick check', Toggle: 'switch on off',
+    'Nav bar': 'navigation top bar header', 'Tab bar': 'bottom navigation tabs', Tabs: 'segmented tab switch', Card: 'tile panel', 'List row': 'cell item list', Table: 'grid data rows columns spreadsheet', Accordion: 'faq collapse expand', Modal: 'dialog popup overlay sheet',
+    Header: 'site navigation top', Hero: 'banner headline landing', Logos: 'brands clients partners strip', Features: 'benefits grid', Gallery: 'photos images', Stats: 'numbers metrics figures', Testimonials: 'quotes reviews customers', Pricing: 'plans tiers cost', 'Card grid': 'cards grid columns', CTA: 'call to action button banner', Footer: 'links bottom' };
+  const pieceBtn = n => `<button data-piece="${n}" data-kw="${n.toLowerCase()} ${PIECE_KW[n] || ''}" title="Add ${n.toLowerCase()}">${Icon(PIECES[n].icon)}${n}</button>`;
+  GROUPS.forEach(([g, names]) => { $('design').querySelector(`.dz-piece-grid[data-g="${g}"]`).innerHTML = names.map(pieceBtn).join(''); });
+  // the groups fold (Layouts starts folded), and the choice is remembered
+  let dzOpen = { layouts: false }; try { dzOpen = { layouts: false, ...JSON.parse(localStorage.getItem('fenmyr:dzOpen') || '{}') }; } catch (e) {}
+  const dzWords = () => queryWords($('dzSearch').value);
+  function dzApply() { const q = dzWords().length > 0; $('design').querySelectorAll('.dz-group').forEach(g => { const open = dzOpen[g.dataset.g] !== false || q; g.classList.toggle('closed', !open); g.querySelector('.dz-gh').setAttribute('aria-expanded', open); }); }
+  // typing narrows every group to what matches (a search opens the groups it finds things in)
+  function dzFilter() { const words = dzWords(); let any = false;
+    $('design').querySelectorAll('.dz-group').forEach(g => { let has = false;
+      g.querySelectorAll('.dz-tools button, .dz-piece-grid button').forEach(b => { const ok = !words.length || hasAll(words, b.dataset.kw); b.hidden = !ok; if (ok) has = true; });
+      g.hidden = words.length > 0 && !has; if (has) any = true; });
+    $('dzNone').hidden = !words.length || any; dzApply(); }
+  $('dzSearch').oninput = dzFilter;
+  $('dzSearch').onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') { $('dzSearch').value = ''; dzFilter(); } if (e.key === 'Enter') { e.preventDefault(); $('design').querySelector('.dz-group:not([hidden]) :is(.dz-tools, .dz-piece-grid) button:not([hidden])')?.click(); } };
+  $('design').addEventListener('click', e => {
+    const h = e.target.closest('.dz-gh'); if (h) { const g = h.parentElement.dataset.g; dzOpen[g] = dzOpen[g] === false; try { localStorage.setItem('fenmyr:dzOpen', JSON.stringify(dzOpen)); } catch (e2) {} dzApply(); return; }
+    const b = e.target.closest('[data-piece]'); if (!b || pDragged) return; pickWF(null); stopPlacing(); addPiece(b.dataset.piece); });
+  // dragging an element from the panel onto the board puts it exactly where you let go (the preview follows the pointer, above the panels)
+  let pDrag = null, pDragged = false;
+  $('design').addEventListener('pointerdown', e => { const b = e.target.closest('[data-piece]'); if (b && !e.button) pDrag = { name: b.dataset.piece, x: e.clientX, y: e.clientY, on: false }; });
+  addEventListener('pointermove', e => { if (!pDrag || pDrag.on || Math.hypot(e.clientX - pDrag.x, e.clientY - pDrag.y) < 6) return; pDrag.on = true; pickWF(null); startPlacing('piece', { piece: pDrag.name }, true); document.body.classList.add('dz-dragging'); }, true);
+  addEventListener('pointerup', e => { if (!pDrag) return; const d = pDrag; pDrag = null; if (!d.on) return; document.body.classList.remove('dz-dragging'); pDragged = true; setTimeout(() => { pDragged = false; }, 0);
+    const over = document.elementFromPoint(e.clientX, e.clientY);
+    if (placing && placing.type === 'piece' && !over?.closest('.design, .side, .tray, .tools, .dock, .myra, .selbar, .m-chat, .keys, .top, .hub, .sheet, .settings')) placeAt(toWorld(e.clientX, e.clientY)); else stopPlacing(); }, true);
+  dzApply();
+  function placePiece(name, w, opts = {}) {
+    const P = PIECES[name], f = opts.frame || [...board.cards].reverse().find(f => f.type === 'frame' && w.x > f.x && w.x < f.x + f.w && w.y > f.y && w.y < f.y + f.h), M = f && f.w > 700 ? 64 : 24;
+    const W = (P.bar || P.web) && f ? f.w : P.web ? 1200 : Math.min(P.w || 360, f ? f.w - M * 2 : Infinity), items = P.make(W, { panel: true });
+    const bw = Math.max(1, ...items.map(i => i.x + i.w)), bh = Math.max(1, ...items.map(i => i.y + i.h));
+    let ox = w.x - 14 / view.z, oy = w.y - 14 / view.z; if (opts.center) { ox = w.x - bw / 2; oy = w.y - bh / 2; }
     if ((P.bar || P.web) && f) { ox = f.x; if (P.bar === 'top') oy = Math.max(f.y, oy); if (P.bar === 'bottom') oy = Math.min(f.y + f.h - 64, Math.max(f.y, oy)); }
+    const tabKids = f && opts.frame ? board.cards.filter(c => c.onFrame === f.id && c.y >= f.y + f.h - 90) : [];   // a tab bar waiting at the bottom
     const g = uid(), made = items.map(it => { const c = card(it.type, { ...it, x: ox + it.x, y: oy + it.y, r: 0, group: g }); board.cards.push(c); renderCard(c, true); return c; });
-    fileIntoFrame(made); selectOnly(made.map(c => c.id)); renderWires(); save();
+    // adding into a screen that is full: it grows, and the tab bar slides down with its bottom edge
+    if (f && opts.frame && !P.bar) { const limit = f.y + f.h - (tabKids.length ? 90 : 12), grow = oy + bh - limit + 24; if (grow > 24) { f.h += grow; renderCard(f); tabKids.forEach(c => { c.y += grow; renderCard(c); }); } }
+    fileIntoFrame(made); selectOnly(made.map(c => c.id)); renderWires(); save(); return made;
+  }
+  // a click on an element in the panel adds it straight away: into the selected screen, below what is already there, or in the middle of the view (drag it from the panel to put it exactly somewhere)
+  function addPiece(name) {
+    const P = PIECES[name], z = view.z, sc = [...sel].map(byId).filter(Boolean);
+    const fr = sc.length === 1 && sc[0].type === 'frame' ? sc[0] : sc.length && sc[0].onFrame && sc.every(c => c.onFrame === sc[0].onFrame) ? byId(sc[0].onFrame) : null;
+    let made;
+    if (!fr) made = placePiece(name, centerWorld(), { center: true });
+    else {
+      const M = fr.w > 700 ? 64 : 24, body = board.cards.filter(c => c.onFrame === fr.id && c.y < fr.y + fr.h - 90), phone = fr.w <= 500;
+      const y = body.length ? Math.max(...body.map(c => c.y + c.h)) + (P.web ? 0 : 16) : fr.y + (phone ? 44 : 0) + (P.web ? 0 : 20);
+      made = placePiece(name, { x: fr.x + M + 14 / z, y: P.bar === 'bottom' ? fr.y + fr.h : P.bar === 'top' ? fr.y : y + 14 / z }, { frame: fr });
+    }
+    revealCards(made);
+  }
+  // bring something that landed out of sight into view (a screen far from where you are looking)
+  function revealCards(cs) {
+    if (!cs.length) return; const r = stage.getBoundingClientRect(), x0 = Math.min(...cs.map(c => c.x)), y0 = Math.min(...cs.map(c => c.y)), x1 = Math.max(...cs.map(c => c.x + c.w)), y1 = Math.max(...cs.map(c => c.y + c.h));
+    const sx = r.left + view.x + (x0 + x1) / 2 * view.z, sy = r.top + view.y + (y0 + y1) / 2 * view.z;
+    if (sx > r.left + 280 && sx < r.right - 280 && sy > r.top + 80 && sy < r.bottom - 120) return;
+    const c = centerWorld(); view.x += (c.x - (x0 + x1) / 2) * view.z; view.y += (c.y - (y0 + y1) / 2) * view.z; applyView();
   }
   // icons: search Myra's icon set, then click to place (or swap the selected icon)
   let iconSwap = null;
   function renderIcons() {
-    const words = $('iconSearch').value.trim().toLowerCase().split(/\s+/).filter(Boolean), all = window.iconList(), hits = words.length ? all.filter(i => words.every(w => i.kw.includes(w))) : all;
+    const words = queryWords($('iconSearch').value), all = window.iconList(), hits = words.length ? all.filter(i => hasAll(words, i.kw)) : all;
     $('iconGrid').innerHTML = hits.map(i => `<button data-icon="${i.name}" title="${i.name.replace(/-/g, ' ')}">${Icon(i.name)}</button>`).join('') + (hits.length ? '' : '<div class="more">No icons match that</div>');
   }
   $('iconSearch').oninput = renderIcons;
@@ -3588,7 +3826,7 @@
     document.querySelectorAll('[data-wf]').forEach(b => b.classList.toggle('on', b.dataset.wf === t));
     $('dzPresets').classList.toggle('on', t === 'frame');
     $('dzIcons').classList.toggle('on', t === 'icon'); if (t === 'icon') { renderIcons(); setTimeout(() => $('iconSearch').focus(), 20); return; }
-    if (t !== 'icon') iconSwap = null; if (t) $('dzPieces').querySelectorAll('.on').forEach(x => x.classList.remove('on'));
+    if (t !== 'icon') iconSwap = null; if (t) document.querySelectorAll('.dz-piece-grid .on').forEach(x => x.classList.remove('on'));
     if (t === 'frame') { $('dzPresets').innerHTML = Object.keys(DEVICES).map(n => `<button data-dev="${n}">${n}</button>`).join(''); return; }
     if (t) startPlacing(t);
   }
@@ -5182,7 +5420,7 @@ ${proseCSS()}
       if (!phone.on) return; const it = e.target.closest('.tray-item'); if (!it) return; e.stopImmediatePropagation(); e.preventDefault();
       const c = board.tray.find(x => x.id === it.dataset.id); if (!c) return;
       const r = stage.getBoundingClientRect(), w = toWorld(r.left + r.width / 2, r.top + r.height * .42);
-      c.x = w.x - c.w / 2; c.y = w.y - c.h / 2; board.tray = board.tray.filter(x => x !== c); addCard(c); renderTray(); hide(); selectOnly([c.id]); lyFlash([c.id]);
+      const got = takeFromTray(c, { x: w.x - c.w / 2, y: w.y - c.h / 2 }); renderTray(); hide(); selectOnly(got.map(m => m.id)); lyFlash(got.map(m => m.id));
     }, true);
     function set(on) {
       phone.on = on; document.body.classList.toggle('phone', on);
@@ -5238,5 +5476,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

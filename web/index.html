@@ -129,6 +129,14 @@
         <span class="m-name" id="mName">Myra</span>
         <form id="mForm" class="m-form"><input id="mInput" placeholder="Ask Myra… “group these by theme”" autocomplete="off"></form>
       </div>
+      <div class="find-bar" id="findBar" role="search" hidden>
+        <label class="fb-field"><svg data-ico="search" width="16" height="16"></svg><input id="fbQ" placeholder="Find on the board" autocomplete="off" spellcheck="false" aria-label="Find on the board"></label>
+        <span class="fb-count" id="fbCount" aria-live="polite"></span>
+        <button type="button" class="fb-b" id="fbPrev" title="Previous (Shift+Enter)" aria-label="Previous match"><svg data-ico="caret-up" width="16" height="16"></svg></button>
+        <button type="button" class="fb-b" id="fbNext" title="Next (Enter)" aria-label="Next match"><svg data-ico="caret-down" width="16" height="16"></svg></button>
+        <i class="fb-sep"></i>
+        <button type="button" class="fb-b" id="fbX" title="Close (Esc)" aria-label="Close find"><svg data-ico="close" width="16" height="16"></svg></button>
+      </div>
     </div>
   
     <!-- paste a link: drops under the toolbar -->
@@ -168,23 +176,43 @@
     <form id="capForm"><input id="capInput" placeholder="Don’t get bogged down, dump an idea (image works) to Unsorted…" autocomplete="off"></form>
   </div>
   <button class="clean-back" id="cleanBack" type="button">Show panels <kbd>Ctrl+\</kbd></button>
-  <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>Ctrl+K</kbd> quick capture</span><span><kbd>space</kbd> drag to pan</span><span><kbd>Ctrl+\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
+  <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>Ctrl+K</kbd> quick capture</span><span><kbd>Ctrl+F</kbd> find</span><span><kbd>space</kbd> drag to pan</span><span><kbd>Ctrl+\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
   <!-- wireframes: screens, boxes and text, plus a design panel for the selection -->
   <aside class="design" id="design">
     <div class="dz-head"><span class="label">Wireframe</span><button class="mini" id="dzMin" title="Minimise">–</button></div>
     <div class="dz-body">
-      <div class="dz-tools">
-        <button data-wf="frame" title="Screen: pick a device, then click to place"><svg data-ico="screen" width="18" height="18"></svg><span>Screen</span></button>
-        <button data-wf="box" title="Box: drag to draw (R)"><svg data-ico="rectangle" width="18" height="18"></svg><span>Box</span></button>
-        <button data-wf="icon" title="Icon: pick one from the icon set"><svg data-ico="star" width="18" height="18"></svg><span>Icon</span></button>
-        <button data-wf="text" title="Text (X)"><svg data-ico="text" width="18" height="18"></svg><span>Text</span></button>
-      </div>
-      <div class="dz-presets" id="dzPresets"></div>
-      <div class="dz-icons" id="dzIcons"><input id="iconSearch" placeholder="Search icons… home, heart, settings" spellcheck="false" autocomplete="off"><div class="dz-icon-grid" id="iconGrid"></div></div>
-      <div class="dz-pieces"><div class="label">Pieces</div><div class="dz-piece-grid" id="dzPieces"></div></div>
+      <label class="dz-search"><svg data-ico="search" width="15" height="15"></svg><input id="dzSearch" placeholder="Search elements…" autocomplete="off" spellcheck="false" aria-label="Search elements"></label>
+      <section class="dz-group" data-g="basics">
+        <button class="dz-gh" type="button" aria-expanded="true"><span class="label">Basics</span><svg data-ico="caret-down" width="14" height="14"></svg></button>
+        <div class="dz-gb">
+          <div class="dz-tools">
+            <button data-wf="frame" data-kw="screen frame device phone mobile desktop page artboard" title="Screen: pick a device, then click to place"><svg data-ico="screen" width="18" height="18"></svg><span>Screen</span></button>
+            <button data-wf="box" data-kw="box rectangle shape square draw" title="Box: drag to draw (R)"><svg data-ico="rectangle" width="18" height="18"></svg><span>Box</span></button>
+            <button data-wf="text" data-kw="text paragraph copy label type" title="Text (X)"><svg data-ico="text" width="18" height="18"></svg><span>Text</span></button>
+            <button data-wf="icon" data-kw="icon symbol glyph" title="Icon: pick one from the icon set"><svg data-ico="star" width="18" height="18"></svg><span>Icon</span></button>
+          </div>
+          <div class="dz-presets" id="dzPresets"></div>
+          <div class="dz-icons" id="dzIcons"><input id="iconSearch" placeholder="Search icons… home, heart, settings" spellcheck="false" autocomplete="off"><div class="dz-icon-grid" id="iconGrid"></div></div>
+          <div class="dz-piece-grid" data-g="basics"></div>
+        </div>
+      </section>
+      <section class="dz-group" data-g="controls">
+        <button class="dz-gh" type="button" aria-expanded="true"><span class="label">Buttons &amp; inputs</span><svg data-ico="caret-down" width="14" height="14"></svg></button>
+        <div class="dz-gb"><div class="dz-piece-grid" data-g="controls"></div></div>
+      </section>
+      <section class="dz-group" data-g="blocks">
+        <button class="dz-gh" type="button" aria-expanded="true"><span class="label">Building blocks</span><svg data-ico="caret-down" width="14" height="14"></svg></button>
+        <div class="dz-gb"><div class="dz-piece-grid" data-g="blocks"></div></div>
+      </section>
+      <section class="dz-group" data-g="layouts">
+        <button class="dz-gh" type="button" aria-expanded="true"><span class="label">Layouts</span><svg data-ico="caret-down" width="14" height="14"></svg></button>
+        <div class="dz-gb"><div class="dz-piece-grid" data-g="layouts"></div></div>
+      </section>
+      <div class="dz-none" id="dzNone" hidden>No elements match that</div>
       <div class="dz-props" id="dzProps"></div>
     </div>
   </aside>
+  <div class="place-hint" id="placeHint" hidden></div>
   <svg class="guides" id="guides"></svg>
   <!-- the color editor: pops up beside a color card -->
   <div class="cpop" id="cpop">

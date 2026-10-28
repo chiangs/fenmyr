@@ -6,6 +6,9 @@ Write them for people, not for code: one line, what changed and why it's nice.
 ## October 2026 · 1.0.0
 
 - Hello, I'm Myra: a little cloudberry who helps on your boards. Like cloudberries, ideas only grow where conditions are just right.
+- Wireframe elements land where you can see them: click one to add it straight away (inside the selected screen, or in the middle of your view), or drag it out onto the board.
+- Type **/** in Myra's chat to see what she can do without thinking (`/find`, `/tag`, `/tidy`, `/fit`, `/clear`). **Ctrl+F** opens her ready to find something on your board, and a find bar appears next to her: change the words as you like, see how many matched, and step through each one.
+- Pasting a picture into a note puts it on the board as its own picture card, connected to the note (or turns an empty note into the picture). Cards that go to Unsorted together come back together, with their connectors.
 - Nordic colours for your cards (Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather, Birch), warm amber shadows, squircle corners and crisp card edges.
 - New fonts: Figtree, with Shantell Sans for the handwritten touches. A little cloudberry marks the friendly bits.
 - Your cursor and its name tag wear Myra's colour.
@@ -23,5 +26,6 @@ Write them for people, not for code: one line, what changed and why it's nice.
 - Your own templates: right-click a selection or the board to save it, then find it under Yours in the template picker. you choose whether it adds to a board or opens a new one, and can edit its name, description and that choice later. Myra can save and use them too.
 - A default font for text on the board and in docs (Settings → Board → Default font).
 - Ctrl+, opens Settings. Window buttons are off unless you want them.
+- A bigger wireframe panel, grouped by what things are (Basics, Buttons & inputs, Building blocks, Layouts), with a search box and groups that fold. New elements: Video, Map, Divider, Space, Textarea, Dropdown, Radio, Tabs, Table, Accordion, Modal and a Card grid layout. Myra knows them all.
 - Myra has a dry, tart wit to go with her warmth. How much shows depends on Settings → Myra → How chatty she is, and she drops it when you're having a hard time.
 - With emojis off, Myra really never uses them.
