@@ -2,14 +2,14 @@
 // Inside the desktop app, calls go to its host (linux/main.js: saving board files, link previews, asking Myra through Claude Code).
 // In a plain browser (for building and demos) it falls back to localStorage and a pretend Myra.
 (() => {
-  const native = !!window.myraHost;
+  const native = !!window.fenmyrHost;
   const platform = native ? 'linux' : 'web';
   const waiting = new Map(); let seq = 0;
-  // the host answers with window.__myraReply(id, ok, value)
-  window.__myraReply = (id, ok, value) => { const w = waiting.get(id); if (!w) return; waiting.delete(id); ok ? w.res(value) : w.rej(new Error(value)); };
-  const call = (op, args = {}) => new Promise((res, rej) => { const id = ++seq; waiting.set(id, { res, rej }); window.myraHost.post({ id, op, args }); });
+  // the host answers with window.__fenmyrReply(id, ok, value)
+  window.__fenmyrReply = (id, ok, value) => { const w = waiting.get(id); if (!w) return; waiting.delete(id); ok ? w.res(value) : w.rej(new Error(value)); };
+  const call = (op, args = {}) => new Promise((res, rej) => { const id = ++seq; waiting.set(id, { res, rej }); window.fenmyrHost.post({ id, op, args }); });
 
-  const LS = 'myra:';
+  const LS = 'fenmyr:';
   const extOf = blob => ({ 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'video/x-m4v': 'm4v' }[(blob.type || '').split(';')[0]] || (blob.name || '').split('.').pop() || 'mp4');
   const b64 = slice => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] || ''); fr.onerror = rej; fr.readAsDataURL(slice); });
   async function saveMediaNative(blob, onProgress) {
@@ -18,7 +18,7 @@
     return call('mediaEnd', { name });
   }
   // in a browser: IndexedDB keeps the video; the card stores "idbmedia:<id>" and gets a blob URL when it's shown
-  const idb = () => new Promise((res, rej) => { const r = indexedDB.open('myra-media', 1); r.onupgradeneeded = () => r.result.createObjectStore('media'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const idb = () => new Promise((res, rej) => { const r = indexedDB.open('fenmyr-media', 1); r.onupgradeneeded = () => r.result.createObjectStore('media'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   const blobURLs = new Map();
   async function saveMediaBrowser(blob) { const id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36), db = await idb();
     await new Promise((res, rej) => { const t = db.transaction('media', 'readwrite'); t.objectStore('media').put(blob, id); t.oncomplete = res; t.onerror = () => rej(t.error); });
@@ -47,7 +47,7 @@
     async folders() { return JSON.parse(localStorage.getItem(LS + 'folders') || '[]'); },
     async saveFolders(folders) { localStorage.setItem(LS + 'folders', JSON.stringify(folders)); return true; },
     async remove(id) { localStorage.removeItem(LS + 'board:' + id); localStorage.setItem(LS + 'index', JSON.stringify(JSON.parse(localStorage.getItem(LS + 'index') || '[]').filter(b => b.id !== id))); return true; },
-    web, getURL: 'https://github.com/chiangs/myra/releases/latest',
+    web, getURL: 'https://github.com/chiangs/fenmyr/releases/latest',
     async connections() { return { claude: false, mobbin: false, higgsfield: false, browser: true, web }; },
     async caelestia() { return null; }, async usage() { return null; }, async resetUsage() { return true; }, async version() { return null; },
     async fetchImage(url) { return url; },
@@ -59,7 +59,7 @@
     async drawFill() { throw new Error('Drawing illustrations works in the desktop app'); },
     async fonts() { return ['DM Sans', 'Caveat', 'Inter', 'Helvetica Neue', 'Arial', 'Georgia', 'Times New Roman', 'Courier New', 'SF Pro Display', 'Avenir Next', 'Futura', 'Menlo']; },
     async exportRect() { throw new Error('Exporting works in the desktop app'); },
-    async transcribe() { throw new Error('Myra writes out voice memos in the desktop app'); },
+    async transcribe() { throw new Error('Writing out voice memos works in the desktop app'); },
     async rewrite() { throw new Error('Myra rewrites text with Claude in the desktop app'); },
     // in a browser: an ordinary download
     async saveFile(data, name, ext) { const bin = atob(data), u8 = Uint8Array.from(bin, c => c.charCodeAt(0)); const a = document.createElement('a');
@@ -68,7 +68,7 @@
     // in a browser: print the doc in a hidden frame, and the browser's own "Save as PDF" does the rest
     async docPDF(html) { const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0'; document.body.appendChild(f);
       f.srcdoc = html.replace(/__WEB__\//g, location.href.replace(/[^/]*$/, '')); await new Promise(r => f.onload = r); await f.contentDocument.fonts?.ready; f.contentWindow.focus(); f.contentWindow.print(); setTimeout(() => f.remove(), 60000); return ''; },
-    async reveal() { alert('Your boards live in this browser while you try Myra here. In the desktop app this opens their folder.'); },
+    async reveal() { alert('Your boards live in this browser while you try Fenmyr here. In the desktop app this opens their folder.'); },
     async linkPreview(url) { let host = url; try { host = new URL(url).hostname.replace(/^www\./, ''); } catch (e) {} return { title: host, desc: url, image: '' }; },
     // a pretend Myra for the browser: she still tidies things up so the canvas can be tried without the app
     async ask(prompt, board) {
@@ -83,7 +83,7 @@
         add: [{ type: 'note', text: 'What is this for?', color: 'butter' }, { type: 'note', text: 'Who will see it?', color: 'mint' }, { type: 'note', text: 'What does done look like?', color: 'lilac' }] });
     },
   };
-  window.Myra = native ? {
+  window.Fenmyr = native ? {
     native: true, platform,
     list: () => call('list'), load: id => call('load', { id }), save: board => call('save', { board }), remove: id => call('remove', { id }),
     templates: () => call('templates'), saveTemplate: template => call('saveTemplate', { template }), removeTemplate: id => call('removeTemplate', { id }),

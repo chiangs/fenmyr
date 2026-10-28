@@ -1,10 +1,10 @@
-// Where Myra keeps things, following the XDG base directories.
-//   boards, folders, media, usage:  $XDG_DATA_HOME/myra   (~/.local/share/myra)
-//   the speech model:               $XDG_DATA_HOME/myra/whisper
+// Where Fenmyr keeps things, following the XDG base directories.
+//   boards, folders, media, usage:  $XDG_DATA_HOME/fenmyr   (~/.local/share/fenmyr)
+//   the speech model:               $XDG_DATA_HOME/fenmyr/whisper
 const os = require('os'), path = require('path');
 
 const xdg = (v, fallback) => process.env[v] || path.join(os.homedir(), fallback);
-const support = path.join(xdg('XDG_DATA_HOME', '.local/share'), 'myra');
+const support = path.join(xdg('XDG_DATA_HOME', '.local/share'), 'fenmyr');
 
 module.exports = {
   support,

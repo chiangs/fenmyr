@@ -1,6 +1,6 @@
-// Myra doc → Word (.docx). Turns the editor's structured content into real Word parts:
+// Fenmyr doc → Word (.docx). Turns the editor's structured content into real Word parts:
 // Word's own Title / Heading styles, real lists, links, tables, pictures, and Figtree built into the file.
-// Bundled into web/vendor/docx.js as the global `MyraDocx`, loaded only when someone downloads a Word file.
+// Bundled into web/vendor/docx.js as the global `FenmyrDocx`, loaded only when someone downloads a Word file.
 import {
   Document, Packer, Paragraph, TextRun, ExternalHyperlink, ImageRun, Table, TableRow, TableCell,
   HeadingLevel, AlignmentType, LevelFormat, WidthType, BorderStyle, ShadingType, LineRuleType, CharacterSet,
@@ -126,7 +126,7 @@ export async function toDocx(json, { title = '', paper = 'letter' } = {}) {
 
   const bulletText = ['•', '◦', '▪'], numberFmt = [LevelFormat.DECIMAL, LevelFormat.LOWER_LETTER, LevelFormat.LOWER_ROMAN];
   const doc = new Document({
-    creator: 'Myra', title: title || 'Document',
+    creator: 'Fenmyr', title: title || 'Document',
     fonts: [{ name: 'Figtree', data: figRegular, characterSet: CharacterSet.ANSI }],
     styles: {
       default: {

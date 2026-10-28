@@ -27,10 +27,10 @@ const DOC = { type: 'doc', content: [
 ] };
 
 (async () => {
-  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'myra-docs-')), out = path.join(data, 'out'); fs.mkdirSync(out);
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-docs-')), out = path.join(data, 'out'); fs.mkdirSync(out);
   const app = await electron.launch({ args: [path.join(__dirname, '..'), '--no-sandbox'], env: { ...process.env, XDG_DATA_HOME: data, HOME: data, XDG_STATE_HOME: path.join(data, 'state') } });
   const page = await app.firstWindow(); const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('console', m => m.type() === 'error' && !/fonts\.(googleapis|gstatic)\.com/.test(m.location().url || '') && errors.push(m.text()));
-  await page.waitForFunction(() => window.Myra && document.querySelector('#tools')); await page.waitForTimeout(800);
+  await page.waitForFunction(() => window.Fenmyr && document.querySelector('#tools')); await page.waitForTimeout(800);
   const skip = page.getByText('Skip setup'); if (await skip.count()) { await skip.click(); await page.waitForTimeout(500); await page.keyboard.press('Escape'); }
   const r = {};
   // a doc card, opened
@@ -72,7 +72,7 @@ const DOC = { type: 'doc', content: [
   await page.keyboard.press('ArrowRight'); await page.keyboard.press('Control+End');   // put the cursor at the end (the select-all above covered everything)
   r.table = await page.evaluate(() => { const ed = document.querySelector('.dv-prose').editor, words = ed.storage.characterCount.words(); ed.chain().focus().insertTable({ rows: 2, cols: 2, withHeaderRow: true }).run(); return /<table/.test(ed.getHTML()) && words > 3; });
   // a doc downloads as Word (a real .docx), including the full sample
-  r.docx = await page.evaluate(async doc => { if (!window.MyraDocx) await new Promise(res => { const sc = document.createElement('script'); sc.src = 'vendor/docx.js'; sc.onload = res; document.body.appendChild(sc); }); const bytes = await MyraDocx.toDocx(doc, { title: 'Sample', paper: 'letter' }); return { size: bytes.length, zip: bytes[0] === 0x50 && bytes[1] === 0x4b }; }, DOC);
+  r.docx = await page.evaluate(async doc => { if (!window.FenmyrDocx) await new Promise(res => { const sc = document.createElement('script'); sc.src = 'vendor/docx.js'; sc.onload = res; document.body.appendChild(sc); }); const bytes = await FenmyrDocx.toDocx(doc, { title: 'Sample', paper: 'letter' }); return { size: bytes.length, zip: bytes[0] === 0x50 && bytes[1] === 0x4b }; }, DOC);
   // save and reload: the doc comes back the same
   await page.evaluate(doc => document.querySelector('.dv-prose').editor.commands.setContent(doc), DOC); await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(out, 'doc.png') });

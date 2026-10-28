@@ -1,6 +1,6 @@
 // Caelestia (the Hyprland shell, github.com/caelestia-dots) keeps its current colour scheme in one file, rewritten whenever the
 // wallpaper, scheme or light/dark mode changes:  $XDG_STATE_HOME/caelestia/scheme.json  { mode, colours: { primary: "a6c8ff", … } }
-// Myra reads it, and watches it so Settings → General → "Follow Caelestia" restyles the board live.
+// Fenmyr reads it, and watches it so Settings → General → "Follow Caelestia" restyles the board live.
 const fs = require('fs'), os = require('os'), path = require('path');
 
 const dir = path.join(process.env.XDG_STATE_HOME || path.join(os.homedir(), '.local/state'), 'caelestia');

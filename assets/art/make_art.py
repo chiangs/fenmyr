@@ -1,6 +1,6 @@
-# Myra's art, drawn in code: her stickers, the pixel stamp set and the app icon.
+# Myra's art, drawn in code: her stickers and the pixel stamp set. (The app icon is the cloudberry mark: tools/make_icon.js.)
 #   python3 assets/art/make_art.py        (from the repo root; needs Pillow)
-# Writes web/stamps/myra*.png|gif, web/stamps/px/*.png and assets/icon.png.
+# Writes web/stamps/myra*.png|gif and web/stamps/px/*.png.
 # All of it is Myra's own art (see TRADEMARKS.md). The shapes are described as geometry and turned into
 # 16x16 pixels with a light top-left, a darker bottom-right and a few highlights, so the set stays consistent.
 import math, os
@@ -220,17 +220,6 @@ def gif(frames, path, ms):
     pal = [f.convert('RGBA') for f in frames]
     pal[0].save(path, save_all=True, append_images=pal[1:], duration=ms, loop=0, disposal=2, transparency=0, optimize=False)
 
-def icon(path, size=1024):
-    """the app icon: Myra on a warm birch squircle"""
-    s = 4; S = size * s; im = Image.new('RGBA', (S, S), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
-    pad, r = int(S * .06), int(S * .23)
-    d.rounded_rectangle([pad, pad + int(S * .012), S - pad, S - pad + int(S * .012)], r, fill=(196, 109, 22, 70))   # a warm shadow
-    d.rounded_rectangle([pad, pad, S - pad, S - pad], r, fill='#fbf3e6')
-    d.rounded_rectangle([pad, int(S * .62), S - pad, S - pad], r, fill='#f3e6d2'); d.rectangle([pad, int(S * .62), S - pad, int(S * .62) + r], fill='#f3e6d2')
-    cells = sticker('normal'); px = int(S * .036); n = 22; off = (S - px * n) // 2
-    for (x, y), c in cells.items(): d.rectangle([off + x * px, off + y * px - int(S * .03), off + (x + 1) * px - 1, off + (y + 1) * px - 1 - int(S * .03)], fill=c)
-    im.resize((size, size), Image.LANCZOS).save(path)
-
 if __name__ == '__main__':
     os.makedirs(os.path.join(STAMPS, 'px'), exist_ok=True)
     for name, fn in STAMP_SET.items(): save(fn(), os.path.join(STAMPS, 'px', name + '.png'))
@@ -242,5 +231,4 @@ if __name__ == '__main__':
     fr = []
     for m in ('normal', 'normal', 'half', 'sigh', 'sigh', 'half'): save_cells(sticker(m), None, im_list=fr)
     gif(fr, os.path.join(STAMPS, 'myra-sigh.gif'), 260)
-    icon(os.path.join(ROOT, 'assets', 'icon.png'))
-    print('made', len(STAMP_SET), 'stamps, 9 stickers, 2 animations and the icon')
+    print('made', len(STAMP_SET), 'stamps, 9 stickers, 2 animations')

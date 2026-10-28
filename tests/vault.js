@@ -1,7 +1,7 @@
 // The vault module on its own (no app): parsing a note, and the rules that keep private things unread.
 //   node tests/vault.js
 const fs = require('fs'), os = require('os'), path = require('path'), assert = require('assert');
-const data = fs.mkdtempSync(path.join(os.tmpdir(), 'myra-vault-')); process.env.XDG_DATA_HOME = data;
+const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-vault-')); process.env.XDG_DATA_HOME = data;
 const V = require('../linux/vault');
 const sample = path.join(__dirname, 'sample-vault'), copy = path.join(data, 'vault'); fs.cpSync(sample, copy, { recursive: true });
 

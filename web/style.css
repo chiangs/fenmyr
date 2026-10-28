@@ -27,7 +27,8 @@ kbd { font: 500 11px/1 var(--font); padding: 3px 6px; border-radius: 6px; backgr
 .label { font: 700 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
 .box-body > .label { margin: 4px 6px 8px; }
 .brand { display: flex; align-items: center; gap: 9px; font: 800 17px/1 var(--font); letter-spacing: -.03em; }
-.brand canvas { display: block; width: 26px; height: 23px; image-rendering: pixelated; margin-top: -5px; }   /* the goo sits low in her canvas, so lift her to line up with the word */
+.brand svg { display: block; width: 28px; height: 28px; flex: none; }   /* the app's cloudberry mark (duotone, always) */
+svg.brand-mark.ico .ico-r { display: none; } svg.brand-mark.ico .ico-d { display: revert; }
 .boards, .templates { display: flex; flex-direction: column; gap: 1px; }
 .board-row { display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 14px; corner-shape: squircle; cursor: pointer; font-size: 13.5px; }
 .board-row i { width: 9px; height: 9px; border-radius: 3px; flex: none; rotate: -6deg; }
@@ -612,7 +613,7 @@ label.set-row { cursor: pointer; }
 .set-btn { flex: none; padding: 9px 15px; border-radius: var(--pill-r); corner-shape: squircle; border: 1.5px solid var(--ink); background: none; font: 600 12.5px/1 var(--font); cursor: pointer; }
 .set-btn:hover { background: var(--ink); color: #fff; }
 .set-about { display: flex; gap: 12px; align-items: center; }
-.set-about canvas { width: 34px; height: 30px; image-rendering: pixelated; flex: none; }
+.set-about svg { width: 34px; height: 34px; flex: none; }
 .set-about b { font: 800 14px/1.3 var(--font); } .set-about small { display: block; font: 400 12.5px/1.45 var(--font); color: var(--ink-soft); }
 /* what the settings switch */
 body.no-grid .grid { display: none; }
@@ -2230,7 +2231,7 @@ body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .stage.vec-mode, .stage.vec-mode .card { cursor: default; }
 /* Calmest: Myra in soft, muted colors */
 /* her character hidden: the pill shows just her name */
-body.myra-hidden :is(#goo, #coachGoo, #brandGoo, #hubGoo) { display: none !important; }
+body.myra-hidden :is(#goo, #coachGoo, #hubGoo) { display: none !important; }
 .set-input { width: 150px; padding: 9px 12px; border: 0; border-radius: 16px; corner-shape: squircle; background: rgba(0, 0, 0, .05); font: 600 13px/1 var(--font); color: var(--ink); outline: none; }
 .set-input:focus { box-shadow: inset 0 0 0 2px var(--select); } body.dark .set-input { background: rgba(255, 255, 255, .08); }
 body.myra-calm :is(#goo, .m-pill, #mPill).hopping, body.myra-calm #goo.hopping, body.myra-calm .m-pill { animation: none !important; }

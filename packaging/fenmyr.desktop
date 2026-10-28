@@ -1,12 +1,12 @@
 [Desktop Entry]
 Type=Application
-Name=Myra
+Name=Fenmyr
 GenericName=Planning canvas
 Comment=A canvas where ideas thrive
-Exec=myra %U
-Icon=myra
+Exec=fenmyr %U
+Icon=fenmyr
 Terminal=false
 Categories=Office;Graphics;
 Keywords=board;canvas;moodboard;notes;wireframe;planning;prototype;claude;
-StartupWMClass=myra
+StartupWMClass=fenmyr
 StartupNotify=true

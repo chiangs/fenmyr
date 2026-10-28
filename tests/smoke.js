@@ -1,11 +1,11 @@
 // End-to-end smoke test: opens the real app (under Xvfb in CI) with a throwaway data folder, and drives the bridge.
 //   xvfb-run -a node tests/smoke.js
-//   MYRA_APP=~/.local/lib/myra/app xvfb-run -a node tests/smoke.js   (an installed copy, with the Electron install.sh chose)
+//   FENMYR_APP=~/.local/lib/fenmyr/app xvfb-run -a node tests/smoke.js   (an installed copy, with the Electron install.sh chose)
 const { _electron: electron } = require('playwright');
 const fs = require('fs'), os = require('os'), path = require('path');
 
 (async () => {
-  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'myra-smoke-')), out = path.join(data, 'out');
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-smoke-')), out = path.join(data, 'out');
   fs.mkdirSync(out);
   // stand-ins for Claude Code and whisper.cpp, found where the real ones usually live (~/.local/bin)
   const bin = path.join(data, '.local/bin'); fs.mkdirSync(bin, { recursive: true });
@@ -19,64 +19,64 @@ for a; do case "$a" in *.wav) head -c 4 "$a" > "${data}/wav-magic.txt";; esac; d
 echo " [BLANK_AUDIO] hello from whisper"
 `, { mode: 0o755 });
   fs.writeFileSync(path.join(data, 'model.bin'), 'x');
-  const dir = process.env.MYRA_APP || path.join(__dirname, '..');
-  const installed = process.env.MYRA_APP ? JSON.parse(fs.readFileSync(path.join(dir, 'install.json'), 'utf8')) : {};
-  const app = await electron.launch({ ...(installed.electron ? { executablePath: installed.electron } : {}), args: [dir, '--no-sandbox'], env: { ...process.env, XDG_DATA_HOME: data, HOME: data, MYRA_WHISPER_MODEL: path.join(data, 'model.bin') } });
+  const dir = process.env.FENMYR_APP || path.join(__dirname, '..');
+  const installed = process.env.FENMYR_APP ? JSON.parse(fs.readFileSync(path.join(dir, 'install.json'), 'utf8')) : {};
+  const app = await electron.launch({ ...(installed.electron ? { executablePath: installed.electron } : {}), args: [dir, '--no-sandbox'], env: { ...process.env, XDG_DATA_HOME: data, HOME: data, FENMYR_WHISPER_MODEL: path.join(data, 'model.bin') } });
   // save dialogs answer themselves: everything lands in out/
   await app.evaluate(({ dialog }, out) => { dialog.showSaveDialog = async (w, o) => ({ canceled: false, filePath: out + '/' + o.defaultPath.split('/').pop() }); }, out);
   const page = await app.firstWindow(), errors = [];
   await page.exposeFunction('__readArgs', () => fs.readFileSync(path.join(data, 'args.txt'), 'utf8'));
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => m.type() === 'error' && !/fonts\.(googleapis|gstatic)\.com/.test(m.location().url || '') && errors.push(m.text()));   // Google Fonts can't be reached from every test machine
-  await page.waitForFunction(() => window.Myra && document.querySelector('#side'));
+  await page.waitForFunction(() => window.Fenmyr && document.querySelector('#side'));
   await page.waitForTimeout(2000);
   const r = await page.evaluate(async () => {
-    const res = { native: Myra.native, linux: document.documentElement.classList.contains('linux') };
-    res.first = { name: __myra.board.name, cards: __myra.board.cards.length, tray: __myra.board.tray.length, kanban: __myra.board.cards.some(c => c.kanban) };   // the first board people see
+    const res = { native: Fenmyr.native, linux: document.documentElement.classList.contains('linux') };
+    res.first = { name: __fenmyr.board.name, cards: __fenmyr.board.cards.length, tray: __fenmyr.board.tray.length, kanban: __fenmyr.board.cards.some(c => c.kanban) };   // the first board people see
     const board = { id: 'smoke1', name: 'Smoke', color: 'mint', cards: [{ id: 'c1', type: 'note', x: 0, y: 0, w: 220, h: 140, text: 'hi', bad: NaN }] };
-    res.save = await Myra.save(board);
-    res.load = (await Myra.load('smoke1')).cards[0].bad;
+    res.save = await Fenmyr.save(board);
+    res.load = (await Fenmyr.load('smoke1')).cards[0].bad;
     // a big board (pictures make them many MB) goes there and back intact
     const big = 'x'.repeat(20e6); let t = performance.now();
-    await Myra.save({ id: 'big', name: 'Big', cards: [{ id: 'b', type: 'image', src: big }] }); const back = await Myra.load('big');
-    res.big = back.cards[0].src.length === big.length; res.bigMs = Math.round(performance.now() - t); await Myra.remove('big');
-    res.list = (await Myra.list()).some(b => b.id === 'smoke1');
-    res.folders = await Myra.saveFolders([{ id: 'f', name: 'F' }]) && (await Myra.folders()).length;
-    res.fonts = (await Myra.fonts()).length;
-    res.version = await Myra.version();
-    res.usage = typeof (await Myra.usage()).today.asks;
-    res.speech = await Myra.speechAuth();
-    res.unknown = await new Promise(r => { const id = 999999; const o = window.__myraReply; window.__myraReply = (i, ok, v) => { if (i === id) { window.__myraReply = o; r(v); } else o(i, ok, v); }; window.myraHost.post({ id, op: 'nope', args: {} }); });
-    // a video goes in by chunks and comes back through myramedia:// with byte ranges
+    await Fenmyr.save({ id: 'big', name: 'Big', cards: [{ id: 'b', type: 'image', src: big }] }); const back = await Fenmyr.load('big');
+    res.big = back.cards[0].src.length === big.length; res.bigMs = Math.round(performance.now() - t); await Fenmyr.remove('big');
+    res.list = (await Fenmyr.list()).some(b => b.id === 'smoke1');
+    res.folders = await Fenmyr.saveFolders([{ id: 'f', name: 'F' }]) && (await Fenmyr.folders()).length;
+    res.fonts = (await Fenmyr.fonts()).length;
+    res.version = await Fenmyr.version();
+    res.usage = typeof (await Fenmyr.usage()).today.asks;
+    res.speech = await Fenmyr.speechAuth();
+    res.unknown = await new Promise(r => { const id = 999999; const o = window.__fenmyrReply; window.__fenmyrReply = (i, ok, v) => { if (i === id) { window.__fenmyrReply = o; r(v); } else o(i, ok, v); }; window.fenmyrHost.post({ id, op: 'nope', args: {} }); });
+    // a video goes in by chunks and comes back through fenmyrmedia:// with byte ranges
     const blob = new Blob([new Uint8Array(5000).fill(7)], { type: 'video/mp4' });
-    const src = await Myra.saveMedia(blob); res.media = src;
+    const src = await Fenmyr.saveMedia(blob); res.media = src;
     const part = await fetch(src, { headers: { Range: 'bytes=100-199' } }); res.range = [part.status, (await part.arrayBuffer()).byteLength];
-    res.png = await Myra.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: false, scale: 2 });
-    res.pdf = await Myra.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: true, scale: 2 });
-    res.docx = await Myra.saveFile(btoa('hello'), 'Doc', 'docx');
-    res.docPDF = await Myra.docPDF('<!doctype html><link rel="stylesheet" href="__WEB__/fonts.css"><h1 style="font-family:DM Sans">Hello</h1><p>' + 'words '.repeat(2000) + '</p>', 'Doc', 'a4');
-    res.conn = await Myra.connections();
-    res.ask = await Myra.ask('sort these', { cards: [], n: Infinity }, false, { mobbin: true, higgs: false });
-    res.usage2 = (await Myra.usage()).today;
+    res.png = await Fenmyr.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: false, scale: 2 });
+    res.pdf = await Fenmyr.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: true, scale: 2 });
+    res.docx = await Fenmyr.saveFile(btoa('hello'), 'Doc', 'docx');
+    res.docPDF = await Fenmyr.docPDF('<!doctype html><link rel="stylesheet" href="__WEB__/fonts.css"><h1 style="font-family:DM Sans">Hello</h1><p>' + 'words '.repeat(2000) + '</p>', 'Doc', 'a4');
+    res.conn = await Fenmyr.connections();
+    res.ask = await Fenmyr.ask('sort these', { cards: [], n: Infinity }, false, { mobbin: true, higgs: false });
+    res.usage2 = (await Fenmyr.usage()).today;
     // a real webm voice memo, recorded from a tone, goes through the WAV conversion
     const ac = new AudioContext(), osc = ac.createOscillator(), dst = ac.createMediaStreamDestination(); osc.connect(dst); osc.start();
     const rec = new MediaRecorder(dst.stream), chunks = []; rec.ondataavailable = e => chunks.push(e.data);
     await new Promise(r => { rec.onstop = r; rec.start(); setTimeout(() => rec.stop(), 600); });
     const memo = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(new Blob(chunks, { type: rec.mimeType })); });
-    res.memoType = rec.mimeType; res.speech2 = await Myra.speechAuth(); res.transcribe = await Myra.transcribe(memo);
+    res.memoType = rec.mimeType; res.speech2 = await Fenmyr.speechAuth(); res.transcribe = await Fenmyr.transcribe(memo);
     return res;
   });
   r.prompt = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8'); r.args = fs.readFileSync(path.join(data, 'args.txt'), 'utf8').slice(-120); r.wav = fs.readFileSync(path.join(data, 'wav-magic.txt'), 'utf8');
   // Claude Code hooks are always off for Myra's calls; the web (search and public pages) is only on when Settings → Helpers says so
   Object.assign(r, await page.evaluate(async () => {
     const argsAfter = async fn => { await fn(); return window.__readArgs(); }, res = {};
-    res.hooksOff = await argsAfter(() => Myra.ask('again', {}, false, { mobbin: false, higgs: false }));
-    res.hooksRewrite = await argsAfter(() => Myra.rewrite('text', 'shorter', 'Doc', ''));
-    res.webOn = await argsAfter(() => Myra.ask('look this up', {}, false, { mobbin: false, higgs: false, web: true }));
+    res.hooksOff = await argsAfter(() => Fenmyr.ask('again', {}, false, { mobbin: false, higgs: false }));
+    res.hooksRewrite = await argsAfter(() => Fenmyr.rewrite('text', 'shorter', 'Doc', ''));
+    res.webOn = await argsAfter(() => Fenmyr.ask('look this up', {}, false, { mobbin: false, higgs: false, web: true }));
     return res;
   }));
   r.webPromptOn = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8').includes('search the web and read public pages');
-  r.webOff = await page.evaluate(async () => (await Myra.ask('and this', {}, false, { mobbin: false, higgs: false }), window.__readArgs()));
+  r.webOff = await page.evaluate(async () => (await Fenmyr.ask('and this', {}, false, { mobbin: false, higgs: false }), window.__readArgs()));
   r.webPromptOff = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8').includes('switched off in Settings');
   // icons: everything the page draws is in the icon set, the Icon style setting switches the weight, and a name nobody drew shows a placeholder
   Object.assign(r, await page.evaluate(async () => {
@@ -127,7 +127,7 @@ echo " [BLANK_AUDIO] hello from whisper"
     r.kanban.menu = menu.includes('Rename column') && menu.includes('Delete column') && menu.includes('Limit 5'); await page.keyboard.press('Escape'); await page.mouse.click(5, 300); }
   // your own templates: save the board, see it under Yours, add it to a board (twice: new ids each time) and open it as a new board
   Object.assign(r, await page.evaluate(async () => {
-    const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {};
+    const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__fenmyr, res = {};
     const t = await M.saveAsTemplate('Smoke template', null, { desc: 'For testing', mode: 'add' }); res.tplSaved = !!t && t.name === 'Smoke template' && t.cards.length > 3;
     document.querySelector('#tools [data-add="tpl"]').click(); await wait(200);
     const row = document.querySelector('[data-mine]'); res.tplRow = !!row && row.textContent.includes('Smoke template') && row.textContent.includes('For testing') && row.textContent.includes('Adds to this board');
@@ -140,8 +140,8 @@ echo " [BLANK_AUDIO] hello from whisper"
   // Obsidian vaults: connect one, give this board access, add a note (private ones stay out), flip it, load its full text (never saved), then take access away
   { const vp = path.join(data, 'vault'); fs.cpSync(path.join(__dirname, 'sample-vault'), vp, { recursive: true }); fs.writeFileSync(path.join(vp, 'Reading', 'Long.md'), '# Long\n\n' + Array.from({ length: 40 }, (_, i) => `Paragraph ${i + 1} of a long note, long enough to push the end well past the preview.`).join('\n\n') + '\n\nZZ-END\n');
     Object.assign(r, await page.evaluate(async vp => {
-      const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {};
-      const v = await Myra.vaultAdd(vp); await Myra.vaultUpdate(v.id, { off: ['Private'] });
+      const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__fenmyr, res = {};
+      const v = await Fenmyr.vaultAdd(vp); await Fenmyr.vaultUpdate(v.id, { off: ['Private'] });
       M.board.vaultAccess = [{ vault: v.id, folders: [''], ai: false, write: false }];
       const tool0 = !document.querySelector('[data-add="vnote"]').hidden;
       M.openVaultPicker(); await wait(500);
@@ -160,19 +160,19 @@ echo " [BLANK_AUDIO] hello from whisper"
       return res;
     }, vp)); }
   // Alt+N opens the vault note picker on a board that can read a vault
-  { await page.evaluate(async () => { const M = window.__myra, v = (await Myra.vaults())[0]; M.board.vaultAccess = [{ vault: v.id, folders: [''], ai: false, write: false }]; });
+  { await page.evaluate(async () => { const M = window.__fenmyr, v = (await Fenmyr.vaults())[0]; M.board.vaultAccess = [{ vault: v.id, folders: [''], ai: false, write: false }]; });
     await page.mouse.click(5, 300); await page.keyboard.press('Alt+n'); await page.waitForTimeout(500);
     r.vault.altN = await page.evaluate(() => !!document.getElementById('vaultPick')); await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
   // Myra reads vault notes with AI: only with the grant's switch on and the chip ticked for that question; only allowed folders; and she says what she read
   { const promptNow = () => fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8');
     r.vaultAI = await page.evaluate(async () => {
-      const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, v = (await Myra.vaults())[0], res = {}, chip = () => document.getElementById('mcVault');
+      const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__fenmyr, v = (await Fenmyr.vaults())[0], res = {}, chip = () => document.getElementById('mcVault');
       M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: false, write: false }]; M.applyToolbar(); res.chipHiddenWhenOff = chip().hidden;
       M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: true, write: false }]; M.applyToolbar(); res.chipShown = !chip().hidden;
       await M.ask('what do I know about cloudberries?'); return res; });
     r.vaultAI.withoutChip = !promptNow().includes('dries out by August') && !promptNow().includes('FROM THEIR OBSIDIAN VAULT') && promptNow().includes('did not ask you to this time');
     Object.assign(r.vaultAI, await page.evaluate(async () => {
-      const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {};
+      const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__fenmyr, res = {};
       document.getElementById('mcVault').click(); res.chipOn = document.getElementById('mcVault').classList.contains('on');
       await M.ask('what do I know about cloudberries?'); await wait(300);
       res.said = document.body.innerText.includes('I read 2 notes from your vault'); res.chipReset = !document.getElementById('mcVault').classList.contains('on');
@@ -180,12 +180,12 @@ echo " [BLANK_AUDIO] hello from whisper"
     const p = promptNow();
     r.vaultAI.withChip = p.includes('FROM THEIR OBSIDIAN VAULT') && p.includes('dries out by August') && p.includes('Pack boots') && !p.includes('Cloudberries ripen from amber') && !p.includes('Nobody should read this') && !p.includes('Dear diary');
     // notes she lists become cards, but only ones she was given
-    r.vaultAI.cards = await page.evaluate(async () => { const M = window.__myra, v = (await Myra.vaults())[0], n = M.board.cards.filter(c => c.type === 'vnote').length;
+    r.vaultAI.cards = await page.evaluate(async () => { const M = window.__fenmyr, v = (await Fenmyr.vaults())[0], n = M.board.cards.filter(c => c.type === 'vnote').length;
       await M.applyMyra({ say: 'ok', vaultNotes: [{ vault: v.name, path: 'Projects/Bog Notes/East bog.md' }, { vault: v.name, path: 'Private/Diary.md' }] }, 'q', { asked: true, used: [{ vault: v.name, vaultId: v.id, rel: 'Projects/Bog Notes/East bog.md', title: 'East bog', tags: ['place'], props: [], excerpt: 'x', text: 'x' }] });
       const now = M.board.cards.filter(c => c.type === 'vnote').length; M.board.vaultAccess = []; M.applyToolbar(); return now - n; }); }
   // connectors: weight (regular, medium, bold) and colour from the bar, remembered for the next connector, and a reset
   r.wire = await page.evaluate(async () => {
-    const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {}, b = M.board;
+    const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__fenmyr, res = {}, b = M.board;
     const mk = (id, x, y) => ({ id, type: 'note', x, y, w: 200, h: 90, r: 0, text: id, color: 'butter' }); b.cards.push(mk('wA', -900, 900), mk('wB', -500, 1000)); b.cards.slice(-2).forEach(c => M.renderCard(c));
     b.links.push({ id: 'WL', a: 'wA', b: 'wB', arrow: true }); M.selectWire('WL'); await wait(400);
     const bar = () => document.getElementById('selbar'), pathStyle = () => document.querySelector('.wires path.w')?.getAttribute('style') || '';
@@ -194,9 +194,9 @@ echo " [BLANK_AUDIO] hello from whisper"
     document.querySelector('[data-pop="wwt"]').click(); await wait(200); res.weights = [...bar().querySelectorAll('[data-wb^="w:"] span')].map(e => e.textContent).join();
     bar().querySelector('[data-wb="w:6"]').click(); await wait(300);
     const l = b.links.find(x => x.id === 'WL'); res.set = l.color === '#4f8fc9' && l.w === 6; res.drawn = [...document.querySelectorAll('.wires path')].some(p => (p.getAttribute('style') || '').includes('stroke:#4f8fc9;stroke-width:6'));
-    res.last = JSON.stringify(JSON.parse(localStorage.getItem('myra:settings')).wireStyle); res.halo = !!document.querySelector('.wires path.w-halo');
+    res.last = JSON.stringify(JSON.parse(localStorage.getItem('fenmyr:settings')).wireStyle); res.halo = !!document.querySelector('.wires path.w-halo');
     bar().querySelector('[data-wb="reset"]').click(); await wait(300);
-    res.reset = !l.color && !l.w && !JSON.parse(localStorage.getItem('myra:settings')).wireStyle && !pathStyle().includes('stroke:#');
+    res.reset = !l.color && !l.w && !JSON.parse(localStorage.getItem('fenmyr:settings')).wireStyle && !pathStyle().includes('stroke:#');
     b.links = b.links.filter(x => x.id !== 'WL'); b.cards = b.cards.filter(c => !['wA', 'wB'].includes(c.id)); M.selectWire(null); return res;
   });
   // sidebar rows: hovering shows the row's buttons without making the row taller than its neighbours, and their icons have a real size
@@ -208,16 +208,16 @@ echo " [BLANK_AUDIO] hello from whisper"
       const b = e.querySelector('.f-btn'), sv = b && b.querySelector('svg'), h = e.getBoundingClientRect().height, others = [...e.parentElement.querySelectorAll(':scope > .board-row')].filter(x => x !== e).map(x => x.getBoundingClientRect().height).filter(x => x > 0);
       return { found, h, others, same: others.every(x => Math.abs(x - h) < 1.5), shown: !!b && getComputedStyle(b).display !== 'none', icon: !!sv && sv.getBoundingClientRect().width >= 12 }; }, !!pt); }
   // tags on notes: "#word" + space makes a tag (out of the words), "#" suggests the board's tags, "#24" stays words, Myra's tags land in tags
-  { await page.evaluate(() => { window.__myra.selectOnly([]); window.__myra.board.cards.filter(c => c.type === 'note').forEach(c => delete c.tags); });
-    await page.evaluate(() => window.__myra.newNote(-400, 600)); await page.waitForTimeout(300);
+  { await page.evaluate(() => { window.__fenmyr.selectOnly([]); window.__fenmyr.board.cards.filter(c => c.type === 'note').forEach(c => delete c.tags); });
+    await page.evaluate(() => window.__fenmyr.newNote(-400, 600)); await page.waitForTimeout(300);
     await page.keyboard.type('Fix the login #bug and issue #24 later', { delay: 15 }); await page.keyboard.press('Space'); await page.waitForTimeout(200);
-    r.tags = await page.evaluate(() => { const M = window.__myra, c = M.board.cards.find(x => x.id === M.editing); return { text: c && c.text, tags: c && c.tags, board: M.board.tags }; });
+    r.tags = await page.evaluate(() => { const M = window.__fenmyr, c = M.board.cards.find(x => x.id === M.editing); return { text: c && c.text, tags: c && c.tags, board: M.board.tags }; });
     // a second note: "#b" suggests "#bug"; Enter picks it
-    await page.keyboard.press('Escape'); await page.evaluate(() => window.__myra.newNote(-100, 600)); await page.waitForTimeout(300);
+    await page.keyboard.press('Escape'); await page.evaluate(() => window.__fenmyr.newNote(-100, 600)); await page.waitForTimeout(300);
     await page.keyboard.type('Second #b', { delay: 20 }); await page.waitForTimeout(250);
     r.tags.pop = await page.evaluate(() => [...document.querySelectorAll('#tagPop.on button')].map(b => b.textContent));
     await page.keyboard.press('Enter'); await page.waitForTimeout(250);
-    Object.assign(r.tags, await page.evaluate(async () => { const M = window.__myra, c = M.board.cards.find(x => x.id === M.editing);
+    Object.assign(r.tags, await page.evaluate(async () => { const M = window.__fenmyr, c = M.board.cards.find(x => x.id === M.editing);
       const res = { text2: c && c.text, tags2: c && c.tags, chips: document.querySelectorAll(`[data-id="${c.id}"] .ntags i`).length };
       await M.applyMyra({ say: 'ok', add: [{ type: 'note', name: 'Login fails', text: 'Steps to reproduce', tags: ['BUG', '#ui', '12'], tag: '#31' }] }, 'q');
       const m = M.board.cards.find(x => x.name === 'Login fails'); res.myra = m && { tags: m.tags, label: m.tagText, text: m.text }; res.board2 = M.board.tags;
@@ -225,7 +225,7 @@ echo " [BLANK_AUDIO] hello from whisper"
     await page.keyboard.press('Escape'); }
   // earlier chats: with chats saved on the board, New chat files the conversation away (last 10 kept) and History brings it back
   r.chatHist = await page.evaluate(async () => {
-    const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__myra, res = {};
+    const wait = ms => new Promise(res => setTimeout(res, ms)), M = window.__fenmyr, res = {};
     document.querySelector('[data-seg="chatKeep"] [data-v="board"]').click(); await wait(100);
     document.getElementById('mPill').click(); await wait(300);
     const mk = (q, a) => [{ who: 'me', text: q, t: Date.now() }, { who: 'myra', text: a, t: Date.now() }];
@@ -256,7 +256,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   const png = fs.readFileSync(path.join(out, 'shot.png'));
   r.pngSize = [png.readUInt32BE(16), png.readUInt32BE(20)];
   r.pdfPages = (fs.readFileSync(path.join(out, 'Doc.pdf'), 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
-  r.files = files; r.errors = errors; r.boardOnDisk = fs.existsSync(path.join(data, 'myra/boards/smoke1.json'));
+  r.files = files; r.errors = errors; r.boardOnDisk = fs.existsSync(path.join(data, 'fenmyr/boards/smoke1.json'));
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), webOn: r.webOn.slice(-120), webOff: r.webOff.slice(-120), hooksRewrite: r.hooksRewrite.slice(-100) }, null, 1));
   await app.close();
   const ok = r.native && r.linux && r.save && r.load === 0 && r.list && r.folders === 1 && r.fonts > 0 && r.unknown === 'unknown op nope' && r.range[0] === 206 && r.range[1] === 100

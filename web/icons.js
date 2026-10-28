@@ -2,7 +2,7 @@
 // tools/icons/set.js) says what it looks like, so the icon pack can be swapped without touching the app.
 // Every icon carries both weights; the Icon style setting (Regular or Duotone) switches a class on <body>, and only the bottom bar and the chat header show Duotone.
 (() => {
-  const PACK = window.MYRA_ICON_PACK || { icons: {} }, ICONS = PACK.icons;
+  const PACK = window.FENMYR_ICON_PACK || { icons: {} }, ICONS = PACK.icons;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   // a name nobody has drawn shows a neutral placeholder, with the name as its tooltip, so nothing is ever blank
   const entry = name => ICONS[name] || ICONS.missing;
