@@ -35,7 +35,7 @@
     const g = canvas.getContext('2d'), H = canvas.height;
     let col = opts.colors || { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, pal = null;
     const palette = () => pal || (pal = { B: col.B, S: col.S, s: mix(col.B, col.S, .45), D: col.D, d: mix(col.D, '#000000', .22), L: col.L || '#7cc95e', l: col.l || '#3f8f3c' })   // a color can bring its own leaves (a green Myra gets teal ones, so the crown still shows);
-    let hopT = -9, thinking = false, look = 0, lookTo = 0, nextLook = 0, pose = null, showOff = false, wiggleUntil = 0;   // pose: 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | null; showOff: move even in calm mode (when someone asked her to)
+    let hopT = -9, thinking = false, look = 0, lookTo = 0, nextLook = 0, pose = null, showOff = false, wiggleUntil = 0;   // pose: 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | 'curious' | null; showOff: move even in calm mode (when someone asked her to)
     // Calmest: her colors softened toward a gentle gray (kept light so she still reads as her color)
     const mutedCache = new Map();
     const mute = hex => { if (!window.myraMuted || !/^#[0-9a-f]{6}$/i.test(hex)) return hex; if (mutedCache.has(hex)) return mutedCache.get(hex);
@@ -52,7 +52,7 @@
       const breathe = calm ? 0 : pose === 'sleepy' ? Math.sin(t * 1.3) * .07 : pose === 'sigh' && sighPh === 1 ? -.06 : pose === 'happy' ? Math.abs(Math.sin(t * 7)) * .07 : Math.sin(t * 2.4) * .04;
       if (calm) look = 0;
       const ox = (W - GW * px) / 2 + wig * px * .5, oy = H - GH * px - Math.round(lift) * px;
-      g.save(); g.translate(W / 2, H); g.scale(1 - breathe * .5, 1 + breathe); g.translate(-W / 2, -H);
+      g.save(); g.translate(W / 2, H); if (pose === 'curious') g.rotate(Math.sin(t * 2.4) * .1); g.scale(1 - breathe * .5, 1 + breathe); g.translate(-W / 2, -H);   // curious: her head tilts one way and the other
       grid.forEach((row, y) => row.forEach((c, x) => { if (c) { g.fillStyle = mute(P[c]); g.fillRect(ox + x * px, oy + y * px, px, px); } }));
       const blink = (t % 3.3) > 3.15, ex = Math.round(look), ink = mute('#2a1708');
       const closed = pose === 'sleepy' || (pose === 'sigh' && sighPh === 1);
@@ -60,6 +60,8 @@
         g.fillStyle = mute('#ffffff'); [3, 10].forEach(c => g.fillRect(ox + c * px, oy + 7 * px, px * 2, px * 3));
         g.fillStyle = ink; [4, 11].forEach(c => g.fillRect(ox + c * px, oy + 8 * px, px, px)); g.fillRect(ox + 7 * px, oy + 11 * px, px * 2, px * 2);
         g.fillStyle = mute('#c8dcf0'); g.fillRect(ox + 14.5 * px, oy + (3.5 + Math.sin(t * 5) * .4) * px, px * 1.3, px * 2.4);
+      } else if (pose === 'curious') {   // eyes looking up and over, at the question mark
+        g.fillStyle = ink; [4, 11].forEach(c => g.fillRect(ox + (c + 1) * px, oy + 7.2 * px, px, px * 2));
       } else if (pose === 'happy') {   // beaming: eyes as arches
         g.fillStyle = ink; [4, 11].forEach(c => { g.fillRect(ox + (c - 1) * px, oy + 9 * px, px, px); g.fillRect(ox + c * px, oy + 8 * px, px, px); g.fillRect(ox + (c + 1) * px, oy + 9 * px, px, px); });
       } else if (pose === 'love') {   // heart eyes
@@ -72,9 +74,14 @@
         g.fillStyle = ink; [4, 11].forEach(c => g.fillRect(ox + (c + ex) * px, oy + (blink ? 8.5 : 8) * px, px, blink ? px * .4 : px * 2));
       }
       g.fillStyle = mute('#ff8fa8'); [2, 13].forEach(c => g.fillRect(ox + c * px, oy + 10 * px, px, px));
-      if (pose === 'happy') { g.fillStyle = ink; g.fillRect(ox + 6 * px, oy + 11 * px, px * 4, px); g.fillRect(ox + 7 * px, oy + 12 * px, px * 2, px); }   // a big open smile
+      if (pose === 'curious') { g.fillStyle = ink; g.fillRect(ox + 7.5 * px, oy + 11 * px, px, px); }   // a small round mouth
+      else if (pose === 'happy') { g.fillStyle = ink; g.fillRect(ox + 6 * px, oy + 11 * px, px * 4, px); g.fillRect(ox + 7 * px, oy + 12 * px, px * 2, px); }   // a big open smile
       else if (pose === 'dizzy') { g.fillStyle = mute(P.d); [6, 8, 10].forEach((c, i) => g.fillRect(ox + (c - .5) * px, oy + (11 + (i % 2) * .6) * px, px * 1.3, px * .8)); }   // a wobbly mouth
       else if (pose !== 'shook') { g.fillStyle = mute(P.d); if (pose === 'sigh') g.fillRect(ox + 6.5 * px, oy + 11 * px, px * 3, px); else g.fillRect(ox + 7 * px, oy + 11 * px, px * 2, px); }   // a small smile
+      if (pose === 'curious') {   // a question mark bobs above her
+        const bob = Math.sin(t * 5) * .6, q = ['XXX', '..X', '.X.', '...', '.X.'], u = Math.max(1, px * 1.05); g.fillStyle = mute('#5b7bd5'); g.globalAlpha = .75 + Math.sin(t * 5) * .25;
+        q.forEach((row, ry) => [...row].forEach((c, rx) => { if (c === 'X') g.fillRect(ox + 11.5 * px + rx * u, oy - 1 * px + bob * px + ry * u, u, u); })); g.globalAlpha = 1;
+      }
       if (pose === 'happy') {   // sparkles twinkle around her
         g.fillStyle = mute('#fff3b0'); [[1, 3, 0], [14, 5, 1.4], [15, 10, 2.8]].forEach(([x, y, o]) => { const a = Math.max(0, Math.sin(t * 6 + o)); g.globalAlpha = a; g.fillRect(ox + x * px, oy + (y - 1) * px, px * .8, px * 2.6); g.fillRect(ox + (x - 1) * px, oy + y * px, px * 2.8, px * .8); }); g.globalAlpha = 1;
       }
