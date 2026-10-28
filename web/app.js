@@ -2396,18 +2396,42 @@
   let perched = false, gooAnim = null, toggleLog = [], dizzyAt = 0, dizzyAuto = true;
   const gooOffset = () => { const t = getComputedStyle(gooSlot).transform; if (!t || t === 'none') return { x: 0, y: 0 }; const m = new DOMMatrix(t); return { x: m.m41, y: m.m42 }; };
   const gooMove = t => { gooSlot.style.transform = `translate(${t.x}px, ${t.y}px)`; };
-  function perchTarget() {   // layout values only, so it is right even while the chat is still fading in
-    const my = $('myra').getBoundingClientRect(), chat = $('mChat'), cs = getComputedStyle(chat), form = $('mcForm'), s = gooSlot.getBoundingClientRect(), cur = gooOffset();
+  function perchTarget() {   // layout values only (never her own transform), so it is right while she squashes, leans and flies, and while the chat is still fading in
+    const my = $('myra').getBoundingClientRect(), chat = $('mChat'), cs = getComputedStyle(chat), form = $('mcForm'), pill = $('mPill'), pr = pill.getBoundingClientRect();
+    const baseL = pr.left + (gooSlot.offsetLeft - pill.offsetLeft), baseT = pr.top + (gooSlot.offsetTop - pill.offsetTop);   // where her slot sits in the button
     const chatL = my.right - parseFloat(cs.right) - chat.offsetWidth, chatT = my.bottom - parseFloat(cs.bottom) - chat.offsetHeight;
-    return { x: chatL + form.offsetLeft + 12 - (s.left - cur.x), y: chatT + form.offsetTop + 6 - s.height - (s.top - cur.y) };
+    return { x: chatL + form.offsetLeft + 12 - baseL, y: chatT + form.offsetTop + 6 - gooSlot.offsetHeight - baseT };
   }
+  // her hop is a little physics, not a slide: she crouches (anticipation), springs off, stretches as she speeds up, tips into the direction she is going, follows a rounded arc under gravity,
+  // lands squashed (her feet stay put), springs back past straight and settles with a tiny second bounce. The landing spot is measured again as she lands, in case the bar moved.
+  const gooPose = (p, sx, sy, rot) => { gooSlot.style.transform = `translate(${p.x}px, ${p.y}px)`; gooSlot.style.scale = `${sx} ${sy}`; gooSlot.style.rotate = `${rot}deg`; };
+  const gooRest = () => { gooSlot.style.scale = ''; gooSlot.style.rotate = ''; };
   function flyGoo(to, instant) {
-    const from = gooOffset(); if (gooAnim) { gooAnim.cancel(); gooAnim = null; }
-    if (instant || (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1)) { gooMove(to); if (flightLive) { flightLive = false; liveOff(); } return; }
-    gooMove(from); if (!flightLive) { flightLive = true; liveOn(); } hopMyra();
-    const mid = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 40 }, tf = p => `translate(${p.x}px, ${p.y}px)`;
-    const a = gooAnim = gooSlot.animate([{ transform: tf(from) }, { transform: tf(mid), offset: .5 }, { transform: tf(to) }], { duration: 560, easing: 'cubic-bezier(.3, .6, .4, 1)' });
-    a.onfinish = () => { if (gooAnim === a) { gooAnim = null; gooMove(perched ? perchTarget() : to); if (flightLive) { flightLive = false; liveOff(); } } };   // (where the input is now, in case the button changed width on the way)
+    const from = gooOffset(); if (gooAnim) { gooAnim.stop(); gooAnim = null; }
+    const done = () => { if (flightLive) { flightLive = false; liveOff(); } };
+    if (instant || (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1)) { gooRest(); gooMove(to); done(); return; }
+    if (!flightLive) { flightLive = true; liveOn(); }
+    gooRest();
+    const dist = Math.hypot(to.x - from.x, to.y - from.y), rise = Math.max(52, Math.min(130, dist * .3 + 30)), CROUCH = to.y < from.y ? 140 : 100, AIR = Math.max(420, Math.min(700, 300 + dist * .8)), LAND = 340;
+    const t0 = performance.now(), sm = k => k * k * (3 - 2 * k), lerp = (a, b, k) => a + (b - a) * k; let target = to, landFrom = null, raf = 0, stopped = false;
+    const step = now => {
+      if (stopped) return; const e = now - t0;
+      if (e < CROUCH) { const k = sm(e / CROUCH); gooPose(from, 1 + .16 * k, 1 - .28 * k, 0); }   // anticipation: she sinks down and widens
+      else if (e < CROUCH + AIR) {
+        target = perched ? perchTarget() : { x: 0, y: 0 };   // keep aiming at where the landing spot is as the chat and bar settle
+        const k = (e - CROUCH) / AIR, x = lerp(from.x, target.x, sm(k)), y = lerp(from.y, target.y, k) - 4 * rise * k * (1 - k);
+        const vy = Math.abs((target.y - from.y) - 4 * rise * (1 - 2 * k)), speed = Math.min(1, vy / (rise * 3 + 40));   // fast = stretched tall and thin, at the top of the arc she is round again
+        gooPose({ x, y }, 1 - .13 * speed + .04 * (1 - speed), 1 + .26 * speed - .04 * (1 - speed), Math.max(-12, Math.min(12, (target.x - from.x) * .045 * Math.sin(Math.PI * k))));
+      } else {
+        const l = e - CROUCH - AIR;
+        if (!landFrom) { landFrom = { x: target.x, y: target.y }; gooRest(); target = perched ? perchTarget() : { x: 0, y: 0 }; }   // where the landing spot is now
+        if (l >= LAND) { gooRest(); gooMove(target); gooAnim = null; done(); return; }
+        const sp = Math.exp(-l / 100) * Math.cos(l / 32), blend = Math.min(1, l / 90), bounce = 8 * Math.exp(-l / 130) * Math.abs(Math.sin(l / 62));
+        gooPose({ x: lerp(landFrom.x, target.x, blend), y: lerp(landFrom.y, target.y, blend) - bounce }, 1 + .2 * sp, 1 - .3 * sp, 0);
+      }
+      raf = requestAnimationFrame(step);
+    };
+    gooAnim = { stop() { stopped = true; cancelAnimationFrame(raf); } }; raf = requestAnimationFrame(step);
   }
   function perchGoo(on) {
     const hidden = document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none'; if (hidden) return;
