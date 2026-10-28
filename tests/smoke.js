@@ -289,16 +289,23 @@ echo " [BLANK_AUDIO] hello from whisper"
     const dragging = await page.evaluate(() => document.getElementById('ghost').classList.contains('on'));
     await page.mouse.move(500, 450, { steps: 6 }); await page.mouse.up(); const d = await sel();
     r.place = { centre: a.n >= 1 && a.cx > a.vw * 0.15 && a.cx < a.vw * 0.7 && a.cy > a.vh * 0.1 && a.cy < a.vh * 0.8, stacked: st.outside === 0 && st.inside, dragging, dropped: d.cards > c0 && Math.abs(d.cx - 500) < 200 && Math.abs(d.cy - 450) < 200, hintGone: await page.evaluate(() => document.getElementById('placeHint').hidden) }; }
-  // slash commands: / lists what Myra can do without AI, Ctrl+F opens her with /find ready, find selects what it finds
-  { await page.evaluate(() => { const M = window.__fenmyr; M.board.cards.length = 0; ['Pick cloudberries', 'Buy bread', 'cloudberry jam'].forEach((t, i) => M.board.cards.push({ id: 'sl' + i, type: 'note', x: i * 300, y: 0, w: 220, h: 140, color: 'white', text: t, r: 0 })); M.renderAll(); });
+  // slash commands: / lists what Myra can do without AI, Ctrl+F opens her with /find ready; /find opens the find bar beside her pill (live search, cycling, closes)
+  { await page.evaluate(() => { const M = window.__fenmyr; M.board.cards.length = 0; ['Pick cloudberries', 'Buy bread', 'cloudberry jam', 'Plan the trip'].forEach((t, i) => M.board.cards.push({ id: 'sl' + i, type: 'note', x: (i % 2) * 300, y: Math.floor(i / 2) * 200, w: 220, h: 140, color: 'white', text: t, r: 0 })); M.renderAll(); });
     await page.keyboard.press('Control+f'); const f1 = await page.evaluate(() => ({ chat: document.getElementById('myra').classList.contains('chat'), val: document.getElementById('mcInput').value, focus: document.activeElement.id }));
-    await page.keyboard.type('cloud'); await page.keyboard.press('Enter'); await page.waitForTimeout(300);
-    const f2 = await page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg')].map(m => m.textContent.trim()));
+    await page.keyboard.type('cloud'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
+    const bar = () => page.evaluate(() => { const b = document.getElementById('findBar'), p = document.getElementById('mPill').getBoundingClientRect(), r = b.getBoundingClientRect(); return { shown: !b.hidden, count: document.getElementById('fbCount').textContent, focus: document.activeElement.id, dim: document.querySelectorAll('.card.dim').length, cur: document.querySelectorAll('.card.find-cur').length, right: r.left >= p.right, level: Math.abs((r.top + r.height / 2) - (p.top + p.height / 2)) < 1.5, prevOff: document.getElementById('fbPrev').disabled }; });
+    const b1 = await bar();
+    await page.keyboard.press('Enter'); await page.waitForTimeout(250); const b2 = await bar();
+    await page.keyboard.press('Shift+Enter'); await page.keyboard.press('Shift+Enter'); await page.waitForTimeout(250); const b3 = await bar();
+    await page.fill('#fbQ', 'trip'); await page.waitForTimeout(400); const b4 = await bar();
+    await page.fill('#fbQ', 'zebra'); await page.waitForTimeout(400); const b5 = await bar();
+    await page.keyboard.press('Escape'); await page.waitForTimeout(100); const b6 = await bar();
+    await page.click('#mPill'); await page.waitForTimeout(200);
     await page.fill('#mcInput', '/'); const menu = await page.evaluate(() => [...document.querySelectorAll('.slash-menu button')].map(b => b.dataset.cmd).join());
     await page.keyboard.press('Escape'); const closed = await page.evaluate(() => document.querySelector('.slash-menu').hidden && document.getElementById('myra').classList.contains('chat'));
     await page.fill('#mcInput', '/tidy'); await page.keyboard.press('Enter'); await page.waitForTimeout(200);
     const f3 = await page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg')].pop().textContent.trim());
-    r.slash = { open: f1.chat && f1.val === '/find ' && f1.focus === 'mcInput', found: f2[f2.length - 2] === '/find cloud' && /Found 2 cards/.test(f2[f2.length - 1]), menu: menu === 'find,tag,tidy,fit,clear,help', closed, tidy: /Lined 3 notes/.test(f3) };
+    r.slash = { open: f1.chat && f1.val === '/find ' && f1.focus === 'mcInput', barOpens: b1.shown && b1.focus === 'fbQ' && b1.count === '1 of 2', dims: b1.dim === 2 && b1.cur === 1, besideMyra: b1.right && b1.level, cycles: b2.count === '2 of 2' && b3.count === '2 of 2', live: b4.count === '1 of 1' && b4.prevOff, none: b5.count === 'No matches' && b5.dim === 0, closes: !b6.shown && b6.dim === 0 && b6.cur === 0, menu: menu === 'find,tag,tidy,fit,clear,help', closed, tidy: /Lined 4 notes/.test(f3) };
     await page.evaluate(() => { document.getElementById('mcNew').click(); document.getElementById('mcInput').blur(); }); }
   r.files = files; r.errors = errors; r.boardOnDisk = fs.existsSync(path.join(data, 'fenmyr/boards/smoke1.json'));
   console.log(JSON.stringify({ ...r, prompt: r.prompt.slice(0, 120) + '…', hooksOff: r.hooksOff.slice(-160), webOn: r.webOn.slice(-120), webOff: r.webOff.slice(-120), hooksRewrite: r.hooksRewrite.slice(-100) }, null, 1));
