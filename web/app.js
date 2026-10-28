@@ -664,7 +664,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function inner(c) {
     switch (c.type) {
-      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra" src="stamps/myra-wave.png" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : `<div class="nname">${esc(c.name || '')}</div>`}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
+      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra${c.myraMv ? ' mv-' + c.myraMv : ''}" src="${esc(c.myraImg || 'stamps/myra-wave.png')}" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : `<div class="nname">${esc(c.name || '')}</div>`}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
       case 'doc': return `<div class="pill">${CIC.doc}<span class="text">${esc(c.text)}</span></div>`;
       case 'canvas': return `<div class="cv-head">${CIC.canvas}<span class="text">${esc(c.text)}</span></div><div class="cv-prev"><em>empty canvas</em></div>`;
       case 'shape': return shapeSVG(c) + `<div class="text">${esc(c.text || '')}</div>`;
@@ -2413,7 +2413,7 @@
     if (instant || (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1)) { gooRest(); gooMove(to); done(); return; }
     if (!flightLive) { flightLive = true; liveOn(); }
     gooRest();
-    const dist = Math.hypot(to.x - from.x, to.y - from.y), rise = Math.max(52, Math.min(130, dist * .3 + 30)), CROUCH = to.y < from.y ? 140 : 100, AIR = Math.max(420, Math.min(700, 300 + dist * .8)), LAND = 340;
+    const up = to.y < from.y, dist = Math.hypot(to.x - from.x, to.y - from.y), rise = Math.max(26, Math.min(56, dist * .12 + 18)) * (up ? 1 : .6), CROUCH = up ? 110 : 70, AIR = Math.max(300, Math.min(520, 250 + dist * .5)) * (up ? 1 : .8), LAND = 320;   // low arcs: a higher one made her float across an empty board while the chat faded
     const t0 = performance.now(), sm = k => k * k * (3 - 2 * k), lerp = (a, b, k) => a + (b - a) * k; let target = to, landFrom = null, raf = 0, stopped = false;
     const step = now => {
       if (stopped) return; const e = now - t0;
@@ -2422,7 +2422,7 @@
         target = perched ? perchTarget() : { x: 0, y: 0 };   // keep aiming at where the landing spot is as the chat and bar settle
         const k = (e - CROUCH) / AIR, x = lerp(from.x, target.x, sm(k)), y = lerp(from.y, target.y, k) - 4 * rise * k * (1 - k);
         const vy = Math.abs((target.y - from.y) - 4 * rise * (1 - 2 * k)), speed = Math.min(1, vy / (rise * 3 + 40));   // fast = stretched tall and thin, at the top of the arc she is round again
-        gooPose({ x, y }, 1 - .13 * speed + .04 * (1 - speed), 1 + .26 * speed - .04 * (1 - speed), Math.max(-12, Math.min(12, (target.x - from.x) * .045 * Math.sin(Math.PI * k))));
+        gooPose({ x, y }, 1 - .13 * speed + .04 * (1 - speed), 1 + .26 * speed - .04 * (1 - speed), Math.max(-9, Math.min(9, (target.x - from.x) * .035 * Math.sin(Math.PI * k))));
       } else {
         const l = e - CROUCH - AIR;
         if (!landFrom) { landFrom = { x: target.x, y: target.y }; gooRest(); target = perched ? perchTarget() : { x: 0, y: 0 }; }   // where the landing spot is now
@@ -2776,13 +2776,23 @@
   const focusedNow = () => window.__bdFocus ?? (!document.hidden && document.hasFocus());
   const attentive = anyway => !!anyway || (focusedNow() && Date.now() - lastActive < 60000 && Date.now() - lastKey > 4000);
   const BD_LINES = [who => `Happy birthday${who}! I put on my best hat for you ✦`, who => `It's your birthday${who}! Berries for everyone ✦`, who => `Happy birthday${who}! The board can wait a little today ✦`];
-  async function birthdayLine(due) {   // with thinking on, a line written for the moment; otherwise (or if it is slow) the written ones
+  // the card she leaves on the board: warm, a little dry, like a birthday card. With thinking off these are the pool (a different one each time, never the last one twice); with it on she writes a fresh one.
+  const BD_CARDS = ['Another year older, {n}, and still the best reason this board gets anything done. Cake first, tidying later.', 'Happy birthday, {n}. I would light the candles myself, but I am mostly fruit and the cake is flammable.', "You are not getting older, {n}. You are ripening. I'd know.", "Today's agenda, {n}: cake, nothing urgent, and at least one person singing badly on your behalf.", 'Happy birthday, {n}. The backlog has been told it can wait. It did not argue.', 'Another lap around the sun, {n}. Excellent form, no notes.', 'Many happy returns, {n}. I am not accepting any returns today, only cake.', 'Happy birthday, {n}. Cake counts as a project plan today. I checked.', "I'd say you don't look a day older, {n}, but I only see you through a screen, so who knows. Happy birthday.", 'Happy birthday, {n}. I made this card myself. It took a while, mostly the glitter.', 'Happy birthday, {n}. Whatever you wished for, I have already put it in the backlog.', 'Another year, {n}, and the board still has you. It could do worse. Happy birthday.'];
+  const BD_BELATED = ['Happy belated birthday, {n}. I am told the best presents arrive late. This card is the present.', 'Belated happy birthday, {n}. The confetti took the scenic route.', 'Happy belated birthday, {n}. I missed the day, not the cake. Where is the cake.', 'Late, {n}, but sincere: happy birthday. I blame the clouds.', "Happy belated birthday, {n}. Consider it a birthday that's still in the post.", 'You get a second round of birthday, {n}. Happy belated. Terms and conditions do not apply.'];
+  let lastCardIdx = -1;
+  const fillName = t => t.replace(/, \{n\}/g, settings.name ? `, ${settings.name}` : '').replace(/\{n\}/g, settings.name || 'friend');
+  function pickCard(belated) {
+    const pool = belated ? BD_BELATED : BD_CARDS, st = bdState(), last = st.cardIdx != null && st.cardKind === (belated ? 'b' : 'a') ? st.cardIdx : -1;
+    let i; do { i = Math.floor(Math.random() * pool.length); } while (pool.length > 1 && (i === last || i === lastCardIdx));
+    lastCardIdx = i; return { text: fillName(pool[i]), idx: i };
+  }
+  async function birthdayLine(due) {   // with thinking on, a greeting and a card written for the moment; otherwise (or if it is slow) null and the written ones are used
     if (window.__birthdayLineStub) return window.__birthdayLineStub(due);
     if (Fenmyr.web || !settings.ai || haveClaude === false || !navigator.onLine) return null;
-    const prompt = `(This is a birthday notice, not a request. ${due.kind === 'belated' ? `The person's birthday was ${due.days} day${due.days === 1 ? '' : 's'} ago and you missed it, so wish them a happy belated birthday` : "It is the person's birthday today, so wish them a happy birthday"}. Say one short, warm line in your own voice and nothing else. Do not change the board.)`;
+    const last = bdState().card, prompt = `(This is a birthday notice, not a request. ${due.kind === 'belated' ? `The person's birthday was ${due.days} day${due.days === 1 ? '' : 's'} ago and you missed it, so wish them a happy belated birthday` : "It is the person's birthday today, so wish them a happy birthday"}. Reply with "say": one short, warm line in your own voice for the chat, and "card": the words for a birthday card you will leave on their board: one or two short sentences, warm with a little dry humour like a good birthday card, addressed to them, never telling them what to do with the card. ${last ? `The card you left last time said: "${String(last).slice(0, 200)}", so write something different. ` : ''}Do not change the board.)`;
     try {
       const raw = await Promise.race([Fenmyr.ask(prompt, { ...snapshot(), cards: [], links: [], unsorted: [], recentChat: [], commands: undefined }, false, { mobbin: false, higgs: false, web: false, canVault: false, vaultNotes: [] }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 6000))]);
-      return parse(raw).say || null;
+      const r = parse(raw); return { say: r.say || null, card: typeof r.card === 'string' && r.card.trim() ? r.card.trim().slice(0, 240) : null };
     } catch (e) { return null; }
   }
   async function celebrateBirthday(due, demo) {
@@ -2795,9 +2805,11 @@
     [500, 2000, 3500].forEach(ms => setTimeout(() => partyMyra(true), ms));   // waves of berry confetti, whatever her calm setting
     const when = due.date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
     const canned = belated ? `Happy belated birthday${who}! I missed you on ${when}, so I saved the confetti ✦` : BD_LINES[Math.floor(Math.random() * BD_LINES.length)](who);
-    const line = await Promise.race([birthdayLine(due), new Promise(r => setTimeout(() => r(null), 2200))]);
-    reply(noEmoji(line || canned), 0);
-    const p = centerWorld(), title = belated ? 'Happy belated birthday' : 'Happy birthday', c = card('note', { myra: true, name: title, text: `${title}${who}! Keep this note or delete it, whichever you like.`, color: 'butter', w: 260, h: 170 });
+    let ai = await Promise.race([birthdayLine(due), new Promise(r => setTimeout(() => r(null), 2200))]); if (typeof ai === 'string') ai = { say: ai };
+    reply(noEmoji((ai && ai.say) || canned), 0);
+    const picked = ai && ai.card ? null : pickCard(belated), words = ai && ai.card ? noEmoji(ai.card) : picked.text;
+    if (!demo) { const st = bdState(); st.card = words; if (picked) { st.cardIdx = picked.idx; st.cardKind = belated ? 'b' : 'a'; } saveBd(st); }
+    const p = centerWorld(), title = belated ? 'Happy belated birthday' : 'Happy birthday', c = card('note', { myra: true, myraImg: 'stamps/myra-party.png', myraMv: 'spin', name: title, text: words, color: 'butter', w: 260, h: 190 });
     c.x = p.x - c.w / 2; c.y = p.y - c.h / 2 - 40; addCard(c);
     celebrating = false;
   }
