@@ -2186,7 +2186,7 @@ body[data-tb="l"] .m-pill { height: 58px; }
 body.dark .m-pill { --m-base: 0 8px 26px rgba(0, 0, 0, .31); }
 @keyframes m-glow {
   0%, 100% { box-shadow: var(--m-base), 0 0 14px 1px color-mix(in srgb, var(--m-glow) 36%, transparent); }
-  50% { box-shadow: var(--m-base), 0 0 28px 5px color-mix(in srgb, var(--m-glow) 66%, transparent); } }
+  50% { box-shadow: var(--m-base), 0 0 20px 2px color-mix(in srgb, var(--m-glow) 48%, transparent); } }
 @keyframes m-wobble { 0%, 86%, 100% { transform: none; } 89% { transform: rotate(-.9deg); } 92% { transform: rotate(.8deg); } 95% { transform: rotate(-.4deg); } 97.5% { transform: rotate(.2deg); } }
 @media (prefers-reduced-motion: reduce) { .m-pill { animation: none; } }
 body[data-tb="l"] .tools .zoom { font-size: 15px; }
