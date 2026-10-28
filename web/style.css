@@ -143,7 +143,7 @@ button.zoom { justify-content: flex-end; font-family: inherit; font-size: 12px; 
 
 /* ---------- Myra ---------- */
 .myra { position: absolute; left: calc(50% + 8px); bottom: 22px; transform: translateX(-50%); z-index: 15; display: flex; flex-direction: column; align-items: center; }
-.m-pill { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 18px 0 10px; border-radius: var(--pill-r); corner-shape: squircle; background: rgba(40, 40, 48, .94); color: #fff; box-shadow: 0 12px 30px rgba(58, 40, 22, .3); cursor: pointer; transition: width .35s cubic-bezier(.2, .8, .3, 1); }
+.m-pill { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 10px; border-radius: var(--pill-r); corner-shape: squircle; background: rgba(40, 40, 48, .94); color: #fff; box-shadow: 0 12px 30px rgba(58, 40, 22, .3); cursor: pointer; transition: width .35s cubic-bezier(.2, .8, .3, 1); }
 .m-pill canvas { width: 40px; height: 35px; image-rendering: pixelated; }
 .m-name { font: 600 15px/1 var(--font); }
 .m-form { display: none; }
@@ -2172,6 +2172,9 @@ body[data-tb="s"] .tools button[data-add], body[data-tb="s"] .tools .tb-more, bo
 body[data-tb="s"] #tools svg[viewBox="0 0 24 24"], body[data-tb="s"] .tools .ic { width: 17px !important; height: 17px !important; }
 body[data-tb="l"] .tools button[data-add], body[data-tb="l"] .tools .tb-more, body[data-tb="l"] .tools .clean-btn { width: 48px; height: 46px; }
 body[data-tb="l"] #tools svg[viewBox="0 0 24 24"], body[data-tb="l"] .tools .ic { width: 24px !important; height: 24px !important; }
+/* the Myra pill is as tall as the toolbar at every size: small 46, medium 50, large 58 */
+body[data-tb="s"] .m-pill { height: 46px; }
+body[data-tb="l"] .m-pill { height: 58px; }
 body[data-tb="l"] .tools .zoom { font-size: 15px; }
 body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .tools .tb-over { display: none !important; }
