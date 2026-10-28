@@ -2454,6 +2454,26 @@ body.following-caelestia .ly.on:hover { background: color-mix(in srgb, var(--pan
 body.following-caelestia .tray-item, body.following-caelestia .mc-msg.myra { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)) !important; color: var(--ink); }
 body.following-caelestia .mc-msg.me { background: color-mix(in srgb, var(--panel) 86%, var(--pink-deep) 14%) !important; color: var(--ink); }
 
+/* following Caelestia: Settings and the setup tour are the panel colour, and what sits in them is tonal like the sidebar: segmented buttons, inputs and
+   toggles take the scheme's outline colour, the chosen option and switched-on toggles take its accent, and the warm cards are the muted cloudberry amber */
+body.following-caelestia .set-panel, body.following-caelestia .ob-panel { background: var(--panel) !important; color: var(--ink); }
+body.following-caelestia .set-body section { border-color: color-mix(in srgb, var(--panel) 78%, var(--dot)); }
+body.following-caelestia .seg { background: color-mix(in srgb, var(--panel) 78%, var(--dot)) !important; }
+body.following-caelestia .seg button { color: var(--ink-soft); }
+body.following-caelestia .seg button.on { background: color-mix(in srgb, var(--panel) 68%, var(--pink-deep) 32%) !important; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
+body.following-caelestia .set-input { background: color-mix(in srgb, var(--panel) 80%, var(--dot)); color: var(--ink); }
+body.following-caelestia .tgl { background: color-mix(in srgb, var(--panel) 62%, var(--dot)); }
+body.following-caelestia .tgl:checked { background: var(--pink-deep); }
+body.following-caelestia .tgl::after, body.following-caelestia .tgl:checked::after { background: var(--panel); }
+body.following-caelestia .set-btn { border-color: var(--ink); color: var(--ink); }
+body.following-caelestia .set-btn:hover, body.following-caelestia .set-btn.hot { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+body.following-caelestia .set-start, body.following-caelestia .set-maker, body.following-caelestia .set-feedback { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)); color: var(--ink); }
+body.following-caelestia .sm-sig { color: var(--ink-soft); }
+body.following-caelestia .set-update { background: color-mix(in srgb, var(--panel) 80%, var(--dot)); }
+body.following-caelestia .set-update.ready { background: color-mix(in srgb, var(--panel) 70%, var(--mint-deep) 30%); }
+body.following-caelestia .su-icon { background: color-mix(in srgb, var(--panel) 65%, var(--dot)); }
+body.following-caelestia .set-head .dv-btn { background: color-mix(in srgb, var(--panel) 78%, var(--dot)) !important; color: var(--ink); }
+
 /* earlier chats in Myra's chat window */
 #mcHist { display: inline-flex; align-items: center; gap: 5px; } #mcHist[hidden] { display: none; } #mcHist svg { width: 15px; height: 15px; }
 #mcHist.on { background: var(--blush); color: var(--ink); }
