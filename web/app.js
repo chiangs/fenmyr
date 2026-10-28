@@ -2733,7 +2733,7 @@
   // ---------- placing: pick a tool, the new thing rides on your cursor, click to drop it, then type ----------
   let placing = null, mouse = { x: 0, y: 0 };
   const PLACE = { note: ['Note', [220, 120]], todo: ['Checklist', [240, 170]], title: ['Title', [300, 56]], coll: ['Collection', [288, 200]], swatch: ['Colour', [120, 150]], doc: ['Doc', [240, 52]], canvas: ['Canvas', [260, 180]], link: ['Paste a link', [260, 52]], shape: ['', [160, 160]], stamp: ['', [56, 56]], audio: ['Voice memo', [290, 150]], piece: ['', [300, 60]], icon: ['', [28, 28]], frame: ['Screen', [393, 852]], text: ['Text', [220, 26]], box: ['Drag to draw a box', [160, 100]] , video: ['Video', [360, 246]] };
-  function startPlacing(type, extra = {}) {
+  function startPlacing(type, extra = {}, quiet = false) {
     if (placing?.type === type && placing.extra?.shape === extra.shape) return stopPlacing();
     stopPlacing(); placing = { type, extra }; selectOnly([]);
     const g = $('ghost'), [label, [w, h]] = PLACE[type]; g.className = 'ghost on ' + type; g.innerHTML = `<span>${label}</span>`;
@@ -2742,10 +2742,11 @@
     if (type === 'icon') { g.innerHTML = Icon(extra.name, { cls: 'ci', size: 28 }); g.style.width = g.style.height = '28px'; }
     if (type === 'frame' && DEVICES[extra.device]) { g.style.width = DEVICES[extra.device][0] + 'px'; g.style.height = DEVICES[extra.device][1] + 'px'; g.querySelector('span').textContent = extra.device; }
     if (type === 'stamp') { const st = extra.stamp; g.innerHTML = stampHTML(st); g.style.width = g.style.height = '56px'; } moveGhost(); stage.classList.add('placing');
+    if (!quiet) { const h = $('placeHint'); h.textContent = (type === 'box' ? 'Drag on the board to draw it' : 'Click the board to place it') + ' · Esc to cancel'; h.hidden = false; }
     $('tools').querySelector(`[data-add="${type}"]`)?.classList.add('on');
   }
-  function stopPlacing() { if (placing?.type === 'audio') setTimeout(coolMic, 15000); $('shapePick').classList.remove('on'); $('tplPick').classList.remove('on'); $('stampWheel').classList.remove('on'); $('stampPick').classList.remove('on'); placing = null; $('ghost').className = 'ghost'; stage.classList.remove('placing'); $('tools').querySelectorAll('.on').forEach(b => b.classList.remove('on')); }
-  function moveGhost() { if (!placing) return; const r = stage.getBoundingClientRect(), g = $('ghost'), o = placing.type === 'stamp' ? 28 * view.z : 14; g.style.left = mouse.x - r.left - o + 'px'; g.style.top = mouse.y - r.top - o + 'px'; g.style.transform = `scale(${view.z})`; }
+  function stopPlacing() { if (placing?.type === 'audio') setTimeout(coolMic, 15000); $('shapePick').classList.remove('on'); $('tplPick').classList.remove('on'); $('stampWheel').classList.remove('on'); $('stampPick').classList.remove('on'); placing = null; $('ghost').className = 'ghost'; $('placeHint').hidden = true; document.body.classList.remove('dz-dragging'); stage.classList.remove('placing'); $('tools').querySelectorAll('.on').forEach(b => b.classList.remove('on')); }
+  function moveGhost() { if (!placing) return; const g = $('ghost'), o = placing.type === 'stamp' ? 28 * view.z : 14; g.style.left = mouse.x - o + 'px'; g.style.top = mouse.y - o + 'px'; g.style.transform = `scale(${view.z})`; }
   addEventListener('pointermove', e => { mouse = { x: e.clientX, y: e.clientY }; moveGhost(); }, true);
   function placeAt(w) {
     if (placing.type === 'stamp') return stampAt(w, placing.extra.stamp);
@@ -3622,14 +3623,46 @@
   $('dzSearch').onkeydown = e => { e.stopPropagation(); if (e.key === 'Escape') { $('dzSearch').value = ''; dzFilter(); } if (e.key === 'Enter') { e.preventDefault(); $('design').querySelector('.dz-group:not([hidden]) :is(.dz-tools, .dz-piece-grid) button:not([hidden])')?.click(); } };
   $('design').addEventListener('click', e => {
     const h = e.target.closest('.dz-gh'); if (h) { const g = h.parentElement.dataset.g; dzOpen[g] = dzOpen[g] === false; try { localStorage.setItem('fenmyr:dzOpen', JSON.stringify(dzOpen)); } catch (e2) {} dzApply(); return; }
-    const b = e.target.closest('[data-piece]'); if (!b) return; pickWF(null); document.querySelectorAll('.dz-piece-grid button').forEach(x => x.classList.toggle('on', x === b)); startPlacing('piece', { piece: b.dataset.piece }); });
+    const b = e.target.closest('[data-piece]'); if (!b || pDragged) return; pickWF(null); stopPlacing(); addPiece(b.dataset.piece); });
+  // dragging an element from the panel onto the board puts it exactly where you let go (the preview follows the pointer, above the panels)
+  let pDrag = null, pDragged = false;
+  $('design').addEventListener('pointerdown', e => { const b = e.target.closest('[data-piece]'); if (b && !e.button) pDrag = { name: b.dataset.piece, x: e.clientX, y: e.clientY, on: false }; });
+  addEventListener('pointermove', e => { if (!pDrag || pDrag.on || Math.hypot(e.clientX - pDrag.x, e.clientY - pDrag.y) < 6) return; pDrag.on = true; pickWF(null); startPlacing('piece', { piece: pDrag.name }, true); document.body.classList.add('dz-dragging'); }, true);
+  addEventListener('pointerup', e => { if (!pDrag) return; const d = pDrag; pDrag = null; if (!d.on) return; document.body.classList.remove('dz-dragging'); pDragged = true; setTimeout(() => { pDragged = false; }, 0);
+    const over = document.elementFromPoint(e.clientX, e.clientY);
+    if (placing && placing.type === 'piece' && !over?.closest('.design, .side, .tray, .tools, .dock, .myra, .selbar, .m-chat, .keys, .top, .hub, .sheet, .settings')) placeAt(toWorld(e.clientX, e.clientY)); else stopPlacing(); }, true);
   dzApply();
-  function placePiece(name, w) {
-    const P = PIECES[name], f = [...board.cards].reverse().find(f => f.type === 'frame' && w.x > f.x && w.x < f.x + f.w && w.y > f.y && w.y < f.y + f.h);
-    const W = (P.bar || P.web) && f ? f.w : P.web ? 1200 : P.w || 360, items = P.make(W, { panel: true }); let ox = w.x - 14 / view.z, oy = w.y - 14 / view.z;
+  function placePiece(name, w, opts = {}) {
+    const P = PIECES[name], f = opts.frame || [...board.cards].reverse().find(f => f.type === 'frame' && w.x > f.x && w.x < f.x + f.w && w.y > f.y && w.y < f.y + f.h), M = f && f.w > 700 ? 64 : 24;
+    const W = (P.bar || P.web) && f ? f.w : P.web ? 1200 : Math.min(P.w || 360, f ? f.w - M * 2 : Infinity), items = P.make(W, { panel: true });
+    const bw = Math.max(1, ...items.map(i => i.x + i.w)), bh = Math.max(1, ...items.map(i => i.y + i.h));
+    let ox = w.x - 14 / view.z, oy = w.y - 14 / view.z; if (opts.center) { ox = w.x - bw / 2; oy = w.y - bh / 2; }
     if ((P.bar || P.web) && f) { ox = f.x; if (P.bar === 'top') oy = Math.max(f.y, oy); if (P.bar === 'bottom') oy = Math.min(f.y + f.h - 64, Math.max(f.y, oy)); }
+    const tabKids = f && opts.frame ? board.cards.filter(c => c.onFrame === f.id && c.y >= f.y + f.h - 90) : [];   // a tab bar waiting at the bottom
     const g = uid(), made = items.map(it => { const c = card(it.type, { ...it, x: ox + it.x, y: oy + it.y, r: 0, group: g }); board.cards.push(c); renderCard(c, true); return c; });
-    fileIntoFrame(made); selectOnly(made.map(c => c.id)); renderWires(); save();
+    // adding into a screen that is full: it grows, and the tab bar slides down with its bottom edge
+    if (f && opts.frame && !P.bar) { const limit = f.y + f.h - (tabKids.length ? 90 : 12), grow = oy + bh - limit + 24; if (grow > 24) { f.h += grow; renderCard(f); tabKids.forEach(c => { c.y += grow; renderCard(c); }); } }
+    fileIntoFrame(made); selectOnly(made.map(c => c.id)); renderWires(); save(); return made;
+  }
+  // a click on an element in the panel adds it straight away: into the selected screen, below what is already there, or in the middle of the view (drag it from the panel to put it exactly somewhere)
+  function addPiece(name) {
+    const P = PIECES[name], z = view.z, sc = [...sel].map(byId).filter(Boolean);
+    const fr = sc.length === 1 && sc[0].type === 'frame' ? sc[0] : sc.length && sc[0].onFrame && sc.every(c => c.onFrame === sc[0].onFrame) ? byId(sc[0].onFrame) : null;
+    let made;
+    if (!fr) made = placePiece(name, centerWorld(), { center: true });
+    else {
+      const M = fr.w > 700 ? 64 : 24, body = board.cards.filter(c => c.onFrame === fr.id && c.y < fr.y + fr.h - 90), phone = fr.w <= 500;
+      const y = body.length ? Math.max(...body.map(c => c.y + c.h)) + (P.web ? 0 : 16) : fr.y + (phone ? 44 : 0) + (P.web ? 0 : 20);
+      made = placePiece(name, { x: fr.x + M + 14 / z, y: P.bar === 'bottom' ? fr.y + fr.h : P.bar === 'top' ? fr.y : y + 14 / z }, { frame: fr });
+    }
+    revealCards(made);
+  }
+  // bring something that landed out of sight into view (a screen far from where you are looking)
+  function revealCards(cs) {
+    if (!cs.length) return; const r = stage.getBoundingClientRect(), x0 = Math.min(...cs.map(c => c.x)), y0 = Math.min(...cs.map(c => c.y)), x1 = Math.max(...cs.map(c => c.x + c.w)), y1 = Math.max(...cs.map(c => c.y + c.h));
+    const sx = r.left + view.x + (x0 + x1) / 2 * view.z, sy = r.top + view.y + (y0 + y1) / 2 * view.z;
+    if (sx > r.left + 280 && sx < r.right - 280 && sy > r.top + 80 && sy < r.bottom - 120) return;
+    const c = centerWorld(); view.x += (c.x - (x0 + x1) / 2) * view.z; view.y += (c.y - (y0 + y1) / 2) * view.z; applyView();
   }
   // icons: search Myra's icon set, then click to place (or swap the selected icon)
   let iconSwap = null;

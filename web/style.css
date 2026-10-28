@@ -396,7 +396,7 @@ html.native .home-in { padding-top: 40px; }
 .keys { left: 22px; bottom: 14px; width: var(--side); flex-wrap: wrap; white-space: normal; gap: 4px 10px; }
 /* placing: the new thing rides on the cursor until you click */
 .stage.placing, .stage.placing * { cursor: copy !important; }
-.ghost { position: absolute; z-index: 40; pointer-events: none; display: none; border-radius: 22px; corner-shape: squircle; background: rgba(255, 255, 255, .85); box-shadow: 0 14px 34px rgba(var(--sh), calc(.22 * var(--sh-k))), 0 0 0 1.5px var(--select); transform-origin: 0 0; }
+.ghost { position: fixed; z-index: 9000; pointer-events: none; display: none; border-radius: 22px; corner-shape: squircle; background: rgba(255, 255, 255, .85); box-shadow: 0 14px 34px rgba(var(--sh), calc(.22 * var(--sh-k))), 0 0 0 1.5px var(--select); transform-origin: 0 0; }
 .ghost.on { display: block; }
 .ghost span { position: absolute; left: 14px; top: 12px; font: 600 13px/1 var(--font); color: var(--ink-soft); }
 .ghost.coll { background: none; box-shadow: none; }
@@ -2564,3 +2564,10 @@ body.dark .tag-pop { background: var(--surface); }
 .card.note > .body { display: flex; flex-direction: column; }
 .card.note > .body > .ntags { margin-top: auto; padding-top: 8px; }
 .card.note > .body > .text { flex: none; }
+
+/* picking something to place: the preview stays above every panel, and a pill says what to do */
+.place-hint { position: fixed; z-index: 9001; left: 50%; top: 16px; transform: translateX(-50%); padding: 9px 16px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: #fff; font: 600 12.5px/1 var(--font); pointer-events: none; box-shadow: 0 8px 22px rgba(0, 0, 0, .22); }
+.place-hint[hidden] { display: none; }
+body.dark .place-hint { color: #1d1a16; }
+body.tint-panels .place-hint { color: var(--panel); }
+body.dz-dragging, body.dz-dragging * { cursor: grabbing !important; }
