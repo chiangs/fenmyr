@@ -2604,13 +2604,16 @@
   const timerWhat = t => t.purpose || `your ${t.minutes}-minute timer`;
   // what the glow says when it runs out: red for work and focus, green for a break. With thinking on the model decides (t.kind, from its warning), otherwise a break or a breather is green and everything else is red
   const timerKind = t => t.kind || (/^(break|breather)$/.test((t.purpose || '').trim().toLowerCase().replace(/^(a|the|my|some)\s+/, '')) ? 'break' : 'focus');
-  let glowT = 0;
-  const clearGlow = () => { clearTimeout(glowT); $('mPill').classList.remove('glow-red', 'glow-green'); };
+  // her faces follow the timer: sleepy through a break, shook in the last two minutes, and after a focus timer ends she sighs until you answer
+  let glowT = 0, sighing = false, currentPose = null;
+  const setPose = p => { if (p !== currentPose) { currentPose = p; goo.pose(p); } };
+  const wantedPose = () => sighing ? 'sigh' : timer && timer.minutes >= 3 && timer.end - Date.now() <= 120000 ? 'shook' : timer && timerKind(timer) === 'break' ? 'sleepy' : null;
+  const clearGlow = () => { clearTimeout(glowT); sighing = false; $('mPill').classList.remove('glow-red', 'glow-green'); setPose(wantedPose()); };
   const setGlow = kind => { clearGlow(); $('mPill').classList.add(kind === 'break' ? 'glow-green' : 'glow-red'); glowT = setTimeout(clearGlow, 120000); };
   function paintTimer() {
-    const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); if (!timer) { chip.hidden = true; return; }
+    const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); if (!timer) { chip.hidden = true; $('mPill').classList.remove('hurry'); setPose(wantedPose()); return; }
     chip.hidden = false; $('tcTime').textContent = clock(timer.end - Date.now()); $('tcWhat').textContent = timer.purpose || `${timer.minutes} min`;
-    chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.minutes * 60000)))); chip.classList.toggle('soon', timer.minutes >= 3 && timer.end - Date.now() <= 120000);
+    chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.minutes * 60000)))); $('mPill').classList.toggle('hurry', timer.minutes >= 3 && timer.end - Date.now() <= 120000); setPose(wantedPose());
   }
   function startTimer(t, replace) {
     if (timer && !replace) return reply(`You already have ${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. Start this one instead?`, 0, [{ label: 'Replace it', cls: 'next', run: () => startTimer(t, true) }, { label: 'Keep it', ghost: true, run: () => {} }]);
@@ -2651,7 +2654,8 @@
   async function timerDone() {
     const t = timer; timer = null; saveTimer(); paintTimer();
     const plain = `Time's up! ${t.minutes} minutes${t.purpose ? ` (${t.purpose})` : ''} ✦`, acts = [{ label: '5 more minutes', cls: 'next', run: () => startTimer({ minutes: 5, purpose: t.purpose }, true) }, { label: 'Thanks', ghost: true, run: clearGlow }];
-    reply(plain, 0, acts); $('mBubble').classList.add('party'); setGlow(timerKind(t)); partyMyra(); osNotify("Time's up", t.purpose || `${t.minutes}-minute timer`);
+    reply(plain, 0, acts); $('mBubble').classList.add('party'); setGlow(timerKind(t)); partyMyra();
+    if (timerKind(t) !== 'break') setTimeout(() => { if ($('mPill').classList.contains('glow-red')) { sighing = true; setPose('sigh'); } }, window.myraMuted ? 600 : 3600); osNotify("Time's up", t.purpose || `${t.minutes}-minute timer`);
     const r = await timerLine('done', t); if (r?.kind && r.kind !== timerKind(t)) setGlow(r.kind); if (r?.say && $('mBubble').classList.contains('on') && $('mBubble').classList.contains('party')) $('mSay').textContent = noEmoji(r.say);
   }
   function timerCheck() { if (!timer) return; const left = timer.end - Date.now(); if (left <= 0) return timerDone(); paintTimer(); if (!timer.warned && left <= 120000) timerWarn(); }
@@ -5553,5 +5557,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
