@@ -46,6 +46,9 @@ const DOC = { type: 'doc', content: [
   const needMarks = ['bold', 'code', 'highlight', 'italic', 'link', 'strike', 'subscript', 'superscript', 'textStyle', 'underline'];
   r.typesOk = needTypes.every(t => round.types.includes(t)); r.marksOk = needMarks.every(t => round.marks.includes(t));
   r.attrsOk = round.kind === 'lead' && round.align === 'center' && round.lh === '1.5' && round.checked === true;
+  // the custom cursor hands over to the system's text cursor over everything you can type in, not just the editor's edges (issue #35)
+  { const q = page.locator('.dv-prose p').first(); const b = await q.boundingBox(); await page.mouse.move(b.x + 20, b.y + b.height / 2); await page.waitForTimeout(150);
+    r.docCursor = await page.evaluate(() => { const el = document.elementFromPoint(innerWidth / 2, innerHeight / 2); const p = document.querySelector('.dv-prose p'); return getComputedStyle(p).cursor === 'text' && getComputedStyle(document.querySelector('.dv-prose')).cursor === 'text'; }); }
   r.htmlOk = /color: ?(#c0392b|rgb\(192, 57, 43\))/i.test(round.html) && /font-size: ?24px/.test(round.html) && /Georgia/.test(round.html) && /<a [^>]*href="https:\/\/example.com"/.test(round.html) && /<th/.test(round.html) && /<mark/.test(round.html);
   // typing: markdown shortcuts and the toolbar
   await page.evaluate(() => document.querySelector('.dv-prose').editor.commands.clearContent()); await page.click('.dv-prose'); await page.waitForTimeout(200);
@@ -79,7 +82,7 @@ const DOC = { type: 'doc', content: [
   r.errors = errors;
   console.log(JSON.stringify(r, null, 1));
   await app.close();
-  const ok = r.editorLoaded && r.typesOk && r.marksOk && r.attrsOk && r.htmlOk && Object.values(r.typed).every(Boolean) && r.bubble && r.bubbleAbove && r.boldOn && r.undo && r.toolbarBold && r.table && r.docx.zip && r.docx.size > 5000 && !errors.length;
+  const ok = r.editorLoaded && r.docCursor && r.typesOk && r.marksOk && r.attrsOk && r.htmlOk && Object.values(r.typed).every(Boolean) && r.bubble && r.bubbleAbove && r.boldOn && r.undo && r.toolbarBold && r.table && r.docx.zip && r.docx.size > 5000 && !errors.length;
   if (process.env.KEEP) console.log('output in', out); else fs.rmSync(data, { recursive: true, force: true });
   console.log(ok ? 'DOCS OK' : 'DOCS FAILED'); process.exit(ok ? 0 : 1);
 })().catch(e => { console.error(e); process.exit(1); });

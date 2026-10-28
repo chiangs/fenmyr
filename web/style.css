@@ -1238,7 +1238,7 @@ body.dark .col-chip { background: rgba(255, 255, 255, .05); }
 
 /* ---------- your cursor (a pointer and name tag in Myra's color) ---------- */
 body.fancy-cursor, body.fancy-cursor * { cursor: none !important; }
-body.fancy-cursor.cur-native input:not([type=checkbox]):not([type=radio]):not([type=range]), body.fancy-cursor.cur-native textarea, body.fancy-cursor.cur-native [contenteditable="true"], body.fancy-cursor.cur-native .card.editing * { cursor: text !important; }
+body.fancy-cursor.cur-native input:not([type=checkbox]):not([type=radio]):not([type=range]), body.fancy-cursor.cur-native textarea, body.fancy-cursor.cur-native [contenteditable="true"], body.fancy-cursor.cur-native [contenteditable="true"] *, body.fancy-cursor.cur-native .card.editing * { cursor: text !important; }
 body.fancy-cursor.cur-native .handle { cursor: nwse-resize !important; } body.fancy-cursor.cur-native .knob, body.fancy-cursor.cur-native .wires * { cursor: crosshair !important; }
 body.fancy-cursor.cur-native iframe, body.fancy-cursor.cur-native .wheel, body.fancy-cursor.cur-native .bright { cursor: default !important; }
 .mcur { position: fixed; left: 0; top: 0; z-index: 2147483000; pointer-events: none; opacity: 0; transition: opacity .25s; will-change: transform; }
