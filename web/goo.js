@@ -1,6 +1,6 @@
 // Myra in pixels: a little cloudberry (a bumpy cluster of golden beads with a leafy crown, ink eyes and blush).
 // She breathes, blinks, glances around, hops when she does something, and wiggles while she's thinking.
-// The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, pose, lively, setColors, draw }.
+// The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, wiggle, pose, lively, setColors, draw }.
 
 (() => {
   // her shape: X is berry, the leaves sit on top; the beads are textured in below
@@ -35,7 +35,7 @@
     const g = canvas.getContext('2d'), H = canvas.height;
     let col = opts.colors || { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, pal = null;
     const palette = () => pal || (pal = { B: col.B, S: col.S, s: mix(col.B, col.S, .45), D: col.D, d: mix(col.D, '#000000', .22), L: col.L || '#7cc95e', l: col.l || '#3f8f3c' })   // a color can bring its own leaves (a green Myra gets teal ones, so the crown still shows);
-    let hopT = -9, thinking = false, look = 0, lookTo = 0, nextLook = 0, pose = null, showOff = false;   // pose: 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | null; showOff: move even in calm mode (when someone asked her to)
+    let hopT = -9, thinking = false, look = 0, lookTo = 0, nextLook = 0, pose = null, showOff = false, wiggleUntil = 0;   // pose: 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | null; showOff: move even in calm mode (when someone asked her to)
     // Calmest: her colors softened toward a gentle gray (kept light so she still reads as her color)
     const mutedCache = new Map();
     const mute = hex => { if (!window.myraMuted || !/^#[0-9a-f]{6}$/i.test(hex)) return hex; if (mutedCache.has(hex)) return mutedCache.get(hex);
@@ -48,7 +48,7 @@
       const calm = window.myraCalm && !showOff, hp = t - hopT, lift = !calm && hp < .45 ? Math.sin(hp / .45 * Math.PI) * 3 : 0;   // calm: she sits still (she still blinks)
       const sighPh = pose === 'sigh' ? Math.floor((t % .78) / .26) : 0;   // the sigh runs normal, sigh, normal at 260 ms a frame, like her stamp
       // each face has its own motion: shook trembles, sleepy breathes slow and deep, and she deflates a little mid-sigh
-      const wig = thinking && !calm ? Math.sin(t * 14) * .6 : pose === 'shook' && !calm ? Math.sin(t * 38) * .55 : pose === 'dizzy' ? Math.sin(t * 5) * .8 : 0;
+      const wig = (thinking || t * 1000 < wiggleUntil) && !calm ? Math.sin(t * 14) * .6 : pose === 'shook' && !calm ? Math.sin(t * 38) * .55 : pose === 'dizzy' ? Math.sin(t * 5) * .8 : 0;
       const breathe = calm ? 0 : pose === 'sleepy' ? Math.sin(t * 1.3) * .07 : pose === 'sigh' && sighPh === 1 ? -.06 : pose === 'happy' ? Math.abs(Math.sin(t * 7)) * .07 : Math.sin(t * 2.4) * .04;
       if (calm) look = 0;
       const ox = (W - GW * px) / 2 + wig * px * .5, oy = H - GH * px - Math.round(lift) * px;
@@ -99,6 +99,6 @@
     if (!opts.manual && window.IntersectionObserver) new IntersectionObserver(es => { seen = es[es.length - 1].isIntersecting; }).observe(canvas);
     const loop = now => { if (seen && now - lastDraw >= 32) { lastDraw = now; frame(now); } requestAnimationFrame(loop); };
     if (!opts.manual) requestAnimationFrame(loop);   // manual: the caller draws her (the favicon runs on a timer, which keeps going in background tabs)
-    return { hop() { hopT = performance.now() / 1000; }, think(on) { thinking = on; }, lively(on) { showOff = !!on; }, pose(p) { pose = p || null; }, setColors(c) { col = c; pal = null; }, draw() { frame(performance.now()); } };
+    return { hop() { hopT = performance.now() / 1000; }, think(on) { thinking = on; }, wiggle(ms) { wiggleUntil = performance.now() + ms; }, lively(on) { showOff = !!on; }, pose(p) { pose = p || null; }, setColors(c) { col = c; pal = null; }, draw() { frame(performance.now()); } };
   };
 })();

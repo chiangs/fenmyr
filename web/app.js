@@ -2478,7 +2478,9 @@
     const what = /mobbin/i.test(q) ? 'Mobbin lives in your Claude account, and I can only reach it from the desktop app.' : /higgsfield|photo|picture|image/i.test(q) ? 'Making pictures with Higgsfield happens in the desktop app, where I can check the price with you first.' : 'I think with Claude Code, and that lives in the desktop app.';
     reply(`I'd love to help with that! ${what} Download me and I'll connect to your Claude, Mobbin and Higgsfield ✦`, 0, DL);
   }
+  let animAskedAt = 0, aiAnimAt = 0;
   async function ask(q, confirmed = false) {
+    { const an = animRequest(q); if (an && !confirmed) { animAskedAt = Date.now(); playAnim(an === '*' ? pickAnim() : an, false); } }
     if (Fenmyr.web) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return webMyra(q); }
     if (!settings.ai || haveClaude === false) { if (!chatOpen()) myraOpen(true); addMsg('me', q); }
     if (!settings.ai) return offlineMyra(q, "My thinking is switched off in Settings, so I can only do simple tidying.");
@@ -2596,7 +2598,7 @@
   // ---------- animate: what she can do with her sprite when asked (/animate, plain words like "can you jump?", or her own choice with thinking on). Always plays, even in calm mode ----------
   const ANIMS = [
     { name: 'hop', desc: 'A little jump', line: 'Boing!', ms: 1300, play: () => { hopMyra(); setTimeout(hopMyra, 520); } },
-    { name: 'wiggle', desc: 'A happy wiggle', line: '*wiggle wiggle*', ms: 2400, play: () => goo.think(true), end: () => goo.think(false) },
+    { name: 'wiggle', desc: 'A happy wiggle', line: '*wiggle wiggle*', ms: 2400, play: () => goo.wiggle(2400) },   // (her own wiggle, so it never cuts her thinking wiggle short)
     { name: 'party', desc: 'Hops and berry confetti', line: 'Party time!', ms: 3800, play: () => partyMyra(true) },
     { name: 'sleepy', desc: 'A big yawn and a nap', line: '*yawn*', ms: 4500, pose: 'sleepy' },
     { name: 'shook', desc: 'Startled', line: 'Whoa!', ms: 3000, pose: 'shook' },
@@ -2607,12 +2609,14 @@
   ];
   let animT = 0, lastAnim = '';
   const pickAnim = () => { const pool = ANIMS.filter(a => a.name !== lastAnim); return pool[Math.floor(Math.random() * pool.length)].name; };
+  const ANIM_ALIAS = { jump: 'hop', bounce: 'hop', wobble: 'wiggle', dance: 'party', celebrate: 'party', confetti: 'party', yawn: 'sleepy', sleep: 'sleepy', nap: 'sleepy', startled: 'shook', surprised: 'shook', smile: 'happy', beam: 'happy', sparkle: 'happy', heart: 'love', hearts: 'love', 'heart eyes': 'love', spin: 'dizzy' };
+  const animName = n => { const k = String(n || '').toLowerCase().trim(); return ANIMS.some(a => a.name === k) ? k : ANIM_ALIAS[k] || ''; };
   function playAnim(name, say = true) {
-    const a = ANIMS.find(x => x.name === String(name).toLowerCase()); if (!a) return false;
+    const a = ANIMS.find(x => x.name === animName(name)); if (!a) return false;
     if (timerPose()) { if (say) reply('My face is busy with the timer right now. Ask me again in a moment ✦'); return false; }
-    clearTimeout(animT); ANIMS.forEach(x => x.end && x.end()); lastAnim = a.name; goo.lively(true);
+    clearTimeout(animT); lastAnim = a.name; goo.lively(true);
     if (a.pose) { animPose = a.pose; setPose(wantedPose()); } else a.play();
-    animT = setTimeout(() => { animPose = null; goo.lively(false); a.end && a.end(); setPose(wantedPose()); }, a.ms);
+    animT = setTimeout(() => { animPose = null; goo.lively(false); setPose(wantedPose()); }, a.ms);
     if (say) reply(`${a.line} ✦`, 5000);
     return true;
   }
@@ -2623,7 +2627,33 @@
   // plain words, with thinking off (or on the web demo): "can you jump?", "do a little dance", "show me your moves"
   const ANIM_WORDS = [['hop', /\b(jump|hop|bounce)\b/i], ['wiggle', /\b(wiggle|wobble)\b/i], ['party', /\b(party|celebrate|confetti|cheer)\b/i], ['sleepy', /\b(sleepy|yawn|nap|sleep)\b/i], ['shook', /\b(shook|startled|surprised|scared)\b/i],
     ['sigh', /\bsigh\b/i], ['happy', /\b(happy|smile|beam|sparkle)\b/i], ['love', /\b(love|heart)\b/i], ['dizzy', /\b(dizzy|spin)\b/i], ['*', /\b(animat\w*|dance|dancing|tricks?|show me your moves|do something|show me something)\b/i]];
+  const ANIM_ASK = /\b(can|could|would|will)\s+(you|u)\b|\bplease\b|\b(show|give|do|make)\b/i;
+  const animRequest = q => { const an = animIntent(q); return an && (ANIM_ASK.test(q) || q.trim().split(/\s+/).length <= 3) ? an : ''; };   // with thinking on, only sentences that ask for it (so "I love how this board looks" is left to the model)
   const animIntent = q => /group|sort|organi[sz]e|tidy|line up/i.test(q) ? '' : (ANIM_WORDS.find(([, re]) => re.test(q)) || [''])[0];
+  // ---------- every now and then she animates by herself (lively about hourly, calm every few hours, calmest never; never more than once an hour) ----------
+  const IDLE_KEY = 'fenmyr:idleAnim', IDLE_SET = ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'];
+  let lastActive = Date.now(), idleT = 0;
+  ['pointermove', 'keydown', 'pointerdown'].forEach(ev => addEventListener(ev, () => { lastActive = Date.now(); }, { passive: true, capture: true }));
+  const idleGap = () => { const m = settings.myraCalm || 'lively', r = Math.random(); return m === 'calmest' ? 0 : m === 'lively' ? (60 + r * 30) * 60000 : (180 + r * 60) * 60000; };
+  const idleState = () => { try { return JSON.parse(localStorage.getItem(IDLE_KEY) || 'null') || {}; } catch (e) { return {}; } };
+  const saveIdle = st => { try { localStorage.setItem(IDLE_KEY, JSON.stringify(st)); } catch (e) {} };
+  // true when she could be seen playing: the window is in use, nothing else is going on with her, and the pill is on screen
+  function idleOK(anyway) {
+    if (!anyway && (document.hidden || !document.hasFocus() || Date.now() - lastActive > 180000)) return false;
+    const pill = $('mPill'), busyGlow = /glow-|hurry/.test(pill.className);
+    return !!board && pill.offsetParent !== null && !timerPose() && !busyGlow && !animPose && !chatOpen() && !$('myra').classList.contains('thinking') && !homeAt && !docCard && !drawOn && !placing && !stage.classList.contains('doc-open')
+      && !$('settings').classList.contains('on') && !$('onboard').classList.contains('on');
+  }
+  function idleCheck(anyway) {
+    const m = settings.myraCalm || 'lively'; if (m === 'calmest') return false;
+    const now = Date.now(), st = idleState(), maxGap = (m === 'lively' ? 90 : 240) * 60000;
+    if (!st.next) { saveIdle({ last: st.last || 0, next: now + idleGap() }); return false; }
+    if (now < Math.min(st.next, (st.last || 0) + maxGap) || !idleOK(anyway)) return false;
+    const pool = IDLE_SET.filter(n => n !== lastAnim), name = pool[Math.floor(Math.random() * pool.length)];
+    if (!playAnim(name, false)) return false;
+    saveIdle({ last: now, next: now + idleGap() }); return name;
+  }
+  idleT = setInterval(idleCheck, 300000);
   // ---------- the timer: /timer 25 write the intro. It counts down by the clock (so it survives sleep, restarts and switching boards), warns at two minutes, and Myra makes a fuss when it's up ----------
   const TIMER_KEY = 'fenmyr:timer';
   let timer = null, timerTick = 0;
@@ -2704,7 +2734,7 @@
   // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
   async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     // her templates: use one of theirs, or keep what's on the board as one
-    if (r.animate) playAnim(r.animate, false);
+    if (r.animate && Date.now() - animAskedAt > 30000 && (Date.now() - aiAnimAt > 600000 || animIntent(q || ''))) { const n = animName(r.animate); if (n && (n !== 'party' || animIntent(q || '') === 'party')) { if (playAnim(n, false)) aiAnimAt = Date.now(); } }   // her own pick: about once per ten minutes, and confetti only if asked
     if (r.useTemplate) { const o = r.useTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) await useTemplate(t, o.mode === 'new' || o.mode === 'add' ? o.mode : undefined); }
     // folders first: create, rename, and move boards around the library
     const fo = r.folders, pr = r.projects;
@@ -5595,5 +5625,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { playAnim, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
