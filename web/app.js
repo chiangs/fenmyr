@@ -1853,6 +1853,7 @@
   addEventListener('keydown', e => {
     const typing = e.target.closest('input, textarea, [contenteditable="true"]');
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); capture(true); return; }
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'f' && !homeAt && !$('settings').classList.contains('on')) { e.preventDefault(); startFind(); return; }
     if ((e.metaKey || e.ctrlKey) && (e.key === '\\' || e.code === 'Backslash') && !homeAt && !docCard) { e.preventDefault(); setClean(!document.body.classList.contains('clean')); return; }
     if (e.key === 'Escape' && document.body.classList.contains('clean') && !editing && !drawOn) { setClean(false); return; }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !e.target.closest('input, textarea, [contenteditable="true"]') && !homeAt) { e.preventDefault(); travel(e.shiftKey ? 1 : -1); return; }   // inside text, ⌘Z undoes typing as usual
@@ -2380,7 +2381,7 @@
   }
   function typing(on) { $('mcList').querySelector('.typing')?.remove(); $('mcStatus').textContent = on ? 'thinking…' : '';
     if (on) { const d = document.createElement('div'); d.className = 'mc-msg myra typing'; d.innerHTML = '<i></i><i></i><i></i>'; $('mcList').appendChild(d); $('mcList').scrollTop = 1e9; } }
-  $('mcForm').onsubmit = e => { e.preventDefault(); const q = $('mcInput').value.trim(); if (!q) return; $('mcInput').value = ''; $('mcInput').style.height = ''; $('mcInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
+  $('mcForm').onsubmit = e => { e.preventDefault(); const q = $('mcInput').value.trim(); if (!q) return; $('mcInput').value = ''; $('mcInput').style.height = ''; hideSlash(); if (q[0] === '/') return slash(q); $('mcInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
   $('mcInput').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('mcForm').requestSubmit(); } if (e.key === 'Escape') { myraOpen(false); e.stopPropagation(); } };
   $('mcInput').oninput = () => { const t = $('mcInput'); t.style.height = 'auto'; t.style.height = Math.min(120, t.scrollHeight) + 'px'; };
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());
@@ -2395,13 +2396,14 @@
       library: { projects: projects.map(p => ({ name: p.name, folders: foldersIn(p.id).map(f => f.name) })), foldersNotInAProject: looseFolders().map(f => f.name), boards: boardList.map(b => ({ id: b.id, name: b.name, folder: (folders.find(f => f.id === b.folder) || {}).name || null, current: b.id === board.id || undefined })) } };
   }
   // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
+  function tidyNotes() {
+    const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id)); if (!notes.length) return 0;
+    const x0 = Math.min(...notes.map(c => c.x)), y0 = Math.min(...notes.map(c => c.y));
+    notes.forEach((c, i) => { c.x = x0 + (i % 4) * 250; c.y = y0 + Math.floor(i / 4) * 180; c.r = tilt(); renderCard(c); }); renderWires(); save();
+    return notes.length;
+  }
   function offlineMyra(q, why) {
-    const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
-    if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) {
-      const x0 = Math.min(...notes.map(c => c.x)), y0 = Math.min(...notes.map(c => c.y));
-      notes.forEach((c, i) => { c.x = x0 + (i % 4) * 250; c.y = y0 + Math.floor(i / 4) * 180; c.r = tilt(); renderCard(c); }); renderWires(); save();
-      return reply(`I lined your ${notes.length} notes up in tidy rows ✦ ${why}`, 9000);
-    }
+    if (/group|sort|organi[sz]e|tidy|line up/i.test(q)) { const n = tidyNotes(); if (n) return reply(`I lined your ${n} notes up in tidy rows ✦ ${why}`, 9000); }
     reply(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Fenmyr.openURL(GUIDE) }] : []); offlineMyra.signin = false;
   }
   let haveClaude = null;
@@ -2434,7 +2436,73 @@
       reply("Hmm, I couldn't reach Claude: " + err.message); }
     finally { $('myra').classList.remove('thinking'); goo.think(false); typing(false); }
   }
-  $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
+  $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; if (q[0] === '/') return slash(q); myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
+  // ---------- slash commands: a list of what Myra can do right here, no thinking needed (typing / opens it; Ctrl+F starts /find) ----------
+  const SLASH = [
+    { cmd: 'find', arg: '<words>', desc: 'Find cards that mention something', run: slashFind },
+    { cmd: 'tag', arg: '<tag>', desc: 'Show the cards with a tag', run: slashTag },
+    { cmd: 'tidy', desc: 'Line the loose notes up in rows', run: () => { const n = tidyNotes(); reply(n ? `Lined ${n} notes up in tidy rows ✦` : 'No loose notes to tidy ✦'); } },
+    { cmd: 'fit', desc: 'Zoom to see everything', run: () => { zoomFit(); reply('Everything is in view ✦'); } },
+    { cmd: 'clear', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
+    { cmd: 'help', desc: 'What I can do without thinking', run: () => reply(helpText()) },
+  ];
+  const helpText = (lead = 'Here is what I can do right here, no thinking needed:') => lead + '\n' + SLASH.filter(c => c.cmd !== 'help').map(c => `/${c.cmd}${c.arg ? ' ' + c.arg : ''}  ${c.desc}`).join('\n') + '\nAsk me anything else in your own words ✦';
+  const wordsOf = c => [c.text, c.name, c.label, c.title, ...(c.items || []).map(i => i.t), ...(c.tags || []).map(t => '#' + t), String(c.body || '').replace(/<[^>]+>/g, ' ')].filter(Boolean).join(' ').toLowerCase();
+  function glideTo(cs) { const from = { ...view }; fit(cs, 200, 1.2); const to = { ...view }; Object.assign(view, from); applyView(); glideView(to); }
+  function showHits(hits, what, extra = '') {
+    selectOnly(hits.map(c => c.id)); if (hits.length) glideTo(hits);
+    const acts = hits.length > 1 ? [{ label: 'Next one', cls: 'next', run: () => { showHits.i = ((showHits.i ?? -1) + 1) % hits.length; selectOnly([hits[showHits.i].id]); glideTo([hits[showHits.i]]); } }] : []; showHits.i = -1;
+    reply(hits.length ? `Found ${hits.length} ${hits.length === 1 ? 'card' : 'cards'} for ${what}${extra} ✦` : `Nothing for ${what}${extra}.`, 0, acts);
+  }
+  function slashFind(arg) {
+    const q = arg.trim().toLowerCase(); if (!q) return reply('Tell me what to look for, like /find berries ✦');
+    const words = q.split(/\s+/), hits = board.cards.filter(c => !c.hidden && words.every(w => wordsOf(c).includes(w))), inTray = board.tray.filter(c => words.every(w => wordsOf(c).includes(w))).length;
+    showHits(hits, `“${arg.trim()}”`, inTray ? `, and ${inTray} in Unsorted` : '');
+  }
+  function slashTag(arg) {
+    const t = cleanTag(arg).toLowerCase(), all = board.tags || [];
+    if (!t) return reply(all.length ? 'Tags on this board: ' + all.map(x => `#${x} (${board.cards.filter(c => (c.tags || []).some(y => y.toLowerCase() === x.toLowerCase())).length})`).join(', ') + '. Try /tag ' + all[0] + ' ✦' : 'No tags on this board yet. Type # in a note to add one ✦');
+    showHits(board.cards.filter(c => (c.tags || []).some(x => x.toLowerCase() === t)), `#${t}`);
+  }
+  function slash(text) {
+    if (!board) return; if (!chatOpen()) myraOpen(true);
+    const m = /^\/(\w*)\s*(.*)$/s.exec(text.trim()), c = m && SLASH.find(x => x.cmd === m[1].toLowerCase());
+    if (!c) { addMsg('me', text); return reply(helpText(`I don't know /${m ? m[1] : ''}. Here is what I can do:`)); }
+    if (!c.quiet) addMsg('me', text); c.run(m[2]);
+  }
+  let slashSel = 0;
+  const slashMenu = document.createElement('div'); slashMenu.className = 'slash-menu'; slashMenu.hidden = true; document.body.appendChild(slashMenu);
+  const hideSlash = () => { slashMenu.hidden = true; };
+  const slashMatches = el => { const m = /^\/(\w*)$/.exec(el.value); return m ? SLASH.filter(c => c.cmd.startsWith(m[1].toLowerCase())) : []; };
+  function showSlash(el) {
+    const list = slashMatches(el); if (!list.length) return hideSlash(); slashSel = Math.min(slashSel, list.length - 1);
+    slashMenu.innerHTML = list.map((c, i) => `<button type="button" data-cmd="${c.cmd}" class="${i === slashSel ? 'on' : ''}"><b>/${c.cmd}${c.arg ? ` <i>${esc(c.arg)}</i>` : ''}</b><span>${esc(c.desc)}</span></button>`).join('');
+    const r = (el.closest('form') || el).getBoundingClientRect(); slashMenu.hidden = false; slashMenu.style.left = r.left + 'px'; slashMenu.style.width = Math.max(260, r.width) + 'px'; slashMenu.style.bottom = (innerHeight - r.top + 6) + 'px';
+    slashMenu.dataset.for = el.id;
+  }
+  function pickSlash(cmd) {
+    const el = $(slashMenu.dataset.for), c = SLASH.find(x => x.cmd === cmd); hideSlash(); if (!el || !c) return;
+    el.value = '/' + c.cmd + (c.arg ? ' ' : ''); el.focus(); el.setSelectionRange(el.value.length, el.value.length);
+    if (!c.arg) el.closest('form').requestSubmit();
+  }
+  slashMenu.addEventListener('pointerdown', e => e.preventDefault());   // keep the focus in the box
+  slashMenu.onclick = e => { const b = e.target.closest('[data-cmd]'); if (b) pickSlash(b.dataset.cmd); };
+  ['mInput', 'mcInput'].forEach(id => {
+    const el = $(id);
+    el.addEventListener('input', () => { slashSel = 0; showSlash(el); });
+    el.addEventListener('blur', () => setTimeout(hideSlash, 120));
+    el.addEventListener('keydown', e => {
+      if (slashMenu.hidden || slashMenu.dataset.for !== id) return; const list = slashMatches(el);
+      if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); return hideSlash(); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); slashSel = (slashSel + (e.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length; return showSlash(el); }
+      if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && list[slashSel] && !(e.key === 'Enter' && el.value.slice(1).toLowerCase() === list[slashSel].cmd && !list[slashSel].arg)) { e.preventDefault(); e.stopImmediatePropagation(); pickSlash(list[slashSel].cmd); }
+    }, true);
+  });
+  // Ctrl+F: Myra's chat opens ready to search
+  function startFind() {
+    if (!board) return; myraOpen(true); const el = $('mcInput'), had = /^\/find /i.test(el.value);
+    if (!had) el.value = '/find '; el.focus(); el.dispatchEvent(new Event('input')); had ? el.setSelectionRange(6, el.value.length) : el.setSelectionRange(el.value.length, el.value.length);
+  }
   // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
   const noEmoji = t => settings.emoji ? t : String(t).replace(/(\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}])(\uFE0F|\u200D|\u20E3|[\u{1F3FB}-\u{1F3FF}])*/gu, '').replace(/ {2,}/g, ' ').trim();
   const parse = raw => { const s = String(raw), a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0) return { say: s.trim() }; try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return { say: s.trim() }; } };
