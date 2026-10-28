@@ -2390,7 +2390,35 @@
   }
   $('mcSel').onclick = e => { if (e.target.closest('.mcs-x')) { selectOnly([]); renderSelChip(); } };
   ['pointerup', 'keyup'].forEach(ev => document.addEventListener(ev, () => { if (chatOpen()) setTimeout(renderSelChip, 0); }, true));
-  function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); selChipKey = null; renderSelChip(); $('mcInput').focus(); } }
+  function myraOpen(on) { const was = chatOpen(); $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); selChipKey = null; renderSelChip(); $('mcInput').focus(); } if (on !== was) perchGoo(on); }
+  // ---------- with the chat open she perches on the top right of the input box (where you are looking), and hops back to her button when it closes ----------
+  const gooSlot = $('gooSlot');
+  let perched = false, gooAnim = null, toggleLog = [], dizzyAt = 0, dizzyAuto = true;
+  const gooOffset = () => { const t = getComputedStyle(gooSlot).transform; if (!t || t === 'none') return { x: 0, y: 0 }; const m = new DOMMatrix(t); return { x: m.m41, y: m.m42 }; };
+  const gooMove = t => { gooSlot.style.transform = `translate(${t.x}px, ${t.y}px)`; };
+  function perchTarget() {   // layout values only, so it is right even while the chat is still fading in
+    const my = $('myra').getBoundingClientRect(), chat = $('mChat'), cs = getComputedStyle(chat), form = $('mcForm'), s = gooSlot.getBoundingClientRect(), cur = gooOffset();
+    const chatL = my.right - parseFloat(cs.right) - chat.offsetWidth, chatT = my.bottom - parseFloat(cs.bottom) - chat.offsetHeight;
+    return { x: chatL + form.offsetLeft + form.offsetWidth - 12 - s.width - (s.left - cur.x), y: chatT + form.offsetTop + 6 - s.height - (s.top - cur.y) };
+  }
+  function flyGoo(to, instant) {
+    const from = gooOffset(); if (gooAnim) { gooAnim.cancel(); gooAnim = null; }
+    if (instant || (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1)) { gooMove(to); if (flightLive) { flightLive = false; liveOff(); } return; }
+    gooMove(from); if (!flightLive) { flightLive = true; liveOn(); } hopMyra();
+    const mid = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 40 }, tf = p => `translate(${p.x}px, ${p.y}px)`;
+    const a = gooAnim = gooSlot.animate([{ transform: tf(from) }, { transform: tf(mid), offset: .5 }, { transform: tf(to) }], { duration: 560, easing: 'cubic-bezier(.3, .6, .4, 1)' });
+    a.onfinish = () => { if (gooAnim === a) { gooMove(to); gooAnim = null; if (flightLive) { flightLive = false; liveOff(); } } };
+  }
+  function perchGoo(on) {
+    const hidden = document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none'; if (hidden) return;
+    const now = Date.now(); toggleLog = toggleLog.filter(t => now - t < 3000); toggleLog.push(now);
+    if (dizzyAuto && toggleLog.length >= 4 && now - dizzyAt > 8000) { dizzyAt = now; toggleLog = []; setTimeout(() => playAnim('dizzy', false), 350); }   // toggled over and over: she gets dizzy
+    perched = on; gooSlot.classList.toggle('perched', on);
+    flyGoo(on ? perchTarget() : { x: 0, y: 0 }, window.myraMuted || matchMedia('(prefers-reduced-motion: reduce)').matches);   // calmest and reduced motion: she just appears
+  }
+  const keepPerch = () => { if (perched && !gooAnim) gooMove(perchTarget()); };
+  addEventListener('resize', keepPerch); new ResizeObserver(keepPerch).observe($('mChat'));
+  gooSlot.addEventListener('click', e => { if (!perched) return; e.stopPropagation(); playAnim(pickAnim(), false); });   // click her in the chat and she does something
   $('mPill').onclick = () => { clearGlow(); myraOpen(!chatOpen()); };
   $('mcClose').onclick = () => myraOpen(false);
   // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
@@ -2478,7 +2506,9 @@
     const what = /mobbin/i.test(q) ? 'Mobbin lives in your Claude account, and I can only reach it from the desktop app.' : /higgsfield|photo|picture|image/i.test(q) ? 'Making pictures with Higgsfield happens in the desktop app, where I can check the price with you first.' : 'I think with Claude Code, and that lives in the desktop app.';
     reply(`I'd love to help with that! ${what} Download me and I'll connect to your Claude, Mobbin and Higgsfield ✦`, 0, DL);
   }
+  let animAskedAt = 0, aiAnimAt = 0;
   async function ask(q, confirmed = false) {
+    { const an = animRequest(q); if (an && !confirmed) { animAskedAt = Date.now(); playAnim(an === '*' ? pickAnim() : an, false); } }
     if (Fenmyr.web) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return webMyra(q); }
     if (!settings.ai || haveClaude === false) { if (!chatOpen()) myraOpen(true); addMsg('me', q); }
     if (!settings.ai) return offlineMyra(q, "My thinking is switched off in Settings, so I can only do simple tidying.");
@@ -2596,7 +2626,7 @@
   // ---------- animate: what she can do with her sprite when asked (/animate, plain words like "can you jump?", or her own choice with thinking on). Always plays, even in calm mode ----------
   const ANIMS = [
     { name: 'hop', desc: 'A little jump', line: 'Boing!', ms: 1300, play: () => { hopMyra(); setTimeout(hopMyra, 520); } },
-    { name: 'wiggle', desc: 'A happy wiggle', line: '*wiggle wiggle*', ms: 2400, play: () => goo.think(true), end: () => goo.think(false) },
+    { name: 'wiggle', desc: 'A happy wiggle', line: '*wiggle wiggle*', ms: 2400, play: () => goo.wiggle(2400) },   // (her own wiggle, so it never cuts her thinking wiggle short)
     { name: 'party', desc: 'Hops and berry confetti', line: 'Party time!', ms: 3800, play: () => partyMyra(true) },
     { name: 'sleepy', desc: 'A big yawn and a nap', line: '*yawn*', ms: 4500, pose: 'sleepy' },
     { name: 'shook', desc: 'Startled', line: 'Whoa!', ms: 3000, pose: 'shook' },
@@ -2605,14 +2635,17 @@
     { name: 'love', desc: 'Heart eyes', line: 'Aww, I love it here.', ms: 4000, pose: 'love' },
     { name: 'dizzy', desc: 'Stars circling', line: 'Wheee, the room is spinning.', ms: 4000, pose: 'dizzy' },
   ];
-  let animT = 0, lastAnim = '';
+  let animT = 0, lastAnim = '', animLive = false, flightLive = false, liveN = 0;
+  const liveOn = () => { liveN++; goo.lively(true); }, liveOff = () => { liveN = Math.max(0, liveN - 1); goo.lively(liveN > 0); };
   const pickAnim = () => { const pool = ANIMS.filter(a => a.name !== lastAnim); return pool[Math.floor(Math.random() * pool.length)].name; };
+  const ANIM_ALIAS = { jump: 'hop', bounce: 'hop', wobble: 'wiggle', dance: 'party', celebrate: 'party', confetti: 'party', yawn: 'sleepy', sleep: 'sleepy', nap: 'sleepy', startled: 'shook', surprised: 'shook', smile: 'happy', beam: 'happy', sparkle: 'happy', heart: 'love', hearts: 'love', 'heart eyes': 'love', spin: 'dizzy' };
+  const animName = n => { const k = String(n || '').toLowerCase().trim(); return ANIMS.some(a => a.name === k) ? k : ANIM_ALIAS[k] || ''; };
   function playAnim(name, say = true) {
-    const a = ANIMS.find(x => x.name === String(name).toLowerCase()); if (!a) return false;
+    const a = ANIMS.find(x => x.name === animName(name)); if (!a) return false;
     if (timerPose()) { if (say) reply('My face is busy with the timer right now. Ask me again in a moment ✦'); return false; }
-    clearTimeout(animT); ANIMS.forEach(x => x.end && x.end()); lastAnim = a.name; goo.lively(true);
+    clearTimeout(animT); lastAnim = a.name; if (!animLive) { animLive = true; liveOn(); }
     if (a.pose) { animPose = a.pose; setPose(wantedPose()); } else a.play();
-    animT = setTimeout(() => { animPose = null; goo.lively(false); a.end && a.end(); setPose(wantedPose()); }, a.ms);
+    animT = setTimeout(() => { animPose = null; if (animLive) { animLive = false; liveOff(); } setPose(wantedPose()); }, a.ms);
     if (say) reply(`${a.line} ✦`, 5000);
     return true;
   }
@@ -2623,7 +2656,34 @@
   // plain words, with thinking off (or on the web demo): "can you jump?", "do a little dance", "show me your moves"
   const ANIM_WORDS = [['hop', /\b(jump|hop|bounce)\b/i], ['wiggle', /\b(wiggle|wobble)\b/i], ['party', /\b(party|celebrate|confetti|cheer)\b/i], ['sleepy', /\b(sleepy|yawn|nap|sleep)\b/i], ['shook', /\b(shook|startled|surprised|scared)\b/i],
     ['sigh', /\bsigh\b/i], ['happy', /\b(happy|smile|beam|sparkle)\b/i], ['love', /\b(love|heart)\b/i], ['dizzy', /\b(dizzy|spin)\b/i], ['*', /\b(animat\w*|dance|dancing|tricks?|show me your moves|do something|show me something)\b/i]];
+  const ANIM_ASK = /\b(can|could|would|will)\s+(you|u)\b|\bplease\b|\b(show|give|do|make)\b/i;
+  const animRequest = q => { const an = animIntent(q); return an && (ANIM_ASK.test(q) || q.trim().split(/\s+/).length <= 3) ? an : ''; };   // with thinking on, only sentences that ask for it (so "I love how this board looks" is left to the model)
   const animIntent = q => /group|sort|organi[sz]e|tidy|line up/i.test(q) ? '' : (ANIM_WORDS.find(([, re]) => re.test(q)) || [''])[0];
+  // ---------- every now and then she animates by herself (lively about hourly, calm every few hours, calmest never; never more than once an hour) ----------
+  const IDLE_KEY = 'fenmyr:idleAnim', IDLE_SET = ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'];
+  let lastActive = Date.now(), idleT = 0, lastKey = 0;
+  addEventListener('keydown', () => { lastKey = Date.now(); }, { passive: true, capture: true });
+  ['pointermove', 'keydown', 'pointerdown'].forEach(ev => addEventListener(ev, () => { lastActive = Date.now(); }, { passive: true, capture: true }));
+  const idleGap = () => { const m = settings.myraCalm || 'lively', r = Math.random(); return m === 'calmest' ? 0 : m === 'lively' ? (60 + r * 30) * 60000 : (180 + r * 60) * 60000; };
+  const idleState = () => { try { return JSON.parse(localStorage.getItem(IDLE_KEY) || 'null') || {}; } catch (e) { return {}; } };
+  const saveIdle = st => { try { localStorage.setItem(IDLE_KEY, JSON.stringify(st)); } catch (e) {} };
+  // true when she could be seen playing: the window is in use, nothing else is going on with her, and the pill is on screen
+  function idleOK(anyway) {
+    if (!anyway && (document.hidden || !document.hasFocus() || Date.now() - lastActive > 180000)) return false;
+    const pill = $('mPill'), busyGlow = /glow-|hurry/.test(pill.className);
+    return !!board && pill.offsetParent !== null && !timerPose() && !busyGlow && !animPose && !(chatOpen() && Date.now() - lastKey < 8000) && !$('myra').classList.contains('thinking') && !homeAt && !docCard && !drawOn && !placing && !stage.classList.contains('doc-open')
+      && !$('settings').classList.contains('on') && !$('onboard').classList.contains('on');
+  }
+  function idleCheck(anyway) {
+    const m = settings.myraCalm || 'lively'; if (m === 'calmest') return false;
+    const now = Date.now(), st = idleState(), maxGap = (m === 'lively' ? 90 : 240) * 60000;
+    if (!st.next) { saveIdle({ last: st.last || 0, next: now + idleGap() }); return false; }
+    if (now < Math.min(st.next, (st.last || 0) + maxGap) || !idleOK(anyway)) return false;
+    const pool = IDLE_SET.filter(n => n !== lastAnim), name = pool[Math.floor(Math.random() * pool.length)];
+    if (!playAnim(name, false)) return false;
+    saveIdle({ last: now, next: now + idleGap() }); return name;
+  }
+  idleT = setInterval(idleCheck, 300000);
   // ---------- the timer: /timer 25 write the intro. It counts down by the clock (so it survives sleep, restarts and switching boards), warns at two minutes, and Myra makes a fuss when it's up ----------
   const TIMER_KEY = 'fenmyr:timer';
   let timer = null, timerTick = 0;
@@ -2648,7 +2708,7 @@
   const clearGlow = () => { clearTimeout(glowT); sighing = false; $('mPill').classList.remove('glow-red', 'glow-green'); setPose(wantedPose()); };
   const setGlow = kind => { clearGlow(); $('mPill').classList.add(kind === 'break' ? 'glow-green' : 'glow-red'); glowT = setTimeout(clearGlow, 120000); };
   function paintTimer() {
-    const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); if (!timer) { chip.hidden = true; $('mPill').classList.remove('hurry'); setPose(wantedPose()); return; }
+    const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); keepPerch(); if (!timer) { chip.hidden = true; $('mPill').classList.remove('hurry'); setPose(wantedPose()); return; }
     chip.hidden = false; $('tcTime').textContent = clock(timer.end - Date.now()); $('tcWhat').textContent = timer.purpose || `${timer.minutes} min`;
     chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.minutes * 60000)))); $('mPill').classList.toggle('hurry', timer.minutes >= 3 && timer.end - Date.now() <= 120000); setPose(wantedPose());
   }
@@ -2704,7 +2764,7 @@
   // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
   async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     // her templates: use one of theirs, or keep what's on the board as one
-    if (r.animate) playAnim(r.animate, false);
+    if (r.animate && Date.now() - animAskedAt > 30000 && (Date.now() - aiAnimAt > 600000 || animIntent(q || ''))) { const n = animName(r.animate); if (n && (n !== 'party' || animIntent(q || '') === 'party')) { if (playAnim(n, false)) aiAnimAt = Date.now(); } }   // her own pick: about once per ten minutes, and confetti only if asked
     if (r.useTemplate) { const o = r.useTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) await useTemplate(t, o.mode === 'new' || o.mode === 'add' ? o.mode : undefined); }
     // folders first: create, rename, and move boards around the library
     const fo = r.folders, pr = r.projects;
@@ -5595,5 +5655,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { playAnim, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

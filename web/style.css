@@ -2631,3 +2631,9 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 /* the last two minutes: her own glow runs a little faster; when it ends it goes back to her normal pace */
 .m-pill.hurry { animation: m-glow 2.2s ease-in-out infinite, m-wobble 8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .m-pill.glow-red, .m-pill.glow-green, .m-pill.hurry { animation: none; } }
+
+/* Myra's sprite lives in a slot so she can hop out of her button and perch beside the chat */
+.goo-slot { position: relative; z-index: 6; display: inline-block; line-height: 0; will-change: transform; }
+.goo-slot.perched { cursor: pointer; }
+.mc-list { padding-bottom: 40px; } body.phone .mc-list { padding-bottom: 6px; }
+.mc-sel { max-width: calc(100% - 96px); }
