@@ -692,7 +692,7 @@ body.exporting .card.sel::after { display: none; }
 .seg { display: flex; flex: none; padding: 3px; border-radius: var(--pill-r); corner-shape: squircle; background: #f4f0ed; }
 .seg button { padding: 7px 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; white-space: nowrap; }
 .seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
-#noteColors button.rand { background: conic-gradient(#fbdcbc, #f8e08a, #a8e6c3, #aed3ff, #fbdcbc, #fbdcbc); }
+#noteColors button.rand, #obNotes button.rand { background: conic-gradient(#fbdcbc, #f8e08a, #a8e6c3, #aed3ff, #fbdcbc, #fbdcbc); }
 
 /* Myra's chat: white in light mode, dark in dark mode */
 .m-pill { background: #fff; color: var(--ink); box-shadow: 0 12px 30px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
