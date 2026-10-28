@@ -692,7 +692,7 @@
         // a crop shows a window onto the picture: the picture is scaled up and shifted so only the kept part shows
         const k = !c.cropEdit && c.crop, st = k ? `position:absolute;width:${100 / k.w}%;height:${100 / k.h}%;left:${-k.x / k.w * 100}%;top:${-k.y / k.h * 100}%;object-fit:fill;border-radius:0` : '';
         const ui = c.cropEdit && cropping ? `<div class="crop-ui"><div class="crop-box" style="left:${cropping.box.x * 100}%;top:${cropping.box.y * 100}%;width:${cropping.box.w * 100}%;height:${cropping.box.h * 100}%">${['nw', 'ne', 'sw', 'se'].map(h => `<i data-h="${h}"></i>`).join('')}</div></div>` : '';
-        return `<div class="imgwrap"><img src="${esc(c.src)}" alt="" style="${st}">${ui}</div>${c.cropEdit ? '' : '<button class="chip" data-act="colors">pull colours ✦</button>'}`; }
+        return `<div class="imgwrap"><img src="${esc(c.src)}" alt="" style="${st}">${ui}</div>${c.cropEdit ? '' : `<button class="chip" data-act="colors">${Icon('palette', { size: 16 })}<span>Pull colours</span></button>`}`; }
       case 'vnote': {
         const gone = c.blocked || c.missing, back = c.side === 'back', full = vnFull.get(c.id), sm = c.props || [];
         const head = `<div class="vn-head">${Icon('notebook')}<span class="vn-title text">${esc(c.title || 'Note')}</span><button class="vn-flip" data-act="vn-flip" title="${back ? 'Show the title and tags' : 'Show the content'}">${Icon('refresh')}</button></div>`;
