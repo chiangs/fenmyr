@@ -2618,8 +2618,8 @@ body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-
 .dock .myra.timing .m-bubble { bottom: calc(100% + 52px); } .myra.timing .m-chat { bottom: calc(100% + 52px); }
 .m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
 .myra.partying:not(.chat) .m-pill { animation: m-party .55s ease-in-out 6; }
-.myra.partying.chat .goo-slot.perched { animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she does the wiggle herself (rotate and scale compose with her position) */
-@keyframes m-party-slot { 0%, 100% { rotate: 0deg; scale: 1; } 25% { rotate: -6deg; scale: 1.12; } 75% { rotate: 6deg; scale: 1.12; } }
+.myra.partying.chat .goo-slot.perched #goo { transform-origin: 50% 100%; animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she wiggles herself; on the sprite, because rotate/scale on the slot would scale and swing her whole offset from the button */
+@keyframes m-party-slot { 0%, 100% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(-6deg) scale(1.12); } 75% { transform: rotate(6deg) scale(1.12); } }
 @keyframes m-party { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-4deg) scale(1.06); } 75% { transform: rotate(4deg) scale(1.06); } }
 .confetti { position: absolute; left: 50%; bottom: 40px; width: 9px; height: 9px; border-radius: 3px; background: var(--c); pointer-events: none; opacity: 0; z-index: 20; animation: confetti 1.7s cubic-bezier(.2, .7, .3, 1) forwards; }
 @keyframes confetti { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 110px)) rotate(var(--rot)); } }

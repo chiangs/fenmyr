@@ -2405,9 +2405,9 @@
   // her hop is one gooey jump, no springs: a short wind-up, then she stretches along the line she is travelling (diagonally up and left leaving the button, up and right going home), most when
   // she is fastest and round again near the top of the arc, with a soft wobble just after she leaves the ground; she slows towards the top and quickens a little coming down; on landing she squashes
   // once and settles. The landing spot is fixed when she takes off (measured again at touchdown), so she can never drift past the edge of the chat.
-  const HOP = { stretch: .3, wobble: .3, arc: 100, up: 574, home: 431, squash: .35, wind: 140, land: 300 };
+  const HOP = { stretch: .3, wobble: .3, arc: 100, up: 480, home: 431, squash: .35, wind: 140, land: 300 };
   const gooPose = (p, tf) => { gooAt = p; gooSlot.style.transform = `translate(${p.x}px, ${p.y}px)${tf || ''}`; };
-  const gooRest = () => { gooSlot.style.scale = ''; gooSlot.style.rotate = ''; gooSlot.style.transformOrigin = ''; };
+  const gooRest = () => { gooSlot.style.transformOrigin = ''; };
   function flyGoo(to, instant) {
     const from = gooAt; if (gooAnim) { gooAnim.stop(); gooAnim = null; }
     const done = () => { if (flightLive) { flightLive = false; liveOff(); } };
@@ -2419,9 +2419,9 @@
     const t0 = performance.now(), sm = k => k * k * (3 - 2 * k), lerp = (a, b, k) => a + (b - a) * k; let target = to, landFrom = null, raf = 0, stopped = false;
     const step = now => {
       if (stopped) return; const e = now - t0;
-      if (e < WIND) { const k = sm(e / WIND); gooSlot.style.scale = `${1 + .1 * k * HOP.squash / .35} ${1 - .14 * k * HOP.squash / .35}`; gooPose(from); }   // a small crouch before she leaves
+      if (e < WIND) { const k = sm(e / WIND); gooPose(from, ` scale(${1 + .1 * k * HOP.squash / .35}, ${1 - .14 * k * HOP.squash / .35})`); }   // a small crouch before she leaves
       else if (e < WIND + AIR) {
-        gooSlot.style.scale = ''; gooSlot.style.transformOrigin = '50% 55%';
+        gooSlot.style.transformOrigin = '50% 55%';
         const t = e - WIND, k = t / AIR, x = from.x + dx * k, y = from.y + dy * k - 4 * h * k * (1 - k);
         const vx = dx / AIR, vy = dy / AIR - 4 * h * (1 - 2 * k) / AIR, sp = Math.hypot(vx, vy) / vref, th = Math.atan2(vy, vx);
         const el = sm(Math.min(1, sp)), along = 1 + HOP.stretch * el + HOP.wobble * .4 * Math.exp(-t / 170) * Math.sin(t / 34), across = 1 / Math.sqrt(along);
@@ -2431,8 +2431,7 @@
         if (!landFrom) { landFrom = { x: from.x + dx, y: from.y + dy }; gooRest(); target = perched ? perchTarget() : { x: 0, y: 0 }; }   // where the landing spot is now
         if (l >= LAND) { gooRest(); gooMove(target); gooAnim = null; done(); return; }
         const sq = Math.exp(-l / 85) * Math.cos(l / 40), blend = Math.min(1, l / 120);
-        gooPose({ x: lerp(landFrom.x, target.x, blend), y: lerp(landFrom.y, target.y, blend) });
-        gooSlot.style.scale = `${1 + .55 * HOP.squash * sq} ${1 - HOP.squash * sq}`;
+        gooPose({ x: lerp(landFrom.x, target.x, blend), y: lerp(landFrom.y, target.y, blend) }, ` scale(${1 + .55 * HOP.squash * sq}, ${1 - HOP.squash * sq})`);
       }
       raf = requestAnimationFrame(step);
     };
