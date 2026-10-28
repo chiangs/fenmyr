@@ -2464,11 +2464,13 @@ body.following-caelestia .board-row:hover, body.following-caelestia .node-head:h
 body.following-caelestia .board-row.on { background: color-mix(in srgb, var(--panel) 70%, var(--pink-deep) 30%) !important; box-shadow: inset 0 0 0 1.5px var(--pink-deep); color: var(--ink); }
 body.following-caelestia .board-row.on:hover { background: color-mix(in srgb, var(--panel) 58%, var(--pink-deep) 42%) !important; }
 
-/* following Caelestia: Layers rows act like the sidebar rows; Unsorted ideas and Myra's chat replies are a muted cloudberry amber; your chat messages are the accent-tinted button colour */
+/* following Caelestia: Layers rows act like the sidebar rows; Myra's chat replies are a muted cloudberry amber; Unsorted ideas are tonal; your chat messages are the accent-tinted button colour */
 body.following-caelestia .ly:hover { background: color-mix(in srgb, var(--panel) 45%, var(--dot)) !important; }
 body.following-caelestia .ly.on { background: color-mix(in srgb, var(--panel) 70%, var(--pink-deep) 30%) !important; box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
 body.following-caelestia .ly.on:hover { background: color-mix(in srgb, var(--panel) 58%, var(--pink-deep) 42%) !important; }
-body.following-caelestia .tray-item, body.following-caelestia .mc-msg.myra { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)) !important; color: var(--ink); }
+body.following-caelestia .mc-msg.myra { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)) !important; color: var(--ink); }
+/* Unsorted ideas follow the panel colour, pulled toward the scheme's outline colour so they stand out from the panel without a new hue */
+body.following-caelestia .tray-item { background: color-mix(in srgb, var(--panel) 62%, var(--dot)) !important; color: var(--ink); box-shadow: none; }
 body.following-caelestia .mc-msg.me { background: color-mix(in srgb, var(--panel) 86%, var(--pink-deep) 14%) !important; color: var(--ink); }
 
 /* following Caelestia: Settings and the setup tour are the panel colour, and what sits in them is tonal like the sidebar: segmented buttons, inputs and
