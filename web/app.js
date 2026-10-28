@@ -2309,7 +2309,9 @@
   }
   // ---------- Myra's chat window: click her to open it, click again (or Esc) to close ----------
   const chatOpen = () => $('myra').classList.contains('chat');
-  function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); $('mcInput').focus(); } }
+  // with cards selected, the chat's hint says what "this" will mean: they go along with whatever you send
+  const askHint = () => sel.size === 1 ? 'Change this… “make it say…”, “turn it mint”' : sel.size > 1 ? `Change these ${sel.size}… “rename to step 1, 2, 3”` : 'Ask Myra… “group these by theme”';
+  function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); $('mcInput').placeholder = askHint(); $('mcInput').focus(); } }
   $('mPill').onclick = () => myraOpen(!chatOpen());
   $('mcClose').onclick = () => myraOpen(false);
   // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
@@ -4332,7 +4334,7 @@ ${proseCSS()}
   }
   const FS = { s: .8, m: 1, l: 1.4, xl: 2 }, SIZED = ['note', 'todo', 'title', 'shape', 'coll', 'vnote'];
   function selCards() { return [...sel].map(byId).filter(Boolean); }
-  const ICON = { tags: Icon('tag'), tag: Icon('berry-label'), edit: Icon('edit'), myra: Icon('myra-tool'), del: Icon('trash'), head: Icon('header'), caption: Icon('captions'), color: Icon('palette'),
+  const ICON = { tags: Icon('tag'), tag: Icon('berry-label'), edit: Icon('edit'), del: Icon('trash'), head: Icon('header'), caption: Icon('captions'), color: Icon('palette'),
     name: Icon('name'), hex: Icon('hex'), crop: Icon('crop'), open: Icon('open'), link: Icon('link'), flip: Icon('refresh') };
   // fonts for board text: the same list as docs (fonts on this board first, then suggestions, then everything on this computer)
   // every font this board uses: picked for notes and titles, wireframe text, font cards, and fonts set inside docs (most used first)
@@ -4517,7 +4519,7 @@ ${proseCSS()}
     if (one?.type === 'section') h += G(2, colorPop(COLORS[one.color] || '#fff', COLOR_NAMES.map(n => `<button data-sc="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${(one.color || 'white') === n ? 'on' : ''}"></button>`).join('')));
     if (cs.length > 1) h += G(8, `<span class="sb-sep"></span><button class="sb-txt" data-sb="${oneGroup ? 'ungroup' : 'group'}" title="${oneGroup ? 'Ungroup · ⇧⌘G' : 'Group · ⌘G'}">${oneGroup ? 'Ungroup' : 'Group'}</button>`);
     h += `<span class="sb-sep sb-moresep"></span>` + pop('more', Icon('more', { cls: 'sb-l24' }), `<div class="sb-morebody">${more}</div>`, 'More');
-    h += `<span class="sb-sep"></span>` + btn('myra', 'myra', 'Ask Myra') + btn('del', 'del', 'Delete');
+    h += `<span class="sb-sep"></span>` + btn('del', 'del', 'Delete');
     bar.innerHTML = h; foldSelbar(bar); snapSoon();
   }
   let coverT = 0;
@@ -4750,7 +4752,6 @@ ${proseCSS()}
     if (a === 'tag') { if (one.tagText) { delete one.tagText; redraw(); } else editTag(one); }   // tap again to take the label off
     if (a === 'edit') startEdit(one.id);
     if (a === 'del') removeSelected();
-    if (a === 'myra') { myraOpen(true); $('mcInput').placeholder = cs.length === 1 ? 'Change this… “make it say…”, “turn it mint”' : `Change these ${cs.length}… “rename to step 1, 2, 3”`; }
   };
 
   // ---------- colors: the editor beside a color card, and the board's own palette ----------
