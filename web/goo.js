@@ -1,6 +1,6 @@
 // Myra in pixels: a little cloudberry (a bumpy cluster of golden beads with a leafy crown, ink eyes and blush).
 // She breathes, blinks, glances around, hops when she does something, and wiggles while she's thinking.
-// The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, wiggle, pose, lively, setColors, draw }.
+// The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, wiggle, pose, hat, lively, setColors, draw }.
 
 (() => {
   // her shape: X is berry, the leaves sit on top; the beads are textured in below
@@ -35,7 +35,7 @@
     const g = canvas.getContext('2d'), H = canvas.height;
     let col = opts.colors || { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, pal = null;
     const palette = () => pal || (pal = { B: col.B, S: col.S, s: mix(col.B, col.S, .45), D: col.D, d: mix(col.D, '#000000', .22), L: col.L || '#7cc95e', l: col.l || '#3f8f3c' })   // a color can bring its own leaves (a green Myra gets teal ones, so the crown still shows);
-    let hopT = -9, thinking = false, look = 0, lookTo = 0, nextLook = 0, pose = null, showOff = false, wiggleUntil = 0;   // pose: 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | 'curious' | null; showOff: move even in calm mode (when someone asked her to)
+    let hopT = -9, thinking = false, look = 0, lookTo = 0, nextLook = 0, pose = null, showOff = false, wiggleUntil = 0, hatOn = false;   // pose: 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | 'curious' | null; showOff: move even in calm mode (when someone asked her to)
     // Calmest: her colors softened toward a gentle gray (kept light so she still reads as her color)
     const mutedCache = new Map();
     const mute = hex => { if (!window.myraMuted || !/^#[0-9a-f]{6}$/i.test(hex)) return hex; if (mutedCache.has(hex)) return mutedCache.get(hex);
@@ -99,6 +99,10 @@
         g.fillStyle = mute('#b8a898'); g.fillRect(ox + 14 * px, oy + 8 * px, px * 3.5, px * 3.5);
         g.fillStyle = mute('#c8dcf0'); g.fillRect(ox + 14.5 * px, oy + 8.5 * px, px * 2.5, px * 2.5);
       }
+      if (hatOn) {   // a party hat, tipped to one side: lilac with cream stripes and a pompom
+        const u = Math.max(1, px * 1.25), cone = ['..P..', '.LLL.', '.LSL.', 'LLLLL', 'LSLSL'], hx = ox + 8.4 * px, hy = oy - 3.6 * px;
+        cone.forEach((row, ry) => [...row].forEach((c, rx) => { if (c === '.') return; g.fillStyle = mute(c === 'L' ? '#a98bdc' : c === 'S' ? '#ffe2a8' : '#ffe2a8'); g.fillRect(hx + rx * u, hy + ry * u, u, u); }));
+      }
       g.restore();
     }
     // she only draws while she's on screen, 30 times a second (plenty for chunky pixels)
@@ -106,6 +110,6 @@
     if (!opts.manual && window.IntersectionObserver) new IntersectionObserver(es => { seen = es[es.length - 1].isIntersecting; }).observe(canvas);
     const loop = now => { if (seen && now - lastDraw >= 32) { lastDraw = now; frame(now); } requestAnimationFrame(loop); };
     if (!opts.manual) requestAnimationFrame(loop);   // manual: the caller draws her (the favicon runs on a timer, which keeps going in background tabs)
-    return { hop() { hopT = performance.now() / 1000; }, think(on) { thinking = on; }, wiggle(ms) { wiggleUntil = performance.now() + ms; }, lively(on) { showOff = !!on; }, pose(p) { pose = p || null; }, setColors(c) { col = c; pal = null; }, draw() { frame(performance.now()); } };
+    return { hop() { hopT = performance.now() / 1000; }, think(on) { thinking = on; }, wiggle(ms) { wiggleUntil = performance.now() + ms; }, lively(on) { showOff = !!on; }, pose(p) { pose = p || null; }, hat(on) { hatOn = !!on; }, setColors(c) { col = c; pal = null; }, draw() { frame(performance.now()); } };
   };
 })();

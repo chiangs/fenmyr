@@ -2635,10 +2635,22 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 @media (prefers-reduced-motion: reduce) { .m-pill.glow-red, .m-pill.glow-green, .m-pill.hurry { animation: none; } }
 
 /* Myra's sprite lives in a slot so she can hop out of her button and perch beside the chat */
-.goo-slot { position: relative; z-index: 6; display: inline-block; line-height: 0; will-change: transform; }
+.goo-slot { position: relative; z-index: 6; display: inline-block; line-height: 0; will-change: transform; transform-origin: 50% 100%; }   /* her feet are the pivot for squash and stretch */
 .goo-slot.perched { cursor: pointer; }
 .mc-list { padding-bottom: 40px; } body.phone .mc-list { padding-bottom: 6px; }
 .mc-sel { margin-left: 66px; max-width: calc(100% - 78px); }
 
 /* with the chat open, its header already says she is thinking: the button keeps its width, so the bar and the chat don't slide sideways */
 .myra.chat.thinking .m-name::after { content: none; }
+
+/* a closed chat can't be focused or tabbed into (its fade still plays), so M and typing work after Esc */
+.m-chat { visibility: hidden; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2), visibility 0s .3s; }
+.myra.chat .m-chat { visibility: visible; transition-delay: 0s; }
+
+/* birthday inputs: month and day, nothing else */
+.bd-pick { display: inline-flex; align-items: center; gap: 6px; }
+.bd-pick select { font: 500 13px/1.2 var(--font); padding: 7px 9px; border: 0; border-radius: 11px; corner-shape: squircle; background: #f8f5f3; color: var(--ink); cursor: pointer; }
+.bd-clear { width: 26px; height: 26px; border: 0; border-radius: 9px; background: none; color: var(--ink-soft); cursor: pointer; font: 600 16px/1 var(--font); }
+.bd-clear:hover { background: var(--blush); color: var(--ink); }
+body.dark .bd-pick select, body.tint-panels .bd-pick select { background: rgba(255, 255, 255, .08); color: inherit; }
+.ob-field small { color: var(--ink-faint); font-weight: 500; }
