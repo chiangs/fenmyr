@@ -2642,3 +2642,7 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 
 /* with the chat open, its header already says she is thinking: the button keeps its width, so the bar and the chat don't slide sideways */
 .myra.chat.thinking .m-name::after { content: none; }
+
+/* a closed chat can't be focused or tabbed into (its fade still plays), so M and typing work after Esc */
+.m-chat { visibility: hidden; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2), visibility 0s .3s; }
+.myra.chat .m-chat { visibility: visible; transition-delay: 0s; }

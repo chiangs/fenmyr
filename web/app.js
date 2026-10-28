@@ -1958,7 +1958,7 @@
     if (k === 'v') { if (e.shiftKey) startPlacing('video'); else toPointer(); }
     if (k === 'i') $('filePick').click();
     if (k === '0') fit(board.cards);
-    if (k === 'm') { e.preventDefault(); myraOpen(true); }
+    if (k === 'm') { e.preventDefault(); const was = chatOpen(); myraOpen(true); if (!was) wonderIfEmpty(); }
   });
   addEventListener('keyup', e => { if (e.key === ' ') { space = false; stage.classList.remove('space'); } });
   // links get a little paste box under the toolbar (the app can't show the browser's prompt)
@@ -2390,7 +2390,7 @@
   }
   $('mcSel').onclick = e => { if (e.target.closest('.mcs-x')) { selectOnly([]); renderSelChip(); } };
   ['pointerup', 'keyup'].forEach(ev => document.addEventListener(ev, () => { if (chatOpen()) setTimeout(renderSelChip, 0); }, true));
-  function myraOpen(on) { const was = chatOpen(); $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); selChipKey = null; renderSelChip(); $('mcInput').focus(); } if (on !== was) perchGoo(on); }
+  function myraOpen(on) { const was = chatOpen(); if (!on && $('mChat').contains(document.activeElement)) document.activeElement.blur(); /* a closed chat is also visibility:hidden, so nothing in it can keep or take the cursor */ $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); selChipKey = null; renderSelChip(); $('mcInput').focus(); } if (on !== was) perchGoo(on); }
   // ---------- with the chat open she perches on the top left of the input box (under her latest reply), and hops back to her button when it closes ----------
   const gooSlot = $('gooSlot');
   let perched = false, gooAnim = null, toggleLog = [], dizzyAt = 0, dizzyAuto = true;
@@ -2419,7 +2419,9 @@
   const keepPerch = () => { if (perched && !gooAnim) gooMove(perchTarget()); };
   addEventListener('resize', keepPerch); const perchWatch = new ResizeObserver(keepPerch); [$('mChat'), $('mPill'), $('myra')].forEach(el => perchWatch.observe(el));   // the button changing width (a label appearing) moves the whole bar, and the chat with it
   gooSlot.addEventListener('click', e => { if (!perched) return; e.stopPropagation(); playAnim(pickAnim(), false); });   // click her in the chat and she does something
-  $('mPill').onclick = () => { clearGlow(); myraOpen(!chatOpen()); };
+  // you opened an empty chat (the button or M): once she has landed by the input she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
+  const wonderIfEmpty = () => setTimeout(() => { if (chatOpen() && !chatLog().length && Date.now() - dizzyAt > 2500 && !$('myra').classList.contains('thinking')) playAnim('curious', false); }, window.myraMuted ? 150 : 700);
+  $('mPill').onclick = () => { clearGlow(); const opening = !chatOpen(); myraOpen(opening); if (opening) wonderIfEmpty(); };
   $('mcClose').onclick = () => myraOpen(false);
   // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
   const CHATS_KEPT = 10; let histOpen = false;
@@ -2666,7 +2668,7 @@
   // plain words, with thinking off (or on the web demo): "can you jump?", "do a little dance", "show me your moves"
   const ANIM_WORDS = [['hop', /\b(jump|hop|bounce)\b/i], ['wiggle', /\b(wiggle|wobble)\b/i], ['party', /\b(party|celebrate|confetti|cheer)\b/i], ['sleepy', /\b(sleepy|yawn|nap|sleep)\b/i], ['shook', /\b(shook|startled|surprised|scared)\b/i],
     ['sigh', /\bsigh\b/i], ['happy', /\b(happy|smile|beam|sparkle)\b/i], ['love', /\b(love|heart)\b/i], ['dizzy', /\b(dizzy|spin)\b/i], ['curious', /\b(curious|puzzled|confused)\b/i], ['*', /\b(animat\w*|dance|dancing|tricks?|show me your moves|do something|show me something)\b/i]];
-  const ANIM_ASK = /\b(can|could|would|will)\s+(you|u)\b|\bplease\b|\b(show|give|do|make)\b/i;
+  const ANIM_ASK = /\b(can|could|would|will)\s+(you|u)\b|\bplease\b|\b(show|give|do|make|throw|host|play|perform|try)\b|\bput on\b|\blet(?:'s|s| us)\b|\bhave a\b/i;
   const animRequest = q => { const an = animIntent(q); return an && (ANIM_ASK.test(q) || q.trim().split(/\s+/).length <= 3) ? an : ''; };   // with thinking on, only sentences that ask for it (so "I love how this board looks" is left to the model)
   const animIntent = q => /group|sort|organi[sz]e|tidy|line up/i.test(q) ? '' : (ANIM_WORDS.find(([, re]) => re.test(q)) || [''])[0];
   // ---------- every now and then she animates by herself (lively about hourly, calm every few hours, calmest never; never more than once an hour) ----------
