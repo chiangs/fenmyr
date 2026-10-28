@@ -91,10 +91,13 @@ body.dark .card.sel::after { box-shadow: 0 0 0 3px rgba(25, 21, 16, .85), inset 
 /* image */
 .card.image .body { padding: 8px; }
 .card.image img { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; corner-shape: squircle; display: block; pointer-events: none; }
-.card .chip { position: absolute; bottom: 14px; right: 14px; padding: 5px 11px; border-radius: var(--pill-r); corner-shape: squircle; border: 0; background: rgba(255, 255, 255, .92); font: 600 12px/1 var(--font); cursor: pointer; opacity: 0; transition: opacity .15s; box-shadow: 0 3px 10px rgba(0, 0, 0, .12); }
-.card:hover .chip { opacity: 1; }
-.card .chip { color: #302c26; }
-body.dark .card .chip { background: rgba(46, 42, 37, .94); color: #f6f2ee; box-shadow: 0 4px 14px rgba(0, 0, 0, .35), 0 0 0 1px rgba(255, 255, 255, .08); }
+/* the "Pull colours" button on a picture: big enough to notice, the panel colour tinted with the accent (so it follows the theme, dark mode and Caelestia) */
+.card .chip { position: absolute; bottom: 14px; right: 14px; display: flex; align-items: center; gap: 7px; padding: 9px 15px 9px 12px; border-radius: var(--pill-r); corner-shape: squircle; border: 0; background: color-mix(in srgb, var(--panel, #fff) 72%, var(--pink-deep) 28%); color: var(--ink); font: 700 13.5px/1 var(--font); cursor: pointer; opacity: 0; transition: opacity .15s, transform .15s, background .15s; box-shadow: 0 0 0 1.5px var(--pink-deep), 0 8px 20px rgba(0, 0, 0, .22); }
+.card .chip svg { width: 16px; height: 16px; flex: none; }
+.card:hover .chip, .card.sel .chip { opacity: 1; }
+.card .chip:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--panel, #fff) 56%, var(--pink-deep) 44%); }
+body.dark .card .chip { background: color-mix(in srgb, var(--panel, #2e2a25) 72%, var(--pink-deep) 28%); }
+body.dark .card .chip:hover { background: color-mix(in srgb, var(--panel, #2e2a25) 56%, var(--pink-deep) 44%); }
 /* link */
 .card.link .body { padding: 0; display: flex; flex-direction: column; }
 .card.link .thumb { flex: 1; min-height: 0; background: var(--sky) center / cover; }
@@ -143,7 +146,7 @@ button.zoom { justify-content: flex-end; font-family: inherit; font-size: 12px; 
 
 /* ---------- Myra ---------- */
 .myra { position: absolute; left: calc(50% + 8px); bottom: 22px; transform: translateX(-50%); z-index: 15; display: flex; flex-direction: column; align-items: center; }
-.m-pill { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 18px 0 10px; border-radius: var(--pill-r); corner-shape: squircle; background: rgba(40, 40, 48, .94); color: #fff; box-shadow: 0 12px 30px rgba(58, 40, 22, .3); cursor: pointer; transition: width .35s cubic-bezier(.2, .8, .3, 1); }
+.m-pill { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 10px; border-radius: var(--pill-r); corner-shape: squircle; background: rgba(40, 40, 48, .94); color: #fff; box-shadow: 0 12px 30px rgba(58, 40, 22, .3); cursor: pointer; transition: width .35s cubic-bezier(.2, .8, .3, 1); }
 .m-pill canvas { width: 40px; height: 35px; image-rendering: pixelated; }
 .m-name { font: 600 15px/1 var(--font); }
 .m-form { display: none; }
@@ -405,7 +408,7 @@ html.native .home-in { padding-top: 40px; }
 .card.note .nname { font: 700 calc(15px * var(--fs, 1))/1.3 var(--font); margin-bottom: 6px; outline: none; min-height: 1em; }
 .card.note .nname:empty { display: none; }
 .card.note.sel .nname:empty, .card.note.editing .nname:empty { display: block; }
-.card.note .nname:empty::before { content: "Name (optional)"; color: var(--ink-faint); font-weight: 600; }
+.card.note .nname:empty::before { content: "Name"; color: var(--ink-faint); font-weight: 600; }
 .card.note .text:empty::before { content: "Type something…"; }
 /* ---------- collections: a named header over a frame that stacks its cards ---------- */
 .card.coll { z-index: 0 !important; rotate: 0deg !important; }
@@ -1125,7 +1128,17 @@ body.dark .set-maker { background: #3b2d1f; } body.dark .sm-sig { color: #f6c38a
 
 /* design thinking templates: a little menu above the toolbar */
 .tplpick { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(6px); z-index: 16; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
-.tplpick { max-height: calc(100vh - 130px); overflow: auto; scrollbar-width: thin; }
+.tplpick { max-height: calc(100vh - 130px); overflow: hidden; display: flex; flex-direction: column; gap: 0; }
+.tplpick .tp-list { display: grid; gap: 2px; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.tplpick .tp-list [hidden] { display: none; }
+.tplpick .tp-none { padding: 14px 10px; font: 500 12.5px/1.4 var(--font); color: var(--ink-soft); text-align: center; }
+/* the search box sits at the bottom of the menu, right above the toolbar button */
+.tplpick .tp-search { flex: none; display: flex; align-items: center; gap: 8px; margin: 6px 2px 0; padding: 9px 12px; border-radius: var(--pill-r); corner-shape: squircle; background: #f4f0ed; color: var(--ink-soft); cursor: text; }
+.tplpick .tp-search svg { width: 16px; height: 16px; flex: none; }
+.tplpick .tp-search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: 500 13px/1.2 var(--font); color: var(--ink); }
+.tplpick .tp-search:focus-within { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
+body.dark .tplpick .tp-search { background: rgba(255, 255, 255, .08); }
+body.following-caelestia .tplpick .tp-search { background: color-mix(in srgb, var(--panel) 78%, var(--dot)); }
 .tplpick.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
 .tplpick button { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
 .tplpick button:hover { background: var(--blush); }
@@ -2173,6 +2186,20 @@ body[data-tb="s"] .tools button[data-add], body[data-tb="s"] .tools .tb-more, bo
 body[data-tb="s"] #tools svg[viewBox="0 0 24 24"], body[data-tb="s"] .tools .ic { width: 17px !important; height: 17px !important; }
 body[data-tb="l"] .tools button[data-add], body[data-tb="l"] .tools .tb-more, body[data-tb="l"] .tools .clean-btn { width: 48px; height: 46px; }
 body[data-tb="l"] #tools svg[viewBox="0 0 24 24"], body[data-tb="l"] .tools .ic { width: 24px !important; height: 24px !important; }
+/* the Myra pill is as tall as the toolbar at every size: small 46, medium 50, large 58 */
+body[data-tb="s"] .m-pill { height: 46px; }
+body[data-tb="l"] .m-pill { height: 58px; }
+/* Myra's button: no outline ring (it made her look taller than the toolbar), the toolbar's own shadow, plus a soft cloudberry-amber glow that breathes and a tiny wobble
+   every few seconds. Glows and transforms never change the box, so she stays exactly the toolbar's height. Calm mode and reduced motion keep the glow still. */
+.m-pill { --m-base: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); --m-glow: var(--butter-deep, #f0b04a); transform-origin: 50% 60%;
+  box-shadow: var(--m-base), 0 0 16px 1px color-mix(in srgb, var(--m-glow) 44%, transparent);
+  animation: m-glow 3.6s ease-in-out infinite, m-wobble 8s ease-in-out infinite; }
+body.dark .m-pill { --m-base: 0 8px 26px rgba(0, 0, 0, .31); }
+@keyframes m-glow {
+  0%, 100% { box-shadow: var(--m-base), 0 0 14px 1px color-mix(in srgb, var(--m-glow) 36%, transparent); }
+  50% { box-shadow: var(--m-base), 0 0 20px 2px color-mix(in srgb, var(--m-glow) 48%, transparent); } }
+@keyframes m-wobble { 0%, 86%, 100% { transform: none; } 89% { transform: rotate(-.9deg); } 92% { transform: rotate(.8deg); } 95% { transform: rotate(-.4deg); } 97.5% { transform: rotate(.2deg); } }
+@media (prefers-reduced-motion: reduce) { .m-pill { animation: none; } }
 body[data-tb="l"] .tools .zoom { font-size: 15px; }
 body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .tools .tb-over { display: none !important; }
@@ -2423,6 +2450,13 @@ body.dark .sb-dots button[data-c="white"] { box-shadow: inset 0 0 0 1px rgba(255
 body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--select), inset 0 0 0 1px rgba(255, 255, 255, .3); }
 
 /* the "Search my vault" chip in Myra's chat */
+/* what "this" means: the cards selected right now, which go along with whatever you send */
+.mc-sel { display: flex; align-items: center; gap: 4px; width: fit-content; max-width: calc(100% - 24px); margin: 8px 12px 0; padding: 4px 5px 4px 11px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--blush); color: var(--ink); font: 600 11.5px/1.2 var(--font); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pink-deep) 55%, transparent); }
+.mc-sel[hidden] { display: none; }
+.mcs-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcs-x { flex: none; width: 18px; height: 18px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: inherit; font: 700 14px/1 var(--font); opacity: .65; cursor: pointer; }
+.mcs-x:hover { opacity: 1; background: rgba(0, 0, 0, .08); }
+body.dark .mcs-x:hover { background: rgba(255, 255, 255, .12); }
 .mc-vault { flex: none; display: flex; align-items: center; gap: 5px; padding: 0 10px; height: 30px; border: 1.5px solid currentColor; border-radius: 15px; corner-shape: squircle; background: none; font: 600 11.5px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .mc-vault[hidden] { display: none; }
 .mc-vault svg { width: 14px; height: 14px; }
@@ -2448,15 +2482,17 @@ body.following-caelestia .board-row:hover, body.following-caelestia .node-head:h
 body.following-caelestia .board-row.on { background: color-mix(in srgb, var(--panel) 70%, var(--pink-deep) 30%) !important; box-shadow: inset 0 0 0 1.5px var(--pink-deep); color: var(--ink); }
 body.following-caelestia .board-row.on:hover { background: color-mix(in srgb, var(--panel) 58%, var(--pink-deep) 42%) !important; }
 
-/* following Caelestia: Layers rows act like the sidebar rows; Unsorted ideas and Myra's chat replies are a muted cloudberry amber; your chat messages are the accent-tinted button colour */
+/* following Caelestia: Layers rows act like the sidebar rows; Myra's chat replies are a muted cloudberry amber; Unsorted ideas are tonal; your chat messages are the accent-tinted button colour */
 body.following-caelestia .ly:hover { background: color-mix(in srgb, var(--panel) 45%, var(--dot)) !important; }
 body.following-caelestia .ly.on { background: color-mix(in srgb, var(--panel) 70%, var(--pink-deep) 30%) !important; box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
 body.following-caelestia .ly.on:hover { background: color-mix(in srgb, var(--panel) 58%, var(--pink-deep) 42%) !important; }
-body.following-caelestia .tray-item, body.following-caelestia .mc-msg.myra { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)) !important; color: var(--ink); }
+body.following-caelestia .mc-msg.myra { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)) !important; color: var(--ink); }
+/* Unsorted ideas follow the panel colour, pulled toward the scheme's outline colour so they stand out from the panel without a new hue */
+body.following-caelestia .tray-item { background: color-mix(in srgb, var(--panel) 62%, var(--dot)) !important; color: var(--ink); box-shadow: none; }
 body.following-caelestia .mc-msg.me { background: color-mix(in srgb, var(--panel) 86%, var(--pink-deep) 14%) !important; color: var(--ink); }
 
 /* following Caelestia: Settings and the setup tour are the panel colour, and what sits in them is tonal like the sidebar: segmented buttons, inputs and
-   toggles take the scheme's outline colour, the chosen option and switched-on toggles take its accent, and the warm cards are the muted cloudberry amber */
+   toggles take the scheme's outline colour, the chosen option and switched-on toggles take its accent, and the About cards (tour, feedback, maker, updates) all share one tonal colour */
 body.following-caelestia .set-panel, body.following-caelestia .ob-panel { background: var(--panel) !important; color: var(--ink); }
 body.following-caelestia .set-body section { border-color: color-mix(in srgb, var(--panel) 78%, var(--dot)); }
 body.following-caelestia .seg { background: color-mix(in srgb, var(--panel) 78%, var(--dot)) !important; }
@@ -2468,9 +2504,8 @@ body.following-caelestia .tgl:checked { background: var(--pink-deep); }
 body.following-caelestia .tgl::after, body.following-caelestia .tgl:checked::after { background: var(--panel); }
 body.following-caelestia .set-btn { border-color: var(--ink); color: var(--ink); }
 body.following-caelestia .set-btn:hover, body.following-caelestia .set-btn.hot { background: var(--ink); color: var(--panel); border-color: var(--ink); }
-body.following-caelestia .set-start, body.following-caelestia .set-maker, body.following-caelestia .set-feedback { background: color-mix(in srgb, var(--butter-deep) 42%, var(--panel)); color: var(--ink); }
+body.following-caelestia .set-start, body.following-caelestia .set-maker, body.following-caelestia .set-feedback, body.following-caelestia .set-update { background: color-mix(in srgb, var(--panel) 80%, var(--dot)); color: var(--ink); }
 body.following-caelestia .sm-sig { color: var(--ink-soft); }
-body.following-caelestia .set-update { background: color-mix(in srgb, var(--panel) 80%, var(--dot)); }
 body.following-caelestia .set-update.ready { background: color-mix(in srgb, var(--panel) 70%, var(--mint-deep) 30%); }
 body.following-caelestia .su-icon { background: color-mix(in srgb, var(--panel) 65%, var(--dot)); }
 body.following-caelestia .set-head .dv-btn { background: color-mix(in srgb, var(--panel) 78%, var(--dot)) !important; color: var(--ink); }

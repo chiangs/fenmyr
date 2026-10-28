@@ -120,6 +120,7 @@
       <div class="m-chat" id="mChat">
         <div class="mc-head"><svg class="mc-ic" data-ico="myra-chat" width="28" height="28"></svg><b id="mcHeadName">Myra</b><span class="mc-status" id="mcStatus"></span><button class="mc-btn" id="mcHist" title="Earlier chats on this board" hidden><svg data-ico="clock" width="15" height="15"></svg><span>History</span></button><button class="mc-btn" id="mcNew" title="Start a fresh chat">New chat</button><button class="mc-btn x" id="mcClose" title="Close (Esc)">×</button></div>
         <div class="mc-list" id="mcList"></div>
+        <div class="mc-sel" id="mcSel" hidden></div>
         <form class="mc-form" id="mcForm"><textarea id="mcInput" rows="1" placeholder="Ask Myra… “group these by theme”" spellcheck="true"></textarea><button type="button" class="mc-vault" id="mcVault" title="Let Myra search your vault for this question" hidden><svg data-ico="notebook" width="14" height="14"></svg><span>Vault</span></button><button class="mc-send" title="Send (Enter)">↑</button></form>
       </div>
       <div class="m-bubble" id="mBubble"><small>myra</small><p id="mSay"></p><div class="m-acts" id="mActs"></div></div>
@@ -164,7 +165,7 @@
   </aside>
 
   <div class="capture" id="capture">
-    <form id="capForm"><input id="capInput" placeholder="Dump an idea… it goes in Unsorted (paste a link or image too)" autocomplete="off"></form>
+    <form id="capForm"><input id="capInput" placeholder="Don’t get bogged down, dump an idea (image works) to Unsorted…" autocomplete="off"></form>
   </div>
   <button class="clean-back" id="cleanBack" type="button">Show panels <kbd>Ctrl+\</kbd></button>
   <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>Ctrl+K</kbd> quick capture</span><span><kbd>space</kbd> drag to pan</span><span><kbd>Ctrl+\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
