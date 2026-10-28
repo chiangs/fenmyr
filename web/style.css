@@ -1261,6 +1261,11 @@ body:not(.fancy-cursor) > .mcur { display: none; }
 .mcur.grabby .tipv { transform: scale(0); }
 .mcur.grabby:not(.down) .grabhand.open { transform: scale(1) rotate(0); } .mcur.grabby.down .grabhand.fist { transform: scale(.95) rotate(-6deg); }
 .mcur.grabby .bub, .mcur.grabby .tagbg { translate: 14px 10px; }
+/* over a height grip: an up-and-down arrow in her colours */
+.mcur .rszv { position: absolute; left: -12px; top: -12px; width: 34px; height: 34px; overflow: visible; transform: scale(0); transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
+.mcur .rszv .o > * { fill: var(--cs); stroke: var(--cs); stroke-width: 3.2; stroke-linejoin: round; } .mcur .rszv .f > * { fill: var(--c); }
+.mcur.rsz .tipv { transform: scale(0); } .mcur.rsz .rszv { transform: scale(1); } .mcur.rsz.down .rszv { transform: scale(.9); }
+.mcur.rsz .bub, .mcur.rsz .tagbg { translate: 14px 10px; }
 /* resize handles, wire knobs and rotate handles keep their size on screen when you zoom out (they'd shrink to a few pixels otherwise) */
 
 .card .handle { z-index: 6; }   /* the resize corner sits above chips like "pull colors" */
@@ -2283,10 +2288,9 @@ body.myra-calm :is(#goo, .m-pill, #mPill).hopping, body.myra-calm #goo.hopping, 
 .rz-grip { position: relative; height: 12px; margin: 2px auto -4px; cursor: ns-resize; flex: none; }
 .rz-grip > svg { position: absolute; left: 50%; top: 50%; width: 200px; height: 40px; margin: -20px 0 0 -100px; overflow: visible; pointer-events: none; }   /* the bar is drawn as a path (see gripBulge) so the middle can swell */
 .rz-grip > svg path { fill: rgba(128, 110, 92, .18); transition: fill .15s; }
-.rz-grip:hover > svg path, .rz-grip.on > svg path { fill: var(--select, #0d99ff); }
+.rz-grip:hover > svg path, .rz-grip.on > svg path { fill: var(--pink-deep); }
 body.dark .rz-grip > svg path { fill: rgba(255, 255, 255, .18); }
-body.dark .rz-grip:hover > svg path, body.dark .rz-grip.on > svg path { fill: var(--select, #0d99ff); }
-body.fancy-cursor.cur-native .rz-grip { cursor: ns-resize !important; }
+body.dark .rz-grip:hover > svg path, body.dark .rz-grip.on > svg path { fill: var(--pink-deep); }
 
 
 .tray > .rz-grip, .design > .rz-grip, .design .rz-grip { align-self: stretch; width: auto; min-width: 60px; }
@@ -2667,3 +2671,7 @@ body.dark .bd-pick select, body.tint-panels.panel-dark .bd-pick select { color-s
 body.dark .bd-pick select option { background: #2b2722; color: #f6f2ec; }
 body.tint-panels .bd-pick select option { background: var(--panel); color: #3b342d; }
 body.tint-panels.panel-dark .bd-pick select option { background: var(--panel); color: #f0ebe4; }
+
+/* Wireframe and Unsorted keep the height you drag them to: no shrinking against each other, one scrollbar (the list's own) */
+.side > .design.sized, .side > .tray.sized { flex: none; max-height: none; }
+.side > .design:not(.min) { overflow: hidden; }
