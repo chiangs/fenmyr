@@ -388,19 +388,19 @@ echo " [BLANK_AUDIO] hello from whisper"
     r.idleAnim = { aliases: nm === 'love|hop|party|', requests: rq === 'hop|||*', plays: ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'].includes(idle.first), once: idle.second === false, gap: idle.gapMin >= 59.9 && idle.gapMin <= 91, notOverTimer: overTimer === false }; }
   // with the chat open she hops out of her button and perches on the input's top right; closing sends her home; toggling it over and over makes her dizzy; clicking her makes her do something
   { const R = () => page.evaluate(() => { const g = id => { const b = document.getElementById(id).getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom }; }; return { slot: g('gooSlot'), form: g('mcForm'), name: g('mName'), perched: window.__fenmyr.perched() }; });
-    await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); document.getElementById('mcInput').blur(); window.__fenmyr.perchGoo(false); window.__fenmyr.dizzyAuto(true); }); await page.waitForTimeout(900); const home = await R();
-    await page.click('#mPill'); await page.waitForTimeout(900); const up = await R();
+    await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); document.getElementById('mcInput').blur(); window.__fenmyr.perchGoo(false); window.__fenmyr.dizzyAuto(true); }); await page.waitForTimeout(1300); const home = await R();
+    await page.click('#mPill'); await page.waitForTimeout(1300); const up = await R();
     const was = await page.evaluate(() => window.__fenmyr.lastAnimName()); await page.click('#gooSlot'); await page.waitForTimeout(200); const clicked = await page.evaluate(() => window.__fenmyr.lastAnimName());
-    await page.waitForTimeout(4200); await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(900); const back = await R();
+    await page.waitForTimeout(4200); await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(1300); const back = await R();
     for (let i = 0; i < 5; i++) { await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(150); } await page.waitForTimeout(700); const dizzy = await page.evaluate(() => window.__fenmyr.currentPose());
-    await page.waitForTimeout(4500); if (await page.evaluate(() => window.__fenmyr.perched())) { await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(900); }
+    await page.waitForTimeout(4500); if (await page.evaluate(() => window.__fenmyr.perched())) { await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(1300); }
     // while she is thinking the button does not change width, so the chat stays put and she stays on the input
-    await page.click('#mPill'); await page.waitForTimeout(900); const calmSnap = await R(), chatBox = () => page.evaluate(() => { const b = document.getElementById('mChat').getBoundingClientRect(); return { l: b.left, r: b.right }; }), chat0 = await chatBox();
+    await page.click('#mPill'); await page.waitForTimeout(1300); const calmSnap = await R(), chatBox = () => page.evaluate(() => { const b = document.getElementById('mChat').getBoundingClientRect(); return { l: b.left, r: b.right }; }), chat0 = await chatBox();
     await page.evaluate(() => document.getElementById('myra').classList.add('thinking')); await page.waitForTimeout(700); const thinkSnap = await R(), chat1 = await chatBox();
-    await page.evaluate(() => { document.getElementById('myra').classList.remove('thinking'); document.getElementById('mPill').click(); }); await page.waitForTimeout(900);
+    await page.evaluate(() => { document.getElementById('myra').classList.remove('thinking'); document.getElementById('mPill').click(); }); await page.waitForTimeout(1300);
     await page.evaluate(() => { document.getElementById('myra').classList.add('thinking'); }); await page.click('#mPill'); await page.waitForTimeout(1000); const lateSnap = await R(), chat2 = await chatBox();
     await page.evaluate(() => { document.getElementById('myra').classList.remove('thinking'); }); await page.waitForTimeout(700); const afterSnap = await R();
-    await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(900);
+    await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(1300);
     const onInput = s => Math.abs(s.slot.l - (s.form.l + 12)) < 3 && Math.abs(s.slot.b - (s.form.t + 6)) < 4;
     r.perch = { hopsUp: up.perched && up.slot.b > up.form.t - 12 && up.slot.b < up.form.t + 14 && up.slot.l >= up.form.l && up.slot.l < up.form.l + 40, namesStay: Math.abs(up.name.l - home.name.l) < 1 && Math.abs(up.name.t - home.name.t) < 1, backHome: !back.perched && Math.abs(back.slot.l - home.slot.l) < 2 && Math.abs(back.slot.t - home.slot.t) < 2, click: clicked !== '' && (clicked !== was || true), dizzy: dizzy === 'dizzy', stillWhenThinking: onInput(thinkSnap) && Math.abs(chat1.l - chat0.l) < 1 && onInput(lateSnap) && onInput(afterSnap) && Math.abs(chat2.l - chat0.l) < 1 }; }
   // plain sentences start timers locally (with thinking on or off): exactly the time said, with the purpose, and stop / status; the model learns it from the sentence
@@ -420,9 +420,9 @@ echo " [BLANK_AUDIO] hello from whisper"
     await finish('/timer 10 quick break'); const quick = await track(600);
     await finish('/timer 10 write the intro'); const plain = await track(3200);
     await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(150);
-    await page.evaluate(() => { document.getElementById('myra').classList.add('chat'); window.__fenmyr.perchGoo(true); }); await page.waitForTimeout(900);
+    await page.evaluate(() => { document.getElementById('myra').classList.add('chat'); window.__fenmyr.perchGoo(true); }); await page.waitForTimeout(1300);
     const conf = await page.evaluate(() => { window.__fenmyr.playAnim('party', false); const c = document.querySelector('.confetti'), s = document.getElementById('gooSlot').getBoundingClientRect(), m = document.getElementById('myra').getBoundingClientRect(); return c ? { dx: Math.abs(parseFloat(c.style.left) - (s.left + s.width / 2 - m.left)), dy: Math.abs(parseFloat(c.style.top) - (s.top + s.height * .45 - m.top)) } : null; });
-    await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); window.__fenmyr.perchGoo(false); window.__fenmyr.dizzyAuto(true); }); await page.waitForTimeout(900);
+    await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); window.__fenmyr.perchGoo(false); window.__fenmyr.dizzyAuto(true); }); await page.waitForTimeout(1300);
     r.timerEnd = { noFlash: !late.split(',').includes('red') && late.split(',').pop() === 'green', quickBreak: quick.split(',')[0] === 'green' || quick === 'green', ruleFallback: plain.split(',').pop() === 'red' && !plain.includes('green'), confettiFollows: !!conf && conf.dx < 2 && conf.dy < 2 }; }
   // a fresh chat: she tilts her head with a question mark
   { await page.evaluate(() => { window.__fenmyr.dizzyAuto(false); document.getElementById('myra').classList.add('chat'); }); await page.waitForTimeout(4200);
@@ -431,7 +431,7 @@ echo " [BLANK_AUDIO] hello from whisper"
     await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); document.getElementById('mcInput').blur(); });
     r.curious = { onNewChat: pose1 === 'curious', ends: pose2 === null, named: await page.evaluate(() => window.__fenmyr.animNames().includes('curious') && window.__fenmyr.animName('hmm') === 'curious') }; }
   // opening an empty chat from the button also makes her curious (once she has landed); not when the chat already has something in it
-  { const pose = () => page.evaluate(() => window.__fenmyr.currentPose()), open = async () => { await page.evaluate(() => { window.__fenmyr.stopAnim(); if (window.__fenmyr.perched()) document.getElementById('mPill').click(); }); await page.waitForTimeout(1000); };
+  { const pose = () => page.evaluate(() => window.__fenmyr.currentPose()), open = async () => { await page.evaluate(() => { window.__fenmyr.stopAnim(); if (window.__fenmyr.perched()) document.getElementById('mPill').click(); }); await page.waitForTimeout(1300); };
     await open(); await page.evaluate(() => { document.getElementById('mcNew').click(); window.__fenmyr.stopAnim(); }); await page.waitForTimeout(200);
     await page.evaluate(() => window.__fenmyr.dizzyAuto(false)); await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(1200); const empty = await pose();
     await page.fill('#mcInput', '/fit'); await page.keyboard.press('Enter'); await page.waitForTimeout(300); await open();
@@ -439,7 +439,7 @@ echo " [BLANK_AUDIO] hello from whisper"
     await open(); await page.evaluate(() => { document.getElementById('mcNew').click(); window.__fenmyr.stopAnim(); document.getElementById('mcInput').blur(); });
     r.curiousOnOpen = { empty: empty === 'curious', notWhenNotEmpty: full !== 'curious' }; }
   // Esc closes the chat and takes the cursor out of it, so M opens it again and nothing is typed into the hidden box; "Throw a berry party" plays the party even though it has no "can you" in it
-  { await page.evaluate(() => { window.__fenmyr.stopAnim(); if (window.__fenmyr.perched()) document.getElementById('mPill').click(); }); await page.waitForTimeout(1000);
+  { await page.evaluate(() => { window.__fenmyr.stopAnim(); if (window.__fenmyr.perched()) document.getElementById('mPill').click(); }); await page.waitForTimeout(1300);
     await page.evaluate(() => document.getElementById('mPill').click()); await page.waitForTimeout(900); await page.evaluate(() => document.getElementById('mcInput').focus());
     await page.keyboard.press('Escape'); await page.waitForTimeout(400); const closed = await page.evaluate(() => ({ chat: document.getElementById('myra').classList.contains('chat'), inChat: document.getElementById('mChat').contains(document.activeElement) }));
     await page.keyboard.press('m'); await page.waitForTimeout(500); const reopened = await page.evaluate(() => ({ chat: document.getElementById('myra').classList.contains('chat'), val: document.getElementById('mcInput').value, focused: document.activeElement.id }));
