@@ -971,6 +971,31 @@
     board.tray.forEach(c => { const d = document.createElement('div'); d.className = 'tray-item'; d.dataset.id = c.id; d.style.setProperty('--tilt', (c.r / 2) + 'deg');
       d.innerHTML = c.type === 'image' ? `<img src="${esc(c.src)}">` : esc(c.type === 'link' ? (c.title || c.url) : c.text); list.appendChild(d); });
   }
+  // Unsorted keeps ideas simple: every card is its own item. But cards that were joined by connectors when they went in stay tied (c.tie, and their
+  // connectors wait in board.trayLinks), so pulling one back out brings the others with it, laid out as they were, reconnected
+  function sendToTray(cards) {
+    const ids = new Set(cards.map(c => c.id)), joined = board.links.filter(l => ids.has(l.a) && ids.has(l.b)), up = new Map(cards.map(c => [c.id, c.id]));
+    const root = id => { while (up.get(id) !== id) id = up.get(id); return id; }; joined.forEach(l => up.set(root(l.a), root(l.b)));
+    const size = {}; cards.forEach(c => { const r = root(c.id); size[r] = (size[r] || 0) + 1; });
+    cards.forEach(c => { const r = root(c.id); if (size[r] > 1) c.tie = r; else delete c.tie; });
+    board.trayLinks = [...(board.trayLinks || []), ...joined];
+    board.cards = board.cards.filter(c => !ids.has(c.id)); board.links = board.links.filter(l => !ids.has(l.a) && !ids.has(l.b));
+    cards.forEach(c => { board.tray.unshift(c); cardsEl.querySelector(`[data-id="${c.id}"]`)?.remove(); });
+  }
+  // back onto the board with c's top-left at `at`; the rest of its group follows. Returns everything that came out.
+  function takeFromTray(c, at) {
+    const members = c.tie ? board.tray.filter(m => m.tie === c.tie) : [c]; if (!members.includes(c)) members.push(c);
+    const dx = c.x == null ? 0 : at.x - c.x, dy = c.y == null ? 0 : at.y - c.y, ids = new Set(members.map(m => m.id));
+    members.forEach(m => { if (m === c) { m.x = at.x; m.y = at.y; } else if (m.x != null) { m.x += dx; m.y += dy; } });
+    const back = (board.trayLinks || []).filter(l => ids.has(l.a) && ids.has(l.b)); board.trayLinks = (board.trayLinks || []).filter(l => !back.includes(l)); board.links.push(...back);
+    board.tray = board.tray.filter(m => !ids.has(m.id)); members.forEach(m => { delete m.tie; addCard(m); });
+    if (back.length) renderWires(); return members;
+  }
+  // a tied card that lost its partners (Myra removed them) is just an ordinary item again
+  function tidyTies() {
+    const n = {}; board.tray.forEach(c => c.tie && (n[c.tie] = (n[c.tie] || 0) + 1)); board.tray.forEach(c => { if (c.tie && n[c.tie] < 2) delete c.tie; });
+    const ids = new Set(board.tray.map(c => c.id)); board.trayLinks = (board.trayLinks || []).filter(l => ids.has(l.a) && ids.has(l.b)); if (!board.trayLinks.length) delete board.trayLinks;
+  }
   // (the stage gets a 'multi' class when more than one thing is selected: tilt handles only show for one thing at a time)
   function selectOnly(ids) { if (ids.length && selWire) { selWire = null; renderWires(); } sel = new Set(ids); stage.classList.toggle('multi', sel.size > 1); LY.reveal = true; layersSoon(); board.cards.forEach(c => { const el = cardsEl.querySelector(`[data-id="${c.id}"]`); el && el.classList.toggle('sel', sel.has(c.id)); }); }
 
@@ -1346,16 +1371,31 @@
       const png = file.type === 'image/png' || file.type === 'image/svg+xml', out = png ? cv.toDataURL('image/png') : '';
       res({ src: png && out.length < 6e6 ? out : cv.toDataURL('image/jpeg', .9), w: cv.width, h: cv.height }); }; im.src = fr.result; }; fr.readAsDataURL(file); });
   }
+  const imageCardFrom = async f => { const im = await imageFromFile(f), w = 260; return card('image', { src: im.src, w, h: Math.round(w * im.h / im.w) + 16 }); };
   async function addImages(files, at, toTray) {
     files = [...files]; const vfs = files.filter(f => f.type.startsWith('video/')); files = files.filter(f => !f.type.startsWith('video/'));
     vfs.forEach((f, n) => addVideo(f, at ? { x: at.x + n * 30, y: at.y + n * 30 } : null));
     let i = 0;
-    for (const f of files) { if (!f.type.startsWith('image/')) continue; const im = await imageFromFile(f);
-      const w = 260, h = Math.round(w * im.h / im.w) + 16, c = card('image', { src: im.src, w, h });
+    for (const f of files) { if (!f.type.startsWith('image/')) continue; const c = await imageCardFrom(f);
       if (toTray) { board.tray.unshift(c); renderTray(); save(); continue; }
-      const p = at || centerWorld(); c.x = p.x - w / 2 + i * 30; c.y = p.y - h / 2 + i * 30; i++; addCard(c); }
+      const p = at || centerWorld(); c.x = p.x - c.w / 2 + i * 30; c.y = p.y - c.h / 2 + i * 30; i++; addCard(c); }
   }
-
+  // a picture meant for a note becomes a card of its own, so a card never mixes kinds: an empty note turns into the picture,
+  // a note with words gets it beside it, joined by a connector (in the connector style you last chose)
+  async function pictureForNote(c, files) {
+    const el = cardsEl.querySelector(`[data-id="${c.id}"]`), hasWords = !![el?.querySelector('.text')?.innerText ?? c.text, el?.querySelector('.nname')?.innerText ?? c.name].join('').trim() || (c.tags || []).length;
+    if (editing === c.id) endEdit();
+    const pics = []; for (const f of files) if (f.type.startsWith('image/')) pics.push(await imageCardFrom(f)); if (!pics.length) return;
+    let anchor = c; const made = [];
+    if (!hasWords) { const p = pics.shift(); p.x = c.x + c.w / 2 - p.w / 2; p.y = c.y + c.h / 2 - p.h / 2; sel = new Set([c.id]); removeSelected(); addCard(p); anchor = p; made.push(p); }
+    const busy = (x, y, w, h) => board.cards.some(k => k.type !== 'frame' && k.type !== 'section' && x < k.x + k.w + 12 && x + w + 12 > k.x && y < k.y + k.h + 12 && y + h + 12 > k.y);
+    for (const p of pics) {
+      let x = anchor.x + anchor.w + 70, y = anchor.y;
+      for (let k = 0; k < 10 && busy(x, y, p.w, p.h); k++) y = anchor.y + (k + 1) * (p.h + 24);
+      p.x = x; p.y = y; addCard(p); made.push(p); board.links.push({ id: uid(), a: anchor.id, b: p.id, ...(settings.wireStyle || {}) });
+    }
+    renderWires(); save(); selectOnly([made[made.length - 1].id]); revealCards(made);
+  }
   // ---------- pulling colours out of an image ----------
   function pullColors(c) {
     const im = new Image(); im.onload = () => {
@@ -1659,7 +1699,7 @@
       // set it down: the transform becomes its real position again
       d.start.forEach(s => { const el = s.el || cardsEl.querySelector(`[data-id="${s.c.id}"]`); if (!el) return; el.style.left = s.c.x + 'px'; el.style.top = s.c.y + 'px'; el.style.transform = ''; el.style.willChange = ''; el.classList.remove('dragging'); });
       if (d.moved && overTray(e)) {                       // dropped on the tray: back to Unsorted
-        d.start.forEach(s => { board.cards = board.cards.filter(c => c !== s.c); board.links = board.links.filter(l => l.a !== s.c.id && l.b !== s.c.id); board.tray.unshift(s.c); cardsEl.querySelector(`[data-id="${s.c.id}"]`)?.remove(); });
+        sendToTray(d.start.map(s => s.c));
         sel.clear(); renderTray(); renderWires(); save(); return;
       }
       cardsEl.querySelectorAll('.drop-in, .drop-col').forEach(n => n.classList.remove('drop-in', 'drop-col'));
@@ -1763,7 +1803,7 @@
     document.body.appendChild(ghost); it.style.opacity = .3;
     const mv = ev => { ghost.style.left = ev.clientX - 40 + 'px'; ghost.style.top = ev.clientY - 20 + 'px'; };
     const up = ev => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); ghost.remove(); it.style.opacity = '';
-      if (!overTray(ev) && !ev.target.closest('.side, .box')) { const w = toWorld(ev.clientX, ev.clientY); c.x = w.x - c.w / 2; c.y = w.y - 20; board.tray = board.tray.filter(x => x !== c); addCard(c); renderTray(); } };
+      if (!overTray(ev) && !ev.target.closest('.side, .box')) { const w = toWorld(ev.clientX, ev.clientY); takeFromTray(c, { x: w.x - c.w / 2, y: w.y - 20 }); renderTray(); } };
     addEventListener('pointermove', mv); addEventListener('pointerup', up);
   });
 
@@ -2016,6 +2056,13 @@
 
   // ---------- paste and drop ----------
   addEventListener('paste', e => {
+    // pictures never go inside a card's text: a note gets a connected picture card, anything else you were typing in gets one on the board
+    const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/')), one = !editing && sel.size === 1 && !e.target.closest('input, textarea, [contenteditable="true"]') ? byId([...sel][0]) : null;
+    if (imgs.length && !$('capture').classList.contains('on')) {
+      const into = editing && e.target.closest?.('.card.editing') ? byId(editing) : one;
+      if (into?.type === 'note') { e.preventDefault(); pictureForNote(into, imgs); return; }
+      if (editing && e.target.closest?.('.card.editing')) { e.preventDefault(); addImages(imgs, null); return; }
+    }
     if (e.target.closest('input, textarea, [contenteditable="true"]') && !(e.target.id === 'capInput' && e.clipboardData.files?.length)) return;   // a picture pasted into quick capture goes to Unsorted
     pendingPaste = false;
     // cards copied in Fenmyr (on this board or another one) come back as cards
@@ -2029,7 +2076,7 @@
   stage.addEventListener('dragover', e => e.preventDefault());
   stage.addEventListener('drop', e => { e.preventDefault(); const files = [...e.dataTransfer.files], w = toWorld(e.clientX, e.clientY);
     const bid = e.dataTransfer.getData('fenmyr/board'); if (bid && board) return nestBoard(bid, board.id, { x: w.x - 130, y: w.y - 90 }).then(ok => ok && refreshBoards());
-    if (files.length) return addImages(files, w, overTray(e));
+    if (files.length) { const ed = editing && e.target.closest?.('.card.editing') ? byId(editing) : null; if (ed?.type === 'note') return pictureForNote(ed, files); return addImages(files, w, overTray(e)); }
     const u = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain'); if (/^https?:/.test(u)) linkCard(u.trim(), w); });
 
   // ---------- Myra on the board ----------
@@ -2562,7 +2609,7 @@
       x: o.x, y: o.y, text: o.type === 'font' ? (o.sample || '') : o.text || '', color: COLOR_NAMES.includes(o.color) ? o.color : 'white', hex: o.hex, label: o.label,
       items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined, tagText: o.tag, name: o.name }); if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag); addCard(c); added.push(c); if (o.in) file(c, o.in); });
     (r.titles || []).forEach(o => { place(o); added.push(addCard(card('title', { x: o.x, y: o.y, text: o.text }))); });
-    (r.place || []).forEach(o => { const c = board.tray.find(x => x.id === o.id); if (!c) return; place(o); c.x = o.x; c.y = o.y; board.tray = board.tray.filter(x => x !== c); addCard(c); added.push(c); });
+    (r.place || []).forEach(o => { const c = board.tray.find(x => x.id === o.id); if (!c) return; place(o); takeFromTray(c, { x: o.x, y: o.y }).forEach(m => added.push(m)); });
     (r.move || []).forEach(o => { const c = byId(o.id); if (!c || o.x == null) return; c.x = o.x; c.y = o.y; if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
       const el = cardsEl.querySelector(`[data-id="${c.id}"]`); if (el) { el.style.transition = 'left .6s cubic-bezier(.2,.8,.3,1), top .6s cubic-bezier(.2,.8,.3,1)'; renderCard(c); setTimeout(() => el.style.transition = '', 650); } added.push(c); });
     (r.edit || []).forEach(o => { const c = byId(o.id) || board.tray.find(x => x.id === o.id); if (!c) return;
@@ -2580,7 +2627,7 @@
       if (o.name != null && c.type === 'note') c.name = o.name;
       if (o.in !== undefined) { if (o.in) file(c, o.in); else { const from = parentOf(c.id); if (from) from.kids = from.kids.filter(x => x !== c.id); } }
       if (board.cards.includes(c)) { renderCard(c, true); added.push(c); } else renderTray(); });
-    if (r.remove && r.remove.length) { const gone = new Set(r.remove); board.cards = board.cards.filter(c => !gone.has(c.id)); board.tray = board.tray.filter(c => !gone.has(c.id)); board.links = board.links.filter(l => !gone.has(l.a) && !gone.has(l.b)); gone.forEach(id => cardsEl.querySelector(`[data-id="${id}"]`)?.remove()); }
+    if (r.remove && r.remove.length) { const gone = new Set(r.remove); board.cards = board.cards.filter(c => !gone.has(c.id)); board.tray = board.tray.filter(c => !gone.has(c.id)); tidyTies(); board.links = board.links.filter(l => !gone.has(l.a) && !gone.has(l.b)); gone.forEach(id => cardsEl.querySelector(`[data-id="${id}"]`)?.remove()); }
     (r.connect || []).forEach(p => { const [a, b] = Array.isArray(p) ? p : [p.a, p.b]; if (byId(a) && byId(b)) board.links.push({ id: uid(), a, b }); });
     // wireframes: real screens built from the pieces, left to right, with arrows for the flow
     if (Array.isArray(r.screens) && r.screens.length) {
@@ -5371,7 +5418,7 @@ ${proseCSS()}
       if (!phone.on) return; const it = e.target.closest('.tray-item'); if (!it) return; e.stopImmediatePropagation(); e.preventDefault();
       const c = board.tray.find(x => x.id === it.dataset.id); if (!c) return;
       const r = stage.getBoundingClientRect(), w = toWorld(r.left + r.width / 2, r.top + r.height * .42);
-      c.x = w.x - c.w / 2; c.y = w.y - c.h / 2; board.tray = board.tray.filter(x => x !== c); addCard(c); renderTray(); hide(); selectOnly([c.id]); lyFlash([c.id]);
+      const got = takeFromTray(c, { x: w.x - c.w / 2, y: w.y - c.h / 2 }); renderTray(); hide(); selectOnly(got.map(m => m.id)); lyFlash(got.map(m => m.id));
     }, true);
     function set(on) {
       phone.on = on; document.body.classList.toggle('phone', on);
