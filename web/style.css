@@ -2604,3 +2604,21 @@ body.dark .find-bar .fb-sep { background: rgba(255, 255, 255, .14); }
 @media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
 .find-bar.up { left: auto; right: 0; bottom: calc(100% + 12px); }
 .dock.finding .tools, .dock.finding .selbar.on { display: none !important; }
+
+/* the timer: a small chip above Myra's pill, and her fuss when it runs out */
+.timer-chip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 3; height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 11px; max-width: 280px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))); font: 600 12px/1 var(--font); overflow: hidden; animation: fb-in .18s ease-out; }
+.timer-chip[hidden] { display: none; }
+.timer-chip svg { flex: none; color: var(--ink-soft); } .timer-chip b { font-variant-numeric: tabular-nums; font-weight: 700; }
+.timer-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); font-weight: 500; }
+.timer-chip button { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ink-soft); cursor: pointer; }
+.timer-chip button:hover { background: var(--blush); color: var(--ink); }
+.timer-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: var(--pink-deep, #e88a24); transition: width 1s linear; }
+body.dark .timer-chip { background: rgba(46, 42, 37, .97); color: #fff; } body.dark .timer-chip b { color: #fff; }
+body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-panels.panel-dark .timer-chip { color: #f0ebe4; }
+.dock .myra.timing .m-bubble { bottom: calc(100% + 52px); } .myra.timing .m-chat { bottom: calc(100% + 52px); }
+.m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
+.myra.partying .m-pill { animation: m-party .55s ease-in-out 6; }
+@keyframes m-party { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-4deg) scale(1.06); } 75% { transform: rotate(4deg) scale(1.06); } }
+.confetti { position: absolute; left: 50%; bottom: 40px; width: 9px; height: 9px; border-radius: 3px; background: var(--c); pointer-events: none; opacity: 0; z-index: 20; animation: confetti 1.7s cubic-bezier(.2, .7, .3, 1) forwards; }
+@keyframes confetti { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 110px)) rotate(var(--rot)); } }
+@media (prefers-reduced-motion: reduce) { .timer-chip { animation: none; } .myra.partying .m-pill, .confetti { animation: none; } }

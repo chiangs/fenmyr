@@ -2364,6 +2364,7 @@
   function tip(text) { if (settings.chat === 'chatty') say(text, 6000); }
   // keep: an answer to something you asked, so it also goes into the chat even when the chat window is closed
   function say(text, ms = 6000, acts = [], keep = false) {
+    $('mBubble').classList.remove('party');
     if (chatOpen()) { if (text) addMsg('myra', text, acts); return; }
     if (keep && text) addMsg('myra', text, acts);
     $('mSay').textContent = text; $('mActs').innerHTML = '';
@@ -2500,6 +2501,7 @@
     { cmd: 'tag', arg: '<tag>', desc: 'Show the cards with a tag', run: slashTag },
     { cmd: 'tidy', desc: 'Line the loose notes up in rows', run: () => { const n = tidyNotes(); reply(n ? `Lined ${n} notes up in tidy rows ✦` : 'No loose notes to tidy ✦'); } },
     { cmd: 'fit', desc: 'Zoom to see everything', run: () => { zoomFit(); reply('Everything is in view ✦'); } },
+    { cmd: 'timer', arg: '<minutes> <purpose>', desc: 'A timer; the purpose is optional (/timer stop cancels)', run: slashTimer },
     { cmd: 'clear', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
     { cmd: 'help', desc: 'What I can do without thinking', run: () => reply(helpText()) },
   ];
@@ -2551,20 +2553,26 @@
   let slashSel = 0;
   const slashMenu = document.createElement('div'); slashMenu.className = 'slash-menu'; slashMenu.hidden = true; document.body.appendChild(slashMenu);
   const hideSlash = () => { slashMenu.hidden = true; };
-  const slashMatches = el => { const m = /^\/(\w*)$/.exec(el.value); return m ? SLASH.filter(c => c.cmd.startsWith(m[1].toLowerCase())) : []; };
+  // the menu lists commands; typing just /timer lists ready-made timers instead
+  const TIMER_PRESETS = [{ fill: '/timer 15 break', title: '15 min break', desc: 'A short break' }, { fill: '/timer 50 focus', title: '50 min focus', desc: 'A long stretch of focus' }, { fill: '/timer 5 breather', title: '5 min breather', desc: 'Stand up, look away, stretch' }];
+  const slashMatches = el => {
+    if (/^\/timer\s*$/i.test(el.value) && !timer) return TIMER_PRESETS.map(p => ({ key: p.fill, title: `<b>/timer</b> ${esc(p.title)}`, desc: p.desc, fill: p.fill }));
+    const m = /^\/(\w*)$/.exec(el.value); return m ? SLASH.filter(c => c.cmd.startsWith(m[1].toLowerCase())).map(c => ({ key: c.cmd, title: `<b>/${c.cmd}${c.arg ? ` <i>${esc(c.arg)}</i>` : ''}</b>`, desc: c.desc, cmd: c })) : [];
+  };
   function showSlash(el) {
     const list = slashMatches(el); if (!list.length) return hideSlash(); slashSel = Math.min(slashSel, list.length - 1);
-    slashMenu.innerHTML = list.map((c, i) => `<button type="button" data-cmd="${c.cmd}" class="${i === slashSel ? 'on' : ''}"><b>/${c.cmd}${c.arg ? ` <i>${esc(c.arg)}</i>` : ''}</b><span>${esc(c.desc)}</span></button>`).join('');
+    slashMenu.innerHTML = list.map((c, i) => `<button type="button" data-key="${esc(c.key)}" class="${i === slashSel ? 'on' : ''}">${c.title}<span>${esc(c.desc)}</span></button>`).join('');
     const r = (el.closest('form') || el).getBoundingClientRect(); slashMenu.hidden = false; slashMenu.style.left = r.left + 'px'; slashMenu.style.width = Math.max(260, r.width) + 'px'; slashMenu.style.bottom = (innerHeight - r.top + 6) + 'px';
     slashMenu.dataset.for = el.id;
   }
-  function pickSlash(cmd) {
-    const el = $(slashMenu.dataset.for), c = SLASH.find(x => x.cmd === cmd); hideSlash(); if (!el || !c) return;
-    el.value = '/' + c.cmd + (c.arg ? ' ' : ''); el.focus(); el.setSelectionRange(el.value.length, el.value.length);
+  function pickSlash(key) {
+    const el = $(slashMenu.dataset.for), it = el && slashMatches(el).find(x => x.key === key); hideSlash(); if (!it) return;
+    if (it.fill) { el.value = it.fill; el.closest('form').requestSubmit(); return; }
+    const c = it.cmd; el.value = '/' + c.cmd + (c.arg ? ' ' : ''); el.focus(); el.setSelectionRange(el.value.length, el.value.length);
     if (!c.arg) el.closest('form').requestSubmit();
   }
   slashMenu.addEventListener('pointerdown', e => e.preventDefault());   // keep the focus in the box
-  slashMenu.onclick = e => { const b = e.target.closest('[data-cmd]'); if (b) pickSlash(b.dataset.cmd); };
+  slashMenu.onclick = e => { const b = e.target.closest('[data-key]'); if (b) pickSlash(b.dataset.key); };
   ['mInput', 'mcInput'].forEach(id => {
     const el = $(id);
     el.addEventListener('input', () => { slashSel = 0; showSlash(el); });
@@ -2573,7 +2581,7 @@
       if (slashMenu.hidden || slashMenu.dataset.for !== id) return; const list = slashMatches(el);
       if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); return hideSlash(); }
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); slashSel = (slashSel + (e.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length; return showSlash(el); }
-      if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && list[slashSel] && !(e.key === 'Enter' && el.value.slice(1).toLowerCase() === list[slashSel].cmd && !list[slashSel].arg)) { e.preventDefault(); e.stopImmediatePropagation(); pickSlash(list[slashSel].cmd); }
+      if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && list[slashSel] && !(e.key === 'Enter' && list[slashSel].cmd && el.value.slice(1).toLowerCase() === list[slashSel].cmd.cmd && !list[slashSel].cmd.arg)) { e.preventDefault(); e.stopImmediatePropagation(); pickSlash(list[slashSel].key); }
     }, true);
   });
   // Ctrl+F: Myra's chat opens ready to search
@@ -2581,6 +2589,68 @@
     if (!board) return; if (find.on) { $('fbQ').focus(); $('fbQ').select(); return; } myraOpen(true); const el = $('mcInput'), had = /^\/find /i.test(el.value);
     if (!had) el.value = '/find '; el.focus(); el.dispatchEvent(new Event('input')); had ? el.setSelectionRange(6, el.value.length) : el.setSelectionRange(el.value.length, el.value.length);
   }
+  // ---------- the timer: /timer 25 write the intro. It counts down by the clock (so it survives sleep, restarts and switching boards), warns at two minutes, and Myra makes a fuss when it's up ----------
+  const TIMER_KEY = 'fenmyr:timer';
+  let timer = null, timerTick = 0;
+  try { timer = JSON.parse(localStorage.getItem(TIMER_KEY) || 'null'); if (!timer || !timer.end) timer = null; } catch (e) { timer = null; }
+  const saveTimer = () => { try { timer ? localStorage.setItem(TIMER_KEY, JSON.stringify(timer)) : localStorage.removeItem(TIMER_KEY); } catch (e) {} };
+  const clock = ms => { const t = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60, p = n => String(n).padStart(2, '0'); return h ? `${h}:${p(m)}:${p(sec)}` : `${m}:${p(sec)}`; };
+  // "25", "25m", "90", "1h", "1h30", "1.5h", then whatever is left is the purpose
+  function parseTimer(arg) {
+    const m = /^\s*(?:(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours)\s*(\d+)?\s*(?:m|min|mins|minutes?)?|(\d+(?:\.\d+)?)\s*(?:m|min|mins|minutes?)?)(?=\s|$)\s*(.*)$/i.exec(arg || ''); if (!m) return null;
+    const minutes = Math.round(m[1] != null ? +m[1] * 60 + (+m[3] || 0) : +m[4]), purpose = (m[5] || '').trim().slice(0, 60);
+    return minutes >= 1 && minutes <= 600 ? { minutes, purpose } : null;
+  }
+  const timerWhat = t => t.purpose || `your ${t.minutes}-minute timer`;
+  function paintTimer() {
+    const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); if (!timer) { chip.hidden = true; return; }
+    chip.hidden = false; $('tcTime').textContent = clock(timer.end - Date.now()); $('tcWhat').textContent = timer.purpose || `${timer.minutes} min`;
+    chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.minutes * 60000))));
+  }
+  function startTimer(t, replace) {
+    if (timer && !replace) return reply(`You already have ${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. Start this one instead?`, 0, [{ label: 'Replace it', cls: 'next', run: () => startTimer(t, true) }, { label: 'Keep it', ghost: true, run: () => {} }]);
+    timer = { end: Date.now() + t.minutes * 60000, minutes: t.minutes, purpose: t.purpose, warned: t.minutes < 3 }; saveTimer(); paintTimer(); hopMyra();
+    reply(`Timer set: ${t.minutes} minutes${t.purpose ? ` (${t.purpose})` : ''}. I'll tell you when it's time ✦`);
+  }
+  function stopTimer(say = true) { if (!timer) return say && reply('No timer is running ✦'); const t = timer; timer = null; saveTimer(); paintTimer(); say && reply(`Stopped the timer for ${timerWhat(t)} ✦`); }
+  function slashTimer(arg) {
+    const a = (arg || '').trim();
+    if (/^(stop|cancel|off|clear)$/i.test(a)) return stopTimer();
+    if (!a) return reply(timer ? `${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. /timer stop cancels it ✦` : 'Try /timer 25 write the intro, or pick a ready-made one from the list when you type /timer ✦');
+    const t = parseTimer(a); if (!t) return reply('I need minutes first, like /timer 25 write the intro (or 1h30, or 90) ✦');
+    startTimer(t);
+  }
+  // with thinking on, one short model call gives the warning and the finish a line that fits what you're doing (the plain line shows first and is replaced if it arrives in time)
+  async function timerLine(kind, t) {
+    if (Fenmyr.web || !settings.ai || haveClaude === false || !navigator.onLine) return null;
+    const what = `${t.minutes}-minute timer${t.purpose ? ` for "${t.purpose}"` : ''}`;
+    const prompt = `(This is a timer notice, not a request. The person's ${what} ${kind === 'warn' ? 'has two minutes left' : 'has just run out'}. Say one short line in your own voice that fits what they are doing${kind === 'warn' ? '' : ', and if it fits suggest what comes next, like a break after focus time or getting back to it after a break'}. Do not change the board.)`;
+    try { const raw = await Promise.race([Fenmyr.ask(prompt, { ...snapshot(), cards: [], links: [], unsorted: [], recentChat: [] }, false, { mobbin: false, higgs: false, web: false, canVault: false, vaultNotes: [] }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 12000))]); return parse(raw).say || null; }
+    catch (e) { return null; }
+  }
+  const osNotify = (title, body) => { if (Fenmyr.web || document.hasFocus() || typeof Notification === 'undefined') return; try { new Notification(title, { body }); } catch (e) {} };
+  const CONFETTI = ['#f2a339', '#e07a5f', '#ffdcd8', '#e0edd3', '#d9e7f3', '#ebe1f2'];
+  // when it's up: she hops, her pill wiggles and berry confetti bursts out (calmer if she is set to calm, nothing at all if calmest)
+  function partyMyra() {
+    if (window.myraMuted) return; hopMyra(); if (window.myraCalm || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let n = 0; const iv = setInterval(() => { hopMyra(); if (++n >= 5) clearInterval(iv); }, 520);
+    const my = $('myra'); my.classList.add('partying'); setTimeout(() => my.classList.remove('partying'), 3400);
+    for (let i = 0; i < 26; i++) { const c = document.createElement('i'), a = (Math.random() * 160 - 80) * Math.PI / 180, d = 90 + Math.random() * 150; c.className = 'confetti'; c.style.cssText = `--dx:${Math.round(Math.sin(a) * d)}px;--dy:${-Math.round(Math.cos(a) * d + 20)}px;--rot:${Math.round(Math.random() * 720 - 360)}deg;--c:${CONFETTI[i % CONFETTI.length]};animation-delay:${Math.round(Math.random() * 300)}ms`; $('myra').appendChild(c); setTimeout(() => c.remove(), 2400); }
+  }
+  async function timerWarn() {
+    const t = timer; t.warned = true; saveTimer(); hopMyra();
+    const plain = `Two minutes left${t.purpose ? ` (${t.purpose})` : ''} ✦`; reply(plain, 9000); osNotify('Two minutes left', t.purpose || `${t.minutes}-minute timer`);
+    const line = await timerLine('warn', t); if (line && timer === t) reply(noEmoji(line), 9000);
+  }
+  async function timerDone() {
+    const t = timer; timer = null; saveTimer(); paintTimer();
+    const plain = `Time's up! ${t.minutes} minutes${t.purpose ? ` (${t.purpose})` : ''} ✦`, acts = [{ label: '5 more minutes', cls: 'next', run: () => startTimer({ minutes: 5, purpose: t.purpose }, true) }, { label: 'Thanks', ghost: true, run: () => {} }];
+    reply(plain, 0, acts); $('mBubble').classList.add('party'); partyMyra(); osNotify("Time's up", t.purpose || `${t.minutes}-minute timer`);
+    const line = await timerLine('done', t); if (line && $('mBubble').classList.contains('on') && $('mBubble').classList.contains('party')) { $('mSay').textContent = noEmoji(line); }
+  }
+  function timerCheck() { if (!timer) return; const left = timer.end - Date.now(); if (left <= 0) return timerDone(); paintTimer(); if (!timer.warned && left <= 120000) timerWarn(); }
+  $('tcX').onclick = e => { e.stopPropagation(); stopTimer(); };
+  timerTick = setInterval(timerCheck, 1000); paintTimer(); setTimeout(timerCheck, 1500);
   // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
   const noEmoji = t => settings.emoji ? t : String(t).replace(/(\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}])(\uFE0F|\u200D|\u20E3|[\u{1F3FB}-\u{1F3FF}])*/gu, '').replace(/ {2,}/g, ' ').trim();
   const parse = raw => { const s = String(raw), a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0) return { say: s.trim() }; try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return { say: s.trim() }; } };
@@ -5477,5 +5547,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
