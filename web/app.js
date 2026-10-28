@@ -870,17 +870,22 @@
     }).join('');
   }
   function kanbanOp(s, fn) { remember(); fn(); layoutColl(s); renderWires(); save(); }
+  // start typing a column's name (a new column comes up like this, with 'New column' selected)
+  function renameKanbanCol(s, k, undoStep = true) {
+    const el = cardsEl.querySelector(`[data-id="${s.id}"]`), t = el?.querySelector(`.kb-h[data-k="${k}"] .text`);
+    if (t) { if (undoStep) remember(); editField(el, t, v => s.colNames[k] = v, () => { s.colNames[k] = s.colNames[k] || 'Column ' + (k + 1); layoutColl(s); save(); }); }
+  }
   function kanbanMenu(e, s, k) {
     const last = s.cols - 1, move = d => kanbanOp(s, () => {
       const j = k + d, swap = a => { [a[k], a[j]] = [a[j], a[k]]; };
       swap(s.colNames); swap(s.colLimit); Object.keys(s.colOf || {}).forEach(id => { if (s.colOf[id] === k) s.colOf[id] = j; else if (s.colOf[id] === j) s.colOf[id] = k; });
     });
     boardMenu(e, [
-      { label: 'Rename column', run: () => { const el = cardsEl.querySelector(`[data-id="${s.id}"]`), t = el?.querySelector(`.kb-h[data-k="${k}"] .text`); if (t) { remember(); editField(el, t, v => s.colNames[k] = v, () => { s.colNames[k] = s.colNames[k] || 'Column ' + (k + 1); layoutColl(s); save(); }); } } },
+      { label: 'Rename column', run: () => renameKanbanCol(s, k) },
       ...(k > 0 ? [{ label: 'Move left', run: () => move(-1) }] : []), ...(k < last ? [{ label: 'Move right', run: () => move(1) }] : []),
       { label: 'Add a column after', run: () => kanbanOp(s, () => {
         s.cols++; s.colNames.splice(k + 1, 0, 'New column'); s.colLimit.splice(k + 1, 0, 0);
-        Object.keys(s.colOf || {}).forEach(id => { if (s.colOf[id] > k) s.colOf[id]++; }); }) }, '-',
+        Object.keys(s.colOf || {}).forEach(id => { if (s.colOf[id] > k) s.colOf[id]++; }); setTimeout(() => renameKanbanCol(s, k + 1, false), 0); }) }, '-',
       ...[0, 1, 2, 3, 5, 8].map(n => ({ label: (s.colLimit[k] || 0) === n ? `✓ ${n ? 'Limit ' + n : 'No limit'}` : n ? `Limit ${n}` : 'No limit', run: () => kanbanOp(s, () => s.colLimit[k] = n) })),
       ...(s.cols > 1 ? ['-', { label: 'Delete column', danger: true, run: () => kanbanOp(s, () => {
         const into = k > 0 ? k - 1 : 1;   // its cards move to the neighbour
@@ -1925,7 +1930,7 @@
     if (t === 'draw') return drawOn ? exitDraw() : enterDraw();
     if (t === 'stamp') { const on = !$('stampWheel').classList.contains('on'); stopPlacing(); const r = tbRect(b), sr = stage.getBoundingClientRect(); ['stampWheel', 'stampPick'].forEach(id => $(id).style.left = (r.left + r.width / 2 - sr.left) + 'px'); renderWheel(); $('stampWheel').classList.toggle('on', on); b.classList.toggle('on', on); $('mBubble').classList.remove('on'); return; }
     if (t === 'shape') { const on = !$('shapePick').classList.contains('on'); stopPlacing(); const r = tbRect(b), sr = stage.getBoundingClientRect(); $('shapePick').style.left = (r.left + r.width / 2 - sr.left) + 'px'; $('shapePick').classList.toggle('on', on); b.classList.toggle('on', on); $('mBubble').classList.remove('on'); return; }
-    if (t === 'tpl') { const on = !$('tplPick').classList.contains('on'); stopPlacing(); const r = tbRect(b), sr = stage.getBoundingClientRect(); $('tplPick').style.left = (r.left + r.width / 2 - sr.left) + 'px'; $('tplPick').classList.toggle('on', on); b.classList.toggle('on', on); $('mBubble').classList.remove('on'); return; }
+    if (t === 'tpl') { const on = !$('tplPick').classList.contains('on'); stopPlacing(); const r = tbRect(b), sr = stage.getBoundingClientRect(); $('tplPick').style.left = (r.left + r.width / 2 - sr.left) + 'px'; $('tplPick').classList.toggle('on', on); b.classList.toggle('on', on); $('mBubble').classList.remove('on'); if (on) { $('tpSearch').value = ''; filterTpl(); setTimeout(() => $('tpSearch').focus(), 30); } return; }
     if (t === 'audio') return readyToRecord().then(ok => ok && startPlacing('audio'));
     startPlacing(t); };
   $('filePick').onchange = e => { const fs = [...e.target.files], tgt = $('filePick').dataset.into; delete $('filePick').dataset.into; e.target.value = '';
@@ -2003,7 +2008,7 @@
 
   // ---------- paste and drop ----------
   addEventListener('paste', e => {
-    if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    if (e.target.closest('input, textarea, [contenteditable="true"]') && !(e.target.id === 'capInput' && e.clipboardData.files?.length)) return;   // a picture pasted into quick capture goes to Unsorted
     pendingPaste = false;
     // cards copied in Fenmyr (on this board or another one) come back as cards
     const tx = e.clipboardData.getData('text/plain');
@@ -2963,8 +2968,26 @@
     return `<button data-starter="${esc(k)}"><span class="tp-e">${Icon(ic)}</span><span class="tp-t"><b>${esc(k)}</b><small>${esc(line)}</small><em class="tp-k new">Opens a new board ↗</em></span></button>`;
   };
   const mineRow = t => { const nw = t.mode === 'new'; return `<button data-mine="${esc(t.id)}"><span class="tp-e">${Icon('templates')}</span><span class="tp-t"><b>${esc(t.name)}</b><small>${esc(t.desc || `${t.cards.length} card${t.cards.length === 1 ? '' : 's'}`)}</small><em class="tp-k${nw ? ' new' : ''}">${nw ? 'Opens a new board ↗' : 'Adds to this board'}</em></span><span class="tp-x"><i data-tm="ren" title="Edit name, description and how it opens">${Icon('edit')}</i><i data-tm="del" title="Delete">${Icon('trash')}</i></span></button>`; };
-  function buildTplPick() { $('tplPick').innerHTML = TPL_GROUPS.map(([g, keys]) => `<div class="tp-h">${g}</div>` + keys.map(tplRow).join('')).join('') + (myTpls.length ? '<div class="tp-h">Yours</div>' + myTpls.map(mineRow).join('') : ''); }
+  // the search sits at the bottom, next to the toolbar button, and has the cursor when the menu opens
+  function buildTplPick() {
+    const q = $('tpSearch')?.value || '';
+    $('tplPick').innerHTML = '<div class="tp-list">' + TPL_GROUPS.map(([g, keys]) => `<div class="tp-h">${g}</div>` + keys.map(tplRow).join('')).join('') + (myTpls.length ? '<div class="tp-h">Yours</div>' + myTpls.map(mineRow).join('') : '') + '<div class="tp-none" hidden>No templates match</div></div>'
+      + `<label class="tp-search">${Icon('search', { size: 16 })}<input id="tpSearch" placeholder="Search templates…" autocomplete="off" spellcheck="false"></label>`;
+    $('tpSearch').value = q; filterTpl();
+  }
+  // every word you type has to appear in a template's name or description; a group's heading hides when none of its templates match
+  function filterTpl() {
+    const words = ($('tpSearch')?.value || '').toLowerCase().split(/\s+/).filter(Boolean); let head = null, headHas = false, shown = 0;
+    const closeHead = () => { if (head) head.hidden = !headHas && words.length > 0; };
+    $('tplPick').querySelectorAll('.tp-list > :not(.tp-none)').forEach(el => {
+      if (el.classList.contains('tp-h')) { closeHead(); head = el; headHas = false; return; }
+      const txt = ((el.querySelector('.tp-t b')?.textContent || '') + ' ' + (el.querySelector('.tp-t small')?.textContent || '')).toLowerCase(), ok = words.every(w => txt.includes(w));
+      el.hidden = !ok; if (ok) { headHas = true; shown++; } });
+    closeHead(); $('tplPick').querySelector('.tp-none').hidden = shown > 0 || !words.length;
+  }
   buildTplPick();
+  $('tplPick').addEventListener('input', e => { if (e.target.id === 'tpSearch') filterTpl(); });
+  $('tplPick').addEventListener('keydown', e => { if (e.target.id === 'tpSearch' && e.key === 'Enter') { e.preventDefault(); $('tplPick').querySelector('.tp-list button:not([hidden])')?.click(); } });
   $('tplPick').onclick = async e => { const st = e.target.closest('[data-starter]');
     if (st) { $('tplPick').classList.remove('on'); $('tools').querySelector('[data-add="tpl"]').classList.remove('on'); const name = st.dataset.starter, b = newBoard(name, name), { f, p } = scope(), into = f || (p && foldersIn(p.id)[0]); if (into) b.folder = into.id; await Fenmyr.save(b); await openBoard(b.id); fit(board.cards); refreshBoards(); return; }
     const mine = e.target.closest('[data-mine]');

@@ -1127,7 +1127,17 @@ body.dark .set-maker { background: #3b2d1f; } body.dark .sm-sig { color: #f6c38a
 
 /* design thinking templates: a little menu above the toolbar */
 .tplpick { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(6px); z-index: 16; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
-.tplpick { max-height: calc(100vh - 130px); overflow: auto; scrollbar-width: thin; }
+.tplpick { max-height: calc(100vh - 130px); overflow: hidden; display: flex; flex-direction: column; gap: 0; }
+.tplpick .tp-list { display: grid; gap: 2px; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.tplpick .tp-list [hidden] { display: none; }
+.tplpick .tp-none { padding: 14px 10px; font: 500 12.5px/1.4 var(--font); color: var(--ink-soft); text-align: center; }
+/* the search box sits at the bottom of the menu, right above the toolbar button */
+.tplpick .tp-search { flex: none; display: flex; align-items: center; gap: 8px; margin: 6px 2px 0; padding: 9px 12px; border-radius: var(--pill-r); corner-shape: squircle; background: #f4f0ed; color: var(--ink-soft); cursor: text; }
+.tplpick .tp-search svg { width: 16px; height: 16px; flex: none; }
+.tplpick .tp-search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: 500 13px/1.2 var(--font); color: var(--ink); }
+.tplpick .tp-search:focus-within { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
+body.dark .tplpick .tp-search { background: rgba(255, 255, 255, .08); }
+body.following-caelestia .tplpick .tp-search { background: color-mix(in srgb, var(--panel) 78%, var(--dot)); }
 .tplpick.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
 .tplpick button { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
 .tplpick button:hover { background: var(--blush); }
