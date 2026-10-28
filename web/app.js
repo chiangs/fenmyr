@@ -2189,7 +2189,7 @@
     + `<svg class="grabhand fist" viewBox="0 0 34 34"><g class="o"><rect x="7.5" y="13" width="21" height="17" rx="7.5"/><circle cx="11" cy="13.6" r="3"/><circle cx="16" cy="12.6" r="3"/><circle cx="21" cy="12.8" r="3"/><circle cx="25.4" cy="14.4" r="2.7"/><rect x="6" y="17" width="12" height="5" rx="2.5" transform="rotate(-12 12 19.5)"/></g><g class="f"><rect x="7.5" y="13" width="21" height="17" rx="7.5"/><circle cx="11" cy="13.6" r="3"/><circle cx="16" cy="12.6" r="3"/><circle cx="21" cy="12.8" r="3"/><circle cx="25.4" cy="14.4" r="2.7"/><rect x="6" y="17" width="12" height="5" rx="2.5" transform="rotate(-12 12 19.5)"/></g></svg>`
     + `<i class="ring"></i><div class="bub"></div>`;
   document.body.appendChild(myCur);
-  const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .handle, #rh, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
+  const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .handle, #rh, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright, .rz-grip';
   // the name tag: a rounded rectangle whose straight edges wobble gently (the corners stay clean), drawn to fit the name
   function tagPath(w, h, phase) {
     const r = Math.min(8, h / 2 - 1), a = .8, step = 3, wav = (t, len) => a * Math.sin(t / len * Math.PI * Math.max(1, Math.round(len / 22)) + phase) * Math.sin(t / len * Math.PI);
@@ -2295,12 +2295,25 @@
   const panelMin = k => k === 'layers' ? Math.max(30, $('layers').querySelector('.ly')?.offsetHeight || 30) : k === 'boards' ? Math.max(30, $('boards').querySelector('.board-row, .folder-row, .proj-row')?.offsetHeight || 32) : k === 'tray' ? 60 : 120;
   function applyPanelH() { Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const v = (settings.panelH || {})[k];
     if (v) { const h = Math.max(panelMin(k), v); Object.assign(el.style, { height: h + 'px', minHeight: '0', maxHeight: 'none', flex: `0 1 ${h}px`, overflowY: 'auto' }); } else Object.assign(el.style, { height: '', minHeight: '', maxHeight: '', flex: '', overflowY: '' }); }); }   // a saved height is a wish: on a short window the panel shrinks to fit instead of spilling out of its column
-  Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const grip = document.createElement('div'); grip.className = 'rz-grip'; grip.title = 'Drag to change the height · double-click for automatic'; grip.dataset.panel = k; el.insertAdjacentElement('afterend', grip);
+  Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const grip = document.createElement('div'); grip.className = 'rz-grip'; grip.title = 'Drag to change the height · double-click for automatic'; grip.dataset.panel = k; el.insertAdjacentElement('afterend', grip); gripBulge(grip);
     grip.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const y0 = e.clientY, h0 = el.getBoundingClientRect().height; grip.setPointerCapture(e.pointerId); grip.classList.add('on');
       const mv = ev => { settings.panelH = { ...(settings.panelH || {}), [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))) }; applyPanelH(); };
       const up = () => { grip.classList.remove('on'); grip.removeEventListener('pointermove', mv); grip.removeEventListener('pointerup', up); applySettings(); };
       grip.addEventListener('pointermove', mv); grip.addEventListener('pointerup', up); });
     grip.addEventListener('dblclick', e => { e.stopPropagation(); const p = { ...(settings.panelH || {}) }; delete p[k]; settings.panelH = p; applyPanelH(); applySettings(); }); });
+  // the height grips bulge on hover: the line widens and swells into a small round peak above and below, with a wobble that settles (a damped spring on its width and thickness)
+  function gripBulge(grip) {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), path = document.createElementNS(NS, 'path'); svg.setAttribute('viewBox', '0 0 200 40'); svg.appendChild(path); grip.appendChild(svg);
+    const REST = { w: 15, t: 4 }, HOT = { w: 20, t: 11 }, st = { w: REST.w, t: REST.t, vw: 0, vt: 0 }; let raf = 0, last = 0;
+    const draw = () => { const N = 36, top = [], bot = []; for (let i = 0; i <= N; i++) { const u = -1 + 2 * i / N, h = i === 0 || i === N ? 2 : 2 + (st.t / 2 - 2) * Math.exp(-u * u * 9), x = (100 + u * st.w).toFixed(2); top.push(`${x},${(20 - h).toFixed(2)}`); bot.push(`${x},${(20 + h).toFixed(2)}`); }
+      path.setAttribute('d', `M${top.join(' L')} A2,2 0 0 1 ${bot[N]} L${bot.reverse().join(' L')} A2,2 0 0 1 ${top[0]} Z`); };
+    const goal = () => grip.matches(':hover') || grip.classList.contains('on') ? 1 : 0;
+    const tick = now => { const dt = Math.min(32, now - (last || now)) / 1000; last = now; const g = goal(), gw = REST.w + (HOT.w - REST.w) * g, gt = REST.t + (HOT.t - REST.t) * g;
+      st.vw += (-190 * (st.w - gw) - 14 * st.vw) * dt; st.w += st.vw * dt; st.vt += (-230 * (st.t - gt) - 7 * st.vt) * dt; st.t = Math.max(2.5, st.t + st.vt * dt); draw();
+      if (Math.abs(st.w - gw) + Math.abs(st.t - gt) + Math.abs(st.vw) * .05 + Math.abs(st.vt) * .05 < .05) { st.w = gw; st.t = gt; st.vw = st.vt = 0; draw(); raf = 0; last = 0; return; } raf = requestAnimationFrame(tick); };
+    const kick = () => { if (matchMedia('(prefers-reduced-motion: reduce)').matches) { const g = goal(); st.w = g ? HOT.w : REST.w; st.t = g ? HOT.t : REST.t; draw(); } else if (!raf) raf = requestAnimationFrame(tick); };
+    ['pointerenter', 'pointerleave', 'pointerdown', 'pointerup', 'lostpointercapture'].forEach(ev => grip.addEventListener(ev, () => setTimeout(kick, 0))); draw();
+  }
   applyPanelH();
   $('myraNameIn').oninput = e => { settings.myraName = e.target.value.slice(0, 18); applySettings(); };
   $('myraNameIn').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') e.target.blur(); };
