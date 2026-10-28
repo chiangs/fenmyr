@@ -2636,7 +2636,7 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 .goo-slot { position: relative; z-index: 6; display: inline-block; line-height: 0; will-change: transform; }
 .goo-slot.perched { cursor: pointer; }
 .mc-list { padding-bottom: 40px; } body.phone .mc-list { padding-bottom: 6px; }
-.mc-sel { max-width: calc(100% - 96px); }
+.mc-sel { margin-left: 66px; max-width: calc(100% - 78px); }
 
 /* with the chat open, its header already says she is thinking: the button keeps its width, so the bar and the chat don't slide sideways */
 .myra.chat.thinking .m-name::after { content: none; }
