@@ -2675,3 +2675,6 @@ body.tint-panels.panel-dark .bd-pick select option { background: var(--panel); c
 /* Wireframe and Unsorted keep the height you drag them to: no shrinking against each other, one scrollbar (the list's own) */
 .side > .design.sized, .side > .tray.sized { flex: none; max-height: none; }
 .side > .design:not(.min) { overflow: hidden; }
+
+/* dragging a board between two rows: a line shows where it will go */
+.board-row.drop-before { box-shadow: 0 -2px 0 0 var(--pink-deep); } .board-row.drop-after { box-shadow: 0 2px 0 0 var(--pink-deep); }

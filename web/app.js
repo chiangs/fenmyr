@@ -142,14 +142,16 @@
   // ---------- the library: projects hold folders, folders hold boards ----------
   // stored as one small file: { projects: [{id, name, color, open}], folders: [{id, name, project, open}] }
   let projects = [], folders = [], boardList = [];
-  const saveLib = () => Fenmyr.saveFolders({ projects, folders });
+  let boardOrder = {};   // the order you dragged boards into, per folder (or 'loose'): lists of board ids, kept with the folders so a reorder never rewrites a board
+  const saveLib = () => Fenmyr.saveFolders({ projects, folders, order: boardOrder });
   const byName = (arr, name) => arr.find(x => x.name.trim().toLowerCase() === String(name || '').trim().toLowerCase());
   const findFolder = name => byName(folders, name);
   function makeProject(name) { const p = byName(projects, name) || { id: uid(), name: String(name).trim() || 'New project', color: COLOR_NAMES[1 + projects.length % 6], open: true }; if (!projects.includes(p)) projects.push(p); return p; }
   function makeFolder(name, projectId = null) { const f = findFolder(name) || { id: uid(), name: String(name).trim() || 'New folder', project: projectId, open: true }; if (!folders.includes(f)) folders.push(f); return f; }
   // canvases (boards inside boards) live under their parent board, not loose in a folder
   const topLevel = b => !b.parent || !boardList.some(x => x.id === b.parent);
-  const boardsIn = fid => boardList.filter(b => b.folder === fid && topLevel(b));
+  const inOrder = (key, list) => { const o = boardOrder[key]; if (!o || !o.length) return list; const at = id => o.indexOf(id); return [...list.filter(b => at(b.id) < 0), ...list.filter(b => at(b.id) >= 0).sort((a, b) => at(a.id) - at(b.id))]; };   // boards you haven't placed yet (new ones) stay on top, newest first, as before
+  const boardsIn = fid => inOrder(fid, boardList.filter(b => b.folder === fid && topLevel(b)));
   // folders can live inside other folders: f.parent is the folder it sits in (its project comes along with it)
   const hasParent = f => !!f.parent && folders.some(x => x.id === f.parent);
   const subFolders = fid => folders.filter(f => f.parent === fid);
@@ -165,11 +167,13 @@
     if (into) { x.parent = into.id; setProject(x, into.project || null); into.open = true; } else { delete x.parent; setProject(x, projectId); }
     return true;
   }
-  const looseBoards = () => boardList.filter(b => (!b.folder || !folders.some(f => f.id === b.folder)) && topLevel(b));
+  const looseBoards = () => inOrder('loose', boardList.filter(b => (!b.folder || !folders.some(f => f.id === b.folder)) && topLevel(b)));
+  const orderKey = b => b.folder && folders.some(f => f.id === b.folder) ? b.folder : 'loose';
   const tint = c => COLORS[c] && c !== 'white' ? `var(--k-${c})` : 'var(--pink)';
   // moving a board into a folder (or out of one). A canvas that lived inside another board comes out on its own.
   async function moveBoard(id, folderId) {
-    await unhook(id);
+    await unhook(id); Object.keys(boardOrder).forEach(k => { boardOrder[k] = boardOrder[k].filter(x => x !== id); });   // moved: no longer placed anywhere (it lands on top of its new folder)
+
     if (board && board.id === id) { board.folder = folderId; delete board.parent; await Fenmyr.save(board); renderCrumbsSoon(); return; }
     const b = await Fenmyr.load(id); if (!b) return; b.folder = folderId; delete b.parent; await Fenmyr.save(b);
   }
@@ -200,6 +204,9 @@
     boardList = list;
     if (Array.isArray(lib)) { projects = []; folders = lib; }   // folders saved before projects existed
     else { projects = (lib && lib.projects) || []; folders = (lib && lib.folders) || []; }
+    boardOrder = (lib && !Array.isArray(lib) && lib.order) || {};
+    // forget order entries for boards and folders that are gone
+    { const ids = new Set(list.map(b => b.id)); Object.keys(boardOrder).forEach(k => { if (k !== 'loose' && !folders.some(f => f.id === k)) { delete boardOrder[k]; return; } boardOrder[k] = boardOrder[k].filter(id => ids.has(id)); if (!boardOrder[k].length) delete boardOrder[k]; }); }
   }
   // drag and drop between rows and tiles: boards go into folders, folders go into projects
   const dropZone = (el, kind, onDrop) => {
@@ -207,7 +214,24 @@
     el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop'); });
     el.addEventListener('drop', async e => { const id = e.dataTransfer.getData('fenmyr/' + kind); if (!id) return; e.preventDefault(); e.stopPropagation(); el.classList.remove('drop'); await onDrop(id); await saveLib(); refreshBoards(); });
   };
-  const draggable = (el, kind, id) => { el.draggable = true; el.ondragstart = e => { e.stopPropagation(); e.dataTransfer.setData('fenmyr/' + kind, id); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); }; el.ondragend = () => el.classList.remove('dragging'); };
+  // drag a board between two rows to put it there (the top and bottom edge of a row; the middle still files it inside that board, as before)
+  const dropEdge = (e, el) => { const r = el.getBoundingClientRect(), y = (e.clientY - r.top) / r.height; return y < .3 ? 'before' : y > .7 ? 'after' : null; };
+  const clearEdges = () => document.querySelectorAll('.board-row.drop-before, .board-row.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  async function placeBoard(id, target, after) {
+    const mine = boardList.find(x => x.id === id) || (board && board.id === id ? board : null); if (!mine || id === target.id) return;
+    const key = orderKey(target), from = orderKey(mine);
+    if (key !== from || !topLevel(mine) || mine.parent) await moveBoard(id, key === 'loose' ? null : key);
+    const ids = (key === 'loose' ? looseBoards() : boardsIn(key)).map(x => x.id).filter(x => x !== id), at = ids.indexOf(target.id) + (after ? 1 : 0);
+    ids.splice(at < 0 ? ids.length : at, 0, id); boardOrder[key] = ids;
+    if (from !== key && boardOrder[from]) boardOrder[from] = boardOrder[from].filter(x => x !== id);
+  }
+  function reorderZone(el, b) {
+    if (b.parent && boardList.some(x => x.id === b.parent)) return;   // canvases inside another board are not part of a folder's order
+    el.addEventListener('dragover', e => { if (!e.dataTransfer.types.includes('fenmyr/board')) return; const z = dropEdge(e, el); el.classList.remove('drop-before', 'drop-after'); if (!z) return; e.preventDefault(); e.stopImmediatePropagation(); el.classList.remove('drop'); el.classList.add('drop-' + z); });
+    el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop-before', 'drop-after'); });
+    el.addEventListener('drop', async e => { const z = dropEdge(e, el), id = e.dataTransfer.getData('fenmyr/board'); clearEdges(); if (!z || !id) return; e.preventDefault(); e.stopImmediatePropagation(); await placeBoard(id, b, z === 'after'); await saveLib(); refreshBoards(); });
+  }
+  const draggable = (el, kind, id) => { el.draggable = true; el.ondragstart = e => { e.stopPropagation(); e.dataTransfer.setData('fenmyr/' + kind, id); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); }; el.ondragend = () => { el.classList.remove('dragging'); clearEdges(); }; };
   function inlineRename(el, obj, after) {
     el.contentEditable = 'true'; el.focus(); getSelection().selectAllChildren(el);
     el.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); } if (ev.key === 'Escape') { el.textContent = obj.name; el.blur(); } ev.stopPropagation(); };
@@ -308,7 +332,7 @@
     r.ondblclick = e => { e.stopPropagation(); clearTimeout(tap); inlineRename(name, b, v => renameBoard(b, v)); };
     const pen = document.createElement('button'); pen.className = 'f-btn'; pen.title = 'Rename'; pen.innerHTML = FBTN.ren; r.appendChild(pen);
     pen.onclick = e => { e.stopPropagation(); clearTimeout(tap); inlineRename(name, b, v => renameBoard(b, v)); };
-    draggable(r, 'board', b.id); dropZone(r, 'board', id => nestBoard(id, b.id)); r.oncontextmenu = e => rowMenu(e, 'board', b, name);
+    draggable(r, 'board', b.id); reorderZone(r, b); dropZone(r, 'board', id => nestBoard(id, b.id)); r.oncontextmenu = e => rowMenu(e, 'board', b, name);
     const kids = boardList.filter(x => x.parent === b.id); if (!kids.length) return r;
     const frag = document.createDocumentFragment(), sub = document.createElement('div'); sub.className = 'sub-boards';
     kids.forEach(k => sub.appendChild(boardRow(k))); frag.appendChild(r); frag.appendChild(sub); return frag;
@@ -5866,5 +5890,5 @@ ${proseCSS()}
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { stopAnim, slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd), birthdayDue, birthdayCheck, setBirthday, bdSetting: () => settings.birthday, birthdayFacts, bdState, celebrateBirthday, bdActive: (ms, keyMs = 99999) => { lastActive = Date.now() - ms; lastKey = Date.now() - keyMs; }, hatOn: () => hatOn, timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { stopAnim, refreshBoards: () => refreshBoards(), boardOrder: () => boardOrder, boardsOf: fid => boardsIn(fid).map(b => b.name), slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd), birthdayDue, birthdayCheck, setBirthday, bdSetting: () => settings.birthday, birthdayFacts, bdState, celebrateBirthday, bdActive: (ms, keyMs = 99999) => { lastActive = Date.now() - ms; lastKey = Date.now() - keyMs; }, hatOn: () => hatOn, timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

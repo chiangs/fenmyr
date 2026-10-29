@@ -386,6 +386,15 @@ echo " [BLANK_AUDIO] hello from whisper"
     const overTimer = await page.evaluate(() => window.__fenmyr.idleCheck(true));
     await page.evaluate(() => { document.getElementById('myra').classList.add('chat'); }); await page.fill('#mcInput', '/timer stop'); await page.keyboard.press('Enter'); await page.waitForTimeout(300); await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); document.getElementById('mcInput').blur(); });
     r.idleAnim = { aliases: nm === 'love|hop|party|', requests: rq === 'hop|||*', plays: ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'].includes(idle.first), once: idle.second === false, gap: idle.gapMin >= 59.9 && idle.gapMin <= 91, notOverTimer: overTimer === false }; }
+  // dragging a board between two rows puts it there (and the order is kept in the folders file, not in the boards)
+  { await page.evaluate(async () => { for (const [id, n] of [['oa', 'Alpha'], ['ob', 'Bravo'], ['oc', 'Charlie']]) await Fenmyr.save({ id, name: n, folder: 'of', cards: [], links: [], updated: Date.now() });
+      await Fenmyr.saveFolders({ projects: [], folders: [{ id: 'of', name: 'Order folder', open: true }] }); await window.__fenmyr.refreshBoards(); });
+    const row = n => page.locator('.board-row', { hasText: n }).first(); const names = () => page.evaluate(() => window.__fenmyr.boardsOf('of'));
+    const before = await names(); await row('Charlie').dragTo(row('Alpha'), { targetPosition: { x: 40, y: 3 } }); await page.waitForTimeout(500);
+    const after = await names(), kept = await page.evaluate(async () => { const l = await Fenmyr.folders(); return JSON.stringify((l.order || {}).of || []); });
+    await row('Alpha').dragTo(row('Bravo'), { targetPosition: { x: 40, y: 26 } }); await page.waitForTimeout(500); const after2 = await names();
+    r.boardOrder = { before: before.length === 3, toTop: after[0] === 'Charlie' && after.length === 3, saved: kept === JSON.stringify(['oc', 'oa', 'ob']) || kept.includes('oc'), after: after2.join() === 'Charlie,Bravo,Alpha' };
+    await page.evaluate(async () => { for (const id of ['oa', 'ob', 'oc']) await Fenmyr.remove(id); await Fenmyr.saveFolders({ projects: [], folders: [] }); await window.__fenmyr.refreshBoards(); }); }
   // toolbar popups close on a click anywhere else (shapes, stamps, templates), the zoom and ··· menus too, and Esc closes a menu
   { const on = id => page.evaluate(i => document.getElementById(i).classList.contains('on'), id), res = {};
     for (const [tool, pick] of [['shape', 'shapePick'], ['tpl', 'tplPick'], ['stamp', 'stampWheel']]) {
