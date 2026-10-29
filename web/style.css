@@ -2689,3 +2689,13 @@ body.dark .card .due.soon { background: #ffd98a; color: #5a3a05; } body.dark .ca
 .sb-due .sd-row { display: flex; gap: 8px; } .sb-due label { display: grid; gap: 3px; flex: 1; font: 600 11px/1 var(--font); color: var(--ink-soft); }
 .sb-due input { font: 600 13px/1 var(--font); padding: 8px 9px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgba(0, 0, 0, .05); color: var(--ink); min-width: 0; } body.dark .sb-due input { background: rgba(255, 255, 255, .08); color-scheme: dark; }
 .sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgba(0, 0, 0, .05); color: var(--ink); } body.dark .sb-due .sd-chips button { background: rgba(255, 255, 255, .08); }
+
+/* the clear (×) button on search and text fields: one floating button (see the top of app.js); the fields leave room for it */
+.clr-btn { position: fixed; z-index: 2147482000; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(0, 0, 0, .08); color: var(--ink-soft, #6b6259); cursor: pointer; }
+.clr-btn:hover { background: rgba(0, 0, 0, .16); color: var(--ink, #3b342d); } .clr-btn[hidden] { display: none; }
+body.dark .clr-btn { background: rgba(255, 255, 255, .14); color: #d8d0c6; } body.dark .clr-btn:hover { background: rgba(255, 255, 255, .26); color: #fff; }
+input:is(:not([type]), [type=text], [type=search]):not(.dv-title, .board-name), #mcInput { padding-right: 30px; }
+/* the wireframe search stays put while the palette scrolls, like the icon search does */
+.design { --dzbg: #fff; } body.dark .design { --dzbg: #26211c; } body.tint-panels .design { --dzbg: var(--panel); }
+.dz-body > .dz-search { position: sticky; top: 0; z-index: 6; box-shadow: 0 0 0 8px var(--dzbg); }
+.dz-body > .dz-search:focus-within { box-shadow: 0 0 0 8px var(--dzbg), inset 0 0 0 1.5px var(--pink-deep); }
