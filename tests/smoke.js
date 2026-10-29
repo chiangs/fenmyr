@@ -438,6 +438,17 @@ echo " [BLANK_AUDIO] hello from whisper"
   { const at = async (px, py) => { await page.mouse.move(px + 2, py + 2); await page.mouse.move(px, py); await page.waitForTimeout(120); return page.evaluate(() => ({ edge: document.body.classList.contains('cur-edge'), hidden: document.querySelector('body > .mcur').classList.contains('hide') })); };
     const corner = await at(4, 4), strip = await at(150, 20), board = await at(700, 420), side = await at(1436, 400);
     r.cursorEdge = { corner: corner.edge && corner.hidden, strip: strip.edge && strip.hidden, board: !board.edge && !board.hidden, side: side.edge && side.hidden }; await page.mouse.move(700, 420); }
+  // tags on the note itself: "+ tag" adds one, the x removes it, undo brings it back, and neither shows on an unselected note
+  { const id = await page.evaluate(() => window.__fenmyr.newNote(120, -250)); await page.keyboard.type('tag me'); await page.keyboard.press('Escape'); await page.mouse.click(700, 150); await page.waitForTimeout(200); await page.evaluate(i => window.__fenmyr.selectOnly([i]), id); await page.waitForTimeout(250);
+    const st = () => page.evaluate(i => { const b = window.__fenmyr.curBoard(), c = b.cards.find(k => k.id === i); return { tags: c.tags || [], board: b.tags || [] }; }, id);
+    const sel = `[data-id="${id}"]`, vis = s => page.locator(sel + ' ' + s).first().isVisible();
+    const soloShown = await vis('.nt-add');
+    await page.locator(sel + ' .nt-add').click(); await page.waitForTimeout(250); await page.keyboard.type('zeta'); await page.keyboard.press('Enter'); await page.waitForTimeout(350);
+    const added = await st(); const xShown = await vis('.nt-x');
+    await page.locator(sel + ' .nt-x').click(); await page.waitForTimeout(350); const removed = await st();
+    await page.keyboard.press('Control+z'); await page.waitForTimeout(500); const undone = await st();
+    await page.mouse.click(700, 120); await page.waitForTimeout(200); const hidden = !(await vis('.nt-x')) && !(await vis('.nt-add'));
+    r.noteTags = { soloShown, adds: added.tags.join() === 'zeta' && added.board.includes('zeta'), xShown, removes: removed.tags.length === 0 && !removed.board.includes('zeta'), undo: undone.tags.join() === 'zeta', quietWhenUnselected: hidden }; }
   // search and text fields get a clear (x) button; the wireframe search stays visible while the palette scrolls
   { const vis = () => page.evaluate(() => { const b = document.getElementById('clrBtn'); return !!b && !b.hidden; });
     await page.keyboard.press('Escape'); await page.mouse.click(700, 420); await page.waitForTimeout(150); await page.locator('#dzSearch').click(); await page.waitForTimeout(150); const empty = await vis(); await page.keyboard.type('box'); await page.waitForTimeout(150); const shown = await vis();

@@ -832,7 +832,7 @@
     if (c.type === 'coll') { const t = COLL[c.color] || COLL.pink; el.style.setProperty('--chead', t[0]); el.style.setProperty('--cframe', t[1]); el.classList.toggle('nohead', c.head === false); el.style.height = c.h + 'px'; }
     else if (parentOf(c.id)) el.classList.add('inside');
     if (c.type === 'spotify') { const fr = el.querySelector('.sp-frame'); if (fr && fr.dataset.src === spEmbed(c)) { const t = el.querySelector('.sp-head span'); if (t) t.textContent = c.title || 'Spotify'; const tg = el.querySelector(':scope > .tag'); if (tg) tg.textContent = c.tagText || ''; if (!!tg === !!c.tagText) return el; } }
-    el.innerHTML = `<div class="frame"></div><div class="body">${inner(c)}</div>${c.tagText ? `<div class="tag">${esc(c.tagText)}</div>` : ''}${dueChip(c)}<div class="knob"></div><div class="handle"></div>${TILTS(c) ? '<i class="rot-h" title="Drag to tilt"></i>' : ''}`;
+    el.innerHTML = `<div class="frame"></div><div class="body">${inner(c)}</div>${c.tagText ? `<div class="tag">${esc(c.tagText)}</div>` : ''}${dueChip(c)}${soloTagAdd(c)}<div class="knob"></div><div class="handle"></div>${TILTS(c) ? '<i class="rot-h" title="Drag to tilt"></i>' : ''}`;
     if (c.type === 'video') setupVideo(c, el);
     if (WF.includes(c.type)) styleWF(c, el);   // after the insides exist
     else applyStroke(c, el);
@@ -1502,12 +1502,42 @@
     return `<div class="te-chips">${(c.tags || []).map(t => `<span class="te-chip">#${esc(t)}<button data-tagx="${esc(t)}" title="Remove">×</button></span>`).join('') || '<span class="te-none">No tags yet</span>'}</div>`
       + `<input class="te-in" placeholder="Add a tag…" spellcheck="false" maxlength="30"><div class="te-sug">${sug.map(t => `<button data-tagadd="${esc(t)}">#${esc(t)}</button>`).join('')}</div>`;
   }
-  function tagChips(c) { return `<div class="ntags">${c.tags.map(t => `<i>#${esc(t)}</i>`).join('')}</div>`; }
-  function refreshTagChips(c) { const b = cardsEl.querySelector(`[data-id="${c.id}"] .body`); if (!b) return; b.querySelector('.ntags')?.remove(); if ((c.tags || []).length) b.insertAdjacentHTML('beforeend', tagChips(c)); fitText(c); }
+  // on the note itself, while it is selected: each tag has a small × and a "+ tag" chip adds one (the toolbar's tag editor does the same, so you never have to leave the note)
+  const addTagBtn = solo => `<button type="button" class="nt-add${solo ? ' solo' : ''}" data-nt="add" aria-label="Add a tag" tabindex="-1">+ tag</button>`;
+  const soloTagAdd = c => c.type === 'note' && !(c.tags || []).length ? addTagBtn(true) : '';   // no tags yet: the chip sits on the card's bottom edge, so selecting a note never changes its size
+  function tagChips(c) { return `<div class="ntags">${c.tags.map(t => `<i>#${esc(t)}<button type="button" class="nt-x" data-tagx="${esc(t)}" aria-label="Remove tag ${esc(t)}" tabindex="-1">×</button></i>`).join('')}${addTagBtn(false)}</div>`; }
+  function refreshTagChips(c) {
+    const el = cardsEl.querySelector(`[data-id="${c.id}"]`), b = el?.querySelector('.body'); if (!b) return; b.querySelector('.ntags')?.remove(); el.querySelector(':scope > .nt-add')?.remove();
+    if ((c.tags || []).length) b.insertAdjacentHTML('beforeend', tagChips(c)); else if (c.type === 'note') el.insertAdjacentHTML('beforeend', soloTagAdd(c));
+    fitText(c); const bar = $('selbar'); if (bar && !bar.querySelector('.sb-popw.open')) bar.dataset.key = '';   // the toolbar's tag count follows
+  }
   // an existing tag keeps its spelling: "UI" typed when the board has "ui" becomes "ui"
   const existingTag = t => (board.tags || []).find(x => x.toLowerCase() === cleanTag(t).toLowerCase()) || cleanTag(t);
   function addTag(c, t) { t = existingTag(t); if (!realTag(t)) return; c.tags = cleanTags([...(c.tags || []), t]); syncBoardTags(); refreshTagChips(c); save(); }
   function removeTag(c, t) { c.tags = (c.tags || []).filter(x => x.toLowerCase() !== String(t).toLowerCase()); if (!c.tags.length) delete c.tags; syncBoardTags(); refreshTagChips(c); save(); }
+  // the × and the + tag chip on a note: one set of handlers for every note; the "+" opens a small box with the board's tags as suggestions
+  { let pop = null, anchorEl = null;
+    const closeAdd = () => { pop?.classList.remove('on'); anchorEl = null; };
+    function openTagAdd(c, btn) {
+      pop = pop || (pop = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'tag-pop tag-add', id: 'tagAdd' })));
+      pop.innerHTML = '<input class="ta-in" type="text" maxlength="30" placeholder="Add a tag…" spellcheck="false" autocomplete="off" aria-label="Add a tag"><div class="ta-sug"></div>';
+      const inp = pop.querySelector('input'), sug = pop.querySelector('.ta-sug'); let items = [], at = 0; anchorEl = btn;
+      const draw = () => { const w = cleanTag(inp.value); items = tagSuggestions(inp.value, c.tags || []);
+        if (realTag(w) && !(board.tags || []).some(x => x.toLowerCase() === w.toLowerCase())) items.push({ create: w });
+        at = Math.min(at, Math.max(0, items.length - 1)); sug.innerHTML = items.map((x, i) => `<button type="button" data-i="${i}" class="${i === at ? 'on' : ''}">${x.create ? `New tag <b>#${esc(x.create)}</b>` : `#${esc(x)}`}</button>`).join(''); };
+      const pick = x => { if (!x) return; remember(); addTag(c, x.create || x); closeAdd(); };
+      inp.oninput = () => { at = 0; draw(); };
+      inp.onkeydown = e => { e.stopPropagation();
+        if (e.key === 'Escape') { e.preventDefault(); closeAdd(); }
+        else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (items.length) { at = (at + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length; draw(); } }
+        else if (e.key === 'Enter' || e.key === ',' || e.key === ' ' && realTag(cleanTag(inp.value))) { e.preventDefault(); pick(items[at] || (realTag(cleanTag(inp.value)) ? { create: cleanTag(inp.value) } : null)); } };
+      sug.onclick = e => { const b = e.target.closest('[data-i]'); if (b) pick(items[+b.dataset.i]); };
+      draw(); const r = btn.getBoundingClientRect(); pop.classList.add('on'); pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.left)) + 'px'; pop.style.top = Math.min(innerHeight - pop.offsetHeight - 8, r.bottom + 6) + 'px'; setTimeout(() => inp.focus(), 30);
+    }
+    addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('.card .nt-x, .card .nt-add')) { e.stopPropagation(); e.preventDefault(); } else if (pop?.classList.contains('on') && !e.target.closest('#tagAdd')) closeAdd(); }, true);
+    addEventListener('click', e => { const t = e.target.closest && e.target.closest('.card .nt-x, .card .nt-add'); if (!t) return; e.stopPropagation(); e.preventDefault();
+      const c = byId(t.closest('.card').dataset.id); if (!c) return; if (t.matches('.nt-x')) { remember(); removeTag(c, t.dataset.tagx); } else openTagAdd(c, t); }, true);
+  }
   // typing "#" in a note: suggestions from the board's tags; picking one (or a space after a new word) turns it into a tag, out of the words
   const tagBox = e => { const box = e.target.closest('.sb-tags'); return box && { box, c: byId(box.dataset.for) }; };
   const redrawTags = ({ box, c }) => { box.innerHTML = tagEditor(c); const n = (c.tags || []).length, b = $('selbar').querySelector('[data-pop="tags"] b'); if (b) b.textContent = n || ''; box.querySelector('.te-in').focus(); };

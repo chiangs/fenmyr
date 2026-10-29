@@ -2699,3 +2699,17 @@ input:is(:not([type]), [type=text], [type=search]):not(.dv-title, .board-name), 
 .design { --dzbg: #fff; } body.dark .design { --dzbg: #26211c; } body.tint-panels .design { --dzbg: var(--panel); }
 .dz-body > .dz-search { position: sticky; top: 0; z-index: 6; box-shadow: 0 0 0 8px var(--dzbg); }
 .dz-body > .dz-search:focus-within { box-shadow: 0 0 0 8px var(--dzbg), inset 0 0 0 1.5px var(--pink-deep); }
+
+/* tags on a note: × to remove and a quiet + tag to add, both only while the note is selected */
+.card.note .nt-x, .card.note .nt-add { display: none; }
+.card.note.sel .nt-x { display: inline-grid; } .card.note.sel .nt-add { display: inline-flex; }
+.card.note .ntags i { display: inline-flex; align-items: center; gap: 3px; }
+.nt-x { width: 14px; height: 14px; margin: -2px -4px -2px 0; padding: 0; border: 0; border-radius: 50%; place-items: center; background: none; color: inherit; font: 700 11px/1 var(--font); opacity: .55; cursor: pointer; position: relative; }
+.nt-x::after { content: ""; position: absolute; inset: -5px; }   /* a bigger hit area than the little glyph */
+.nt-x:hover { opacity: 1; background: rgba(0, 0, 0, .12); } body.dark .card.note.c-white .nt-x:hover { background: rgba(255, 255, 255, .2); }
+.nt-add { align-items: center; padding: 3px 7px; border: 1px dashed rgba(63, 58, 52, .28); border-radius: 8px; corner-shape: squircle; background: none; color: rgba(63, 58, 52, .55); font: 600 calc(10.5px * var(--fs, 1))/1 var(--font); cursor: pointer; }
+.nt-add:hover { color: var(--ink); border-color: rgba(63, 58, 52, .5); } body.dark .card.note.c-white .nt-add { color: rgba(255, 255, 255, .55); border-color: rgba(255, 255, 255, .28); }
+.nt-add.solo { position: absolute; left: 14px; bottom: -11px; background: var(--fill, #fff); box-shadow: 0 2px 6px rgba(var(--sh), calc(.1 * var(--sh-k))); z-index: 2; }
+body.dark .card.c-white .nt-add.solo { background: #38332d; }
+.tag-add { min-width: 170px; } .tag-add .ta-in { width: 100%; box-sizing: border-box; padding: 7px 10px; border: 0; border-radius: 9px; corner-shape: squircle; background: rgba(0, 0, 0, .05); font: 500 13px/1.2 var(--font); color: var(--ink); outline: none; } body.dark .tag-add .ta-in { background: rgba(255, 255, 255, .08); }
+.tag-add .ta-sug { display: grid; gap: 1px; margin-top: 4px; }
