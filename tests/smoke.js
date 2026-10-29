@@ -386,6 +386,15 @@ echo " [BLANK_AUDIO] hello from whisper"
     const overTimer = await page.evaluate(() => window.__fenmyr.idleCheck(true));
     await page.evaluate(() => { document.getElementById('myra').classList.add('chat'); }); await page.fill('#mcInput', '/timer stop'); await page.keyboard.press('Enter'); await page.waitForTimeout(300); await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); document.getElementById('mcInput').blur(); });
     r.idleAnim = { aliases: nm === 'love|hop|party|', requests: rq === 'hop|||*', plays: ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'].includes(idle.first), once: idle.second === false, gap: idle.gapMin >= 59.9 && idle.gapMin <= 91, notOverTimer: overTimer === false }; }
+  // toolbar popups close on a click anywhere else (shapes, stamps, templates), the zoom and ··· menus too, and Esc closes a menu
+  { const on = id => page.evaluate(i => document.getElementById(i).classList.contains('on'), id), res = {};
+    for (const [tool, pick] of [['shape', 'shapePick'], ['tpl', 'tplPick'], ['stamp', 'stampWheel']]) {
+      await page.locator('#tools > [data-add="' + tool + '"]').click(); await page.waitForTimeout(300); const was = await on(pick);
+      await page.mouse.click(700, 420); await page.waitForTimeout(300); res[tool] = was && !(await on(pick)); }
+    await page.locator('#zoom').click(); await page.waitForTimeout(200); const menu = await page.evaluate(() => !!document.getElementById('rowMenu'));
+    await page.mouse.click(700, 420); await page.waitForTimeout(200); const gone = await page.evaluate(() => !document.getElementById('rowMenu'));
+    await page.locator('#zoom').click(); await page.waitForTimeout(200); await page.keyboard.press('Escape'); await page.waitForTimeout(200); const esc = await page.evaluate(() => !document.getElementById('rowMenu'));
+    r.popups = { ...res, zoomMenu: menu && gone, escMenu: esc }; }
   // the height grips: the pointer shows the system's resize cursor over them, and the bar swells into a peak on hover
   { const g = await page.locator('.rz-grip').first().boundingBox(), h = () => page.evaluate(() => document.querySelector('.rz-grip path').getBBox().height);
     const rest = await h(); await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.waitForTimeout(900);
