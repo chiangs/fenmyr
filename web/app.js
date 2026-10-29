@@ -2629,7 +2629,7 @@
     const el = cardsEl.querySelector(`[data-id="${c.id}"]`); if (el) { el.querySelector('.due')?.remove(); el.insertAdjacentHTML('beforeend', dueChip(c)); }
     save(); dueIndex(true);
   }
-  let dueSigs = new Map(), dueT = 0;
+  let dueSigs = new Map(), dueT = 0, dueHold = true, dueHeld = [];   // dueHold: at start-up reminders wait until the greeting has been said
   function dueIndex(force) {
     if (!board) return;
     const mine = board.cards.filter(c => c.type === 'note' && dueDate(c.due)), sig = mine.map(c => `${c.id}|${c.due}|${c.name || c.text || ''}`).join('\n') + '|' + board.name;
@@ -2645,7 +2645,7 @@
   function dueArm() {
     clearTimeout(dueT); const idx = lsRead(DUE_KEY, {}), fired = lsRead(DUE_FIRED, {}), now = Date.now();
     const ready = Object.entries(idx).filter(([k, it]) => it.t <= now && fired[k] !== it.d);
-    if (ready.length) { ready.forEach(([k, it]) => fired[k] = it.d); Object.keys(fired).forEach(k => { if (!idx[k]) delete fired[k]; }); lsWrite(DUE_FIRED, fired); dueAnnounce(ready.map(([, it]) => it)); }
+    if (ready.length) { ready.forEach(([k, it]) => fired[k] = it.d); Object.keys(fired).forEach(k => { if (!idx[k]) delete fired[k]; }); lsWrite(DUE_FIRED, fired); const its = ready.map(([, it]) => it); if (dueHold) dueHeld.push(...its); else dueAnnounce(its); }
     dueChips();
     let next = Infinity; Object.entries(idx).forEach(([k, it]) => { const due = dueDate(it.d).getTime(); [fired[k] === it.d ? Infinity : it.t, due - 864e5, due].forEach(t => { if (t > now && t < next) next = t; }); });
     if (next < Infinity) dueT = setTimeout(dueArm, Math.min(next - now + 50, 2147e6));
@@ -2660,18 +2660,42 @@
     const text = `${items.length} notes are due ✦\n` + items.slice(0, 6).map(it => `• ${it.n}${where(it)}`).join('\n'); say(text, 0, [{ label: 'Show me', run: () => dueJump(items[0]) }], true); osNotify('Due', `${items.length} notes are due`);
   }
   addEventListener('focus', () => dueArm()); document.addEventListener('visibilitychange', () => { if (!document.hidden) dueArm(); });
-  function slashDue() {
-    const idx = Object.values(lsRead(DUE_KEY, {})).sort((a, b) => a.t - b.t), now = Date.now(); if (!idx.length) return reply('Nothing has a due date yet. Pick a note and use the calendar button ✦');
-    const over = idx.filter(it => dueDate(it.d) < now), soon = idx.filter(it => dueDate(it.d) >= now).slice(0, 8), line = it => `• ${it.n} · ${dueText(it.d)}${board && board.id === it.b ? '' : ' · ' + it.bn}`;
-    const acts = [...over.slice(0, 2), ...soon.slice(0, 3 - Math.min(2, over.length))].map(it => ({ label: it.n.slice(0, 22), run: () => dueJump(it) }));
-    reply((over.length ? 'Overdue:\n' + over.slice(0, 8).map(line).join('\n') + '\n' : '') + (soon.length ? 'Coming up:\n' + soon.map(line).join('\n') : '') + ' ✦', 0, acts);
+  function slashDue(arg) {
+    const only = (arg || '').trim().toLowerCase(), idx = Object.values(lsRead(DUE_KEY, {})).sort((a, b) => a.t - b.t), now = bdNow(), day = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!idx.length) return reply('Nothing has a due date yet. Pick a note and use the calendar button ✦');
+    const over = idx.filter(it => dueDate(it.d) < now), soon = idx.filter(it => dueDate(it.d) >= now && (only !== 'today' || day(dueDate(it.d)) === day(now))).slice(0, 8), line = it => `• ${it.n} · ${dueText(it.d)}${board && board.id === it.b ? '' : ' · ' + it.bn}`;
+    const showOver = only !== 'today', showSoon = only !== 'overdue';
+    if ((!over.length || !showOver) && (!soon.length || !showSoon)) return reply(only === 'overdue' ? 'Nothing is overdue ✦' : only === 'today' ? 'Nothing else is due today ✦' : 'Nothing is overdue or coming up ✦');
+    const acts = [...(showOver ? over : []).slice(0, 2), ...(showSoon ? soon : []).slice(0, 3)].slice(0, 3).map(it => ({ label: it.n.slice(0, 22), run: () => dueJump(it) }));
+    reply((showOver && over.length ? 'Overdue:\n' + over.slice(0, 8).map(line).join('\n') + '\n' : '') + (showSoon && soon.length ? (only === 'today' ? 'Due today:\n' : 'Coming up:\n') + soon.map(line).join('\n') : '') + ' ✦', 0, acts);
   }
+  // ---------- Myra's greeting: a small registry, so a feature can add a line to it without its own timer ----------
+  // greeter(id, order, ctx => ({ text, acts? }) | null): lines are quick and read only what is already in memory (never scan boards). greet() runs when the app opens, and again on the first focus after midnight.
+  // ctx: { why: 'start' | 'newday', firstToday: true on the first greeting of a calendar day, now: Date, name }. daily(id) is true once per calendar day, for anything that should only be said once a day.
+  const GREETERS = [], greeter = (id, order, line) => GREETERS.push({ id, order, line });
+  function daily(id) { const k = 'fenmyr:daily:' + id, t = dayKey(bdNow()); try { if (localStorage.getItem(k) === t) return false; localStorage.setItem(k, t); } catch (e) {} return true; }
+  let greetDay = '';
+  function greet(why) {
+    const ctx = { why, firstToday: daily('open'), now: bdNow(), name: settings.name || '' }; greetDay = dayKey(ctx.now);
+    const lines = []; GREETERS.slice().sort((a, b) => a.order - b.order).forEach(g => { try { const l = g.line(ctx); if (l && l.text) lines.push(l); } catch (e) {} });
+    const shown = settings.greet && settings.chat !== 'quiet' && lines.length;
+    if (shown) say(lines.slice(0, 3).map(l => l.text).join('\n'), 9000, lines.find(l => l.acts)?.acts || [], true);
+    setTimeout(() => { dueHold = false; if (dueHeld.length) { const its = dueHeld.splice(0); dueAnnounce(its); } }, shown ? 10000 : 0);   // what came due while the app was closed is said after the greeting, not over it
+  }
+  addEventListener('focus', () => { if (greetDay && dayKey(bdNow()) !== greetDay) greet('newday'); });   // the first focus after midnight
+  greeter('hello', 0, c => c.why === 'start' ? { text: `Hi${c.name ? ' ' + c.name : ''}, it's Myra! Dump ideas with ⌘K, then ask me to sort them ✦` } : null);
+  greeter('due', 10, c => {   // what is still due today
+    if (!c.firstToday) return null;
+    const day = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`, its = Object.values(lsRead(DUE_KEY, {})).filter(it => { const t = dueDate(it.d); return t && t >= c.now && day(t) === day(c.now); }).sort((a, b) => a.t - b.t); if (!its.length) return null;
+    const bit = it => `“${it.n.slice(0, 40)}” ${it.d.length > 10 ? 'at ' + dueText(it.d).split(' · ')[1] : 'by tonight'}`;
+    return { text: `${c.why === 'newday' ? `Good morning${c.name ? ' ' + c.name : ''}! ` : ''}Due today: ${its.slice(0, 3).map(bit).join(', ')}${its.length > 3 ? ` and ${its.length - 3} more` : ''} ✦`, acts: [{ label: 'Show me', run: () => dueJump(its[0]) }] };
+  });
   const SLASH = [
     // every command here is handed to Myra in her instructions (see snapshot()), so a new one only needs a desc (and an ex / opts if they help her explain it)
     { cmd: 'find', arg: '<words>', desc: 'Find cards that mention something', ex: '/find berries', run: slashFind },
     { cmd: 'tag', arg: '<tag>', desc: 'Show the cards with a tag', ex: '/tag food', run: slashTag },
     { cmd: 'tidy', desc: 'Line the loose notes up in rows', run: () => { const n = tidyNotes(); reply(n ? `Lined ${n} notes up in tidy rows ✦` : 'No loose notes to tidy ✦'); } },
-    { cmd: 'due', desc: 'List what is due or overdue, on every board', run: slashDue },
+    { cmd: 'due', arg: '[overdue|today]', desc: 'List what is overdue and coming up, on every board (/due overdue for the late ones, /due today for today)', ex: ['/due', '/due overdue', '/due today'], opts: ['overdue', 'today'], run: a => slashDue(a) },
     { cmd: 'fit', desc: 'Zoom to see everything', run: () => { zoomFit(); reply('Everything is in view ✦'); } },
     { cmd: 'timer', arg: '<minutes> <purpose>', desc: 'A timer; the purpose is optional (/timer stop cancels, /timer alone shows the time left)', ex: ['/timer 25 write the intro', '/timer 2m10s tea', '/timer 1h30'], opts: ['15 break', '50 focus', '5 breather'], run: slashTimer },
     { cmd: 'birthday', desc: '(demo, temporary) play the birthday celebration; /birthday belated plays the belated one', dev: true, run: a => slashBirthday(a) },
@@ -5948,10 +5972,10 @@ ${proseCSS()}
     applySettings(); phone.init();
     let onboarded = true; try { onboarded = !!localStorage.getItem('fenmyr:onboarded'); } catch (e) {}
     if (!onboarded) { firstRunSetup = true; try { localStorage.setItem(newsKey, (await Fenmyr.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
-    setTimeout(() => { fit(board.cards); if (settings.greet && settings.chat !== 'quiet') say(`Hi${settings.name ? ' ' + settings.name : ''}, it's Myra! Dump ideas with ⌘K, then ask me to sort them ✦`, 7000); }, 400);
+    setTimeout(() => { fit(board.cards); greet('start'); }, 400);
     showConnections(true);
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { stopAnim, setDue, dueArm, dueState, dueRaw: () => lsRead(DUE_KEY, {}), dueFiredRaw: () => lsRead(DUE_FIRED, {}), copyCards, pasteCards, openBoard, curBoard: () => board, selectOnly, refreshBoards: () => refreshBoards(), boardOrder: () => boardOrder, boardsOf: fid => boardsIn(fid).map(b => b.name), slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd), birthdayDue, birthdayCheck, setBirthday, bdSetting: () => settings.birthday, birthdayFacts, bdState, celebrateBirthday, bdActive: (ms, keyMs = 99999) => { lastActive = Date.now() - ms; lastKey = Date.now() - keyMs; }, hatOn: () => hatOn, timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { stopAnim, dueRelease: () => { dueHold = false; if (dueHeld.length) dueAnnounce(dueHeld.splice(0)); }, greet, greeter, daily, dayKey, slashDue, setGreet: (g, chat) => { settings.greet = g; settings.chat = chat; }, setDue, dueArm, dueState, dueRaw: () => lsRead(DUE_KEY, {}), dueFiredRaw: () => lsRead(DUE_FIRED, {}), copyCards, pasteCards, openBoard, curBoard: () => board, selectOnly, refreshBoards: () => refreshBoards(), boardOrder: () => boardOrder, boardsOf: fid => boardsIn(fid).map(b => b.name), slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd), birthdayDue, birthdayCheck, setBirthday, bdSetting: () => settings.birthday, birthdayFacts, bdState, celebrateBirthday, bdActive: (ms, keyMs = 99999) => { lastActive = Date.now() - ms; lastKey = Date.now() - keyMs; }, hatOn: () => hatOn, timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();
