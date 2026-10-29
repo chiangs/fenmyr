@@ -142,14 +142,16 @@
   // ---------- the library: projects hold folders, folders hold boards ----------
   // stored as one small file: { projects: [{id, name, color, open}], folders: [{id, name, project, open}] }
   let projects = [], folders = [], boardList = [];
-  const saveLib = () => Fenmyr.saveFolders({ projects, folders });
+  let boardOrder = {};   // the order you dragged boards into, per folder (or 'loose'): lists of board ids, kept with the folders so a reorder never rewrites a board
+  const saveLib = () => Fenmyr.saveFolders({ projects, folders, order: boardOrder });
   const byName = (arr, name) => arr.find(x => x.name.trim().toLowerCase() === String(name || '').trim().toLowerCase());
   const findFolder = name => byName(folders, name);
   function makeProject(name) { const p = byName(projects, name) || { id: uid(), name: String(name).trim() || 'New project', color: COLOR_NAMES[1 + projects.length % 6], open: true }; if (!projects.includes(p)) projects.push(p); return p; }
   function makeFolder(name, projectId = null) { const f = findFolder(name) || { id: uid(), name: String(name).trim() || 'New folder', project: projectId, open: true }; if (!folders.includes(f)) folders.push(f); return f; }
   // canvases (boards inside boards) live under their parent board, not loose in a folder
   const topLevel = b => !b.parent || !boardList.some(x => x.id === b.parent);
-  const boardsIn = fid => boardList.filter(b => b.folder === fid && topLevel(b));
+  const inOrder = (key, list) => { const o = boardOrder[key]; if (!o || !o.length) return list; const at = id => o.indexOf(id); return [...list.filter(b => at(b.id) < 0), ...list.filter(b => at(b.id) >= 0).sort((a, b) => at(a.id) - at(b.id))]; };   // boards you haven't placed yet (new ones) stay on top, newest first, as before
+  const boardsIn = fid => inOrder(fid, boardList.filter(b => b.folder === fid && topLevel(b)));
   // folders can live inside other folders: f.parent is the folder it sits in (its project comes along with it)
   const hasParent = f => !!f.parent && folders.some(x => x.id === f.parent);
   const subFolders = fid => folders.filter(f => f.parent === fid);
@@ -165,11 +167,13 @@
     if (into) { x.parent = into.id; setProject(x, into.project || null); into.open = true; } else { delete x.parent; setProject(x, projectId); }
     return true;
   }
-  const looseBoards = () => boardList.filter(b => (!b.folder || !folders.some(f => f.id === b.folder)) && topLevel(b));
+  const looseBoards = () => inOrder('loose', boardList.filter(b => (!b.folder || !folders.some(f => f.id === b.folder)) && topLevel(b)));
+  const orderKey = b => b.folder && folders.some(f => f.id === b.folder) ? b.folder : 'loose';
   const tint = c => COLORS[c] && c !== 'white' ? `var(--k-${c})` : 'var(--pink)';
   // moving a board into a folder (or out of one). A canvas that lived inside another board comes out on its own.
   async function moveBoard(id, folderId) {
-    await unhook(id);
+    await unhook(id); Object.keys(boardOrder).forEach(k => { boardOrder[k] = boardOrder[k].filter(x => x !== id); });   // moved: no longer placed anywhere (it lands on top of its new folder)
+
     if (board && board.id === id) { board.folder = folderId; delete board.parent; await Fenmyr.save(board); renderCrumbsSoon(); return; }
     const b = await Fenmyr.load(id); if (!b) return; b.folder = folderId; delete b.parent; await Fenmyr.save(b);
   }
@@ -200,6 +204,9 @@
     boardList = list;
     if (Array.isArray(lib)) { projects = []; folders = lib; }   // folders saved before projects existed
     else { projects = (lib && lib.projects) || []; folders = (lib && lib.folders) || []; }
+    boardOrder = (lib && !Array.isArray(lib) && lib.order) || {};
+    // forget order entries for boards and folders that are gone
+    { const ids = new Set(list.map(b => b.id)); Object.keys(boardOrder).forEach(k => { if (k !== 'loose' && !folders.some(f => f.id === k)) { delete boardOrder[k]; return; } boardOrder[k] = boardOrder[k].filter(id => ids.has(id)); if (!boardOrder[k].length) delete boardOrder[k]; }); }
   }
   // drag and drop between rows and tiles: boards go into folders, folders go into projects
   const dropZone = (el, kind, onDrop) => {
@@ -207,7 +214,24 @@
     el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop'); });
     el.addEventListener('drop', async e => { const id = e.dataTransfer.getData('fenmyr/' + kind); if (!id) return; e.preventDefault(); e.stopPropagation(); el.classList.remove('drop'); await onDrop(id); await saveLib(); refreshBoards(); });
   };
-  const draggable = (el, kind, id) => { el.draggable = true; el.ondragstart = e => { e.stopPropagation(); e.dataTransfer.setData('fenmyr/' + kind, id); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); }; el.ondragend = () => el.classList.remove('dragging'); };
+  // drag a board between two rows to put it there (the top and bottom edge of a row; the middle still files it inside that board, as before)
+  const dropEdge = (e, el) => { const r = el.getBoundingClientRect(), y = (e.clientY - r.top) / r.height; return y < .3 ? 'before' : y > .7 ? 'after' : null; };
+  const clearEdges = () => document.querySelectorAll('.board-row.drop-before, .board-row.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  async function placeBoard(id, target, after) {
+    const mine = boardList.find(x => x.id === id) || (board && board.id === id ? board : null); if (!mine || id === target.id) return;
+    const key = orderKey(target), from = orderKey(mine);
+    if (key !== from || !topLevel(mine) || mine.parent) await moveBoard(id, key === 'loose' ? null : key);
+    const ids = (key === 'loose' ? looseBoards() : boardsIn(key)).map(x => x.id).filter(x => x !== id), at = ids.indexOf(target.id) + (after ? 1 : 0);
+    ids.splice(at < 0 ? ids.length : at, 0, id); boardOrder[key] = ids;
+    if (from !== key && boardOrder[from]) boardOrder[from] = boardOrder[from].filter(x => x !== id);
+  }
+  function reorderZone(el, b) {
+    if (b.parent && boardList.some(x => x.id === b.parent)) return;   // canvases inside another board are not part of a folder's order
+    el.addEventListener('dragover', e => { if (!e.dataTransfer.types.includes('fenmyr/board')) return; const z = dropEdge(e, el); el.classList.remove('drop-before', 'drop-after'); if (!z) return; e.preventDefault(); e.stopImmediatePropagation(); el.classList.remove('drop'); el.classList.add('drop-' + z); });
+    el.addEventListener('dragleave', e => { if (!el.contains(e.relatedTarget)) el.classList.remove('drop-before', 'drop-after'); });
+    el.addEventListener('drop', async e => { const z = dropEdge(e, el), id = e.dataTransfer.getData('fenmyr/board'); clearEdges(); if (!z || !id) return; e.preventDefault(); e.stopImmediatePropagation(); await placeBoard(id, b, z === 'after'); await saveLib(); refreshBoards(); });
+  }
+  const draggable = (el, kind, id) => { el.draggable = true; el.ondragstart = e => { e.stopPropagation(); e.dataTransfer.setData('fenmyr/' + kind, id); e.dataTransfer.effectAllowed = 'move'; el.classList.add('dragging'); }; el.ondragend = () => { el.classList.remove('dragging'); clearEdges(); }; };
   function inlineRename(el, obj, after) {
     el.contentEditable = 'true'; el.focus(); getSelection().selectAllChildren(el);
     el.onkeydown = ev => { if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); } if (ev.key === 'Escape') { el.textContent = obj.name; el.blur(); } ev.stopPropagation(); };
@@ -226,7 +250,7 @@
     for (const k of c.cards) if (k.type === 'canvas' && k.board) { const kid = await copyBoard(k.board, { parent: c.id, folder: c.folder || null }); if (kid) k.board = kid.id; }
     await Fenmyr.save(c); return c;
   }
-  async function dropBoard(id) { for (const k of boardList.filter(x => x.parent === id)) await dropBoard(k.id); await Fenmyr.remove(id); }
+  async function dropBoard(id) { for (const k of boardList.filter(x => x.parent === id)) await dropBoard(k.id); await Fenmyr.remove(id); dueForget(id); }
   async function duplicate(kind, obj) {
     if (kind === 'board') { const c = await copyBoard(obj.id, { name: obj.name + ' copy' }); await refreshBoards(); if (c) chirp(`Made “${c.name}” ✦`, 3500); return; }
     // copy a folder, the folders inside it and all their boards
@@ -308,7 +332,7 @@
     r.ondblclick = e => { e.stopPropagation(); clearTimeout(tap); inlineRename(name, b, v => renameBoard(b, v)); };
     const pen = document.createElement('button'); pen.className = 'f-btn'; pen.title = 'Rename'; pen.innerHTML = FBTN.ren; r.appendChild(pen);
     pen.onclick = e => { e.stopPropagation(); clearTimeout(tap); inlineRename(name, b, v => renameBoard(b, v)); };
-    draggable(r, 'board', b.id); dropZone(r, 'board', id => nestBoard(id, b.id)); r.oncontextmenu = e => rowMenu(e, 'board', b, name);
+    draggable(r, 'board', b.id); reorderZone(r, b); dropZone(r, 'board', id => nestBoard(id, b.id)); r.oncontextmenu = e => rowMenu(e, 'board', b, name);
     const kids = boardList.filter(x => x.parent === b.id); if (!kids.length) return r;
     const frag = document.createDocumentFragment(), sub = document.createElement('div'); sub.className = 'sub-boards';
     kids.forEach(k => sub.appendChild(boardRow(k))); frag.appendChild(r); frag.appendChild(sub); return frag;
@@ -505,7 +529,7 @@
     miniCache.clear(); vnFull.clear(); histOpen = false; findClose(); board = b; if (chatOpen()) setTimeout(renderChat, 0); board.palette = board.palette || []; setTimeout(resetHistory, 0); view = Object.assign({ x: 160, y: 140, z: 1 }, b.view); sel.clear(); editing = null; focusSet = null; closeColor(); renderPalette();
     board.cards.forEach(c => { if (c.type === 'audio' && c.rec) { c.rec = false; c.paused = false; if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.'; } });
     board.cards.forEach(c => { if (c.type === 'canvas' && c.board) { const kb = boardList.find(x => x.id === c.board); if (kb && kb.name !== c.text) c.text = kb.name; } });
-    $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); applyToolbar(); try { localStorage.setItem('fenmyr:last', id); } catch (e) {}
+    $('boardName').value = board.name; renderAll(); refreshBoards(); refreshVNotes(); applyToolbar(); try { localStorage.setItem('fenmyr:last', id); } catch (e) {} dueIndex();
   }
   let saveT = 0;
   // ---------- undo / redo: a snapshot of the board after each change settles ----------
@@ -526,7 +550,7 @@
     if (!drag && board) { layoutAll(); cleanNumbers(); syncBoardTags(); }
     if (!restoring) { clearTimeout(snapT); snapT = setTimeout(remember, 350); }
     layersSoon(); $('saved').textContent = 'saving…'; clearTimeout(saveT);
-    saveT = setTimeout(async () => { board.view = view; await Fenmyr.save(board); $('saved').textContent = 'saved'; refreshBoards(); }, 400);
+    saveT = setTimeout(async () => { board.view = view; await Fenmyr.save(board); $('saved').textContent = 'saved'; dueIndex(); refreshBoards(); }, 400);
   }
 
   // after Myra works: glide to what she made (unless it's already in view) and let it glow for a moment
@@ -664,7 +688,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function inner(c) {
     switch (c.type) {
-      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra" src="stamps/myra-wave.png" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : `<div class="nname">${esc(c.name || '')}</div>`}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
+      case 'note': return `${c.myra ? `<div class="nm-head"><img class="nmyra${c.myraMv ? ' mv-' + c.myraMv : ''}" src="${esc(c.myraImg || 'stamps/myra-wave.png')}" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : `<div class="nname">${esc(c.name || '')}</div>`}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
       case 'doc': return `<div class="pill">${CIC.doc}<span class="text">${esc(c.text)}</span></div>`;
       case 'canvas': return `<div class="cv-head">${CIC.canvas}<span class="text">${esc(c.text)}</span></div><div class="cv-prev"><em>empty canvas</em></div>`;
       case 'shape': return shapeSVG(c) + `<div class="text">${esc(c.text || '')}</div>`;
@@ -787,7 +811,7 @@
     if (c.type === 'coll') { const t = COLL[c.color] || COLL.pink; el.style.setProperty('--chead', t[0]); el.style.setProperty('--cframe', t[1]); el.classList.toggle('nohead', c.head === false); el.style.height = c.h + 'px'; }
     else if (parentOf(c.id)) el.classList.add('inside');
     if (c.type === 'spotify') { const fr = el.querySelector('.sp-frame'); if (fr && fr.dataset.src === spEmbed(c)) { const t = el.querySelector('.sp-head span'); if (t) t.textContent = c.title || 'Spotify'; const tg = el.querySelector(':scope > .tag'); if (tg) tg.textContent = c.tagText || ''; if (!!tg === !!c.tagText) return el; } }
-    el.innerHTML = `<div class="frame"></div><div class="body">${inner(c)}</div>${c.tagText ? `<div class="tag">${esc(c.tagText)}</div>` : ''}<div class="knob"></div><div class="handle"></div>${TILTS(c) ? '<i class="rot-h" title="Drag to tilt"></i>' : ''}`;
+    el.innerHTML = `<div class="frame"></div><div class="body">${inner(c)}</div>${c.tagText ? `<div class="tag">${esc(c.tagText)}</div>` : ''}${dueChip(c)}<div class="knob"></div><div class="handle"></div>${TILTS(c) ? '<i class="rot-h" title="Drag to tilt"></i>' : ''}`;
     if (c.type === 'video') setupVideo(c, el);
     if (WF.includes(c.type)) styleWF(c, el);   // after the insides exist
     else applyStroke(c, el);
@@ -1958,7 +1982,7 @@
     if (k === 'v') { if (e.shiftKey) startPlacing('video'); else toPointer(); }
     if (k === 'i') $('filePick').click();
     if (k === '0') fit(board.cards);
-    if (k === 'm') { e.preventDefault(); myraOpen(true); }
+    if (k === 'm') { e.preventDefault(); const was = chatOpen(); myraOpen(true); if (!was) wonderIfEmpty(); }
   });
   addEventListener('keyup', e => { if (e.key === ' ') { space = false; stage.classList.remove('space'); } });
   // links get a little paste box under the toolbar (the app can't show the browser's prompt)
@@ -2187,9 +2211,10 @@
   myCur.innerHTML = `<svg class="tipv" viewBox="0 0 20 22"><path d="M2.6 1.6 17.2 9.9c1 .6.9 1.5-.2 1.8l-6.1 1.8c-.5.2-.9.5-1.1 1l-2.6 6c-.5 1-1.4 1-1.7-.1L1.2 2.9c-.3-1.1.5-1.8 1.4-1.3Z"/></svg><svg class="tagbg" aria-hidden="true"><path/></svg>`
     + `<svg class="grabhand open" viewBox="0 0 34 34"><g class="o"><rect x="8.5" y="15" width="19.5" height="16" rx="7"/><rect x="8" y="4.2" width="5" height="15.5" rx="2.5" transform="rotate(-8 10.5 19)"/><rect x="13.2" y="1.2" width="5" height="17.5" rx="2.5"/><rect x="18.4" y="2.2" width="5" height="16.5" rx="2.5"/><rect x="23.4" y="5.6" width="4.6" height="14" rx="2.3" transform="rotate(8 25.7 19)"/><rect x="7.6" y="15.5" width="3.8" height="9" rx="1.9" transform="rotate(-42 9.5 24)"/></g><g class="f"><rect x="8.5" y="15" width="19.5" height="16" rx="7"/><rect x="8" y="4.2" width="5" height="15.5" rx="2.5" transform="rotate(-8 10.5 19)"/><rect x="13.2" y="1.2" width="5" height="17.5" rx="2.5"/><rect x="18.4" y="2.2" width="5" height="16.5" rx="2.5"/><rect x="23.4" y="5.6" width="4.6" height="14" rx="2.3" transform="rotate(8 25.7 19)"/><rect x="7.6" y="15.5" width="3.8" height="9" rx="1.9" transform="rotate(-42 9.5 24)"/></g></svg>`
     + `<svg class="grabhand fist" viewBox="0 0 34 34"><g class="o"><rect x="7.5" y="13" width="21" height="17" rx="7.5"/><circle cx="11" cy="13.6" r="3"/><circle cx="16" cy="12.6" r="3"/><circle cx="21" cy="12.8" r="3"/><circle cx="25.4" cy="14.4" r="2.7"/><rect x="6" y="17" width="12" height="5" rx="2.5" transform="rotate(-12 12 19.5)"/></g><g class="f"><rect x="7.5" y="13" width="21" height="17" rx="7.5"/><circle cx="11" cy="13.6" r="3"/><circle cx="16" cy="12.6" r="3"/><circle cx="21" cy="12.8" r="3"/><circle cx="25.4" cy="14.4" r="2.7"/><rect x="6" y="17" width="12" height="5" rx="2.5" transform="rotate(-12 12 19.5)"/></g></svg>`
+    + `<svg class="rszv" viewBox="0 0 34 34"><g class="o"><path d="M17 3.5 22.8 11.5H18.8V22.5H22.8L17 30.5 11.2 22.5H15.2V11.5H11.2Z"/></g><g class="f"><path d="M17 3.5 22.8 11.5H18.8V22.5H22.8L17 30.5 11.2 22.5H15.2V11.5H11.2Z"/></g></svg>`
     + `<i class="ring"></i><div class="bub"></div>`;
   document.body.appendChild(myCur);
-  const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .handle, #rh, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
+  const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
   // the name tag: a rounded rectangle whose straight edges wobble gently (the corners stay clean), drawn to fit the name
   function tagPath(w, h, phase) {
     const r = Math.min(8, h / 2 - 1), a = .8, step = 3, wav = (t, len) => a * Math.sin(t / len * Math.PI * Math.max(1, Math.round(len / 22)) + phase) * Math.sin(t / len * Math.PI);
@@ -2227,6 +2252,8 @@
     const t = e.target, native = edge || !!(t.closest && t.closest(NATIVE));
     myCur.classList.toggle('hide', native); document.body.classList.toggle('cur-native', native);
     const onCard = !native && !placing && !drawOn && t.closest && t.closest('.card') && !t.closest('button, a, input');
+    const rz = native || !t.closest ? null : t.closest('.rz-grip') ? 0 : t.closest('#rh, .handle') ? -45 : t.closest('.crop-box i[data-h]') ? (/^(nw|se)$/.test(t.closest('.crop-box i[data-h]').dataset.h) ? -45 : 45) : t.closest('.resize-cursor') ? 90 : null;   // over a resize handle: her own double arrow, turned to fit (height grips, corners, table column edges)
+    myCur.classList.toggle('rsz', rz !== null); if (rz !== null) myCur.style.setProperty('--rz', rz + 'deg');
     myCur.classList.toggle('grabby', !!onCard || stage.classList.contains('space') || stage.classList.contains('panning'));
   }, { passive: true, capture: true });
   addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; myCur.classList.add('down'); myCur.classList.remove('tap'); void myCur.offsetWidth; myCur.classList.add('tap'); }, true);
@@ -2259,6 +2286,7 @@
     paintCursor();
     // settings: name, cursor colors and the little preview
     if ($('setName') && document.activeElement !== $('setName')) $('setName').value = settings.name || '';
+    paintBd();
     if ($('curColors')) $('curColors').innerHTML = PRESETS.cursor.map(h => `<button data-cc="${h}" title="${h.toUpperCase()}" style="background:${h}" class="${settings.cursor === h ? 'on' : ''}"></button>`).join('')
       + `<button class="rand${PRESETS.cursor.includes(settings.cursor) ? '' : ' on'}" data-col="cursor" title="Any colour"></button>`;
     const pv = document.querySelector('#curPrev .mcur'); if (pv) { pv.innerHTML = myCur.innerHTML; pv.setAttribute('style', myCur.getAttribute('style') || ''); pv.style.transform = ''; }
@@ -2293,13 +2321,33 @@
   const PANELS = { boards: () => $('boards'), layers: () => $('layers'), tray: () => $('trayList'), design: () => document.querySelector('#design .dz-body') };
   const panelMin = k => k === 'layers' ? Math.max(30, $('layers').querySelector('.ly')?.offsetHeight || 30) : k === 'boards' ? Math.max(30, $('boards').querySelector('.board-row, .folder-row, .proj-row')?.offsetHeight || 32) : k === 'tray' ? 60 : 120;
   function applyPanelH() { Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const v = (settings.panelH || {})[k];
-    if (v) { const h = Math.max(panelMin(k), v); Object.assign(el.style, { height: h + 'px', minHeight: '0', maxHeight: 'none', flex: `0 1 ${h}px`, overflowY: 'auto' }); } else Object.assign(el.style, { height: '', minHeight: '', maxHeight: '', flex: '', overflowY: '' }); }); }   // a saved height is a wish: on a short window the panel shrinks to fit instead of spilling out of its column
-  Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const grip = document.createElement('div'); grip.className = 'rz-grip'; grip.title = 'Drag to change the height · double-click for automatic'; grip.dataset.panel = k; el.insertAdjacentElement('afterend', grip);
+    if (v) { const h = Math.max(panelMin(k), v); Object.assign(el.style, { height: h + 'px', minHeight: '0', maxHeight: 'none', flex: `0 1 ${h}px`, overflowY: 'auto', overflowX: k === 'tray' || k === 'design' ? 'hidden' : '' }); } else Object.assign(el.style, { height: '', minHeight: '', maxHeight: '', flex: '', overflowY: '', overflowX: '' }); el.closest('.design, .tray')?.classList.toggle('sized', !!v); }); fitSides(); }   // a saved height is a wish: on a short window the panel shrinks to fit instead of spilling out of its column
+  Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const grip = document.createElement('div'); grip.className = 'rz-grip'; grip.title = 'Drag to change the height · double-click for automatic'; grip.dataset.panel = k; el.insertAdjacentElement('afterend', grip); gripBulge(grip);
     grip.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const y0 = e.clientY, h0 = el.getBoundingClientRect().height; grip.setPointerCapture(e.pointerId); grip.classList.add('on');
-      const mv = ev => { settings.panelH = { ...(settings.panelH || {}), [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))) }; applyPanelH(); };
+      const mv = ev => { settings.panelH = { ...(settings.panelH || {}), [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))) }; applyPanelH(); const got = Math.round(el.getBoundingClientRect().height); if (got < settings.panelH[k]) settings.panelH[k] = got; };
       const up = () => { grip.classList.remove('on'); grip.removeEventListener('pointermove', mv); grip.removeEventListener('pointerup', up); applySettings(); };
       grip.addEventListener('pointermove', mv); grip.addEventListener('pointerup', up); });
     grip.addEventListener('dblclick', e => { e.stopPropagation(); const p = { ...(settings.panelH || {}) }; delete p[k]; settings.panelH = p; applyPanelH(); applySettings(); }); });
+  // Wireframe and Unsorted share the right column: a height you dragged (or saved) is a wish, trimmed so everything in the column stays on screen (Wireframe gives way first)
+  function fitSides() {
+    document.querySelectorAll('.side').forEach(side => { let over = side.scrollHeight - side.clientHeight; if (over < 2) return;
+      ['design', 'tray'].forEach(k => { const el = PANELS[k](); if (over < 2 || !el || !el.closest('.side') || el.closest('.side') !== side || !el.closest('.sized')) return;
+        const cur = el.getBoundingClientRect().height, h = Math.max(panelMin(k), Math.floor(cur - over)); if (h >= cur) return; Object.assign(el.style, { height: h + 'px', flex: `0 1 ${h}px` }); over -= cur - h; }); });
+  }
+  addEventListener('resize', fitSides); document.querySelectorAll('.side').forEach(el => new ResizeObserver(() => requestAnimationFrame(fitSides)).observe(el));
+  // the height grips bulge on hover: the line widens and swells into a small round peak above and below, with a wobble that settles (a damped spring on its width and thickness)
+  function gripBulge(grip) {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), path = document.createElementNS(NS, 'path'); svg.setAttribute('viewBox', '0 0 200 40'); svg.appendChild(path); grip.appendChild(svg);
+    const REST = { w: 15, t: 4 }, HOT = { w: 20, t: 11 }, st = { w: REST.w, t: REST.t, vw: 0, vt: 0 }; let raf = 0, last = 0;
+    const draw = () => { const N = 36, top = [], bot = []; for (let i = 0; i <= N; i++) { const u = -1 + 2 * i / N, h = i === 0 || i === N ? 2 : 2 + (st.t / 2 - 2) * Math.exp(-u * u * 9), x = (100 + u * st.w).toFixed(2); top.push(`${x},${(20 - h).toFixed(2)}`); bot.push(`${x},${(20 + h).toFixed(2)}`); }
+      path.setAttribute('d', `M${top.join(' L')} A2,2 0 0 1 ${bot[N]} L${bot.reverse().join(' L')} A2,2 0 0 1 ${top[0]} Z`); };
+    const goal = () => grip.matches(':hover') || grip.classList.contains('on') ? 1 : 0;
+    const tick = now => { const dt = Math.min(32, now - (last || now)) / 1000; last = now; const g = goal(), gw = REST.w + (HOT.w - REST.w) * g, gt = REST.t + (HOT.t - REST.t) * g;
+      st.vw += (-190 * (st.w - gw) - 14 * st.vw) * dt; st.w += st.vw * dt; st.vt += (-230 * (st.t - gt) - 7 * st.vt) * dt; st.t = Math.max(2.5, st.t + st.vt * dt); draw();
+      if (Math.abs(st.w - gw) + Math.abs(st.t - gt) + Math.abs(st.vw) * .05 + Math.abs(st.vt) * .05 < .05) { st.w = gw; st.t = gt; st.vw = st.vt = 0; draw(); raf = 0; last = 0; return; } raf = requestAnimationFrame(tick); };
+    const kick = () => { if (matchMedia('(prefers-reduced-motion: reduce)').matches) { const g = goal(); st.w = g ? HOT.w : REST.w; st.t = g ? HOT.t : REST.t; draw(); } else if (!raf) raf = requestAnimationFrame(tick); };
+    ['pointerenter', 'pointerleave', 'pointerdown', 'pointerup', 'lostpointercapture'].forEach(ev => grip.addEventListener(ev, () => setTimeout(kick, 0))); draw();
+  }
   applyPanelH();
   $('myraNameIn').oninput = e => { settings.myraName = e.target.value.slice(0, 18); applySettings(); };
   $('myraNameIn').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') e.target.blur(); };
@@ -2364,6 +2412,7 @@
   function tip(text) { if (settings.chat === 'chatty') say(text, 6000); }
   // keep: an answer to something you asked, so it also goes into the chat even when the chat window is closed
   function say(text, ms = 6000, acts = [], keep = false) {
+    $('mBubble').classList.remove('party');
     if (chatOpen()) { if (text) addMsg('myra', text, acts); return; }
     if (keep && text) addMsg('myra', text, acts);
     $('mSay').textContent = text; $('mActs').innerHTML = '';
@@ -2389,8 +2438,65 @@
   }
   $('mcSel').onclick = e => { if (e.target.closest('.mcs-x')) { selectOnly([]); renderSelChip(); } };
   ['pointerup', 'keyup'].forEach(ev => document.addEventListener(ev, () => { if (chatOpen()) setTimeout(renderSelChip, 0); }, true));
-  function myraOpen(on) { $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); selChipKey = null; renderSelChip(); $('mcInput').focus(); } }
-  $('mPill').onclick = () => myraOpen(!chatOpen());
+  function myraOpen(on) { const was = chatOpen(); if (!on && $('mChat').contains(document.activeElement)) document.activeElement.blur(); /* a closed chat is also visibility:hidden, so nothing in it can keep or take the cursor */ $('myra').classList.toggle('chat', on); if (on) { $('mBubble').classList.remove('on'); renderChat(); selChipKey = null; renderSelChip(); $('mcInput').focus(); } if (on !== was) perchGoo(on); }
+  // ---------- with the chat open she perches on the top left of the input box (under her latest reply), and hops back to her button when it closes ----------
+  const gooSlot = $('gooSlot');
+  let perched = false, gooAt = { x: 0, y: 0 }, gooAnim = null, toggleLog = [], dizzyAt = 0, dizzyAuto = true;
+    const gooMove = t => { gooAt = t; gooSlot.style.transform = `translate(${t.x}px, ${t.y}px)`; };
+  function perchTarget() {   // layout values only (never her own transform), so it is right while she squashes, leans and flies, and while the chat is still fading in
+    const my = $('myra').getBoundingClientRect(), chat = $('mChat'), cs = getComputedStyle(chat), form = $('mcForm'), pill = $('mPill'), pr = pill.getBoundingClientRect();
+    const baseL = pr.left + (gooSlot.offsetLeft - pill.offsetLeft), baseT = pr.top + (gooSlot.offsetTop - pill.offsetTop);   // where her slot sits in the button
+    const chatL = my.right - parseFloat(cs.right) - chat.offsetWidth, chatT = my.bottom - parseFloat(cs.bottom) - chat.offsetHeight;
+    return { x: chatL + form.offsetLeft + 12 - baseL, y: chatT + form.offsetTop + 6 - gooSlot.offsetHeight - baseT };
+  }
+  // her hop is one gooey jump, no springs: a short wind-up, then she stretches along the line she is travelling (diagonally up and left leaving the button, up and right going home), most when
+  // she is fastest and round again near the top of the arc, with a soft wobble just after she leaves the ground; she slows towards the top and quickens a little coming down; on landing she squashes
+  // once and settles. The landing spot is fixed when she takes off (measured again at touchdown), so she can never drift past the edge of the chat.
+  const HOP = { stretch: .3, wobble: .3, arc: 100, up: 480, home: 431, squash: .35, wind: 140, land: 300 };
+  const gooPose = (p, tf) => { gooAt = p; gooSlot.style.transform = `translate(${p.x}px, ${p.y}px)${tf || ''}`; };
+  const gooRest = () => { gooSlot.style.transformOrigin = ''; };
+  function flyGoo(to, instant) {
+    const from = gooAt; if (gooAnim) { gooAnim.stop(); gooAnim = null; }
+    const done = () => { if (flightLive) { flightLive = false; liveOff(); } };
+    if (instant || (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1)) { gooRest(); gooMove(to); done(); return; }
+    if (!flightLive) { flightLive = true; liveOn(); }
+    gooRest();
+    const up = to.y < from.y, WIND = up ? HOP.wind : HOP.wind * .6, AIR = up ? HOP.up : HOP.home, h = HOP.arc * (up ? 1 : .7), LAND = HOP.land;
+    const dx = to.x - from.x, dy = to.y - from.y, vref = Math.hypot(Math.abs(dx), Math.abs(dy) + 4 * h) / AIR;
+    const t0 = performance.now(), sm = k => k * k * (3 - 2 * k), lerp = (a, b, k) => a + (b - a) * k; let target = to, landFrom = null, raf = 0, stopped = false;
+    const step = now => {
+      if (stopped) return; const e = now - t0;
+      if (e < WIND) { const k = sm(e / WIND); gooPose(from, ` scale(${1 + .1 * k * HOP.squash / .35}, ${1 - .14 * k * HOP.squash / .35})`); }   // a small crouch before she leaves
+      else if (e < WIND + AIR) {
+        gooSlot.style.transformOrigin = '50% 55%';
+        const t = e - WIND, k = t / AIR, x = from.x + dx * k, y = from.y + dy * k - 4 * h * k * (1 - k);
+        const vx = dx / AIR, vy = dy / AIR - 4 * h * (1 - 2 * k) / AIR, sp = Math.hypot(vx, vy) / vref, th = Math.atan2(vy, vx);
+        const el = sm(Math.min(1, sp)), along = 1 + HOP.stretch * el + HOP.wobble * .4 * Math.exp(-t / 170) * Math.sin(t / 34), across = 1 / Math.sqrt(along);
+        gooPose({ x, y }, ` rotate(${th}rad) scale(${along}, ${across}) rotate(${-th}rad)`);
+      } else {
+        const l = e - WIND - AIR;
+        if (!landFrom) { landFrom = { x: from.x + dx, y: from.y + dy }; gooRest(); target = perched ? perchTarget() : { x: 0, y: 0 }; }   // where the landing spot is now
+        if (l >= LAND) { gooRest(); gooMove(target); gooAnim = null; done(); return; }
+        const sq = Math.exp(-l / 85) * Math.cos(l / 40), blend = Math.min(1, l / 120);
+        gooPose({ x: lerp(landFrom.x, target.x, blend), y: lerp(landFrom.y, target.y, blend) }, ` scale(${1 + .55 * HOP.squash * sq}, ${1 - HOP.squash * sq})`);
+      }
+      raf = requestAnimationFrame(step);
+    };
+    gooAnim = { stop() { stopped = true; cancelAnimationFrame(raf); } }; raf = requestAnimationFrame(step);
+  }
+  function perchGoo(on) {
+    const hidden = document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none'; if (hidden) return;
+    const now = Date.now(); toggleLog = toggleLog.filter(t => now - t < 3000); toggleLog.push(now);
+    if (dizzyAuto && toggleLog.length >= 4 && now - dizzyAt > 8000) { dizzyAt = now; toggleLog = []; setTimeout(() => playAnim('dizzy', false), 350); }   // toggled over and over: she gets dizzy
+    perched = on; gooSlot.classList.toggle('perched', on);
+    flyGoo(on ? perchTarget() : { x: 0, y: 0 }, window.myraMuted || matchMedia('(prefers-reduced-motion: reduce)').matches);   // calmest and reduced motion: she just appears
+  }
+  const keepPerch = () => { if (perched && !gooAnim) gooMove(perchTarget()); };
+  addEventListener('resize', keepPerch); const perchWatch = new ResizeObserver(keepPerch); [$('mChat'), $('mPill'), $('myra')].forEach(el => perchWatch.observe(el));   // the button changing width (a label appearing) moves the whole bar, and the chat with it
+  gooSlot.addEventListener('click', e => { if (!perched) return; e.stopPropagation(); playAnim(pickAnim(), false); });   // click her in the chat and she does something
+  // you opened an empty chat (the button or M): once she has landed by the input she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
+  const wonderIfEmpty = () => setTimeout(() => { if (chatOpen() && !chatLog().length && Date.now() - dizzyAt > 2500 && !$('myra').classList.contains('thinking')) playAnim('curious', false); }, window.myraMuted ? 150 : 700);
+  $('mPill').onclick = () => { clearGlow(); const opening = !chatOpen(); myraOpen(opening); if (opening) wonderIfEmpty(); };
   $('mcClose').onclick = () => myraOpen(false);
   // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
   const CHATS_KEPT = 10; let histOpen = false;
@@ -2400,7 +2506,7 @@
     const msgs = board.chat, first = msgs.find(m => m.who === 'me') || msgs[0];
     board.chats = [{ id: uid(), title: String(first.text || 'Chat').replace(/\s+/g, ' ').trim().slice(0, 70), t: msgs[msgs.length - 1].t || Date.now(), msgs }, ...(board.chats || [])].slice(0, CHATS_KEPT);
   }
-  $('mcNew').onclick = () => { archiveChat(); if (settings.chatKeep === 'board') { board.chat = []; save(); } else chatLog().length = 0; histOpen = false; renderChat(); $('mcInput').focus(); };
+  $('mcNew').onclick = () => { archiveChat(); if (settings.chatKeep === 'board') { board.chat = []; save(); } else chatLog().length = 0; histOpen = false; renderChat(); $('mcInput').focus(); if (!chatLog().length) playAnim('curious', false); };   // a fresh, empty chat: she tilts her head and wonders what you will ask
   $('mcHist').onclick = () => { histOpen = !histOpen; renderChat(); };
   const whenText = t => { const d = new Date(t), days = Math.floor((Date.now() - t) / 864e5); return days < 1 ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : days < 7 ? d.toLocaleDateString([], { weekday: 'short' }) : d.toLocaleDateString([], { day: 'numeric', month: 'short' }); };
   function renderHistory() {
@@ -2445,11 +2551,13 @@
   // what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
   function snapshot() {
     const brief = c => c.type === 'vnote' ? { id: c.id, type: 'vnote', x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h) } : ({ id: c.id, type: c.type, x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h), color: c.color,
-      text: (c.text || c.title || c.label || '').slice(0, 300), font: c.font, name: c.name, kids: c.kids, desc: c.desc, body: c.body ? c.body.slice(0, 600) : undefined, shape: c.shape, label: c.tagText, tags: (c.tags || []).length ? c.tags : undefined, items: c.items ? c.items.map(i => i.t) : undefined, hex: c.hex, url: c.url, selected: sel.has(c.id) || undefined });
-    return { name: board.name, boardTags: board.tags || [], myTemplates: myTpls.map(t => t.name), cards: board.cards.map(brief), links: board.links.map(l => [l.a, l.b]), unsorted: board.tray.map(brief), boardColors: board.palette,
+      text: (c.text || c.title || c.label || '').slice(0, 300), font: c.font, name: c.name, kids: c.kids, desc: c.desc, body: c.body ? c.body.slice(0, 600) : undefined, shape: c.shape, label: c.tagText, tags: (c.tags || []).length ? c.tags : undefined, due: c.type === 'note' ? c.due : undefined, items: c.items ? c.items.map(i => i.t) : undefined, hex: c.hex, url: c.url, selected: sel.has(c.id) || undefined });
+    return { today: `${new Date().toDateString()}, ${new Date().toTimeString().slice(0, 5)}`, name: board.name, boardTags: board.tags || [], myTemplates: myTpls.map(t => t.name), cards: board.cards.map(brief), links: board.links.map(l => [l.a, l.b]), unsorted: board.tray.map(brief), boardColors: board.palette,
       fontsOnThisComputer: FONTS.filter(f => !/^(\.|Apple |System|STIX|Noto Sans [A-Z][a-z]+ [A-Z])/.test(f)).slice(0, 400),
       recentChat: (settings.chatKeep === 'off' ? chatLog().slice(-2) : chatLog().slice(-8)).map(m => `${m.who === 'me' ? 'Person' : 'Myra'}: ${m.text}`),
       myraStyle: { name: settings.name || '', chat: settings.chat, emoji: !!settings.emoji }, // the host turns these into words (TONES in linux/prompts.js)
+      commands: SLASH.filter(c => !c.dev).map(c => ({ cmd: c.cmd, arg: c.arg, desc: c.desc, ex: c.ex, opts: c.opts })),
+      person: birthdayFacts(),   // the slash commands, so she knows every one (the host puts them in her instructions)
       library: { projects: projects.map(p => ({ name: p.name, folders: foldersIn(p.id).map(f => f.name) })), foldersNotInAProject: looseFolders().map(f => f.name), boards: boardList.map(b => ({ id: b.id, name: b.name, folder: (folders.find(f => f.id === b.folder) || {}).name || null, current: b.id === board.id || undefined })) } };
   }
   // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
@@ -2460,6 +2568,8 @@
     return notes.length;
   }
   function offlineMyra(q, why) {
+    { const tr = timerRequest(q); if (tr) return void runTimerRequest(tr, true); }
+    const an = animIntent(q); if (an) return void playAnim(an === '*' ? pickAnim() : an);
     if (/group|sort|organi[sz]e|tidy|line up/i.test(q)) { const n = tidyNotes(); if (n) return reply(`I lined your ${n} notes up in tidy rows ✦ ${why}`, 9000); }
     reply(`${why} Everything else on the board works without me thinking ✦`, 0, (haveClaude === false || offlineMyra.signin) && settings.ai ? [{ label: 'Show me how to connect', run: () => Fenmyr.openURL(GUIDE) }] : []); offlineMyra.signin = false;
   }
@@ -2470,12 +2580,20 @@
   const getApp = () => Fenmyr.openURL(Fenmyr.getURL || 'https://github.com/chiangs/fenmyr/releases/latest');
   const DL = [{ label: 'Download Fenmyr ✦', run: getApp }, { label: 'Keep playing', ghost: true, run: () => {} }];
   function webMyra(q) {
+    { const tr = timerRequest(q); if (tr) return void runTimerRequest(tr, true); }
+    const an = animIntent(q); if (an) return void playAnim(an === '*' ? pickAnim() : an);
     const notes = board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
     if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length) return offlineMyra(q, 'In the desktop app I can sort them by theme too, with Claude.');
     const what = /mobbin/i.test(q) ? 'Mobbin lives in your Claude account, and I can only reach it from the desktop app.' : /higgsfield|photo|picture|image/i.test(q) ? 'Making pictures with Higgsfield happens in the desktop app, where I can check the price with you first.' : 'I think with Claude Code, and that lives in the desktop app.';
     reply(`I'd love to help with that! ${what} Download me and I'll connect to your Claude, Mobbin and Higgsfield ✦`, 0, DL);
   }
+  let animAskedAt = 0, aiAnimAt = 0, timerAskedAt = 0;
   async function ask(q, confirmed = false) {
+    const did = [];   // what the app already did for this sentence, so her answer can go with it
+    if (!confirmed) {
+      const an = animRequest(q); if (an) { animAskedAt = Date.now(); const n = an === '*' ? pickAnim() : an; if (playAnim(n, false)) did.push(`played her ${n} animation`); }
+      const tr = timerRequest(q); if (tr) { timerAskedAt = Date.now(); did.push(runTimerRequest(tr)); }
+    }
     if (Fenmyr.web) { if (!chatOpen()) myraOpen(true); addMsg('me', q); return webMyra(q); }
     if (!settings.ai || haveClaude === false) { if (!chatOpen()) myraOpen(true); addMsg('me', q); }
     if (!settings.ai) return offlineMyra(q, "My thinking is switched off in Settings, so I can only do simple tidying.");
@@ -2487,7 +2605,7 @@
     const ctx = { asked: false, used: [] };
     if (vaultChip && aiGrants(board).length) { ctx.asked = true; try { ctx.used = await gatherVault(q); } catch (e) {} }
     const canVault = !ctx.asked && aiGrants(board).length > 0; vaultChip = false; updateVaultChip();
-    try { const raw = await Fenmyr.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q, snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs, web: !!settings.webAccess, canVault, vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })) }); await applyMyra(parse(raw), q, ctx); }
+    try { const raw = await Fenmyr.ask((window.myraName && window.myraName !== 'Myra' ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) ` : '') + q + (did.filter(Boolean).length ? ` (The app has already done this for them: ${did.filter(Boolean).join('; ')}. Do not claim you cannot. Answer in a short line.)` : ''), snapshot(), confirmed, { mobbin: settings.mobbin, higgs: settings.higgs, web: !!settings.webAccess, canVault, vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })) }); await applyMyra(parse(raw), q, ctx); }
     catch (err) { if (/Claude Code/.test(err.message)) { haveClaude = false; return offlineMyra(q, "I need Claude Code on this computer to think. It's a one-time setup with your Claude account."); }
       if (SIGNIN.test(err.message)) { offlineMyra.signin = true; return offlineMyra(q, "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account."); }
       reply("Hmm, I couldn't reach Claude: " + err.message); }
@@ -2495,15 +2613,97 @@
   }
   $('mForm').onsubmit = e => { e.preventDefault(); const q = $('mInput').value.trim(); if (!q) return; $('mInput').value = ''; if (q[0] === '/') return slash(q); myraOpen(false); $('mInput').placeholder = 'Ask Myra… “group these by theme”'; ask(q); };
   // ---------- slash commands: a list of what Myra can do right here, no thinking needed (typing / opens it; Ctrl+F starts /find) ----------
+  // ---------- due dates on notes: a chip on the card's bottom edge, a reminder when it comes due ----------
+  // note.due is "2026-11-04" (the end of that day; the reminder comes at 9:00) or "2026-11-04T15:30". The reminders come from a small index kept in localStorage (every note with a due date, on any board you have opened),
+  // so nothing needs to open or scan the other boards, and one timer is armed for the next moment that matters: a reminder, a note turning amber (24 hours to go) or red (overdue).
+  const DUE_KEY = 'fenmyr:due', DUE_FIRED = 'fenmyr:dueFired', DUE_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/;
+  const lsRead = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }, lsWrite = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  function dueDate(d) { if (typeof d !== 'string' || !DUE_RE.test(d)) return null; const t = new Date(d.length > 10 ? d : d + 'T23:59'); return isNaN(t) ? null : t; }
+  const dueRemindAt = d => { const t = dueDate(d); return t && (d.length > 10 ? t : new Date(d + 'T09:00')); };
+  function dueState(d) { const t = dueDate(d); if (!t) return ''; const ms = t - Date.now(); return ms < 0 ? 'over' : ms < 864e5 ? 'soon' : ''; }
+  function dueText(d) { const t = dueDate(d); if (!t) return ''; const day = t.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); return d.length > 10 ? `${day} · ${t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : day; }
+  const dueChip = c => c.type === 'note' && dueDate(c.due) ? `<div class="due ${dueState(c.due)}" title="Due ${esc(dueText(c.due))}">${Icon('clock', { size: 12 })}<span>${esc(dueText(c.due))}</span></div>` : '';
+  function dueChips() { cardsEl.querySelectorAll('.card .due').forEach(ch => { const c = byId(ch.closest('.card')?.dataset.id); if (c) ch.className = 'due ' + dueState(c.due); }); }
+  function setDue(c, v) {
+    remember(); if (dueDate(v)) c.due = v; else delete c.due;
+    const el = cardsEl.querySelector(`[data-id="${c.id}"]`); if (el) { el.querySelector('.due')?.remove(); el.insertAdjacentHTML('beforeend', dueChip(c)); }
+    save(); dueIndex(true);
+  }
+  let dueSigs = new Map(), dueT = 0, dueHold = true, dueHeld = [];   // dueHold: at start-up reminders wait until the greeting has been said
+  function dueIndex(force) {
+    if (!board) return;
+    const mine = board.cards.filter(c => c.type === 'note' && dueDate(c.due)), sig = mine.map(c => `${c.id}|${c.due}|${c.name || c.text || ''}`).join('\n') + '|' + board.name;
+    if (!force && dueSigs.get(board.id) === sig) return; dueSigs.set(board.id, sig);   // saving happens all the time; only a change to the due notes touches the index
+    const idx = lsRead(DUE_KEY, {}); Object.keys(idx).forEach(k => { if (idx[k].b === board.id) delete idx[k]; });
+    mine.forEach(c => { idx[board.id + ':' + c.id] = { b: board.id, c: c.id, d: c.due, t: dueRemindAt(c.due).getTime(), n: String(c.name || c.text || 'Note').replace(/\s+/g, ' ').trim().slice(0, 60), bn: board.name }; });
+    const keys = Object.keys(idx), now = Date.now();
+    keys.forEach(k => { if (idx[k].t < now - 30 * 864e5) delete idx[k]; });   // a month overdue and long since announced: forget it
+    const left = Object.keys(idx); if (left.length > 500) left.sort((a, b) => Math.abs(idx[b].t - now) - Math.abs(idx[a].t - now)).slice(0, left.length - 500).forEach(k => delete idx[k]);
+    lsWrite(DUE_KEY, idx); dueArm();
+  }
+  function dueForget(boardId) { const idx = lsRead(DUE_KEY, {}); let n = 0; Object.keys(idx).forEach(k => { if (idx[k].b === boardId) { delete idx[k]; n++; } }); dueSigs.delete(boardId); if (n) { lsWrite(DUE_KEY, idx); dueArm(); } }
+  function dueArm() {
+    clearTimeout(dueT); const idx = lsRead(DUE_KEY, {}), fired = lsRead(DUE_FIRED, {}), now = Date.now();
+    const ready = Object.entries(idx).filter(([k, it]) => it.t <= now && fired[k] !== it.d);
+    if (ready.length) { ready.forEach(([k, it]) => fired[k] = it.d); Object.keys(fired).forEach(k => { if (!idx[k]) delete fired[k]; }); lsWrite(DUE_FIRED, fired); const its = ready.map(([, it]) => it); if (dueHold) dueHeld.push(...its); else dueAnnounce(its); }
+    dueChips();
+    let next = Infinity; Object.entries(idx).forEach(([k, it]) => { const due = dueDate(it.d).getTime(); [fired[k] === it.d ? Infinity : it.t, due - 864e5, due].forEach(t => { if (t > now && t < next) next = t; }); });
+    if (next < Infinity) dueT = setTimeout(dueArm, Math.min(next - now + 50, 2147e6));
+  }
+  async function dueJump(it) {
+    if (!board || board.id !== it.b) { closeHome?.(); await openBoard(it.b); }
+    const c = byId(it.c); if (c) { selectOnly([c.id]); showWhatMyraMade([c]); } else chirp('That note is no longer on its board ✦', 3500);
+  }
+  function dueAnnounce(items) {
+    const late = it => Date.now() - it.t > 10 * 6e4, where = it => board && board.id === it.b ? '' : ` on “${it.bn}”`;
+    if (items.length === 1) { const it = items[0], text = `“${it.n}”${where(it)} ${late(it) ? 'was due ' + dueText(it.d) : 'is due now'} ✦`; say(text, 0, [{ label: 'Show me', run: () => dueJump(it) }], true); osNotify('Due', `${it.n}${where(it)}`); return; }
+    const text = `${items.length} notes are due ✦\n` + items.slice(0, 6).map(it => `• ${it.n}${where(it)}`).join('\n'); say(text, 0, [{ label: 'Show me', run: () => dueJump(items[0]) }], true); osNotify('Due', `${items.length} notes are due`);
+  }
+  addEventListener('focus', () => dueArm()); document.addEventListener('visibilitychange', () => { if (!document.hidden) dueArm(); });
+  function slashDue(arg) {
+    const only = (arg || '').trim().toLowerCase(), idx = Object.values(lsRead(DUE_KEY, {})).sort((a, b) => a.t - b.t), now = bdNow(), day = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!idx.length) return reply('Nothing has a due date yet. Pick a note and use the calendar button ✦');
+    const over = idx.filter(it => dueDate(it.d) < now), soon = idx.filter(it => dueDate(it.d) >= now && (only !== 'today' || day(dueDate(it.d)) === day(now))).slice(0, 8), line = it => `• ${it.n} · ${dueText(it.d)}${board && board.id === it.b ? '' : ' · ' + it.bn}`;
+    const showOver = only !== 'today', showSoon = only !== 'overdue';
+    if ((!over.length || !showOver) && (!soon.length || !showSoon)) return reply(only === 'overdue' ? 'Nothing is overdue ✦' : only === 'today' ? 'Nothing else is due today ✦' : 'Nothing is overdue or coming up ✦');
+    const acts = [...(showOver ? over : []).slice(0, 2), ...(showSoon ? soon : []).slice(0, 3)].slice(0, 3).map(it => ({ label: it.n.slice(0, 22), run: () => dueJump(it) }));
+    reply((showOver && over.length ? 'Overdue:\n' + over.slice(0, 8).map(line).join('\n') + '\n' : '') + (showSoon && soon.length ? (only === 'today' ? 'Due today:\n' : 'Coming up:\n') + soon.map(line).join('\n') : '') + ' ✦', 0, acts);
+  }
+  // ---------- Myra's greeting: a small registry, so a feature can add a line to it without its own timer ----------
+  // greeter(id, order, ctx => ({ text, acts? }) | null): lines are quick and read only what is already in memory (never scan boards). greet() runs when the app opens, and again on the first focus after midnight.
+  // ctx: { why: 'start' | 'newday', firstToday: true on the first greeting of a calendar day, now: Date, name }. daily(id) is true once per calendar day, for anything that should only be said once a day.
+  const GREETERS = [], greeter = (id, order, line) => GREETERS.push({ id, order, line });
+  function daily(id) { const k = 'fenmyr:daily:' + id, t = dayKey(bdNow()); try { if (localStorage.getItem(k) === t) return false; localStorage.setItem(k, t); } catch (e) {} return true; }
+  let greetDay = '';
+  function greet(why) {
+    const ctx = { why, firstToday: daily('open'), now: bdNow(), name: settings.name || '' }; greetDay = dayKey(ctx.now);
+    const lines = []; GREETERS.slice().sort((a, b) => a.order - b.order).forEach(g => { try { const l = g.line(ctx); if (l && l.text) lines.push(l); } catch (e) {} });
+    const shown = settings.greet && settings.chat !== 'quiet' && lines.length;
+    if (shown) say(lines.slice(0, 3).map(l => l.text).join('\n'), 9000, lines.find(l => l.acts)?.acts || [], true);
+    setTimeout(() => { dueHold = false; if (dueHeld.length) { const its = dueHeld.splice(0); dueAnnounce(its); } }, shown ? 10000 : 0);   // what came due while the app was closed is said after the greeting, not over it
+  }
+  addEventListener('focus', () => { if (greetDay && dayKey(bdNow()) !== greetDay) greet('newday'); });   // the first focus after midnight
+  greeter('hello', 0, c => c.why === 'start' ? { text: `Hi${c.name ? ' ' + c.name : ''}, it's Myra! Dump ideas with ⌘K, then ask me to sort them ✦` } : null);
+  greeter('due', 10, c => {   // what is still due today
+    if (!c.firstToday) return null;
+    const day = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`, its = Object.values(lsRead(DUE_KEY, {})).filter(it => { const t = dueDate(it.d); return t && t >= c.now && day(t) === day(c.now); }).sort((a, b) => a.t - b.t); if (!its.length) return null;
+    const bit = it => `“${it.n.slice(0, 40)}” ${it.d.length > 10 ? 'at ' + dueText(it.d).split(' · ')[1] : 'by tonight'}`;
+    return { text: `${c.why === 'newday' ? `Good morning${c.name ? ' ' + c.name : ''}! ` : ''}Due today: ${its.slice(0, 3).map(bit).join(', ')}${its.length > 3 ? ` and ${its.length - 3} more` : ''} ✦`, acts: [{ label: 'Show me', run: () => dueJump(its[0]) }] };
+  });
   const SLASH = [
-    { cmd: 'find', arg: '<words>', desc: 'Find cards that mention something', run: slashFind },
-    { cmd: 'tag', arg: '<tag>', desc: 'Show the cards with a tag', run: slashTag },
+    // every command here is handed to Myra in her instructions (see snapshot()), so a new one only needs a desc (and an ex / opts if they help her explain it)
+    { cmd: 'find', arg: '<words>', desc: 'Find cards that mention something', ex: '/find berries', run: slashFind },
+    { cmd: 'tag', arg: '<tag>', desc: 'Show the cards with a tag', ex: '/tag food', run: slashTag },
     { cmd: 'tidy', desc: 'Line the loose notes up in rows', run: () => { const n = tidyNotes(); reply(n ? `Lined ${n} notes up in tidy rows ✦` : 'No loose notes to tidy ✦'); } },
+    { cmd: 'due', arg: '[overdue|today]', desc: 'List what is overdue and coming up, on every board (/due overdue for the late ones, /due today for today)', ex: ['/due', '/due overdue', '/due today'], opts: ['overdue', 'today'], run: a => slashDue(a) },
     { cmd: 'fit', desc: 'Zoom to see everything', run: () => { zoomFit(); reply('Everything is in view ✦'); } },
+    { cmd: 'timer', arg: '<minutes> <purpose>', desc: 'A timer; the purpose is optional (/timer stop cancels, /timer alone shows the time left)', ex: ['/timer 25 write the intro', '/timer 2m10s tea', '/timer 1h30'], opts: ['15 break', '50 focus', '5 breather'], run: slashTimer },
+    { cmd: 'birthday', desc: '(demo, temporary) play the birthday celebration; /birthday belated plays the belated one', dev: true, run: a => slashBirthday(a) },
+    { cmd: 'animate', arg: '<name>', desc: 'Make me move: a surprise, or pick one', ex: '/animate love', get opts() { return ANIMS.map(a => a.name); }, run: slashAnimate },
     { cmd: 'clear', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
     { cmd: 'help', desc: 'What I can do without thinking', run: () => reply(helpText()) },
   ];
-  const helpText = (lead = 'Here is what I can do right here, no thinking needed:') => lead + '\n' + SLASH.filter(c => c.cmd !== 'help').map(c => `/${c.cmd}${c.arg ? ' ' + c.arg : ''}  ${c.desc}`).join('\n') + '\nAsk me anything else in your own words ✦';
+  const helpText = (lead = 'Here is what I can do right here, no thinking needed:') => lead + '\n' + SLASH.filter(c => c.cmd !== 'help' && !c.dev).map(c => `/${c.cmd}${c.arg ? ' ' + c.arg : ''}  ${c.desc}`).join('\n') + '\nAsk me anything else in your own words ✦';
   const wordsOf = c => [c.text, c.name, c.label, c.title, ...(c.items || []).map(i => i.t), ...(c.tags || []).map(t => '#' + t), String(c.body || '').replace(/<[^>]+>/g, ' ')].filter(Boolean).join(' ').toLowerCase();
   function glideTo(cs) { const from = { ...view }; fit(cs, 200, 1.2); const to = { ...view }; Object.assign(view, from); applyView(); glideView(to); }
   // ---------- the find bar: opens next to Myra when /find or /tag runs; searches as you type, steps through the matches, closes with Esc ----------
@@ -2551,29 +2751,36 @@
   let slashSel = 0;
   const slashMenu = document.createElement('div'); slashMenu.className = 'slash-menu'; slashMenu.hidden = true; document.body.appendChild(slashMenu);
   const hideSlash = () => { slashMenu.hidden = true; };
-  const slashMatches = el => { const m = /^\/(\w*)$/.exec(el.value); return m ? SLASH.filter(c => c.cmd.startsWith(m[1].toLowerCase())) : []; };
+  // the menu lists commands; typing just /timer lists ready-made timers instead
+  const TIMER_PRESETS = [{ fill: '/timer 15 break', title: '15 min break', desc: 'A short break' }, { fill: '/timer 50 focus', title: '50 min focus', desc: 'A long stretch of focus' }, { fill: '/timer 5 breather', title: '5 min breather', desc: 'Stand up, look away, stretch' }];
+  const slashMatches = el => {
+    if (/^\/timer\s*$/i.test(el.value) && !timer) return TIMER_PRESETS.map(p => ({ key: p.fill, title: `<b>/timer</b> ${esc(p.title)}`, desc: p.desc, fill: p.fill }));
+    if (/^\/animate\s*$/i.test(el.value)) return [{ key: '/animate', title: '<b>/animate</b> Surprise me', desc: 'A random one', fill: '/animate' }, ...ANIMS.map(a => ({ key: '/animate ' + a.name, title: `<b>/animate</b> ${a.name}`, desc: a.desc, fill: '/animate ' + a.name }))];
+    const m = /^\/(\w*)$/.exec(el.value); return m ? SLASH.filter(c => c.cmd.startsWith(m[1].toLowerCase())).map(c => ({ key: c.cmd, title: `<b>/${c.cmd}${c.arg ? ` <i>${esc(c.arg)}</i>` : ''}</b>`, desc: c.desc, cmd: c })) : [];
+  };
   function showSlash(el) {
     const list = slashMatches(el); if (!list.length) return hideSlash(); slashSel = Math.min(slashSel, list.length - 1);
-    slashMenu.innerHTML = list.map((c, i) => `<button type="button" data-cmd="${c.cmd}" class="${i === slashSel ? 'on' : ''}"><b>/${c.cmd}${c.arg ? ` <i>${esc(c.arg)}</i>` : ''}</b><span>${esc(c.desc)}</span></button>`).join('');
+    slashMenu.innerHTML = list.map((c, i) => `<button type="button" data-key="${esc(c.key)}" class="${i === slashSel ? 'on' : ''}">${c.title}<span>${esc(c.desc)}</span></button>`).join('');
     const r = (el.closest('form') || el).getBoundingClientRect(); slashMenu.hidden = false; slashMenu.style.left = r.left + 'px'; slashMenu.style.width = Math.max(260, r.width) + 'px'; slashMenu.style.bottom = (innerHeight - r.top + 6) + 'px';
     slashMenu.dataset.for = el.id;
   }
-  function pickSlash(cmd) {
-    const el = $(slashMenu.dataset.for), c = SLASH.find(x => x.cmd === cmd); hideSlash(); if (!el || !c) return;
-    el.value = '/' + c.cmd + (c.arg ? ' ' : ''); el.focus(); el.setSelectionRange(el.value.length, el.value.length);
-    if (!c.arg) el.closest('form').requestSubmit();
+  function pickSlash(key) {
+    const el = $(slashMenu.dataset.for), it = el && slashMatches(el).find(x => x.key === key); hideSlash(); if (!it) return;
+    if (it.fill) { el.value = it.fill; el.closest('form').requestSubmit(); return; }
+    const c = it.cmd; el.value = '/' + c.cmd + (c.arg ? ' ' : ''); el.focus(); el.setSelectionRange(el.value.length, el.value.length);
+    if (!c.arg) el.closest('form').requestSubmit(); else { slashSel = 0; showSlash(el); }   // /timer then lists its ready-made timers
   }
   slashMenu.addEventListener('pointerdown', e => e.preventDefault());   // keep the focus in the box
-  slashMenu.onclick = e => { const b = e.target.closest('[data-cmd]'); if (b) pickSlash(b.dataset.cmd); };
+  slashMenu.onclick = e => { const b = e.target.closest('[data-key]'); if (b) pickSlash(b.dataset.key); };
   ['mInput', 'mcInput'].forEach(id => {
     const el = $(id);
     el.addEventListener('input', () => { slashSel = 0; showSlash(el); });
-    el.addEventListener('blur', () => setTimeout(hideSlash, 120));
+    el.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== el) hideSlash(); }, 120));   // (not if it has the cursor again by then)
     el.addEventListener('keydown', e => {
       if (slashMenu.hidden || slashMenu.dataset.for !== id) return; const list = slashMatches(el);
       if (e.key === 'Escape') { e.stopImmediatePropagation(); e.preventDefault(); return hideSlash(); }
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); e.stopImmediatePropagation(); slashSel = (slashSel + (e.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length; return showSlash(el); }
-      if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && list[slashSel] && !(e.key === 'Enter' && el.value.slice(1).toLowerCase() === list[slashSel].cmd && !list[slashSel].arg)) { e.preventDefault(); e.stopImmediatePropagation(); pickSlash(list[slashSel].cmd); }
+      if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && list[slashSel] && !(e.key === 'Enter' && list[slashSel].cmd && el.value.slice(1).toLowerCase() === list[slashSel].cmd.cmd && !list[slashSel].cmd.arg)) { e.preventDefault(); e.stopImmediatePropagation(); pickSlash(list[slashSel].key); }
     }, true);
   });
   // Ctrl+F: Myra's chat opens ready to search
@@ -2581,12 +2788,291 @@
     if (!board) return; if (find.on) { $('fbQ').focus(); $('fbQ').select(); return; } myraOpen(true); const el = $('mcInput'), had = /^\/find /i.test(el.value);
     if (!had) el.value = '/find '; el.focus(); el.dispatchEvent(new Event('input')); had ? el.setSelectionRange(6, el.value.length) : el.setSelectionRange(el.value.length, el.value.length);
   }
+  // ---------- animate: what she can do with her sprite when asked (/animate, plain words like "can you jump?", or her own choice with thinking on). Always plays, even in calm mode ----------
+  const ANIMS = [
+    { name: 'hop', desc: 'A little jump', line: 'Boing!', ms: 1300, play: () => { hopMyra(); setTimeout(hopMyra, 520); } },
+    { name: 'wiggle', desc: 'A happy wiggle', line: '*wiggle wiggle*', ms: 2400, play: () => goo.wiggle(2400) },   // (her own wiggle, so it never cuts her thinking wiggle short)
+    { name: 'party', desc: 'Hops and berry confetti', line: 'Party time!', ms: 3800, play: () => partyMyra(true) },
+    { name: 'sleepy', desc: 'A big yawn and a nap', line: '*yawn*', ms: 4500, pose: 'sleepy' },
+    { name: 'shook', desc: 'Startled', line: 'Whoa!', ms: 3000, pose: 'shook' },
+    { name: 'sigh', desc: 'A long sigh', line: '*sigh*', ms: 3200, pose: 'sigh' },
+    { name: 'happy', desc: 'Beaming, with sparkles', line: 'Yay!', ms: 3600, pose: 'happy' },
+    { name: 'love', desc: 'Heart eyes', line: 'Aww, I love it here.', ms: 4000, pose: 'love' },
+    { name: 'dizzy', desc: 'Stars circling', line: 'Wheee, the room is spinning.', ms: 4000, pose: 'dizzy' },
+    { name: 'curious', desc: 'Head tilts, a floating question mark', line: 'Hmm?', ms: 3400, pose: 'curious' },
+  ];
+  let animT = 0, lastAnim = '', animLive = false, flightLive = false, liveN = 0;
+  const liveOn = () => { liveN++; goo.lively(true); }, liveOff = () => { liveN = Math.max(0, liveN - 1); goo.lively(liveN > 0); };
+  const pickAnim = () => { const pool = ANIMS.filter(a => a.name !== lastAnim); return pool[Math.floor(Math.random() * pool.length)].name; };
+  const ANIM_ALIAS = { jump: 'hop', bounce: 'hop', wobble: 'wiggle', dance: 'party', celebrate: 'party', confetti: 'party', yawn: 'sleepy', sleep: 'sleepy', nap: 'sleepy', startled: 'shook', surprised: 'shook', smile: 'happy', beam: 'happy', sparkle: 'happy', heart: 'love', hearts: 'love', 'heart eyes': 'love', spin: 'dizzy', question: 'curious', wonder: 'curious', confused: 'curious', puzzled: 'curious', hmm: 'curious' };
+  const animName = n => { const k = String(n || '').toLowerCase().trim(); return ANIMS.some(a => a.name === k) ? k : ANIM_ALIAS[k] || ''; };
+  function playAnim(name, say = true) {
+    const a = ANIMS.find(x => x.name === animName(name)); if (!a) return false;
+    if (timerPose()) { if (say) reply('My face is busy with the timer right now. Ask me again in a moment ✦'); return false; }
+    clearTimeout(animT); lastAnim = a.name; if (!animLive) { animLive = true; liveOn(); }
+    if (a.pose) { animPose = a.pose; setPose(wantedPose()); } else a.play();
+    animT = setTimeout(() => { animPose = null; if (animLive) { animLive = false; liveOff(); } setPose(wantedPose()); }, a.ms);
+    if (say) reply(`${a.line} ✦`, 5000);
+    return true;
+  }
+  const stopAnim = () => { clearTimeout(animT); animPose = null; if (animLive) { animLive = false; liveOff(); } setPose(wantedPose()); };
+  function slashAnimate(arg) {
+    const n = (arg || '').trim().toLowerCase(); if (!n || n === 'random' || n === 'surprise') return void playAnim(pickAnim());
+    if (!playAnim(n) && !ANIMS.some(a => a.name === n)) reply(`I don't know that one. I can do: ${ANIMS.map(a => a.name).join(', ')} ✦`);
+  }
+  // plain words, with thinking off (or on the web demo): "can you jump?", "do a little dance", "show me your moves"
+  const ANIM_WORDS = [['hop', /\b(jump|hop|bounce)\b/i], ['wiggle', /\b(wiggle|wobble)\b/i], ['party', /\b(party|celebrate|confetti|cheer)\b/i], ['sleepy', /\b(sleepy|yawn|nap|sleep)\b/i], ['shook', /\b(shook|startled|surprised|scared)\b/i],
+    ['sigh', /\bsigh\b/i], ['happy', /\b(happy|smile|beam|sparkle)\b/i], ['love', /\b(love|heart)\b/i], ['dizzy', /\b(dizzy|spin)\b/i], ['curious', /\b(curious|puzzled|confused)\b/i], ['*', /\b(animat\w*|dance|dancing|tricks?|show me your moves|do something|show me something)\b/i]];
+  const ANIM_ASK = /\b(can|could|would|will)\s+(you|u)\b|\bplease\b|\b(show|give|do|make|throw|host|play|perform|try)\b|\bput on\b|\blet(?:'s|s| us)\b|\bhave a\b/i;
+  const animRequest = q => { const an = animIntent(q); return an && (ANIM_ASK.test(q) || q.trim().split(/\s+/).length <= 3) ? an : ''; };   // with thinking on, only sentences that ask for it (so "I love how this board looks" is left to the model)
+  const animIntent = q => /group|sort|organi[sz]e|tidy|line up/i.test(q) ? '' : (ANIM_WORDS.find(([, re]) => re.test(q)) || [''])[0];
+  // ---------- every now and then she animates by herself (lively about hourly, calm every few hours, calmest never; never more than once an hour) ----------
+  const IDLE_KEY = 'fenmyr:idleAnim', IDLE_SET = ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'];
+  let lastActive = Date.now(), idleT = 0, lastKey = 0;
+  addEventListener('keydown', () => { lastKey = Date.now(); }, { passive: true, capture: true });
+  ['pointermove', 'keydown', 'pointerdown'].forEach(ev => addEventListener(ev, () => { lastActive = Date.now(); }, { passive: true, capture: true }));
+  const idleGap = () => { const m = settings.myraCalm || 'lively', r = Math.random(); return m === 'calmest' ? 0 : m === 'lively' ? (60 + r * 30) * 60000 : (180 + r * 60) * 60000; };
+  const idleState = () => { try { return JSON.parse(localStorage.getItem(IDLE_KEY) || 'null') || {}; } catch (e) { return {}; } };
+  const saveIdle = st => { try { localStorage.setItem(IDLE_KEY, JSON.stringify(st)); } catch (e) {} };
+  // true when she could be seen playing: the window is in use, nothing else is going on with her, and the pill is on screen
+  function idleOK(anyway) {
+    if (!anyway && (document.hidden || !document.hasFocus() || Date.now() - lastActive > 180000)) return false;
+    const pill = $('mPill'), busyGlow = /glow-|hurry/.test(pill.className);
+    return !!board && pill.offsetParent !== null && !timerPose() && !busyGlow && !animPose && !(chatOpen() && Date.now() - lastKey < 8000) && !$('myra').classList.contains('thinking') && !homeAt && !docCard && !drawOn && !placing && !stage.classList.contains('doc-open')
+      && !$('settings').classList.contains('on') && !$('onboard').classList.contains('on');
+  }
+  function idleCheck(anyway) {
+    const m = settings.myraCalm || 'lively'; if (m === 'calmest') return false;
+    const now = Date.now(), st = idleState(), maxGap = (m === 'lively' ? 90 : 240) * 60000;
+    if (!st.next) { saveIdle({ last: st.last || 0, next: now + idleGap() }); return false; }
+    if (now < Math.min(st.next, (st.last || 0) + maxGap) || !idleOK(anyway)) return false;
+    const pool = IDLE_SET.filter(n => n !== lastAnim), name = pool[Math.floor(Math.random() * pool.length)];
+    if (!playAnim(name, false)) return false;
+    saveIdle({ last: now, next: now + idleGap() }); return name;
+  }
+  idleT = setInterval(idleCheck, 300000);
+  // ---------- birthday: set in Settings (or at setup), kept as month and day only. On the day Myra celebrates once you are really there (the window focused, you active in the last minute, not mid-sentence). Miss it and she wishes you a belated one for up to 14 days ----------
+  const BD_KEY = 'fenmyr:birthday', MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  function bdState() { try { return JSON.parse(localStorage.getItem(BD_KEY) || 'null') || {}; } catch (e) { return {}; } }
+  function saveBd(st) { try { localStorage.setItem(BD_KEY, JSON.stringify(st)); } catch (e) {} }
+  function bdNow() { return window.__bdNow ? new Date(window.__bdNow) : new Date(); }
+  function dayKey(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  function bdParts() { const m = /^(\d\d)-(\d\d)$/.exec(settings.birthday || ''); return m ? { m: +m[1], d: +m[2] } : null; }
+  function bdDate(year) {   // this year's birthday; February 29 is February 28 in a year without one
+    const b = bdParts(); if (!b) return null;
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    return new Date(year, b.m - 1, b.m === 2 && b.d === 29 && !leap ? 28 : b.d);
+  }
+  function birthdayDue(now = bdNow()) {
+    const st = bdState(), y = now.getFullYear(), thisYear = bdDate(y); if (!thisYear) return null;
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()), setAt = st.setAt || '0000-00-00';
+    if (dayKey(thisYear) === dayKey(today)) return st.last === y ? null : { kind: 'today', year: y, date: thisYear };
+    const recent = thisYear <= today ? thisYear : bdDate(y - 1), days = Math.round((today - recent) / 86400000);
+    // belated: within 14 days, not already celebrated, and only for a birthday that was set before it came round (not one you typed in afterwards)
+    return days >= 1 && days <= 14 && st.last !== recent.getFullYear() && dayKey(recent) >= setAt ? { kind: 'belated', year: recent.getFullYear(), days, date: recent } : null;
+  }
+  function birthdayFacts() {   // what she is told about it: the day, and whether it is today
+    const b = bdParts(); if (!b) return undefined;
+    const d = bdDate(bdNow().getFullYear());
+    return { birthday: `${MONTHS[b.m - 1]} ${b.d}`, birthdayToday: !!d && dayKey(d) === dayKey(bdNow()) };
+  }
+  function setBirthday(m, d) {
+    m = +m; d = +d; const max = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
+    const next = m >= 1 && m <= 12 && d >= 1 && d <= max ? `${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : '';
+    if (next === (settings.birthday || '')) return;
+    settings.birthday = next; const st = bdState(); st.setAt = dayKey(bdNow()); saveBd(st); applySettings();   // (the year's celebration, once done, stays done if you change the date)
+  }
+  function fillBd(mSel, dSel) {
+    mSel.innerHTML = '<option value="">Month</option>' + MONTHS.map((n, i) => `<option value="${i + 1}">${n}</option>`).join('');
+    dSel.innerHTML = '<option value="">Day</option>' + Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+  }
+  function paintBd() {
+    const b = bdParts();
+    [['setBdMonth', 'setBdDay'], ['obBdMonth', 'obBdDay']].forEach(([a, c]) => { if ($(a) && $(a).options.length) { $(a).value = b ? b.m : ''; $(c).value = b ? b.d : ''; } });
+  }
+  [['setBdMonth', 'setBdDay'], ['obBdMonth', 'obBdDay']].forEach(([a, c]) => {
+    fillBd($(a), $(c)); $(a).onchange = $(c).onchange = () => setBirthday($(a).value, $(c).value);
+    [$(a), $(c)].forEach(el => el.addEventListener('keydown', e => e.stopPropagation()));
+  });
+  $('setBdClear').onclick = () => { $('setBdMonth').value = $('setBdDay').value = ''; setBirthday('', ''); };
+  paintBd();
+
+  // she wears the hat all day, once she has celebrated
+  let hatOn = false, celebrating = false, hatDemoUntil = 0;
+  function syncHat() { const on = bdState().hat === dayKey(bdNow()) || Date.now() < hatDemoUntil; if (on !== hatOn) { hatOn = on; goo.hat(on); } }
+  // paying attention: the window is focused, there was real input in the last minute, and nothing was typed in the last few seconds; and nothing else is going on with her
+  const focusedNow = () => window.__bdFocus ?? (!document.hidden && document.hasFocus());
+  const attentive = anyway => !!anyway || (focusedNow() && Date.now() - lastActive < 60000 && Date.now() - lastKey > 4000);
+  const BD_LINES = [who => `Happy birthday${who}! I put on my best hat for you ✦`, who => `It's your birthday${who}! Berries for everyone ✦`, who => `Happy birthday${who}! The board can wait a little today ✦`];
+  // the card she leaves on the board: warm, a little dry, like a birthday card. With thinking off these are the pool (a different one each time, never the last one twice); with it on she writes a fresh one.
+  const BD_CARDS = ['Another year older, {n}, and still the best reason this board gets anything done. Cake first, tidying later.', 'Happy birthday, {n}. I would light the candles myself, but I am mostly fruit and the cake is flammable.', "You are not getting older, {n}. You are ripening. I'd know.", "Today's agenda, {n}: cake, nothing urgent, and at least one person singing badly on your behalf.", 'Happy birthday, {n}. The backlog has been told it can wait. It did not argue.', 'Another lap around the sun, {n}. Excellent form, no notes.', 'Many happy returns, {n}. I am not accepting any returns today, only cake.', 'Happy birthday, {n}. Cake counts as a project plan today. I checked.', "I'd say you don't look a day older, {n}, but I only see you through a screen, so who knows. Happy birthday.", 'Happy birthday, {n}. I made this card myself. It took a while, mostly the glitter.', 'Happy birthday, {n}. Whatever you wished for, I have already put it in the backlog.', 'Another year, {n}, and the board still has you. It could do worse. Happy birthday.'];
+  const BD_BELATED = ['Happy belated birthday, {n}. I am told the best presents arrive late. This card is the present.', 'Belated happy birthday, {n}. The confetti took the scenic route.', 'Happy belated birthday, {n}. I missed the day, not the cake. Where is the cake.', 'Late, {n}, but sincere: happy birthday. I blame the clouds.', "Happy belated birthday, {n}. Consider it a birthday that's still in the post.", 'You get a second round of birthday, {n}. Happy belated. Terms and conditions do not apply.'];
+  let lastCardIdx = -1;
+  const fillName = t => t.replace(/, \{n\}/g, settings.name ? `, ${settings.name}` : '').replace(/\{n\}/g, settings.name || 'friend');
+  function pickCard(belated) {
+    const pool = belated ? BD_BELATED : BD_CARDS, st = bdState(), last = st.cardIdx != null && st.cardKind === (belated ? 'b' : 'a') ? st.cardIdx : -1;
+    let i; do { i = Math.floor(Math.random() * pool.length); } while (pool.length > 1 && (i === last || i === lastCardIdx));
+    lastCardIdx = i; return { text: fillName(pool[i]), idx: i };
+  }
+  async function birthdayLine(due) {   // with thinking on, a greeting and a card written for the moment; otherwise (or if it is slow) null and the written ones are used
+    if (window.__birthdayLineStub) return window.__birthdayLineStub(due);
+    if (Fenmyr.web || !settings.ai || haveClaude === false || !navigator.onLine) return null;
+    const last = bdState().card, prompt = `(This is a birthday notice, not a request. ${due.kind === 'belated' ? `The person's birthday was ${due.days} day${due.days === 1 ? '' : 's'} ago and you missed it, so wish them a happy belated birthday` : "It is the person's birthday today, so wish them a happy birthday"}. Reply with "say": one short, warm line in your own voice for the chat, and "card": the words for a birthday card you will leave on their board: one or two short sentences, warm with a little dry humour like a good birthday card, addressed to them, never telling them what to do with the card. ${last ? `The card you left last time said: "${String(last).slice(0, 200)}", so write something different. ` : ''}Do not change the board.)`;
+    try {
+      const raw = await Promise.race([Fenmyr.ask(prompt, { ...snapshot(), cards: [], links: [], unsorted: [], recentChat: [], commands: undefined }, false, { mobbin: false, higgs: false, web: false, canVault: false, vaultNotes: [] }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 6000))]);
+      const r = parse(raw); return { say: r.say || null, card: typeof r.card === 'string' && r.card.trim() ? r.card.trim().slice(0, 240) : null };
+    } catch (e) { return null; }
+  }
+  async function celebrateBirthday(due, demo) {
+    celebrating = true;
+    const who = settings.name ? `, ${settings.name}` : '', belated = due.kind === 'belated';
+    if (!demo) { const st = bdState(); st.last = due.year; st.hat = dayKey(bdNow()); saveBd(st); }
+    if (demo) hatDemoUntil = Date.now() + 90000;   // (the demo's hat lasts a minute and a half)
+    hatOn = true; goo.hat(true);
+    if (!chatOpen()) myraOpen(true);
+    [500, 2000, 3500].forEach(ms => setTimeout(() => partyMyra(true), ms));   // waves of berry confetti, whatever her calm setting
+    const when = due.date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+    const canned = belated ? `Happy belated birthday${who}! I missed you on ${when}, so I saved the confetti ✦` : BD_LINES[Math.floor(Math.random() * BD_LINES.length)](who);
+    let ai = await Promise.race([birthdayLine(due), new Promise(r => setTimeout(() => r(null), 2200))]); if (typeof ai === 'string') ai = { say: ai };
+    reply(noEmoji((ai && ai.say) || canned), 0);
+    const picked = ai && ai.card ? null : pickCard(belated), words = ai && ai.card ? noEmoji(ai.card) : picked.text;
+    if (!demo) { const st = bdState(); st.card = words; if (picked) { st.cardIdx = picked.idx; st.cardKind = belated ? 'b' : 'a'; } saveBd(st); }
+    const p = centerWorld(), title = belated ? 'Happy belated birthday' : 'Happy birthday', c = card('note', { myra: true, myraImg: 'stamps/myra-party.png', myraMv: 'spin', name: title, text: words, color: 'butter', w: 260, h: 190 });
+    c.x = p.x - c.w / 2; c.y = p.y - c.h / 2 - 40; addCard(c);
+    celebrating = false;
+  }
+  function birthdayCheck(anyway) {
+    syncHat(); if (celebrating) return false;
+    const due = birthdayDue(); if (!due || !attentive(anyway) || !idleOK(true)) return false;
+    celebrateBirthday(due); return true;
+  }
+  // (temporary, for trying it out) /birthday plays the celebration now; /birthday belated plays the belated one. It stores nothing.
+  function slashBirthday(arg) {
+    const belated = /^belated/i.test((arg || '').trim()), d = new Date(); if (belated) d.setDate(d.getDate() - 3);
+    celebrateBirthday({ kind: belated ? 'belated' : 'today', year: d.getFullYear(), days: 3, date: d }, true);
+  }
+  setInterval(() => birthdayCheck(), 10000); addEventListener('focus', () => setTimeout(() => birthdayCheck(), 3000)); setTimeout(() => birthdayCheck(), 6000); syncHat();
+  // ---------- the timer: /timer 25 write the intro. It counts down by the clock (so it survives sleep, restarts and switching boards), warns at two minutes, and Myra makes a fuss when it's up ----------
+  const TIMER_KEY = 'fenmyr:timer';
+  let timer = null, timerTick = 0;
+  try { timer = JSON.parse(localStorage.getItem(TIMER_KEY) || 'null'); if (!timer || !timer.end) timer = null; else if (timer.secs == null) timer.secs = Math.round((timer.minutes || 1) * 60); } catch (e) { timer = null; }
+  const saveTimer = () => { try { timer ? localStorage.setItem(TIMER_KEY, JSON.stringify(timer)) : localStorage.removeItem(TIMER_KEY); } catch (e) {} };
+  const clock = ms => { const t = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60, p = n => String(n).padStart(2, '0'); return h ? `${h}:${p(m)}:${p(sec)}` : `${m}:${p(sec)}`; };
+  // how long, exactly as entered: "25" (minutes), "25m", "1h30", "2m10s", "1 min 1 sec", "69 seconds", "half an hour". Whatever follows is the purpose.
+  const UNIT_S = { h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600, m: 60, min: 60, mins: 60, minute: 60, minutes: 60, s: 1, sec: 1, secs: 1, second: 1, seconds: 1 };
+  const DUR_WORDS = [[/^\s*an hour and a half\b/i, 5400], [/^\s*half an hour\b/i, 1800], [/^\s*(?:an|one) hour\b/i, 3600], [/^\s*a minute\b/i, 60], [/^\s*a second\b/i, 1]];
+  function parseDuration(str, needUnit) {   // from the start of str: { secs, rest } or null (needUnit: a bare number is not enough, for plain sentences)
+    const w = DUR_WORDS.find(([re]) => re.test(str)); if (w) return { secs: w[1], rest: str.replace(w[0], '') };
+    let rest = str, total = 0, prev = Infinity, got = 0, anyUnit = false;
+    for (;;) {
+      const m = /^\s*(?:and\s+)?(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)?(?![a-z])/i.exec(rest); if (!m) break;
+      const u = m[2] ? UNIT_S[m[2].toLowerCase()] : !got ? 60 : prev === 3600 ? 60 : prev === 60 ? 1 : 0;   // a bare number is minutes, or the next unit down after hours or minutes ("1h30")
+      if (!u || u >= prev) break; if (m[2]) anyUnit = true;
+      total += +m[1] * u; prev = u; got++; rest = rest.slice(m[0].length);
+    }
+    return got && (anyUnit || !needUnit) ? { secs: Math.round(total), rest } : null;
+  }
+  function parseTimer(arg) {
+    const d = parseDuration(arg || '', false); if (!d || !/^(\s|$)/.test(d.rest)) return null;
+    return d.secs >= 1 && d.secs <= 36000 ? { secs: d.secs, purpose: d.rest.trim().slice(0, 60) } : null;
+  }
+  const durText = secs => { const h = Math.floor(secs / 3600), m = Math.floor(secs % 3600 / 60), sec = secs % 60; return [h && `${h} hr`, m && `${m} min`, sec && `${sec} sec`].filter(Boolean).join(' ') || '0 sec'; };
+  // plain sentences: "set a timer for 25 minutes for the intro", "give me a 2 minute 10 second timer", "remind me in 20 minutes to stretch", "cancel my timer", "how much time is left?"
+  function timerRequest(q) {
+    if (/\b(cancel|stop|clear|end|turn off|kill)\b[^.?!]*\btimer\b/i.test(q)) return { stop: true };
+    if (/\b(how (much )?(time|long)\b[^.?!]*\b(left|remain\w*)|time (left|remaining))\b/i.test(q) && timer) return { status: true };
+    const asks = /\b(set|start|begin|make|give me|create|run|put on|can i (get|have)|could (you|i) (get|have))\b[^.?!]*\btimer\b|\btimer\b[^.?!]*\b(for|of)\b|\b(\d+\s*(min|minute|sec|second|hour|hr)\w*[ -]*timer)\b|\bremind me\b[^.?!]*\bin\b/i.test(q) || /^\s*timer\b/i.test(q); if (!asks) return null;
+    for (const m of q.matchAll(/(?:\d|\b(?:half an hour|an hour|a minute|a second)\b)/gi)) {
+      const d = parseDuration(q.slice(m.index), true); if (!d || d.secs < 1 || d.secs > 36000) continue;
+      const purpose = d.rest.replace(/^[\s,.-]*(?:timer|alarm)\b[\s,.]*/i, '').replace(/^[\s,.]+/, '').replace(/^(?:for|to|so i can|while i|so that i can|called|named|labell?ed)\s+/i, '').replace(/[\s.?!]+$/, '').slice(0, 60);
+      return { secs: d.secs, purpose: /^(me|please|thanks?|now)$/i.test(purpose) ? '' : purpose };
+    }
+    return null;
+  }
+  const timerWhat = t => t.purpose || `your ${durText(t.secs)} timer`;
+  // what the glow says when it runs out: red for work and focus, green for a break. With thinking on the model decides (t.kind, from its warning), otherwise a break or a breather is green and everything else is red
+  const timerKind = t => t.kind || (/\b(break(?!\s*(down|through|into|up|out|in|open)\b)|breather)\b/i.test(t.purpose || '') ? 'break' : 'focus');   // 'break', 'coffee break', 'quick breather'; not 'break down the plan'
+  // her faces follow the timer: sleepy through a break, shook in the last two minutes, and after a focus timer ends she sighs until you answer
+  let glowT = 0, sighing = false, currentPose = null;
+  const setPose = p => { if (p !== currentPose) { currentPose = p; goo.pose(p); } };
+  const timerPose = () => sighing ? 'sigh' : timer && timer.secs >= 180 && timer.end - Date.now() <= 120000 ? 'shook' : timer && timerKind(timer) === 'break' ? 'sleepy' : null;
+  let animPose = null;   // a face she was asked to make (/animate, plain words); the timer's own faces win
+  const wantedPose = () => timerPose() || animPose;
+  const clearGlow = () => { clearTimeout(glowT); sighing = false; $('mPill').classList.remove('glow-red', 'glow-green'); setPose(wantedPose()); };
+  const setGlow = kind => { clearGlow(); $('mPill').classList.add(kind === 'break' ? 'glow-green' : 'glow-red'); glowT = setTimeout(clearGlow, 120000); };
+  function paintTimer() {
+    const chip = $('timerChip'); $('myra').classList.toggle('timing', !!timer); keepPerch(); if (!timer) { chip.hidden = true; $('mPill').classList.remove('hurry'); setPose(wantedPose()); return; }
+    chip.hidden = false; $('tcTime').textContent = clock(timer.end - Date.now()); $('tcWhat').textContent = timer.purpose || durText(timer.secs);
+    chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.secs * 1000)))); $('mPill').classList.toggle('hurry', timer.secs >= 180 && timer.end - Date.now() <= 120000); setPose(wantedPose());
+  }
+  function startTimer(t, replace, quiet) {
+    if (timer && !replace) return reply(`You already have ${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. Start this one instead?`, 0, [{ label: 'Replace it', cls: 'next', run: () => startTimer(t, true) }, { label: 'Keep it', ghost: true, run: () => {} }]);
+    clearGlow(); timer = { end: Date.now() + t.secs * 1000, secs: t.secs, purpose: t.purpose, warned: t.secs < 180 }; saveTimer(); paintTimer(); hopMyra();
+    if (!quiet) reply(`Timer set: ${durText(t.secs)}${t.purpose ? ` (${t.purpose})` : ''}. I'll tell you when it's time ✦`);
+  }
+  function stopTimer(say = true) { if (!timer) return say && reply('No timer is running ✦'); const t = timer; timer = null; saveTimer(); paintTimer(); say && reply(`Stopped the timer for ${timerWhat(t)} ✦`); }
+  // a plain sentence asked for a timer (or to stop it, or how long is left)
+  function runTimerRequest(tr, say) {
+    if (tr.stop) { stopTimer(!!say); return 'stopped the timer'; }
+    if (tr.status) { slashTimer(''); return 'told them how much time is left'; }
+    startTimer({ secs: tr.secs, purpose: tr.purpose }, false, !say); return `set a timer for ${durText(tr.secs)}${tr.purpose ? ` (${tr.purpose})` : ''}`;
+  }
+  function slashTimer(arg) {
+    const a = (arg || '').trim();
+    if (/^(stop|cancel|off|clear)$/i.test(a)) return stopTimer();
+    if (!a) return reply(timer ? `${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. /timer stop cancels it ✦` : 'Try /timer 25 write the intro, or pick a ready-made one from the list when you type /timer ✦');
+    const t = parseTimer(a); if (!t) return reply('I need a time first, like /timer 25 write the intro (or 1h30, 2m10s, 69 seconds) ✦');
+    startTimer(t);
+  }
+  // with thinking on, one short model call gives the warning and the finish a line that fits what you're doing (the plain line shows first and is replaced if it arrives in time)
+  async function timerLine(kind, t) {
+    if (window.__timerLineStub) return window.__timerLineStub(kind, t);   // (tests)
+    if (Fenmyr.web || !settings.ai || haveClaude === false || !navigator.onLine) return null;
+    const what = `timer of ${durText(t.secs)}${t.purpose ? ` for "${t.purpose}"` : ''}`;
+    const prompt = `(This is a timer notice, not a request. The person's ${what} ${kind === 'warn' ? 'has two minutes left' : 'has just run out'}. Say one short line in your own voice that fits what they are doing${kind === 'warn' ? '' : ', and if it fits suggest what comes next, like a break after focus time or getting back to it after a break'}. Do not change the board. Also add a "kind" field: "break" if the timer is for rest or a pause, "focus" if it is for work or concentration.)`;
+    try { const raw = await Promise.race([Fenmyr.ask(prompt, { ...snapshot(), cards: [], links: [], unsorted: [], recentChat: [], commands: undefined }, false, { mobbin: false, higgs: false, web: false, canVault: false, vaultNotes: [] }), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 12000))]);
+      const r = parse(raw); return { say: r.say || null, kind: r.kind === 'break' || r.kind === 'focus' ? r.kind : null }; }
+    catch (e) { return null; }
+  }
+  const osNotify = (title, body) => { if (Fenmyr.web || document.hasFocus() || typeof Notification === 'undefined') return; try { new Notification(title, { body }); } catch (e) {} };
+  const CONFETTI = ['#f2a339', '#e07a5f', '#ffdcd8', '#e0edd3', '#d9e7f3', '#ebe1f2'];
+  // when it's up: she hops, her pill wiggles and berry confetti bursts out (calmer if she is set to calm, nothing at all if calmest)
+  function partyMyra(force) {
+    if (window.myraMuted && !force) return; hopMyra(); if ((window.myraCalm && !force) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let n = 0; const iv = setInterval(() => { hopMyra(); if (++n >= 5) clearInterval(iv); }, 520);
+    const my = $('myra'); my.classList.add('partying'); setTimeout(() => my.classList.remove('partying'), 3400);
+    const sr = gooSlot.getBoundingClientRect(), mr = $('myra').getBoundingClientRect(), ox = Math.round(sr.left + sr.width / 2 - mr.left), oy = Math.round(sr.top + sr.height * .45 - mr.top);   // from where she is: her button, or the chat when she is perched there
+    for (let i = 0; i < 26; i++) { const c = document.createElement('i'), a = (Math.random() * 160 - 80) * Math.PI / 180, d = 90 + Math.random() * 150; c.className = 'confetti'; c.style.cssText = `--dx:${Math.round(Math.sin(a) * d)}px;--dy:${-Math.round(Math.cos(a) * d + 20)}px;--rot:${Math.round(Math.random() * 720 - 360)}deg;--c:${CONFETTI[i % CONFETTI.length]};animation-delay:${Math.round(Math.random() * 300)}ms`; c.style.left = ox + 'px'; c.style.top = oy + 'px'; c.style.bottom = 'auto'; $('myra').appendChild(c); setTimeout(() => c.remove(), 2400); }
+  }
+  async function timerWarn() {
+    const t = timer; t.warned = true; saveTimer(); hopMyra();
+    const plain = `Two minutes left${t.purpose ? ` (${t.purpose})` : ''} ✦`; reply(plain, 20000); osNotify('Two minutes left', t.purpose || `${durText(t.secs)} timer`);
+    const r = await timerLine('warn', t); if (r?.kind && timer === t) { t.kind = r.kind; saveTimer(); } if (r?.say && timer === t) reply(noEmoji(r.say), 20000);
+  }
+  async function timerDone() {
+    const t = timer; timer = null; saveTimer(); paintTimer();
+    const plain = `Time's up! ${durText(t.secs)}${t.purpose ? ` (${t.purpose})` : ''} ✦`, acts = [{ label: '5 more minutes', cls: 'next', run: () => startTimer({ secs: 300, purpose: t.purpose }, true) }, { label: 'Thanks', ghost: true, run: clearGlow }];
+    reply(plain, 0, acts); $('mBubble').classList.add('party'); partyMyra(); osNotify("Time's up", t.purpose || `${durText(t.secs)} timer`);
+    // the glow (and the sigh after focus) is decided once and never flips: when the rules are sure (a break by its words, or the model already said at the two-minute warning) it is at once; when not, the model gets a couple of seconds, then the rules decide
+    const doneAt = Date.now(); let decided = false;
+    const decide = kind => { if (decided) return; decided = true; setGlow(kind); if (kind !== 'break') setTimeout(() => { if ($('mPill').classList.contains('glow-red')) { sighing = true; setPose('sigh'); } }, Math.max(0, (window.myraMuted ? 600 : 3600) - (Date.now() - doneAt))); };
+    const aiOn = !!window.__timerLineStub || (!Fenmyr.web && settings.ai && haveClaude !== false && navigator.onLine);
+    if (t.kind || timerKind(t) === 'break' || !t.purpose || !aiOn) decide(timerKind(t)); else setTimeout(() => decide(timerKind(t)), 2500);
+    const r = await timerLine('done', t); if (r?.kind) decide(r.kind); else decide(timerKind(t));
+    if (r?.say && $('mBubble').classList.contains('on') && $('mBubble').classList.contains('party')) $('mSay').textContent = noEmoji(r.say);
+  }
+  function timerCheck() { if (!timer) return; const left = timer.end - Date.now(); if (left <= 0) return timerDone(); paintTimer(); if (!timer.warned && left <= 120000) timerWarn(); }
+  $('tcX').onclick = e => { e.stopPropagation(); stopTimer(); };
+  timerTick = setInterval(timerCheck, 1000); paintTimer(); setTimeout(timerCheck, 1500);
   // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
   const noEmoji = t => settings.emoji ? t : String(t).replace(/(\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}])(\uFE0F|\u200D|\u20E3|[\u{1F3FB}-\u{1F3FF}])*/gu, '').replace(/ {2,}/g, ' ').trim();
   const parse = raw => { const s = String(raw), a = s.indexOf('{'), b = s.lastIndexOf('}'); if (a < 0) return { say: s.trim() }; try { return JSON.parse(s.slice(a, b + 1)); } catch (e) { return { say: s.trim() }; } };
   // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
   async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     // her templates: use one of theirs, or keep what's on the board as one
+    if (r.stopTimer && timer && Date.now() - timerAskedAt > 30000) stopTimer(false);
+    if (r.timer && Date.now() - timerAskedAt > 30000) { const secs = Math.round((+r.timer.minutes || 0) * 60 + (+r.timer.seconds || 0)); if (secs >= 1 && secs <= 36000) startTimer({ secs, purpose: String(r.timer.purpose || '').slice(0, 60) }, false, true); }
+    if (r.animate && Date.now() - animAskedAt > 30000 && (Date.now() - aiAnimAt > 600000 || animIntent(q || ''))) { const n = animName(r.animate); if (n && (n !== 'party' || animIntent(q || '') === 'party')) { if (playAnim(n, false)) aiAnimAt = Date.now(); } }   // her own pick: about once per ten minutes, and confetti only if asked
     if (r.useTemplate) { const o = r.useTemplate, t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()); if (t) await useTemplate(t, o.mode === 'new' || o.mode === 'add' ? o.mode : undefined); }
     // folders first: create, rename, and move boards around the library
     const fo = r.folders, pr = r.projects;
@@ -2610,7 +3096,7 @@
     const file = (c, k) => { const s2 = collFor(k); if (!s2 || c.id === s2.id) return; const from = parentOf(c.id); if (from) from.kids = from.kids.filter(x => x !== c.id); s2.kids.push(c.id); };
     (r.add || []).forEach(o => { place(o); const c = card(['todo', 'title', 'swatch', 'doc', 'font'].includes(o.type) ? o.type : 'note', { font: o.type === 'font' ? (o.font || o.text) : (o.font ? String(o.font) : undefined), body: o.type === 'doc' ? (o.body || '') : undefined,
       x: o.x, y: o.y, text: o.type === 'font' ? (o.sample || '') : o.text || '', color: COLOR_NAMES.includes(o.color) ? o.color : 'white', hex: o.hex, label: o.label,
-      items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined, tagText: o.tag, name: o.name }); if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag); addCard(c); added.push(c); if (o.in) file(c, o.in); });
+      items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined, tagText: o.tag, name: o.name }); if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag); if (c.type === 'note' && dueDate(o.due)) c.due = o.due; addCard(c); added.push(c); if (o.in) file(c, o.in); });
     (r.titles || []).forEach(o => { place(o); added.push(addCard(card('title', { x: o.x, y: o.y, text: o.text }))); });
     (r.place || []).forEach(o => { const c = board.tray.find(x => x.id === o.id); if (!c) return; place(o); takeFromTray(c, { x: o.x, y: o.y }).forEach(m => added.push(m)); });
     (r.move || []).forEach(o => { const c = byId(o.id); if (!c || o.x == null) return; c.x = o.x; c.y = o.y; if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
@@ -2623,6 +3109,7 @@
       if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
       if (o.tag !== undefined) { if (o.tag) c.tagText = o.tag; else delete c.tagText; }
       if (Array.isArray(o.tags) && c.type === 'note') { c.tags = cleanTags(o.tags).map(existingTag); if (!c.tags.length) delete c.tags; }
+      if (o.due !== undefined && c.type === 'note') { if (dueDate(o.due)) c.due = o.due; else delete c.due; }
       if (o.hex && /^#[0-9a-f]{6}$/i.test(o.hex)) c.hex = o.hex.toLowerCase();
       if (o.label != null) c.label = o.label;
       ['bold', 'italic', 'under', 'strike'].forEach(k => { if (typeof o[k] === 'boolean') c[k] = o[k]; });
@@ -3527,6 +4014,11 @@
   }
   function closeTiltPop() { $('tiltPop').classList.remove('on'); }
   addEventListener('keydown', e => { if (e.key === 'Escape' && $('tiltPop').classList.contains('on')) { closeTiltPop(); e.stopPropagation(); } }, true);
+  // the pickers that drop out of the toolbar (shapes, stamps, templates) close when you click anywhere else, and a popup menu (zoom, ···, rows) closes on Esc; one listener each, registered once
+  const DOCK_PICKS = { shapePick: 'shape', tplPick: 'tpl', stampWheel: 'stamp', stampPick: 'stamp' }, DOCK_PICK_SEL = Object.keys(DOCK_PICKS).map(id => '#' + id).join(', ') + ', #tools [data-add="shape"], #tools [data-add="stamp"], #tools [data-add="tpl"], #tbMore, #rowMenu';
+  addEventListener('pointerdown', e => { const open = Object.keys(DOCK_PICKS).filter(id => $(id)?.classList.contains('on')); if (!open.length || e.target.closest(DOCK_PICK_SEL)) return;
+    open.forEach(id => { $(id).classList.remove('on'); $('tools').querySelector(`[data-add="${DOCK_PICKS[id]}"]`)?.classList.remove('on'); }); }, true);
+  addEventListener('keydown', e => { const m = e.key === 'Escape' && $('rowMenu'); if (m) { m.remove(); e.stopPropagation(); } }, true);
   addEventListener('pointerdown', e => { if ($('tiltPop').classList.contains('on') && !e.target.closest('#tiltPop, [data-sb="tiltpop"]')) closeTiltPop(); }, true);
 
   // removing a section pops the bubble but leaves everything that was inside it right where it is
@@ -4733,6 +5225,7 @@ ${proseCSS()}
     if (one?.type === 'image') h += btn('crop', 'crop', 'Crop') + btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText);
     else if (one && !['coll', 'swatch', 'stamp', 'ink'].includes(one.type)) h += G(6, btn('tag', 'tag', one.tagText ? 'Remove the label' : 'Add a label', !!one.tagText));
     if (one?.type === 'note') h += pop('tags', `${ICON.tags}${(one.tags || []).length ? `<b>${one.tags.length}</b>` : ''}${CARET}`, `<div class="sb-tags" data-for="${one.id}">${tagEditor(one)}</div>`, 'Tags');
+    if (one?.type === 'note') h += pop('due', `${Icon('calendar')}${one.due ? '<b>•</b>' : ''}${CARET}`, `<div class="sb-due" data-for="${one.id}"><div class="sd-row"><label><span>Date</span><input type="date" data-due-d value="${esc((one.due || '').slice(0, 10))}"></label><label><span>Time</span><input type="time" data-due-t value="${esc((one.due || '').slice(11))}"></label></div><div class="sd-chips"><button data-due-q="0">Today</button><button data-due-q="1">Tomorrow</button><button data-due-q="7">Next week</button><button data-due-clear>Clear</button></div></div>`, 'Due date');
     if (one?.type === 'doc') h += btn('open', 'open', 'Open the doc');
     if (one?.type === 'vnote') h += btn('vnflip', 'flip', 'Flip the card') + btn('vnopen', 'open', 'Open in Obsidian');
     if (one?.type === 'canvas') h += btn('open', 'open', 'Open this canvas');
@@ -4998,6 +5491,13 @@ ${proseCSS()}
     cs.forEach(c => { c.x = Math.round(c.x); c.y = Math.round(c.y); renderCard(c); }); selectOnly(cs.map(c => c.id)); renderWires(); save();
   }
   $('selbar').addEventListener('click', e => { const b = e.target.closest('[data-arr]'); if (!b) return; e.stopImmediatePropagation(); arrange(b.dataset.arr); }, true);
+  // the due date box in the selection bar: pick a date (and a time if it matters), or one of the quick days
+  { const dueBox = el => el.closest('.sb-due'), dueSet = box => { const c = byId(box.dataset.for), d = box.querySelector('[data-due-d]').value, t = box.querySelector('[data-due-t]').value; if (c) setDue(c, d ? d + (t ? 'T' + t : '') : ''); };
+    $('selbar').addEventListener('change', e => { if (e.target.matches('[data-due-d], [data-due-t]')) dueSet(dueBox(e.target)); });
+    $('selbar').addEventListener('keydown', e => { if (e.target.matches('[data-due-d], [data-due-t]')) { e.stopPropagation(); if (e.key === 'Enter') closeSbPops(); } });
+    $('selbar').addEventListener('click', e => { const b = e.target.closest('[data-due-q], [data-due-clear]'); if (!b) return; e.stopPropagation(); const box = dueBox(b), dIn = box.querySelector('[data-due-d]'), tIn = box.querySelector('[data-due-t]');
+      if (b.matches('[data-due-clear]')) { dIn.value = tIn.value = ''; } else { const d = new Date(); d.setDate(d.getDate() + +b.dataset.dueQ); dIn.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+      dueSet(box); }); }
   $('selbar').onclick = e => {
     const cs = selCards(), one = cs[0], dot = e.target.closest('[data-c]'), cdot = e.target.closest('[data-cc]'), a = e.target.closest('[data-sb]')?.dataset.sb;
     if (a === 'group' || a === 'ungroup') { remember(); return groupSel(a === 'group'); }
@@ -5472,10 +5972,10 @@ ${proseCSS()}
     applySettings(); phone.init();
     let onboarded = true; try { onboarded = !!localStorage.getItem('fenmyr:onboarded'); } catch (e) {}
     if (!onboarded) { firstRunSetup = true; try { localStorage.setItem(newsKey, (await Fenmyr.version().catch(() => null)) || Object.keys(NEWS).pop()); } catch (e) {} setTimeout(() => { fit(board.cards); openSetup(); }, 400); showConnections(true); return; }   // brand new: the tour covers it, no what's new
-    setTimeout(() => { fit(board.cards); if (settings.greet && settings.chat !== 'quiet') say(`Hi${settings.name ? ' ' + settings.name : ''}, it's Myra! Dump ideas with ⌘K, then ask me to sort them ✦`, 7000); }, 400);
+    setTimeout(() => { fit(board.cards); greet('start'); }, 400);
     showConnections(true);
     setTimeout(maybeNews, 700);
     setTimeout(() => checkUpdate(), 4000);
   })();
-  window.__fenmyr = { placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
+  window.__fenmyr = { stopAnim, dueRelease: () => { dueHold = false; if (dueHeld.length) dueAnnounce(dueHeld.splice(0)); }, greet, greeter, daily, dayKey, slashDue, setGreet: (g, chat) => { settings.greet = g; settings.chat = chat; }, setDue, dueArm, dueState, dueRaw: () => lsRead(DUE_KEY, {}), dueFiredRaw: () => lsRead(DUE_FIRED, {}), copyCards, pasteCards, openBoard, curBoard: () => board, selectOnly, refreshBoards: () => refreshBoards(), boardOrder: () => boardOrder, boardsOf: fid => boardsIn(fid).map(b => b.name), slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd), birthdayDue, birthdayCheck, setBirthday, bdSetting: () => settings.birthday, birthdayFacts, bdState, celebrateBirthday, bdActive: (ms, keyMs = 99999) => { lastActive = Date.now() - ms; lastKey = Date.now() - keyMs; }, hatOn: () => hatOn, timerRequest, durText, dizzyAuto: v => { dizzyAuto = !!v; toggleLog = []; }, perchGoo, lastAnimName: () => lastAnim, perched: () => perched, idleCheck, idleState, playAnim, animRequest, animName, animIntent, animNames: () => ANIMS.map(a => a.name), currentPose: () => currentPose, timerState: () => timer, timerCheck, parseTimer, placePiece, PIECES, GROUPS, newNote: (x = 0, y = 0) => { const w = centerWorld(), c = card('note', { color: 'white', name: '' }); c.x = w.x + x; c.y = w.y + y; addCard(c); selectOnly([c.id]); startEdit(c.id); return c.id; }, selectWire, renderTray, ask, applyToolbar, renderCard, openVaultPicker, editVaultAccess, refreshVNotes, saveWithDialog, saveAsTemplate, useTemplate, selectOnly, restack, openSetup, startTour, get board() { return board; }, applyMyra, fit, lib: () => snapshot().library, openHome, get editing() { return editing; }, get sel() { return [...sel]; }, placeSelbar, renderAll, get view() { return view; }, applyView };   // handy for testing
 })();

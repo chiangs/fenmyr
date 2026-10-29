@@ -1262,6 +1262,11 @@ body:not(.fancy-cursor) > .mcur { display: none; }
 .mcur.grabby .tipv { transform: scale(0); }
 .mcur.grabby:not(.down) .grabhand.open { transform: scale(1) rotate(0); } .mcur.grabby.down .grabhand.fist { transform: scale(.95) rotate(-6deg); }
 .mcur.grabby .bub, .mcur.grabby .tagbg { translate: 14px 10px; }
+/* over a height grip: an up-and-down arrow in her colours */
+.mcur .rszv { position: absolute; left: -12px; top: -12px; width: 34px; height: 34px; overflow: visible; rotate: var(--rz, 0deg); transform: scale(0); transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
+.mcur .rszv .o > * { fill: var(--cs); stroke: var(--cs); stroke-width: 1.8; stroke-linejoin: round; } .mcur .rszv .f > * { fill: var(--c); }
+.mcur.rsz .tipv { transform: scale(0); } .mcur.rsz .rszv { transform: scale(1); } .mcur.rsz.down .rszv { transform: scale(.9); }
+.mcur.rsz .bub, .mcur.rsz .tagbg { translate: 14px 10px; }
 /* resize handles, wire knobs and rotate handles keep their size on screen when you zoom out (they'd shrink to a few pixels otherwise) */
 
 .card .handle { z-index: 6; }   /* the resize corner sits above chips like "pull colors" */
@@ -2282,10 +2287,11 @@ body.myra-hidden :is(#goo, #coachGoo, #hubGoo) { display: none !important; }
 body.myra-calm :is(#goo, .m-pill, #mPill).hopping, body.myra-calm #goo.hopping, body.myra-calm .m-pill { animation: none !important; }
 /* the height grip under Layers, Wireframe and Unsorted */
 .rz-grip { position: relative; height: 12px; margin: 2px auto -4px; cursor: ns-resize; flex: none; }
-.rz-grip::before { content: ""; position: absolute; left: 50%; top: 4px; width: 34px; height: 4px; margin-left: -17px; border-radius: 134px; corner-shape: squircle; background: rgba(128, 110, 92, .18); transition: background .15s, width .15s, margin .15s; }
-.rz-grip:hover::before, .rz-grip.on::before { background: var(--select, #0d99ff); width: 46px; margin-left: -23px; }
-.design.min .rz-grip, .tray.closed .rz-grip, .box.min .rz-grip { display: none; }
-body.dark .rz-grip::before { background: rgba(255, 255, 255, .18); }
+.rz-grip > svg { position: absolute; left: 50%; top: 50%; width: 200px; height: 40px; margin: -20px 0 0 -100px; overflow: visible; pointer-events: none; }   /* the bar is drawn as a path (see gripBulge) so the middle can swell */
+.rz-grip > svg path { fill: rgba(128, 110, 92, .18); transition: fill .15s; }
+.rz-grip:hover > svg path, .rz-grip.on > svg path { fill: var(--pink-deep); }
+body.dark .rz-grip > svg path { fill: rgba(255, 255, 255, .18); }
+body.dark .rz-grip:hover > svg path, body.dark .rz-grip.on > svg path { fill: var(--pink-deep); }
 
 
 .tray > .rz-grip, .design > .rz-grip, .design .rz-grip { align-self: stretch; width: auto; min-width: 60px; }
@@ -2605,3 +2611,82 @@ body.dark .find-bar .fb-sep { background: rgba(255, 255, 255, .14); }
 @media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
 .find-bar.up { left: auto; right: 0; bottom: calc(100% + 12px); }
 .dock.finding .tools, .dock.finding .selbar.on { display: none !important; }
+
+/* the timer: a small chip above Myra's pill, and her fuss when it runs out */
+.timer-chip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 3; height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 11px; max-width: 280px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))); font: 600 12px/1 var(--font); overflow: hidden; animation: fb-in .18s ease-out; }
+.timer-chip[hidden] { display: none; }
+.timer-chip svg { flex: none; color: var(--ink-soft); } .timer-chip b { font-variant-numeric: tabular-nums; font-weight: 700; }
+.timer-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); font-weight: 500; }
+.timer-chip button { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ink-soft); cursor: pointer; }
+.timer-chip button:hover { background: var(--blush); color: var(--ink); }
+.timer-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: var(--pink-deep, #e88a24); transition: width 1s linear; }
+body.dark .timer-chip { background: rgba(46, 42, 37, .97); color: #fff; } body.dark .timer-chip b { color: #fff; }
+body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-panels.panel-dark .timer-chip { color: #f0ebe4; }
+.dock .myra.timing .m-bubble { bottom: calc(100% + 52px); } .myra.timing .m-chat { bottom: calc(100% + 52px); }
+.m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
+.myra.partying:not(.chat) .m-pill { animation: m-party .55s ease-in-out 6; }
+.myra.partying.chat .goo-slot.perched #goo { transform-origin: 50% 100%; animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she wiggles herself; on the sprite, because rotate/scale on the slot would scale and swing her whole offset from the button */
+@keyframes m-party-slot { 0%, 100% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(-6deg) scale(1.12); } 75% { transform: rotate(6deg) scale(1.12); } }
+@keyframes m-party { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-4deg) scale(1.06); } 75% { transform: rotate(4deg) scale(1.06); } }
+.confetti { position: absolute; left: 50%; bottom: 40px; width: 9px; height: 9px; border-radius: 3px; background: var(--c); pointer-events: none; opacity: 0; z-index: 20; animation: confetti 1.7s cubic-bezier(.2, .7, .3, 1) forwards; }
+@keyframes confetti { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx), calc(var(--dy) + 110px)) rotate(var(--rot)); } }
+@media (prefers-reduced-motion: reduce) { .timer-chip { animation: none; } .myra.partying .m-pill, .myra.partying .goo-slot, .confetti { animation: none; } }
+
+/* the end of a timer: the pill glows red (work and focus) or green (a break) until you dismiss it, and the chip pulses through the last two minutes */
+.m-pill.glow-red { --m-glow: #e5484d; } .m-pill.glow-green { --m-glow: #3fae6a; }
+.m-pill.glow-red, .m-pill.glow-green { box-shadow: var(--m-base), 0 0 24px 4px color-mix(in srgb, var(--m-glow) 62%, transparent); animation: m-glow-hot 3.6s ease-in-out infinite; }
+@keyframes m-glow-hot { 0%, 100% { box-shadow: var(--m-base), 0 0 16px 2px color-mix(in srgb, var(--m-glow) 44%, transparent); } 50% { box-shadow: var(--m-base), 0 0 32px 7px color-mix(in srgb, var(--m-glow) 78%, transparent); } }
+body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: none; }
+/* the last two minutes: her own glow runs a little faster; when it ends it goes back to her normal pace */
+.m-pill.hurry { animation: m-glow 2.2s ease-in-out infinite, m-wobble 8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .m-pill.glow-red, .m-pill.glow-green, .m-pill.hurry { animation: none; } }
+
+/* Myra's sprite lives in a slot so she can hop out of her button and perch beside the chat */
+.goo-slot { position: relative; z-index: 6; display: inline-block; line-height: 0; will-change: transform; transform-origin: 50% 100%; }   /* her feet are the pivot for squash and stretch */
+.goo-slot.perched { cursor: pointer; }
+.mc-list { padding-bottom: 40px; } body.phone .mc-list { padding-bottom: 6px; }
+.mc-sel { margin-left: 66px; max-width: calc(100% - 78px); }
+
+/* with the chat open, its header already says she is thinking: the button keeps its width, so the bar and the chat don't slide sideways */
+.myra.chat.thinking .m-name::after { content: none; }
+
+/* a closed chat can't be focused or tabbed into (its fade still plays), so M and typing work after Esc */
+.m-chat { visibility: hidden; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2), visibility 0s .3s; }
+.myra.chat .m-chat { visibility: visible; transition-delay: 0s; }
+
+/* birthday inputs: month and day, nothing else */
+.bd-pick { display: inline-flex; align-items: center; gap: 6px; }
+.bd-pick select { font: 500 13px/1.2 var(--font); padding: 7px 9px; border: 0; border-radius: 11px; corner-shape: squircle; background: #f8f5f3; color: var(--ink); cursor: pointer; }
+.bd-clear { width: 26px; height: 26px; border: 0; border-radius: 9px; background: none; color: var(--ink-soft); cursor: pointer; font: 600 16px/1 var(--font); }
+.bd-clear:hover { background: var(--blush); color: var(--ink); }
+body.dark .bd-pick select, body.tint-panels .bd-pick select { background: rgba(255, 255, 255, .08); color: inherit; }
+.ob-field small { color: var(--ink-faint); font-weight: 500; }
+
+/* the birthday note's Myra spins (her moving party stamp) */
+.card.note .nmyra.mv-spin { animation: mv-spin 1.6s cubic-bezier(.5, 0, .5, 1) infinite; }
+@media (prefers-reduced-motion: reduce) { .card.note .nmyra.mv-spin { animation: none; } }
+/* the month and day lists follow the theme (the open list is the system's, so it needs its own colours in dark and Caelestia) */
+.bd-pick select { color-scheme: light; }
+body.dark .bd-pick select, body.tint-panels.panel-dark .bd-pick select { color-scheme: dark; }
+.bd-pick select option { background: #fff; color: #3b342d; }
+body.dark .bd-pick select option { background: #2b2722; color: #f6f2ec; }
+body.tint-panels .bd-pick select option { background: var(--panel); color: #3b342d; }
+body.tint-panels.panel-dark .bd-pick select option { background: var(--panel); color: #f0ebe4; }
+
+/* Wireframe and Unsorted keep the height you drag them to: no shrinking against each other, one scrollbar (the list's own) */
+.side > .design.sized, .side > .tray.sized { flex: none; max-height: none; }
+.side > .design:not(.min) { overflow: hidden; }
+
+/* dragging a board between two rows: a line shows where it will go */
+.board-row.drop-before { box-shadow: 0 -2px 0 0 var(--pink-deep); } .board-row.drop-after { box-shadow: 0 2px 0 0 var(--pink-deep); }
+
+/* due date: a chip on the bottom edge of a note in the note's own colour (quiet), amber within a day, red once it has passed */
+.card .due { position: absolute; right: 14px; bottom: -12px; display: flex; align-items: center; gap: 4px; padding: 2px 9px 3px 7px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--fill, #fff); color: var(--ink-soft); font: 700 11.5px/1.2 var(--font); white-space: nowrap; rotate: 2deg; box-shadow: 0 3px 8px rgba(var(--sh), calc(.12 * var(--sh-k))), inset 0 0 0 1px rgba(0, 0, 0, .06); pointer-events: none; }
+.card .due .ico { width: 12px; height: 12px; flex: none; }
+body.dark .card.c-white .due { background: #38332d; color: var(--ink); } body.dark .card:not(.c-white) .due { color: #3f3a34; }
+.card .due.soon { background: #ffd98a; color: #5a3a05; } .card .due.over { background: #ff9d8f; color: #5b1409; }
+body.dark .card .due.soon { background: #ffd98a; color: #5a3a05; } body.dark .card .due.over { background: #ff9d8f; color: #5b1409; }
+.sb-due { display: grid; gap: 10px; width: 250px; padding: 2px; white-space: normal; }
+.sb-due .sd-row { display: flex; gap: 8px; } .sb-due label { display: grid; gap: 3px; flex: 1; font: 600 11px/1 var(--font); color: var(--ink-soft); }
+.sb-due input { font: 600 13px/1 var(--font); padding: 8px 9px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgba(0, 0, 0, .05); color: var(--ink); min-width: 0; } body.dark .sb-due input { background: rgba(255, 255, 255, .08); color-scheme: dark; }
+.sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgba(0, 0, 0, .05); color: var(--ink); } body.dark .sb-due .sd-chips button { background: rgba(255, 255, 255, .08); }

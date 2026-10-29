@@ -125,10 +125,11 @@
       </div>
       <div class="m-bubble" id="mBubble"><small>myra</small><p id="mSay"></p><div class="m-acts" id="mActs"></div></div>
       <div class="m-pill" id="mPill">
-        <canvas id="goo" width="64" height="56"></canvas>
+        <span class="goo-slot" id="gooSlot"><canvas id="goo" width="64" height="56"></canvas></span>
         <span class="m-name" id="mName">Myra</span>
         <form id="mForm" class="m-form"><input id="mInput" placeholder="Ask Myra… “group these by theme”" autocomplete="off"></form>
       </div>
+      <div class="timer-chip" id="timerChip" hidden><svg data-ico="timer" width="15" height="15"></svg><b id="tcTime">0:00</b><span id="tcWhat"></span><button type="button" id="tcX" title="Stop the timer" aria-label="Stop the timer"><svg data-ico="close" width="13" height="13"></svg></button></div>
       <div class="find-bar" id="findBar" role="search" hidden>
         <label class="fb-field"><svg data-ico="search" width="16" height="16"></svg><input id="fbQ" placeholder="Find on the board" autocomplete="off" spellcheck="false" aria-label="Find on the board"></label>
         <span class="fb-count" id="fbCount" aria-live="polite"></span>
@@ -243,6 +244,7 @@
       <h2>Hi, I'm Myra!</h2>
       <p>I'm a little cloudberry who lives in your boards. Like cloudberries, ideas only grow where conditions are just right. Let's make yours. It takes about a minute.</p>
       <label class="ob-field"><span>What should I call you?</span><input id="obName" placeholder="Your name" autocomplete="off" spellcheck="false"></label>
+      <div class="ob-field"><span>When is your birthday? <small>Optional. I like a good party.</small></span><span class="bd-pick"><select id="obBdMonth" aria-label="Birthday month"></select><select id="obBdDay" aria-label="Birthday day"></select></span></div>
     </section>
     <section class="ob-step" data-step="1">
       <h2>Make it yours</h2>
@@ -308,6 +310,7 @@
       <section data-tab="general"><h3>Your cursor</h3>
         <div class="cur-prev" id="curPrev"><div class="mcur show demo"></div></div>
         <label class="set-row"><div><b>Your name</b><small>It rides along on your cursor, in Myra’s colour</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
+        <div class="set-row"><div><b>Birthday</b><small>Optional. Myra celebrates it with you, and wishes you a belated one if you miss it. Only the month and day are kept, on this computer</small></div><span class="bd-pick"><select id="setBdMonth" aria-label="Birthday month"></select><select id="setBdDay" aria-label="Birthday day"></select><button type="button" class="bd-clear" id="setBdClear" title="Clear">×</button></span></div>
         <div class="set-row" style="display:none"><div><b>Cursor colour</b></div><div class="myra-colors cur-colors" id="curColors"></div></div>
         <label class="set-row native-only win-only"><div><b>Window buttons</b><small>The close, minimise and maximise dots at the top left. Turn off if your compositor handles windows (Hyprland, Sway, niri)</small></div><input type="checkbox" class="tgl" data-set="winButtons"></label>
         <label class="set-row"><div><b>Cursor</b><small>Off uses your system’s regular cursor</small></div><input type="checkbox" class="tgl" data-set="fancyCursor"></label>

@@ -95,3 +95,21 @@ Fenmyr's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard
 The app never names an icon pack directly. It asks for a Fenmyr icon name through `Icon('note')` (`web/icons.js`), or marks a placeholder in the HTML with `<svg data-ico="note"></svg>`. `tools/icons/set.js` says which icon of the current pack (Phosphor) draws each name and which names the wireframe picker offers; `tools/icons/custom.js` holds Myra's own icons (the cloudberry mark, the Myra tool, chat). Run `npm run icons` after changing either: it builds `web/icons/pack.js` (both the Regular and the Duotone drawing of every icon) and `linux/icon-names.json` (the names Myra may use in wireframes).
 
 To use another icon pack, add it as a dependency and change `pack` and the second column of `set.js`; nothing else in the app changes. A name with no icon shows a dashed placeholder, so old boards never break. Only the bottom bar (toolbar, selection bar, pen bar, shape picker) and Myra's chat header show Duotone; panels, wireframe pieces and icon cards always draw as plain outlines.
+
+## Adding a line to Myra's greeting
+
+Myra's greeting (when the app opens, and on the first focus after midnight) is built from a small list in `web/app.js`, `GREETERS`. To add something, register it next to the others:
+
+```js
+greeter('myfeature', 20, c => c.firstToday ? { text: 'One thing worth saying today ✦', acts: [{ label: 'Show me', run: () => showIt() }] } : null);
+```
+
+- `order` sorts the lines (the hello is 0, due dates 10). At most three lines are shown, in one bubble that also goes into the chat.
+- `c` has `why` (`'start'` or `'newday'`), `firstToday`, `now` and `name`. `daily(id)` is true once per calendar day for anything that should only be said once.
+- Keep it quick and synchronous: read what is already in memory (never scan boards or wait on the network). Return nothing when there is nothing to say.
+
+## Adding a slash command
+
+Slash commands live in one list, `SLASH` in `web/app.js`. Give every command a `cmd`, a plain `desc`, a `run`, and (where it helps) an `ex` example and `opts`. The app sends this list to Myra with every question and `linux/prompts.js` puts it in her instructions, so she knows about a new command without anyone editing a prompt. A test fails if a command is missing from what she is told.
+
+If the same thing is something she should be able to do herself (like `timer` or `animate`), also add an action key to the JSON she replies with, in `linux/prompts.js`, and handle it in `applyMyra`.
