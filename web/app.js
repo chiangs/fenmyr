@@ -3911,6 +3911,11 @@
   }
   function closeTiltPop() { $('tiltPop').classList.remove('on'); }
   addEventListener('keydown', e => { if (e.key === 'Escape' && $('tiltPop').classList.contains('on')) { closeTiltPop(); e.stopPropagation(); } }, true);
+  // the pickers that drop out of the toolbar (shapes, stamps, templates) close when you click anywhere else, and a popup menu (zoom, ···, rows) closes on Esc; one listener each, registered once
+  const DOCK_PICKS = { shapePick: 'shape', tplPick: 'tpl', stampWheel: 'stamp', stampPick: 'stamp' }, DOCK_PICK_SEL = Object.keys(DOCK_PICKS).map(id => '#' + id).join(', ') + ', #tools [data-add="shape"], #tools [data-add="stamp"], #tools [data-add="tpl"], #tbMore, #rowMenu';
+  addEventListener('pointerdown', e => { const open = Object.keys(DOCK_PICKS).filter(id => $(id)?.classList.contains('on')); if (!open.length || e.target.closest(DOCK_PICK_SEL)) return;
+    open.forEach(id => { $(id).classList.remove('on'); $('tools').querySelector(`[data-add="${DOCK_PICKS[id]}"]`)?.classList.remove('on'); }); }, true);
+  addEventListener('keydown', e => { const m = e.key === 'Escape' && $('rowMenu'); if (m) { m.remove(); e.stopPropagation(); } }, true);
   addEventListener('pointerdown', e => { if ($('tiltPop').classList.contains('on') && !e.target.closest('#tiltPop, [data-sb="tiltpop"]')) closeTiltPop(); }, true);
 
   // removing a section pops the bubble but leaves everything that was inside it right where it is
