@@ -306,7 +306,7 @@ echo " [BLANK_AUDIO] hello from whisper"
     await page.keyboard.press('Escape'); const closed = await page.evaluate(() => document.querySelector('.slash-menu').hidden && document.getElementById('myra').classList.contains('chat'));
     await page.fill('#mcInput', '/tidy'); await page.keyboard.press('Enter'); await page.waitForTimeout(200);
     const f3 = await page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg')].pop().textContent.trim());
-    r.slash = { open: f1.chat && f1.val === '/find ' && f1.focus === 'mcInput', barOpens: b1.shown && b1.focus === 'fbQ' && b1.count === '1 of 2', dims: b1.dim === 2 && b1.cur === 1, besideMyra: b1.right && b1.level, cycles: b2.count === '2 of 2' && b3.count === '2 of 2', live: b4.count === '1 of 1' && b4.prevOff, none: b5.count === 'No matches' && b5.dim === 0, closes: !b6.shown && b6.dim === 0 && b6.cur === 0, menu: menu === 'find,tag,tidy,fit,timer,birthday,animate,clear,help', closed, tidy: /Lined 4 notes/.test(f3) };
+    r.slash = { open: f1.chat && f1.val === '/find ' && f1.focus === 'mcInput', barOpens: b1.shown && b1.focus === 'fbQ' && b1.count === '1 of 2', dims: b1.dim === 2 && b1.cur === 1, besideMyra: b1.right && b1.level, cycles: b2.count === '2 of 2' && b3.count === '2 of 2', live: b4.count === '1 of 1' && b4.prevOff, none: b5.count === 'No matches' && b5.dim === 0, closes: !b6.shown && b6.dim === 0 && b6.cur === 0, menu: menu === 'find,tag,tidy,due,fit,timer,birthday,animate,clear,help', closed, tidy: /Lined 4 notes/.test(f3) };
     await page.evaluate(() => { document.getElementById('mcNew').click(); window.__fenmyr.stopAnim(); document.getElementById('mcInput').blur(); }); }
   // pictures never live inside a note: pasted into a note they become a connected picture card (or replace an empty note); a linked pair sent to Unsorted comes back together
   { const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC';
@@ -386,6 +386,23 @@ echo " [BLANK_AUDIO] hello from whisper"
     const overTimer = await page.evaluate(() => window.__fenmyr.idleCheck(true));
     await page.evaluate(() => { document.getElementById('myra').classList.add('chat'); }); await page.fill('#mcInput', '/timer stop'); await page.keyboard.press('Enter'); await page.waitForTimeout(300); await page.evaluate(() => { document.getElementById('myra').classList.remove('chat'); document.getElementById('mcInput').blur(); });
     r.idleAnim = { aliases: nm === 'love|hop|party|', requests: rq === 'hop|||*', plays: ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'].includes(idle.first), once: idle.second === false, gap: idle.gapMin >= 59.9 && idle.gapMin <= 91, notOverTimer: overTimer === false }; }
+  // due dates: the chip and its colour, the reminder index, one announcement per due date, and the date coming along when the note is copied to another board
+  { const F = '(window.__fenmyr)', iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    const id = await page.evaluate(() => window.__fenmyr.newNote(300, 700)); await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+    const chip = () => page.evaluate(i => { const e = document.querySelector(`[data-id="${i}"] .due`); return e ? { cls: e.className, text: e.textContent } : null; }, id);
+    const day = new Date(Date.now() + 3 * 864e5); await page.evaluate(([i, v]) => window.__fenmyr.setDue(window.__fenmyr.curBoard().cards.find(c => c.id === i), v), [id, iso(day).slice(0, 10)]); const far = await chip();
+    const soon = new Date(Date.now() + 2 * 36e5); await page.evaluate(([i, v]) => window.__fenmyr.setDue(window.__fenmyr.curBoard().cards.find(c => c.id === i), v), [id, iso(soon)]); const near = await chip();
+    const idx1 = await page.evaluate(() => Object.keys(window.__fenmyr.dueRaw()).length);
+    await page.evaluate(() => { document.getElementById('mSay').textContent = ''; });
+    const gone = new Date(Date.now() - 15 * 6e4); await page.evaluate(([i, v]) => window.__fenmyr.setDue(window.__fenmyr.curBoard().cards.find(c => c.id === i), v), [id, iso(gone)]); await page.waitForTimeout(300);
+    const late = await chip(), said = await page.evaluate(() => document.getElementById('mSay').textContent + ' ' + [...document.querySelectorAll('#mcList .mc-m')].map(e => e.textContent).join(' ')), fired = await page.evaluate(() => Object.keys(window.__fenmyr.dueFiredRaw()).length);
+    await page.evaluate(() => { document.getElementById('mSay').textContent = ''; window.__fenmyr.dueArm(); }); await page.waitForTimeout(200); const again = await page.evaluate(() => document.getElementById('mSay').textContent);
+    const home = await page.evaluate(() => window.__fenmyr.curBoard().id);
+    await page.evaluate(async () => { await Fenmyr.save({ id: 'duex', name: 'Due elsewhere', cards: [], links: [], tray: [], trayLinks: [], palette: [], updated: Date.now() }); });
+    await page.evaluate(i => { window.__fenmyr.selectOnly([i]); window.__fenmyr.copyCards(); }, id); await page.evaluate(async () => { await window.__fenmyr.openBoard('duex'); window.__fenmyr.pasteCards(); }); await page.waitForTimeout(700);
+    const moved = await page.evaluate(() => { const c = window.__fenmyr.curBoard().cards.find(k => k.type === 'note'); return c && c.due; }), idx2 = await page.evaluate(() => Object.values(window.__fenmyr.dueRaw()).filter(it => it.b === 'duex').length);
+    await page.evaluate(async h => { await window.__fenmyr.openBoard(h); await Fenmyr.remove('duex'); }, home); await page.waitForTimeout(300);
+    r.due = { chip: !!far && far.cls === 'due ' && /\d/.test(far.text), soon: !!near && near.cls.includes('soon'), index: idx1 >= 1, over: !!late && late.cls.includes('over'), announced: /was due/.test(said) && fired >= 1, once: again.trim() === '', kept: moved === iso(gone), indexedOtherBoard: idx2 === 1 }; }
   // dragging a board between two rows puts it there (and the order is kept in the folders file, not in the boards)
   { await page.evaluate(async () => { for (const [id, n] of [['oa', 'Alpha'], ['ob', 'Bravo'], ['oc', 'Charlie']]) await Fenmyr.save({ id, name: n, folder: 'of', cards: [], links: [], updated: Date.now() });
       await Fenmyr.saveFolders({ projects: [], folders: [{ id: 'of', name: 'Order folder', open: true }] }); await window.__fenmyr.refreshBoards(); });

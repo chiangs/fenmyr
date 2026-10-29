@@ -2678,3 +2678,13 @@ body.tint-panels.panel-dark .bd-pick select option { background: var(--panel); c
 
 /* dragging a board between two rows: a line shows where it will go */
 .board-row.drop-before { box-shadow: 0 -2px 0 0 var(--pink-deep); } .board-row.drop-after { box-shadow: 0 2px 0 0 var(--pink-deep); }
+
+/* due date: a chip on the bottom edge of a note, amber within a day, red once it has passed */
+.card .due { position: absolute; right: 14px; bottom: -12px; display: flex; align-items: center; gap: 4px; padding: 2px 9px 3px 7px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink-soft); font: 700 11.5px/1.2 var(--font); white-space: nowrap; rotate: 2deg; box-shadow: 0 3px 8px rgba(var(--sh), calc(.12 * var(--sh-k))); pointer-events: none; }
+.card .due .ico { width: 12px; height: 12px; flex: none; }
+.card .due.soon { background: #ffd98a; color: #5a3a05; } .card .due.over { background: #ff9d8f; color: #5b1409; }
+body.dark .card .due { background: #403b35; color: var(--ink); } body.dark .card .due.soon { background: #ffd98a; color: #5a3a05; } body.dark .card .due.over { background: #ff9d8f; color: #5b1409; }
+.sb-due { display: grid; gap: 10px; width: 250px; padding: 2px; white-space: normal; }
+.sb-due .sd-row { display: flex; gap: 8px; } .sb-due label { display: grid; gap: 3px; flex: 1; font: 600 11px/1 var(--font); color: var(--ink-soft); }
+.sb-due input { font: 600 13px/1 var(--font); padding: 8px 9px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgba(0, 0, 0, .05); color: var(--ink); min-width: 0; } body.dark .sb-due input { background: rgba(255, 255, 255, .08); color-scheme: dark; }
+.sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgba(0, 0, 0, .05); color: var(--ink); } body.dark .sb-due .sd-chips button { background: rgba(255, 255, 255, .08); }
