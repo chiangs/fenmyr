@@ -434,6 +434,10 @@ echo " [BLANK_AUDIO] hello from whisper"
     await page.mouse.click(700, 420); await page.waitForTimeout(200); const gone = await page.evaluate(() => !document.getElementById('rowMenu'));
     await page.locator('#zoom').click(); await page.waitForTimeout(200); await page.keyboard.press('Escape'); await page.waitForTimeout(200); const esc = await page.evaluate(() => !document.getElementById('rowMenu'));
     r.popups = { ...res, zoomMenu: menu && gone, escMenu: esc }; }
+  // at the window edge and over the top-left strip the system cursor comes back (and the app's own cursor steps aside); anywhere else it is the app's own
+  { const at = async (px, py) => { await page.mouse.move(px + 2, py + 2); await page.mouse.move(px, py); await page.waitForTimeout(120); return page.evaluate(() => ({ edge: document.body.classList.contains('cur-edge'), hidden: document.querySelector('body > .mcur').classList.contains('hide') })); };
+    const corner = await at(4, 4), strip = await at(150, 20), board = await at(700, 420), side = await at(1436, 400);
+    r.cursorEdge = { corner: corner.edge && corner.hidden, strip: strip.edge && strip.hidden, board: !board.edge && !board.hidden, side: side.edge && side.hidden }; await page.mouse.move(700, 420); }
   // the height grips: the pointer shows the system's resize cursor over them, and the bar swells into a peak on hover
   { const g = await page.locator('.rz-grip').first().boundingBox(), h = () => page.evaluate(() => document.querySelector('.rz-grip path').getBBox().height);
     const rest = await h(); await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.waitForTimeout(900);

@@ -2247,8 +2247,9 @@
   addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse' || !document.body.classList.contains('fancy-cursor')) return;
     myCur.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`; myCur.classList.add('show');
-    // at the window's edges, hand back the system's own cursor so its resize arrows show (and you can see where to grab)
-    const edge = Fenmyr.native && (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8 || (OS === 'mac' && e.clientX < 96 && e.clientY < 44));   // (the close, minimise and zoom buttons sit at the top left on a Mac, and the page never sees the pointer over them) document.body.classList.toggle('cur-edge', edge);
+    // at the window's edges, and over the top-left strip (the Mac's traffic lights, and the strip you drag the window by: the page never sees the pointer there), hand back the system cursor
+    const strip = e.clientY < 44 && e.clientX < 240 && (OS === 'mac' || e.clientX >= 70), edge = Fenmyr.native && (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8 || strip);
+    document.body.classList.toggle('cur-edge', edge);
     const t = e.target, native = edge || !!(t.closest && t.closest(NATIVE));
     myCur.classList.toggle('hide', native); document.body.classList.toggle('cur-native', native);
     const onCard = !native && !placing && !drawOn && t.closest && t.closest('.card') && !t.closest('button, a, input');
