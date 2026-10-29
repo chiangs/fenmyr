@@ -1534,9 +1534,12 @@
       sug.onclick = e => { const b = e.target.closest('[data-i]'); if (b) pick(items[+b.dataset.i]); };
       draw(); const r = btn.getBoundingClientRect(); pop.classList.add('on'); pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.left)) + 'px'; pop.style.top = Math.min(innerHeight - pop.offsetHeight - 8, r.bottom + 6) + 'px'; setTimeout(() => inp.focus(), 30);
     }
-    addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('.card .nt-x, .card .nt-add')) { e.stopPropagation(); e.preventDefault(); } else if (pop?.classList.contains('on') && !e.target.closest('#tagAdd')) closeAdd(); }, true);
-    addEventListener('click', e => { const t = e.target.closest && e.target.closest('.card .nt-x, .card .nt-add'); if (!t) return; e.stopPropagation(); e.preventDefault();
-      const c = byId(t.closest('.card').dataset.id); if (!c) return; if (t.matches('.nt-x')) { remember(); removeTag(c, t.dataset.tagx); } else openTagAdd(c, t); }, true);
+    // the action runs on pointer-up (remembering what was pressed, not the element: the card may be redrawn between the press and the release, which would cancel a click)
+    let down = null; const chipOf = t => { const b = t.closest && t.closest('.card .nt-x, .card .nt-add'); return b && { kind: b.matches('.nt-x') ? 'x' : 'add', card: b.closest('.card').dataset.id, tag: b.dataset.tagx }; };
+    addEventListener('pointerdown', e => { const h = chipOf(e.target); if (h) { down = h; e.stopPropagation(); e.preventDefault(); } else { down = null; if (pop?.classList.contains('on') && !e.target.closest('#tagAdd')) closeAdd(); } }, true);
+    addEventListener('pointerup', e => { const h = chipOf(e.target), d = down; down = null; if (!d) return; e.stopPropagation(); if (!h || h.kind !== d.kind || h.card !== d.card) return;
+      const c = byId(d.card); if (!c) return; if (d.kind === 'x') { remember(); removeTag(c, d.tag); } else openTagAdd(c, cardsEl.querySelector(`[data-id="${c.id}"] .nt-add`) || e.target); }, true);
+    addEventListener('click', e => { if (chipOf(e.target)) { e.stopPropagation(); e.preventDefault(); } }, true);
   }
   // typing "#" in a note: suggestions from the board's tags; picking one (or a space after a new word) turns it into a tag, out of the words
   const tagBox = e => { const box = e.target.closest('.sb-tags'); return box && { box, c: byId(box.dataset.for) }; };
