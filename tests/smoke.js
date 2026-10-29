@@ -438,6 +438,15 @@ echo " [BLANK_AUDIO] hello from whisper"
   { const at = async (px, py) => { await page.mouse.move(px + 2, py + 2); await page.mouse.move(px, py); await page.waitForTimeout(120); return page.evaluate(() => ({ edge: document.body.classList.contains('cur-edge'), hidden: document.querySelector('body > .mcur').classList.contains('hide') })); };
     const corner = await at(4, 4), strip = await at(150, 20), board = await at(700, 420), side = await at(1436, 400);
     r.cursorEdge = { corner: corner.edge && corner.hidden, strip: strip.edge && strip.hidden, board: !board.edge && !board.hidden, side: side.edge && side.hidden }; await page.mouse.move(700, 420); }
+  // search and text fields get a clear (x) button; the wireframe search stays visible while the palette scrolls
+  { const vis = () => page.evaluate(() => { const b = document.getElementById('clrBtn'); return !!b && !b.hidden; });
+    await page.keyboard.press('Escape'); await page.mouse.click(700, 420); await page.waitForTimeout(150); await page.locator('#dzSearch').click(); await page.waitForTimeout(150); const empty = await vis(); await page.keyboard.type('box'); await page.waitForTimeout(150); const shown = await vis();
+    const hits = await page.evaluate(() => [...document.querySelectorAll('.dz-body [data-wf], .dz-body [data-piece]')].filter(b => b.offsetParent).length);
+    await page.locator('#clrBtn').click(); await page.waitForTimeout(150);
+    const cleared = await page.evaluate(() => ({ v: document.getElementById('dzSearch').value, focus: document.activeElement === document.getElementById('dzSearch'), n: [...document.querySelectorAll('.dz-body [data-wf], .dz-body [data-piece]')].filter(b => b.offsetParent).length }));
+    const sticky = await page.evaluate(() => { const body = document.querySelector('#design .dz-body'); body.scrollTop = 400; return new Promise(r => setTimeout(() => { const a = document.querySelector('#design .dz-search').getBoundingClientRect(), b = body.getBoundingClientRect(); r({ scrolled: body.scrollTop > 100, atTop: Math.abs(a.top - b.top) < 3 }); body.scrollTop = 0; }, 100)); });
+    await page.locator('#mcInput').evaluate(el => { el.closest('.m-chat')?.classList.add('on'); }); await page.mouse.move(5, 400); await page.keyboard.press('Escape');
+    r.clearBtn = { hiddenWhenEmpty: !empty, showsWithText: shown, clears: cleared.v === '' && cleared.focus && cleared.n > hits, sticky: sticky.scrolled && sticky.atTop }; }
   // the height grips: the pointer shows the system's resize cursor over them, and the bar swells into a peak on hover
   { const g = await page.locator('.rz-grip').first().boundingBox(), h = () => page.evaluate(() => document.querySelector('.rz-grip path').getBBox().height);
     const rest = await h(); await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2); await page.waitForTimeout(900);
