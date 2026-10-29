@@ -1262,8 +1262,8 @@ body:not(.fancy-cursor) > .mcur { display: none; }
 .mcur.grabby:not(.down) .grabhand.open { transform: scale(1) rotate(0); } .mcur.grabby.down .grabhand.fist { transform: scale(.95) rotate(-6deg); }
 .mcur.grabby .bub, .mcur.grabby .tagbg { translate: 14px 10px; }
 /* over a height grip: an up-and-down arrow in her colours */
-.mcur .rszv { position: absolute; left: -12px; top: -12px; width: 34px; height: 34px; overflow: visible; transform: scale(0); transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
-.mcur .rszv .o > * { fill: var(--cs); stroke: var(--cs); stroke-width: 3.2; stroke-linejoin: round; } .mcur .rszv .f > * { fill: var(--c); }
+.mcur .rszv { position: absolute; left: -12px; top: -12px; width: 34px; height: 34px; overflow: visible; rotate: var(--rz, 0deg); transform: scale(0); transition: transform .3s cubic-bezier(.34, 1.56, .64, 1); }
+.mcur .rszv .o > * { fill: var(--cs); stroke: var(--cs); stroke-width: 1.8; stroke-linejoin: round; } .mcur .rszv .f > * { fill: var(--c); }
 .mcur.rsz .tipv { transform: scale(0); } .mcur.rsz .rszv { transform: scale(1); } .mcur.rsz.down .rszv { transform: scale(.9); }
 .mcur.rsz .bub, .mcur.rsz .tagbg { translate: 14px 10px; }
 /* resize handles, wire knobs and rotate handles keep their size on screen when you zoom out (they'd shrink to a few pixels otherwise) */

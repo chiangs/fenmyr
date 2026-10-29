@@ -2187,10 +2187,10 @@
   myCur.innerHTML = `<svg class="tipv" viewBox="0 0 20 22"><path d="M2.6 1.6 17.2 9.9c1 .6.9 1.5-.2 1.8l-6.1 1.8c-.5.2-.9.5-1.1 1l-2.6 6c-.5 1-1.4 1-1.7-.1L1.2 2.9c-.3-1.1.5-1.8 1.4-1.3Z"/></svg><svg class="tagbg" aria-hidden="true"><path/></svg>`
     + `<svg class="grabhand open" viewBox="0 0 34 34"><g class="o"><rect x="8.5" y="15" width="19.5" height="16" rx="7"/><rect x="8" y="4.2" width="5" height="15.5" rx="2.5" transform="rotate(-8 10.5 19)"/><rect x="13.2" y="1.2" width="5" height="17.5" rx="2.5"/><rect x="18.4" y="2.2" width="5" height="16.5" rx="2.5"/><rect x="23.4" y="5.6" width="4.6" height="14" rx="2.3" transform="rotate(8 25.7 19)"/><rect x="7.6" y="15.5" width="3.8" height="9" rx="1.9" transform="rotate(-42 9.5 24)"/></g><g class="f"><rect x="8.5" y="15" width="19.5" height="16" rx="7"/><rect x="8" y="4.2" width="5" height="15.5" rx="2.5" transform="rotate(-8 10.5 19)"/><rect x="13.2" y="1.2" width="5" height="17.5" rx="2.5"/><rect x="18.4" y="2.2" width="5" height="16.5" rx="2.5"/><rect x="23.4" y="5.6" width="4.6" height="14" rx="2.3" transform="rotate(8 25.7 19)"/><rect x="7.6" y="15.5" width="3.8" height="9" rx="1.9" transform="rotate(-42 9.5 24)"/></g></svg>`
     + `<svg class="grabhand fist" viewBox="0 0 34 34"><g class="o"><rect x="7.5" y="13" width="21" height="17" rx="7.5"/><circle cx="11" cy="13.6" r="3"/><circle cx="16" cy="12.6" r="3"/><circle cx="21" cy="12.8" r="3"/><circle cx="25.4" cy="14.4" r="2.7"/><rect x="6" y="17" width="12" height="5" rx="2.5" transform="rotate(-12 12 19.5)"/></g><g class="f"><rect x="7.5" y="13" width="21" height="17" rx="7.5"/><circle cx="11" cy="13.6" r="3"/><circle cx="16" cy="12.6" r="3"/><circle cx="21" cy="12.8" r="3"/><circle cx="25.4" cy="14.4" r="2.7"/><rect x="6" y="17" width="12" height="5" rx="2.5" transform="rotate(-12 12 19.5)"/></g></svg>`
-    + `<svg class="rszv" viewBox="0 0 34 34"><g class="o"><path d="M17 3 25 12H20V22H25L17 31 9 22H14V12H9Z"/></g><g class="f"><path d="M17 3 25 12H20V22H25L17 31 9 22H14V12H9Z"/></g></svg>`
+    + `<svg class="rszv" viewBox="0 0 34 34"><g class="o"><path d="M17 3.5 22.8 11.5H18.8V22.5H22.8L17 30.5 11.2 22.5H15.2V11.5H11.2Z"/></g><g class="f"><path d="M17 3.5 22.8 11.5H18.8V22.5H22.8L17 30.5 11.2 22.5H15.2V11.5H11.2Z"/></g></svg>`
     + `<i class="ring"></i><div class="bub"></div>`;
   document.body.appendChild(myCur);
-  const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .handle, #rh, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
+  const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
   // the name tag: a rounded rectangle whose straight edges wobble gently (the corners stay clean), drawn to fit the name
   function tagPath(w, h, phase) {
     const r = Math.min(8, h / 2 - 1), a = .8, step = 3, wav = (t, len) => a * Math.sin(t / len * Math.PI * Math.max(1, Math.round(len / 22)) + phase) * Math.sin(t / len * Math.PI);
@@ -2228,7 +2228,8 @@
     const t = e.target, native = edge || !!(t.closest && t.closest(NATIVE));
     myCur.classList.toggle('hide', native); document.body.classList.toggle('cur-native', native);
     const onCard = !native && !placing && !drawOn && t.closest && t.closest('.card') && !t.closest('button, a, input');
-    myCur.classList.toggle('rsz', !native && !!(t.closest && t.closest('.rz-grip')));   // over a height grip: her own up-and-down arrow
+    const rz = native || !t.closest ? null : t.closest('.rz-grip') ? 0 : t.closest('#rh, .handle') ? -45 : t.closest('.crop-box i[data-h]') ? (/^(nw|se)$/.test(t.closest('.crop-box i[data-h]').dataset.h) ? -45 : 45) : t.closest('.resize-cursor') ? 90 : null;   // over a resize handle: her own double arrow, turned to fit (height grips, corners, table column edges)
+    myCur.classList.toggle('rsz', rz !== null); if (rz !== null) myCur.style.setProperty('--rz', rz + 'deg');
     myCur.classList.toggle('grabby', !!onCard || stage.classList.contains('space') || stage.classList.contains('panning'));
   }, { passive: true, capture: true });
   addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; myCur.classList.add('down'); myCur.classList.remove('tap'); void myCur.offsetWidth; myCur.classList.add('tap'); }, true);
@@ -2296,13 +2297,20 @@
   const PANELS = { boards: () => $('boards'), layers: () => $('layers'), tray: () => $('trayList'), design: () => document.querySelector('#design .dz-body') };
   const panelMin = k => k === 'layers' ? Math.max(30, $('layers').querySelector('.ly')?.offsetHeight || 30) : k === 'boards' ? Math.max(30, $('boards').querySelector('.board-row, .folder-row, .proj-row')?.offsetHeight || 32) : k === 'tray' ? 60 : 120;
   function applyPanelH() { Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const v = (settings.panelH || {})[k];
-    if (v) { const h = Math.max(panelMin(k), v); Object.assign(el.style, { height: h + 'px', minHeight: '0', maxHeight: 'none', flex: `0 1 ${h}px`, overflowY: 'auto', overflowX: k === 'tray' || k === 'design' ? 'hidden' : '' }); } else Object.assign(el.style, { height: '', minHeight: '', maxHeight: '', flex: '', overflowY: '', overflowX: '' }); el.closest('.design, .tray')?.classList.toggle('sized', !!v); }); }   // a saved height is a wish: on a short window the panel shrinks to fit instead of spilling out of its column
+    if (v) { const h = Math.max(panelMin(k), v); Object.assign(el.style, { height: h + 'px', minHeight: '0', maxHeight: 'none', flex: `0 1 ${h}px`, overflowY: 'auto', overflowX: k === 'tray' || k === 'design' ? 'hidden' : '' }); } else Object.assign(el.style, { height: '', minHeight: '', maxHeight: '', flex: '', overflowY: '', overflowX: '' }); el.closest('.design, .tray')?.classList.toggle('sized', !!v); }); fitSides(); }   // a saved height is a wish: on a short window the panel shrinks to fit instead of spilling out of its column
   Object.entries(PANELS).forEach(([k, f]) => { const el = f(); if (!el) return; const grip = document.createElement('div'); grip.className = 'rz-grip'; grip.title = 'Drag to change the height · double-click for automatic'; grip.dataset.panel = k; el.insertAdjacentElement('afterend', grip); gripBulge(grip);
     grip.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); const y0 = e.clientY, h0 = el.getBoundingClientRect().height; grip.setPointerCapture(e.pointerId); grip.classList.add('on');
-      const mv = ev => { settings.panelH = { ...(settings.panelH || {}), [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))) }; applyPanelH(); };
+      const mv = ev => { settings.panelH = { ...(settings.panelH || {}), [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))) }; applyPanelH(); const got = Math.round(el.getBoundingClientRect().height); if (got < settings.panelH[k]) settings.panelH[k] = got; };
       const up = () => { grip.classList.remove('on'); grip.removeEventListener('pointermove', mv); grip.removeEventListener('pointerup', up); applySettings(); };
       grip.addEventListener('pointermove', mv); grip.addEventListener('pointerup', up); });
     grip.addEventListener('dblclick', e => { e.stopPropagation(); const p = { ...(settings.panelH || {}) }; delete p[k]; settings.panelH = p; applyPanelH(); applySettings(); }); });
+  // Wireframe and Unsorted share the right column: a height you dragged (or saved) is a wish, trimmed so everything in the column stays on screen (Wireframe gives way first)
+  function fitSides() {
+    document.querySelectorAll('.side').forEach(side => { let over = side.scrollHeight - side.clientHeight; if (over < 2) return;
+      ['design', 'tray'].forEach(k => { const el = PANELS[k](); if (over < 2 || !el || !el.closest('.side') || el.closest('.side') !== side || !el.closest('.sized')) return;
+        const cur = el.getBoundingClientRect().height, h = Math.max(panelMin(k), Math.floor(cur - over)); if (h >= cur) return; Object.assign(el.style, { height: h + 'px', flex: `0 1 ${h}px` }); over -= cur - h; }); });
+  }
+  addEventListener('resize', fitSides); document.querySelectorAll('.side').forEach(el => new ResizeObserver(() => requestAnimationFrame(fitSides)).observe(el));
   // the height grips bulge on hover: the line widens and swells into a small round peak above and below, with a wobble that settles (a damped spring on its width and thickness)
   function gripBulge(grip) {
     const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), path = document.createElementNS(NS, 'path'); svg.setAttribute('viewBox', '0 0 200 40'); svg.appendChild(path); grip.appendChild(svg);
