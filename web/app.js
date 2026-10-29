@@ -2190,7 +2190,7 @@
     + `<svg class="rszv" viewBox="0 0 34 34"><g class="o"><path d="M17 3.5 22.8 11.5H18.8V22.5H22.8L17 30.5 11.2 22.5H15.2V11.5H11.2Z"/></g><g class="f"><path d="M17 3.5 22.8 11.5H18.8V22.5H22.8L17 30.5 11.2 22.5H15.2V11.5H11.2Z"/></g></svg>`
     + `<i class="ring"></i><div class="bub"></div>`;
   document.body.appendChild(myCur);
-  const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .handle, #rh, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
+  const NATIVE = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
   // the name tag: a rounded rectangle whose straight edges wobble gently (the corners stay clean), drawn to fit the name
   function tagPath(w, h, phase) {
     const r = Math.min(8, h / 2 - 1), a = .8, step = 3, wav = (t, len) => a * Math.sin(t / len * Math.PI * Math.max(1, Math.round(len / 22)) + phase) * Math.sin(t / len * Math.PI);
@@ -2228,7 +2228,8 @@
     const t = e.target, native = edge || !!(t.closest && t.closest(NATIVE));
     myCur.classList.toggle('hide', native); document.body.classList.toggle('cur-native', native);
     const onCard = !native && !placing && !drawOn && t.closest && t.closest('.card') && !t.closest('button, a, input');
-    myCur.classList.toggle('rsz', !native && !!(t.closest && t.closest('.rz-grip')));   // over a height grip: her own up-and-down arrow
+    const rz = native || !t.closest ? null : t.closest('.rz-grip') ? 0 : t.closest('#rh, .handle') ? -45 : t.closest('.crop-box i[data-h]') ? (/^(nw|se)$/.test(t.closest('.crop-box i[data-h]').dataset.h) ? -45 : 45) : t.closest('.resize-cursor') ? 90 : null;   // over a resize handle: her own double arrow, turned to fit (height grips, corners, table column edges)
+    myCur.classList.toggle('rsz', rz !== null); if (rz !== null) myCur.style.setProperty('--rz', rz + 'deg');
     myCur.classList.toggle('grabby', !!onCard || stage.classList.contains('space') || stage.classList.contains('panning'));
   }, { passive: true, capture: true });
   addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; myCur.classList.add('down'); myCur.classList.remove('tap'); void myCur.offsetWidth; myCur.classList.add('tap'); }, true);
