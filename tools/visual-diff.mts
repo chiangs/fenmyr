@@ -12,6 +12,7 @@ type Group = { settings?: Record<string, unknown>; phone?: boolean; states: [str
 
 const FROZEN_MOTION = '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
 const HIDDEN_RANDOM_CANVASES = 'canvas { visibility: hidden !important; }';
+const HIDDEN_COMMIT_DATE = '#suSub { visibility: hidden !important; }';
 const CHANNEL_TOLERANCE = 2;
 const TABS = ['general', 'myra', 'helpers', 'vaults', 'board', 'toolbar', 'widgets', 'about'];
 
@@ -53,7 +54,7 @@ async function shoot(dir: string, out: string) {
 			await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(600, 900));
 			await settle(l.page);
 		}
-		await l.page.addStyleTag({ content: FROZEN_MOTION + HIDDEN_RANDOM_CANVASES });
+		await l.page.addStyleTag({ content: FROZEN_MOTION + HIDDEN_RANDOM_CANVASES + HIDDEN_COMMIT_DATE });
 		for (const [state, step] of group.states) {
 			await step(l.page);
 			await settle(l.page, 500);
