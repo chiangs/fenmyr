@@ -47,4 +47,4 @@ async function transcribe(dataURL) {
   } finally { fs.rmSync(wav, { force: true }); }
 }
 
-module.exports = { speechAuth, transcribe, whisperPath, downloadModel, modelFile };
+module.exports = { speechAuth, transcribe };

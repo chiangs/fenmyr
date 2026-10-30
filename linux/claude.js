@@ -120,4 +120,4 @@ async function connections() {
 // JSON can't hold "not a number" or infinity; the Mac app swaps them for 0, so this does too
 function jsonSafe(v) { return JSON.stringify(v, (k, x) => typeof x === 'number' && !isFinite(x) ? 0 : x); }
 
-module.exports = { claudePath, ask, rewrite, higgsQuote, higgsMake, drawFill, connections, usageSummary, resetUsage, jsonSafe, run };
+module.exports = { ask, rewrite, higgsQuote, higgsMake, drawFill, connections, usageSummary, resetUsage, jsonSafe, run };

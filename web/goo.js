@@ -22,7 +22,6 @@
     if (y % 3 === 0 && (x + off) % 4 === 3) return 'D';
     return 'B';
   }));
-  window.MYRA_GRID = grid;
   const mix = (a, b, k) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), A = p(a), B = p(b);
     return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join(''); };
 

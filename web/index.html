@@ -49,7 +49,6 @@
     <div class="group-boxes" id="groupBoxes"></div>
   </div>
   <div class="marquee" id="marquee"></div>
-  <div class="focus-veil" id="veil"></div>
 
   <!-- a quiet bar when there's a new version: it never pops up or interrupts, it just waits here until you want it -->
   <div class="upbar" id="upBar" hidden><span class="ub-spark">✦</span><span class="ub-text" id="ubText">A new Fenmyr is ready</span><button class="ub-yes" id="ubYes" type="button" hidden>Yes, automatically</button><button class="ub-link" id="ubNo" type="button" hidden>I’ll do it myself</button><button class="ub-link" id="ubNotes" type="button">What’s new</button><button class="ub-go" id="ubGo" type="button">Update now</button><button class="ub-x" id="ubX" type="button" aria-label="Hide until the next version">×</button></div>
@@ -342,8 +341,6 @@
           <div class="set-btns"><button class="set-btn hot" id="usLimits">See my plan limits ↗</button><button class="set-btn" id="usReset">Reset</button></div>
         </div>
       </section>
-      <section data-tab="helpers" id="whRow" hidden><h3>Voice memo writing</h3>
-        <div class="set-row"><div><b>Whisper</b><small id="whState">Off.</small></div><button class="set-btn hot" id="whGo">Set it up</button></div></section>
       <section data-tab="helpers"><h3>Myra's helpers</h3>
         <div class="conns" id="conns"></div>
         <label class="set-row native-only"><div><b>Let Myra use Mobbin</b><small>Real app screenshots for inspiration (free with your Mobbin account)</small></div><input type="checkbox" class="tgl" data-set="mobbin"></label>
