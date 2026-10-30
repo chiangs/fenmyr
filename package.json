@@ -14,7 +14,10 @@
     "voice": "node tests/voice.js",
     "dist": "electron-builder --linux AppImage",
     "notices": "node tools/notices.js",
-    "icons": "node tools/icons.js"
+    "icons": "node tools/icons.js",
+    "perf": "node tests/perf.mts",
+    "visual": "node tools/visual-diff.mts",
+    "metrics": "node tools/metrics.mts"
   },
   "devDependencies": {
     "@phosphor-icons/core": "^2.1.1",

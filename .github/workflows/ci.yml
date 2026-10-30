@@ -14,6 +14,8 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed git nodejs npm electron xorg-server-xvfb fontconfig ttf-dejavu nss alsa-lib gtk3 libxss libxtst at-spi2-core libdrm mesa
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Shell syntax
         run: bash -n install.sh && bash -n uninstall.sh && bash -n make-release.sh
       - name: JavaScript syntax
@@ -30,6 +32,8 @@ jobs:
         run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/docs.js
       - name: Caelestia theme test
         run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/theme.js
+      - name: Visual check against main
+        run: git config --global --add safe.directory "$PWD" && node tools/visual-diff.mts origin/main
       - name: Install, run the installed copy, uninstall
         run: |
           # each part's output goes to a file; on failure its last lines become annotations, so they're readable without the full log
