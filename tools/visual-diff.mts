@@ -93,7 +93,7 @@ async function compare(page: Page, a: string, b: string, diff: string) {
 
 const hasRef = (r: string) => { try { execFileSync('git', ['rev-parse', '--verify', '--quiet', r], { cwd: ROOT, stdio: 'ignore' }); return true; } catch { return false; } };
 const ref = process.argv[2] ?? (hasRef('origin/main') ? 'origin/main' : 'main');
-const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-'));
+const out = process.env.VISUAL_OUT ?? fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-'));
 const base = checkout(ref);
 try {
 	await shoot(base.dir, path.join(out, 'ref'));

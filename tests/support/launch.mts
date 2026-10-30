@@ -40,7 +40,15 @@ const STARTUP_TIMERS_MS = 900;
 
 export async function settle(page: Page, ms = STARTUP_TIMERS_MS) {
 	await page.waitForTimeout(ms);
-	await page.waitForFunction(() => !/saving/i.test(document.getElementById('saved')?.textContent ?? ''), null, { timeout: 5000 });
+	await page.waitForFunction(
+		() => {
+			const busy = (id: string) => /saving|making/i.test(document.getElementById(id)?.textContent ?? '');
+			const moving = document.getElementById('stage')?.classList.contains('moving');
+			return document.fonts.status === 'loaded' && !busy('saved') && !busy('dvSaved') && !moving;
+		},
+		null,
+		{ timeout: 5000 },
+	);
 	await page.evaluate(() => window.__fenmyr.stopAnim());
 	await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 }

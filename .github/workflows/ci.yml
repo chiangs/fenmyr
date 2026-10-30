@@ -33,7 +33,12 @@ jobs:
       - name: Caelestia theme test
         run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/theme.js
       - name: Visual check against main
-        run: git config --global --add safe.directory "$PWD" && node tools/visual-diff.mts origin/main
+        run: git config --global --add safe.directory "$PWD" && VISUAL_OUT=/tmp/visual node tools/visual-diff.mts origin/main
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: visual-diff
+          path: /tmp/visual
       - name: Install, run the installed copy, uninstall
         run: |
           # each part's output goes to a file; on failure its last lines become annotations, so they're readable without the full log
