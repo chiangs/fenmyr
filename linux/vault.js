@@ -137,4 +137,4 @@ function update(id, patch) {
 const remove = id => { saveVaults(vaults().filter(v => v.id !== id)); return true; };
 const byId = id => { const v = vaults().find(x => x.id === id); if (!v) throw new Error('That vault is not connected.'); return v; };
 
-module.exports = { vaults, add, update, remove, byId, scan, list, note, search, obsidianURL, parseNote, isPrivate, reachable, realFile, norm };
+module.exports = { vaults, add, update, remove, byId, scan, list, note, search, obsidianURL };
