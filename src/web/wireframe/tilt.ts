@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { closeOnOutsidePress } from '../ui/popover.ts';
 import { cardEl } from '../ui/dom.ts';
 import { realBox } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
@@ -226,11 +227,7 @@ export function init47() {
     true,
   );
 
-  addEventListener(
-    'pointerdown',
-    e => {
-      if ($('tiltPop').classList.contains('on') && !e.target.closest('#tiltPop, [data-sb="tiltpop"]')) closeTiltPop();
-    },
-    true,
-  );
+  closeOnOutsidePress('#tiltPop, [data-sb="tiltpop"]', () => {
+    if ($('tiltPop').classList.contains('on')) closeTiltPop();
+  });
 }

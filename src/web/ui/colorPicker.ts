@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { closeOnOutsidePress } from './popover.ts';
 import { hexOf, normHex, rgbOf } from './color.ts';
 import { cardEl, esc } from './dom.ts';
 import { renderCard } from '../canvas/render.ts';
@@ -469,13 +470,9 @@ export function init57() {
 
   $('cpDone').onclick = closeColor;
 
-  addEventListener(
-    'pointerdown',
-    e => {
-      if ($('cpop').classList.contains('on') && !e.target.closest('.cpop, .card.swatch, [data-col]')) closeColor();
-    },
-    true,
-  );
+  closeOnOutsidePress('.cpop, .card.swatch, [data-col]', () => {
+    if ($('cpop').classList.contains('on')) closeColor();
+  });
 
   $('cpReset').onclick = () => {
     if (colorCard && colorCard.tint) {

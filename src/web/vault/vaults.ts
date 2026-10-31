@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { showDialog } from '../ui/popover.ts';
 import { esc } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
@@ -102,12 +103,10 @@ function vaultAccessDialog({ title, grants, inherit }) {
     await loadVaults();
     const mine = JSON.parse(JSON.stringify(grants || []));
     let follow = inherit != null;
-    const d = document.createElement('div');
-    d.className = 'tdlg-wrap';
-    d.innerHTML = `<div class="tdlg vdlg" role="dialog"><h3>Vault access</h3><p class="set-note">${esc(title)}. Notes are only read, and only from the folders you tick. Off-limits folders and #private notes are never read.</p>
+    const d =
+      showDialog(`<div class="tdlg vdlg" role="dialog"><h3>Vault access</h3><p class="set-note">${esc(title)}. Notes are only read, and only from the folders you tick. Off-limits folders and #private notes are never read.</p>
         ${inherit != null ? `<div class="tdlg-row"><span>Who decides</span><div class="seg" id="vaFollow"><button data-v="1">${inherit ? 'Same as “' + esc(inherit) + '”' : 'Same as its project'}</button><button data-v="0">This board only</button></div></div>` : ''}
-        <div class="va-list" id="vaList"></div><div class="tdlg-btns"><button class="set-btn" id="vaNo">Cancel</button><button class="set-btn hot" id="vaOk">Save</button></div></div>`;
-    document.body.appendChild(d);
+        <div class="va-list" id="vaList"></div><div class="tdlg-btns"><button class="set-btn" id="vaNo">Cancel</button><button class="set-btn hot" id="vaOk">Save</button></div></div>`);
     const list = d.querySelector('#vaList');
     const paint = async () => {
       d.querySelectorAll('#vaFollow [data-v]').forEach(b => b.classList.toggle('on', (b.dataset.v === '1') === follow));

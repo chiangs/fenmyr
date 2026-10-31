@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { closeOnOutsidePress } from '../ui/popover.ts';
 import { esc } from '../ui/dom.ts';
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
@@ -373,13 +374,9 @@ export function init55() {
     if (d.how) rewrite(d.how);
   });
 
-  addEventListener(
-    'pointerdown',
-    e => {
-      if (!$('dvPop').hidden && !e.target.closest('#dvPop, .dt-drop, .dt-myra, #cpop')) hidePop();
-    },
-    true,
-  );
+  closeOnOutsidePress('#dvPop, .dt-drop, .dt-myra, #cpop', () => {
+    if (!$('dvPop').hidden) hidePop();
+  });
 
   $('docview').addEventListener(
     'keydown',

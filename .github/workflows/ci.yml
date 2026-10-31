@@ -40,6 +40,8 @@ jobs:
         run: node tests/docs.ts
       - name: Phone layout test
         run: node tests/phone.ts
+      - name: Popup test
+        run: node tests/popups.ts
       - name: Caelestia theme test
         run: node tests/theme.ts
       - name: Visual check against main

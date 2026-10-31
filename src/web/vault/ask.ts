@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { showDialog } from '../ui/popover.ts';
 import { esc } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
 import { saveLib } from '../library/tree.ts';
@@ -60,12 +61,10 @@ export async function openVaultPicker() {
     );
     return;
   }
-  const d = document.createElement('div');
-  d.id = 'vaultPick';
-  d.className = 'tdlg-wrap';
-  d.innerHTML =
-    '<div class="tdlg vdlg"><h3>Add a note from a vault</h3><input id="vpQ" placeholder="Search by name or folder…" autocomplete="off" spellcheck="false"><div class="vp-list" id="vpList"></div><div class="tdlg-btns"><button class="set-btn" id="vpNo">Close</button></div></div>';
-  document.body.appendChild(d);
+  const d = showDialog(
+    '<div class="tdlg vdlg"><h3>Add a note from a vault</h3><input id="vpQ" placeholder="Search by name or folder…" autocomplete="off" spellcheck="false"><div class="vp-list" id="vpList"></div><div class="tdlg-btns"><button class="set-btn" id="vpNo">Close</button></div></div>',
+    'vaultPick',
+  );
   const q = d.querySelector('#vpQ'),
     list = d.querySelector('#vpList');
   let seq = 0,

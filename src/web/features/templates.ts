@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { showDialog } from '../ui/popover.ts';
 import { esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { fit } from '../canvas/handles.ts';
@@ -123,15 +124,12 @@ export async function saveAsTemplate(name, ids, opts = {}) {
 // the little form for a template's name, description and how it opens (when you save it, and again whenever you edit it)
 function templateDialog(t, editing) {
   return new Promise(res => {
-    const d = document.createElement('div');
-    d.className = 'tdlg-wrap';
     let mode = t.mode === 'new' ? 'new' : 'add';
-    d.innerHTML = `<div class="tdlg" role="dialog"><h3>${editing ? 'Edit template' : 'Save as a template'}</h3>
+    const d = showDialog(`<div class="tdlg" role="dialog"><h3>${editing ? 'Edit template' : 'Save as a template'}</h3>
         <label>Name<input id="tdName" maxlength="60" value="${esc(t.name || '')}"></label>
         <label>Description<input id="tdDesc" maxlength="140" placeholder="A few words on when to use it" value="${esc(t.desc || '')}"></label>
         <div class="tdlg-row"><span>When you use it</span><div class="seg" id="tdMode"><button data-v="add">Add to a board</button><button data-v="new">Open a new board</button></div></div>
-        <div class="tdlg-btns"><button class="set-btn" id="tdNo">Cancel</button><button class="set-btn hot" id="tdOk">${editing ? 'Save' : 'Save template'}</button></div></div>`;
-    document.body.appendChild(d);
+        <div class="tdlg-btns"><button class="set-btn" id="tdNo">Cancel</button><button class="set-btn hot" id="tdOk">${editing ? 'Save' : 'Save template'}</button></div></div>`);
     const paint = () =>
       d.querySelectorAll('#tdMode [data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === mode));
     paint();

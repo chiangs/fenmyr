@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { closeOnOutsidePress } from '../ui/popover.ts';
 import { cardEl } from '../ui/dom.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderTray } from '../canvas/wires.ts';
@@ -49,13 +50,9 @@ export function setFocus(on) {
 }
 export function init18() {
   // clicking anywhere outside the box closes it (what you typed isn't saved unless you pressed Enter)
-  addEventListener(
-    'pointerdown',
-    e => {
-      if ($('capture').classList.contains('on') && !e.target.closest('.capture')) capture(false);
-    },
-    true,
-  );
+  closeOnOutsidePress('.capture', () => {
+    if ($('capture').classList.contains('on')) capture(false);
+  });
 
   $('capForm').onsubmit = e => {
     e.preventDefault();
