@@ -61,7 +61,7 @@ export function wireGeom(l, a, b) {
 export const wireW = l => (l.w === 4 || l.w === 6 ? l.w : 2);
 export const wireColor = l => (/^#[0-9a-f]{3,8}$/i.test(l.color || '') ? l.color : '');
 
-export function renderWires(live) {
+export function renderWires(live?) {
   const O = 5000;
   let h = '';
   session.board.links.forEach(l => {

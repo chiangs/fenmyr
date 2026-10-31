@@ -6,7 +6,7 @@ import { drawKanban } from './kanban.ts';
 import { session } from '../core/state.ts';
 
 // ---------- collections: a named header over a frame; cards inside stack in columns and the frame grows to fit ----------
-export const COLL = {
+export const COLL: Record<string, string[]> = {
   pink: ['#f2a59a', '#ffe6e2'],
   butter: ['#f6c47a', '#fff0d9'],
   mint: ['#b5d69e', '#edf5e5'],

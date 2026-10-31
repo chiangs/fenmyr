@@ -1,7 +1,7 @@
 import type { Card } from '../../shared/model.ts';
 import { session } from './state.ts';
 
-export const COLORS = {
+export const COLORS: Record<string, string> = {
   white: '#ffffff',
   pink: '#ffdcd8',
   butter: '#ffe3bd',
@@ -10,6 +10,7 @@ export const COLORS = {
   sky: '#d9e7f3',
   peach: '#f1ebe2',
 };
+export const colorHex = (name = 'pink') => COLORS[name] ?? COLORS.pink ?? '';
 export const COLOR_NAMES = Object.keys(COLORS);
 
 const COLOR_LABEL: Record<string, string> = {

@@ -20,3 +20,10 @@ export function removeOnOutsidePress(popup: Element) {
     addEventListener('pointerdown', onPress, true);
   });
 }
+
+// For elements the code just created from its own markup, so a miss is a bug worth stopping at.
+export function child(root: ParentNode, selector: string) {
+  const el = root.querySelector(selector);
+  if (!(el instanceof HTMLElement)) throw new Error(`no ${selector}`);
+  return el;
+}

@@ -23,7 +23,7 @@ import { onFrame } from '../wireframe/tilt.ts';
 import { session } from '../core/state.ts';
 
 // ---------- your own templates: save a selection (or the whole board); use it on a board or as a new one (Settings decides) ----------
-export let myTpls = [];
+export let myTpls: { id: string; name: string; desc?: string; mode?: string }[] = [];
 
 const NO_KEEP = typesWith('notInTemplates');
 // files and other boards stay out of templates; pictures become empty image spots

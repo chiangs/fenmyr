@@ -1,4 +1,5 @@
-import type { Board, View } from '../../shared/model.ts';
+import type { BoardSummary } from '../../shared/ops.ts';
+import type { Board, BoardOrder, Folder, Project, View } from '../../shared/model.ts';
 
 // What one open board holds, kept together so a second view can have its own later (split screen, issue #49).
 type Session = {
@@ -15,10 +16,10 @@ export const session = {} as Session;
 
 // App-wide values more than one module assigns. Typing the modules that own one replaces its `unknown`.
 type AppState = {
-  projects: unknown;
-  folders: unknown;
-  boardList: unknown;
-  boardOrder: unknown;
+  projects: Project[];
+  folders: Folder[];
+  boardList: BoardSummary[];
+  boardOrder: BoardOrder;
   saveT: ReturnType<typeof setTimeout> | undefined;
   mrotKeep: unknown;
   lastTap: unknown;
@@ -30,7 +31,7 @@ type AppState = {
   dizzyAuto: unknown;
   histOpen: unknown;
   haveClaude: unknown;
-  aiAnimAt: unknown;
+  aiAnimAt: number;
   dueHold: unknown;
   flightLive: unknown;
   lastActive: unknown;
@@ -38,7 +39,7 @@ type AppState = {
   animPose: unknown;
   vaultChip: unknown;
   micOK: unknown;
-  warm: unknown;
+  warm: MediaStream | null;
   firstRunSetup: unknown;
 };
 export const appState = {} as AppState;

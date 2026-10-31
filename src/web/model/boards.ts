@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { Board, Card } from '../../shared/model.ts';
 import { sizeOf } from '../../shared/cardTypes.ts';
 import { COLOR_NAMES, tilt, uid } from '../core/base.ts';
 import { OS } from '../platform/osWords.ts';
@@ -318,7 +319,7 @@ export const TEMPLATES = {
   }),
 };
 
-export function card(type, o = {}) {
+export function card(type: string, o: Record<string, unknown> = {}): Card {
   const size = sizeOf(type);
   return Object.assign(
     { id: uid(), type, x: 0, y: 0, w: size[0], h: size[1], r: type === 'title' ? 0 : tilt(), color: 'white' },
@@ -326,8 +327,8 @@ export function card(type, o = {}) {
   );
 }
 
-export function newBoard(name = 'Untitled board', tpl) {
-  const b = {
+export function newBoard(name = 'Untitled board', tpl?: string): Board {
+  const b: Board = {
     id: uid(),
     name,
     color: COLOR_NAMES[1 + Math.floor(Math.random() * 6)],

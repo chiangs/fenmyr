@@ -1,4 +1,4 @@
-// @ts-nocheck
+import type { Card } from '../../shared/model.ts';
 import { cardEl, esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
@@ -32,7 +32,7 @@ import { appState, session } from '../core/state.ts';
 
 // ---------- rendering ----------
 
-function inner(c) {
+function inner(c: Card): string {
   switch (c.type) {
     case 'note':
       return `${c.myra ? `<div class="nm-head"><img class="nmyra${c.myraMv ? ' mv-' + c.myraMv : ''}" src="${esc(c.myraImg || 'stamps/myra-wave.png')}" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : `<div class="nname">${esc(c.name || '')}</div>`}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
@@ -72,7 +72,7 @@ function inner(c) {
           : `<div class="au-top"><span class="text">${esc(c.title || 'Voice memo')}</span></div><div class="au-row"><button class="au-play" data-act="au-play">${PLAY}</button><div class="au-wave" data-act="au-seek">${(c.wave || Array(40).fill(0.2)).map(v => `<i style="height:${Math.max(8, v * 100)}%"></i>`).join('')}</div><span class="au-time">${fmtT(c.dur || 0)}</span></div>` +
             `<div class="au-tx${c.text ? '' : ' wait'}">${c.text ? esc(c.text) : esc(c.txNote || 'Writing it out…')}</div><div class="au-acts"><button data-act="au-replace">Replace</button>${c.text ? '<button data-act="au-notes">✦ Turn into notes</button>' : c.needTx ? '<button data-act="au-tx">✦ Write it out</button>' : ''}</div>`;
     case 'path':
-      return `<svg class="pth" viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none"><path d="${pathD(c.pts, c.closed, c.radius || 0, c.ow / Math.max(1, c.w))}" fill="${c.closed && c.fill ? c.fill : 'none'}" stroke="${c.stroke && c.sw > 0 ? c.stroke : 'none'}" stroke-width="${c.sw || 0}" stroke-linecap="round" stroke-linejoin="round"${skStyle(c) === 'dash' ? ` stroke-dasharray="${c.dl ?? 8} ${c.dg ?? 6}"` : skStyle(c) === 'dot' ? ` stroke-dasharray="0 ${(c.dg ?? 6) + (c.sw || 0)}"` : ''} vector-effect="non-scaling-stroke"/></svg>`;
+      return `<svg class="pth" viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none"><path d="${pathD(c.pts, c.closed, c.radius || 0, c.ow / Math.max(1, c.w))}" fill="${c.closed && c.fill ? c.fill : 'none'}" stroke="${c.stroke && (c.sw ?? 0) > 0 ? c.stroke : 'none'}" stroke-width="${c.sw || 0}" stroke-linecap="round" stroke-linejoin="round"${skStyle(c) === 'dash' ? ` stroke-dasharray="${c.dl ?? 8} ${c.dg ?? 6}"` : skStyle(c) === 'dot' ? ` stroke-dasharray="0 ${(c.dg ?? 6) + (c.sw ?? 0)}"` : ''} vector-effect="non-scaling-stroke"/></svg>`;
     case 'ink':
       return `<svg viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none">${inkPath(c.pts, c.pen, c.size, c.ink, true)}</svg>`;
     case 'frame':
@@ -110,7 +110,7 @@ function inner(c) {
       const gone = c.blocked || c.missing,
         back = c.side === 'back',
         full = vnFull.get(c.id),
-        sm = c.props || [];
+        sm = c.props ?? [];
       const head = `<div class="vn-head">${Icon('notebook')}<span class="vn-title text">${esc(c.title || 'Note')}</span><button class="vn-flip" data-act="vn-flip" title="${back ? 'Show the title and tags' : 'Show the content'}">${Icon('refresh')}</button></div>`;
       const btns = `${back && !gone ? `<button class="vn-btn" data-act="vn-full">${full ? 'Show less' : 'Show full text'}</button>` : ''}<button class="vn-btn" data-act="vn-open" title="Open in Obsidian">${Icon('open')}<span>Obsidian</span></button>`;
       const foot = `<div class="vn-foot">${btns}</div>`;
@@ -119,7 +119,7 @@ function inner(c) {
       if (!back)
         return `${head}${
           (c.tags || []).length
-            ? `<div class="vn-tags">${c.tags
+            ? `<div class="vn-tags">${(c.tags ?? [])
                 .slice(0, 6)
                 .map(t => `<i>#${esc(t)}</i>`)
                 .join('')}</div>`
@@ -148,27 +148,27 @@ function inner(c) {
 
 // which cards can be tilted by hand: everything except the things that hold other things (sections, screens, collections) and wireframe pieces (they rotate their own way)
 const NO_TILT = typesWith('noTilt');
-export const TILTS = c => !NO_TILT.includes(c.type);
+export const TILTS = (c: Card) => !NO_TILT.includes(c.type);
 // strokes: boxes and screens get a border (solid or dashed); titles, wireframe text and icons get an outline around the letters
 const STROKABLE = typesWith('strokable');
 export const STROKE_TEXT = ['title', 'text', 'icon'];
 
-export const canStroke = c => STROKABLE.includes(c.type) && !(c.type === 'shape' && c.shape === 'line');
+export const canStroke = (c: Card) => STROKABLE.includes(c.type) && !(c.type === 'shape' && c.shape === 'line');
 
 // boxes and screens: the line is drawn (an SVG rect) so it can be solid, dashed or dotted with your own dash length and gap, like Figma
-export const skStyle = c => (c.sdash === true ? 'dash' : c.sdash || 'solid');
+export const skStyle = (c: { sdash?: boolean | string }) => (c.sdash === true ? 'dash' : c.sdash || 'solid');
 
-export function applyStroke(c, el) {
+export function applyStroke(c: Card, el: HTMLElement) {
   if (c.type === 'title') {
-    const t = el.querySelector('.text');
+    const t = el.querySelector<HTMLElement>('.text');
     if (t) t.style.color = c.tc && c.tc !== 'none' ? c.tc : '';
   } // a title's own text color (applied after its text is drawn)
   if (!canStroke(c)) return;
-  const on = !!(c.stroke && c.sw > 0);
+  const on = !!(c.stroke && (c.sw ?? 0) > 0);
   el.classList.toggle('has-stroke', on);
   if (on) {
-    el.style.setProperty('--sk', c.stroke);
-    el.style.setProperty('--skw', c.sw + 'px');
+    el.style.setProperty('--sk', c.stroke ?? '');
+    el.style.setProperty('--skw', `${c.sw}px`);
   } else {
     el.style.removeProperty('--sk');
     el.style.removeProperty('--skw');
@@ -187,13 +187,14 @@ export function applyStroke(c, el) {
     svg = el.querySelector(':scope > .sk-svg');
   }
   const st = skStyle(c),
-    w = c.sw,
+    w = c.sw ?? 0,
     r = Math.max(0, (c.type === 'frame' ? (c.radius ?? 0) : c.radius || 0) - w / 2),
-    rect = svg.firstChild;
-  rect.setAttribute('rx', r);
-  rect.setAttribute('ry', r);
-  rect.setAttribute('stroke', c.stroke);
-  rect.setAttribute('stroke-width', w);
+    rect = svg?.firstElementChild;
+  if (!rect) return;
+  rect.setAttribute('rx', String(r));
+  rect.setAttribute('ry', String(r));
+  rect.setAttribute('stroke', c.stroke ?? '');
+  rect.setAttribute('stroke-width', String(w));
   rect.setAttribute(
     'stroke-dasharray',
     st === 'dash' ? `${c.dl ?? 8} ${c.dg ?? 6}` : st === 'dot' ? `0 ${(c.dg ?? 6) + w}` : 'none',
@@ -201,9 +202,9 @@ export function applyStroke(c, el) {
   rect.setAttribute('stroke-linecap', st === 'dot' ? 'round' : c.cap === 'round' ? 'round' : 'butt');
 }
 
-export const titleW = c => (c.type === 'title' && !c.fixedW ? 'max-content' : c.w + 'px');
+export const titleW = (c: Card) => (c.type === 'title' && !c.fixedW ? 'max-content' : c.w + 'px');
 
-export function renderCard(c, pop) {
+export function renderCard(c: Card, pop?: boolean) {
   let el = cardEl(c.id);
   if (!el) {
     el = document.createElement('div');
@@ -231,8 +232,17 @@ export function renderCard(c, pop) {
     el.classList.toggle('no-fill', (c.type === 'title' ? c.tc : c.color) === 'none');
   if (SIZED.includes(c.type)) {
     el.style.setProperty('--ta', c.align || 'left');
-    el.style.setProperty('--tt', { upper: 'uppercase', lower: 'lowercase', title: 'capitalize' }[c.tcase] || 'none'); // Case: how the words show (what you typed stays as typed)
-    if (c.lh != null) el.style.setProperty('--lh', c.lh);
+    el.style.setProperty(
+      '--tt',
+      c.tcase === 'upper'
+        ? 'uppercase'
+        : c.tcase === 'lower'
+          ? 'lowercase'
+          : c.tcase === 'title'
+            ? 'capitalize'
+            : 'none',
+    ); // Case: how the words show (what you typed stays as typed)
+    if (c.lh != null) el.style.setProperty('--lh', String(c.lh));
     else el.style.removeProperty('--lh');
     el.classList.toggle('has-lh', c.lh != null);
     if (c.ls != null) el.style.setProperty('--ls', c.ls / 100 + 'em');
@@ -245,9 +255,10 @@ export function renderCard(c, pop) {
       if (!c.fixedW && el.offsetWidth) c.w = el.offsetWidth;
       if (el.offsetHeight) c.h = el.offsetHeight;
     });
-  el.style.setProperty('--tilt', (c.type === 'stamp' && !c.tilted ? 0 : c.r) + 'deg');
-  el.style.setProperty('--fill', COLORS[c.color] || '#fff');
-  el.classList.add('c-' + (COLORS[c.color] && c.color !== 'white' ? c.color : 'white'));
+  el.style.setProperty('--tilt', `${c.type === 'stamp' && !c.tilted ? 0 : c.r}deg`);
+  const named = c.color && COLORS[c.color] ? c.color : '';
+  el.style.setProperty('--fill', named ? (COLORS[named] ?? '#fff') : '#fff');
+  el.classList.add(`c-${named && named !== 'white' ? named : 'white'}`);
   if (c.type === 'swatch') el.style.setProperty('--hex', c.hex);
   el.style.setProperty('--fs', fsMul(c));
   el.classList.toggle('has-font', !!c.font && SIZED.includes(c.type));
@@ -255,10 +266,10 @@ export function renderCard(c, pop) {
     el.style.setProperty('--cf', `"${String(c.font).replace(/"/g, '')}"`);
     useFont(c.font);
   } else el.style.removeProperty('--cf');
-  ['bold', 'italic', 'under', 'strike'].forEach(k => {
-    el.classList.toggle('t-' + k, c[k] === true);
-    el.classList.toggle('t-no' + k, c[k] === false);
-  });
+  for (const k of ['bold', 'italic', 'under', 'strike'] as const) {
+    el.classList.toggle(`t-${k}`, c[k] === true);
+    el.classList.toggle(`t-no${k}`, c[k] === false);
+  }
   if (c.type === 'doc') el.classList.toggle('has-body', !!(c.body || '').trim());
   if (c.type === 'audio') {
     el.classList.toggle('paused', !!c.paused);
@@ -276,15 +287,15 @@ export function renderCard(c, pop) {
     });
   if (c.type === 'link' && !c.url) setTimeout(() => wireLinkInput(c), 0);
   if (c.type === 'coll') {
-    const t = COLL[c.color] || COLL.pink;
-    el.style.setProperty('--chead', t[0]);
-    el.style.setProperty('--cframe', t[1]);
+    const t = (c.color && COLL[c.color]) || COLL.pink;
+    el.style.setProperty('--chead', t?.[0] ?? '');
+    el.style.setProperty('--cframe', t?.[1] ?? '');
     el.classList.toggle('nohead', c.head === false);
     el.style.height = c.h + 'px';
   } else if (parentOf(c.id)) el.classList.add('inside');
   if (c.type === 'spotify') {
     const fr = el.querySelector('.sp-frame');
-    if (fr && fr.dataset.src === spEmbed(c)) {
+    if (fr instanceof HTMLElement && fr.dataset.src === spEmbed(c)) {
       const t = el.querySelector('.sp-head span');
       if (t) t.textContent = c.title || 'Spotify';
       const tg = el.querySelector(':scope > .tag');
@@ -304,16 +315,17 @@ export function renderCard(c, pop) {
 // a card on a screen always sits above its screen in the stack (older boards could have them the other way round, which didn't show while screens were pinned to the back)
 function keepOnScreens() {
   const at = new Map(session.board.cards.map((c, i) => [c.id, i]));
-  if (!session.board.cards.some(c => c.onFrame && at.has(c.onFrame) && at.get(c.id) < at.get(c.onFrame))) return;
-  const kids = new Map();
+  const before = (c: Card) => {
+    const frame = c.onFrame ? at.get(c.onFrame) : undefined;
+    return frame !== undefined && (at.get(c.id) ?? 0) < frame;
+  };
+  if (!session.board.cards.some(before)) return;
+  const kids = new Map<string, Card[]>();
   session.board.cards.forEach(c => {
-    if (c.onFrame && at.has(c.onFrame) && at.get(c.id) < at.get(c.onFrame)) {
-      if (!kids.has(c.onFrame)) kids.set(c.onFrame, []);
-      kids.get(c.onFrame).push(c);
-    }
+    if (c.onFrame && before(c)) kids.set(c.onFrame, [...(kids.get(c.onFrame) ?? []), c]);
   });
   const moving = new Set([...kids.values()].flat()),
-    out = [];
+    out: Card[] = [];
   session.board.cards.forEach(c => {
     if (moving.has(c)) return;
     out.push(c);

@@ -6,7 +6,7 @@ import { $, cardsEl, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 
 // ---------- crop an image: see the whole picture, drag the box or its corners, then Done ----------
-export let cropping = null;
+export let cropping: { box: { x: number; y: number; w: number; h: number } } | null = null;
 let cropDrag = null;
 
 export function startCrop(c) {

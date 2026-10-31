@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { Card } from '../../shared/model.ts';
 import { esc } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
@@ -13,8 +14,8 @@ import { session } from '../core/state.ts';
 
 // ---------- docs: a real document editor (styles, fonts, sizes, colors, lists, tables, images, Myra on any words), beside the board ----------
 // A doc keeps its rich content in c.doc (the editor's own structured format) and a plain-text copy in c.body (for the card, search and Myra).
-export let docCard = null;
-export let ed = null;
+export let docCard: Card | null = null;
+export let ed: { commands: { setContent(html: string, emit: boolean): void } } | null = null;
 let dvT = 0;
 export let bubbleEl;
 // the editor's popup moves the floating bar out of the page, so keep hold of it

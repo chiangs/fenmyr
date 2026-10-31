@@ -1,5 +1,6 @@
-// @ts-nocheck
 import { cardEl } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
+import type { MyraReply } from '../../shared/myraReply.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderTray, renderWires, takeFromTray, tidyTies } from '../canvas/wires.ts';
 import { COLL, colls, parentOf } from '../cards/collection.ts';
@@ -27,11 +28,23 @@ import { buildScreen } from '../wireframe/pieces.ts';
 import { appState, session } from '../core/state.ts';
 
 // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
-export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
+type NoteUsed = {
+  vault: string;
+  vaultId: string;
+  rel: string;
+  title: string;
+  tags: string[];
+  props: unknown;
+  excerpt: string;
+  text: string;
+};
+type Picked = { asked: boolean; used: NoteUsed[] };
+
+export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked: false, used: [] }) {
   // her templates: use one of theirs, or keep what's on the board as one
   if (r.stopTimer && timer && Date.now() - timerAskedAt > 30000) stopTimer(false);
   if (r.timer && Date.now() - timerAskedAt > 30000) {
-    const secs = Math.round((+r.timer.minutes || 0) * 60 + (+r.timer.seconds || 0));
+    const secs = Math.round((r.timer.minutes ?? 0) * 60 + (r.timer.seconds ?? 0));
     if (secs >= 1 && secs <= 36000)
       startTimer({ secs, purpose: String(r.timer.purpose || '').slice(0, 60) }, false, true);
   }
@@ -55,38 +68,42 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     pr = r.projects;
   if (fo || pr) {
     await loadLib();
-    ((pr && pr.create) || []).forEach(n => makeProject(n));
-    ((pr && pr.rename) || []).forEach(o => {
+    for (const n of pr?.create ?? []) makeProject(n);
+    (pr?.rename ?? []).forEach(o => {
       const x = byName(appState.projects, o.from);
       if (x && o.to) x.name = String(o.to).trim();
     });
-    ((fo && fo.create) || []).forEach(o => {
+    (fo?.create ?? []).forEach(o => {
       const n = typeof o === 'string' ? o : o.name,
         f = makeFolder(n);
-      if (o.project) f.project = makeProject(o.project).id;
+      if (typeof o !== 'string' && o.project) f.project = makeProject(o.project).id;
     });
-    ((fo && fo.rename) || []).forEach(o => {
+    (fo?.rename ?? []).forEach(o => {
       const f = findFolder(o.from);
       if (f && o.to) f.name = String(o.to).trim();
     });
-    ((fo && fo.file) || []).forEach(o => {
+    (fo?.file ?? []).forEach(o => {
       const f = findFolder(o.folder) || makeFolder(o.folder);
       f.project = o.project ? makeProject(o.project).id : null;
     });
-    for (const m of (fo && fo.move) || []) {
+    for (const m of fo?.move ?? []) {
       if (!appState.boardList.some(b => b.id === m.board)) continue;
       const f = m.folder ? makeFolder(m.folder) : null;
       if (f && m.project) f.project = makeProject(m.project).id;
       await moveBoard(m.board, f ? f.id : null);
     }
-    [...appState.projects, ...appState.folders].forEach(x => (x.open = true));
+    for (const x of [...appState.projects, ...appState.folders]) x.open = true;
     await saveLib();
     await refreshBoards();
   }
+  const leaveCollection = (c: Card) => {
+    const from = parentOf(c.id);
+    if (from?.type === 'coll') from.kids = from.kids.filter((x: string) => x !== c.id);
+  };
   const center = centerWorld(),
-    added = [];
+    added: Card[] = [];
   let i = 0;
-  const place = o => {
+  const place = (o: { x?: number | undefined; y?: number | undefined; type?: string | undefined }) => {
     if (o.x == null || o.y == null) {
       const wide = o.type === 'font';
       o.x = center.x - 300 + (i % 3) * (wide ? 330 : 250);
@@ -95,14 +112,14 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     }
   };
   // collections Myra makes, and cards she files into them (by collection id, or by the name of one she just made)
-  const made = {};
+  const made: Record<string, Card> = {};
   (r.collections || []).forEach(o => {
     place(o);
     const s2 = card('coll', {
       x: o.x,
       y: o.y,
       text: o.name || o.text || '',
-      color: COLL[o.color] ? o.color : 'pink',
+      color: o.color && COLL[o.color] ? o.color : 'pink',
       kids: [],
       cols: o.cols || 1,
       r: 0,
@@ -111,27 +128,25 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     made[(o.name || '').toLowerCase()] = s2;
     added.push(s2);
   });
-  const collFor = k =>
-    k &&
-    (byId(k)?.type === 'coll'
+  const collFor = (k: string) =>
+    byId(k)?.type === 'coll'
       ? byId(k)
-      : made[String(k).toLowerCase()] || colls().find(s2 => s2.text.toLowerCase() === String(k).toLowerCase()));
-  const file = (c, k) => {
+      : made[k.toLowerCase()] || colls().find((s2: Card) => s2.text?.toLowerCase() === k.toLowerCase());
+  const file = (c: Card, k: string) => {
     const s2 = collFor(k);
-    if (!s2 || c.id === s2.id) return;
-    const from = parentOf(c.id);
-    if (from) from.kids = from.kids.filter(x => x !== c.id);
+    if (s2?.type !== 'coll' || c.id === s2.id) return;
+    leaveCollection(c);
     s2.kids.push(c.id);
   };
   (r.add || []).forEach(o => {
     place(o);
-    const c = card(['todo', 'title', 'swatch', 'doc', 'font'].includes(o.type) ? o.type : 'note', {
+    const c = card(o.type && ['todo', 'title', 'swatch', 'doc', 'font'].includes(o.type) ? o.type : 'note', {
       font: o.type === 'font' ? o.font || o.text : o.font ? String(o.font) : undefined,
       body: o.type === 'doc' ? o.body || '' : undefined,
       x: o.x,
       y: o.y,
       text: o.type === 'font' ? o.sample || '' : o.text || '',
-      color: COLOR_NAMES.includes(o.color) ? o.color : 'white',
+      color: o.color && COLOR_NAMES.includes(o.color) ? o.color : 'white',
       hex: o.hex,
       label: o.label,
       items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined,
@@ -139,7 +154,7 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
       name: o.name,
     });
     if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag);
-    if (c.type === 'note' && dueDate(o.due)) c.due = o.due;
+    if (c.type === 'note' && o.due && dueDate(o.due)) c.due = o.due;
     addCard(c);
     added.push(c);
     if (o.in) file(c, o.in);
@@ -158,13 +173,15 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     const c = byId(o.id);
     if (!c || o.x == null) return;
     c.x = o.x;
-    c.y = o.y;
+    c.y = o.y ?? c.y;
     if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
     const el = cardEl(c.id);
     if (el) {
       el.style.transition = 'left .6s cubic-bezier(.2,.8,.3,1), top .6s cubic-bezier(.2,.8,.3,1)';
       renderCard(c);
-      setTimeout(() => (el.style.transition = ''), 650);
+      setTimeout(() => {
+        el.style.transition = '';
+      }, 650);
     }
     added.push(c);
   });
@@ -178,14 +195,16 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     if (o.desc != null) c.desc = o.desc;
     if (o.body != null && c.type === 'doc') {
       c.body = o.body;
-      c.doc = null;
+      c.doc = undefined;
       if (docCard === c && ed) ed.commands.setContent(mdToHTML(c.body), false);
     }
-    if (o.items)
+    if (o.items && c.type === 'todo') {
+      const before = c.items;
       c.items = o.items.map((t, k) => ({
         t: typeof t === 'string' ? t : t.t,
-        done: (typeof t === 'object' && t.done) || (c.items?.[k]?.t === t && c.items[k].done) || false,
+        done: (typeof t === 'object' && t.done) || (before?.[k]?.t === t && before[k].done) || false,
       }));
+    }
     if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
     if (o.tag !== undefined) {
       if (o.tag) c.tagText = o.tag;
@@ -196,14 +215,15 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
       if (!c.tags.length) delete c.tags;
     }
     if (o.due !== undefined && c.type === 'note') {
-      if (dueDate(o.due)) c.due = o.due;
+      if (o.due && dueDate(o.due)) c.due = o.due;
       else delete c.due;
     }
     if (o.hex && /^#[0-9a-f]{6}$/i.test(o.hex)) c.hex = o.hex.toLowerCase();
     if (o.label != null) c.label = o.label;
-    ['bold', 'italic', 'under', 'strike'].forEach(k => {
-      if (typeof o[k] === 'boolean') c[k] = o[k];
-    });
+    if (o.bold !== undefined) c.bold = o.bold;
+    if (o.italic !== undefined) c.italic = o.italic;
+    if (o.under !== undefined) c.under = o.under;
+    if (o.strike !== undefined) c.strike = o.strike;
     if (o.size && FS[o.size]) {
       if (o.size === 'm') delete c.fs;
       else c.fs = o.size;
@@ -212,8 +232,7 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     if (o.in !== undefined) {
       if (o.in) file(c, o.in);
       else {
-        const from = parentOf(c.id);
-        if (from) from.kids = from.kids.filter(x => x !== c.id);
+        leaveCollection(c);
       }
     }
     if (session.board.cards.includes(c)) {
@@ -227,7 +246,7 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     session.board.tray = session.board.tray.filter(c => !gone.has(c.id));
     tidyTies();
     session.board.links = session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b));
-    gone.forEach(id => cardEl(id)?.remove());
+    for (const id of gone) cardEl(id)?.remove();
   }
   (r.connect || []).forEach(p => {
     const [a, b] = Array.isArray(p) ? p : [p.a, p.b];
@@ -237,20 +256,21 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
   if (Array.isArray(r.screens) && r.screens.length) {
     let sx = session.board.cards.length ? Math.max(...session.board.cards.map(c => c.x + c.w)) + 160 : center.x - 200,
       sy = session.board.cards.length ? Math.min(...session.board.cards.map(c => c.y)) : center.y - 400,
-      prev = null;
-    const builtFrames = [];
+      prev: Card | null = null;
+    const builtFrames: Card[] = [];
     r.screens.forEach(sp => {
       const { f, made } = buildScreen(sp, sx, sy);
       builtFrames.push(f);
       made.forEach(c => added.push(c));
-      if (prev && sp.flow !== false) session.board.links.push({ id: uid(), a: prev.id, b: f.id, arrow: true });
+      const noFlow = typeof sp === 'object' && sp !== null && 'flow' in sp && sp.flow === false;
+      if (prev && !noFlow) session.board.links.push({ id: uid(), a: prev.id, b: f.id, arrow: true });
       prev = f;
       sx += f.w + 140;
     });
   }
   if (r.screens?.length)
     setTimeout(
-      () => offerFill(spotsIn(session.board.cards.filter(c => c.type === 'frame').slice(-r.screens.length))),
+      () => offerFill(spotsIn(session.board.cards.filter(c => c.type === 'frame').slice(-(r.screens?.length ?? 0)))),
       1500,
     );
   // pictures (Mobbin screens, Higgsfield images): fetched and saved into the board, laid out in a row of tilted cards
@@ -264,7 +284,7 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     for (const im of imgs) {
       try {
         const data = await Fenmyr.fetchImage(im.url),
-          dims = await new Promise(res => {
+          dims = await new Promise<[number, number]>(res => {
             const t = new Image();
             t.onload = () => res([t.width, t.height]);
             t.onerror = () => res([3, 4]);
@@ -310,7 +330,7 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
   // notes she says she used (only ones she was actually given) land on the board as vault note cards
   const given = (r.vaultNotes || [])
     .map(x => ctx.used.find(n => n.vault === x.vault && n.rel === x.path))
-    .filter((n, i, a) => n && a.indexOf(n) === i);
+    .filter((n, i, a): n is NoteUsed => !!n && a.indexOf(n) === i);
   given.forEach((n, k) => {
     const w = centerWorld(),
       c = card('vnote', {
@@ -333,7 +353,7 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
       ? ` I read ${ctx.used.length} note${ctx.used.length === 1 ? '' : 's'} from your vault: ${ctx.used.map(n => n.title).join(', ')}.`
       : ' I looked in your vault, but found no notes matching that in the folders you allowed.';
   if (given.length) save();
-  const acts = r.confirm
+  const acts: { label: string; run: () => unknown; ghost?: boolean; cls?: string }[] = r.confirm
     ? [
         { label: (r.confirm || 'Yes, make it') + ' ✦', run: () => ask(q, true) },
         { label: 'Not now', ghost: true, run: () => {} },
@@ -352,8 +372,8 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
   // what next: Myra's own ideas, or a sensible guess from what she just made
   const next = acts.length
     ? []
-    : (Array.isArray(r.next) && r.next.length ? r.next : guessNext(r, added))
-        .filter(t => typeof t === 'string')
+    : (r.next?.length ? r.next : guessNext(r, added))
+        .filter((t: unknown): t is string => typeof t === 'string')
         .map(noEmoji)
         .filter(Boolean)
         .slice(0, 3);

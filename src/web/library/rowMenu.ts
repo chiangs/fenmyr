@@ -1,6 +1,19 @@
-// @ts-nocheck
+import type { Folder, Project } from '../../shared/model.ts';
+import type { BoardSummary } from '../../shared/ops.ts';
+
+type Kind = 'board' | 'folder' | 'project';
+// a row in the left box: a board, folder or project, each using the fields it has
+type Thing = {
+  id: string;
+  name: string;
+  color?: string;
+  open?: boolean;
+  folder?: string | null;
+  parent?: string | null;
+  project?: string | null;
+};
 import { keepOnScreen } from '../ui/popover.ts';
-import { esc, removeOnOutsidePress } from '../ui/dom.ts';
+import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
@@ -30,7 +43,7 @@ import { appState, session } from '../core/state.ts';
 
 // ---------- right-click in the left box: duplicate or delete a board, folder or project ----------
 // copying a board also copies the canvases inside it, so the copy doesn't share them
-async function copyBoard(id, into = {}) {
+async function copyBoard(id: string, into: { name?: string; parent?: string; folder?: string | null } = {}) {
   const b = await Fenmyr.load(id);
   if (!b) return null;
   const c = JSON.parse(JSON.stringify(b));
@@ -45,13 +58,13 @@ async function copyBoard(id, into = {}) {
   return c;
 }
 
-async function dropBoard(id) {
+async function dropBoard(id: string) {
   for (const k of appState.boardList.filter(x => x.parent === id)) await dropBoard(k.id);
   await Fenmyr.remove(id);
   dueForget(id);
 }
 
-async function duplicate(kind, obj) {
+async function duplicate(kind: Kind, obj: Thing) {
   if (kind === 'board') {
     const c = await copyBoard(obj.id, { name: obj.name + ' copy' });
     await refreshBoards();
@@ -59,8 +72,8 @@ async function duplicate(kind, obj) {
     return;
   }
   // copy a folder, the folders inside it and all their boards
-  const copyFolder = async (f0, name, project, parent) => {
-    const f = { id: uid(), name, project, open: true };
+  const copyFolder = async (f0: Folder, name: string, project: string | null, parent: string | null) => {
+    const f: Folder = { id: uid(), name, project, open: true };
     if (parent) f.parent = parent;
     appState.folders.push(f);
     await saveLib();
@@ -69,7 +82,7 @@ async function duplicate(kind, obj) {
   };
   if (kind === 'folder') await copyFolder(obj, obj.name + ' copy', obj.project || null, obj.parent || null);
   if (kind === 'project') {
-    const p = { id: uid(), name: obj.name + ' copy', color: obj.color, open: true };
+    const p: Project = { id: uid(), name: `${obj.name} copy`, open: true, ...(obj.color ? { color: obj.color } : {}) };
     appState.projects.push(p);
     await saveLib();
     for (const f0 of foldersIn(obj.id)) await copyFolder(f0, f0.name, p.id, null);
@@ -78,8 +91,8 @@ async function duplicate(kind, obj) {
   chirp(`Made “${obj.name} copy” ✦`, 3500);
 }
 
-async function destroy(kind, obj) {
-  const all = f => [f, ...subFolders(f.id).flatMap(all)]; // a folder and every folder inside it
+async function destroy(kind: Kind, obj: Thing) {
+  const all = (f: Folder): Folder[] => [f, ...subFolders(f.id).flatMap(all)]; // a folder and every folder inside it
   const gone = kind === 'folder' ? all(obj) : kind === 'project' ? foldersIn(obj.id).flatMap(all) : [];
   const ids = kind === 'board' ? [obj.id] : gone.flatMap(f => boardsIn(f.id).map(b => b.id));
   for (const id of ids) await dropBoard(id);
@@ -94,19 +107,22 @@ async function destroy(kind, obj) {
       await Fenmyr.save(b);
       list = await Fenmyr.list();
     }
-    await openBoard(list[0].id);
+    if (list[0]) await openBoard(list[0].id);
   }
 }
 
 // Move to…: a little map of projects and folders; pick where it goes
-function moveMenu(m, kind, obj) {
+function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
   const here = kind === 'board' ? obj.folder || null : obj.parent ? 'f:' + obj.parent : obj.project || null,
-    row = (id, label, depth, icon) =>
+    row = (id: string | null, label: string, depth: number, icon: string) =>
       `<button class="mv-row${id === here ? ' here' : ''}" data-to="${id ?? ''}" style="padding-left:${12 + depth * 16}px">${icon}<span>${esc(label)}</span>${id === here ? '<em>here</em>' : ''}</button>`;
   const FIC = '<i class="fic"></i>',
-    PIC = c => `<i class="pic" style="background:${tint(c)}"></i>`;
+    PIC = (c = '') => {
+      const shade = tint(c);
+      return `<i class="pic" style="background:${shade}"></i>`;
+    };
   let h = `<div class="mv-head">Move “${esc(obj.name)}” to…</div><div class="mv-list">`;
-  const tree = (f, d) => {
+  const tree = (f: Folder, d: number) => {
     if (kind === 'folder' && f.id === obj.id) return;
     h += row(kind === 'board' ? f.id : 'f:' + f.id, f.name, d, FIC);
     subFolders(f.id).forEach(x => tree(x, d + 1));
@@ -131,7 +147,7 @@ function moveMenu(m, kind, obj) {
   m.classList.add('mv');
   keepOnScreen(m);
   m.onclick = async ev => {
-    const b = ev.target.closest('[data-to]');
+    const b = ev.target instanceof Element ? ev.target.closest<HTMLElement>('[data-to]') : null;
     if (!b) return;
     const to = b.dataset.to || null;
     m.remove();
@@ -146,7 +162,7 @@ function moveMenu(m, kind, obj) {
       }
     } else if (to && to.startsWith('f:')) {
       const into = appState.folders.find(x => x.id === to.slice(2));
-      if (!putFolder(obj.id, into)) return chirp("A folder can't go inside itself ✦", 2500);
+      if (!putFolder(obj.id, into ?? null)) return chirp("A folder can't go inside itself ✦", 2500);
     } else {
       putFolder(obj.id, null, to);
       const p = appState.projects.find(x => x.id === to);
@@ -163,11 +179,12 @@ function moveMenu(m, kind, obj) {
   };
 }
 
-export async function renameBoard(b, v) {
+export async function renameBoard(b: { id: string }, v: string) {
   if (!v) return;
   if (session.board && session.board.id === b.id) {
     session.board.name = v;
-    $('boardName').value = v;
+    const field = $('boardName');
+    if (field instanceof HTMLInputElement) field.value = v;
     save();
   } else {
     const bb = await Fenmyr.load(b.id);
@@ -178,7 +195,7 @@ export async function renameBoard(b, v) {
   }
 }
 
-export function rowMenu(e, kind, obj, nameEl) {
+export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElement) {
   e.preventDefault();
   e.stopPropagation();
   $('rowMenu')?.remove();
@@ -197,11 +214,11 @@ export function rowMenu(e, kind, obj, nameEl) {
   document.body.appendChild(m);
   keepOnScreen(m);
   m.onclick = async ev => {
-    const a = ev.target.closest('[data-m]')?.dataset.m;
+    const a = ev.target instanceof Element ? ev.target.closest<HTMLElement>('[data-m]')?.dataset.m : undefined;
     if (!a) return;
     if (a === 'ren') {
       m.remove();
-      return inlineRename(nameEl, obj, kind === 'board' ? v => renameBoard(obj, v) : undefined);
+      return nameEl && inlineRename(nameEl, obj, kind === 'board' ? v => renameBoard(obj, v) : undefined);
     }
     if (a === 'dup') {
       m.remove();
@@ -240,17 +257,18 @@ export function rowMenu(e, kind, obj, nameEl) {
   };
   removeOnOutsidePress(m);
 }
-export let FBTN;
+let FBTN: { add: string; ren: string; del: string };
+export const FBTN_OF = (a: string) => (a === 'add' ? FBTN.add : a === 'ren' ? FBTN.ren : FBTN.del);
 
 // the left box: a small tree (projects ▸ folders ▸ boards)
-function boardRow(b) {
+function boardRow(b: BoardSummary): Node {
   const r = document.createElement('div');
   r.className = 'board-row' + (session.board && b.id === session.board.id ? ' on' : '');
   r.innerHTML = `<i style="background:${tint(b.color)}"></i><span></span>`;
-  r.querySelector('span').textContent = b.name;
+  child(r, 'span').textContent = b.name;
   // one click opens the board; a double-click renames it right here (so wait a beat to tell them apart)
-  let tap = 0;
-  const name = r.querySelector('span');
+  let tap: ReturnType<typeof setTimeout> | undefined;
+  const name = child(r, 'span');
   r.onclick = () => {
     if (name.isContentEditable) return;
     clearTimeout(tap);
@@ -289,13 +307,13 @@ function boardRow(b) {
   return frag;
 }
 
-function treeNode(obj, kind, count, kids, btns) {
+function treeNode(obj: Thing, kind: Kind, count: number, kids: Node[], btns: [string, string, string][]) {
   const wrap = document.createElement('div');
   wrap.className = 'node ' + kind + (obj.open ? ' open' : '');
-  wrap.innerHTML = `<div class="node-head"><span class="chev">▶</span><span class="${kind === 'project' ? 'pic' : 'fic'}"></span><span class="fname"></span><small>${count}</small>${btns.map(([a, t, s]) => `<button class="f-btn" data-a="${a}" title="${t}">${FBTN[a] || s}</button>`).join('')}</div><div class="node-body"></div>`;
-  if (kind === 'project') wrap.querySelector('.pic').style.background = tint(obj.color);
-  const name = wrap.querySelector('.fname'),
-    body = wrap.querySelector('.node-body');
+  wrap.innerHTML = `<div class="node-head"><span class="chev">▶</span><span class="${kind === 'project' ? 'pic' : 'fic'}"></span><span class="fname"></span><small>${count}</small>${btns.map(([a, t, s]) => `<button class="f-btn" data-a="${a}" title="${t}">${FBTN_OF(a) || s}</button>`).join('')}</div><div class="node-body"></div>`;
+  if (kind === 'project') child(wrap, '.pic').style.background = tint(obj.color ?? '');
+  const name = child(wrap, '.fname'),
+    body = child(wrap, '.node-body');
   name.textContent = obj.name;
   kids.forEach(k => body.appendChild(k));
   if (!kids.length)
@@ -307,7 +325,7 @@ function treeNode(obj, kind, count, kids, btns) {
   return { wrap, name };
 }
 
-function folderNode(f) {
+function folderNode(f: Folder): HTMLElement {
   const inside = boardsIn(f.id),
     subs = subFolders(f.id);
   if (holdsBoard(f)) f.open = true;
@@ -321,8 +339,8 @@ function folderNode(f) {
       ['ren', 'Rename', '✎'],
     ],
   );
-  wrap.querySelector('.node-head').onclick = async e => {
-    const a = e.target.closest('.f-btn')?.dataset.a;
+  child(wrap, '.node-head').onclick = async e => {
+    const a = e.target instanceof Element ? e.target.closest<HTMLElement>('.f-btn')?.dataset.a : undefined;
     if (a === 'add') return newBoardIn(f.id);
     if (a === 'ren') return inlineRename(name, f);
     if (a === 'del') {
@@ -340,28 +358,28 @@ function folderNode(f) {
     wrap.classList.toggle('open', f.open);
     saveLib();
   };
-  draggable(wrap.querySelector('.node-head'), 'folder', f.id);
-  wrap.querySelector('.node-head').oncontextmenu = e => rowMenu(e, 'folder', f, name);
-  dropZone(wrap.querySelector('.node-head'), 'board', id =>
+  draggable(child(wrap, '.node-head'), 'folder', f.id);
+  child(wrap, '.node-head').oncontextmenu = e => rowMenu(e, 'folder', f, name);
+  dropZone(child(wrap, '.node-head'), 'board', id =>
     moveBoard(id, f.id).then(() => {
       f.open = true;
     }),
   );
-  dropZone(wrap.querySelector('.node-head'), 'folder', id => {
+  dropZone(child(wrap, '.node-head'), 'folder', id => {
     if (!putFolder(id, f)) chirp("A folder can't go inside itself ✦", 2500);
   });
   return wrap;
 }
 
-function projectNode(p) {
+function projectNode(p: Project): HTMLElement {
   const fs = foldersIn(p.id);
   if (fs.some(holdsBoard)) p.open = true;
   const { wrap, name } = treeNode(p, 'project', fs.length, fs.map(folderNode), [
     ['add', 'New folder in this project', '+'],
     ['ren', 'Rename', '✎'],
   ]);
-  wrap.querySelector('.node-head').onclick = async e => {
-    const a = e.target.closest('.f-btn')?.dataset.a;
+  child(wrap, '.node-head').onclick = async e => {
+    const a = e.target instanceof Element ? e.target.closest<HTMLElement>('.f-btn')?.dataset.a : undefined;
     if (a === 'add') {
       const f = makeFolder(uniqueName(appState.folders, 'New folder'), p.id);
       p.open = true;
@@ -381,26 +399,24 @@ function projectNode(p) {
     wrap.classList.toggle('open', p.open);
     saveLib();
   };
-  wrap.querySelector('.node-head').oncontextmenu = e => rowMenu(e, 'project', p, name);
-  dropZone(wrap.querySelector('.node-head'), 'folder', id => {
+  child(wrap, '.node-head').oncontextmenu = e => rowMenu(e, 'project', p, name);
+  dropZone(child(wrap, '.node-head'), 'folder', id => {
     putFolder(id, null, p.id);
     p.open = true;
   });
   return wrap;
 }
 
-export const uniqueName = (arr, base) => {
+export const uniqueName = (arr: { name: string }[], base: string) => {
   let n = base,
     k = 2;
   while (byName(arr, n)) n = base + ' ' + k++;
   return n;
 };
 
-export function renameNewest(sel, obj) {
-  const el = [...document.querySelectorAll(`#boards ${sel}`)].find(
-    n => n.querySelector('.fname').textContent === obj.name,
-  );
-  if (el) inlineRename(el.querySelector('.fname'), obj);
+export function renameNewest(sel: string, obj: { id: string; name: string }) {
+  const el = [...document.querySelectorAll(`#boards ${sel}`)].find(n => child(n, '.fname').textContent === obj.name);
+  if (el) inlineRename(child(el, '.fname'), obj);
 }
 
 // A save rarely changes the sidebar. Rebuilding it only when its contents or order changed saves a repaint on every edit.
@@ -426,25 +442,28 @@ export async function refreshBoards() {
   const el = $('boards');
   el.innerHTML = '';
   // inside a project (on Home or on one of its boards) the left box shows just that project; in All projects it shows everything
-  const sf = homeAt
-    ? homeAt.level === 'folder'
-      ? appState.folders.find(x => x.id === homeAt.id)
+  const at = homeAt;
+  const sf = at
+    ? at.level === 'folder'
+      ? appState.folders.find(x => x.id === at.id)
       : null
     : appState.folders.find(x => x.id === session.board?.folder);
   const sp =
-    homeAt?.level === 'project'
-      ? appState.projects.find(x => x.id === homeAt.id)
+    at?.level === 'project'
+      ? appState.projects.find(x => x.id === at.id)
       : sf && appState.projects.find(x => x.id === sf.project);
-  const scoped = homeAt?.level !== 'all' && (sp || sf);
+  const scoped = at?.level !== 'all' && (sp || sf);
   $('treeLabel').textContent = scoped ? 'In this project' : 'Everything';
   if (scoped) {
     if (sp) {
       sp.open = true;
       el.appendChild(projectNode(sp));
     } else {
-      const top = folderChain(sf)[0];
-      top.open = true;
-      el.appendChild(folderNode(top));
+      const top = sf ? folderChain(sf)[0] : undefined;
+      if (top) {
+        top.open = true;
+        el.appendChild(folderNode(top));
+      }
     }
     $('homeBtn').classList.add('out');
     renderCrumbs();
@@ -487,6 +506,6 @@ export function init6() {
   };
 
   addEventListener('focus', () => {
-    if (session.board && !document.querySelector('[contenteditable="true"]')) window.__boardsChanged();
+    if (session.board && !document.querySelector('[contenteditable="true"]')) window.__boardsChanged?.();
   });
 }

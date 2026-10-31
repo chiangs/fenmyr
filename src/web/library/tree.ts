@@ -1,4 +1,5 @@
-// @ts-nocheck
+import type { Folder, Project, StoredBoard } from '../../shared/model.ts';
+import type { BoardSummary } from '../../shared/ops.ts';
 import { COLORS, COLOR_NAMES, uid } from '../core/base.ts';
 import { renderCrumbsSoon, unhook } from './nesting.ts';
 import { appState, session } from '../core/state.ts';
@@ -6,7 +7,7 @@ import { appState, session } from '../core/state.ts';
 export const saveLib = () =>
   Fenmyr.saveFolders({ projects: appState.projects, folders: appState.folders, order: appState.boardOrder });
 
-export const byName = (arr, name) =>
+export const byName = <T extends { name: string }>(arr: T[], name: unknown) =>
   arr.find(
     x =>
       x.name.trim().toLowerCase() ===
@@ -15,21 +16,21 @@ export const byName = (arr, name) =>
         .toLowerCase(),
   );
 
-export const findFolder = name => byName(appState.folders, name);
+export const findFolder = (name: unknown) => byName(appState.folders, name);
 
-export function makeProject(name) {
-  const p = byName(appState.projects, name) || {
+export function makeProject(name: unknown) {
+  const p: Project = byName(appState.projects, name) || {
     id: uid(),
     name: String(name).trim() || 'New project',
-    color: COLOR_NAMES[1 + (appState.projects.length % 6)],
+    color: COLOR_NAMES[1 + (appState.projects.length % 6)] ?? 'white',
     open: true,
   };
   if (!appState.projects.includes(p)) appState.projects.push(p);
   return p;
 }
 
-export function makeFolder(name, projectId = null) {
-  const f = findFolder(name) || {
+export function makeFolder(name: unknown, projectId: string | null = null) {
+  const f: Folder = findFolder(name) || {
     id: uid(),
     name: String(name).trim() || 'New folder',
     project: projectId,
@@ -40,27 +41,28 @@ export function makeFolder(name, projectId = null) {
 }
 
 // canvases (boards inside boards) live under their parent board, not loose in a folder
-export const topLevel = b => !b.parent || !appState.boardList.some(x => x.id === b.parent);
+export const topLevel = (b: Pick<BoardSummary, 'parent'> | StoredBoard) =>
+  !b.parent || !appState.boardList.some(x => x.id === b.parent);
 
-const inOrder = (key, list) => {
+const inOrder = (key: string, list: BoardSummary[]) => {
   const o = appState.boardOrder[key];
   if (!o || !o.length) return list;
-  const at = id => o.indexOf(id);
+  const at = (id: string) => o.indexOf(id);
   return [...list.filter(b => at(b.id) < 0), ...list.filter(b => at(b.id) >= 0).sort((a, b) => at(a.id) - at(b.id))];
 };
 // boards you haven't placed yet (new ones) stay on top, newest first, as before
-export const boardsIn = fid =>
+export const boardsIn = (fid: string) =>
   inOrder(
     fid,
     appState.boardList.filter(b => b.folder === fid && topLevel(b)),
   );
 
 // folders can live inside other folders: f.parent is the folder it sits in (its project comes along with it)
-export const hasParent = f => !!f.parent && appState.folders.some(x => x.id === f.parent);
+export const hasParent = (f: Folder) => !!f.parent && appState.folders.some(x => x.id === f.parent);
 
-export const subFolders = fid => appState.folders.filter(f => f.parent === fid);
+export const subFolders = (fid: string) => appState.folders.filter(f => f.parent === fid);
 
-export const foldersIn = pid =>
+export const foldersIn = (pid: string | null) =>
   appState.folders.filter(
     f => !hasParent(f) && (f.project || null) === pid && (pid === null || appState.projects.some(p => p.id === pid)),
   );
@@ -68,28 +70,30 @@ export const foldersIn = pid =>
 export const looseFolders = () =>
   appState.folders.filter(f => !hasParent(f) && (!f.project || !appState.projects.some(p => p.id === f.project)));
 
-export const folderChain = f => {
-  const out = [];
+export const folderChain = (f: Folder | undefined) => {
+  const out: Folder[] = [];
   let x = f;
   while (x && out.length < 30) {
     out.unshift(x);
-    x = appState.folders.find(y => y.id === x.parent);
+    const parent = x.parent;
+    x = appState.folders.find(y => y.id === parent);
   }
   return out;
 };
 // outermost first
-export const holdsBoard = f =>
+export const holdsBoard = (f: Folder): boolean =>
   !!session.board && (boardsIn(f.id).some(b => b.id === session.board.id) || subFolders(f.id).some(holdsBoard));
 
-export const boardsUnder = f => boardsIn(f.id).length + subFolders(f.id).reduce((n, x) => n + boardsUnder(x), 0);
+export const boardsUnder = (f: Folder): number =>
+  boardsIn(f.id).length + subFolders(f.id).reduce((n, x) => n + boardsUnder(x), 0);
 
-const setProject = (f, pid) => {
+const setProject = (f: Folder, pid: string | null) => {
   f.project = pid;
   subFolders(f.id).forEach(x => setProject(x, pid));
 };
 
 // move a folder into another folder, a project, or out to the top level (never into itself)
-export function putFolder(fid, into, projectId = null) {
+export function putFolder(fid: string, into: Folder | null, projectId: string | null = null) {
   const x = appState.folders.find(y => y.id === fid);
   if (!x || (into && folderChain(into).includes(x))) return false;
   if (into) {
@@ -109,15 +113,16 @@ export const looseBoards = () =>
     appState.boardList.filter(b => (!b.folder || !appState.folders.some(f => f.id === b.folder)) && topLevel(b)),
   );
 
-export const orderKey = b => (b.folder && appState.folders.some(f => f.id === b.folder) ? b.folder : 'loose');
+export const orderKey = (b: { folder?: string | null }) =>
+  b.folder && appState.folders.some(f => f.id === b.folder) ? b.folder : 'loose';
 
-export const tint = c => (COLORS[c] && c !== 'white' ? `var(--k-${c})` : 'var(--pink)');
+export const tint = (c: string) => (c in COLORS && c !== 'white' ? `var(--k-${c})` : 'var(--pink)');
 
 // moving a board into a folder (or out of one). A canvas that lived inside another board comes out on its own.
-export async function moveBoard(id, folderId) {
+export async function moveBoard(id: string, folderId: string | null) {
   await unhook(id);
   Object.keys(appState.boardOrder).forEach(k => {
-    appState.boardOrder[k] = appState.boardOrder[k].filter(x => x !== id);
+    appState.boardOrder[k] = appState.boardOrder[k]?.filter(x => x !== id) ?? [];
   }); // moved: no longer placed anywhere (it lands on top of its new folder)
 
   if (session.board && session.board.id === id) {

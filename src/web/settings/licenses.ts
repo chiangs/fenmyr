@@ -76,7 +76,7 @@ let sayT = 0;
 // the little extras: skipped when she's set to Quiet
 export const reply = (text, ms, acts) => say(text, ms, acts, true);
 
-export function chirp(text, ms, acts) {
+export function chirp(text, ms?, acts?) {
   if (settings.chat !== 'quiet') say(text, ms, acts);
 }
 
