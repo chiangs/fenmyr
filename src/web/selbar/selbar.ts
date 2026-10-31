@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { typesWith } from '../../shared/cardTypes.ts';
 import { toWorld } from '../canvas/handles.ts';
 import { STROKE_TEXT, TILTS, canStroke, esc, renderCard, skStyle } from '../canvas/render.ts';
 import { byId, linkById, renderWires, selectOnly, wireColor, wireW } from '../canvas/wires.ts';
@@ -28,7 +29,7 @@ import { FONTS } from '../wireframe/wireframes.ts';
 import { appState, session } from '../core/state.ts';
 
 // ---------- the dock swaps to tools for whatever is selected ----------
-const FILLABLE = ['note', 'todo', 'link', 'vnote'];
+const FILLABLE = typesWith('fillable');
 
 const ARRANGE_NAME = {
   left: 'align-l',
@@ -118,7 +119,7 @@ function setSpacing(kind, v) {
 }
 
 export const FS = { s: 0.8, m: 1, l: 1.4, xl: 2 };
-export const SIZED = ['note', 'todo', 'title', 'shape', 'coll', 'vnote'];
+export const SIZED = typesWith('sized');
 
 export function selCards() {
   return [...session.sel].map(byId).filter(Boolean);

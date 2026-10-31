@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
 import { byId } from './wires.ts';
 import { cropping } from '../cards/crop.ts';
@@ -19,7 +20,7 @@ export const realBox = k => {
 };
 export let mrot;
 
-export const ROT_FIXED = ['section', 'frame', 'coll', 'ink'];
+export const ROT_FIXED = typesWith('noRotate');
 // a group you turned: { key, anchor } (the dot stays on the piece that was on top)
 export const selKey = cs =>
   cs

@@ -28,6 +28,10 @@ jobs:
         run: npm run build
       - name: Vault test (reading notes, privacy rules)
         run: node tests/vault.ts
+      - name: Save test (running-only flags stay out of board files)
+        run: node tests/persist.ts
+      - name: Myra reply test
+        run: node tests/reply.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)
         run: node tests/smoke.ts
       - name: Zoom test

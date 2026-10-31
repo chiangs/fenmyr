@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
 import { renderTray, renderWires } from './wires.ts';
 import { COLL, parentOf } from '../cards/collection.ts';
@@ -147,10 +148,10 @@ function inner(c) {
 }
 
 // which cards can be tilted by hand: everything except the things that hold other things (sections, screens, collections) and wireframe pieces (they rotate their own way)
-export const TILTS = c => !['section', 'frame', 'coll', 'ink', 'box', 'text', 'icon'].includes(c.type);
-// (the wireframe list WF isn't set up yet when the first cards draw)
+const NO_TILT = typesWith('noTilt');
+export const TILTS = c => !NO_TILT.includes(c.type);
 // strokes: boxes and screens get a border (solid or dashed); titles, wireframe text and icons get an outline around the letters
-const STROKABLE = ['box', 'frame', 'title', 'text', 'icon', 'path', 'shape'];
+const STROKABLE = typesWith('strokable');
 export const STROKE_TEXT = ['title', 'text', 'icon'];
 
 export const canStroke = c => STROKABLE.includes(c.type) && !(c.type === 'shape' && c.shape === 'line');

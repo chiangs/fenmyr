@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { typesWith } from '../../shared/cardTypes.ts';
 import { fit } from '../canvas/handles.ts';
 import { esc, renderCard } from '../canvas/render.ts';
 import { byId, renderWires } from '../canvas/wires.ts';
@@ -22,7 +23,7 @@ import { session } from '../core/state.ts';
 // ---------- your own templates: save a selection (or the whole board); use it on a board or as a new one (Settings decides) ----------
 export let myTpls = [];
 
-const NO_KEEP = ['video', 'audio', 'doc', 'canvas', 'spotify', 'vnote'];
+const NO_KEEP = typesWith('notInTemplates');
 // files and other boards stay out of templates; pictures become empty image spots
 function templateFrom(cs) {
   const all = new Set(cs);

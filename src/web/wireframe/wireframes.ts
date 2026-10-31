@@ -1,8 +1,9 @@
 // @ts-nocheck
+import { typesWith } from '../../shared/cardTypes.ts';
 import { applyStroke } from '../canvas/render.ts';
 
 // ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
-export const WF = ['frame', 'box', 'text', 'icon'];
+export const WF = typesWith('wireframe');
 
 export const DEVICES = {
   iPhone: [393, 852, 44],
