@@ -1755,7 +1755,7 @@ echo " [BLANK_AUDIO] hello from whisper"
       vis = s => page.locator(`${sel} ${s}`).first().isVisible();
     const soloShown = await vis('.nt-add');
     await page.locator(`${sel} .nt-add`).click();
-    await page.waitForTimeout(250);
+    await page.waitForFunction(() => document.activeElement?.matches('#tagAdd input'));
     await page.keyboard.type('zeta');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(350);
