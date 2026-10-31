@@ -11,7 +11,7 @@ const QUIET = { greet: false, autoUpdate: false, caelestia: false, motion: false
 
 // the members of the renderer's window.__fenmyr test hook that the harness calls
 type TestHooks = {
-  curBoard(): { name: string } | null;
+  curBoard(): { name: string; cards: Record<string, unknown>[] } | null;
   stopAnim(): void;
   selectOnly(ids: string[]): void;
   openBoard(id: string): Promise<void>;
@@ -85,7 +85,7 @@ export async function settle(page: Page, ms = STARTUP_TIMERS_MS) {
 
 declare global {
   interface Window {
-    Fenmyr?: object;
+    Fenmyr?: { save(board: unknown): Promise<unknown> };
     __fenmyr: TestHooks;
   }
 }
