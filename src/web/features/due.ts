@@ -84,7 +84,7 @@ let dueSigs = new Map();
 let dueT = 0;
 export let dueHeld = [];
 // dueHold: at start-up reminders wait until the greeting has been said
-export function dueIndex(force) {
+export function dueIndex(force = false) {
   if (!session.board) return;
   const mine = session.board.cards.filter(c => c.type === 'note' && dueDate(c.due)),
     sig = mine.map(c => `${c.id}|${c.due}|${c.name || c.text || ''}`).join('\n') + '|' + session.board.name;
