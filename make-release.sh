@@ -4,7 +4,7 @@
 #   ./make-release.sh --dry    build the AppImage only (build/release/)
 #   ./make-release.sh --arm64  also build for 64-bit ARM
 # People download it from https://github.com/chiangs/fenmyr/releases/latest
-# The AppImage updates itself from those releases (linux/update.js looks for Fenmyr-<arch>.AppImage).
+# The AppImage updates itself from those releases (src/host/update.ts looks for Fenmyr-<arch>.AppImage).
 set -e
 cd "$(dirname "$0")"
 V="$(node -p "require('./package.json').version")"
@@ -14,6 +14,7 @@ for a in "$@"; do case "$a" in --dry) DRY=1;; --arm64) ARCHS="--x64 --arm64";; e
 [ -d node_modules/electron-builder ] || npm ci --no-audit --no-fund
 echo "  Building Fenmyr $V…"
 rm -rf build/release
+npm run build --silent
 npx electron-builder --linux AppImage $ARCHS --publish never
 ls -1 build/release/*.AppImage | sed 's/^/  ✓ /'
 [ "$DRY" = 1 ] && exit 0

@@ -48,6 +48,8 @@ The installer:
 
 After that, Fenmyr checks for new versions on its own. When one is ready, a little dot shows on the ⚙ and Settings lists what's new, with an **Update now** button (it pulls from GitHub, reinstalls and reopens; your boards are never touched). From a terminal: `./install.sh --update`.
 
+The installer builds Fenmyr, so it also needs Node.js and npm (it offers to `sudo pacman -S nodejs npm` if they're missing).
+
 Installer options: `--update` (pull first), `--yes` (no questions), `--no-open`.
 
 ### AppImage
@@ -191,7 +193,7 @@ Fenmyr reads `~/.local/state/caelestia/scheme.json`, the file Caelestia's shell 
 Two layers:
 
 - `web/`: the canvas, plain HTML, CSS and JavaScript with no build step.
-- `linux/`: a small Electron host that does what a web page can't. It saves boards, fetches link previews, exports images and PDFs, writes out voice memos, and runs `claude -p` so Myra can think.
+- `src/host/`: a small TypeScript Electron host that does what a web page can't. It saves boards, fetches link previews, exports images and PDFs, writes out voice memos, and runs `claude -p` so Myra can think.
 
 The two talk through one channel (`window.fenmyrHost`), so the canvas doesn't know or care which computer it's on. See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it.
 

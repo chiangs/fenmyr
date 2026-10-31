@@ -4,7 +4,7 @@ Fenmyr's **code** is open source under the [MIT License](LICENSE): use it, learn
 
 The **brand** is different. These belong to Stephen Chiang and are **all rights reserved**. They are not covered by the code license:
 
-- The name **"Fenmyr"** for this app, and the Fenmyr logo and app icon (`assets/`, `tools/make_icon.js`)
+- The name **"Fenmyr"** for this app, and the Fenmyr logo and app icon (`assets/`, `tools/make-icon.ts`)
 - The name **"Myra"** for the assistant, and **Myra**, the cloudberry character, in any form: her drawing in the code (`web/goo.js`), her stickers (`web/stamps/myra-*`), and any art of her
 - Fenmyr's and Myra's own art and illustrations: the stamp set (`web/stamps/`), the cover and other images in `assets/`
 - Their own icons: the cloudberry mark, the Myra tool and the chat icon (`tools/icons/custom.js`), and the cloudberry glyph font (`web/fonts/MyraMark.woff2`). The rest of the icons are Phosphor Icons (MIT), which keep their own license, listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

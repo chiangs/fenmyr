@@ -2418,7 +2418,7 @@
     if (g.dataset.seg === 'chatKeep' && b.dataset.v !== 'board') clearSavedChats(); if (g.dataset.seg === 'chatKeep') renderChat(); });
   $('obNotes').onclick = $('noteColors').onclick = e => { const b = e.target.closest('[data-nc]'); if (b) { settings.noteColor = b.dataset.nc; applySettings(); } };
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => settings.theme === 'system' && applySettings());
-  window.__fenmyrEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } };   // a new wallpaper or scheme: restyle right away
+  window.__fenmyrEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } else if (name === 'boardsChanged') window.__boardsChanged(); };   // a new wallpaper or scheme: restyle right away
   if (Fenmyr.caelestia) Fenmyr.caelestia().then(d => { cae = d; if (d) applySettings(); }).catch(() => {});
   const newNoteColor = () => settings.noteColor === 'random' ? COLOR_NAMES[1 + Math.floor(Math.random() * 6)] : settings.noteColor;
   let deselectAt = 0;
