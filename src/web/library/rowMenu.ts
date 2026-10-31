@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
@@ -239,18 +239,7 @@ export function rowMenu(e, kind, obj, nameEl) {
     }
     if (a === 'no') m.remove();
   };
-  setTimeout(() =>
-    addEventListener(
-      'pointerdown',
-      function off(ev) {
-        if (!m.contains(ev.target)) {
-          m.remove();
-          removeEventListener('pointerdown', off, true);
-        }
-      },
-      true,
-    ),
-  );
+  removeOnOutsidePress(m);
 }
 export let FBTN;
 

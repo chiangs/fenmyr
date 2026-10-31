@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { esc } from './dom.ts';
 import { $ } from '../core/dom.ts';
 import { boardMenu } from '../features/export.ts';
 import { setTab } from '../settings/colors.ts';

@@ -1,7 +1,8 @@
 // @ts-nocheck
+import { esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { fit } from '../canvas/handles.ts';
-import { esc, renderCard } from '../canvas/render.ts';
+import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { FRAMEWORKS, STARTERS, TPL_IC, placeFramework } from '../content/frameworks.ts';

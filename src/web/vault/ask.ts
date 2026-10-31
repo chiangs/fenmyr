@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { esc } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
 import { saveLib } from '../library/tree.ts';
 import { say } from '../settings/licenses.ts';

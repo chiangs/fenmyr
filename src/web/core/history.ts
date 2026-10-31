@@ -1,8 +1,9 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { fit, toWorld } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
 import { layoutAll } from '../cards/kanban.ts';
-import { $, cardsEl, stage } from './dom.ts';
+import { $, stage } from './dom.ts';
 import { dueIndex } from '../features/due.ts';
 import { endEdit, syncBoardTags } from '../features/tags.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
@@ -117,7 +118,7 @@ export function showWhatMyraMade(cs) {
   setTimeout(
     () =>
       glow.forEach(c => {
-        const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+        const el = cardEl(c.id);
         if (!el) return;
         el.classList.remove('just-made');
         void el.offsetWidth;

@@ -1,8 +1,8 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { titleW } from '../canvas/render.ts';
 import { byId } from '../canvas/wires.ts';
 import { drawKanban } from './kanban.ts';
-import { cardsEl } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 
 // ---------- collections: a named header over a frame; cards inside stack in columns and the frame grows to fit ----------
@@ -51,7 +51,7 @@ export function layoutColl(s) {
     colH = Array(s.cols).fill(0);
   s.kids.forEach(id => {
     const c = byId(id),
-      el = cardsEl.querySelector(`[data-id="${id}"]`);
+      el = cardEl(id);
     if (!el) return;
     const h = naturalHeight(c, el);
     if (c.type === 'image') {
@@ -78,12 +78,12 @@ export function layoutColl(s) {
     el.classList.add('inside');
   });
   s.h = top + CPAD * 2 + Math.max(s.kanban ? 240 : 90, Math.max(...colH) - CGAP);
-  const el = cardsEl.querySelector(`[data-id="${s.id}"]`);
+  const el = cardEl(s.id);
   // cards inside always sit on top of their collection (a card made before the collection would otherwise hide under it)
   if (el) {
     let after = el;
     s.kids.forEach(id => {
-      const k = cardsEl.querySelector(`[data-id="${id}"]`);
+      const k = cardEl(id);
       if (k && k.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) {
         after.after(k);
         after = k;

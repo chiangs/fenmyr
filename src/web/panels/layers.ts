@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { esc, renderAll, renderCard } from '../canvas/render.ts';
+import { cardEl, esc } from '../ui/dom.ts';
+import { renderAll, renderCard } from '../canvas/render.ts';
 import { applyView } from '../canvas/view.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
@@ -221,7 +222,7 @@ const lyFind = (key, ns = LY.tree || []) => {
   return null;
 };
 
-const lyHL = (ids, on) => ids.forEach(i => cardsEl.querySelector(`[data-id="${i}"]`)?.classList.toggle('ly-hl', on));
+const lyHL = (ids, on) => ids.forEach(i => cardEl(i)?.classList.toggle('ly-hl', on));
 
 export function wireLayers() {
   const list = $('layers');

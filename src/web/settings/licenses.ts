@@ -1,6 +1,6 @@
 // @ts-nocheck
+import { esc } from '../ui/dom.ts';
 import { showUpdate, updInfo } from '../app/updates.ts';
-import { esc } from '../canvas/render.ts';
 import { COLOR_NAMES } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { addMsg, renderChat, sessionChats } from '../myra/chat.ts';

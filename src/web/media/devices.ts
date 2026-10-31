@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { esc, renderCard } from '../canvas/render.ts';
+import { cardEl, esc } from '../ui/dom.ts';
+import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { cardsEl } from '../core/dom.ts';
@@ -208,7 +209,7 @@ async function record(c) {
     data = new Uint8Array(an.frequencyBinCount);
   (function draw() {
     if (!live.has(c.id)) return;
-    const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+    const el = cardEl(c.id),
       canvas = cv();
     if (canvas) {
       // the canvas matches the size it's shown at, so the bars grow with the card instead of stretching
@@ -302,7 +303,7 @@ export async function transcribe(c) {
 
 export function audioAct(c, act, e) {
   const L = live.get(c.id),
-    el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+    el = cardEl(c.id);
   if (act === 'au-stop' && L) {
     if (L.recorder.state !== 'inactive') L.recorder.stop();
     else {
@@ -370,7 +371,7 @@ export function audioAct(c, act, e) {
     } else if (p.paused) p.play();
     else p.pause();
     const tick = () => {
-      const e2 = cardsEl.querySelector(`[data-id="${c.id}"]`);
+      const e2 = cardEl(c.id);
       if (!e2) return;
       const f = (p.currentTime || 0) / (c.dur || p.duration || 1);
       e2.querySelectorAll('.au-wave i').forEach((b, i, all) => b.classList.toggle('past', i / all.length < f));

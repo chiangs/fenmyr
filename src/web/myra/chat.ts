@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { esc, renderCard } from '../canvas/render.ts';
+import { esc } from '../ui/dom.ts';
+import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { tilt, uid } from '../core/base.ts';

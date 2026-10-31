@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { cardEl, esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
 import { renderTray, renderWires } from './wires.ts';
@@ -30,8 +31,6 @@ import { WF, styleWF } from '../wireframe/wireframes.ts';
 import { appState, session } from '../core/state.ts';
 
 // ---------- rendering ----------
-export const esc = s =>
-  String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 function inner(c) {
   switch (c.type) {
@@ -205,7 +204,7 @@ export function applyStroke(c, el) {
 export const titleW = c => (c.type === 'title' && !c.fixedW ? 'max-content' : c.w + 'px');
 
 export function renderCard(c, pop) {
-  let el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+  let el = cardEl(c.id);
   if (!el) {
     el = document.createElement('div');
     el.dataset.id = c.id;

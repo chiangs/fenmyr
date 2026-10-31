@@ -1,9 +1,10 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderTray } from '../canvas/wires.ts';
 import { linkCard } from '../cards/spotify.ts';
 import { find } from '../core/base.ts';
-import { $, cardsEl } from '../core/dom.ts';
+import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { card } from '../model/boards.ts';
 import { say } from '../settings/licenses.ts';
@@ -24,7 +25,7 @@ export const isDim = c => !!(session.focusSet && !session.focusSet.has(c.id)) ||
 
 export function applyDim() {
   session.board.cards.forEach(c => {
-    const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+    const el = cardEl(c.id);
     el?.classList.toggle('dim', isDim(c));
     el?.classList.toggle('find-cur', find.cur === c.id);
   });

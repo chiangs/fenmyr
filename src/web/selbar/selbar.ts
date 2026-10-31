@@ -1,7 +1,9 @@
 // @ts-nocheck
+import { cssToHex } from '../ui/color.ts';
+import { cardEl, esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { toWorld } from '../canvas/handles.ts';
-import { STROKE_TEXT, TILTS, canStroke, esc, renderCard, skStyle } from '../canvas/render.ts';
+import { STROKE_TEXT, TILTS, canStroke, renderCard, skStyle } from '../canvas/render.ts';
 import { byId, linkById, renderWires, selectOnly, wireColor, wireW } from '../canvas/wires.ts';
 import { openCanvas } from '../cards/canvas.ts';
 import { COLL, parentOf } from '../cards/collection.ts';
@@ -56,7 +58,7 @@ const fsPx = c => Math.round((FS_BASE[c.type] || 15) * fsMul(c));
 function fitNote(c) {
   if (c.type !== 'note' || parentOf(c.id)) return;
   renderCard(c);
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+  const el = cardEl(c.id),
     b2 = el.querySelector('.body');
   b2.style.height = 'auto';
   c.h = Math.max(80, b2.offsetHeight);
@@ -110,7 +112,7 @@ function setSpacing(kind, v) {
       renderCard(c);
       fitText(c);
       if (c.type === 'title') {
-        const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+        const el = cardEl(c.id);
         if (el) c.h = el.offsetHeight;
       }
     });
@@ -188,7 +190,7 @@ function boardFontPop(btn, list) {
   p.style.bottom = '';
   if (above) p.style.bottom = innerHeight - r.top + 8 + 'px';
   else p.style.top = r.bottom + 8 + 'px';
-  const els = list.map(c => cardsEl.querySelector(`[data-id="${c.id}"]`)).filter(Boolean);
+  const els = list.map(c => cardEl(c.id)).filter(Boolean);
   const preview = f =>
     els.forEach((el, i) => {
       const c = list[i];
@@ -1016,7 +1018,7 @@ function setCorners(v, keepOpen) {
 function setSquig(patch) {
   const c = selCards().find(k => k.type === 'shape' && k.shape === 'line');
   if (!c) return;
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+  const el = cardEl(c.id);
   // each style starts at its own look (wavy = round, zigzag = sharp); the slider takes it from there
   if (patch.squig) {
     c.squig = patch.squig === 'straight' ? undefined : patch.squig;
@@ -1039,7 +1041,7 @@ function setSquig(patch) {
     if (patch[k] != null) c[k] = +patch[k];
   });
   renderCard(c);
-  if (el) Object.assign(cardsEl.querySelector(`[data-id="${c.id}"]`).style, { top: c.y + 'px', height: c.h + 'px' });
+  if (el) Object.assign(cardEl(c.id).style, { top: c.y + 'px', height: c.h + 'px' });
   selectOnly([c.id]);
   renderWires();
   save();
@@ -1068,22 +1070,10 @@ function setSquig(patch) {
 }
 
 // going to No fill: if it has no border yet, it gets one in the color the fill had, so it never just disappears
-const toHex = v => {
-  if (!v) return null;
-  if (/^#[0-9a-f]{6}$/i.test(v)) return v.toLowerCase();
-  const m = String(v).match(/\d+(\.\d+)?/g);
-  return m && m.length >= 3
-    ? '#' +
-        m
-          .slice(0, 3)
-          .map(n => (+n | 0).toString(16).padStart(2, '0'))
-          .join('')
-    : null;
-};
 
 function autoBorder(c, was) {
   if (c.stroke && c.sw > 0) return;
-  c.stroke = toHex(was) || '#27272a';
+  c.stroke = cssToHex(was) || '#27272a';
   c.sw = ['title', 'text', 'icon'].includes(c.type) ? 1 : 2;
 }
 
@@ -1207,7 +1197,7 @@ function arrange(how) {
   if (cs.length < 2) return;
   remember();
   // real sizes right now (a title's saved width catches up a moment after it changes, which made the first click land off-center)
-  const elOf = c => cardsEl.querySelector(`[data-id="${c.id}"]`),
+  const elOf = c => cardEl(c.id),
     W = c => (c.type === 'title' ? elOf(c)?.offsetWidth || c.w : c.w),
     H = c => (c.type === 'title' ? elOf(c)?.offsetHeight || c.h : c.h);
   cs.forEach(c => {
@@ -1584,7 +1574,7 @@ export function init56() {
         tint: true,
         boardColors: true,
         title: 'Text colour',
-        hex: toHex(cs[0].type === 'title' ? cs[0].tc : cs[0].color) || '#27272a',
+        hex: cssToHex(cs[0].type === 'title' ? cs[0].tc : cs[0].color) || '#27272a',
         presets: ['#27272a', '#ffffff', '#ff5a6e', '#f6b45e', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff'],
         fromBar: true,
         at: { x: r.left + r.width / 2 - 140, y: r.top - 480 },

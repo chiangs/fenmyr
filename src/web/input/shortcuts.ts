@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { isTyping } from '../ui/dom.ts';
 import { endTour, obKeys } from '../app/onboarding.ts';
 import { copyCards, lastClip, pasteCards } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
@@ -63,7 +64,7 @@ export function init20() {
   ['pointerdown', 'mousedown', 'dblclick'].forEach(t => $('cleanBack').addEventListener(t, e => e.stopPropagation()));
 
   addEventListener('keydown', e => {
-    const typing = e.target.closest('input, textarea, [contenteditable="true"]');
+    const typing = isTyping(e.target);
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       capture(true);
@@ -95,12 +96,7 @@ export function init20() {
       setClean(false);
       return;
     }
-    if (
-      (e.metaKey || e.ctrlKey) &&
-      e.key.toLowerCase() === 'z' &&
-      !e.target.closest('input, textarea, [contenteditable="true"]') &&
-      !homeAt
-    ) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !isTyping(e.target) && !homeAt) {
       e.preventDefault();
       travel(e.shiftKey ? 1 : -1);
       return;
@@ -180,7 +176,7 @@ export function init20() {
       endCrop('cancel');
       return;
     }
-    if (e.key === 'Enter' && cropping && !e.target.closest('input, textarea, [contenteditable="true"]')) {
+    if (e.key === 'Enter' && cropping && !isTyping(e.target)) {
       endCrop('done');
       return;
     }

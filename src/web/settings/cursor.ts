@@ -1,7 +1,7 @@
 // @ts-nocheck
+import { luminance } from '../ui/color.ts';
 import { stage } from '../core/dom.ts';
 import { OS } from '../platform/osWords.ts';
-import { lum } from './colors.ts';
 import { MYRA_COLORS, settings } from './settings.ts';
 import { drawOn } from '../tools/draw.ts';
 import { placing } from '../tools/place.ts';
@@ -52,7 +52,7 @@ export function paintCursor() {
     edge = m.D; // your cursor wears Myra's color
   myCur.style.setProperty('--c', c);
   myCur.style.setProperty('--cs', edge);
-  myCur.style.setProperty('--ct', lum(c) > 0.4 ? '#3d3640' : '#ffffff');
+  myCur.style.setProperty('--ct', luminance(c) > 0.4 ? '#3d3640' : '#ffffff');
   myCur.querySelector('.bub').textContent = (settings.name || 'You').slice(0, 24);
   requestAnimationFrame(shapeTag);
   document.body.classList.toggle(

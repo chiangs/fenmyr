@@ -1,6 +1,7 @@
 // @ts-nocheck
+import { luminance, mixHex } from '../ui/color.ts';
+import { esc } from '../ui/dom.ts';
 import { checkUpdate } from '../app/updates.ts';
-import { esc } from '../canvas/render.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { devName, openMedia } from '../media/devices.ts';
@@ -21,24 +22,6 @@ const COLOR_DEFAULTS = {
   light: { bg: '#faf7f2', dot: '#e4dccf', panel: '#ffffff', accent: '#e88a24' },
   dark: { bg: '#12100d', dot: '#332d25', panel: '#242019', accent: '#e88a24' },
 };
-
-export const lum = hex => {
-  const [r, g, b] = [1, 3, 5].map(i => {
-    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-
-const mixHex = (a, b, k) =>
-  '#' +
-  [1, 3, 5]
-    .map(i =>
-      Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - k) + parseInt(b.slice(i, i + 2), 16) * k)
-        .toString(16)
-        .padStart(2, '0'),
-    )
-    .join('');
 
 const modeName = () => (document.body.classList.contains('dark') ? 'dark' : 'light');
 
@@ -64,7 +47,7 @@ export function applyColors() {
   const B = document.body.style,
     mine = myColors(),
     bg = colorOf('bg'),
-    darkBg = lum(bg) < 0.2;
+    darkBg = luminance(bg) < 0.2;
   B.setProperty('--board', bg);
   if (mine.dot) B.setProperty('--dot', mine.dot);
   else if (darkBg !== (modeName() === 'dark')) B.setProperty('--dot', mixHex(bg, darkBg ? '#ffffff' : '#000000', 0.13));
@@ -72,7 +55,7 @@ export function applyColors() {
   document.body.classList.toggle('tint-panels', !!mine.panel);
   if (mine.panel) B.setProperty('--panel', mine.panel);
   else B.removeProperty('--panel');
-  document.body.classList.toggle('panel-dark', !!mine.panel && lum(mine.panel) < 0.2);
+  document.body.classList.toggle('panel-dark', !!mine.panel && luminance(mine.panel) < 0.2);
   if (mine.accent) {
     B.setProperty('--pink-deep', mine.accent);
     B.setProperty('--pink', mixHex(mine.accent, '#ffffff', 0.3));

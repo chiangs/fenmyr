@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { esc } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
 import { docCard, ed, mdToHTML } from './editor.ts';
 import { hidePop } from './menus.ts';

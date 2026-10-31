@@ -1,6 +1,7 @@
 // @ts-nocheck
+import { cardEl, esc } from '../ui/dom.ts';
 import { toWorld } from '../canvas/handles.ts';
-import { esc, renderCard } from '../canvas/render.ts';
+import { renderCard } from '../canvas/render.ts';
 import { applyView } from '../canvas/view.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { hasAll, queryWords, uid } from '../core/base.ts';
@@ -66,10 +67,10 @@ export function restack(where) {
   // move only the restacked cards on the page, so a playing Spotify or video elsewhere keeps going
   const after = next
     .slice(next.indexOf(moving[moving.length - 1]) + 1)
-    .map(c => cardsEl.querySelector(`[data-id="${c.id}"]`))
+    .map(c => cardEl(c.id))
     .find(el => el && !el.classList.contains('coll'));
   moving.forEach(c => {
-    const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+    const el = cardEl(c.id);
     if (el) cardsEl.insertBefore(el, after || null);
   });
   renderWires();

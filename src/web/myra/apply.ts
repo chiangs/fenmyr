@@ -1,11 +1,11 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderTray, renderWires, takeFromTray, tidyTies } from '../canvas/wires.ts';
 import { COLL, colls, parentOf } from '../cards/collection.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { COLOR_NAMES, uid } from '../core/base.ts';
-import { cardsEl } from '../core/dom.ts';
 import { save, showWhatMyraMade } from '../core/history.ts';
 import { docCard, ed, mdToHTML } from '../docs/editor.ts';
 import { dueDate } from '../features/due.ts';
@@ -160,7 +160,7 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     c.x = o.x;
     c.y = o.y;
     if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
-    const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+    const el = cardEl(c.id);
     if (el) {
       el.style.transition = 'left .6s cubic-bezier(.2,.8,.3,1), top .6s cubic-bezier(.2,.8,.3,1)';
       renderCard(c);
@@ -227,7 +227,7 @@ export async function applyMyra(r, q, ctx = { asked: false, used: [] }) {
     session.board.tray = session.board.tray.filter(c => !gone.has(c.id));
     tidyTies();
     session.board.links = session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b));
-    gone.forEach(id => cardsEl.querySelector(`[data-id="${id}"]`)?.remove());
+    gone.forEach(id => cardEl(id)?.remove());
   }
   (r.connect || []).forEach(p => {
     const [a, b] = Array.isArray(p) ? p : [p.a, p.b];

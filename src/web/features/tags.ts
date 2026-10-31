@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { esc, renderCard } from '../canvas/render.ts';
+import { cardEl, esc } from '../ui/dom.ts';
+import { renderCard } from '../canvas/render.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { openCanvas, renameChild } from '../cards/canvas.ts';
 import { layoutColl } from '../cards/collection.ts';
@@ -85,7 +86,7 @@ export function tagChips(c) {
 }
 
 function refreshTagChips(c) {
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+  const el = cardEl(c.id),
     b = el?.querySelector('.body');
   if (!b) return;
   b.querySelector('.ntags')?.remove();
@@ -241,7 +242,7 @@ function wireTagTyping(c, t) {
 }
 
 export function startEdit(id, target) {
-  const el = cardsEl.querySelector(`[data-id="${id}"]`),
+  const el = cardEl(id),
     c = byId(id);
   if (!el || !c) return;
   if (target && target.closest('.tag')) return editTag(c);
@@ -411,7 +412,7 @@ export function startEdit(id, target) {
 
 export function endEdit() {
   if (!session.editing) return;
-  const el = cardsEl.querySelector(`[data-id="${session.editing}"]`);
+  const el = cardEl(session.editing);
   if (el) {
     el.classList.remove('editing');
     el.querySelectorAll('[contenteditable]').forEach(n => (n.contentEditable = 'false'));

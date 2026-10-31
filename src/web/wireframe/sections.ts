@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { parentOf } from '../cards/collection.ts';
 import { cardsEl } from '../core/dom.ts';
@@ -46,7 +47,7 @@ export function makeSection(cs = selCards()) {
   });
   session.board.cards.unshift(s);
   renderCard(s, true);
-  cardsEl.prepend(cardsEl.querySelector(`[data-id="${s.id}"]`));
+  cardsEl.prepend(cardEl(s.id));
   save(); // behind everything it holds selectOnly([s.id]); layersSoon();
   setTimeout(() => renameSection(s), 60);
 }

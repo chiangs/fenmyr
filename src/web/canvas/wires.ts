@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { esc } from './render.ts';
-import { $, cardsEl, stage, wires } from '../core/dom.ts';
+import { cardEl, esc } from '../ui/dom.ts';
+import { $, stage, wires } from '../core/dom.ts';
 import { LY, layersSoon } from '../panels/layers.ts';
 import { chirp } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
@@ -169,7 +169,7 @@ export function sendToTray(cards) {
   session.board.links = session.board.links.filter(l => !ids.has(l.a) && !ids.has(l.b));
   cards.forEach(c => {
     session.board.tray.unshift(c);
-    cardsEl.querySelector(`[data-id="${c.id}"]`)?.remove();
+    cardEl(c.id)?.remove();
   });
 }
 
@@ -224,7 +224,7 @@ export function selectOnly(ids) {
   LY.reveal = true;
   layersSoon();
   session.board.cards.forEach(c => {
-    const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+    const el = cardEl(c.id);
     el && el.classList.toggle('sel', session.sel.has(c.id));
   });
 }

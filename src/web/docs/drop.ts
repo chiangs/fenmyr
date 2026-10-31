@@ -1,6 +1,7 @@
 // @ts-nocheck
+import { esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
-import { esc, renderCard } from '../canvas/render.ts';
+import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';

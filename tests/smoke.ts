@@ -1755,7 +1755,32 @@ echo " [BLANK_AUDIO] hello from whisper"
       vis = s => page.locator(`${sel} ${s}`).first().isVisible();
     const soloShown = await vis('.nt-add');
     await page.locator(`${sel} .nt-add`).click();
-    await page.waitForTimeout(250);
+    await page
+      .waitForFunction(() => document.activeElement?.matches('#tagAdd input'), null, { timeout: 8000 })
+      .catch(async e => {
+        const state = await page.evaluate(i => {
+          const add = document.querySelector(`[data-id="${i}"] .nt-add`);
+          const b = add?.getBoundingClientRect();
+          const under = b ? document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2) : null;
+          const a = document.activeElement;
+          return {
+            active: a ? `${a.tagName}#${a.id}.${a.className}` : null,
+            pop: document.getElementById('tagAdd')?.className ?? 'no pop',
+            popHasInput: !!document.querySelector('#tagAdd input'),
+            docFocus: document.hasFocus(),
+            selected: [...document.querySelectorAll('.card.sel')].map(c => c.dataset.id),
+            want: i,
+            addExists: !!add,
+            addRect: b ? [b.x, b.y, b.width, b.height] : null,
+            under: under ? `${under.tagName}.${under.className}` : null,
+            on: [...document.querySelectorAll('.on')].map(x => x.id || x.className).slice(0, 15),
+          };
+        }, id);
+        console.log('TAG DIAG', JSON.stringify(state));
+        fs.mkdirSync('/tmp/visual', { recursive: true });
+        await page.screenshot({ path: '/tmp/visual/tag-diag.png' });
+        throw e;
+      });
     await page.keyboard.type('zeta');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(350);

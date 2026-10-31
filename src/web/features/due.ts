@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { cardEl, esc } from '../ui/dom.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember, save, showWhatMyraMade } from '../core/history.ts';
@@ -71,7 +71,7 @@ export function setDue(c, v) {
   remember();
   if (dueDate(v)) c.due = v;
   else delete c.due;
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+  const el = cardEl(c.id);
   if (el) {
     el.querySelector('.due')?.remove();
     el.insertAdjacentHTML('beforeend', dueChip(c));

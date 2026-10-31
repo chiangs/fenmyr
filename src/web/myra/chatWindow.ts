@@ -1,6 +1,6 @@
 // @ts-nocheck
+import { esc } from '../ui/dom.ts';
 import { labelOf } from '../../shared/cardTypes.ts';
-import { esc } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { perchGoo, renderChat } from './chat.ts';

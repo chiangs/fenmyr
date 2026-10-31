@@ -1,8 +1,8 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderTray, renderWires, selectOnly } from '../canvas/wires.ts';
 import { uid } from '../core/base.ts';
-import { cardsEl } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { endEdit } from '../features/tags.ts';
 import { addVideo } from '../media/video.ts';
@@ -175,7 +175,7 @@ export async function addImages(files, at, toTray) {
 // a picture meant for a note becomes a card of its own, so a card never mixes kinds: an empty note turns into the picture,
 // a note with words gets it beside it, joined by a connector (in the connector style you last chose)
 export async function pictureForNote(c, files) {
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+  const el = cardEl(c.id),
     hasWords =
       !![el?.querySelector('.text')?.innerText ?? c.text, el?.querySelector('.nname')?.innerText ?? c.name]
         .join('')

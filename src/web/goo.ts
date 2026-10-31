@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { rgbOf } from './ui/color.ts';
 // Myra in pixels: a little cloudberry (a bumpy cluster of golden beads with a leafy crown, ink eyes and blush).
 // She breathes, blinks, glances around, hops when she does something, and wiggles while she's thinking.
 // The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, wiggle, pose, hat, lively, setColors, draw }.
@@ -60,7 +61,7 @@
     }),
   );
   const mix = (a, b, k) => {
-    const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)),
+    const p = rgbOf,
       A = p(a),
       B = p(b);
     return (

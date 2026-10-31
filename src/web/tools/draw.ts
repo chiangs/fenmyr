@@ -1,9 +1,10 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { toWorld } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { colorLabel } from '../core/base.ts';
-import { $, cardsEl, stage, world } from '../core/dom.ts';
+import { $, stage, world } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { card } from '../model/boards.ts';
 import { stopPlacing } from './place.ts';
@@ -249,7 +250,7 @@ function eraseAt(e) {
       if (c.pts.some(p => Math.hypot(c.x + p[0] * sx - w.x, c.y + p[1] * sy - w.y) < r + half)) {
         hit = true;
         session.board.cards = session.board.cards.filter(x => x !== c);
-        const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+        const el = cardEl(c.id);
         if (el) {
           el.classList.add('fading');
           setTimeout(() => el.remove(), 260);

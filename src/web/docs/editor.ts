@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { esc, renderCard } from '../canvas/render.ts';
+import { esc } from '../ui/dom.ts';
+import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { CIC } from '../cards/shapes.ts';
 import { $, stage } from '../core/dom.ts';

@@ -1,6 +1,6 @@
 // @ts-nocheck
+import { esc } from '../ui/dom.ts';
 import { startTour } from './onboarding.ts';
-import { esc } from '../canvas/render.ts';
 import { $ } from '../core/dom.ts';
 
 // ---------- what's new: a little card, once, the first time a new version opens ----------

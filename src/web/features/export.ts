@@ -1,11 +1,12 @@
 // @ts-nocheck
+import { cardEl, removeOnOutsidePress } from '../ui/dom.ts';
 import { TILTS, renderCard } from '../canvas/render.ts';
 import { applyView } from '../canvas/view.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { kanbanMenu } from '../cards/kanban.ts';
 import { tilt, uid } from '../core/base.ts';
-import { $, cardsEl, stage } from '../core/dom.ts';
+import { $, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { endEdit } from './tags.ts';
 import { saveWithDialog } from './templates.ts';
@@ -100,18 +101,7 @@ export function boardMenu(e, items) {
     m.remove();
     items[+b.dataset.i].run();
   };
-  setTimeout(() =>
-    addEventListener(
-      'pointerdown',
-      function off(ev) {
-        if (!m.contains(ev.target)) {
-          m.remove();
-          removeEventListener('pointerdown', off, true);
-        }
-      },
-      true,
-    ),
-  );
+  removeOnOutsidePress(m);
 }
 
 export const cardName = cs =>
@@ -139,7 +129,7 @@ export function init43() {
     e.preventDefault();
     let el = document.elementFromPoint(e.clientX, e.clientY)?.closest('.card'); // the pointer may be captured, so look at what's really under it
     // things are selected and you right-click empty board: the menu is still about what you selected (click empty board first to get the board's own menu)
-    if (!el && session.sel.size) el = cardsEl.querySelector(`[data-id="${[...session.sel][0]}"]`);
+    if (!el && session.sel.size) el = cardEl([...session.sel][0]);
     const kh = el && document.elementFromPoint(e.clientX, e.clientY)?.closest('.kb-h'),
       ks = kh && byId(el.dataset.id);
     if (ks?.kanban) {
