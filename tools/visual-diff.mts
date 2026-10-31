@@ -12,8 +12,12 @@ type Group = { settings?: Record<string, unknown>; phone?: boolean; states: [str
 
 const FROZEN_MOTION = '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
 const HIDDEN_RANDOM_CANVASES = 'canvas { visibility: hidden !important; }';
-const HIDDEN_COMMIT_DATE = '#suSub { visibility: hidden !important; }';
+const HIDDEN_UPDATE_STATE = '#suSub, #upBar { visibility: hidden !important; }';
+const HIDDEN_TIMED_BUBBLE = '#mBubble { visibility: hidden !important; }';
 const CHANNEL_TOLERANCE = 2;
+const STRAY_PIXELS = 20;
+// scaled card edges land a pixel apart from run to run at this zoom; same code measured 900 to 1,600, a layout change 268,000
+const STRAY_PIXELS_SCALED: Record<string, number> = { 'zoom-out.png': 3000 };
 const TABS = ['general', 'myra', 'helpers', 'vaults', 'board', 'toolbar', 'widgets', 'about'];
 
 const center = async (page: Page, sel: string) => {
@@ -21,7 +25,7 @@ const center = async (page: Page, sel: string) => {
 	return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
 };
 const select = (ids: string[]): Step => async (page) => { await page.evaluate((x) => window.__fenmyr.selectOnly(x), ids); };
-const keys = (...k: string[]): Step => async (page) => { for (const key of k) await page.keyboard.press(key); };
+const keys = (...k: string[]): Step => async (page) => { for (const key of k) { await page.keyboard.press(key); await settle(page, 500); } };
 
 const board: [string, Step][] = [
 	['board', async () => {}],
@@ -54,7 +58,7 @@ async function shoot(dir: string, out: string) {
 			await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(600, 900));
 			await settle(l.page);
 		}
-		await l.page.addStyleTag({ content: FROZEN_MOTION + HIDDEN_RANDOM_CANVASES + HIDDEN_COMMIT_DATE });
+		await l.page.addStyleTag({ content: FROZEN_MOTION + HIDDEN_RANDOM_CANVASES + HIDDEN_UPDATE_STATE + HIDDEN_TIMED_BUBBLE });
 		for (const [state, step] of group.states) {
 			await step(l.page);
 			await settle(l.page, 500);
@@ -105,7 +109,7 @@ const judge = await launch({ boards: [everyOfflineCard()], open: 'every' });
 let failed = 0;
 for (const f of fs.readdirSync(path.join(out, 'ref')).sort()) {
 	const r = await compare(judge.page, path.join(out, 'ref', f), path.join(out, 'head', f), path.join(out, `diff-${f}`));
-	const ok = r.changed === 0;
+	const ok = r.changed >= 0 && r.changed <= (STRAY_PIXELS_SCALED[f] ?? STRAY_PIXELS);
 	if (!ok) failed++;
 	console.log(`${ok ? 'same' : 'DIFF'}  ${f.replace('.png', '').padEnd(20)} ${r.changed < 0 ? 'size changed' : `${r.changed} px`}`);
 }

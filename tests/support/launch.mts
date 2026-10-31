@@ -28,7 +28,7 @@ export async function launch({ dir = ROOT, boards = [], settings = {}, open, fla
 	await page.waitForFunction(() => window.__fenmyr?.curBoard());
 	await page.waitForTimeout(500);
 	const store = { 'fenmyr:onboarded': '1', 'fenmyr:newsSeen': version, 'fenmyr:settings': JSON.stringify({ ...QUIET, ...settings }), ...(open ? { 'fenmyr:last': open } : {}) };
-	await page.evaluate((s) => { for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v); }, store);
+	await app.context().addInitScript((s) => { for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v); }, store);
 	await page.reload();
 	await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
 	await settle(page);
