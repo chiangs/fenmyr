@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { closeOnOutsidePress } from '../ui/popover.ts';
 import { cssToHex } from '../ui/color.ts';
 import { cardEl, esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
@@ -1313,14 +1314,10 @@ export function init56() {
     flip: Icon('refresh'),
   };
 
-  document.addEventListener(
-    'pointerdown',
-    e => {
-      const p = $('fontPop');
-      if (p && !p.hidden && !e.target.closest('#fontPop, [data-sbfont]')) p.hidden = true;
-    },
-    true,
-  );
+  closeOnOutsidePress('#fontPop, [data-sbfont]', () => {
+    const p = $('fontPop');
+    if (p) p.hidden = true;
+  });
 
   $('defaultFontBtn').onclick = e => {
     e.stopPropagation();
@@ -1482,13 +1479,9 @@ export function init56() {
     $('selbar').addEventListener('pointerdown', hide, true);
   })();
 
-  addEventListener(
-    'pointerdown',
-    e => {
-      if (!e.target.closest('.sb-popw')) closeSbPops();
-    },
-    true,
-  );
+  closeOnOutsidePress('.sb-popw', () => {
+    closeSbPops();
+  });
 
   addEventListener(
     'keydown',

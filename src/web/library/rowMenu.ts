@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { keepOnScreen } from '../ui/popover.ts';
 import { esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
@@ -128,8 +129,7 @@ function moveMenu(m, kind, obj) {
   }
   m.innerHTML = h + '</div>';
   m.classList.add('mv');
-  const r = m.getBoundingClientRect();
-  if (r.bottom > innerHeight - 10) m.style.top = Math.max(10, innerHeight - r.height - 10) + 'px';
+  keepOnScreen(m);
   m.onclick = async ev => {
     const b = ev.target.closest('[data-to]');
     if (!b) return;
@@ -195,8 +195,7 @@ export function rowMenu(e, kind, obj, nameEl) {
   m.style.top = e.clientY + 'px';
   m.innerHTML = `${nameEl ? '<button data-m="ren">Rename</button>' : ''}${kind !== 'project' ? '<button data-m="move">Move to…</button>' : ''}${kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : ''}${kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : ''}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
   document.body.appendChild(m);
-  const r = m.getBoundingClientRect();
-  if (r.bottom > innerHeight - 10) m.style.top = innerHeight - r.height - 10 + 'px';
+  keepOnScreen(m);
   m.onclick = async ev => {
     const a = ev.target.closest('[data-m]')?.dataset.m;
     if (!a) return;

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { keepOnScreen } from '../ui/popover.ts';
 import { cardEl, removeOnOutsidePress } from '../ui/dom.ts';
 import { TILTS, renderCard } from '../canvas/render.ts';
 import { applyView } from '../canvas/view.ts';
@@ -92,9 +93,7 @@ export function boardMenu(e, items) {
     )
     .join('');
   document.body.appendChild(m);
-  const rr = m.getBoundingClientRect();
-  if (rr.bottom > innerHeight - 10) m.style.top = innerHeight - rr.height - 10 + 'px';
-  if (rr.right > innerWidth - 10) m.style.left = innerWidth - rr.width - 10 + 'px';
+  keepOnScreen(m);
   m.onclick = ev => {
     const b = ev.target.closest('[data-i]');
     if (!b) return;
