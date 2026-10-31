@@ -1848,8 +1848,6 @@ body.dark .wg-slot.on { background: rgba(220, 163, 106, .18); }
 
 /* Smooth hovering in Safari: each card's wobbly edge is drawn once into its own layer and kept, so hover effects
    (bringing a card forward, showing its knob and chip) slide on top instead of redrawing the wobble filter every time */
-.card .frame, .coll-frame::before, .card.shape svg.sh { will-change: transform; }
-.card .knob, .card .chip { will-change: opacity; }
 
 /* the zoom % is a button: click it for the zoom menu */
 button.zoom { border: 0; background: none; height: 34px; border-radius: 14px; corner-shape: squircle; font: 600 12px/1 var(--font); cursor: pointer; transition: background .12s, color .12s; }
