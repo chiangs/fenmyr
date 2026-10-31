@@ -1,50 +1,22 @@
 # Changing Fenmyr
 
-Fenmyr is two layers that talk through one small channel. Most changes only touch one of them.
-
-```
-web/            the canvas: everything you see and do (static files; the renderer's code is in src/web/ and builds to web/dist/app.js)
-  index.html      the page: panels, settings, dialogs
-  style.css       all the styling (light and dark)
-  (src/web/bridge.ts) window.Fenmyr: the canvas's only way to reach the host (or a pretend host in a browser)
-  (src/web/icons.ts) the Icon() facade; icons/pack.js is built by `npm run icons`
-  vendor/         prebuilt TipTap editor and .docx writer (source in tools/editor/)
-  licenses.js     generated third-party notices for About → Licenses (npm run notices)
-src/host/       the host: an Electron main process
-  main.ts         window, keys, permissions, fenmyrmedia://, and the table of bridge operations (OPS)
-  preload.ts      provides window.fenmyrHost (and fenmyrWindow, for the window buttons) to the page
-  storage.ts      boards, folders and videos on disk
-  claude.ts       finding and running Claude Code, usage tally, connections
-  prompts.ts      everything Myra is told: her voice at the top (PERSONA, BEHAVIOUR, SCOPE, EXAMPLES, TONES), her abilities below
-  output.ts       PNG / PDF export, .docx save, paged doc PDFs
-  speech.ts       voice memo transcription (whisper.cpp)
-  update.ts       updates for git installs and the AppImage
-  paths.ts        where things are kept (XDG folders)
-  theme.ts        reads and watches Caelestia's colour scheme (Follow Caelestia)
-assets/art/      make_art.py draws Myra, her stickers and the stamps; make_mark.py makes the ✦ cloudberry font
-tools/make-icon.ts  the app icon and the browser tab icon (the cloudberry mark on a birch squircle)
-tests/smoke.ts  opens the real app and checks every bridge operation
-tests/zoom.ts   Ctrl + wheel steps, touchpad pinch, reset to 100%
-tests/theme.ts  Follow Caelestia: offered only with Caelestia, live restyle, back to your colors
-tests/docs.ts   the docs editor: every kind of formatting, shortcuts, the floating bar, Word download
-tests/vault.ts  Obsidian vaults: parsing, folder and #private rules, search (no app needed)
-tests/voice.ts  Myra's voice check against the real Myra (manual: npm run voice)
-install.sh  uninstall.sh  make-release.sh  packaging/
-```
+Fenmyr has two layers that talk through one small channel, and most changes touch only one of them. [CLAUDE.md](CLAUDE.md) lists the commands, the layout and the rules, each with the check that enforces it. [DESIGN.md](DESIGN.md) holds the visual and copy rules. This file holds the how-to guides.
 
 ## How the canvas talks to the host
 
-`src/web/bridge.ts` sends `{id, op, args}` through `window.fenmyrHost.post`. In the app, `src/host/preload.ts` passes it to `src/host/main.ts`, which looks the op up in `OPS`. The answer goes back over IPC (`fenmyr-reply`), and preload.js hands it to the page's `__fenmyrReply(id, ok, value)`. Nothing is turned into script, so big boards and pictures pass through quickly. News the page didn't ask for (Caelestia's colours changed) arrives the same way as `__fenmyrEvent(name, data)`. In a plain browser, bridge.js uses localStorage and a pretend Myra instead.
+`src/web/bridge.ts` sends `{id, op, args}` through `window.fenmyrHost.post`. In the app, `src/host/preload.ts` passes it to `src/host/main.ts`, which looks the op up in `OPS`. The answer goes back over IPC (`fenmyr-reply`), and preload.js hands it to the page's `__fenmyrReply(id, ok, value)`. No data is turned into script, so big boards and pictures pass through quickly. News the page didn't ask for (Caelestia's colours changed) arrives the same way as `__fenmyrEvent(name, data)`. In a plain browser, bridge.js uses localStorage and a pretend Myra instead.
 
-**To add a new ability that needs the computer** (a file, a program, the network):
-1. Add the op to `OPS` in `src/host/main.ts` (put real work in a module next to it).
-2. Add a matching method to the `native` side of `window.Fenmyr` in `src/web/bridge.ts`, and a browser fallback.
-3. Call `Fenmyr.yourThing()` from `src/web/`.
-4. Add a check for it in `tests/smoke.ts`.
+**To add an ability that needs the computer**, such as a file, a program or the network:
 
-**To change only the canvas** (a card type, a tool, a setting, the look): edit `src/web/` or `web/`, run `npm run build`, then reload the window (F12 → Ctrl+R in DevTools), or work on it in a browser with `python3 -m http.server` in `web/`.
+1. Add the op's arguments and result to `src/shared/ops.ts`.
+2. Add the handler to `OPS` in `src/host/main.ts`, with the real work in a module next to it.
+3. Add a matching method to the `native` side of `window.Fenmyr` in `src/web/bridge.ts`, and a browser fallback.
+4. Call `Fenmyr.yourThing()` from `src/web/`.
+5. Add a check for it in `tests/smoke.ts`.
 
-**To change what Myra does:** her instructions are in `src/host/prompts.ts`. The JSON she answers with is applied by `applyMyra()` in `src/web/`.
+**To change only the canvas**, such as a card type, a tool, a setting or the look, edit `src/web/` or `web/`, run `npm run build`, then reload the window (F12 → Ctrl+R in DevTools), or work on it in a browser with `python3 -m http.server` in `web/`, where Myra is pretend.
+
+**To change what Myra does:** her instructions are in `src/host/prompts.ts`. The JSON she answers with is applied by `applyMyra()` in `src/web/myra/apply.ts`.
 - **Her character** is the voice block at the top: `PERSONA` (who she is, shared with the docs editor), `BEHAVIOUR`, `LANGUAGE`, `SCOPE` and `EXAMPLES` (sample replies per tone setting; she only sees the ones for the person's setting).
 - **The tone settings' words** (Settings → Myra → How chatty she is, emojis, your name) are in `TONES`. The app sends only the choice; the host puts the words in the prompt as YOUR TONE.
 - **Her abilities** (cards, templates, wireframes, tags, vaults) are in the prompts below the voice block.
@@ -64,7 +36,7 @@ The smoke test uses a throwaway data folder and stand-in `claude` and `whisper-c
 
 ## Releasing
 
-Versions: nothing has been released yet, so Fenmyr stays at 1.0.0 until the first release. After that, bump the patch number (1.0.1) for fixes and small changes, the minor number (1.1.0) for new features, and add a matching entry to `NEWS` in `src/web/` for anything people should hear about.
+Nothing has been released yet, so Fenmyr stays at 1.0.0 until the first release. After that, bump the patch number for fixes and small changes, and the minor number for new features. Add an entry to `NEWS` in `src/web/app/news.ts` for anything people should hear about.
 
 1. Bump `version` in `package.json` and add a section at the top of `WHATSNEW.md` (lines starting with `- ` become the notes people see in the app).
 2. Commit and push.
@@ -72,18 +44,13 @@ Versions: nothing has been released yet, so Fenmyr stays at 1.0.0 until the firs
 
 ## Myra's art
 
-Everything Myra looks like is drawn in code, so it's easy to change and stays consistent:
+Everything Myra looks like is drawn in code:
 
 - `src/web/goo.ts`: Myra herself, live on the page (her pixels, colors, breathing, blinking, hopping).
-- `assets/art/make_art.py`: her stickers and animations, the pixel stamps and the app icon. Run `python3 assets/art/make_art.py` (needs Pillow). To add a stamp, write a `st_…` function, add it to `STAMP_SET`, and map its emoji in `PX` in `src/web/`.
+- `assets/art/make_art.py`: her stickers and animations, the pixel stamps and the app icon. Run `python3 assets/art/make_art.py` (needs Pillow). To add a stamp, write a `st_…` function, add it to `STAMP_SET`, and map its emoji in `PX` in `src/web/tools/stamps.ts`.
 - `assets/art/make_mark.py`: the little cloudberry that ✦ turns into (a one-glyph colour font). Needs fontTools and brotli.
 
-Fenmyr's name, and Myra's character and art, are reserved (see [TRADEMARKS.md](TRADEMARKS.md)); the code is MIT.
-
-## Where it came from
-
-Fenmyr's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by Jessa Wolfe (MIT). Mochiboard's name, Mochi and its art and music are hers and aren't part of Fenmyr. Fenmyr doesn't track Mochiboard.
-
+Fenmyr's name and Myra's character and art are reserved, as [TRADEMARKS.md](TRADEMARKS.md) explains. The code is MIT.
 
 ## Third-party notices
 
@@ -97,7 +64,7 @@ To use another icon pack, add it as a dependency and change `pack` and the secon
 
 ## Adding a line to Myra's greeting
 
-Myra's greeting (when the app opens, and on the first focus after midnight) is built from a small list in `src/web/`, `GREETERS`. To add something, register it next to the others:
+Myra's greeting (when the app opens, and on the first focus after midnight) is built from a small list, `GREETERS`, in `src/web/myra/greet.ts`. To add something, register it next to the others:
 
 ```js
 greeter('myfeature', 20, c => c.firstToday ? { text: 'One thing worth saying today ✦', acts: [{ label: 'Show me', run: () => showIt() }] } : null);
@@ -109,6 +76,6 @@ greeter('myfeature', 20, c => c.firstToday ? { text: 'One thing worth saying tod
 
 ## Adding a slash command
 
-Slash commands live in one list, `SLASH` in `src/web/`. Give every command a `cmd`, a plain `desc`, a `run`, and (where it helps) an `ex` example and `opts`. The app sends this list to Myra with every question and `src/host/prompts.ts` puts it in her instructions, so she knows about a new command without anyone editing a prompt. A test fails if a command is missing from what she is told.
+Slash commands live in one list, `SLASH`, in `src/web/myra/greet.ts`. Give every command a `cmd`, a plain `desc`, a `run`, and (where it helps) an `ex` example and `opts`. The app sends this list to Myra with every question and `src/host/prompts.ts` puts it in her instructions, so she knows about a new command without anyone editing a prompt. A test fails if a command is missing from what she is told.
 
 If the same thing is something she should be able to do herself (like `timer` or `animate`), also add an action key to the JSON she replies with, in `src/host/prompts.ts`, and handle it in `applyMyra`.
