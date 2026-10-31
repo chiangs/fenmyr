@@ -6,7 +6,7 @@ import { layoutAll } from '../cards/kanban.ts';
 import { $, stage } from './dom.ts';
 import { dueIndex } from '../features/due.ts';
 import { endEdit, syncBoardTags } from '../features/tags.ts';
-import { refreshBoards } from '../library/rowMenu.ts';
+import { refreshBoardsAfterSave } from '../library/rowMenu.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { say } from '../settings/licenses.ts';
@@ -89,7 +89,7 @@ export function save() {
     clearTimeout(snapT);
     snapT = setTimeout(remember, 350);
   }
-  layersSoon();
+  if (!appState.drag) layersSoon();
   $('saved').textContent = 'saving…';
   clearTimeout(appState.saveT);
   appState.saveT = setTimeout(async () => {
@@ -97,7 +97,7 @@ export function save() {
     await Fenmyr.save(session.board);
     $('saved').textContent = 'saved';
     dueIndex();
-    refreshBoards();
+    refreshBoardsAfterSave();
   }, 400);
 }
 
