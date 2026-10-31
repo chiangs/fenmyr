@@ -1,6 +1,6 @@
 # Fenmyr
 
-Fenmyr is an Electron canvas app for Linux. The renderer in `web/` draws boards and handles everything people see. The host in `src/host/` owns files, programs and the network. They talk over one bridge, and `src/shared/ops.ts` is its contract.
+Fenmyr is an Electron canvas app for Linux. The renderer in `src/web/` draws boards and handles everything people see. The host in `src/host/` owns files, programs and the network. They talk over one bridge, and `src/shared/ops.ts` is its contract.
 
 ## Commands
 
@@ -8,7 +8,7 @@ Fenmyr is an Electron canvas app for Linux. The renderer in `web/` draws boards 
 |---|---|
 | `npm ci && node node_modules/electron/install.js` | Installs dependencies. npm blocks install scripts, so the second command fetches Electron's binary. |
 | `npm start` | Builds, then runs the app from this checkout. |
-| `npm run build` | Bundles `src/host` into `dist/main.cjs` and `dist/preload.cjs` with esbuild. |
+| `npm run build` | Bundles `src/host` into `dist/` and `src/web` into `web/dist/app.js` with esbuild. |
 | `npm run check:fast` | Type check, lint, unused code (knip) and the budget. Run it before every commit. |
 | `npm test` | Builds, then runs the vault, smoke, zoom, theme and docs tests. They run Electron headless, so no display is needed. |
 | `npm run visual` | Screenshots 22 states here and on `origin/main`. Any changed pixel fails. |
@@ -23,7 +23,8 @@ Node runs `.ts` files directly, so tests and tools need no build step. Write imp
 |---|---|
 | `src/host/` | The Electron main process: window, `OPS` (the bridge operations), storage, vaults, Claude Code, export, speech, updates. |
 | `src/shared/ops.ts` | The bridge contract: every operation's arguments and result, and the events the host sends. |
-| `web/` | The renderer: `index.html`, `style.css`, `app.js`, `bridge.js` (`window.Fenmyr`), `goo.js` (Myra's sprite), fonts, stamps, vendor bundles. |
+| `src/web/` | The renderer, one module per area: `canvas/`, `cards/`, `library/`, `myra/`, `docs/`, `selbar/` and others. `main.ts` runs each module's start-up code in a fixed order. `core/state.ts` holds shared state. |
+| `web/` | Static files: `index.html`, `style.css`, fonts, stamps, vendor bundles. The renderer builds to `web/dist/app.js`. |
 | `tests/` | Headless Electron tests, the perf benchmark, fixtures and the launch helper. |
 | `tools/` | The build, the budget, the visual diff, metrics, and generators for icons, notices and the app icon. |
 | `tools/editor/` | A separate npm package that builds `web/vendor/editor.js` and `docx.js`. |
@@ -32,7 +33,7 @@ Node runs `.ts` files directly, so tests and tools need no build step. Write imp
 
 1. Add its arguments and result to `src/shared/ops.ts`.
 2. Add the handler to `OPS` in `src/host/main.ts`. Put the real work in a module next to it.
-3. Add the method to `window.Fenmyr` in `web/bridge.js`, with a browser fallback.
+3. Add the method to `window.Fenmyr` in `src/web/bridge.ts`, with a browser fallback.
 4. Add a check for it to `tests/smoke.ts`.
 
 ## Rules
@@ -48,4 +49,4 @@ Each rule names the check that enforces it.
 - **User-facing text.** Myra speaks in the first person in her own lines, with ✦ used sparingly. Menus, tooltips, settings and errors are plain and neutral. Use British English.
 - **Commits.** The subject is a plain sentence. GitHub adds the PR number on merge.
 
-The budget in `tools/budget.json` records what is still being paid down: untyped files, `any`, casts, long files and logic in markup. `npm run budget` fails when any count rises.
+The budget in `tools/budget.json` records what is still being paid down: untyped files, `any`, casts, long files and logic in markup. Renderer modules start with `@ts-nocheck`, and Biome's linter is off for `src/web` until they are typed. `npm run budget` fails when any count rises.

@@ -192,7 +192,7 @@ Fenmyr reads `~/.local/state/caelestia/scheme.json`, the file Caelestia's shell 
 
 Two layers:
 
-- `web/`: the canvas, plain HTML, CSS and JavaScript with no build step.
+- `src/web/` and `web/`: the canvas, TypeScript modules plus HTML and CSS.
 - `src/host/`: a small TypeScript Electron host that does what a web page can't. It saves boards, fetches link previews, exports images and PDFs, writes out voice memos, and runs `claude -p` so Myra can think.
 
 The two talk through one channel (`window.fenmyrHost`), so the canvas doesn't know or care which computer it's on. See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it.

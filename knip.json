@@ -1,6 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/host/main.ts", "src/host/preload.ts", "tests/*.ts", "tools/*.ts", ".claude/hooks/*.ts"],
+  "entry": [
+    "src/host/main.ts",
+    "src/host/preload.ts",
+    "tests/*.ts",
+    "tools/*.ts",
+    ".claude/hooks/*.ts",
+    "src/web/main.ts"
+  ],
   "project": ["src/**/*.ts", "tests/**/*.ts", "tools/**/*.ts", "!tools/editor/**", ".claude/hooks/*.ts"],
   "ignoreDependencies": ["@phosphor-icons/core"],
   "ignoreBinaries": ["fc-list"]

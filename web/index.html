@@ -399,11 +399,8 @@
 </div>
 
 <script src="icons/pack.js"></script>
-<script src="icons.js"></script>
-<script src="bridge.js"></script>
-<script src="goo.js"></script>
 <script src="vendor/editor.js"></script>
-<script src="app.js"></script>
+<script src="dist/app.js"></script>
 <script>
   // the website version keeps a copy of itself so it still opens with no internet (the desktop app reads its files from disk)
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});

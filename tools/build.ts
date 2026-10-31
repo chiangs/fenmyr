@@ -13,4 +13,14 @@ const host: BuildOptions = {
 await Promise.all([
   build({ ...host, entryPoints: ['src/host/main.ts'], outfile: 'dist/main.cjs' }),
   build({ ...host, entryPoints: ['src/host/preload.ts'], outfile: 'dist/preload.cjs' }),
+  build({
+    entryPoints: ['src/web/main.ts'],
+    outfile: 'web/dist/app.js',
+    bundle: true,
+    format: 'iife',
+    target: 'chrome130',
+    minify: true,
+    sourcemap: 'linked',
+    logLevel: 'warning',
+  }),
 ]);
