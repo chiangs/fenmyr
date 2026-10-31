@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { parseReply } from '../../shared/myraReply.ts';
 import { $ } from '../core/dom.ts';
 import { gooSlot, keepPerch, snapshot } from '../myra/chat.ts';
 import { goo, hopMyra } from '../myra/goos.ts';
@@ -378,7 +379,7 @@ export const parse = raw => {
     b = s.lastIndexOf('}');
   if (a < 0) return { say: s.trim() };
   try {
-    return JSON.parse(s.slice(a, b + 1));
+    return parseReply(JSON.parse(s.slice(a, b + 1)));
   } catch (e) {
     return { say: s.trim() };
   }

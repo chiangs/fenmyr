@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { storedBoard } from '../shared/model.ts';
 // The bridge between the canvas and wherever it's running.
 // Inside the desktop app, calls go to its host (linux/main.js: saving board files, link previews, asking Myra through Claude Code).
 // In a plain browser (for building and demos) it falls back to localStorage and a pretend Myra.
@@ -91,6 +92,7 @@
       return s ? JSON.parse(s) : null;
     },
     async save(board) {
+      board = storedBoard(board);
       localStorage.setItem(LS + 'board:' + board.id, JSON.stringify(board));
       const idx = JSON.parse(localStorage.getItem(LS + 'index') || '[]').filter(b => b.id !== board.id);
       idx.unshift({
@@ -299,7 +301,7 @@
         platform,
         list: () => call('list'),
         load: id => call('load', { id }),
-        save: board => call('save', { board }),
+        save: board => call('save', { board: storedBoard(board) }),
         remove: id => call('remove', { id }),
         templates: () => call('templates'),
         saveTemplate: template => call('saveTemplate', { template }),

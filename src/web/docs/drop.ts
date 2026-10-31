@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { typesWith } from '../../shared/cardTypes.ts';
 import { esc, renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
@@ -8,7 +9,7 @@ import { say } from '../settings/licenses.ts';
 import { session } from '../core/state.ts';
 
 // ---------- dropping cards into a doc: they arrive as real content (a checklist stays a checklist) ----------
-const WORDY = ['note', 'todo', 'title', 'link', 'swatch', 'doc', 'shape', 'audio', 'spotify'];
+const WORDY = typesWith('wordy');
 
 function cardWords(c) {
   if (c.type === 'note') return [c.name, c.text].filter(x => (x || '').trim()).join('\n');

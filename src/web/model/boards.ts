@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { sizeOf } from '../../shared/cardTypes.ts';
 import { COLOR_NAMES, tilt, uid } from '../core/base.ts';
 import { OS } from '../platform/osWords.ts';
 // the find bar next to Myra
@@ -318,28 +319,7 @@ export const TEMPLATES = {
 };
 
 export function card(type, o = {}) {
-  const size = {
-    note: [220, 140],
-    title: [320, 50],
-    image: [260, 220],
-    link: [260, 210],
-    todo: [240, 180],
-    swatch: [120, 150],
-    coll: [288, 200],
-    doc: [240, 52],
-    canvas: [260, 180],
-    shape: [160, 160],
-    stamp: [56, 56],
-    audio: [290, 150],
-    video: [360, 246],
-    ink: [10, 10],
-    frame: [393, 852],
-    box: [160, 100],
-    text: [220, 24],
-    icon: [28, 28],
-    font: [300, 210],
-    vnote: [300, 270],
-  }[type] || [220, 140];
+  const size = sizeOf(type);
   return Object.assign(
     { id: uid(), type, x: 0, y: 0, w: size[0], h: size[1], r: type === 'title' ? 0 : tilt(), color: 'white' },
     o,

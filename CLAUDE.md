@@ -10,7 +10,7 @@ Fenmyr is an Electron canvas app for Linux. The renderer in `src/web/` draws boa
 | `npm start` | Builds, then runs the app from this checkout. |
 | `npm run build` | Bundles `src/host` into `dist/` and `src/web` into `web/dist/app.js` with esbuild. |
 | `npm run check:fast` | Type check, lint, unused code (knip) and the budget. Run it before every commit. |
-| `npm test` | Builds, then runs the vault, smoke, zoom, theme and docs tests. They run Electron headless, so no display is needed. |
+| `npm test` | Builds, then runs the vault, save, reply, smoke, zoom, theme and docs tests. They run Electron headless, so no display is needed. |
 | `npm run visual` | Screenshots 22 states here and on `origin/main`. Any changed pixel fails. |
 | `node tests/perf.ts origin/main` | Times opening, dragging, zooming and editing a 500-card board on both sides and fails when this side is clearly slower. |
 | `node tools/budget.ts --write` | Lowers the budget after you pay part of it down. It never raises it. |
@@ -22,7 +22,7 @@ Node runs `.ts` files directly, so tests and tools need no build step. Write imp
 | Path | Holds |
 |---|---|
 | `src/host/` | The Electron main process: window, `OPS` (the bridge operations), storage, vaults, Claude Code, export, speech, updates. |
-| `src/shared/ops.ts` | The bridge contract: every operation's arguments and result, and the events the host sends. |
+| `src/shared/` | `ops.ts` (the bridge contract), `cardTypes.ts` (the card-type table), `model.ts` (board and card types), `myraReply.ts` (the check on Myra's replies). |
 | `src/web/` | The renderer, one module per area: `canvas/`, `cards/`, `library/`, `myra/`, `docs/`, `selbar/` and others. `main.ts` runs each module's start-up code in a fixed order. `core/state.ts` holds shared state. |
 | `web/` | Static files: `index.html`, `style.css`, fonts, stamps, vendor bundles. The renderer builds to `web/dist/app.js`. |
 | `tests/` | Headless Electron tests, the perf benchmark, fixtures and the launch helper. |
@@ -43,6 +43,7 @@ Each rule names the check that enforces it.
 - **Strict TypeScript.** No `any`. No `as` except straight after a parse. Data from disk, the network, child processes and IPC is `unknown` until it is narrowed where it enters. Variants are unions with a `type` or `kind` field, and a `switch` over them ends with a `never` check. Enforced by `tsc` and the budget.
 - **Markup templates hold values, not logic.** Compute every value into a named `const` first. Inside `${}` in a template that builds markup, use only a name or a chain of property reads: no ternaries, calls, `.map` or `.join`. Enforced by the budget's `markupLogic` count.
 - **One area per module, at most 400 lines.** Before writing a popover, menu, dialog, drag loop or colour helper, look for the shared one. Enforced by the budget's `longFiles` count.
+- **Card types live in one table.** Per-type facts go in `src/shared/cardTypes.ts`, not in new lists. Data from outside is parsed once where it enters: `src/shared/myraReply.ts` is the pattern.
 - **No dead code.** knip and `noUnused*` fail on unused files, exports, dependencies, locals and parameters.
 - **Comments say why.** Keep a comment only when it explains something the code can't show. No section banners and no comments that restate the code.
 - **Prove behaviour, not compilation.** A renderer change runs `npm run visual` and `node tests/perf.ts origin/main`. A new bridge operation gets a smoke check.

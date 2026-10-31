@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { labelOf } from '../../shared/cardTypes.ts';
 import { esc } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
@@ -17,29 +18,6 @@ const askHint = () =>
       : 'Ask Myra… “group these by theme”';
 
 // a little chip above the box says which cards are selected (they go along with what you send); it follows the selection while the chat is open
-const TYPE_NAMES = {
-  note: 'Note',
-  todo: 'Checklist',
-  title: 'Title',
-  image: 'Picture',
-  swatch: 'Colour',
-  font: 'Font',
-  coll: 'Collection',
-  frame: 'Frame',
-  section: 'Section',
-  doc: 'Doc',
-  link: 'Link',
-  audio: 'Voice memo',
-  video: 'Video',
-  stamp: 'Stamp',
-  shape: 'Shape',
-  screen: 'Screen',
-  canvas: 'Drawing',
-  vnote: 'Vault note',
-  spotify: 'Spotify',
-  icon: 'Icon',
-};
-
 let selChipKey = null;
 
 function renderSelChip() {
@@ -62,7 +40,7 @@ function renderSelChip() {
     el.innerHTML = '';
     return;
   }
-  el.innerHTML = `<span class="mcs-t">${one ? `${esc(TYPE_NAMES[one.type] || one.type)}${words ? ` · “${esc(words)}”` : ''}` : `${cs.length} cards selected`}</span><button type="button" class="mcs-x" title="Deselect" aria-label="Deselect">×</button>`;
+  el.innerHTML = `<span class="mcs-t">${one ? `${esc(labelOf(one.type))}${words ? ` · “${esc(words)}”` : ''}` : `${cs.length} cards selected`}</span><button type="button" class="mcs-x" title="Deselect" aria-label="Deselect">×</button>`;
   el.hidden = false;
 }
 
