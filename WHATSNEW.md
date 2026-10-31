@@ -1,38 +1,42 @@
 # What's new in Fenmyr
 
-Each update gets a short line here. Fenmyr shows the new ones in Settings when an update is ready.
-Write them for people, not for code: one line, what changed and why it's nice.
+Each update gets short lines here. Fenmyr shows the new ones in Settings when an update is ready.
+Write them for people, not for code: one line each, saying what changed and why it helps.
 
 ## October 2026 · 1.0.0
 
-- Hello, I'm Myra: a little cloudberry who helps on your boards. Like cloudberries, ideas only grow where conditions are just right.
-- Wireframe elements land where you can see them: click one to add it straight away (inside the selected screen, or in the middle of your view), or drag it out onto the board.
-- Type **/** in Myra's chat to see what she can do without thinking (`/find`, `/tag`, `/tidy`, `/fit`, `/clear`). **Ctrl+F** opens her ready to find something on your board, and a find bar appears next to her: change the words as you like, see how many matched, and step through each one.
-- Pasting a picture into a note puts it on the board as its own picture card, connected to the note (or turns an empty note into the picture). Cards that go to Unsorted together come back together, with their connectors.
-- Type /timer 25 write the intro, or ask in plain words ("set a timer for 2 minutes 10 seconds for tea", "cancel my timer"); times are exactly as you say them, down to the second (or pick a ready-made one: 15 min break, 50 min focus, 5 min breather) and Myra keeps the time. She warns you at two minutes left, and when it's up she hops, wiggles and throws berry confetti. She dozes through a break, looks shook with two minutes left (her glow picks up the pace), and sighs after a focus timer until you answer. With thinking on, her messages fit what you're doing.
-- Ask Myra to move: /animate (a surprise, or pick hop, wiggle, party, sleepy, shook, sigh, happy, love, dizzy or curious), or just ask in plain words like "can you jump?". She plays it even in calm mode, and with thinking on she can pick one herself. Now and then, when you're using the app, she does a little one on her own (never more than once an hour, less often in calm mode, never in calmest). With the chat open she springs out of her button (a crouch, a stretched launch, a squashed landing and a little bounce) and perches on the left of the input, under her replies, so you see her animate while you talk; she hops home when you close it, and gets dizzy if you open and close it over and over. Start a new chat, or open an empty one, and she tilts her head with a floating question mark, wondering what you'll ask.
-- Tell Myra your birthday (an optional month and day, at setup or in Settings) and she celebrates it: when you're really there on the day she puts on a party hat, greets you in the chat, throws waves of berry confetti and leaves a birthday note on your board. If you miss it, she wishes you a belated one for up to two weeks.
-- Nordic colours for your cards (Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather, Birch), warm amber shadows, squircle corners and crisp card edges.
-- New fonts: Figtree, with Shantell Sans for the handwritten touches. A little cloudberry marks the friendly bits.
+- Meet Myra, a small cloudberry who helps on your boards.
+- Click a wireframe element to add it inside the selected screen or the middle of your view, or drag it out.
+- Type **/** in Myra's chat to see what she can do without thinking, such as `/find`, `/tag`, `/tidy` and `/fit`.
+- **Ctrl+F** finds things on the board, with a bar to change the words and step through matches.
+- Paste a picture into a note, and it lands on the board as its own connected card.
+- Cards that go to Unsorted together come back together, with their connectors.
+- Set a timer with `/timer 25 write the intro` or plain words. Myra warns you at two minutes and celebrates when it ends.
+- Ask Myra to move with `/animate` or plain words. She also perches by the chat box while you talk.
+- Tell Myra your birthday, and she celebrates on the day.
+- Nordic card colours, warm amber shadows, squircle corners and crisp card edges.
+- New fonts: Figtree, with Shantell Sans for handwritten touches.
 - Your cursor and its name tag wear Myra's colour.
-- Follows your Caelestia colours and light or dark mode out of the box, and updates itself quietly when you quit.
+- Fenmyr follows your Caelestia colours and light or dark mode, and updates itself when you quit.
 - New icons everywhere, with a plain or Duotone bottom bar (Settings → General → Icon style).
-- Myra can search the web and read public pages and GitHub repos, once you switch it on (Settings → Helpers).
-- Two new starter boards (OKRs and opportunities, Product kickoff), and the design templates now use cloudberry-picking examples.
-- A new first board that shows ideas ripening into a plan, with things to try. Pick an empty start at the end of setup, or add the example later from Settings.
-- Obsidian vaults (read-only): connect a vault in Settings, choose which folders each project or board may read, and add notes to a board (Alt+N) as cards you can flip between title and tags and the content, and open in Obsidian. A #private tag and off-limits folders are never read.
-- Ask Myra about your notes: switch on “read with AI” for a vault grant, tick Vault in her chat for a question, and she reads the best few matching notes (never #private ones or off-limits folders), tells you which, and can put them on the board.
-- Tags on notes: type #word in a note (suggestions come from the board's tags) or use Tags in the bar. Tags stay apart from the words, and Myra uses them, including labels from GitHub issues.
-- Earlier chats: when chats are saved with the board, New chat keeps the conversation, and History in Myra's chat brings back any of the last 10.
-- Connectors: pick a colour and a weight (regular, medium or bold) from the bar; the next connector you draw starts the same way, and Reset puts it back.
-- Kanban: columns you can name, with counts and limits, added to any board from the template picker.
-- Your own templates: right-click a selection or the board to save it, then find it under Yours in the template picker. you choose whether it adds to a board or opens a new one, and can edit its name, description and that choice later. Myra can save and use them too.
-- A default font for text on the board and in docs (Settings → Board → Default font).
-- Ctrl+, opens Settings. Window buttons are off unless you want them.
-- A bigger wireframe panel, grouped by what things are (Basics, Buttons & inputs, Building blocks, Layouts), with a search box and groups that fold. New elements: Video, Map, Divider, Space, Textarea, Dropdown, Radio, Tabs, Table, Accordion, Modal and a Card grid layout. Myra knows them all.
-- Myra has a dry, tart wit to go with her warmth. How much shows depends on Settings → Myra → How chatty she is, and she drops it when you're having a hard time.
-- With emojis off, Myra really never uses them.
-- Give a note a due date: pick it in the bar under the note (a date, and a time if it matters) or ask Myra. A small chip sits on the note's bottom edge, turns amber a day before and red once it has passed, and Myra reminds you when it comes due, even for notes on other boards. The first time you open Fenmyr each day (or come back after midnight), Myra tells you what is still due today. Type /due to see what is overdue and coming up (/due overdue for just the late ones).
-- Drag a board between two rows in the project list to put it where you want it; the order is kept for each folder. Pickers from the toolbar (shapes, stamps, templates) now close when you click elsewhere, and Esc closes the toolbar menus.
-- Search and text fields have a small × to clear them, and the search at the top of the Wireframe panel stays in view while you scroll the elements.
-- Tags on a note: while a note is selected, each tag has a small × to remove it and a quiet + tag adds one, so you don't have to go to the toolbar. Undo brings a removed tag back.
+- Myra can search the web and read public pages once you switch it on (Settings → Helpers).
+- Two new starter boards, OKRs and opportunities, and Product kickoff.
+- A new first board shows ideas ripening into a plan. You can skip it at setup or add it later from Settings.
+- Connect an Obsidian vault read-only, choose what each project or board may read, and add notes as cards with Alt+N. Off-limits folders and #private notes are never read.
+- Ask Myra about your notes once you switch on "read with AI" for a vault. She tells you which notes she read.
+- Tags on notes: type #word or use the bar. Tags stay apart from your words, and Myra uses them.
+- Saved chats: New chat keeps the conversation, and History brings back any of the last 10.
+- Connectors take a colour and a weight, and the next one you draw starts the same way.
+- Kanban: columns you can name, with counts and limits, from the template picker.
+- Save a selection or board as your own template, and choose whether it adds to a board or opens a new one.
+- Set a default font for board text and docs (Settings → Board → Default font).
+- Ctrl+, opens Settings. Window buttons stay off unless you want them.
+- A bigger wireframe panel with groups that fold, a search box and many new elements.
+- Myra has a dry wit. How much shows depends on Settings → Myra → How chatty she is.
+- With emojis off, Myra never uses them.
+- Give a note a due date in the bar or by asking Myra. A chip shows on the note, and Myra reminds you, even for notes on other boards.
+- `/due` shows what is overdue and coming up, and Myra mentions what's due when you first open Fenmyr each day.
+- Drag a board between two rows to order it. The order is kept for each folder.
+- Pickers from the toolbar close when you click elsewhere, and Esc closes toolbar menus.
+- Search and text fields have an × to clear them, and the Wireframe panel's search stays in view while you scroll.
+- While a note is selected, each tag has an × to remove it and + tag adds one. Undo brings a removed tag back.
