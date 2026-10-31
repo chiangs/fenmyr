@@ -1,4 +1,4 @@
-// @ts-nocheck
+import type { Card } from '../../shared/model.ts';
 import { cardEl } from '../ui/dom.ts';
 import { fit, toWorld } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
@@ -15,10 +15,10 @@ import { WF } from '../wireframe/wireframes.ts';
 import { appState, session } from './state.ts';
 
 // ---------- undo / redo: a snapshot of the board after each change settles ----------
-let past = [];
-let future = [];
+let past: string[] = [];
+let future: string[] = [];
 let restoring = false;
-export let snapT = 0;
+export let snapT: ReturnType<typeof setTimeout> | undefined;
 
 const stateOf = () =>
   JSON.stringify({
@@ -44,14 +44,15 @@ export function resetHistory() {
   future = [];
 }
 
-export function travel(dir) {
+export function travel(dir: -1 | 1) {
   clearTimeout(snapT);
   remember(); // catch the very latest change first
   if (dir < 0 ? past.length < 2 : !future.length)
     return say(dir < 0 ? 'Nothing left to undo' : 'Nothing to redo', 1800);
-  if (dir < 0) future.push(past.pop());
-  else past.push(future.pop());
-  const st = JSON.parse(past[past.length - 1]);
+  const moved = dir < 0 ? past.pop() : future.pop();
+  if (moved === undefined) return;
+  (dir < 0 ? future : past).push(moved);
+  const st = JSON.parse(past[past.length - 1] ?? '{}');
   restoring = true;
   Object.assign(session.board, st);
   if (!st.trayLinks) delete session.board.trayLinks;
@@ -67,15 +68,12 @@ export function travel(dir) {
 // every card keeps real numbers for its place and size (a bad one would break saving)
 function cleanNumbers() {
   session.board.cards.forEach(c => {
-    ['x', 'y'].forEach(k => {
-      if (!Number.isFinite(c[k])) c[k] = 0;
-    });
-    ['w', 'h'].forEach(k => {
-      if (!Number.isFinite(c[k]) || c[k] <= 0) c[k] = k === 'w' ? 200 : 100;
-    });
-    ['r', 'rot'].forEach(k => {
-      if (c[k] != null && !Number.isFinite(c[k])) c[k] = 0;
-    });
+    if (!Number.isFinite(c.x)) c.x = 0;
+    if (!Number.isFinite(c.y)) c.y = 0;
+    if (!Number.isFinite(c.w) || c.w <= 0) c.w = 200;
+    if (!Number.isFinite(c.h) || c.h <= 0) c.h = 100;
+    if (c.r != null && !Number.isFinite(c.r)) c.r = 0;
+    if (c.rot != null && !Number.isFinite(c.rot)) c.rot = 0;
   });
 }
 
@@ -102,8 +100,8 @@ export function save() {
 }
 
 // after Myra works: glide to what she made (unless it's already in view) and let it glow for a moment
-export function showWhatMyraMade(cs) {
-  cs = [...new Set(cs)].filter(c => session.board.cards.includes(c));
+export function showWhatMyraMade(made: Card[]) {
+  const cs = [...new Set(made)].filter(c => session.board.cards.includes(c));
   if (!cs.length) return;
   const r = stage.getBoundingClientRect(),
     L = 270,

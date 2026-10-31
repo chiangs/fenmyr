@@ -27,10 +27,39 @@ type CardFields = {
   path: { pts: { x: number; y: number; r?: number }[]; closed?: boolean; ow: number; oh: number };
 };
 
-type CardBase = { id: string; x: number; y: number; w: number; h: number; r?: number; color?: string };
-type Card = { [T in CardType]: CardBase & { type: T } & CardFields[T] }[CardType];
+type CardBase = {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  r?: number;
+  rot?: number;
+  color?: string;
+  onFrame?: string;
+};
+export type Card = { [T in CardType]: CardBase & { type: T } & CardFields[T] }[CardType];
 
-export type Board = { id: string; name?: string; cards?: Card[]; tray?: Card[]; [key: string]: unknown };
+export type View = { x: number; y: number; z: number };
+export type Link = { id: string; a: string; b: string; arrow?: boolean };
+
+export type Board = {
+  id: string;
+  name: string;
+  color?: string;
+  cards: Card[];
+  links: Link[];
+  tray: Card[];
+  trayLinks?: Link[];
+  palette?: { hex: string; name?: string }[];
+  view?: View;
+  folder?: string | null;
+  parent?: string | null;
+  tags?: string[];
+  bg?: unknown;
+  chat?: unknown;
+  chats?: unknown;
+};
 
 // True only while the app runs. A video saved with `saving` would show "Saving…" forever after reopening.
 // `rec` and `paused` stay: reopening a board finds an interrupted recording by them.
@@ -43,6 +72,6 @@ function storedCard<T extends object>(card: T): T {
   return copy;
 }
 
-export function storedBoard<T extends Board>(board: T): T {
+export function storedBoard<T extends { cards?: object[]; tray?: object[] }>(board: T): T {
   return { ...board, cards: board.cards?.map(storedCard), tray: board.tray?.map(storedCard) };
 }
