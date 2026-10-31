@@ -192,7 +192,8 @@ const judge = await launch({ boards: [everyOfflineCard()], open: 'every' });
 let failed = 0;
 for (const f of fs.readdirSync(path.join(out, 'ref')).sort()) {
   const r = await compare(judge.page, path.join(out, 'ref', f), path.join(out, 'head', f), path.join(out, `diff-${f}`));
-  const ok = r.changed >= 0 && r.changed <= (STRAY_PIXELS_SCALED[f] ?? STRAY_PIXELS);
+  const allowed = Number(process.env.VISUAL_ALLOW_PIXELS) || (STRAY_PIXELS_SCALED[f] ?? STRAY_PIXELS);
+  const ok = r.changed >= 0 && r.changed <= allowed;
   if (!ok) failed++;
   console.log(
     `${ok ? 'same' : 'DIFF'}  ${f.replace('.png', '').padEnd(20)} ${r.changed < 0 ? 'size changed' : `${r.changed} px`}`,
