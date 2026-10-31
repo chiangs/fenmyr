@@ -1,16 +1,16 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { host } from './shapes.ts';
 import { spotifyFill, spotifyOf } from './spotify.ts';
-import { cardsEl } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { session } from '../core/state.ts';
 
 // ---------- links: type or paste right into the card, then it fills in the site's name and picture ----------
 export function wireLinkInput(c) {
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+  const el = cardEl(c.id),
     inp = el?.querySelector('.link-in input');
   if (!inp || inp.dataset.wired) return;
   inp.dataset.wired = 1;

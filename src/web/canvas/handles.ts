@@ -1,10 +1,11 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
 import { byId } from './wires.ts';
 import { cropping } from '../cards/crop.ts';
 import { clamp } from '../core/base.ts';
-import { $, cardsEl, stage, world } from '../core/dom.ts';
+import { $, stage, world } from '../core/dom.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { drawOn } from '../tools/draw.ts';
 import { vec } from '../tools/penEdit.ts';
@@ -15,7 +16,7 @@ export let rhEl;
 export let rhFor = null;
 
 export const realBox = k => {
-  const el = k.type === 'title' ? cardsEl.querySelector(`[data-id="${k.id}"]`) : null;
+  const el = k.type === 'title' ? cardEl(k.id) : null;
   return { w: el?.offsetWidth || k.w, h: el?.offsetHeight || k.h };
 };
 export let mrot;
@@ -104,11 +105,7 @@ function syncRH() {
     rh.classList.add('on');
     rh.style.left = Math.max(...cs.map(k => k.x + k.w)) + 'px';
     rh.style.top =
-      Math.max(
-        ...cs.map(
-          k => k.y + (k.type === 'title' ? cardsEl.querySelector(`[data-id="${k.id}"]`)?.offsetHeight || k.h : k.h),
-        ),
-      ) + 'px';
+      Math.max(...cs.map(k => k.y + (k.type === 'title' ? cardEl(k.id)?.offsetHeight || k.h : k.h))) + 'px';
     requestAnimationFrame(syncRH);
     return;
   }
@@ -126,9 +123,7 @@ function syncRH() {
       const R = realBox;
       rhFor = 'm';
       rh.classList.add('on');
-      const rs_ = cs
-        .map(k => cardsEl.querySelector(`[data-id="${k.id}"]`)?.getBoundingClientRect())
-        .filter(r => r && r.width); // the real bottom-right of what you see (turned things included)
+      const rs_ = cs.map(k => cardEl(k.id)?.getBoundingClientRect()).filter(r => r && r.width); // the real bottom-right of what you see (turned things included)
       const pt = rs_.length
         ? toWorld(Math.max(...rs_.map(r => r.right)), Math.max(...rs_.map(r => r.bottom)))
         : { x: Math.max(...cs.map(k => k.x + R(k).w)), y: Math.max(...cs.map(k => k.y + R(k).h)) };
@@ -141,7 +136,7 @@ function syncRH() {
   rhFor = ok ? c.id : null;
   rh.classList.toggle('on', !!ok);
   if (ok) {
-    const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+    const el = cardEl(c.id);
     const h = c.type === 'title' && el ? el.offsetHeight : c.h;
     // a title's real width (its saved width lags a moment after the text, size or font changes, which left the corner floating off to the side)
     const w = c.type === 'title' && el && el.offsetWidth ? el.offsetWidth : c.w;

@@ -1,8 +1,8 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
-import { cardsEl } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { endEdit } from '../features/tags.ts';
 import { session } from '../core/state.ts';
@@ -12,7 +12,7 @@ import { session } from '../core/state.ts';
 // but never shorter than the height you gave the card yourself (c.userH, remembered the first time you edit or resize it)
 export function fitText(c) {
   if (!c || !['note', 'todo'].includes(c.type) || parentOf(c.id)) return;
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+  const el = cardEl(c.id),
     b = el?.querySelector('.body');
   if (!b) return;
   if (c.userH == null) c.userH = c.h;
@@ -62,14 +62,14 @@ export function editField(el, t, set, done) {
 }
 
 export function editTag(c) {
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+  const el = cardEl(c.id);
   if (!el) return;
   if (!c.tagText) {
     c.tagText = 'label';
     renderCard(c);
     selectOnly([c.id]);
   }
-  const e2 = cardsEl.querySelector(`[data-id="${c.id}"]`);
+  const e2 = cardEl(c.id);
   editField(
     e2,
     e2.querySelector('.tag'),

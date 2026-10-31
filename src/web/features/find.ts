@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { esc } from '../ui/dom.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { find, hasAll, queryWords } from '../core/base.ts';
 import { $ } from '../core/dom.ts';

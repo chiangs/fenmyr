@@ -1,11 +1,11 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { uid } from '../core/base.ts';
-import { cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { card } from '../model/boards.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
@@ -465,7 +465,7 @@ export function placeFramework(key) {
   made
     .filter(c => c.type === 'note' && !parentOf(c.id))
     .forEach(c => {
-      const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+      const el = cardEl(c.id),
         b = el?.querySelector('.body');
       if (!b) return;
       b.style.height = 'auto';

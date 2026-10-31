@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { cloneForDrag } from './clipboard.ts';
 import {
   ROT_FIXED,
@@ -78,7 +79,7 @@ export function init16() {
   stage.addEventListener('pointercancel', () => {
     if (appState.drag?.mode === 'move') {
       appState.drag.start?.forEach(s => {
-        const el = s.el || cardsEl.querySelector(`[data-id="${s.c.id}"]`);
+        const el = s.el || cardEl(s.c.id);
         if (el) {
           el.style.left = s.c.x + 'px';
           el.style.top = s.c.y + 'px';
@@ -168,7 +169,7 @@ export function init16() {
             };
           }),
         };
-        appState.drag.items.forEach(it => cardsEl.querySelector(`[data-id="${it.c.id}"]`)?.classList.add('tilting')); // no easing while turning, so nothing trails behind
+        appState.drag.items.forEach(it => cardEl(it.c.id)?.classList.add('tilting')); // no easing while turning, so nothing trails behind
         stage.setPointerCapture(e.pointerId);
         return;
       }
@@ -380,7 +381,7 @@ export function init16() {
       appState.drag.start.forEach(s => {
         s.c.x = s.x + dx;
         s.c.y = s.y + dy;
-        const el = s.el || (s.el = cardsEl.querySelector(`[data-id="${s.c.id}"]`));
+        const el = s.el || (s.el = cardEl(s.c.id));
         if (!el) return;
         if (!s.lifted) {
           s.lifted = true;
@@ -398,10 +399,10 @@ export function init16() {
       const dt = loose.length && !skip.size && docTarget(e, w, loose);
       $('docview').classList.toggle('drop', dt === 'page');
       if (dt && dt !== 'page') {
-        cardsEl.querySelector(`[data-id="${dt.id}"]`)?.classList.add('drop-in');
+        cardEl(dt.id)?.classList.add('drop-in');
       } else if (loose.length && !skip.size) {
         const t = collAt(w, skip);
-        if (t) cardsEl.querySelector(`[data-id="${t.s.id}"]`)?.classList.add(t.side ? 'drop-col' : 'drop-in');
+        if (t) cardEl(t.s.id)?.classList.add(t.side ? 'drop-col' : 'drop-in');
       }
     }
     if (appState.drag.mode === 'resize' && byId(appState.drag.id).type === 'coll' && !byId(appState.drag.id).kanban) {
@@ -414,7 +415,7 @@ export function init16() {
     if (appState.drag.mode === 'resize' && ['stamp', 'icon'].includes(byId(appState.drag.id).type)) {
       const c = byId(appState.drag.id);
       c.w = c.h = clamp(appState.drag.w0 + Math.max(w.x - appState.drag.sx, w.y - appState.drag.sy), 24, 400);
-      const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+      const el = cardEl(c.id);
       Object.assign(el.style, { width: c.w + 'px', height: c.h + 'px' });
       el.style.setProperty('--sz', c.w + 'px');
       return;
@@ -426,7 +427,7 @@ export function init16() {
       !['coll', 'frame', 'section'].includes(byId(appState.drag.id).type)
     ) {
       const c = byId(appState.drag.id),
-        el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+        el = cardEl(c.id),
         kx = (appState.drag.w0 + w.x - appState.drag.sx) / appState.drag.w0,
         ky = (appState.drag.h0 + w.y - appState.drag.sy) / appState.drag.h0;
       const k = Math.max(
@@ -457,7 +458,7 @@ export function init16() {
       const c = byId(appState.drag.id);
       c.w = Math.max(80, appState.drag.w0 + w.x - appState.drag.sx);
       c.h = Math.max(50, appState.drag.h0 + w.y - appState.drag.sy);
-      const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+      const el = cardEl(c.id);
       if (c.type === 'title' && !c.fixedW) {
         c.fixedW = true;
         el.classList.add('fixedw');
@@ -487,7 +488,7 @@ export function init16() {
         }
         if (c.type === 'text' && it.size0) c.size = Math.max(4, Math.round(it.size0 * k * 10) / 10);
         if (c.type === 'title' && c.fixedW) c.w = Math.max(8, it.w * k);
-        const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+        const el = cardEl(c.id);
         if (el) {
           Object.assign(el.style, {
             left: c.x + 'px',
@@ -516,7 +517,7 @@ export function init16() {
         c.w = Math.max(8, it.w * kx);
         c.h = txt ? it.h : Math.max(8, it.h * ky);
         c.y = txt ? d.by + (it.y + it.h / 2 - d.by) * ky - it.h / 2 : d.by + (it.y - d.by) * ky;
-        const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+        const el = cardEl(c.id);
         if (el)
           Object.assign(el.style, {
             left: c.x + 'px',
@@ -552,7 +553,7 @@ export function init16() {
           ny = d.cy + dx * si + dy * co; // each piece's middle goes around the turn
         c.x = nx - it.w / 2;
         c.y = ny - it.h / 2;
-        const el = cardsEl.querySelector(`[data-id="${c.id}"]`);
+        const el = cardEl(c.id);
         if (el) {
           el.style.left = c.x + 'px';
           el.style.top = c.y + 'px';
@@ -685,7 +686,7 @@ export function init16() {
       stage.classList.remove('dragging-cards', 'cloning');
       // set it down: the transform becomes its real position again
       d.start.forEach(s => {
-        const el = s.el || cardsEl.querySelector(`[data-id="${s.c.id}"]`);
+        const el = s.el || cardEl(s.c.id);
         if (!el) return;
         el.style.left = s.c.x + 'px';
         el.style.top = s.c.y + 'px';
@@ -740,7 +741,7 @@ export function init16() {
               const from = parentOf(id);
               if (from) {
                 from.kids = from.kids.filter(k => k !== id);
-                const el = cardsEl.querySelector(`[data-id="${id}"]`);
+                const el = cardEl(id);
                 el?.classList.remove('inside');
                 byId(id).r = tilt();
                 renderCard(byId(id));
@@ -794,7 +795,7 @@ export function init16() {
       $('rotBadge').classList.remove('on');
       d.items.forEach(it => {
         renderCard(it.c);
-        cardsEl.querySelector(`[data-id="${it.c.id}"]`)?.classList.remove('tilting');
+        cardEl(it.c.id)?.classList.remove('tilting');
       });
       selectOnly(d.items.map(it => it.c.id));
       save();
@@ -802,7 +803,7 @@ export function init16() {
     }
     if (d.mode === 'rotate') {
       $('rotBadge').classList.remove('on');
-      cardsEl.querySelector(`[data-id="${d.c.id}"]`)?.classList.remove('tilting');
+      cardEl(d.c.id)?.classList.remove('tilting');
       save();
       $('selbar').dataset.key = '';
     }

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { rgbOf } from '../ui/color.ts';
 
 // ---------- colors name themselves (until you name one yourself) ----------
 const NAMED = {
@@ -79,7 +80,7 @@ const NAMED = {
 };
 
 export function colorName(hex) {
-  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)),
+  const rgb = rgbOf,
     [r, g, b] = rgb(hex);
   let best = 'Colour',
     d = Infinity;

@@ -1,7 +1,9 @@
 // After an edit to a TypeScript file, type check the project and hand any errors back to Claude.
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
+// a fresh clone, or a folder that only ran install.sh, has no dev tools to run
+if (!existsSync(`${process.env.CLAUDE_PROJECT_DIR}/node_modules/.bin/tsc`)) process.exit(0);
 const input: unknown = JSON.parse(readFileSync(0, 'utf8'));
 const edited =
   typeof input === 'object' &&

@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { esc, renderAll } from '../canvas/render.ts';
+import { esc, removeOnOutsidePress } from '../ui/dom.ts';
+import { renderAll } from '../canvas/render.ts';
 import { COLORS } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { resetHistory } from '../core/history.ts';
@@ -250,18 +251,7 @@ export function renderHome() {
           saveLib().then(refreshBoards);
         }
       };
-      setTimeout(() =>
-        addEventListener(
-          'pointerdown',
-          function off(ev) {
-            if (!m.contains(ev.target)) {
-              m.remove();
-              removeEventListener('pointerdown', off, true);
-            }
-          },
-          true,
-        ),
-      );
+      removeOnOutsidePress(m);
     };
     t.querySelector('[data-a="ren"]').onclick = () => inlineRename(t.querySelector('.tile-meta b'), pp);
     t.oncontextmenu = e => rowMenu(e, 'project', pp, t.querySelector('.tile-meta b'));

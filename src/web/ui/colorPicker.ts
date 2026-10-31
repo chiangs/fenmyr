@@ -1,9 +1,11 @@
 // @ts-nocheck
-import { esc, renderCard } from '../canvas/render.ts';
+import { hexOf, normHex, rgbOf } from './color.ts';
+import { cardEl, esc } from './dom.ts';
+import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { colorName } from '../cards/colorNames.ts';
 import { COLORS, clamp } from '../core/base.ts';
-import { $, cardsEl, stage } from '../core/dom.ts';
+import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { boardMenu } from '../features/export.ts';
 import { addAtCenter } from '../panels/zoomMenu.ts';
@@ -18,14 +20,6 @@ import { session } from '../core/state.ts';
 let colorCard = null;
 let hsv = { h: 330, s: 0.4, v: 1 };
 
-const normHex = v => {
-  let h = String(v || '')
-    .trim()
-    .replace(/^#/, '');
-  if (/^[0-9a-f]{3}$/i.test(h)) h = [...h].map(x => x + x).join('');
-  return /^[0-9a-f]{6}$/i.test(h) ? '#' + h.toLowerCase() : null;
-};
-
 const hsv2rgb = (h, s, v) => {
   const f = n => {
     const k = (n + h / 60) % 6;
@@ -34,10 +28,8 @@ const hsv2rgb = (h, s, v) => {
   return [f(5), f(3), f(1)].map(x => Math.round(x * 255));
 };
 
-const rgb2hex = c3 => '#' + c3.map(x => x.toString(16).padStart(2, '0')).join('');
-
 const hex2hsv = hex => {
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255),
+  const [r, g, b] = rgbOf(hex).map(n => n / 255),
     mx = Math.max(r, g, b),
     mn = Math.min(r, g, b),
     d = mx - mn;
@@ -76,10 +68,10 @@ function showHSV() {
   Object.assign($('wheelRing').style, {
     left: W / 2 + Math.cos(a) * rr + 'px',
     top: W / 2 + Math.sin(a) * rr + 'px',
-    background: rgb2hex(hsv2rgb(hsv.h, hsv.s, hsv.v)),
+    background: hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)),
   });
-  $('bright').style.background = `linear-gradient(to right, #000, ${rgb2hex(hsv2rgb(hsv.h, hsv.s, 1))})`;
-  Object.assign($('brightRing').style, { left: hsv.v * 100 + '%', background: rgb2hex(hsv2rgb(hsv.h, hsv.s, hsv.v)) });
+  $('bright').style.background = `linear-gradient(to right, #000, ${hexOf(hsv2rgb(hsv.h, hsv.s, 1))})`;
+  Object.assign($('brightRing').style, { left: hsv.v * 100 + '%', background: hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)) });
 }
 
 function dragOn(el, fn) {
@@ -108,7 +100,7 @@ function drawIfV() {
 }
 
 function placeColorPop(c) {
-  const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
+  const el = cardEl(c.id),
     r = el.getBoundingClientRect(),
     s = stage.getBoundingClientRect(),
     pop = $('cpop');
@@ -422,14 +414,14 @@ export function init57() {
     hsv.s = Math.min(1, Math.hypot(dx, dy) / (r.width / 2));
     if (hsv.v < 0.05) hsv.v = 1;
     drawIfV();
-    setColor(rgb2hex(hsv2rgb(hsv.h, hsv.s, hsv.v)), 'wheel');
+    setColor(hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)), 'wheel');
   });
 
   dragOn($('bright'), e => {
     const r = $('bright').getBoundingClientRect();
     hsv.v = clamp((e.clientX - r.left) / r.width, 0, 1);
     drawIfV();
-    setColor(rgb2hex(hsv2rgb(hsv.h, hsv.s, hsv.v)), 'wheel');
+    setColor(hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)), 'wheel');
   });
 
   $('cpHex').oninput = e => {

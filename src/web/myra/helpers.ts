@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { cardsEl } from '../core/dom.ts';
@@ -61,7 +62,7 @@ export function removeSelected() {
   const gone = new Set(session.sel);
   session.board.cards = session.board.cards.filter(c => !gone.has(c.id));
   session.board.links = session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b));
-  gone.forEach(id => cardsEl.querySelector(`[data-id="${id}"]`)?.remove());
+  gone.forEach(id => cardEl(id)?.remove());
   session.sel.clear();
   cardsEl.querySelectorAll('.card.inside').forEach(el => {
     if (!parentOf(el.dataset.id)) {

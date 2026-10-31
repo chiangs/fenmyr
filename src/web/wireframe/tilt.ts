@@ -1,9 +1,10 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { realBox } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
-import { $, cardsEl } from '../core/dom.ts';
+import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { O } from '../tools/draw.ts';
@@ -76,7 +77,7 @@ export function removeSection(secs) {
   const kids = secs.flatMap(inSection).map(c => c.id),
     gone = new Set(secs.map(c => c.id));
   session.board.cards = session.board.cards.filter(c => !gone.has(c.id));
-  secs.forEach(c => cardsEl.querySelector(`[data-id="${c.id}"]`)?.remove());
+  secs.forEach(c => cardEl(c.id)?.remove());
   if (session.board.links) session.board.links = session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b));
   selectOnly(kids);
   renderWires();
@@ -100,8 +101,8 @@ export function fileIntoFrame(cs) {
     if (f && session.board.cards.indexOf(c) < session.board.cards.indexOf(f)) {
       session.board.cards.splice(session.board.cards.indexOf(c), 1);
       session.board.cards.splice(session.board.cards.indexOf(f) + 1, 0, c);
-      const el = cardsEl.querySelector(`[data-id="${c.id}"]`),
-        fe = cardsEl.querySelector(`[data-id="${f.id}"]`);
+      const el = cardEl(c.id),
+        fe = cardEl(f.id);
       if (el && fe) fe.after(el);
     }
   });

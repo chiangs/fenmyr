@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { isTyping } from '../ui/dom.ts';
 import { lastClip, pasteCards } from './clipboard.ts';
 import { toWorld } from './handles.ts';
 import { overTray } from './pointer.ts';
@@ -16,10 +17,7 @@ export function init23() {
     appState.pendingPaste = false; // a real paste arrived, so Ctrl+V's fallback (pasting the cards you last copied) must stand down, whichever way this paste goes
     // pictures never go inside a card's text: a note gets a connected picture card, anything else you were typing in gets one on the board
     const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/')),
-      one =
-        !session.editing && session.sel.size === 1 && !e.target.closest('input, textarea, [contenteditable="true"]')
-          ? byId([...session.sel][0])
-          : null;
+      one = !session.editing && session.sel.size === 1 && !isTyping(e.target) ? byId([...session.sel][0]) : null;
     if (imgs.length && !$('capture').classList.contains('on')) {
       const into = session.editing && e.target.closest?.('.card.editing') ? byId(session.editing) : one;
       if (into?.type === 'note') {
@@ -33,11 +31,7 @@ export function init23() {
         return;
       }
     }
-    if (
-      e.target.closest('input, textarea, [contenteditable="true"]') &&
-      !(e.target.id === 'capInput' && e.clipboardData.files?.length)
-    )
-      return; // a picture pasted into quick capture goes to Unsorted
+    if (isTyping(e.target) && !(e.target.id === 'capInput' && e.clipboardData.files?.length)) return; // a picture pasted into quick capture goes to Unsorted
     appState.pendingPaste = false;
     // cards copied in Fenmyr (on this board or another one) come back as cards
     const tx = e.clipboardData.getData('text/plain');

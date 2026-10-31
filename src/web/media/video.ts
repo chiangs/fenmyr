@@ -1,8 +1,9 @@
 // @ts-nocheck
+import { cardEl } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
-import { $, cardsEl } from '../core/dom.ts';
+import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { fmtT } from './audio.ts';
 import { devicePick, openMedia, transcribe } from './devices.ts';
@@ -28,7 +29,7 @@ function paintLook() {
   });
 }
 
-const vEl = id => cardsEl.querySelector(`[data-id="${id}"]`);
+const vEl = id => cardEl(id);
 
 export function setupVideo(c, el) {
   if (c.src) {

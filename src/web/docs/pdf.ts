@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { esc } from '../ui/dom.ts';
 import { docCard, docHTML, ed, fontsIn } from './editor.ts';
 import { settings } from '../settings/settings.ts';
 import { isLocalFont } from '../wireframe/tilt.ts';

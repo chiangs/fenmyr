@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { cardEl, esc } from '../ui/dom.ts';
 import { byId, renderWires } from '../canvas/wires.ts';
 import { CGAP, CHEAD, CPAD, CW, KHEAD, colls, layoutColl, parentOf } from './collection.ts';
 import { clamp } from '../core/base.ts';
@@ -36,7 +36,7 @@ function kanbanOp(s, fn) {
 
 // start typing a column's name (a new column comes up like this, with 'New column' selected)
 function renameKanbanCol(s, k, undoStep = true) {
-  const el = cardsEl.querySelector(`[data-id="${s.id}"]`),
+  const el = cardEl(s.id),
     t = el?.querySelector(`.kb-h[data-k="${k}"] .text`);
   if (t) {
     if (undoStep) remember();

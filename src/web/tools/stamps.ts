@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { esc } from '../canvas/render.ts';
+import { esc } from '../ui/dom.ts';
 import { $, stage } from '../core/dom.ts';
 import { card } from '../model/boards.ts';
 import { addCard } from './penEdit.ts';
