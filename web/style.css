@@ -1428,7 +1428,6 @@ body.phone .sheet.on { pointer-events: auto; }
 body.fancy-cursor.cur-edge, body.fancy-cursor.cur-edge * { cursor: auto !important; }   /* the window edge: the system's resize arrows */
 /* phone: the action bar for what's selected matches the hub — big, thumb-sized buttons and icons */
 body.phone .dock .selbar { gap: 4px; padding: 6px 10px; }
-body.phone .selbar .sb-ic { width: 46px; height: 46px; border-radius: 20px; corner-shape: squircle; }
 body.phone .selbar .sb-ic svg { width: 23px; height: 23px; }
 body.phone .selbar .sb-txt { height: 44px; padding: 0 15px; font-size: 14px; border-radius: 20px; corner-shape: squircle; }
 body.phone .selbar .sb-label { font-size: 13px; padding: 0 6px; }
@@ -1918,7 +1917,6 @@ body.dark .card.section .sec-glass::before { background: linear-gradient(180deg,
 body.dark .card.section .sec-name { background: rgba(255, 255, 255, .1); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
 .sb-glass { background: linear-gradient(150deg, rgba(255, 255, 255, .9), rgba(253, 239, 225), .7) !important; box-shadow: inset 0 0 0 1px rgba(248, 189, 130, .35); }
 .card.section > .frame { display: none; }   /* no paper behind the glass */
-.card.section .sec-name { cursor: grab; }
 .card.section .sec-name:hover { box-shadow: 0 2px 8px rgba(137, 110, 83, .1), inset 0 0 0 1.5px var(--pink-deep, #e88a24); }   /* the name looks clickable: double-click to rename */
 .card.section .body { overflow: visible; padding: 0; }   /* the name rises above the bubble when zoomed out: never clip it */
 
@@ -2038,7 +2036,6 @@ body.dark .sb-glass { background: rgba(248, 189, 130, .2) !important; color: var
 .selbar { --pill: rgba(255, 255, 255, .7); }
 .selbar .sb-sizes.sb-style button:hover { background: rgba(255, 255, 255, .9); }
 body.dark .dock .selbar { background: rgba(47, 41, 35, .55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 0 0 1px rgba(255, 255, 255, .08), 0 10px 30px rgba(0, 0, 0, .35); }
-body.dark .selbar { --pill: rgba(255, 255, 255, .09); }
 /* ---------- one look for every selection bar: same icon size, color and line weight; same text size and color ---------- */
 .selbar { --sb-icon: 19px; --sb-ink: var(--ink-soft); --sb-on: var(--ink); --sb-text: 600 12.5px/1 var(--font); }
 .selbar svg:not(.sb-caret):not(.sb-dots3) { width: var(--sb-icon) !important; height: var(--sb-icon) !important; }
