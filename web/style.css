@@ -899,7 +899,7 @@ body.dark .home-back:hover { background: #f0ebe4; color: #1d1a16; }
 .dz-row button:hover, .dz-row button.on { background: var(--blush); color: var(--ink); }
 .dz-row svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
 .dz-hint { font: 400 11.5px/1.45 var(--font); color: var(--ink-soft); padding: 0 2px; }
-/* wireframe things sit straight and crisp: no tilt, no wobble */
+/* wireframe things sit straight and crisp: no tilt */
 .card.wf { rotate: 0deg !important; }
 .card.wf > .frame { display: none; }
 .card.wf .body { padding: 0; overflow: visible; }
@@ -980,9 +980,6 @@ body.dark .dz-piece-grid button { background: #322c25; } body.dark .dz-icons inp
 .card.wf.sel .rot-h { display: block; }
 .card.wf.grouped.sel::after { border-style: dashed; }
 .card.frame .rot-h { display: none !important; }
-/* speed: the hand-cut wobble is lovely but costly; it steps aside while the view moves, and when zoomed far out */
-.stage.moving .card .frame, .stage.far .card .frame, .stage.dragging-cards .card .frame, .stage.moving .coll-frame::before, .stage.far .coll-frame::before, .stage.dragging-cards .coll-frame::before,
-.stage.moving .card.shape svg.sh, .stage.far .card.shape svg.sh, .stage.dragging-cards .card.shape svg.sh { filter: none !important; }   /* Safari redraws these wobbly edges every frame; straighten them while things move */
 .stage.moving .world { will-change: transform; }
 .stage.far .card.wf .rot-h, .stage.far .card .knob { display: none; }
 
@@ -1431,7 +1428,6 @@ body.phone .sheet.on { pointer-events: auto; }
 body.fancy-cursor.cur-edge, body.fancy-cursor.cur-edge * { cursor: auto !important; }   /* the window edge: the system's resize arrows */
 /* phone: the action bar for what's selected matches the hub — big, thumb-sized buttons and icons */
 body.phone .dock .selbar { gap: 4px; padding: 6px 10px; }
-body.phone .selbar .sb-ic { width: 46px; height: 46px; border-radius: 20px; corner-shape: squircle; }
 body.phone .selbar .sb-ic svg { width: 23px; height: 23px; }
 body.phone .selbar .sb-txt { height: 44px; padding: 0 15px; font-size: 14px; border-radius: 20px; corner-shape: squircle; }
 body.phone .selbar .sb-label { font-size: 13px; padding: 0 6px; }
@@ -1846,8 +1842,6 @@ body.dark .wg-slot.on { background: rgba(220, 163, 106, .18); }
 
 
 
-/* Smooth hovering in Safari: each card's wobbly edge is drawn once into its own layer and kept, so hover effects
-   (bringing a card forward, showing its knob and chip) slide on top instead of redrawing the wobble filter every time */
 
 /* the zoom % is a button: click it for the zoom menu */
 button.zoom { border: 0; background: none; height: 34px; border-radius: 14px; corner-shape: squircle; font: 600 12px/1 var(--font); cursor: pointer; transition: background .12s, color .12s; }
@@ -1923,7 +1917,6 @@ body.dark .card.section .sec-glass::before { background: linear-gradient(180deg,
 body.dark .card.section .sec-name { background: rgba(255, 255, 255, .1); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
 .sb-glass { background: linear-gradient(150deg, rgba(255, 255, 255, .9), rgba(253, 239, 225), .7) !important; box-shadow: inset 0 0 0 1px rgba(248, 189, 130, .35); }
 .card.section > .frame { display: none; }   /* no paper behind the glass */
-.card.section .sec-name { cursor: grab; }
 .card.section .sec-name:hover { box-shadow: 0 2px 8px rgba(137, 110, 83, .1), inset 0 0 0 1.5px var(--pink-deep, #e88a24); }   /* the name looks clickable: double-click to rename */
 .card.section .body { overflow: visible; padding: 0; }   /* the name rises above the bubble when zoomed out: never clip it */
 
@@ -2043,7 +2036,6 @@ body.dark .sb-glass { background: rgba(248, 189, 130, .2) !important; color: var
 .selbar { --pill: rgba(255, 255, 255, .7); }
 .selbar .sb-sizes.sb-style button:hover { background: rgba(255, 255, 255, .9); }
 body.dark .dock .selbar { background: rgba(47, 41, 35, .55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 0 0 1px rgba(255, 255, 255, .08), 0 10px 30px rgba(0, 0, 0, .35); }
-body.dark .selbar { --pill: rgba(255, 255, 255, .09); }
 /* ---------- one look for every selection bar: same icon size, color and line weight; same text size and color ---------- */
 .selbar { --sb-icon: 19px; --sb-ink: var(--ink-soft); --sb-on: var(--ink); --sb-text: 600 12.5px/1 var(--font); }
 .selbar svg:not(.sb-caret):not(.sb-dots3) { width: var(--sb-icon) !important; height: var(--sb-icon) !important; }
@@ -2298,8 +2290,6 @@ body.dark .rz-grip:hover > svg path, body.dark .rz-grip.on > svg path { fill: va
 .sb-cases button.on, .sb-cases button.on b { color: var(--ink) !important; } body.dark .sb-cases button.on, body.dark .sb-cases button.on b { color: #fff !important; }
 /* the selection bar (and anything that opens from it, like dropdowns inside ···) sits above Myra's pill */
 .dock .selbar { position: relative; z-index: 6; } .dock .myra { z-index: 2; } .dock .selbar .sb-popw.open { z-index: 10; }
-/* a perfectly flat line has no height, and Safari draws the wobble effect at that size: nothing. Straight lines skip the wobble */
-.card.shape svg.sh.is-line { filter: none; }   /* lines have their own Wobble slider; the board's wobble effect misdraws them in Safari's sharp zoom */
 .set-feedback { background: #fef7f0; } .set-feedback .sf-ic { font-size: 24px; flex: none; } body.dark .set-feedback { background: rgba(248, 189, 130, .14); }
 
 /* About → Licenses: the same panel as Settings, above it */
