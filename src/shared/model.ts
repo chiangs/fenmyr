@@ -41,7 +41,7 @@ type CardBase = {
 export type Card = { [T in CardType]: CardBase & { type: T } & CardFields[T] }[CardType];
 
 export type View = { x: number; y: number; z: number };
-export type Link = { id: string; a: string; b: string; arrow?: boolean };
+type Link = { id: string; a: string; b: string; arrow?: boolean };
 
 export type Board = {
   id: string;
