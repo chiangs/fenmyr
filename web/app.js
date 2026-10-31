@@ -628,9 +628,8 @@
     stage.classList.toggle('far', view.z < .55); stage.classList.add('moving'); clearTimeout(movingT); movingT = setTimeout(() => { stage.classList.remove('moving');
       // real zoom only where it's needed: a Spotify player or video on the board makes Safari stretch an old picture of the board, so lay it out fresh there.
       // Boards without them are already crisp with the fast scale, and skipping the re-layout keeps them snappier.
-      cardsEl.querySelectorAll('.card.tsk-on').forEach(el => { const c = byId(el.dataset.id); if (c) textStrokeSVG(c, el); });   // dashed / dotted letters re-measured at the new zoom
       if (view.z > 1.02) {   // only zoomed in: shrinking a picture never blurs it
-        world.style.zoom = view.z; world.style.transform = `translate(${view.x / view.z}px, ${view.y / view.z}px)`; requestAnimationFrame(() => cardsEl.querySelectorAll('.card.tsk-on').forEach(el => { const c = byId(el.dataset.id); if (c) textStrokeSVG(c, el); })); } }, 450);   // a short pause in a pinch isn't the end of it, so wait a little before redrawing everything sharp
+        world.style.zoom = view.z; world.style.transform = `translate(${view.x / view.z}px, ${view.y / view.z}px)`; } }, 450);   // a short pause in a pinch isn't the end of it, so wait a little before redrawing everything sharp
     let s = 26 * view.z; while (s < 20) s *= 2; while (s > 40) s /= 2;   // dots keep their size; zooming out skips every other dot instead of crowding them
     grid.style.backgroundSize = `${s}px ${s}px`; grid.style.backgroundPosition = `${view.x}px ${view.y}px`;
     if (grid.classList.contains('shaped')) { grid.style.webkitMaskSize = grid.style.maskSize = `${s}px ${s}px`; grid.style.webkitMaskPosition = grid.style.maskPosition = `${view.x}px ${view.y}px`; }
@@ -645,7 +644,6 @@
   // the turn dot is a handle attached to what you selected: on top when it's straight, and it turns with it (and stays there after) like a real handle
   let mrotKeep = null;   // a group you turned: { key, anchor } (the dot stays on the piece that was on top)
   const selKey = cs => cs.map(k => k.id).sort().join();
-  const midOf = cs => { const ms = cs.map(k => { const b = realBox(k); return [k.x + b.w / 2, k.y + b.h / 2]; }); return { x: ms.reduce((n, m) => n + m[0], 0) / ms.length, y: ms.reduce((n, m) => n + m[1], 0) / ms.length }; };
   const tiltOf = k => (k.rot || 0) + (document.body.classList.contains('neat') || ROT_FIXED.includes(k.type) || (k.type === 'stamp' && !k.tilted) ? 0 : (k.r || 0));
   // which piece carries the dot: one thing is itself; for several, the one on top (and it keeps the dot after you turn them)
   function anchorOf(cs) { if (cs.length === 1) return cs[0]; const kept = mrotKeep && mrotKeep.key === selKey(cs) && cs.find(k => k.id === mrotKeep.anchor); if (kept) return kept;
@@ -759,41 +757,12 @@
   }
   // which cards can be tilted by hand: everything except the things that hold other things (sections, screens, collections) and wireframe pieces (they rotate their own way)
   const TILTS = c => !['section', 'frame', 'coll', 'ink', 'box', 'text', 'icon'].includes(c.type);   // (the wireframe list WF isn't set up yet when the first cards draw)
-  const SIZED_T = ['note', 'todo', 'title', 'shape', 'coll', 'vnote'];
   // strokes: boxes and screens get a border (solid or dashed); titles, wireframe text and icons get an outline around the letters
   const STROKABLE = ['box', 'frame', 'title', 'text', 'icon', 'path', 'shape'], STROKE_TEXT = ['title', 'text', 'icon'];
   const canStroke = c => STROKABLE.includes(c.type) && !(c.type === 'shape' && c.shape === 'line');
   // boxes and screens: the line is drawn (an SVG rect) so it can be solid, dashed or dotted with your own dash length and gap, like Figma
   const skStyle = c => c.sdash === true ? 'dash' : c.sdash || 'solid';
-  // dashed or dotted letters: the browser can only outline text solid, so the words are redrawn as an SVG on top (line by line, same font),
-  // with the real text underneath kept for editing. While you edit, the real text shows normally
-  function textStrokeSVG(c, el) {
-    el.querySelector(':scope > .tsk')?.remove(); el.classList.remove('tsk-on');
-    return;   // paused: dashed/dotted letters couldn't stay lined up in Safari; text outlines are solid for now
-    if (!['title', 'text'].includes(c.type) || !(c.stroke && c.sw > 0) || skStyle(c) === 'solid') return;
-    const t = el.querySelector(c.type === 'title' ? '.text' : '.tx'); if (!t || !t.textContent.trim()) return;
-    // measured on the real text itself (its real line breaks and letter spots), held straight for a moment, and converted by the board zoom, which is always known exactly
-    el.classList.add('tsk-measure'); void el.offsetWidth;
-    const z = view.z || 1, er = el.getBoundingClientRect(), lines = [], rg = document.createRange(), walker = document.createTreeWalker(t, NodeFilter.SHOW_TEXT); let node;
-    while ((node = walker.nextNode())) for (let i = 0; i < node.length; i++) { if (!node.data[i].trim()) continue; rg.setStart(node, i); rg.setEnd(node, i + 1); const r = rg.getClientRects()[0]; if (!r) continue;
-      const top = (r.top - er.top) / z, x = (r.left - er.left) / z, L = lines.find(l => Math.abs(l.top - top) < r.height / z * .5) || (lines.push({ top, ch: [] }), lines[lines.length - 1]);
-      let ch = node.data[i]; if (c.tcase === 'upper') ch = ch.toUpperCase(); else if (c.tcase === 'lower') ch = ch.toLowerCase(); else if (c.tcase === 'title' && (i === 0 || /\s/.test(node.data[i - 1]))) ch = ch.toUpperCase();
-      L.ch.push({ c: ch, x }); }
-    el.classList.remove('tsk-measure');
-    // the font itself, read unzoomed (Safari reports zoomed sizes inside a zoomed board), from a plain copy of the text's style
-    const host = textStrokeSVG.host || (textStrokeSVG.host = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'tsk-host' })));
-    const cl = el.cloneNode(true); cl.querySelector(':scope > .tsk')?.remove(); host.appendChild(cl);
-    const g = getComputedStyle(cl.querySelector(c.type === 'title' ? '.text' : '.tx')), cs = { color: g.color, fontFamily: g.fontFamily, fontSize: g.fontSize, fontWeight: g.fontWeight, fontStyle: g.fontStyle }; cl.remove();
-    const st = skStyle(c), fillC = (c.type === 'title' ? c.tc : c.color) === 'none' ? 'none' : cs.color, w = c.sw;
-    const mc = (textStrokeSVG.cv ||= document.createElement('canvas').getContext('2d')); mc.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`; const asc = mc.measureText('Hg').fontBoundingBoxAscent || parseFloat(cs.fontSize) * .8;
-    const dash = st === 'dash' ? `${c.dl ?? 8} ${c.dg ?? 6}` : `0 ${(c.dg ?? 6) + w * 2}`, ff = cs.fontFamily.replace(/"/g, "'");
-    el.insertAdjacentHTML('beforeend', `<svg class="tsk" aria-hidden="true">${lines.filter(l => l.ch.length).map(l => `<text x="${l.ch.map(q => q.x.toFixed(1)).join(' ')}" y="${(l.top + asc).toFixed(1)}" style="font-family:${ff};font-size:${cs.fontSize};font-weight:${cs.fontWeight};font-style:${cs.fontStyle};letter-spacing:0;font-kerning:none" fill="${fillC}" stroke="${c.stroke}" stroke-width="${w * 2}" stroke-dasharray="${dash}" stroke-linecap="${st === 'dot' ? 'round' : 'butt'}" stroke-linejoin="round" paint-order="stroke fill">${esc(l.ch.map(q => q.c).join(''))}</text>`).join('')}</svg>`);
-    el.classList.add('tsk-on');
-  }
-  const tskSoon = (c, el) => requestAnimationFrame(() => { if (el.isConnected) textStrokeSVG(c, el); });
-  const tskRO = new ResizeObserver(es => es.forEach(e => { const el = e.target, c = byId(el.dataset.id); if (c && !el.classList.contains('editing')) textStrokeSVG(c, el); }));
   function applyStroke(c, el) {
-    if (['title', 'text'].includes(c.type)) { if (c.stroke && c.sw > 0 && skStyle(c) !== 'solid') { tskSoon(c, el); tskRO.observe(el); } else { el.querySelector(':scope > .tsk')?.remove(); el.classList.remove('tsk-on'); tskRO.unobserve(el); } }
     if (c.type === 'title') { const t = el.querySelector('.text'); if (t) t.style.color = c.tc && c.tc !== 'none' ? c.tc : ''; }   // a title's own text color (applied after its text is drawn)
     if (!canStroke(c)) return; const on = !!(c.stroke && c.sw > 0);
     el.classList.toggle('has-stroke', on);
@@ -813,7 +782,7 @@
     el.className = `card ${c.type}` + (sel.has(c.id) ? ' sel' : '') + (isDim(c) ? ' dim' : '') + (find.cur === c.id ? ' find-cur' : '') + (pop ? ' pop' : '');
     Object.assign(el.style, { left: c.x + 'px', top: c.y + 'px', width: titleW(c), height: c.type === 'title' ? 'auto' : c.h + 'px' });
     el.classList.toggle('ly-off', !!c.hidden); el.classList.toggle('ly-lock', !!c.locked); el.classList.toggle('fixedw', !!c.fixedW); applyStroke(c, el);
-    if (c.type === 'title' || c.type === 'text') el.classList.toggle('no-fill', (c.type === 'title' ? c.tc : c.color) === 'none'); if (SIZED_T.includes(c.type)) { el.style.setProperty('--ta', c.align || 'left');
+    if (c.type === 'title' || c.type === 'text') el.classList.toggle('no-fill', (c.type === 'title' ? c.tc : c.color) === 'none'); if (SIZED.includes(c.type)) { el.style.setProperty('--ta', c.align || 'left');
       el.style.setProperty('--tt', { upper: 'uppercase', lower: 'lowercase', title: 'capitalize' }[c.tcase] || 'none');   // Case: how the words show (what you typed stays as typed)
       if (c.lh != null) el.style.setProperty('--lh', c.lh); else el.style.removeProperty('--lh'); el.classList.toggle('has-lh', c.lh != null);
       if (c.ls != null) el.style.setProperty('--ls', c.ls / 100 + 'em'); else el.style.removeProperty('--ls'); el.classList.toggle('has-ls', c.ls != null); }
@@ -1108,7 +1077,6 @@
   //   click the outline to add a point · Delete removes picked points · Enter, Esc or clicking away finishes. Rectangles, triangles, stars and circles turn into pen shapes when you do this ----------
   let vec = null;   // { id, sel: Set, svg, drag }
   const vecCard = () => vec && byId(vec.id);
-  const vW = (c, q, kx = 'x', ky = 'y') => ({ x: c.x + q[kx] * c.w / c.ow, y: c.y + q[ky] * c.h / c.oh });
   function shapeToPath(c) {   // a built-in shape becomes editable points in its own box
     const W = c.w, H = c.h, P = (x, y) => ({ x: x * W / 100, y: y * H / 100 }); let pts;
     if ((c.shape || 'rect') === 'rect') pts = [P(0, 0), P(100, 0), P(100, 100), P(0, 100)];
@@ -1351,7 +1319,6 @@
     requestAnimationFrame(step);
   }
   // ---------- zoom from the menu (click the %) or the keyboard: it glides there, centered on the part of the board you're looking at ----------
-  const ZOOMS = ZOOM_STEPS;   // the menu and Ctrl +/− use the same even steps as Ctrl + scroll
   function glideView(to) {
     const from = { ...view }, t0 = performance.now(); stage.classList.add('moving');
     const step = t => { const k = Math.min(1, (t - t0) / 260), e = 1 - Math.pow(1 - k, 3); ['x', 'y', 'z'].forEach(n => view[n] = from[n] + (to[n] - from[n]) * e); applyView();
@@ -1363,7 +1330,7 @@
     const p = { x: (cx - view.x) / view.z, y: (cy - view.y) / view.z }, nz = clamp(z, .15, 3);
     glideView({ x: cx - p.x * nz, y: cy - p.y * nz, z: nz });
   }
-  const zoomStep = dir => zoomTo(dir > 0 ? (ZOOMS.find(z => z > view.z + .01) || 3) : ([...ZOOMS].reverse().find(z => z < view.z - .01) || .25));
+  const zoomStep = dir => zoomTo(dir > 0 ? (ZOOM_STEPS.find(z => z > view.z + .01) || 3) : ([...ZOOM_STEPS].reverse().find(z => z < view.z - .01) || .25));
   function zoomFit() { if (!board?.cards.length) return zoomTo(1); const from = { ...view }; fit(board.cards.filter(c => !c.hidden), 120, 2); const to = { ...view }; Object.assign(view, from); applyView(); glideView(to); }
   $('zoom').onclick = e => { e.stopPropagation(); const b = $('zoom').getBoundingClientRect();
     boardMenu({ clientX: b.left, clientY: b.top - 8 }, [
@@ -1624,7 +1591,7 @@
     if (c.type === 'note') { wireTagTyping(c, t);
       if (!t._nameHop) { t._nameHop = true; t.addEventListener('keydown', ev => { if (ev.key === 'Tab' && ev.shiftKey && !c.myra) { ev.preventDefault(); ev.stopImmediatePropagation(); t.onblur = null; endEdit(); save(); startEdit(c.id, cardsEl.querySelector(`[data-id="${c.id}"] .nname`)); } }, true); } }
   }
-  function endEdit() { if (!editing) return; { const c0 = byId(editing), e0 = cardsEl.querySelector(`[data-id="${editing}"]`); if (c0 && e0 && ['title', 'text'].includes(c0.type)) setTimeout(() => textStrokeSVG(c0, e0), 0); }
+  function endEdit() { if (!editing) return;
     const el = cardsEl.querySelector(`[data-id="${editing}"]`); if (el) { el.classList.remove('editing'); el.querySelectorAll('[contenteditable]').forEach(n => n.contentEditable = 'false'); } editing = null; }
 
   // ---------- pointer: drag cards, resize, connect, marquee, pan ----------
@@ -2171,8 +2138,6 @@
   const MYRA_COLORS = { golden: { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' }, honey: { B: '#ffc74a', S: '#fff1bd', D: '#e39d1d' }, amber: { B: '#e88a24', S: '#ffd08a', D: '#b8621a' },
     blush: { B: '#ff9d7a', S: '#ffe1d3', D: '#e0684a' }, unripe: { B: '#e2553c', S: '#ffb5a3', D: '#b33a25' }, moss: { B: '#8fc65a', S: '#e4f4c4', D: '#5c9a35', L: '#2f9e72', l: '#1f6e50' }, frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' }, night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' } };
   const settings = Object.assign({ defaultFont: '', iconStyle: 'regular', winButtons: false, webAccess: false, caelestia: true, autoUpdate: true, panelH: {}, myraName: '', myraCalm: 'lively', myraChar: true, tbSize: 'm', dblNote: true, wLayers: true, wColors: true, wDesign: true, wTray: true,  myra: 'golden', greet: true, grid: true, tilt: true, motion: true, keys: true, theme: 'system', chat: 'normal', emoji: true, noteColor: 'random', snap: false, ai: true, mobbin: true, higgs: true, chatKeep: 'board', chatMax: '60', cursor: '#f6b45e', fancyCursor: true, colors: { light: {}, dark: {} } }, (() => { try { return JSON.parse(localStorage.getItem('fenmyr:settings') || '{}'); } catch (e) { return {}; } })());
-  delete settings.wDressup; delete settings.wMusic; delete settings.outfit;   // left in saved settings by the old Dress up and music widgets
-  try { if (localStorage.getItem('fenmyr:keys') === 'hide') settings.keys = false; } catch (e) {}
   // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
   // the Boards panel is pinned at the top left (it's home to your boards and Settings), everything else can move
   const WG_DEFAULT = { left: ['layers', 'colors'], right: ['design', 'tray'] };
@@ -2257,7 +2222,7 @@
     document.documentElement.classList.toggle('no-win-buttons', settings.winButtons === false);   // tiling compositors place the window themselves
     $('obMyra').innerHTML = $('myraColors').innerHTML = Object.entries(MYRA_COLORS).map(([n, c]) => `<button data-mc="${n}" title="${colorLabel(n)}" style="background:${c.B}" class="${settings.myra === n ? 'on' : ''}"></button>`).join('');
     document.querySelectorAll('[data-set]').forEach(t => t.checked = !!settings[t.dataset.set]);
-    try { localStorage.setItem('fenmyr:settings', JSON.stringify(settings)); localStorage.setItem('fenmyr:keys', settings.keys ? 'show' : 'hide'); } catch (e) {}
+    try { localStorage.setItem('fenmyr:settings', JSON.stringify(settings)); } catch (e) {}
   }
   // ---------- your cursor: a little pointer and name tag in Myra's color ----------
   // It follows the mouse; over a card it turns into an open hand, and a fist while you drag. Text and inputs keep the system's own I-beam.
@@ -2364,10 +2329,9 @@
         [...cams.keys()].forEach(cid => { const c = byId(cid); camOff(cid); if (c) camOn(c); }); };
     }
   }
-  $('whGo').onclick = () => setupWhisper();
   $('devAllow').onclick = async () => { try { const st = await openMedia(true); st.getTracks().forEach(t => t.stop()); } catch (e) { try { const st = await openMedia(false); st.getTracks().forEach(t => t.stop()); } catch (e2) {} } fillDevices(); };
   navigator.mediaDevices?.addEventListener?.('devicechange', () => { if ($('settings').classList.contains('on')) fillDevices(); });
-  $('gearBtn').onclick = e => { e.stopPropagation(); fillDevices(); paintWhisper(); showConnections(true);   // always a fresh look at Claude's connections
+  $('gearBtn').onclick = e => { e.stopPropagation(); fillDevices(); showConnections(true);   // always a fresh look at Claude's connections
     if (placing) stopPlacing(); if (sel.size) selectOnly([]); checkUpdate(); showUsage(); $('boardCount').textContent = `${boardList.length} board${boardList.length === 1 ? '' : 's'}, kept on this computer. They never leave your computer.`; showConnections(true); $('settings').classList.add('on'); };
   const closeSettings = () => $('settings').classList.remove('on');
   // settings tabs: one topic at a time, so it isn't one long scroll
@@ -2454,7 +2418,7 @@
     if (g.dataset.seg === 'chatKeep' && b.dataset.v !== 'board') clearSavedChats(); if (g.dataset.seg === 'chatKeep') renderChat(); });
   $('obNotes').onclick = $('noteColors').onclick = e => { const b = e.target.closest('[data-nc]'); if (b) { settings.noteColor = b.dataset.nc; applySettings(); } };
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => settings.theme === 'system' && applySettings());
-  window.__fenmyrEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } else if (name === 'settings') openSettingsKey(); };   // a new wallpaper or scheme: restyle right away
+  window.__fenmyrEvent = (name, data) => { if (name === 'caelestia') { cae = data; applySettings(); } };   // a new wallpaper or scheme: restyle right away
   if (Fenmyr.caelestia) Fenmyr.caelestia().then(d => { cae = d; if (d) applySettings(); }).catch(() => {});
   const newNoteColor = () => settings.noteColor === 'random' ? COLOR_NAMES[1 + Math.floor(Math.random() * 6)] : settings.noteColor;
   let deselectAt = 0;
@@ -3955,43 +3919,15 @@
     const u8 = new Uint8Array(out.buffer); let bin = ''; for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
     return 'data:audio/wav;base64,' + btoa(bin);
   }
-  async function transcribe(c, asked) {
-    if (Fenmyr.whisperStatus) { c.txNote = 'Writing it out…'; renderCard(c); }
+  async function transcribe(c) {
     try { const text = await Fenmyr.transcribe(c.type === 'video' ? await videoAudio(c) : c.src); c.text = (text || '').trim(); c.txNote = c.text ? '' : "I couldn't make out any words in that one."; }
     catch (e) {
-      if (e.message === 'NEED_WHISPER') { c.txNote = 'Not written out yet.'; c.needTx = true; renderCard(c); save(); offerWhisper(asked); return; }
       c.txNote = e.message; }
     c.needTx = false;
     renderCard(c); save();
     const what = c.type === 'video' ? 'video' : 'voice memo';
     if (c.text && (!settings.ai || haveClaude === false)) say(`Your ${what} is written out ✦`, 4000);
     else if (c.text) say(`Your ${what} is written out ✦ Want me to turn it into notes?`, 6000, [{ label: 'Turn into notes', run: () => c.type === 'video' ? videoAct(c, 'vd-notes') : audioAct(c, 'au-notes') }, { label: 'Not now', ghost: true, run: () => {} }]);
-  }
-  // Windows/Linux: Whisper writes memos out on this computer. The first memo asks once; after that it just happens.
-  let whisperBusy = false;
-  function offerWhisper(force) {
-    let asked = false; try { asked = !!localStorage.getItem('fenmyr:whisperAsked'); } catch (e) {}
-    if (asked && !force) return; try { localStorage.setItem('fenmyr:whisperAsked', '1'); } catch (e) {}
-    say("Want me to write out your voice memos? I learn once (a 140 MB download), then it all happens right here on your computer, privately ✦", 0,
-      [{ label: 'Yes, set it up', run: setupWhisper }, { label: 'Not now', ghost: true, run: () => say('No problem! Your memos still record and play. Tap “Write it out” on one anytime, or turn it on in Settings → Helpers.', 7000) }]);
-  }
-  async function setupWhisper() {
-    if (whisperBusy || !Fenmyr.whisperGet) return; whisperBusy = true;
-    try { await Fenmyr.whisperGet(); } catch (e) {}
-    for (;;) {
-      await new Promise(r => setTimeout(r, 600)); let st = {}; try { st = await Fenmyr.whisperStatus(); } catch (e) { break; }
-      paintWhisper(st);
-      if (st.ready) { whisperBusy = false; say("All set! Voice memos will be written out from now on ✦", 5000); board.cards.filter(c => (c.type === 'audio' || (c.type === 'video' && c.needTx)) && c.src && !c.text).forEach(c => transcribe(c)); return; }
-      if (st.error) { whisperBusy = false; say(st.error, 8000, [{ label: 'Try again', run: setupWhisper }]); return; }
-      if (st.downloading) say(`Learning to listen… ${Math.round((st.progress || 0) * 100)}%`, 0);
-    }
-    whisperBusy = false;
-  }
-  async function paintWhisper(st) {
-    const row = $('whRow'); if (!row || !Fenmyr.whisperStatus) return; row.hidden = false;
-    if (!st) try { st = await Fenmyr.whisperStatus(); } catch (e) { st = {}; }
-    $('whState').textContent = st.ready ? 'Ready. Memos are written out on this computer.' : st.downloading ? `Downloading… ${Math.round((st.progress || 0) * 100)}%` : 'Off. A one-time 140 MB download, then it works offline.';
-    $('whGo').hidden = !!st.ready || !!st.downloading;
   }
   function audioAct(c, act, e) {
     const L = live.get(c.id), el = cardsEl.querySelector(`[data-id="${c.id}"]`);
@@ -4000,7 +3936,7 @@
     if (act === 'au-pause' && L && L.recorder.state === 'inactive') return;
     if (act === 'au-pause' && L) { if (c.paused) { L.recorder.resume(); L.paused += Date.now() - L.pausedAt; } else { L.recorder.pause(); L.pausedAt = Date.now(); } c.paused = !c.paused; renderCard(c); }
     if (act === 'au-start') { readyToRecord().then(ok => { if (ok) record(c); }); return; }
-    if (act === 'au-tx') { transcribe(c, true); return; }
+    if (act === 'au-tx') { transcribe(c); return; }
     if (act === 'au-dev') return devicePick(e, [['audioinput', 'Microphone', 'micId']], async () => { if (warm) { warm.getTracks().forEach(t => t.stop()); warm = null; } await readyToRecord(); renderCard(c); });
     if (act === 'au-replace') { players.get(c.id)?.pause(); players.delete(c.id); record(c); }
     if (act === 'au-notes') ask(`This is a voice memo I recorded (card ${c.id}). Turn it into short notes on the board, placed just to the right of that card, grouped if there are a few ideas:\n"${c.text}"`);
@@ -4647,10 +4583,8 @@
   };
   // from the top, clockwise: Myra, thumbs up, thumbs down, Myra in love, a look, a question, a red cross, a green check
   const WHEEL_DEFAULT = [{ src: 'stamps/myra-bounce.gif' }, { emoji: '👍' }, { emoji: '👎' }, { src: M('love'), mv: 'pulse' }, { emoji: '👀' }, { emoji: '❓' }, { emoji: '❌' }, { emoji: '✅' }];
-  // people who never changed the wheel get the new one; a wheel you made your own stays as you left it
-  const WHEEL_OLD_DEFAULT = JSON.stringify([{ emoji: '❤️' }, { emoji: '👍' }, { src: M('love') }, { emoji: '⭐' }, { src: 'stamps/myra-bounce.gif' }, { emoji: '❓' }, { emoji: '🌈' }, { src: M('happy'), mv: 'squish' }]);
   // the wheel keeps your favorites; anything you pick from the full list joins it
-  let wheel = WHEEL_DEFAULT; try { const w0 = JSON.parse(localStorage.getItem('fenmyr:wheel') || 'null'); if (Array.isArray(w0) && w0.length === 8 && JSON.stringify(w0) !== WHEEL_OLD_DEFAULT) wheel = w0; } catch (e) {}
+  let wheel = WHEEL_DEFAULT; try { const w0 = JSON.parse(localStorage.getItem('fenmyr:wheel') || 'null'); if (Array.isArray(w0) && w0.length === 8) wheel = w0; } catch (e) {}
   // Myra's own pixel stamps (drawn by assets/art/make_art.py); every other emoji shows as your system's emoji until it has one
   const PX = { '❤️': 'heart', '⭐': 'star', '✨': 'sparkles', '🌈': 'rainbow', '🔥': 'fire', '✅': 'check', '❌': 'cross', '❓': 'question', '❗': 'exclaim', '💡': 'bulb', '💙': 'blueheart', '🌸': 'blossom', '☕': 'coffee', '📌': 'pushpin', '🎯': 'target', '💬': 'speech' };
   const pxSrc = e => PX[e] ? `stamps/px/${PX[e]}.png` : null;
@@ -4717,11 +4651,10 @@
     table: Icon('table'), hr: Icon('divider'), clear: Icon('clear-format'),
   };
   const fontName = f => String(f || '').replace(/["']/g, '').split(',')[0].trim();
-  const escH = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
   // plain text or Myra's light markdown → editor HTML (headings, lists, checklists, quotes, dividers, **bold**, *italic*, `code`)
   function mdToHTML(src) {
-    const inl = s => escH(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1<em>$2</em>').replace(/`(.+?)`/g, '<code>$1</code>');
+    const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1<em>$2</em>').replace(/`(.+?)`/g, '<code>$1</code>');
     const lines = String(src || '').replace(/\r/g, '').split('\n'); let out = '', list = null;
     const close = () => { if (list) { out += `</${list === 'task' ? 'ul' : list}>`; list = null; } };
     const open = k => { if (list !== k) { close(); out += k === 'task' ? '<ul data-type="taskList">' : `<${k}>`; list = k; } };
@@ -4824,7 +4757,7 @@
     const title = (docCard?.text || '').trim() && first.trim().toLowerCase() !== (docCard.text || '').trim().toLowerCase() ? docCard.text.trim() : '';   // no double title when the doc already starts with it
     const dfont = (settings.defaultFont || '').trim().replace(/"/g, ''), web = [...new Set([...fontsIn(ed ? ed.getJSON() : docCard.doc || {}), ...(dfont ? [dfont] : [])])].filter(f => !isLocalFont(f));
     const size = paper === 'a4' ? '210mm 297mm' : '8.5in 11in';
-    return `<!doctype html><html><head><meta charset="utf-8"><title>${escH(title || 'Document')}</title>
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title || 'Document')}</title>
 <link rel="stylesheet" href="__WEB__/fonts.css">${web.map(f => `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(f).replace(/%20/g, '+')}:ital,wght@0,400;0,700;1,400&display=swap">`).join('')}
 <style>
 @page { size: ${size}; margin: 0.8in 0.85in 0.85in; }   /* browsers use these; the desktop app sets the same margins when it prints */
@@ -4841,7 +4774,7 @@ ${proseCSS()}
 .dv-prose .keep > :first-child { margin-top: 0; } .dv-prose > .keep { margin-top: 1.5em; } .dv-prose > .keep:first-child { margin-top: 0; }
 .dv-prose a { color: #b8621a; }
 .dv-prose ul[data-type="taskList"] input[type="checkbox"] { pointer-events: none; }
-</style></head><body>${title ? `<h1 class="doc-title">${escH(title)}</h1>` : ''}<div class="dv-prose">${body}</div></body></html>`;
+</style></head><body>${title ? `<h1 class="doc-title">${esc(title)}</h1>` : ''}<div class="dv-prose">${body}</div></body></html>`;
   }
   // ---------- a doc as a Word file: real headings, lists, tables and pictures, with Figtree built in ----------
   let docxLoading = null;
@@ -4965,7 +4898,7 @@ ${proseCSS()}
     } else if (kind === 'font') {
       const cur = fontName(ed.getAttributes('textStyle').fontFamily) || docDefault();
       const onBoard = boardFonts();
-      const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-font="${escH(f)}" style="font-family:'${escH(f)}', ${DOC_FONT}, system-ui">${escH(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
+      const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-font="${esc(f)}" style="font-family:'${esc(f)}', ${DOC_FONT}, system-ui">${esc(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
       p.innerHTML = `<input class="dp-search" id="dpFontQ" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
         <div class="dp-scroll" id="dpFontList">${onBoard.length ? `<div class="dp-h">Used on this board</div>${onBoard.map(row).join('')}` : ''}<div class="dp-h">Suggested</div>${SUGGESTED_FONTS.filter(f => !onBoard.includes(f)).map(row).join('')}
         <div class="dp-h">On your computer</div>${FONTS.filter(f => !SUGGESTED_FONTS.includes(f) && !onBoard.includes(f)).slice(0, 400).map(row).join('')}</div>`;
@@ -4983,12 +4916,12 @@ ${proseCSS()}
       p.innerHTML = `<div class="dp-icons">${['left', 'center', 'right', 'justify'].map(a => `<button type="button" class="dp-ic ${ed.isActive({ textAlign: a }) || (a === 'left' && !['center', 'right', 'justify'].some(x => ed.isActive({ textAlign: x }))) ? 'on' : ''}" data-align="${a}" title="${a === 'center' ? 'Centre' : a[0].toUpperCase() + a.slice(1)}">${DICON[a]}</button>`).join('')}</div>`;
     } else if (kind === 'link') {
       const href = ed.getAttributes('link').href || '';
-      p.innerHTML = `<form class="dp-link" id="dpLink"><input id="dpLinkIn" placeholder="Paste a link…" value="${escH(href)}" autocomplete="off" spellcheck="false"><button class="dp-go" type="submit">${href ? 'Update' : 'Add link'}</button></form>
+      p.innerHTML = `<form class="dp-link" id="dpLink"><input id="dpLinkIn" placeholder="Paste a link…" value="${esc(href)}" autocomplete="off" spellcheck="false"><button class="dp-go" type="submit">${href ? 'Update' : 'Add link'}</button></form>
         ${href ? `<div class="dp-linkacts"><button type="button" class="dp-row" data-link="open">Open ↗</button><button type="button" class="dp-row" data-link="remove">Remove link</button></div>` : ''}`;
       const inp = $('dpLinkIn'); inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Escape') { hidePop(); ed.commands.focus(); } });
       $('dpLink').onsubmit = e => { e.preventDefault(); let v = inp.value.trim(); if (!v) { ed.chain().focus().extendMarkRange('link').unsetLink().run(); return hidePop(); }
         if (!/^(https?:|mailto:|tel:)/i.test(v)) v = 'https://' + v;
-        if (ed.state.selection.empty && !ed.isActive('link')) ed.chain().focus().insertContent(`<a href="${escH(v)}">${escH(v.replace(/^https?:\/\//, ''))}</a> `).run();
+        if (ed.state.selection.empty && !ed.isActive('link')) ed.chain().focus().insertContent(`<a href="${esc(v)}">${esc(v.replace(/^https?:\/\//, ''))}</a> `).run();
         else ed.chain().focus().extendMarkRange('link').setLink({ href: v }).run(); hidePop(); };
       setTimeout(() => inp.focus(), 30);
     } else if (kind === 'more') {
@@ -5017,7 +4950,7 @@ ${proseCSS()}
         <button type="button" class="dp-row dp-pdf dp-word" data-word="1">${Icon('file-word')}<span>Download Word<small>A .docx you can keep editing in Word or Pages</small></span></button>`;
     } else if (kind === 'myra') {
       const has = !ed.state.selection.empty;
-      p.innerHTML = has ? `<div class="dp-h">Myra, make this…</div>${[['Shorter', 'Make it shorter and tighter'], ['Clearer', 'Make it clearer and easier to read'], ['Friendlier', 'Make it warmer and friendlier'], ['More confident', 'Make it more confident and direct'], ['More professional', 'Make it more polished and professional'], ['Fix spelling & grammar', 'Fix spelling, grammar and punctuation only. Change nothing else'], ['Into bullet points', 'Turn it into a short bulleted list']].map(([l, how]) => `<button type="button" class="dp-row" data-how="${escH(how)}">${l}</button>`).join('')}
+      p.innerHTML = has ? `<div class="dp-h">Myra, make this…</div>${[['Shorter', 'Make it shorter and tighter'], ['Clearer', 'Make it clearer and easier to read'], ['Friendlier', 'Make it warmer and friendlier'], ['More confident', 'Make it more confident and direct'], ['More professional', 'Make it more polished and professional'], ['Fix spelling & grammar', 'Fix spelling, grammar and punctuation only. Change nothing else'], ['Into bullet points', 'Turn it into a short bulleted list']].map(([l, how]) => `<button type="button" class="dp-row" data-how="${esc(how)}">${l}</button>`).join('')}
         <form class="dp-link" id="dpAsk"><input id="dpAskIn" placeholder="Or tell Myra what to do…" autocomplete="off"><button class="dp-go" type="submit">✦</button></form>`
         : `<p class="dp-tip">Select some words, then ask Myra to rewrite them: shorter, friendlier, fixed up, or anything you like ✦</p>`;
       const ask = $('dpAskIn'); if (ask) { ask.addEventListener('keydown', e => e.stopPropagation()); $('dpAsk').onsubmit = e => { e.preventDefault(); const v = ask.value.trim(); if (v) rewrite(v); }; }
@@ -5065,7 +4998,7 @@ ${proseCSS()}
     try {
       const out = (await Fenmyr.rewrite(text, how, docCard?.text || '', around) || '').trim(); if (!out) throw new Error('Myra came back empty-handed');
       const multi = /\n/.test(out);
-      ed.chain().focus().insertContentAt({ from, to }, multi ? mdToHTML(out) : escH(out)).run();
+      ed.chain().focus().insertContentAt({ from, to }, multi ? mdToHTML(out) : esc(out)).run();
       const end = ed.state.selection.from; ed.commands.setTextSelection({ from, to: end });
       say('Rewritten ✦ Undo brings back your words.', 6000, [{ label: 'Undo', run: () => ed.chain().focus().undo().run() }]);
     } catch (err) {
@@ -5089,12 +5022,12 @@ ${proseCSS()}
     return c.text || '';
   }
   function cardHTML(c) {
-    if (c.type === 'note') return (c.name ? `<p><strong>${escH(c.name)}</strong></p>` : '') + mdToHTML(c.text);
-    if (c.type === 'todo') return (c.text ? `<p><strong>${escH(c.text)}</strong></p>` : '') + `<ul data-type="taskList">${(c.items || []).map(i => `<li data-type="taskItem" data-checked="${!!i.done}"><p>${escH(i.t)}</p></li>`).join('')}</ul>`;
-    if (c.type === 'link') return `<p><a href="${escH(c.url)}">${escH(c.title || c.url)}</a></p>`;
-    if (c.type === 'swatch') return `<p><span style="color: ${c.hex}">■</span> ${escH(c.label || '')} <code>${c.hex.toUpperCase()}</code></p>`;
-    if (c.type === 'title') return `<h2>${escH(c.text)}</h2>`;
-    if (c.type === 'doc') return (c.text ? `<h2>${escH(c.text)}</h2>` : '') + docHTML(c);
+    if (c.type === 'note') return (c.name ? `<p><strong>${esc(c.name)}</strong></p>` : '') + mdToHTML(c.text);
+    if (c.type === 'todo') return (c.text ? `<p><strong>${esc(c.text)}</strong></p>` : '') + `<ul data-type="taskList">${(c.items || []).map(i => `<li data-type="taskItem" data-checked="${!!i.done}"><p>${esc(i.t)}</p></li>`).join('')}</ul>`;
+    if (c.type === 'link') return `<p><a href="${esc(c.url)}">${esc(c.title || c.url)}</a></p>`;
+    if (c.type === 'swatch') return `<p><span style="color: ${c.hex}">■</span> ${esc(c.label || '')} <code>${c.hex.toUpperCase()}</code></p>`;
+    if (c.type === 'title') return `<h2>${esc(c.text)}</h2>`;
+    if (c.type === 'doc') return (c.text ? `<h2>${esc(c.text)}</h2>` : '') + docHTML(c);
     return mdToHTML(cardWords(c));
   }
   // the open doc page, or a doc card on the board, under the pointer (only for cards that have words)
@@ -5174,7 +5107,7 @@ ${proseCSS()}
     p.dataset.for = list.map(c => c.id).join(); p.style.zIndex = '';
     const cur = list.every(c => (c.font || '') === (list[0].font || '')) ? (list[0].font || '') : null;
     const onBoard = boardFonts();
-    const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-bfont="${escH(f)}" style="font-family:'${escH(f)}', ${DOC_FONT}, system-ui">${escH(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
+    const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-bfont="${esc(f)}" style="font-family:'${esc(f)}', ${DOC_FONT}, system-ui">${esc(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
     p.innerHTML = `<input class="dp-search" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
       <div class="dp-scroll"><button type="button" class="dp-row dp-font ${cur === '' ? 'on' : ''}" data-bfont="">Default font<small>Fenmyr’s own</small></button>
       ${onBoard.length ? `<div class="dp-h">Used on this board</div>${onBoard.map(row).join('')}` : ''}<div class="dp-h">Suggested</div>${SUGGESTED_FONTS.filter(f => !onBoard.includes(f)).map(row).join('')}
@@ -5203,7 +5136,7 @@ ${proseCSS()}
       ['pointerdown', 'mousedown', 'wheel', 'dblclick'].forEach(t => p.addEventListener(t, e => e.stopPropagation(), { passive: true })); }
     p.dataset.for = 'default'; p.style.zIndex = '120';   // above the Settings window
     const cur = (settings.defaultFont || '').trim();
-    const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-bfont="${escH(f)}" style="font-family:'${escH(f)}', ${DOC_FONT}, system-ui">${escH(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
+    const row = f => `<button type="button" class="dp-row dp-font ${f === cur ? 'on' : ''}" data-bfont="${esc(f)}" style="font-family:'${esc(f)}', ${DOC_FONT}, system-ui">${esc(f)}${isLocalFont(f) ? '' : '<small>Google Fonts</small>'}</button>`;
     p.innerHTML = `<input class="dp-search" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
       <div class="dp-scroll"><button type="button" class="dp-row dp-font ${cur === '' ? 'on' : ''}" data-bfont="">${DOC_FONT}<small>Fenmyr’s own</small></button>
       <div class="dp-h">Suggested</div>${SUGGESTED_FONTS.filter(f => f !== DOC_FONT).map(row).join('')}

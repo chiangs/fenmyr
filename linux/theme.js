@@ -26,4 +26,4 @@ function watch(onChange) {
   if (!start()) { const t = setInterval(() => { if (start()) { clearInterval(t); changed(); } }, 30000); t.unref && t.unref(); }
 }
 
-module.exports = { read, watch, file };
+module.exports = { read, watch };
