@@ -1,4 +1,5 @@
-// @ts-nocheck
+import type { StoredBoard } from '../../shared/model.ts';
+import { parseLibrary } from '../../shared/model.ts';
 import { renderAll } from '../canvas/render.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
@@ -10,17 +11,18 @@ import { chirp } from '../settings/licenses.ts';
 import { appState, session } from '../core/state.ts';
 
 // ---------- canvases can go anywhere: inside another board (as a canvas card there), into a folder, or out on their own ----------
-const insideOf = (id, maybeAncestor) => {
+const insideOf = (id: string, maybeAncestor: string) => {
   let b = appState.boardList.find(x => x.id === id),
     n = 0;
-  while (b && b.parent && n++ < 40) {
+  while (b?.parent && n++ < 40) {
     if (b.parent === maybeAncestor) return true;
-    b = appState.boardList.find(x => x.id === b.parent);
+    const parent = b.parent;
+    b = appState.boardList.find(x => x.id === parent);
   }
   return false;
 };
 
-async function editBoard(id, fn) {
+async function editBoard<R>(id: string, fn: (b: StoredBoard) => R) {
   if (session.board && session.board.id === id) {
     fn(session.board);
     renderAll();
@@ -35,20 +37,21 @@ async function editBoard(id, fn) {
 }
 
 // take a canvas's card off the board it sat inside
-export async function unhook(id) {
+export async function unhook(id: string) {
   const kid =
       appState.boardList.find(x => x.id === id) || (session.board && session.board.id === id ? session.board : null),
     p = kid && kid.parent;
   if (!p) return;
   await editBoard(p, pb => {
-    const gone = new Set(pb.cards.filter(c => c.type === 'canvas' && c.board === id).map(c => c.id));
-    pb.cards = pb.cards.filter(c => !gone.has(c.id));
+    const cards = pb.cards ?? [];
+    const gone = new Set(cards.filter(c => c.type === 'canvas' && c.board === id).map(c => c.id));
+    pb.cards = cards.filter(c => !gone.has(c.id));
     pb.links = (pb.links || []).filter(l => !gone.has(l.a) && !gone.has(l.b));
   });
 }
 
 // put a board inside another one, as a canvas card (at a spot, or to the right of what's there)
-export async function nestBoard(id, intoId, at) {
+export async function nestBoard(id: string, intoId: string, at?: { x: number; y: number }) {
   if (id === intoId || insideOf(intoId, id)) {
     chirp("A board can't go inside itself ✦", 2500);
     return false;
@@ -64,28 +67,24 @@ export async function nestBoard(id, intoId, at) {
     b.folder = into.folder || null;
   });
   await editBoard(intoId, pb => {
-    const x = at ? at.x : pb.cards.length ? Math.max(...pb.cards.map(c => c.x + c.w)) + 60 : 0,
-      y = at ? at.y : pb.cards.length ? Math.min(...pb.cards.map(c => c.y)) : 0;
-    pb.cards.push(card('canvas', { x, y, text: kid.name, board: id }));
+    const cards = (pb.cards ??= []);
+    const x = at ? at.x : cards.length ? Math.max(...cards.map(c => c.x + c.w)) + 60 : 0,
+      y = at ? at.y : cards.length ? Math.min(...cards.map(c => c.y)) : 0;
+    cards.push(card('canvas', { x, y, text: kid.name, board: id }));
   });
   chirp(`Moved “${kid.name}” inside “${into.name}” ✦`, 3000);
   return true;
 }
 
-export const renderCrumbsSoon = () => setTimeout(() => typeof renderCrumbs === 'function' && renderCrumbs(), 50);
+export const renderCrumbsSoon = () => setTimeout(() => renderCrumbs(), 50);
 
 export async function loadLib() {
   const [list, lib] = await Promise.all([Fenmyr.list(), Fenmyr.folders().catch(() => null)]);
   appState.boardList = list;
-  if (Array.isArray(lib)) {
-    appState.projects = [];
-    appState.folders = lib;
-  } // folders saved before projects existed
-  else {
-    appState.projects = (lib && lib.projects) || [];
-    appState.folders = (lib && lib.folders) || [];
-  }
-  appState.boardOrder = (lib && !Array.isArray(lib) && lib.order) || {};
+  const { projects, folders, order } = parseLibrary(lib);
+  appState.projects = projects;
+  appState.folders = folders;
+  appState.boardOrder = order;
   // forget order entries for boards and folders that are gone
   {
     const ids = new Set(list.map(b => b.id));
@@ -94,25 +93,26 @@ export async function loadLib() {
         delete appState.boardOrder[k];
         return;
       }
-      appState.boardOrder[k] = appState.boardOrder[k].filter(id => ids.has(id));
-      if (!appState.boardOrder[k].length) delete appState.boardOrder[k];
+      const kept = appState.boardOrder[k]?.filter(id => ids.has(id)) ?? [];
+      if (kept.length) appState.boardOrder[k] = kept;
+      else delete appState.boardOrder[k];
     });
   }
 }
 
 // drag and drop between rows and tiles: boards go into folders, folders go into projects
-export const dropZone = (el, kind, onDrop) => {
+export const dropZone = (el: HTMLElement, kind: string, onDrop: (id: string) => unknown) => {
   el.addEventListener('dragover', e => {
-    if (!e.dataTransfer.types.includes('fenmyr/' + kind)) return;
+    if (!e.dataTransfer?.types.includes(`fenmyr/${kind}`)) return;
     e.preventDefault();
     e.stopPropagation();
     el.classList.add('drop');
   });
   el.addEventListener('dragleave', e => {
-    if (!el.contains(e.relatedTarget)) el.classList.remove('drop');
+    if (!(e.relatedTarget instanceof Node && el.contains(e.relatedTarget))) el.classList.remove('drop');
   });
   el.addEventListener('drop', async e => {
-    const id = e.dataTransfer.getData('fenmyr/' + kind);
+    const id = e.dataTransfer?.getData(`fenmyr/${kind}`);
     if (!id) return;
     e.preventDefault();
     e.stopPropagation();
@@ -124,7 +124,7 @@ export const dropZone = (el, kind, onDrop) => {
 };
 
 // drag a board between two rows to put it there (the top and bottom edge of a row; the middle still files it inside that board, as before)
-const dropEdge = (e, el) => {
+const dropEdge = (e: MouseEvent, el: HTMLElement) => {
   const r = el.getBoundingClientRect(),
     y = (e.clientY - r.top) / r.height;
   return y < 0.3 ? 'before' : y > 0.7 ? 'after' : null;
@@ -135,7 +135,7 @@ const clearEdges = () =>
     .querySelectorAll('.board-row.drop-before, .board-row.drop-after')
     .forEach(x => x.classList.remove('drop-before', 'drop-after'));
 
-async function placeBoard(id, target, after) {
+async function placeBoard(id: string, target: { id: string; folder?: string | null }, after: boolean) {
   const mine =
     appState.boardList.find(x => x.id === id) || (session.board && session.board.id === id ? session.board : null);
   if (!mine || id === target.id) return;
@@ -147,13 +147,13 @@ async function placeBoard(id, target, after) {
   ids.splice(at < 0 ? ids.length : at, 0, id);
   appState.boardOrder[key] = ids;
   if (from !== key && appState.boardOrder[from])
-    appState.boardOrder[from] = appState.boardOrder[from].filter(x => x !== id);
+    appState.boardOrder[from] = appState.boardOrder[from]?.filter(x => x !== id) ?? [];
 }
 
-export function reorderZone(el, b) {
+export function reorderZone(el: HTMLElement, b: { id: string; folder?: string | null; parent?: string | null }) {
   if (b.parent && appState.boardList.some(x => x.id === b.parent)) return; // canvases inside another board are not part of a folder's order
   el.addEventListener('dragover', e => {
-    if (!e.dataTransfer.types.includes('fenmyr/board')) return;
+    if (!e.dataTransfer?.types.includes('fenmyr/board')) return;
     const z = dropEdge(e, el);
     el.classList.remove('drop-before', 'drop-after');
     if (!z) return;
@@ -163,11 +163,12 @@ export function reorderZone(el, b) {
     el.classList.add('drop-' + z);
   });
   el.addEventListener('dragleave', e => {
-    if (!el.contains(e.relatedTarget)) el.classList.remove('drop-before', 'drop-after');
+    if (!(e.relatedTarget instanceof Node && el.contains(e.relatedTarget)))
+      el.classList.remove('drop-before', 'drop-after');
   });
   el.addEventListener('drop', async e => {
     const z = dropEdge(e, el),
-      id = e.dataTransfer.getData('fenmyr/board');
+      id = e.dataTransfer?.getData('fenmyr/board');
     clearEdges();
     if (!z || !id) return;
     e.preventDefault();
@@ -178,12 +179,12 @@ export function reorderZone(el, b) {
   });
 }
 
-export const draggable = (el, kind, id) => {
+export const draggable = (el: HTMLElement, kind: string, id: string) => {
   el.draggable = true;
   el.ondragstart = e => {
     e.stopPropagation();
-    e.dataTransfer.setData('fenmyr/' + kind, id);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer?.setData(`fenmyr/${kind}`, id);
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
     el.classList.add('dragging');
   };
   el.ondragend = () => {
@@ -192,10 +193,10 @@ export const draggable = (el, kind, id) => {
   };
 };
 
-export function inlineRename(el, obj, after) {
+export function inlineRename(el: HTMLElement, obj: { id: string; name: string }, after?: (v: string) => unknown) {
   el.contentEditable = 'true';
   el.focus();
-  getSelection().selectAllChildren(el);
+  getSelection()?.selectAllChildren(el);
   el.onkeydown = ev => {
     if (ev.key === 'Enter') {
       ev.preventDefault();
@@ -209,7 +210,7 @@ export function inlineRename(el, obj, after) {
   };
   el.onblur = async () => {
     el.contentEditable = 'false';
-    const v = el.textContent.trim();
+    const v = (el.textContent ?? '').trim();
     // the list may have reloaded while you typed, so rename the current copy (found by id), not the one we started with
     const liveObj = [...appState.projects, ...appState.folders].find(x => x.id === obj.id) || obj;
     if (v) {
@@ -221,12 +222,13 @@ export function inlineRename(el, obj, after) {
   };
 }
 
-export async function newBoardIn(folderId) {
+export async function newBoardIn(folderId: string | null) {
   const b = newBoard();
   b.folder = folderId;
   await Fenmyr.save(b);
   closeHome();
   await openBoard(b.id);
   $('boardName').focus();
-  $('boardName').select();
+  const field = $('boardName');
+  if (field instanceof HTMLInputElement) field.select();
 }

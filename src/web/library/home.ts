@@ -1,13 +1,14 @@
-// @ts-nocheck
-import { esc, removeOnOutsidePress } from '../ui/dom.ts';
+import type { Card, Folder, Project } from '../../shared/model.ts';
+import type { BoardSummary } from '../../shared/ops.ts';
+import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { renderAll } from '../canvas/render.ts';
-import { COLORS } from '../core/base.ts';
+import { COLORS, colorHex } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { resetHistory } from '../core/history.ts';
 import { dueIndex } from '../features/due.ts';
 import { findClose } from '../features/find.ts';
 import { draggable, dropZone, inlineRename, nestBoard, newBoardIn } from './nesting.ts';
-import { FBTN, refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
+import { FBTN_OF, refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
 import {
   boardsIn,
   boardsUnder,
@@ -34,8 +35,9 @@ import { appState, session } from '../core/state.ts';
 // and check again whenever you come back to the app
 
 // ---------- home: zoom out to see every project, then a project's folders, then a folder's boards ----------
-export let homeAt = null;
-// null = closed, { level: 'all' } | { level: 'project', id } | { level: 'folder', id }
+type HomeAt = { level: 'all'; id?: undefined } | { level: 'project' | 'folder'; id: string };
+// null means Home is closed
+export let homeAt: HomeAt | null = null;
 export const where = () => {
   const f = appState.folders.find(x => x.id === session.board?.folder),
     p = f && appState.projects.find(x => x.id === f.project);
@@ -52,19 +54,24 @@ export function renderCrumbs() {
     chainF.map((x, i) => `${p || i ? '<i>/</i>' : ''}<button data-go="folder:${x.id}"></button>`).join('');
   const btns = [...el.querySelectorAll('button')];
   if (p) {
-    btns[0].textContent = p.name;
-    btns[0].title = p.name;
+    const [first] = btns;
+    if (first) {
+      first.textContent = p.name;
+      first.title = p.name;
+    }
   }
   chainF.forEach((x, i) => {
     const bt = btns[i + (p ? 1 : 0)];
+    if (!bt) return;
     bt.textContent = x.name;
     bt.title = x.name;
   });
   // inside a canvas: the boards it lives in, so you can climb back out
-  const chain = [];
+  const chain: BoardSummary[] = [];
   let up = session.board.parent;
   while (up && chain.length < 4) {
-    const pb = appState.boardList.find(x => x.id === up);
+    const looking = up;
+    const pb = appState.boardList.find(x => x.id === looking);
     if (!pb) break;
     chain.unshift(pb);
     up = pb.parent;
@@ -75,15 +82,16 @@ export function renderCrumbs() {
       `${el.children.length ? '<i>/</i>' : ''}<button data-board="${pb.id}"></button>`,
     );
     const bt = el.lastElementChild;
+    if (!(bt instanceof HTMLElement)) return;
     bt.textContent = pb.name;
-    bt.title = 'Back to ' + pb.name;
+    bt.title = `Back to ${pb.name}`;
   });
 }
 
 export function openHome(go = 'all') {
   const [level, id] = go.split(':');
-  findClose();
-  homeAt = { level, id };
+  findClose(undefined);
+  homeAt = (level === 'project' || level === 'folder') && id ? { level, id } : { level: 'all' };
   $('home').classList.add('on');
   stage.classList.add('at-home');
   stopPlacing();
@@ -98,9 +106,9 @@ export function closeHome() {
   refreshBoards();
 }
 
-export const miniCache = new Map();
+export const miniCache = new Map<string, Promise<string>>();
 
-export async function mini(id) {
+export async function mini(id: string): Promise<string> {
   // a tiny map of the board: every card as a little colored block
   if (!miniCache.has(id))
     miniCache.set(
@@ -112,14 +120,14 @@ export async function mini(id) {
           y0 = Math.min(...cs.map(c => c.y)),
           x1 = Math.max(...cs.map(c => c.x + c.w)),
           y1 = Math.max(...cs.map(c => c.y + c.h));
-        const fill = c =>
+        const fill = (c: Card) =>
           c.type === 'swatch'
             ? c.hex
             : c.type === 'image'
               ? '#d9cfe0'
               : c.type === 'title'
                 ? 'transparent'
-                : COLORS[c.color] || '#fff';
+                : (c.color && COLORS[c.color]) || '#fff';
         return (
           `<svg viewBox="${x0 - 40} ${y0 - 40} ${x1 - x0 + 80} ${y1 - y0 + 80}" preserveAspectRatio="xMidYMid meet">` +
           cs
@@ -133,25 +141,33 @@ export async function mini(id) {
         );
       }),
     );
-  return miniCache.get(id);
+  return miniCache.get(id) ?? '';
 }
 
-function tile(kind, obj, sub, onOpen, btns = []) {
+function tile(
+  kind: string,
+  obj: { id: string; name: string },
+  sub: string,
+  onOpen: () => void,
+  btns: [string, string, string][] = [],
+) {
   const t = document.createElement('div');
   t.className = 'tile ' + kind;
   t.style.rotate = (((obj.id.charCodeAt(0) + obj.id.charCodeAt(1)) % 5) - 2) * 0.6 + 'deg';
-  t.innerHTML = `<div class="tile-art"></div><div class="tile-meta"><b></b><small>${sub}</small>${btns.map(([a, tt, s]) => `<button class="f-btn" data-a="${a}" title="${tt}">${FBTN[a] || s}</button>`).join('')}</div>`;
-  t.querySelector('.tile-meta b').textContent = obj.name;
+  t.innerHTML = `<div class="tile-art"></div><div class="tile-meta"><b></b><small>${sub}</small>${btns.map(([a, tt, s]) => `<button class="f-btn" data-a="${a}" title="${tt}">${FBTN_OF(a) || s}</button>`).join('')}</div>`;
+  child(t, '.tile-meta b').textContent = obj.name;
   t.onclick = e => {
-    if (e.target.closest('.f-btn') || t.querySelector('.tile-meta b').isContentEditable) return;
+    if ((e.target instanceof Element && e.target.closest('.f-btn')) || child(t, '.tile-meta b').isContentEditable)
+      return;
     onOpen();
   };
   return t;
 }
 
-const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
-export function renderHome() {
+export function renderHome(): void {
+  if (!homeAt) return;
   const { level, id } = homeAt,
     grid = $('homeGrid'),
     crumbs = $('homeCrumbs');
@@ -174,8 +190,12 @@ export function renderHome() {
     (p ? `<i>/</i><button data-go="project:${p.id}"></button>` : '') +
     chainF.map(x => `<i>/</i><button data-go="folder:${x.id}"></button>`).join('');
   const cb = crumbs.querySelectorAll('button');
-  if (p) cb[1].textContent = p.name;
-  chainF.forEach((x, i) => (cb[i + (p ? 2 : 1)].textContent = x.name));
+  const projectCrumb = cb[1];
+  if (p && projectCrumb) projectCrumb.textContent = p.name;
+  chainF.forEach((x, i) => {
+    const b = cb[i + (p ? 2 : 1)];
+    if (b) b.textContent = x.name;
+  });
   $('home').classList.toggle('deep', level !== 'all');
   $('homeTitle').textContent = f ? f.name : p ? p.name : 'Your projects';
   $('homeSub').textContent = f
@@ -185,14 +205,14 @@ export function renderHome() {
     : p
       ? plural(foldersIn(p.id).length, 'folder')
       : 'Every project, with its folders and boards inside.';
-  const add = (label, run) => {
+  const add = (label: string, run: () => unknown) => {
     const a = document.createElement('button');
     a.className = 'tile add';
     a.innerHTML = `<span>+</span>${label}`;
     a.onclick = run;
     grid.appendChild(a);
   };
-  const projectTile = pp => {
+  const projectTile = (pp: Project) => {
     const fs = foldersIn(pp.id),
       nb = fs.reduce((n, x) => n + boardsUnder(x), 0);
     const t = tile(
@@ -202,7 +222,7 @@ export function renderHome() {
       () => openHome('project:' + pp.id),
       [['ren', 'Rename', '✎']],
     );
-    const art = t.querySelector('.tile-art'),
+    const art = child(t, '.tile-art'),
       chips = `<div class="chips">${fs
         .slice(0, 3)
         .map(x => `<span class="mf"><i></i>${esc(x.name)}</span>`)
@@ -219,11 +239,11 @@ export function renderHome() {
         if (svg) art.insertAdjacentHTML('afterbegin', svg);
         else {
           art.classList.remove('peekboard');
-          art.style.background = COLORS[pp.color] || COLORS.pink;
+          art.style.background = colorHex(pp.color);
         }
       });
     } else {
-      art.style.background = COLORS[pp.color] || COLORS.pink;
+      art.style.background = colorHex(pp.color);
       art.innerHTML = fs.length ? chips : '<em>empty project</em>';
     }
     const cb = document.createElement('button');
@@ -239,12 +259,13 @@ export function renderHome() {
       t.appendChild(m);
       m.onclick = ev => {
         ev.stopPropagation();
-        const c = ev.target.closest('[data-c]')?.dataset.c;
+        const c = ev.target instanceof Element ? ev.target.closest<HTMLElement>('[data-c]')?.dataset.c : undefined;
         m.remove();
         if (c === 'pick') {
           coverFor = pp;
-          $('coverPick').value = '';
-          $('coverPick').click();
+          const pick = $('coverPick');
+          if (pick instanceof HTMLInputElement) pick.value = '';
+          pick.click();
         }
         if (c === 'board') {
           delete pp.cover;
@@ -253,12 +274,12 @@ export function renderHome() {
       };
       removeOnOutsidePress(m);
     };
-    t.querySelector('[data-a="ren"]').onclick = () => inlineRename(t.querySelector('.tile-meta b'), pp);
-    t.oncontextmenu = e => rowMenu(e, 'project', pp, t.querySelector('.tile-meta b'));
+    child(t, '[data-a="ren"]').onclick = () => inlineRename(child(t, '.tile-meta b'), pp);
+    t.oncontextmenu = e => rowMenu(e, 'project', pp, child(t, '.tile-meta b'));
     dropZone(t, 'folder', fid => putFolder(fid, null, pp.id));
     return t;
   };
-  const folderTile = ff => {
+  const folderTile = (ff: Folder) => {
     const bs = boardsIn(ff.id),
       ns = subFolders(ff.id).length,
       t = tile(
@@ -268,21 +289,21 @@ export function renderHome() {
         () => openHome('folder:' + ff.id),
         [['ren', 'Rename', '✎']],
       );
-    const art = t.querySelector('.tile-art');
+    const art = child(t, '.tile-art');
     art.innerHTML =
       '<div class="back"></div><div class="tab"></div><div class="peek"></div><div class="front"><span class="face"><b></b><i></i><b></b></span></div>';
     const shown = bs.slice(0, 3);
-    art.querySelector('.peek').style.setProperty('--mid', (shown.length - 1) / 2);
+    child(art, '.peek').style.setProperty('--mid', String((shown.length - 1) / 2));
     shown.forEach(async (b, i) => {
       const d = document.createElement('div');
       d.className = 'paper';
-      d.style.setProperty('--i', i);
-      d.style.zIndex = i === Math.floor((shown.length - 1) / 2) ? 3 : 1;
+      d.style.setProperty('--i', String(i));
+      d.style.zIndex = i === Math.floor((shown.length - 1) / 2) ? '3' : '1';
       d.innerHTML = await mini(b.id);
-      art.querySelector('.peek').appendChild(d);
+      child(art, '.peek').appendChild(d);
     });
-    t.querySelector('[data-a="ren"]').onclick = () => inlineRename(t.querySelector('.tile-meta b'), ff);
-    t.oncontextmenu = e => rowMenu(e, 'folder', ff, t.querySelector('.tile-meta b'));
+    child(t, '[data-a="ren"]').onclick = () => inlineRename(child(t, '.tile-meta b'), ff);
+    t.oncontextmenu = e => rowMenu(e, 'folder', ff, child(t, '.tile-meta b'));
     draggable(t, 'folder', ff.id);
     dropZone(t, 'board', bid => moveBoard(bid, ff.id));
     dropZone(t, 'folder', fid => {
@@ -290,7 +311,7 @@ export function renderHome() {
     });
     return t;
   };
-  const boardTile = b => {
+  const boardTile = (b: BoardSummary) => {
     const t = tile(
       'board',
       b,
@@ -301,15 +322,16 @@ export function renderHome() {
       },
       [['ren', 'Rename', '✎']],
     );
-    t.querySelector('[data-a="ren"]').onclick = () =>
-      inlineRename(t.querySelector('.tile-meta b'), b, v => renameBoard(b, v));
-    mini(b.id).then(svg => (t.querySelector('.tile-art').innerHTML = svg || '<em>empty board</em>'));
+    child(t, '[data-a="ren"]').onclick = () => inlineRename(child(t, '.tile-meta b'), b, v => renameBoard(b, v));
+    mini(b.id).then(svg => {
+      child(t, '.tile-art').innerHTML = svg || '<em>empty board</em>';
+    });
     draggable(t, 'board', b.id);
     dropZone(t, 'board', id => nestBoard(id, b.id));
-    t.oncontextmenu = e => rowMenu(e, 'board', b, t.querySelector('.tile-meta b'));
+    t.oncontextmenu = e => rowMenu(e, 'board', b, child(t, '.tile-meta b'));
     return t;
   };
-  const section = label => {
+  const section = (label: string) => {
     const h = document.createElement('div');
     h.className = 'home-sec';
     h.textContent = label;
@@ -322,7 +344,7 @@ export function renderHome() {
       await saveLib();
       await refreshBoards();
       const t = [...grid.querySelectorAll('.tile.project')].pop();
-      inlineRename(t.querySelector('.tile-meta b'), pp);
+      if (t) inlineRename(child(t, '.tile-meta b'), pp);
     });
     if (looseFolders().length) {
       section('Folders not in a project · drag onto a project to file');
@@ -332,20 +354,20 @@ export function renderHome() {
       section('Boards not in a folder');
       looseBoards().forEach(b => grid.appendChild(boardTile(b)));
     }
-  } else if (level === 'project') {
+  } else if (level === 'project' && p) {
     foldersIn(p.id).forEach(ff => grid.appendChild(folderTile(ff)));
     add('New folder', async () => {
       const ff = makeFolder(uniqueName(appState.folders, 'New folder'), p.id);
       await saveLib();
       await refreshBoards();
       const t = [...grid.querySelectorAll('.tile.folder')].pop();
-      inlineRename(t.querySelector('.tile-meta b'), ff);
+      if (t) inlineRename(child(t, '.tile-meta b'), ff);
     });
     if (looseBoards().length) {
       section('Boards not in a folder · drag onto a folder to file');
       looseBoards().forEach(b => grid.appendChild(boardTile(b)));
     }
-  } else {
+  } else if (f) {
     subFolders(f.id).forEach(ff => grid.appendChild(folderTile(ff)));
     boardsIn(f.id).forEach(b => grid.appendChild(boardTile(b)));
     add('New board', () => newBoardIn(f.id));
@@ -355,12 +377,12 @@ export function renderHome() {
       await saveLib();
       await refreshBoards();
       const t = [...grid.querySelectorAll('.tile.folder')].pop();
-      if (t) inlineRename(t.querySelector('.tile-meta b'), ff);
+      if (t) inlineRename(child(t, '.tile-meta b'), ff);
     });
   }
 }
 
-const ago = t => {
+const ago = (t: number) => {
   const s = Date.now() / 1000 - t,
     m = s / 60,
     h = m / 60,
@@ -375,13 +397,13 @@ const ago = t => {
 };
 
 // a project's cover image: shrunk to a tidy size and saved with the library
-let coverFor = null;
+let coverFor: Project | null = null;
 
-export async function openBoard(id) {
+export async function openBoard(id: string) {
   // an edit still waiting to save belongs to the board you're leaving: save it first
   if (appState.saveT && session.board) {
     clearTimeout(appState.saveT);
-    appState.saveT = 0;
+    appState.saveT = undefined;
     session.board.view = session.view;
     await Fenmyr.save(session.board);
   }
@@ -390,12 +412,12 @@ export async function openBoard(id) {
   miniCache.clear();
   vnFull.clear();
   appState.histOpen = false;
-  findClose();
-  session.board = b;
+  findClose(undefined);
+  session.board = { name: '', cards: [], links: [], tray: [], ...b };
   if (chatOpen()) setTimeout(renderChat, 0);
   session.board.palette = session.board.palette || [];
   setTimeout(resetHistory, 0);
-  session.view = Object.assign({ x: 160, y: 140, z: 1 }, b.view);
+  session.view = { x: 160, y: 140, z: 1, ...b.view };
   session.sel.clear();
   session.editing = null;
   session.focusSet = null;
@@ -414,7 +436,8 @@ export async function openBoard(id) {
       if (kb && kb.name !== c.text) c.text = kb.name;
     }
   });
-  $('boardName').value = session.board.name;
+  const field = $('boardName');
+  if (field instanceof HTMLInputElement) field.value = session.board.name;
   renderAll();
   refreshBoards();
   refreshVNotes();
@@ -426,13 +449,13 @@ export async function openBoard(id) {
 }
 export function init7() {
   $('crumbs').onclick = async e => {
-    const pb = e.target.closest('[data-board]')?.dataset.board;
+    const pb = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-board]')?.dataset.board : undefined;
     if (pb) {
       session.board.view = session.view;
       await Fenmyr.save(session.board);
       return openBoard(pb);
     }
-    const g = e.target.closest('[data-go]')?.dataset.go;
+    const g = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-go]')?.dataset.go : undefined;
     if (g) openHome(g);
   };
 
@@ -442,7 +465,8 @@ export function init7() {
 
   $('homeBack').onclick = () => {
     if (!homeAt) return;
-    const f = homeAt.level === 'folder' && appState.folders.find(x => x.id === homeAt.id);
+    const at = homeAt;
+    const f = at.level === 'folder' ? appState.folders.find(x => x.id === at.id) : undefined;
     openHome(
       f && hasParent(f)
         ? 'folder:' + f.parent
@@ -453,14 +477,15 @@ export function init7() {
   };
 
   $('homeCrumbs').onclick = e => {
-    const g = e.target.closest('[data-go]')?.dataset.go;
+    const g = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-go]')?.dataset.go : undefined;
     if (g) openHome(g);
   };
 
   $('homeClose').onclick = closeHome;
 
   $('coverPick').onchange = () => {
-    const file = $('coverPick').files[0],
+    const pick = $('coverPick');
+    const file = pick instanceof HTMLInputElement ? pick.files?.[0] : undefined,
       p = coverFor;
     if (!file || !p) return;
     const rd = new FileReader();
@@ -471,14 +496,14 @@ export function init7() {
           cv = document.createElement('canvas');
         cv.width = im.width * k;
         cv.height = im.height * k;
-        cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+        cv.getContext('2d')?.drawImage(im, 0, 0, cv.width, cv.height);
         p.cover = cv.toDataURL('image/jpeg', 0.86);
         saveLib().then(refreshBoards);
       };
-      im.src = rd.result;
+      im.src = String(rd.result);
     };
     rd.readAsDataURL(file);
   };
 
-  appState.saveT = 0;
+  appState.saveT = undefined;
 }

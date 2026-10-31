@@ -121,7 +121,7 @@ function setSpacing(kind, v) {
   save();
 }
 
-export const FS = { s: 0.8, m: 1, l: 1.4, xl: 2 };
+export const FS: Record<string, number> = { s: 0.8, m: 1, l: 1.4, xl: 2 };
 export const SIZED = typesWith('sized');
 
 export function selCards() {
