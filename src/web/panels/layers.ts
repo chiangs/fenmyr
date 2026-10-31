@@ -14,7 +14,7 @@ import { renderPalette } from '../ui/colorPicker.ts';
 import { session } from '../core/state.ts';
 
 // ---------- layers: every piece on the board, top of the stack first (like Figma). Frames and collections fold open, groups stay together ----------
-export const LY = { open: new Set(), t: 0, drag: null };
+export const LY = { open: new Set(), t: 0, drag: null, html: '' };
 let LICON;
 
 const lyText = s =>
@@ -194,10 +194,15 @@ export function renderLayers() {
     );
   };
   const st = list.scrollTop;
-  list.innerHTML = tree.length
+  const html = tree.length
     ? tree.map(n => row(n, 0)).join('')
     : '<div class="ly-empty">Nothing on this board yet. Everything you add shows up here.</div>';
-  list.scrollTop = st;
+  // moving a card changes nothing here, and rewriting hundreds of rows costs more than the rest of an edit
+  if (html !== LY.html) {
+    LY.html = html;
+    list.innerHTML = html;
+    list.scrollTop = st;
+  }
   LY.tree = tree;
   const on = list.querySelector('.ly.on');
   if (on && LY.reveal) {
@@ -319,6 +324,7 @@ export function wireLayers() {
     if (!nm) return;
     const n = lyFind(key);
     if (!n) return;
+    LY.html = '';
     nm.contentEditable = 'true';
     nm.focus();
     getSelection().selectAllChildren(nm);

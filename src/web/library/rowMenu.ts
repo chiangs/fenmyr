@@ -404,6 +404,23 @@ export function renameNewest(sel, obj) {
   if (el) inlineRename(el.querySelector('.fname'), obj);
 }
 
+// A save rarely changes the sidebar. Rebuilding it only when its contents or order changed saves a repaint on every edit.
+let sidebarShown = '';
+const sidebarKey = () =>
+  JSON.stringify([
+    appState.boardList.map(b => [b.id, b.name, b.color, b.folder, b.parent]),
+    appState.projects,
+    appState.folders,
+    appState.boardOrder,
+    session.board?.id,
+    session.board?.name,
+  ]);
+export async function refreshBoardsAfterSave() {
+  if (homeAt || document.querySelector('[contenteditable="true"]')) return refreshBoards();
+  await loadLib();
+  if (sidebarKey() !== sidebarShown) await refreshBoards();
+}
+
 export async function refreshBoards() {
   if (document.querySelector('#boards [contenteditable="true"], .home [contenteditable="true"]')) return; // don't redraw under someone typing a name
   await loadLib();
@@ -432,9 +449,11 @@ export async function refreshBoards() {
     }
     $('homeBtn').classList.add('out');
     renderCrumbs();
+    sidebarShown = sidebarKey();
     if (homeAt) renderHome();
     return;
   }
+  sidebarShown = sidebarKey();
   $('homeBtn').classList.remove('out');
   appState.projects.forEach(p => el.appendChild(projectNode(p)));
   looseFolders().forEach(f => el.appendChild(folderNode(f)));
