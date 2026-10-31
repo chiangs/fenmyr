@@ -43,15 +43,26 @@ if [ -z "$ELECTRON" ]; then
 fi
 command -v fc-list >/dev/null || echo "  (fontconfig isn't installed, so Fenmyr won't list your fonts: sudo pacman -S fontconfig)"
 
-# --- 2. the app itself ---
+# --- 2. build it ---
+if ! command -v npm >/dev/null && command -v pacman >/dev/null; then
+  ask "  Fenmyr is built with Node.js and npm. Install them with pacman (sudo pacman -S nodejs npm)? [Y/n]: " y
+  if [[ "$REPLY" =~ ^[Yy] ]]; then sudo pacman -S --needed --noconfirm nodejs npm; fi
+fi
+command -v npm >/dev/null || { echo "  Fenmyr is built with Node.js and npm. Install them (Arch: sudo pacman -S nodejs npm), then run ./install.sh again."; exit 1; }
+echo "  Building Fenmyr…"
+# a working copy with the developer tools builds with those; anywhere else, only the build's own packages are fetched
+[ -d node_modules/typescript ] || npm ci --omit=dev --ignore-scripts --no-audit --no-fund --loglevel=error >/dev/null
+npm run build --silent
+
+# --- 3. the app itself ---
 pkill -f "lectron[^ ]* .*$LIB/app( |$)" 2>/dev/null && sleep 1 || true   # let the old one finish quitting before replacing it
 rm -rf "$LIB/app"; mkdir -p "$LIB/app/assets"
-cp -R linux web package.json LICENSE THIRD-PARTY-NOTICES.md "$LIB/app/"
+cp -R dist web package.json LICENSE THIRD-PARTY-NOTICES.md "$LIB/app/"
 cp assets/icon.png "$LIB/app/assets/icon.png"
 # remember where this copy came from, so Settings → Update now can pull and reinstall from here
 printf '{ "repo": "%s", "electron": "%s" }\n' "$REPO" "$ELECTRON" > "$LIB/app/install.json"
 
-# --- 3. a command, and an entry in your app launcher ---
+# --- 4. a command, and an entry in your app launcher ---
 mkdir -p "$BIN" "$APPS"
 cat > "$BIN/fenmyr" <<SH
 #!/bin/sh
@@ -69,7 +80,7 @@ case ":$PATH:" in *":$BIN:"*) ;; *) echo "  (~/.local/bin isn't on your PATH, so
 command -v claude >/dev/null || [ -x "$HOME/.local/bin/claude" ] || [ -x "$HOME/.claude/local/claude" ] || echo "  (Myra thinks with Claude Code. Install it from claude.com/claude-code so she can help on your boards.)"
 command -v whisper-cli >/dev/null || command -v whisper-cpp >/dev/null || echo "  (Optional: to have voice memos written out, install whisper.cpp, e.g. yay -S whisper.cpp)"
 
-# --- 4. open it ---
+# --- 5. open it ---
 if [ "$OPEN" = 1 ] && { [ -n "$WAYLAND_DISPLAY" ] || [ -n "$DISPLAY" ]; }; then
   nohup "$BIN/fenmyr" >/dev/null 2>&1 &
   echo "  🫧  Opening Fenmyr…"

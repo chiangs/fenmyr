@@ -1,0 +1,96 @@
+// @ts-nocheck
+
+// ---------- colors name themselves (until you name one yourself) ----------
+const NAMED = {
+  Black: '#000000',
+  Charcoal: '#36454f',
+  Slate: '#708090',
+  Grey: '#808080',
+  Silver: '#c0c0c0',
+  Cloud: '#ecebef',
+  White: '#ffffff',
+  Ivory: '#fffff0',
+  Cream: '#ffe3bd',
+  Butter: '#f0b04a',
+  Lemon: '#fff44f',
+  Gold: '#ffd700',
+  Mustard: '#e1ad01',
+  Amber: '#ffbf00',
+  Tangerine: '#f28500',
+  Orange: '#ff8c00',
+  Peach: '#ffcba4',
+  Apricot: '#fbceb1',
+  Coral: '#ff7f50',
+  Salmon: '#fa8072',
+  Tomato: '#ff6347',
+  Red: '#e0303a',
+  Cherry: '#c2185b',
+  Crimson: '#dc143c',
+  Brick: '#b22222',
+  Maroon: '#800000',
+  Wine: '#722f37',
+  Rose: '#ff66a3',
+  Bubblegum: '#f6b45e',
+  Blush: '#ffd1dc',
+  Pink: '#ffc0cb',
+  'Hot Pink': '#ff69b4',
+  Magenta: '#ff00ff',
+  Fuchsia: '#c154c1',
+  Orchid: '#da70d6',
+  Lilac: '#c8a2c8',
+  Lavender: '#e6e6fa',
+  Periwinkle: '#ccccff',
+  Violet: '#8f00ff',
+  Purple: '#800080',
+  Plum: '#8e4585',
+  Grape: '#6f2da8',
+  Indigo: '#4b0082',
+  Navy: '#000080',
+  Midnight: '#191970',
+  'Royal Blue': '#4169e1',
+  Cobalt: '#0047ab',
+  Blue: '#1e6fff',
+  'Steel Blue': '#4682b4',
+  Cornflower: '#6495ed',
+  Sky: '#87ceeb',
+  'Baby Blue': '#bfdfff',
+  Ice: '#d9e7f3',
+  Powder: '#b0e0e6',
+  Teal: '#008080',
+  Turquoise: '#40e0d0',
+  Aqua: '#00e5e5',
+  Mint: '#98ff98',
+  Seafoam: '#9fe2bf',
+  Sage: '#9caf88',
+  Pistachio: '#93c572',
+  Lime: '#a4de02',
+  Green: '#2e9e4f',
+  Emerald: '#50c878',
+  Forest: '#228b22',
+  Olive: '#808000',
+  Khaki: '#c3b091',
+  Sand: '#e2c290',
+  Tan: '#d2b48c',
+  Camel: '#c19a6b',
+  Caramel: '#af6f09',
+  Brown: '#8b4513',
+  Chocolate: '#5c3317',
+  Espresso: '#3b2219',
+};
+
+export function colorName(hex) {
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)),
+    [r, g, b] = rgb(hex);
+  let best = 'Colour',
+    d = Infinity;
+  for (const [n, h] of Object.entries(NAMED)) {
+    const [r2, g2, b2] = rgb(h),
+      rm = (r + r2) / 2,
+      dd = (2 + rm / 256) * (r - r2) ** 2 + 4 * (g - g2) ** 2 + (2 + (255 - rm) / 256) * (b - b2) ** 2;
+    if (dd < d) {
+      d = dd;
+      best = n;
+    }
+  }
+  return best;
+}

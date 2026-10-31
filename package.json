@@ -6,35 +6,47 @@
   "homepage": "https://github.com/chiangs/fenmyr",
   "license": "MIT",
   "author": "Stephen Chiang",
-  "main": "linux/main.js",
+  "main": "dist/main.cjs",
   "desktopName": "fenmyr.desktop",
   "scripts": {
-    "start": "electron . --ozone-platform-hint=auto",
-    "test": "node tests/vault.js && node tests/smoke.js && node tests/zoom.js && node tests/theme.js && node tests/docs.js",
-    "voice": "node tests/voice.js",
-    "dist": "electron-builder --linux AppImage",
-    "notices": "node tools/notices.js",
-    "icons": "node tools/icons.js",
-    "perf": "node tests/perf.mts",
-    "visual": "node tools/visual-diff.mts",
-    "metrics": "node tools/metrics.mts"
+    "build": "node tools/build.ts",
+    "start": "npm run build && electron . --ozone-platform-hint=auto",
+    "typecheck": "tsc",
+    "lint": "biome check",
+    "knip": "knip",
+    "budget": "node tools/budget.ts",
+    "check:fast": "npm run typecheck && npm run lint && npm run knip && npm run budget",
+    "test": "npm run build && node tests/vault.ts && node tests/persist.ts && node tests/reply.ts && node tests/smoke.ts && node tests/zoom.ts && node tests/theme.ts && node tests/docs.ts",
+    "check": "npm run check:fast && npm test",
+    "voice": "node tests/voice.ts",
+    "dist": "npm run build && electron-builder --linux AppImage",
+    "notices": "node tools/notices.ts",
+    "icons": "node tools/icons.ts",
+    "perf": "node tests/perf.ts",
+    "visual": "node tools/visual-diff.ts",
+    "metrics": "node tools/metrics.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.6.4",
     "@phosphor-icons/core": "^2.1.1",
+    "@types/node": "^26.6.6",
     "electron": "44.9.1",
     "electron-builder": "26.15.3",
-    "playwright": "1.63.0"
+    "knip": "^6.44.0",
+    "playwright": "1.63.0",
+    "typescript": "^6.0.3"
   },
   "build": {
     "appId": "io.github.chiangs.fenmyr",
     "productName": "Fenmyr",
     "files": [
-      "linux/**",
+      "dist/**",
       "web/**",
       "assets/icon.png",
       "package.json",
       "LICENSE",
-      "THIRD-PARTY-NOTICES.md"
+      "THIRD-PARTY-NOTICES.md",
+      "!node_modules/**"
     ],
     "linux": {
       "target": [
@@ -59,5 +71,10 @@
     "directories": {
       "output": "build/release"
     }
-  }
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "zod": "^4.6.7"
+  },
+  "type": "module"
 }

@@ -12,41 +12,49 @@ jobs:
     steps:
       - name: Install packages
         run: |
-          pacman -Syu --noconfirm --needed git nodejs npm electron xorg-server-xvfb fontconfig ttf-dejavu nss alsa-lib gtk3 libxss libxtst at-spi2-core libdrm mesa
+          pacman -Syu --noconfirm --needed git nodejs npm electron fontconfig ttf-dejavu nss alsa-lib gtk3 libxss libxtst at-spi2-core libdrm mesa
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - name: Trust the checkout (the container runs as a different user)
+        run: git config --global --add safe.directory "$PWD"
       - name: Shell syntax
         run: bash -n install.sh && bash -n uninstall.sh && bash -n make-release.sh
-      - name: JavaScript syntax
-        run: for f in linux/*.js web/app.js web/bridge.js tests/*.js; do node --check "$f"; done
       - name: Dependencies
         run: npm ci --no-audit --no-fund && node node_modules/electron/install.js
+      - name: Types, lint, unused code and the budget
+        run: npm run check:fast
+      - name: Build
+        run: npm run build
       - name: Vault test (reading notes, privacy rules)
-        run: node tests/vault.js
+        run: node tests/vault.ts
+      - name: Save test (running-only flags stay out of board files)
+        run: node tests/persist.ts
+      - name: Myra reply test
+        run: node tests/reply.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)
-        run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/smoke.js
+        run: node tests/smoke.ts
       - name: Zoom test
-        run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/zoom.js
+        run: node tests/zoom.ts
       - name: Docs editor test
-        run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/docs.js
+        run: node tests/docs.ts
       - name: Caelestia theme test
-        run: xvfb-run -a -s '-screen 0 1440x900x24' node tests/theme.js
+        run: node tests/theme.ts
       - name: Visual check against main
-        run: git config --global --add safe.directory "$PWD" && VISUAL_OUT=/tmp/visual node tools/visual-diff.mts origin/main
+        run: VISUAL_OUT=/tmp/visual node tools/visual-diff.ts origin/main
       - uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: visual-diff
           path: /tmp/visual
-      - name: Install, run the installed copy, uninstall
+      - name: Install from a fresh clone, run the installed copy, uninstall
         run: |
           # each part's output goes to a file; on failure its last lines become annotations, so they're readable without the full log
           report() { echo "::error title=$1::$(tail -c 3000 "$2" | sed ':a;N;$!ba;s/%/%25/g;s/\r/%0D/g;s/\n/%0A/g')"; exit 1; }
-          useradd -m tester && cp -r . /home/tester/fenmyr && chown -R tester /home/tester/fenmyr
+          useradd -m tester && git clone -q . /home/tester/fenmyr && chown -R tester /home/tester/fenmyr
           su tester -c 'cd ~/fenmyr && ./install.sh --yes --no-open' > install.log 2>&1 || report install install.log
           cat /home/tester/.local/lib/fenmyr/app/install.json; echo "::notice title=Arch electron::$(pacman -Q $(pacman -Qq | grep -E "^electron[0-9]+$") 2>&1 | tr "\n" " ")"
-          su tester -c "cd ~/fenmyr && FENMYR_APP=\$HOME/.local/lib/fenmyr/app xvfb-run -a -s '-screen 0 1440x900x24' node tests/smoke.js" > smoke.log 2>&1 || report installed-smoke smoke.log
+          su tester -c "cd ~/fenmyr && npm ci --ignore-scripts --no-audit --no-fund && FENMYR_APP=\$HOME/.local/lib/fenmyr/app node tests/smoke.ts" > smoke.log 2>&1 || report installed-smoke smoke.log
           su tester -c 'cd ~/fenmyr && ./uninstall.sh --purge' > uninstall.log 2>&1 || report uninstall uninstall.log
           test ! -e /home/tester/.local/bin/fenmyr
       - name: Build the AppImage
