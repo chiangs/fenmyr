@@ -61,7 +61,6 @@ export function init62() {
       const S0 = SHEETS[name];
       if (!S0) return;
       open = name;
-      tab = t;
       const S = {
         ...S0,
         tabs: S0.tabs.filter(([, get]) => {
