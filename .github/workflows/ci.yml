@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+      - name: Trust the checkout (the container runs as a different user)
+        run: git config --global --add safe.directory "$PWD"
       - name: Shell syntax
         run: bash -n install.sh && bash -n uninstall.sh && bash -n make-release.sh
       - name: Dependencies
@@ -39,7 +41,7 @@ jobs:
       - name: Caelestia theme test
         run: node tests/theme.ts
       - name: Visual check against main
-        run: git config --global --add safe.directory "$PWD" && VISUAL_OUT=/tmp/visual node tools/visual-diff.ts origin/main
+        run: VISUAL_OUT=/tmp/visual node tools/visual-diff.ts origin/main
       - uses: actions/upload-artifact@v5
         if: failure()
         with:

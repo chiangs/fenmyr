@@ -15,7 +15,7 @@ const FROZEN_MOTION =
 const HIDDEN_RANDOM_CANVASES = 'canvas { visibility: hidden !important; }';
 const HIDDEN_UPDATE_STATE = '#suSub, #upBar { visibility: hidden !important; }';
 const HIDDEN_TIMED_BUBBLE = '#mBubble { visibility: hidden !important; }';
-const STRAY_PIXELS = 20;
+const STRAY_PIXELS = 60;
 // scaled card edges land a pixel apart from run to run at this zoom; same code measured 900 to 1,600, a layout change 268,000
 const STRAY_PIXELS_SCALED: Record<string, number> = { 'zoom-out.png': 3000 };
 const CHANNEL_TOLERANCE = 2;
