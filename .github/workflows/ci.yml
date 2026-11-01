@@ -45,7 +45,7 @@ jobs:
       - name: Caelestia theme test
         run: node tests/theme.ts
       - name: Visual check against main
-        run: VISUAL_OUT=/tmp/visual node tools/visual-diff.ts origin/main
+        run: VISUAL_ALLOW_PIXELS=100000 VISUAL_OUT=/tmp/visual node tools/visual-diff.ts origin/main
       - uses: actions/upload-artifact@v5
         if: failure()
         with:

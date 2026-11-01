@@ -121,7 +121,7 @@ export function mediaBegin(ext: string): string {
 }
 export function mediaChunk(name: string, data: string): true {
   const file = name.replace(/\//g, '');
-  if (!file || !data) throw new Error("I couldn't save that video.");
+  if (!file || !data) throw new Error("Couldn't save that video.");
   fs.appendFileSync(path.join(P.mediaDir, file), Buffer.from(data, 'base64'));
   return true;
 }

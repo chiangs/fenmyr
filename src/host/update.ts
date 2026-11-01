@@ -118,11 +118,11 @@ function pendingVersion() {
 }
 async function download() {
   const r = await latestRelease();
-  if (!r) throw new Error("I couldn't reach GitHub just now.");
+  if (!r) throw new Error("Couldn't reach GitHub.");
   const v = pendingVersion();
   if (v && !newer(r.tag_name, v) && fs.existsSync(pendingFile())) return v;
   const asset = r.assets.find(a => a.name === assetName());
-  if (!asset) throw new Error("The new version isn't there yet.");
+  if (!asset) throw new Error("The new version isn't available yet.");
   fs.rmSync(P.pendingDir, { recursive: true, force: true });
   fs.mkdirSync(P.pendingDir, { recursive: true });
   try {
@@ -158,16 +158,16 @@ export async function prepare() {
   return download();
 }
 export async function now(): Promise<'updating'> {
-  if (preview()) throw new Error('This is just a preview, so nothing changed ✦');
+  if (preview()) throw new Error('This is a preview, so nothing changed.');
   const dir = repoDir();
   if (dir) {
     // only a clean fast-forward: never touch someone's own changes
     if ((await git(['status', '--porcelain', '--untracked-files=no'], dir)).out)
       throw new Error(
-        "Your Fenmyr folder has changes of its own, so I won't update over them. Run ./install.sh --update in a terminal to see what's up.",
+        "Your Fenmyr folder has its own changes, so it wasn't updated. Run ./install.sh --update in a terminal to see them.",
       );
     if (!(await git(['merge-base', '--is-ancestor', 'HEAD', '@{u}'], dir)).ok)
-      throw new Error("This copy has gone its own way from GitHub, so I'll leave it alone.");
+      throw new Error("This copy has diverged from GitHub, so it wasn't updated.");
     const searchPath = [
       ...(process.env.PATH || '').split(':'),
       path.join(os.homedir(), '.local/bin'),

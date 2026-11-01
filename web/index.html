@@ -104,7 +104,7 @@
     <!-- drawing: pens, sizes, colors, eraser -->
     <div class="drawbar" id="drawbar">
       <button class="db-done" data-db="done" title="Done drawing (Esc)">Done</button><span class="sb-sep"></span>
-      <button class="db-tool on" data-pen="pen" title="Pen: smooth ink that swells when you slow down"><svg data-ico="pen"></svg></button>
+      <button class="db-tool on" data-pen="pen" title="Pen: smooth ink that widens as you slow down"><svg data-ico="pen"></svg></button>
       <button class="db-tool" data-pen="marker" title="Marker: bold and even"><svg data-ico="marker"></svg></button>
       <button class="db-tool" data-pen="hi" title="Highlighter: see-through"><svg data-ico="highlighter"></svg></button>
       <button class="db-tool" data-pen="eraser" title="Eraser: swipe over a drawing to remove it"><svg data-ico="eraser"></svg></button>
@@ -173,7 +173,7 @@
   </aside>
 
   <div class="capture" id="capture">
-    <form id="capForm"><input id="capInput" placeholder="Don’t get bogged down, dump an idea (image works) to Unsorted…" autocomplete="off"></form>
+    <form id="capForm"><input id="capInput" placeholder="Save an idea or image to Unsorted…" autocomplete="off"></form>
   </div>
   <button class="clean-back" id="cleanBack" type="button">Show panels <kbd>⌘\</kbd></button>
   <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>⌘K</kbd> quick capture</span><span><kbd>⌘F</kbd> find</span><span><kbd>space</kbd> drag to pan</span><span><kbd>⌘\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
@@ -220,7 +220,7 @@
     <div class="wheel" id="wheel"><canvas id="wheelCv" width="440" height="440"></canvas><i class="ring" id="wheelRing"></i></div>
     <div class="bright" id="bright"><i class="ring" id="brightRing"></i></div>
     <div class="cp-row"><span class="cp-dot" id="cpDot"></span>
-      <div class="cp-fields"><input id="cpHex" maxlength="7" spellcheck="false" aria-label="Hex"><input id="cpName" placeholder="Name it (e.g. Blush Pop)" spellcheck="false" aria-label="Colour name"></div></div>
+      <div class="cp-fields"><input id="cpHex" maxlength="7" spellcheck="false" aria-label="Hex"><input id="cpName" placeholder="Name it" spellcheck="false" aria-label="Colour name"></div></div>
     <div class="cp-quick" id="cpQuick"></div>
     <div class="cp-acts"><button id="cpSave" class="solid">Save to board colours</button><button id="cpReset" class="cp-reset">Use the default</button><button id="cpDone">Done</button></div>
   </div>
@@ -241,29 +241,29 @@
     <section class="ob-step" data-step="0">
       <canvas id="obGoo" width="64" height="56"></canvas>
       <h2>Hi, I'm Myra!</h2>
-      <p>I'm a little cloudberry who lives in your boards. Like cloudberries, ideas only grow where conditions are just right. Let's make yours. It takes about a minute.</p>
+      <p>I'm a cloudberry who lives in your boards. Cloudberries only grow where conditions are right, and ideas are the same. Let's set yours up. It takes about a minute.</p>
       <label class="ob-field"><span>What should I call you?</span><input id="obName" placeholder="Your name" autocomplete="off" spellcheck="false"></label>
-      <div class="ob-field"><span>When is your birthday? <small>Optional. I like a good party.</small></span><span class="bd-pick"><select id="obBdMonth" aria-label="Birthday month"></select><select id="obBdDay" aria-label="Birthday day"></select></span></div>
+      <div class="ob-field"><span>When is your birthday? <small>Optional. I like a party.</small></span><span class="bd-pick"><select id="obBdMonth" aria-label="Birthday month"></select><select id="obBdDay" aria-label="Birthday day"></select></span></div>
     </section>
     <section class="ob-step" data-step="1">
       <h2>Make it yours</h2>
-      <p>Pick my colour and how the app looks. You can change these anytime.</p>
+      <p>Pick my colour and how the app looks. You can change these later.</p>
       <div class="set-row"><div><b>My colour</b><small>Me in the dock and the logo</small></div><div class="myra-colors" id="obMyra"></div></div>
       <div class="set-row"><div><b>Theme</b><small>Light, dark, or match your system</small></div><div class="seg" data-seg="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">Match system</button></div></div>
     </section>
     <section class="ob-step" data-step="2">
       <h2>My thinking</h2>
-      <p>I think with <b>Claude Code</b> on your computer. My helpers are connections in your Claude account: <b>Mobbin</b> finds real app screens, <b>Higgsfield</b> makes images (it costs credits, so I always ask first).</p>
+      <p>I think with <b>Claude Code</b> on your computer. My helpers are connections in your Claude account: <b>Mobbin</b> finds real app screens. <b>Higgsfield</b> makes images and costs credits, so I always ask first.</p>
       <div class="conns" id="obConns"></div>
-      <label class="set-row native-only"><div><b>Let me think (AI)</b><small>Off: I can still tidy things, and Fenmyr works fully on its own. No AI, no internet.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
+      <label class="set-row native-only"><div><b>Let me think (AI)</b><small>Off: I can still tidy things, and Fenmyr works without AI or internet.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
       <label class="set-row native-only"><div><b>Use Mobbin</b><small>When it's connected</small></div><input type="checkbox" class="tgl" data-set="mobbin"></label>
       <label class="set-row native-only"><div><b>Use Higgsfield</b><small>Only after you say yes to the price</small></div><input type="checkbox" class="tgl" data-set="higgs"></label>
       <div class="web-note web-only">You're trying the web version, so I can't connect to Claude, Mobbin or Higgsfield here. Everything else works! Download the desktop app and I'll connect to all three. <button class="set-link get-app">Get Fenmyr ↗</button></div><div class="set-note native-only">Not ready yet? That's fine, skip it. Connect later, then tap <button class="set-link" id="obRecheck">check again</button> here or in Settings.</div>
     </section>
     <section class="ob-step" data-step="3">
       <h2>How I talk</h2>
-      <p>Some people like a chatty buddy, some like quiet. Both are great.</p>
-      <div class="set-row"><div><b>How chatty</b><small>Quiet only talks when you ask</small></div><div class="seg" data-seg="chat"><button data-v="quiet">Quiet</button><button data-v="normal">Normal</button><button data-v="chatty">Chatty</button></div></div>
+      <p>Some people like a chatty buddy, and some like quiet.</p>
+      <div class="set-row"><div><b>How chatty</b><small>Quiet talks only when you ask</small></div><div class="seg" data-seg="chat"><button data-v="quiet">Quiet</button><button data-v="normal">Normal</button><button data-v="chatty">Chatty</button></div></div>
       <label class="set-row"><div><b>Emojis</b><small>A few ✨ 🌸 here and there</small></div><input type="checkbox" class="tgl" data-set="emoji"></label>
       <div class="set-row"><div><b>Remember our chats</b><small>Saved in your board files on this computer</small></div><div class="seg" data-seg="chatKeep"><button data-v="off">Off</button><button data-v="session">Until I quit</button><button data-v="board">On each board</button></div></div>
     </section>
@@ -277,10 +277,10 @@
     <section class="ob-step" data-step="5">
       <canvas id="obGoo2" width="64" height="56"></canvas>
       <h2 id="obDoneTitle">You're all set!</h2>
-      <p>Want a quick tour? I'll show you around and you can try things as we go. About a minute.</p>
+      <p>Want a tour? I'll show you around and you can try things as we go. It takes about a minute.</p>
       <div class="set-row" id="obFirstRow"><div><b>Your first board</b><small>An example to look at, or a clean start</small></div><div class="seg" id="obFirst"><button data-v="example">The example</button><button data-v="empty">Empty</button></div></div>
       <div class="ob-big"><button class="ob-primary" id="obTour">Show me around ✦</button><button class="ob-ghost" id="obExplore">I'll explore on my own</button></div>
-      <p class="ob-small">Everything here lives in Settings (the ⚙ next to Fenmyr), including this tour.</p>
+      <p class="ob-small">You can find all of this in Settings, the ⚙ next to Fenmyr, including this tour.</p>
     </section>
     <footer class="ob-foot"><button class="ob-ghost" id="obBack">Back</button><div class="ob-dots" id="obDots"></div><button class="ob-primary" id="obNext">Let's go</button></footer>
     <button class="ob-skip" id="obSkip">Skip setup</button>
@@ -303,29 +303,29 @@
     <div class="set-body">
       <section data-tab="general"><h3>Look</h3>
         <div class="set-row"><div><b>Theme</b><small>Light, dark, or whatever your system is using</small></div><div class="seg" data-seg="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">Match my system</button></div></div>
-        <div class="set-row"><div><b>Icon style</b><small>Regular is plain outlines. Duotone adds a soft tint to the icons in the bottom bar and Myra's chat header.</small></div><div class="seg" data-seg="iconStyle"><button data-v="regular">Regular</button><button data-v="duotone">Duotone</button></div></div>
-        <label class="set-row native-only cae-only"><div><b>Follow Caelestia</b><small>Use your desktop's colours and light or dark mode, and change with your wallpaper. Your own colours come back when you turn it off.</small></div><input type="checkbox" class="tgl" data-set="caelestia"></label>
+        <div class="set-row"><div><b>Icon style</b><small>Regular is plain outlines. Duotone adds a tint to the bottom bar and Myra's chat header.</small></div><div class="seg" data-seg="iconStyle"><button data-v="regular">Regular</button><button data-v="duotone">Duotone</button></div></div>
+        <label class="set-row native-only cae-only"><div><b>Follow Caelestia</b><small>Use your desktop's colours and light or dark mode. Your own colours come back when you turn this off.</small></div><input type="checkbox" class="tgl" data-set="caelestia"></label>
       </section>
       <section data-tab="general"><h3>Your cursor</h3>
         <div class="cur-prev" id="curPrev"><div class="mcur show demo"></div></div>
-        <label class="set-row"><div><b>Your name</b><small>It rides along on your cursor, in Myra’s colour</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
-        <div class="set-row"><div><b>Birthday</b><small>Optional. Myra celebrates it with you, and wishes you a belated one if you miss it. Only the month and day are kept, on this computer</small></div><span class="bd-pick"><select id="setBdMonth" aria-label="Birthday month"></select><select id="setBdDay" aria-label="Birthday day"></select><button type="button" class="bd-clear" id="setBdClear" title="Clear">×</button></span></div>
+        <label class="set-row"><div><b>Your name</b><small>Shown on your cursor, in Myra's colour</small></div><input class="set-input" id="setName" maxlength="24" placeholder="Your name" spellcheck="false"></label>
+        <div class="set-row"><div><b>Birthday</b><small>Optional. Myra celebrates it with you. Only the month and day are kept, on this computer.</small></div><span class="bd-pick"><select id="setBdMonth" aria-label="Birthday month"></select><select id="setBdDay" aria-label="Birthday day"></select><button type="button" class="bd-clear" id="setBdClear" title="Clear">×</button></span></div>
         <div class="set-row" style="display:none"><div><b>Cursor colour</b></div><div class="myra-colors cur-colors" id="curColors"></div></div>
-        <label class="set-row native-only win-only"><div><b>Window buttons</b><small>The close, minimise and maximise dots at the top left. Turn off if your compositor handles windows (Hyprland, Sway, niri)</small></div><input type="checkbox" class="tgl" data-set="winButtons"></label>
-        <label class="set-row"><div><b>Cursor</b><small>Off uses your system’s regular cursor</small></div><input type="checkbox" class="tgl" data-set="fancyCursor"></label>
+        <label class="set-row native-only win-only"><div><b>Window buttons</b><small>Close, minimise and maximise dots at the top left. Leave off if your compositor handles windows.</small></div><input type="checkbox" class="tgl" data-set="winButtons"></label>
+        <label class="set-row"><div><b>Cursor</b><small>Off uses your system's cursor.</small></div><input type="checkbox" class="tgl" data-set="fancyCursor"></label>
       </section>
       <section data-tab="myra"><h3>Myra</h3>
-        <div class="set-row"><div><b>Her name</b><small>Call her whatever you like. She answers to it everywhere.</small></div><input class="set-input" id="myraNameIn" maxlength="18" placeholder="Myra" autocomplete="off" spellcheck="false"></div>
-        <div class="set-row"><div><b>How lively she is</b><small>Calm: she sits still (no hops, wiggles or breathing). Calmest: still, with softer, muted colours.</small></div><div class="seg" data-seg="myraCalm"><button data-v="lively">Lively</button><button data-v="calm">Calm</button><button data-v="calmest">Calmest</button></div></div>
-        <label class="set-row"><div><b>Show her character</b><small>Off hides the little pixel Myra. Her pill shows just her name, and she still helps.</small></div><input type="checkbox" class="tgl" data-set="myraChar"></label>
+        <div class="set-row"><div><b>Her name</b><small>She answers to this name everywhere.</small></div><input class="set-input" id="myraNameIn" maxlength="18" placeholder="Myra" autocomplete="off" spellcheck="false"></div>
+        <div class="set-row"><div><b>How lively she is</b><small>Calm: she sits still. Calmest: she sits still, in muted colours.</small></div><div class="seg" data-seg="myraCalm"><button data-v="lively">Lively</button><button data-v="calm">Calm</button><button data-v="calmest">Calmest</button></div></div>
+        <label class="set-row"><div><b>Show her character</b><small>Off hides her pixel character and shows only her name. She still helps.</small></div><input type="checkbox" class="tgl" data-set="myraChar"></label>
         <div class="set-row"><div><b>Her colour</b><small>Myra in the dock and the logo</small></div><div class="myra-colors" id="myraColors"></div></div>
-        <div class="set-row"><div><b>How chatty she is</b><small>Quiet only talks when you ask. Chatty adds little tips and cheers.</small></div><div class="seg" data-seg="chat"><button data-v="quiet">Quiet</button><button data-v="normal">Normal</button><button data-v="chatty">Chatty</button></div></div>
+        <div class="set-row"><div><b>How chatty she is</b><small>Quiet talks only when you ask. Chatty adds tips and cheers.</small></div><div class="seg" data-seg="chat"><button data-v="quiet">Quiet</button><button data-v="normal">Normal</button><button data-v="chatty">Chatty</button></div></div>
         <label class="set-row"><div><b>Emojis in her replies</b><small>A few ✨ 🌸 here and there</small></div><input type="checkbox" class="tgl" data-set="emoji"></label>
-        <div class="set-row"><div><b>Remember chats</b><small>Chats are saved in your board files on this computer. Off forgets each chat as you go.</small></div><div class="seg" data-seg="chatKeep"><button data-v="off">Off</button><button data-v="session">Until I quit</button><button data-v="board">On each board</button></div></div>
+        <div class="set-row"><div><b>Remember chats</b><small>Saved in your board files on this computer. Off forgets each chat.</small></div><div class="seg" data-seg="chatKeep"><button data-v="off">Off</button><button data-v="session">Until I quit</button><button data-v="board">On each board</button></div></div>
         <div class="set-row"><div><b>How many messages to keep</b><small>Older messages fall off the top</small></div><div class="seg" data-seg="chatMax"><button data-v="20">20</button><button data-v="60">60</button><button data-v="200">200</button></div></div>
         <div class="set-row"><div><b>Saved chats</b><small>Deletes Myra's chat history from every board</small></div><button class="set-btn" id="clearChats">Clear all chats</button></div>
-        <label class="set-row"><div><b>Say hi when I open the app</b><small>Myra's little welcome bubble</small></div><input type="checkbox" class="tgl" data-set="greet"></label>
-        <label class="set-row native-only"><div><b>Myra's thinking (AI)</b><small>Uses Claude Code on your computer to sort, write and edit for you. Off: Fenmyr works fully on its own and Myra can still tidy simple things. No AI, no accounts, no internet.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
+        <label class="set-row"><div><b>Say hi when I open the app</b><small>Myra's welcome bubble</small></div><input type="checkbox" class="tgl" data-set="greet"></label>
+        <label class="set-row native-only"><div><b>Myra's thinking (AI)</b><small>Uses Claude Code on your computer to sort, write and edit. Off: Fenmyr works without AI, accounts or internet, and Myra can still tidy.</small></div><input type="checkbox" class="tgl" data-set="ai"></label>
       </section>
       <section class="native-only" data-tab="vaults"><h3>Obsidian vaults</h3>
         <p class="set-note">Myra can show notes from your Obsidian vaults on a board. She only reads, and only where you allow it: connect a vault here, then give a project or a board access from its right-click menu (Vault access). A folder you mark off-limits, and any note tagged <b>#private</b>, is never read.</p>
@@ -343,9 +343,9 @@
       </section>
       <section data-tab="helpers"><h3>Myra's helpers</h3>
         <div class="conns" id="conns"></div>
-        <label class="set-row native-only"><div><b>Let Myra use Mobbin</b><small>Real app screenshots for inspiration (free with your Mobbin account)</small></div><input type="checkbox" class="tgl" data-set="mobbin"></label>
-        <label class="set-row native-only"><div><b>Let Myra use Higgsfield</b><small>Image generation. It costs credits, so Myra always asks first, every time. That check can't be turned off.</small></div><input type="checkbox" class="tgl" data-set="higgs"></label>
-        <label class="set-row native-only"><div><b>Let Myra search the web</b><small>She can look things up and read public pages, including public GitHub repos. What she searches for can include words from your board. Off until you switch it on.</small></div><input type="checkbox" class="tgl" data-set="webAccess"></label>
+        <label class="set-row native-only"><div><b>Let Myra use Mobbin</b><small>Real app screenshots for inspiration. Free with a Mobbin account.</small></div><input type="checkbox" class="tgl" data-set="mobbin"></label>
+        <label class="set-row native-only"><div><b>Let Myra use Higgsfield</b><small>Generates images. It costs credits, so Myra always asks first. You can't turn that check off.</small></div><input type="checkbox" class="tgl" data-set="higgs"></label>
+        <label class="set-row native-only"><div><b>Let Myra search the web</b><small>She can look things up and read public pages, including public GitHub repos. Her searches can include words from your board.</small></div><input type="checkbox" class="tgl" data-set="webAccess"></label>
         <div class="web-note web-only">This is the web version, so Myra can't reach Claude Code or your helpers from here. Download the desktop app to connect them. <button class="set-link get-app">Get Fenmyr ↗</button></div><div class="set-note native-only">Helpers are the connections in your Claude account. Connect one in Claude's settings, then come back and tap <button class="set-link" id="recheck">check again</button>.</div>
       </section>
       <section data-tab="widgets"><h3>Widgets</h3>
@@ -353,12 +353,12 @@
         <label class="set-row"><div><b>Layers</b><small>Everything on the board, top first. Rename, hide, lock and restack</small></div><input type="checkbox" class="tgl" data-set="wLayers"></label>
         <label class="set-row"><div><b>Board colours</b><small>The colours you've saved for this board</small></div><input type="checkbox" class="tgl" data-set="wColors"></label>
         <label class="set-row"><div><b>Wireframe</b><small>Screens, boxes and ready-made pieces to sketch with</small></div><input type="checkbox" class="tgl" data-set="wDesign"></label>
-        <label class="set-row"><div><b>Unsorted</b><small>Ideas waiting for a spot. ⌘K still saves there when it's off</small></div><input type="checkbox" class="tgl" data-set="wTray"></label>
-        <div class="set-row"><div><b>Arrange them</b><small>Drag a widget by its title into any spot on either side</small></div><button class="set-btn" id="wgReset">Reset layout</button></div>
+        <label class="set-row"><div><b>Unsorted</b><small>Ideas waiting for a spot. ⌘K still saves there when this is off.</small></div><input type="checkbox" class="tgl" data-set="wTray"></label>
+        <div class="set-row"><div><b>Arrange them</b><small>Drag a widget by its title to any spot on either side.</small></div><button class="set-btn" id="wgReset">Reset layout</button></div>
       </section>
       <section data-tab="board"><h3>The board</h3>
-        <div class="set-row"><div><b>Default font</b><small>For notes, titles, checklists, collections and docs that don't have a font of their own. Menus and panels keep Myra's font.</small></div><button class="set-btn set-font" id="defaultFontBtn" data-sbfont="default" type="button"></button></div>
-        <div class="set-row"><div><b>Colours</b><small>The background, dots, panels and accent. Right-click any board to give just that board its own background.</small></div><button class="set-btn" id="colReset" hidden>Reset colours</button></div>
+        <div class="set-row"><div><b>Default font</b><small>For board text and docs without their own font. Menus and panels don't change.</small></div><button class="set-btn set-font" id="defaultFontBtn" data-sbfont="default" type="button"></button></div>
+        <div class="set-row"><div><b>Colours</b><small>Background, dots, panels and accent. Right-click a board to give it its own background.</small></div><button class="set-btn" id="colReset" hidden>Reset colours</button></div>
         <div class="col-grid">
           <button class="col-chip" data-col="bg"><i></i><span>Background</span></button>
           <button class="col-chip" data-col="dot"><i></i><span>Dots</span></button>
@@ -366,31 +366,31 @@
           <button class="col-chip" data-col="accent"><i></i><span>Accent</span></button>
         </div>
         <label class="set-row"><div><b>Dot grid</b><small>The soft dots behind your cards</small></div><input type="checkbox" class="tgl" data-set="grid"></label>
-        <div class="set-row grid-shape-row"><div><b>Grid shape</b><small>Dots, or something a little cuter</small></div><div class="grid-shapes" id="gridShapes"></div></div>
+        <div class="set-row grid-shape-row"><div><b>Grid shape</b><small>Dots or small shapes</small></div><div class="grid-shapes" id="gridShapes"></div></div>
         <div class="set-row"><div><b>New note colour</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="noteColors"></div></div>
-        <label class="set-row"><div><b>Double-click to add a note</b><small>Double-click empty board for a new note. Off if stray notes keep popping up</small></div><input type="checkbox" class="tgl" data-set="dblNote"></label>
+        <label class="set-row"><div><b>Double-click to add a note</b><small>Double-click an empty spot for a new note.</small></div><input type="checkbox" class="tgl" data-set="dblNote"></label>
         <label class="set-row"><div><b>Snap to the dots</b><small>Cards line up with the grid when you drop them</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
-        <label class="set-row"><div><b>Loose, tilted cards</b><small>Off makes every card sit perfectly straight</small></div><input type="checkbox" class="tgl" data-set="tilt"></label>
+        <label class="set-row"><div><b>Loose, tilted cards</b><small>Off makes every card sit straight</small></div><input type="checkbox" class="tgl" data-set="tilt"></label>
         <label class="set-row"><div><b>Moving stamps and wiggles</b><small>Turn off for a calmer board</small></div><input type="checkbox" class="tgl" data-set="motion"></label>
-        <label class="set-row"><div><b>Shortcut hints</b><small>The little key list in the bottom corner</small></div><input type="checkbox" class="tgl" data-set="keys"></label>
+        <label class="set-row"><div><b>Shortcut hints</b><small>The key list in the bottom corner</small></div><input type="checkbox" class="tgl" data-set="keys"></label>
       </section>
       <section data-tab="general"><h3>Your boards</h3>
         <div class="set-row native-only"><div><b>Saved on this computer</b><small id="boardCount">Your boards never leave your computer</small></div><button class="set-btn" id="revealBoards">Show folder</button></div>
       </section>
-      <section class="set-about" data-tab="about"><svg class="brand-mark" data-ico="fenmyr-mark" width="34" height="34"></svg><div class="sa-text"><b>Fenmyr</b><small>Where ideas thrive. A canvas with Myra the cloudberry to help. Free and open source (MIT).</small></div></section>
+      <section class="set-about" data-tab="about"><svg class="brand-mark" data-ico="fenmyr-mark" width="34" height="34"></svg><div class="sa-text"><b>Fenmyr</b><small>Where ideas thrive. Free and open source (MIT).</small></div></section>
       <section class="set-update native-only" id="setUpdate" data-tab="about"><div class="su-top"><div class="su-icon"><svg data-ico="refresh" width="18" height="18"></svg></div><div class="su-text"><b id="suTitle">Updates</b><small id="suSub">Checking for a new version…</small></div><button class="set-btn hot" id="suGo" hidden>Update now</button><button class="set-btn" id="suCheck">Check now</button></div><ul class="su-notes" id="suNotes" hidden></ul></section>
       <section data-tab="toolbar"><h3>Toolbar</h3>
-        <div class="set-row"><div><b>Icon size</b><small>How big the tools at the bottom are. If they don't all fit on your screen, the extras tuck into a ··· menu at the end.</small></div><div class="seg" data-seg="tbSize"><button data-v="s">Small</button><button data-v="m">Medium</button><button data-v="l">Large</button></div></div>
-        <div class="set-row"><div><b>Your tools</b><small>Switch tools on or off, and drag to change their order. Shortcuts still work for tools you hide.</small></div><button class="set-btn" id="tbReset">Reset</button></div>
+        <div class="set-row"><div><b>Icon size</b><small>The size of the tools at the bottom. Tools that don't fit go into a ··· menu.</small></div><div class="seg" data-seg="tbSize"><button data-v="s">Small</button><button data-v="m">Medium</button><button data-v="l">Large</button></div></div>
+        <div class="set-row"><div><b>Your tools</b><small>Switch tools on or off and drag to reorder them. Shortcuts still work for hidden tools.</small></div><button class="set-btn" id="tbReset">Reset</button></div>
         <div class="tbe-list set-tblist" id="setTbList"></div></section>
       <section class="set-devices" data-tab="general"><h3>Camera &amp; microphone</h3>
         <div class="set-row"><div><b>Camera</b><small>For video cards</small></div><select class="dev-sel" id="devCam" aria-label="Camera"></select></div>
         <div class="set-row"><div><b>Microphone</b><small>For voice memos and videos</small></div><select class="dev-sel" id="devMic" aria-label="Microphone"></select></div>
         <button class="set-btn" id="devAllow" hidden>Show my devices</button></section>
-      <section class="set-auto native-only" data-tab="about"><label class="set-row"><div><b>Update automatically</b><small>New versions install quietly when you quit Fenmyr. Your boards never change.</small></div><input type="checkbox" class="tgl" data-set="autoUpdate"></label></section>
+      <section class="set-auto native-only" data-tab="about"><label class="set-row"><div><b>Update automatically</b><small>New versions install when you quit Fenmyr. Your boards don't change.</small></div><input type="checkbox" class="tgl" data-set="autoUpdate"></label></section>
       <section class="set-start" data-tab="about"><canvas id="setGoo" width="40" height="36"></canvas><div><b>New here, or need a refresher?</b><small>Myra shows you around in about a minute</small></div><div class="set-btns"><button class="set-btn hot" id="redoTour">Take the tour ✦</button><button class="set-btn" id="redoSetup">Redo setup</button><button class="set-btn" id="addExample">Add the example board</button></div></section>
-      <section class="set-start set-feedback" data-tab="about"><span class="sf-ic" aria-hidden="true">💌</span><div><b>Tell me what you think</b><small>Ideas, bugs, little wishes: they go to this version’s GitHub issues.</small></div><div class="set-btns"><button class="set-btn hot" id="sendFeedback">Send feedback ♡</button></div></section>
-      <section class="set-maker" data-tab="about"><div class="sm-sig">made with care by</div><div class="sm-name">Stephen Chiang</div><small>Like cloudberries, ideas only grow where conditions are just right. Fenmyr tries to be that place.</small>
+      <section class="set-start set-feedback" data-tab="about"><span class="sf-ic" aria-hidden="true">💌</span><div><b>Tell me what you think</b><small>Ideas and bugs go to this version's GitHub issues.</small></div><div class="set-btns"><button class="set-btn hot" id="sendFeedback">Send feedback ♡</button></div></section>
+      <section class="set-maker" data-tab="about"><div class="sm-sig">made with care by</div><div class="sm-name">Stephen Chiang</div>
         <div class="sm-links"><button class="set-btn hot" data-url="https://github.com/chiangs/fenmyr">Fenmyr on GitHub ↗</button></div></section>
       <section class="set-start set-credit" data-tab="about"><div><b>Built on Mochiboard</b><small>Fenmyr grew from Mochiboard, Jessa Wolfe's open-source planning canvas (MIT). Mochiboard, Mochi and their art are hers and aren't part of Fenmyr.</small></div><div class="set-btns"><button class="set-btn" data-url="https://github.com/jessawolfe-ux/mochiboard">Mochiboard ↗</button><button class="set-btn" data-url="https://jessa.art">jessa.art ↗</button></div></section>
       <section class="set-start set-lic" data-tab="about"><div><b>Open-source licences</b><small>Fenmyr's own licence, and the software made by others that Fenmyr includes.</small></div><div class="set-btns"><button class="set-btn" id="openLicenses">View licences</button></div></section>

@@ -39,14 +39,14 @@ export const speechAuth = () => (whisperPath() ? 'ok' : 'off');
 
 export async function transcribe(dataURL: string): Promise<string> {
   const comma = dataURL.indexOf(',');
-  if (comma < 0) throw new Error("couldn't read that recording");
+  if (comma < 0) throw new Error("Couldn't read that recording.");
   const bin = whisperPath();
   if (!bin) throw new Error('To write out voice memos, install whisper.cpp (yay -S whisper.cpp), then try again.');
   if (!fs.existsSync(modelFile())) {
-    if (downloading) throw new Error('Still getting the speech model ready. Try again in a minute ✦');
+    if (downloading) throw new Error('The speech model is still downloading. Try again in a minute.');
     downloadModel().catch(() => {});
     throw new Error(
-      `Getting the speech model ready (one time, about ${MODEL === 'tiny' ? 75 : MODEL === 'base' ? 140 : 500} MB). Try again in a minute ✦`,
+      `Downloading the speech model (once, about ${MODEL === 'tiny' ? 75 : MODEL === 'base' ? 140 : 500} MB). Try again in a minute.`,
     );
   }
   // 16 kHz mono WAV, which is what whisper reads (preload.ts converts the page's recordings)
