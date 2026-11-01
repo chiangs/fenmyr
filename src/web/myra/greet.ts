@@ -142,7 +142,7 @@ export function init33() {
     {
       cmd: 'due',
       arg: '[overdue|today]',
-      desc: 'List what is overdue and coming up, on every board (/due overdue for the late ones, /due today for today)',
+      desc: 'List what is overdue and coming up on every board. Use /due overdue or /due today to narrow it.',
       ex: ['/due', '/due overdue', '/due today'],
       opts: ['overdue', 'today'],
       run: a => slashDue(a),
@@ -158,7 +158,7 @@ export function init33() {
     {
       cmd: 'timer',
       arg: '<minutes> <purpose>',
-      desc: 'A timer; the purpose is optional (/timer stop cancels, /timer alone shows the time left)',
+      desc: 'Start a timer, with an optional purpose. /timer stop cancels it, and /timer shows the time left.',
       ex: ['/timer 25 write the intro', '/timer 2m10s tea', '/timer 1h30'],
       opts: ['15 break', '50 focus', '5 breather'],
       run: slashTimer,

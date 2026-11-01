@@ -94,7 +94,7 @@ const TOUR = [
   {
     el: '#tools',
     side: 'top',
-    text: 'These are your tools: notes, docs, checklists, titles, collections, links, images, voice memos, colours, shapes, stamps and drawing. Pick one, then click the board to place it.',
+    text: 'These are your tools. Pick one, then click the board to place it.',
     try: 'Try it: add a note (or double-click the board).',
     done: t => session.board.cards.length > t.cards,
   },
@@ -105,7 +105,7 @@ const TOUR = [
   },
   {
     el: null,
-    text: 'Got an idea mid-thought? Press ⌘K, type it, hit Enter. It goes to Unsorted so you never lose your place.',
+    text: 'Got an idea mid-thought? Press ⌘K, type it and press Enter. It goes to Unsorted, and you keep your place.',
     try: 'Try it: press ⌘K and jot something down.',
     done: t => session.board.tray.length > t.tray,
   },

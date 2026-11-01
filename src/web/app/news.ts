@@ -10,7 +10,7 @@ export const NEWS = {
     [
       'myra-tool',
       'Hello, I’m Myra',
-      'A little cloudberry. Like cloudberries, ideas only grow where conditions are just right, so this board tries to be that place.',
+      'I’m a cloudberry who lives in your boards, and I help you sort, plan and build ✦',
     ],
     [
       'palette',

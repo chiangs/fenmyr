@@ -84,7 +84,7 @@ export async function exportRect(win: BrowserWindow, a: Untrusted<Ops['export'][
   };
   const name = clean(a.name, 'Fenmyr');
   const png = await snapshot(win.webContents, r, Number(a.scale) || 2);
-  if (!png?.length) throw new Error("I couldn't capture that");
+  if (!png?.length) throw new Error("Couldn't capture that area.");
   if (!a.pdf) return saveAs(win, `${name}.png`, 'png', png);
   // a one-page PDF the exact size of what was captured (the picture is drawn at 2x or more, so it stays sharp when zoomed)
   return saveAs(win, `${name}.pdf`, 'pdf', async () => {

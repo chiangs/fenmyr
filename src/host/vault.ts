@@ -281,7 +281,7 @@ export function add(dir: string): Vault {
   try {
     st = fs.statSync(at);
   } catch {
-    throw new Error("I can't find that folder.");
+    throw new Error("Can't find that folder.");
   }
   if (!st.isDirectory()) throw new Error('That is not a folder.');
   const all = vaults(),
