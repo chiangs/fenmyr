@@ -1,6 +1,15 @@
-// @ts-nocheck
-import type { Card } from '../../shared/model.ts';
-import { esc } from '../ui/dom.ts';
+import { type CardOf, isRecord } from '../../shared/model.ts';
+import { closestTo, elementById, esc } from '../ui/dom.ts';
+import type { DocEditor } from './editorTypes.ts';
+
+export type DocCard = CardOf<'doc'>;
+const titleField = () => elementById('dvTitle', HTMLInputElement);
+// the doc editor bundle, once its script has loaded
+export function editorBundle() {
+  const b = window.FenmyrEditor;
+  if (!b) throw new Error("The doc editor didn't load.");
+  return b;
+}
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { CIC } from '../cards/shapes.ts';
@@ -14,16 +23,21 @@ import { session } from '../core/state.ts';
 
 // ---------- docs: a real document editor (styles, fonts, sizes, colors, lists, tables, images, Myra on any words), beside the board ----------
 // A doc keeps its rich content in c.doc (the editor's own structured format) and a plain-text copy in c.body (for the card, search and Myra).
-export let docCard: Card | null = null;
-export let ed: { commands: { setContent(html: string, emit: boolean): void } } | null = null;
-let dvT = 0;
-export let bubbleEl;
+export let docCard: DocCard | null = null;
+export let ed: DocEditor | null = null;
+let dvT: ReturnType<typeof setTimeout> | undefined;
+export let bubbleEl: HTMLElement;
+// the editor, for the toolbar and menus: they only exist once there is one
+export function liveEditor(): DocEditor {
+  if (!ed) throw new Error('no doc editor yet');
+  return ed;
+}
 // the editor's popup moves the floating bar out of the page, so keep hold of it
 export const DOC_FONT = 'Figtree';
 export const docDefault = () => (settings.defaultFont || '').trim() || DOC_FONT;
 export const SIZES = [9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 60, 72];
 
-export const BLOCKS = [
+export const BLOCKS: [key: string, name: string, size: number][] = [
   ['title', 'Title', 36],
   ['heading', 'Heading', 26],
   ['sub', 'Subheading', 20],
@@ -71,17 +85,18 @@ export const SUGGESTED_FONTS = [
   'JetBrains Mono',
   'Shantell Sans',
 ];
-export let DICON;
+export let DICON: Record<string, string> = {};
 
-export const fontName = f =>
-  String(f || '')
-    .replace(/["']/g, '')
-    .split(',')[0]
-    .trim();
+export const fontName = (f: unknown) =>
+  (
+    String(f || '')
+      .replace(/["']/g, '')
+      .split(',')[0] ?? ''
+  ).trim();
 
 // plain text or Myra's light markdown → editor HTML (headings, lists, checklists, quotes, dividers, **bold**, *italic*, `code`)
-export function mdToHTML(src) {
-  const inl = s =>
+export function mdToHTML(src: unknown) {
+  const inl = (s: string | undefined) =>
     esc(s)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1<em>$2</em>')
@@ -90,14 +105,14 @@ export function mdToHTML(src) {
     .replace(/\r/g, '')
     .split('\n');
   let out = '',
-    list = null;
+    list: string | null = null;
   const close = () => {
     if (list) {
       out += `</${list === 'task' ? 'ul' : list}>`;
       list = null;
     }
   };
-  const open = k => {
+  const open = (k: string) => {
     if (list !== k) {
       close();
       out += k === 'task' ? '<ul data-type="taskList">' : `<${k}>`;
@@ -106,14 +121,15 @@ export function mdToHTML(src) {
   };
   for (const raw of lines) {
     const l = raw.trimEnd();
-    let m;
+    let m: RegExpMatchArray | null;
     if (!l.trim()) {
       close();
       continue;
     }
     if ((m = l.match(/^(#{1,3})\s+(.*)/))) {
       close();
-      out += `<h${m[1].length}>${inl(m[2])}</h${m[1].length}>`;
+      const level = (m[1] ?? '#').length;
+      out += `<h${level}>${inl(m[2])}</h${level}>`;
     } else if ((m = l.match(/^\s*(?:(?:[-*]\s+)?\[( |x|X)\]|([☐☑]))\s*(.*)/))) {
       open('task');
       const on = (m[1] || '').toLowerCase() === 'x' || m[2] === '☑';
@@ -139,30 +155,35 @@ export function mdToHTML(src) {
   return out || '<p></p>';
 }
 
-export const docHTML = c =>
-  c.doc && window.FenmyrEditor ? FenmyrEditor.generateHTML(c.doc, FenmyrEditor.extensions()) : mdToHTML(c.body);
+export const docHTML = (c: DocCard) => {
+  const b = window.FenmyrEditor;
+  return c.doc && b ? b.generateHTML(c.doc, b.extensions()) : mdToHTML(c.body);
+};
 
 // load any web fonts a doc uses, so it looks right on this computer
-export function fontsIn(json) {
-  const out = new Set();
-  (function walk(n) {
-    (n?.marks || []).forEach(
-      m => m.type === 'textStyle' && m.attrs?.fontFamily && out.add(fontName(m.attrs.fontFamily)),
-    );
-    (n?.content || []).forEach(walk);
+export function fontsIn(json: unknown) {
+  const out = new Set<string>();
+  const list = (x: unknown) => (Array.isArray(x) ? x : []);
+  (function walk(n: unknown) {
+    if (!isRecord(n)) return;
+    for (const m of list(n.marks))
+      if (isRecord(m) && m.type === 'textStyle' && isRecord(m.attrs) && m.attrs.fontFamily)
+        out.add(fontName(m.attrs.fontFamily));
+    list(n.content).forEach(walk);
   })(json);
   return [...out];
 }
 
 function ensureEditor() {
   if (ed) return ed;
-  if (!window.FenmyrEditor) return null;
-  ed = new FenmyrEditor.Editor({
+  const b = window.FenmyrEditor;
+  if (!b) return null;
+  ed = new b.Editor({
     element: $('dvBody'),
-    extensions: FenmyrEditor.extensions('Start writing, or drag cards here from the board…'),
+    extensions: b.extensions('Start writing, or drag cards here from the board…'),
     editorProps: {
       attributes: { class: 'dv-prose', spellcheck: 'true' },
-      handleKeyDown: (v, e) => {
+      handleKeyDown: (_v, e) => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
           showPop('link', $('dvTools').querySelector('[data-pop="link"]'));
@@ -179,7 +200,7 @@ function ensureEditor() {
         fs.forEach(f => addDocImage(f, pos));
         return true;
       },
-      handlePaste: (v, e) => {
+      handlePaste: (_v, e) => {
         const fs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/'));
         if (!fs.length) return false;
         fs.forEach(f => addDocImage(f));
@@ -219,12 +240,14 @@ function placeBubble() {
     !ed.isActive('image') &&
     !document.querySelector('#dvPop:not([hidden])') &&
     (ed.isFocused || bubbleEl.contains(document.activeElement));
-  if (!on) {
+  if (!on || !ed) {
     bubbleEl.style.display = 'none';
     return;
   }
   const sel = getSelection();
-  let rc = sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null; // where the selected words really are on screen
+  // where the selected words really are on screen
+  let rc: { left: number; right: number; top: number; bottom: number; width?: number } | null =
+    sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;
   if (!rc || !rc.width) {
     const { from, to } = ed.state.selection,
       a = ed.view.coordsAtPos(from),
@@ -264,23 +287,22 @@ const paintCount = () => {
   $('dvCount').textContent = `${w.toLocaleString()} word${w === 1 ? '' : 's'}`;
 };
 
-function addDocImage(file, pos) {
+function addDocImage(file: File, pos?: number) {
   const r = new FileReader();
   r.onload = () => {
-    const ch = ed.chain().focus();
-    (pos != null
-      ? ch.insertContentAt(pos, { type: 'image', attrs: { src: r.result } })
-      : ch.setImage({ src: r.result })
-    ).run();
+    if (!ed) return;
+    const src = String(r.result),
+      ch = ed.chain().focus();
+    (pos != null ? ch.insertContentAt(pos, { type: 'image', attrs: { src } }) : ch.setImage({ src })).run();
   };
   r.readAsDataURL(file);
 }
-export let imgPick;
+export let imgPick: HTMLInputElement;
 
-export function openDoc(c) {
+export function openDoc(c: DocCard) {
   if (docCard && docCard !== c) syncDoc();
   docCard = c;
-  $('dvTitle').value = c.text || '';
+  titleField().value = c.text || '';
   $('dvWhere').textContent = `${session.board.name} › ${c.text || 'Untitled'}`;
   $('docview').classList.add('on');
   stage.classList.add('doc-open');
@@ -295,7 +317,7 @@ export function openDoc(c) {
     $('dvSaved').textContent = '';
   }
   $('dvPage').scrollTop = 0;
-  setTimeout(() => (c.text ? e?.commands.focus('end') : $('dvTitle').focus()), 250);
+  setTimeout(() => (c.text ? e?.commands.focus('end') : titleField().focus()), 250);
 }
 
 export function closeDoc() {
@@ -307,7 +329,7 @@ export function closeDoc() {
   docCard = null;
   $('docview').classList.remove('on', 'wide');
   stage.classList.remove('doc-open');
-  document.activeElement.blur();
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   renderCard(c);
   selectOnly([c.id]);
   save();
@@ -338,7 +360,7 @@ export function init53() {
     bullet: Icon('bullets'),
     ordered: Icon('numbered'),
     task: Icon('task'),
-    link: CIC.link,
+    link: CIC.link ?? '',
     image: Icon('image'),
     more: Icon('more'),
     hl: Icon('highlight'),
@@ -351,7 +373,7 @@ export function init53() {
   };
 
   bubbleEl.addEventListener('mousedown', e => {
-    if (e.target.closest('button')) e.preventDefault();
+    if (closestTo(e.target, 'button')) e.preventDefault();
   });
   // using the bar must not take the selection away from the text
   document.addEventListener(
@@ -372,19 +394,19 @@ export function init53() {
   document.body.appendChild(imgPick);
 
   imgPick.onchange = () => {
-    [...imgPick.files].forEach(f => addDocImage(f));
+    [...(imgPick.files ?? [])].forEach(f => addDocImage(f));
     imgPick.value = '';
   };
 
-  $('dvTitle').oninput = () => {
+  titleField().oninput = () => {
     if (!docCard) return;
-    docCard.text = $('dvTitle').value;
+    docCard.text = titleField().value;
     $('dvWhere').textContent = `${session.board.name} › ${docCard.text || 'Untitled'}`;
     renderCard(docCard);
     save();
   };
 
-  $('dvTitle').onkeydown = e => {
+  titleField().onkeydown = e => {
     if (e.key === 'Enter') {
       e.preventDefault();
       ed?.commands.focus('start');
@@ -396,12 +418,12 @@ export function init53() {
 
   $('dvExport').onclick = e => {
     ensureEditor();
-    showPop('export', e.currentTarget);
+    showPop('export', e.currentTarget instanceof Element ? e.currentTarget : null);
   };
 
   $('dvPageMode').onclick = e => {
     ensureEditor();
-    showPop('page', e.currentTarget);
+    showPop('page', e.currentTarget instanceof Element ? e.currentTarget : null);
   };
 
   new MutationObserver(applyDocPage).observe(document.body, { attributes: true, attributeFilter: ['class'] });

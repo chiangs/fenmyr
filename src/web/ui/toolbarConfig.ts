@@ -1,4 +1,4 @@
-import { closestTo, esc } from './dom.ts';
+import { closestTo, esc, htmlIn } from './dom.ts';
 import { $ } from '../core/dom.ts';
 import { boardMenu } from '../features/export.ts';
 import { setTab } from '../settings/colors.ts';
@@ -10,8 +10,6 @@ import { session } from '../core/state.ts';
 let TB_DEFAULT: string[] = [];
 
 // the HTML elements matching a selector, under root
-const htmlIn = (root: ParentNode, selector: string) =>
-  [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);
 const toolButton = (k: string) => {
   const b = $('tools').querySelector(`:scope > [data-add="${k}"]`);
   return b instanceof HTMLElement ? b : null;

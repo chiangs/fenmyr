@@ -1,5 +1,5 @@
 import { openSettingsKey } from '../input/shortcuts.ts';
-import { esc } from '../ui/dom.ts';
+import { esc, htmlIn } from '../ui/dom.ts';
 import { autoUpdateAnswered } from '../app/updates.ts';
 import { COLOR_NAMES } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
@@ -27,8 +27,6 @@ type Licence = {
 };
 const text = (v: unknown) => (typeof v === 'string' ? v : '');
 const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
-const htmlIn = (root: ParentNode, selector: string) =>
-  [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);
 
 // web/licenses.js is a script that sets a global, so what it holds is checked like any other outside data
 function readLicences() {

@@ -1,18 +1,18 @@
-// @ts-nocheck
 import { esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { docCard, docHTML, ed, mdToHTML, syncDoc } from './editor.ts';
+import { type DocCard, docCard, docHTML, ed, editorBundle, mdToHTML, syncDoc } from './editor.ts';
+import type { Card } from '../../shared/model.ts';
 import { say } from '../settings/licenses.ts';
 import { session } from '../core/state.ts';
 
 // ---------- dropping cards into a doc: they arrive as real content (a checklist stays a checklist) ----------
 const WORDY = typesWith('wordy');
 
-function cardWords(c) {
+function cardWords(c: Card) {
   if (c.type === 'note') return [c.name, c.text].filter(x => (x || '').trim()).join('\n');
   if (c.type === 'todo')
     return [(c.text || '').trim(), ...(c.items || []).map(i => (i.done ? '☑ ' : '☐ ') + i.t)]
@@ -26,14 +26,17 @@ function cardWords(c) {
   return c.text || '';
 }
 
-function cardHTML(c) {
+function cardHTML(c: Card) {
   if (c.type === 'note') return (c.name ? `<p><strong>${esc(c.name)}</strong></p>` : '') + mdToHTML(c.text);
   if (c.type === 'todo')
     return (
-      (c.text ? `<p><strong>${esc(c.text)}</strong></p>` : '') +
-      `<ul data-type="taskList">${(c.items || []).map(i => `<li data-type="taskItem" data-checked="${!!i.done}"><p>${esc(i.t)}</p></li>`).join('')}</ul>`
+      (c.text ? `<p><strong>${esc(c.text)}</strong></p>` : '') + `<ul data-type="taskList">${taskItems(c.items)}</ul>`
     );
-  if (c.type === 'link') return `<p><a href="${esc(c.url)}">${esc(c.title || c.url)}</a></p>`;
+  if (c.type === 'link') {
+    const url = esc(c.url),
+      name = esc(c.title || c.url);
+    return `<p><a href="${url}">${name}</a></p>`;
+  }
   if (c.type === 'swatch')
     return `<p><span style="color: ${c.hex}">■</span> ${esc(c.label || '')} <code>${c.hex.toUpperCase()}</code></p>`;
   if (c.type === 'title') return `<h2>${esc(c.text)}</h2>`;
@@ -41,9 +44,22 @@ function cardHTML(c) {
   return mdToHTML(cardWords(c));
 }
 
+const taskItems = (items: { t: string; done?: boolean }[] = []) =>
+  items
+    .map(i => {
+      const done = !!i.done,
+        t = esc(i.t);
+      return `<li data-type="taskItem" data-checked="${done}"><p>${t}</p></li>`;
+    })
+    .join('');
+
 // the open doc page, or a doc card on the board, under the pointer (only for cards that have words)
-export function docTarget(e, w, moving) {
-  const cs = moving.map(m => m.c || m);
+export function docTarget(
+  e: MouseEvent,
+  w: { x: number; y: number },
+  moving: (Card | { c: Card })[],
+): 'page' | DocCard | null {
+  const cs = moving.map(m => ('c' in m ? m.c : m));
   if (!cs.length || !cs.every(c => WORDY.includes(c.type))) return null;
   if (docCard && !cs.includes(docCard)) {
     const r = $('docview').getBoundingClientRect();
@@ -52,24 +68,28 @@ export function docTarget(e, w, moving) {
   return (
     [...session.board.cards]
       .reverse()
-      .find(c => c.type === 'doc' && !cs.includes(c) && w.x > c.x && w.x < c.x + c.w && w.y > c.y && w.y < c.y + c.h) ||
-    null
+      .find(
+        (c): c is DocCard =>
+          c.type === 'doc' && !cs.includes(c) && w.x > c.x && w.x < c.x + c.w && w.y > c.y && w.y < c.y + c.h,
+      ) || null
   );
 }
 
-export function dropIntoDoc(t, cs, e) {
-  const doc = t === 'page' ? docCard : t,
-    html = cs.map(cardHTML).join(''),
+export function dropIntoDoc(t: 'page' | DocCard, cs: Card[], e: MouseEvent) {
+  const doc = t === 'page' ? docCard : t;
+  if (!doc) return;
+  const html = cs.map(cardHTML).join(''),
     before = { body: doc.body, doc: doc.doc };
   if (t === 'page' && ed) {
     // right where you let go on the page
     const at = ed.view.posAtCoords({ left: e.clientX, top: e.clientY });
     const $p = at && ed.state.doc.resolve(at.pos);
-    const pos = $p ? ($p.depth ? $p.after(1) : at.pos) : ed.state.doc.content.size;
+    const pos = at && $p ? ($p.depth ? $p.after(1) : at.pos) : ed.state.doc.content.size;
     ed.chain().focus().insertContentAt(pos, html).run();
     syncDoc();
   } else {
-    doc.doc = FenmyrEditor.generateJSON(docHTML(doc) + html, FenmyrEditor.extensions());
+    const bundle = editorBundle();
+    doc.doc = bundle.generateJSON(docHTML(doc) + html, bundle.extensions());
     doc.body = [doc.body, ...cs.map(cardWords)].filter(x => (x || '').trim()).join('\n\n');
   }
   selectOnly(cs.map(c => c.id));

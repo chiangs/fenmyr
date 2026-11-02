@@ -8,12 +8,10 @@ import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { placeTray } from '../wireframe/pieces.ts';
 import { useFont } from '../wireframe/tilt.ts';
 import { appState } from '../core/state.ts';
-import { closestTo } from '../ui/dom.ts';
+import { closestTo, htmlIn } from '../ui/dom.ts';
 import { choiceOf, flagOn, myraColors } from './settings.ts';
 
 type Side = { left: string[]; right: string[] };
-const htmlIn = (root: ParentNode, selector: string) =>
-  [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);
 
 // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
 // the Boards panel is pinned at the top left (it's home to your boards and Settings), everything else can move

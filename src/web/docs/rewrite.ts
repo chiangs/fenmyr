@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { esc } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
 import { docCard, ed, mdToHTML } from './editor.ts';
@@ -8,14 +7,15 @@ import { goo } from '../myra/goos.ts';
 import { say } from '../settings/licenses.ts';
 
 // ---------- Myra rewrites the words you selected ----------
-export async function rewrite(how) {
+export async function rewrite(how: string) {
   hidePop();
-  if (!ed) return;
-  const { from, to } = ed.state.selection;
+  const e = ed;
+  if (!e) return;
+  const { from, to } = e.state.selection;
   if (from === to) return;
-  const text = ed.state.doc.textBetween(from, to, '\n'),
-    size = ed.state.doc.content.size;
-  const around = ed.state.doc.textBetween(Math.max(0, from - 700), Math.min(size, to + 700), '\n');
+  const text = e.state.doc.textBetween(from, to, '\n'),
+    size = e.state.doc.content.size;
+  const around = e.state.doc.textBetween(Math.max(0, from - 700), Math.min(size, to + 700), '\n');
   $('docview').classList.add('myra-busy');
   goo.think(true);
   $('dvSaved').textContent = 'Myra is rewriting…';
@@ -23,17 +23,17 @@ export async function rewrite(how) {
     const out = ((await Fenmyr.rewrite(text, how, docCard?.text || '', around)) || '').trim();
     if (!out) throw new Error('Myra came back empty-handed');
     const multi = /\n/.test(out);
-    ed.chain()
+    e.chain()
       .focus()
       .insertContentAt({ from, to }, multi ? mdToHTML(out) : esc(out))
       .run();
-    const end = ed.state.selection.from;
-    ed.commands.setTextSelection({ from, to: end });
+    const end = e.state.selection.from;
+    e.commands.setTextSelection({ from, to: end });
     say('Rewritten ✦ Undo brings back your words.', 6000, [
-      { label: 'Undo', run: () => ed.chain().focus().undo().run() },
+      { label: 'Undo', run: () => e.chain().focus().undo().run() },
     ]);
   } catch (err) {
-    const m = err.message || '';
+    const m = err instanceof Error ? err.message : '';
     if (/Claude Code/.test(m))
       say("I need Claude Code to rewrite things. It's a one-time setup with your Claude account.", 0, [
         { label: 'Show me how to connect', run: () => Fenmyr.openURL(GUIDE) },

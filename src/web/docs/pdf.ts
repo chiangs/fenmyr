@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { esc } from '../ui/dom.ts';
 import { docCard, docHTML, ed, fontsIn } from './editor.ts';
 import { settings } from '../settings/settings.ts';
@@ -9,15 +8,15 @@ import { isLocalFont } from '../wireframe/tilt.ts';
 function proseCSS() {
   let out = '';
   for (const sh of document.styleSheets) {
-    let rules;
+    let rules: CSSRuleList;
     try {
       rules = sh.cssRules;
-    } catch (e) {
+    } catch {
       continue;
     }
     for (const r of rules)
       if (
-        r.selectorText &&
+        r instanceof CSSStyleRule &&
         /\.dv-prose/.test(r.selectorText) &&
         !/page-dark|ProseMirror-selectednode|selectedCell|column-resize|resize-cursor|is-empty|::selection|is-editor-empty/.test(
           r.selectorText,
@@ -28,11 +27,12 @@ function proseCSS() {
   return out;
 }
 
-export function docPrintHTML(paper) {
+export function docPrintHTML(paper: string) {
   // glue each heading to the block after it, so a heading never sits alone at the bottom of a page (WebKit's print ignores break-after)
-  const glue = html => {
+  const glue = (html: string) => {
     const d = new DOMParser().parseFromString(`<div id="r">${html}</div>`, 'text/html'),
       r = d.getElementById('r');
+    if (!r) return html;
     [...r.querySelectorAll(':scope > h1, :scope > h2, :scope > h3')].forEach(h => {
       const w = d.createElement('div');
       w.className = 'keep';
@@ -43,14 +43,14 @@ export function docPrintHTML(paper) {
     });
     return r.innerHTML;
   };
-  const body = glue(ed ? ed.getHTML() : docHTML(docCard)),
-    first = (ed ? ed.state.doc.firstChild?.textContent : '') || '';
-  const title =
-    (docCard?.text || '').trim() && first.trim().toLowerCase() !== (docCard.text || '').trim().toLowerCase()
-      ? docCard.text.trim()
-      : ''; // no double title when the doc already starts with it
+  const doc = docCard,
+    body = glue(ed ? ed.getHTML() : doc ? docHTML(doc) : ''),
+    first = (ed ? ed.state.doc.firstChild?.textContent : '') || '',
+    named = (doc?.text || '').trim();
+  // no double title when the doc already starts with it
+  const title = named && first.trim().toLowerCase() !== named.toLowerCase() ? named : '';
   const dfont = (settings.defaultFont || '').trim().replace(/"/g, ''),
-    web = [...new Set([...fontsIn(ed ? ed.getJSON() : docCard.doc || {}), ...(dfont ? [dfont] : [])])].filter(
+    web = [...new Set([...fontsIn(ed ? ed.getJSON() : doc?.doc || {}), ...(dfont ? [dfont] : [])])].filter(
       f => !isLocalFont(f),
     );
   const size = paper === 'a4' ? '210mm 297mm' : '8.5in 11in';
