@@ -1,10 +1,10 @@
-// @ts-nocheck
 import { esc } from '../ui/dom.ts';
 import { labelOf } from '../../shared/cardTypes.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { perchGoo, renderChat } from './chat.ts';
 import { session } from '../core/state.ts';
+import { closestTo, textField } from '../ui/dom.ts';
 
 // ---------- Myra's chat window: click her to open it, click again (or Esc) to close ----------
 export const chatOpen = () => $('myra').classList.contains('chat');
@@ -18,7 +18,7 @@ const askHint = () =>
       : 'Ask Myra… “group these by theme”';
 
 // a little chip above the box says which cards are selected (they go along with what you send); it follows the selection while the chat is open
-let selChipKey = null;
+let selChipKey: string | null = null;
 
 function renderSelChip() {
   const el = $('mcSel');
@@ -34,7 +34,7 @@ function renderSelChip() {
   const key = cs.map(c => c.id).join(',') + '|' + words;
   if (key === selChipKey) return;
   selChipKey = key;
-  $('mcInput').placeholder = askHint();
+  textField('mcInput').placeholder = askHint();
   if (!cs.length) {
     el.hidden = true;
     el.innerHTML = '';
@@ -44,10 +44,11 @@ function renderSelChip() {
   el.hidden = false;
 }
 
-export function myraOpen(on) {
-  const was = chatOpen();
-  if (!on && $('mChat').contains(document.activeElement))
-    document.activeElement.blur(); /* a closed chat is also visibility:hidden, so nothing in it can keep or take the cursor */
+export function myraOpen(on: boolean) {
+  const was = chatOpen(),
+    active = document.activeElement;
+  if (!on && active instanceof HTMLElement && $('mChat').contains(active))
+    active.blur(); /* a closed chat is also visibility:hidden, so nothing in it can keep or take the cursor */
   $('myra').classList.toggle('chat', on);
   if (on) {
     $('mBubble').classList.remove('on');
@@ -60,7 +61,7 @@ export function myraOpen(on) {
 }
 export function init30() {
   $('mcSel').onclick = e => {
-    if (e.target.closest('.mcs-x')) {
+    if (closestTo(e.target, '.mcs-x')) {
       selectOnly([]);
       renderSelChip();
     }

@@ -1,5 +1,7 @@
-// @ts-nocheck
 import { $ } from '../core/dom.ts';
+import { elementById } from '../ui/dom.ts';
+
+const canvas = (id: string) => elementById(id, HTMLCanvasElement);
 
 // ---------- Myra on the board ----------
 // her hop: she jumps right up out of her pill, then squishes a little as she lands
@@ -10,17 +12,18 @@ export function hopMyra() {
   void c.offsetWidth;
   c.classList.add('hopping');
 }
-export let goo;
+// Myra on the board, the one the other modules move
+export let goo: ReturnType<typeof Goo>;
 const SMALL = { headroom: 8 };
 export let goos: ReturnType<typeof Goo>[] = [];
 export function init24() {
-  goo = Goo($('goo'), { headroom: 8 });
+  goo = Goo(canvas('goo'), { headroom: 8 });
   // small Myras get room above them
   goos = [
     goo,
-    Goo($('obGoo'), { headroom: 8 }),
-    Goo($('obGoo2'), { headroom: 8 }),
-    Goo($('coachGoo'), SMALL),
-    Goo($('setGoo'), SMALL),
+    Goo(canvas('obGoo'), { headroom: 8 }),
+    Goo(canvas('obGoo2'), { headroom: 8 }),
+    Goo(canvas('coachGoo'), SMALL),
+    Goo(canvas('setGoo'), SMALL),
   ];
 }

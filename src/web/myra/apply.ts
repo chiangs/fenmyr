@@ -359,7 +359,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
   if (given.length) save();
   const acts: { label: string; run: () => unknown; ghost?: boolean; cls?: string }[] = r.confirm
     ? [
-        { label: (r.confirm || 'Yes, make it') + ' ✦', run: () => ask(q, true) },
+        { label: (r.confirm || 'Yes, make it') + ' ✦', run: () => ask(q ?? '', true) },
         { label: 'Not now', ghost: true, run: () => {} },
       ]
     : [];
@@ -370,7 +370,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       run: () => {
         appState.vaultChip = true;
         updateVaultChip();
-        ask(q);
+        ask(q ?? '');
       },
     });
   // what next: Myra's own ideas, or a sensible guess from what she just made

@@ -1,11 +1,14 @@
-// @ts-nocheck
 import { partyMyra, setPose, timerPose, wantedPose } from '../features/timer.ts';
 import { goo, hopMyra } from './goos.ts';
 import { reply } from '../settings/licenses.ts';
 import { appState } from '../core/state.ts';
+import type { Pose } from '../goo.ts';
+
+// an animation either plays something (play) or holds a face for a while (pose)
+type Anim = { name: string; desc: string; line: string; ms: number; play?: () => void; pose?: Pose };
 
 // ---------- animate: what she can do with her sprite when asked (/animate, plain words like "can you jump?", or her own choice with thinking on). Always plays, even in calm mode ----------
-export const ANIMS = [
+export const ANIMS: Anim[] = [
   {
     name: 'hop',
     desc: 'A little jump',
@@ -27,7 +30,7 @@ export const ANIMS = [
   { name: 'curious', desc: 'Head tilts, a floating question mark', line: 'Hmm?', ms: 3400, pose: 'curious' },
 ];
 
-let animT = 0;
+let animT: ReturnType<typeof setTimeout> | undefined;
 export let lastAnim = '';
 let animLive = false;
 let liveN = 0;
@@ -43,10 +46,10 @@ export const liveOff = () => {
 
 export const pickAnim = () => {
   const pool = ANIMS.filter(a => a.name !== lastAnim);
-  return pool[Math.floor(Math.random() * pool.length)].name;
+  return pool[Math.floor(Math.random() * pool.length)]?.name ?? 'hop';
 };
 
-const ANIM_ALIAS = {
+const ANIM_ALIAS: Record<string, string> = {
   jump: 'hop',
   bounce: 'hop',
   wobble: 'wiggle',
@@ -72,14 +75,14 @@ const ANIM_ALIAS = {
   hmm: 'curious',
 };
 
-export const animName = n => {
+export const animName = (n: unknown) => {
   const k = String(n || '')
     .toLowerCase()
     .trim();
   return ANIMS.some(a => a.name === k) ? k : ANIM_ALIAS[k] || '';
 };
 
-export function playAnim(name, say = true) {
+export function playAnim(name: string, say = true) {
   const a = ANIMS.find(x => x.name === animName(name));
   if (!a) return false;
   if (timerPose()) {
@@ -95,7 +98,7 @@ export function playAnim(name, say = true) {
   if (a.pose) {
     appState.animPose = a.pose;
     setPose(wantedPose());
-  } else a.play();
+  } else a.play?.();
   animT = setTimeout(() => {
     appState.animPose = null;
     if (animLive) {
@@ -118,7 +121,7 @@ export const stopAnim = () => {
   setPose(wantedPose());
 };
 
-export function slashAnimate(arg) {
+export function slashAnimate(arg?: string) {
   const n = (arg || '').trim().toLowerCase();
   if (!n || n === 'random' || n === 'surprise') return void playAnim(pickAnim());
   if (!playAnim(n) && !ANIMS.some(a => a.name === n))
@@ -126,7 +129,7 @@ export function slashAnimate(arg) {
 }
 
 // plain words, with thinking off (or on the web demo): "can you jump?", "do a little dance", "show me your moves"
-const ANIM_WORDS = [
+const ANIM_WORDS: [name: string, words: RegExp][] = [
   ['hop', /\b(jump|hop|bounce)\b/i],
   ['wiggle', /\b(wiggle|wobble)\b/i],
   ['party', /\b(party|celebrate|confetti|cheer)\b/i],
@@ -143,13 +146,13 @@ const ANIM_WORDS = [
 const ANIM_ASK =
   /\b(can|could|would|will)\s+(you|u)\b|\bplease\b|\b(show|give|do|make|throw|host|play|perform|try)\b|\bput on\b|\blet(?:'s|s| us)\b|\bhave a\b/i;
 
-export const animRequest = q => {
+export const animRequest = (q: string) => {
   const an = animIntent(q);
   return an && (ANIM_ASK.test(q) || q.trim().split(/\s+/).length <= 3) ? an : '';
 };
 // with thinking on, only sentences that ask for it (so "I love how this board looks" is left to the model)
-export const animIntent = q =>
-  /group|sort|organi[sz]e|tidy|line up/i.test(q) ? '' : (ANIM_WORDS.find(([, re]) => re.test(q)) || [''])[0];
+export const animIntent = (q: string) =>
+  /group|sort|organi[sz]e|tidy|line up/i.test(q) ? '' : (ANIM_WORDS.find(([, re]) => re.test(q))?.[0] ?? '');
 export function init35() {
   appState.flightLive = false;
 }

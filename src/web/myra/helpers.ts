@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { cardEl } from '../ui/dom.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
@@ -7,11 +6,12 @@ import { save } from '../core/history.ts';
 import { GUIDE } from './chat.ts';
 import { say } from '../settings/licenses.ts';
 import { appState, session } from '../core/state.ts';
+import type { Connections } from '../../shared/ops.ts';
 
 // ---------- Myra's helpers: Claude Code, Mobbin, Higgsfield ----------
 let lastConn = 0;
 
-export async function showConnections(force) {
+export async function showConnections(force = false) {
   if (!force && Date.now() - lastConn < 5 * 60 * 1000) return;
   lastConn = Date.now();
   const els = [...document.querySelectorAll('.conns')];
@@ -23,9 +23,11 @@ export async function showConnections(force) {
         )
         .join('');
   });
-  const c = await Fenmyr.connections().catch(() => ({}));
-  if (!c.browser) appState.haveClaude = !!c.claude;
-  const rows = [
+  const c = await Fenmyr.connections().catch(() => null),
+    // the browser version can't reach any of them, so it offers no buttons
+    inBrowser = !Fenmyr.native;
+  if (!inBrowser) appState.haveClaude = !!c?.claude;
+  const rows: [key: keyof Connections, name: string, url: string, verb: string][] = [
     ['claude', 'Claude Code', GUIDE, 'Set up'],
     ['mobbin', 'Mobbin', 'https://claude.ai/settings/connectors', 'Connect'],
     ['higgsfield', 'Higgsfield', 'https://claude.ai/settings/connectors', 'Connect'],
@@ -35,10 +37,11 @@ export async function showConnections(force) {
     // Connect clears the 5-minute wait, so the app looks again the moment they come back from claude.ai
     rows.forEach(([k, name, url, verb]) => {
       const r = document.createElement('div');
-      r.className = 'conn' + (c[k] ? ' on' : '');
+      const ready = !!c?.[k];
+      r.className = 'conn' + (ready ? ' on' : '');
       r.innerHTML = `<span class="dot"></span>${name}`;
-      if (c[k]) r.insertAdjacentHTML('beforeend', '<em>ready</em>');
-      else if (!c.browser) {
+      if (ready) r.insertAdjacentHTML('beforeend', '<em>ready</em>');
+      else if (!inBrowser) {
         const b = document.createElement('button');
         b.textContent = verb;
         b.onclick = () => {
@@ -64,11 +67,8 @@ export function removeSelected() {
   session.board.links = session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b));
   gone.forEach(id => cardEl(id)?.remove());
   session.sel.clear();
-  cardsEl.querySelectorAll('.card.inside').forEach(el => {
-    if (!parentOf(el.dataset.id)) {
-      el.classList.remove('inside');
-    }
-  });
+  for (const el of cardsEl.querySelectorAll('.card.inside'))
+    if (el instanceof HTMLElement && !parentOf(el.dataset.id ?? '')) el.classList.remove('inside');
   renderWires();
   save();
 }
