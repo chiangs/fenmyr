@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { cardEl } from '../ui/dom.ts';
 import { placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
@@ -12,10 +11,26 @@ import { say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { session } from '../core/state.ts';
+import type { Card } from '../../shared/model.ts';
 
 // ---------- design thinking templates: a ready-made layout with one or two examples, plus Myra's how-to note (delete it anytime) ----------
 // items: title / note / coll (a collection with example notes) / how (Myra's note). keys + links draw arrows between items.
-export const FRAMEWORKS = {
+type FrameworkNote = { text: string; color?: string };
+type At = { x: number; y: number };
+type FrameworkItem =
+  | (At & { t: 'title'; text: string })
+  | (At & { t: 'note'; text: string; name?: string; color?: string; key?: string })
+  | (At & { t: 'how'; text: string })
+  | (At & { t: 'coll'; name: string; color?: string; notes: FrameworkNote[] })
+  | (At & {
+      t: 'kanban';
+      name: string;
+      color?: string;
+      cols: { name: string; limit?: number; notes?: FrameworkNote[] }[];
+    });
+type Framework = { emoji: string; name: string; line: string; items: FrameworkItem[]; links?: [string, string][] };
+
+export const FRAMEWORKS: Record<string, Framework> = {
   affinity: {
     emoji: '🧩',
     name: 'Affinity map',
@@ -380,90 +395,102 @@ export const FRAMEWORKS = {
   },
 };
 
-export function placeFramework(key) {
+export function placeFramework(key: string) {
   const F = FRAMEWORKS[key];
   if (!F) return;
   remember();
   stopPlacing();
-  const made = [],
-    keyed = {};
-  F.items.forEach(it => {
+  const made: Card[] = [],
+    keyed: Record<string, Card> = {};
+  // a collection and the notes inside it, which it lays out itself
+  const addCollection = (coll: Card, kids: Card[]) => {
+    for (const c of [coll, ...kids]) {
+      session.board.cards.push(c);
+      renderCard(c, true);
+    }
+    made.push(coll, ...kids);
+  };
+  const inside = (n: FrameworkNote) => card('note', { text: n.text, color: n.color || 'white', r: 0 });
+  for (const it of F.items) {
     const at = { x: it.x, y: it.y };
-    if (it.t === 'title') made.push(addCard(card('title', { ...at, text: it.text }), true));
-    if (it.t === 'note') {
-      const c = addCard(card('note', { ...at, text: it.text, name: it.name, color: it.color || 'white' }), true);
-      made.push(c);
-      if (it.key) keyed[it.key] = c;
+    switch (it.t) {
+      case 'title':
+        made.push(addCard(card('title', { ...at, text: it.text }), true));
+        break;
+      case 'note': {
+        const c = addCard(card('note', { ...at, text: it.text, name: it.name, color: it.color || 'white' }), true);
+        made.push(c);
+        if (it.key) keyed[it.key] = c;
+        break;
+      }
+      case 'how':
+        made.push(
+          addCard(
+            card('note', {
+              ...at,
+              w: 280,
+              h: 300,
+              r: 1.5,
+              name: 'Myra’s how-to',
+              text: it.text,
+              color: 'white',
+              myra: true,
+            }),
+            true,
+          ),
+        );
+        break;
+      case 'kanban': {
+        const kids: Card[] = [],
+          colOf: Record<string, number> = {};
+        it.cols.forEach((col, k) => {
+          for (const n of col.notes || []) {
+            const kid = inside(n);
+            kids.push(kid);
+            colOf[kid.id] = k;
+          }
+        });
+        const board = card('coll', {
+          ...at,
+          text: it.name,
+          color: it.color || 'white',
+          kanban: true,
+          kids: kids.map(k => k.id),
+          colOf,
+          cols: it.cols.length,
+          colNames: it.cols.map(c => c.name),
+          colLimit: it.cols.map(c => c.limit || 0),
+          r: 0,
+        });
+        addCollection(board, kids);
+        break;
+      }
+      case 'coll': {
+        const kids = it.notes.map(inside);
+        addCollection(
+          card('coll', { ...at, text: it.name, color: it.color, kids: kids.map(k => k.id), cols: 1, r: 0 }),
+          kids,
+        );
+        break;
+      }
+      default: {
+        const unhandled: never = it;
+        throw new Error(`unknown framework item ${JSON.stringify(unhandled)}`);
+      }
     }
-    if (it.t === 'how')
-      made.push(
-        addCard(
-          card('note', {
-            ...at,
-            w: 280,
-            h: 300,
-            r: 1.5,
-            name: 'Myra’s how-to',
-            text: it.text,
-            color: 'white',
-            myra: true,
-          }),
-          true,
-        ),
-      );
-    if (it.t === 'kanban') {
-      const kids = [],
-        colOf = {};
-      it.cols.forEach((col, k) =>
-        (col.notes || []).forEach(n => {
-          const kid = card('note', { text: n.text, color: n.color || 'white', r: 0 });
-          kids.push(kid);
-          colOf[kid.id] = k;
-        }),
-      );
-      const kb = card('coll', {
-        ...at,
-        text: it.name,
-        color: it.color || 'white',
-        kanban: true,
-        kids: kids.map(k => k.id),
-        colOf,
-        cols: it.cols.length,
-        colNames: it.cols.map(c => c.name),
-        colLimit: it.cols.map(c => c.limit || 0),
-        r: 0,
-      });
-      session.board.cards.push(kb);
-      renderCard(kb, true);
-      kids.forEach(k => {
-        session.board.cards.push(k);
-        renderCard(k, true);
-      });
-      made.push(kb, ...kids);
-    }
-    if (it.t === 'coll') {
-      const kids = it.notes.map(n => card('note', { text: n.text, color: n.color || 'white', r: 0 }));
-      const s2 = card('coll', { ...at, text: it.name, color: it.color, kids: kids.map(k => k.id), cols: 1, r: 0 });
-      session.board.cards.push(s2);
-      renderCard(s2, true);
-      kids.forEach(k => {
-        session.board.cards.push(k);
-        renderCard(k, true);
-      });
-      made.push(s2, ...kids);
-    }
-  });
-  (F.links || []).forEach(
-    ([a, b]) =>
-      keyed[a] && keyed[b] && session.board.links.push({ id: uid(), a: keyed[a].id, b: keyed[b].id, arrow: true }),
-  );
+  }
+  for (const [a, b] of F.links || []) {
+    const from = keyed[a],
+      to = keyed[b];
+    if (from && to) session.board.links.push({ id: uid(), a: from.id, b: to.id, arrow: true });
+  }
   // notes grow to fit their words
   made
     .filter(c => c.type === 'note' && !parentOf(c.id))
     .forEach(c => {
       const el = cardEl(c.id),
         b = el?.querySelector('.body');
-      if (!b) return;
+      if (!el || !(b instanceof HTMLElement)) return;
       b.style.height = 'auto';
       c.h = Math.max(c.h, b.offsetHeight + 8);
       b.style.height = '';

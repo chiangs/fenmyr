@@ -1,4 +1,5 @@
 import { cardEl } from '../ui/dom.ts';
+import type { NoteProps } from '../../shared/ops.ts';
 import type { Card } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
 import { renderCard } from '../canvas/render.ts';
@@ -27,6 +28,9 @@ import { aiGrants, updateVaultChip } from '../vault/ask.ts';
 import { buildScreen } from '../wireframe/pieces.ts';
 import { appState, session } from '../core/state.ts';
 
+// the kinds of card she can add; anything else she names becomes a note
+const MYRA_ADDS = ['todo', 'title', 'swatch', 'doc', 'font'] as const;
+
 // her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
 type NoteUsed = {
   vault: string;
@@ -34,7 +38,7 @@ type NoteUsed = {
   rel: string;
   title: string;
   tags: string[];
-  props: unknown;
+  props: NoteProps | undefined;
   excerpt: string;
   text: string;
 };
@@ -140,7 +144,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
   };
   (r.add || []).forEach(o => {
     place(o);
-    const c = card(o.type && ['todo', 'title', 'swatch', 'doc', 'font'].includes(o.type) ? o.type : 'note', {
+    const c = card(MYRA_ADDS.find(t => t === o.type) ?? 'note', {
       font: o.type === 'font' ? o.font || o.text : o.font ? String(o.font) : undefined,
       body: o.type === 'doc' ? o.body || '' : undefined,
       x: o.x,
@@ -148,9 +152,9 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       text: o.type === 'font' ? o.sample || '' : o.text || '',
       color: o.color && COLOR_NAMES.includes(o.color) ? o.color : 'white',
       hex: o.hex,
-      label: o.label,
+      label: o.label ?? undefined,
       items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined,
-      tagText: o.tag,
+      tagText: o.tag ?? undefined,
       name: o.name,
     });
     if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag);
