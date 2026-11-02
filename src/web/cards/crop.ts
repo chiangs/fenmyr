@@ -1,19 +1,28 @@
-// @ts-nocheck
 import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $, cardsEl, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import type { CardOf } from '../../shared/model.ts';
+import { closestTo } from '../ui/dom.ts';
+
+type Box = { x: number; y: number; w: number; h: number };
+type ImageCard = CardOf<'image'>;
+// h: what's dragged, 'move' or the corners and edges it names (n, e, s, w); r: the picture's rect; b0: the box when it started
+type CropDrag = { h: string; r: DOMRect; sx: number; sy: number; b0: Box };
 
 // ---------- crop an image: see the whole picture, drag the box or its corners, then Done ----------
-export let cropping: { box: { x: number; y: number; w: number; h: number } } | null = null;
-let cropDrag = null;
+// prevH, prevCrop: how it was, for Cancel
+export let cropping: { c: ImageCard; nw: number; nh: number; prevH: number; prevCrop?: Box; box: Box } | null = null;
+let cropDrag: CropDrag | null = null;
 
-export function startCrop(c) {
+export function startCrop(c: ImageCard) {
   const img = cardsEl.querySelector(`[data-id="${c.id}"] img`),
-    nw = img?.naturalWidth || c.w,
-    nh = img?.naturalHeight || c.h;
-  cropping = { c, nw, nh, prevH: c.h, prevCrop: c.crop, box: Object.assign({ x: 0, y: 0, w: 1, h: 1 }, c.crop) };
+    pic = img instanceof HTMLImageElement ? img : null,
+    nw = pic?.naturalWidth || c.w,
+    nh = pic?.naturalHeight || c.h;
+  cropping = { c, nw, nh, prevH: c.h, box: { x: 0, y: 0, w: 1, h: 1, ...c.crop } };
+  if (c.crop) cropping.prevCrop = c.crop;
   c.cropEdit = true;
   c.h = Math.round(((c.w - 16) * nh) / nw + 16);
   renderCard(c);
@@ -22,7 +31,7 @@ export function startCrop(c) {
   renderWires();
 }
 
-export function endCrop(how) {
+export function endCrop(how?: 'reset' | 'done' | 'cancel') {
   if (!cropping) return;
   const { c, nw, nh, prevH, prevCrop, box } = cropping;
   if (how === 'reset') {
@@ -50,11 +59,12 @@ export function endCrop(how) {
   if (how === 'done') save();
 }
 
-export function cropDown(e) {
+export function cropDown(e: PointerEvent) {
+  if (!cropping) return;
   const img = cardsEl.querySelector(`[data-id="${cropping.c.id}"] img`);
   if (!img) return;
   cropDrag = {
-    h: e.target.closest('[data-h]')?.dataset.h || 'move',
+    h: closestTo(e.target, '[data-h]')?.dataset.h || 'move',
     r: img.getBoundingClientRect(),
     sx: e.clientX,
     sy: e.clientY,
@@ -86,7 +96,7 @@ export function init49() {
     if (h.includes('s')) b.h = clamp(b0.h + dy, MIN, 1 - b0.y);
     cropping.box = b;
     const box = cardsEl.querySelector(`[data-id="${cropping.c.id}"] .crop-box`);
-    if (box)
+    if (box instanceof HTMLElement)
       Object.assign(box.style, {
         left: b.x * 100 + '%',
         top: b.y * 100 + '%',

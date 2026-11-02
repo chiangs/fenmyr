@@ -1,9 +1,11 @@
-// @ts-nocheck
 import { skStyle } from '../canvas/render.ts';
 import { roundedD } from '../tools/pen.ts';
+import type { CardOf } from '../../shared/model.ts';
+
+type Shape = CardOf<'shape'>;
 export let CIC: Record<string, string> = {};
 
-export const host = u => {
+export const host = (u: string) => {
   try {
     return new URL(u).hostname.replace(/^www\./, '');
   } catch (e) {
@@ -11,7 +13,7 @@ export const host = u => {
   }
 };
 
-export const SHAPE_FILL = {
+export const SHAPE_FILL: Record<string, string> = {
   gray: '#e4dfd8',
   pink: '#f2a59a',
   butter: '#f6c47a',
@@ -23,7 +25,7 @@ export const SHAPE_FILL = {
 };
 
 // a line can be wavy, zigzag or loopy: waves = how tight, round = sharp → soft (or the loop size), wobble = hand-drawn looseness. Drawn in the 0–100 box
-function squigPath(c) {
+function squigPath(c: Shape) {
   const n = Math.max(0.5, c.waves ?? 6),
     r = (c.round ?? 60) / 100,
     wob = (c.wobble ?? 0) / 100,
@@ -34,14 +36,15 @@ function squigPath(c) {
   const p1 = rnd() * 6.28,
     p2 = rnd() * 6.28,
     p3 = rnd() * 6.28;
-  const wobAmp = u => 1 + wob * 0.55 * (Math.sin(6.28 * 0.37 * u + p1) * 0.6 + Math.sin(6.28 * 0.83 * u + p2) * 0.4),
-    drift = u => wob * A * 0.22 * Math.sin(6.28 * 0.21 * u + p3);
-  const pts = [],
+  const wobAmp = (u: number) =>
+      1 + wob * 0.55 * (Math.sin(6.28 * 0.37 * u + p1) * 0.6 + Math.sin(6.28 * 0.83 * u + p2) * 0.4),
+    drift = (u: number) => wob * A * 0.22 * Math.sin(6.28 * 0.21 * u + p3);
+  const pts: string[] = [],
     N = Math.ceil(4 * n) * 14;
   for (let i = 0; i <= N; i++) {
     const t = i / N,
       u = n * t;
-    let x, y;
+    let x: number, y: number;
     if (st === 'loopy') {
       const k = 1 + r * 1.8,
         th = 6.28318 * u;
@@ -59,10 +62,11 @@ function squigPath(c) {
   return 'M' + pts.join(' L');
 }
 
-export function shapeSVG(c) {
+export function shapeSVG(c: Shape) {
   const named = SHAPE_FILL[c.fill || 'gray'],
     f = c.fill === 'none' ? 'none' : named ? `var(--sh-${c.fill || 'gray'})` : c.fill,
-    sk = c.stroke && c.sw > 0 && c.shape !== 'line';
+    sw = c.sw ?? 0,
+    sk = c.stroke && sw > 0 && c.shape !== 'line';
   const P = sk
     ? {
         stroke: c.stroke,
@@ -72,16 +76,16 @@ export function shapeSVG(c) {
         ...(skStyle(c) === 'dash'
           ? { 'stroke-dasharray': `${c.dl ?? 8} ${c.dg ?? 6}` }
           : skStyle(c) === 'dot'
-            ? { 'stroke-dasharray': `0 ${(c.dg ?? 6) + c.sw}`, 'stroke-linecap': 'round' }
+            ? { 'stroke-dasharray': `0 ${(c.dg ?? 6) + sw}`, 'stroke-linecap': 'round' }
             : {}),
         style: `fill:${f}`,
       }
     : { stroke: 'none', style: `fill:${f}` };
-  const attrs = o =>
+  const attrs = (o: Record<string, unknown>) =>
     Object.entries(o)
       .map(([k, v]) => `${k}="${v}"`)
       .join(' ');
-  const body = {
+  const bodies: Record<string, string> = {
     rect: `<rect x="0" y="0" width="100" height="100" rx="${c.radius != null ? Math.min(50, (c.radius * 100) / Math.max(1, c.w || 160)) : 10}" ry="${c.radius != null ? Math.min(50, (c.radius * 100) / Math.max(1, c.h || 160)) : 10}" ${attrs(P)}/>`,
     circle: `<ellipse cx="50" cy="50" rx="50" ry="50" ${attrs(P)}/>`,
     tri: `<path d="${
@@ -122,7 +126,8 @@ export function shapeSVG(c) {
       (c.squig || 'straight') === 'straight'
         ? `<line x1="0" y1="50" x2="100" y2="50" style="stroke:${(c.fill || 'gray') === 'gray' ? 'var(--pen-ink)' : f}" stroke-width="${c.lw || 4}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`
         : `<path d="${squigPath(c)}" fill="none" style="stroke:${(c.fill || 'gray') === 'gray' ? 'var(--pen-ink)' : f}" stroke-width="${c.lw || 4}" stroke-linecap="round" stroke-linejoin="${(c.round ?? 60) < 15 && c.squig === 'zigzag' ? 'miter' : 'round'}" vector-effect="non-scaling-stroke"/>`,
-  }[c.shape || 'rect'];
+  };
+  const body = bodies[c.shape || 'rect'] ?? '';
   return `<svg class="sh${(c.shape || 'rect') === 'line' ? ' is-line' : ''}" viewBox="0 0 100 100" preserveAspectRatio="none">${body}</svg>`;
 }
 export function init10() {

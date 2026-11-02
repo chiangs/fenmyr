@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { rgbOf } from '../ui/color.ts';
 
 // ---------- colors name themselves (until you name one yourself) ----------
@@ -79,7 +78,7 @@ const NAMED = {
   Espresso: '#3b2219',
 };
 
-export function colorName(hex) {
+export function colorName(hex: string) {
   const rgb = rgbOf,
     [r, g, b] = rgb(hex);
   let best = 'Colour',

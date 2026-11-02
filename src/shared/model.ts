@@ -33,7 +33,16 @@ type CardFields = {
   };
   doc: { doc?: unknown; body?: string };
   canvas: { text?: string; board?: string };
-  shape: { shape?: string; fill?: string };
+  // squig: a line's style (straight, wavy, zigzag, loopy); waves, round and wobble shape it; lw: its width
+  shape: {
+    shape?: string;
+    fill?: string;
+    squig?: string;
+    waves?: number;
+    round?: number;
+    wobble?: number;
+    lw?: number;
+  };
   stamp: { src?: string; emoji?: string; mv?: string };
   audio: RecordingFields & { ready?: boolean; wave?: number[] };
   video: RecordingFields & {
@@ -51,7 +60,16 @@ type CardFields = {
     vw?: number;
     vh?: number;
   };
-  spotify: { url?: string; title?: string; image?: string };
+  // kind: track, album, playlist, episode, show or artist; sid: Spotify's id for it
+  spotify: {
+    url?: string;
+    title?: string;
+    image?: string;
+    kind?: string;
+    sid?: string;
+    loading?: boolean;
+    draft?: string;
+  };
   ink: { pts: [number, number][]; pen?: string; size?: number; ink?: string; ow: number; oh: number };
   frame: { name?: string };
   section: { text?: string };

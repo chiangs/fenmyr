@@ -353,7 +353,7 @@ export function addMsg(who: string, text: string, acts: SayAction[] = []) {
   list.scrollTop = list.scrollHeight;
 }
 
-export function typing(on) {
+export function typing(on: boolean) {
   $('mcList').querySelector('.typing')?.remove();
   $('mcStatus').textContent = on ? 'thinking…' : '';
   if (on) {
@@ -469,7 +469,8 @@ export const SIGNIN = /log ?in|api key|auth|credential|subscription|not (signed|
 
 // the web demo: Myra tidies for real, and for anything that needs AI she points you to the desktop app
 export const getApp = () => Fenmyr.openURL(Fenmyr.getURL || 'https://github.com/chiangs/fenmyr/releases/latest');
-export let DL;
+// the button under her web-demo lines: get the desktop app
+export let DL: SayAction[] = [];
 
 function webMyra(q) {
   {
