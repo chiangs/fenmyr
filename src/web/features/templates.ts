@@ -2,7 +2,7 @@
 import { showDialog } from '../ui/popover.ts';
 import { esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
-import { fit } from '../canvas/handles.ts';
+import { fit, placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
@@ -15,7 +15,6 @@ import { openBoard } from '../library/home.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { foldersIn } from '../library/tree.ts';
 import { TEMPLATES, newBoard } from '../model/boards.ts';
-import { centerWorld } from '../panels/zoomMenu.ts';
 import { say } from '../settings/licenses.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { scope } from '../ui/toolbar.ts';
@@ -208,17 +207,14 @@ export async function useTemplate(t, mode) {
   }
   remember();
   stopPlacing();
-  const c0 = centerWorld(),
-    x0 = session.board.cards.length ? Math.max(...session.board.cards.map(c => c.x + c.w)) + 200 : c0.x - 300,
-    y0 = session.board.cards.length ? Math.min(...session.board.cards.map(c => c.y)) : c0.y - 200;
-  const inst = instantiate(t, x0, y0);
+  const inst = instantiate(t, 0, 0);
   session.board.cards.push(...inst.cards);
   session.board.links.push(...inst.links);
   inst.cards.forEach(c => renderCard(c, true));
   layoutAll();
+  placeInView(inst.cards);
   renderWires();
   save();
-  fit(inst.cards);
   say(`Here’s “${t.name}” ✦ It’s all yours to change.`, 4000);
   return session.board;
 }

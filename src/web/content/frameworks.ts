@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { cardEl } from '../ui/dom.ts';
-import { fit } from '../canvas/handles.ts';
+import { placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
@@ -8,7 +8,6 @@ import { layoutAll } from '../cards/kanban.ts';
 import { uid } from '../core/base.ts';
 import { remember, save } from '../core/history.ts';
 import { card } from '../model/boards.ts';
-import { centerWorld } from '../panels/zoomMenu.ts';
 import { say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { stopPlacing } from '../tools/place.ts';
@@ -386,13 +385,10 @@ export function placeFramework(key) {
   if (!F) return;
   remember();
   stopPlacing();
-  const c0 = centerWorld(),
-    x0 = session.board.cards.length ? Math.max(...session.board.cards.map(c => c.x + c.w)) + 200 : c0.x - 500,
-    y0 = session.board.cards.length ? Math.min(...session.board.cards.map(c => c.y)) : c0.y - 300;
   const made = [],
     keyed = {};
   F.items.forEach(it => {
-    const at = { x: x0 + it.x, y: y0 + it.y };
+    const at = { x: it.x, y: it.y };
     if (it.t === 'title') made.push(addCard(card('title', { ...at, text: it.text }), true));
     if (it.t === 'note') {
       const c = addCard(card('note', { ...at, text: it.text, name: it.name, color: it.color || 'white' }), true);
@@ -474,9 +470,9 @@ export function placeFramework(key) {
       el.style.height = c.h + 'px';
     });
   layoutAll();
+  placeInView(made);
   renderWires();
   save();
-  fit(made);
   say(
     `Here’s ${/^[aeiou]/i.test(F.name) ? 'an' : 'a'} ${F.name.toLowerCase()} ${F.emoji} My how-to note is on the right. Delete it whenever you’re ready ✦`,
     7000,

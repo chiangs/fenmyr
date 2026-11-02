@@ -3,11 +3,20 @@
 // and the percentage opens the zoom menu (in, out, 100%, fit, quick sizes) with Ctrl shortcuts.
 //   node tests/zoom.ts
 
+import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron } from 'playwright';
+import { nearestEmptySpot } from '../src/web/canvas/emptySpot.ts';
 import { HEADLESS } from './support/launch.ts';
+
+const size = { w: 100, h: 100 },
+  centre = { x: 0, y: 0 };
+assert.deepStrictEqual(nearestEmptySpot(size, centre, []), { x: -50, y: -50 });
+const block = { x: -100, y: -100, w: 200, h: 200 };
+assert.deepStrictEqual(nearestEmptySpot(size, { x: 20, y: 0 }, [block]), { x: 160, y: -50 });
+assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -50, y: 160 });
 
 (async () => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-zoom-'));
@@ -138,11 +147,80 @@ import { HEADLESS } from './support/launch.ts';
     on = false;
     return { peak: Math.max(...widths), end: widths.at(-1), z: H.view.z };
   });
+  // Templates land in the nearest empty space around the middle of the view, and the view moves only if they'd be off screen.
+  r.placed = await page.evaluate(async () => {
+    const H = window.__fenmyr,
+      wait = ms => new Promise(res => setTimeout(res, ms)),
+      template = {
+        name: 'T',
+        mode: 'add',
+        cards: [{ id: 'a', type: 'note', x: 500, y: 700, w: 200, h: 120, color: 'white', text: 'x', r: 0 }],
+        links: [],
+      };
+    const measure = async place => {
+      const before = new Set(H.board.cards.map(c => c.id)),
+        from = { ...H.view };
+      await place();
+      await wait(800);
+      const made = H.board.cards.filter(c => !before.has(c.id)),
+        others = H.board.cards.filter(c => before.has(c.id)),
+        overlaps = made.some(m =>
+          others.some(o => o.x < m.x + m.w && m.x < o.x + o.w && o.y < m.y + m.h && m.y < o.y + o.h),
+        ),
+        stage = document.getElementById('stage').getBoundingClientRect(),
+        rects = made.map(c => document.querySelector(`.card[data-id="${c.id}"]`).getBoundingClientRect()),
+        onScreen = rects.every(
+          r => r.left >= stage.left && r.right <= stage.right && r.top >= stage.top && r.bottom <= stage.bottom,
+        ),
+        viewMoved = from.x !== H.view.x || from.y !== H.view.y || from.z !== H.view.z;
+      return { count: made.length, overlaps, onScreen, viewMoved, zoomedIn: H.view.z > from.z, x: made[0]?.x };
+    };
+    const setView = async view => {
+      Object.assign(H.view, view);
+      H.applyView();
+      await wait(600);
+    };
+    const r = {};
+    // Plenty of room: an empty board's worth of space in view, so nothing moves.
+    for (const c of H.board.cards) c.x -= 9000;
+    H.renderAll();
+    await setView({ x: 0, y: 0, z: 0.5 });
+    r.room = await measure(() => H.useTemplate(template, 'add'));
+    // The same through the built-in templates, which are placed by different code.
+    r.builtIn = await measure(async () => {
+      document.querySelector('#tools [data-add="tpl"]').click();
+      await wait(100);
+      document.querySelector('[data-tpl="kanban"]').click();
+    });
+    // Something huge fills the view: the template has to go off screen, so the view follows without zooming in.
+    H.newNote();
+    const wall = H.board.cards.at(-1);
+    Object.assign(wall, { x: -4000, y: -4000, w: 8000, h: 8000 });
+    H.renderCard(wall);
+    H.selectOnly([]);
+    await setView({ x: 0, y: 0, z: 0.8 });
+    r.follow = await measure(() => H.useTemplate(template, 'add'));
+    return r;
+  });
   r.errors = errors;
   await page.screenshot({ path: path.join(data, 'zoom.png'), clip: { x: 250, y: 800, width: 900, height: 100 } });
   console.log(JSON.stringify(r), '\n  toolbar:', path.join(data, 'zoom.png'));
   await app.close();
+  const { room, builtIn, follow } = r.placed;
+  const placedOk =
+    room.count === 1 &&
+    !room.overlaps &&
+    room.onScreen &&
+    !room.viewMoved &&
+    builtIn.count > 1 &&
+    !builtIn.overlaps &&
+    follow.count === 1 &&
+    !follow.overlaps &&
+    follow.onScreen &&
+    follow.viewMoved &&
+    !follow.zoomedIn;
   const ok =
+    placedOk &&
     r.reset === '100%' &&
     r.pan.wheel[0] === 0 &&
     r.pan.wheel[1] === -100 &&
