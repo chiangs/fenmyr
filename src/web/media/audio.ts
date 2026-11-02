@@ -1,19 +1,29 @@
-// @ts-nocheck
 import { renderWires } from '../canvas/wires.ts';
 import { appState } from '../core/state.ts';
-export let PLAY;
-export let PAUSE;
+import type { Card } from '../../shared/model.ts';
 
-export const fmtT = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+type Recording = {
+  recorder: MediaRecorder;
+  stream: MediaStream;
+  ac: AudioContext;
+  start: number;
+  paused: number;
+  pausedAt: number;
+};
+export let PLAY = '';
+export let PAUSE = '';
 
-export const live = new Map();
-// card id → { recorder, stream, timer, ... } while recording
-export const players = new Map();
-export let MIC;
+export const fmtT = (t: number) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 
-export function fitAudio(c, el) {
+// card id → its recording, while it records
+export const live = new Map<string, Recording>();
+// card id → its player
+export const players = new Map<string, HTMLAudioElement>();
+export let MIC = '';
+
+export function fitAudio(c: Card, el: HTMLElement) {
   const b = el.querySelector('.body');
-  if (!b) return;
+  if (!(b instanceof HTMLElement)) return;
   b.style.height = 'auto';
   const h = Math.max(150, b.offsetHeight);
   b.style.height = '';
@@ -23,10 +33,10 @@ export function fitAudio(c, el) {
     renderWires();
   }
 }
-export let warmT = 0;
+export let warmT: ReturnType<typeof setTimeout> | undefined;
 
 // the mic switches on as soon as the tool is picked, so the first words aren't lost while it wakes up; it switches off again if nothing gets recorded
-export function warmMic(st) {
+export function warmMic(st: MediaStream) {
   clearTimeout(warmT);
   if (appState.warm && appState.warm !== st) appState.warm.getTracks().forEach(t => t.stop());
   appState.warm = st;

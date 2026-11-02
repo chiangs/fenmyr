@@ -1,4 +1,4 @@
-type Rgb = [red: number, green: number, blue: number];
+export type Rgb = [red: number, green: number, blue: number];
 
 const channel = (n: number) => Math.round(n).toString(16).padStart(2, '0');
 

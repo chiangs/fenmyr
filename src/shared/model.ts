@@ -8,6 +8,9 @@ type RecordingFields = {
   count?: number | string;
   starting?: boolean;
   needTx?: boolean;
+  paused?: boolean;
+  // why the words couldn't be written out, shown in place of them
+  txNote?: string;
 };
 
 type CardFields = {
@@ -16,7 +19,8 @@ type CardFields = {
   title: { text?: string };
   image: { src?: string; crop?: { x: number; y: number; w: number; h: number }; cropEdit?: boolean };
   link: { url?: string; image?: string; loading?: boolean; draft?: string };
-  swatch: { hex: string; hideName?: boolean; hideHex?: boolean };
+  // autoName: the label follows the colour until someone names it
+  swatch: { hex: string; hideName?: boolean; hideHex?: boolean; autoName?: boolean };
   coll: {
     kids: string[];
     cols?: number;
@@ -40,6 +44,12 @@ type CardFields = {
     camErr?: string;
     camRest?: boolean;
     vert?: boolean;
+    ready?: boolean;
+    poster?: string;
+    // recorded wide with flip on, so it plays back mirrored
+    mirror?: boolean;
+    vw?: number;
+    vh?: number;
   };
   spotify: { url?: string; title?: string; image?: string };
   ink: { pts: [number, number][]; pen?: string; size?: number; ink?: string; ow: number; oh: number };
@@ -109,6 +119,9 @@ type CardBase = {
   locked?: boolean;
   txNote?: string;
   paused?: boolean;
+  // a name given in the Layers panel, and a group's name (kept on each card in the group)
+  ln?: string;
+  gn?: string;
 };
 
 export type Card = { [T in CardType]: CardBase & { type: T } & CardFields[T] }[CardType];

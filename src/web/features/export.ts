@@ -78,7 +78,9 @@ async function exportCards(cs, name, pdf) {
   }
 }
 
-export function boardMenu(e, items) {
+// '-' draws a divider; a label may hold markup (a tick, an icon)
+export type MenuItem = '-' | { label: string; run: () => unknown; danger?: boolean };
+export function boardMenu(e: { clientX: number; clientY: number }, items: MenuItem[]) {
   $('rowMenu')?.remove();
   const m = document.createElement('div');
   m.id = 'rowMenu';

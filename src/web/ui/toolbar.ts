@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { byId } from '../canvas/wires.ts';
 import { addImages } from '../cards/spotify.ts';
 import { $, stage } from '../core/dom.ts';
@@ -18,6 +17,7 @@ import { renderWheel } from '../tools/stamps.ts';
 import { tbRect } from './toolbarConfig.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { appState, session } from '../core/state.ts';
+import { closestTo, elementById } from './dom.ts';
 
 // links get a little paste box under the toolbar (the app can't show the browser's prompt)
 
@@ -45,15 +45,16 @@ function syncPointer() {
 
 // + Project / + Folder / + Board: the folder and board add into wherever you are: the folder you're in, or the project you're in
 export function scope() {
-  const f = homeAt
-    ? homeAt.level === 'folder'
-      ? appState.folders.find(x => x.id === homeAt.id)
+  const at = homeAt;
+  const f = at
+    ? at.level === 'folder'
+      ? appState.folders.find(x => x.id === at.id)
       : null
     : appState.folders.find(x => x.id === session.board?.folder);
   const p =
-    homeAt?.level === 'project'
-      ? appState.projects.find(x => x.id === homeAt.id)
-      : homeAt?.level === 'all'
+    at?.level === 'project'
+      ? appState.projects.find(x => x.id === at.id)
+      : at?.level === 'all'
         ? null
         : f && appState.projects.find(x => x.id === f.project);
   return { f, p };
@@ -69,9 +70,9 @@ export function init21() {
   }
 
   $('tools').onclick = e => {
-    const b = e.target.closest('[data-add]');
+    const b = closestTo(e.target, '[data-add]');
     if (!b) return;
-    const t = b.dataset.add;
+    const t = b.dataset.add ?? '';
     if (t === 'pointer') return toPointer();
     if (t === 'pen') return penT ? endPen(true) : startPen();
     if (penT) endPen(true); // picking another tool finishes the pen line
@@ -114,7 +115,7 @@ export function init21() {
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');
       if (on) {
-        $('tpSearch').value = '';
+        elementById('tpSearch', HTMLInputElement).value = '';
         filterTpl();
         setTimeout(() => $('tpSearch').focus(), 30);
       }
@@ -124,19 +125,21 @@ export function init21() {
     startPlacing(t);
   };
 
-  $('filePick').onchange = e => {
-    const fs = [...e.target.files],
-      tgt = $('filePick').dataset.into;
-    delete $('filePick').dataset.into;
-    e.target.value = '';
+  const pick = elementById('filePick', HTMLInputElement);
+  pick.onchange = () => {
+    const fs = [...(pick.files ?? [])],
+      tgt = pick.dataset.into;
+    delete pick.dataset.into;
+    pick.value = '';
     const c = tgt && byId(tgt),
       v = fs.find(f => f.type.startsWith('video/'));
-    if (c && v) return fillVideo(c, v);
-    addImages(fs);
+    if (c && c.type === 'video' && v) fillVideo(c, v);
+    else addImages(fs);
   };
 
-  $('boardName').oninput = e => {
-    session.board.name = e.target.value || 'Untitled board';
+  const nameField = elementById('boardName', HTMLInputElement);
+  nameField.oninput = () => {
+    session.board.name = nameField.value || 'Untitled board';
     save();
   };
 

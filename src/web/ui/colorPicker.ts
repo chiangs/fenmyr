@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { closeOnOutsidePress } from './popover.ts';
-import { hexOf, normHex, rgbOf } from './color.ts';
-import { cardEl, esc } from './dom.ts';
+import { type Rgb, hexOf, normHex, rgbOf } from './color.ts';
+import { cardEl, child, closestTo, elementById, esc } from './dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { colorName } from '../cards/colorNames.ts';
@@ -15,22 +14,44 @@ import { chirp } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { session } from '../core/state.ts';
+import type { Card, CardOf } from '../../shared/model.ts';
+
+// a colour in the app itself (the background, the accent, a doc's text) rather than a colour card
+export type Tint = {
+  tint: true;
+  title: string;
+  hex: string;
+  presets: string[];
+  at: { x: number; y: number };
+  apply: (hex: string) => void;
+  reset: () => void;
+  boardColors?: boolean;
+  fromBar?: boolean;
+};
+type Swatch = CardOf<'swatch'>;
+type Named = { hex: string; name: string };
+const hexField = () => elementById('cpHex', HTMLInputElement);
+const nameField = () => elementById('cpName', HTMLInputElement);
+const palette = () => (session.board.palette ??= []);
 
 // ---------- colors: the editor beside a color card, and the board's own palette ----------
 // the wheel works in HSV: hue = angle, saturation = distance from the middle, value = the brightness slider
-let colorCard = null;
+let colorCard: Swatch | Tint | null = null;
 let hsv = { h: 330, s: 0.4, v: 1 };
 
-const hsv2rgb = (h, s, v) => {
-  const f = n => {
+const hsv2rgb = (h: number, s: number, v: number): Rgb => {
+  const f = (n: number) => {
     const k = (n + h / 60) % 6;
-    return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+    return Math.round((v - v * s * Math.max(0, Math.min(k, 4 - k, 1))) * 255);
   };
-  return [f(5), f(3), f(1)].map(x => Math.round(x * 255));
+  return [f(5), f(3), f(1)];
 };
 
-const hex2hsv = hex => {
-  const [r, g, b] = rgbOf(hex).map(n => n / 255),
+const hex2hsv = (hex: string) => {
+  const [r255, g255, b255] = rgbOf(hex),
+    r = r255 / 255,
+    g = g255 / 255,
+    b = b255 / 255,
     mx = Math.max(r, g, b),
     mn = Math.min(r, g, b),
     d = mx - mn;
@@ -38,8 +59,8 @@ const hex2hsv = hex => {
   if (d) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
   return { h: (h * 60 + 360) % 360, s: mx ? d / mx : 0, v: mx };
 };
-let wheelCv;
-let wg;
+let wheelCv: HTMLCanvasElement;
+let wg: CanvasRenderingContext2D;
 
 function drawWheel() {
   const N = wheelCv.width,
@@ -75,12 +96,12 @@ function showHSV() {
   Object.assign($('brightRing').style, { left: hsv.v * 100 + '%', background: hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)) });
 }
 
-function dragOn(el, fn) {
+function dragOn(el: HTMLElement, fn: (e: PointerEvent) => void) {
   el.addEventListener('pointerdown', e => {
     e.stopPropagation();
     el.setPointerCapture(e.pointerId);
     fn(e);
-    const mv = ev => fn(ev),
+    const mv = (ev: PointerEvent) => fn(ev),
       up = () => {
         el.removeEventListener('pointermove', mv);
         el.removeEventListener('pointerup', up);
@@ -100,9 +121,10 @@ function drawIfV() {
   showHSV();
 }
 
-function placeColorPop(c) {
-  const el = cardEl(c.id),
-    r = el.getBoundingClientRect(),
+function placeColorPop(c: Card) {
+  const el = cardEl(c.id);
+  if (!el) return;
+  const r = el.getBoundingClientRect(),
     s = stage.getBoundingClientRect(),
     pop = $('cpop');
   const dock = $('dock').getBoundingClientRect(),
@@ -119,28 +141,28 @@ function placeColorPop(c) {
 // the wheel's quick colors: black + white always, then saved board colors, the color cards on the board (with their names), then other colors in use
 let cpAll = false;
 // the wheel's colors: two easy rows, or every color on the board (remembered while the app is open)
-function boardColorRows(starter) {
-  const norm = v => (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : COLORS[v] || null),
+function boardColorRows(starter: string[]) {
+  const norm = (v: unknown) =>
+      typeof v !== 'string' ? null : /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : COLORS[v] || null,
     seen = new Set(['#000000', '#ffffff']);
-  const take = list => list.filter(x => x.hex && !seen.has(x.hex) && seen.add(x.hex));
-  const saved = take((session.board.palette || []).map(p => ({ hex: p.hex.toLowerCase(), name: p.name })));
+  const take = (list: Named[]) => list.filter(x => x.hex && !seen.has(x.hex) && seen.add(x.hex));
+  const saved = take(palette().map(p => ({ hex: p.hex.toLowerCase(), name: p.name ?? '' })));
   const cards = take(
-    session.board.cards
-      .filter(c => c.type === 'swatch' && c.hex)
-      .map(c => ({ hex: c.hex.toLowerCase(), name: c.label || c.hex.toUpperCase() })),
+    session.board.cards.flatMap(c =>
+      c.type === 'swatch' && c.hex ? [{ hex: c.hex.toLowerCase(), name: c.label || c.hex.toUpperCase() }] : [],
+    ),
   );
-  const count = new Map();
-  session.board.cards.forEach(
-    c =>
-      c.type !== 'swatch' &&
-      ['color', 'fill', 'stroke'].forEach(k => {
-        const h = norm(c[k]);
-        if (h) count.set(h, (count.get(h) || 0) + 1);
-      }),
-  );
+  const count = new Map<string, number>();
+  for (const c of session.board.cards) {
+    if (c.type === 'swatch') continue;
+    for (const v of [c.color, 'fill' in c ? c.fill : undefined, c.stroke]) {
+      const h = norm(v);
+      if (h) count.set(h, (count.get(h) || 0) + 1);
+    }
+  }
   const used = take([...count].sort((a, b) => b[1] - a[1]).map(([h]) => ({ hex: h, name: h.toUpperCase() })));
-  const dot = x => `<button style="background:${x.hex}" data-hex="${x.hex}" title="${esc(x.name)}"></button>`,
-    row = (label, xs) =>
+  const dot = (x: Named) => `<button style="background:${x.hex}" data-hex="${x.hex}" title="${esc(x.name)}"></button>`,
+    row = (label: string, xs: Named[]) =>
       xs.length ? `<div class="cpq-l">${label}</div><div class="cpq-row">${xs.map(dot).join('')}</div>` : '';
   const bw = [
     { hex: '#000000', name: 'Black' },
@@ -160,23 +182,27 @@ function boardColorRows(starter) {
     : `<div class="cpq-row">${all.slice(0, FEW).map(dot).join('')}</div><button class="cpq-more" data-cpq="all">All board colours (${all.length})</button>`;
 }
 
-export function openColor(c) {
-  $('cpop').classList.toggle('tint', !!c.tint);
-  $('cpop').classList.toggle('from-bar', !!c.fromBar);
-  if (c.tint) document.body.appendChild($('cpop'));
+export function openColor(c: Swatch | Tint) {
+  const tint = 'tint' in c ? c : null;
+  $('cpop').classList.toggle('tint', !!tint);
+  $('cpop').classList.toggle('from-bar', !!tint?.fromBar);
+  if (tint) document.body.appendChild($('cpop'));
   else if ($('cpop').parentNode !== stage) stage.appendChild($('cpop')); // UI colors sit above Settings; card colors stay on the board
-  if (c.tint) {
+  if ('tint' in c) {
     // a UI color, not a color card: no name or palette, a few starting points, and a way back to the default
     colorCard = c;
     hsv = hex2hsv(c.hex);
     drawIfV();
-    $('cpHex').value = c.hex.toUpperCase();
+    hexField().value = c.hex.toUpperCase();
     $('cpDot').style.background = c.hex;
     $('cpTitle').textContent = c.title;
     $('cpQuick').innerHTML = c.boardColors
       ? boardColorRows(c.presets)
       : c.presets
-          .map(h => `<button style="background:${h}" data-hex="${h}" title="${h.toUpperCase()}"></button>`)
+          .map(h => {
+            const name = h.toUpperCase();
+            return `<button style="background:${h}" data-hex="${h}" title="${name}"></button>`;
+          })
           .join('');
     $('cpQuick').classList.toggle('rows', !!c.boardColors);
     $('cpReset').hidden = !!c.boardColors;
@@ -192,15 +218,16 @@ export function openColor(c) {
   colorCard = c;
   hsv = hex2hsv(c.hex);
   drawIfV();
-  $('cpHex').value = c.hex.toUpperCase();
-  $('cpName').value = c.label || '';
+  hexField().value = c.hex.toUpperCase();
+  nameField().value = c.label || '';
   $('cpDot').style.background = c.hex;
-  $('cpQuick').innerHTML = session.board.palette
-    .map(p => `<button style="background:${p.hex}" data-hex="${p.hex}" title="${esc(p.name)}"></button>`)
+  $('cpQuick').innerHTML = palette()
+    .map(p => {
+      const name = esc(p.name);
+      return `<button style="background:${p.hex}" data-hex="${p.hex}" title="${name}"></button>`;
+    })
     .join('');
-  $('cpSave').textContent = session.board.palette.some(p => p.hex === c.hex)
-    ? 'Update board colour'
-    : 'Save to board colours';
+  $('cpSave').textContent = palette().some(p => p.hex === c.hex) ? 'Update board colour' : 'Save to board colours';
   $('cpSave').classList.remove('saved-ok');
   placeColorPop(c);
   $('cpop').classList.add('on');
@@ -211,11 +238,11 @@ export function closeColor() {
   colorCard = null;
 }
 
-function setColor(hex, from) {
-  if (colorCard && colorCard.tint && hex) {
+function setColor(hex: string | null | undefined, from: string) {
+  if (colorCard && 'tint' in colorCard && hex) {
     colorCard.hex = hex;
     $('cpDot').style.background = hex;
-    if (from !== 'hex') $('cpHex').value = hex.toUpperCase();
+    if (from !== 'hex') hexField().value = hex.toUpperCase();
     if (from !== 'wheel') {
       hsv = hex2hsv(hex);
       drawIfV();
@@ -223,22 +250,22 @@ function setColor(hex, from) {
     colorCard.apply(hex);
     return;
   }
-  if (!colorCard || !hex) return;
+  if (!colorCard || 'tint' in colorCard || !hex) return;
   colorCard.hex = hex;
   $('cpDot').style.background = hex;
-  if (from !== 'hex') $('cpHex').value = hex.toUpperCase();
+  if (from !== 'hex') hexField().value = hex.toUpperCase();
   if (from !== 'wheel') {
     hsv = hex2hsv(hex);
     drawIfV();
   }
-  const named = session.board.palette.find(p => p.hex === hex);
+  const named = palette().find(p => p.hex === hex);
   if (named && from !== 'name') {
-    colorCard.label = named.name;
-    $('cpName').value = named.name;
+    colorCard.label = named.name ?? '';
+    nameField().value = colorCard.label;
   } else if (colorCard.autoName !== false && from !== 'name') {
     colorCard.label = colorName(hex);
     colorCard.autoName = true;
-    $('cpName').value = colorCard.label;
+    nameField().value = colorCard.label;
   }
   $('cpSave').textContent = named ? 'Update board colour' : 'Save to board colours';
   $('cpSave').classList.remove('saved-ok');
@@ -253,7 +280,7 @@ const keepCpopOnScreen = () => {
   if (r.bottom > innerHeight - 12) p.style.top = Math.max(12, innerHeight - r.height - 12) + 'px';
 };
 
-export const PRESETS = {
+export const PRESETS: Record<string, string[]> = {
   bg: ['#faf7f2', '#ffffff', '#fff8ef', '#fffaf0', '#f4fbf6', '#f3f8ff', '#f6f2ff', '#1d1a16', '#232733', '#2c2620'],
   dot: ['#e4dccf', '#f2c9da', '#cfe8d9', '#cfe0f5', '#e6dcff', '#d8d2dd', '#3a332b', '#4a4452'],
   panel: ['#ffffff', '#fff8ef', '#fffaf0', '#f4fbf6', '#f3f8ff', '#f6f2ff', '#28231d', '#2f2a36'],
@@ -261,11 +288,19 @@ export const PRESETS = {
   cursor: ['#f6b45e', '#ffc8a6', '#f8e08a', '#a8e6c3', '#aed3ff', '#cdb8ff', '#ffffff', '#3b342d'],
 };
 
-const COLOR_TITLES = { bg: 'Board background', dot: 'Dots', panel: 'Panels', accent: 'Accent', cursor: 'Your cursor' };
+const COLOR_TITLES: Record<string, string> = {
+  bg: 'Board background',
+  dot: 'Dots',
+  panel: 'Panels',
+  accent: 'Accent',
+  cursor: 'Your cursor',
+};
+
+const boardBg = () => (typeof session.board.bg === 'string' ? session.board.bg : '');
 
 // open the wheel for a UI color; `forBoard` means just this board's background (from a right-click)
-export function tintPicker(key, at, forBoard) {
-  const set = hex => {
+export function tintPicker(key: string, at: { x: number; y: number }, forBoard?: boolean) {
+  const set = (hex: string) => {
     if (key === 'cursor') settings.cursor = hex;
     else if (forBoard) {
       session.board.bg = hex;
@@ -275,9 +310,9 @@ export function tintPicker(key, at, forBoard) {
   };
   openColor({
     tint: true,
-    title: forBoard ? 'This board’s background' : COLOR_TITLES[key],
-    hex: key === 'cursor' ? settings.cursor : forBoard ? session.board.bg || colorOf('bg') : colorOf(key),
-    presets: PRESETS[key],
+    title: forBoard ? 'This board’s background' : (COLOR_TITLES[key] ?? ''),
+    hex: key === 'cursor' ? settings.cursor : forBoard ? boardBg() || colorOf('bg') : colorOf(key),
+    presets: PRESETS[key] ?? [],
     at,
     apply: set,
     reset: () => {
@@ -294,26 +329,27 @@ export function tintPicker(key, at, forBoard) {
 export function renderPalette() {
   const el = $('palette');
   el.innerHTML = '';
-  if (!session.board.palette.length) {
+  if (!palette().length) {
     el.innerHTML =
       '<div class="palette-empty">Custom colours for this board and Myra to use.<br>Add a Colour card from the toolbar, then choose Save to board colours</div>';
     return;
   }
-  session.board.palette.forEach((p, i) => {
+  palette().forEach((p, i) => {
     const r = document.createElement('div');
     r.className = 'pal';
     r.title = 'Click to add to the board';
-    r.innerHTML = `<i style="background:${p.hex}"></i><span></span><small>${p.hex.slice(1)}</small>`;
+    const code = p.hex.slice(1);
+    r.innerHTML = `<i style="background:${p.hex}"></i><span></span><small>${code}</small>`;
     r.title = 'Click to add it to the board. Right-click to rename, change or remove it';
-    const name = r.querySelector('span');
-    name.textContent = p.name;
+    const name = child(r, 'span');
+    name.textContent = p.name ?? '';
     const rename = () => {
       name.contentEditable = 'true';
       name.focus();
-      getSelection().selectAllChildren(name);
+      getSelection()?.selectAllChildren(name);
       const done = () => {
         name.contentEditable = 'false';
-        const v = name.textContent.trim();
+        const v = (name.textContent ?? '').trim();
         if (v) {
           p.name = v;
           session.board.cards
@@ -333,21 +369,26 @@ export function renderPalette() {
           name.blur();
         }
         if (ev.key === 'Escape') {
-          name.textContent = p.name;
+          name.textContent = p.name ?? '';
           name.blur();
         }
         ev.stopPropagation();
       };
     };
     // change the color itself: color cards on the board that use it follow along
-    const recolor = e => {
+    const recolor = () => {
       const was = p.hex,
         rr = r.getBoundingClientRect();
       openColor({
         tint: true,
         title: `Change “${p.name}”`,
         hex: p.hex,
-        presets: [p.hex, ...session.board.palette.filter(x => x !== p).map(x => x.hex)].slice(0, 10),
+        presets: [
+          p.hex,
+          ...palette()
+            .filter(x => x !== p)
+            .map(x => x.hex),
+        ].slice(0, 10),
         at: { x: rr.right + 12, y: rr.top - 60 },
         apply: hex => {
           const from = p.hex;
@@ -358,8 +399,8 @@ export function renderPalette() {
               c.hex = hex;
               renderCard(c);
             });
-          r.querySelector('i').style.background = hex;
-          r.querySelector('small').textContent = hex.slice(1);
+          child(r, 'i').style.background = hex;
+          child(r, 'small').textContent = hex.slice(1);
           save();
         },
         reset: () => {
@@ -392,7 +433,7 @@ export function renderPalette() {
           label: 'Remove from board colours',
           danger: true,
           run: () => {
-            session.board.palette.splice(i, 1);
+            palette().splice(i, 1);
             renderPalette();
             save();
             chirp(`Removed “${p.name}” from this board's colours`, 2500);
@@ -404,8 +445,10 @@ export function renderPalette() {
   });
 }
 export function init57() {
-  wheelCv = $('wheelCv');
-  wg = wheelCv.getContext('2d');
+  wheelCv = elementById('wheelCv', HTMLCanvasElement);
+  const g = wheelCv.getContext('2d');
+  if (!g) throw new Error('no 2D canvas for the colour wheel');
+  wg = g;
 
   dragOn($('wheel'), e => {
     const r = $('wheel').getBoundingClientRect(),
@@ -425,44 +468,46 @@ export function init57() {
     setColor(hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)), 'wheel');
   });
 
-  $('cpHex').oninput = e => {
-    const h = normHex(e.target.value);
+  hexField().oninput = () => {
+    const h = normHex(hexField().value);
     if (h) setColor(h, 'hex');
   };
 
-  $('cpName').oninput = e => {
-    if (!colorCard) return;
+  nameField().oninput = () => {
+    if (!colorCard || 'tint' in colorCard) return;
     colorCard.autoName = false;
-    colorCard.label = e.target.value;
+    colorCard.label = nameField().value;
     renderCard(colorCard);
     selectOnly([colorCard.id]);
     save();
   };
 
   $('cpQuick').onclick = e => {
-    const m = e.target.closest('[data-cpq]');
+    const m = closestTo(e.target, '[data-cpq]');
     if (m) {
       cpAll = m.dataset.cpq === 'all';
-      $('cpQuick').innerHTML = boardColorRows(JSON.parse($('cpQuick').dataset.starter || '[]'));
+      const starter: unknown = JSON.parse($('cpQuick').dataset.starter || '[]');
+      $('cpQuick').innerHTML = boardColorRows(Array.isArray(starter) ? starter.filter(h => typeof h === 'string') : []);
       keepCpopOnScreen();
       return;
     }
-    const b = e.target.closest('[data-hex]');
+    const b = closestTo(e.target, '[data-hex]');
     if (b) setColor(b.dataset.hex, 'quick');
   };
 
   $('cpSave').onclick = () => {
-    if (!colorCard) return;
-    const name = (colorCard.label || '').trim() || colorCard.hex.toUpperCase(),
-      hit = session.board.palette.find(p => p.hex === colorCard.hex);
+    const c = colorCard;
+    if (!c || 'tint' in c) return;
+    const name = (c.label || '').trim() || c.hex.toUpperCase(),
+      hit = palette().find(p => p.hex === c.hex);
     if (hit) hit.name = name;
-    else session.board.palette.push({ hex: colorCard.hex, name });
-    colorCard.label = name;
-    renderCard(colorCard);
-    selectOnly([colorCard.id]);
+    else palette().push({ hex: c.hex, name });
+    c.label = name;
+    renderCard(c);
+    selectOnly([c.id]);
     renderPalette();
     save();
-    openColor(colorCard);
+    openColor(c);
     $('cpSave').textContent = 'Saved ✓';
     $('cpSave').classList.add('saved-ok');
     chirp(`Saved “${name}” to this board's colours ✦`, 3500);
@@ -475,16 +520,16 @@ export function init57() {
   });
 
   $('cpReset').onclick = () => {
-    if (colorCard && colorCard.tint) {
+    if (colorCard && 'tint' in colorCard) {
       colorCard.reset();
       closeColor();
     }
   };
 
   document.addEventListener('click', e => {
-    const b = e.target.closest('[data-col]');
+    const b = closestTo(e.target, '[data-col]');
     if (!b) return;
     const r = b.getBoundingClientRect();
-    tintPicker(b.dataset.col, { x: r.left - 270, y: r.top - 120 });
+    tintPicker(b.dataset.col ?? '', { x: r.left - 270, y: r.top - 120 });
   });
 }

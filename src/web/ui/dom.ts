@@ -39,8 +39,19 @@ export function child(
 }
 
 // The nearest element around an event's target that matches. SVG counts, so wires and the pen's paths are found too.
-export function closestTo(target: EventTarget | null, selector: string): HTMLElement | SVGElement | null {
+export function closestTo(target: EventTarget | null, selector: string): HTMLElement | SVGElement | null;
+export function closestTo<T extends Element>(
+  target: EventTarget | null,
+  selector: string,
+  kind: abstract new (...args: never[]) => T,
+): T | null;
+export function closestTo(
+  target: EventTarget | null,
+  selector: string,
+  kind?: abstract new (...args: never[]) => Element,
+) {
   const el = target instanceof Element ? target.closest(selector) : null;
+  if (kind) return el instanceof kind ? el : null;
   return el instanceof HTMLElement || el instanceof SVGElement ? el : null;
 }
 
