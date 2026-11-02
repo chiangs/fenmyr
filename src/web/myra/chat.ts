@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { SayAction } from '../settings/licenses.ts';
 import { esc } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
@@ -325,7 +326,8 @@ export function renderChat() {
 }
 
 // where a chat lives depends on Settings: saved with the board, kept only until Myra quits, or not kept at all
-export const sessionChats = {};
+// board id → its chat, when chats aren't saved with the board
+export const sessionChats: Record<string, unknown[]> = {};
 
 function chatLog() {
   if (!session.board) return [];
@@ -333,7 +335,7 @@ function chatLog() {
   return (sessionChats[session.board.id] = sessionChats[session.board.id] || []);
 }
 
-export function addMsg(who, text, acts = []) {
+export function addMsg(who: string, text: string, acts: SayAction[] = []) {
   if (!session.board) return;
   if (appState.histOpen) {
     appState.histOpen = false;

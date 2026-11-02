@@ -224,7 +224,7 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
       m.remove();
       return duplicate(kind, obj);
     }
-    if (a === 'vault') {
+    if (a === 'vault' && kind !== 'folder') {
       m.remove();
       return editVaultAccess(kind, obj);
     }

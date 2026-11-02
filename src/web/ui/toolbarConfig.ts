@@ -31,9 +31,8 @@ const vaultToolOn = () => {
 
 export function applyToolbar() {
   const box = $('tools'),
-    cfg = settings.toolbar || {},
-    hidden = new Set<string>(cfg.hidden || []);
-  const order: string[] = (cfg.order || []).filter((k: string) => TB_DEFAULT.includes(k));
+    hidden = new Set(settings.toolbar?.hidden ?? []);
+  const order = (settings.toolbar?.order ?? []).filter(k => TB_DEFAULT.includes(k));
   TB_DEFAULT.forEach((k, i) => {
     if (!order.includes(k)) order.splice(Math.min(i, order.length), 0, k);
   }); // tools added in a later version slot in where they belong
@@ -58,7 +57,7 @@ export function renderTbList() {
   const L = $('setTbList');
   if (!L) return;
   const order = applyToolbar(),
-    hidden = new Set<string>((settings.toolbar || {}).hidden || []);
+    hidden = new Set(settings.toolbar?.hidden ?? []);
   L.innerHTML = order
     .map(k => {
       const b = toolButton(k);

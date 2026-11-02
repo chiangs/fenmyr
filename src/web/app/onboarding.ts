@@ -51,8 +51,8 @@ function obGo(i: number) {
   if (obAt === 2) showConnections(true);
   if (obAt === OB_N - 1) $('obDoneTitle').textContent = `You're all set${settings.name ? ', ' + settings.name : ''}!`;
   if (obAt === 0) setTimeout(() => nameField().focus(), 50);
-  goos[4].hop();
-  goos[5].hop();
+  goos[4]?.hop();
+  goos[5]?.hop();
 }
 let firstChoice = 'example';
 
@@ -200,7 +200,7 @@ function tourGo(i: number) {
   $('coachTry').style.display = st.try ? '' : 'none';
   $('coachNext').textContent = i === TOUR.length - 1 ? 'Done ✦' : 'Continue';
   placeCoach();
-  goos[6].hop();
+  goos[6]?.hop();
   const done = st.done;
   if (done)
     tourPoll = setInterval(() => {

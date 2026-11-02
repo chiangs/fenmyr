@@ -1,4 +1,4 @@
-import type { BoardSummary } from '../../shared/ops.ts';
+import type { BoardSummary, CaelestiaScheme } from '../../shared/ops.ts';
 import type { Board, BoardOrder, Folder, Project, View } from '../../shared/model.ts';
 
 // What one open board holds, kept together so a second view can have its own later (split screen, issue #49).
@@ -25,7 +25,7 @@ type AppState = {
   lastTap: unknown;
   drag: unknown;
   pendingPaste: unknown;
-  cae: unknown;
+  cae: CaelestiaScheme | null;
   deselectAt: unknown;
   toggleLog: unknown;
   dizzyAuto: unknown;
@@ -37,7 +37,7 @@ type AppState = {
   lastActive: unknown;
   lastKey: unknown;
   animPose: unknown;
-  vaultChip: unknown;
+  vaultChip: boolean;
   micOK: unknown;
   warm: MediaStream | null;
   firstRunSetup: unknown;

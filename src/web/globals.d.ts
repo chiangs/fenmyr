@@ -14,6 +14,8 @@ declare global {
     // set from the Myra setting: calm keeps her still, muted (calmest) also softens her colours
     myraCalm?: boolean;
     myraMuted?: boolean;
+    // what Myra is called, if someone renamed her
+    myraName?: string;
     Goo: typeof makeGoo;
     __phone?: Phone;
     Fenmyr: FenmyrApi;

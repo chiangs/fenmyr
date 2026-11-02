@@ -130,6 +130,9 @@ export type CardOf<T extends CardType> = Extract<Card, { type: T }>;
 export type View = { x: number; y: number; z: number };
 export type Link = { id: string; a: string; b: string; arrow?: boolean };
 
+// What a board or project may read from one vault: '' in folders is the whole vault; ai lets Myra send matching notes to Claude.
+export type VaultGrant = { vault: string; folders: string[]; ai: boolean; write: boolean; writeTo: string };
+
 export type Board = {
   id: string;
   name: string;
@@ -146,6 +149,8 @@ export type Board = {
   bg?: unknown;
   chat?: unknown;
   chats?: unknown;
+  // its own vault access; without it the board follows its project
+  vaultAccess?: VaultGrant[];
 };
 
 // True only while the app runs. A video saved with `saving` would show "Saving…" forever after reopening.
@@ -166,7 +171,14 @@ export function storedBoard<T extends { cards?: object[]; tray?: object[] }>(boa
 // A board as read from disk: older or hand-written files can lack any list, and opening one fills them in.
 export type StoredBoard = Partial<Board> & { id: string };
 
-export type Project = { id: string; name: string; color?: string; open?: boolean; cover?: string };
+export type Project = {
+  id: string;
+  name: string;
+  color?: string;
+  open?: boolean;
+  cover?: string;
+  vaults?: VaultGrant[];
+};
 export type Folder = {
   id: string;
   name: string;
@@ -216,7 +228,37 @@ function readCard(x: unknown): Card | null {
 export function parseBoard(raw: unknown): StoredBoard | null {
   if (!isRecord(raw) || typeof raw.id !== 'string') return null;
   const cards = (x: unknown) => (Array.isArray(x) ? x.map(readCard).filter(c => c !== null) : undefined);
-  return { ...raw, id: raw.id, cards: cards(raw.cards), tray: cards(raw.tray) };
+  const board: StoredBoard = { ...raw, id: raw.id, cards: cards(raw.cards), tray: cards(raw.tray) };
+  const access = readGrants(raw.vaultAccess);
+  if (access) board.vaultAccess = access;
+  else delete board.vaultAccess;
+  return board;
+}
+
+function readGrants(x: unknown): VaultGrant[] | undefined {
+  if (!Array.isArray(x)) return undefined;
+  return x.filter(isRecord).flatMap(g =>
+    typeof g.vault === 'string'
+      ? [
+          {
+            vault: g.vault,
+            folders: Array.isArray(g.folders) ? g.folders.filter(f => typeof f === 'string') : [],
+            ai: g.ai === true,
+            write: g.write === true,
+            writeTo: typeof g.writeTo === 'string' ? g.writeTo : 'Myra',
+          },
+        ]
+      : [],
+  );
+}
+
+function readProject(x: unknown): Project[] {
+  if (!isNamed<Project>(x)) return [];
+  const p: Project = { ...x };
+  const vaults = readGrants(Reflect.get(x, 'vaults'));
+  if (vaults) p.vaults = vaults;
+  else delete p.vaults;
+  return [p];
 }
 
 // Whatever this returns gets saved back, so it keeps every readable row: one bad row must not empty the library.
@@ -228,7 +270,7 @@ export function parseLibrary(raw: unknown): Library {
   if (isRecord(raw.order))
     for (const [k, v] of Object.entries(raw.order)) order[k] = list(v).filter(id => typeof id === 'string');
   return {
-    projects: list(raw.projects).filter(isNamed<Project>),
+    projects: list(raw.projects).flatMap(readProject),
     folders: list(raw.folders).filter(isNamed<Folder>),
     order,
   };

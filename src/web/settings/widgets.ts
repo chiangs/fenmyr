@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { applyGridShape } from '../canvas/gridShape.ts';
 import { COLORS, COLOR_NAMES, colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
@@ -9,23 +8,30 @@ import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { placeTray } from '../wireframe/pieces.ts';
 import { useFont } from '../wireframe/tilt.ts';
 import { appState } from '../core/state.ts';
+import { closestTo } from '../ui/dom.ts';
+import { choiceOf, flagOn, myraColors } from './settings.ts';
+
+type Side = { left: string[]; right: string[] };
+const htmlIn = (root: ParentNode, selector: string) =>
+  [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);
 
 // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
 // the Boards panel is pinned at the top left (it's home to your boards and Settings), everything else can move
-const WG_DEFAULT = { left: ['layers', 'colors'], right: ['design', 'tray'] };
+const WG_DEFAULT: Side = { left: ['layers', 'colors'], right: ['design', 'tray'] };
 
 const WG_ALL = ['layers', 'colors', 'design', 'tray'];
 
-const wgEl = k =>
+const wgEl = (k: string) =>
   k === 'design' ? $('design') : k === 'tray' ? $('tray') : document.querySelector(`.box[data-box="${k}"]`);
 
-const wgKey = el => (el.id === 'design' ? 'design' : el.id === 'tray' ? 'tray' : el.dataset.box);
+const wgKey = (el: Element) =>
+  el.id === 'design' ? 'design' : el.id === 'tray' ? 'tray' : el instanceof HTMLElement ? (el.dataset.box ?? '') : '';
 
 function wgLayout() {
   // the saved layout, with anything missing (a new widget) added where it belongs by default
   const L = settings.layout || WG_DEFAULT,
-    seen = new Set(),
-    clean = side => (L[side] || []).filter(k => WG_ALL.includes(k) && !seen.has(k) && seen.add(k));
+    seen = new Set<string>(),
+    clean = (side: keyof Side) => L[side].filter(k => WG_ALL.includes(k) && !seen.has(k) && seen.add(k));
   const out = { left: clean('left'), right: clean('right') };
   WG_ALL.forEach(k => {
     if (!seen.has(k)) (WG_DEFAULT.left.includes(k) ? out.left : out.right).push(k);
@@ -34,14 +40,13 @@ function wgLayout() {
 }
 
 let wgLast = '';
-let wgJustDragged = false;
 
 function applyLayout() {
   const L = wgLayout(),
     key = JSON.stringify(L);
   if (key === wgLast) return;
   wgLast = key;
-  const put = (col, keys) =>
+  const put = (col: HTMLElement, keys: string[]) =>
     keys.forEach(k => {
       const el = wgEl(k);
       if (el && !el.classList.contains('in-sheet')) col.appendChild(el);
@@ -50,7 +55,7 @@ function applyLayout() {
   put($('sideR'), L.right);
 }
 
-function wgDragStart(e, el) {
+function wgDragStart(e: PointerEvent, el: HTMLElement) {
   // the widget itself lifts off the sidebar and follows the cursor, so you can see what you're holding
   const r0 = el.getBoundingClientRect(),
     gx = e.clientX - r0.left,
@@ -62,19 +67,20 @@ function wgDragStart(e, el) {
     width: r0.width + 'px',
     maxHeight: Math.min(r0.height, 320) + 'px',
     overflow: 'hidden',
-    zIndex: 400,
+    zIndex: '400',
     pointerEvents: 'none',
-    margin: 0,
+    margin: '0',
   });
   const home = [el.parentNode, el.nextSibling];
   document.body.appendChild(el); // carried above both sidebars, not inside one
   el.classList.add('wg-lifted');
   document.body.classList.add('wg-arranging');
-  const slots = [];
-  [
+  const slots: HTMLElement[] = [];
+  const columns: [HTMLElement, boolean][] = [
     [$('side'), true],
     [$('sideR'), false],
-  ].forEach(([col, pinned]) => {
+  ];
+  columns.forEach(([col, pinned]) => {
     const kids = [...col.children].filter(c => !c.classList.contains('wg-off'));
     kids.forEach((c, i) => {
       if (pinned && i === 0) return;
@@ -88,42 +94,49 @@ function wgDragStart(e, el) {
     col.appendChild(s);
     slots.push(s);
   });
-  let pick = null;
-  const move = ev => {
+  let pick: HTMLElement | null = null;
+  const move = (ev: PointerEvent) => {
     el.style.left = ev.clientX - gx + 'px';
     el.style.top = ev.clientY - gy + 'px';
-    let best = null,
+    let best: HTMLElement | null = null,
       bd = 1e9;
-    slots.forEach(s => {
+    for (const s of slots) {
       const r = s.getBoundingClientRect(),
         d = Math.hypot(ev.clientX - (r.left + r.width / 2), ev.clientY - (r.top + r.height / 2));
       if (d < bd) {
         bd = d;
         best = s;
       }
-    });
+    }
     if (best !== pick) {
       pick?.classList.remove('on');
       pick = best;
       pick?.classList.add('on');
     }
   };
-  const end = drop => {
+  const end = (drop: boolean) => {
     removeEventListener('pointermove', move);
     removeEventListener('pointerup', up);
     removeEventListener('keydown', esc, true);
-    if (drop && pick) pick.parentNode.insertBefore(el, pick);
-    else home[0].insertBefore(el, home[1]?.parentNode === home[0] ? home[1] : null);
+    if (drop && pick) pick.parentNode?.insertBefore(el, pick);
+    else home[0]?.insertBefore(el, home[1]?.parentNode === home[0] ? home[1] : null);
     slots.forEach(s => s.remove());
-    ['position', 'left', 'top', 'width', 'maxHeight', 'overflow', 'zIndex', 'pointerEvents', 'margin'].forEach(
-      k => (el.style[k] = ''),
-    );
+    for (const k of [
+      'position',
+      'left',
+      'top',
+      'width',
+      'max-height',
+      'overflow',
+      'z-index',
+      'pointer-events',
+      'margin',
+    ])
+      el.style.removeProperty(k);
     el.classList.remove('wg-lifted');
     document.body.classList.remove('wg-arranging');
-    wgJustDragged = true;
-    setTimeout(() => (wgJustDragged = false), 50);
     if (drop && pick) {
-      const keys = col => [...col.children].map(wgKey).filter(k => WG_ALL.includes(k));
+      const keys = (col: HTMLElement) => [...col.children].map(wgKey).filter(k => WG_ALL.includes(k));
       settings.layout = { left: keys($('side')), right: keys($('sideR')) };
       wgLast = JSON.stringify(wgLayout());
       applySettings();
@@ -131,7 +144,7 @@ function wgDragStart(e, el) {
     }
   };
   const up = () => end(true),
-    esc = ev => {
+    esc = (ev: KeyboardEvent) => {
       if (ev.key === 'Escape') {
         ev.stopPropagation();
         end(false);
@@ -143,7 +156,7 @@ function wgDragStart(e, el) {
   move(e);
 }
 // listen first: some widgets (Wireframe) keep their clicks to themselves
-const WIDGETS = [
+const WIDGETS: [string, () => Element | null][] = [
   ['wLayers', () => document.querySelector('.box[data-box="layers"]')],
   ['wColors', () => document.querySelector('.box[data-box="colors"]')],
   ['wDesign', () => $('design')],
@@ -154,21 +167,20 @@ export function applySettings() {
   queueMicrotask(() => applyColors());
   queueMicrotask(() => applyGridShape());
   queueMicrotask(() => applyToolbar());
-  goos.forEach(g => g.setColors(MYRA_COLORS[settings.myra] || MYRA_COLORS.golden));
+  goos.forEach(g => g.setColors(myraColors(settings.myra)));
   // widgets: the panels people can turn off (the Boards panel always stays: it holds their boards and Settings)
-  WIDGETS.forEach(([k, el]) => el()?.classList.toggle('wg-off', settings[k] === false));
-  [
+  WIDGETS.forEach(([k, el]) => el()?.classList.toggle('wg-off', !flagOn(k)));
+  for (const [sh, k] of [
     ['layers', 'wLayers'],
     ['tray', 'wTray'],
-  ].forEach(([sh, k]) =>
-    document.querySelector(`#hub [data-sheet="${sh}"]`)?.classList.toggle('wg-off', settings[k] === false),
-  );
+  ] as const)
+    document.querySelector(`#hub [data-sheet="${sh}"]`)?.classList.toggle('wg-off', !flagOn(k));
   queueMicrotask(() => {
     applyLayout();
     placeTray();
   });
   const dark = following()
-    ? appState.cae.mode === 'dark'
+    ? appState.cae?.mode === 'dark'
     : settings.theme === 'dark' || (settings.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
   document.body.classList.toggle('has-caelestia', !!appState.cae);
   document.body.classList.toggle('following-caelestia', following());
@@ -193,36 +205,39 @@ export function applySettings() {
   document.body.classList.toggle('icons-duo', settings.iconStyle === 'duotone');
   document.body.classList.toggle('dark', dark);
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
-  document
-    .querySelectorAll('[data-seg]')
-    .forEach(g =>
-      g.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', settings[g.dataset.seg] === b.dataset.v)),
-    );
+  for (const g of htmlIn(document, '[data-seg]'))
+    for (const b of htmlIn(g, '[data-v]')) b.classList.toggle('on', choiceOf(g.dataset.seg ?? '') === b.dataset.v);
+  const randomOn = settings.noteColor === 'random' ? 'on' : '',
+    noteColor = (n: string) => {
+      const label = colorLabel(n),
+        hex = COLORS[n],
+        on = settings.noteColor === n ? 'on' : '';
+      return `<button data-nc="${n}" title="${label}" style="background:${hex}" class="${on}"></button>`;
+    };
   $('obNotes').innerHTML = $('noteColors').innerHTML =
-    `<button data-nc="random" class="rand ${settings.noteColor === 'random' ? 'on' : ''}" title="A random colour"></button>` +
-    COLOR_NAMES.map(
-      n =>
-        `<button data-nc="${n}" title="${colorLabel(n)}" style="background:${COLORS[n]}" class="${settings.noteColor === n ? 'on' : ''}"></button>`,
-    ).join('');
+    `<button data-nc="random" class="rand ${randomOn}" title="A random colour"></button>` +
+    COLOR_NAMES.map(noteColor).join('');
   // Myra's name, how lively she is, and whether her character shows
   const mn = (settings.myraName || '').trim() || 'Myra';
   window.myraName = mn;
-  [['mName'], ['mcHeadName'], ['coachName']].forEach(([id]) => {
-    const el = $(id);
+  for (const id of ['mName', 'mcHeadName', 'coachName']) {
+    const el = document.getElementById(id);
     if (el) el.textContent = mn;
-  });
-  ['mInput', 'mcInput'].forEach(id => {
-    const el = $(id);
-    if (el) el.placeholder = `Ask ${mn}… “group these by theme”`;
-  });
+  }
+  for (const id of ['mInput', 'mcInput']) {
+    const el = document.getElementById(id);
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
+      el.placeholder = `Ask ${mn}… “group these by theme”`;
+  }
   const bs = $('mBubble')?.querySelector('small');
   if (bs) bs.textContent = mn.toLowerCase();
-  document.querySelectorAll('[data-mname]').forEach(el => (el.textContent = el.dataset.mname.replace('{name}', mn)));
-  if ($('myraNameIn') && document.activeElement !== $('myraNameIn')) $('myraNameIn').value = settings.myraName || '';
+  for (const el of htmlIn(document, '[data-mname]')) el.textContent = (el.dataset.mname ?? '').replace('{name}', mn);
+  const nameIn = document.getElementById('myraNameIn');
+  if (nameIn instanceof HTMLInputElement && document.activeElement !== nameIn) nameIn.value = settings.myraName || '';
   window.myraCalm = settings.myraCalm !== 'lively';
   document.body.classList.toggle('myra-calm', window.myraCalm);
   window.myraMuted = settings.myraCalm === 'calmest';
-  goos.forEach(gg => gg.draw?.());
+  goos.forEach(gg => gg.draw());
   document.body.classList.toggle('myra-hidden', settings.myraChar === false);
   document.body.classList.toggle('no-grid', !settings.grid);
   document.body.classList.toggle('neat', !settings.tilt);
@@ -230,12 +245,14 @@ export function applySettings() {
   $('keys').classList.toggle('hide', !settings.keys);
   document.documentElement.classList.toggle('no-win-buttons', settings.winButtons === false); // tiling compositors place the window themselves
   $('obMyra').innerHTML = $('myraColors').innerHTML = Object.entries(MYRA_COLORS)
-    .map(
-      ([n, c]) =>
-        `<button data-mc="${n}" title="${colorLabel(n)}" style="background:${c.B}" class="${settings.myra === n ? 'on' : ''}"></button>`,
-    )
+    .map(([n, c]) => {
+      const label = colorLabel(n),
+        on = settings.myra === n ? 'on' : '';
+      return `<button data-mc="${n}" title="${label}" style="background:${c.B}" class="${on}"></button>`;
+    })
     .join('');
-  document.querySelectorAll('[data-set]').forEach(t => (t.checked = !!settings[t.dataset.set]));
+  for (const t of document.querySelectorAll('[data-set]'))
+    if (t instanceof HTMLInputElement) t.checked = !!flagOn(t.dataset.set ?? '');
   try {
     localStorage.setItem('fenmyr:settings', JSON.stringify(settings));
   } catch (e) {}
@@ -244,13 +261,13 @@ export function init26() {
   document.addEventListener(
     'pointerdown',
     e => {
-      const h = e.target.closest('.side .box > header, .side #design .dz-head, .side #tray .tray-head');
-      if (!h || e.button !== 0 || e.pointerType === 'touch' || e.target.closest('button, input, .brand')) return;
+      const h = closestTo(e.target, '.side .box > header, .side #design .dz-head, .side #tray .tray-head');
+      if (!h || e.button !== 0 || e.pointerType === 'touch' || closestTo(e.target, 'button, input, .brand')) return;
       const el = h.parentElement;
-      if (el.dataset.box === 'boards') return;
+      if (!el || el.dataset.box === 'boards') return;
       const x0 = e.clientX,
         y0 = e.clientY;
-      const go = ev => {
+      const go = (ev: PointerEvent) => {
         if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return;
         stop();
         wgDragStart(ev, el);
