@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { renderCard } from '../canvas/render.ts';
 import { byId } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
@@ -11,20 +10,32 @@ import { say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { onFrame } from '../wireframe/tilt.ts';
 import { session } from '../core/state.ts';
+import { type Card, type CardOf, isRecord } from '../../shared/model.ts';
+import type { SayAction } from '../settings/licenses.ts';
+
+type Spot = CardOf<'box'>;
+type Made = { id: string; url: string; svg: string };
+const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const textOf = (v: unknown) => (typeof v === 'string' ? v : '');
+// what Higgsfield or the drawing step sent back, one picture per spot
+const readMade = (list: unknown): Made[] =>
+  (Array.isArray(list) ? list : [])
+    .filter(isRecord)
+    .map(it => ({ id: textOf(it.id), url: textOf(it.url), svg: textOf(it.svg) }));
 
 // ---------- filling image spots: Higgsfield photos (price check, then your yes) or free drawn illustrations ----------
-export const spotsIn = cs => {
-  const ids = new Set();
+export const spotsIn = (cs: Card[]) => {
+  const ids = new Set<string>();
   cs.forEach(c => {
     if (c.type === 'frame') onFrame(c).forEach(k => ids.add(k.id));
     else ids.add(c.id);
   });
-  return session.board.cards.filter(c => ids.has(c.id) && c.type === 'box' && c.img && !c.src);
+  return session.board.cards.filter((c): c is Spot => ids.has(c.id) && c.type === 'box' && !!c.img && !c.src);
 };
 
-const aspect = c => {
+const aspect = (c: Card) => {
   const r = c.w / c.h,
-    opts = [
+    opts: [string, number][] = [
       ['1:1', 1],
       ['4:3', 4 / 3],
       ['3:4', 3 / 4],
@@ -34,24 +45,26 @@ const aspect = c => {
       ['2:3', 2 / 3],
       ['21:9', 21 / 9],
     ];
-  return opts.sort((a, b) => Math.abs(a[1] - r) - Math.abs(b[1] - r))[0][0];
+  return opts.sort((a, b) => Math.abs(a[1] - r) - Math.abs(b[1] - r))[0]?.[0] ?? '1:1';
 };
 
-const styleHint = spots => {
-  const f = byId(spots[0]?.onFrame);
+const styleHint = (spots: Spot[]) => {
+  const f = byId(spots[0]?.onFrame ?? '');
   return [session.board.name, f?.name].filter(Boolean).join(', ');
 };
 
-export function offerFill(spots, where = 'chat') {
+export function offerFill(spots: Spot[]) {
   if (!spots.length) return;
-  if (Fenmyr.web)
-    return say(
+  if (Fenmyr.web) {
+    say(
       `There ${spots.length === 1 ? 'is 1 image spot' : `are ${spots.length} image spots`} waiting for pictures. In the desktop app I can fill them with Higgsfield or draw them for you ✦`,
       0,
       DL,
     );
+    return;
+  }
   const n = spots.length,
-    acts = [];
+    acts: SayAction[] = [];
   if (settings.ai && settings.higgs) acts.push({ label: `Fill ${n} with Higgsfield ✦`, run: () => quoteFill(spots) });
   if (settings.ai)
     acts.push({
@@ -67,15 +80,15 @@ export function offerFill(spots, where = 'chat') {
   );
 }
 
-async function quoteFill(spots) {
+async function quoteFill(spots: Spot[]) {
   if (!chatOpen()) myraOpen(true);
   addMsg('myra', 'Checking your Higgsfield balance and the price per image…');
   typing(true);
   try {
     const q = parse(await Fenmyr.higgsQuote({ model: 'nano_banana_2' }));
     typing(false);
-    const per = +q.perImage,
-      bal = +q.balance,
+    const per = Number(q.perImage),
+      bal = Number(q.balance),
       total = Number.isFinite(per) ? Math.ceil(per * spots.length) : null;
     const line =
       total != null
@@ -102,13 +115,13 @@ async function quoteFill(spots) {
     );
   } catch (e) {
     typing(false);
-    say("I couldn't reach Higgsfield: " + e.message);
+    say("I couldn't reach Higgsfield: " + messageOf(e));
   }
 }
 
-async function placeImages(spots, list, key) {
+async function placeImages(spots: Spot[], list: unknown, key: 'svg' | 'url') {
   let n = 0;
-  for (const it of list || []) {
+  for (const it of readMade(list)) {
     const c = spots.find(s => s.id === it.id);
     if (!c) continue;
     try {
@@ -124,7 +137,7 @@ async function placeImages(spots, list, key) {
   return n;
 }
 
-async function makeFill(spots) {
+async function makeFill(spots: Spot[]) {
   addMsg(
     'myra',
     `Making ${spots.length} image${spots.length > 1 ? 's' : ''} with Higgsfield… this can take a minute or two ✦`,
@@ -137,7 +150,7 @@ async function makeFill(spots) {
       await Fenmyr.higgsMake({
         model: 'nano_banana_2',
         style: styleHint(spots),
-        images: spots.map(c => ({ id: c.id, label: c.img, aspect: aspect(c) })),
+        images: spots.map(c => ({ id: c.id, label: c.img ?? '', aspect: aspect(c) })),
       }),
     );
     const n = await placeImages(spots, r.images, 'url');
@@ -150,14 +163,14 @@ async function makeFill(spots) {
     if (n) showWhatMyraMade(spots.filter(c => c.src));
   } catch (e) {
     typing(false);
-    say('Something went wrong making those: ' + e.message);
+    say('Something went wrong making those: ' + messageOf(e));
   } finally {
     $('myra').classList.remove('thinking');
     goo.think(false);
   }
 }
 
-async function drawFill(spots) {
+async function drawFill(spots: Spot[]) {
   if (!chatOpen()) myraOpen(true);
   addMsg('myra', `Drawing ${spots.length} little illustration${spots.length > 1 ? 's' : ''}…`);
   typing(true);
@@ -167,7 +180,7 @@ async function drawFill(spots) {
     const r = parse(
       await Fenmyr.drawFill({
         style: 'soft pastel, rounded, friendly, minimal',
-        images: spots.map(c => ({ id: c.id, label: c.img, w: Math.round(c.w), h: Math.round(c.h) })),
+        images: spots.map(c => ({ id: c.id, label: c.img ?? '', w: Math.round(c.w), h: Math.round(c.h) })),
       }),
     );
     const n = await placeImages(spots, r.images, 'svg');
@@ -176,7 +189,7 @@ async function drawFill(spots) {
     if (n) showWhatMyraMade(spots.filter(c => c.src));
   } catch (e) {
     typing(false);
-    say("I couldn't draw those: " + e.message);
+    say("I couldn't draw those: " + messageOf(e));
   } finally {
     $('myra').classList.remove('thinking');
     goo.think(false);

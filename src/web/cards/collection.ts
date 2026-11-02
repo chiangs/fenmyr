@@ -1,9 +1,9 @@
-// @ts-nocheck
 import { cardEl } from '../ui/dom.ts';
 import { titleW } from '../canvas/render.ts';
 import { byId } from '../canvas/wires.ts';
 import { drawKanban } from './kanban.ts';
 import { session } from '../core/state.ts';
+import type { Card, CardOf } from '../../shared/model.ts';
 
 // ---------- collections: a named header over a frame; cards inside stack in columns and the frame grows to fit ----------
 export const COLL: Record<string, string[]> = {
@@ -24,14 +24,19 @@ export const KHEAD = 44;
 // KHEAD: the row of column names a kanban carries under its title
 export const colls = () => session.board.cards.filter(c => c.type === 'coll');
 
-export const parentOf = id => session.board.cards.find(s => s.type === 'coll' && (s.kids || []).includes(id));
+export const parentOf = (id: string) =>
+  session.board.cards.find((s): s is CardOf<'coll'> => s.type === 'coll' && s.kids.includes(id));
 
-function naturalHeight(c, el) {
+function naturalHeight(c: Card, el: HTMLElement) {
   if (c.type === 'image') return Math.round(CW * (c.h / c.w));
   if (!['note', 'todo'].includes(c.type)) return c.h;
   const was = el.style.height;
   el.style.height = 'auto';
   const b = el.querySelector('.body');
+  if (!(b instanceof HTMLElement)) {
+    el.style.height = was;
+    return c.h;
+  }
   b.style.height = 'auto';
   const h = Math.max(64, b.offsetHeight);
   el.style.height = was;
@@ -39,36 +44,37 @@ function naturalHeight(c, el) {
   return h;
 }
 
-export function layoutColl(s) {
-  s.kids = (s.kids || []).filter(id => byId(id) && id !== s.id);
-  s.cols = Math.max(1, s.cols || 1);
+export function layoutColl(s: CardOf<'coll'>) {
+  s.kids = s.kids.filter(id => byId(id) && id !== s.id);
+  const cols = Math.max(1, s.cols || 1);
+  s.cols = cols;
   s.w = s.cols * CW + (s.cols - 1) * CGAP + CPAD * 2;
   if (s.kanban) {
     s.colNames = Array.from({ length: s.cols }, (_, i) => s.colNames?.[i] ?? 'Column ' + (i + 1));
     s.colLimit = Array.from({ length: s.cols }, (_, i) => s.colLimit?.[i] || 0);
   }
   const top = (s.head === false ? 0 : CHEAD) + (s.kanban ? KHEAD : 0),
-    colH = Array(s.cols).fill(0);
+    colH: number[] = Array(s.cols).fill(0);
   s.kids.forEach(id => {
     const c = byId(id),
       el = cardEl(id);
-    if (!el) return;
+    if (!el || !c) return;
     const h = naturalHeight(c, el);
     if (c.type === 'image') {
       c.h = h;
     }
     // each card remembers its column (where you dropped it); new ones go in the shortest
     let k = s.colOf?.[id];
-    if (k == null || k >= s.cols) {
+    if (k == null || k >= cols) {
       k = colH.indexOf(Math.min(...colH));
       (s.colOf = s.colOf || {})[id] = k;
     }
     c.x = s.x + CPAD + k * (CW + CGAP);
-    c.y = s.y + top + CPAD + colH[k];
+    c.y = s.y + top + CPAD + (colH[k] ?? 0);
     c.w = CW;
     if (['note', 'todo'].includes(c.type)) c.h = h;
     c.r = 0;
-    colH[k] += c.h + CGAP;
+    colH[k] = (colH[k] ?? 0) + c.h + CGAP;
     Object.assign(el.style, {
       left: c.x + 'px',
       top: c.y + 'px',
@@ -95,6 +101,6 @@ export function layoutColl(s) {
     el.querySelector('.coll-empty')?.remove();
     if (s.kanban) drawKanban(s, el);
     else if (!s.kids.length)
-      el.querySelector('.body').insertAdjacentHTML('beforeend', '<div class="coll-empty">Drop cards here</div>');
+      el.querySelector('.body')?.insertAdjacentHTML('beforeend', '<div class="coll-empty">Drop cards here</div>');
   }
 }

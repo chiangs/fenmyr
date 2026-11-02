@@ -1,12 +1,12 @@
-// @ts-nocheck
 import { fit } from '../canvas/handles.ts';
 import { miniCache, openBoard } from '../library/home.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { newBoard } from '../model/boards.ts';
 import { session } from '../core/state.ts';
+import type { CardOf } from '../../shared/model.ts';
 
 // ---------- canvases: a board inside this board, like a folder you can open ----------
-export async function openCanvas(c) {
+export async function openCanvas(c: CardOf<'canvas'>) {
   if (!c.board) {
     const child = newBoard(c.text || 'Untitled canvas');
     child.parent = session.board.id;
@@ -16,12 +16,13 @@ export async function openCanvas(c) {
   }
   session.board.view = session.view;
   await Fenmyr.save(session.board);
-  miniCache.delete(c.board);
-  await openBoard(c.board);
+  const id = c.board;
+  miniCache.delete(id);
+  await openBoard(id);
   fit(session.board.cards);
 }
 
-export async function renameChild(c) {
+export async function renameChild(c: CardOf<'canvas'>) {
   if (!c.board) return;
   const b = await Fenmyr.load(c.board);
   if (b && c.text && b.name !== c.text) {

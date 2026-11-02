@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { cardEl } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
@@ -7,13 +6,15 @@ import { spotifyFill, spotifyOf } from './spotify.ts';
 import { save } from '../core/history.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { session } from '../core/state.ts';
+import type { CardOf } from '../../shared/model.ts';
+import type { LinkPreview } from '../../shared/ops.ts';
 
 // ---------- links: type or paste right into the card, then it fills in the site's name and picture ----------
-export function wireLinkInput(c) {
+export function wireLinkInput(c: CardOf<'link'>) {
   const el = cardEl(c.id),
     inp = el?.querySelector('.link-in input');
-  if (!inp || inp.dataset.wired) return;
-  inp.dataset.wired = 1;
+  if (!(inp instanceof HTMLInputElement) || inp.dataset.wired) return;
+  inp.dataset.wired = '1';
   if (!c.loading)
     setTimeout(() => {
       inp.focus();
@@ -43,10 +44,10 @@ export function wireLinkInput(c) {
     c.loading = true;
     renderCard(c);
     selectOnly([c.id]);
-    let p = {};
+    let p: Partial<LinkPreview> = {};
     try {
       p = await Fenmyr.linkPreview(url);
-    } catch (e2) {}
+    } catch {}
     Object.assign(c, {
       url,
       title: p.title || host(url),
