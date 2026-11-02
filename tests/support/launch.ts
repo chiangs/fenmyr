@@ -85,7 +85,10 @@ export async function settle(page: Page, ms = STARTUP_TIMERS_MS) {
 
 declare global {
   interface Window {
-    Fenmyr?: { save(board: unknown): Promise<unknown> };
+    Fenmyr?: {
+      save(board: unknown): Promise<unknown>;
+      updateCheck?(): Promise<{ behind?: number; notes?: string[] }>;
+    };
     __fenmyr: TestHooks;
   }
 }
