@@ -241,7 +241,7 @@ function wireTagTyping(c, t) {
   t.addEventListener('blur', () => setTimeout(close, 120));
 }
 
-export function startEdit(id, target) {
+export function startEdit(id: string, target?: Element | null) {
   const el = cardEl(id),
     c = byId(id);
   if (!el || !c) return;

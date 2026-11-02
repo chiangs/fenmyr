@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { fit, toWorld } from '../canvas/handles.ts';
 import { applyView } from '../canvas/view.ts';
 import { renderTray, selectOnly, takeFromTray } from '../canvas/wires.ts';
@@ -9,13 +8,25 @@ import { lyFlash, renderLayers } from '../panels/layers.ts';
 import { drawOn } from '../tools/draw.ts';
 import { placing } from '../tools/place.ts';
 import { session } from '../core/state.ts';
-export let phone;
+import { child, closestTo } from '../ui/dom.ts';
+
+export type Phone = { on: boolean; set(on: boolean): void; hide(): void; count(): void; init(): void };
+type Sheet = { title: string; tabs: [label: string, get: () => HTMLElement | null][] };
+export let phone: Phone;
+
+const box = (k: string) => {
+  const el = document.querySelector(`.box[data-box="${k}"]`);
+  return el instanceof HTMLElement ? el : null;
+};
+// the hub's buttons, each with the sheet it opens
+const sheetButtons = (hub: HTMLElement) =>
+  [...hub.querySelectorAll('[data-sheet]')].filter(b => b instanceof HTMLElement);
 export function init62() {
   // ---------- phone: the board gets the whole screen. Panels slide up as bottom sheets, and the bottom bar becomes a hub ----------
   // The sheets hold the app's real panels (moved in while on a phone, put back on a bigger screen), so everything works the same.
   phone = (() => {
     const mq = matchMedia('(max-width: 700px)'),
-      home = new Map();
+      home = new Map<HTMLElement, [ParentNode | null, Node | null]>();
     const hub = document.createElement('div');
     hub.className = 'hub';
     hub.id = 'hub';
@@ -31,10 +42,9 @@ export function init62() {
     sh.innerHTML =
       '<div class="sh-veil"></div><div class="sh-panel" role="dialog"><div class="sh-grab"><i></i></div><div class="sh-head"><b id="shTitle"></b><div class="sh-tabs" id="shTabs"></div><button class="sh-x" aria-label="Close">×</button></div><div class="sh-body" id="shBody"></div></div>';
     document.body.appendChild(sh);
-    const hubGoo = Goo(hub.querySelector('#hubGoo'));
+    const hubGoo = Goo(child(hub, '#hubGoo', HTMLCanvasElement));
     goos.push(hubGoo);
-    const box = k => document.querySelector(`.box[data-box="${k}"]`);
-    const SHEETS = {
+    const SHEETS: Record<string, Sheet> = {
       boards: { title: 'Boards', tabs: [['Boards', () => box('boards')]] },
       layers: { title: 'Layers', tabs: [['Layers', () => box('layers')]] },
       add: {
@@ -47,17 +57,17 @@ export function init62() {
       },
       tray: { title: 'Unsorted', tabs: [['Ideas', () => $('tray')]] },
     };
-    let open = null;
+    let open: string | null = null;
     // move a real panel into the sheet (remembering where it lived) or put it back
-    const adopt = el => {
+    const adopt = (el: HTMLElement) => {
       if (!home.has(el)) home.set(el, [el.parentNode, el.nextSibling]);
     };
     const restoreAll = () =>
       home.forEach(([p, n], el) => {
-        p.insertBefore(el, n && n.parentNode === p ? n : null);
+        p?.insertBefore(el, n && n.parentNode === p ? n : null);
         el.classList.remove('in-sheet');
       });
-    function show(name, t = 0) {
+    function show(name: string, t = 0) {
       const S0 = SHEETS[name];
       if (!S0) return;
       open = name;
@@ -69,10 +79,11 @@ export function init62() {
         }),
       }; // widgets turned off in Settings stay out of the sheets too
       $('shTitle').textContent = S.title;
-      $('shTabs').innerHTML =
-        S.tabs.length > 1
-          ? S.tabs.map(([l], i) => `<button data-t="${i}" class="${i === t ? 'on' : ''}">${l}</button>`).join('')
-          : '';
+      const tabButton = ([label]: Sheet['tabs'][number], i: number) => {
+        const on = i === t ? 'on' : '';
+        return `<button data-t="${i}" class="${on}">${label}</button>`;
+      };
+      $('shTabs').innerHTML = S.tabs.length > 1 ? S.tabs.map(tabButton).join('') : '';
       const body = $('shBody');
       [...body.children].forEach(c => c.classList.remove('shown'));
       S.tabs.forEach(([, get], i) => {
@@ -85,38 +96,39 @@ export function init62() {
       });
       if (name === 'tray') $('tray').classList.remove('closed');
       sh.classList.add('on');
-      hub.querySelectorAll('[data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === name));
+      for (const b of sheetButtons(hub)) b.classList.toggle('on', b.dataset.sheet === name);
       if (name === 'layers') renderLayers();
     }
     function hide() {
       open = null;
       sh.classList.remove('on');
-      sh.querySelector('.sh-panel').style.transform = '';
-      hub.querySelectorAll('[data-sheet]').forEach(b => b.classList.remove('on'));
+      child(sh, '.sh-panel').style.transform = '';
+      for (const b of sheetButtons(hub)) b.classList.remove('on');
     }
     hub.addEventListener('click', e => {
-      const b = e.target.closest('[data-sheet], [data-hub]');
+      const b = closestTo(e.target, '[data-sheet], [data-hub]');
       if (!b) return;
+      const sheet = b.dataset.sheet ?? '';
       if (b.dataset.hub === 'myra') {
         hide();
         hubGoo.hop();
         return myraOpen(!$('myra').classList.contains('chat'));
       }
-      if (open === b.dataset.sheet) return hide();
+      if (open === sheet) return hide();
       myraOpen(false);
-      show(b.dataset.sheet);
+      show(sheet);
     });
     $('shTabs').onclick = e => {
-      const b = e.target.closest('[data-t]');
-      if (b) show(open, +b.dataset.t);
+      const b = closestTo(e.target, '[data-t]');
+      if (b && open) show(open, Number(b.dataset.t));
     };
-    sh.querySelector('.sh-veil').onclick = hide;
-    sh.querySelector('.sh-x').onclick = hide;
+    child(sh, '.sh-veil').onclick = hide;
+    child(sh, '.sh-x').onclick = hide;
     // drag the sheet down by its handle to close it
     {
-      const grab = sh.querySelector('.sh-grab'),
-        panel = sh.querySelector('.sh-panel');
-      let y0 = null,
+      const grab = child(sh, '.sh-grab'),
+        panel = child(sh, '.sh-panel');
+      let y0: number | null = null,
         dy = 0;
       grab.addEventListener('pointerdown', e => {
         y0 = e.clientY;
@@ -145,18 +157,18 @@ export function init62() {
       setTimeout(() => open && ready() && hide(), 700);
     }); // the second look catches tools that get ready a moment later (a voice memo asks for the mic first)
     // layers and boards: once you pick one, get out of the way so you can see it
-    box('layers').addEventListener('click', e => {
-      if (phone.on && e.target.closest('.ly') && !e.target.closest('.ly-tw, .ly-b')) setTimeout(hide, 60);
+    box('layers')?.addEventListener('click', e => {
+      if (phone.on && closestTo(e.target, '.ly') && !closestTo(e.target, '.ly-tw, .ly-b')) setTimeout(hide, 60);
     });
-    box('boards').addEventListener('click', e => {
-      if (phone.on && e.target.closest('.board-row')) setTimeout(hide, 60);
+    box('boards')?.addEventListener('click', e => {
+      if (phone.on && closestTo(e.target, '.board-row')) setTimeout(hide, 60);
     });
     // Unsorted on a phone: tap an idea to drop it in the middle of the board (Myra points it out)
     $('trayList').addEventListener(
       'pointerdown',
       e => {
         if (!phone.on) return;
-        const it = e.target.closest('.tray-item');
+        const it = closestTo(e.target, '.tray-item');
         if (!it) return;
         e.stopImmediatePropagation();
         e.preventDefault();
@@ -172,14 +184,14 @@ export function init62() {
       },
       true,
     );
-    function set(on) {
+    function set(on: boolean) {
       phone.on = on;
       document.body.classList.toggle('phone', on);
       if (on) {
         $('dock').prepend(hub);
-        $('tools')
-          .querySelectorAll('[data-tip]')
-          .forEach(b => (b.dataset.name = b.dataset.tip.split(' · ')[0])); // no keyboard on a phone, so just the names
+        // no keyboard on a phone, so just the names
+        for (const b of $('tools').querySelectorAll('[data-tip]'))
+          if (b instanceof HTMLElement) b.dataset.name = (b.dataset.tip ?? '').split(' · ')[0];
         if (session.board?.cards.length && session.view.z < 0.6) {
           fit(session.board.cards, 40, 1);
           applyView();
@@ -190,12 +202,13 @@ export function init62() {
         restoreAll();
         hub.remove();
       }
-      hub.querySelector('#hubN').textContent = session.board?.tray?.length || '';
+      child(hub, '#hubN').textContent = String(session.board?.tray?.length || '');
     }
     mq.addEventListener('change', e => set(e.matches));
-    $('selbar').addEventListener(
+    const bar = $('selbar');
+    bar.addEventListener(
       'scroll',
-      e => e.target.classList.toggle('end', e.target.scrollLeft + e.target.clientWidth >= e.target.scrollWidth - 4),
+      () => bar.classList.toggle('end', bar.scrollLeft + bar.clientWidth >= bar.scrollWidth - 4),
       { passive: true },
     );
     return {
@@ -203,7 +216,7 @@ export function init62() {
       set,
       hide,
       count: () => {
-        hub.querySelector('#hubN').textContent = session.board?.tray?.length || '';
+        child(hub, '#hubN').textContent = String(session.board?.tray?.length || '');
       },
       init: () => set(mq.matches),
     };

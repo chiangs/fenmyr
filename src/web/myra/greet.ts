@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { SlashCommand } from '../../shared/ops.ts';
 import { fit } from '../canvas/handles.ts';
 import { applyView } from '../canvas/view.ts';
 import { $ } from '../core/dom.ts';
@@ -65,7 +66,8 @@ export function greet(why) {
     shown ? 10000 : 0,
   ); // what came due while the app was closed is said after the greeting, not over it
 }
-export let SLASH;
+// dev: only listed in development builds
+export let SLASH: (SlashCommand & { dev?: boolean; run: (arg: string) => unknown })[];
 
 export const helpText = (lead = 'Here is what I can do right here, no thinking needed:') =>
   lead +
