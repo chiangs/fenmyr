@@ -42,6 +42,8 @@ jobs:
         run: node tests/phone.ts
       - name: Popup test
         run: node tests/popups.ts
+      - name: Updater test
+        run: node tests/update.ts
       - name: Caelestia theme test
         run: node tests/theme.ts
       - name: Visual check against main
