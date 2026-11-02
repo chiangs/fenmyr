@@ -147,6 +147,32 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
     on = false;
     return { peak: Math.max(...widths), end: widths.at(-1), z: H.view.z };
   });
+  // words stay exactly where they are when the board settles after a zoom
+  r.textShift = await page.evaluate(async () => {
+    const H = window.__fenmyr,
+      wait = ms => new Promise(res => setTimeout(res, ms));
+    H.newNote();
+    const c = H.board.cards.at(-1);
+    c.text = 'The quick brown fox\nsecond line of words';
+    c.r = 0;
+    H.renderCard(c);
+    H.selectOnly([]);
+    const body = document.querySelector(`.card[data-id="${c.id}"] .body`),
+      words = document.createRange();
+    words.selectNodeContents(body);
+    await wait(800);
+    const shifts = [];
+    for (const z of [1.25, 2, 3]) {
+      Object.assign(H.view, { z, x: 300 - c.x * z, y: 100 - c.y * z });
+      H.applyView();
+      await wait(50);
+      const moving = words.getBoundingClientRect();
+      await wait(800);
+      const settled = words.getBoundingClientRect();
+      shifts.push(Math.max(Math.abs(settled.top - moving.top), Math.abs(settled.left - moving.left)));
+    }
+    return { px: Math.max(...shifts), realZoom: document.getElementById('world').style.zoom };
+  });
   // Templates land in the nearest empty space around the middle of the view, and the view moves only if they'd be off screen.
   r.placed = await page.evaluate(async () => {
     const H = window.__fenmyr,
@@ -221,6 +247,8 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
     !follow.zoomedIn;
   const ok =
     placedOk &&
+    r.textShift.px < 0.01 &&
+    r.textShift.realZoom === '' &&
     r.reset === '100%' &&
     r.pan.wheel[0] === 0 &&
     r.pan.wheel[1] === -100 &&
