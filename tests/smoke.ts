@@ -1754,6 +1754,16 @@ echo " [BLANK_AUDIO] hello from whisper"
     const sel = `[data-id="${id}"]`,
       vis = s => page.locator(`${sel} ${s}`).first().isVisible();
     const soloShown = await vis('.nt-add');
+    await page.evaluate(() => {
+      const trace = [];
+      window.__tagTrace = trace;
+      for (const name of ['pointerdown', 'pointerup', 'pointercancel', 'click', 'focusin', 'keydown'])
+        addEventListener(
+          name,
+          e => trace.push([Math.round(performance.now()), name, `${e.target?.tagName}.${e.target?.className}`]),
+          true,
+        );
+    });
     await page.locator(`${sel} .nt-add`).click();
     await page
       .waitForFunction(() => document.activeElement?.matches('#tagAdd input'), null, { timeout: 8000 })
@@ -1774,6 +1784,8 @@ echo " [BLANK_AUDIO] hello from whisper"
             addRect: b ? [b.x, b.y, b.width, b.height] : null,
             under: under ? `${under.tagName}.${under.className}` : null,
             on: [...document.querySelectorAll('.on')].map(x => x.id || x.className).slice(0, 15),
+            editing: document.querySelector('.card.editing')?.dataset.id ?? null,
+            trace: window.__tagTrace,
           };
         }, id);
         console.log('TAG DIAG', JSON.stringify(state));
