@@ -13,6 +13,7 @@ Fenmyr is an Electron canvas app for Linux. The renderer in `src/web/` draws boa
 | `npm test` | Builds, then runs the vault, save, reply, smoke, zoom, theme and docs tests. They run Electron headless, so no display is needed. |
 | `npm run visual` | Screenshots 22 states here and on `origin/main`. Any changed pixel fails. |
 | `node tests/perf.ts origin/main` | Times opening, dragging, zooming and editing a 500-card board on both sides and fails when this side is clearly slower. |
+| Mac build | Start it from the Actions tab, or run `npm run dist:mac` on a Mac. The result is unsigned. |
 | `node tools/budget.ts --write` | Lowers the budget after you pay part of it down. It never raises it. |
 
 Node runs `.ts` files directly, so tests and tools need no build step. Write imports with the `.ts` extension.

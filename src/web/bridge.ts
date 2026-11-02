@@ -4,7 +4,7 @@ import type { Ops } from '../shared/ops.ts';
 
 declare global {
   interface Window {
-    fenmyrHost?: { post(msg: unknown): void };
+    fenmyrHost?: { platform?: string; post(msg: unknown): void };
     __fenmyrReply?: (id: number, ok: boolean, value: unknown) => void;
   }
 }
@@ -19,7 +19,7 @@ type PretendBoard = { cards: { type: string; id: string; x: number; y: number }[
 // In a plain browser (for building and demos) it falls back to localStorage and a pretend Myra.
 (() => {
   const native = !!window.fenmyrHost;
-  const platform = native ? 'linux' : 'web';
+  const platform = native ? (window.fenmyrHost?.platform ?? 'linux') : 'web';
   const waiting = new Map<number, Waiting>();
   let seq = 0;
   // the host answers with window.__fenmyrReply(id, ok, value)

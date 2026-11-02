@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { openSettingsKey } from '../input/shortcuts.ts';
 import { esc } from '../ui/dom.ts';
 import { showUpdate, updInfo } from '../app/updates.ts';
 import { COLOR_NAMES } from '../core/base.ts';
@@ -199,6 +200,7 @@ export function init29() {
       appState.cae = data;
       applySettings();
     } else if (name === 'boardsChanged') window.__boardsChanged();
+    else if (name === 'settings') openSettingsKey();
   };
   // a new wallpaper or scheme: restyle right away
   if (Fenmyr.caelestia)

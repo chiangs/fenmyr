@@ -179,6 +179,7 @@ export async function now(): Promise<'updating'> {
     const searchPath = [
       ...(process.env.PATH || '').split(':'),
       path.join(os.homedir(), '.local/bin'),
+      '/opt/homebrew/bin',
       '/usr/local/bin',
       '/usr/bin',
     ];

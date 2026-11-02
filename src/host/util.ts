@@ -47,7 +47,7 @@ export type RunResult = { code: number | null; out: Buffer; err: Buffer };
 const home = os.homedir();
 const env = () => ({
   ...process.env,
-  PATH: [process.env.PATH || '', `${home}/.local/bin`, '/usr/local/bin', '/usr/bin'].join(':'),
+  PATH: [process.env.PATH || '', `${home}/.local/bin`, '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin'].join(':'),
 });
 
 // collects what the program prints and stops it after `timeout` seconds
