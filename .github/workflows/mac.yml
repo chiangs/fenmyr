@@ -2,8 +2,6 @@ name: Mac build
 # An unsigned (ad-hoc signed) .dmg for Apple Silicon and Intel, uploaded as artifacts of the run. Start it from the Actions tab.
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/mac]
 
 jobs:
   mac:
