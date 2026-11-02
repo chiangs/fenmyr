@@ -23,6 +23,8 @@ export function applyView() {
   stage.classList.toggle('far', session.view.z < 0.55);
   stage.classList.add('moving');
   clearTimeout(movingT);
+  // Swapping to real zoom during fit()'s transition applies the zoom at once while the transform animates, so the board overshoots and slides back.
+  const settleMs = world.style.transition ? 540 : 450;
   movingT = setTimeout(() => {
     stage.classList.remove('moving');
     // real zoom only where it's needed: a Spotify player or video on the board makes Safari stretch an old picture of the board, so lay it out fresh there.
@@ -32,7 +34,7 @@ export function applyView() {
       world.style.zoom = session.view.z;
       world.style.transform = `translate(${session.view.x / session.view.z}px, ${session.view.y / session.view.z}px)`;
     }
-  }, 450); // a short pause in a pinch isn't the end of it, so wait a little before redrawing everything sharp
+  }, settleMs); // a short pause in a pinch isn't the end of it, so wait a little before redrawing everything sharp
   let s = 26 * session.view.z;
   while (s < 20) s *= 2;
   while (s > 40) s /= 2; // dots keep their size; zooming out skips every other dot instead of crowding them
