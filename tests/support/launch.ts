@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { _electron, type ElectronApplication, type Page } from 'playwright';
+import type { UpdateInfo } from '../../src/shared/ops.ts';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREEN = { width: 1440, height: 900 };
@@ -87,7 +88,7 @@ declare global {
   interface Window {
     Fenmyr?: {
       save(board: unknown): Promise<unknown>;
-      updateCheck?(): Promise<{ behind?: number; notes?: string[] }>;
+      updateCheck?(): Promise<UpdateInfo>;
     };
     __fenmyr: TestHooks;
   }
