@@ -1,7 +1,15 @@
 name: CI
 on:
   push:
+    branches: [main]   # a pull request is tested by its own run, so a pushed branch is not tested twice
   pull_request:
+  release:
+    types: [published]   # the AppImage is only built here (and by hand), not on every change
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}   # a newer push to a branch or pull request replaces its older run; main always finishes
 
 jobs:
   test:
@@ -66,8 +74,10 @@ jobs:
           su tester -c 'cd ~/fenmyr && ./uninstall.sh --purge' > uninstall.log 2>&1 || report uninstall uninstall.log
           test ! -e /home/tester/.local/bin/fenmyr
       - name: Build the AppImage
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         run: npx electron-builder --linux AppImage --x64 --publish never
       - uses: actions/upload-artifact@v5
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         with:
           name: Fenmyr-x86_64.AppImage
           path: build/release/*.AppImage
