@@ -1,4 +1,4 @@
-import type { CardType } from './cardTypes.ts';
+import { type CardType, isCardType, sizeOf } from './cardTypes.ts';
 
 // What each kind of card adds. Cards also hold per-type options these fields don't list yet; typing the renderer modules adds them.
 type RecordingFields = {
@@ -66,6 +66,8 @@ type CardBase = {
   due?: string;
   tags?: string[];
   tagText?: string;
+  // the height someone gave a note or checklist themselves; fitting the words never shrinks it below this
+  userH?: number;
   bold?: boolean;
   italic?: boolean;
   under?: boolean;
@@ -143,9 +145,44 @@ export type Folder = {
 export type BoardOrder = Record<string, string[]>;
 type Library = { projects: Project[]; folders: Folder[]; order: BoardOrder };
 
-const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null;
+export const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null;
 const isNamed = <T extends { id: string; name: string }>(x: unknown): x is T =>
   isRecord(x) && typeof x.id === 'string' && typeof x.name === 'string';
+
+const isNum = (x: unknown) => typeof x === 'number' && Number.isFinite(x);
+
+// Checks what every card needs plus the fields a type can't do without; the optional per-type fields are read where they're used.
+function isCard(x: unknown): x is Card {
+  if (!isRecord(x) || typeof x.id !== 'string' || !isCardType(x.type)) return false;
+  if (![x.x, x.y, x.w, x.h].every(isNum)) return false;
+  if (x.type === 'swatch') return typeof x.hex === 'string';
+  if (x.type === 'coll') return Array.isArray(x.kids) && x.kids.every(k => typeof k === 'string');
+  return true;
+}
+
+// Anything saved back after opening a board is all it keeps, so a card missing a number gets a default instead of being
+// dropped. Only a card with no id or an unknown type is left out, since it can't be shown.
+function readCard(x: unknown): Card | null {
+  if (!isRecord(x) || !isCardType(x.type)) return null;
+  const [width, height] = sizeOf(x.type),
+    filled = {
+      ...x,
+      x: isNum(x.x) ? x.x : 0,
+      y: isNum(x.y) ? x.y : 0,
+      w: isNum(x.w) ? x.w : width,
+      h: isNum(x.h) ? x.h : height,
+      ...(x.type === 'swatch' && typeof x.hex !== 'string' ? { hex: '#ffffff' } : {}),
+      ...(x.type === 'coll' && !Array.isArray(x.kids) ? { kids: [] } : {}),
+    };
+  return isCard(filled) ? filled : null;
+}
+
+// A board file read from disk.
+export function parseBoard(raw: unknown): StoredBoard | null {
+  if (!isRecord(raw) || typeof raw.id !== 'string') return null;
+  const cards = (x: unknown) => (Array.isArray(x) ? x.map(readCard).filter(c => c !== null) : undefined);
+  return { ...raw, id: raw.id, cards: cards(raw.cards), tray: cards(raw.tray) };
+}
 
 // Whatever this returns gets saved back, so it keeps every readable row: one bad row must not empty the library.
 export function parseLibrary(raw: unknown): Library {

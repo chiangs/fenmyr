@@ -9,7 +9,7 @@ const safe = (v: unknown) => String(v ?? 'x').replace(/[^\p{L}\p{N}-]/gu, '');
 const stringOr = <T>(v: unknown, otherwise: T) => (typeof v === 'string' ? v : otherwise);
 const isBoard = (j: unknown): j is Board => isRecord(j) && typeof j.id === 'string';
 const isTemplate = (t: unknown): t is Template =>
-  isRecord(t) && typeof t.id === 'string' && t.id !== '' && Array.isArray(t.cards);
+  isRecord(t) && typeof t.id === 'string' && t.id !== '' && typeof t.name === 'string' && Array.isArray(t.cards);
 const jsonFiles = (dir: string) => fs.readdirSync(dir).filter(f => f.endsWith('.json'));
 
 // boards with pictures can be many MB, so each board's summary is kept until its file changes (same size and time = same board)

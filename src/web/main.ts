@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Runs each module's start-up code in a fixed order, so modules can import each other freely.
 import './icons.ts';
 import './bridge.ts';
@@ -10,7 +9,6 @@ import * as m3 from './core/base.ts';
 import * as m4 from './library/tree.ts';
 import * as m5 from './library/rowMenu.ts';
 import * as m6 from './library/home.ts';
-import * as m7 from './canvas/view.ts';
 import * as m8 from './canvas/handles.ts';
 import * as m9 from './cards/shapes.ts';
 import * as m10 from './canvas/wires.ts';

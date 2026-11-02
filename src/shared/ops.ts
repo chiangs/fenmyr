@@ -9,7 +9,14 @@ export type BoardSummary = {
   parent: string | null;
   updated: number;
 };
-export type Template = { id: string; cards: unknown[]; [key: string]: unknown };
+export type Template = {
+  id: string;
+  name: string;
+  desc?: string;
+  mode?: string;
+  cards: unknown[];
+  [key: string]: unknown;
+};
 
 export type Vault = {
   id: string;

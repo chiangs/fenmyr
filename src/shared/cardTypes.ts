@@ -39,6 +39,7 @@ const CARD_TYPES = {
 } as const satisfies Record<string, Traits>;
 
 export type CardType = keyof typeof CARD_TYPES;
+export const isCardType = (x: unknown): x is CardType => typeof x === 'string' && Object.hasOwn(CARD_TYPES, x);
 
 const DEFAULT_SIZE = [220, 140] as const;
 const traits = (type: string): Traits => (Object.hasOwn(CARD_TYPES, type) ? Reflect.get(CARD_TYPES, type) : {});
