@@ -36,6 +36,13 @@ async function git(args: string[], dir: string, timeout = 30) {
   const r = await run('git', ['-C', dir, ...args], timeout);
   return { ok: r.code === 0, out: r.out.toString('utf8').trim() };
 }
+// What is actually installed, not what the folder has: a `git pull` there must not hide an update.
+// Older installs didn't record it, and history can be rewritten, so the folder is the fallback.
+async function installedCommit(dir: string) {
+  const install = readJSON(path.join(app.getAppPath(), 'install.json'));
+  const commit = isRecord(install) ? text(install.commit) : '';
+  return commit && (await git(['cat-file', '-e', `${commit}^{commit}`], dir)).ok ? commit : 'HEAD';
+}
 function newer(a: string, b: string) {
   const parts = (v: string) =>
     v
@@ -79,11 +86,12 @@ export async function check(): Promise<UpdateInfo> {
     };
   const dir = repoDir();
   if (dir) {
-    const here = (await git(['log', '-1', '--format=%cs'], dir)).out;
+    const base = await installedCommit(dir);
+    const here = (await git(['log', '-1', '--format=%cs', base], dir)).out;
     if (!(await git(['fetch', '--quiet', 'origin'], dir, 40)).ok) return { repo: true, offline: true, since: here };
-    const behind = Number.parseInt((await git(['rev-list', '--count', 'HEAD..@{u}'], dir)).out, 10) || 0;
+    const behind = Number.parseInt((await git(['rev-list', '--count', `${base}..@{u}`], dir)).out, 10) || 0;
     // the friendly notes: lines added to WHATSNEW.md since this copy
-    const diff = (await git(['diff', 'HEAD', '@{u}', '--', 'WHATSNEW.md'], dir)).out;
+    const diff = (await git(['diff', base, '@{u}', '--', 'WHATSNEW.md'], dir)).out;
     const notes = diff
       .split('\n')
       .filter(l => l.startsWith('+- '))

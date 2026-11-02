@@ -59,8 +59,9 @@ pkill -f "lectron[^ ]* .*$LIB/app( |$)" 2>/dev/null && sleep 1 || true   # let t
 rm -rf "$LIB/app"; mkdir -p "$LIB/app/assets"
 cp -R dist web package.json LICENSE THIRD-PARTY-NOTICES.md "$LIB/app/"
 cp assets/icon.png "$LIB/app/assets/icon.png"
-# remember where this copy came from, so Settings → Update now can pull and reinstall from here
-printf '{ "repo": "%s", "electron": "%s" }\n' "$REPO" "$ELECTRON" > "$LIB/app/install.json"
+# remember where this copy came from and which commit it is, so Settings → Update now can pull, reinstall and tell what's new
+COMMIT="$(git rev-parse HEAD 2>/dev/null || true)"
+printf '{ "repo": "%s", "electron": "%s", "commit": "%s" }\n' "$REPO" "$ELECTRON" "$COMMIT" > "$LIB/app/install.json"
 
 # --- 4. a command, and an entry in your app launcher ---
 mkdir -p "$BIN" "$APPS"
