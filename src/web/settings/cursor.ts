@@ -1,21 +1,21 @@
-// @ts-nocheck
 import { luminance } from '../ui/color.ts';
 import { stage } from '../core/dom.ts';
 import { OS } from '../platform/osWords.ts';
-import { MYRA_COLORS, settings } from './settings.ts';
+import { myraColors, settings } from './settings.ts';
+import { child } from '../ui/dom.ts';
 import { drawOn } from '../tools/draw.ts';
 import { placing } from '../tools/place.ts';
-export let myCur;
+export let myCur: HTMLElement;
 
 const NATIVE =
   'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=color]), textarea, select, [contenteditable="true"], .card.editing, .knob, .wires .w-end, .wires .w-bend, iframe, .wheel, .bright';
 
 // the name tag: a rounded rectangle whose straight edges wobble gently (the corners stay clean), drawn to fit the name
-function tagPath(w, h, phase) {
+function tagPath(w: number, h: number, phase: number) {
   const r = Math.min(8, h / 2 - 1),
     a = 0.8,
     step = 3,
-    wav = (t, len) =>
+    wav = (t: number, len: number) =>
       a * Math.sin((t / len) * Math.PI * Math.max(1, Math.round(len / 22)) + phase) * Math.sin((t / len) * Math.PI);
   const p = [`M${r} 0`];
   for (let x = r + step; x < w - r; x += step) p.push(`L${x.toFixed(1)} ${(-wav(x - r, w - 2 * r)).toFixed(2)}`);
@@ -29,31 +29,31 @@ function tagPath(w, h, phase) {
 }
 
 function shapeTag() {
-  const bub = myCur.querySelector('.bub'),
-    svg = myCur.querySelector('.tagbg'),
+  const bub = child(myCur, '.bub'),
+    svg = child(myCur, '.tagbg', SVGSVGElement),
     w = bub.offsetWidth,
     h = bub.offsetHeight;
   if (!w || !h) return;
-  svg.setAttribute('width', w + 4);
-  svg.setAttribute('height', h + 4);
+  svg.setAttribute('width', String(w + 4));
+  svg.setAttribute('height', String(h + 4));
   svg.setAttribute('viewBox', `-2 -2 ${w + 4} ${h + 4}`);
   Object.assign(svg.style, { left: bub.offsetLeft - 2 + 'px', top: bub.offsetTop - 2 + 'px' });
   const ps = [0, Math.PI * 0.66, Math.PI * 1.33].map(ph => tagPath(w, h, ph)),
-    path = svg.querySelector('path');
-  path.setAttribute('d', ps[0]);
+    path = child(svg, 'path', SVGPathElement);
+  path.setAttribute('d', ps[0] ?? '');
   path.innerHTML = window.myraCalm
     ? ''
     : `<animate attributeName="d" dur="5s" repeatCount="indefinite" values="${ps.join(';')};${ps[0]}" calcMode="spline" keySplines="${'.45 0 .55 1;'.repeat(3).slice(0, -1)}"/>`;
 }
 
 export function paintCursor() {
-  const m = MYRA_COLORS[settings.myra] || MYRA_COLORS.golden,
+  const m = myraColors(settings.myra),
     c = m.B,
     edge = m.D; // your cursor wears Myra's color
   myCur.style.setProperty('--c', c);
   myCur.style.setProperty('--cs', edge);
   myCur.style.setProperty('--ct', luminance(c) > 0.4 ? '#3d3640' : '#ffffff');
-  myCur.querySelector('.bub').textContent = (settings.name || 'You').slice(0, 24);
+  child(myCur, '.bub').textContent = (settings.name || 'You').slice(0, 24);
   requestAnimationFrame(shapeTag);
   document.body.classList.toggle(
     'fancy-cursor',
@@ -90,21 +90,20 @@ export function init27() {
           Fenmyr.native &&
           (e.clientX < 8 || e.clientY < 8 || e.clientX > innerWidth - 8 || e.clientY > innerHeight - 8 || strip);
       document.body.classList.toggle('cur-edge', edge);
-      const t = e.target,
-        native = edge || !!(t.closest && t.closest(NATIVE));
+      const t = e.target instanceof Element ? e.target : null,
+        native = edge || !!t?.closest(NATIVE);
       myCur.classList.toggle('hide', native);
       document.body.classList.toggle('cur-native', native);
-      const onCard =
-        !native && !placing && !drawOn && t.closest && t.closest('.card') && !t.closest('button, a, input');
+      const onCard = !native && !placing && !drawOn && t?.closest('.card') && !t.closest('button, a, input');
       const rz =
-        native || !t.closest
+        native || !t
           ? null
           : t.closest('.rz-grip')
             ? 0
             : t.closest('#rh, .handle')
               ? -45
               : t.closest('.crop-box i[data-h]')
-                ? /^(nw|se)$/.test(t.closest('.crop-box i[data-h]').dataset.h)
+                ? /^(nw|se)$/.test(t.closest('.crop-box i[data-h]')?.getAttribute('data-h') ?? '')
                   ? -45
                   : 45
                 : t.closest('.resize-cursor')

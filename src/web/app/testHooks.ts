@@ -59,7 +59,7 @@ const makeHooks = () => ({
   daily,
   dayKey,
   slashDue,
-  setGreet: (g: string, chat: string) => {
+  setGreet: (g: boolean, chat: string) => {
     settings.greet = g;
     settings.chat = chat;
   },

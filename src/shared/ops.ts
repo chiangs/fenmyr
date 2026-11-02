@@ -52,7 +52,7 @@ export type VaultHit = {
   text: string;
 };
 
-type UsageTotals = { asks: number; tokensIn: number; tokensOut: number; cost: number };
+export type UsageTotals = { asks: number; tokensIn: number; tokensOut: number; cost: number };
 export type UsageSummary = { today: UsageTotals; week: UsageTotals; all: UsageTotals; since: number };
 
 export type CaelestiaScheme = { name: string; mode: 'dark' | 'light'; colours: Record<string, string> };

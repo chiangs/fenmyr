@@ -12,7 +12,7 @@ export function hopMyra() {
 }
 export let goo;
 const SMALL = { headroom: 8 };
-export let goos;
+export let goos: ReturnType<typeof Goo>[] = [];
 export function init24() {
   goo = Goo($('goo'), { headroom: 8 });
   // small Myras get room above them

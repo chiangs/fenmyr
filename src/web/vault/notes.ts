@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { esc } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
@@ -10,24 +9,32 @@ import { say, snapTo } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { activeGrants, loadVaults, vaultById } from './vaults.ts';
 import { session } from '../core/state.ts';
+import type { Board, CardOf, VaultGrant } from '../../shared/model.ts';
+import type { Vault } from '../../shared/ops.ts';
+
+type VaultNote = CardOf<'vnote'>;
+const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 // ---------- vault notes on a board: a card that shows a note's title, tags, properties and first lines, and opens it in Obsidian ----------
-const obsLink = (v, rel) =>
+const obsLink = (v: Vault, rel: string) =>
   'obsidian://open?vault=' +
   encodeURIComponent(v.obsidian || v.name) +
   '&file=' +
   encodeURIComponent(String(rel).replace(/\.md$/i, ''));
 
-export function openVNote(c) {
-  const v = vaultById(c.vault);
-  if (!v) return say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000);
-  Fenmyr.openURL(obsLink(v, c.path));
+export function openVNote(c: VaultNote) {
+  const v = vaultById(c.vault ?? '');
+  if (!v) {
+    say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000);
+    return;
+  }
+  Fenmyr.openURL(obsLink(v, c.path ?? ''));
 }
 
 // each card remembers its own side; the back holds the stored excerpt, and the full text only while you ask for it (never saved)
-export const vnFull = new Map();
+export const vnFull = new Map<string, { body: string; truncated: boolean }>();
 
-export function flipVNote(c) {
+export function flipVNote(c: VaultNote) {
   remember();
   const body = cardsEl.querySelector(`[data-id="${c.id}"] .body`);
   const swap = () => {
@@ -46,25 +53,32 @@ export function flipVNote(c) {
   else swap();
 }
 
-export async function toggleVNFull(c) {
+export async function toggleVNFull(c: VaultNote) {
   if (vnFull.has(c.id)) {
     vnFull.delete(c.id);
-    return renderCard(c);
+    renderCard(c);
+    return;
   }
-  const g = grantFor(session.board, c.vault, c.path);
-  if (!g) return say('This board isn’t allowed to read that note.', 3500);
+  const vault = c.vault ?? '',
+    path = c.path ?? '',
+    g = grantFor(session.board, vault, path);
+  if (!g) {
+    say('This board isn’t allowed to read that note.', 3500);
+    return;
+  }
   try {
-    const n = await Fenmyr.vaultNote(c.vault, c.path, g.folders, true);
+    const n = await Fenmyr.vaultNote(vault, path, g.folders, true);
     vnFull.set(c.id, { body: n.body || '', truncated: !!n.truncated });
     renderCard(c);
   } catch (e) {
-    say(/missing/.test(e.message) ? 'I can’t find that note any more.' : 'Hmm: ' + e.message, 3500);
+    const why = messageOf(e);
+    say(/missing/.test(why) ? 'I can’t find that note any more.' : 'Hmm: ' + why, 3500);
   }
 }
 
 // a small, safe markdown for the back of the card: headings, lists, tasks, quotes, bold, italic, code; [[links]] show as their words
-export function vnMd(src) {
-  const inl = t =>
+export function vnMd(src: unknown) {
+  const inl = (t: string | undefined) =>
     esc(t)
       .replace(/!\[\[[^\]]*\]\]/g, '')
       .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, '$1')
@@ -72,14 +86,14 @@ export function vnMd(src) {
       .replace(/(^|[^*])\*(?!\s)(.+?)\*/g, '$1<em>$2</em>')
       .replace(/`(.+?)`/g, '<code>$1</code>');
   let out = '',
-    list = null;
+    list: string | null = null;
   const close = () => {
       if (list) {
         out += `</${list}>`;
         list = null;
       }
     },
-    open = k => {
+    open = (k: string) => {
       if (list !== k) {
         close();
         out += `<${k}>`;
@@ -90,7 +104,7 @@ export function vnMd(src) {
     .replace(/\r/g, '')
     .split('\n')) {
     const l = raw.trimEnd();
-    let m;
+    let m: RegExpMatchArray | null;
     if (!l.trim()) {
       close();
       continue;
@@ -122,7 +136,7 @@ export function vnMd(src) {
   return out;
 }
 
-const grantFor = (b, vaultId, rel) =>
+const grantFor = (b: Board, vaultId: string, rel: string): VaultGrant | undefined =>
   activeGrants(b).find(
     g => g.vault === vaultId && g.folders.some(f => f === '' || rel === f || rel.startsWith(f + '/')),
   );
@@ -135,10 +149,12 @@ export async function refreshVNotes(b = session.board) {
   let changed = false;
   for (const c of cs) {
     const before = JSON.stringify([c.title, c.tags, c.props, c.excerpt, c.blocked, c.missing]),
-      g = grantFor(b, c.vault, c.path);
+      vault = c.vault ?? '',
+      path = c.path ?? '',
+      g = grantFor(b, vault, path);
     try {
       if (!g) throw new Error('blocked');
-      const n = await Fenmyr.vaultNote(c.vault, c.path, g.folders);
+      const n = await Fenmyr.vaultNote(vault, path, g.folders);
       Object.assign(c, {
         title: n.title,
         tags: n.tags,
@@ -149,7 +165,7 @@ export async function refreshVNotes(b = session.board) {
       });
     } catch (e) {
       vnFull.delete(c.id);
-      const miss = /missing/.test(e.message);
+      const miss = /missing/.test(messageOf(e));
       Object.assign(c, { blocked: !miss, missing: miss, tags: [], props: [], excerpt: '' });
     }
     if (before !== JSON.stringify([c.title, c.tags, c.props, c.excerpt, c.blocked, c.missing])) {
@@ -160,7 +176,7 @@ export async function refreshVNotes(b = session.board) {
   if (changed && b === session.board) save();
 }
 
-export async function addVaultNote(g, rel) {
+export async function addVaultNote(g: VaultGrant, rel: string) {
   const n = await Fenmyr.vaultNote(g.vault, rel, g.folders),
     w = centerWorld(),
     c = card('vnote', {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { luminance, mixHex } from '../ui/color.ts';
 import { esc } from '../ui/dom.ts';
 import { checkUpdate } from '../app/updates.ts';
@@ -16,32 +15,44 @@ import { PRESETS } from '../ui/colorPicker.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
 import { appState, session } from '../core/state.ts';
+import type { CaelestiaScheme, UsageTotals } from '../../shared/ops.ts';
+import { child, closestTo, elementById } from '../ui/dom.ts';
+
+type Mode = 'light' | 'dark';
+const htmlIn = (root: ParentNode, selector: string) =>
+  [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);
+const htmlOrNull = (el: Element | null) => (el instanceof HTMLElement ? el : null);
 
 // ---------- your colors: the board, its dots, the panels and the accent, set per light/dark; one board can also have its own background ----------
-const COLOR_DEFAULTS = {
+const COLOR_DEFAULTS: Record<Mode, Record<string, string>> = {
   light: { bg: '#faf7f2', dot: '#e4dccf', panel: '#ffffff', accent: '#e88a24' },
   dark: { bg: '#12100d', dot: '#332d25', panel: '#242019', accent: '#e88a24' },
 };
 
-const modeName = () => (document.body.classList.contains('dark') ? 'dark' : 'light');
+const modeName = (): Mode => (document.body.classList.contains('dark') ? 'dark' : 'light');
 
 export const following = () => !!(settings.caelestia && appState.cae);
 
-const caeColors = () => ({
-  bg: appState.cae.colours.surface,
-  dot: appState.cae.colours.outlineVariant || appState.cae.colours.outline,
-  panel: appState.cae.colours.surfaceContainer || appState.cae.colours.surface,
-  accent: appState.cae.colours.primary,
-});
+function caeColors({ colours: c }: CaelestiaScheme) {
+  const picked: Record<string, string | undefined> = {
+    bg: c.surface,
+    dot: c.outlineVariant || c.outline,
+    panel: c.surfaceContainer || c.surface,
+    accent: c.primary,
+  };
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(picked)) if (v) out[k] = v;
+  return out;
+}
 
-export const myColors = () => {
-  if (following()) return caeColors();
-  settings.colors = settings.colors || { light: {}, dark: {} };
-  return (settings.colors[modeName()] = settings.colors[modeName()] || {});
+export const myColors = (): Record<string, string> => {
+  const cae = appState.cae;
+  if (settings.caelestia && cae) return caeColors(cae);
+  return settings.colors[modeName()];
 };
 
-export const colorOf = k =>
-  (k === 'bg' && session.board && session.board.bg) || myColors()[k] || COLOR_DEFAULTS[modeName()][k];
+const boardBg = () => (typeof session.board?.bg === 'string' ? session.board.bg : '');
+export const colorOf = (k: string) => (k === 'bg' && boardBg()) || myColors()[k] || COLOR_DEFAULTS[modeName()][k] || '';
 
 export function applyColors() {
   const B = document.body.style,
@@ -63,25 +74,29 @@ export function applyColors() {
   } else ['--pink-deep', '--pink', '--blush'].forEach(v => B.removeProperty(v));
   document.body.classList.toggle('board-dark', darkBg);
   document.body.classList.toggle('board-light', !darkBg && modeName() === 'dark');
-  document
-    .querySelectorAll('[data-col]')
-    .forEach(b => b.style.setProperty('--chip', b.dataset.col === 'cursor' ? settings.cursor : colorOf(b.dataset.col)));
-  $('colReset') && ($('colReset').hidden = !Object.keys(mine).length);
+  for (const b of htmlIn(document, '[data-col]'))
+    b.style.setProperty('--chip', b.dataset.col === 'cursor' ? settings.cursor : colorOf(b.dataset.col ?? ''));
+  const reset = document.getElementById('colReset');
+  if (reset) reset.hidden = !Object.keys(mine).length;
   paintCursor();
   // settings: name, cursor colors and the little preview
-  if ($('setName') && document.activeElement !== $('setName')) $('setName').value = settings.name || '';
+  const nameIn = document.getElementById('setName');
+  if (nameIn instanceof HTMLInputElement && document.activeElement !== nameIn) nameIn.value = settings.name || '';
   paintBd();
-  if ($('curColors'))
-    $('curColors').innerHTML =
-      PRESETS.cursor
-        .map(
-          h =>
-            `<button data-cc="${h}" title="${h.toUpperCase()}" style="background:${h}" class="${settings.cursor === h ? 'on' : ''}"></button>`,
-        )
-        .join('') +
-      `<button class="rand${PRESETS.cursor.includes(settings.cursor) ? '' : ' on'}" data-col="cursor" title="Any colour"></button>`;
+  const cursors = PRESETS.cursor ?? [],
+    swatches = document.getElementById('curColors');
+  if (swatches) {
+    const anyOn = cursors.includes(settings.cursor) ? '' : ' on',
+      swatch = (h: string) => {
+        const name = h.toUpperCase(),
+          on = settings.cursor === h ? 'on' : '';
+        return `<button data-cc="${h}" title="${name}" style="background:${h}" class="${on}"></button>`;
+      };
+    swatches.innerHTML =
+      cursors.map(swatch).join('') + `<button class="rand${anyOn}" data-col="cursor" title="Any colour"></button>`;
+  }
   const pv = document.querySelector('#curPrev .mcur');
-  if (pv) {
+  if (pv instanceof HTMLElement) {
     pv.innerHTML = myCur.innerHTML;
     pv.setAttribute('style', myCur.getAttribute('style') || '');
     pv.style.transform = '';
@@ -90,24 +105,29 @@ export function applyColors() {
 
 // Settings → Camera & microphone: the same choice the little menus on video and memo cards make
 async function fillDevices() {
-  let list = [];
+  let list: MediaDeviceInfo[] = [];
   try {
     list = await navigator.mediaDevices.enumerateDevices();
-  } catch (e) {}
+  } catch {}
   const named = list.some(d => d.label); // names only show once Myra has been allowed to use them
   $('devAllow').hidden = named || !navigator.mediaDevices;
-  for (const [id, kind, key, title] of [
+  const pickers: [id: string, kind: MediaDeviceKind, key: 'camId' | 'micId', title: string][] = [
     ['devCam', 'videoinput', 'camId', 'Camera'],
     ['devMic', 'audioinput', 'micId', 'Microphone'],
-  ]) {
-    const sel = $(id),
+  ];
+  for (const [id, kind, key, title] of pickers) {
+    const sel = elementById(id, HTMLSelectElement),
       ds = list.filter(
         d => d.kind === kind && d.deviceId && d.deviceId !== 'default' && d.deviceId !== 'communications',
       );
-    sel.innerHTML =
-      `<option value="">Default ${title.toLowerCase()}</option>` +
-      ds.map((d, i) => `<option value="${esc(d.deviceId)}">${esc(devName(d, `${title} ${i + 1}`))}</option>`).join('');
-    sel.value = ds.some(d => d.deviceId === settings[key]) ? settings[key] : '';
+    const kindName = title.toLowerCase(),
+      option = (d: MediaDeviceInfo, i: number) => {
+        const value = esc(d.deviceId),
+          name = esc(devName(d, `${title} ${i + 1}`));
+        return `<option value="${value}">${name}</option>`;
+      };
+    sel.innerHTML = `<option value="">Default ${kindName}</option>` + ds.map(option).join('');
+    sel.value = ds.some(d => d.deviceId === settings[key]) ? (settings[key] ?? '') : '';
     sel.disabled = !ds.length && named;
     sel.onchange = () => {
       if (sel.value) settings[key] = sel.value;
@@ -120,7 +140,7 @@ async function fillDevices() {
       [...cams.keys()].forEach(cid => {
         const c = byId(cid);
         camOff(cid);
-        if (c) camOn(c);
+        if (c?.type === 'video') camOn(c);
       });
     };
   }
@@ -129,30 +149,29 @@ async function fillDevices() {
 export const closeSettings = () => $('settings').classList.remove('on');
 
 // settings tabs: one topic at a time, so it isn't one long scroll
-export function setTab(t) {
-  $('setTabs')
-    .querySelectorAll('button')
-    .forEach(b => b.classList.toggle('on', b.dataset.tab === t));
-  $('settings')
-    .querySelectorAll('.set-body section[data-tab]')
-    .forEach(sec => sec.classList.toggle('tab-off', sec.dataset.tab !== t));
-  $('settings').querySelector('.set-body').scrollTop = 0;
+export function setTab(t: string) {
+  for (const b of htmlIn($('setTabs'), 'button')) b.classList.toggle('on', b.dataset.tab === t);
+  for (const sec of htmlIn($('settings'), '.set-body section[data-tab]'))
+    sec.classList.toggle('tab-off', sec.dataset.tab !== t);
+  child($('settings'), '.set-body').scrollTop = 0;
   if (t === 'helpers') showUsage();
 }
 
 // panel heights: drag the little bar at the bottom of your boards list, Layers, Wireframe or Unsorted (double-click it to go back to automatic). Layers always keeps at least one row showing
-const PANELS = {
+const PANELS: Record<string, () => HTMLElement | null> = {
   boards: () => $('boards'),
   layers: () => $('layers'),
   tray: () => $('trayList'),
-  design: () => document.querySelector('#design .dz-body'),
+  design: () => htmlOrNull(document.querySelector('#design .dz-body')),
 };
+// the height of one row, so a panel never shrinks past it
+const rowHeight = (list: HTMLElement, selector: string) => htmlOrNull(list.querySelector(selector))?.offsetHeight;
 
-const panelMin = k =>
+const panelMin = (k: string) =>
   k === 'layers'
-    ? Math.max(30, $('layers').querySelector('.ly')?.offsetHeight || 30)
+    ? Math.max(30, rowHeight($('layers'), '.ly') || 30)
     : k === 'boards'
-      ? Math.max(30, $('boards').querySelector('.board-row, .folder-row, .proj-row')?.offsetHeight || 32)
+      ? Math.max(30, rowHeight($('boards'), '.board-row, .folder-row, .proj-row') || 32)
       : k === 'tray'
         ? 60
         : 120;
@@ -161,7 +180,7 @@ function applyPanelH() {
   Object.entries(PANELS).forEach(([k, f]) => {
     const el = f();
     if (!el) return;
-    const v = (settings.panelH || {})[k];
+    const v = settings.panelH[k];
     if (v) {
       const h = Math.max(panelMin(k), v);
       Object.assign(el.style, {
@@ -185,7 +204,7 @@ function fitSides() {
     let over = side.scrollHeight - side.clientHeight;
     if (over < 2) return;
     ['design', 'tray'].forEach(k => {
-      const el = PANELS[k]();
+      const el = PANELS[k]?.();
       if (over < 2 || !el || !el.closest('.side') || el.closest('.side') !== side || !el.closest('.sized')) return;
       const cur = el.getBoundingClientRect().height,
         h = Math.max(panelMin(k), Math.floor(cur - over));
@@ -197,7 +216,7 @@ function fitSides() {
 }
 
 // the height grips bulge on hover: the line widens and swells into a small round peak above and below, with a wobble that settles (a damped spring on its width and thickness)
-function gripBulge(grip) {
+function gripBulge(grip: HTMLElement) {
   const NS = 'http://www.w3.org/2000/svg',
     svg = document.createElementNS(NS, 'svg'),
     path = document.createElementNS(NS, 'path');
@@ -211,8 +230,8 @@ function gripBulge(grip) {
     last = 0;
   const draw = () => {
     const N = 36,
-      top = [],
-      bot = [];
+      top: string[] = [],
+      bot: string[] = [];
     for (let i = 0; i <= N; i++) {
       const u = -1 + (2 * i) / N,
         h = i === 0 || i === N ? 2 : 2 + (st.t / 2 - 2) * Math.exp(-u * u * 9),
@@ -222,11 +241,11 @@ function gripBulge(grip) {
     }
     path.setAttribute(
       'd',
-      `M${top.join(' L')} A2,2 0 0 1 ${bot[N]} L${bot.reverse().join(' L')} A2,2 0 0 1 ${top[0]} Z`,
+      `M${top.join(' L')} A2,2 0 0 1 ${bot[N] ?? ''} L${bot.reverse().join(' L')} A2,2 0 0 1 ${top[0] ?? ''} Z`,
     );
   };
   const goal = () => (grip.matches(':hover') || grip.classList.contains('on') ? 1 : 0);
-  const tick = now => {
+  const tick = (now: number) => {
     const dt = Math.min(32, now - (last || now)) / 1000;
     last = now;
     const g = goal(),
@@ -263,10 +282,10 @@ function gripBulge(grip) {
 }
 
 // Claude usage (desktop app): Myra's own tally, plus a door to the plan limits page
-const kTok = n =>
+const kTok = (n: number) =>
   n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(Math.round(n));
 
-const usLine = u =>
+const usLine = (u: UsageTotals | undefined) =>
   !u || !u.asks ? 'No asks yet' : `${u.asks} ask${u.asks === 1 ? '' : 's'} · ${kTok(u.tokensIn + u.tokensOut)} tokens`;
 
 async function showUsage() {
@@ -288,17 +307,18 @@ export function init28() {
   // Settings → General → Follow Caelestia: the desktop's Material You scheme (from the host, live) stands in for your own colors
   appState.cae = null;
 
-  $('setName').oninput = e => {
-    settings.name = e.target.value.trim().slice(0, 24);
+  const nameIn = elementById('setName', HTMLInputElement);
+  nameIn.oninput = () => {
+    settings.name = nameIn.value.trim().slice(0, 24);
     applySettings();
   };
 
   $('setName').onkeydown = e => e.stopPropagation();
 
   $('curColors').onclick = e => {
-    const b = e.target.closest('[data-cc]');
+    const b = closestTo(e.target, '[data-cc]');
     if (b) {
-      settings.cursor = b.dataset.cc;
+      settings.cursor = b.dataset.cc ?? settings.cursor;
       applySettings();
     }
   };
@@ -355,14 +375,15 @@ export function init28() {
         h0 = el.getBoundingClientRect().height;
       grip.setPointerCapture(e.pointerId);
       grip.classList.add('on');
-      const mv = ev => {
+      const mv = (ev: PointerEvent) => {
         settings.panelH = {
-          ...(settings.panelH || {}),
+          ...settings.panelH,
           [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))),
         };
         applyPanelH();
         const got = Math.round(el.getBoundingClientRect().height);
-        if (got < settings.panelH[k]) settings.panelH[k] = got;
+        const want = settings.panelH[k];
+        if (want !== undefined && got < want) settings.panelH[k] = got;
       };
       const up = () => {
         grip.classList.remove('on');
@@ -375,7 +396,7 @@ export function init28() {
     });
     grip.addEventListener('dblclick', e => {
       e.stopPropagation();
-      const p = { ...(settings.panelH || {}) };
+      const p = { ...settings.panelH };
       delete p[k];
       settings.panelH = p;
       applyPanelH();
@@ -390,20 +411,21 @@ export function init28() {
 
   applyPanelH();
 
-  $('myraNameIn').oninput = e => {
-    settings.myraName = e.target.value.slice(0, 18);
+  const myraNameIn = elementById('myraNameIn', HTMLInputElement);
+  myraNameIn.oninput = () => {
+    settings.myraName = myraNameIn.value.slice(0, 18);
     applySettings();
   };
 
-  $('myraNameIn').onkeydown = e => {
+  myraNameIn.onkeydown = e => {
     e.stopPropagation();
-    if (e.key === 'Enter') e.target.blur();
+    if (e.key === 'Enter') myraNameIn.blur();
   };
 
   $('setTabs').onclick = e => {
-    const b = e.target.closest('[data-tab]');
+    const b = closestTo(e.target, '[data-tab]');
     if (b) {
-      setTab(b.dataset.tab);
+      setTab(b.dataset.tab ?? 'general');
       if (b.dataset.tab === 'toolbar') renderTbList();
       if (b.dataset.tab === 'vaults') renderVaults();
     }
