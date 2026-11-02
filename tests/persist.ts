@@ -12,8 +12,9 @@ await l.page.evaluate(async keys => {
   if (!board) throw new Error('no board open');
   const card = board.cards.find(c => c.id === 'note');
   if (!card) throw new Error('no note');
-  for (const k of keys) card[k] = 1;
-  card.rec = true;
+  // flags no card type declares, which is the point: saving must strip them anyway
+  for (const k of keys) Reflect.set(card, k, 1);
+  Reflect.set(card, 'rec', true);
   await window.Fenmyr?.save(board);
 }, RUNNING_ONLY);
 const file = path.join(l.data, 'fenmyr', 'boards', 'every.json');

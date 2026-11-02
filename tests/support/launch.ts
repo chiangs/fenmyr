@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { _electron, type ElectronApplication, type Page } from 'playwright';
-import type { UpdateInfo } from '../../src/shared/ops.ts';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREEN = { width: 1440, height: 900 };
@@ -10,13 +9,6 @@ export const HEADLESS = ['--ozone-platform=headless', `--ozone-override-screen-s
 
 const QUIET = { greet: false, autoUpdate: false, caelestia: false, motion: false, tilt: false };
 
-// the members of the renderer's window.__fenmyr test hook that the harness calls
-type TestHooks = {
-  curBoard(): { name: string; cards: Record<string, unknown>[] } | null;
-  stopAnim(): void;
-  selectOnly(ids: string[]): void;
-  openBoard(id: string): Promise<void>;
-};
 export type Board = { id: string; name: string; [key: string]: unknown };
 export type Launched = {
   app: ElectronApplication;
@@ -82,14 +74,4 @@ export async function settle(page: Page, ms = STARTUP_TIMERS_MS) {
   );
   await page.evaluate(() => window.__fenmyr.stopAnim());
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-}
-
-declare global {
-  interface Window {
-    Fenmyr?: {
-      save(board: unknown): Promise<unknown>;
-      updateCheck?(): Promise<UpdateInfo>;
-    };
-    __fenmyr: TestHooks;
-  }
 }

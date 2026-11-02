@@ -48,114 +48,118 @@ import { refreshVNotes } from '../vault/notes.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
 import { GROUPS, PIECES, placePiece, restack } from '../wireframe/pieces.ts';
 import { appState, session } from '../core/state.ts';
-export function init65() {
-  window.__fenmyr = {
-    stopAnim,
-    dueRelease: () => {
-      appState.dueHold = false;
-      if (dueHeld.length) dueAnnounce(dueHeld.splice(0));
-    },
-    greet,
-    greeter,
-    daily,
-    dayKey,
-    slashDue,
-    setGreet: (g, chat) => {
-      settings.greet = g;
-      settings.chat = chat;
-    },
-    setDue,
-    dueArm,
-    dueState,
-    dueRaw: () => lsRead(DUE_KEY, {}),
-    dueFiredRaw: () => lsRead(DUE_FIRED, {}),
-    copyCards,
-    pasteCards,
-    openBoard,
-    curBoard: () => session.board,
+// what tests reach through window.__fenmyr
+const makeHooks = () => ({
+  stopAnim,
+  dueRelease: () => {
+    appState.dueHold = false;
+    if (dueHeld.length) dueAnnounce(dueHeld.splice(0));
+  },
+  greet,
+  greeter,
+  daily,
+  dayKey,
+  slashDue,
+  setGreet: (g, chat) => {
+    settings.greet = g;
+    settings.chat = chat;
+  },
+  setDue,
+  dueArm,
+  dueState,
+  dueRaw: () => lsRead(DUE_KEY, {}),
+  dueFiredRaw: () => lsRead(DUE_FIRED, {}),
+  copyCards,
+  pasteCards,
+  openBoard,
+  curBoard: () => session.board,
 
-    refreshBoards: () => refreshBoards(),
-    boardOrder: () => appState.boardOrder,
-    boardsOf: fid => boardsIn(fid).map(b => b.name),
-    slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd),
-    birthdayDue,
-    birthdayCheck,
-    setBirthday,
-    bdSetting: () => settings.birthday,
-    birthdayFacts,
-    bdState,
-    celebrateBirthday,
-    bdActive: (ms, keyMs = 99999) => {
-      appState.lastActive = Date.now() - ms;
-      appState.lastKey = Date.now() - keyMs;
-    },
-    hatOn: () => hatOn,
-    timerRequest,
-    durText,
-    dizzyAuto: v => {
-      appState.dizzyAuto = !!v;
-      appState.toggleLog = [];
-    },
-    perchGoo,
-    lastAnimName: () => lastAnim,
-    perched: () => perched,
-    idleCheck,
-    idleState,
-    playAnim,
-    animRequest,
-    animName,
-    animIntent,
-    animNames: () => ANIMS.map(a => a.name),
-    currentPose: () => currentPose,
-    timerState: () => timer,
-    timerCheck,
-    parseTimer,
-    placePiece,
-    PIECES,
-    GROUPS,
-    newNote: (x = 0, y = 0) => {
-      const w = centerWorld(),
-        c = card('note', { color: 'white', name: '' });
-      c.x = w.x + x;
-      c.y = w.y + y;
-      addCard(c);
-      selectOnly([c.id]);
-      startEdit(c.id);
-      return c.id;
-    },
-    selectWire,
-    renderTray,
-    ask,
-    applyToolbar,
-    renderCard,
-    openVaultPicker,
-    editVaultAccess,
-    refreshVNotes,
-    saveWithDialog,
-    saveAsTemplate,
-    useTemplate,
-    selectOnly,
-    restack,
-    openSetup,
-    startTour,
-    get board() {
-      return session.board;
-    },
-    applyMyra,
-    fit,
-    lib: () => snapshot().library,
-    openHome,
-    get editing() {
-      return session.editing;
-    },
-    get sel() {
-      return [...session.sel];
-    },
-    placeSelbar,
-    renderAll,
-    get view() {
-      return session.view;
-    },
-    applyView,
-  };
+  refreshBoards: () => refreshBoards(),
+  boardOrder: () => appState.boardOrder,
+  boardsOf: fid => boardsIn(fid).map(b => b.name),
+  slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd),
+  birthdayDue,
+  birthdayCheck,
+  setBirthday,
+  bdSetting: () => settings.birthday,
+  birthdayFacts,
+  bdState,
+  celebrateBirthday,
+  bdActive: (ms, keyMs = 99999) => {
+    appState.lastActive = Date.now() - ms;
+    appState.lastKey = Date.now() - keyMs;
+  },
+  hatOn: () => hatOn,
+  timerRequest,
+  durText,
+  dizzyAuto: v => {
+    appState.dizzyAuto = !!v;
+    appState.toggleLog = [];
+  },
+  perchGoo,
+  lastAnimName: () => lastAnim,
+  perched: () => perched,
+  idleCheck,
+  idleState,
+  playAnim,
+  animRequest,
+  animName,
+  animIntent,
+  animNames: () => ANIMS.map(a => a.name),
+  currentPose: () => currentPose,
+  timerState: () => timer,
+  timerCheck,
+  parseTimer,
+  placePiece,
+  PIECES,
+  GROUPS,
+  newNote: (x = 0, y = 0) => {
+    const w = centerWorld(),
+      c = card('note', { color: 'white', name: '' });
+    c.x = w.x + x;
+    c.y = w.y + y;
+    addCard(c);
+    selectOnly([c.id]);
+    startEdit(c.id);
+    return c.id;
+  },
+  selectWire,
+  renderTray,
+  ask,
+  applyToolbar,
+  renderCard,
+  openVaultPicker,
+  editVaultAccess,
+  refreshVNotes,
+  saveWithDialog,
+  saveAsTemplate,
+  useTemplate,
+  selectOnly,
+  restack,
+  openSetup,
+  startTour,
+  get board() {
+    return session.board;
+  },
+  applyMyra,
+  fit,
+  lib: () => snapshot().library,
+  openHome,
+  get editing() {
+    return session.editing;
+  },
+  get sel() {
+    return [...session.sel];
+  },
+  placeSelbar,
+  renderAll,
+  get view() {
+    return session.view;
+  },
+  applyView,
+});
+export type TestHooks = ReturnType<typeof makeHooks>;
+
+export function init65() {
+  window.__fenmyr = makeHooks();
 }
