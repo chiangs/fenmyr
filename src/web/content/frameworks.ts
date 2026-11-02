@@ -507,7 +507,7 @@ export function placeFramework(key: string) {
 }
 
 // little line icons for the menu, drawn like the toolbar's
-export const TPL_IC = {
+export const TPL_IC: Record<string, string> = {
   affinity: 'tpl-affinity',
   opportunity: 'tpl-opportunity',
   matrix: 'tpl-matrix',
@@ -519,7 +519,8 @@ export const TPL_IC = {
 };
 
 // the old "Start from" boards live here now too, under the frameworks: each opens as its own new board
-export const STARTERS = {
+// name → its line in the picker and its icon
+export const STARTERS: Record<string, [line: string, icon: string]> = {
   Moodboard: ['Pictures, colours and fonts for a feeling', 'palette'],
   'Brain dump': ['Empty your head, then I’ll sort it', 'brain'],
   'OKRs and opportunities': ['A vision, its key results and an opportunity tree', 'tree'],

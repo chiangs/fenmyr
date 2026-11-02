@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { closeOnOutsidePress } from '../ui/popover.ts';
 import { cardEl } from '../ui/dom.ts';
 import { fit } from '../canvas/handles.ts';
@@ -10,19 +9,24 @@ import { save } from '../core/history.ts';
 import { card } from '../model/boards.ts';
 import { say } from '../settings/licenses.ts';
 import { session } from '../core/state.ts';
+import type { Card } from '../../shared/model.ts';
+import { elementById } from '../ui/dom.ts';
+
+const captureField = () => elementById('capInput', HTMLInputElement);
 
 // ---------- quick capture (Ctrl+K) ----------
-export const capture = on => {
+export const capture = (on: boolean) => {
   $('capture').classList.toggle('on', on);
   if (on) {
-    $('capInput').value = '';
-    $('capInput').focus();
-  } else $('capInput').blur();
+    captureField().value = '';
+    captureField().focus();
+  } else captureField().blur();
 };
 
 // ---------- focus mode ----------
 // a card fades when Focus mode or Find leaves it out
-export const isDim = c => !!(session.focusSet && !session.focusSet.has(c.id)) || !!(find.set && !find.set.has(c.id));
+export const isDim = (c: Card) =>
+  !!(session.focusSet && !session.focusSet.has(c.id)) || !!(find.set && !find.set.has(c.id));
 
 export function applyDim() {
   session.board.cards.forEach(c => {
@@ -32,17 +36,18 @@ export function applyDim() {
   });
 }
 
-export function setFocus(on) {
-  session.focusSet = on && session.sel.size ? new Set(session.sel) : null;
-  if (session.focusSet)
+export function setFocus(on: boolean) {
+  const focus = on && session.sel.size ? new Set(session.sel) : null;
+  session.focusSet = focus;
+  if (focus)
     session.board.links.forEach(l => {
-      if (session.focusSet.has(l.a)) session.focusSet.add(l.b);
-      if (session.focusSet.has(l.b)) session.focusSet.add(l.a);
+      if (focus.has(l.a)) focus.add(l.b);
+      if (focus.has(l.b)) focus.add(l.a);
     });
   applyDim();
-  if (session.focusSet) {
+  if (focus) {
     fit(
-      session.board.cards.filter(c => session.focusSet.has(c.id)),
+      session.board.cards.filter(c => focus.has(c.id)),
       160,
     );
     say('Focus mode: just these. Press Esc when you want everything back.');
@@ -56,7 +61,7 @@ export function init18() {
 
   $('capForm').onsubmit = e => {
     e.preventDefault();
-    const v = $('capInput').value.trim();
+    const v = captureField().value.trim();
     if (v) {
       if (/^https?:\/\//.test(v)) linkCard(v, null, true);
       else {

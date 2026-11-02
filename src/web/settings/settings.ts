@@ -13,6 +13,12 @@ export const MYRA_COLORS: Record<string, GooColors> = {
   night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' },
 };
 import { isRecord } from '../../shared/model.ts';
+import type { Chattiness } from '../../shared/ops.ts';
+
+// keeps the default's type as all three values, not just 'normal'
+const chattiness = (c: Chattiness) => c;
+const NORMAL = chattiness('normal');
+const isChat = (v: unknown): v is Chattiness => v === 'quiet' || v === 'normal' || v === 'chatty';
 
 const DEFAULTS = {
   defaultFont: '',
@@ -37,7 +43,7 @@ const DEFAULTS = {
   motion: true,
   keys: true,
   theme: 'system',
-  chat: 'normal',
+  chat: NORMAL,
   emoji: true,
   noteColor: 'random',
   snap: false,
@@ -54,7 +60,8 @@ type Defaults = typeof DEFAULTS;
 export const myraColors = (name: string) => MYRA_COLORS[name] ?? GOLDEN;
 // the switches in Settings (data-set) and the choices (data-seg) name these
 type Flag = { [K in keyof Defaults]: Defaults[K] extends boolean ? K : never }[keyof Defaults];
-type Choice = { [K in keyof Defaults]: Defaults[K] extends string ? K : never }[keyof Defaults];
+// how chatty she is has its own three values, so it's set through setChoice's own check
+type Choice = Exclude<{ [K in keyof Defaults]: Defaults[K] extends string ? K : never }[keyof Defaults], 'chat'>;
 type Colors = Record<string, string>;
 
 export type Settings = Defaults & {
@@ -101,6 +108,7 @@ function readSettings(raw: unknown): Settings {
       ? { light: colorsIn(saved.colors.light), dark: colorsIn(saved.colors.dark) }
       : { light: {}, dark: {} },
   };
+  out.chat = isChat(saved.chat) ? saved.chat : NORMAL;
   for (const k of ['name', 'micId', 'camId', 'birthday', 'gridShape'] as const)
     if (typeof saved[k] === 'string') out[k] = saved[k];
   if (typeof saved.camFlip === 'boolean') out.camFlip = saved.camFlip;
@@ -115,15 +123,18 @@ function readSettings(raw: unknown): Settings {
 }
 
 const isFlag = (k: string): k is Flag => Object.hasOwn(DEFAULTS, k) && typeof Reflect.get(DEFAULTS, k) === 'boolean';
-const isChoice = (k: string): k is Choice => Object.hasOwn(DEFAULTS, k) && typeof Reflect.get(DEFAULTS, k) === 'string';
+const isChoice = (k: string): k is Choice =>
+  k !== 'chat' && Object.hasOwn(DEFAULTS, k) && typeof Reflect.get(DEFAULTS, k) === 'string';
 
 export const flagOn = (k: string) => isFlag(k) && settings[k];
 export function setFlag(k: string, on: boolean) {
   if (isFlag(k)) settings[k] = on;
 }
-export const choiceOf = (k: string) => (isChoice(k) ? settings[k] : undefined);
+export const choiceOf = (k: string) => (k === 'chat' ? settings.chat : isChoice(k) ? settings[k] : undefined);
 export function setChoice(k: string, v: string) {
-  if (isChoice(k)) settings[k] = v;
+  if (k === 'chat') {
+    if (isChat(v)) settings.chat = v;
+  } else if (isChoice(k)) settings[k] = v;
 }
 
 export function init25() {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { keepOnScreen } from '../ui/popover.ts';
 import { cardEl, removeOnOutsidePress } from '../ui/dom.ts';
 import { TILTS, renderCard } from '../canvas/render.ts';
@@ -6,7 +5,7 @@ import { applyView } from '../canvas/view.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { kanbanMenu } from '../cards/kanban.ts';
-import { tilt, uid } from '../core/base.ts';
+import { copyOf, tilt, uid } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { endEdit } from './tags.ts';
@@ -25,16 +24,22 @@ import { groupSel, restack } from '../wireframe/pieces.ts';
 import { makeSection, renameSection } from '../wireframe/sections.ts';
 import { groupOf, onFrame, removeSection } from '../wireframe/tilt.ts';
 import { session } from '../core/state.ts';
+import type { Card } from '../../shared/model.ts';
+import { closestTo } from '../ui/dom.ts';
 
 // ---------- export: right-click a card (or the empty board) to save it as an image or PDF ----------
 const nextFrame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-async function exportCards(cs, name, pdf) {
+async function exportCards(cs: Card[], name: string, pdf: boolean) {
   if (!cs.length) return say('Nothing to export yet ✦', 2500);
   if (Fenmyr.web) return say('Saving images and PDFs works in the desktop app ✦', 0, DL);
   const all = new Set(cs);
   cs.forEach(c => {
-    if (c.type === 'coll') (c.kids || []).forEach(k => byId(k) && all.add(byId(k)));
+    if (c.type === 'coll')
+      for (const k of c.kids) {
+        const kid = byId(k);
+        if (kid) all.add(kid);
+      }
     if (c.type === 'frame') onFrame(c).forEach(k => all.add(k));
   });
   const list = [...all],
@@ -69,7 +74,7 @@ async function exportCards(cs, name, pdf) {
     });
     if (saved) chirp(`Saved “${saved}” ✦`, 3500);
   } catch (e) {
-    say(e.message, 4000);
+    say(e instanceof Error ? e.message : String(e), 4000);
   } finally {
     document.body.classList.remove('exporting');
     session.view = keep;
@@ -80,6 +85,8 @@ async function exportCards(cs, name, pdf) {
 
 // '-' draws a divider; a label may hold markup (a tick, an icon)
 export type MenuItem = '-' | { label: string; run: () => unknown; danger?: boolean };
+// menu items that only show sometimes
+export const when = (on: boolean, items: MenuItem[]) => (on ? items : []);
 export function boardMenu(e: { clientX: number; clientY: number }, items: MenuItem[]) {
   $('rowMenu')?.remove();
   const m = document.createElement('div');
@@ -88,36 +95,32 @@ export function boardMenu(e: { clientX: number; clientY: number }, items: MenuIt
   m.style.left = e.clientX + 'px';
   m.style.top = e.clientY + 'px';
   m.innerHTML = items
-    .map((it, i) =>
-      it === '-'
-        ? '<span class="rm-sep"></span>'
-        : `<button data-i="${i}" class="${it.danger ? 'danger' : ''}">${it.label}</button>`,
-    )
+    .map((it, i) => {
+      if (it === '-') return '<span class="rm-sep"></span>';
+      const cls = it.danger ? 'danger' : '';
+      return `<button data-i="${i}" class="${cls}">${it.label}</button>`;
+    })
     .join('');
   document.body.appendChild(m);
   keepOnScreen(m);
   m.onclick = ev => {
-    const b = ev.target.closest('[data-i]');
+    const b = closestTo(ev.target, '[data-i]');
     if (!b) return;
     m.remove();
-    items[+b.dataset.i].run();
+    const it = items[Number(b.dataset.i)];
+    if (it && it !== '-') it.run();
   };
   removeOnOutsidePress(m);
 }
 
-export const cardName = cs =>
-  (cs.length === 1
-    ? cs[0].name ||
-      cs[0].text ||
-      cs[0].title ||
-      cs[0].label ||
-      { image: 'Image', stamp: 'Stamp', shape: 'Shape' }[cs[0].type] ||
-      'Card'
-    : `${session.board.name} – ${cs.length} cards`
-  )
-    .toString()
-    .slice(0, 60)
-    .trim() || 'Card';
+const KIND_NAMES: Record<string, string> = { image: 'Image', stamp: 'Stamp', shape: 'Shape' };
+export const cardName = (cs: Card[]) => {
+  const one = cs.length === 1 ? cs[0] : undefined,
+    name = one
+      ? one.name || one.text || one.title || one.label || KIND_NAMES[one.type] || 'Card'
+      : `${session.board.name} – ${cs.length} cards`;
+  return name.slice(0, 60).trim() || 'Card';
+};
 export function init43() {
   stage.addEventListener('contextmenu', e => {
     // holding something (a sticker, a note to place, a shape) or a picker is open: a right-click just puts it down, like Esc
@@ -126,70 +129,72 @@ export function init43() {
       stopPlacing();
       return;
     }
-    if (e.target.closest('.dock, .side, .tray, .top, .home, .docview, .cpop, .settings')) return;
+    if (closestTo(e.target, '.dock, .side, .tray, .top, .home, .docview, .cpop, .settings')) return;
     e.preventDefault();
-    let el = document.elementFromPoint(e.clientX, e.clientY)?.closest('.card'); // the pointer may be captured, so look at what's really under it
+    // the pointer may be captured, so look at what's really under it
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    let el = closestTo(under, '.card', HTMLElement);
     // things are selected and you right-click empty board: the menu is still about what you selected (click empty board first to get the board's own menu)
-    if (!el && session.sel.size) el = cardEl([...session.sel][0]);
-    const kh = el && document.elementFromPoint(e.clientX, e.clientY)?.closest('.kb-h'),
-      ks = kh && byId(el.dataset.id);
-    if (ks?.kanban) {
+    const firstSel = [...session.sel][0];
+    if (!el && firstSel) el = cardEl(firstSel);
+    const kh = el ? closestTo(under, '.kb-h') : null,
+      ks = kh && el ? byId(el.dataset.id ?? '') : undefined;
+    if (kh && ks?.type === 'coll' && ks.kanban) {
       selectOnly([ks.id]);
-      return kanbanMenu(e, ks, +kh.dataset.k);
+      return kanbanMenu(e, ks, Number(kh.dataset.k));
     }
     if (el) {
-      if (!session.sel.has(el.dataset.id)) selectOnly(groupOf(el.dataset.id));
-      const cs = selCards(); // like a click: a grouped piece means its group, unless you picked the piece
+      const id = el.dataset.id ?? '';
+      if (!session.sel.has(id)) selectOnly(groupOf(id));
+      const cs: Card[] = selCards().filter(c => c !== undefined), // like a click: a grouped piece means its group, unless you picked the piece
+        first = cs[0],
+        sections = cs.filter(c => c.type === 'section'),
+        spots = spotsIn(cs),
+        oneSection = cs.length === 1 && first?.type === 'section' ? first : undefined;
       boardMenu(e, [
-        ...(cs.length > 1 && !cs.every(c => c.group && c.group === cs[0].group)
-          ? [
-              {
-                label: 'Group  ⌘G',
-                run: () => {
-                  remember();
-                  groupSel(true);
-                },
+        ...when(cs.length > 1 && !cs.every(c => c.group && c.group === first?.group), [
+          {
+            label: 'Group  ⌘G',
+            run: () => {
+              remember();
+              groupSel(true);
+            },
+          },
+        ]),
+        ...when(
+          cs.some(c => c.group),
+          [
+            {
+              label: 'Ungroup  ⇧⌘G',
+              run: () => {
+                remember();
+                groupSel(false);
               },
-            ]
-          : []),
-        ...(cs.some(c => c.group)
-          ? [
-              {
-                label: 'Ungroup  ⇧⌘G',
-                run: () => {
-                  remember();
-                  groupSel(false);
-                },
+            },
+          ],
+        ),
+        ...when(!oneSection, [{ label: 'Create section  ⌥⌘G', run: () => makeSection(cs) }]),
+        ...(oneSection ? [{ label: 'Rename section', run: () => renameSection(oneSection) }] : []),
+        ...when(sections.length > 0, [{ label: 'Remove section', run: () => removeSection(sections) }]),
+        ...when(
+          cs.some(c => TILTS(c) && Math.round(c.type === 'stamp' && !c.tilted ? 0 : c.r || 0)),
+          [
+            {
+              label: cs.length > 1 ? 'Reset tilts' : 'Reset tilt',
+              run: () => {
+                remember();
+                cs.filter(TILTS).forEach(c => {
+                  c.r = 0;
+                  c.tilted = true;
+                  renderCard(c);
+                });
+                selectOnly(cs.map(c => c.id));
+                $('selbar').dataset.key = '';
+                save();
               },
-            ]
-          : []),
-        ...(!(cs.length === 1 && cs[0].type === 'section')
-          ? [{ label: 'Create section  ⌥⌘G', run: () => makeSection(cs) }]
-          : []),
-        ...(cs.length === 1 && cs[0].type === 'section'
-          ? [{ label: 'Rename section', run: () => renameSection(cs[0]) }]
-          : []),
-        ...(cs.some(c => c.type === 'section')
-          ? [{ label: 'Remove section', run: () => removeSection(cs.filter(c => c.type === 'section')) }]
-          : []),
-        ...(cs.some(c => TILTS(c) && Math.round(c.type === 'stamp' && !c.tilted ? 0 : c.r || 0))
-          ? [
-              {
-                label: cs.length > 1 ? 'Reset tilts' : 'Reset tilt',
-                run: () => {
-                  remember();
-                  cs.filter(TILTS).forEach(c => {
-                    c.r = 0;
-                    c.tilted = true;
-                    renderCard(c);
-                  });
-                  selectOnly(cs.map(c => c.id));
-                  $('selbar').dataset.key = '';
-                  save();
-                },
-              },
-            ]
-          : []),
+            },
+          ],
+        ),
         { label: 'Bring to front  ⇧⌘]', run: () => restack('front') },
         { label: 'Bring forward  ⌘]', run: () => restack('forward') },
         { label: 'Send backward  ⌘[', run: () => restack('backward') },
@@ -198,26 +203,22 @@ export function init43() {
         { label: 'Save as template', run: () => saveWithDialog(cs.map(c => c.id)) },
         { label: 'Export as image', run: () => exportCards(cs, cardName(cs), false) },
         { label: 'Export as PDF', run: () => exportCards(cs, cardName(cs), true) },
-        ...(spotsIn(cs).length
-          ? [
-              {
-                label: `Fill ${spotsIn(cs).length} image spot${spotsIn(cs).length > 1 ? 's' : ''}…`,
-                run: () => offerFill(spotsIn(cs)),
-              },
-            ]
-          : []),
+        ...when(spots.length > 0, [
+          {
+            label: `Fill ${spots.length} image spot${spots.length > 1 ? 's' : ''}…`,
+            run: () => offerFill(spots),
+          },
+        ]),
         '-',
         {
           label: 'Duplicate',
           run: () => {
-            const gm = {},
+            const gm: Record<string, string> = {},
               copies = cs
                 .filter(c => c.type !== 'coll')
-                .map(c =>
-                  Object.assign(JSON.parse(JSON.stringify(c)), { id: uid(), r: tilt(), x: c.x + 30, y: c.y + 30 }),
-                );
+                .map(c => ({ ...copyOf(c), id: uid(), r: tilt(), x: c.x + 30, y: c.y + 30 }));
             copies.forEach(c => {
-              if (c.group) c.group = gm[c.group] || (gm[c.group] = uid());
+              if (c.group) c.group = gm[c.group] ??= uid();
             });
             copies.forEach(c => addCard(c));
             selectOnly(copies.map(c => c.id));
@@ -228,26 +229,22 @@ export function init43() {
     } else
       boardMenu(e, [
         { label: 'Background colour…', run: () => tintPicker('bg', { x: e.clientX + 12, y: e.clientY - 40 }, true) },
-        ...(session.board.bg
-          ? [
-              {
-                label: 'Use the default background',
-                run: () => {
-                  delete session.board.bg;
-                  save();
-                  applyColors();
-                },
-              },
-            ]
-          : []),
+        ...when(!!session.board.bg, [
+          {
+            label: 'Use the default background',
+            run: () => {
+              delete session.board.bg;
+              save();
+              applyColors();
+            },
+          },
+        ]),
         '-',
         { label: 'Save board as template', run: () => saveWithDialog(null) },
-        ...(Fenmyr.native
-          ? [
-              { label: 'Add a note from a vault…', run: openVaultPicker },
-              { label: 'Vault access for this board…', run: () => editVaultAccess('board', session.board) },
-            ]
-          : []),
+        ...when(Fenmyr.native, [
+          { label: 'Add a note from a vault…', run: openVaultPicker },
+          { label: 'Vault access for this board…', run: () => editVaultAccess('board', session.board) },
+        ]),
         { label: 'Export board as image', run: () => exportCards(session.board.cards, session.board.name, false) },
         { label: 'Export board as PDF', run: () => exportCards(session.board.cards, session.board.name, true) },
       ]);

@@ -66,8 +66,9 @@ export function greet(why) {
     shown ? 10000 : 0,
   ); // what came due while the app was closed is said after the greeting, not over it
 }
-// dev: only listed in development builds
-export let SLASH: (SlashCommand & { dev?: boolean; run: (arg: string) => unknown })[];
+// dev: only listed in development builds; quiet: the command doesn't echo into the chat
+export type SlashEntry = SlashCommand & { dev?: boolean; quiet?: boolean; run: (arg: string) => unknown };
+export let SLASH: SlashEntry[];
 
 export const helpText = (lead = 'Here is what I can do right here, no thinking needed:') =>
   lead +

@@ -1,5 +1,6 @@
 import type { BoardSummary, CaelestiaScheme } from '../../shared/ops.ts';
 import type { Board, BoardOrder, Folder, Project, View } from '../../shared/model.ts';
+import type { Pose } from '../goo.ts';
 
 // What one open board holds, kept together so a second view can have its own later (split screen, issue #49).
 type Session = {
@@ -32,11 +33,11 @@ type AppState = {
   histOpen: unknown;
   haveClaude: unknown;
   aiAnimAt: number;
-  dueHold: unknown;
+  dueHold: boolean;
   flightLive: unknown;
   lastActive: unknown;
   lastKey: unknown;
-  animPose: unknown;
+  animPose: Pose | null;
   vaultChip: boolean;
   micOK: unknown;
   warm: MediaStream | null;
