@@ -2,8 +2,10 @@
 import { cardEl } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
+import { nearestEmptySpot } from './emptySpot.ts';
 import { byId } from './wires.ts';
 import { cropping } from '../cards/crop.ts';
+import { layoutAll } from '../cards/kanban.ts';
 import { clamp } from '../core/base.ts';
 import { $, stage, world } from '../core/dom.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
@@ -188,6 +190,14 @@ export function stepZoom(cx, cy, dir) {
   if (next) zoomAt(cx, cy, next);
 }
 
+// the part of the stage not covered by the left boxes and the tray (or Myra's chat, when it's open)
+function openSides(r) {
+  const ph = document.body.classList.contains('phone'),
+    ch = !ph && chatOpen() && $('mChat').getBoundingClientRect();
+  if (ph) return { L: 0, R: 0 };
+  return { L: 270, R: ch && ch.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - 270 - 520)) : 260 };
+}
+
 export function fit(cards, pad = 120, maxZ = 1.4) {
   if (!cards.length) return;
   const r = stage.getBoundingClientRect();
@@ -196,9 +206,7 @@ export function fit(cards, pad = 120, maxZ = 1.4) {
     x1 = Math.max(...cards.map(c => c.x + c.w)),
     y1 = Math.max(...cards.map(c => c.y + c.h));
   const ph = document.body.classList.contains('phone'),
-    L = ph ? 0 : 270,
-    ch = !ph && chatOpen() && $('mChat').getBoundingClientRect(),
-    R = ph ? 0 : ch && ch.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - L - 520)) : 260; // a phone has no side panels to leave room for   // the open space between the left boxes and the tray (or Myra's chat, when it's open)
+    { L, R } = openSides(r);
   session.view.z = clamp(Math.min((r.width - L - R - pad) / (x1 - x0), (r.height - pad * 2) / (y1 - y0)), 0.2, maxZ);
   session.view.x = L + (r.width - L - R - (x1 - x0) * session.view.z) / 2 - x0 * session.view.z;
   session.view.y = (r.height - (ph ? 90 : 0) - (y1 - y0) * session.view.z) / 2 - y0 * session.view.z + (ph ? 20 : 0);
@@ -206,6 +214,36 @@ export function fit(cards, pad = 120, maxZ = 1.4) {
   applyView();
   setTimeout(() => (world.style.transition = ''), 520);
 }
+// New cards go in the empty space nearest the middle of the view. The view only moves if that leaves them off screen,
+// and then it doesn't zoom in, so placing something never changes how close you were looking.
+export function placeInView(made) {
+  const r = stage.getBoundingClientRect(),
+    { L, R } = openSides(r),
+    { x: vx, y: vy, z } = session.view,
+    x0 = Math.min(...made.map(c => c.x)),
+    y0 = Math.min(...made.map(c => c.y)),
+    w = Math.max(...made.map(c => c.x + c.w)) - x0,
+    h = Math.max(...made.map(c => c.y + c.h)) - y0,
+    isNew = new Set(made),
+    others = session.board.cards.filter(c => !isNew.has(c)),
+    centre = { x: ((L + r.width - R) / 2 - vx) / z, y: (r.height / 2 - vy) / z },
+    spot = nearestEmptySpot({ w, h }, centre, others);
+  made.forEach(c => {
+    c.x += spot.x - x0;
+    c.y += spot.y - y0;
+    const el = cardEl(c.id);
+    if (el) {
+      el.style.left = c.x + 'px';
+      el.style.top = c.y + 'px';
+    }
+  });
+  layoutAll();
+  const left = spot.x * z + vx,
+    top = spot.y * z + vy,
+    onScreen = left >= L && left + w * z <= r.width - R && top >= 0 && top + h * z <= r.height;
+  if (!onScreen) fit(made, 120, z);
+}
+
 export function init9() {
   // ---------- the resize corner lives on its own layer above every card (like Figma), so a neighbor that overlaps can never hide it ----------
   rh = document.createElement('div');
