@@ -15,6 +15,7 @@ function whisperPath() {
   const dirs = [
     ...(process.env.PATH || '').split(':'),
     path.join(os.homedir(), '.local/bin'),
+    '/opt/homebrew/bin',
     '/usr/local/bin',
     '/usr/bin',
   ];

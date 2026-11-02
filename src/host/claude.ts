@@ -48,6 +48,7 @@ async function findClaude(): Promise<string | null> {
     `${home}/.claude/local/claude`,
     '/usr/bin/claude',
     '/usr/local/bin/claude',
+    '/opt/homebrew/bin/claude',
     `${home}/.npm-global/bin/claude`,
     `${home}/.volta/bin/claude`,
     `${home}/.bun/bin/claude`,

@@ -50,6 +50,7 @@ async function toWav16k(dataURL: string) {
 const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null;
 
 contextBridge.exposeInMainWorld('fenmyrHost', {
+  platform: process.platform === 'darwin' ? 'mac' : 'linux',
   post: async (msg: unknown) => {
     const audio = isRecord(msg) && msg.op === 'transcribe' && isRecord(msg.args) ? msg.args.audio : null;
     if (

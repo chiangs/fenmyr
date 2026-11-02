@@ -32,6 +32,8 @@ jobs:
         run: node tests/persist.ts
       - name: Myra reply test
         run: node tests/reply.ts
+      - name: Mac font list test
+        run: node tests/mac.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)
         run: node tests/smoke.ts
       - name: Zoom test

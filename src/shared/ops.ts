@@ -134,4 +134,4 @@ export type Ops = {
   openURL: { args: { url: string }; result: true };
 };
 
-export type HostEvents = { caelestia: CaelestiaScheme | null; boardsChanged: null };
+export type HostEvents = { caelestia: CaelestiaScheme | null; boardsChanged: null; settings: null };

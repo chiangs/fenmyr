@@ -5,6 +5,7 @@ import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
 import * as claude from './claude.ts';
+import { parseMacFonts } from './macFonts.ts';
 import * as net from './net.ts';
 import * as output from './output.ts';
 import P from './paths.ts';
@@ -68,7 +69,10 @@ function createWindow() {
     // narrow enough to sit beside other apps; below 700 wide it switches to the phone layout
     minWidth: 380,
     minHeight: 520,
-    frame: false,
+    // Linux: no frame, and the page draws its own dots. Mac: the real traffic lights, where those dots would be.
+    ...(process.platform === 'darwin'
+      ? { titleBarStyle: 'hidden' as const, trafficLightPosition: { x: 14, y: 12 } }
+      : { frame: false }),
     show: false,
     title: 'Fenmyr',
     backgroundColor: '#faf7f2',
@@ -123,23 +127,54 @@ function send<K extends keyof HostEvents>(name: K, data: HostEvents[K]) {
 
 // the font families installed on this computer, for notes, docs and Myra's type specimens
 let fontCache: Promise<string[]> | null = null;
+// the fonts the app always has, listed even if the system doesn't report them
+const withOwnFonts = (names: Iterable<string>) =>
+  [...new Set([...names, 'DM Sans', 'Caveat'])].sort((a, b) => a.localeCompare(b));
+
 function fonts() {
+  if (process.platform === 'darwin') {
+    fontCache ??= new Promise(res => {
+      const ask = ['SPFontsDataType', '-json', '-detailLevel', 'mini'];
+      execFile('system_profiler', ask, { maxBuffer: 256 << 20, timeout: 30000 }, (_err, out) =>
+        res(withOwnFonts(parseMacFonts(String(out)))),
+      );
+    });
+    return fontCache;
+  }
   fontCache ??= new Promise(res => {
     execFile('fc-list', [':', 'family'], { maxBuffer: 16 << 20 }, (_err, out) => {
-      const names = new Set(
-        String(out || '')
-          .split('\n')
-          .map(l => (l.split(',')[0] ?? '').replace(/\\-/g, '-').trim())
-          .filter(n => n && !n.startsWith('.')),
-      );
-      // the app's own fonts are always there
-      names.add('DM Sans');
-      names.add('Caveat');
-      res([...names].sort((a, b) => a.localeCompare(b)));
+      const names = String(out || '')
+        .split('\n')
+        .map(l => (l.split(',')[0] ?? '').replace(/\\-/g, '-').trim())
+        .filter(n => n && !n.startsWith('.'));
+      res(withOwnFonts(names));
     });
   });
   return fontCache;
 }
+
+// The Mac needs a menu bar: ⌘Q, ⌘C, ⌘V and ⌘Z in text, and the window keys all live there.
+const macMenu = () =>
+  Menu.buildFromTemplate([
+    {
+      label: app.name,
+      submenu: [
+        { role: 'about' },
+        { type: 'separator' },
+        { label: 'Settings…', accelerator: 'Command+,', click: () => send('settings', null) },
+        { type: 'separator' },
+        { role: 'services' },
+        { type: 'separator' },
+        { role: 'hide' },
+        { role: 'hideOthers' },
+        { role: 'unhide' },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    { role: 'editMenu' },
+    { role: 'windowMenu' },
+  ]);
 
 const OPS = {
   list: () => storage.list(),
@@ -254,7 +289,7 @@ app.whenReady().then(() => {
   fs.mkdirSync(P.templatesDir, { recursive: true });
   fs.mkdirSync(P.mediaDir, { recursive: true });
   setTimeout(() => storage.sweepMedia(), 3000);
-  Menu.setApplicationMenu(null);
+  Menu.setApplicationMenu(process.platform === 'darwin' ? macMenu() : null);
   protocol.handle('fenmyrmedia', req => storage.serveMedia(req));
   // the microphone for voice memos, the camera for video cards, and the clipboard for copy/paste between boards
   const allowed = new Set(['media', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'notifications']);

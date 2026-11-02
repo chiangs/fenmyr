@@ -47,7 +47,7 @@ function setClean(on) {
 }
 // the board mustn't grab presses on the pill
 
-const openSettingsKey = () => {
+export const openSettingsKey = () => {
   if (!$('settings').classList.contains('on') && !$('onboard').classList.contains('on')) $('gearBtn').click();
 };
 export function init20() {
