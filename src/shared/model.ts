@@ -1,6 +1,10 @@
 import { type CardType, isCardType, sizeOf } from './cardTypes.ts';
 
 // What each kind of card adds. Cards also hold per-type options these fields don't list yet; typing the renderer modules adds them.
+// a point on a pen path: r rounds a sharp corner; ix, iy and ox, oy are its curve handles in and out
+export type InkPoint = [x: number, y: number, t?: number];
+export type PathPoint = { x: number; y: number; r?: number; ix?: number; iy?: number; ox?: number; oy?: number };
+
 type RecordingFields = {
   src?: string;
   dur?: number;
@@ -70,11 +74,13 @@ type CardFields = {
     loading?: boolean;
     draft?: string;
   };
-  ink: { pts: [number, number][]; pen?: string; size?: number; ink?: string; ow: number; oh: number };
-  frame: { name?: string };
+  // pts: x, y and when it was drawn (ms); size: a number, or s / m / l in older drawings
+  ink: { pts: InkPoint[]; pen?: string; size?: number | string; ink?: string; ow: number; oh: number };
+  // device: the screen it's sized for (iPhone, Desktop…)
+  frame: { name?: string; device?: string; fill?: string };
   section: { text?: string };
   box: { img?: string; src?: string };
-  text: { text?: string };
+  text: { text?: string; size?: number; weight?: number };
   icon: { name?: string };
   font: { font?: string; text?: string };
   vnote: {
@@ -86,7 +92,7 @@ type CardFields = {
     missing?: boolean;
     props?: [string, string][];
   };
-  path: { pts: { x: number; y: number; r?: number }[]; closed?: boolean; fill?: string; ow: number; oh: number };
+  path: { pts: PathPoint[]; closed?: boolean; fill?: string; ow: number; oh: number };
 };
 
 // Fields Myra and the selection bar can set on any kind of card, so they live here.

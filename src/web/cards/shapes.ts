@@ -115,7 +115,7 @@ export function shapeSVG(c: Shape) {
               [31, 58],
               [3, 37],
               [38, 36],
-            ].map(([x, y]) => ({ x, y })),
+            ].map(([x = 0, y = 0]) => ({ x, y })),
             true,
             (c.radius * 100) / Math.max(1, Math.min(c.w || 160, c.h || 160)),
           )

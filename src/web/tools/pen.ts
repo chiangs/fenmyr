@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { toWorld } from '../canvas/handles.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $, stage, world } from '../core/dom.ts';
@@ -8,16 +7,21 @@ import { drawOn, exitDraw } from './draw.ts';
 import { addCard } from './penEdit.ts';
 import { stopPlacing } from './place.ts';
 import { session } from '../core/state.ts';
+import type { PathPoint } from '../../shared/model.ts';
+
+type Point = { x: number; y: number };
+const ORIGIN: PathPoint = { x: 0, y: 0 };
+const f = (v: number) => +v.toFixed(2);
 
 // ---------- adding things ----------
 // ---------- the Pen: click to drop points (straight lines), click-and-drag for a smooth curve, click the first point to close a shape;
 // Enter, Esc or a double-click finishes an open line. The result is a 'path' card you can move, resize, tilt, stroke and fill ----------
 // round the sharp corners of a polyline: each corner is cut back by up to r along both sides and joined with a soft curve
-export function roundedD(pts, closed, r) {
+export function roundedD(pts: Point[], closed: boolean, r: number) {
   const n = pts.length,
-    f = v => +v.toFixed(2);
+    at = (i: number) => pts[(i + n) % n] ?? ORIGIN;
   if (!r || (n < 3 && !closed)) return null;
-  const corner = (prev, p, next) => {
+  const corner = (prev: Point, p: Point, next: Point) => {
     const a = Math.hypot(p.x - prev.x, p.y - prev.y),
       b = Math.hypot(next.x - p.x, next.y - p.y),
       k = Math.min(r, a / 2, b / 2);
@@ -29,23 +33,23 @@ export function roundedD(pts, closed, r) {
   };
   let d = '';
   const idx = closed ? [...Array(n).keys()] : [...Array(n).keys()].slice(1, -1);
-  if (!closed) d = `M${f(pts[0].x)} ${f(pts[0].y)}`;
+  if (!closed) d = `M${f(at(0).x)} ${f(at(0).y)}`;
   idx.forEach((i, j) => {
-    const c = corner(pts[(i - 1 + n) % n], pts[i], pts[(i + 1) % n]);
+    const c = corner(at(i - 1), at(i), at(i + 1));
     d +=
       (j === 0 && closed ? `M${f(c.s.x)} ${f(c.s.y)}` : ` L${f(c.s.x)} ${f(c.s.y)}`) +
       ` Q${f(c.p.x)} ${f(c.p.y)} ${f(c.e.x)} ${f(c.e.y)}`;
   });
-  return d + (closed ? ' Z' : ` L${f(pts[n - 1].x)} ${f(pts[n - 1].y)}`);
+  return d + (closed ? ' Z' : ` L${f(at(n - 1).x)} ${f(at(n - 1).y)}`);
 }
 
 // a pen path with curves AND rounded corners: a sharp point (no handles, straight on both sides) is rounded by its own radius (q.r) or the shape's
-export function pathD(pts, closed, R = 0, k = 1) {
-  const n = pts.length,
-    f = v => +v.toFixed(2);
+type PathNode = { p: PathPoint; s: Point; e: Point; round?: boolean };
+export function pathD(pts: PathPoint[], closed: boolean | undefined, R = 0, k = 1) {
+  const n = pts.length;
   if (!n) return '';
-  const P = i => pts[(i + n) % n];
-  const node = i => {
+  const P = (i: number) => pts[(i + n) % n] ?? ORIGIN;
+  const node = (i: number): PathNode => {
     const q = P(i),
       r = (q.r ?? R) * k,
       hasPrev = closed || i > 0,
@@ -65,33 +69,34 @@ export function pathD(pts, closed, R = 0, k = 1) {
     };
   };
   const N = pts.map((_, i) => node(i));
-  const seg = (A, B) =>
+  const seg = (A: PathNode, B: PathNode) =>
     A.p.ox == null && B.p.ix == null
       ? ` L${f(B.s.x)} ${f(B.s.y)}`
       : ` C${f(A.p.ox ?? A.p.x)} ${f(A.p.oy ?? A.p.y)} ${f(B.p.ix ?? B.p.x)} ${f(B.p.iy ?? B.p.y)} ${f(B.p.x)} ${f(B.p.y)}`;
-  const corner = B => (B.round ? ` Q${f(B.p.x)} ${f(B.p.y)} ${f(B.e.x)} ${f(B.e.y)}` : '');
-  let d = `M${f(N[0].e.x)} ${f(N[0].e.y)}`;
-  for (let i = 1; i < n; i++) d += seg(N[i - 1], N[i]) + corner(N[i]);
-  if (closed && n > 2) d += seg(N[n - 1], N[0]) + corner(N[0]) + ' Z';
+  const corner = (B: PathNode) => (B.round ? ` Q${f(B.p.x)} ${f(B.p.y)} ${f(B.e.x)} ${f(B.e.y)}` : '');
+  const at = (i: number) => N[(i + n) % n] ?? { p: ORIGIN, s: ORIGIN, e: ORIGIN };
+  let d = `M${f(at(0).e.x)} ${f(at(0).e.y)}`;
+  for (let i = 1; i < n; i++) d += seg(at(i - 1), at(i)) + corner(at(i));
+  if (closed && n > 2) d += seg(at(n - 1), at(0)) + corner(at(0)) + ' Z';
   return d;
 }
 
-const penD = (pts, closed) => {
-  if (!pts?.length) return '';
-  const f = n => +n.toFixed(2);
-  const seg = (a, b) =>
+const penD = (pts: PathPoint[], closed = false) => {
+  const first = pts[0],
+    last = pts.at(-1);
+  if (!first || !last) return '';
+  const seg = (a: PathPoint, b: PathPoint) =>
     a.ox == null && b.ix == null
       ? ` L${f(b.x)} ${f(b.y)}`
       : ` C${f(a.ox ?? a.x)} ${f(a.oy ?? a.y)} ${f(b.ix ?? b.x)} ${f(b.iy ?? b.y)} ${f(b.x)} ${f(b.y)}`;
-  let d = `M${f(pts[0].x)} ${f(pts[0].y)}`;
-  for (let i = 1; i < pts.length; i++) d += seg(pts[i - 1], pts[i]);
-  if (closed && pts.length > 2) d += seg(pts[pts.length - 1], pts[0]) + ' Z';
+  let d = `M${f(first.x)} ${f(first.y)}`;
+  for (let i = 1; i < pts.length; i++) d += seg(pts[i - 1] ?? first, pts[i] ?? first);
+  if (closed && pts.length > 2) d += seg(last, first) + ' Z';
   return d;
 };
 
-type PenPoint = { x: number; y: number; r?: number };
-export let penT: { pts: PenPoint[]; down: number | null; hover: PenPoint | null; svg: SVGSVGElement } | null = null;
-// { pts, down, hover, svg } while the Pen is in your hand
+// while the Pen is in your hand: the points so far, the one being dragged, where the next would go
+export let penT: { pts: PathPoint[]; down: number | null; hover: Point | null; svg: SVGSVGElement } | null = null;
 export function startPen() {
   stopPlacing();
   if (drawOn) exitDraw();
@@ -129,9 +134,10 @@ export function endPen(keep = true, closed = false) {
     y0 -= (12 - h) / 2;
     h = 12;
   }
-  const sh = q => {
-    const o = { x: q.x - x0, y: q.y - y0 };
-    if (q.ix != null) Object.assign(o, { ix: q.ix - x0, iy: q.iy - y0, ox: q.ox - x0, oy: q.oy - y0 });
+  const sh = (q: PathPoint): PathPoint => {
+    const o: PathPoint = { x: q.x - x0, y: q.y - y0 };
+    if (q.ix != null)
+      Object.assign(o, { ix: q.ix - x0, iy: (q.iy ?? q.y) - y0, ox: (q.ox ?? q.x) - x0, oy: (q.oy ?? q.y) - y0 });
     return o;
   };
   remember();
@@ -157,12 +163,13 @@ export function drawPen() {
   if (!penT) return;
   const z = session.view.z,
     P = penT.pts,
-    last = P[P.length - 1],
+    first = P[0] ?? ORIGIN,
+    last = P.at(-1),
     hv = penT.hover;
-  const nearFirst = hv && P.length > 2 && Math.hypot(hv.x - P[0].x, hv.y - P[0].y) < 10 / z;
+  const nearFirst = hv && P.length > 2 && Math.hypot(hv.x - first.x, hv.y - first.y) < 10 / z;
   let h = `<path d="${penD(P)}" class="pl-path" style="stroke-width:${2 / z}px"/>`;
   if (last && hv && penT.down == null)
-    h += `<path d="${penD([last, nearFirst ? P[0] : hv])}" class="pl-band" style="stroke-width:${1.5 / z}px;stroke-dasharray:${4 / z} ${4 / z}"/>`;
+    h += `<path d="${penD([last, nearFirst ? first : hv])}" class="pl-band" style="stroke-width:${1.5 / z}px;stroke-dasharray:${4 / z} ${4 / z}"/>`;
   const dn = penT.down != null && P[penT.down];
   if (dn && dn.ox != null)
     h += `<path d="M${dn.ix} ${dn.iy} L${dn.ox} ${dn.oy}" class="pl-handle" style="stroke-width:${1 / z}px"/><circle cx="${dn.ix}" cy="${dn.iy}" r="${3 / z}" class="pl-hdot"/><circle cx="${dn.ox}" cy="${dn.oy}" r="${3 / z}" class="pl-hdot"/>`;
@@ -173,7 +180,7 @@ export function drawPen() {
   penT.svg.innerHTML = h;
 }
 
-const snap45 = (from, w) => {
+const snap45 = (from: Point, w: Point) => {
   const dx = w.x - from.x,
     dy = w.y - from.y,
     a = (Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * Math.PI) / 4,
@@ -181,27 +188,36 @@ const snap45 = (from, w) => {
   return { x: from.x + Math.cos(a) * l, y: from.y + Math.sin(a) * l };
 };
 
-export function penDown(e) {
+export function penDown(e: PointerEvent) {
+  const pen = penT;
+  if (!pen) return;
   let w = toWorld(e.clientX, e.clientY);
-  const P = penT.pts;
-  if (e.shiftKey && P.length) w = snap45(P[P.length - 1], w); // Shift: straight across, up or at 45°
-  if (P.length > 2 && Math.hypot(w.x - P[0].x, w.y - P[0].y) < 10 / session.view.z) return endPen(true, true); // back to the start: a closed shape
+  const P = pen.pts,
+    last = P.at(-1),
+    first = P[0];
+  if (e.shiftKey && last) w = snap45(last, w); // Shift: straight across, up or at 45°
+  // back to the start: a closed shape
+  if (first && P.length > 2 && Math.hypot(w.x - first.x, w.y - first.y) < 10 / session.view.z)
+    return endPen(true, true);
   P.push({ x: w.x, y: w.y });
-  penT.down = P.length - 1;
+  pen.down = P.length - 1;
   stage.setPointerCapture(e.pointerId);
   drawPen();
 }
 
-export function penMove(e) {
-  const w = toWorld(e.clientX, e.clientY);
-  penT.hover = w;
-  if (penT.down != null) {
-    const q = penT.pts[penT.down];
+export function penMove(e: PointerEvent) {
+  const pen = penT;
+  if (!pen) return;
+  const w = toWorld(e.clientX, e.clientY),
+    last = pen.pts.at(-1);
+  pen.hover = w;
+  const q = pen.down != null ? pen.pts[pen.down] : undefined;
+  if (q) {
     if (Math.hypot(w.x - q.x, w.y - q.y) > 3 / session.view.z) {
       if (e.altKey) Object.assign(q, { ox: w.x, oy: w.y, ix: q.ix ?? q.x, iy: q.iy ?? q.y });
       else Object.assign(q, { ox: w.x, oy: w.y, ix: 2 * q.x - w.x, iy: 2 * q.y - w.y });
     }
   } // dragging pulls out smooth curve handles; Option bends only the way out
-  else if (e.shiftKey && penT.pts.length) penT.hover = snap45(penT.pts[penT.pts.length - 1], w);
+  else if (e.shiftKey && last) pen.hover = snap45(last, w);
   drawPen();
 }
