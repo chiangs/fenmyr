@@ -15,8 +15,8 @@ import { session } from '../core/state.ts';
 //   Option-drag a sharp point to pull curve handles out of it · double-click a point to switch sharp ↔ smooth (sharp drops its roundness)
 //   click a point to pick it (Shift-click for more): Corners in the bar, or the little dot inside the corner, rounds just those
 //   click the outline to add a point · Delete removes picked points · Enter, Esc or clicking away finishes. Rectangles, triangles, stars and circles turn into pen shapes when you do this ----------
-export let vec = null;
-// { id, sel: Set, svg, drag }
+// the shape being edited point by point, and which of its points are picked
+export let vec: { id: string; sel: Set<number>; svg: SVGSVGElement; drag: unknown } | null = null;
 export const vecCard = () => vec && byId(vec.id);
 
 function shapeToPath(c) {

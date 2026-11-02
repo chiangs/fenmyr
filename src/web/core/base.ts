@@ -53,3 +53,6 @@ export function init4() {
   session.space = false;
   session.focusSet = null;
 }
+
+// Cards and boards are plain JSON (it's their file format), so a JSON round trip copies them exactly.
+export const copyOf = <T>(x: T): T => JSON.parse(JSON.stringify(x));

@@ -17,7 +17,16 @@ type CardFields = {
   image: { src?: string; crop?: { x: number; y: number; w: number; h: number }; cropEdit?: boolean };
   link: { url?: string; image?: string; loading?: boolean; draft?: string };
   swatch: { hex: string; hideName?: boolean; hideHex?: boolean };
-  coll: { kids: string[]; cols?: number; kanban?: boolean; head?: boolean };
+  coll: {
+    kids: string[];
+    cols?: number;
+    kanban?: boolean;
+    head?: boolean;
+    // which column each card sits in, by card id, and each column's name and card limit (0: none)
+    colOf?: Record<string, number>;
+    colNames?: string[];
+    colLimit?: number[];
+  };
   doc: { doc?: unknown; body?: string };
   canvas: { text?: string; board?: string };
   shape: { shape?: string; fill?: string };
@@ -40,7 +49,15 @@ type CardFields = {
   text: { text?: string };
   icon: { name?: string };
   font: { font?: string; text?: string };
-  vnote: { excerpt?: string; side?: string; blocked?: boolean; missing?: boolean; props?: [string, string][] };
+  vnote: {
+    vault?: string;
+    path?: string;
+    excerpt?: string;
+    side?: string;
+    blocked?: boolean;
+    missing?: boolean;
+    props?: [string, string][];
+  };
   path: { pts: { x: number; y: number; r?: number }[]; closed?: boolean; fill?: string; ow: number; oh: number };
 };
 
@@ -55,6 +72,8 @@ type CardBase = {
   rot?: number;
   color?: string;
   onFrame?: string;
+  // cards grouped together share this id and move as one
+  group?: string;
   name?: string;
   text?: string;
   title?: string;
@@ -93,9 +112,10 @@ type CardBase = {
 };
 
 export type Card = { [T in CardType]: CardBase & { type: T } & CardFields[T] }[CardType];
+export type CardOf<T extends CardType> = Extract<Card, { type: T }>;
 
 export type View = { x: number; y: number; z: number };
-type Link = { id: string; a: string; b: string; arrow?: boolean };
+export type Link = { id: string; a: string; b: string; arrow?: boolean };
 
 export type Board = {
   id: string;
@@ -159,6 +179,8 @@ function isCard(x: unknown): x is Card {
   if (x.type === 'coll') return Array.isArray(x.kids) && x.kids.every(k => typeof k === 'string');
   return true;
 }
+
+export const isCardOf = <T extends CardType>(x: unknown, type: T): x is CardOf<T> => isCard(x) && x.type === type;
 
 // Anything saved back after opening a board is all it keeps, so a card missing a number gets a default instead of being
 // dropped. Only a card with no id or an unknown type is left out, since it can't be shown.

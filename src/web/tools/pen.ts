@@ -89,7 +89,8 @@ const penD = (pts, closed) => {
   return d;
 };
 
-export let penT = null;
+type PenPoint = { x: number; y: number; r?: number };
+export let penT: { pts: PenPoint[]; down: number | null; hover: PenPoint | null; svg: SVGSVGElement } | null = null;
 // { pts, down, hover, svg } while the Pen is in your hand
 export function startPen() {
   stopPlacing();

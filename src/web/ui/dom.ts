@@ -27,3 +27,15 @@ export function child(root: ParentNode, selector: string) {
   if (!(el instanceof HTMLElement)) throw new Error(`no ${selector}`);
   return el;
 }
+
+// The nearest element around an event's target that matches. SVG counts, so wires and the pen's paths are found too.
+export function closestTo(target: EventTarget | null, selector: string): HTMLElement | SVGElement | null {
+  const el = target instanceof Element ? target.closest(selector) : null;
+  return el instanceof HTMLElement || el instanceof SVGElement ? el : null;
+}
+
+// presses a button the way a click would, if it's there
+export function clickIn(root: ParentNode, selector: string) {
+  const el = root.querySelector(selector);
+  if (el instanceof HTMLElement) el.click();
+}

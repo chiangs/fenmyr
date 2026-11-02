@@ -1,12 +1,11 @@
-// @ts-nocheck
-import { isTyping } from '../ui/dom.ts';
+import { clickIn, isTyping } from '../ui/dom.ts';
 import { endTour, obKeys } from '../app/onboarding.ts';
 import { copyCards, lastClip, pasteCards } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires, selectOnly, selectWire } from '../canvas/wires.ts';
 import { cropping, endCrop } from '../cards/crop.ts';
-import { tilt, uid } from '../core/base.ts';
+import { copyOf, tilt, uid } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { remember, save, travel } from '../core/history.ts';
 import { closeDoc, docCard } from '../docs/editor.ts';
@@ -29,12 +28,12 @@ import { toPointer } from '../ui/toolbar.ts';
 import { groupSel, pickWF, restack } from '../wireframe/pieces.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { appState, session } from '../core/state.ts';
-let CLEAN_EL;
+let CLEAN_EL: Element[] = [];
 
-function setClean(on) {
+function setClean(on: boolean) {
   if (on === document.body.classList.contains('clean') || (on && document.body.classList.contains('phone'))) return;
-  const fade = (from, to) =>
-    CLEAN_EL.forEach(el => el.animate?.([{ opacity: from }, { opacity: to }], { duration: 220, easing: 'ease' }));
+  const fade = (from: number, to: number) =>
+    CLEAN_EL.forEach(el => el.animate([{ opacity: from }, { opacity: to }], { duration: 220, easing: 'ease' }));
   if (on) {
     closeColor();
     myraOpen(false);
@@ -52,10 +51,9 @@ export const openSettingsKey = () => {
 };
 export function init20() {
   // ---------- just the board: every panel tucks away (Ctrl+\, like Figma), and comes back with Ctrl+\ or Esc ----------
-  CLEAN_EL = ['side', 'tray', 'dock', 'keys', 'design']
-    .map(id => $(id))
-    .concat([document.querySelector('.top')])
-    .filter(Boolean);
+  CLEAN_EL = [...['side', 'tray', 'dock', 'keys', 'design'].map(id => $(id)), document.querySelector('.top')].filter(
+    el => el !== null,
+  );
 
   $('cleanBtn').onclick = () => setClean(true);
 
@@ -112,12 +110,13 @@ export function init20() {
       if ((e.key === 'Backspace' || e.key === 'Delete') && vec.sel.size) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        const c = vecCard();
-        if (c.pts.length - vec.sel.size >= 2) {
+        const c = vecCard(),
+          picked = vec.sel;
+        if (c?.type === 'path' && c.pts.length - picked.size >= 2) {
           remember();
-          c.pts = c.pts.filter((_, i) => !vec.sel.has(i));
+          c.pts = c.pts.filter((_, i) => !picked.has(i));
           if (c.pts.length < 3) c.closed = undefined;
-          vec.sel.clear();
+          picked.clear();
           refit(c);
           renderCard(c);
           drawVec();
@@ -210,7 +209,7 @@ export function init20() {
       setFocus(false);
       selectOnly([]);
       myraOpen(false);
-      document.activeElement.blur();
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       return;
     }
     if (typing || homeAt || $('capture').classList.contains('on')) return; // never fire board shortcuts while quick capture is open
@@ -252,9 +251,8 @@ export function init20() {
     }
     if ((e.metaKey || e.ctrlKey) && ['b', 'i', 'u'].includes(e.key.toLowerCase()) && session.sel.size) {
       e.preventDefault();
-      $('selbar')
-        .querySelector(`[data-ts="${{ b: 'bold', i: 'italic', u: 'under' }[e.key.toLowerCase()]}"]`)
-        ?.click();
+      const style = { b: 'bold', i: 'italic', u: 'under' }[e.key.toLowerCase()];
+      clickIn($('selbar'), `[data-ts="${style}"]`);
       return;
     }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
@@ -282,12 +280,13 @@ export function init20() {
     }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd' && session.sel.size) {
       e.preventDefault();
-      const gm = {},
-        copies = [...session.sel].map(id =>
-          Object.assign(JSON.parse(JSON.stringify(byId(id))), { id: uid(), r: tilt() }),
-        );
+      const gm: Record<string, string> = {},
+        copies = [...session.sel]
+          .map(byId)
+          .filter(c => c !== undefined)
+          .map(c => ({ ...copyOf(c), id: uid(), r: tilt() }));
       copies.forEach(c => {
-        if (c.group) c.group = gm[c.group] || (gm[c.group] = uid());
+        if (c.group) c.group = gm[c.group] ??= uid();
       });
       copies.forEach(c => {
         c.x += 30;
@@ -306,8 +305,8 @@ export function init20() {
     if (k === 'r') pickWF('box');
     if (k === 'x') pickWF('text');
     if (k === 'd') startPlacing('doc');
-    if (k === 's') $('tools').querySelector('[data-add="shape"]').click();
-    if (k === 'e') $('tools').querySelector('[data-add="stamp"]').click();
+    if (k === 's') clickIn($('tools'), '[data-add="shape"]');
+    if (k === 'e') clickIn($('tools'), '[data-add="stamp"]');
     if (k === 'l') startPlacing('link');
     if (k === 'p' && e.shiftKey) {
       penT ? endPen(true) : startPen();

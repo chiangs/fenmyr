@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { Card, Link } from '../../shared/model.ts';
 import { renderCard } from './render.ts';
 import { byId, renderWires, selectOnly } from './wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
@@ -16,7 +17,7 @@ import { appState, session } from '../core/state.ts';
 // ---------- copy, cut and paste cards: works across boards (the clip lives in Fenmyr, plus their words go to the system clipboard) ----------
 const CLIP = 'fenmyr:clip';
 
-export let lastClip = null;
+export let lastClip: { cards: Card[]; links: Link[]; from: string; text: string } | null = null;
 let pasteN = 0;
 
 export function copyCards() {

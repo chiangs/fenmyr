@@ -1,12 +1,12 @@
-// @ts-nocheck
-import type { Board, Card } from '../../shared/model.ts';
-import { sizeOf } from '../../shared/cardTypes.ts';
+import { type Board, type Card, type CardOf, type Link, isCardOf } from '../../shared/model.ts';
+import { type CardType, sizeOf } from '../../shared/cardTypes.ts';
 import { COLOR_NAMES, tilt, uid } from '../core/base.ts';
 import { OS } from '../platform/osWords.ts';
 // the find bar next to Myra
 
 // ---------- boards ----------
-export const TEMPLATES = {
+type Starter = { cards: Card[]; links?: Link[]; tray: Card[] };
+export const TEMPLATES: Record<string, () => Starter> = {
   Moodboard: () => ({
     cards: [
       card('title', { x: 0, y: -40, text: 'Moodboard' }),
@@ -105,8 +105,9 @@ export const TEMPLATES = {
     // a vision, the objective under it, key results, then one result opened up into an opportunity solution tree
     const how =
       'Start at the top: one sentence for where this is all going.\n\nUnder it, this quarter’s objective and three key results you can measure. Then pick ONE key result and grow its tree: the opportunities you heard from people, a few solutions for each, and a small test to run first.\n\nDrag from a card’s edge to draw more lines. Ask me to fill it in for your product and I’ll swap my examples for yours.';
-    const C = {},
-      n = (key, o) => (C[key] = card('note', { w: 220, ...o }));
+    const C: Record<string, Card> = {},
+      n = (key: string, o: Partial<CardOf<'note'>>) => (C[key] = card('note', { w: 220, ...o })),
+      idOf = (key: string) => C[key]?.id ?? '';
     const cards = [
       card('title', { x: 120, y: -40, text: 'Vision to opportunities' }),
       n('v', {
@@ -189,19 +190,21 @@ export const TEMPLATES = {
       ['p1', 's2'],
       ['p2', 's3'],
       ['s1', 'e1'],
-    ].map(([x, y]) => ({ id: uid(), a: C[x].id, b: C[y].id, arrow: true }));
+    ].map(([x = '', y = '']) => ({ id: uid(), a: idOf(x), b: idOf(y), arrow: true }));
     return { cards, links, tray: [] };
   },
   'Product kickoff': () => {
     // the questions a team answers together before building anything; the starter prompts are meant to be written over
     const how =
       'Fill the boxes together, one note per thought. Write over my prompts with your own words.\n\nThe top two rows say why this exists and who it’s for. The middle row sets the edges: what’s in, what’s out, and what could go wrong. The bottom row is how you’ll start.\n\nWhen something is unclear, put it in Decisions needed and give it an owner. Ask me to tidy it up or draft a first version from a few sentences.';
-    const note = (x, y, name, text, color, o = {}) => card('note', { x, y, w: 230, name, text, color, ...o });
-    const coll = (x, y, name, color, texts) => {
+    const note = (x: number, y: number, name: string, text: string, color: string, o: Partial<CardOf<'note'>> = {}) =>
+      card('note', { x, y, w: 230, name, text, color, ...o });
+    const coll = (x: number, y: number, name: string, color: string, texts: string[]) => {
       const kids = texts.map(t => card('note', { text: t, color, r: 0 }));
       return [card('coll', { x, y, text: name, color, kids: kids.map(k => k.id), cols: 1, r: 0 }), ...kids];
     };
-    const todo = (x, y, text, items) => card('todo', { x, y, text, items: items.map(t => ({ t, done: false })) });
+    const todo = (x: number, y: number, text: string, items: string[]) =>
+      card('todo', { x, y, text, items: items.map(t => ({ t, done: false })) });
     const cards = [
       card('title', { x: 0, y: -40, text: 'Product kickoff' }),
       note(0, 60, 'Why now', 'What changed that makes this worth doing this quarter?', 'butter'),
@@ -237,7 +240,7 @@ export const TEMPLATES = {
   },
   // the first board: ideas ripening into a plan, with a few things to try. Short enough that nobody feels they must tidy it up.
   'My first board': () => {
-    const n = (text, color, o = {}) => card('note', { text, color, ...o }),
+    const n = (text: string, color: string, o: Partial<CardOf<'note'>> = {}) => card('note', { text, color, ...o }),
       raw = [
         n('A map of my favourite bogs', 'butter', { r: 0 }),
         n('Which boots stay dry?', 'butter', { r: 0 }),
@@ -247,7 +250,7 @@ export const TEMPLATES = {
     const todo = n('Scout the east bog', 'butter', { r: 0 }),
       doing = n('Mark last year’s good spots', 'sky', { r: 0 }),
       done = n('Pack boots and a mosquito net', 'mint', { r: 0 });
-    const coll = (x, y, text, color, kids) =>
+    const coll = (x: number, y: number, text: string, color: string, kids: Card[]) =>
       card('coll', { x, y, text, color, kids: kids.map(k => k.id), cols: 1, r: 0 });
     const kb = card('coll', {
       x: 300,
@@ -319,12 +322,25 @@ export const TEMPLATES = {
   }),
 };
 
-export function card(type: string, o: Record<string, unknown> = {}): Card {
-  const size = sizeOf(type);
-  return Object.assign(
-    { id: uid(), type, x: 0, y: 0, w: size[0], h: size[1], r: type === 'title' ? 0 : tilt(), color: 'white' },
-    o,
-  );
+// The fields a type can't do without get a default here, so a card made with only a type is still a whole card.
+export function card<T extends CardType>(type: T, o: Partial<CardOf<T>> = {}): CardOf<T> {
+  const [w, h] = sizeOf(type),
+    made = {
+      id: uid(),
+      type,
+      x: 0,
+      y: 0,
+      w,
+      h,
+      r: type === 'title' ? 0 : tilt(),
+      color: 'white',
+      ...(type === 'coll' ? { kids: [] } : {}),
+      ...(type === 'swatch' ? { hex: '#ffffff' } : {}),
+      // a field passed as undefined leaves the default alone, as it would when not passed at all
+      ...Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)),
+    };
+  if (!isCardOf(made, type)) throw new Error(`a ${type} card is missing a field it needs`);
+  return made;
 }
 
 export function newBoard(name = 'Untitled board', tpl?: string): Board {
@@ -337,8 +353,9 @@ export function newBoard(name = 'Untitled board', tpl?: string): Board {
     tray: [],
     view: { x: 160, y: 140, z: 1 },
   };
-  if (tpl) {
-    const t = TEMPLATES[tpl]();
+  const make = tpl ? TEMPLATES[tpl] : undefined;
+  if (tpl && make) {
+    const t = make();
     b.cards = t.cards;
     b.links = t.links || [];
     b.tray = t.tray;
