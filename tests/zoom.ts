@@ -116,6 +116,28 @@ import { HEADLESS } from './support/launch.ts';
   await page.waitForTimeout(500);
   r.plus = await pct();
   r.steps = steps;
+  // a fit that ends zoomed in must not overshoot when the board swaps to real zoom as it settles
+  r.fitPeak = await page.evaluate(async () => {
+    const H = window.__fenmyr;
+    H.newNote();
+    const c = H.board.cards.at(-1),
+      el = document.querySelector(`.card[data-id="${c.id}"]`),
+      widths = [];
+    let on = true;
+    const tick = () => {
+      widths.push(el.getBoundingClientRect().width);
+      if (on) requestAnimationFrame(tick);
+    };
+    H.selectOnly([]);
+    Object.assign(H.view, { z: 0.5 });
+    H.applyView();
+    await new Promise(res => setTimeout(res, 600));
+    H.fit([c], 20);
+    requestAnimationFrame(tick);
+    await new Promise(res => setTimeout(res, 1400));
+    on = false;
+    return { peak: Math.max(...widths), end: widths.at(-1), z: H.view.z };
+  });
   r.errors = errors;
   await page.screenshot({ path: path.join(data, 'zoom.png'), clip: { x: 250, y: 800, width: 900, height: 100 } });
   console.log(JSON.stringify(r), '\n  toolbar:', path.join(data, 'zoom.png'));
@@ -135,6 +157,8 @@ import { HEADLESS } from './support/launch.ts';
     r.menu.includes('Zoom in Ctrl++') &&
     r.menu.includes('Zoom to 100% Ctrl+0') &&
     !r.menu.join().includes('⌘') &&
+    r.fitPeak.z > 1.02 &&
+    r.fitPeak.peak < r.fitPeak.end * 1.02 &&
     !errors.length;
   console.log(ok ? 'ZOOM OK' : 'ZOOM FAILED');
   process.exit(ok ? 0 : 1);
