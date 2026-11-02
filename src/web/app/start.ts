@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { NEWS, maybeNews, newsKey } from './news.ts';
+import { currentVersion, maybeNews, newsKey } from './news.ts';
 import { openSetup } from './onboarding.ts';
 import { checkUpdate } from './updates.ts';
 import { fit } from '../canvas/handles.ts';
@@ -27,7 +26,8 @@ export function init64() {
     try {
       last = localStorage.getItem('fenmyr:last');
     } catch (e) {}
-    await openBoard(list.some(b => b.id === last) ? last : list[0].id);
+    const first = list.find(b => b.id === last) ?? list[0];
+    if (first) await openBoard(first.id);
     applySettings();
     phone.init();
     let onboarded = true;
@@ -37,7 +37,7 @@ export function init64() {
     if (!onboarded) {
       appState.firstRunSetup = true;
       try {
-        localStorage.setItem(newsKey, (await Fenmyr.version().catch(() => null)) || Object.keys(NEWS).pop());
+        localStorage.setItem(newsKey, await currentVersion());
       } catch (e) {}
       setTimeout(() => {
         fit(session.board.cards);

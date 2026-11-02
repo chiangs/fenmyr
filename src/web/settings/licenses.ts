@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { openSettingsKey } from '../input/shortcuts.ts';
 import { esc } from '../ui/dom.ts';
-import { showUpdate, updInfo } from '../app/updates.ts';
+import { autoUpdateAnswered } from '../app/updates.ts';
 import { COLOR_NAMES } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { addMsg, renderChat, sessionChats } from '../myra/chat.ts';
@@ -86,7 +86,9 @@ export function tip(text) {
 }
 
 // keep: an answer to something you asked, so it also goes into the chat even when the chat window is closed
-export function say(text, ms = 6000, acts = [], keep = false) {
+// a button under one of Myra's lines
+export type SayAction = { label: string; cls?: string; ghost?: boolean; run: () => unknown };
+export function say(text: string, ms = 6000, acts: SayAction[] = [], keep = false) {
   $('mBubble').classList.remove('party');
   if (chatOpen()) {
     if (text) addMsg('myra', text, acts);
@@ -153,10 +155,7 @@ export function init29() {
       (t.onchange = () => {
         settings[t.dataset.set] = t.checked;
         applySettings();
-        if (t.dataset.set === 'autoUpdate') {
-          showUpdate.answered = true;
-          if (t.checked && updInfo) showUpdate();
-        }
+        if (t.dataset.set === 'autoUpdate') autoUpdateAnswered(t.checked);
       }),
   );
 

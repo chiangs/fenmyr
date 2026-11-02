@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { openSetup, startTour } from './onboarding.ts';
 import { copyCards, pasteCards } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
@@ -60,7 +59,7 @@ const makeHooks = () => ({
   daily,
   dayKey,
   slashDue,
-  setGreet: (g, chat) => {
+  setGreet: (g: string, chat: string) => {
     settings.greet = g;
     settings.chat = chat;
   },
@@ -76,7 +75,7 @@ const makeHooks = () => ({
 
   refreshBoards: () => refreshBoards(),
   boardOrder: () => appState.boardOrder,
-  boardsOf: fid => boardsIn(fid).map(b => b.name),
+  boardsOf: (fid: string) => boardsIn(fid).map(b => b.name),
   slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd),
   birthdayDue,
   birthdayCheck,
@@ -85,14 +84,14 @@ const makeHooks = () => ({
   birthdayFacts,
   bdState,
   celebrateBirthday,
-  bdActive: (ms, keyMs = 99999) => {
+  bdActive: (ms: number, keyMs = 99999) => {
     appState.lastActive = Date.now() - ms;
     appState.lastKey = Date.now() - keyMs;
   },
   hatOn: () => hatOn,
   timerRequest,
   durText,
-  dizzyAuto: v => {
+  dizzyAuto: (v: boolean) => {
     appState.dizzyAuto = !!v;
     appState.toggleLog = [];
   },

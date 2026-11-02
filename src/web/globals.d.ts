@@ -1,5 +1,7 @@
 import type { TestHooks } from './app/testHooks.ts';
 import type { FenmyrApi } from './bridge.ts';
+import type { Goo as makeGoo } from './goo.ts';
+import type { Phone } from './platform/phone.ts';
 
 declare global {
   function Icon(name: string, opts?: { size?: number; cls?: string; title?: string }): string;
@@ -9,7 +11,13 @@ declare global {
   interface Window {
     __boardsChanged?: () => unknown;
     __fenmyr: TestHooks;
+    // set from the Myra setting: calm keeps her still, muted (calmest) also softens her colours
+    myraCalm?: boolean;
+    myraMuted?: boolean;
+    Goo: typeof makeGoo;
+    __phone?: Phone;
     Fenmyr: FenmyrApi;
   }
   const Fenmyr: FenmyrApi;
+  const Goo: typeof makeGoo;
 }

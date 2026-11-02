@@ -22,9 +22,19 @@ export function removeOnOutsidePress(popup: Element) {
 }
 
 // For elements the code just created from its own markup, so a miss is a bug worth stopping at.
-export function child(root: ParentNode, selector: string) {
+export function child(root: ParentNode, selector: string): HTMLElement;
+export function child<T extends Element>(
+  root: ParentNode,
+  selector: string,
+  kind: abstract new (...args: never[]) => T,
+): T;
+export function child(
+  root: ParentNode,
+  selector: string,
+  kind: abstract new (...args: never[]) => Element = HTMLElement,
+) {
   const el = root.querySelector(selector);
-  if (!(el instanceof HTMLElement)) throw new Error(`no ${selector}`);
+  if (!(el instanceof kind)) throw new Error(`no ${selector}`);
   return el;
 }
 
@@ -38,4 +48,11 @@ export function closestTo(target: EventTarget | null, selector: string): HTMLEle
 export function clickIn(root: ParentNode, selector: string) {
   const el = root.querySelector(selector);
   if (el instanceof HTMLElement) el.click();
+}
+
+// The element of a given kind with this id: a button to disable, say. A miss or a wrong kind is a bug.
+export function elementById<T extends Element>(id: string, kind: abstract new (...args: never[]) => T): T {
+  const el = document.getElementById(id);
+  if (!(el instanceof kind)) throw new Error(`#${id} is not a ${kind.name}`);
+  return el;
 }

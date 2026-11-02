@@ -1,36 +1,60 @@
-// @ts-nocheck
-import { esc } from '../ui/dom.ts';
+import type { UpdateInfo } from '../../shared/ops.ts';
+import { elementById, esc } from '../ui/dom.ts';
 import { $, stage } from '../core/dom.ts';
 import { setTab } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 
 // ---------- updates: check GitHub for a newer Fenmyr (about once a day), show what's new, update with one tap ----------
-export let updInfo = null;
-// updating is a desktop app thing: the web version changes when the site does
-export async function checkUpdate(force) {
+let updInfo: UpdateInfo | { error: true } | null = null;
+// the preview build asks about automatic updates every time it starts, until someone answers
+let answered = false;
+const button = (id: string) => elementById(id, HTMLButtonElement);
+const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+// every kind of answer the host can give, read the same way
+function readUpdate(u: typeof updInfo) {
+  return {
+    repo: !!u && 'repo' in u,
+    release: !!u && 'release' in u,
+    offline: !!u && 'offline' in u,
+    behind: u && 'behind' in u ? u.behind : 0,
+    since: u && 'since' in u ? u.since : '',
+    latest: u && 'latest' in u ? u.latest : '',
+    notes: u && 'notes' in u ? u.notes : [],
+    preview: !!u && 'preview' in u && !!u.preview,
+  };
+}
+
+// someone answered in Settings instead of on the bar
+export function autoUpdateAnswered(on: boolean) {
+  answered = true;
+  if (on && updInfo) showUpdate();
+}
+
+export async function checkUpdate(force = false) {
   if (!Fenmyr.native) return;
   let last = 0;
   try {
-    last = +localStorage.getItem('fenmyr:updChecked') || 0;
+    last = Number(localStorage.getItem('fenmyr:updChecked')) || 0;
   } catch (e) {}
   if (!force && Date.now() - last < 15 * 60 * 1000 && updInfo) return showUpdate(); // at most every 15 minutes (it used to wait 20 hours, so an app left open never noticed)
   $('suSub').textContent = 'Checking for a new version…';
   try {
     updInfo = await Fenmyr.updateCheck();
-    localStorage.setItem('fenmyr:updChecked', Date.now());
+    localStorage.setItem('fenmyr:updChecked', String(Date.now()));
   } catch (e) {
     updInfo = { error: true };
   }
-  showUpdate(true);
+  showUpdate();
 }
 
-export function showUpdate(fresh) {
-  const u = { ...(updInfo || {}) },
-    n = u.behind || 0;
+function showUpdate() {
+  const u = readUpdate(updInfo),
+    n = u.behind;
   if (u.since && !u.release) {
     const d = new Date(u.since + 'T12:00');
-    if (!isNaN(d)) u.since = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (!Number.isNaN(d.getTime())) u.since = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
   $('gearBtn').classList.toggle('has-update', n > 0);
   $('setUpdate').classList.toggle('ready', n > 0);
@@ -48,9 +72,14 @@ export function showUpdate(fresh) {
           : n > 0
             ? `${n} update${n > 1 ? 's' : ''} since your version${u.since ? ' from ' + u.since : ''}. Your boards and settings stay just as they are.`
             : `You’re up to date${u.since ? ' (version from ' + u.since + ')' : ''}.`;
-  const notes = (u.notes || []).slice(0, 8);
+  const notes = u.notes.slice(0, 8);
   $('suNotes').hidden = !(n > 0 && notes.length);
-  $('suNotes').innerHTML = notes.map(t => `<li>${esc(t)}</li>`).join('');
+  $('suNotes').innerHTML = notes
+    .map(t => {
+      const line = esc(t);
+      return `<li>${line}</li>`;
+    })
+    .join('');
   // a quiet bar on the board instead of a pop-up: shown once there's a new version, hidden with × until the next one
   const ver = String(u.latest || u.since || '')
       .replace(/^v/, '')
@@ -61,11 +90,11 @@ export function showUpdate(fresh) {
     hid = localStorage.getItem('fenmyr:upbarHidden') || '';
   } catch (e) {}
   $('ubText').textContent = u.latest ? `Fenmyr ${ver} is ready` : 'A new Fenmyr is ready';
-  $('ubGo').disabled = false;
+  button('ubGo').disabled = false;
   $('ubGo').textContent = 'Update now';
   $('upBar').classList.remove('busy');
   // the first time there's an update, the bar asks once if Fenmyr may keep things up to date; the answer becomes a switch in Settings
-  const asking = n > 0 && (settings.autoUpdate === undefined || (u.preview && !showUpdate.answered)); // the preview always asks, so it can be shown again
+  const asking = n > 0 && (settings.autoUpdate === undefined || (u.preview && !answered)); // the preview always asks, so it can be shown again
   $('upBar').classList.toggle('ask', asking);
   requestAnimationFrame(fitUpBar);
   $('ubYes').hidden = $('ubNo').hidden = !asking;
@@ -103,10 +132,10 @@ function fitUpBar() {
 }
 // the board mustn't grab presses on the bar
 // automatic updates: get the new version ready quietly; it goes in when Fenmyr quits
-let preparing = null;
+let preparing: Promise<unknown> | null = null;
 
 function prepareUpdate() {
-  if (preparing || !Fenmyr.updatePrepare) return;
+  if (preparing) return;
   preparing = Fenmyr.updatePrepare().catch(() => {
     preparing = null;
   });
@@ -125,7 +154,7 @@ export function init59() {
   addEventListener('resize', () => fitUpBar());
 
   $('ubYes').onclick = () => {
-    showUpdate.answered = true;
+    answered = true;
     settings.autoUpdate = true;
     applySettings();
     showUpdate();
@@ -135,7 +164,7 @@ export function init59() {
   };
 
   $('ubNo').onclick = () => {
-    showUpdate.answered = true;
+    answered = true;
     settings.autoUpdate = false;
     applySettings();
     showUpdate();
@@ -155,33 +184,34 @@ export function init59() {
   };
 
   $('ubGo').onclick = async () => {
-    $('ubGo').disabled = true;
+    button('ubGo').disabled = true;
     $('ubGo').textContent = 'Updating…';
     $('upBar').classList.add('busy');
     $('ubText').textContent = 'Getting the new version. Fenmyr will reopen in a moment';
     try {
       await Fenmyr.updateNow();
     } catch (e) {
-      $('ubText').textContent = e.message;
+      $('ubText').textContent = messageOf(e);
       $('ubGo').textContent = 'Update now';
-      $('ubGo').disabled = false;
+      button('ubGo').disabled = false;
       $('upBar').classList.remove('busy');
     }
   };
 
   $('suGo').onclick = async () => {
-    $('suGo').disabled = true;
+    button('suGo').disabled = true;
     $('suGo').textContent = 'Updating…';
     $('suSub').textContent =
       'Getting the new version and rebuilding. Fenmyr will close and reopen in about 30 seconds.';
     try {
       await Fenmyr.updateNow();
     } catch (e) {
-      $('suGo').disabled = false;
+      button('suGo').disabled = false;
       $('suGo').textContent = 'Update now';
-      $('suSub').textContent = e.message;
+      $('suSub').textContent = messageOf(e);
     }
   };
 
-  document.querySelectorAll('[data-url]').forEach(b => (b.onclick = () => Fenmyr.openURL(b.dataset.url)));
+  for (const b of document.querySelectorAll('[data-url]'))
+    if (b instanceof HTMLElement) b.onclick = () => Fenmyr.openURL(b.dataset.url ?? '');
 }

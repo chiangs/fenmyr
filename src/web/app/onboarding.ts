@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { fit } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
 import { renderTray, renderWires } from '../canvas/wires.ts';
@@ -19,25 +18,39 @@ import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { scope } from '../ui/toolbar.ts';
 import { appState, session } from '../core/state.ts';
+import { closestTo, elementById } from '../ui/dom.ts';
+
+type Counts = { cards: number; tray: number };
+type TourStep = {
+  el: string | null;
+  side?: 'top' | 'left' | 'right';
+  text: string;
+  try?: string;
+  done?: (at: Counts) => boolean;
+};
+const nameField = () => elementById('obName', HTMLInputElement);
+const each = (selector: string, f: (el: HTMLElement) => void) => {
+  for (const el of document.querySelectorAll(selector)) if (el instanceof HTMLElement) f(el);
+};
 
 // ---------- first run: set up with Myra, then an optional hands-on tour ----------
 const OB_N = 6;
 let obAt = 0;
 
-function obGo(i) {
+function obGo(i: number) {
   obAt = clamp(i, 0, OB_N - 1);
-  document.querySelectorAll('.ob-step').forEach(s => s.classList.toggle('on', +s.dataset.step === obAt));
-  $('obDots').innerHTML = Array.from(
-    { length: OB_N },
-    (_, k) => `<i class="${k === obAt ? 'on' : k < obAt ? 'done' : ''}"></i>`,
-  ).join('');
+  each('.ob-step', s => s.classList.toggle('on', Number(s.dataset.step) === obAt));
+  $('obDots').innerHTML = Array.from({ length: OB_N }, (_, k) => {
+    const state = k === obAt ? 'on' : k < obAt ? 'done' : '';
+    return `<i class="${state}"></i>`;
+  }).join('');
   $('obBack').style.visibility = obAt ? 'visible' : 'hidden';
   $('obNext').textContent = obAt === 0 ? "Let's go" : 'Next';
   $('onboard').classList.toggle('last', obAt === OB_N - 1);
   $('obSkip').style.display = obAt === OB_N - 1 ? 'none' : '';
   if (obAt === 2) showConnections(true);
   if (obAt === OB_N - 1) $('obDoneTitle').textContent = `You're all set${settings.name ? ', ' + settings.name : ''}!`;
-  if (obAt === 0) setTimeout(() => $('obName').focus(), 50);
+  if (obAt === 0) setTimeout(() => nameField().focus(), 50);
   goos[4].hop();
   goos[5].hop();
 }
@@ -48,16 +61,15 @@ export function openSetup() {
   $('obFirstRow').hidden = !appState.firstRunSetup;
   firstChoice = 'example';
   paintFirst();
-  $('obName').value = settings.name || '';
+  nameField().value = settings.name || '';
   applySettings();
   $('onboard').classList.add('on');
   obGo(0);
 }
 
-const paintFirst = () =>
-  document.querySelectorAll('#obFirst [data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === firstChoice));
+const paintFirst = () => each('#obFirst [data-v]', b => b.classList.toggle('on', b.dataset.v === firstChoice));
 
-function finishSetup(tour) {
+function finishSetup(tour: boolean) {
   // first run only: the example board can be swapped for an empty one
   if (appState.firstRunSetup && firstChoice === 'empty' && session.board.name === 'My first board') {
     session.board.cards = [];
@@ -69,7 +81,7 @@ function finishSetup(tour) {
     save();
   }
   appState.firstRunSetup = false;
-  settings.name = $('obName').value.trim().slice(0, 40);
+  settings.name = nameField().value.trim().slice(0, 40);
   applySettings();
   try {
     localStorage.setItem('fenmyr:onboarded', '1');
@@ -79,18 +91,18 @@ function finishSetup(tour) {
   else say(`Have fun${settings.name ? ', ' + settings.name : ''}! Click me anytime to chat ✦`, 6000);
 }
 
-export function obKeys(e) {
-  if (e.target.closest?.('input')) return;
+export function obKeys(e: KeyboardEvent) {
+  if (closestTo(e.target, 'input')) return;
   if (e.key === 'ArrowRight') obGo(obAt + 1);
   if (e.key === 'ArrowLeft') obGo(obAt - 1);
-  if (e.key === 'Enter' && !e.target.closest?.('button')) {
+  if (e.key === 'Enter' && !closestTo(e.target, 'button')) {
     e.preventDefault();
     obAt < OB_N - 1 ? $('obNext').click() : $('obTour').click();
   }
 }
 
 // the tour: Myra points at each part; some steps you try for real and she notices
-const TOUR = [
+const TOUR: TourStep[] = [
   {
     el: '#tools',
     side: 'top',
@@ -139,7 +151,7 @@ const TOUR = [
 ];
 
 let tourAt = -1;
-let tourPoll = 0;
+let tourPoll: ReturnType<typeof setInterval> | undefined;
 
 export function startTour() {
   if (homeAt) closeHome();
@@ -155,7 +167,7 @@ export function endTour() {
   $('coach').classList.remove('on');
 }
 
-function tourGo(i) {
+function tourGo(i: number) {
   clearInterval(tourPoll);
   if (i >= TOUR.length) {
     endTour();
@@ -170,16 +182,17 @@ function tourGo(i) {
         cls: 'next',
         run: () => {
           myraOpen(true);
-          $('mcInput').value = 'Build me a landing page for ';
+          elementById('mcInput', HTMLTextAreaElement).value = 'Build me a landing page for ';
           $('mcInput').focus();
         },
       },
     ]);
     return;
   }
+  const st = TOUR[i];
+  if (!st) return;
   tourAt = i;
-  const st = TOUR[i],
-    start = { cards: session.board.cards.length, tray: session.board.tray.length };
+  const start = { cards: session.board.cards.length, tray: session.board.tray.length };
   $('coachStep').textContent = `${i + 1} of ${TOUR.length}`;
   $('coachText').textContent = st.text;
   $('coachTry').textContent = st.try || '';
@@ -188,9 +201,10 @@ function tourGo(i) {
   $('coachNext').textContent = i === TOUR.length - 1 ? 'Done ✦' : 'Continue';
   placeCoach();
   goos[6].hop();
-  if (st.done)
+  const done = st.done;
+  if (done)
     tourPoll = setInterval(() => {
-      if (tourAt !== i || !st.done(start)) return;
+      if (tourAt !== i || !done(start)) return;
       clearInterval(tourPoll);
       $('coachTry').textContent = 'Nice! ✦';
       $('coachTry').classList.add('yay');
@@ -200,9 +214,9 @@ function tourGo(i) {
 }
 
 function placeCoach() {
-  if (tourAt < 0) return;
-  const st = TOUR[tourAt],
-    t = st.el && document.querySelector(st.el),
+  const st = TOUR[tourAt];
+  if (!st) return;
+  const t = st.el && document.querySelector(st.el),
     card = $('coachCard'),
     ring = $('coachRing');
   const r = t && t.getBoundingClientRect(),
@@ -215,7 +229,7 @@ function placeCoach() {
   $('coach').classList.toggle('dim', !ok);
   let x = (W - cw) / 2,
     y = (H - ch) / 2;
-  if (ok) {
+  if (r && ok) {
     Object.assign(ring.style, {
       left: r.left - 8 + 'px',
       top: r.top - 8 + 'px',
@@ -240,16 +254,16 @@ export function init60() {
   appState.firstRunSetup = false;
 
   $('obFirst').onclick = e => {
-    const b = e.target.closest('[data-v]');
+    const b = closestTo(e.target, '[data-v]');
     if (b) {
-      firstChoice = b.dataset.v;
+      firstChoice = b.dataset.v ?? 'example';
       paintFirst();
     }
   };
 
   $('obNext').onclick = () => {
     if (obAt === 0) {
-      settings.name = $('obName').value.trim().slice(0, 40);
+      settings.name = nameField().value.trim().slice(0, 40);
       applySettings();
     }
     obGo(obAt + 1);
@@ -302,11 +316,10 @@ export function init60() {
 
   if (Fenmyr.web) document.body.classList.add('web');
 
-  document.querySelectorAll('.get-app').forEach(
-    b =>
-      (b.onclick = e => {
-        e.stopPropagation();
-        getApp();
-      }),
-  );
+  each('.get-app', b => {
+    b.onclick = e => {
+      e.stopPropagation();
+      getApp();
+    };
+  });
 }
