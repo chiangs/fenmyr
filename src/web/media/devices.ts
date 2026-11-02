@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { cardEl, esc } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
@@ -8,17 +7,25 @@ import { save } from '../core/history.ts';
 import { boardMenu } from '../features/export.ts';
 import { PAUSE, PLAY, fmtT, live, players, warmMic, warmT } from './audio.ts';
 import { privacy, videoAct } from './video.ts';
+import { videoAudio } from './wav.ts';
 import { ask } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { appState, session } from '../core/state.ts';
+import type { CardOf } from '../../shared/model.ts';
+import type { MenuItem } from '../features/export.ts';
+
+type AudioCard = CardOf<'audio'>;
+type DeviceKind = [kind: MediaDeviceKind, title: string, setting: 'micId' | 'camId'];
+const errorName = (e: unknown) => (e instanceof Error ? e.name : '');
+const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 // ---------- which camera and microphone: the person picks, Myra remembers, and falls back to the default if one is unplugged ----------
 const micC = () => (settings.micId ? { deviceId: { exact: settings.micId } } : true);
 
-export async function openMedia(video) {
+export async function openMedia(video: boolean) {
   const want = () => ({
     audio: micC(),
     video: video
@@ -32,7 +39,7 @@ export async function openMedia(video) {
   try {
     return await navigator.mediaDevices.getUserMedia(want());
   } catch (e) {
-    if (!/Overconstrained|NotFound|NotReadable/.test(e.name || '') || !(settings.micId || settings.camId)) throw e;
+    if (!/Overconstrained|NotFound|NotReadable/.test(errorName(e)) || !(settings.micId || settings.camId)) throw e;
     delete settings.micId;
     delete settings.camId;
     applySettings();
@@ -40,19 +47,25 @@ export async function openMedia(video) {
   }
 }
 
-export const devName = (track, fallback) =>
+export const devName = (track: { label?: string } | null | undefined, fallback: string) =>
   (track?.label || fallback)
     .replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4}\)\s*$/i, '')
     .replace(/^(Default|Communications) - /, '')
     .trim() || fallback;
 
+const deviceLabel = (on: boolean, name: string) => {
+  const tick = on ? '✓' : '',
+    shown = esc(name);
+  return `<span class="dm-ck">${tick}</span>${shown}`;
+};
+
 // the little menu: cameras (for video) and microphones, the one in use checked
-export async function devicePick(e, kinds, onPick) {
-  let list = [];
+export async function devicePick(e: MouseEvent, kinds: DeviceKind[], onPick: () => unknown) {
+  let list: MediaDeviceInfo[] = [];
   try {
     list = await navigator.mediaDevices.enumerateDevices();
   } catch (er) {}
-  const items = [];
+  const items: MenuItem[] = [];
   for (const [kind, title, key] of kinds) {
     const ds = list.filter(d => d.kind === kind && d.deviceId && d.deviceId !== 'communications');
     if (!ds.length) continue;
@@ -61,10 +74,10 @@ export async function devicePick(e, kinds, onPick) {
     const def = ds.find(d => d.deviceId === 'default'),
       cur =
         settings[key] ||
-        ((def && ds.find(d => d.deviceId !== 'default' && d.groupId === def.groupId)) || def || ds[0]).deviceId; // "default" is a stand-in: check the real device behind it
+        ((def && ds.find(d => d.deviceId !== 'default' && d.groupId === def.groupId)) || def || ds[0])?.deviceId; // "default" is a stand-in: check the real device behind it
     ds.filter(d => !(d.deviceId === 'default' && ds.length > 1)).forEach(d =>
       items.push({
-        label: `<span class="dm-ck">${d.deviceId === cur ? '✓' : ''}</span>${esc(devName(d, title))}`,
+        label: deviceLabel(d.deviceId === cur, devName(d, title)),
         run: () => {
           settings[key] = d.deviceId;
           applySettings();
@@ -101,7 +114,7 @@ export async function readyToRecord() {
   return true;
 }
 
-async function record(c) {
+async function record(c: AudioCard) {
   let stream = appState.warm && appState.warm.active ? appState.warm : null;
   appState.warm = null;
   clearTimeout(warmT);
@@ -115,7 +128,7 @@ async function record(c) {
     }
     return;
   }
-  const chunks = [],
+  const chunks: Blob[] = [],
     recorder = new MediaRecorder(stream),
     ac = new AudioContext(),
     an = ac.createAnalyser();
@@ -140,12 +153,12 @@ async function record(c) {
     ac.close();
     live.delete(c.id);
     const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/mp4' }),
-      url = await new Promise(r => {
+      url = await new Promise<string>(r => {
         const fr = new FileReader();
-        fr.onload = () => r(fr.result);
+        fr.onload = () => r(String(fr.result));
         fr.readAsDataURL(blob);
       });
-    let wave = [],
+    let wave: number[] = [],
       dur = (Date.now() - L.start - L.paused) / 1000;
     try {
       const buf = await new AudioContext().decodeAudioData(await blob.arrayBuffer()),
@@ -155,7 +168,7 @@ async function record(c) {
       dur = buf.duration;
       for (let i = 0; i < n; i++) {
         let m = 0;
-        for (let j = i * step; j < (i + 1) * step; j += 16) m = Math.max(m, Math.abs(d[j]));
+        for (let j = i * step; j < (i + 1) * step; j += 16) m = Math.max(m, Math.abs(d[j] ?? 0));
         wave.push(m);
       }
       const top = Math.max(...wave, 0.01);
@@ -205,7 +218,10 @@ async function record(c) {
     c.count = 0;
     recorder.start(250);
   })();
-  const cv = () => cardsEl.querySelector(`[data-id="${c.id}"] .au-live`),
+  const cv = () => {
+      const el = cardsEl.querySelector(`[data-id="${c.id}"] .au-live`);
+      return el instanceof HTMLCanvasElement ? el : null;
+    },
     data = new Uint8Array(an.frequencyBinCount);
   (function draw() {
     if (!live.has(c.id)) return;
@@ -221,18 +237,17 @@ async function record(c) {
       }
       const g = canvas.getContext('2d');
       an.getByteTimeDomainData(data);
+      if (!g) return;
       g.clearRect(0, 0, canvas.width, canvas.height);
       g.fillStyle = '#e88a24';
       const step = canvas.width / 44,
         bw = step * 0.58,
         r = Math.min(bw / 2, 6);
       for (let i = 0; i < 44; i++) {
-        const v = Math.abs(data[Math.floor((i * data.length) / 44)] - 128) / 128,
+        const v = Math.abs((data[Math.floor((i * data.length) / 44)] ?? 128) - 128) / 128,
           h = Math.min(canvas.height, Math.max(bw, v * canvas.height * 2.2));
         g.beginPath();
-        g.roundRect
-          ? g.roundRect(i * step, (canvas.height - h) / 2, bw, h, r)
-          : g.rect(i * step, (canvas.height - h) / 2, bw, h);
+        g.roundRect(i * step, (canvas.height - h) / 2, bw, h, r);
         g.fill();
       }
     }
@@ -242,52 +257,13 @@ async function record(c) {
   })();
 }
 
-// a video's sound, as a plain 16 kHz mono WAV: what the Mac's speech recognizer and Whisper both read
-async function videoAudio(c) {
-  let buf;
+export async function transcribe(c: AudioCard | CardOf<'video'>) {
   try {
-    const ab = await (await fetch(await Fenmyr.mediaURL(c.src))).arrayBuffer(),
-      ac = new (window.AudioContext || window.webkitAudioContext)();
-    buf = await ac.decodeAudioData(ab);
-    ac.close?.();
-  } catch (e) {
-    throw new Error('This video has no sound to write out.');
-  }
-  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * 16000)), 16000),
-    s = off.createBufferSource();
-  s.buffer = buf;
-  s.connect(off.destination);
-  s.start();
-  const pcm = (await off.startRendering()).getChannelData(0),
-    n = pcm.length,
-    out = new DataView(new ArrayBuffer(44 + n * 2));
-  const str = (o, t) => [...t].forEach((ch, i) => out.setUint8(o + i, ch.charCodeAt(0)));
-  str(0, 'RIFF');
-  out.setUint32(4, 36 + n * 2, true);
-  str(8, 'WAVEfmt ');
-  out.setUint32(16, 16, true);
-  out.setUint16(20, 1, true);
-  out.setUint16(22, 1, true);
-  out.setUint32(24, 16000, true);
-  out.setUint32(28, 32000, true);
-  out.setUint16(32, 2, true);
-  out.setUint16(34, 16, true);
-  str(36, 'data');
-  out.setUint32(40, n * 2, true);
-  for (let i = 0; i < n; i++) out.setInt16(44 + i * 2, Math.max(-1, Math.min(1, pcm[i])) * 0x7fff, true);
-  const u8 = new Uint8Array(out.buffer);
-  let bin = '';
-  for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
-  return 'data:audio/wav;base64,' + btoa(bin);
-}
-
-export async function transcribe(c) {
-  try {
-    const text = await Fenmyr.transcribe(c.type === 'video' ? await videoAudio(c) : c.src);
+    const text = await Fenmyr.transcribe(c.type === 'video' ? await videoAudio(c) : (c.src ?? ''));
     c.text = (text || '').trim();
     c.txNote = c.text ? '' : "I couldn't make out any words in that one.";
   } catch (e) {
-    c.txNote = e.message;
+    c.txNote = messageOf(e);
   }
   c.needTx = false;
   renderCard(c);
@@ -301,7 +277,7 @@ export async function transcribe(c) {
     ]);
 }
 
-export function audioAct(c, act, e) {
+export function audioAct(c: AudioCard, act: string, e?: MouseEvent) {
   const L = live.get(c.id),
     el = cardEl(c.id);
   if (act === 'au-stop' && L) {
@@ -340,8 +316,8 @@ export function audioAct(c, act, e) {
     transcribe(c);
     return;
   }
-  if (act === 'au-dev')
-    return devicePick(e, [['audioinput', 'Microphone', 'micId']], async () => {
+  if (act === 'au-dev' && e) {
+    devicePick(e, [['audioinput', 'Microphone', 'micId']], async () => {
       if (appState.warm) {
         appState.warm.getTracks().forEach(t => t.stop());
         appState.warm = null;
@@ -349,6 +325,8 @@ export function audioAct(c, act, e) {
       await readyToRecord();
       renderCard(c);
     });
+    return;
+  }
   if (act === 'au-replace') {
     players.get(c.id)?.pause();
     players.delete(c.id);
@@ -365,7 +343,9 @@ export function audioAct(c, act, e) {
       players.set(c.id, p);
     }
     if (act === 'au-seek' && e) {
-      const r = el.querySelector('.au-wave').getBoundingClientRect();
+      const wave = el?.querySelector('.au-wave');
+      if (!wave) return;
+      const r = wave.getBoundingClientRect();
       p.currentTime = clamp((e.clientX - r.left) / r.width, 0, 1) * (c.dur || p.duration || 0);
       if (p.paused) p.play();
     } else if (p.paused) p.play();
@@ -375,8 +355,10 @@ export function audioAct(c, act, e) {
       if (!e2) return;
       const f = (p.currentTime || 0) / (c.dur || p.duration || 1);
       e2.querySelectorAll('.au-wave i').forEach((b, i, all) => b.classList.toggle('past', i / all.length < f));
-      e2.querySelector('.au-time').textContent = `${fmtT(p.currentTime || 0)} / ${fmtT(c.dur || 0)}`;
-      const pb = e2.querySelector('.au-play');
+      const time = e2.querySelector('.au-time'),
+        pb = e2.querySelector('.au-play');
+      if (time) time.textContent = `${fmtT(p.currentTime || 0)} / ${fmtT(c.dur || 0)}`;
+      if (!pb) return;
       pb.innerHTML = p.paused ? PLAY : PAUSE;
       pb.classList.toggle('on', !p.paused);
       if (!p.paused) requestAnimationFrame(tick);

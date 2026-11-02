@@ -1,4 +1,4 @@
-// @ts-nocheck
+import { closestTo } from './dom.ts';
 export function init2() {
   // ---------- a clear (×) button on every search and text field ----------
   // One floating button, not one per field: it sits at the right edge of the field you are in (or pointing at) while it has text, so no field is wrapped and fields made later get it too.
@@ -13,15 +13,23 @@ export function init2() {
     btn.innerHTML = Icon('close', { size: 11 });
     btn.hidden = true;
     document.body.appendChild(btn);
-    let cur = null;
-    const clearable = el =>
-      !!el &&
-      !!el.tagName &&
-      (el.tagName === 'INPUT' ? el.type === 'text' || el.type === 'search' : el.id === 'mcInput') &&
-      !el.readOnly &&
-      !el.disabled &&
-      !el.closest('.dv-title, .board-name, .card, [data-no-clear]') &&
-      !el.matches('.dv-title, .board-name');
+    let cur: HTMLInputElement | HTMLTextAreaElement | null = null;
+    // a text field people type into themselves, not one the app fills in
+    const clearable = (el: unknown): el is HTMLInputElement | HTMLTextAreaElement => {
+      const field =
+        el instanceof HTMLInputElement && (el.type === 'text' || el.type === 'search')
+          ? el
+          : el instanceof HTMLTextAreaElement && el.id === 'mcInput'
+            ? el
+            : null;
+      return (
+        !!field &&
+        !field.readOnly &&
+        !field.disabled &&
+        !field.closest('.dv-title, .board-name, .card, [data-no-clear]') &&
+        !field.matches('.dv-title, .board-name')
+      );
+    };
     const place = () => {
       if (!cur || !cur.isConnected || !cur.value) {
         btn.hidden = true;
@@ -40,7 +48,7 @@ export function init2() {
     addEventListener(
       'pointerdown',
       e => {
-        if (e.target.closest && e.target.closest('#clrBtn')) {
+        if (closestTo(e.target, '#clrBtn')) {
           e.stopImmediatePropagation();
           e.preventDefault();
         }

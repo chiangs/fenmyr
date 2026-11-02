@@ -149,7 +149,7 @@ const imageCardFrom = async f => {
   return card('image', { src: im.src, w, h: Math.round((w * im.h) / im.w) + 16 });
 };
 
-export async function addImages(files, at, toTray) {
+export async function addImages(files: File[], at?: { x: number; y: number } | null, toTray?: boolean) {
   files = [...files];
   const vfs = files.filter(f => f.type.startsWith('video/'));
   files = files.filter(f => !f.type.startsWith('video/'));

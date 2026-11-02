@@ -1,4 +1,5 @@
-// @ts-nocheck
+import type { CardType } from '../../shared/cardTypes.ts';
+import type { CardOf, View } from '../../shared/model.ts';
 import { ZOOM_STEPS, fit, toWorld } from '../canvas/handles.ts';
 import { applyView } from '../canvas/view.ts';
 import { selectOnly } from '../canvas/wires.ts';
@@ -11,14 +12,14 @@ import { addCard } from '../tools/penEdit.ts';
 import { session } from '../core/state.ts';
 
 // ---------- zoom from the menu (click the %) or the keyboard: it glides there, centered on the part of the board you're looking at ----------
-export function glideView(to) {
+export function glideView(to: View) {
   const from = { ...session.view },
     t0 = performance.now();
   stage.classList.add('moving');
-  const step = t => {
+  const step = (t: number) => {
     const k = Math.min(1, (t - t0) / 260),
       e = 1 - Math.pow(1 - k, 3);
-    ['x', 'y', 'z'].forEach(n => (session.view[n] = from[n] + (to[n] - from[n]) * e));
+    (['x', 'y', 'z'] as const).forEach(n => (session.view[n] = from[n] + (to[n] - from[n]) * e));
     applyView();
     if (k < 1) requestAnimationFrame(step);
     else stage.classList.remove('moving');
@@ -26,7 +27,7 @@ export function glideView(to) {
   requestAnimationFrame(step);
 }
 
-export function zoomTo(z) {
+export function zoomTo(z: number) {
   const r = stage.getBoundingClientRect(),
     L = document.body.classList.contains('phone') ? 0 : 270,
     cx = L + (r.width - L - 270) / 2,
@@ -36,7 +37,7 @@ export function zoomTo(z) {
   glideView({ x: cx - p.x * nz, y: cy - p.y * nz, z: nz });
 }
 
-export const zoomStep = dir =>
+export const zoomStep = (dir: number) =>
   zoomTo(
     dir > 0
       ? ZOOM_STEPS.find(z => z > session.view.z + 0.01) || 3
@@ -62,7 +63,7 @@ export function centerWorld() {
   return toWorld(r.left + 270 + (r.width - 530) / 2, r.top + r.height / 2);
 }
 
-export function addAtCenter(type, extra = {}) {
+export function addAtCenter<T extends CardType>(type: T, extra: Partial<CardOf<T>> = {}) {
   const p = centerWorld(),
     c = card(type, extra);
   c.x = p.x - c.w / 2 + (Math.random() * 60 - 30);

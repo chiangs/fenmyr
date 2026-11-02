@@ -1,23 +1,27 @@
-// @ts-nocheck
+import { isRecord } from '../../shared/model.ts';
 import { $, stage, world } from '../core/dom.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { placeTray, renderDesign } from '../wireframe/pieces.ts';
-let boxState;
+// which boxes are minimised, by name
+let boxState: Record<string, boolean> = {};
+const readBoxes = (): Record<string, boolean> => {
+  try {
+    const saved: unknown = JSON.parse(localStorage.getItem('fenmyr:boxes') || '{}');
+    return isRecord(saved) ? Object.fromEntries(Object.entries(saved).map(([k, v]) => [k, v === true])) : {};
+  } catch {
+    return {};
+  }
+};
 export function init58() {
   // ---------- the floating boxes: minimize to their title, remembered between launches ----------
-  boxState = (() => {
-    try {
-      return JSON.parse(localStorage.getItem('fenmyr:boxes') || '{}');
-    } catch (e) {
-      return {};
-    }
-  })();
+  boxState = readBoxes();
 
-  document.querySelectorAll('.box').forEach(b => {
-    const k = b.dataset.box,
-      btn = b.querySelector('.mini:not(.home-btn):not(.gear)');
-    const set = min => {
+  for (const b of document.querySelectorAll('.box')) {
+    const btn = b.querySelector('.mini:not(.home-btn):not(.gear)');
+    if (!(b instanceof HTMLElement) || !(btn instanceof HTMLElement)) continue;
+    const k = b.dataset.box ?? '';
+    const set = (min: boolean) => {
       b.classList.toggle('min', min);
       btn.textContent = min ? '+' : '–';
       btn.title = min ? 'Open' : 'Minimise';
@@ -28,7 +32,7 @@ export function init58() {
     };
     set(!!boxState[k]);
     btn.onclick = () => set(!b.classList.contains('min'));
-  });
+  }
 
   $('keysX').onclick = () => {
     settings.keys = false;

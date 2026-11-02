@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { skStyle } from '../canvas/render.ts';
 import { roundedD } from '../tools/pen.ts';
-export let CIC;
+export let CIC: Record<string, string> = {};
 
 export const host = u => {
   try {
