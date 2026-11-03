@@ -113,14 +113,22 @@ async function destroy(kind: Kind, obj: Thing) {
 // Move to…: a little map of projects and folders; pick where it goes
 function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
   const here = kind === 'board' ? obj.folder || null : obj.parent ? 'f:' + obj.parent : obj.project || null,
-    row = (id: string | null, label: string, depth: number, icon: string) =>
-      `<button class="mv-row${id === here ? ' here' : ''}" data-to="${id ?? ''}" style="padding-left:${12 + depth * 16}px">${icon}<span>${esc(label)}</span>${id === here ? '<em>here</em>' : ''}</button>`;
+    row = (id: string | null, label: string, depth: number, icon: string) => {
+      const isHere = id === here,
+        cls = isHere ? ' here' : '',
+        to = id ?? '',
+        pad = 12 + depth * 16,
+        name = esc(label),
+        mark = isHere ? '<em>here</em>' : '';
+      return `<button class="mv-row${cls}" data-to="${to}" style="padding-left:${pad}px">${icon}<span>${name}</span>${mark}</button>`;
+    };
   const FIC = '<i class="fic"></i>',
     PIC = (c = '') => {
       const shade = tint(c);
       return `<i class="pic" style="background:${shade}"></i>`;
     };
-  let h = `<div class="mv-head">Move “${esc(obj.name)}” to…</div><div class="mv-list">`;
+  const title = esc(obj.name);
+  let h = `<div class="mv-head">Move “${title}” to…</div><div class="mv-list">`;
   const tree = (f: Folder, d: number) => {
     if (kind === 'folder' && f.id === obj.id) return;
     h += row(kind === 'board' ? f.id : 'f:' + f.id, f.name, d, FIC);
@@ -128,7 +136,9 @@ function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
   };
   if (kind === 'board') {
     appState.projects.forEach(p => {
-      h += `<div class="mv-group" style="padding-left:12px">${PIC(p.color)}<span>${esc(p.name)}</span></div>`;
+      const pic = PIC(p.color),
+        name = esc(p.name);
+      h += `<div class="mv-group" style="padding-left:12px">${pic}<span>${name}</span></div>`;
       foldersIn(p.id).forEach(f => tree(f, 1));
       if (!foldersIn(p.id).length) h += '<div class="mv-none">no folders yet</div>';
     });
@@ -209,7 +219,12 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
   m.className = 'row-menu';
   m.style.left = e.clientX + 'px';
   m.style.top = e.clientY + 'px';
-  m.innerHTML = `${nameEl ? '<button data-m="ren">Rename</button>' : ''}${kind !== 'project' ? '<button data-m="move">Move to…</button>' : ''}${kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : ''}${kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : ''}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
+  const items =
+    (nameEl ? '<button data-m="ren">Rename</button>' : '') +
+    (kind !== 'project' ? '<button data-m="move">Move to…</button>' : '') +
+    (kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : '') +
+    (kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : '');
+  m.innerHTML = `${items}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
   document.body.appendChild(m);
   keepOnScreen(m);
   m.onclick = async ev => {
@@ -245,7 +260,8 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
           : n
             ? `and the ${n} board${n === 1 ? '' : 's'} inside it`
             : '';
-      m.innerHTML = `<p>Delete “${esc(obj.name)}” ${what}? This can't be undone.</p><div><button data-m="yes" class="danger solid">Delete</button><button data-m="no">Cancel</button></div>`;
+      const name = esc(obj.name);
+      m.innerHTML = `<p>Delete “${name}” ${what}? This can't be undone.</p><div><button data-m="yes" class="danger solid">Delete</button><button data-m="no">Cancel</button></div>`;
       return;
     }
     if (a === 'yes') {

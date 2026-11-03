@@ -78,15 +78,31 @@ async function openLicenses() {
   if ($('licBody').dataset.done) return;
   const L = readLicences();
   if (!L) return;
-  const row = (
-    i: Licence,
-  ) => `<details class="lic-item"><summary><b>${esc(i.name)}</b>${i.version ? ` <span>${esc(i.version)}</span>` : ''}<em>${esc(i.license)}</em></summary>
-      <p class="lic-meta">${esc(i.where)}${i.url ? ` · <button class="set-link" data-url="${esc(i.url)}">${esc(i.url.replace(/^https?:\/\//, ''))}</button>` : ''}</p>${i.note ? `<p class="lic-note">${esc(i.note)}</p>` : ''}
-      ${i.name === 'Electron' && Fenmyr.native ? '<p><button class="set-btn" id="licChromium">Open Chromium’s licences</button></p>' : ''}<pre>${esc(i.text)}</pre></details>`;
+  const row = (i: Licence) => {
+    const name = esc(i.name),
+      version = i.version ? ` <span>${esc(i.version)}</span>` : '',
+      license = esc(i.license),
+      where = esc(i.where),
+      link = i.url
+        ? ` · <button class="set-link" data-url="${esc(i.url)}">${esc(i.url.replace(/^https?:\/\//, ''))}</button>`
+        : '',
+      note = i.note ? `<p class="lic-note">${esc(i.note)}</p>` : '',
+      chromium =
+        i.name === 'Electron' && Fenmyr.native
+          ? '<p><button class="set-btn" id="licChromium">Open Chromium’s licences</button></p>'
+          : '',
+      text = esc(i.text);
+    return `<details class="lic-item"><summary><b>${name}</b>${version}<em>${license}</em></summary>
+      <p class="lic-meta">${where}${link}</p>${note}
+      ${chromium}<pre>${text}</pre></details>`;
+  };
+  const count = L.items.length,
+    own = esc(L.fenmyr),
+    rows = L.items.map(row).join('');
   $('licBody').innerHTML =
-    `<p class="lic-intro">Fenmyr is open source under the MIT License. The name Fenmyr, its logo, Myra the cloudberry and her art are reserved by Stephen Chiang. It includes ${L.items.length} pieces of software made by others, each listed with its licence.</p>
-      <details class="lic-item lic-fenmyr" open><summary><b>Fenmyr</b><em>MIT</em></summary><pre>${esc(L.fenmyr)}</pre></details>` +
-    L.items.map(row).join('');
+    `<p class="lic-intro">Fenmyr is open source under the MIT License. The name Fenmyr, its logo, Myra the cloudberry and her art are reserved by Stephen Chiang. It includes ${count} pieces of software made by others, each listed with its licence.</p>
+      <details class="lic-item lic-fenmyr" open><summary><b>Fenmyr</b><em>MIT</em></summary><pre>${own}</pre></details>` +
+    rows;
   $('licBody').dataset.done = '1';
   for (const b of htmlIn($('licBody'), '[data-url]')) b.onclick = () => Fenmyr.openURL(b.dataset.url ?? '');
   const chromium = document.getElementById('licChromium');

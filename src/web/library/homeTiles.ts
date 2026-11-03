@@ -5,6 +5,20 @@ import { FBTN_OF } from './sidebarRows.ts';
 
 export const miniCache = new Map<string, Promise<string>>();
 
+// one card on a board's thumbnail: a title is a dark bar, anything else a block in its colour
+function miniBlock(c: Card, fill: string | undefined) {
+  if (c.type === 'title') {
+    const y = c.y + c.h * 0.25,
+      w = Math.min(c.w, 260),
+      h = c.h * 0.5;
+    return `<rect x="${c.x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#3b342d" opacity=".75"/>`;
+  }
+  const r = c.r || 0,
+    cx = c.x + c.w / 2,
+    cy = c.y + c.h / 2;
+  return `<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="14" fill="${fill}" stroke="rgba(120,80,120,.12)" stroke-width="3" transform="rotate(${r} ${cx} ${cy})"/>`;
+}
+
 export async function mini(id: string): Promise<string> {
   // a tiny map of the board: every card as a little colored block
   if (!miniCache.has(id))
@@ -25,17 +39,12 @@ export async function mini(id: string): Promise<string> {
               : c.type === 'title'
                 ? 'transparent'
                 : (c.color && COLORS[c.color]) || '#fff';
-        return (
-          `<svg viewBox="${x0 - 40} ${y0 - 40} ${x1 - x0 + 80} ${y1 - y0 + 80}" preserveAspectRatio="xMidYMid meet">` +
-          cs
-            .map(c =>
-              c.type === 'title'
-                ? `<rect x="${c.x}" y="${c.y + c.h * 0.25}" width="${Math.min(c.w, 260)}" height="${c.h * 0.5}" rx="8" fill="#3b342d" opacity=".75"/>`
-                : `<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="14" fill="${fill(c)}" stroke="rgba(120,80,120,.12)" stroke-width="3" transform="rotate(${c.r || 0} ${c.x + c.w / 2} ${c.y + c.h / 2})"/>`,
-            )
-            .join('') +
-          '</svg>'
-        );
+        const vx = x0 - 40,
+          vy = y0 - 40,
+          vw = x1 - x0 + 80,
+          vh = y1 - y0 + 80,
+          blocks = cs.map(c => miniBlock(c, fill(c))).join('');
+        return `<svg viewBox="${vx} ${vy} ${vw} ${vh}" preserveAspectRatio="xMidYMid meet">${blocks}</svg>`;
       }),
     );
   return miniCache.get(id) ?? '';
@@ -51,7 +60,13 @@ export function tile(
   const t = document.createElement('div');
   t.className = 'tile ' + kind;
   t.style.rotate = (((obj.id.charCodeAt(0) + obj.id.charCodeAt(1)) % 5) - 2) * 0.6 + 'deg';
-  t.innerHTML = `<div class="tile-art"></div><div class="tile-meta"><b></b><small>${sub}</small>${btns.map(([a, tt, s]) => `<button class="f-btn" data-a="${a}" title="${tt}">${FBTN_OF(a) || s}</button>`).join('')}</div>`;
+  const buttons = btns
+    .map(([a, tt, s]) => {
+      const icon = FBTN_OF(a) || s;
+      return `<button class="f-btn" data-a="${a}" title="${tt}">${icon}</button>`;
+    })
+    .join('');
+  t.innerHTML = `<div class="tile-art"></div><div class="tile-meta"><b></b><small>${sub}</small>${buttons}</div>`;
   child(t, '.tile-meta b').textContent = obj.name;
   t.onclick = e => {
     if ((e.target instanceof Element && e.target.closest('.f-btn')) || child(t, '.tile-meta b').isContentEditable)

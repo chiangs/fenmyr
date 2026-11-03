@@ -6,9 +6,21 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { selCards } from '../selbar/selected.ts';
 import { startPlacing, stopPlacing } from '../tools/place.ts';
-import { closestTo, esc, htmlIn, textField } from '../ui/dom.ts';
+import { closestTo, htmlIn, textField } from '../ui/dom.ts';
 import { groupSel } from './stack.ts';
-import { DEVICES, FONTS, WF } from './wireframes.ts';
+import { DEVICES, WF } from './wireframes.ts';
+import {
+  alignSection,
+  boxSection,
+  field,
+  fontCardSection,
+  frameSection,
+  groupSection,
+  iconSection,
+  placeSection,
+  sec,
+  textSection,
+} from './designMarkup.ts';
 
 // icons: search Myra's icon set, then click to place (or swap the selected icon)
 let iconSwap: string | null = null;
@@ -49,12 +61,7 @@ export function placeTray() {
   if ($('tray').parentElement?.classList.contains('side')) $('tray').style.top = $('tray').style.maxHeight = ''; // in a sidebar column: it just stacks
 }
 
-let ALIGN: Record<string, string> = {};
-const KIND: Record<string, string> = { frame: 'Screen', box: 'Box', text: 'Text', font: 'Font' };
-
-const field = (k: string, label: string, v: string | number, type = 'number', extra = '') =>
-  `<label class="dz-f ${extra}"><span>${label}</span><input data-k="${k}" type="${type}" value="${esc(v)}"${type === 'number' ? ' step="1"' : ''}></label>`;
-
+export let ALIGN: Record<string, string> = {};
 // the one selected card, when it's a font card
 const soleFont = () => {
   const cs = selCards();
@@ -62,14 +69,13 @@ const soleFont = () => {
 };
 
 export function renderDesign() {
-  const fc = soleFont();
+  const fc = soleFont(),
+    el = $('dzProps');
   if (fc) {
-    $('dzProps').innerHTML =
-      `<div class="dz-sec"><div class="label">Font</div><div class="dz-grid"><label class="dz-f wide"><span>Font</span><select data-k="font">${[...new Set([fc.font || 'Figtree', ...FONTS])].map(f => `<option${fc.font === f ? ' selected' : ''} style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></label><label class="dz-f wide"><span>Or any Google font</span><input data-k="gfont" placeholder="e.g. Playfair Display" spellcheck="false"></label></div><div class="dz-hint">Double-click the sample line on the card to try your own words.</div></div>`;
+    el.innerHTML = fontCardSection(fc);
     return;
   }
-  const cs = selCards().filter(c => WF.includes(c.type)),
-    el = $('dzProps');
+  const cs = selCards().filter(c => WF.includes(c.type));
   if (!cs.length) {
     el.innerHTML = selCards().length
       ? ''
@@ -78,35 +84,14 @@ export function renderDesign() {
   }
   const one = cs.length === 1 ? (cs[0] ?? null) : null;
   let h = '';
-  if (one)
-    h += `<div class="dz-sec"><div class="label">${KIND[one.type] ?? ''}</div><div class="dz-grid">${field('x', 'X', Math.round(one.x))}${field('y', 'Y', Math.round(one.y))}${field('w', 'W', Math.round(one.w))}${one.type === 'text' ? '' : field('h', 'H', Math.round(one.h))}</div></div>`;
-  if (one && one.type !== 'frame')
-    h += `<div class="dz-sec"><div class="dz-grid">${field('rot', 'Rotate°', one.rot || 0, 'number', 'wide')}</div></div>`;
-  if (one?.type === 'icon')
-    h += `<div class="dz-sec"><div class="label">Icon</div><div class="dz-grid">${field('isz', 'Size', Math.round(one.w))}${field('color', 'Colour', one.color || '#27272a', 'color')}</div><div class="dz-row"><button data-swap="1" style="font:600 11.5px/1 var(--font);gap:6px;display:flex;align-items:center;justify-content:center">${Icon(one.name ?? 'star', { size: 16 })} Change icon</button></div></div>`;
-  const groupedSel = cs.length > 1 && cs.every(c => c.group && c.group === cs[0]?.group);
-  if (cs.length > 1)
-    h += `<div class="dz-sec"><div class="dz-row"><button data-grp="${groupedSel ? 'off' : 'on'}" style="font:600 11.5px/1 var(--font)">${groupedSel ? 'Ungroup  ⇧⌘G' : 'Group  ⌘G'}</button></div></div>`;
-  if (one?.type === 'frame')
-    h += `<div class="dz-sec"><div class="dz-grid">${field('name', 'Name', one.name || 'Screen', 'text', 'wide')}<label class="dz-f wide"><span>Device</span><select data-k="device">${['Custom', ...Object.keys(DEVICES)].map(n => `<option${(one.device || 'Custom') === n ? ' selected' : ''}>${n}</option>`).join('')}</select></label>${field('fill', 'Fill', one.fill || '#ffffff', 'color')}${field('radius', 'Corners', one.radius ?? 0)}</div></div>`;
-  if (one?.type === 'box')
-    h += `<div class="dz-sec"><div class="label">Look</div><div class="dz-grid">${field('fill', 'Fill', one.fill || '#e4e4e7', 'color')}${field('radius', 'Corners', one.radius || 0)}${field('stroke', 'Border', one.stroke || '#a1a1aa', 'color')}${field('sw', 'Width', one.sw || 0)}${field('opacity', 'Opacity %', Math.round((one.opacity ?? 1) * 100), 'number', 'wide')}</div></div>`;
-  if (one?.type === 'text')
-    h += `<div class="dz-sec"><div class="label">Type</div><div class="dz-grid"><label class="dz-f wide"><span>Font</span><select data-k="font">${[...new Set([one.font || 'Figtree', ...FONTS])].map(f => `<option${(one.font || 'Figtree') === f ? ' selected' : ''} style="font-family:'${esc(f)}'">${esc(f)}</option>`).join('')}</select></label>
-      ${field('size', 'Size', one.size || 18)}<label class="dz-f"><span>Weight</span><select data-k="weight">${[
-        [300, 'Light'],
-        [400, 'Regular'],
-        [500, 'Medium'],
-        [600, 'Semi'],
-        [700, 'Bold'],
-        [800, 'Extra'],
-      ]
-        .map(([v, n]) => `<option value="${v}"${(one.weight || 500) === v ? ' selected' : ''}>${n}</option>`)
-        .join('')}</select></label>
-      ${field('color', 'Colour', one.color || '#27272a', 'color')}${field('lh', 'Line', one.lh || 1.3)}</div><div class="dz-row">${['left', 'center', 'right'].map(a => `<button data-talign="${a}" class="${(one.align || 'left') === a ? 'on' : ''}" title="Align ${a === 'center' ? 'centre' : a}">${ALIGN[a[0] ?? 'l']}</button>`).join('')}</div></div>`;
-  const inFrame = one && one.onFrame && byId(one.onFrame);
-  if (cs.length > 1 || inFrame)
-    h += `<div class="dz-sec"><div class="label">${cs.length > 1 ? 'Align' : 'Align on its screen'}</div><div class="dz-row">${['l', 'c', 'r', 't', 'm', 'b'].map(a => `<button data-align="${a}" title="Align">${ALIGN[a] ?? ''}</button>`).join('')}</div>${cs.length > 2 ? `<div class="dz-row"><button data-dist="h" title="Even spacing across">${ALIGN.dh}</button><button data-dist="v" title="Even spacing down">${ALIGN.dv}</button></div>` : ''}</div>`;
+  if (one) h += placeSection(one);
+  if (one && one.type !== 'frame') h += sec(field('rot', 'Rotate°', one.rot || 0, 'number', 'wide'));
+  if (one?.type === 'icon') h += iconSection(one);
+  if (cs.length > 1) h += groupSection(cs.every(c => c.group && c.group === cs[0]?.group));
+  if (one?.type === 'frame') h += frameSection(one);
+  if (one?.type === 'box') h += boxSection(one);
+  if (one?.type === 'text') h += textSection(one);
+  if (cs.length > 1 || (one?.onFrame && byId(one.onFrame))) h += alignSection(cs.length);
   el.innerHTML = h;
 }
 
