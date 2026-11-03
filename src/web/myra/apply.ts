@@ -26,7 +26,7 @@ import { FS } from '../selbar/selbar.ts';
 import { reply, snapTo } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { aiGrants, updateVaultChip } from '../vault/ask.ts';
-import { buildScreen } from '../wireframe/pieces.ts';
+import { buildScreen } from '../wireframe/screen.ts';
 import { appState, session } from '../core/state.ts';
 
 // the kinds of card she can add; anything else she names becomes a note

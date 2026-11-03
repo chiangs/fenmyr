@@ -2,7 +2,7 @@ import { isRecord } from '../../shared/model.ts';
 import { $, stage, world } from '../core/dom.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { placeTray, renderDesign } from '../wireframe/pieces.ts';
+import { placeTray, renderDesign } from '../wireframe/designPanel.ts';
 // which boxes are minimised, by name
 let boxState: Record<string, boolean> = {};
 const readBoxes = (): Record<string, boolean> => {

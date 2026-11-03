@@ -79,7 +79,7 @@ type CardFields = {
   // device: the screen it's sized for (iPhone, Desktop…)
   frame: { name?: string; device?: string; fill?: string };
   section: { text?: string };
-  box: { img?: string; src?: string; fill?: string };
+  box: { img?: string; src?: string; fill?: string; opacity?: number };
   text: { text?: string; size?: number; weight?: number };
   icon: { name?: string };
   font: { font?: string; text?: string };

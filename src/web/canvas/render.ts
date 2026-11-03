@@ -1,5 +1,5 @@
 import type { Card } from '../../shared/model.ts';
-import { cardEl, esc } from '../ui/dom.ts';
+import { cardEl, esc, oneIn } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
 import { renderTray, renderWires } from './wires.ts';
@@ -160,7 +160,7 @@ export const skStyle = (c: { sdash?: boolean | string }) => (c.sdash === true ? 
 
 export function applyStroke(c: Card, el: HTMLElement) {
   if (c.type === 'title') {
-    const t = el.querySelector<HTMLElement>('.text');
+    const t = oneIn(el, '.text');
     if (t) t.style.color = c.tc && c.tc !== 'none' ? c.tc : '';
   } // a title's own text color (applied after its text is drawn)
   if (!canStroke(c)) return;

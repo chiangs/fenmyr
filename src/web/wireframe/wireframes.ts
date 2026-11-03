@@ -1,6 +1,7 @@
-// @ts-nocheck
 import { typesWith } from '../../shared/cardTypes.ts';
 import { applyStroke } from '../canvas/render.ts';
+import { oneIn } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 
 // ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
 export const WF = typesWith('wireframe');
@@ -16,7 +17,7 @@ export const DEVICES: Record<string, [w: number, h: number, radius: number]> = {
 
 export let FONTS = ['Figtree', 'Shantell Sans'];
 
-export function styleWF(c, el) {
+export function styleWF(c: Card, el: HTMLElement) {
   el.classList.add('wf');
   c.r = 0;
   el.style.setProperty('--rot', (c.rot || 0) + 'deg');
@@ -31,27 +32,29 @@ export function styleWF(c, el) {
     el.classList.toggle('no-fill', c.fill === 'none');
     el.style.setProperty('--fr-r', (c.radius ?? 0) + 'px');
   }
-  if (c.type === 'box')
-    Object.assign(el.querySelector('.bx').style, {
+  const bx = oneIn(el, '.bx'),
+    tx = oneIn(el, '.tx');
+  if (c.type === 'box' && bx)
+    Object.assign(bx.style, {
       background: c.src
         ? `center / cover no-repeat url("${c.src}")`
         : c.fill === 'none'
           ? 'transparent'
           : c.fill || '#e4e4e7',
       borderRadius: (c.radius || 0) + 'px',
-      opacity: c.opacity ?? 1,
+      opacity: String(c.opacity ?? 1),
       boxShadow: 'none',
       border: '0',
     });
-  if (c.type === 'text') {
+  if (c.type === 'text' && tx) {
     el.style.height = 'auto';
-    Object.assign(el.querySelector('.tx').style, {
+    Object.assign(tx.style, {
       fontFamily: `"${c.font || 'Figtree'}", system-ui`,
       fontSize: (c.size || 18) + 'px',
-      fontWeight: c.weight || 500,
+      fontWeight: String(c.weight || 500),
       color: c.color && c.color !== 'none' ? c.color : '#27272a',
       textAlign: c.align || 'left',
-      lineHeight: c.lh || 1.3,
+      lineHeight: String(c.lh || 1.3),
     });
     requestAnimationFrame(() => {
       const h = el.offsetHeight;

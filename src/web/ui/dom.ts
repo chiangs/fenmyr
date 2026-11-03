@@ -77,5 +77,11 @@ export function textField(id: string) {
 }
 
 // the HTML elements matching a selector under root (an SVG match is left out)
+// the first match that's an HTML element, or null
+export function oneIn(root: ParentNode, selector: string) {
+  const el = root.querySelector(selector);
+  return el instanceof HTMLElement ? el : null;
+}
+
 export const htmlIn = (root: ParentNode, selector: string) =>
   [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);

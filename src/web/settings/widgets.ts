@@ -5,7 +5,7 @@ import { goos } from '../myra/goos.ts';
 import { applyColors, following } from './colors.ts';
 import { MYRA_COLORS, settings } from './settings.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
-import { placeTray } from '../wireframe/pieces.ts';
+import { placeTray } from '../wireframe/designPanel.ts';
 import { useFont } from '../wireframe/tilt.ts';
 import { appState } from '../core/state.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';

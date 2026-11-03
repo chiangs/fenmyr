@@ -25,7 +25,8 @@ import { addCard, drawVec, endVec, refit, vec, vecCard } from '../tools/penEdit.
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { closeColor } from '../ui/colorPicker.ts';
 import { toPointer } from '../ui/toolbar.ts';
-import { groupSel, pickWF, restack } from '../wireframe/pieces.ts';
+import { groupSel, restack } from '../wireframe/stack.ts';
+import { pickWF } from '../wireframe/designPanel.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { appState, session } from '../core/state.ts';
 let CLEAN_EL: Element[] = [];
