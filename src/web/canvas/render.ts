@@ -14,7 +14,7 @@ import { cardsEl } from '../core/dom.ts';
 import { dueChip } from '../features/due.ts';
 import { isDim } from '../features/focus.ts';
 import { soloTagAdd, tagChips } from '../features/tags.ts';
-import { mini } from '../library/home.ts';
+import { mini } from '../library/homeTiles.ts';
 import { MIC, PLAY, fitAudio, fmtT } from '../media/audio.ts';
 import { devName } from '../media/devices.ts';
 import { SPK, cams, setupVideo } from '../media/video.ts';

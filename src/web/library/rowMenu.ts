@@ -17,7 +17,8 @@ import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { dueForget } from '../features/due.ts';
-import { homeAt, openBoard, renderCrumbs, renderHome, where } from './home.ts';
+import { homeAt, openBoard, renderHome } from './home.ts';
+import { renderCrumbs, where } from './crumbs.ts';
 import { dropZone, inlineRename, loadLib } from './nesting.ts';
 import {
   boardsIn,

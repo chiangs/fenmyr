@@ -2,7 +2,7 @@ import { renderCard } from '../canvas/render.ts';
 import { byId } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save, showWhatMyraMade } from '../core/history.ts';
-import { parse } from '../features/timer.ts';
+import { parse } from '../myra/replyText.ts';
 import { DL } from '../myra/chat.ts';
 import { addMsg, typing } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';

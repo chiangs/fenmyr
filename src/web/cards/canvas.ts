@@ -1,5 +1,6 @@
 import { fit } from '../canvas/handles.ts';
-import { miniCache, openBoard } from '../library/home.ts';
+import { openBoard } from '../library/home.ts';
+import { miniCache } from '../library/homeTiles.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { newBoard } from '../model/boards.ts';
 import { session } from '../core/state.ts';
