@@ -1,5 +1,6 @@
 import { $ } from '../core/dom.ts';
-import { noEmoji, parse, partyMyra } from '../features/timer.ts';
+import { partyMyra } from '../features/timer.ts';
+import { noEmoji, parse } from './replyText.ts';
 import { card } from '../model/boards.ts';
 import { snapshot } from './chat.ts';
 import { chatOpen, myraOpen } from './chatWindow.ts';

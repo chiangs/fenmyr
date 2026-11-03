@@ -6,7 +6,7 @@ import { selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { boardMenu } from '../features/export.ts';
-import { startEdit } from '../features/tags.ts';
+import { startEdit } from '../edit/editing.ts';
 import { card } from '../model/boards.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { session } from '../core/state.ts';

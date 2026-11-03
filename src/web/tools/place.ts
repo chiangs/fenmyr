@@ -7,7 +7,7 @@ import { shapeSVG } from '../cards/shapes.ts';
 import { clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { startEdit } from '../features/tags.ts';
+import { startEdit } from '../edit/editing.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { coolMic } from '../media/audio.ts';
 import { readyToRecord } from '../media/devices.ts';

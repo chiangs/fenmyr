@@ -93,7 +93,7 @@ async function vaults(t: Smoke) {
     await T.wait(400);
     await add('long');
     const lc = M.board.cards.find(x => x.type === 'vnote' && x.title === 'Long');
-    if (!lc || lc.type !== 'vnote') throw new Error('the long note was not added');
+    if (lc?.type !== 'vnote') throw new Error('the long note was not added');
     const el = () => T.el(`[data-id="${lc.id}"]`),
       words = () => el().textContent ?? '';
     T.click(`[data-id="${lc.id}"] .vn-flip`);

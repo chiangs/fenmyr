@@ -1,14 +1,14 @@
-import type { Card, Folder, Project } from '../../shared/model.ts';
+import type { Folder, Project } from '../../shared/model.ts';
 import type { BoardSummary } from '../../shared/ops.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { renderAll } from '../canvas/render.ts';
-import { COLORS, colorHex } from '../core/base.ts';
+import { colorHex } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { resetHistory } from '../core/history.ts';
 import { dueIndex } from '../features/due.ts';
 import { findClose } from '../features/find.ts';
 import { draggable, dropZone, inlineRename, nestBoard, newBoardIn } from './nesting.ts';
-import { FBTN_OF, refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
+import { refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
 import {
   boardsIn,
   boardsUnder,
@@ -24,70 +24,22 @@ import {
   saveLib,
   subFolders,
 } from './tree.ts';
-import { renderChat } from '../myra/chat.ts';
+import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { chirp } from '../settings/licenses.ts';
 import { stopPlacing } from '../tools/place.ts';
-import { closeColor, renderPalette } from '../ui/colorPicker.ts';
+import { closeColor } from '../ui/colorPicker.ts';
+import { renderPalette } from '../ui/palette.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { refreshVNotes, vnFull } from '../vault/notes.ts';
 import { appState, session } from '../core/state.ts';
+import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
 // and check again whenever you come back to the app
 
 // ---------- home: zoom out to see every project, then a project's folders, then a folder's boards ----------
 type HomeAt = { level: 'all'; id?: undefined } | { level: 'project' | 'folder'; id: string };
 // null means Home is closed
 export let homeAt: HomeAt | null = null;
-export const where = () => {
-  const f = appState.folders.find(x => x.id === session.board?.folder),
-    p = f && appState.projects.find(x => x.id === f.project);
-  return { f, p };
-};
-
-export function renderCrumbs() {
-  if (!session.board) return;
-  const { f, p } = where(),
-    el = $('crumbs');
-  const chainF = f ? folderChain(f) : [];
-  el.innerHTML =
-    (p ? `<button data-go="project:${p.id}"></button>` : '') +
-    chainF.map((x, i) => `${p || i ? '<i>/</i>' : ''}<button data-go="folder:${x.id}"></button>`).join('');
-  const btns = [...el.querySelectorAll('button')];
-  if (p) {
-    const [first] = btns;
-    if (first) {
-      first.textContent = p.name;
-      first.title = p.name;
-    }
-  }
-  chainF.forEach((x, i) => {
-    const bt = btns[i + (p ? 1 : 0)];
-    if (!bt) return;
-    bt.textContent = x.name;
-    bt.title = x.name;
-  });
-  // inside a canvas: the boards it lives in, so you can climb back out
-  const chain: BoardSummary[] = [];
-  let up = session.board.parent;
-  while (up && chain.length < 4) {
-    const looking = up;
-    const pb = appState.boardList.find(x => x.id === looking);
-    if (!pb) break;
-    chain.unshift(pb);
-    up = pb.parent;
-  }
-  chain.forEach(pb => {
-    el.insertAdjacentHTML(
-      'beforeend',
-      `${el.children.length ? '<i>/</i>' : ''}<button data-board="${pb.id}"></button>`,
-    );
-    const bt = el.lastElementChild;
-    if (!(bt instanceof HTMLElement)) return;
-    bt.textContent = pb.name;
-    bt.title = `Back to ${pb.name}`;
-  });
-}
-
 export function openHome(go = 'all') {
   const [level, id] = go.split(':');
   findClose(undefined);
@@ -105,66 +57,6 @@ export function closeHome() {
   stage.classList.remove('at-home');
   refreshBoards();
 }
-
-export const miniCache = new Map<string, Promise<string>>();
-
-export async function mini(id: string): Promise<string> {
-  // a tiny map of the board: every card as a little colored block
-  if (!miniCache.has(id))
-    miniCache.set(
-      id,
-      Fenmyr.load(id).then(b => {
-        const cs = (b && b.cards) || [];
-        if (!cs.length) return '';
-        const x0 = Math.min(...cs.map(c => c.x)),
-          y0 = Math.min(...cs.map(c => c.y)),
-          x1 = Math.max(...cs.map(c => c.x + c.w)),
-          y1 = Math.max(...cs.map(c => c.y + c.h));
-        const fill = (c: Card) =>
-          c.type === 'swatch'
-            ? c.hex
-            : c.type === 'image'
-              ? '#d9cfe0'
-              : c.type === 'title'
-                ? 'transparent'
-                : (c.color && COLORS[c.color]) || '#fff';
-        return (
-          `<svg viewBox="${x0 - 40} ${y0 - 40} ${x1 - x0 + 80} ${y1 - y0 + 80}" preserveAspectRatio="xMidYMid meet">` +
-          cs
-            .map(c =>
-              c.type === 'title'
-                ? `<rect x="${c.x}" y="${c.y + c.h * 0.25}" width="${Math.min(c.w, 260)}" height="${c.h * 0.5}" rx="8" fill="#3b342d" opacity=".75"/>`
-                : `<rect x="${c.x}" y="${c.y}" width="${c.w}" height="${c.h}" rx="14" fill="${fill(c)}" stroke="rgba(120,80,120,.12)" stroke-width="3" transform="rotate(${c.r || 0} ${c.x + c.w / 2} ${c.y + c.h / 2})"/>`,
-            )
-            .join('') +
-          '</svg>'
-        );
-      }),
-    );
-  return miniCache.get(id) ?? '';
-}
-
-function tile(
-  kind: string,
-  obj: { id: string; name: string },
-  sub: string,
-  onOpen: () => void,
-  btns: [string, string, string][] = [],
-) {
-  const t = document.createElement('div');
-  t.className = 'tile ' + kind;
-  t.style.rotate = (((obj.id.charCodeAt(0) + obj.id.charCodeAt(1)) % 5) - 2) * 0.6 + 'deg';
-  t.innerHTML = `<div class="tile-art"></div><div class="tile-meta"><b></b><small>${sub}</small>${btns.map(([a, tt, s]) => `<button class="f-btn" data-a="${a}" title="${tt}">${FBTN_OF(a) || s}</button>`).join('')}</div>`;
-  child(t, '.tile-meta b').textContent = obj.name;
-  t.onclick = e => {
-    if ((e.target instanceof Element && e.target.closest('.f-btn')) || child(t, '.tile-meta b').isContentEditable)
-      return;
-    onOpen();
-  };
-  return t;
-}
-
-const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 export function renderHome(): void {
   if (!homeAt) return;
@@ -381,20 +273,6 @@ export function renderHome(): void {
     });
   }
 }
-
-const ago = (t: number) => {
-  const s = Date.now() / 1000 - t,
-    m = s / 60,
-    h = m / 60,
-    d = h / 24;
-  return s < 90
-    ? 'just now'
-    : m < 60
-      ? Math.round(m) + 'm ago'
-      : h < 24
-        ? Math.round(h) + 'h ago'
-        : Math.round(d) + 'd ago';
-};
 
 // a project's cover image: shrunk to a tidy size and saved with the library
 let coverFor: Project | null = null;

@@ -1,5 +1,6 @@
 import { $ } from '../core/dom.ts';
-import { docCard, docHTML, ed, syncDoc } from './editor.ts';
+import { docCard, ed, syncDoc } from './editor.ts';
+import { docHTML } from './docText.ts';
 import { docPrintHTML } from './pdf.ts';
 import { fitTools } from './toolbar.ts';
 import { say } from '../settings/licenses.ts';

@@ -13,7 +13,7 @@ import { applyDim } from './focus.ts';
 import { cleanTag } from './tags.ts';
 import { timer } from './timer.ts';
 import { ANIMS } from '../myra/anim.ts';
-import { addMsg } from '../myra/chat.ts';
+import { addMsg } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { SLASH, glideTo, helpText, wordsOf } from '../myra/greet.ts';
 import { reply } from '../settings/licenses.ts';

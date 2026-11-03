@@ -3,7 +3,7 @@ import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { save } from '../core/history.ts';
-import { endEdit } from '../features/tags.ts';
+import { endEdit } from './editing.ts';
 import { session } from '../core/state.ts';
 import type { Card } from '../../shared/model.ts';
 

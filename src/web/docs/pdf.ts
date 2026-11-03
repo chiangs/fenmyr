@@ -1,5 +1,6 @@
 import { esc } from '../ui/dom.ts';
-import { docCard, docHTML, ed, fontsIn } from './editor.ts';
+import { docCard, ed } from './editor.ts';
+import { docHTML, fontsIn } from './docText.ts';
 import { settings } from '../settings/settings.ts';
 import { isLocalFont } from '../wireframe/tilt.ts';
 

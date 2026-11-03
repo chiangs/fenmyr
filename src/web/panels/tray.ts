@@ -1,5 +1,5 @@
 import { toWorld } from '../canvas/handles.ts';
-import { overTray } from '../canvas/pointer.ts';
+import { overTray } from '../canvas/pointerKit.ts';
 import { renderTray, takeFromTray } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { homeAt } from '../library/home.ts';

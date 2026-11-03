@@ -3,7 +3,7 @@ import { esc, htmlIn } from '../ui/dom.ts';
 import { autoUpdateAnswered } from '../app/updates.ts';
 import { COLOR_NAMES } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { addMsg, renderChat, sessionChats } from '../myra/chat.ts';
+import { addMsg, renderChat, sessionChats } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { hopMyra } from '../myra/goos.ts';
 import { showConnections } from '../myra/helpers.ts';

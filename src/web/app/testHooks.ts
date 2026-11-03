@@ -16,9 +16,10 @@ import {
   setDue,
   slashDue,
 } from '../features/due.ts';
-import { startEdit } from '../features/tags.ts';
+import { startEdit } from '../edit/editing.ts';
 import { saveAsTemplate, saveWithDialog, useTemplate } from '../features/templates.ts';
-import { currentPose, durText, parseTimer, timer, timerCheck, timerRequest } from '../features/timer.ts';
+import { currentPose, timer, timerCheck } from '../features/timer.ts';
+import { durText, parseTimer, timerRequest } from '../features/duration.ts';
 import { liveEditor } from '../docs/editor.ts';
 import { openBoard, openHome } from '../library/home.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
@@ -36,7 +37,8 @@ import {
   hatOn,
   setBirthday,
 } from '../myra/birthday.ts';
-import { ask, perchGoo, perched, snapshot } from '../myra/chat.ts';
+import { ask, snapshot } from '../myra/chat.ts';
+import { perchGoo, perched } from '../myra/perch.ts';
 import { SLASH, daily, greet, greeter } from '../myra/greet.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';

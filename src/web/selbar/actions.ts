@@ -9,7 +9,7 @@ import { remember, save } from '../core/history.ts';
 import { openDoc } from '../docs/editor.ts';
 import { editTag } from '../edit/text.ts';
 import { setDue } from '../features/due.ts';
-import { startEdit } from '../features/tags.ts';
+import { startEdit } from '../edit/editing.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { closestTo } from '../ui/dom.ts';

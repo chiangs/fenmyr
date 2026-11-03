@@ -1,7 +1,7 @@
 import { closestTo, isTyping } from '../ui/dom.ts';
 import { lastClip, pasteCards } from './clipboard.ts';
 import { toWorld } from './handles.ts';
-import { overTray } from './pointer.ts';
+import { overTray } from './pointerKit.ts';
 import { byId } from './wires.ts';
 import { addImages, linkCard, pictureForNote, spotifyOf } from '../cards/spotify.ts';
 import { $, stage } from '../core/dom.ts';

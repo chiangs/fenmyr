@@ -1,6 +1,7 @@
 import { esc } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
-import { docCard, ed, mdToHTML } from './editor.ts';
+import { docCard, ed } from './editor.ts';
+import { mdToHTML } from './docText.ts';
 import { hidePop } from './menus.ts';
 import { GUIDE, SIGNIN } from '../myra/chat.ts';
 import { goo } from '../myra/goos.ts';

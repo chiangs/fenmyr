@@ -4,7 +4,7 @@ import { renderCard } from '../canvas/render.ts';
 import { parentOf } from '../cards/collection.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { startEdit } from '../features/tags.ts';
+import { startEdit } from '../edit/editing.ts';
 import { card } from '../model/boards.ts';
 import { selCards } from '../selbar/selected.ts';
 import { session } from '../core/state.ts';

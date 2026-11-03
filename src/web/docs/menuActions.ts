@@ -1,7 +1,8 @@
 import { closeOnOutsidePress } from '../ui/popover.ts';
 import { closestTo } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
-import { HIGHLIGHTS, TEXT_COLORS, applyDocPage, docDefault, ed, liveEditor } from './editor.ts';
+import { applyDocPage, ed, liveEditor } from './editor.ts';
+import { HIGHLIGHTS, TEXT_COLORS, docDefault } from './docText.ts';
 import { hidePop, showPop } from './menus.ts';
 import { rewrite } from './rewrite.ts';
 import { run, setBlock } from './toolbar.ts';
