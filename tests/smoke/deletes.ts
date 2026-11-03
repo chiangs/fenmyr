@@ -131,14 +131,22 @@ export async function deleteCurrent(t: Smoke) {
 // the last board: deleting it leaves a fresh one, and says so. Runs after everything else, because it empties the library.
 export async function deleteLastBoard(t: Smoke) {
   const { page } = t;
+  // Open the board first: leaving the one before writes its waiting save, which would bring it back if the others were
+  // removed already, and leave two boards in the library.
   await page.evaluate(async () => {
     await Fenmyr.save({ id: 'dlast', name: 'Last one', cards: [], links: [], tray: [], trayLinks: [], palette: [] });
-    for (const b of await Fenmyr.list()) if (b.id !== 'dlast') await Fenmyr.remove(b.id);
-    await Fenmyr.saveFolders({ projects: [], folders: [] });
     await window.__fenmyr.refreshBoards();
     await window.__fenmyr.openBoard('dlast');
   });
   await page.waitForTimeout(700);
+  await page.evaluate(async () => {
+    for (const b of await Fenmyr.list()) if (b.id !== 'dlast') await Fenmyr.remove(b.id);
+    await Fenmyr.saveFolders({ projects: [], folders: [] });
+    await window.__fenmyr.refreshBoards();
+  });
+  await page.waitForTimeout(300);
+  // an earlier check leaves Myra quiet, and a quiet Myra doesn't chirp
+  await page.evaluate(() => window.__fenmyr.setGreet(false, 'normal'));
   const was = await page.evaluate(() => window.__fenmyr.board.id);
   await page.locator('.loose-zone .board-row').first().click({ button: 'right' });
   await page.locator('#rowMenu [data-m="del"]').click();
