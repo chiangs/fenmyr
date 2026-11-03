@@ -1,15 +1,9 @@
 import type { Board, StoredBoard } from '../shared/model.ts';
 import { isRecord, parseBoard, storedBoard } from '../shared/model.ts';
 import type { Ops } from '../shared/ops.ts';
+import { call, desktopOnly, native, platform } from './hostCall.ts';
+import { repoFallbacks, repoOps } from './repo/hostOps.ts';
 
-declare global {
-  interface Window {
-    fenmyrHost?: { platform?: string; post(msg: unknown): void };
-    __fenmyrReply?: (id: number, ok: boolean, value: unknown) => void;
-  }
-}
-
-type Waiting = { res: (value: never) => void; rej: (err: Error) => void };
 type Progress = (share: number) => void;
 type IndexRow = { id: string };
 type PretendCard = { type: string; id: string; x: number; y: number };
@@ -19,31 +13,10 @@ const isPretendCard = (c: unknown): c is PretendCard =>
   typeof c.id === 'string' &&
   typeof c.x === 'number' &&
   typeof c.y === 'number';
-// in a browser there's no host to ask, and every caller already handles a refusal
-const desktopOnly = () => Promise.reject(new Error('This needs the desktop app.'));
 
 // The bridge between the canvas and wherever it's running.
 // Inside the desktop app, calls go to its host (src/host/main.ts: saving board files, link previews, asking Myra through Claude Code).
 // In a plain browser (for building and demos) it falls back to localStorage and a pretend Myra.
-const native = !!window.fenmyrHost;
-const platform = native ? (window.fenmyrHost?.platform ?? 'linux') : 'web';
-const waiting = new Map<number, Waiting>();
-let seq = 0;
-// the host answers with window.__fenmyrReply(id, ok, value)
-window.__fenmyrReply = (id, ok, value) => {
-  const w = waiting.get(id);
-  if (!w) return;
-  waiting.delete(id);
-  if (ok) (w.res as (v: unknown) => void)(value);
-  else w.rej(new Error(String(value)));
-};
-const call = <K extends keyof Ops>(op: K, args?: Ops[K]['args']) =>
-  new Promise<Ops[K]['result']>((res, rej) => {
-    const id = ++seq;
-    waiting.set(id, { res, rej });
-    window.fenmyrHost?.post({ id, op, args: args ?? {} });
-  });
-
 const LS = 'fenmyr:';
 const VIDEO_EXT: Record<string, string> = {
   'video/mp4': 'mp4',
@@ -158,10 +131,7 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
     throw new Error('Connecting a vault works in the desktop app');
   },
   vaultUpdate: desktopOnly,
-  gitStatus: desktopOnly,
-  gitInit: desktopOnly,
-  gitSetIdentity: desktopOnly,
-  ghStatus: desktopOnly,
+  ...repoFallbacks,
   async vaultRemove() {
     return true;
   },
@@ -387,10 +357,7 @@ const nativeApi = {
   updatePrepare: () => call('updatePrepare'),
   higgsMake: (o: Ops['higgsMake']['args']) => call('higgsMake', o),
   drawFill: (o: Ops['drawFill']['args']) => call('drawFill', o),
-  gitStatus: (path: string) => call('gitStatus', { path }),
-  gitInit: (path: string) => call('gitInit', { path }),
-  gitSetIdentity: (o: Ops['gitSetIdentity']['args']) => call('gitSetIdentity', o),
-  ghStatus: () => call('ghStatus'),
+  ...repoOps,
 };
 export type FenmyrApi = typeof nativeApi;
 const api: FenmyrApi = native ? nativeApi : Object.assign({ native: false, platform }, browser);

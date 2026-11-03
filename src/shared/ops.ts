@@ -124,6 +124,7 @@ export type GitStatus =
 // ok is false when a sign-in needs renewing
 export type GhAccount = { host: string; login: string; active: boolean; ok: boolean };
 export type GhState = { kind: 'missing' } | { kind: 'ready'; accounts: GhAccount[] };
+export type PackageManager = 'pacman' | 'apt' | 'dnf' | 'zypper' | 'brew';
 
 export type Ops = {
   list: { args: None; result: BoardSummary[] };
@@ -197,6 +198,8 @@ export type Ops = {
   // everywhere: for every repo on this computer, not only this one
   gitSetIdentity: { args: { path: string; name: string; email: string; everywhere: boolean }; result: GitStatus };
   ghStatus: { args: None; result: GhState };
+  repoPick: { args: None; result: string | null };
+  packageManager: { args: None; result: PackageManager | null };
 };
 
 export type HostEvents = { caelestia: CaelestiaScheme | null; boardsChanged: null; settings: null };

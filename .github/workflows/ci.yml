@@ -42,6 +42,8 @@ jobs:
         run: node tests/model.ts
       - name: Git test (the git and gh bridge, with real git and a stand-in gh)
         run: node tests/git.ts
+      - name: Link test (a project's repo, from its menu)
+        run: node tests/link.ts
       - name: Myra reply test
         run: node tests/reply.ts
       - name: Mac font list test
