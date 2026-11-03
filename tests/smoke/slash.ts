@@ -1,4 +1,6 @@
-import type { Smoke } from './kit.ts';
+import fs from 'node:fs';
+import path from 'node:path';
+import { chatOpen, type Smoke, send } from './kit.ts';
 
 const note = (i: number, text: string) => ({
   id: `sl${i}`,
@@ -102,5 +104,24 @@ export async function slash(t: Smoke) {
     window.__t.click('#mcNew');
     window.__fenmyr.stopAnim();
     window.__t.el('#mcInput').blur();
+  });
+}
+
+// every slash command is in Myra's instructions (the app hands over its own list), so a new command is known to her without editing a prompt file
+export async function commandsInPrompt(t: Smoke) {
+  const { page } = t;
+  const names = await page.evaluate(() => window.__fenmyr.slashNames());
+  await chatOpen(t, true);
+  await send(t, 'what can you do?', 2000);
+  const pr = fs.readFileSync(path.join(t.data, 'prompt.txt'), 'utf8');
+  await page.evaluate(() => {
+    window.__t.el('#myra').classList.remove('chat');
+    window.__t.el('#mcInput').blur();
+  });
+  t.checkAll('cmdsInPrompt', {
+    all: names.length >= 8 && names.every(n => pr.includes(`/${n}`)),
+    section: pr.includes('SLASH COMMANDS:'),
+    examples: pr.includes('/timer 2m10s tea') && pr.includes('[hop, wiggle'),
+    notBoardData: !pr.includes('"commands"'),
   });
 }
