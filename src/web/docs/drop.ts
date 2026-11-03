@@ -27,21 +27,31 @@ function cardWords(c: Card) {
   return c.text || '';
 }
 
+// a bold first line, when there is one
+const lead = (words: string | undefined) => {
+  const text = esc(words);
+  return words ? `<p><strong>${text}</strong></p>` : '';
+};
+
 function cardHTML(c: Card) {
-  if (c.type === 'note') return (c.name ? `<p><strong>${esc(c.name)}</strong></p>` : '') + mdToHTML(c.text);
-  if (c.type === 'todo')
-    return (
-      (c.text ? `<p><strong>${esc(c.text)}</strong></p>` : '') + `<ul data-type="taskList">${taskItems(c.items)}</ul>`
-    );
+  if (c.type === 'note') return lead(c.name) + mdToHTML(c.text);
+  if (c.type === 'todo') {
+    const items = taskItems(c.items);
+    return lead(c.text) + `<ul data-type="taskList">${items}</ul>`;
+  }
   if (c.type === 'link') {
     const url = esc(c.url),
       name = esc(c.title || c.url);
     return `<p><a href="${url}">${name}</a></p>`;
   }
-  if (c.type === 'swatch')
-    return `<p><span style="color: ${c.hex}">■</span> ${esc(c.label || '')} <code>${c.hex.toUpperCase()}</code></p>`;
-  if (c.type === 'title') return `<h2>${esc(c.text)}</h2>`;
-  if (c.type === 'doc') return (c.text ? `<h2>${esc(c.text)}</h2>` : '') + docHTML(c);
+  if (c.type === 'swatch') {
+    const label = esc(c.label || ''),
+      hex = c.hex.toUpperCase();
+    return `<p><span style="color: ${c.hex}">■</span> ${label} <code>${hex}</code></p>`;
+  }
+  const heading = esc(c.text);
+  if (c.type === 'title') return `<h2>${heading}</h2>`;
+  if (c.type === 'doc') return (c.text ? `<h2>${heading}</h2>` : '') + docHTML(c);
   return mdToHTML(cardWords(c));
 }
 

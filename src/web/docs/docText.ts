@@ -98,26 +98,32 @@ export function mdToHTML(src: unknown) {
     if ((m = l.match(/^(#{1,3})\s+(.*)/))) {
       close();
       const level = (m[1] ?? '#').length;
-      out += `<h${level}>${inl(m[2])}</h${level}>`;
+      const html = inl(m[2]);
+      out += `<h${level}>${html}</h${level}>`;
     } else if ((m = l.match(/^\s*(?:(?:[-*]\s+)?\[( |x|X)\]|([☐☑]))\s*(.*)/))) {
       open('task');
       const on = (m[1] || '').toLowerCase() === 'x' || m[2] === '☑';
-      out += `<li data-type="taskItem" data-checked="${on}"><p>${inl(m[3])}</p></li>`;
+      const html = inl(m[3]);
+      out += `<li data-type="taskItem" data-checked="${on}"><p>${html}</p></li>`;
     } else if ((m = l.match(/^\s*[-*•]\s+(.*)/))) {
       open('ul');
-      out += `<li><p>${inl(m[1])}</p></li>`;
+      const html = inl(m[1]);
+      out += `<li><p>${html}</p></li>`;
     } else if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) {
       open('ol');
-      out += `<li><p>${inl(m[1])}</p></li>`;
+      const html = inl(m[1]);
+      out += `<li><p>${html}</p></li>`;
     } else if ((m = l.match(/^>\s?(.*)/))) {
       close();
-      out += `<blockquote><p>${inl(m[1])}</p></blockquote>`;
+      const html = inl(m[1]);
+      out += `<blockquote><p>${html}</p></blockquote>`;
     } else if (/^(-{3,}|\*{3,})$/.test(l.trim())) {
       close();
       out += '<hr>';
     } else {
       close();
-      out += `<p>${inl(l)}</p>`;
+      const html = inl(l);
+      out += `<p>${html}</p>`;
     }
   }
   close();
