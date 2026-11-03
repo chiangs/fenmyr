@@ -321,5 +321,50 @@ async function vaultTasks(t: Smoke) {
     nothing,
     noEmptyBoard: promptNow().includes('Do not build, fill or empty any board'),
   });
+  // Settings → Vaults: the three steps, who reads each vault (nothing yet, then a board with AI reading), and the Give access… list that opens the access dialog
+  const access = await page.evaluate(async () => {
+    const wait = (ms: number) => new Promise(r => setTimeout(r, ms)),
+      click = (sel: string) => document.querySelector<HTMLElement>(sel)?.click(),
+      text = (sel: string) => document.querySelector(sel)?.textContent ?? '';
+    click('#gearBtn');
+    await wait(400);
+    click('#setTabs [data-tab="vaults"]');
+    await wait(1200);
+    const steps = document.querySelectorAll('.vr-steps li').length,
+      unused = text('.vrow .vr-use').includes('Not used by anything yet'),
+      hot = !!document.querySelector('.vrow [data-vb="access"].hot');
+    const M = window.__fenmyr,
+      v = (await Fenmyr.vaults())[0];
+    if (!v) return { steps, unused, hot, reads: false, aiShown: false, picker: false, dialog: false };
+    M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: true, write: false, writeTo: 'Myra' }];
+    await Fenmyr.save(M.board);
+    document.dispatchEvent(new Event('fenmyr:vault-use'));
+    await wait(800);
+    const chip = text('.vrow .vr-chip'),
+      reads = chip.includes(M.board.name),
+      aiShown = chip.includes('AI reading on'),
+      cooled = !document.querySelector('.vrow [data-vb="access"].hot');
+    click('.vrow [data-vb="access"]');
+    await wait(400);
+    const picker = !!document.querySelector('#vaultWho') && text('#vaultWho').includes(M.board.name);
+    click('#vaultWho .vp-row');
+    await wait(600);
+    const dialog = text('.vdlg h3') === 'Vault access' && text('.vdlg .set-note').includes(M.board.name);
+    click('#vaNo');
+    await wait(300);
+    M.board.vaultAccess = [];
+    await Fenmyr.save(M.board);
+    click('#setClose');
+    return { steps, unused, hot, reads, aiShown, cooled, picker, dialog };
+  });
+  t.checkAll('vaultAccessUx', {
+    steps: access.steps === 3,
+    unused: access.unused,
+    hotWhenUnused: access.hot,
+    reads: access.reads,
+    aiShown: access.aiShown,
+    picker: access.picker,
+    opensDialog: access.dialog,
+  });
   fs.rmSync(path.join(vp, 'Projects/Gifts.md'));
 }

@@ -14,6 +14,15 @@ const jsonFiles = (dir: string) => fs.readdirSync(dir).filter(f => f.endsWith('.
 
 // boards with pictures can be many MB, so each board's summary is kept until its file changes (same size and time = same board)
 const summaries = new Map<string, { mtimeMs: number; size: number; row: BoardSummary }>();
+// which vaults a board may read on its own (only those with a folder ticked), for the list in Settings → Vaults
+function grantSummary(raw: unknown): Pick<BoardSummary, 'vaultAccess'> {
+  if (!Array.isArray(raw)) return {};
+  const out: { vault: string; ai: boolean }[] = [];
+  for (const g of raw)
+    if (isRecord(g) && typeof g.vault === 'string' && Array.isArray(g.folders) && g.folders.length)
+      out.push({ vault: g.vault, ai: g.ai === true });
+  return { vaultAccess: out };
+}
 export function list(): BoardSummary[] {
   let files: string[] = [];
   try {
@@ -40,6 +49,7 @@ export function list(): BoardSummary[] {
         folder: stringOr(j.folder, null),
         parent: stringOr(j.parent, null),
         updated: st.mtimeMs / 1000,
+        ...grantSummary(j.vaultAccess),
       };
       summaries.set(f, { mtimeMs: st.mtimeMs, size: st.size, row });
       return row;
