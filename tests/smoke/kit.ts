@@ -78,3 +78,24 @@ export function makeSmoke(o: Pick<Smoke, 'app' | 'page' | 'data' | 'out' | 'erro
     },
   };
 }
+
+// types a line into Myra's chat box and sends it
+export async function send(t: Smoke, line: string, ms = 200) {
+  await t.page.fill('#mcInput', line);
+  await t.page.keyboard.press('Enter');
+  await t.page.waitForTimeout(ms);
+}
+
+// a new, empty chat, with her animation stopped and the box let go
+export const freshChat = (t: Smoke) =>
+  t.page.evaluate(() => {
+    window.__t.click('#mcNew');
+    window.__fenmyr.stopAnim();
+    window.__t.el('#mcInput').blur();
+  });
+
+// her chat panel open or closed, without the opening animation
+export const chatOpen = (t: Smoke, on: boolean) =>
+  t.page.evaluate(on => window.__t.el('#myra').classList.toggle('chat', on), on);
+
+export const pose = (t: Smoke) => t.page.evaluate(() => window.__fenmyr.currentPose());
