@@ -57,6 +57,7 @@ export type DocEditor = {
   can(): { undo(): boolean; redo(): boolean };
   commands: {
     setContent(content: unknown, emit?: boolean): boolean;
+    clearContent(): boolean;
     focus(at?: unknown): boolean;
     setTextSelection(at: number | { from: number; to: number }): boolean;
     undo(): boolean;

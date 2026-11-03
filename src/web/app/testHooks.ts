@@ -19,6 +19,7 @@ import {
 import { startEdit } from '../features/tags.ts';
 import { saveAsTemplate, saveWithDialog, useTemplate } from '../features/templates.ts';
 import { currentPose, durText, parseTimer, timer, timerCheck, timerRequest } from '../features/timer.ts';
+import { liveEditor } from '../docs/editor.ts';
 import { openBoard, openHome } from '../library/home.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { boardsIn } from '../library/tree.ts';
@@ -146,6 +147,7 @@ const makeHooks = () => ({
   applyMyra,
   fit,
   lib: () => snapshot().library,
+  docEditor: liveEditor,
   openHome,
   get editing() {
     return session.editing;

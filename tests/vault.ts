@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The vault module on its own (no app): parsing a note, and the rules that keep private things unread.
 //   node tests/vault.ts
 import assert from 'node:assert';
@@ -127,15 +126,16 @@ assert.deepStrictEqual(V.note(v, 'Reading/Cloudberries.md', ['']).tags, ['readin
 // full text only when asked for: frontmatter stripped, capped
 assert.strictEqual(n.body, undefined, 'the preview never carries the whole note');
 const nf = V.note(v, 'Projects/Bog Notes/Trip plan.md', [''], true);
+const body = nf.body ?? '';
 assert(
-  nf.body.startsWith('# Trip plan') &&
-    !nf.body.includes('status: doing') &&
-    nf.body.includes('Related: [[Cloudberries]]') &&
+  body.startsWith('# Trip plan') &&
+    !body.includes('status: doing') &&
+    body.includes('Related: [[Cloudberries]]') &&
     !nf.truncated,
 );
 fs.writeFileSync(path.join(copy, 'Reading', 'Long.md'), 'x'.repeat(30000));
 const nl = V.note(v, 'Reading/Long.md', [''], true);
-assert.strictEqual(nl.body.length, 20000);
+assert.strictEqual(nl.body?.length, 20000);
 assert(nl.truncated);
 fs.rmSync(path.join(copy, 'Reading', 'Long.md'));
 // grants: only the folders allowed

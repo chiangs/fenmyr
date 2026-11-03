@@ -1,11 +1,19 @@
-// @ts-nocheck
 // Myra's voice check: asks the real Myra a set of tricky questions and prints what she says, for a person to read.
 // Run it after changing her prompts (linux/prompts.js) or her model:  npm run voice   (or: node tests/voice.ts 4 7)
 // Needs Claude Code signed in, costs a few requests, and is never part of npm test or CI. Things to look for:
 // the voice holds, the length matches the tone, wit is aimed at the board and never the person, and no emojis when off.
 import { ask } from '../src/host/claude.ts';
 
-const note = (id, text, x, y) => ({ id, type: 'note', x, y, w: 220, h: 140, color: 'butter', text });
+const note = (id: string, text: string, x: number, y: number) => ({
+  id,
+  type: 'note',
+  x,
+  y,
+  w: 220,
+  h: 140,
+  color: 'butter',
+  text,
+});
 const empty = { name: 'Untitled', cards: [], links: [], unsorted: [] };
 const busy = {
   name: 'Launch',
@@ -19,7 +27,7 @@ const busy = {
   links: [],
   unsorted: [],
 };
-const style = (chat, emoji = false) => ({ name: '', chat, emoji });
+const style = (chat: string, emoji = false) => ({ name: '', chat, emoji });
 
 const CASES = [
   { name: 'Terse person', chat: 'normal', board: busy, q: 'ok' },
@@ -46,7 +54,7 @@ const CASES = [
   },
 ];
 
-const say = raw => {
+const say = (raw: unknown) => {
   const s = String(raw),
     a = s.indexOf('{'),
     b = s.lastIndexOf('}');
@@ -76,7 +84,7 @@ const say = raw => {
           ),
       );
     } catch (e) {
-      console.log(`   (failed) ${e.message}`);
+      console.log(`   (failed) ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 })();
