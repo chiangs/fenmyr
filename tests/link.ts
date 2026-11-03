@@ -92,6 +92,14 @@ try {
     fs.existsSync(path.join(folder, 'notes.txt')) && fs.existsSync(path.join(folder, '.git')),
     'and keeps every file',
   );
+
+  await page.evaluate(() =>
+    window.__fenmyr.applyMyra({ say: 'The button below opens it.', openRepo: 'acme' }, 'link acme'),
+  );
+  await page.locator('button:visible', { hasText: 'Link “Acme” to a repo' }).first().click();
+  await page.waitForTimeout(300);
+  assert.match(await screen(), /Choose an empty folder/, 'Myra’s button opens the project’s repo dialog');
+  await press('done');
   assert.deepStrictEqual(l.errors, []);
   console.log('LINK OK');
 } finally {
