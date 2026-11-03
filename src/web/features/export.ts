@@ -8,7 +8,7 @@ import { kanbanMenu } from '../cards/kanban.ts';
 import { copyOf, tilt, uid } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { endEdit } from './tags.ts';
+import { endEdit } from '../edit/editing.ts';
 import { saveWithDialog } from './templates.ts';
 import { DL } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';

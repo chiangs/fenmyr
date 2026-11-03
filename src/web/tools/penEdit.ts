@@ -4,7 +4,7 @@ import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { SHAPE_FILL } from '../cards/shapes.ts';
 import { stage, world } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { endEdit } from '../features/tags.ts';
+import { endEdit } from '../edit/editing.ts';
 import { say } from '../settings/licenses.ts';
 import { pathD, penT } from './pen.ts';
 import { session } from '../core/state.ts';

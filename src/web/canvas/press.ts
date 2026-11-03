@@ -5,7 +5,7 @@ import { byId, linkById, selectOnly, selectWire } from './wires.ts';
 import { cropDown, cropping } from '../cards/crop.ts';
 import { stage } from '../core/dom.ts';
 import { remember, snapT } from '../core/history.ts';
-import { endEdit } from '../features/tags.ts';
+import { endEdit } from '../edit/editing.ts';
 import { fsMul } from '../selbar/textSize.ts';
 import { selCards } from '../selbar/selected.ts';
 import { drawDown, drawOn } from '../tools/draw.ts';

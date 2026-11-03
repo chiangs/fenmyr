@@ -11,7 +11,7 @@ import { remember, save, travel } from '../core/history.ts';
 import { closeDoc, docCard } from '../docs/editor.ts';
 import { startFind } from '../features/find.ts';
 import { capture, setFocus } from '../features/focus.ts';
-import { endEdit } from '../features/tags.ts';
+import { endEdit } from '../edit/editing.ts';
 import { closeHome, homeAt } from '../library/home.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { wonderIfEmpty } from '../myra/perch.ts';

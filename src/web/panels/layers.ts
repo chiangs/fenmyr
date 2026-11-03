@@ -6,7 +6,7 @@ import { layoutAll } from '../cards/kanban.ts';
 import { CIC, host } from '../cards/shapes.ts';
 import { $, cardsEl, stage, world } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { endEdit } from '../features/tags.ts';
+import { endEdit } from '../edit/editing.ts';
 import { chirp } from '../settings/licenses.ts';
 import { pxSrc } from '../tools/stamps.ts';
 import { renderPalette } from '../ui/colorPicker.ts';

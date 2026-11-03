@@ -7,7 +7,7 @@ import { clamp } from '../core/base.ts';
 import { cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { fitText } from '../edit/text.ts';
-import { endEdit, startEdit } from '../features/tags.ts';
+import { endEdit, startEdit } from '../edit/editing.ts';
 import { audioAct } from '../media/devices.ts';
 import { videoAct } from '../media/video.ts';
 import { card } from '../model/boards.ts';

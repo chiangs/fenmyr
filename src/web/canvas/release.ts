@@ -8,7 +8,7 @@ import { tilt, uid } from '../core/base.ts';
 import { $, cardsEl, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { docTarget, dropIntoDoc } from '../docs/drop.ts';
-import { startEdit } from '../features/tags.ts';
+import { startEdit } from '../edit/editing.ts';
 import { card } from '../model/boards.ts';
 import { snapTo } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
