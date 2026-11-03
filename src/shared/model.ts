@@ -79,7 +79,7 @@ type CardFields = {
   // device: the screen it's sized for (iPhone, Desktop…)
   frame: { name?: string; device?: string; fill?: string };
   section: { text?: string };
-  box: { img?: string; src?: string };
+  box: { img?: string; src?: string; fill?: string };
   text: { text?: string; size?: number; weight?: number };
   icon: { name?: string };
   font: { font?: string; text?: string };
@@ -115,7 +115,8 @@ type CardBase = {
   label?: string;
   hex?: string;
   font?: string;
-  fs?: string;
+  // a named text size (s, l, xl) or the exact scale left by Shift-resizing
+  fs?: string | number;
   due?: string;
   tags?: string[];
   tagText?: string;
@@ -146,13 +147,28 @@ type CardBase = {
   // a name given in the Layers panel, and a group's name (kept on each card in the group)
   ln?: string;
   gn?: string;
+  // in Unsorted: cards that went in joined by connectors share this, so they come back out together
+  tie?: string;
 };
 
 export type Card = { [T in CardType]: CardBase & { type: T } & CardFields[T] }[CardType];
 export type CardOf<T extends CardType> = Extract<Card, { type: T }>;
 
 export type View = { x: number; y: number; z: number };
-export type Link = { id: string; a: string; b: string; arrow?: boolean };
+// pa, pb: an end pinned to a spot on its card's edge (fractions of its width and height); bend: how far it curves;
+// w: its weight (2, 4 or 6) and color its colour
+export type Link = {
+  id: string;
+  a: string;
+  b: string;
+  arrow?: boolean;
+  pa?: { u: number; v: number };
+  pb?: { u: number; v: number };
+  bend?: number;
+  w?: number;
+  color?: string;
+  dash?: boolean;
+};
 
 // What a board or project may read from one vault: '' in folders is the whole vault; ai lets Myra send matching notes to Claude.
 export type VaultGrant = { vault: string; folders: string[]; ai: boolean; write: boolean; writeTo: string };

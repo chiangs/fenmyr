@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { cardEl, esc } from '../ui/dom.ts';
 import { $, stage, wires } from '../core/dom.ts';
 import { LY, layersSoon } from '../panels/layers.ts';
@@ -7,10 +6,14 @@ import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { session } from '../core/state.ts';
+import type { Card, Link } from '../../shared/model.ts';
 
-const center = c => ({ x: c.x + c.w / 2, y: c.y + (c.type === 'title' ? 25 : c.h / 2) });
+type Point = { x: number; y: number };
+type Pin = { u: number; v: number };
 
-function edgePoint(c, toward) {
+const center = (c: Card) => ({ x: c.x + c.w / 2, y: c.y + (c.type === 'title' ? 25 : c.h / 2) });
+
+function edgePoint(c: Card, toward: Point) {
   // where the line from a card's center toward a point leaves the card
   const m = center(c),
     dx = toward.x - m.x,
@@ -22,7 +25,7 @@ function edgePoint(c, toward) {
 }
 
 // a pinned line end: a spot on the card's edge, kept as a fraction of its width and height, so it follows the card when it moves or resizes
-function pinPoint(c, p) {
+function pinPoint(c: Card, p: Pin) {
   const h = c.type === 'title' ? 50 : c.h,
     x = c.x + p.u * c.w,
     y = c.y + p.v * h,
@@ -30,18 +33,18 @@ function pinPoint(c, p) {
   return { x: x + (p.u <= 0 ? -o : p.u >= 1 ? o : 0), y: y + (p.v <= 0 ? -o : p.v >= 1 ? o : 0) };
 }
 
-export function pinAt(c, w) {
+export function pinAt(c: Card, w: Point): Pin {
   // the nearest point on the card's edge to where you dropped the end
   const h = c.type === 'title' ? 50 : c.h,
     u = Math.max(0, Math.min(1, (w.x - c.x) / c.w)),
     v = Math.max(0, Math.min(1, (w.y - c.y) / h));
   const d = [u, 1 - u, v, 1 - v],
     k = d.indexOf(Math.min(...d)),
-    r = x => Math.round(x * 1000) / 1000;
+    r = (x: number) => Math.round(x * 1000) / 1000;
   return k === 0 ? { u: 0, v: r(v) } : k === 1 ? { u: 1, v: r(v) } : k === 2 ? { u: r(u), v: 0 } : { u: r(u), v: 1 };
 }
 
-export function wireGeom(l, a, b) {
+export function wireGeom(l: Link, a: Card, b: Card) {
   const ca = l.pa ? pinPoint(a, l.pa) : center(a),
     cb = l.pb ? pinPoint(b, l.pb) : center(b),
     p0 = l.pa ? ca : edgePoint(a, cb),
@@ -58,10 +61,10 @@ export function wireGeom(l, a, b) {
 }
 
 // connector weight and colour; a colour from a board file is checked before it goes into the page
-export const wireW = l => (l.w === 4 || l.w === 6 ? l.w : 2);
-export const wireColor = l => (/^#[0-9a-f]{3,8}$/i.test(l.color || '') ? l.color : '');
+export const wireW = (l: Link) => (l.w === 4 || l.w === 6 ? l.w : 2);
+export const wireColor = (l: Link) => (/^#[0-9a-f]{3,8}$/i.test(l.color || '') ? l.color : '');
 
-export function renderWires(live?) {
+export function renderWires(live?: { a: Point; b: Point }) {
   const O = 5000;
   let h = '';
   session.board.links.forEach(l => {
@@ -92,7 +95,9 @@ export function renderWires(live?) {
       if (on) halo += `<path class="w-halo" style="stroke-width:${ww + 6}" d="${ad}"/>`;
     }
     if (on) halo = `<path class="w-halo" style="stroke-width:${ww + 6}" d="${d}"/>` + halo; // selected: a soft blue glow behind the line, so its real colour stays visible
-    h += `${halo}<path class="w${l.dash ? ' dash' : ''}" style="${sty}${ds}" d="${d}"/>${arrow}<path class="w-hit" style="stroke-width:${Math.max(16, ww + 12)}" data-wire="${l.id}" d="${d}"/>`;
+    const dash = l.dash ? ' dash' : '',
+      hitW = Math.max(16, ww + 12);
+    h += `${halo}<path class="w${dash}" style="${sty}${ds}" d="${d}"/>${arrow}<path class="w-hit" style="stroke-width:${hitW}" data-wire="${l.id}" d="${d}"/>`;
     if (on)
       h += `<circle class="w-end" data-end="a" data-wire="${l.id}" cx="${g.p0.x + O}" cy="${g.p0.y + O}" r="6"/><circle class="w-end" data-end="b" data-wire="${l.id}" cx="${g.p2.x + O}" cy="${g.p2.y + O}" r="6"/><circle class="w-bend" data-wire="${l.id}" cx="${g.handle.x + O}" cy="${g.handle.y + O}" r="7"/>`;
   });
@@ -104,17 +109,17 @@ export function renderWires(live?) {
   wires.innerHTML = h;
 }
 
-export const linkById = id => session.board.links.find(l => l.id === id);
+export const linkById = (id: string) => session.board.links.find(l => l.id === id);
 
-export function selectWire(id) {
+export function selectWire(id: string | null) {
   session.selWire = id;
   if (id) selectOnly([]);
   renderWires();
 }
 
-export const byId = id => session.board.cards.find(c => c.id === id);
+export const byId = (id: string) => session.board.cards.find(c => c.id === id);
 
-let trayN = null;
+let trayN: number | null = null;
 
 export function renderTray() {
   if (window.__phone?.on) setTimeout(window.__phone.count);
@@ -132,36 +137,38 @@ export function renderTray() {
   trayN = session.board.tray.length;
   const list = $('trayList');
   list.innerHTML = '';
-  $('trayCount').textContent = session.board.tray.length;
+  $('trayCount').textContent = String(session.board.tray.length);
   session.board.tray.forEach(c => {
     const d = document.createElement('div');
     d.className = 'tray-item';
     d.dataset.id = c.id;
-    d.style.setProperty('--tilt', c.r / 2 + 'deg');
-    d.innerHTML = c.type === 'image' ? `<img src="${esc(c.src)}">` : esc(c.type === 'link' ? c.title || c.url : c.text);
+    d.style.setProperty('--tilt', (c.r ?? 0) / 2 + 'deg');
+    const src = c.type === 'image' ? esc(c.src) : '';
+    d.innerHTML = c.type === 'image' ? `<img src="${src}">` : esc(c.type === 'link' ? c.title || c.url : c.text);
     list.appendChild(d);
   });
 }
 
 // Unsorted keeps ideas simple: every card is its own item. But cards that were joined by connectors when they went in stay tied (c.tie, and their
 // connectors wait in board.trayLinks), so pulling one back out brings the others with it, laid out as they were, reconnected
-export function sendToTray(cards) {
+export function sendToTray(cards: Card[]) {
   const ids = new Set(cards.map(c => c.id)),
     joined = session.board.links.filter(l => ids.has(l.a) && ids.has(l.b)),
     up = new Map(cards.map(c => [c.id, c.id]));
-  const root = id => {
-    while (up.get(id) !== id) id = up.get(id);
+  const root = (start: string) => {
+    let id = start;
+    for (let next = up.get(id); next !== undefined && next !== id; next = up.get(id)) id = next;
     return id;
   };
   joined.forEach(l => up.set(root(l.a), root(l.b)));
-  const size = {};
+  const size: Record<string, number> = {};
   cards.forEach(c => {
     const r = root(c.id);
     size[r] = (size[r] || 0) + 1;
   });
   cards.forEach(c => {
     const r = root(c.id);
-    if (size[r] > 1) c.tie = r;
+    if ((size[r] ?? 0) > 1) c.tie = r;
     else delete c.tie;
   });
   session.board.trayLinks = [...(session.board.trayLinks || []), ...joined];
@@ -174,17 +181,17 @@ export function sendToTray(cards) {
 }
 
 // back onto the board with c's top-left at `at`; the rest of its group follows. Returns everything that came out.
-export function takeFromTray(c, at) {
+export function takeFromTray(c: Card, at: Point) {
   const members = c.tie ? session.board.tray.filter(m => m.tie === c.tie) : [c];
   if (!members.includes(c)) members.push(c);
-  const dx = c.x == null ? 0 : at.x - c.x,
-    dy = c.y == null ? 0 : at.y - c.y,
+  const dx = at.x - c.x,
+    dy = at.y - c.y,
     ids = new Set(members.map(m => m.id));
   members.forEach(m => {
     if (m === c) {
       m.x = at.x;
       m.y = at.y;
-    } else if (m.x != null) {
+    } else {
       m.x += dx;
       m.y += dy;
     }
@@ -203,18 +210,16 @@ export function takeFromTray(c, at) {
 
 // a tied card that lost its partners (Myra removed them) is just an ordinary item again
 export function tidyTies() {
-  const n = {};
-  session.board.tray.forEach(c => c.tie && (n[c.tie] = (n[c.tie] || 0) + 1));
-  session.board.tray.forEach(c => {
-    if (c.tie && n[c.tie] < 2) delete c.tie;
-  });
+  const n: Record<string, number> = {};
+  for (const c of session.board.tray) if (c.tie) n[c.tie] = (n[c.tie] || 0) + 1;
+  for (const c of session.board.tray) if (c.tie && (n[c.tie] ?? 0) < 2) delete c.tie;
   const ids = new Set(session.board.tray.map(c => c.id));
   session.board.trayLinks = (session.board.trayLinks || []).filter(l => ids.has(l.a) && ids.has(l.b));
   if (!session.board.trayLinks.length) delete session.board.trayLinks;
 }
 
 // (the stage gets a 'multi' class when more than one thing is selected: tilt handles only show for one thing at a time)
-export function selectOnly(ids) {
+export function selectOnly(ids: string[]) {
   if (ids.length && session.selWire) {
     session.selWire = null;
     renderWires();

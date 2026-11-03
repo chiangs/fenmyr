@@ -1,10 +1,9 @@
-// @ts-nocheck
 import { rhEl } from './handles.ts';
 import { $, grid, stage, world } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 
 // ---------- view ----------
-let movingT = 0;
+let movingT: ReturnType<typeof setTimeout> | undefined;
 
 export function applyView() {
   // section names grow as you zoom out, so a zoomed-out board reads like a big wall of labeled areas

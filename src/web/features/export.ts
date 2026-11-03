@@ -146,7 +146,7 @@ export function init43() {
     if (el) {
       const id = el.dataset.id ?? '';
       if (!session.sel.has(id)) selectOnly(groupOf(id));
-      const cs: Card[] = selCards().filter(c => c !== undefined), // like a click: a grouped piece means its group, unless you picked the piece
+      const cs = selCards(), // like a click: a grouped piece means its group, unless you picked the piece
         first = cs[0],
         sections = cs.filter(c => c.type === 'section'),
         spots = spotsIn(cs),

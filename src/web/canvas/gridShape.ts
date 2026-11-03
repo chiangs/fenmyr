@@ -1,11 +1,12 @@
-// @ts-nocheck
 import { applyView } from './view.ts';
 import { $, grid } from '../core/dom.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
+import { closestTo, htmlIn } from '../ui/dom.ts';
 
 // ---------- the grid's shape: plain dots, or a tiny repeating shape in the dot color ----------
-const GRID_SHAPES = {
+// each shape's name, and its SVG drawn in a 26 × 26 tile
+const GRID_SHAPES: Record<string, [name: string, svg: string]> = {
   dot: ['Dots', '<circle cx="13" cy="13" r="1.6"/>'],
   cross: [
     'Crosses',
@@ -26,11 +27,11 @@ const GRID_SHAPES = {
   ],
 };
 
-const gridMask = k =>
-  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" fill="#000">${(GRID_SHAPES[k] || GRID_SHAPES.dot)[1]}</svg>`)}")`;
+const gridMask = (k: string) =>
+  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" fill="#000">${(GRID_SHAPES[k] ?? GRID_SHAPES.dot)?.[1] ?? ''}</svg>`)}")`;
 
 export function applyGridShape() {
-  const k = GRID_SHAPES[settings.gridShape] ? settings.gridShape : 'dot',
+  const k = settings.gridShape && GRID_SHAPES[settings.gridShape] ? settings.gridShape : 'dot',
     on = k !== 'dot';
   grid.classList.toggle('shaped', on);
   if (on) grid.style.setProperty('--gm', gridMask(k));
@@ -45,13 +46,13 @@ export function applyGridShape() {
       )
       .join('');
     box.onclick = e => {
-      const b = e.target.closest('[data-gshape]');
+      const b = closestTo(e.target, '[data-gshape]');
       if (!b) return;
       settings.gridShape = b.dataset.gshape;
       if (!settings.grid) settings.grid = true;
       applySettings();
     };
   }
-  box.querySelectorAll('[data-gshape]').forEach(b => b.classList.toggle('on', b.dataset.gshape === k));
+  for (const b of htmlIn(box, '[data-gshape]')) b.classList.toggle('on', b.dataset.gshape === k);
   applyView();
 }

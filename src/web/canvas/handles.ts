@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { cardEl } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
@@ -12,45 +11,50 @@ import { chatOpen } from '../myra/chatWindow.ts';
 import { drawOn } from '../tools/draw.ts';
 import { vec } from '../tools/penEdit.ts';
 import { appState, session } from '../core/state.ts';
-let rh;
-export let rhEl;
+import type { Card } from '../../shared/model.ts';
 
-export let rhFor = null;
+let rh: HTMLElement;
+export let rhEl: HTMLElement;
 
-export const realBox = k => {
+// what the resize corner is on: a card's id, 'g:' and a group's id, or 'm' for several things
+export let rhFor: string | null = null;
+
+export const realBox = (k: Card) => {
   const el = k.type === 'title' ? cardEl(k.id) : null;
   return { w: el?.offsetWidth || k.w, h: el?.offsetHeight || k.h };
 };
-export let mrot;
+export let mrot: HTMLElement;
 
 export const ROT_FIXED = typesWith('noRotate');
 // a group you turned: { key, anchor } (the dot stays on the piece that was on top)
-export const selKey = cs =>
+export const selKey = (cs: Card[]) =>
   cs
     .map(k => k.id)
     .sort()
     .join();
 
-export const tiltOf = k =>
+export const tiltOf = (k: Card) =>
   (k.rot || 0) +
   (document.body.classList.contains('neat') || ROT_FIXED.includes(k.type) || (k.type === 'stamp' && !k.tilted)
     ? 0
     : k.r || 0);
 
 // which piece carries the dot: one thing is itself; for several, the one on top (and it keeps the dot after you turn them)
-export function anchorOf(cs) {
+export function anchorOf(cs: Card[]): Card | undefined {
   if (cs.length === 1) return cs[0];
-  const kept =
-    appState.mrotKeep && appState.mrotKeep.key === selKey(cs) && cs.find(k => k.id === appState.mrotKeep.anchor);
+  const keep = appState.mrotKeep,
+    kept = keep && keep.key === selKey(cs) && cs.find(k => k.id === keep.anchor);
   if (kept) return kept;
-  return cs.reduce((best, k) => {
+  let best: { k: Card; y: number } | null = null;
+  for (const k of cs) {
     const b = realBox(k),
       y = k.y + b.h / 2 - (b.h / 2) * Math.cos((tiltOf(k) * Math.PI) / 180);
-    return !best || y < best.y ? { k, y } : best;
-  }, null).k;
+    if (!best || y < best.y) best = { k, y };
+  }
+  return best?.k;
 }
 
-function placeDot(x, y, ang) {
+function placeDot(x: number, y: number, ang: number) {
   mrot.style.left = x + 'px';
   mrot.style.top = y + 'px';
   mrot.style.rotate = (ang || 0) + 'deg';
@@ -59,8 +63,9 @@ function placeDot(x, y, ang) {
 
 function syncMrot() {
   const ids = session.board ? [...session.sel] : [];
-  const cs = ids.map(byId).filter(k => k && !k.locked);
-  const turnable = cs.length > 1 || (cs.length === 1 && !ROT_FIXED.includes(cs[0].type) && cs[0].type !== 'section');
+  const cs = ids.map(byId).filter((k): k is Card => !!k && !k.locked),
+    one = cs.length === 1 ? cs[0] : undefined;
+  const turnable = cs.length > 1 || (!!one && !ROT_FIXED.includes(one.type) && one.type !== 'section');
   const on =
     turnable &&
     !drawOn &&
@@ -70,18 +75,20 @@ function syncMrot() {
     !vec;
   mrot.classList.toggle('on', !!on);
   if (!on) return;
-  if (appState.drag && appState.drag.mode === 'mrotate' && appState.drag.dot0) {
-    const t = ((appState.drag.cur || 0) * Math.PI) / 180,
-      dx = appState.drag.dot0.x - appState.drag.cx,
-      dy = appState.drag.dot0.y - appState.drag.cy; // held by the cursor, going round with the turn
+  const turn = appState.drag;
+  if (turn?.mode === 'mrotate') {
+    const t = ((turn.cur || 0) * Math.PI) / 180,
+      dx = turn.dot0.x - turn.cx,
+      dy = turn.dot0.y - turn.cy; // held by the cursor, going round with the turn
     return placeDot(
-      appState.drag.cx + dx * Math.cos(t) - dy * Math.sin(t),
-      appState.drag.cy + dx * Math.sin(t) + dy * Math.cos(t),
-      appState.drag.ang0 + (appState.drag.cur || 0),
+      turn.cx + dx * Math.cos(t) - dy * Math.sin(t),
+      turn.cy + dx * Math.sin(t) + dy * Math.cos(t),
+      turn.ang0 + (turn.cur || 0),
     );
   }
-  const k = anchorOf(cs),
-    b = realBox(k),
+  const k = anchorOf(cs);
+  if (!k) return;
+  const b = realBox(k),
     d = tiltOf(k),
     t = (d * Math.PI) / 180; // the top piece's own top middle, turned with it
   placeDot(k.x + b.w / 2 + (b.h / 2) * Math.sin(t), k.y + b.h / 2 - (b.h / 2) * Math.cos(t), d);
@@ -90,7 +97,7 @@ function syncMrot() {
 function syncRH() {
   syncMrot();
   const ids = session.board ? [...session.sel] : [],
-    c = ids.length === 1 ? byId(ids[0]) : null;
+    c = ids.length === 1 ? byId(ids[0] ?? '') : null;
   const ok =
     c &&
     !['ink'].includes(c.type) &&
@@ -99,10 +106,10 @@ function syncRH() {
     !(appState.drag && appState.drag.mode === 'move') &&
     !cropping;
   // a whole group selected (a button, an input…): one corner for the group
-  const g = !c && ids.length > 1 && byId(ids[0])?.group,
+  const g = !c && ids.length > 1 && byId(ids[0] ?? '')?.group,
     grp = g && ids.every(i => byId(i)?.group === g) && !drawOn && !(appState.drag && appState.drag.mode === 'move');
   if (grp) {
-    const cs = ids.map(byId);
+    const cs = ids.map(byId).filter(k => k !== undefined);
     rhFor = 'g:' + g;
     rh.classList.add('on');
     rh.style.left = Math.max(...cs.map(k => k.x + k.w)) + 'px';
@@ -120,12 +127,12 @@ function syncRH() {
     !cropping &&
     !session.editing;
   if (multi) {
-    const cs = ids.map(byId).filter(k => k && !k.locked && k.type !== 'ink');
+    const cs = ids.map(byId).filter((k): k is Card => !!k && !k.locked && k.type !== 'ink');
     if (cs.length > 1) {
       const R = realBox;
       rhFor = 'm';
       rh.classList.add('on');
-      const rs_ = cs.map(k => cardEl(k.id)?.getBoundingClientRect()).filter(r => r && r.width); // the real bottom-right of what you see (turned things included)
+      const rs_ = cs.map(k => cardEl(k.id)?.getBoundingClientRect()).filter((r): r is DOMRect => !!r && !!r.width); // the real bottom-right of what you see (turned things included)
       const pt = rs_.length
         ? toWorld(Math.max(...rs_.map(r => r.right)), Math.max(...rs_.map(r => r.bottom)))
         : { x: Math.max(...cs.map(k => k.x + R(k).w)), y: Math.max(...cs.map(k => k.y + R(k).h)) };
@@ -137,7 +144,7 @@ function syncRH() {
   }
   rhFor = ok ? c.id : null;
   rh.classList.toggle('on', !!ok);
-  if (ok) {
+  if (ok && c) {
     const el = cardEl(c.id);
     const h = c.type === 'title' && el ? el.offsetHeight : c.h;
     // a title's real width (its saved width lags a moment after the text, size or font changes, which left the corner floating off to the side)
@@ -156,7 +163,7 @@ function syncRH() {
   requestAnimationFrame(syncRH);
 }
 // starts after the rest of the app is set up
-export const toWorld = (cx, cy) => {
+export const toWorld = (cx: number, cy: number) => {
   const r = stage.getBoundingClientRect();
   return { x: (cx - r.left - session.view.x) / session.view.z, y: (cy - r.top - session.view.y) / session.view.z };
 };
@@ -172,33 +179,34 @@ export const viewSoon = () => {
     });
 };
 
-export function zoomAt(cx, cy, z, soon) {
+export function zoomAt(cx: number, cy: number, z: number, soon = false) {
   const r = stage.getBoundingClientRect(),
     p = toWorld(cx, cy);
   session.view.z = clamp(z, 0.15, 3);
   session.view.x = cx - r.left - p.x * session.view.z;
   session.view.y = cy - r.top - p.y * session.view.z;
-  soon ? viewSoon() : applyView();
+  if (soon) viewSoon();
+  else applyView();
 }
 
 // Ctrl + mouse wheel moves one step along these, so every notch is the same size and 100% is always one of them
 export const ZOOM_STEPS = [0.15, 0.2, 0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
-export function stepZoom(cx, cy, dir) {
+export function stepZoom(cx: number, cy: number, dir: number) {
   const z = session.view.z,
     next = dir > 0 ? ZOOM_STEPS.find(s => s > z + 0.001) : [...ZOOM_STEPS].reverse().find(s => s < z - 0.001);
   if (next) zoomAt(cx, cy, next);
 }
 
 // the part of the stage not covered by the left boxes and the tray (or Myra's chat, when it's open)
-function openSides(r) {
+function openSides(r: DOMRect) {
   const ph = document.body.classList.contains('phone'),
     ch = !ph && chatOpen() && $('mChat').getBoundingClientRect();
   if (ph) return { L: 0, R: 0 };
   return { L: 270, R: ch && ch.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - 270 - 520)) : 260 };
 }
 
-export function fit(cards, pad = 120, maxZ = 1.4) {
+export function fit(cards: Card[], pad = 120, maxZ = 1.4) {
   if (!cards.length) return;
   const r = stage.getBoundingClientRect();
   const x0 = Math.min(...cards.map(c => c.x)),
@@ -216,7 +224,7 @@ export function fit(cards, pad = 120, maxZ = 1.4) {
 }
 // New cards go in the empty space nearest the middle of the view. The view only moves if that leaves them off screen,
 // and then it doesn't zoom in, so placing something never changes how close you were looking.
-export function placeInView(made) {
+export function placeInView(made: Card[]) {
   const r = stage.getBoundingClientRect(),
     { L, R } = openSides(r),
     { x: vx, y: vy, z } = session.view,
