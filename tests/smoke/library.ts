@@ -7,6 +7,7 @@ export async function library(t: Smoke) {
   await templates(t);
   await vaults(t);
   await vaultAI(t);
+  await vaultTasks(t);
 }
 
 // save the board as a template, see it under Yours, add it to a board (twice: new ids each time) and open it as a new board
@@ -228,4 +229,97 @@ async function vaultAI(t: Smoke) {
     chipReset: ticked.reset,
     oneCard: cards === 1,
   });
+}
+
+// asking for tasks: the app collects the unfinished ones (narrowed to the request's names, sub-tasks kept, due date
+// read) and says what it used; Myra's kanban with cards in its columns is built from her reply
+async function vaultTasks(t: Smoke) {
+  const { page, data } = t,
+    vp = path.join(data, 'vault'),
+    promptNow = () => fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8');
+  fs.writeFileSync(
+    path.join(vp, 'Projects/Gifts.md'),
+    [
+      '# Gifts',
+      '- [x] Order the wrapping paper',
+      '- [ ] Buy a gift for Ruth 📅 2026-12-20',
+      '  - [x] Pick a shop',
+      '  - [ ] Wrap it',
+      '- [/] Card for Max',
+      '- [ ] Unrelated chore',
+    ].join('\n'),
+  );
+  // Myra may read the Projects folder, and the chip is ticked for one question
+  const askTasks = (q: string) =>
+    page.evaluate(async q => {
+      const T = window.__t,
+        M = window.__fenmyr,
+        v = (await Fenmyr.vaults())[0];
+      if (!v) throw new Error('no vault');
+      M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: true, write: false, writeTo: 'Myra' }];
+      M.applyToolbar();
+      T.click('#mcVault');
+      await M.ask(q);
+      await T.wait(300);
+      return document.body.textContent ?? '';
+    }, q);
+  const said = /I used 2 unfinished tasks from 1 note in your vault \(\d+ open in all/.test(
+      await askTasks('take all my tasks that are not completed and add a kanban board for the xmas/ruth/max ones'),
+    ),
+    p = promptNow(),
+    prompt =
+      p.includes('THEIR UNFINISHED TASKS') &&
+      p.includes('Buy a gift for Ruth') &&
+      p.includes('due 2026-12-20') &&
+      p.includes('[x] Pick a shop') &&
+      p.includes('Card for Max (in progress)') &&
+      !p.includes('Unrelated chore') &&
+      !p.includes('Order the wrapping paper');
+  const kanban = await page.evaluate(async () => {
+    const M = window.__fenmyr,
+      b = M.board;
+    await M.applyMyra({
+      say: 'ok',
+      collections: [{ name: 'Xmas gifts', kanban: true, columns: ['Ruth', 'Max'], x: 0, y: 900 }],
+      add: [
+        {
+          type: 'todo',
+          text: 'Buy a gift for Ruth',
+          items: ['Pick a shop', { t: 'Wrap it', done: true }],
+          due: '2026-12-20',
+          in: 'Xmas gifts',
+          column: 'Ruth',
+        },
+        { type: 'todo', text: 'Card for Max', items: ['Write it'], in: 'Xmas gifts', column: 'Max' },
+      ],
+    });
+    const k = b.cards.find(c => c.type === 'coll' && c.text === 'Xmas gifts');
+    if (k?.type !== 'coll') return { made: false, columns: false, sub: false, due: false };
+    const [a, c] = k.kids.map(id => b.cards.find(x => x.id === id));
+    if (a?.type !== 'todo' || !c) return { made: true, columns: false, sub: false, due: false };
+    return {
+      made: k.kanban === true && k.colNames?.join() === 'Ruth,Max',
+      columns: k.colOf?.[a.id] === 0 && k.colOf?.[c.id] === 1,
+      sub: a.items?.length === 2 && a.items[1]?.done === true && a.items[0]?.done === false,
+      due: a.due === '2026-12-20' && !!document.querySelector(`[data-id="${a.id}"] .due`),
+    };
+  });
+  const nothing = /found none that match your words/.test(
+    await askTasks('list my unfinished tasks about the moon landing'),
+  );
+  await page.evaluate(() => {
+    window.__fenmyr.board.vaultAccess = [];
+    window.__fenmyr.applyToolbar();
+  });
+  t.checkAll('vaultTasks', {
+    said,
+    prompt,
+    kanbanMade: kanban.made,
+    kanbanColumns: kanban.columns,
+    kanbanSub: kanban.sub,
+    kanbanDue: kanban.due,
+    nothing,
+    noEmptyBoard: promptNow().includes('Do not build, fill or empty any board'),
+  });
+  fs.rmSync(path.join(vp, 'Projects/Gifts.md'));
 }
