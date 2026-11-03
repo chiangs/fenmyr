@@ -8,6 +8,7 @@ export type BoardSummary = {
   folder: string | null;
   parent: string | null;
   updated: number;
+  kind?: 'prototype';
   // set when the board has its own vault access (not its project's): the vaults it may read, and whether AI may read them
   vaultAccess?: { vault: string; ai: boolean }[];
 };
@@ -210,6 +211,11 @@ export type Ops = {
   ghLoginCancel: { args: None; result: true };
   ghSetupGit: { args: None; result: true };
   // a new GitHub repo for a linked folder, made by that account and set as its origin
+  // a new prototype's code folder and starter files in a linked repo
+  protoCreate: {
+    args: { root: string; name: string; stack: 'react' | 'html' };
+    result: { dir: string; stack: 'react' | 'html' };
+  };
   ghRepoCreate: {
     args: { path: string; account: string; name: string; private: boolean };
     result: { owner: string; name: string };

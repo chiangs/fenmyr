@@ -12,6 +12,7 @@ import { parseMacFonts } from './macFonts.ts';
 import * as net from './net.ts';
 import * as output from './output.ts';
 import P from './paths.ts';
+import * as prototypes from './prototypes.ts';
 import * as speech from './speech.ts';
 import * as storage from './storage.ts';
 import * as theme from './theme.ts';
@@ -276,6 +277,7 @@ const OPS = {
   ghLogin: () => gh.startLogin(r => send('ghLogin', r)),
   ghLoginCancel: () => gh.cancelLogin(),
   ghSetupGit: () => gh.setupGit(),
+  protoCreate: a => prototypes.create(text(a.root), text(a.name), a.stack === 'html' ? 'html' : 'react'),
   ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
 } satisfies Handlers;
 

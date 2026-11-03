@@ -158,7 +158,8 @@ export function linkRepo(first: Project) {
   const show = (s: Step) => {
     step = s;
     body.innerHTML = screen(s);
-    body.querySelector('input')?.focus();
+    // focus inside the dialog, so Escape reaches it on screens with nothing to type
+    body.querySelector<HTMLElement>('input, select, .set-btn.hot, .set-btn')?.focus();
   };
   const fail = (e: unknown) => show({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
   const link = async (r: Repo) => {

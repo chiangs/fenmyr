@@ -41,9 +41,12 @@ const l = await launch({ env: { PATH: `${bin}:${process.env.PATH ?? ''}` } });
 const { page } = l;
 const library = () => fs.readFileSync(path.join(l.data, 'fenmyr', 'folders.json'), 'utf8');
 const screen = () => page.evaluate(() => document.querySelector('.rl-body')?.textContent ?? '');
+// the dialog turns its buttons off while a step runs and draws the next screen when it's done
 const press = async (action: string) => {
   await page.click(`.rl-body [data-a="${action}"]`);
-  await page.waitForTimeout(500);
+  await page.waitForFunction(
+    () => !document.querySelector('.rl-body') || !!document.querySelector('.rl-body button:not([disabled])'),
+  );
 };
 const openRepo = async (name: string) => {
   await page.evaluate(name => {

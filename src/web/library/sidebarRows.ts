@@ -1,6 +1,7 @@
 import type { Folder, Project } from '../../shared/model.ts';
 import type { BoardSummary } from '../../shared/ops.ts';
 import { appState, session } from '../core/state.ts';
+import { newPrototypeIn } from '../repo/prototypes.ts';
 import { chirp } from '../settings/licenses.ts';
 import { child } from '../ui/dom.ts';
 import { closeHome } from './home.ts';
@@ -25,7 +26,7 @@ export const FBTN_OF = (a: string) => (a === 'add' ? FBTN.add : a === 'ren' ? FB
 // the left box: a small tree (projects ▸ folders ▸ boards)
 export function boardRow(b: BoardSummary): Node {
   const r = document.createElement('div');
-  r.className = `board-row${session.board && b.id === session.board.id ? ' on' : ''}`;
+  r.className = `board-row${session.board && b.id === session.board.id ? ' on' : ''}${b.kind === 'prototype' ? ' proto' : ''}`;
   const shade = tint(b.color);
   r.innerHTML = `<i style="background:${shade}"></i><span></span>`;
   child(r, 'span').textContent = b.name;
@@ -111,13 +112,14 @@ export function folderNode(f: Folder): HTMLElement {
     inside.length + subs.length,
     [...subs.map(folderNode), ...inside.map(boardRow)],
     [
-      ['add', 'New board in this folder', '+'],
+      ['add', f.kind === 'prototyping' ? 'New prototype in this folder' : 'New board in this folder', '+'],
       ['ren', 'Rename', '✎'],
     ],
   );
+  wrap.classList.toggle('proto', f.kind === 'prototyping');
   child(wrap, '.node-head').onclick = async e => {
     const a = e.target instanceof Element ? e.target.closest<HTMLElement>('.f-btn')?.dataset.a : undefined;
-    if (a === 'add') return newBoardIn(f.id);
+    if (a === 'add') return f.kind === 'prototyping' ? newPrototypeIn(f) : newBoardIn(f.id);
     if (a === 'ren') return inlineRename(name, f);
     if (a === 'del') {
       for (const b of inside) await moveBoard(b.id, null);
