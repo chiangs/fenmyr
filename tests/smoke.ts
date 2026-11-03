@@ -7,6 +7,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron } from 'playwright';
+import { bridge } from './smoke/bridge.ts';
+import { installPageKit, makeSmoke } from './smoke/kit.ts';
+import { look } from './smoke/look.ts';
 import { HEADLESS } from './support/launch.ts';
 
 (async () => {
@@ -59,239 +62,12 @@ echo " [BLANK_AUDIO] hello from whisper"
   ); // Google Fonts can't be reached from every test machine
   await page.waitForFunction(() => window.Fenmyr && document.querySelector('#side'));
   await page.waitForTimeout(2000);
-  const r = await page.evaluate(async () => {
-    const res = { native: Fenmyr.native, linux: document.documentElement.classList.contains('linux') };
-    res.first = {
-      name: __fenmyr.board.name,
-      cards: __fenmyr.board.cards.length,
-      tray: __fenmyr.board.tray.length,
-      kanban: __fenmyr.board.cards.some(c => c.kanban),
-    }; // the first board people see
-    const board = {
-      id: 'smoke1',
-      name: 'Smoke',
-      color: 'mint',
-      cards: [{ id: 'c1', type: 'note', x: 0, y: 0, w: 220, h: 140, text: 'hi', bad: NaN }],
-    };
-    res.save = await Fenmyr.save(board);
-    res.load = (await Fenmyr.load('smoke1')).cards[0].bad;
-    // a big board (pictures make them many MB) goes there and back intact
-    const big = 'x'.repeat(20e6);
-    const t = performance.now();
-    await Fenmyr.save({ id: 'big', name: 'Big', cards: [{ id: 'b', type: 'image', src: big }] });
-    const back = await Fenmyr.load('big');
-    res.big = back.cards[0].src.length === big.length;
-    res.bigMs = Math.round(performance.now() - t);
-    await Fenmyr.remove('big');
-    res.list = (await Fenmyr.list()).some(b => b.id === 'smoke1');
-    res.folders = (await Fenmyr.saveFolders([{ id: 'f', name: 'F' }])) && (await Fenmyr.folders()).length;
-    res.fonts = (await Fenmyr.fonts()).length;
-    res.version = await Fenmyr.version();
-    res.usage = typeof (await Fenmyr.usage()).today.asks;
-    res.speech = await Fenmyr.speechAuth();
-    res.unknown = await new Promise(r => {
-      const id = 999999;
-      const o = window.__fenmyrReply;
-      window.__fenmyrReply = (i, ok, v) => {
-        if (i === id) {
-          window.__fenmyrReply = o;
-          r(v);
-        } else o(i, ok, v);
-      };
-      window.fenmyrHost.post({ id, op: 'nope', args: {} });
-    });
-    // a video goes in by chunks and comes back through fenmyrmedia:// with byte ranges
-    const blob = new Blob([new Uint8Array(5000).fill(7)], { type: 'video/mp4' });
-    const src = await Fenmyr.saveMedia(blob);
-    res.media = src;
-    const part = await fetch(src, { headers: { Range: 'bytes=100-199' } });
-    res.range = [part.status, (await part.arrayBuffer()).byteLength];
-    res.png = await Fenmyr.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: false, scale: 2 });
-    res.pdf = await Fenmyr.exportRect({ x: 0, y: 0, w: 300, h: 200, name: 'shot', pdf: true, scale: 2 });
-    res.docx = await Fenmyr.saveFile(btoa('hello'), 'Doc', 'docx');
-    res.docPDF = await Fenmyr.docPDF(
-      '<!doctype html><link rel="stylesheet" href="__WEB__/fonts.css"><h1 style="font-family:DM Sans">Hello</h1><p>' +
-        'words '.repeat(2000) +
-        '</p>',
-      'Doc',
-      'a4',
-    );
-    res.conn = await Fenmyr.connections();
-    res.ask = await Fenmyr.ask('sort these', { cards: [], n: Infinity }, false, { mobbin: true, higgs: false });
-    res.usage2 = (await Fenmyr.usage()).today;
-    // a real webm voice memo, recorded from a tone, goes through the WAV conversion
-    const ac = new AudioContext(),
-      osc = ac.createOscillator(),
-      dst = ac.createMediaStreamDestination();
-    osc.connect(dst);
-    osc.start();
-    const rec = new MediaRecorder(dst.stream),
-      chunks = [];
-    rec.ondataavailable = e => chunks.push(e.data);
-    await new Promise(r => {
-      rec.onstop = r;
-      rec.start();
-      setTimeout(() => rec.stop(), 600);
-    });
-    const memo = await new Promise(r => {
-      const fr = new FileReader();
-      fr.onload = () => r(fr.result);
-      fr.readAsDataURL(new Blob(chunks, { type: rec.mimeType }));
-    });
-    res.memoType = rec.mimeType;
-    res.speech2 = await Fenmyr.speechAuth();
-    res.transcribe = await Fenmyr.transcribe(memo);
-    return res;
-  });
-  r.prompt = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8');
-  r.args = fs.readFileSync(path.join(data, 'args.txt'), 'utf8').slice(-120);
-  r.wav = fs.readFileSync(path.join(data, 'wav-magic.txt'), 'utf8');
-  // Claude Code hooks are always off for Myra's calls; the web (search and public pages) is only on when Settings → Helpers says so
-  Object.assign(
-    r,
-    await page.evaluate(async () => {
-      const argsAfter = async fn => {
-          await fn();
-          return window.__readArgs();
-        },
-        res = {};
-      res.hooksOff = await argsAfter(() => Fenmyr.ask('again', {}, false, { mobbin: false, higgs: false }));
-      res.hooksRewrite = await argsAfter(() => Fenmyr.rewrite('text', 'shorter', 'Doc', ''));
-      res.webOn = await argsAfter(() =>
-        Fenmyr.ask('look this up', {}, false, { mobbin: false, higgs: false, web: true }),
-      );
-      return res;
-    }),
-  );
-  r.webPromptOn = fs
-    .readFileSync(path.join(data, 'prompt.txt'), 'utf8')
-    .includes('search the web and read public pages');
-  r.webOff = await page.evaluate(async () => {
-    await Fenmyr.ask('and this', {}, false, { mobbin: false, higgs: false });
-    return window.__readArgs();
-  });
-  r.webPromptOff = fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8').includes('switched off in Settings');
-  // icons: everything the page draws is in the icon set, the Icon style setting switches the weight, and a name nobody drew shows a placeholder
-  Object.assign(
-    r,
-    await page.evaluate(async () => {
-      const shown = sel => [...document.querySelectorAll(sel)].some(g => getComputedStyle(g).display !== 'none'),
-        res = {};
-      res.gridShapes = [...document.querySelectorAll('#gridShapes button')].map(b => b.dataset.gshape).join();
-      res.icoMissing = [
-        ...new Set(
-          [...document.querySelectorAll('svg[data-ico]')]
-            .map(s => s.dataset.ico)
-            .filter(n => !window.iconKnown(n) || n === 'missing'),
-        ),
-      ];
-      res.icoCount = document.querySelectorAll('#tools svg.ico').length;
-      res.icoPick = window.iconList().length;
-      res.icoPlaceholder = /data-ico="move_horiz"[^>]*><title>move_horiz/.test(window.Icon('move_horiz'));
-      res.icoRegular = shown('#tools .ico-r') && !shown('#tools .ico-d');
-      document.querySelector('[data-seg="iconStyle"] [data-v="duotone"]').click();
-      await new Promise(res => setTimeout(res, 100));
-      res.icoDuo =
-        document.body.classList.contains('icons-duo') &&
-        shown('#tools .ico-d') &&
-        !shown('#tools .ico-r') &&
-        document.querySelectorAll('#tools svg.ico .ico-d .t').length > 10;
-      document.querySelector('[data-seg="iconStyle"] [data-v="regular"]').click();
-      return res;
-    }),
-  );
-  // Settings → Board → Default font: board text and docs change, the app's own panels don't, and choosing Myra's own puts it back
-  Object.assign(
-    r,
-    await page.evaluate(async () => {
-      const wait = ms => new Promise(res => setTimeout(res, ms)),
-        fam = sel => getComputedStyle(document.querySelector(sel)).fontFamily,
-        res = {};
-      document.getElementById('gearBtn').click();
-      await wait(300);
-      document.querySelector('#setTabs [data-tab="board"]').click();
-      await wait(200);
-      res.fontBefore = fam('.card.title .text');
-      document.getElementById('defaultFontBtn').click();
-      await wait(200);
-      const pick = [...document.querySelectorAll('#fontPop .dp-font')].find(
-        b => b.dataset.bfont && b.dataset.bfont !== 'Figtree' && !b.querySelector('small'),
-      ); // a font installed here (no network in the test)
-      const name = pick.dataset.bfont;
-      pick.click();
-      await wait(300);
-      res.fontLora =
-        fam('.card.title .text').includes(name) &&
-        fam('.box').includes('Figtree') &&
-        !fam('.box').includes(name) &&
-        document.getElementById('defaultFontBtn').textContent === name;
-      document.getElementById('defaultFontBtn').click();
-      await wait(200);
-      document.querySelector('#fontPop [data-bfont=""]').click();
-      await wait(300);
-      res.fontBack = fam('.card.title .text') === res.fontBefore;
-      document.getElementById('setClose').click();
-      await wait(200);
-      return res;
-    }),
-  );
-  // the new starter boards open as their own boards, with their cards (and, for the tree, its lines)
-  Object.assign(
-    r,
-    await page.evaluate(async () => {
-      const wait = ms => new Promise(res => setTimeout(res, ms)),
-        res = {};
-      for (const [name, key] of [
-        ['OKRs and opportunities', 'tree'],
-        ['Product kickoff', 'kickoff'],
-      ]) {
-        document.querySelector('#tools [data-add="tpl"]').click();
-        await wait(200);
-        document.querySelector(`[data-starter="${name}"]`).click();
-        await wait(1500);
-        res[key] = {
-          name: document.getElementById('boardName').value === name,
-          cards: document.querySelectorAll('.card').length,
-        };
-      }
-      return res;
-    }),
-  );
-  // Kanban adds columns with names and counts to the board; right-clicking a name offers the column menu
-  Object.assign(
-    r,
-    await page.evaluate(async () => {
-      const wait = ms => new Promise(res => setTimeout(res, ms));
-      document.querySelector('#tools [data-add="tpl"]').click();
-      await wait(200);
-      document.querySelector('[data-tpl="kanban"]').click();
-      await wait(1200);
-      const hs = [...document.querySelectorAll('.kb-h')];
-      return {
-        kanban: {
-          cols: hs.map(h => h.querySelector('.text').textContent),
-          counts: hs.map(h => h.querySelector('.kb-n').textContent),
-        },
-      };
-    }),
-  );
-  await page.evaluate(() => {
-    document.getElementById('newsOk')?.click();
-    document.getElementById('onboard')?.classList.remove('on');
-  });
-  await page.waitForTimeout(800);
-  {
-    const bb = await page.evaluate(() => {
-      const q = document.querySelectorAll('.kb-h')[1].getBoundingClientRect();
-      return [q.x + 20, q.y + 12];
-    });
-    await page.mouse.click(bb[0], bb[1], { button: 'right' });
-    await page.waitForTimeout(300);
-    const menu = await page.evaluate(() => [...document.querySelectorAll('#rowMenu button')].map(b => b.textContent));
-    r.kanban.menu = menu.includes('Rename column') && menu.includes('Delete column') && menu.includes('Limit 5');
-    await page.keyboard.press('Escape');
-    await page.mouse.click(5, 300);
-  }
+  await page.addInitScript(installPageKit);
+  await page.evaluate(installPageKit);
+  const t = makeSmoke({ app, page, data, out, errors }),
+    r = {};
+  await bridge(t);
+  await look(t);
   // your own templates: save the board, see it under Yours, add it to a board (twice: new ids each time) and open it as a new board
   Object.assign(
     r,
@@ -2535,20 +2311,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   r.files = files;
   r.errors = errors;
   r.boardOnDisk = fs.existsSync(path.join(data, 'fenmyr/boards/smoke1.json'));
-  console.log(
-    JSON.stringify(
-      {
-        ...r,
-        prompt: `${r.prompt.slice(0, 120)}…`,
-        hooksOff: r.hooksOff.slice(-160),
-        webOn: r.webOn.slice(-120),
-        webOff: r.webOff.slice(-120),
-        hooksRewrite: r.hooksRewrite.slice(-100),
-      },
-      null,
-      1,
-    ),
-  );
+  console.log(JSON.stringify({ ...t.results, ...r, failed: t.failures }, null, 1));
   // every slash command is in Myra's instructions (the app hands over its own list), so a new command is known to her without editing a prompt file
   {
     const names = await page.evaluate(() => window.__fenmyr.slashNames());
@@ -2571,20 +2334,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   r.files = files;
   r.errors = errors;
   r.boardOnDisk = fs.existsSync(path.join(data, 'fenmyr/boards/smoke1.json'));
-  console.log(
-    JSON.stringify(
-      {
-        ...r,
-        prompt: `${r.prompt.slice(0, 120)}…`,
-        hooksOff: r.hooksOff.slice(-160),
-        webOn: r.webOn.slice(-120),
-        webOff: r.webOff.slice(-120),
-        hooksRewrite: r.hooksRewrite.slice(-100),
-      },
-      null,
-      1,
-    ),
-  );
+  console.log(JSON.stringify({ ...t.results, ...r, failed: t.failures }, null, 1));
   await app.close();
   const ok =
     r.wfOk &&
@@ -2605,37 +2355,14 @@ echo " [BLANK_AUDIO] hello from whisper"
     Object.values(r.notePics).every(Boolean) &&
     Object.values(r.place).every(Boolean) &&
     Object.values(r.slash).every(Boolean) &&
-    r.native &&
-    r.linux &&
-    r.save &&
-    r.load === 0 &&
-    r.list &&
-    r.folders === 1 &&
-    r.fonts > 0 &&
-    r.unknown === 'unknown op nope' &&
-    r.range[0] === 206 &&
-    r.range[1] === 100 &&
     r.pngSize[0] === 600 &&
     r.pdfPages >= 2 &&
     files.includes('shot.pdf') &&
     files.includes('Doc.docx') &&
     r.boardOnDisk &&
-    r.big &&
     r.licenses > 60 &&
     r.licMochiboard &&
     r.licJszip &&
-    r.gridShapes === 'dot,cross,square,cloudberry,berry,leaf' &&
-    r.tree.name &&
-    r.tree.cards >= 12 &&
-    r.kickoff.name &&
-    r.kickoff.cards >= 18 &&
-    r.kanban.cols.join() === 'To do,Doing,Done' &&
-    r.kanban.counts.join() === '2,1 / 3,1' &&
-    r.first.name === 'My first board' &&
-    r.first.cards === 15 &&
-    r.first.tray === 5 &&
-    r.first.kanban &&
-    r.kanban.menu &&
     r.vault.names === '2026-10-20,Cloudberries,East bog,Long,Trip plan' &&
     r.vault.title === 'Trip plan' &&
     r.vault.tags === 'trip,cloudberries,today' &&
@@ -2695,42 +2422,14 @@ echo " [BLANK_AUDIO] hello from whisper"
     r.tplAdds &&
     r.tplNew &&
     r.licPhosphor &&
-    r.fontLora &&
-    r.fontBack &&
-    !r.icoMissing.length &&
-    r.icoCount >= 19 &&
-    r.icoPick > 150 &&
-    r.icoPlaceholder &&
-    r.icoRegular &&
-    r.icoDuo &&
     r.chromiumFile &&
     !errors.length &&
-    r.conn.mobbin === true &&
-    r.conn.higgsfield === false &&
-    JSON.parse(r.ask).say === 'hi from fake claude' &&
-    r.usage2.asks === 1 &&
-    r.usage2.tokensIn === 15 &&
-    r.prompt.includes('The person asked you: sort these') &&
-    r.prompt.includes('Icons are names from this list') &&
-    r.prompt.includes('"n":0') &&
-    r.prompt.includes('Higgsfield is TURNED OFF') &&
-    r.args.includes('mcp__claude_ai_Mobbin__search_screens') &&
-    r.hooksOff.includes('disableAllHooks') &&
-    r.hooksRewrite.includes('disableAllHooks') &&
-    !r.hooksOff.includes('WebSearch') &&
-    r.webOn.includes('WebSearch') &&
-    r.webOn.includes('WebFetch') &&
-    r.webOn.includes('disableAllHooks') &&
-    !r.webOff.includes('WebSearch') &&
-    r.webPromptOn &&
-    r.webPromptOff &&
-    r.wav === 'RIFF' &&
-    r.transcribe === 'hello from whisper';
+    !t.failures.length;
   if (process.env.KEEP) console.log('output in', out);
   else fs.rmSync(data, { recursive: true, force: true });
   // on GitHub, a failure also becomes an annotation with the results, since the job log isn't always at hand
   if (!ok && process.env.GITHUB_ACTIONS) {
-    const { prompt, args, ...brief } = r;
+    const brief = { failed: t.failures, ...t.results, ...r };
     console.log(
       '::error title=Smoke test failed::' +
         JSON.stringify(brief, (_k, v) => (typeof v === 'string' && v.length > 160 ? `${v.slice(0, 60)}…` : v))
