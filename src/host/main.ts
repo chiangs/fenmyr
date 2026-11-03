@@ -7,6 +7,7 @@ import type { HostEvents, Ops } from '../shared/ops.ts';
 import * as claude from './claude.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
+import { packageManager } from './install.ts';
 import { parseMacFonts } from './macFonts.ts';
 import * as net from './net.ts';
 import * as output from './output.ts';
@@ -262,6 +263,14 @@ const OPS = {
   gitInit: a => git.init(text(a.path)),
   gitSetIdentity: a => git.setIdentity(text(a.path), text(a.name), text(a.email), a.everywhere === true),
   ghStatus: () => gh.status(),
+  repoPick: async () => {
+    const r = await dialog.showOpenDialog(theWindow(), {
+      title: "Choose the folder for this project's prototypes",
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    return r.canceled ? null : (r.filePaths[0] ?? null);
+  },
+  packageManager: () => packageManager(),
 } satisfies Handlers;
 
 const isOp = (op: string): op is keyof Ops => Object.hasOwn(OPS, op);

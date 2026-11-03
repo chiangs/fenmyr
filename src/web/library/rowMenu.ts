@@ -17,6 +17,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
+import { linkRepo } from '../repo/link.ts';
 import { chirp, say } from '../settings/licenses.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { keepOnScreen } from '../ui/popover.ts';
@@ -224,11 +225,15 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
   m.className = 'row-menu';
   m.style.left = `${e.clientX}px`;
   m.style.top = `${e.clientY}px`;
+  const project = kind === 'project' ? appState.projects.find(x => x.id === obj.id) : undefined,
+    repoLabel = project?.repo ? 'Repo…' : 'Link a repo…',
+    repoItem = `<button data-m="repo">${repoLabel}</button>`;
   const items =
     (nameEl ? '<button data-m="ren">Rename</button>' : '') +
     (kind !== 'project' ? '<button data-m="move">Move to…</button>' : '') +
     (kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : '') +
-    (kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : '');
+    (kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : '') +
+    (kind === 'project' && Fenmyr.native ? repoItem : '');
   m.innerHTML = `${items}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
   document.body.appendChild(m);
   keepOnScreen(m);
@@ -242,6 +247,10 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
     if (a === 'dup') {
       m.remove();
       return duplicate(kind, obj);
+    }
+    if (a === 'repo' && project) {
+      m.remove();
+      return linkRepo(project);
     }
     if (a === 'vault' && kind !== 'folder') {
       m.remove();

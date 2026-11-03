@@ -1,6 +1,7 @@
 // Library and board files keep what they had, keep the prototype fields when they're sound, and drop them when not.
 import assert from 'node:assert';
 import { parseBoard, parseLibrary } from '../src/shared/model.ts';
+import { repoClash } from '../src/shared/repos.ts';
 
 const json = (x: unknown) => JSON.parse(JSON.stringify(x));
 
@@ -52,5 +53,16 @@ for (const dir of ['../escape', 'prototypes/../../etc', 'prototypes/a/b', 'src/a
 }
 const strayProto = json(parseBoard({ id: 'b3', name: 'Plain', proto: { dir: 'prototypes/x', stack: 'react' } }));
 assert.ok(!('proto' in strayProto), 'a code folder without the prototype kind is dropped');
+
+const acme = { id: 'a', name: 'Acme', repo: { path: '/code/acme' } },
+  none = { id: 'c', name: 'None' };
+const clash = (self: string, root: string) => repoClash([acme, none], self, root)?.name;
+assert.strictEqual(clash('x', '/code/acme'), 'Acme', 'the same repo is taken');
+assert.strictEqual(clash('x', '/code/acme/inner'), 'Acme', 'a repo inside a linked one is taken');
+assert.strictEqual(clash('x', '/code'), 'Acme', 'a repo around a linked one is taken');
+assert.strictEqual(clash('x', '/code/acme2'), undefined, 'a name that only starts the same is free');
+assert.strictEqual(clash('a', '/code/acme'), undefined, 'a project never clashes with itself');
+const rootRepo = { id: 'r', name: 'Everything', repo: { path: '/' } };
+assert.strictEqual(repoClash([rootRepo], 'x', '/code/b')?.name, 'Everything', 'a repo at / holds every other');
 
 console.log('MODEL OK');
