@@ -123,7 +123,13 @@ try {
   for (const f of ['index.html', 'style.css', 'script.js'])
     assert.ok(fs.existsSync(path.join(repo, 'prototypes/checkout-flow-2', f)), `plain HTML has ${f}`);
 
-  const said = () => page.evaluate(() => document.getElementById('mBubble')?.textContent ?? '');
+  // Myra's latest words: in her chat on a prototype board, where it stays open, and in her bubble elsewhere
+  const said = () =>
+    page.evaluate(() =>
+      document.body.classList.contains('proto')
+        ? ([...document.querySelectorAll('#mcList .mc-msg.myra')].at(-1)?.textContent ?? '')
+        : (document.getElementById('mBubble')?.textContent ?? ''),
+    );
   await page.evaluate(id => window.__fenmyr.moveBoard(id, 'fa'), first.id);
   assert.match(
     await said(),
@@ -151,14 +157,14 @@ try {
     'its code is copied into Lioness’s repo',
   );
   assert.deepStrictEqual(
-    copy.chat.map((m: { who: string; text: string }) => [m.who, m.text.slice(0, 40)]),
+    copy.chat.slice(-2).map((m: { who: string; text: string }) => [m.who, m.text.slice(0, 40)]),
     [
       ['myra', 'I copied “Checkout {flow}” from Acme int'],
       ['myra', 'Committing saves it in Lioness’s history'],
     ],
     'Myra says where it came from, in git’s terms and then in plain words',
   );
-  assert.match(copy.chat[0].text, /lion\/prototypes\/checkout-flow\. 4 new files, not committed yet\./);
+  assert.match(copy.chat.at(-2).text, /lion\/prototypes\/checkout-flow\. 4 new files, not committed yet\./);
   const untracked = execFileSync('git', ['-C', lionRepo, 'status', '--porcelain']).toString();
   assert.match(untracked, /\?\? prototypes\//, 'nothing is committed for them');
 
@@ -167,7 +173,13 @@ try {
   assert.strictEqual(library().folders.find((f: { id: string }) => f.id === folder.id).project, 'p1');
 
   // Myra's own buttons, in her bubble or her chat
-  const tap = (label: string) => page.locator(':is(#mActs, #mcList) button:visible', { hasText: label }).last().click();
+  const tap = async (label: string) => {
+    const inChat = await page.evaluate(() => document.body.classList.contains('proto'));
+    await page
+      .locator(inChat ? '#mcList .m-acts button' : '#mActs button', { hasText: label })
+      .last()
+      .click();
+  };
   const git = (...args: string[]) =>
     execFileSync('git', ['-C', repo, '-c', 'user.name=T', '-c', 'user.email=t@e.st', ...args]).toString();
   git('add', '-A');

@@ -6,6 +6,7 @@ import { dueIndex } from '../features/due.ts';
 import { findClose } from '../features/find.ts';
 import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
+import { showProto } from '../proto/layout.ts';
 import { checkCode } from '../repo/codeFolder.ts';
 import { closeColor } from '../ui/colorPicker.ts';
 import { renderPalette } from '../ui/palette.ts';
@@ -30,6 +31,7 @@ export async function openBoard(id: string) {
   findClose(undefined);
   session.board = { name: '', cards: [], links: [], tray: [], ...b };
   checkCode(session.board);
+  showProto(session.board);
   if (chatOpen()) setTimeout(renderChat, 0);
   session.board.palette = session.board.palette || [];
   setTimeout(resetHistory, 0);

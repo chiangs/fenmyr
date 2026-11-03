@@ -42,6 +42,8 @@ jobs:
         run: node tests/model.ts
       - name: Placement test (moving and copying boards and folders with prototypes)
         run: node tests/placement.ts
+      - name: Fit test (how a prototype board's columns fold)
+        run: node tests/fit.ts
       - name: Git test (the git and gh bridge, with real git and a stand-in gh)
         run: node tests/git.ts
       - name: Link test (a project's repo, from its menu)
@@ -52,6 +54,8 @@ jobs:
         run: node tests/github.ts
       - name: Prototype test (prototyping folders and new prototypes in a linked repo)
         run: node tests/prototype.ts
+      - name: Layout test (a prototype board's screen)
+        run: node tests/layout.ts
       - name: Myra reply test
         run: node tests/reply.ts
       - name: Mac font list test

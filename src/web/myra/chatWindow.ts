@@ -50,6 +50,8 @@ function renderSelChip() {
 }
 
 export function myraOpen(on: boolean) {
+  // a prototype board keeps her chat docked open
+  if (!on && document.body.classList.contains('proto')) return;
   const was = chatOpen(),
     active = document.activeElement;
   if (!on && active instanceof HTMLElement && $('mChat').contains(active))

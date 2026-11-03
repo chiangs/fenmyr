@@ -7,7 +7,7 @@ import { say } from '../settings/licenses.ts';
 type Prototype = Extract<StoredBoard, { kind: 'prototype' }>;
 
 // a prototype's code lives in its project's repo
-const rootOf = (b: { folder?: string | null }) => {
+export const rootOf = (b: { folder?: string | null }) => {
   const f = appState.folders.find(x => x.id === b.folder);
   return appState.projects.find(p => p.id === f?.project)?.repo?.path ?? null;
 };
