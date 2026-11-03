@@ -62,73 +62,94 @@ function squigPath(c: Shape) {
   return 'M' + pts.join(' L');
 }
 
+const STAR: [number, number][] = [
+  [50, 3],
+  [62, 36],
+  [97, 37],
+  [69, 58],
+  [79, 93],
+  [50, 72],
+  [21, 93],
+  [31, 58],
+  [3, 37],
+  [38, 36],
+];
+const TRIANGLE = [
+  { x: 50, y: 2 },
+  { x: 98, y: 98 },
+  { x: 2, y: 98 },
+];
+
+// a corner radius in the shape's own 100-unit box
+const roundIn = (c: Shape) => ((c.radius ?? 0) * 100) / Math.max(1, Math.min(c.w || 160, c.h || 160));
+
+// the one piece of the shape that's drawn: its outline with fill and stroke attributes already written out
+function shapeBody(c: Shape, attrs: string, f: string) {
+  switch (c.shape || 'rect') {
+    case 'rect': {
+      const rx = c.radius != null ? Math.min(50, (c.radius * 100) / Math.max(1, c.w || 160)) : 10,
+        ry = c.radius != null ? Math.min(50, (c.radius * 100) / Math.max(1, c.h || 160)) : 10;
+      return `<rect x="0" y="0" width="100" height="100" rx="${rx}" ry="${ry}" ${attrs}/>`;
+    }
+    case 'circle':
+      return `<ellipse cx="50" cy="50" rx="50" ry="50" ${attrs}/>`;
+    case 'tri': {
+      const d = c.radius ? roundedD(TRIANGLE, true, roundIn(c)) : 'M50 2 L98 98 L2 98 Z';
+      return `<path d="${d}" stroke-linejoin="round" ${attrs}/>`;
+    }
+    case 'star': {
+      const d = c.radius
+        ? roundedD(
+            STAR.map(([x, y]) => ({ x, y })),
+            true,
+            roundIn(c),
+          )
+        : 'M50 3 L62 36 L97 37 L69 58 L79 93 L50 72 L21 93 L31 58 L3 37 L38 36 Z';
+      return `<path d="${d}" ${attrs}/>`;
+    }
+    case 'heart':
+      return `<path d="M50 92 C20 72 3 55 3 33 C3 15 17 4 31 4 C40 4 47 9 50 16 C53 9 60 4 69 4 C83 4 97 15 97 33 C97 55 80 72 50 92 Z" ${attrs}/>`;
+    case 'line': {
+      const ink = (c.fill || 'gray') === 'gray' ? 'var(--pen-ink)' : f,
+        width = c.lw || 4;
+      if ((c.squig || 'straight') === 'straight')
+        return `<line x1="0" y1="50" x2="100" y2="50" style="stroke:${ink}" stroke-width="${width}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`;
+      const d = squigPath(c),
+        join = (c.round ?? 60) < 15 && c.squig === 'zigzag' ? 'miter' : 'round';
+      return `<path d="${d}" fill="none" style="stroke:${ink}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="${join}" vector-effect="non-scaling-stroke"/>`;
+    }
+  }
+  return '';
+}
+
 export function shapeSVG(c: Shape) {
-  const named = SHAPE_FILL[c.fill || 'gray'],
-    f = c.fill === 'none' ? 'none' : named ? `var(--sh-${c.fill || 'gray'})` : c.fill,
+  const fill = c.fill || 'gray',
+    f = c.fill === 'none' ? 'none' : SHAPE_FILL[fill] ? `var(--sh-${fill})` : (c.fill ?? ''),
     sw = c.sw ?? 0,
-    sk = c.stroke && sw > 0 && c.shape !== 'line';
-  const P = sk
+    sk = c.stroke && sw > 0 && c.shape !== 'line',
+    style = skStyle(c),
+    dashes =
+      style === 'dash'
+        ? { 'stroke-dasharray': `${c.dl ?? 8} ${c.dg ?? 6}` }
+        : style === 'dot'
+          ? { 'stroke-dasharray': `0 ${(c.dg ?? 6) + sw}`, 'stroke-linecap': 'round' }
+          : {};
+  const P: Record<string, unknown> = sk
     ? {
         stroke: c.stroke,
         'stroke-width': c.sw,
         'vector-effect': 'non-scaling-stroke',
         'stroke-linejoin': 'round',
-        ...(skStyle(c) === 'dash'
-          ? { 'stroke-dasharray': `${c.dl ?? 8} ${c.dg ?? 6}` }
-          : skStyle(c) === 'dot'
-            ? { 'stroke-dasharray': `0 ${(c.dg ?? 6) + sw}`, 'stroke-linecap': 'round' }
-            : {}),
+        ...dashes,
         style: `fill:${f}`,
       }
     : { stroke: 'none', style: `fill:${f}` };
-  const attrs = (o: Record<string, unknown>) =>
-    Object.entries(o)
+  const attrs = Object.entries(P)
       .map(([k, v]) => `${k}="${v}"`)
-      .join(' ');
-  const bodies: Record<string, string> = {
-    rect: `<rect x="0" y="0" width="100" height="100" rx="${c.radius != null ? Math.min(50, (c.radius * 100) / Math.max(1, c.w || 160)) : 10}" ry="${c.radius != null ? Math.min(50, (c.radius * 100) / Math.max(1, c.h || 160)) : 10}" ${attrs(P)}/>`,
-    circle: `<ellipse cx="50" cy="50" rx="50" ry="50" ${attrs(P)}/>`,
-    tri: `<path d="${
-      c.radius
-        ? roundedD(
-            [
-              { x: 50, y: 2 },
-              { x: 98, y: 98 },
-              { x: 2, y: 98 },
-            ],
-            true,
-            (c.radius * 100) / Math.max(1, Math.min(c.w || 160, c.h || 160)),
-          )
-        : 'M50 2 L98 98 L2 98 Z'
-    }" stroke-linejoin="round" ${attrs(P)}/>`,
-    star: `<path d="${
-      c.radius
-        ? roundedD(
-            [
-              [50, 3],
-              [62, 36],
-              [97, 37],
-              [69, 58],
-              [79, 93],
-              [50, 72],
-              [21, 93],
-              [31, 58],
-              [3, 37],
-              [38, 36],
-            ].map(([x = 0, y = 0]) => ({ x, y })),
-            true,
-            (c.radius * 100) / Math.max(1, Math.min(c.w || 160, c.h || 160)),
-          )
-        : 'M50 3 L62 36 L97 37 L69 58 L79 93 L50 72 L21 93 L31 58 L3 37 L38 36 Z'
-    }" ${attrs(P)}/>`,
-    heart: `<path d="M50 92 C20 72 3 55 3 33 C3 15 17 4 31 4 C40 4 47 9 50 16 C53 9 60 4 69 4 C83 4 97 15 97 33 C97 55 80 72 50 92 Z" ${attrs(P)}/>`,
-    line:
-      (c.squig || 'straight') === 'straight'
-        ? `<line x1="0" y1="50" x2="100" y2="50" style="stroke:${(c.fill || 'gray') === 'gray' ? 'var(--pen-ink)' : f}" stroke-width="${c.lw || 4}" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`
-        : `<path d="${squigPath(c)}" fill="none" style="stroke:${(c.fill || 'gray') === 'gray' ? 'var(--pen-ink)' : f}" stroke-width="${c.lw || 4}" stroke-linecap="round" stroke-linejoin="${(c.round ?? 60) < 15 && c.squig === 'zigzag' ? 'miter' : 'round'}" vector-effect="non-scaling-stroke"/>`,
-  };
-  const body = bodies[c.shape || 'rect'] ?? '';
-  return `<svg class="sh${(c.shape || 'rect') === 'line' ? ' is-line' : ''}" viewBox="0 0 100 100" preserveAspectRatio="none">${body}</svg>`;
+      .join(' '),
+    body = shapeBody(c, attrs, f),
+    line = (c.shape || 'rect') === 'line' ? ' is-line' : '';
+  return `<svg class="sh${line}" viewBox="0 0 100 100" preserveAspectRatio="none">${body}</svg>`;
 }
 export function init10() {
   // ---------- round 2 pieces: icons, shapes, link hosts ----------
