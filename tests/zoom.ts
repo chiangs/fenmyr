@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Zoom: Ctrl + mouse wheel moves one even step per notch, a touchpad pinch stays smooth, Ctrl+0 resets to 100%,
 // and the percentage opens the zoom menu (in, out, 100%, fit, quick sizes) with Ctrl shortcuts.
 //   node tests/zoom.ts
@@ -25,22 +24,22 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
     env: { ...process.env, XDG_DATA_HOME: data, HOME: data },
   });
   const page = await app.firstWindow(),
-    errors = [];
+    errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.waitForTimeout(2500);
   await page.getByText('Skip setup').click();
   await page.waitForTimeout(1500);
   await page.keyboard.press('Escape');
-  const pct = () => page.evaluate(() => document.getElementById('zoom').textContent);
-  const r = {};
+  const pct = () => page.evaluate(() => document.getElementById('zoom')?.textContent ?? '');
   await page.keyboard.press('Control+0');
   await page.waitForTimeout(400);
-  r.reset = await pct();
+  const reset = await pct();
   // the wheel pans up and down; Shift + wheel pans sideways
-  {
+  const pan = await (async () => {
     const at = () =>
-      page.evaluate(() => {
-        const m = new DOMMatrix(getComputedStyle(document.getElementById('world')).transform);
+      page.evaluate((): [number, number] => {
+        const w = document.getElementById('world'),
+          m = new DOMMatrix(w ? getComputedStyle(w).transform : 'none');
         return [Math.round(m.e), Math.round(m.f)];
       });
     await page.mouse.move(700, 400);
@@ -53,12 +52,12 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
     await page.waitForTimeout(300);
     await page.keyboard.up('Shift');
     const p2 = await at();
-    r.pan = { wheel: [p1[0] - p0[0], p1[1] - p0[1]], shift: [p2[0] - p1[0], p2[1] - p1[1]] };
-  }
+    return { wheel: [p1[0] - p0[0], p1[1] - p0[1]], shift: [p2[0] - p1[0], p2[1] - p1[1]] };
+  })();
   // a mouse wheel: Ctrl held, one notch at a time (Chromium on Linux reports ~120px per notch)
   await page.mouse.move(700, 400);
   await page.keyboard.down('Control');
-  const steps = [];
+  const steps: string[] = [];
   for (const dy of [-120, -120, -120, 120, 120, 120, 120]) {
     await page.mouse.wheel(0, dy);
     await page.waitForTimeout(300);
@@ -74,15 +73,15 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
     await page.waitForTimeout(25);
   } // 45px: one notch
   await page.waitForTimeout(300);
-  r.hires = await pct();
+  const hires = await pct();
   await page.keyboard.up('Control');
   // a touchpad pinch: ctrl + wheel without Ctrl held, small deltas
   await page.keyboard.press('Control+0');
   await page.waitForTimeout(400);
   await page.evaluate(() => {
-    const s = document.querySelector('.stage') || document.getElementById('stage');
+    const s = document.getElementById('stage');
     for (let i = 0; i < 3; i++)
-      s.dispatchEvent(
+      s?.dispatchEvent(
         new WheelEvent('wheel', {
           deltaY: -4,
           ctrlKey: true,
@@ -94,11 +93,10 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
       );
   });
   await page.waitForTimeout(300);
-  r.pinch = await pct();
+  const pinch = await pct();
   // a big pinch flick can't jump: at most 5% per event (113% × e^0.05 ≈ 119%)
   await page.evaluate(() => {
-    const s = document.querySelector('.stage') || document.getElementById('stage');
-    s.dispatchEvent(
+    document.getElementById('stage')?.dispatchEvent(
       new WheelEvent('wheel', {
         deltaY: -300,
         ctrlKey: true,
@@ -110,31 +108,31 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
     );
   });
   await page.waitForTimeout(300);
-  r.flick = await pct();
+  const flick = await pct();
   // the percentage opens the zoom menu; "Zoom to 100%" goes back
   await page.click('#zoom');
   await page.waitForTimeout(300);
-  r.menu = await page.evaluate(() =>
-    [...document.querySelectorAll('#rowMenu button')].map(b => b.textContent.replace(/\s+/g, ' ').trim()),
+  const menu = await page.evaluate(() =>
+    [...document.querySelectorAll('#rowMenu button')].map(b => (b.textContent ?? '').replace(/\s+/g, ' ').trim()),
   );
   await page.locator('#rowMenu button', { hasText: 'Zoom to 100%' }).click();
   await page.waitForTimeout(500);
-  r.click = await pct();
+  const click = await pct();
   // Ctrl + = steps along the same ladder as the wheel
   await page.keyboard.press('Control+=');
   await page.waitForTimeout(500);
-  r.plus = await pct();
-  r.steps = steps;
+  const plus = await pct();
   // a fit that ends zoomed in must not overshoot when the board swaps to real zoom as it settles
-  r.fitPeak = await page.evaluate(async () => {
+  const fitPeak = await page.evaluate(async () => {
     const H = window.__fenmyr;
-    H.newNote();
-    const c = H.board.cards.at(-1),
-      el = document.querySelector(`.card[data-id="${c.id}"]`),
-      widths = [];
+    const id = H.newNote(),
+      c = H.board.cards.find(k => k.id === id);
+    if (!c) throw new Error('no new note');
+    const el = document.querySelector(`.card[data-id="${c.id}"]`),
+      widths: number[] = [];
     let on = true;
     const tick = () => {
-      widths.push(el.getBoundingClientRect().width);
+      widths.push(el?.getBoundingClientRect().width ?? 0);
       if (on) requestAnimationFrame(tick);
     };
     H.selectOnly([]);
@@ -145,23 +143,24 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
     requestAnimationFrame(tick);
     await new Promise(res => setTimeout(res, 1400));
     on = false;
-    return { peak: Math.max(...widths), end: widths.at(-1), z: H.view.z };
+    return { peak: Math.max(...widths), end: widths.at(-1) ?? 0, z: H.view.z };
   });
   // words stay exactly where they are when the board settles after a zoom
-  r.textShift = await page.evaluate(async () => {
+  const textShift = await page.evaluate(async () => {
     const H = window.__fenmyr,
-      wait = ms => new Promise(res => setTimeout(res, ms));
-    H.newNote();
-    const c = H.board.cards.at(-1);
+      wait = (ms: number) => new Promise(res => setTimeout(res, ms));
+    const id = H.newNote(),
+      c = H.board.cards.find(k => k.id === id);
+    if (!c) throw new Error('no new note');
     c.text = 'The quick brown fox\nsecond line of words';
     c.r = 0;
     H.renderCard(c);
     H.selectOnly([]);
     const body = document.querySelector(`.card[data-id="${c.id}"] .body`),
       words = document.createRange();
-    words.selectNodeContents(body);
+    if (body) words.selectNodeContents(body);
     await wait(800);
-    const shifts = [];
+    const shifts: number[] = [];
     for (const z of [1.25, 2, 3]) {
       Object.assign(H.view, { z, x: 300 - c.x * z, y: 100 - c.y * z });
       H.applyView();
@@ -171,19 +170,20 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
       const settled = words.getBoundingClientRect();
       shifts.push(Math.max(Math.abs(settled.top - moving.top), Math.abs(settled.left - moving.left)));
     }
-    return { px: Math.max(...shifts), realZoom: document.getElementById('world').style.zoom };
+    return { px: Math.max(...shifts), realZoom: document.getElementById('world')?.style.zoom };
   });
   // Templates land in the nearest empty space around the middle of the view, and the view moves only if they'd be off screen.
-  r.placed = await page.evaluate(async () => {
+  const placed = await page.evaluate(async () => {
     const H = window.__fenmyr,
-      wait = ms => new Promise(res => setTimeout(res, ms)),
+      wait = (ms: number) => new Promise(res => setTimeout(res, ms)),
       template = {
+        id: 'T',
         name: 'T',
         mode: 'add',
         cards: [{ id: 'a', type: 'note', x: 500, y: 700, w: 200, h: 120, color: 'white', text: 'x', r: 0 }],
         links: [],
       };
-    const measure = async place => {
+    const measure = async (place: () => unknown) => {
       const before = new Set(H.board.cards.map(c => c.id)),
         from = { ...H.view };
       await place();
@@ -193,42 +193,48 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
         overlaps = made.some(m =>
           others.some(o => o.x < m.x + m.w && m.x < o.x + o.w && o.y < m.y + m.h && m.y < o.y + o.h),
         ),
-        stage = document.getElementById('stage').getBoundingClientRect(),
-        rects = made.map(c => document.querySelector(`.card[data-id="${c.id}"]`).getBoundingClientRect()),
+        stage = document.getElementById('stage')?.getBoundingClientRect() ?? new DOMRect(),
+        rects = made.map(
+          c => document.querySelector(`.card[data-id="${c.id}"]`)?.getBoundingClientRect() ?? new DOMRect(),
+        ),
         onScreen = rects.every(
           r => r.left >= stage.left && r.right <= stage.right && r.top >= stage.top && r.bottom <= stage.bottom,
         ),
         viewMoved = from.x !== H.view.x || from.y !== H.view.y || from.z !== H.view.z;
       return { count: made.length, overlaps, onScreen, viewMoved, zoomedIn: H.view.z > from.z, x: made[0]?.x };
     };
-    const setView = async view => {
+    const setView = async (view: { x: number; y: number; z: number }) => {
       Object.assign(H.view, view);
       H.applyView();
       await wait(600);
     };
-    const r = {};
     // Plenty of room: an empty board's worth of space in view, so nothing moves.
     for (const c of H.board.cards) c.x -= 9000;
     H.renderAll();
     await setView({ x: 0, y: 0, z: 0.5 });
-    r.room = await measure(() => H.useTemplate(template, 'add'));
+    const room = await measure(() => H.useTemplate(template, 'add'));
     // The same through the built-in templates, which are placed by different code.
-    r.builtIn = await measure(async () => {
-      document.querySelector('#tools [data-add="tpl"]').click();
+    const press = (q: string) => {
+      const b = document.querySelector(q);
+      if (b instanceof HTMLElement) b.click();
+    };
+    const builtIn = await measure(async () => {
+      press('#tools [data-add="tpl"]');
       await wait(100);
-      document.querySelector('[data-tpl="kanban"]').click();
+      press('[data-tpl="kanban"]');
     });
     // Something huge fills the view: the template has to go off screen, so the view follows without zooming in.
-    H.newNote();
-    const wall = H.board.cards.at(-1);
+    const wallId = H.newNote(),
+      wall = H.board.cards.find(k => k.id === wallId);
+    if (!wall) throw new Error('no new note');
     Object.assign(wall, { x: -4000, y: -4000, w: 8000, h: 8000 });
     H.renderCard(wall);
     H.selectOnly([]);
     await setView({ x: 0, y: 0, z: 0.8 });
-    r.follow = await measure(() => H.useTemplate(template, 'add'));
-    return r;
+    const follow = await measure(() => H.useTemplate(template, 'add'));
+    return { room, builtIn, follow };
   });
-  r.errors = errors;
+  const r = { reset, pan, steps, hires, pinch, flick, menu, click, plus, fitPeak, textShift, placed, errors };
   await page.screenshot({ path: path.join(data, 'zoom.png'), clip: { x: 250, y: 800, width: 900, height: 100 } });
   console.log(JSON.stringify(r), '\n  toolbar:', path.join(data, 'zoom.png'));
   await app.close();
