@@ -13,8 +13,9 @@ export function applyView() {
   stage.classList.toggle('far', session.view.z < 0.55);
   stage.classList.add('moving');
   clearTimeout(movingT);
-  // Dropping the moving class is what redraws the board sharp, so a short pause in a pinch shouldn't trigger it.
-  movingT = setTimeout(() => stage.classList.remove('moving'), 450);
+  // Dropping the moving class is what redraws the board sharp, so a short pause in a pinch or between wheel
+  // notches shouldn't trigger it.
+  movingT = setTimeout(() => stage.classList.remove('moving'), 300);
   let s = 26 * session.view.z;
   while (s < 20) s *= 2;
   while (s > 40) s /= 2; // dots keep their size; zooming out skips every other dot instead of crowding them
