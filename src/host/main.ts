@@ -271,6 +271,11 @@ const OPS = {
     return r.canceled ? null : (r.filePaths[0] ?? null);
   },
   packageManager: () => packageManager(),
+  gitSetup: () => git.setup(),
+  gitSetGlobalIdentity: a => git.setGlobalIdentity(text(a.name), text(a.email)),
+  ghLogin: () => gh.startLogin(r => send('ghLogin', r)),
+  ghLoginCancel: () => gh.cancelLogin(),
+  ghSetupGit: () => gh.setupGit(),
 } satisfies Handlers;
 
 const isOp = (op: string): op is keyof Ops => Object.hasOwn(OPS, op);

@@ -16,7 +16,7 @@
     "knip": "knip",
     "budget": "node tools/budget.ts",
     "check:fast": "npm run typecheck && npm run lint && npm run knip && npm run budget && node tools/check-names.ts",
-    "test": "npm run build && node tests/vault.ts && node tests/persist.ts && node tests/model.ts && node tests/git.ts && node tests/link.ts && node tests/reply.ts && node tests/mac.ts && node tests/smoke.ts && node tests/zoom.ts && node tests/theme.ts && node tests/docs.ts && node tests/phone.ts && node tests/popups.ts && node tests/update.ts",
+    "test": "npm run build && node tests/vault.ts && node tests/persist.ts && node tests/model.ts && node tests/git.ts && node tests/link.ts && node tests/setup.ts && node tests/reply.ts && node tests/mac.ts && node tests/smoke.ts && node tests/zoom.ts && node tests/theme.ts && node tests/docs.ts && node tests/phone.ts && node tests/popups.ts && node tests/update.ts",
     "check": "npm run check:fast && npm test",
     "voice": "node tests/voice.ts",
     "dist": "npm run build && electron-builder --linux AppImage",

@@ -54,7 +54,7 @@ export const pathDirs = () =>
     '/usr/local/bin',
     '/usr/bin',
   ].filter(Boolean);
-const env = () => ({ ...process.env, PATH: pathDirs().join(':') });
+export const env = () => ({ ...process.env, PATH: pathDirs().join(':') });
 
 // collects what the program prints and stops it after `timeout` seconds
 export function run(cmd: string, args: string[], timeout: number): Promise<RunResult> {

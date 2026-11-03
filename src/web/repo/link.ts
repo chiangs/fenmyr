@@ -1,5 +1,5 @@
 import type { Project } from '../../shared/model.ts';
-import type { GitStatus, PackageManager } from '../../shared/ops.ts';
+import type { GitStatus } from '../../shared/ops.ts';
 import { repoClash } from '../../shared/repos.ts';
 import { appState } from '../core/state.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
@@ -7,6 +7,7 @@ import { saveLib } from '../library/tree.ts';
 import { chirp } from '../settings/licenses.ts';
 import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
+import { installCommand } from './install.ts';
 
 type Repo = Extract<GitStatus, { kind: 'repo' }>;
 // the one screen the dialog shows
@@ -21,15 +22,6 @@ type Step =
   | { kind: 'identity'; root: string; name: string; email: string; problem: string }
   | { kind: 'unlink'; path: string }
   | { kind: 'error'; message: string };
-
-// on a Mac, git comes with Apple's command line tools
-const GIT_INSTALL: Record<PackageManager, string> = {
-  pacman: 'sudo pacman -S git',
-  apt: 'sudo apt install git',
-  dnf: 'sudo dnf install git',
-  zypper: 'sudo zypper install git',
-  brew: 'xcode-select --install',
-};
 
 const button = (action: string, label: string, look = '') =>
   `<button class="set-btn ${look}" data-a="${action}">${label}</button>`;
@@ -108,11 +100,6 @@ function screen(s: Step): string {
   }
 }
 
-const installCommand = async () => {
-  const pm = await Fenmyr.packageManager().catch(() => null);
-  return pm ? GIT_INSTALL[pm] : null;
-};
-
 // The project menu's Repo… dialog: choose a folder, make it a repo if needed, name who commits, and link it.
 // Saving reloads the library, so the project is looked up by id each time rather than kept.
 export function linkRepo(first: Project) {
@@ -142,7 +129,7 @@ export function linkRepo(first: Project) {
     const st = await Fenmyr.gitStatus(dir);
     switch (st.kind) {
       case 'noGit':
-        return show({ kind: 'noGit', dir, install: await installCommand() });
+        return show({ kind: 'noGit', dir, install: await installCommand('git') });
       case 'missing':
         return show({ kind: 'gone', path: dir });
       case 'folder': {
