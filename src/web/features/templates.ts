@@ -191,7 +191,7 @@ export async function loadTemplates() {
 const TPL_GROUPS: [heading: string, keys: string[]][] = [
   ['Think', ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix']],
   ['Capture', ['Moodboard', 'Brain dump']],
-  ['Plan', ['OKRs and opportunities', 'Product kickoff', 'App plan', 'kanban']],
+  ['Plan', ['OKRs and opportunities', 'Product kickoff', 'App plan', 'Workshop planning', 'kanban']],
   ['Look back', ['retro']],
 ];
 

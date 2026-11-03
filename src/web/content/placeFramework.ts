@@ -145,4 +145,5 @@ export const STARTERS: Record<string, [line: string, icon: string]> = {
   'OKRs and opportunities': ['A vision, its key results and an opportunity tree', 'tree'],
   'Product kickoff': ['Why, who for, the edges and the first steps', 'rocket'],
   'App plan': ["Who it's for, the problem, the screens", 'screen'],
+  'Workshop planning': ['Define, design, prepare, run and follow up a workshop', 'users'],
 };
