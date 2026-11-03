@@ -38,6 +38,10 @@ jobs:
         run: node tests/vault.ts
       - name: Save test (running-only flags stay out of board files)
         run: node tests/persist.ts
+      - name: Model test (board and library files, prototype fields)
+        run: node tests/model.ts
+      - name: Git test (the git and gh bridge, with real git and a stand-in gh)
+        run: node tests/git.ts
       - name: Myra reply test
         run: node tests/reply.ts
       - name: Mac font list test
