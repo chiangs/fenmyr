@@ -209,6 +209,11 @@ export type Ops = {
   ghLogin: { args: None; result: { code: string; url: string } };
   ghLoginCancel: { args: None; result: true };
   ghSetupGit: { args: None; result: true };
+  // a new GitHub repo for a linked folder, made by that account and set as its origin
+  ghRepoCreate: {
+    args: { path: string; account: string; name: string; private: boolean };
+    result: { owner: string; name: string };
+  };
 };
 
 export type HostEvents = {
