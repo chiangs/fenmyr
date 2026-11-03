@@ -278,6 +278,7 @@ const OPS = {
   ghLoginCancel: () => gh.cancelLogin(),
   ghSetupGit: () => gh.setupGit(),
   protoCreate: a => prototypes.create(text(a.root), text(a.name), a.stack === 'html' ? 'html' : 'react'),
+  protoCopy: a => prototypes.copy(text(a.fromRoot), text(a.dir), text(a.toRoot)),
   ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
 } satisfies Handlers;
 

@@ -1,7 +1,10 @@
 import type { Folder, Project, StoredBoard } from '../../shared/model.ts';
 import type { BoardSummary } from '../../shared/ops.ts';
+import { placeBoard, placeFolder } from '../../shared/placement.ts';
 import { COLOR_NAMES, COLORS, uid } from '../core/base.ts';
 import { appState, session } from '../core/state.ts';
+import { copyPrototype, copyPrototypingFolder } from '../repo/copy.ts';
+import { chirp, say } from '../settings/licenses.ts';
 import { renderCrumbsSoon, unhook } from './nesting.ts';
 // the order you dragged boards into, per folder (or 'loose'): lists of board ids, kept with the folders so a reorder never rewrites a board
 export const saveLib = () =>
@@ -94,10 +97,15 @@ const setProject = (f: Folder, pid: string | null) => {
   });
 };
 
-// move a folder into another folder, a project, or out to the top level (never into itself)
+// move a folder into another folder, a project, or out to the top level (never into itself); a prototyping folder going
+// to another project is copied instead, and anything the rules refuse says why
 export function putFolder(fid: string, into: Folder | null, projectId: string | null = null) {
   const x = appState.folders.find(y => y.id === fid);
-  if (!x || (into && folderChain(into).includes(x))) return false;
+  if (!x) return;
+  if (into && folderChain(into).includes(x)) return chirp("A folder can't go inside itself ✦", 2500);
+  const verdict = placeFolder(appState, x, into, into ? (into.project ?? null) : projectId);
+  if (verdict.kind === 'blocked') return say(verdict.why, 5000);
+  if (verdict.kind === 'copy') return void copyPrototypingFolder(x, into, verdict.to);
   if (into) {
     x.parent = into.id;
     setProject(x, into.project || null);
@@ -106,7 +114,6 @@ export function putFolder(fid: string, into: Folder | null, projectId: string | 
     delete x.parent;
     setProject(x, projectId);
   }
-  return true;
 }
 
 export const looseBoards = () =>
@@ -122,6 +129,11 @@ export const tint = (c: string) => (c in COLORS && c !== 'white' ? `var(--k-${c}
 
 // moving a board into a folder (or out of one). A canvas that lived inside another board comes out on its own.
 export async function moveBoard(id: string, folderId: string | null) {
+  const board = appState.boardList.find(b => b.id === id) ?? (session.board?.id === id ? session.board : {}),
+    to = appState.folders.find(f => f.id === folderId) ?? null,
+    verdict = placeBoard(appState, board, to);
+  if (verdict.kind === 'blocked') return say(verdict.why, 5000);
+  if (verdict.kind === 'copy' && to) return copyPrototype(id, to, verdict.to);
   await unhook(id);
   Object.keys(appState.boardOrder).forEach(k => {
     appState.boardOrder[k] = appState.boardOrder[k]?.filter(x => x !== id) ?? [];

@@ -2,7 +2,6 @@ import type { Folder, Project } from '../../shared/model.ts';
 import type { BoardSummary } from '../../shared/ops.ts';
 import { appState, session } from '../core/state.ts';
 import { newPrototypeIn } from '../repo/prototypes.ts';
-import { chirp } from '../settings/licenses.ts';
 import { child } from '../ui/dom.ts';
 import { closeHome } from './home.ts';
 import { draggable, dropZone, inlineRename, nestBoard, newBoardIn, reorderZone } from './nesting.ts';
@@ -144,7 +143,7 @@ export function folderNode(f: Folder): HTMLElement {
     }),
   );
   dropZone(child(wrap, '.node-head'), 'folder', id => {
-    if (!putFolder(id, f)) chirp("A folder can't go inside itself ✦", 2500);
+    putFolder(id, f);
   });
   return wrap;
 }
