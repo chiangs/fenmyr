@@ -129,6 +129,16 @@ function walk(vault: Vault, fn: (x: Entry) => void, limit = 30000) {
     }
   })(vault.path, '');
 }
+// A folder's own folders come straight after it. Sorting whole paths puts "Tracking-Fitness" before "Tracking/01_Weekly", because the collator skips punctuation, which splits a folder from its children.
+function byPath(a: string, b: string) {
+  const x = a.split('/'),
+    y = b.split('/');
+  for (let i = 0; i < Math.min(x.length, y.length); i++) {
+    const c = (x[i] ?? '').localeCompare(y[i] ?? '', undefined, { numeric: true });
+    if (c) return c;
+  }
+  return x.length - y.length;
+}
 export function scan(vault: Vault): VaultScan {
   const folders: string[] = [];
   let notes = 0;
@@ -136,7 +146,7 @@ export function scan(vault: Vault): VaultScan {
     if (x.dir) folders.push(x.rel);
     else notes++;
   });
-  return { folders: folders.sort((a, b) => a.localeCompare(b)), notes };
+  return { folders: folders.sort(byPath), notes };
 }
 // newest first (or best name match first); #private notes have to be read to be dropped
 export function list(vault: Vault, allow: string[], query: string, max = 40): VaultListItem[] {

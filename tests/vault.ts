@@ -21,6 +21,25 @@ const sc = V.scan(v);
 assert.strictEqual(sc.notes, 6);
 assert(sc.folders.includes('Projects/Bog Notes') && !sc.folders.some(f => f.startsWith('.')));
 
+// a folder's own folders come right after it, even when a sibling's name continues with a hyphen ("Tracking-Fitness" must not land between "Tracking" and "Tracking/01_Weekly")
+{
+  const tracked = path.join(data, 'tracked');
+  for (const d of ['Tracking/01_Weekly', 'Tracking/02_Monthly', 'Tracking/10_Yearly', 'Tracking-Fitness/Runs'])
+    fs.mkdirSync(path.join(tracked, d), { recursive: true });
+  for (const d of ['Tracking/01_Weekly', 'Tracking-Fitness/Runs'])
+    fs.writeFileSync(path.join(tracked, d, 'a.md'), '# a');
+  const tv = V.add(tracked);
+  assert.deepStrictEqual(V.scan(tv).folders, [
+    'Tracking',
+    'Tracking/01_Weekly',
+    'Tracking/02_Monthly',
+    'Tracking/10_Yearly',
+    'Tracking-Fitness',
+    'Tracking-Fitness/Runs',
+  ]);
+  V.remove(tv.id);
+}
+
 // parsing: frontmatter in three styles, inline tags, links, no tags from headings
 const n = V.note(v, 'Projects/Bog Notes/Trip plan.md', ['']);
 assert.deepStrictEqual(n.tags.sort(), ['cloudberries', 'today', 'trip']);
