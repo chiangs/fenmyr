@@ -16,7 +16,7 @@ import { $, cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { DOC_FONT, SUGGESTED_FONTS, openDoc } from '../docs/editor.ts';
 import { editTag, fitText } from '../edit/text.ts';
-import { setDue } from '../features/due.ts';
+import { hasDue, setDue } from '../features/due.ts';
 import { startEdit, tagEditor } from '../features/tags.ts';
 import { homeAt } from '../library/home.ts';
 import { removeSelected } from '../myra/helpers.ts';
@@ -588,7 +588,7 @@ export function placeSelbar() {
       `<div class="sb-tags" data-for="${one.id}">${tagEditor(one)}</div>`,
       'Tags',
     );
-  if (one?.type === 'note')
+  if (one && hasDue(one))
     h += pop(
       'due',
       `${Icon('calendar')}${one.due ? '<b>•</b>' : ''}${CARET}`,

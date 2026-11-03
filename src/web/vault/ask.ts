@@ -7,7 +7,7 @@ import { addVaultNote } from './notes.ts';
 import { activeGrants, folderChecklist, loadVaults, renderVaults, vaultById, vaultInfo } from './vaults.ts';
 import { appState, session } from '../core/state.ts';
 import type { Board, StoredBoard, VaultGrant } from '../../shared/model.ts';
-import type { VaultHit, VaultListItem, VaultPatch } from '../../shared/ops.ts';
+import type { VaultHit, VaultListItem, VaultPatch, VaultTaskForMyra } from '../../shared/ops.ts';
 import { child, closestTo, elementById } from '../ui/dom.ts';
 
 type Found = VaultHit & { vault: string; vaultId: string };
@@ -49,6 +49,46 @@ export async function gatherVault(q: string) {
   }
   return out;
 }
+
+// asking for tasks (not just notes): the app collects the unfinished ones, narrowed to the request's own words, so no task is lost to the few-notes limit of a search
+const ABOUT_TASKS =
+  /\b(tasks?|to-?dos?|check-?lists?|unfinished|incomplete|not (?:yet )?(?:done|completed|finished))\b/i;
+export type VaultTasksUsed = {
+  items: VaultTaskForMyra[];
+  summary: string;
+  open: number;
+  notes: number;
+  stopped: boolean;
+  filtered: boolean;
+};
+export async function gatherVaultTasks(q: string): Promise<VaultTasksUsed | null> {
+  if (!ABOUT_TASKS.test(q)) return null;
+  const items: VaultTaskForMyra[] = [];
+  let open = 0,
+    stopped = false,
+    filtered = false;
+  for (const g of aiGrants(session.board)) {
+    const v = vaultById(g.vault);
+    if (!v) continue;
+    try {
+      const r = await Fenmyr.vaultTasks(g.vault, g.folders, q);
+      r.tasks.forEach(t => items.push({ ...t, vault: v.name }));
+      open += r.open;
+      stopped ||= r.stopped;
+      filtered ||= r.filtered;
+    } catch (e) {}
+  }
+  const notes = new Set(items.map(t => `${t.vault}/${t.rel}`)).size,
+    which = filtered ? 'the ones that match the words of the request' : 'all of them',
+    summary = `${items.length} of ${open} open tasks, ${which}${stopped ? '; the scan stopped early, so some notes were not read' : ''}`;
+  return { items, summary, open, notes, stopped, filtered };
+}
+
+// what the app tells them about the tasks it gave Myra
+export const tasksLine = (t: VaultTasksUsed) =>
+  t.items.length
+    ? ` I used ${t.items.length} unfinished task${t.items.length === 1 ? '' : 's'} from ${t.notes} note${t.notes === 1 ? '' : 's'} in your vault${t.filtered ? ` (${t.open} open in all; I kept the ones that match your words)` : ''}.${t.stopped ? ' I ran out of time before reading every note, so some may be missing.' : ''}`
+    : ` I looked in your vault for unfinished tasks, but found none${t.filtered ? ' that match your words' : ''}${t.stopped ? ' (I ran out of time before reading every note)' : ''}.`;
 
 export async function openVaultPicker() {
   await loadVaults();

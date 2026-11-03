@@ -189,3 +189,27 @@ export function dropInto(t: { s: Coll; side: boolean }, ids: string[], w: Point)
   s.kids.splice(at, 0, ...ids);
   for (const id of ids) colOf[id] = col;
 }
+
+// the fields of a collection Myra makes: plain with `cols` columns of cards, or a kanban with named columns (ones she did not name become To do, Doing, Done)
+export function kanbanFields(o: {
+  kanban?: boolean | undefined;
+  columns?: string[] | undefined;
+  cols?: number | undefined;
+}) {
+  if (!o.kanban) return { cols: o.cols || 1 };
+  const names = (o.columns ?? [])
+    .map(c => c.trim().slice(0, 40))
+    .filter(Boolean)
+    .slice(0, 8);
+  const colNames = names.length ? names : ['To do', 'Doing', 'Done'];
+  return { kanban: true, cols: colNames.length, colNames, colLimit: [], colOf: {} };
+}
+// file a card in a kanban's column, by the column's name or number (the first column when it is not one of them)
+export function placeInColumn(s: Coll, id: string, column: string | number | undefined) {
+  if (!s.kanban) return;
+  const { names, colOf } = columns(s),
+    wanted = String(column ?? '').toLowerCase(),
+    byName = names.findIndex(n => n.toLowerCase() === wanted),
+    at = byName >= 0 ? byName : /^\d+$/.test(wanted) ? Number(wanted) : 0;
+  colOf[id] = clamp(at, 0, Math.max(0, names.length - 1));
+}

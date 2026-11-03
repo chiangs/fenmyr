@@ -6,11 +6,12 @@ import { renderCard } from '../canvas/render.ts';
 import { byId, renderTray, renderWires, takeFromTray, tidyTies } from '../canvas/wires.ts';
 import { COLL, colls, parentOf } from '../cards/collection.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
-import { layoutAll } from '../cards/kanban.ts';
+import { kanbanFields, layoutAll, placeInColumn } from '../cards/kanban.ts';
 import { COLOR_NAMES, uid } from '../core/base.ts';
 import { save, showWhatMyraMade } from '../core/history.ts';
 import { docCard, ed, mdToHTML } from '../docs/editor.ts';
-import { dueDate } from '../features/due.ts';
+import { dueDate, hasDue } from '../features/due.ts';
+import { type VaultTasksUsed, tasksLine } from '../vault/ask.ts';
 import { cleanTags, existingTag } from '../features/tags.ts';
 import { buildTplPick, freeName, myTpls, saveAsTemplate, useTemplate } from '../features/templates.ts';
 import { guessNext, noEmoji, startTimer, stopTimer, timer } from '../features/timer.ts';
@@ -42,7 +43,7 @@ type NoteUsed = {
   excerpt: string;
   text: string;
 };
-type Picked = { asked: boolean; used: NoteUsed[] };
+type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null };
 
 export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked: false, used: [] }) {
   // her templates: use one of theirs, or keep what's on the board as one
@@ -125,8 +126,8 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       text: o.name || o.text || '',
       color: o.color && COLL[o.color] ? o.color : 'pink',
       kids: [],
-      cols: o.cols || 1,
       r: 0,
+      ...kanbanFields(o),
     });
     addCard(s2);
     made[(o.name || '').toLowerCase()] = s2;
@@ -136,11 +137,12 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     byId(k)?.type === 'coll'
       ? byId(k)
       : made[k.toLowerCase()] || colls().find((s2: Card) => s2.text?.toLowerCase() === k.toLowerCase());
-  const file = (c: Card, k: string) => {
+  const file = (c: Card, k: string, column?: string | number) => {
     const s2 = collFor(k);
     if (s2?.type !== 'coll' || c.id === s2.id) return;
     leaveCollection(c);
     s2.kids.push(c.id);
+    placeInColumn(s2, c.id, column);
   };
   (r.add || []).forEach(o => {
     place(o);
@@ -153,15 +155,17 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       color: o.color && COLOR_NAMES.includes(o.color) ? o.color : 'white',
       hex: o.hex,
       label: o.label ?? undefined,
-      items: o.items ? o.items.map(t => ({ t: typeof t === 'string' ? t : t.t, done: false })) : undefined,
+      items: o.items
+        ? o.items.map(t => (typeof t === 'string' ? { t, done: false } : { t: t.t, done: t.done === true }))
+        : undefined,
       tagText: o.tag ?? undefined,
       name: o.name,
     });
     if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag);
-    if (c.type === 'note' && o.due && dueDate(o.due)) c.due = o.due;
+    if (hasDue(c) && o.due && dueDate(o.due)) c.due = o.due;
     addCard(c);
     added.push(c);
-    if (o.in) file(c, o.in);
+    if (o.in) file(c, o.in, o.column);
   });
   (r.titles || []).forEach(o => {
     place(o);
@@ -218,7 +222,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       c.tags = cleanTags(o.tags).map(existingTag);
       if (!c.tags.length) delete c.tags;
     }
-    if (o.due !== undefined && c.type === 'note') {
+    if (o.due !== undefined && hasDue(c)) {
       if (o.due && dueDate(o.due)) c.due = o.due;
       else delete c.due;
     }
@@ -353,9 +357,11 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
   });
   const read = !ctx.asked
     ? ''
-    : ctx.used.length
-      ? ` I read ${ctx.used.length} note${ctx.used.length === 1 ? '' : 's'} from your vault: ${ctx.used.map(n => n.title).join(', ')}.`
-      : ' I looked in your vault, but found no notes matching that in the folders you allowed.';
+    : ctx.tasks
+      ? tasksLine(ctx.tasks)
+      : ctx.used.length
+        ? ` I read ${ctx.used.length} note${ctx.used.length === 1 ? '' : 's'} from your vault: ${ctx.used.map(n => n.title).join(', ')}.`
+        : ' I looked in your vault, but found no notes matching that in the folders you allowed.';
   if (given.length) save();
   const acts: { label: string; run: () => unknown; ghost?: boolean; cls?: string }[] = r.confirm
     ? [

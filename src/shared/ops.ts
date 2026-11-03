@@ -52,6 +52,29 @@ export type VaultHit = {
   text: string;
 };
 
+// an unfinished task from a vault note: top-level, with its sub-tasks as a checklist (due: from a 📅 date or a "due::" field)
+export type VaultTask = {
+  rel: string;
+  title: string;
+  heading: string;
+  text: string;
+  due?: string;
+  kids: { t: string; done: boolean }[];
+};
+export type VaultTasks = {
+  tasks: VaultTask[];
+  // open top-level tasks found, how many are sent (matching the request's words, up to a cap), and how many notes they come from
+  open: number;
+  sent: number;
+  notes: number;
+  scanned: number;
+  // the scan ran out of time before every note was read
+  stopped: boolean;
+  // only tasks matching the request's own words were kept
+  filtered: boolean;
+};
+export type VaultTaskForMyra = VaultTask & { vault: string };
+
 export type UsageTotals = { asks: number; tokensIn: number; tokensOut: number; cost: number };
 export type UsageSummary = { today: UsageTotals; week: UsageTotals; all: UsageTotals; since: number };
 
@@ -89,6 +112,7 @@ export type Ops = {
   vaultRemove: { args: { id: string }; result: true };
   vaultScan: { args: { id: string }; result: VaultScan };
   vaultSearch: { args: { id: string; allow: string[]; query: string }; result: VaultHit[] };
+  vaultTasks: { args: { id: string; allow: string[]; query: string }; result: VaultTasks };
   vaultNotes: { args: { id: string; allow: string[]; query: string }; result: VaultListItem[] };
   vaultNote: {
     args: { id: string; rel: string; allow: string[]; full?: boolean };
@@ -114,6 +138,7 @@ export type Ops = {
       web?: boolean;
       canVault?: boolean;
       vaultNotes?: VaultNoteForMyra[];
+      vaultTasks?: { items: VaultTaskForMyra[]; summary: string };
     };
     result: string;
   };
