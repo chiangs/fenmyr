@@ -1,14 +1,22 @@
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { DICON, liveEditor, pagePref } from './editor.ts';
-import { BLOCKS, DOC_FONT, HIGHLIGHTS, SUGGESTED_FONTS, TEXT_COLORS, docDefault, fontName } from './docText.ts';
+import { BLOCKS, DOC_FONT, SUGGESTED_FONTS, docDefault, fontName } from './docText.ts';
 import { rewrite } from './rewrite.ts';
 import { blockOf } from './toolbar.ts';
 import { boardFonts } from '../selbar/fontPop.ts';
 import { isLocalFont, useFont } from '../wireframe/tilt.ts';
-import { FONTS } from '../wireframe/wireframes.ts';
 import { session } from '../core/state.ts';
 import { elementById, esc, htmlIn } from '../ui/dom.ts';
+import {
+  colorMarkup,
+  exportMarkup,
+  fontListMarkup,
+  linkMarkup,
+  moreMarkup,
+  myraMarkup,
+  pageMarkup,
+} from './popMarkup.ts';
 
 const LIST_NODES: Record<string, string> = { bullet: 'bulletList', ordered: 'orderedList', task: 'taskList' };
 const FOLD_TITLES: Record<string, string> = {
@@ -70,18 +78,7 @@ export function showPop(kind: string, btn: Element | null) {
         where = isLocalFont(f) ? '' : '<small>Google Fonts</small>';
       return `<button type="button" class="dp-row dp-font ${state}" data-font="${name}" style="font-family:'${name}', ${DOC_FONT}, system-ui">${name}${where}</button>`;
     };
-    p.innerHTML = `<input class="dp-search" id="dpFontQ" placeholder="Search fonts…" autocomplete="off" spellcheck="false">
-        <div class="dp-scroll" id="dpFontList">${onBoard.length ? `<div class="dp-h">Used on this board</div>${onBoard.map(row).join('')}` : ''}<div class="dp-h">Suggested</div>${SUGGESTED_FONTS.filter(
-          f => !onBoard.includes(f),
-        )
-          .map(row)
-          .join('')}
-        <div class="dp-h">On your computer</div>${FONTS.filter(
-          f => !SUGGESTED_FONTS.includes(f) && !onBoard.includes(f),
-        )
-          .slice(0, 400)
-          .map(row)
-          .join('')}</div>`;
+    p.innerHTML = fontListMarkup(onBoard, row);
     SUGGESTED_FONTS.concat(onBoard).forEach(useFont);
     const q = elementById('dpFontQ', HTMLInputElement);
     q.addEventListener('keydown', e => e.stopPropagation());
@@ -94,10 +91,7 @@ export function showPop(kind: string, btn: Element | null) {
   } else if (kind === 'color' || kind === 'hl') {
     const isHl = kind === 'hl',
       cur = isHl ? ed.getAttributes('highlight').color : ed.getAttributes('textStyle').color;
-    p.innerHTML = `<button type="button" class="dp-row dp-none" data-${isHl ? 'hl' : 'tc'}="">${isHl ? 'No highlight' : 'Default colour'}</button>
-        ${boardCols.length ? `<div class="dp-h">Board colours</div><div class="dp-grid">${swatches(boardCols, cur, isHl ? 'data-hl' : 'data-tc')}</div>` : ''}
-        <div class="dp-h">${isHl ? 'Highlighters' : 'Colours'}</div><div class="dp-grid">${swatches(isHl ? HIGHLIGHTS : TEXT_COLORS, cur, isHl ? 'data-hl' : 'data-tc')}</div>
-        <button type="button" class="dp-row dp-any" data-any="${kind}">Any colour…</button>`;
+    p.innerHTML = colorMarkup(kind, isHl, boardCols, cur, swatches);
   } else if (kind === 'align') {
     const set = ['center', 'right', 'justify'].find(x => ed.isActive({ textAlign: x })) ?? 'left',
       icon = (a: string) => {
@@ -110,8 +104,7 @@ export function showPop(kind: string, btn: Element | null) {
     p.innerHTML = `<div class="dp-icons">${icons}</div>`;
   } else if (kind === 'link') {
     const href = String(ed.getAttributes('link').href || '');
-    p.innerHTML = `<form class="dp-link" id="dpLink"><input id="dpLinkIn" placeholder="Paste a link…" value="${esc(href)}" autocomplete="off" spellcheck="false"><button class="dp-go" type="submit">${href ? 'Update' : 'Add link'}</button></form>
-        ${href ? `<div class="dp-linkacts"><button type="button" class="dp-row" data-link="open">Open ↗</button><button type="button" class="dp-row" data-link="remove">Remove link</button></div>` : ''}`;
+    p.innerHTML = linkMarkup(href);
     const inp = elementById('dpLinkIn', HTMLInputElement);
     inp.addEventListener('keydown', e => {
       e.stopPropagation();
@@ -168,52 +161,10 @@ export function showPop(kind: string, btn: Element | null) {
             : [toolIcon(k)],
       )
       .join('');
-    p.innerHTML =
-      (foldIcons ? `<div class="dp-h">Tools</div><div class="dp-icons dp-fold">${foldIcons}</div>` : '') +
-      `<div class="dp-h">Line spacing</div><div class="dp-seg">${[
-        ['1', 'Single'],
-        ['1.15', '1.15'],
-        ['1.5', '1.5'],
-        ['2', 'Double'],
-      ]
-        .map(([v, l]) => {
-          const state = on(String(lh) === v);
-          return `<button type="button" class="${state}" data-lh="${v}">${l}</button>`;
-        })
-        .join('')}</div>
-        <div class="dp-h">Insert</div>
-        <button type="button" class="dp-row dp-irow" data-ins="table">${DICON.table}Table</button>
-        <button type="button" class="dp-row dp-irow" data-ins="hr">${DICON.hr}Divider</button>
-        <button type="button" class="dp-row dp-irow" data-ins="sup"><b class="dp-glyph">x²</b>Superscript</button>
-        <button type="button" class="dp-row dp-irow" data-ins="sub"><b class="dp-glyph">x₂</b>Subscript</button>
-        ${
-          inTable
-            ? `<div class="dp-h">Table</div><div class="dp-grid2">${[
-                ['rowAfter', '+ Row'],
-                ['colAfter', '+ Column'],
-                ['delRow', '− Row'],
-                ['delCol', '− Column'],
-                ['header', 'Header row'],
-                ['delTable', 'Delete table'],
-              ]
-                .map(([a, l]) => `<button type="button" data-tbl="${a}">${l}</button>`)
-                .join('')}</div>`
-            : ''
-        }
-        <div class="dp-h"></div><button type="button" class="dp-row dp-irow" data-ins="clear">${DICON.clear}Clear formatting</button>`;
+    p.innerHTML = moreMarkup(foldIcons, String(lh), inTable);
   } else if (kind === 'page') {
     const cur = pagePref();
-    p.innerHTML = `<div class="dp-h">Page colour</div>${[
-      ['auto', 'Match Fenmyr', 'Light or dark, with the app'],
-      ['light', 'Light paper', 'Always white'],
-      ['dark', 'Dark', 'Easy on the eyes at night'],
-    ]
-      .map(([v, l, sub]) => {
-        const state = on(cur === v);
-        return `<button type="button" class="dp-row dp-page ${state}" data-page="${v}"><i class="pg-sw pg-${v}"></i><span>${l}<small>${sub}</small></span></button>`;
-      })
-      .join('')}
-        <p class="dp-tip">Only how it looks while you write. Downloads are always regular light pages.</p>`;
+    p.innerHTML = pageMarkup(cur);
   } else if (kind === 'export') {
     const paper = (() => {
       try {
@@ -222,36 +173,10 @@ export function showPop(kind: string, btn: Element | null) {
         return 'letter';
       }
     })();
-    p.innerHTML = `<div class="dp-h">Paper</div><div class="dp-seg">${[
-      ['letter', 'Letter'],
-      ['a4', 'A4'],
-    ]
-      .map(([v, l]) => {
-        const state = on(paper === v);
-        return `<button type="button" class="${state}" data-paper="${v}">${l}</button>`;
-      })
-      .join('')}</div>
-        <button type="button" class="dp-row dp-pdf" data-pdf="1">${Icon('file-pdf')}<span>Download PDF<small>Real pages, ready to send or print</small></span></button>
-        <button type="button" class="dp-row dp-pdf dp-word" data-word="1">${Icon('file-word')}<span>Download Word<small>A .docx you can keep editing in Word or Pages</small></span></button>`;
+    p.innerHTML = exportMarkup(paper);
   } else if (kind === 'myra') {
     const has = !ed.state.selection.empty;
-    p.innerHTML = has
-      ? `<div class="dp-h">Myra, make this…</div>${[
-          ['Shorter', 'Make it shorter and tighter'],
-          ['Clearer', 'Make it clearer and easier to read'],
-          ['Friendlier', 'Make it warmer and friendlier'],
-          ['More confident', 'Make it more confident and direct'],
-          ['More professional', 'Make it more polished and professional'],
-          ['Fix spelling & grammar', 'Fix spelling, grammar and punctuation only. Change nothing else'],
-          ['Into bullet points', 'Turn it into a short bulleted list'],
-        ]
-          .map(([l, how]) => {
-            const ask = esc(how);
-            return `<button type="button" class="dp-row" data-how="${ask}">${l}</button>`;
-          })
-          .join('')}
-        <form class="dp-link" id="dpAsk"><input id="dpAskIn" placeholder="Or tell Myra what to do…" autocomplete="off"><button class="dp-go" type="submit">✦</button></form>`
-      : `<p class="dp-tip">Select some words, then ask Myra to rewrite them: shorter, friendlier, fixed up, or anything you like ✦</p>`;
+    p.innerHTML = myraMarkup(has);
     const ask = document.getElementById('dpAskIn'),
       form = document.getElementById('dpAsk');
     if (ask instanceof HTMLInputElement && form) {
