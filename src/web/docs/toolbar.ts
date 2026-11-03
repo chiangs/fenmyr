@@ -1,18 +1,7 @@
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import {
-  BLOCKS,
-  DICON,
-  DOC_FONT,
-  SIZES,
-  bubbleEl,
-  docCard,
-  docDefault,
-  ed,
-  fontName,
-  imgPick,
-  liveEditor,
-} from './editor.ts';
+import { DICON, bubbleEl, docCard, ed, imgPick, liveEditor } from './editor.ts';
+import { BLOCKS, DOC_FONT, SIZES, docDefault, fontName } from './docText.ts';
 import { showPop } from './menus.ts';
 import { closestTo, elementById, htmlIn } from '../ui/dom.ts';
 

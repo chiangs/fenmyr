@@ -4,7 +4,7 @@ import { renderTray, renderWires, selectOnly } from '../canvas/wires.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
 import { endEdit } from '../edit/editing.ts';
-import { addVideo } from '../media/video.ts';
+import { addVideo } from '../media/videoFile.ts';
 import { card } from '../model/boards.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';

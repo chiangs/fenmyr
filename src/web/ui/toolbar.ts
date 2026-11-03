@@ -8,7 +8,7 @@ import { newBoardIn } from '../library/nesting.ts';
 import { refreshBoards, renameNewest, uniqueName } from '../library/rowMenu.ts';
 import { foldersIn, makeFolder, makeProject, saveLib } from '../library/tree.ts';
 import { readyToRecord } from '../media/devices.ts';
-import { fillVideo } from '../media/video.ts';
+import { fillVideo } from '../media/videoFile.ts';
 import { newBoard } from '../model/boards.ts';
 import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { endPen, penT, startPen } from '../tools/pen.ts';

@@ -3,7 +3,7 @@ import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { DOC_FONT, SUGGESTED_FONTS } from '../docs/editor.ts';
+import { DOC_FONT, SUGGESTED_FONTS } from '../docs/docText.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';

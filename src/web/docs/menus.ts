@@ -1,17 +1,7 @@
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import {
-  BLOCKS,
-  DICON,
-  DOC_FONT,
-  HIGHLIGHTS,
-  SUGGESTED_FONTS,
-  TEXT_COLORS,
-  docDefault,
-  fontName,
-  liveEditor,
-  pagePref,
-} from './editor.ts';
+import { DICON, liveEditor, pagePref } from './editor.ts';
+import { BLOCKS, DOC_FONT, HIGHLIGHTS, SUGGESTED_FONTS, TEXT_COLORS, docDefault, fontName } from './docText.ts';
 import { rewrite } from './rewrite.ts';
 import { blockOf } from './toolbar.ts';
 import { boardFonts } from '../selbar/fontPop.ts';

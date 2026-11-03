@@ -1,4 +1,4 @@
-import { rgbOf } from './ui/color.ts';
+import { SIL, mix } from './gooShapes.ts';
 // Myra in pixels: a little cloudberry (a bumpy cluster of golden beads with a leafy crown, ink eyes and blush).
 // She breathes, blinks, glances around, hops when she does something, and wiggles while she's thinking.
 // The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, wiggle, pose, hat, lively, setColors, draw }.
@@ -9,24 +9,6 @@ export type Pose = 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | 'c
 // headroom: rows of room above her; manual: the caller draws her
 type GooOptions = { headroom?: number; colors?: GooColors; manual?: boolean };
 
-// her shape: X is berry, the leaves sit on top; the beads are textured in below
-const SIL = [
-  '................',
-  '................',
-  '................',
-  '................',
-  '.....XX..XX.....',
-  '...XXXXXXXXXX...',
-  '..XXXXXXXXXXXX..',
-  '.XXXXXXXXXXXXXX.',
-  '.XXXXXXXXXXXXXX.',
-  'XXXXXXXXXXXXXXXX',
-  'XXXXXXXXXXXXXXXX',
-  '.XXXXXXXXXXXXXX.',
-  '.XXXXXXXXXXXXXX.',
-  '..XXXXXXXXXXXX..',
-  '...XX.XXXX.XX...',
-];
 const LEAVES: Record<string, Pixel> = {
   '6,0': 'l',
   '9,0': 'l',
@@ -65,20 +47,6 @@ const grid = SIL.map((row, y) =>
     return 'B';
   }),
 );
-const mix = (a: string, b: string, k: number) => {
-  const p = rgbOf,
-    A = p(a),
-    B = p(b);
-  return (
-    '#' +
-    A.map((v, i) =>
-      Math.round(v + ((B[i] ?? v) - v) * k)
-        .toString(16)
-        .padStart(2, '0'),
-    ).join('')
-  );
-};
-
 function context2d(canvas: HTMLCanvasElement) {
   const g = canvas.getContext('2d');
   if (!g) throw new Error('no 2D canvas for Myra');
