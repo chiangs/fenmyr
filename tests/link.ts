@@ -19,9 +19,12 @@ await l.app.evaluate(({ dialog }, dir) => {
 const { page } = l;
 const library = () => JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'folders.json'), 'utf8'));
 const screen = () => page.evaluate(() => document.querySelector('.rl-body')?.textContent ?? '');
+// the dialog turns its buttons off while a step runs and draws the next screen when it's done
 const press = async (action: string) => {
   await page.click(`.rl-body [data-a="${action}"]`);
-  await page.waitForTimeout(300);
+  await page.waitForFunction(
+    () => !document.querySelector('.rl-body') || !!document.querySelector('.rl-body button:not([disabled])'),
+  );
 };
 const openMenu = (name: string) =>
   page.evaluate(name => {
