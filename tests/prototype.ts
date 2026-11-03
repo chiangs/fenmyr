@@ -202,6 +202,43 @@ try {
     'it comes back from the last commit',
   );
   assert.match(await said(), /back as it was at the last commit/);
+
+  await page.evaluate(() =>
+    window.__fenmyr.applyMyra(
+      {
+        say: 'Made it.',
+        newPrototype: {
+          name: 'Sign up',
+          stack: 'react',
+          purpose: 'Test a shorter sign-up',
+          device: 'phone',
+          project: 'Acme',
+        },
+      },
+      'make a prototype',
+    ),
+  );
+  await page.waitForTimeout(1200);
+  const made = await page.evaluate(() => window.__fenmyr.curBoard());
+  assert.ok(made?.kind === 'prototype', 'Myra’s new prototype opens');
+  assert.deepStrictEqual(made.proto, {
+    dir: 'prototypes/sign-up',
+    stack: 'react',
+    purpose: 'Test a shorter sign-up',
+    device: 'phone',
+  });
+  assert.strictEqual(made.folder, folder.id, 'in the project’s prototyping folder');
+  await page.evaluate(() =>
+    window.__fenmyr.applyMyra(
+      { say: 'Link it first.', newPrototype: { name: 'Diary', project: 'Personal' } },
+      'make one',
+    ),
+  );
+  await page.waitForTimeout(500);
+  assert.ok(
+    await page.locator('button:visible', { hasText: 'Link “Personal” to a repo' }).count(),
+    'an unlinked project gets the link button instead',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('PROTOTYPE OK');
 } finally {

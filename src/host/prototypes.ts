@@ -1,8 +1,7 @@
 // A prototype's own folder of code, under prototypes/ in its project's repo.
 import fs from 'node:fs';
 import path from 'node:path';
-import { PROTO_DIR, type Proto } from '../shared/model.ts';
-import { protoSlug } from '../shared/repos.ts';
+import { PROTO_DIR, type Proto, protoSlug } from '../shared/repos.ts';
 import { status } from './git.ts';
 import { ROOT_FILES, STARTERS } from './protoStarter.ts';
 import { run } from './util.ts';

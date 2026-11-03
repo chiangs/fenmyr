@@ -13,6 +13,7 @@ assert.strictEqual(bad.add, undefined);
 assert.deepStrictEqual(bad.move, [{ id: 'a' }]);
 assert.deepStrictEqual(parseReply('words'), {});
 assert.deepStrictEqual(parseReply({ openRepo: 'Acme', gitSetup: true }), { openRepo: 'Acme', gitSetup: true });
+assert.strictEqual(parseReply({ newPrototype: { name: 'Sign up', stack: 'react' } }).newPrototype?.name, 'Sign up');
 const wrong = parseReply({ openRepo: 7, gitSetup: 'yes' });
 assert.ok(wrong.openRepo === undefined && wrong.gitSetup === undefined, 'repo buttons of the wrong kind are dropped');
 console.log('REPLY OK');

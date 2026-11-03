@@ -1,6 +1,6 @@
 // The files a new prototype starts with, and the ones every prototype in a repo shares at its root. React prototypes
 // are laid out the way Vite expects, so the README's "npm install, then npx vite prototypes/<name>" runs them anywhere.
-import type { Proto } from '../shared/model.ts';
+import type { Proto } from '../shared/repos.ts';
 
 type Files = Record<string, string>;
 
