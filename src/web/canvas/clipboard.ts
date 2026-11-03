@@ -9,7 +9,7 @@ import { remember, save } from '../core/history.ts';
 import { homeAt } from '../library/home.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
-import { selCards } from '../selbar/selbar.ts';
+import { selCards } from '../selbar/selected.ts';
 import { chirp } from '../settings/licenses.ts';
 import { onFrame } from '../wireframe/tilt.ts';
 import { appState, session } from '../core/state.ts';

@@ -40,7 +40,9 @@ import { endEdit, startEdit } from '../features/tags.ts';
 import { audioAct } from '../media/devices.ts';
 import { videoAct } from '../media/video.ts';
 import { card } from '../model/boards.ts';
-import { FS, SIZED, fsMul, placeSelbar, selCards } from '../selbar/selbar.ts';
+import { FS, fsMul, SIZED } from '../selbar/textSize.ts';
+import { placeSelbar } from '../selbar/selbar.ts';
+import { selCards } from '../selbar/selected.ts';
 import { newNoteColor, snapTo } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { drawDown, drawOn } from '../tools/draw.ts';
@@ -498,7 +500,7 @@ export function init16() {
             width: titleW(c),
             height: c.type === 'title' ? 'auto' : c.h + 'px',
           });
-          el.style.setProperty('--fs', fsMul(c));
+          el.style.setProperty('--fs', String(fsMul(c)));
           if (c.type === 'text') {
             const tx = oneIn(el, '.tx');
             if (tx) tx.style.fontSize = (c.size || 18) + 'px';

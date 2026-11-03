@@ -12,7 +12,7 @@ import { endEdit } from './tags.ts';
 import { saveWithDialog } from './templates.ts';
 import { DL } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';
-import { selCards } from '../selbar/selbar.ts';
+import { selCards } from '../selbar/selected.ts';
 import { applyColors } from '../settings/colors.ts';
 import { chirp, say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
