@@ -37,6 +37,8 @@ function readFired(): Record<string, string> {
 // ---------- due dates on notes: a chip on the card's bottom edge, a reminder when it comes due ----------
 // note.due is "2026-11-04" (the end of that day; the reminder comes at 9:00) or "2026-11-04T15:30". The reminders come from a small index kept in localStorage (every note with a due date, on any board you have opened),
 // so nothing needs to open or scan the other boards, and one timer is armed for the next moment that matters: a reminder, a note turning amber (24 hours to go) or red (overdue).
+// notes and checklists can carry a due date
+export const hasDue = (c: { type: string }) => c.type === 'note' || c.type === 'todo';
 export const DUE_KEY = 'fenmyr:due';
 export const DUE_FIRED = 'fenmyr:dueFired';
 const DUE_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/;
@@ -80,7 +82,7 @@ export function dueText(d: unknown) {
 }
 
 export const dueChip = (c: Card) => {
-  if (c.type !== 'note' || !dueDate(c.due)) return '';
+  if (!hasDue(c) || !dueDate(c.due)) return '';
   const state = dueState(c.due),
     when = esc(dueText(c.due)),
     clock = Icon('clock', { size: 12 });
@@ -114,7 +116,7 @@ export const dueHeld: DueItem[] = [];
 // dueHold: at start-up reminders wait until the greeting has been said
 export function dueIndex(force = false) {
   if (!session.board) return;
-  const mine = session.board.cards.filter(c => c.type === 'note' && dueDate(c.due)),
+  const mine = session.board.cards.filter(c => hasDue(c) && dueDate(c.due)),
     sig = mine.map(c => `${c.id}|${c.due}|${c.name || c.text || ''}`).join('\n') + '|' + session.board.name;
   if (!force && dueSigs.get(session.board.id) === sig) return;
   dueSigs.set(session.board.id, sig); // saving happens all the time; only a change to the due notes touches the index

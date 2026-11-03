@@ -25,6 +25,7 @@ const cardFields = {
   tags: opt(z.array(z.string())),
   due: z.catch(z.optional(z.nullable(z.string())), undefined),
   in: z.catch(z.optional(z.nullable(z.string())), undefined),
+  column: z.catch(z.optional(z.union([z.string(), z.number()])), undefined),
   items: opt(z.array(z.union([z.string(), z.looseObject({ t: z.string(), done: opt(z.boolean()) })]))),
 };
 
@@ -49,7 +50,18 @@ const reply = z.looseObject({
       move: list(z.looseObject({ board: z.string(), folder: txt, project: txt })),
     }),
   ),
-  collections: list(z.looseObject({ x: num, y: num, name: txt, text: txt, color: txt, cols: num })),
+  collections: list(
+    z.looseObject({
+      x: num,
+      y: num,
+      name: txt,
+      text: txt,
+      color: txt,
+      cols: num,
+      kanban: opt(z.boolean()),
+      columns: opt(z.array(z.string())),
+    }),
+  ),
   add: list(z.looseObject(cardFields)),
   titles: list(z.looseObject({ x: num, y: num, text: txt })),
   place: list(z.looseObject({ id: z.string(), x: num, y: num })),

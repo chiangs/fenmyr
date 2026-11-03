@@ -488,6 +488,89 @@ echo " [BLANK_AUDIO] hello from whisper"
       return now - n;
     });
   }
+  // asking for tasks: the app collects the unfinished ones (narrowed to the request's names, sub-tasks kept, due date read) and says what it used; Myra's kanban with cards in its columns is built from her reply
+  {
+    const vp = path.join(data, 'vault');
+    fs.writeFileSync(
+      path.join(vp, 'Projects/Gifts.md'),
+      [
+        '# Gifts',
+        '- [x] Order the wrapping paper',
+        '- [ ] Buy a gift for Ruth 📅 2026-12-20',
+        '  - [x] Pick a shop',
+        '  - [ ] Wrap it',
+        '- [/] Card for Max',
+        '- [ ] Unrelated chore',
+      ].join('\n'),
+    );
+    const promptNow = () => fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8');
+    r.vaultTasks = await page.evaluate(async () => {
+      const wait = ms => new Promise(res => setTimeout(res, ms)),
+        M = window.__fenmyr,
+        v = (await Fenmyr.vaults())[0],
+        res = {};
+      M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: true, write: false }];
+      M.applyToolbar();
+      document.getElementById('mcVault').click();
+      await M.ask('take all my tasks that are not completed and add a kanban board for the xmas/ruth/max ones');
+      await wait(300);
+      res.said = /I used 2 unfinished tasks from 1 note in your vault \(\d+ open in all/.test(
+        document.body.textContent,
+      );
+      return res;
+    });
+    const p = promptNow();
+    r.vaultTasks.prompt =
+      p.includes('THEIR UNFINISHED TASKS') &&
+      p.includes('Buy a gift for Ruth') &&
+      p.includes('due 2026-12-20') &&
+      p.includes('[x] Pick a shop') &&
+      p.includes('Card for Max (in progress)') &&
+      !p.includes('Unrelated chore') &&
+      !p.includes('Order the wrapping paper');
+    r.vaultTasks.kanban = await page.evaluate(async () => {
+      const M = window.__fenmyr,
+        b = M.board;
+      await M.applyMyra({
+        say: 'ok',
+        collections: [{ name: 'Xmas gifts', kanban: true, columns: ['Ruth', 'Max'], x: 0, y: 900 }],
+        add: [
+          {
+            type: 'todo',
+            text: 'Buy a gift for Ruth',
+            items: ['Pick a shop', { t: 'Wrap it', done: true }],
+            due: '2026-12-20',
+            in: 'Xmas gifts',
+            column: 'Ruth',
+          },
+          { type: 'todo', text: 'Card for Max', items: ['Write it'], in: 'Xmas gifts', column: 'Max' },
+        ],
+      });
+      const k = b.cards.find(c => c.type === 'coll' && c.text === 'Xmas gifts'),
+        todo = id => b.cards.find(c => c.id === id),
+        [a, c] = k.kids.map(todo);
+      return {
+        made: !!k && k.kanban === true && k.colNames.join() === 'Ruth,Max',
+        columns: k.colOf[a.id] === 0 && k.colOf[c.id] === 1,
+        sub: a.items.length === 2 && a.items[1].done === true && a.items[0].done === false,
+        due: a.due === '2026-12-20' && !!document.querySelector(`[data-id="${a.id}"] .due`),
+      };
+    });
+    r.vaultTasks.nothing = await page.evaluate(async () => {
+      const M = window.__fenmyr,
+        v = (await Fenmyr.vaults())[0];
+      M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: true, write: false }];
+      M.applyToolbar();
+      document.getElementById('mcVault').click();
+      await M.ask('list my unfinished tasks about the moon landing');
+      await new Promise(res => setTimeout(res, 300));
+      M.board.vaultAccess = [];
+      M.applyToolbar();
+      return /found none that match your words/.test(document.body.textContent);
+    });
+    r.vaultTasks.noEmptyBoard = promptNow().includes('Do not build, fill or empty any board');
+    fs.rmSync(path.join(vp, 'Projects/Gifts.md'));
+  }
   // connectors: weight (regular, medium, bold) and colour from the bar, remembered for the next connector, and a reset
   r.wire = await page.evaluate(async () => {
     const wait = ms => new Promise(res => setTimeout(res, ms)),
@@ -2599,6 +2682,14 @@ echo " [BLANK_AUDIO] hello from whisper"
     r.vaultAI.said &&
     r.vaultAI.chipReset &&
     r.vaultAI.cards === 1 &&
+    r.vaultTasks.said &&
+    r.vaultTasks.prompt &&
+    r.vaultTasks.kanban.made &&
+    r.vaultTasks.kanban.columns &&
+    r.vaultTasks.kanban.sub &&
+    r.vaultTasks.kanban.due &&
+    r.vaultTasks.nothing &&
+    r.vaultTasks.noEmptyBoard &&
     r.tplSaved &&
     r.tplRow &&
     r.tplAdds &&

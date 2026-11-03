@@ -19,7 +19,8 @@ import { SLASH } from './greet.ts';
 import { showConnections } from './helpers.ts';
 import { reply } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
-import { aiGrants, gatherVault, updateVaultChip } from '../vault/ask.ts';
+import { hasDue } from '../features/due.ts';
+import { aiGrants, gatherVault, gatherVaultTasks, updateVaultChip, type VaultTasksUsed } from '../vault/ask.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
 import { appState, session } from '../core/state.ts';
 import type { Card, ChatMsg } from '../../shared/model.ts';
@@ -397,7 +398,7 @@ export function snapshot() {
           shape: 'shape' in c ? c.shape : undefined,
           label: c.tagText,
           tags: (c.tags || []).length ? c.tags : undefined,
-          due: c.type === 'note' ? c.due : undefined,
+          due: hasDue(c) ? c.due : undefined,
           items: 'items' in c && c.items ? c.items.map(i => i.t) : undefined,
           hex: c.hex,
           url: 'url' in c ? c.url : undefined,
@@ -565,11 +566,16 @@ export async function ask(q: string, confirmed = false) {
   $('myra').classList.add('thinking');
   goo.think(true);
   typing(true);
-  const ctx: { asked: boolean; used: Awaited<ReturnType<typeof gatherVault>> } = { asked: false, used: [] };
+  const ctx: { asked: boolean; used: Awaited<ReturnType<typeof gatherVault>>; tasks: VaultTasksUsed | null } = {
+    asked: false,
+    used: [],
+    tasks: null,
+  };
   if (appState.vaultChip && aiGrants(session.board).length) {
     ctx.asked = true;
     try {
-      ctx.used = await gatherVault(q);
+      ctx.tasks = await gatherVaultTasks(q);
+      ctx.used = ctx.tasks ? [] : await gatherVault(q);
     } catch (e) {}
   }
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
@@ -592,6 +598,7 @@ export async function ask(q: string, confirmed = false) {
         web: !!settings.webAccess,
         canVault,
         vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })),
+        ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),
       },
     );
     await applyMyra(parse(raw), q, ctx);

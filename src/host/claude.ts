@@ -8,6 +8,7 @@ import type {
   SlashCommand,
   UsageSummary,
   VaultNoteForMyra,
+  VaultTaskForMyra,
 } from '../shared/ops.ts';
 import P from './paths.ts';
 import * as prompts from './prompts.ts';
@@ -187,6 +188,25 @@ const parseVaultNotes = (list: unknown): VaultNoteForMyra[] =>
       text: text(n.text),
     }));
 
+function parseVaultTasks(v: unknown): { items: VaultTaskForMyra[]; summary: string } | undefined {
+  if (!isRecord(v) || !Array.isArray(v.items)) return undefined;
+  const items = v.items
+    .slice(0, 300)
+    .filter(isRecord)
+    .map(n => ({
+      vault: text(n.vault),
+      rel: text(n.rel),
+      title: text(n.title),
+      heading: text(n.heading),
+      text: text(n.text),
+      ...(typeof n.due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(n.due) ? { due: n.due } : {}),
+      kids: (Array.isArray(n.kids) ? n.kids : [])
+        .slice(0, 30)
+        .filter(isRecord)
+        .map(k => ({ t: text(k.t), done: k.done === true })),
+    }));
+  return { items, summary: text(v.summary).slice(0, 300) };
+}
 const NEED = 'I need Claude Code to think. Set it up (Settings → Helpers shows how), then try again.';
 export function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
   const confirmed = Boolean(a.confirmed),
@@ -221,6 +241,7 @@ export function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
     higgs,
     web,
     vaultNotes: parseVaultNotes(a.vaultNotes),
+    vaultTasks: parseVaultTasks(a.vaultTasks),
     canVault: Boolean(a.canVault),
   });
   return runClaude(prompt, tools, 300, NEED);

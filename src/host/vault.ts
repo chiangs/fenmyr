@@ -17,7 +17,7 @@ const inside = (rel: string, folder: string) => folder === '' || rel === folder 
 const hidden = (rel: string) => rel.split('/').some(s => s.startsWith('.') || s === 'node_modules');
 const cleanFolders = (list: string[]) => [...new Set(list.map(norm))].filter(f => !f.split('/').includes('..'));
 // '' in a grant allows the whole vault
-function reachable(vault: Vault, rel: string, allow: string[]) {
+export function reachable(vault: Vault, rel: string, allow: string[]) {
   const r = norm(rel);
   if (!r.toLowerCase().endsWith('.md') || hidden(r)) return false;
   if (vault.off.some(f => f !== '' && inside(r, f))) return false;
@@ -67,7 +67,7 @@ function parseYAML(src: string): Props {
   }
   return out;
 }
-function parseNote(src: string) {
+export function parseNote(src: string) {
   let props: Props = {},
     body = src;
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(src);
@@ -98,16 +98,16 @@ function parseNote(src: string) {
     .slice(0, 280);
   return { props, tags: [...tags], links, excerpt, body: body.trim() };
 }
-const isPrivate = (tags: string[]) => tags.some(t => /^private(\/|$)/i.test(t));
+export const isPrivate = (tags: string[]) => tags.some(t => /^private(\/|$)/i.test(t));
 const shortProps = (props: Props): NoteProps =>
   Object.entries(props)
     .filter(([k]) => !/^tags?$/i.test(k))
     .slice(0, 6)
     .map(([k, v]) => [k, Array.isArray(v) ? v.join(', ') : v]);
-const titleOf = (rel: string) => path.posix.basename(rel).replace(/\.md$/i, '');
+export const titleOf = (rel: string) => path.posix.basename(rel).replace(/\.md$/i, '');
 
 type Entry = { dir: true; rel: string } | { dir: false; rel: string; full: string };
-function walk(vault: Vault, fn: (x: Entry) => void, limit = 30000) {
+export function walk(vault: Vault, fn: (x: Entry) => void, limit = 30000) {
   let n = 0;
   (function go(dir: string, rel: string) {
     let ents: fs.Dirent[] = [];
@@ -200,7 +200,7 @@ export function note(vault: Vault, rel: string, allow: string[], full = false): 
   };
   return full ? { ...out, body: p.body.slice(0, FULL_MAX), truncated: p.body.length > FULL_MAX } : out;
 }
-const STOP = new Set(
+export const STOP = new Set(
   'the and for are was were what when where which who why how can you your about with that this from have has had not but any all there their them they his her its our out into over also does did doing should would could know wrote note notes vault obsidian say said tell give show find look search please'.split(
     ' ',
   ),

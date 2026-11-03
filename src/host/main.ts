@@ -15,6 +15,7 @@ import * as theme from './theme.ts';
 import * as update from './update.ts';
 import { isRecord, readJSON, strings, text, type Untrusted } from './util.ts';
 import * as vault from './vault.ts';
+import * as vaultTasks from './vaultTasks.ts';
 
 type Handlers = {
   [K in keyof Ops]: (args: Untrusted<Ops[K]['args']>) => Ops[K]['result'] | Promise<Ops[K]['result']>;
@@ -197,6 +198,7 @@ const OPS = {
   vaultRemove: a => vault.remove(text(a.id)),
   vaultScan: a => vault.scan(vault.byId(text(a.id))),
   vaultSearch: a => vault.search(vault.byId(text(a.id)), strings(a.allow), text(a.query)),
+  vaultTasks: a => vaultTasks.tasks(vault.byId(text(a.id)), strings(a.allow), text(a.query)),
   vaultNotes: a => vault.list(vault.byId(text(a.id)), strings(a.allow), text(a.query)),
   vaultNote: a => {
     const v = vault.byId(text(a.id));

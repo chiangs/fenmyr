@@ -40,6 +40,78 @@ assert(sc.folders.includes('Projects/Bog Notes') && !sc.folders.some(f => f.star
   V.remove(tv.id);
 }
 
+// unfinished tasks: open and in-progress ones come back with their sub-tasks and due date; done, cancelled, private and off-limits ones do not
+{
+  const T = await import('../src/host/vaultTasks.ts');
+  const tv = path.join(data, 'tasks');
+  fs.mkdirSync(path.join(tv, 'Tracking/01_Weekly'), { recursive: true });
+  fs.mkdirSync(path.join(tv, 'Tracking/Secret'), { recursive: true });
+  fs.writeFileSync(
+    path.join(tv, 'Tracking/01_Weekly/2026-W44.md'),
+    [
+      '# Week 44',
+      '## Gifts',
+      '- [x] Send the report',
+      '- [ ] Buy a gift for Ruth 📅 2026-12-20',
+      '  - [x] Pick a shop',
+      '  - [/] Wrap it',
+      '    - [ ] Find the paper',
+      '- [-] Cancelled thing for Max',
+      '- [x] Done parent',
+      '  - [ ] Still open under a done parent',
+      '- [ ] Take the car in [due:: 2026-11-30]',
+      '  - [ ] Book the garage',
+      '## Later',
+      '- [ ] Unrelated chore',
+    ].join('\n'),
+  );
+  fs.writeFileSync(path.join(tv, 'Tracking/Secret/p.md'), '- [ ] hidden xmas task');
+  fs.writeFileSync(path.join(tv, 'Tracking/private.md'), '---\ntags: [private]\n---\n- [ ] private xmas task');
+  const vt = V.add(tv);
+  V.update(vt.id, { off: ['Tracking/Secret'] });
+  const all = T.tasks(V.byId(vt.id), ['Tracking'], 'take all my unfinished tasks');
+  const texts = all.tasks.map(t => t.text);
+  assert(
+    texts.includes('Buy a gift for Ruth') && texts.includes('Take the car in') && texts.includes('Unrelated chore'),
+  );
+  assert(
+    !texts.some(x => /Send the report|Cancelled|hidden|private/.test(x)),
+    'done, cancelled, off-limits and private tasks stay out',
+  );
+  assert(texts.includes('Done parent'), 'a done task with open sub-tasks is kept');
+  const gift = all.tasks.find(t => t.text === 'Buy a gift for Ruth');
+  assert.strictEqual(gift?.due, '2026-12-20');
+  assert.strictEqual(gift?.heading, 'Gifts');
+  assert.deepStrictEqual(gift?.kids, [
+    { t: 'Pick a shop', done: true },
+    { t: 'Wrap it (in progress)', done: false },
+    { t: '↳ Find the paper', done: false },
+  ]);
+  assert.strictEqual(
+    all.tasks.find(t => t.text === 'Take the car in')?.due,
+    '2026-11-30',
+    'a due:: field counts and is not left in the words',
+  );
+  assert.strictEqual(all.filtered, false);
+  const some = T.tasks(
+    V.byId(vt.id),
+    ['Tracking'],
+    'add a kanban board where all tasks related to xmas/ruth/max are added',
+  );
+  assert.deepStrictEqual(
+    some.tasks.map(t => t.text),
+    ['Buy a gift for Ruth'],
+    'only tasks that match the names, not the words of the request',
+  );
+  assert(some.filtered && some.open > some.sent);
+  assert.strictEqual(
+    T.tasks(V.byId(vt.id), ['Elsewhere'], '').tasks.length,
+    0,
+    'outside the allowed folders nothing is read',
+  );
+  V.remove(vt.id);
+}
+
 // parsing: frontmatter in three styles, inline tags, links, no tags from headings
 const n = V.note(v, 'Projects/Bog Notes/Trip plan.md', ['']);
 assert.deepStrictEqual(n.tags.sort(), ['cloudberries', 'today', 'trip']);

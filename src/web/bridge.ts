@@ -167,6 +167,9 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
   async vaultSearch() {
     return [];
   },
+  async vaultTasks() {
+    return { tasks: [], open: 0, sent: 0, notes: 0, scanned: 0, stopped: false, filtered: false };
+  },
   async vaultNotes() {
     return [];
   },
@@ -343,6 +346,7 @@ const nativeApi = {
   vaultRemove: (id: string) => call('vaultRemove', { id }),
   vaultScan: (id: string) => call('vaultScan', { id }),
   vaultSearch: (id: string, allow: string[], query: string) => call('vaultSearch', { id, allow, query }),
+  vaultTasks: (id: string, allow: string[], query: string) => call('vaultTasks', { id, allow, query }),
   vaultNotes: (id: string, allow: string[], query: string) => call('vaultNotes', { id, allow, query }),
   vaultNote: (id: string, rel: string, allow: string[], full?: boolean) =>
     call('vaultNote', { id, rel, allow, ...(full === undefined ? {} : { full }) }),
