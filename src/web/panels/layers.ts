@@ -124,16 +124,32 @@ export function renderLayers() {
       open = LY.open.has(n.key),
       ids = lyAll(n),
       hidden = ids.length && ids.every(i => byId(i)?.hidden),
-      locked = ids.length && ids.every(i => byId(i)?.locked);
-    const name = n.kind === 'group' || !c ? groupName(n.ids) : layerName(c),
-      icon = n.kind === 'group' || !c ? (LICON.group ?? '') : layerIcon(c);
+      locked = ids.length && ids.every(i => byId(i)?.locked),
+      whole = n.kind === 'group' || !c,
+      name = esc(whole ? groupName(n.ids) : layerName(c)),
+      icon = whole ? (LICON.group ?? '') : layerIcon(c),
+      holds = c?.type === 'frame' || c?.type === 'coll' || c?.type === 'section' || n.kind === 'group',
+      classes =
+        (n.ids.every(i => session.sel.has(i)) ? ' on' : '') +
+        (hidden ? ' off' : '') +
+        (locked ? ' lk' : '') +
+        (holds ? ' parent' : ''),
+      key = esc(n.key),
+      twisty = (kids ? '' : ' none') + (open ? ' open' : ''),
+      twistLabel = open ? 'Close' : 'Open',
+      caret = Icon('caret-right'),
+      lockTip = locked ? 'Unlock' : 'Lock',
+      lockIcon = Icon(locked ? 'lock' : 'unlock'),
+      eyeTip = hidden ? 'Show' : 'Hide',
+      eyeIcon = Icon(hidden ? 'eye-off' : 'eye'),
+      inside = kids && open ? n.kids.map(k => row(k, depth + 1)).join('') : '';
     return (
-      `<div class="ly${n.ids.every(i => session.sel.has(i)) ? ' on' : ''}${hidden ? ' off' : ''}${locked ? ' lk' : ''}${c?.type === 'frame' || c?.type === 'coll' || c?.type === 'section' || n.kind === 'group' ? ' parent' : ''}" data-key="${esc(n.key)}" draggable="true" style="--d:${depth}">
-        <button class="ly-tw${kids ? '' : ' none'}${open ? ' open' : ''}" tabindex="-1" aria-label="${open ? 'Close' : 'Open'}">${Icon('caret-right')}</button>
-        <span class="ly-ic">${icon}</span><span class="ly-n">${esc(name)}</span>
-        <button class="ly-b ly-lock" title="${locked ? 'Unlock' : 'Lock'}">${Icon(locked ? 'lock' : 'unlock')}</button>
-        <button class="ly-b ly-eye" title="${hidden ? 'Show' : 'Hide'}">${Icon(hidden ? 'eye-off' : 'eye')}</button>
-      </div>` + (kids && open ? n.kids.map(k => row(k, depth + 1)).join('') : '')
+      `<div class="ly${classes}" data-key="${key}" draggable="true" style="--d:${depth}">
+        <button class="ly-tw${twisty}" tabindex="-1" aria-label="${twistLabel}">${caret}</button>
+        <span class="ly-ic">${icon}</span><span class="ly-n">${name}</span>
+        <button class="ly-b ly-lock" title="${lockTip}">${lockIcon}</button>
+        <button class="ly-b ly-eye" title="${eyeTip}">${eyeIcon}</button>
+      </div>` + inside
     );
   };
   const st = list.scrollTop;
