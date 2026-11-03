@@ -183,7 +183,7 @@ type SavedChat = { id: string; title: string; t: number; msgs: ChatMsg[] };
 
 // A prototype board's code lives in one folder of its project's repo. The board finds it by dir, never by its name,
 // so renaming or refiling the board can't lose it.
-type Proto = { dir: string; stack: 'react' | 'html' };
+export type Proto = { dir: string; stack: 'react' | 'html' };
 
 type BoardBase = {
   id: string;

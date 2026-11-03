@@ -18,6 +18,7 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
 import { linkRepo } from '../repo/link.ts';
+import { newPrototypingFolder } from '../repo/prototypes.ts';
 import { chirp, say } from '../settings/licenses.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { keepOnScreen } from '../ui/popover.ts';
@@ -227,7 +228,7 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
   m.style.top = `${e.clientY}px`;
   const project = kind === 'project' ? appState.projects.find(x => x.id === obj.id) : undefined,
     repoLabel = project?.repo ? 'Repo…' : 'Link a repo…',
-    repoItem = `<button data-m="repo">${repoLabel}</button>`;
+    repoItem = `<button data-m="repo">${repoLabel}</button><button data-m="protoFolder">New prototyping folder</button>`;
   const items =
     (nameEl ? '<button data-m="ren">Rename</button>' : '') +
     (kind !== 'project' ? '<button data-m="move">Move to…</button>' : '') +
@@ -248,9 +249,9 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
       m.remove();
       return duplicate(kind, obj);
     }
-    if (a === 'repo' && project) {
+    if ((a === 'repo' || a === 'protoFolder') && project) {
       m.remove();
-      return linkRepo(project);
+      return a === 'repo' ? linkRepo(project) : newPrototypingFolder(project);
     }
     if (a === 'vault' && kind !== 'folder') {
       m.remove();

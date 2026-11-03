@@ -1,0 +1,73 @@
+import type { Board, Folder, Project } from '../../shared/model.ts';
+import { appState } from '../core/state.ts';
+import { openBoard } from '../library/openBoard.ts';
+import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
+import { makeFolder, saveLib } from '../library/tree.ts';
+import { newBoard } from '../model/boards.ts';
+import { chirp } from '../settings/licenses.ts';
+import { child, esc } from '../ui/dom.ts';
+import { showDialog } from '../ui/popover.ts';
+import { linkRepo } from './link.ts';
+
+const projectOf = (f: Folder) => appState.projects.find(p => p.id === f.project);
+
+// Prototypes live in prototyping folders, and their code in the project's repo, so a project needs a repo first.
+export async function newPrototypingFolder(p: Project) {
+  if (!p.repo) {
+    chirp(`Link “${p.name}” to a repo first. Its prototypes are saved there ✦`, 4000);
+    return linkRepo(p);
+  }
+  const f = makeFolder(uniqueName(appState.folders, 'Prototypes'), p.id);
+  f.kind = 'prototyping';
+  await saveLib();
+  await refreshBoards();
+  return f;
+}
+
+// Name and stack, then a board and its own folder of code in the repo.
+export function newPrototypeIn(f: Folder) {
+  const p = projectOf(f);
+  if (!p?.repo) {
+    if (p) linkRepo(p);
+    return chirp('This project needs a repo before it can hold prototypes ✦', 4000);
+  }
+  const root = p.repo.path,
+    title = esc(`New prototype in “${f.name}”`);
+  const d = showDialog(`<div class="tdlg" role="dialog"><h3>${title}</h3>
+    <label>Name<input id="npName" placeholder="Checkout flow"></label>
+    <div class="tdlg-row"><span>Code</span><div class="seg" id="npStack"><button data-v="react" class="on">React</button><button data-v="html">Plain HTML</button></div></div>
+    <p class="set-note" id="npNote">React suits screens with state and reusable parts. Plain HTML suits a simple page anyone can edit.</p>
+    <p class="rl-problem" id="npProblem"></p>
+    <div class="tdlg-btns"><button class="set-btn" id="npNo">Cancel</button><button class="set-btn hot" id="npOk">Create</button></div></div>`);
+  let stack: 'react' | 'html' = 'react';
+  const name = child(d, '#npName', HTMLInputElement);
+  name.focus();
+  const create = async () => {
+    const shown = name.value.trim() || 'Untitled prototype';
+    try {
+      const proto = await Fenmyr.protoCreate({ root, name: shown, stack });
+      const b: Board = { ...newBoard(shown), kind: 'prototype', proto, folder: f.id };
+      await Fenmyr.save(b);
+      d.remove();
+      await refreshBoards();
+      await openBoard(b.id);
+      chirp(`Made “${shown}”. Its code is in ${proto.dir} ✦`, 4000);
+    } catch (e) {
+      child(d, '#npProblem').textContent = e instanceof Error ? e.message : String(e);
+    }
+  };
+  d.onclick = e => {
+    const t = e.target instanceof HTMLElement ? e.target : null;
+    if (e.target === d || t?.id === 'npNo') return d.remove();
+    if (t?.id === 'npOk') return create();
+    if (t?.dataset.v === 'react' || t?.dataset.v === 'html') {
+      stack = t.dataset.v;
+      for (const b of d.querySelectorAll('#npStack button')) b.classList.toggle('on', b === t);
+    }
+  };
+  d.onkeydown = e => {
+    e.stopPropagation();
+    if (e.key === 'Escape') d.remove();
+    if (e.key === 'Enter') create();
+  };
+}

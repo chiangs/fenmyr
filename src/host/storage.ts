@@ -50,6 +50,7 @@ export function list(): BoardSummary[] {
         parent: stringOr(j.parent, null),
         updated: st.mtimeMs / 1000,
         ...grantSummary(j.vaultAccess),
+        ...(j.kind === 'prototype' ? { kind: 'prototype' } : {}),
       };
       summaries.set(f, { mtimeMs: st.mtimeMs, size: st.size, row });
       return row;

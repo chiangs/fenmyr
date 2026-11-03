@@ -4,6 +4,7 @@ import { colorHex } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { findClose } from '../features/find.ts';
+import { newPrototypeIn } from '../repo/prototypes.ts';
 import { chirp } from '../settings/licenses.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
@@ -275,15 +276,18 @@ export function renderHome(): void {
     boardsIn(f.id).forEach(b => {
       grid.appendChild(boardTile(b));
     });
-    add('New board', () => newBoardIn(f.id));
-    add('New folder', async () => {
-      const ff = makeFolder(uniqueName(appState.folders, 'New folder'), f.project || null);
-      ff.parent = f.id;
-      await saveLib();
-      await refreshBoards();
-      const t = [...grid.querySelectorAll('.tile.folder')].pop();
-      if (t) inlineRename(child(t, '.tile-meta b'), ff);
-    });
+    if (f.kind === 'prototyping') add('New prototype', () => newPrototypeIn(f));
+    else {
+      add('New board', () => newBoardIn(f.id));
+      add('New folder', async () => {
+        const ff = makeFolder(uniqueName(appState.folders, 'New folder'), f.project || null);
+        ff.parent = f.id;
+        await saveLib();
+        await refreshBoards();
+        const t = [...grid.querySelectorAll('.tile.folder')].pop();
+        if (t) inlineRename(child(t, '.tile-meta b'), ff);
+      });
+    }
   }
 }
 
