@@ -64,48 +64,76 @@ export function wireGeom(l: Link, a: Card, b: Card) {
 export const wireW = (l: Link) => (l.w === 4 || l.w === 6 ? l.w : 2);
 export const wireColor = (l: Link) => (/^#[0-9a-f]{3,8}$/i.test(l.color || '') ? l.color : '');
 
+// the drawing sits in an SVG shifted by this much, so lines off the top or left of the board still show
+const O = 5000;
+const shift = (p: Point) => ({ x: p.x + O, y: p.y + O });
+
+// an arrowhead at the end of the curve, sized to the line's weight
+function arrowPath(c1: Point, p2: Point, ww: number) {
+  const ux = p2.x - c1.x,
+    uy = p2.y - c1.y,
+    ul = Math.hypot(ux, uy) || 1,
+    ax = ux / ul,
+    ay = uy / ul,
+    tip = shift(p2),
+    hl = 11 + (ww - 2) * 2,
+    hw = 7 + (ww - 2) * 1.2,
+    lx = tip.x - ax * hl - ay * hw,
+    ly = tip.y - ay * hl + ax * hw,
+    rx = tip.x - ax * hl + ay * hw,
+    ry = tip.y - ay * hl - ax * hw;
+  return `M${lx} ${ly} L${tip.x} ${tip.y} L${rx} ${ry}`;
+}
+
+// one connector: its line, arrow and invisible wide hit area; selected, a glow behind it and its handles
+function wireMarkup(l: Link, a: Card, b: Card, on: boolean) {
+  const g = wireGeom(l, a, b),
+    p0 = shift(g.p0),
+    c1 = shift(g.c1),
+    p2 = shift(g.p2),
+    hd = shift(g.handle),
+    d = `M${p0.x} ${p0.y} Q${c1.x} ${c1.y} ${p2.x} ${p2.y}`,
+    // weight (regular 2, medium 4, bold 6) and colour; unset means the defaults, which follow the theme
+    ww = wireW(l),
+    k = ww / 2,
+    color = wireColor(l),
+    colorCss = color ? `stroke:${color};` : '',
+    widthCss = ww !== 2 ? `stroke-width:${ww};` : '',
+    sty = colorCss + widthCss,
+    dashLen = 6 * k,
+    gapLen = 7 * k,
+    ds = l.dash && ww !== 2 ? `stroke-dasharray:${dashLen} ${gapLen};` : '',
+    dash = l.dash ? ' dash' : '',
+    haloW = ww + 6,
+    hitW = Math.max(16, ww + 12),
+    ad = l.arrow ? arrowPath(g.c1, g.p2, ww) : '',
+    arrow = ad ? `<path class="w-arrow" style="${sty}" d="${ad}"/>` : '',
+    // selected: a soft blue glow behind the line, so its real colour stays visible
+    lineHalo = on ? `<path class="w-halo" style="stroke-width:${haloW}" d="${d}"/>` : '',
+    arrowHalo = on && ad ? `<path class="w-halo" style="stroke-width:${haloW}" d="${ad}"/>` : '',
+    ends = on
+      ? `<circle class="w-end" data-end="a" data-wire="${l.id}" cx="${p0.x}" cy="${p0.y}" r="6"/><circle class="w-end" data-end="b" data-wire="${l.id}" cx="${p2.x}" cy="${p2.y}" r="6"/><circle class="w-bend" data-wire="${l.id}" cx="${hd.x}" cy="${hd.y}" r="7"/>`
+      : '';
+  return `${lineHalo}${arrowHalo}<path class="w${dash}" style="${sty}${ds}" d="${d}"/>${arrow}<path class="w-hit" style="stroke-width:${hitW}" data-wire="${l.id}" d="${d}"/>${ends}`;
+}
+
+// the line that follows the pointer while you draw a new connector
+function liveMarkup(a: Point, b: Point) {
+  const s = shift(a),
+    e = shift(b),
+    mx = (a.x + b.x) / 2 + O,
+    my = (a.y + b.y) / 2 - 30 + O;
+  return `<path class="live" d="M${s.x} ${s.y} Q${mx} ${my} ${e.x} ${e.y}"/>`;
+}
+
 export function renderWires(live?: { a: Point; b: Point }) {
-  const O = 5000;
   let h = '';
-  session.board.links.forEach(l => {
+  for (const l of session.board.links) {
     const a = byId(l.a),
       b = byId(l.b);
-    if (!a || !b) return;
-    const g = wireGeom(l, a, b);
-    const d = `M${g.p0.x + O} ${g.p0.y + O} Q${g.c1.x + O} ${g.c1.y + O} ${g.p2.x + O} ${g.p2.y + O}`,
-      on = session.selWire === l.id;
-    // weight (regular 2, medium 4, bold 6) and colour; unset means the defaults, which follow the theme
-    const ww = wireW(l),
-      k = ww / 2,
-      sty = `${wireColor(l) ? `stroke:${wireColor(l)};` : ''}${ww !== 2 ? `stroke-width:${ww};` : ''}`,
-      ds = l.dash && ww !== 2 ? `stroke-dasharray:${6 * k} ${7 * k};` : '';
-    let arrow = '',
-      halo = '';
-    if (l.arrow) {
-      const ux = g.p2.x - g.c1.x,
-        uy = g.p2.y - g.c1.y,
-        ul = Math.hypot(ux, uy) || 1,
-        ax = ux / ul,
-        ay = uy / ul,
-        tip = { x: g.p2.x + O, y: g.p2.y + O },
-        hl = 11 + (ww - 2) * 2,
-        hw = 7 + (ww - 2) * 1.2;
-      const ad = `M${tip.x - ax * hl - ay * hw} ${tip.y - ay * hl + ax * hw} L${tip.x} ${tip.y} L${tip.x - ax * hl + ay * hw} ${tip.y - ay * hl - ax * hw}`;
-      arrow = `<path class="w-arrow" style="${sty}" d="${ad}"/>`;
-      if (on) halo += `<path class="w-halo" style="stroke-width:${ww + 6}" d="${ad}"/>`;
-    }
-    if (on) halo = `<path class="w-halo" style="stroke-width:${ww + 6}" d="${d}"/>` + halo; // selected: a soft blue glow behind the line, so its real colour stays visible
-    const dash = l.dash ? ' dash' : '',
-      hitW = Math.max(16, ww + 12);
-    h += `${halo}<path class="w${dash}" style="${sty}${ds}" d="${d}"/>${arrow}<path class="w-hit" style="stroke-width:${hitW}" data-wire="${l.id}" d="${d}"/>`;
-    if (on)
-      h += `<circle class="w-end" data-end="a" data-wire="${l.id}" cx="${g.p0.x + O}" cy="${g.p0.y + O}" r="6"/><circle class="w-end" data-end="b" data-wire="${l.id}" cx="${g.p2.x + O}" cy="${g.p2.y + O}" r="6"/><circle class="w-bend" data-wire="${l.id}" cx="${g.handle.x + O}" cy="${g.handle.y + O}" r="7"/>`;
-  });
-  if (live) {
-    const a = live.a,
-      b = live.b;
-    h += `<path class="live" d="M${a.x + O} ${a.y + O} Q${(a.x + b.x) / 2 + O} ${(a.y + b.y) / 2 - 30 + O} ${b.x + O} ${b.y + O}"/>`;
+    if (a && b) h += wireMarkup(l, a, b, session.selWire === l.id);
   }
+  if (live) h += liveMarkup(live.a, live.b);
   wires.innerHTML = h;
 }
 
