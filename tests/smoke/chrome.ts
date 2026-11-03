@@ -32,6 +32,8 @@ export async function shortcutLabels(t: Smoke) {
   });
 }
 
+const ID_OF: Record<string, string> = { Alpha: 'oa', Bravo: 'ob', Charlie: 'oc' };
+
 // dragging a board between two rows puts it there (and the order is kept in the folders file, not in the boards)
 export async function boardOrder(t: Smoke) {
   const { page } = t;
@@ -47,8 +49,10 @@ export async function boardOrder(t: Smoke) {
   });
   const row = (n: string) => page.locator('.board-row', { hasText: n }).first(),
     names = () => page.evaluate(() => window.__fenmyr.boardsOf('of'));
-  const before = await names();
-  await row('Charlie').dragTo(row('Alpha'), { targetPosition: { x: 40, y: 3 } });
+  // with no order saved yet the newest board comes first, so the expectations follow whatever order this is
+  const before = await names(),
+    [first = '', middle = '', last = ''] = before;
+  await row(last).dragTo(row(first), { targetPosition: { x: 40, y: 3 } }); // onto the top edge: just before it
   await page.waitForTimeout(500);
   const after = await names(),
     kept = await page.evaluate(async () => {
@@ -57,18 +61,14 @@ export async function boardOrder(t: Smoke) {
         of = order && typeof order === 'object' && 'of' in order ? order.of : [];
       return JSON.stringify(of);
     });
-  await row('Alpha').dragTo(row('Bravo'), { targetPosition: { x: 40, y: 26 } });
+  await row(first).dragTo(row(middle), { targetPosition: { x: 40, y: 26 } }); // onto the bottom edge: just after it
   await page.waitForTimeout(500);
   const after2 = await names();
-  // toTop and after fail on main too, and never counted before; they're shown with the results, not required, until
-  // someone finds out whether the drag or the check is wrong.
-  t.results.boardOrderDrag = {
-    toTop: after[0] === 'Charlie' && after.length === 3,
-    after: after2.join() === 'Charlie,Bravo,Alpha',
-  };
   t.checkAll('boardOrder', {
     before: before.length === 3,
-    saved: kept === JSON.stringify(['oc', 'oa', 'ob']) || kept.includes('oc'),
+    toTop: after.join() === [last, first, middle].join(),
+    after: after2.join() === [last, middle, first].join(),
+    saved: kept === JSON.stringify([last, first, middle].map(n => ID_OF[n])),
   });
   await page.evaluate(async () => {
     for (const id of ['oa', 'ob', 'oc']) await Fenmyr.remove(id);
@@ -125,14 +125,13 @@ export async function cursorEdge(t: Smoke) {
     board = await at(700, 420),
     side = await at(1436, 400);
   await page.mouse.move(700, 420);
-  // The three edge positions fail on main too, and never counted before; they're shown with the results, not
-  // required, until someone finds out whether the cursor or the check is wrong.
-  t.results.cursorEdgeAtEdges = {
+  t.checkAll('cursorEdge', {
+    fancy: await page.evaluate(() => document.body.classList.contains('fancy-cursor')),
     corner: corner.edge && corner.hidden,
     strip: strip.edge && strip.hidden,
     side: side.edge && side.hidden,
-  };
-  t.check('cursorOnBoard', !board.edge && !board.hidden);
+    board: !board.edge && !board.hidden,
+  });
 }
 
 // search and text fields get a clear (x) button; the wireframe search stays visible while the palette scrolls
@@ -248,10 +247,9 @@ export async function heightGrips(t: Smoke) {
     else rh.setAttribute('style', was);
   }, was);
   await page.mouse.move(5, 400);
-  // The two cursor parts fail on main too, and never counted before; they're shown with the results, not required,
-  // until someone finds out whether the cursor or the check is wrong.
-  t.results.gripCursor = { cursor: own, cornerCursor };
   t.checkAll('grip', {
+    cursor: own,
+    cornerCursor,
     peaks: hot > rest + 5,
     settles: Math.abs((await h()) - rest) < 0.5,
     follows: !!d1 && Math.abs(d1.y - d0.y - 30) < 3,
