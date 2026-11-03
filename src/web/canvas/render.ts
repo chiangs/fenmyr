@@ -183,7 +183,12 @@ export function renderCard(c: Card, pop?: boolean) {
       if (!!tg === !!c.tagText) return el;
     }
   }
-  el.innerHTML = `<div class="frame"></div><div class="body">${inner(c)}</div>${c.tagText ? `<div class="tag">${esc(c.tagText)}</div>` : ''}${dueChip(c)}${soloTagAdd(c)}<div class="knob"></div><div class="handle"></div>${TILTS(c) ? '<i class="rot-h" title="Drag to tilt"></i>' : ''}`;
+  const body = inner(c),
+    label = c.tagText ? `<div class="tag">${esc(c.tagText)}</div>` : '',
+    due = dueChip(c),
+    addTag = soloTagAdd(c),
+    tilt = TILTS(c) ? '<i class="rot-h" title="Drag to tilt"></i>' : '';
+  el.innerHTML = `<div class="frame"></div><div class="body">${body}</div>${label}${due}${addTag}<div class="knob"></div><div class="handle"></div>${tilt}`;
   if (c.type === 'video') setupVideo(c, el);
   if (WF.includes(c.type))
     styleWF(c, el); // after the insides exist

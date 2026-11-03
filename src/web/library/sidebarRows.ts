@@ -26,7 +26,8 @@ export const FBTN_OF = (a: string) => (a === 'add' ? FBTN.add : a === 'ren' ? FB
 export function boardRow(b: BoardSummary): Node {
   const r = document.createElement('div');
   r.className = 'board-row' + (session.board && b.id === session.board.id ? ' on' : '');
-  r.innerHTML = `<i style="background:${tint(b.color)}"></i><span></span>`;
+  const shade = tint(b.color);
+  r.innerHTML = `<i style="background:${shade}"></i><span></span>`;
   child(r, 'span').textContent = b.name;
   // one click opens the board; a double-click renames it right here (so wait a beat to tell them apart)
   let tap: ReturnType<typeof setTimeout> | undefined;
@@ -72,14 +73,23 @@ export function boardRow(b: BoardSummary): Node {
 function treeNode(obj: Thing, kind: Kind, count: number, kids: Node[], btns: [string, string, string][]) {
   const wrap = document.createElement('div');
   wrap.className = 'node ' + kind + (obj.open ? ' open' : '');
-  wrap.innerHTML = `<div class="node-head"><span class="chev">▶</span><span class="${kind === 'project' ? 'pic' : 'fic'}"></span><span class="fname"></span><small>${count}</small>${btns.map(([a, t, s]) => `<button class="f-btn" data-a="${a}" title="${t}">${FBTN_OF(a) || s}</button>`).join('')}</div><div class="node-body"></div>`;
+  const pic = kind === 'project' ? 'pic' : 'fic',
+    buttons = btns
+      .map(([a, t, s]) => {
+        const icon = FBTN_OF(a) || s;
+        return `<button class="f-btn" data-a="${a}" title="${t}">${icon}</button>`;
+      })
+      .join('');
+  wrap.innerHTML = `<div class="node-head"><span class="chev">▶</span><span class="${pic}"></span><span class="fname"></span><small>${count}</small>${buttons}</div><div class="node-body"></div>`;
   if (kind === 'project') child(wrap, '.pic').style.background = tint(obj.color ?? '');
   const name = child(wrap, '.fname'),
     body = child(wrap, '.node-body');
   name.textContent = obj.name;
   kids.forEach(k => body.appendChild(k));
-  if (!kids.length)
-    body.innerHTML = `<div class="folder-empty">${kind === 'project' ? 'No folders yet' : 'Drag boards in here'}</div>`;
+  if (!kids.length) {
+    const empty = kind === 'project' ? 'No folders yet' : 'Drag boards in here';
+    body.innerHTML = `<div class="folder-empty">${empty}</div>`;
+  }
   name.ondblclick = e => {
     e.stopPropagation();
     inlineRename(name, obj);

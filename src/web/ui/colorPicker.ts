@@ -157,25 +157,29 @@ function boardColorRows(starter: string[]) {
     }
   }
   const used = take([...count].sort((a, b) => b[1] - a[1]).map(([h]) => ({ hex: h, name: h.toUpperCase() })));
-  const dot = (x: Named) => `<button style="background:${x.hex}" data-hex="${x.hex}" title="${esc(x.name)}"></button>`,
-    row = (label: string, xs: Named[]) =>
-      xs.length ? `<div class="cpq-l">${label}</div><div class="cpq-row">${xs.map(dot).join('')}</div>` : '';
+  const dot = (x: Named) => {
+      const name = esc(x.name);
+      return `<button style="background:${x.hex}" data-hex="${x.hex}" title="${name}"></button>`;
+    },
+    dots = (xs: Named[]) => `<div class="cpq-row">${xs.map(dot).join('')}</div>`,
+    row = (label: string, xs: Named[]) => (xs.length ? `<div class="cpq-l">${label}</div>` + dots(xs) : '');
   const bw = [
     { hex: '#000000', name: 'Black' },
     { hex: '#ffffff', name: 'White' },
   ];
   if (!saved.length && !cards.length && !used.length)
-    return `<div class="cpq-row">${[...bw, ...take(starter.map(h => ({ hex: h.toLowerCase(), name: h.toUpperCase() })))].map(dot).join('')}</div>`;
+    return dots([...bw, ...take(starter.map(h => ({ hex: h.toLowerCase(), name: h.toUpperCase() })))]);
   const all = [...bw, ...saved, ...cards, ...used],
     FEW = 16; // two rows of dots
-  if (all.length <= FEW) return `<div class="cpq-row">${all.map(dot).join('')}</div>`;
+  if (all.length <= FEW) return dots(all);
+  const total = all.length;
   return cpAll
     ? row('Black & white', bw) +
         row('Board colours', saved) +
         row('Colour cards', cards) +
         row('On this board', used) +
         `<button class="cpq-more" data-cpq="few">Fewer</button>`
-    : `<div class="cpq-row">${all.slice(0, FEW).map(dot).join('')}</div><button class="cpq-more" data-cpq="all">All board colours (${all.length})</button>`;
+    : dots(all.slice(0, FEW)) + `<button class="cpq-more" data-cpq="all">All board colours (${total})</button>`;
 }
 
 export function openColor(c: Swatch | Tint) {
