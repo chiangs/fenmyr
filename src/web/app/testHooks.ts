@@ -46,7 +46,9 @@ import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { refreshVNotes } from '../vault/notes.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
-import { GROUPS, PIECES, placePiece, restack } from '../wireframe/pieces.ts';
+import { GROUPS, placePiece } from '../wireframe/drawer.ts';
+import { PIECES } from '../wireframe/pieces.ts';
+import { restack } from '../wireframe/stack.ts';
 import { appState, session } from '../core/state.ts';
 // what tests reach through window.__fenmyr
 const makeHooks = () => ({

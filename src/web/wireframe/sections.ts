@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { cardEl } from '../ui/dom.ts';
+import { cardEl, oneIn } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { parentOf } from '../cards/collection.ts';
 import { cardsEl } from '../core/dom.ts';
@@ -14,7 +14,7 @@ import { session } from '../core/state.ts';
 const SEC_PAD = 36;
 const SEC_TOP = 58;
 
-export const inSection = s =>
+export const inSection = (s: Card) =>
   session.board.cards.filter(
     c =>
       c.id !== s.id &&
@@ -47,20 +47,22 @@ export function makeSection(cs = selCards()) {
   });
   session.board.cards.unshift(s);
   renderCard(s, true);
-  cardsEl.prepend(cardEl(s.id));
+  const el = cardEl(s.id);
+  if (el) cardsEl.prepend(el);
   save(); // behind everything it holds selectOnly([s.id]); layersSoon();
   setTimeout(() => renameSection(s), 60);
 }
 
 // rename: the name tab becomes editable with the old name selected, ready to type over
-export function renameSection(sec) {
+export function renameSection(sec: Card) {
   startEdit(sec.id);
-  const t = cardsEl.querySelector(`[data-id="${sec.id}"] .sec-name .text`);
-  if (t) {
+  const t = oneIn(cardsEl, `[data-id="${sec.id}"] .sec-name .text`),
+    sel = getSelection();
+  if (t && sel) {
     t.focus();
     const r = document.createRange();
     r.selectNodeContents(t);
-    getSelection().removeAllRanges();
-    getSelection().addRange(r);
+    sel.removeAllRanges();
+    sel.addRange(r);
   }
 }

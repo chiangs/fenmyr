@@ -11,7 +11,7 @@ import { centerWorld } from '../panels/zoomMenu.ts';
 import { say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { addCard } from '../tools/penEdit.ts';
-import { revealCards } from '../wireframe/pieces.ts';
+import { revealCards } from '../wireframe/drawer.ts';
 import { session } from '../core/state.ts';
 import { isRecord, type Card } from '../../shared/model.ts';
 

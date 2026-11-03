@@ -20,7 +20,7 @@ import { placing, stopPlacing } from '../tools/place.ts';
 import { tintPicker } from '../ui/colorPicker.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
-import { groupSel, restack } from '../wireframe/pieces.ts';
+import { groupSel, restack } from '../wireframe/stack.ts';
 import { makeSection, renameSection } from '../wireframe/sections.ts';
 import { groupOf, onFrame, removeSection } from '../wireframe/tilt.ts';
 import { session } from '../core/state.ts';

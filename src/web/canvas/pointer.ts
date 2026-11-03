@@ -1,4 +1,4 @@
-import { cardEl, closestTo } from '../ui/dom.ts';
+import { cardEl, closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import type { Card } from '../../shared/model.ts';
 import { cloneForDrag } from './clipboard.ts';
 import {
@@ -49,14 +49,14 @@ import { addCard } from '../tools/penEdit.ts';
 import { placeAt, placing, stopPlacing } from '../tools/place.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { flipVNote, openVNote, toggleVNFull } from '../vault/notes.ts';
-import { pickWF, syncDesign } from '../wireframe/pieces.ts';
+import { pickWF, syncDesign } from '../wireframe/designPanel.ts';
 import { inSection } from '../wireframe/sections.ts';
 import { fileIntoFrame, groupOf, onFrame, snapWF } from '../wireframe/tilt.ts';
 import { WF } from '../wireframe/wireframes.ts';
 import { appState, session } from '../core/state.ts';
 
 function clearStuckDrag() {
-  cardsEl.querySelectorAll<HTMLElement>('.card.dragging').forEach(el => {
+  htmlIn(cardsEl, '.card.dragging').forEach(el => {
     el.classList.remove('dragging');
     el.style.transform = '';
     el.style.willChange = '';
@@ -500,7 +500,7 @@ export function init16() {
           });
           el.style.setProperty('--fs', fsMul(c));
           if (c.type === 'text') {
-            const tx = el.querySelector<HTMLElement>('.tx');
+            const tx = oneIn(el, '.tx');
             if (tx) tx.style.fontSize = (c.size || 18) + 'px';
           }
         }

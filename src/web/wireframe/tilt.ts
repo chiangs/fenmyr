@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { closeOnOutsidePress } from '../ui/popover.ts';
-import { cardEl } from '../ui/dom.ts';
+import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { realBox } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
@@ -14,10 +14,9 @@ import { FONTS } from './wireframes.ts';
 import { session } from '../core/state.ts';
 
 // ---------- tilt popover: type an exact angle, or pick one ----------
-export function setTilt(c, deg, keepPop) {
-  if (!c) return;
+export function setTilt(c: Card, to: string | number, keepPop: boolean) {
   remember();
-  deg = Math.max(-180, Math.min(180, Math.round(+deg || 0)));
+  const deg = Math.max(-180, Math.min(180, Math.round(+to || 0)));
   c.r = deg;
   c.tilted = true;
   renderCard(c);
@@ -25,14 +24,12 @@ export function setTilt(c, deg, keepPop) {
   $('selbar').dataset.key = '';
   save();
   const inp = $('tiltPop').querySelector('input');
-  if (keepPop && inp && document.activeElement !== inp) inp.value = deg;
-  $('tiltPop')
-    .querySelectorAll('[data-deg]')
-    .forEach(b => b.classList.toggle('on', +b.dataset.deg === deg));
+  if (keepPop && inp && document.activeElement !== inp) inp.value = String(deg);
+  htmlIn($('tiltPop'), '[data-deg]').forEach(b => b.classList.toggle('on', +(b.dataset.deg ?? NaN) === deg));
   if (!keepPop) closeTiltPop();
 }
 
-export function openTiltPop(c, btn) {
+export function openTiltPop(c: Card, btn: Element) {
   const pop = $('tiltPop'),
     cur = c.type === 'stamp' && !c.tilted ? 0 : Math.round(c.r || 0);
   pop.innerHTML = `<div class="tp-row"><label class="tp-in"><span>Tilt</span><input type="number" min="-180" max="180" step="1" value="${cur}" aria-label="Tilt in degrees"><b>°</b></label><button class="tp-reset" data-deg="0" title="Straighten it">${Icon('refresh')}Reset</button></div>
@@ -43,6 +40,7 @@ export function openTiltPop(c, btn) {
     Math.min(innerWidth - pop.offsetWidth - 10, Math.max(10, r.left + r.width / 2 - pop.offsetWidth / 2)) + 'px';
   pop.style.top = r.top - pop.offsetHeight - 10 + 'px';
   const inp = pop.querySelector('input');
+  if (!inp) return;
   setTimeout(() => {
     inp.focus();
     inp.select();
@@ -58,8 +56,8 @@ export function openTiltPop(c, btn) {
     ev.stopPropagation();
   };
   pop.onclick = ev => {
-    const b = ev.target.closest('[data-deg]');
-    if (b) setTilt(c, b.dataset.deg, true);
+    const deg = closestTo(ev.target, '[data-deg]')?.dataset.deg;
+    if (deg !== undefined) setTilt(c, deg, true);
   };
 }
 
@@ -68,11 +66,19 @@ function closeTiltPop() {
 }
 
 // the pickers that drop out of the toolbar (shapes, stamps, templates) close when you click anywhere else, and a popup menu (zoom, ···, rows) closes on Esc; one listener each, registered once
-const DOCK_PICKS = { shapePick: 'shape', tplPick: 'tpl', stampWheel: 'stamp', stampPick: 'stamp' };
-let DOCK_PICK_SEL;
+const DOCK_PICKS: Record<string, string> = {
+  shapePick: 'shape',
+  tplPick: 'tpl',
+  stampWheel: 'stamp',
+  stampPick: 'stamp',
+};
+const DOCK_PICK_SEL =
+  Object.keys(DOCK_PICKS)
+    .map(id => '#' + id)
+    .join(', ') + ', #tools [data-add="shape"], #tools [data-add="stamp"], #tools [data-add="tpl"], #tbMore, #rowMenu';
 
 // removing a section pops the bubble but leaves everything that was inside it right where it is
-export function removeSection(secs) {
+export function removeSection(secs: Card[]) {
   if (!secs.length) return;
   remember();
   const kids = secs.flatMap(inSection).map(c => c.id),
@@ -87,9 +93,10 @@ export function removeSection(secs) {
 }
 
 // what's on a screen: anything whose middle sits inside it
-export const onFrame = f => session.board.cards.filter(c => c.id !== f.id && c.type !== 'frame' && c.onFrame === f.id);
+export const onFrame = (f: Card) =>
+  session.board.cards.filter(c => c.id !== f.id && c.type !== 'frame' && c.onFrame === f.id);
 
-export function fileIntoFrame(cs) {
+export function fileIntoFrame(cs: Card[]) {
   cs.forEach(c => {
     const mx = c.x + c.w / 2,
       my = c.y + c.h / 2,
@@ -110,7 +117,10 @@ export function fileIntoFrame(cs) {
 }
 
 // snapping: edges and center lines line up with the things around them (any kind), with pink guides
-export function snapWF(start, dx, dy) {
+type Box = { x: number; y: number; w: number; h: number };
+type Snap = { d: number; at: number; o: Box };
+
+export function snapWF(start: { c: Card; x: number; y: number }[], dx: number, dy: number) {
   const moving = new Set(start.map(s => s.c.id)),
     mine = start.filter(s => s.c.type !== 'ink').map(s => ({ ...s, c: { ...s.c, ...realBox(s.c) } }));
   $('guides').innerHTML = '';
@@ -132,26 +142,24 @@ export function snapWF(start, dx, dy) {
       )
       .map(c => ({ ...c, ...realBox(c) })),
     T = 6 / session.view.z;
-  let bx = null,
-    by = null;
+  let bx: Snap | null = null,
+    by: Snap | null = null;
   const mx = [x0, (x0 + x1) / 2, x1],
     my = [y0, (y0 + y1) / 2, y1];
-  others.forEach(o => {
+  for (const o of others) {
     const ox = [o.x, o.x + o.w / 2, o.x + o.w],
       oy = [o.y, o.y + o.h / 2, o.y + o.h];
-    mx.forEach(a =>
-      ox.forEach(b => {
+    for (const a of mx)
+      for (const b of ox) {
         const d = b - a;
         if (Math.abs(d) < T && (!bx || Math.abs(d) < Math.abs(bx.d))) bx = { d, at: b, o };
-      }),
-    );
-    my.forEach(a =>
-      oy.forEach(b => {
+      }
+    for (const a of my)
+      for (const b of oy) {
         const d = b - a;
         if (Math.abs(d) < T && (!by || Math.abs(d) < Math.abs(by.d))) by = { d, at: b, o };
-      }),
-    );
-  });
+      }
+  }
   let g = '';
   if (bx) {
     dx += bx.d;
@@ -166,12 +174,12 @@ export function snapWF(start, dx, dy) {
 }
 
 // fonts: use what's on this computer; anything else is fetched from Google Fonts so the real type shows
-const fontsLoaded = new Set();
+const fontsLoaded = new Set<string>();
 
-export const isLocalFont = f =>
-  FONTS.some(x => x.toLowerCase() === String(f || '').toLowerCase()) || ['Figtree', 'Shantell Sans'].includes(f);
+export const isLocalFont = (f: string | undefined) =>
+  FONTS.some(x => x.toLowerCase() === String(f || '').toLowerCase()) || ['Figtree', 'Shantell Sans'].includes(f ?? '');
 
-export function useFont(f) {
+export function useFont(f: string | undefined) {
   if (!f || isLocalFont(f) || fontsLoaded.has(f)) return;
   fontsLoaded.add(f);
   const l = document.createElement('link');
@@ -181,7 +189,7 @@ export function useFont(f) {
 }
 
 // groups: ready-made pieces arrive grouped; Ctrl+G groups a selection, Ctrl+Shift+G ungroups
-export const groupOf = id => {
+export const groupOf = (id: string) => {
   const g = byId(id)?.group;
   return g ? session.board.cards.filter(c => c.group === g).map(c => c.id) : [id];
 };
@@ -196,17 +204,11 @@ export function init47() {
     },
     true,
   );
-  DOCK_PICK_SEL =
-    Object.keys(DOCK_PICKS)
-      .map(id => '#' + id)
-      .join(', ') +
-    ', #tools [data-add="shape"], #tools [data-add="stamp"], #tools [data-add="tpl"], #tbMore, #rowMenu';
-
   addEventListener(
     'pointerdown',
     e => {
       const open = Object.keys(DOCK_PICKS).filter(id => $(id)?.classList.contains('on'));
-      if (!open.length || e.target.closest(DOCK_PICK_SEL)) return;
+      if (!open.length || closestTo(e.target, DOCK_PICK_SEL)) return;
       open.forEach(id => {
         $(id).classList.remove('on');
         $('tools').querySelector(`[data-add="${DOCK_PICKS[id]}"]`)?.classList.remove('on');
@@ -218,7 +220,7 @@ export function init47() {
   addEventListener(
     'keydown',
     e => {
-      const m = e.key === 'Escape' && $('rowMenu');
+      const m = e.key === 'Escape' && document.getElementById('rowMenu');
       if (m) {
         m.remove();
         e.stopPropagation();

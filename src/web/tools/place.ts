@@ -17,7 +17,9 @@ import { newNoteColor, snapTo, tip } from '../settings/licenses.ts';
 import { addCard } from './penEdit.ts';
 import { stampAt, stampHTML } from './stamps.ts';
 import { openColor } from '../ui/colorPicker.ts';
-import { PIECES, pickWF, placePiece } from '../wireframe/pieces.ts';
+import { PIECES } from '../wireframe/pieces.ts';
+import { pickWF } from '../wireframe/designPanel.ts';
+import { placePiece } from '../wireframe/drawer.ts';
 import { fileIntoFrame } from '../wireframe/tilt.ts';
 import { DEVICES, WF } from '../wireframe/wireframes.ts';
 import { session } from '../core/state.ts';
@@ -114,7 +116,7 @@ export function startPlacing(type: string, extra: PlaceExtra = {}, quiet = false
   if (type === 'shape') g.innerHTML = shapeSVG(card('shape', { shape: extra.shape }));
   const P = type === 'piece' ? PIECES[extra.piece ?? ''] : undefined;
   if (P) {
-    const items = P.make(P.w || 360),
+    const items = P.make(P.w || 360, {}),
       W = Math.max(...items.map(i => i.x + i.w)),
       H = Math.max(...items.map(i => i.y + i.h));
     g.style.width = W + 'px';
