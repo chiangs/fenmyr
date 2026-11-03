@@ -8,7 +8,7 @@ import { remember, save } from '../core/history.ts';
 import { cssToHex } from '../ui/color.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
-import { G, caret, closeSbPops, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
+import { caret, closeSbPops, G, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
 import { selCards } from './selected.ts';
 
 const BOX_FILLS = [
@@ -105,15 +105,13 @@ export function shapeFillHtml(one: CardOf<'shape'>) {
     anyStyle = named ? '' : ` style="--any:${fill}"`,
     anyValue = named ? '#f6b45e' : fill,
     CARET = caret();
-  return G(
-    2,
-    pop(
-      'color',
-      `<i class="sb-cur" style="background:${cur}"></i>${CARET}`,
-      `<div class="sb-dots">${noFill}${dots}<label class="sf-any ${anyCls}" title="Any colour"${anyStyle}><input type="color" data-sfany value="${anyValue}"></label></div>`,
-      'Colour',
-    ) + `<span class="sb-sep"></span>`,
+  const picker = pop(
+    'color',
+    `<i class="sb-cur" style="background:${cur}"></i>${CARET}`,
+    `<div class="sb-dots">${noFill}${dots}<label class="sf-any ${anyCls}" title="Any colour"${anyStyle}><input type="color" data-sfany value="${anyValue}"></label></div>`,
+    'Colour',
   );
+  return G(2, `${picker}<span class="sb-sep"></span>`);
 }
 
 function setTextFill(v: string) {
@@ -137,7 +135,9 @@ function setTextFill(v: string) {
     t.classList.toggle('sb-none', v === 'none');
     t.style.setProperty('--c', v && v !== 'none' ? v : 'var(--ink)');
   }
-  htmlIn($('selbar'), '[data-tf]').forEach(b => b.classList.toggle('on', b.dataset.tf === v));
+  htmlIn($('selbar'), '[data-tf]').forEach(b => {
+    b.classList.toggle('on', b.dataset.tf === v);
+  });
 }
 
 function setFill(v: string, keep?: boolean) {
@@ -156,7 +156,9 @@ function setFill(v: string, keep?: boolean) {
     t.style.background = v === 'none' ? '' : v;
     t.classList.toggle('sb-none', v === 'none');
   }
-  htmlIn(document, '[data-bfill]').forEach(b => b.classList.toggle('on', b.dataset.bfill === v));
+  htmlIn(document, '[data-bfill]').forEach(b => {
+    b.classList.toggle('on', b.dataset.bfill === v);
+  });
   if (!keep) {
     rebuildBar();
     closeSbPops();
@@ -172,7 +174,9 @@ export function initShapeFill() {
     if (v === 'none' && one.fill !== 'none' && one.shape !== 'line')
       autoBorder(one, SHAPE_FILL[one.fill || 'gray'] || one.fill);
     one.fill = v;
-    cs.forEach(c => renderCard(c));
+    cs.forEach(c => {
+      renderCard(c);
+    });
     selectOnly(cs.map(c => c.id));
     rebuildBar();
     save();
@@ -182,7 +186,7 @@ export function initShapeFill() {
     const t = e.target;
     if (!(t instanceof HTMLInputElement) || !t.matches('[data-sfany]')) return;
     const one = selCards()[0];
-    if (!one || one.type !== 'shape') return;
+    if (one?.type !== 'shape') return;
     one.fill = t.value;
     renderCard(one);
     selectOnly([one.id]);

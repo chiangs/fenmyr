@@ -1,13 +1,11 @@
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { DICON, liveEditor, pagePref } from './editor.ts';
-import { BLOCKS, DOC_FONT, SUGGESTED_FONTS, docDefault, fontName } from './docText.ts';
-import { rewrite } from './rewrite.ts';
-import { blockOf } from './toolbar.ts';
-import { boardFonts } from '../selbar/fontPop.ts';
-import { isLocalFont, useFont } from '../wireframe/tilt.ts';
 import { session } from '../core/state.ts';
+import { boardFonts } from '../selbar/fontPop.ts';
 import { elementById, esc, htmlIn } from '../ui/dom.ts';
+import { isLocalFont, useFont } from '../wireframe/tilt.ts';
+import { BLOCKS, DOC_FONT, docDefault, fontName, SUGGESTED_FONTS } from './docText.ts';
+import { DICON, liveEditor, pagePref } from './editor.ts';
 import {
   colorMarkup,
   exportMarkup,
@@ -17,6 +15,8 @@ import {
   myraMarkup,
   pageMarkup,
 } from './popMarkup.ts';
+import { rewrite } from './rewrite.ts';
+import { blockOf } from './toolbar.ts';
 
 const LIST_NODES: Record<string, string> = { bullet: 'bulletList', ordered: 'orderedList', task: 'taskList' };
 const FOLD_TITLES: Record<string, string> = {
@@ -42,7 +42,9 @@ let popKind: string | null = null;
 export function hidePop() {
   $('dvPop').hidden = true;
   popKind = null;
-  document.querySelectorAll('.dt-b.open, .dt-myra.open').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.dt-b.open, .dt-myra.open').forEach(b => {
+    b.classList.remove('open');
+  });
 }
 
 export function showPop(kind: string, btn: Element | null) {
@@ -53,7 +55,7 @@ export function showPop(kind: string, btn: Element | null) {
   popKind = kind;
   btn.classList.add('open');
   const p = $('dvPop');
-  p.className = 'dv-pop pop-' + kind;
+  p.className = `dv-pop pop-${kind}`;
   const swatches = (list: string[], cur: unknown, attr: string) =>
     list
       .map(h => {
@@ -126,7 +128,7 @@ export function showPop(kind: string, btn: Element | null) {
         ed.chain().focus().extendMarkRange('link').unsetLink().run();
         return hidePop();
       }
-      if (!/^(https?:|mailto:|tel:)/i.test(v)) v = 'https://' + v;
+      if (!/^(https?:|mailto:|tel:)/i.test(v)) v = `https://${v}`;
       if (ed.state.selection.empty && !ed.isActive('link')) ed.chain().focus().insertContent(linkHTML(v)).run();
       else ed.chain().focus().extendMarkRange('link').setLink({ href: v }).run();
       hidePop();
@@ -171,7 +173,7 @@ export function showPop(kind: string, btn: Element | null) {
     const paper = (() => {
       try {
         return localStorage.getItem('fenmyr:paper') || 'letter';
-      } catch (e) {
+      } catch (_e) {
         return 'letter';
       }
     })();
@@ -199,6 +201,6 @@ export function showPop(kind: string, btn: Element | null) {
   let x = r.left - dv.left,
     y = r.bottom - dv.top + 8;
   if (y + h > dv.height - 10) y = Math.max(10, r.top - dv.top - h - 8);
-  p.style.left = clamp(x, 10, dv.width - w - 10) + 'px';
-  p.style.top = y + 'px';
+  p.style.left = `${clamp(x, 10, dv.width - w - 10)}px`;
+  p.style.top = `${y}px`;
 }

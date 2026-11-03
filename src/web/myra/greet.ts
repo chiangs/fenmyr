@@ -1,19 +1,19 @@
+import type { Card } from '../../shared/model.ts';
 import type { SlashCommand } from '../../shared/ops.ts';
 import { fit } from '../canvas/handles.ts';
 import { applyView } from '../canvas/view.ts';
 import { $ } from '../core/dom.ts';
+import { appState, session } from '../core/state.ts';
 import { type DueItem, dueAnnounce, dueDate, dueHeld, dueJump, dueText, readIndex, slashDue } from '../features/due.ts';
 import { slashFind, slashTag } from '../features/find.ts';
 import { slashTimer } from '../features/timer.ts';
+import { glideView, zoomFit } from '../panels/zoomMenu.ts';
+import type { SayAction } from '../settings/licenses.ts';
+import { reply, say } from '../settings/licenses.ts';
+import { settings } from '../settings/settings.ts';
 import { ANIMS, slashAnimate } from './anim.ts';
 import { bdNow, dayKey, slashBirthday } from './birthday.ts';
 import { tidyNotes } from './chat.ts';
-import { glideView, zoomFit } from '../panels/zoomMenu.ts';
-import { reply, say } from '../settings/licenses.ts';
-import { settings } from '../settings/settings.ts';
-import { appState, session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
-import type { SayAction } from '../settings/licenses.ts';
 
 type GreetContext = { why: string; firstToday: boolean; now: Date; name: string };
 type GreetLine = { text: string; acts?: SayAction[] } | null;
@@ -26,12 +26,12 @@ const GREETERS: Greeter[] = [];
 export const greeter = (id: string, order: number, line: Greeter['line']) => GREETERS.push({ id, order, line });
 
 export function daily(id: string) {
-  const k = 'fenmyr:daily:' + id,
+  const k = `fenmyr:daily:${id}`,
     t = dayKey(bdNow());
   try {
     if (localStorage.getItem(k) === t) return false;
     localStorage.setItem(k, t);
-  } catch (e) {}
+  } catch (_e) {}
   return true;
 }
 
@@ -46,8 +46,8 @@ export function greet(why: string) {
     .forEach(g => {
       try {
         const l = g.line(ctx);
-        if (l && l.text) lines.push(l);
-      } catch (e) {}
+        if (l?.text) lines.push(l);
+      } catch (_e) {}
     });
   const shown = settings.greet && settings.chat !== 'quiet' && lines.length;
   if (shown)
@@ -79,7 +79,7 @@ export const helpText = (lead = 'Here is what I can do right here, no thinking n
   lead +
   '\n' +
   SLASH.filter(c => c.cmd !== 'help' && !c.dev)
-    .map(c => `/${c.cmd}${c.arg ? ' ' + c.arg : ''}  ${c.desc}`)
+    .map(c => `/${c.cmd}${c.arg ? ` ${c.arg}` : ''}  ${c.desc}`)
     .join('\n') +
   '\nAsk me anything else in your own words ✦';
 
@@ -90,7 +90,7 @@ export const wordsOf = (c: Card) =>
     c.label,
     c.title,
     ...('items' in c ? (c.items ?? []) : []).map(i => (typeof i === 'string' ? i : i.t)),
-    ...(c.tags || []).map(t => '#' + t),
+    ...(c.tags || []).map(t => `#${t}`),
     String(('body' in c && c.body) || '').replace(/<[^>]+>/g, ' '),
   ]
     .filter(Boolean)
@@ -112,7 +112,7 @@ export function init33() {
   // the first focus after midnight
   greeter('hello', 0, c =>
     c.why === 'start'
-      ? { text: `Hi${c.name ? ' ' + c.name : ''}, it's Myra! Dump ideas with ⌘K, then ask me to sort them ✦` }
+      ? { text: `Hi${c.name ? ` ${c.name}` : ''}, it's Myra! Dump ideas with ⌘K, then ask me to sort them ✦` }
       : null,
   );
 
@@ -129,9 +129,9 @@ export function init33() {
     const first = its[0];
     if (!first) return null;
     const bit = (it: DueItem) =>
-      `“${it.n.slice(0, 40)}” ${it.d.length > 10 ? 'at ' + dueText(it.d).split(' · ')[1] : 'by tonight'}`;
+      `“${it.n.slice(0, 40)}” ${it.d.length > 10 ? `at ${dueText(it.d).split(' · ')[1]}` : 'by tonight'}`;
     return {
-      text: `${c.why === 'newday' ? `Good morning${c.name ? ' ' + c.name : ''}! ` : ''}Due today: ${its.slice(0, 3).map(bit).join(', ')}${its.length > 3 ? ` and ${its.length - 3} more` : ''} ✦`,
+      text: `${c.why === 'newday' ? `Good morning${c.name ? ` ${c.name}` : ''}! ` : ''}Due today: ${its.slice(0, 3).map(bit).join(', ')}${its.length > 3 ? ` and ${its.length - 3} more` : ''} ✦`,
       acts: [{ label: 'Show me', run: () => dueJump(first) }],
     };
   });

@@ -1,13 +1,14 @@
-import { cardEl, esc } from '../ui/dom.ts';
+import { type Card, isRecord } from '../../shared/model.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember, save, showWhatMyraMade } from '../core/history.ts';
-import { osNotify } from './timer.ts';
-import { closeHome, openBoard } from '../library/home.ts';
+import { appState, session } from '../core/state.ts';
+import { closeHome } from '../library/home.ts';
+import { openBoard } from '../library/openBoard.ts';
 import { bdNow } from '../myra/birthday.ts';
 import { chirp, reply, say } from '../settings/licenses.ts';
-import { appState, session } from '../core/state.ts';
-import { type Card, isRecord } from '../../shared/model.ts';
+import { cardEl, esc } from '../ui/dom.ts';
+import { osNotify } from './timer.ts';
 
 // one note with a due date, on any board: b the board, c the card, d its due, t when to remind, n its words, bn the board's name
 export type DueItem = { b: string; c: string; d: string; t: number; n: string; bn: string };
@@ -53,18 +54,18 @@ export const lsRead = (k: string, d: unknown): unknown => {
 const lsWrite = (k: string, v: unknown) => {
   try {
     localStorage.setItem(k, JSON.stringify(v));
-  } catch (e) {}
+  } catch (_e) {}
 };
 
 export function dueDate(d: unknown) {
   if (typeof d !== 'string' || !DUE_RE.test(d)) return null;
-  const t = new Date(d.length > 10 ? d : d + 'T23:59');
+  const t = new Date(d.length > 10 ? d : `${d}T23:59`);
   return Number.isNaN(t.getTime()) ? null : t;
 }
 
 const dueRemindAt = (d: string) => {
   const t = dueDate(d);
-  return t && (d.length > 10 ? t : new Date(d + 'T09:00'));
+  return t && (d.length > 10 ? t : new Date(`${d}T09:00`));
 };
 
 export function dueState(d: unknown) {
@@ -93,7 +94,7 @@ function dueChips() {
   cardsEl.querySelectorAll('.card .due').forEach(ch => {
     const holder = ch.closest('.card'),
       c = holder instanceof HTMLElement ? byId(holder.dataset.id ?? '') : undefined;
-    if (c) ch.className = 'due ' + dueState(c.due);
+    if (c) ch.className = `due ${dueState(c.due)}`;
   });
 }
 
@@ -117,7 +118,7 @@ export const dueHeld: DueItem[] = [];
 export function dueIndex(force = false) {
   if (!session.board) return;
   const mine = session.board.cards.filter(c => hasDue(c) && dueDate(c.due)),
-    sig = mine.map(c => `${c.id}|${c.due}|${c.name || c.text || ''}`).join('\n') + '|' + session.board.name;
+    sig = `${mine.map(c => `${c.id}|${c.due}|${c.name || c.text || ''}`).join('\n')}|${session.board.name}`;
   if (!force && dueSigs.get(session.board.id) === sig) return;
   dueSigs.set(session.board.id, sig); // saving happens all the time; only a change to the due notes touches the index
   const idx = readIndex();
@@ -126,7 +127,7 @@ export function dueIndex(force = false) {
     const d = c.due ?? '',
       at = dueRemindAt(d);
     if (!at) return;
-    idx[session.board.id + ':' + c.id] = {
+    idx[`${session.board.id}:${c.id}`] = {
       b: session.board.id,
       c: c.id,
       d,
@@ -148,7 +149,9 @@ export function dueIndex(force = false) {
     left
       .sort((a, b) => Math.abs((idx[b]?.t ?? 0) - now) - Math.abs((idx[a]?.t ?? 0) - now))
       .slice(0, left.length - 500)
-      .forEach(k => delete idx[k]);
+      .forEach(k => {
+        delete idx[k];
+      });
   lsWrite(DUE_KEY, idx);
   dueArm();
 }
@@ -175,7 +178,9 @@ export function dueArm() {
     now = Date.now();
   const ready = Object.entries(idx).filter(([k, it]) => it.t <= now && fired[k] !== it.d);
   if (ready.length) {
-    ready.forEach(([k, it]) => (fired[k] = it.d));
+    ready.forEach(([k, it]) => {
+      fired[k] = it.d;
+    });
     Object.keys(fired).forEach(k => {
       if (!idx[k]) delete fired[k];
     });
@@ -214,7 +219,7 @@ export function dueAnnounce(items: DueItem[]) {
   if (!first) return;
   if (items.length === 1) {
     const it = first,
-      text = `“${it.n}”${where(it)} ${late(it) ? 'was due ' + dueText(it.d) : 'is due now'} ✦`;
+      text = `“${it.n}”${where(it)} ${late(it) ? `was due ${dueText(it.d)}` : 'is due now'} ✦`;
     say(text, 0, [{ label: 'Show me', run: () => dueJump(it) }], true);
     osNotify('Due', `${it.n}${where(it)}`);
     return;
@@ -239,7 +244,7 @@ export function slashDue(arg?: string) {
   const over = idx.filter(it => when(it) < now),
     soon = idx.filter(it => when(it) >= now && (only !== 'today' || day(when(it)) === day(now))).slice(0, 8),
     line = (it: DueItem) =>
-      `• ${it.n} · ${dueText(it.d)}${session.board && session.board.id === it.b ? '' : ' · ' + it.bn}`;
+      `• ${it.n} · ${dueText(it.d)}${session.board && session.board.id === it.b ? '' : ` · ${it.bn}`}`;
   const showOver = only !== 'today',
     showSoon = only !== 'overdue';
   if ((!over.length || !showOver) && (!soon.length || !showSoon))
@@ -254,7 +259,7 @@ export function slashDue(arg?: string) {
     .slice(0, 3)
     .map(it => ({ label: it.n.slice(0, 22), run: () => dueJump(it) }));
   reply(
-    (showOver && over.length ? 'Overdue:\n' + over.slice(0, 8).map(line).join('\n') + '\n' : '') +
+    (showOver && over.length ? `Overdue:\n${over.slice(0, 8).map(line).join('\n')}\n` : '') +
       (showSoon && soon.length
         ? (only === 'today' ? 'Due today:\n' : 'Coming up:\n') + soon.map(line).join('\n')
         : '') +

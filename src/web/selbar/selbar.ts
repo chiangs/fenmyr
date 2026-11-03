@@ -1,25 +1,26 @@
+import { typesWith } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
-import { TILTS, canStroke } from '../canvas/render.ts';
+import { canStroke, TILTS } from '../canvas/render.ts';
 import { linkById } from '../canvas/wires.ts';
 import { COLL } from '../cards/collection.ts';
 import { cropping } from '../cards/crop.ts';
-import { typesWith } from '../../shared/cardTypes.ts';
-import { COLORS, COLOR_NAMES, colorLabel } from '../core/base.ts';
+import { COLOR_NAMES, COLORS, colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { tagEditor } from '../features/tags.ts';
+import { appState, session } from '../core/state.ts';
 import { hasDue } from '../features/due.ts';
+import { tagEditor } from '../features/tags.ts';
 import { homeAt } from '../library/home.ts';
 import { esc } from '../ui/dom.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
-import { appState, session } from '../core/state.ts';
+import { initActions } from './actions.ts';
 import { arrangeHtml, initArrange } from './arrange.ts';
 import {
-  G,
-  ICON,
   btn,
   caret,
   closeSbPops,
   foldSelbar,
+  G,
+  ICON,
   initIcons,
   initPops,
   initTips,
@@ -30,16 +31,17 @@ import { cornersHtml, initCorners, roundable } from './corners.ts';
 import { boxFillHtml, fillable, initFills, initShapeFill, shapeFillHtml, textFillHtml } from './fill.ts';
 import { initFontPop } from './fontPop.ts';
 import { initLineStyle, lineStyleHtml } from './lineStyle.ts';
+import { drawOverlays } from './overlays.ts';
 import { selCards } from './selected.ts';
 import { initStroke, strokeHtml } from './stroke.ts';
 import { initTextBar, textBarHtml } from './textBar.ts';
 import { SIZED } from './textSize.ts';
 import { initWireBar, wireBarHtml, wireKey } from './wireBar.ts';
-import { initActions } from './actions.ts';
-import { drawOverlays } from './overlays.ts';
 
 // ---------- the dock swaps to tools for whatever is selected ----------
 const FILLABLE = typesWith('fillable');
+
+const SEP = '<span class="sb-sep"></span>';
 
 const KIND: Record<string, string> = {
   section: 'Section',
@@ -129,8 +131,7 @@ function colorsHtml(cs: Card[], one: Card | null) {
         .join(''),
       head = one.head === false ? 'Show the header' : 'Hide the header';
     return (
-      G(2, colorPop(COLL[one.color ?? '']?.[0] || '#fff', dots) + `<span class="sb-sep"></span>`) +
-      btn('head', 'head', head, one.head !== false)
+      G(2, colorPop(COLL[one.color ?? '']?.[0] || '#fff', dots) + SEP) + btn('head', 'head', head, one.head !== false)
     );
   }
   const fill = cs.filter(c => FILLABLE.includes(c.type)),
@@ -147,7 +148,7 @@ function colorsHtml(cs: Card[], one: Card | null) {
         fill.every(c => c.color === n),
       ),
     ).join('');
-  return G(2, colorPop(cur, dots) + `<span class="sb-sep"></span>`);
+  return G(2, colorPop(cur, dots) + SEP);
 }
 
 // the buttons that belong to one kind of card: open it, flip it, label it, its tags and due date
@@ -236,7 +237,8 @@ function endHtml(cs: Card[], one: Card | null) {
     h += G(8, `${sep}<button class="sb-txt" data-sb="${act}" title="${tip}">${label}</button>`);
   }
   const more = Icon('more', { cls: 'sb-l24' });
-  h += `<span class="sb-sep sb-moresep"></span>` + pop('more', more, `<div class="sb-morebody"></div>`, 'More');
+  const morePop = pop('more', more, '<div class="sb-morebody"></div>', 'More');
+  h += `<span class="sb-sep sb-moresep"></span>${morePop}`;
   return h + sep + btn('del', 'del', 'Delete');
 }
 
@@ -245,7 +247,7 @@ function cardBarHtml(cs: Card[]) {
     label = one
       ? KIND[one.type === 'coll' ? '' : one.type] ||
         (one.type === 'coll' ? (one.kanban ? 'Kanban' : 'Collection') : 'Card')
-      : cs.length + ' selected';
+      : `${cs.length} selected`;
   let h = `<span class="sb-label">${label}</span>`;
   if (cs.length > 1) h += arrangeHtml(cs.length);
   h += colorsHtml(cs, one);

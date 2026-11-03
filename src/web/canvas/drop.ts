@@ -1,15 +1,15 @@
+import { addImages, linkCard, pictureForNote, spotifyOf } from '../cards/spotify.ts';
+import { $, stage } from '../core/dom.ts';
+import { appState, session } from '../core/state.ts';
+import { capture } from '../features/focus.ts';
+import { nestBoard } from '../library/nesting.ts';
+import { refreshBoards } from '../library/rowMenu.ts';
+import { addAtCenter, centerWorld } from '../panels/zoomMenu.ts';
 import { closestTo, isTyping } from '../ui/dom.ts';
 import { lastClip, pasteCards } from './clipboard.ts';
 import { toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
 import { byId } from './wires.ts';
-import { addImages, linkCard, pictureForNote, spotifyOf } from '../cards/spotify.ts';
-import { $, stage } from '../core/dom.ts';
-import { capture } from '../features/focus.ts';
-import { nestBoard } from '../library/nesting.ts';
-import { refreshBoards } from '../library/rowMenu.ts';
-import { addAtCenter, centerWorld } from '../panels/zoomMenu.ts';
-import { appState, session } from '../core/state.ts';
 export function init23() {
   // ---------- paste and drop ----------
   addEventListener('paste', e => {

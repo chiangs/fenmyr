@@ -1,6 +1,5 @@
-import { keepOnScreen } from '../ui/popover.ts';
-import { cardEl, removeOnOutsidePress } from '../ui/dom.ts';
-import { TILTS, renderCard } from '../canvas/render.ts';
+import type { Card } from '../../shared/model.ts';
+import { renderCard, TILTS } from '../canvas/render.ts';
 import { applyView } from '../canvas/view.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
@@ -8,8 +7,8 @@ import { kanbanMenu } from '../cards/kanban.ts';
 import { copyOf, tilt, uid } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
-import { saveWithDialog } from './templates.ts';
 import { DL } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { selCards } from '../selbar/selected.ts';
@@ -17,15 +16,15 @@ import { applyColors } from '../settings/colors.ts';
 import { chirp, say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
+import { cardEl, closestTo, removeOnOutsidePress } from '../ui/dom.ts';
 import { tintPicker } from '../ui/palette.ts';
+import { keepOnScreen } from '../ui/popover.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
-import { groupSel, restack } from '../wireframe/stack.ts';
 import { makeSection, renameSection } from '../wireframe/sections.ts';
+import { groupSel, restack } from '../wireframe/stack.ts';
 import { groupOf, onFrame, removeSection } from '../wireframe/tilt.ts';
-import { session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
-import { closestTo } from '../ui/dom.ts';
+import { saveWithDialog } from './templates.ts';
 
 // ---------- export: right-click a card (or the empty board) to save it as an image or PDF ----------
 const nextFrame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -40,7 +39,10 @@ async function exportCards(cs: Card[], name: string, pdf: boolean) {
         const kid = byId(k);
         if (kid) all.add(kid);
       }
-    if (c.type === 'frame') onFrame(c).forEach(k => all.add(k));
+    if (c.type === 'frame')
+      onFrame(c).forEach(k => {
+        all.add(k);
+      });
   });
   const list = [...all],
     x0 = Math.min(...list.map(c => c.x)) - 24,
@@ -92,8 +94,8 @@ export function boardMenu(e: { clientX: number; clientY: number }, items: MenuIt
   const m = document.createElement('div');
   m.id = 'rowMenu';
   m.className = 'row-menu';
-  m.style.left = e.clientX + 'px';
-  m.style.top = e.clientY + 'px';
+  m.style.left = `${e.clientX}px`;
+  m.style.top = `${e.clientY}px`;
   m.innerHTML = items
     .map((it, i) => {
       if (it === '-') return '<span class="rm-sep"></span>';
@@ -220,7 +222,9 @@ export function init43() {
             copies.forEach(c => {
               if (c.group) c.group = gm[c.group] ??= uid();
             });
-            copies.forEach(c => addCard(c));
+            copies.forEach(c => {
+              addCard(c);
+            });
             selectOnly(copies.map(c => c.id));
           },
         },

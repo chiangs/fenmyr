@@ -3,6 +3,7 @@ import { $, stage, world } from '../core/dom.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { placeTray, renderDesign } from '../wireframe/designPanel.ts';
+
 // which boxes are minimised, by name
 let boxState: Record<string, boolean> = {};
 const readBoxes = (): Record<string, boolean> => {
@@ -28,7 +29,7 @@ export function init58() {
       boxState[k] = min;
       try {
         localStorage.setItem('fenmyr:boxes', JSON.stringify(boxState));
-      } catch (e) {}
+      } catch (_e) {}
     };
     set(!!boxState[k]);
     btn.onclick = () => set(!b.classList.contains('min'));
@@ -40,16 +41,14 @@ export function init58() {
   };
 
   // the board area never scrolls (it pans instead); if focusing something nudges it, snap it straight back
-  [stage, document.scrollingElement].forEach(
-    el =>
-      el &&
-      el.addEventListener('scroll', () => {
-        if (el.scrollTop || el.scrollLeft) {
-          el.scrollTop = 0;
-          el.scrollLeft = 0;
-        }
-      }),
-  );
+  [stage, document.scrollingElement].forEach(el => {
+    el?.addEventListener('scroll', () => {
+      if (el.scrollTop || el.scrollLeft) {
+        el.scrollTop = 0;
+        el.scrollLeft = 0;
+      }
+    });
+  });
 
   addEventListener('scroll', () => {
     if (scrollX || scrollY) scrollTo(0, 0);

@@ -65,7 +65,7 @@ async function saveMediaNative(blob: Blob, onProgress?: Progress) {
     STEP = 3 * 1024 * 1024;
   for (let i = 0; i < blob.size; i += STEP) {
     await call('mediaChunk', { name, data: await b64(blob.slice(i, i + STEP)) });
-    onProgress && onProgress(Math.min(1, (i + STEP) / blob.size));
+    onProgress?.(Math.min(1, (i + STEP) / blob.size));
   }
   return call('mediaEnd', { name });
 }
@@ -87,8 +87,8 @@ async function saveMediaBrowser(blob: Blob) {
     t.oncomplete = () => res();
     t.onerror = () => rej(t.error);
   });
-  blobURLs.set('idbmedia:' + id, URL.createObjectURL(blob));
-  return 'idbmedia:' + id;
+  blobURLs.set(`idbmedia:${id}`, URL.createObjectURL(blob));
+  return `idbmedia:${id}`;
 }
 async function mediaURL(src: string) {
   if (!src || !String(src).startsWith('idbmedia:')) return src;
@@ -110,16 +110,16 @@ const web =
   !native && (!/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname) || /[?&]web\b/.test(location.search));
 const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
   async list() {
-    return JSON.parse(localStorage.getItem(LS + 'index') || '[]');
+    return JSON.parse(localStorage.getItem(`${LS}index`) || '[]');
   },
   async load(id: string): Promise<StoredBoard | null> {
-    const s = localStorage.getItem(LS + 'board:' + id);
+    const s = localStorage.getItem(`${LS}board:${id}`);
     return s ? parseBoard(JSON.parse(s)) : null;
   },
   async save(unsaved: StoredBoard) {
     const board = storedBoard(unsaved);
-    localStorage.setItem(LS + 'board:' + board.id, JSON.stringify(board));
-    const idx = JSON.parse(localStorage.getItem(LS + 'index') || '[]').filter((b: IndexRow) => b.id !== board.id);
+    localStorage.setItem(`${LS}board:${board.id}`, JSON.stringify(board));
+    const idx = JSON.parse(localStorage.getItem(`${LS}index`) || '[]').filter((b: IndexRow) => b.id !== board.id);
     idx.unshift({
       id: board.id,
       name: board.name,
@@ -128,22 +128,22 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
       parent: board.parent || null,
       updated: Date.now(),
     });
-    localStorage.setItem(LS + 'index', JSON.stringify(idx));
+    localStorage.setItem(`${LS}index`, JSON.stringify(idx));
     return true;
   },
   async templates() {
-    return JSON.parse(localStorage.getItem(LS + 'templates') || '[]');
+    return JSON.parse(localStorage.getItem(`${LS}templates`) || '[]');
   },
   async saveTemplate(t: IndexRow) {
-    const all = JSON.parse(localStorage.getItem(LS + 'templates') || '[]').filter((x: IndexRow) => x.id !== t.id);
+    const all = JSON.parse(localStorage.getItem(`${LS}templates`) || '[]').filter((x: IndexRow) => x.id !== t.id);
     all.push(t);
-    localStorage.setItem(LS + 'templates', JSON.stringify(all));
+    localStorage.setItem(`${LS}templates`, JSON.stringify(all));
     return true;
   },
   async removeTemplate(id: string) {
     localStorage.setItem(
-      LS + 'templates',
-      JSON.stringify(JSON.parse(localStorage.getItem(LS + 'templates') || '[]').filter((x: IndexRow) => x.id !== id)),
+      `${LS}templates`,
+      JSON.stringify(JSON.parse(localStorage.getItem(`${LS}templates`) || '[]').filter((x: IndexRow) => x.id !== id)),
     );
     return true;
   },
@@ -177,17 +177,17 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
     throw new Error('Vault notes work in the desktop app');
   },
   async folders() {
-    return JSON.parse(localStorage.getItem(LS + 'folders') || '[]');
+    return JSON.parse(localStorage.getItem(`${LS}folders`) || '[]');
   },
   async saveFolders(folders: unknown) {
-    localStorage.setItem(LS + 'folders', JSON.stringify(folders));
+    localStorage.setItem(`${LS}folders`, JSON.stringify(folders));
     return true;
   },
   async remove(id: string) {
-    localStorage.removeItem(LS + 'board:' + id);
+    localStorage.removeItem(`${LS}board:${id}`);
     localStorage.setItem(
-      LS + 'index',
-      JSON.stringify(JSON.parse(localStorage.getItem(LS + 'index') || '[]').filter((b: IndexRow) => b.id !== id)),
+      `${LS}index`,
+      JSON.stringify(JSON.parse(localStorage.getItem(`${LS}index`) || '[]').filter((b: IndexRow) => b.id !== id)),
     );
     return true;
   },
@@ -299,7 +299,7 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
     let host = url;
     try {
       host = new URL(url).hostname.replace(/^www\./, '');
-    } catch (e) {}
+    } catch (_e) {}
     return { title: host, desc: url, image: '' };
   },
   // a pretend Myra for the browser: she still tidies things up so the canvas can be tried without the app

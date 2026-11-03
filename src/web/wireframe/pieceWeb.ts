@@ -1,4 +1,4 @@
-import { B, IC, type Piece, PH, T, numOf, recs, str, strs } from './pieceKit.ts';
+import { B, IC, numOf, PH, type Piece, recs, str, strs, T } from './pieceKit.ts';
 
 export const WEB: Record<string, Piece> = {
   'Card grid': {
@@ -157,8 +157,8 @@ export const WEB: Record<string, Piece> = {
           return [
             B(x, y0, cw, 280, { fill: '#f4f4f5', radius: 20 }),
             IC(x + 28, y0 + 28, 'quotes', 32, { color: '#a1a1aa' }),
-            T(x + 28, y0 + 72, cw - 56, '“' + str(it.quote, '') + '”', { size: 17, lh: 1.5 }),
-            PH(x + 28, y0 + 208, 44, 44, str(it.name, 'Person') + ' portrait', { radius: 22 }),
+            T(x + 28, y0 + 72, cw - 56, `“${str(it.quote, '')}”`, { size: 17, lh: 1.5 }),
+            PH(x + 28, y0 + 208, 44, 44, `${str(it.name, 'Person')} portrait`, { radius: 22 }),
             T(x + 84, y0 + 220, cw - 112, str(it.name, 'Name'), { size: 15, weight: 700 }),
           ];
         }),
@@ -206,7 +206,7 @@ export const WEB: Record<string, Piece> = {
             ...strs(pl.features, [])
               .slice(0, 5)
               .map((f, k) =>
-                T(x + 28, y0 + 130 + k * 30, cw - 56, '✓  ' + f, { size: 15, color: hot ? '#e4e4e7' : '#52525b' }),
+                T(x + 28, y0 + 130 + k * 30, cw - 56, `✓  ${f}`, { size: 15, color: hot ? '#e4e4e7' : '#52525b' }),
               ),
             B(x + 28, y0 + ch - 76, cw - 56, 48, { fill: hot ? '#ffffff' : '#18181b', radius: 24 }),
             T(x + 28, y0 + ch - 62, cw - 56, str(pl.cta, 'Choose ') + str(pl.name, 'plan'), {

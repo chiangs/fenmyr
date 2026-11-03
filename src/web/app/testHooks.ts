@@ -1,10 +1,12 @@
-import { openSetup, startTour } from './onboarding.ts';
 import type { Chattiness } from '../../shared/ops.ts';
 import { copyCards, pasteCards } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderAll, renderCard } from '../canvas/render.ts';
 import { applyView } from '../canvas/view.ts';
 import { renderTray, selectOnly, selectWire } from '../canvas/wires.ts';
+import { appState, session } from '../core/state.ts';
+import { liveEditor } from '../docs/editor.ts';
+import { startEdit } from '../edit/editing.ts';
 import {
   DUE_FIRED,
   DUE_KEY,
@@ -16,12 +18,11 @@ import {
   setDue,
   slashDue,
 } from '../features/due.ts';
-import { startEdit } from '../edit/editing.ts';
+import { durText, parseTimer, timerRequest } from '../features/duration.ts';
 import { saveAsTemplate, saveWithDialog, useTemplate } from '../features/templates.ts';
 import { currentPose, timer, timerCheck } from '../features/timer.ts';
-import { durText, parseTimer, timerRequest } from '../features/duration.ts';
-import { liveEditor } from '../docs/editor.ts';
-import { openBoard, openHome } from '../library/home.ts';
+import { openHome } from '../library/home.ts';
+import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { boardsIn } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
@@ -38,9 +39,9 @@ import {
   setBirthday,
 } from '../myra/birthday.ts';
 import { ask, snapshot } from '../myra/chat.ts';
-import { perchGoo, perched } from '../myra/perch.ts';
-import { SLASH, daily, greet, greeter } from '../myra/greet.ts';
+import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
+import { perched, perchGoo } from '../myra/perch.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
 import { settings } from '../settings/settings.ts';
@@ -52,7 +53,8 @@ import { editVaultAccess } from '../vault/vaults.ts';
 import { GROUPS, placePiece } from '../wireframe/drawer.ts';
 import { PIECES } from '../wireframe/pieces.ts';
 import { restack } from '../wireframe/stack.ts';
-import { appState, session } from '../core/state.ts';
+import { openSetup, startTour } from './onboarding.ts';
+
 // what tests reach through window.__fenmyr
 const makeHooks = () => ({
   stopAnim,

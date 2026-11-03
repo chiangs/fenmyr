@@ -1,8 +1,8 @@
-import { closeOnOutsidePress } from '../ui/popover.ts';
-import { closestTo, htmlIn } from '../ui/dom.ts';
 import { $, stage } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';
+import { closestTo, htmlIn } from '../ui/dom.ts';
+import { closeOnOutsidePress } from '../ui/popover.ts';
 
 // the bar's icons, drawn once the icon set has loaded
 export let ICON: Record<string, string> = {};
@@ -48,12 +48,14 @@ export const caret = () => Icon('caret-down', { cls: 'sb-caret' });
 
 // a range slider's filled part, as a percentage of the way from min to max
 export const pct = (v: number, min: number, max: number) =>
-  Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100)) + '%';
+  `${Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100))}%`;
 
 // the bar's dropdowns: open on click (placed above the bar, never cut off), close on a pick or a click elsewhere
 export function closeSbPops() {
   const was = document.querySelector('.sb-popw.open');
-  htmlIn(document, '.sb-popw.open').forEach(w => w.classList.remove('open'));
+  htmlIn(document, '.sb-popw.open').forEach(w => {
+    w.classList.remove('open');
+  });
   marks.fs = marks.sp = marks.sk = marks.sq = false;
   if (was) $('selbar').dataset.key = '';
 }
@@ -102,7 +104,9 @@ export function foldSelbar(bar: HTMLElement) {
     .sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0)); // 0 = never folds
   for (const g of groups) {
     if (bar.scrollWidth <= room()) break;
-    htmlIn(g, ':scope > .sb-sep').forEach(x => x.remove());
+    htmlIn(g, ':scope > .sb-sep').forEach(x => {
+      x.remove();
+    });
     body.appendChild(g);
   }
   const empty = !body.children.length;
@@ -180,9 +184,8 @@ export function initTips() {
       const r = b.getBoundingClientRect();
       tipEl.textContent = txt;
       tipEl.classList.add('on');
-      tipEl.style.left =
-        Math.max(8, Math.min(innerWidth - tipEl.offsetWidth - 8, r.left + r.width / 2 - tipEl.offsetWidth / 2)) + 'px';
-      tipEl.style.top = r.top - tipEl.offsetHeight - 10 + 'px';
+      tipEl.style.left = `${Math.max(8, Math.min(innerWidth - tipEl.offsetWidth - 8, r.left + r.width / 2 - tipEl.offsetWidth / 2))}px`;
+      tipEl.style.top = `${r.top - tipEl.offsetHeight - 10}px`;
     }, 250);
   });
   const hide = () => {

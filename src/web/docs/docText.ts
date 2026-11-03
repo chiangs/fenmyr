@@ -1,8 +1,7 @@
 import { isRecord } from '../../shared/model.ts';
-import { esc } from '../ui/dom.ts';
-
 import { settings } from '../settings/settings.ts';
-import { type DocCard } from './editor.ts';
+import { esc } from '../ui/dom.ts';
+import type { DocCard } from './editor.ts';
 
 export const DOC_FONT = 'Figtree';
 export const docDefault = () => (settings.defaultFont || '').trim() || DOC_FONT;

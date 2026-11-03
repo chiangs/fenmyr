@@ -78,7 +78,11 @@ export function workshopPlanning(card: Make) {
         const lanes = g.cols.map(c => notesIn(c.notes ?? [], color)),
           kids = lanes.flat(),
           colOf: Record<string, number> = {};
-        lanes.forEach((ks, i) => ks.forEach(k => (colOf[k.id] = i)));
+        lanes.forEach((ks, i) => {
+          ks.forEach(k => {
+            colOf[k.id] = i;
+          });
+        });
         return [
           card('coll', {
             x,

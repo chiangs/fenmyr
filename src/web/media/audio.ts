@@ -1,6 +1,6 @@
+import type { Card } from '../../shared/model.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { appState } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
 
 type Recording = {
   recorder: MediaRecorder;
@@ -29,7 +29,7 @@ export function fitAudio(c: Card, el: HTMLElement) {
   b.style.height = '';
   if (Math.abs(h - c.h) > 2) {
     c.h = h;
-    el.style.height = h + 'px';
+    el.style.height = `${h}px`;
     renderWires();
   }
 }
@@ -38,14 +38,19 @@ export let warmT: ReturnType<typeof setTimeout> | undefined;
 // the mic switches on as soon as the tool is picked, so the first words aren't lost while it wakes up; it switches off again if nothing gets recorded
 export function warmMic(st: MediaStream) {
   clearTimeout(warmT);
-  if (appState.warm && appState.warm !== st) appState.warm.getTracks().forEach(t => t.stop());
+  if (appState.warm && appState.warm !== st)
+    appState.warm.getTracks().forEach(t => {
+      t.stop();
+    });
   appState.warm = st;
   warmT = setTimeout(coolMic, 60000);
 }
 
 export function coolMic() {
   if (appState.warm && !live.size) {
-    appState.warm.getTracks().forEach(t => t.stop());
+    appState.warm.getTracks().forEach(t => {
+      t.stop();
+    });
     appState.warm = null;
   }
 }

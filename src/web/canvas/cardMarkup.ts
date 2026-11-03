@@ -2,10 +2,11 @@ import type { Card, CardOf } from '../../shared/model.ts';
 import { cropping } from '../cards/crop.ts';
 import { CIC, host, shapeSVG } from '../cards/shapes.ts';
 import { spEmbed } from '../cards/spotify.ts';
+import { appState } from '../core/state.ts';
 import { tagChips } from '../features/tags.ts';
-import { MIC, PLAY, fmtT } from '../media/audio.ts';
+import { fmtT, MIC, PLAY } from '../media/audio.ts';
 import { devName } from '../media/devices.ts';
-import { SPK, cams } from '../media/video.ts';
+import { cams, SPK } from '../media/video.ts';
 import { settings } from '../settings/settings.ts';
 import { inkPath } from '../tools/ink.ts';
 import { pathD } from '../tools/pen.ts';
@@ -13,7 +14,6 @@ import { pxSrc } from '../tools/stamps.ts';
 import { esc } from '../ui/dom.ts';
 import { vnFull, vnMd } from '../vault/notes.ts';
 import { isLocalFont, useFont } from '../wireframe/tilt.ts';
-import { appState } from '../core/state.ts';
 import { skStyle } from './render.ts';
 
 // ---------- what goes inside each kind of card: values are worked out first, then put into the markup ----------

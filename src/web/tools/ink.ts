@@ -64,7 +64,7 @@ function butter(raw: InkPoint[], finished: boolean, BASE: number) {
       len = lens[i] ?? 0,
       inR = Math.min(1, len / ramp),
       outR = finished ? Math.min(1, (total - len) / ramp) : 1;
-    return w * Math.pow(inR, 0.8) * Math.pow(outR, 0.8) * (1 + 0.12 * Math.sin(len / 11)) + 0.4;
+    return w * inR ** 0.8 * outR ** 0.8 * (1 + 0.12 * Math.sin(len / 11)) + 0.4;
   };
   const L: [number, number][] = [],
     R: [number, number][] = [];
@@ -88,7 +88,7 @@ function butter(raw: InkPoint[], finished: boolean, BASE: number) {
       c = seq[i] ?? start;
     d += ` Q${m[0].toFixed(1)} ${m[1].toFixed(1)} ${((m[0] + c[0]) / 2).toFixed(1)} ${((m[1] + c[1]) / 2).toFixed(1)}`;
   }
-  return d + ' Z';
+  return `${d} Z`;
 }
 
 function centerline(p: InkPoint[]) {
@@ -99,7 +99,7 @@ function centerline(p: InkPoint[]) {
   let d = `M${first[0].toFixed(1)} ${first[1].toFixed(1)}`;
   for (let i = 1; i < p.length - 1; i++)
     d += ` Q${at(i)[0].toFixed(1)} ${at(i)[1].toFixed(1)} ${((at(i)[0] + at(i + 1)[0]) / 2).toFixed(1)} ${((at(i)[1] + at(i + 1)[1]) / 2).toFixed(1)}`;
-  return d + ` L${last[0].toFixed(1)} ${last[1].toFixed(1)}`;
+  return `${d} L${last[0].toFixed(1)} ${last[1].toFixed(1)}`;
 }
 
 export function inkPath(

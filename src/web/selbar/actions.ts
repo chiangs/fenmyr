@@ -7,9 +7,9 @@ import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { openDoc } from '../docs/editor.ts';
+import { startEdit } from '../edit/editing.ts';
 import { editTag } from '../edit/text.ts';
 import { setDue } from '../features/due.ts';
-import { startEdit } from '../edit/editing.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { closestTo } from '../ui/dom.ts';
@@ -32,7 +32,7 @@ function initDue() {
     dueSet = (box: HTMLElement | null) => {
       const c = byId(box?.dataset.for ?? ''),
         f = fields(box);
-      if (c && f) setDue(c, f.d.value ? f.d.value + (f.t.value ? 'T' + f.t.value : '') : '');
+      if (c && f) setDue(c, f.d.value ? f.d.value + (f.t.value ? `T${f.t.value}` : '') : '');
     };
   $('selbar').addEventListener('change', e => {
     if (closestTo(e.target, '[data-due-d], [data-due-t]')) dueSet(closestTo(e.target, '.sb-due', HTMLElement));
@@ -92,13 +92,17 @@ function onBarClick(e: MouseEvent) {
     return;
   }
   const redraw = () => {
-    cs.forEach(c => renderCard(c));
+    cs.forEach(c => {
+      renderCard(c);
+    });
     selectOnly(cs.map(c => c.id));
     rebuildBar();
     save();
   };
   if (dot) {
-    cs.filter(c => FILLABLE.includes(c.type)).forEach(c => (c.color = dot));
+    cs.filter(c => FILLABLE.includes(c.type)).forEach(c => {
+      c.color = dot;
+    });
     redraw();
   }
   if (cdot) {

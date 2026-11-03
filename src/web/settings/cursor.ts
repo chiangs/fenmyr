@@ -1,10 +1,10 @@
-import { luminance } from '../ui/color.ts';
 import { stage } from '../core/dom.ts';
 import { OS } from '../platform/osWords.ts';
-import { myraColors, settings } from './settings.ts';
-import { child } from '../ui/dom.ts';
 import { drawOn } from '../tools/draw.ts';
 import { placing } from '../tools/place.ts';
+import { luminance } from '../ui/color.ts';
+import { child } from '../ui/dom.ts';
+import { myraColors, settings } from './settings.ts';
 export let myCur: HTMLElement;
 
 const NATIVE =
@@ -25,7 +25,7 @@ function tagPath(w: number, h: number, phase: number) {
   for (let x = w - r - step; x > r; x -= step) p.push(`L${x.toFixed(1)} ${(h + wav(x - r, w - 2 * r)).toFixed(2)}`);
   p.push(`L${r} ${h}A${r} ${r} 0 0 1 0 ${h - r}`);
   for (let y = h - r - step; y > r; y -= step) p.push(`L${(-wav(y - r, h - 2 * r)).toFixed(2)} ${y.toFixed(1)}`);
-  return p.join('') + `L0 ${r}A${r} ${r} 0 0 1 ${r} 0Z`;
+  return `${p.join('')}L0 ${r}A${r} ${r} 0 0 1 ${r} 0Z`;
 }
 
 function shapeTag() {
@@ -37,7 +37,7 @@ function shapeTag() {
   svg.setAttribute('width', String(w + 4));
   svg.setAttribute('height', String(h + 4));
   svg.setAttribute('viewBox', `-2 -2 ${w + 4} ${h + 4}`);
-  Object.assign(svg.style, { left: bub.offsetLeft - 2 + 'px', top: bub.offsetTop - 2 + 'px' });
+  Object.assign(svg.style, { left: `${bub.offsetLeft - 2}px`, top: `${bub.offsetTop - 2}px` });
   const ps = [0, Math.PI * 0.66, Math.PI * 1.33].map(ph => tagPath(w, h, ph)),
     path = child(svg, 'path', SVGPathElement);
   path.setAttribute('d', ps[0] ?? '');
@@ -113,7 +113,7 @@ export function init27() {
                   ? 90
                   : null; // over a resize handle: her own double arrow, turned to fit (height grips, corners, table column edges)
       myCur.classList.toggle('rsz', rz !== null);
-      if (rz !== null) myCur.style.setProperty('--rz', rz + 'deg');
+      if (rz !== null) myCur.style.setProperty('--rz', `${rz}deg`);
       myCur.classList.toggle(
         'grabby',
         !!onCard || stage.classList.contains('space') || stage.classList.contains('panning'),

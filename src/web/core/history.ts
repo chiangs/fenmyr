@@ -1,18 +1,18 @@
 import type { Card } from '../../shared/model.ts';
-import { cardEl } from '../ui/dom.ts';
 import { fit, toWorld } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
 import { layoutAll } from '../cards/kanban.ts';
-import { $, stage } from './dom.ts';
+import { endEdit } from '../edit/editing.ts';
 import { dueIndex } from '../features/due.ts';
 import { syncBoardTags } from '../features/tags.ts';
-import { endEdit } from '../edit/editing.ts';
 import { refreshBoardsAfterSave } from '../library/rowMenu.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { say } from '../settings/licenses.ts';
+import { cardEl } from '../ui/dom.ts';
 import { renderPalette } from '../ui/palette.ts';
 import { WF } from '../wireframe/wireframes.ts';
+import { $, stage } from './dom.ts';
 import { appState, session } from './state.ts';
 
 // ---------- undo / redo: a snapshot of the board after each change settles ----------
@@ -106,8 +106,8 @@ export function showWhatMyraMade(made: Card[]) {
   if (!cs.length) return;
   const r = stage.getBoundingClientRect(),
     L = 270,
-    ch = chatOpen() && $('mChat').getBoundingClientRect(),
-    R = ch && ch.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - L - 520)) : 260,
+    ch = chatOpen() ? $('mChat').getBoundingClientRect() : null,
+    R = ch?.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - L - 520)) : 260,
     a = toWorld(r.left + L, r.top + 60),
     b = toWorld(r.right - R, r.bottom - 110);
   const inView =

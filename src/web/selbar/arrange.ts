@@ -3,8 +3,8 @@ import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { cardEl, closestTo } from '../ui/dom.ts';
 import { session } from '../core/state.ts';
+import { cardEl, closestTo } from '../ui/dom.ts';
 import { G } from './barKit.ts';
 import { selCards } from './selected.ts';
 
@@ -50,7 +50,7 @@ function arrange(how: string) {
     units = new Map<string, Card[]>();
   cs.forEach(c => {
     const whole = c.group && session.board.cards.filter(k => k.group === c.group).every(k => ids.has(k.id)),
-      key = whole ? 'g:' + c.group : c.id;
+      key = whole ? `g:${c.group}` : c.id;
     units.set(key, [...(units.get(key) ?? []), c]);
   });
   const U = [...units.values()].map(m => {
@@ -72,12 +72,30 @@ function arrange(how: string) {
     y0 = Math.min(...U.map(u => u.y)),
     y1 = Math.max(...U.map(u => u.y + u.h));
   const moved = new Map(cs.map(c => [c.id, { ox: c.x, oy: c.y }]));
-  if (how === 'left') U.forEach(u => (u.nx = x0));
-  if (how === 'right') U.forEach(u => (u.nx = x1 - u.w));
-  if (how === 'hcenter') U.forEach(u => (u.nx = (x0 + x1) / 2 - u.w / 2));
-  if (how === 'top') U.forEach(u => (u.ny = y0));
-  if (how === 'bottom') U.forEach(u => (u.ny = y1 - u.h));
-  if (how === 'vcenter') U.forEach(u => (u.ny = (y0 + y1) / 2 - u.h / 2));
+  if (how === 'left')
+    U.forEach(u => {
+      u.nx = x0;
+    });
+  if (how === 'right')
+    U.forEach(u => {
+      u.nx = x1 - u.w;
+    });
+  if (how === 'hcenter')
+    U.forEach(u => {
+      u.nx = (x0 + x1) / 2 - u.w / 2;
+    });
+  if (how === 'top')
+    U.forEach(u => {
+      u.ny = y0;
+    });
+  if (how === 'bottom')
+    U.forEach(u => {
+      u.ny = y1 - u.h;
+    });
+  if (how === 'vcenter')
+    U.forEach(u => {
+      u.ny = (y0 + y1) / 2 - u.h / 2;
+    });
   if (how === 'dh') {
     const o = [...U].sort((a, b) => a.x - b.x),
       gap = (x1 - x0 - o.reduce((n, u) => n + u.w, 0)) / (o.length - 1);

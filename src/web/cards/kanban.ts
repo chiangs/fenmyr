@@ -1,13 +1,13 @@
-import { cardEl, esc } from '../ui/dom.ts';
+import type { CardOf } from '../../shared/model.ts';
 import { byId, renderWires } from '../canvas/wires.ts';
-import { CGAP, CHEAD, CPAD, CW, KHEAD, colls, layoutColl, parentOf } from './collection.ts';
 import { clamp } from '../core/base.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { editField } from '../edit/text.ts';
 import { session } from '../core/state.ts';
-import type { CardOf } from '../../shared/model.ts';
-import { type MenuItem, boardMenu, when } from '../features/export.ts';
+import { editField } from '../edit/text.ts';
+import { boardMenu, type MenuItem, when } from '../features/export.ts';
+import { cardEl, esc } from '../ui/dom.ts';
+import { CGAP, CHEAD, CPAD, CW, colls, KHEAD, layoutColl, parentOf } from './collection.ts';
 
 type Coll = CardOf<'coll'>;
 type Point = { x: number; y: number };
@@ -68,7 +68,7 @@ function renameKanbanCol(s: Coll, k: number, undoStep = true) {
         names[k] = v;
       },
       () => {
-        names[k] = names[k] || 'Column ' + (k + 1);
+        names[k] = names[k] || `Column ${k + 1}`;
         layoutColl(s);
         save();
       },

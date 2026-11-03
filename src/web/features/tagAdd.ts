@@ -1,11 +1,11 @@
+import type { Card } from '../../shared/model.ts';
 import { byId } from '../canvas/wires.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
 import { child, closestTo } from '../ui/dom.ts';
 
-import { addTag, cleanTag, nameOf, realTag, removeTag, suggestRow, tagSuggestions, type Suggest } from './tags.ts';
+import { addTag, cleanTag, nameOf, realTag, removeTag, type Suggest, suggestRow, tagSuggestions } from './tags.ts';
 
 // the × and the + tag chip on a note: one set of handlers for every note; the "+" opens a small box with the board's tags as suggestions
 export function initTagAdd() {
@@ -64,8 +64,8 @@ export function initTagAdd() {
     draw();
     const r = btn.getBoundingClientRect();
     box.classList.add('on');
-    box.style.left = Math.max(8, Math.min(innerWidth - box.offsetWidth - 8, r.left)) + 'px';
-    box.style.top = Math.min(innerHeight - box.offsetHeight - 8, r.bottom + 6) + 'px';
+    box.style.left = `${Math.max(8, Math.min(innerWidth - box.offsetWidth - 8, r.left))}px`;
+    box.style.top = `${Math.min(innerHeight - box.offsetHeight - 8, r.bottom + 6)}px`;
     setTimeout(() => inp.focus(), 30);
   }
   // the action runs on pointer-up (remembering what was pressed, not the element: the card may be redrawn between the press and the release, which would cancel a click)

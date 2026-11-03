@@ -1,28 +1,28 @@
-import type { Card } from '../../shared/model.ts';
-import { cardEl, esc, oneIn } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
-import { applyView } from './view.ts';
-import { renderTray, renderWires } from './wires.ts';
+import type { Card } from '../../shared/model.ts';
 import { COLL, parentOf } from '../cards/collection.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { wireLinkInput } from '../cards/links.ts';
 import { spEmbed } from '../cards/spotify.ts';
 import { COLORS, find } from '../core/base.ts';
 import { cardsEl } from '../core/dom.ts';
+import { session } from '../core/state.ts';
 import { dueChip } from '../features/due.ts';
 import { isDim } from '../features/focus.ts';
 import { soloTagAdd } from '../features/tags.ts';
 import { mini } from '../library/homeTiles.ts';
 import { fitAudio } from '../media/audio.ts';
 import { setupVideo } from '../media/video.ts';
-import { layersSoon } from '../panels/layers.ts';
 import { wireLayers } from '../panels/layerEvents.ts';
+import { layersSoon } from '../panels/layers.ts';
 import { fsMul, SIZED } from '../selbar/textSize.ts';
 import { applyColors } from '../settings/colors.ts';
+import { cardEl, esc, oneIn } from '../ui/dom.ts';
 import { useFont } from '../wireframe/tilt.ts';
-import { WF, styleWF } from '../wireframe/wireframes.ts';
-import { session } from '../core/state.ts';
+import { styleWF, WF } from '../wireframe/wireframes.ts';
 import { inner } from './cardMarkup.ts';
+import { applyView } from './view.ts';
+import { renderTray, renderWires } from './wires.ts';
 
 // ---------- rendering ----------
 
@@ -82,7 +82,7 @@ export function applyStroke(c: Card, el: HTMLElement) {
   rect.setAttribute('stroke-linecap', st === 'dot' ? 'round' : c.cap === 'round' ? 'round' : 'butt');
 }
 
-export const titleW = (c: Card) => (c.type === 'title' && !c.fixedW ? 'max-content' : c.w + 'px');
+export const titleW = (c: Card) => (c.type === 'title' && !c.fixedW ? 'max-content' : `${c.w}px`);
 
 export function renderCard(c: Card, pop?: boolean) {
   let el = cardEl(c.id);
@@ -99,10 +99,10 @@ export function renderCard(c: Card, pop?: boolean) {
     (find.cur === c.id ? ' find-cur' : '') +
     (pop ? ' pop' : '');
   Object.assign(el.style, {
-    left: c.x + 'px',
-    top: c.y + 'px',
+    left: `${c.x}px`,
+    top: `${c.y}px`,
     width: titleW(c),
-    height: c.type === 'title' ? 'auto' : c.h + 'px',
+    height: c.type === 'title' ? 'auto' : `${c.h}px`,
   });
   el.classList.toggle('ly-off', !!c.hidden);
   el.classList.toggle('ly-lock', !!c.locked);
@@ -125,7 +125,7 @@ export function renderCard(c: Card, pop?: boolean) {
     if (c.lh != null) el.style.setProperty('--lh', String(c.lh));
     else el.style.removeProperty('--lh');
     el.classList.toggle('has-lh', c.lh != null);
-    if (c.ls != null) el.style.setProperty('--ls', c.ls / 100 + 'em');
+    if (c.ls != null) el.style.setProperty('--ls', `${c.ls / 100}em`);
     else el.style.removeProperty('--ls');
     el.classList.toggle('has-ls', c.ls != null);
   }
@@ -156,8 +156,8 @@ export function renderCard(c: Card, pop?: boolean) {
     if (!c.rec) requestAnimationFrame(() => fitAudio(c, el));
   }
   if (c.type === 'stamp') {
-    el.style.setProperty('--sz', c.w + 'px');
-    if (c.mv) el.classList.add('mv-' + c.mv);
+    el.style.setProperty('--sz', `${c.w}px`);
+    if (c.mv) el.classList.add(`mv-${c.mv}`);
   }
   if (c.type === 'link') el.classList.toggle('compact', !c.url || !c.image);
   if (c.type === 'canvas' && c.board)
@@ -171,7 +171,7 @@ export function renderCard(c: Card, pop?: boolean) {
     el.style.setProperty('--chead', t?.[0] ?? '');
     el.style.setProperty('--cframe', t?.[1] ?? '');
     el.classList.toggle('nohead', c.head === false);
-    el.style.height = c.h + 'px';
+    el.style.height = `${c.h}px`;
   } else if (parentOf(c.id)) el.classList.add('inside');
   if (c.type === 'spotify') {
     const fr = el.querySelector('.sp-frame');
@@ -194,7 +194,7 @@ export function renderCard(c: Card, pop?: boolean) {
   if (WF.includes(c.type))
     styleWF(c, el); // after the insides exist
   else applyStroke(c, el);
-  if (c.type === 'image') el.style.setProperty('--img-r', (c.radius ?? 12) + 'px');
+  if (c.type === 'image') el.style.setProperty('--img-r', `${c.radius ?? 12}px`);
   return el;
 }
 
@@ -215,7 +215,9 @@ function keepOnScreens() {
   session.board.cards.forEach(c => {
     if (moving.has(c)) return;
     out.push(c);
-    (kids.get(c.id) || []).forEach(k => out.push(k));
+    (kids.get(c.id) || []).forEach(k => {
+      out.push(k);
+    });
   });
   session.board.cards = out;
 }
@@ -226,8 +228,16 @@ export function renderAll() {
   layersSoon();
   applyColors();
   cardsEl.innerHTML = '';
-  session.board.cards.filter(c => c.type === 'coll').forEach(c => renderCard(c));
-  session.board.cards.filter(c => c.type !== 'coll').forEach(c => renderCard(c));
+  session.board.cards
+    .filter(c => c.type === 'coll')
+    .forEach(c => {
+      renderCard(c);
+    });
+  session.board.cards
+    .filter(c => c.type !== 'coll')
+    .forEach(c => {
+      renderCard(c);
+    });
   layoutAll();
   renderWires();
   renderTray();

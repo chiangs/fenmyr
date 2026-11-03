@@ -1,14 +1,14 @@
+import { isRecord } from '../../shared/model.ts';
 import { $, stage } from '../core/dom.ts';
+import { appState, session } from '../core/state.ts';
 import { docCard } from '../docs/editor.ts';
 import { timerPose } from '../features/timer.ts';
 import { homeAt } from '../library/home.ts';
-import { lastAnim, playAnim } from './anim.ts';
-import { chatOpen } from './chatWindow.ts';
 import { settings } from '../settings/settings.ts';
 import { drawOn } from '../tools/draw.ts';
 import { placing } from '../tools/place.ts';
-import { appState, session } from '../core/state.ts';
-import { isRecord } from '../../shared/model.ts';
+import { lastAnim, playAnim } from './anim.ts';
+import { chatOpen } from './chatWindow.ts';
 
 // when she last played by herself, and when she may next
 type IdleState = { last: number; next: number };
@@ -36,7 +36,7 @@ export const idleState = (): IdleState => {
 const saveIdle = (st: IdleState) => {
   try {
     localStorage.setItem(IDLE_KEY, JSON.stringify(st));
-  } catch (e) {}
+  } catch (_e) {}
 };
 
 // true when she could be seen playing: the window is in use, nothing else is going on with her, and the pill is on screen
@@ -91,15 +91,15 @@ export function init36() {
     { passive: true, capture: true },
   );
 
-  ['pointermove', 'keydown', 'pointerdown'].forEach(ev =>
+  ['pointermove', 'keydown', 'pointerdown'].forEach(ev => {
     addEventListener(
       ev,
       () => {
         appState.lastActive = Date.now();
       },
       { passive: true, capture: true },
-    ),
-  );
+    );
+  });
 
   setInterval(idleCheck, 300000);
 }

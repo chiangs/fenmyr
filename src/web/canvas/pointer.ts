@@ -1,13 +1,10 @@
-import { cardEl, closestTo } from '../ui/dom.ts';
-import { stepZoom, toWorld, viewSoon, zoomAt } from './handles.ts';
-import { renderCard } from './render.ts';
-import { byId, selectOnly } from './wires.ts';
 import { pullColors } from '../cards/imageColors.ts';
 import { clamp } from '../core/base.ts';
 import { cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { fitText } from '../edit/text.ts';
+import { appState, session } from '../core/state.ts';
 import { endEdit, startEdit } from '../edit/editing.ts';
+import { fitText } from '../edit/text.ts';
 import { audioAct } from '../media/devices.ts';
 import { videoAct } from '../media/video.ts';
 import { card } from '../model/boards.ts';
@@ -16,12 +13,15 @@ import { newNoteColor, snapTo } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { endPen, penT } from '../tools/pen.ts';
 import { addCard } from '../tools/penEdit.ts';
+import { cardEl, closestTo } from '../ui/dom.ts';
 import { flipVNote, openVNote, toggleVNFull } from '../vault/notes.ts';
-import { appState, session } from '../core/state.ts';
 import { onDragMove } from './dragMove.ts';
+import { stepZoom, toWorld, viewSoon, zoomAt } from './handles.ts';
 import { clearStuckDrag } from './pointerKit.ts';
 import { onPress } from './press.ts';
 import { onRelease } from './release.ts';
+import { renderCard } from './render.ts';
+import { byId, selectOnly } from './wires.ts';
 
 let ctrlHeld = false;
 let wheelSum = 0;
@@ -35,8 +35,8 @@ export function init16() {
       appState.drag.start?.forEach(s => {
         const el = s.el || cardEl(s.c.id);
         if (el) {
-          el.style.left = s.c.x + 'px';
-          el.style.top = s.c.y + 'px';
+          el.style.left = `${s.c.x}px`;
+          el.style.top = `${s.c.y}px`;
         }
       });
     }

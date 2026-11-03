@@ -1,18 +1,18 @@
-import { type Card, type Link, isRecord, readCards, readLinks } from '../../shared/model.ts';
-import { closestTo } from '../ui/dom.ts';
-import { renderCard } from './render.ts';
-import { byId, renderWires, selectOnly } from './wires.ts';
+import { type Card, isRecord, type Link, readCards, readLinks } from '../../shared/model.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { copyOf as plainCopy, uid } from '../core/base.ts';
 import { stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { selCards } from '../selbar/selected.ts';
 import { chirp } from '../settings/licenses.ts';
+import { closestTo } from '../ui/dom.ts';
 import { onFrame } from '../wireframe/tilt.ts';
-import { appState, session } from '../core/state.ts';
+import { renderCard } from './render.ts';
+import { byId, renderWires, selectOnly } from './wires.ts';
 
 // ---------- copy, cut and paste cards: works across boards (the clip lives in Fenmyr, plus their words go to the system clipboard) ----------
 const CLIP = 'fenmyr:clip';
@@ -36,11 +36,16 @@ export function copyCards() {
   const take = (c: Card | undefined) => {
     if (!c || ids.has(c.id)) return;
     ids.add(c.id);
-    if (c.type === 'coll') c.kids.forEach(k => take(byId(k)));
+    if (c.type === 'coll')
+      c.kids.forEach(k => {
+        take(byId(k));
+      });
     if (c.type === 'frame') onFrame(c).forEach(take);
     if (c.group) session.board.cards.filter(x => x.group === c.group).forEach(take);
   };
-  selCards().forEach(c => take(c));
+  selCards().forEach(c => {
+    take(c);
+  });
   if (!ids.size) return null;
   const cards = session.board.cards.filter(c => ids.has(c.id)).map(c => plainCopy(c));
   const links = session.board.links.filter(l => ids.has(l.a) && ids.has(l.b)).map(l => ({ ...l }));
@@ -53,7 +58,7 @@ export function copyCards() {
   pasteN = 0;
   try {
     localStorage.setItem(CLIP, JSON.stringify(lastClip));
-  } catch (e) {} // big pictures may not fit; the copy still works while the app is open
+  } catch (_e) {} // big pictures may not fit; the copy still works while the app is open
   return lastClip;
 }
 
@@ -85,12 +90,18 @@ export function cloneForDrag() {
   const src = d.start.map(s => s.c),
     map: Record<string, string> = {},
     gmap: Record<string, string> = {};
-  src.forEach(c => (map[c.id] = uid()));
+  src.forEach(c => {
+    map[c.id] = uid();
+  });
   const fresh = src.map(c => copyOf(c, map, gmap)),
     links = session.board.links.filter(l => map[l.a] && map[l.b]);
   session.board.cards.push(...fresh);
-  fresh.forEach(c => renderCard(c, true));
-  links.forEach(l => session.board.links.push({ ...l, id: uid(), a: map[l.a] ?? l.a, b: map[l.b] ?? l.b }));
+  fresh.forEach(c => {
+    renderCard(c, true);
+  });
+  links.forEach(l => {
+    session.board.links.push({ ...l, id: uid(), a: map[l.a] ?? l.a, b: map[l.b] ?? l.b });
+  });
   layoutAll();
   renderWires();
   selectOnly([...session.sel].map(i => map[i] ?? '').filter(Boolean));
@@ -105,7 +116,9 @@ export function pasteCards() {
   remember();
   const map: Record<string, string> = {},
     gmap: Record<string, string> = {};
-  c0.cards.forEach(c => (map[c.id] = uid()));
+  c0.cards.forEach(c => {
+    map[c.id] = uid();
+  });
   const x0 = Math.min(...c0.cards.map(c => c.x)),
     y0 = Math.min(...c0.cards.map(c => c.y)),
     x1 = Math.max(...c0.cards.map(c => c.x + c.w)),
@@ -127,8 +140,12 @@ export function pasteCards() {
     return n;
   });
   session.board.cards.push(...fresh);
-  fresh.forEach(c => renderCard(c, true)); // all in first, so collections find the cards that belong in them
-  (c0.links || []).forEach(l => session.board.links.push({ ...l, id: uid(), a: map[l.a] ?? l.a, b: map[l.b] ?? l.b }));
+  fresh.forEach(c => {
+    renderCard(c, true);
+  }); // all in first, so collections find the cards that belong in them
+  (c0.links || []).forEach(l => {
+    session.board.links.push({ ...l, id: uid(), a: map[l.a] ?? l.a, b: map[l.b] ?? l.b });
+  });
   layoutAll();
   renderWires();
   save();

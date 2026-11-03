@@ -1,3 +1,4 @@
+import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
@@ -7,6 +8,7 @@ import { shapeSVG } from '../cards/shapes.ts';
 import { clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { startEdit } from '../edit/editing.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { coolMic } from '../media/audio.ts';
@@ -14,18 +16,16 @@ import { readyToRecord } from '../media/devices.ts';
 import { camOn } from '../media/video.ts';
 import { card, newBoard } from '../model/boards.ts';
 import { newNoteColor, snapTo, tip } from '../settings/licenses.ts';
-import { addCard } from './penEdit.ts';
-import { stampAt, stampHTML } from './stamps.ts';
 import { openColor } from '../ui/colorPicker.ts';
-import { PIECES } from '../wireframe/pieces.ts';
+import { htmlIn } from '../ui/dom.ts';
 import { pickWF } from '../wireframe/designPanel.ts';
 import { placePiece } from '../wireframe/drawer.ts';
+import { PIECES } from '../wireframe/pieces.ts';
 import { fileIntoFrame } from '../wireframe/tilt.ts';
 import { DEVICES, WF } from '../wireframe/wireframes.ts';
-import { session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
+import { addCard } from './penEdit.ts';
 import type { Stamp } from './stamps.ts';
-import { htmlIn } from '../ui/dom.ts';
+import { stampAt, stampHTML } from './stamps.ts';
 
 type Point = { x: number; y: number };
 // what the tool being placed carries: the shape, piece, icon, device or stamp you picked
@@ -109,18 +109,18 @@ export function startPlacing(type: string, extra: PlaceExtra = {}, quiet = false
   const g = $('ghost'),
     [label, [w, h]] = PLACE[type] ?? ['', [160, 100]],
     span = () => g.querySelector('span');
-  g.className = 'ghost on ' + type;
+  g.className = `ghost on ${type}`;
   g.innerHTML = `<span>${label}</span>`;
-  g.style.width = w + 'px';
-  g.style.height = (extra.shape === 'line' ? 24 : h) + 'px';
+  g.style.width = `${w}px`;
+  g.style.height = `${extra.shape === 'line' ? 24 : h}px`;
   if (type === 'shape') g.innerHTML = shapeSVG(card('shape', { shape: extra.shape }));
   const P = type === 'piece' ? PIECES[extra.piece ?? ''] : undefined;
   if (P) {
     const items = P.make(P.w || 360, {}),
       W = Math.max(...items.map(i => i.x + i.w)),
       H = Math.max(...items.map(i => i.y + i.h));
-    g.style.width = W + 'px';
-    g.style.height = H + 'px';
+    g.style.width = `${W}px`;
+    g.style.height = `${H}px`;
     const s = span();
     if (s) s.textContent = extra.piece ?? '';
   }
@@ -130,8 +130,8 @@ export function startPlacing(type: string, extra: PlaceExtra = {}, quiet = false
   }
   const device = type === 'frame' ? DEVICES[extra.device ?? ''] : undefined;
   if (device) {
-    g.style.width = device[0] + 'px';
-    g.style.height = device[1] + 'px';
+    g.style.width = `${device[0]}px`;
+    g.style.height = `${device[1]}px`;
     const s = span();
     if (s) s.textContent = extra.device ?? '';
   }
@@ -143,8 +143,7 @@ export function startPlacing(type: string, extra: PlaceExtra = {}, quiet = false
   stage.classList.add('placing');
   if (!quiet) {
     const h = $('placeHint');
-    h.textContent =
-      (type === 'box' ? 'Drag on the board to draw it' : 'Click the board to place it') + ' · Esc to cancel';
+    h.textContent = `${type === 'box' ? 'Drag on the board to draw it' : 'Click the board to place it'} · Esc to cancel`;
     h.hidden = false;
   }
   $('tools').querySelector(`[data-add="${type}"]`)?.classList.add('on');
@@ -168,8 +167,8 @@ function moveGhost() {
   if (!placing) return;
   const g = $('ghost'),
     o = placing.type === 'stamp' ? 28 * session.view.z : 14;
-  g.style.left = mouse.x - o + 'px';
-  g.style.top = mouse.y - o + 'px';
+  g.style.left = `${mouse.x - o}px`;
+  g.style.top = `${mouse.y - o}px`;
   g.style.transform = `scale(${session.view.z})`;
 }
 

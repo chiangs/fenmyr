@@ -1,20 +1,18 @@
-import { openSettingsKey } from '../input/shortcuts.ts';
-import { esc, htmlIn } from '../ui/dom.ts';
+import { isRecord } from '../../shared/model.ts';
+import type { CaelestiaScheme } from '../../shared/ops.ts';
 import { autoUpdateAnswered } from '../app/updates.ts';
 import { COLOR_NAMES } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
+import { appState, session } from '../core/state.ts';
+import { openSettingsKey } from '../input/shortcuts.ts';
 import { addMsg, renderChat, sessionChats } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { hopMyra } from '../myra/goos.ts';
 import { showConnections } from '../myra/helpers.ts';
+import { closestTo, esc, htmlIn } from '../ui/dom.ts';
 import { closeSettings } from './colors.ts';
-import { settings } from './settings.ts';
+import { flagOn, setChoice, setFlag, settings } from './settings.ts';
 import { applySettings } from './widgets.ts';
-import { appState, session } from '../core/state.ts';
-import { isRecord } from '../../shared/model.ts';
-import type { CaelestiaScheme } from '../../shared/ops.ts';
-import { closestTo } from '../ui/dom.ts';
-import { flagOn, setChoice, setFlag } from './settings.ts';
 
 type Licence = {
   name: string;
@@ -71,7 +69,7 @@ async function openLicenses() {
   $('licView').classList.add('on');
   try {
     await loadLicenses();
-  } catch (e) {
+  } catch (_e) {
     $('licBody').innerHTML = '<p class="lic-loading">The licence list is missing from this copy.</p>';
     return;
   }
@@ -224,7 +222,9 @@ export function init29() {
 
   $('clearChats').onclick = async () => {
     await clearSavedChats();
-    Object.keys(sessionChats).forEach(k => delete sessionChats[k]);
+    Object.keys(sessionChats).forEach(k => {
+      delete sessionChats[k];
+    });
     renderChat();
     $('clearChats').textContent = 'Cleared ✓';
     setTimeout(() => ($('clearChats').textContent = 'Clear all chats'), 1800);

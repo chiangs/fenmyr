@@ -1,12 +1,9 @@
-import { cardEl } from '../ui/dom.ts';
-import { selKey, toWorld } from './handles.ts';
-import { renderCard } from './render.ts';
-import { byId, pinAt, renderTray, renderWires, selectOnly, sendToTray } from './wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { collAt, dropInto } from '../cards/kanban.ts';
 import { tilt, uid } from '../core/base.ts';
 import { $, cardsEl, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
 import { docTarget, dropIntoDoc } from '../docs/drop.ts';
 import { startEdit } from '../edit/editing.ts';
 import { card } from '../model/boards.ts';
@@ -15,11 +12,13 @@ import { settings } from '../settings/settings.ts';
 import { drawPen, penT } from '../tools/pen.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { openColor } from '../ui/colorPicker.ts';
+import { cardEl } from '../ui/dom.ts';
 import { pickWF } from '../wireframe/designPanel.ts';
 import { fileIntoFrame } from '../wireframe/tilt.ts';
-import { appState, session } from '../core/state.ts';
-
+import { selKey, toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
+import { renderCard } from './render.ts';
+import { byId, pinAt, renderTray, renderWires, selectOnly, sendToTray } from './wires.ts';
 
 // letting go: the drag lands (snaps, files into a column or a screen, goes to Unsorted) and is saved
 export function onRelease(e: PointerEvent) {
@@ -45,8 +44,8 @@ export function onRelease(e: PointerEvent) {
     d.start.forEach(s => {
       const el = s.el || cardEl(s.c.id);
       if (!el) return;
-      el.style.left = s.c.x + 'px';
-      el.style.top = s.c.y + 'px';
+      el.style.left = `${s.c.x}px`;
+      el.style.top = `${s.c.y}px`;
       el.style.transform = '';
       el.style.willChange = '';
       el.classList.remove('dragging');
@@ -60,7 +59,9 @@ export function onRelease(e: PointerEvent) {
       save();
       return;
     }
-    cardsEl.querySelectorAll('.drop-in, .drop-col').forEach(n => n.classList.remove('drop-in', 'drop-col'));
+    cardsEl.querySelectorAll('.drop-in, .drop-col').forEach(n => {
+      n.classList.remove('drop-in', 'drop-col');
+    });
     const lead = d.start[0]?.c;
     if (d.moved) {
       if (settings.snap && lead) {

@@ -1,5 +1,3 @@
-import { cardEl } from '../ui/dom.ts';
-import type { NoteProps } from '../../shared/ops.ts';
 import type { Card } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
 import { renderCard } from '../canvas/render.ts';
@@ -9,43 +7,28 @@ import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { kanbanFields, layoutAll, placeInColumn } from '../cards/kanban.ts';
 import { COLOR_NAMES, uid } from '../core/base.ts';
 import { save, showWhatMyraMade } from '../core/history.ts';
-import { docCard, ed } from '../docs/editor.ts';
+import { appState, session } from '../core/state.ts';
 import { mdToHTML } from '../docs/docText.ts';
+import { docCard, ed } from '../docs/editor.ts';
 import { dueDate, hasDue } from '../features/due.ts';
-import { type VaultTasksUsed, tasksLine } from '../vault/ask.ts';
 import { cleanTags, existingTag } from '../features/tags.ts';
 import { buildTplPick, freeName, myTpls, saveAsTemplate, useTemplate } from '../features/templates.ts';
 import { startTimer, stopTimer, timer } from '../features/timer.ts';
-import { guessNext, noEmoji } from './replyText.ts';
 import { loadLib } from '../library/nesting.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { byName, findFolder, makeFolder, makeProject, moveBoard, saveLib } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
-import { animIntent, animName, playAnim } from './anim.ts';
-import { animAskedAt, ask, timerAskedAt } from './chat.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { FS } from '../selbar/textSize.ts';
 import { reply, snapTo } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
-import { aiGrants, updateVaultChip } from '../vault/ask.ts';
+import { cardEl } from '../ui/dom.ts';
+import { aiGrants, tasksLine, updateVaultChip } from '../vault/ask.ts';
 import { buildScreen } from '../wireframe/screen.ts';
-import { appState, session } from '../core/state.ts';
-
-// the kinds of card she can add; anything else she names becomes a note
-const MYRA_ADDS = ['todo', 'title', 'swatch', 'doc', 'font'] as const;
-
-// her actions: say, add cards, move cards, place unsorted ideas, add titles, connect cards
-type NoteUsed = {
-  vault: string;
-  vaultId: string;
-  rel: string;
-  title: string;
-  tags: string[];
-  props: NoteProps | undefined;
-  excerpt: string;
-  text: string;
-};
-type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null };
+import { animIntent, animName, playAnim } from './anim.ts';
+import { MYRA_ADDS, type NoteUsed, type Picked } from './applyTypes.ts';
+import { animAskedAt, ask, timerAskedAt } from './chat.ts';
+import { guessNext, noEmoji } from './replyText.ts';
 
 export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked: false, used: [] }) {
   // her templates: use one of theirs, or keep what's on the board as one
@@ -177,7 +160,9 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     const c = session.board.tray.find(x => x.id === o.id);
     if (!c) return;
     place(o);
-    takeFromTray(c, { x: o.x ?? c.x, y: o.y ?? c.y }).forEach(m => added.push(m));
+    takeFromTray(c, { x: o.x ?? c.x, y: o.y ?? c.y }).forEach(m => {
+      added.push(m);
+    });
   });
   (r.move || []).forEach(o => {
     const c = byId(o.id);
@@ -250,7 +235,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       added.push(c);
     } else renderTray();
   });
-  if (r.remove && r.remove.length) {
+  if (r.remove?.length) {
     const gone = new Set(r.remove);
     session.board.cards = session.board.cards.filter(c => !gone.has(c.id));
     session.board.tray = session.board.tray.filter(c => !gone.has(c.id));
@@ -271,7 +256,9 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     r.screens.forEach(sp => {
       const { f, made } = buildScreen(sp, sx, sy);
       builtFrames.push(f);
-      made.forEach(c => added.push(c));
+      made.forEach(c => {
+        added.push(c);
+      });
       const noFlow = typeof sp === 'object' && sp !== null && 'flow' in sp && sp.flow === false;
       if (prev && !noFlow) session.board.links.push({ id: uid(), a: prev.id, b: f.id, arrow: true });
       prev = f;
@@ -313,7 +300,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
         addCard(c);
         added.push(c);
         k++;
-      } catch (e) {}
+      } catch (_e) {}
     }
   }
   layoutAll();
@@ -367,7 +354,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
   if (given.length) save();
   const acts: { label: string; run: () => unknown; ghost?: boolean; cls?: string }[] = r.confirm
     ? [
-        { label: (r.confirm || 'Yes, make it') + ' ✦', run: () => ask(q ?? '', true) },
+        { label: `${r.confirm || 'Yes, make it'} ✦`, run: () => ask(q ?? '', true) },
         { label: 'Not now', ghost: true, run: () => {} },
       ]
     : [];
@@ -389,7 +376,9 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
         .map(noEmoji)
         .filter(Boolean)
         .slice(0, 3);
-  next.forEach(t => acts.push({ label: t.trim(), cls: 'next', run: () => ask(t.trim()) }));
+  next.forEach(t => {
+    acts.push({ label: t.trim(), cls: 'next', run: () => ask(t.trim()) });
+  });
   reply(
     ((r.say && noEmoji(r.say)) || (added.length ? `Done! I touched ${added.length} cards.` : 'Done!')) + read,
     r.confirm ? 0 : next.length ? 16000 : 9000,

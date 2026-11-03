@@ -1,13 +1,13 @@
-import { cardEl } from '../ui/dom.ts';
-import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
-import { host } from './shapes.ts';
-import { spotifyFill, spotifyOf } from './spotify.ts';
-import { save } from '../core/history.ts';
-import { removeSelected } from '../myra/helpers.ts';
-import { session } from '../core/state.ts';
 import type { CardOf } from '../../shared/model.ts';
 import type { LinkPreview } from '../../shared/ops.ts';
+import { renderCard } from '../canvas/render.ts';
+import { selectOnly } from '../canvas/wires.ts';
+import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
+import { removeSelected } from '../myra/helpers.ts';
+import { cardEl } from '../ui/dom.ts';
+import { host } from './shapes.ts';
+import { spotifyFill, spotifyOf } from './spotify.ts';
 
 // ---------- links: type or paste right into the card, then it fills in the site's name and picture ----------
 export function wireLinkInput(c: CardOf<'link'>) {
@@ -35,7 +35,7 @@ export function wireLinkInput(c: CardOf<'link'>) {
     }
     if (ev.key !== 'Enter' || !inp.value.trim()) return;
     const u = inp.value.trim(),
-      url = /^https?:/i.test(u) || /^spotify:/i.test(u) ? u : 'https://' + u;
+      url = /^https?:/i.test(u) || /^spotify:/i.test(u) ? u : `https://${u}`;
     if (spotifyOf(url)) {
       await spotifyFill(c, url);
       selectOnly([c.id]);

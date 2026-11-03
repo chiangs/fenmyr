@@ -1,9 +1,9 @@
 import type { UpdateInfo } from '../../shared/ops.ts';
-import { elementById, esc } from '../ui/dom.ts';
 import { $, stage } from '../core/dom.ts';
 import { setTab } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
+import { elementById, esc } from '../ui/dom.ts';
 
 // ---------- updates: check GitHub for a newer Fenmyr (about once a day), show what's new, update with one tap ----------
 let updInfo: UpdateInfo | { error: true } | null = null;
@@ -37,13 +37,13 @@ export async function checkUpdate(force = false) {
   let last = 0;
   try {
     last = Number(localStorage.getItem('fenmyr:updChecked')) || 0;
-  } catch (e) {}
+  } catch (_e) {}
   if (!force && Date.now() - last < 15 * 60 * 1000 && updInfo) return showUpdate(); // at most every 15 minutes (it used to wait 20 hours, so an app left open never noticed)
   $('suSub').textContent = 'Checking for a new version…';
   try {
     updInfo = await Fenmyr.updateCheck();
     localStorage.setItem('fenmyr:updChecked', String(Date.now()));
-  } catch (e) {
+  } catch (_e) {
     updInfo = { error: true };
   }
   showUpdate();
@@ -53,7 +53,7 @@ function showUpdate() {
   const u = readUpdate(updInfo),
     n = u.behind;
   if (u.since && !u.release) {
-    const d = new Date(u.since + 'T12:00');
+    const d = new Date(`${u.since}T12:00`);
     if (!Number.isNaN(d.getTime())) u.since = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
   $('gearBtn').classList.toggle('has-update', n > 0);
@@ -70,8 +70,8 @@ function showUpdate() {
             ? `Version ${String(u.latest || '').replace(/^v/, '')} is ready (you have ${u.since}). Your boards and settings stay just as they are.`
             : `You’re up to date (version ${u.since}).`
           : n > 0
-            ? `${n} update${n > 1 ? 's' : ''} since your version${u.since ? ' from ' + u.since : ''}. Your boards and settings stay just as they are.`
-            : `You’re up to date${u.since ? ' (version from ' + u.since + ')' : ''}.`;
+            ? `${n} update${n > 1 ? 's' : ''} since your version${u.since ? ` from ${u.since}` : ''}. Your boards and settings stay just as they are.`
+            : `You’re up to date${u.since ? ` (version from ${u.since})` : ''}.`;
   const notes = u.notes.slice(0, 8);
   $('suNotes').hidden = !(n > 0 && notes.length);
   $('suNotes').innerHTML = notes
@@ -84,11 +84,11 @@ function showUpdate() {
   const ver = String(u.latest || u.since || '')
       .replace(/^v/, '')
       .replace(/\.0$/, ''),
-    key = (u.latest || '') + ':' + (u.since || '') + ':' + n;
+    key = `${u.latest || ''}:${u.since || ''}:${n}`;
   let hid = '';
   try {
     hid = localStorage.getItem('fenmyr:upbarHidden') || '';
-  } catch (e) {}
+  } catch (_e) {}
   $('ubText').textContent = u.latest ? `Fenmyr ${ver} is ready` : 'A new Fenmyr is ready';
   button('ubGo').disabled = false;
   $('ubGo').textContent = 'Update now';
@@ -120,11 +120,11 @@ function fitUpBar() {
     w = b.getBoundingClientRect().width;
   const right = [$('design'), $('tray')]
     .map(el => el?.getBoundingClientRect())
-    .filter(r => r && r.width && r.top < 140)
+    .filter(r => r?.width && r.top < 140)
     .reduce((m, r) => Math.min(m, r.left), st.right);
   const from = (t ? t.right : st.left) + 20,
     to = right - 20;
-  if (to - from >= w) b.style.left = (from + to) / 2 - st.left + 'px';
+  if (to - from >= w) b.style.left = `${(from + to) / 2 - st.left}px`;
   else if (t) {
     const r = b.getBoundingClientRect();
     if (r.left < t.right + 16 && r.right > t.left - 16) b.classList.add('low');
@@ -149,7 +149,9 @@ export function init59() {
   // still open: look again every hour
   addEventListener('focus', () => checkUpdate());
   // and whenever you come back to the window (no more than every 15 minutes)
-  ['pointerdown', 'mousedown', 'dblclick'].forEach(t => $('upBar').addEventListener(t, e => e.stopPropagation()));
+  ['pointerdown', 'mousedown', 'dblclick'].forEach(t => {
+    $('upBar').addEventListener(t, e => e.stopPropagation());
+  });
 
   addEventListener('resize', () => fitUpBar());
 
@@ -173,7 +175,7 @@ export function init59() {
   $('ubX').onclick = () => {
     try {
       localStorage.setItem('fenmyr:upbarHidden', $('upBar').dataset.key || '');
-    } catch (e) {}
+    } catch (_e) {}
     $('upBar').hidden = true;
   };
 

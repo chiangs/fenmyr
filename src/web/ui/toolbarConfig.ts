@@ -1,12 +1,13 @@
-import { closestTo, esc, htmlIn } from './dom.ts';
 import { $ } from '../core/dom.ts';
+import { session } from '../core/state.ts';
 import { boardMenu } from '../features/export.ts';
 import { setTab } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { updateVaultChip } from '../vault/ask.ts';
 import { activeGrants, vaults } from '../vault/vaults.ts';
-import { session } from '../core/state.ts';
+import { closestTo, esc, htmlIn } from './dom.ts';
+
 let TB_DEFAULT: string[] = [];
 
 // the HTML elements matching a selector, under root
@@ -22,7 +23,7 @@ const tbName = (b: HTMLElement) => (b.dataset.tip || b.getAttribute('aria-label'
 const vaultToolOn = () => {
   try {
     return !!(Fenmyr.native && session.board && vaults.length && activeGrants(session.board).length);
-  } catch (e) {
+  } catch (_e) {
     return false;
   }
 };
@@ -46,7 +47,7 @@ export function applyToolbar() {
   requestAnimationFrame(fitToolbar);
   try {
     updateVaultChip();
-  } catch (e) {}
+  } catch (_e) {}
   return order;
 }
 
@@ -80,10 +81,12 @@ function fitToolbar() {
   const box = $('tools'),
     more = $('tbMore');
   if (!box || !more) return;
-  box.querySelectorAll(':scope > .tb-over').forEach(b => b.classList.remove('tb-over'));
+  box.querySelectorAll(':scope > .tb-over').forEach(b => {
+    b.classList.remove('tb-over');
+  });
   more.hidden = true;
   const m = $('myra'),
-    others = m && m.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.offsetWidth + 10 : 0; // only Myra's pill shares the row
+    others = m?.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.offsetWidth + 10 : 0; // only Myra's pill shares the row
   const room = innerWidth - 32 - others;
   if (box.offsetWidth <= room) return;
   more.hidden = false;

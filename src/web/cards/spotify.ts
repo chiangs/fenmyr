@@ -1,8 +1,9 @@
-import { cardEl } from '../ui/dom.ts';
+import { type Card, isRecord } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderTray, renderWires, selectOnly } from '../canvas/wires.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
 import { addVideo } from '../media/videoFile.ts';
 import { card } from '../model/boards.ts';
@@ -11,9 +12,8 @@ import { centerWorld } from '../panels/zoomMenu.ts';
 import { say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { addCard } from '../tools/penEdit.ts';
+import { cardEl } from '../ui/dom.ts';
 import { revealCards } from '../wireframe/drawer.ts';
-import { session } from '../core/state.ts';
-import { isRecord, type Card } from '../../shared/model.ts';
 
 type Point = { x: number; y: number };
 const SP_DESC: Record<string, string> = {
@@ -71,7 +71,7 @@ export async function spotifyFill(c: Card, url: string) {
   save();
   // Spotify's own public info (no account needed): the real name and cover art, kept on the card for offline, Layers and Myra
   try {
-    const r = await fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(spotifyURL));
+    const r = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(spotifyURL)}`);
     if (r.ok) {
       const o: unknown = await r.json();
       if (isRecord(o) && typeof o.title === 'string' && o.title) title = o.title;
@@ -84,7 +84,7 @@ export async function spotifyFill(c: Card, url: string) {
       if (p.title && !/^open\.spotify\.com$/i.test(p.title)) title = p.title.replace(/\s*[|·-]\s*Spotify\s*$/i, '');
       if (!image && p.image) image = p.image;
     } catch {}
-  Object.assign(c, { title, image, desc: SP_DESC[s2.kind] + ' on Spotify' });
+  Object.assign(c, { title, image, desc: `${SP_DESC[s2.kind]} on Spotify` });
   renderCard(c);
   save();
   return true;
@@ -116,7 +116,7 @@ export async function linkCard(url: string, at?: Point | null, toTray?: boolean)
     if (toTray) renderTray();
     else renderCard(c);
     save();
-  } catch (e) {}
+  } catch (_e) {}
   if (toTray) {
     renderTray();
     save();
@@ -163,7 +163,9 @@ export async function addImages(files: File[], at?: { x: number; y: number } | n
   files = [...files];
   const vfs = files.filter(f => f.type.startsWith('video/'));
   files = files.filter(f => !f.type.startsWith('video/'));
-  vfs.forEach((f, n) => addVideo(f, at ? { x: at.x + n * 30, y: at.y + n * 30 } : null));
+  vfs.forEach((f, n) => {
+    addVideo(f, at ? { x: at.x + n * 30, y: at.y + n * 30 } : null);
+  });
   let i = 0;
   for (const f of files) {
     if (!f.type.startsWith('image/')) continue;
@@ -208,9 +210,9 @@ export async function pictureForNote(c: Card, files: File[]) {
     session.sel = new Set([c.id]);
     removeSelected();
     addCard(p);
-    ties.forEach(l =>
-      session.board.links.push({ ...l, id: uid(), a: l.a === c.id ? p.id : l.a, b: l.b === c.id ? p.id : l.b }),
-    );
+    ties.forEach(l => {
+      session.board.links.push({ ...l, id: uid(), a: l.a === c.id ? p.id : l.a, b: l.b === c.id ? p.id : l.b });
+    });
     anchor = p;
     made.push(p);
   }

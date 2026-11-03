@@ -1,7 +1,7 @@
-import { esc } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { CIC, host } from '../cards/shapes.ts';
 import { pxSrc } from '../tools/stamps.ts';
-import type { Card } from '../../shared/model.ts';
+import { esc } from '../ui/dom.ts';
 
 export let LICON: Record<string, string> = {};
 

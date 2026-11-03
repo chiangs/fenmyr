@@ -1,17 +1,16 @@
-import { showDialog } from '../ui/popover.ts';
-import { esc } from '../ui/dom.ts';
+import type { Board, Project, StoredBoard, VaultGrant } from '../../shared/model.ts';
+import type { Vault, VaultScan } from '../../shared/ops.ts';
+import { copyOf } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
 import { saveLib } from '../library/tree.ts';
 import { setTab } from '../settings/colors.ts';
 import { chirp } from '../settings/licenses.ts';
+import { child, closestTo, esc } from '../ui/dom.ts';
+import { showDialog } from '../ui/popover.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { refreshVNotes } from './notes.ts';
-import { appState, session } from '../core/state.ts';
-import type { Board, Project, StoredBoard, VaultGrant } from '../../shared/model.ts';
-import type { Vault, VaultScan } from '../../shared/ops.ts';
-import { child, closestTo } from '../ui/dom.ts';
-import { copyOf } from '../core/base.ts';
 
 type AccessChoice = { follow: boolean; grants: VaultGrant[] };
 
@@ -48,7 +47,7 @@ export function folderChecklist(
         folders
           .map(f => {
             const depth = f.split('/').length - 1,
-              covered = (wholeOn && whole) || [...set].some(c => c !== '' && f.startsWith(c + '/'));
+              covered = (wholeOn && whole) || [...set].some(c => c !== '' && f.startsWith(`${c}/`));
             const cov = covered ? ' cov' : '',
               pad = 10 + depth * 16,
               path = esc(f),
@@ -93,14 +92,14 @@ export async function renderVaults() {
         .join('')
     : '<div class="vr-none">No vault connected yet.</div>';
   paintVaultCounts();
-  vaults.forEach(v =>
+  vaults.forEach(v => {
     Fenmyr.vaultScan(v.id)
       .then(info => {
         vaultInfo[v.id] = info;
         paintVaultCounts();
       })
-      .catch(() => {}),
-  );
+      .catch(() => {});
+  });
 }
 
 const countText = (i: VaultScan) =>
@@ -126,7 +125,7 @@ export const activeGrants = (b: Board | StoredBoard) =>
   grantsFor(b).filter(g => vaultById(g.vault) && g.folders.length);
 
 // inherit: the project's name when a board can follow its project
-function vaultAccessDialog({
+async function vaultAccessDialog({
   title,
   grants,
   inherit,
@@ -135,12 +134,12 @@ function vaultAccessDialog({
   grants: VaultGrant[];
   inherit?: string | null;
 }) {
-  return new Promise<AccessChoice | null>(async res => {
-    await loadVaults();
+  await loadVaults();
+  return new Promise<AccessChoice | null>(res => {
     const mine = copyOf(grants);
     let follow = inherit != null;
     const shownTitle = esc(title),
-      followLabel = inherit ? 'Same as “' + esc(inherit) + '”' : 'Same as its project',
+      followLabel = inherit ? `Same as “${esc(inherit)}”` : 'Same as its project',
       followRow =
         inherit != null
           ? `<div class="tdlg-row"><span>Who decides</span><div class="seg" id="vaFollow"><button data-v="1">${followLabel}</button><button data-v="0">This board only</button></div></div>`
@@ -185,7 +184,7 @@ function vaultAccessDialog({
         blk.appendChild(body);
         body.appendChild(
           folderChecklist(
-            info.folders.filter(f => !v.off.some(o => f === o || f.startsWith(o + '/'))),
+            info.folders.filter(f => !v.off.some(o => f === o || f.startsWith(`${o}/`))),
             g.folders,
             f => {
               g.folders = f;

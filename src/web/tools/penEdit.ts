@@ -1,15 +1,15 @@
+import type { Card, CardOf, PathPoint } from '../../shared/model.ts';
 import { toWorld } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { SHAPE_FILL } from '../cards/shapes.ts';
 import { stage, world } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
 import { say } from '../settings/licenses.ts';
-import { pathD, penT } from './pen.ts';
-import { session } from '../core/state.ts';
-import type { Card, CardOf, PathPoint } from '../../shared/model.ts';
 import { closestTo } from '../ui/dom.ts';
+import { pathD, penT } from './pen.ts';
 import { vecDown, vecHit, vecMove, vecToggle, vecUp } from './penPointer.ts';
 
 type PathCard = CardOf<'path'>;
@@ -269,7 +269,7 @@ export function init12() {
   stage.addEventListener(
     'pointermove',
     e => {
-      if (vec && vec.drag) {
+      if (vec?.drag) {
         e.stopImmediatePropagation();
         vecMove(e);
       }
@@ -280,7 +280,7 @@ export function init12() {
   stage.addEventListener(
     'pointerup',
     e => {
-      if (vec && vec.drag) {
+      if (vec?.drag) {
         e.stopImmediatePropagation();
         vecUp();
       }

@@ -1,13 +1,13 @@
+import type { PathPoint } from '../../shared/model.ts';
 import { toWorld } from '../canvas/handles.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $, stage, world } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
 import { drawOn, exitDraw } from './draw.ts';
 import { addCard } from './penEdit.ts';
 import { stopPlacing } from './place.ts';
-import { session } from '../core/state.ts';
-import type { PathPoint } from '../../shared/model.ts';
 
 type Point = { x: number; y: number };
 const ORIGIN: PathPoint = { x: 0, y: 0 };
@@ -77,7 +77,7 @@ export function pathD(pts: PathPoint[], closed: boolean | undefined, R = 0, k = 
   const at = (i: number) => N[(i + n) % n] ?? { p: ORIGIN, s: ORIGIN, e: ORIGIN };
   let d = `M${f(at(0).e.x)} ${f(at(0).e.y)}`;
   for (let i = 1; i < n; i++) d += seg(at(i - 1), at(i)) + corner(at(i));
-  if (closed && n > 2) d += seg(at(n - 1), at(0)) + corner(at(0)) + ' Z';
+  if (closed && n > 2) d += `${seg(at(n - 1), at(0)) + corner(at(0))} Z`;
   return d;
 }
 
@@ -91,7 +91,7 @@ const penD = (pts: PathPoint[], closed = false) => {
       : ` C${f(a.ox ?? a.x)} ${f(a.oy ?? a.y)} ${f(b.ix ?? b.x)} ${f(b.iy ?? b.y)} ${f(b.x)} ${f(b.y)}`;
   let d = `M${f(first.x)} ${f(first.y)}`;
   for (let i = 1; i < pts.length; i++) d += seg(pts[i - 1] ?? first, pts[i] ?? first);
-  if (closed && pts.length > 2) d += seg(last, first) + ' Z';
+  if (closed && pts.length > 2) d += `${seg(last, first)} Z`;
   return d;
 };
 

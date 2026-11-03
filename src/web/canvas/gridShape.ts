@@ -1,8 +1,8 @@
-import { applyView } from './view.ts';
 import { $, grid } from '../core/dom.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
+import { applyView } from './view.ts';
 
 // ---------- the grid's shape: plain dots, or a tiny repeating shape in the dot color ----------
 // each shape's name, and its SVG drawn in a 26 × 26 tile

@@ -4,7 +4,9 @@ import { renderTray, renderWires } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { closeHome, homeAt, openBoard } from '../library/home.ts';
+import { appState, session } from '../core/state.ts';
+import { closeHome, homeAt } from '../library/home.ts';
+import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { foldersIn } from '../library/tree.ts';
 import { newBoard } from '../model/boards.ts';
@@ -16,9 +18,8 @@ import { closeSettings } from '../settings/colors.ts';
 import { say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { scope } from '../ui/toolbar.ts';
-import { appState, session } from '../core/state.ts';
 import { closestTo, elementById } from '../ui/dom.ts';
+import { scope } from '../ui/toolbar.ts';
 
 type Counts = { cards: number; tray: number };
 type TourStep = {
@@ -49,7 +50,7 @@ function obGo(i: number) {
   $('onboard').classList.toggle('last', obAt === OB_N - 1);
   $('obSkip').style.display = obAt === OB_N - 1 ? 'none' : '';
   if (obAt === 2) showConnections(true);
-  if (obAt === OB_N - 1) $('obDoneTitle').textContent = `You're all set${settings.name ? ', ' + settings.name : ''}!`;
+  if (obAt === OB_N - 1) $('obDoneTitle').textContent = `You're all set${settings.name ? `, ${settings.name}` : ''}!`;
   if (obAt === 0) setTimeout(() => nameField().focus(), 50);
   goos[4]?.hop();
   goos[5]?.hop();
@@ -85,10 +86,10 @@ function finishSetup(tour: boolean) {
   applySettings();
   try {
     localStorage.setItem('fenmyr:onboarded', '1');
-  } catch (e) {}
+  } catch (_e) {}
   $('onboard').classList.remove('on');
   if (tour) setTimeout(startTour, 350);
-  else say(`Have fun${settings.name ? ', ' + settings.name : ''}! Click me anytime to chat ✦`, 6000);
+  else say(`Have fun${settings.name ? `, ${settings.name}` : ''}! Click me anytime to chat ✦`, 6000);
 }
 
 export function obKeys(e: KeyboardEvent) {
@@ -171,7 +172,7 @@ function tourGo(i: number) {
   clearInterval(tourPoll);
   if (i >= TOUR.length) {
     endTour();
-    say(`You're ready${settings.name ? ', ' + settings.name : ''}! Click me whenever you want help ✦`, 0, [
+    say(`You're ready${settings.name ? `, ${settings.name}` : ''}! Click me whenever you want help ✦`, 0, [
       {
         label: 'Brainstorm with me',
         cls: 'next',
@@ -219,7 +220,7 @@ function placeCoach() {
   const t = st.el && document.querySelector(st.el),
     card = $('coachCard'),
     ring = $('coachRing');
-  const r = t && t.getBoundingClientRect(),
+  const r = t instanceof Element ? t.getBoundingClientRect() : null,
     ok = r && r.width > 0 && r.height > 0,
     cw = card.offsetWidth,
     ch = card.offsetHeight,
@@ -231,10 +232,10 @@ function placeCoach() {
     y = (H - ch) / 2;
   if (r && ok) {
     Object.assign(ring.style, {
-      left: r.left - 8 + 'px',
-      top: r.top - 8 + 'px',
-      width: r.width + 16 + 'px',
-      height: r.height + 16 + 'px',
+      left: `${r.left - 8}px`,
+      top: `${r.top - 8}px`,
+      width: `${r.width + 16}px`,
+      height: `${r.height + 16}px`,
     });
     if (st.side === 'top') {
       x = r.left + r.width / 2 - cw / 2;
@@ -247,8 +248,8 @@ function placeCoach() {
       y = r.top + Math.min(r.height, 300) / 2 - ch / 2;
     }
   }
-  card.style.left = clamp(x, 16, W - cw - 16) + 'px';
-  card.style.top = clamp(y, 16, H - ch - 16) + 'px';
+  card.style.left = `${clamp(x, 16, W - cw - 16)}px`;
+  card.style.top = `${clamp(y, 16, H - ch - 16)}px`;
 }
 export function init60() {
   appState.firstRunSetup = false;

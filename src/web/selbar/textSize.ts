@@ -45,12 +45,12 @@ export function setFsPx(raw: string | number) {
   const t = document.querySelector('#selbar [data-pop="size"] b');
   if (t) t.textContent = String(px); // the bar stays put while the dropdown is open, so update its label by hand
   const now = sizedCards();
-  htmlIn(document, '#selbar [data-fs]').forEach(b =>
+  htmlIn(document, '#selbar [data-fs]').forEach(b => {
     b.classList.toggle(
       'on',
       now.every(c => (c.fs || 'm') === b.dataset.fs),
-    ),
-  );
+    );
+  });
   renderWires();
   save();
 }

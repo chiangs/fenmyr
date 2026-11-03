@@ -1,4 +1,5 @@
 import type { GooColors } from '../goo.ts';
+
 // ---------- settings: Myra's color and greeting, her helpers, how the board looks ----------
 // Myra's colors: a cloudberry as it ripens, plus a couple of playful ones. B body, S bead shine, D seams and shade
 const GOLDEN: GooColors = { B: '#f6a63c', S: '#ffe0a0', D: '#de8526' };
@@ -12,6 +13,7 @@ export const MYRA_COLORS: Record<string, GooColors> = {
   frost: { B: '#9cc7ea', S: '#e3f1fc', D: '#5f97c9' },
   night: { B: '#4a4f7a', S: '#8d93c9', D: '#2b2e4f' },
 };
+
 import { isRecord } from '../../shared/model.ts';
 import type { Chattiness } from '../../shared/ops.ts';
 

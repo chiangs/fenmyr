@@ -1,22 +1,21 @@
-import { cardEl, closestTo } from '../ui/dom.ts';
-import { anchorOf, mrot, realBox, rhFor, tiltOf, toWorld } from './handles.ts';
-import { TILTS } from './render.ts';
-import { byId, linkById, selectOnly, selectWire } from './wires.ts';
 import { cropDown, cropping } from '../cards/crop.ts';
 import { stage } from '../core/dom.ts';
 import { remember, snapT } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
-import { fsMul } from '../selbar/textSize.ts';
 import { selCards } from '../selbar/selected.ts';
+import { fsMul } from '../selbar/textSize.ts';
 import { drawDown, drawOn } from '../tools/draw.ts';
 import { penDown, penT } from '../tools/pen.ts';
 import { placeAt, placing, stopPlacing } from '../tools/place.ts';
+import { cardEl, closestTo } from '../ui/dom.ts';
 import { inSection } from '../wireframe/sections.ts';
 import { groupOf, onFrame } from '../wireframe/tilt.ts';
 import { WF } from '../wireframe/wireframes.ts';
-import { appState, session } from '../core/state.ts';
-
+import { anchorOf, mrot, realBox, rhFor, tiltOf, toWorld } from './handles.ts';
 import { clearStuckDrag, targetHas, targetId } from './pointerKit.ts';
+import { TILTS } from './render.ts';
+import { byId, linkById, selectOnly, selectWire } from './wires.ts';
 
 // a press on the board: what it starts depends on where it lands (a handle, a wire, a card, empty board) and the tool in hand
 export function onPress(e: PointerEvent) {
@@ -100,7 +99,9 @@ export function onPress(e: PointerEvent) {
         dot0: { x: parseFloat(mrot.style.left), y: parseFloat(mrot.style.top) },
         items,
       };
-      items.forEach(it => cardEl(it.c.id)?.classList.add('tilting')); // no easing while turning, so nothing trails behind
+      items.forEach(it => {
+        cardEl(it.c.id)?.classList.add('tilting');
+      }); // no easing while turning, so nothing trails behind
       stage.setPointerCapture(e.pointerId);
       return;
     }
@@ -224,12 +225,21 @@ export function onPress(e: PointerEvent) {
       const ids = new Set(session.sel);
       [...session.sel].forEach(i => {
         const c = byId(i);
-        if (c?.type === 'section') inSection(c).forEach(k => ids.add(k.id));
+        if (c?.type === 'section')
+          inSection(c).forEach(k => {
+            ids.add(k.id);
+          });
       });
       [...ids].forEach(i => {
         const c = byId(i);
-        if (c?.type === 'coll') (c.kids || []).forEach(k => ids.add(k));
-        if (c?.type === 'frame') onFrame(c).forEach(k => ids.add(k.id));
+        if (c?.type === 'coll')
+          (c.kids || []).forEach(k => {
+            ids.add(k);
+          });
+        if (c?.type === 'frame')
+          onFrame(c).forEach(k => {
+            ids.add(k.id);
+          });
       });
       appState.drag = {
         mode: 'move',
@@ -261,12 +271,21 @@ export function onPress(e: PointerEvent) {
       const ids = new Set(session.sel);
       [...session.sel].forEach(i => {
         const c = byId(i);
-        if (c?.type === 'section') inSection(c).forEach(k => ids.add(k.id));
+        if (c?.type === 'section')
+          inSection(c).forEach(k => {
+            ids.add(k.id);
+          });
       });
       [...ids].forEach(i => {
         const c = byId(i);
-        if (c?.type === 'coll') (c.kids || []).forEach(k => ids.add(k));
-        if (c?.type === 'frame') onFrame(c).forEach(k => ids.add(k.id));
+        if (c?.type === 'coll')
+          (c.kids || []).forEach(k => {
+            ids.add(k);
+          });
+        if (c?.type === 'frame')
+          onFrame(c).forEach(k => {
+            ids.add(k.id);
+          });
       });
       appState.drag = {
         mode: 'move',

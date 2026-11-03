@@ -51,4 +51,4 @@ Each rule names the check that enforces it.
 - **User-facing text.** Myra speaks in the first person in her own lines, with ✦ used sparingly. Menus, tooltips, settings and errors are plain and neutral. Use British English.
 - **Commits.** The subject is a plain sentence. GitHub adds the PR number on merge.
 
-The budget in `tools/budget.json` records what is still being paid down: untyped files, `any`, casts, long files and logic in markup. Renderer modules start with `@ts-nocheck`, and Biome's linter is off for `src/web` until they are typed. `npm run budget` fails when any count rises.
+The budget in `tools/budget.json` counts untyped files, `any`, casts, long files and logic in markup. All are zero except three casts, each at a boundary: the bridge's reply, `$`, and `session` before a board loads. `npm run budget` fails when any count rises.

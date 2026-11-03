@@ -1,16 +1,16 @@
-import { currentVersion, maybeNews, newsKey } from './news.ts';
-import { openSetup } from './onboarding.ts';
-import { checkUpdate } from './updates.ts';
 import { fit } from '../canvas/handles.ts';
+import { appState, session } from '../core/state.ts';
 import { loadTemplates } from '../features/templates.ts';
-import { openBoard } from '../library/home.ts';
+import { openBoard } from '../library/openBoard.ts';
 import { newBoard } from '../model/boards.ts';
 import { greet } from '../myra/greet.ts';
 import { showConnections } from '../myra/helpers.ts';
 import { phone } from '../platform/phone.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { loadVaults } from '../vault/vaults.ts';
-import { appState, session } from '../core/state.ts';
+import { currentVersion, maybeNews, newsKey } from './news.ts';
+import { openSetup } from './onboarding.ts';
+import { checkUpdate } from './updates.ts';
 export function init64() {
   // ---------- start ----------
   (async () => {
@@ -25,7 +25,7 @@ export function init64() {
     let last = null;
     try {
       last = localStorage.getItem('fenmyr:last');
-    } catch (e) {}
+    } catch (_e) {}
     const first = list.find(b => b.id === last) ?? list[0];
     if (first) await openBoard(first.id);
     applySettings();
@@ -33,12 +33,12 @@ export function init64() {
     let onboarded = true;
     try {
       onboarded = !!localStorage.getItem('fenmyr:onboarded');
-    } catch (e) {}
+    } catch (_e) {}
     if (!onboarded) {
       appState.firstRunSetup = true;
       try {
         localStorage.setItem(newsKey, await currentVersion());
-      } catch (e) {}
+      } catch (_e) {}
       setTimeout(() => {
         fit(session.board.cards);
         openSetup();

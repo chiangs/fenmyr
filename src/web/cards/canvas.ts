@@ -1,10 +1,10 @@
+import type { CardOf } from '../../shared/model.ts';
 import { fit } from '../canvas/handles.ts';
-import { openBoard } from '../library/home.ts';
+import { session } from '../core/state.ts';
 import { miniCache } from '../library/homeTiles.ts';
+import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { newBoard } from '../model/boards.ts';
-import { session } from '../core/state.ts';
-import type { CardOf } from '../../shared/model.ts';
 
 // ---------- canvases: a board inside this board, like a folder you can open ----------
 export async function openCanvas(c: CardOf<'canvas'>) {

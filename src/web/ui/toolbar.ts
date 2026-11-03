@@ -2,9 +2,11 @@ import { byId } from '../canvas/wires.ts';
 import { addImages } from '../cards/spotify.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
-import { closeHome, homeAt, openBoard } from '../library/home.ts';
+import { closeHome, homeAt } from '../library/home.ts';
 import { newBoardIn } from '../library/nesting.ts';
+import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, renameNewest, uniqueName } from '../library/rowMenu.ts';
 import { foldersIn, makeFolder, makeProject, saveLib } from '../library/tree.ts';
 import { readyToRecord } from '../media/devices.ts';
@@ -14,10 +16,9 @@ import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { endPen, penT, startPen } from '../tools/pen.ts';
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { renderWheel } from '../tools/stamps.ts';
-import { tbRect } from './toolbarConfig.ts';
 import { openVaultPicker } from '../vault/ask.ts';
-import { appState, session } from '../core/state.ts';
 import { closestTo, elementById } from './dom.ts';
+import { tbRect } from './toolbarConfig.ts';
 
 // links get a little paste box under the toolbar (the app can't show the browser's prompt)
 
@@ -27,7 +28,9 @@ export function toPointer() {
   if (penT) endPen(true);
   stopPlacing();
   if (drawOn) exitDraw();
-  ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(id => $(id)?.classList.remove('on'));
+  ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(id => {
+    $(id)?.classList.remove('on');
+  });
   syncPointer();
 }
 
@@ -64,9 +67,9 @@ export function init21() {
     const mo = new MutationObserver(() => syncPointer());
     mo.observe($('tools'), { subtree: true, attributes: true, attributeFilter: ['class'] });
     mo.observe($('dock'), { attributes: true, attributeFilter: ['class'] });
-    ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(
-      id => $(id) && mo.observe($(id), { attributes: true, attributeFilter: ['class'] }),
-    );
+    ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(id => {
+      $(id) && mo.observe($(id), { attributes: true, attributeFilter: ['class'] });
+    });
   }
 
   $('tools').onclick = e => {
@@ -87,7 +90,9 @@ export function init21() {
       stopPlacing();
       const r = tbRect(b),
         sr = stage.getBoundingClientRect();
-      ['stampWheel', 'stampPick'].forEach(id => ($(id).style.left = r.left + r.width / 2 - sr.left + 'px'));
+      ['stampWheel', 'stampPick'].forEach(id => {
+        $(id).style.left = `${r.left + r.width / 2 - sr.left}px`;
+      });
       renderWheel();
       $('stampWheel').classList.toggle('on', on);
       b.classList.toggle('on', on);
@@ -99,7 +104,7 @@ export function init21() {
       stopPlacing();
       const r = tbRect(b),
         sr = stage.getBoundingClientRect();
-      $('shapePick').style.left = r.left + r.width / 2 - sr.left + 'px';
+      $('shapePick').style.left = `${r.left + r.width / 2 - sr.left}px`;
       $('shapePick').classList.toggle('on', on);
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');
@@ -110,7 +115,7 @@ export function init21() {
       stopPlacing();
       const r = tbRect(b),
         sr = stage.getBoundingClientRect();
-      $('tplPick').style.left = r.left + r.width / 2 - sr.left + 'px';
+      $('tplPick').style.left = `${r.left + r.width / 2 - sr.left}px`;
       $('tplPick').classList.toggle('on', on);
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');

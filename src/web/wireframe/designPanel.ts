@@ -7,8 +7,6 @@ import { save } from '../core/history.ts';
 import { selCards } from '../selbar/selected.ts';
 import { startPlacing, stopPlacing } from '../tools/place.ts';
 import { closestTo, htmlIn, textField } from '../ui/dom.ts';
-import { groupSel } from './stack.ts';
-import { DEVICES, WF } from './wireframes.ts';
 import {
   alignSection,
   boxSection,
@@ -21,6 +19,8 @@ import {
   sec,
   textSection,
 } from './designMarkup.ts';
+import { groupSel } from './stack.ts';
+import { DEVICES, WF } from './wireframes.ts';
 
 // icons: search Myra's icon set, then click to place (or swap the selected icon)
 let iconSwap: string | null = null;
@@ -41,7 +41,9 @@ function renderIcons() {
 
 // the design panel: tools when nothing's picked, the selection's settings when something is
 export function pickWF(t: string | null = null) {
-  htmlIn(document, '[data-wf]').forEach(b => b.classList.toggle('on', b.dataset.wf === t));
+  htmlIn(document, '[data-wf]').forEach(b => {
+    b.classList.toggle('on', b.dataset.wf === t);
+  });
   $('dzPresets').classList.toggle('on', t === 'frame');
   $('dzIcons').classList.toggle('on', t === 'icon');
   if (t === 'icon') {
@@ -50,7 +52,10 @@ export function pickWF(t: string | null = null) {
     return;
   }
   iconSwap = null;
-  if (t) htmlIn(document, '.dz-piece-grid .on').forEach(x => x.classList.remove('on'));
+  if (t)
+    htmlIn(document, '.dz-piece-grid .on').forEach(x => {
+      x.classList.remove('on');
+    });
   if (t === 'frame') {
     $('dzPresets').innerHTML = Object.keys(DEVICES)
       .map(n => `<button data-dev="${n}">${n}</button>`)
@@ -180,7 +185,9 @@ export function initDesign() {
     const b = closestTo(e.target, '[data-icon]'),
       name = b?.dataset.icon;
     if (!b || !name) return;
-    htmlIn($('iconGrid'), '.on').forEach(x => x.classList.remove('on'));
+    htmlIn($('iconGrid'), '.on').forEach(x => {
+      x.classList.remove('on');
+    });
     b.classList.add('on');
     const c = iconSwap ? byId(iconSwap) : undefined;
     if (c) {
@@ -195,22 +202,23 @@ export function initDesign() {
     startPlacing('icon', { name });
   };
 
-  htmlIn(document, '[data-wf]').forEach(
-    b =>
-      (b.onclick = () => {
-        if (b.classList.contains('on')) {
-          stopPlacing();
-          pickWF(null);
-          return;
-        }
-        pickWF(b.dataset.wf ?? null);
-      }),
-  );
+  htmlIn(document, '[data-wf]').forEach(b => {
+    b.onclick = () => {
+      if (b.classList.contains('on')) {
+        stopPlacing();
+        pickWF(null);
+        return;
+      }
+      pickWF(b.dataset.wf ?? null);
+    };
+  });
 
   $('dzPresets').onclick = e => {
     const b = closestTo(e.target, '[data-dev]');
     if (!b) return;
-    htmlIn($('dzPresets'), 'button').forEach(x => x.classList.toggle('on', x === b));
+    htmlIn($('dzPresets'), 'button').forEach(x => {
+      x.classList.toggle('on', x === b);
+    });
     startPlacing('frame', { device: b.dataset.dev });
   };
 
@@ -286,7 +294,10 @@ export function initDesign() {
       ta = closestTo(e.target, '[data-talign]')?.dataset.talign,
       al = closestTo(e.target, '[data-align]')?.dataset.align,
       di = closestTo(e.target, '[data-dist]')?.dataset.dist;
-    if (ta) cs.forEach(c => (c.align = ta));
+    if (ta)
+      cs.forEach(c => {
+        c.align = ta;
+      });
     if (al) {
       // line them up with each other, or a single thing with its screen
       const only = cs.length === 1 ? cs[0] : undefined,
@@ -320,7 +331,9 @@ export function initDesign() {
       });
     }
     if (ta || al || di) {
-      cs.forEach(c => renderCard(c));
+      cs.forEach(c => {
+        renderCard(c);
+      });
       selectOnly(cs.map(c => c.id));
       renderWires();
       save();

@@ -1,5 +1,5 @@
 import { isRecord } from '../../shared/model.ts';
-import { B, FIELD_LABEL, IC, type Piece, T, numOf, recs, str, strs } from './pieceKit.ts';
+import { B, FIELD_LABEL, IC, numOf, type Piece, recs, str, strs, T } from './pieceKit.ts';
 
 // more elements: media, form fields, tabs, a table, an accordion and a dialog (a person can search all of them in the panel)
 export const MORE: Record<string, Piece> = {

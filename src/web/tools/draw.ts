@@ -1,16 +1,15 @@
-import { cardEl } from '../ui/dom.ts';
+import { type InkPoint, isRecord } from '../../shared/model.ts';
 import { toWorld } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { colorLabel } from '../core/base.ts';
 import { $, stage, world } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { card } from '../model/boards.ts';
-import { stopPlacing } from './place.ts';
 import { session } from '../core/state.ts';
-import { INKS, PEN_SIZE, inkPath, penW } from './ink.ts';
-import { type InkPoint, isRecord } from '../../shared/model.ts';
-import { closestTo, htmlIn } from '../ui/dom.ts';
+import { card } from '../model/boards.ts';
+import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
+import { INKS, inkPath, PEN_SIZE, penW } from './ink.ts';
+import { stopPlacing } from './place.ts';
 
 // the drawing in progress: points with times, and the pen it's drawn with
 type Stroke = { pts: InkPoint[]; tool: string; size: number; color: string };
@@ -39,12 +38,12 @@ const curSize = () => pen.sizes[pen.tool] || 9;
 
 const sizeToT = (v: number) => {
   const [a, b] = range();
-  return Math.pow((v - a) / (b - a), 1 / 1.7);
+  return ((v - a) / (b - a)) ** (1 / 1.7);
 };
 // a gentle curve: fine control at the thin end
 const tToSize = (t: number) => {
   const [a, b] = range();
-  return Math.round(a + (b - a) * Math.pow(Math.min(1, Math.max(0, t)), 1.7));
+  return Math.round(a + (b - a) * Math.min(1, Math.max(0, t)) ** 1.7);
 };
 
 function setSize(v: number) {
@@ -53,7 +52,7 @@ function setSize(v: number) {
   paintSize();
   try {
     localStorage.setItem('fenmyr:pen', JSON.stringify(pen));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 function paintSize() {
@@ -67,8 +66,8 @@ function paintSize() {
   const dot = $('dbsDot'),
     d = Math.min(22, Math.max(3, v * (er ? 0.35 : 0.6)));
   Object.assign(dot.style, {
-    width: d + 'px',
-    height: d + 'px',
+    width: `${d}px`,
+    height: `${d}px`,
     background: col,
     opacity: pen.tool === 'hi' ? '0.45' : '1',
   });
@@ -78,14 +77,14 @@ function paintSize() {
   if (!(bub instanceof HTMLElement)) return;
   const bd = Math.min(110, Math.max(2, er ? v : v * session.view.z));
   Object.assign(bub.style, {
-    width: bd + 'px',
-    height: bd + 'px',
+    width: `${bd}px`,
+    height: `${bd}px`,
     background: col,
     opacity: pen.tool === 'hi' ? '0.45' : '1',
   });
   bub.classList.toggle('er', er);
   const ring = document.getElementById('eraseRing');
-  if (ring) Object.assign(ring.style, { width: v + 'px', height: v + 'px', margin: `${-v / 2}px 0 0 ${-v / 2}px` });
+  if (ring) Object.assign(ring.style, { width: `${v}px`, height: `${v}px`, margin: `${-v / 2}px 0 0 ${-v / 2}px` });
 }
 
 function renderDrawbar() {
@@ -103,7 +102,7 @@ function renderDrawbar() {
   stage.classList.toggle('drawing', drawOn && pen.tool !== 'eraser');
   try {
     localStorage.setItem('fenmyr:pen', JSON.stringify(pen));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 export function enterDraw() {
@@ -266,8 +265,8 @@ export function init50() {
     const ring = document.getElementById('eraseRing');
     if (ring) {
       const r = stage.getBoundingClientRect();
-      ring.style.left = e.clientX - r.left + 'px';
-      ring.style.top = e.clientY - r.top + 'px';
+      ring.style.left = `${e.clientX - r.left}px`;
+      ring.style.top = `${e.clientY - r.top}px`;
     }
     if (erasing) return eraseAt(e);
     if (!stroke) return;

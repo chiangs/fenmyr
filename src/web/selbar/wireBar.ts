@@ -2,10 +2,10 @@ import type { Link } from '../../shared/model.ts';
 import { linkById, renderWires, wireColor, wireW } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo } from '../ui/dom.ts';
-import { session } from '../core/state.ts';
-import { ICON, caret, closeSbPops, openBarColor, pop } from './barKit.ts';
+import { caret, closeSbPops, ICON, openBarColor, pop } from './barKit.ts';
 
 const WCOL = [
   ['Default (follows the theme)', ''],
@@ -34,19 +34,19 @@ const wline = (n: number) =>
   `<svg class="sb-wl" width="26" height="14" viewBox="0 0 26 14"><line x1="3" y1="7" x2="23" y2="7" stroke="currentColor" stroke-width="${n}" stroke-linecap="round"/></svg>`;
 
 // what the bar shows depends on all of these; the bar is rebuilt only when this changes
-export const wireKey = (lw: Link) => 'w' + lw.id + lw.bend + lw.dash + lw.arrow + !!(lw.pa || lw.pb) + lw.w + lw.color;
+export const wireKey = (lw: Link) => `w${lw.id}${lw.bend}${lw.dash}${lw.arrow}${!!(lw.pa || lw.pb)}${lw.w}${lw.color}`;
 
 // the bar for a selected connector: colour, weight, curved or straight, dashes, arrow, ends
 export function wireBarHtml(lw: Link) {
   const cw = wireColor(lw),
     ww = wireW(lw),
     CARET = caret();
-  const dots =
-    WCOL.map(([n, hex]) => {
-      const cls = `${cw === hex ? 'on' : ''}${hex ? '' : ' sb-wdef'}`,
+  const colours = WCOL.map(([n, hex]) => {
+      const cls = (cw === hex ? 'on' : '') + (hex ? '' : ' sb-wdef'),
         style = hex ? `background:${hex}` : '';
       return `<button data-wb="col:${hex}" title="${n}" class="${cls}" style="${style}"></button>`;
-    }).join('') + `<button data-wb="colcustom" title="Pick another colour…" class="sb-wcustom"></button>`;
+    }).join(''),
+    dots = `${colours}<button data-wb="colcustom" title="Pick another colour…" class="sb-wcustom"></button>`;
   const curCls = cw ? '' : ' sb-wdef',
     curStyle = cw ? `background:${cw}` : '';
   const colorTrig = pop(

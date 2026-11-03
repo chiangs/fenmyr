@@ -3,13 +3,13 @@ import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { $, cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
 import { chirp } from '../settings/licenses.ts';
-import { renderPalette } from '../ui/palette.ts';
-import { session } from '../core/state.ts';
 import { closestTo } from '../ui/dom.ts';
+import { renderPalette } from '../ui/palette.ts';
 import { layerName } from './layerNames.ts';
-import { LY, type LayerNode, lyAll, lyBringIntoView, lyFind, lyFlash, lyHL, renderLayers } from './layers.ts';
+import { type LayerNode, LY, lyAll, lyBringIntoView, lyFind, lyFlash, lyHL, renderLayers } from './layers.ts';
 
 export function wireLayers() {
   const list = $('layers');
@@ -17,14 +17,18 @@ export function wireLayers() {
   list.dataset.wired = '1';
   list.addEventListener('pointerover', e => {
     const r = closestTo(e.target, '.ly', HTMLElement);
-    cardsEl.querySelectorAll('.ly-hl').forEach(el => el.classList.remove('ly-hl'));
+    cardsEl.querySelectorAll('.ly-hl').forEach(el => {
+      el.classList.remove('ly-hl');
+    });
     if (r) {
       const n = lyFind(r.dataset.key ?? '');
       n && lyHL(lyAll(n), true);
     }
   });
   list.addEventListener('pointerleave', () =>
-    cardsEl.querySelectorAll('.ly-hl').forEach(el => el.classList.remove('ly-hl')),
+    cardsEl.querySelectorAll('.ly-hl').forEach(el => {
+      el.classList.remove('ly-hl');
+    }),
   );
   // right-click a layer: the same menu as right-clicking that thing on the board (it gets selected first, if it isn't already)
   list.addEventListener('contextmenu', e => {
@@ -90,7 +94,9 @@ export function wireLayers() {
     endEdit();
     if (e.shiftKey || e.metaKey || e.ctrlKey) {
       const all = n.ids.every(i => session.sel.has(i));
-      n.ids.forEach(i => (all ? session.sel.delete(i) : session.sel.add(i)));
+      n.ids.forEach(i => {
+        all ? session.sel.delete(i) : session.sel.add(i);
+      });
       selectOnly([...session.sel]);
     } else selectOnly(n.ids);
     lyBringIntoView(n.ids);
@@ -179,7 +185,7 @@ export function wireLayers() {
     e.dataTransfer.effectAllowed = 'move';
     try {
       e.dataTransfer.setData('text/plain', '');
-    } catch (er) {}
+    } catch (_er) {}
   });
   const parentKey = (key: string) => {
     const find = (ns: LayerNode[], p: string): string | undefined => {
@@ -194,7 +200,9 @@ export function wireLayers() {
   };
   list.addEventListener('dragover', e => {
     const r = closestTo(e.target, '.ly', HTMLElement);
-    list.querySelectorAll('.drop-a, .drop-b').forEach(x => x.classList.remove('drop-a', 'drop-b'));
+    list.querySelectorAll('.drop-a, .drop-b').forEach(x => {
+      x.classList.remove('drop-a', 'drop-b');
+    });
     if (!r || !LY.drag || r.dataset.key === LY.drag || parentKey(r.dataset.key ?? '') !== parentKey(LY.drag)) return;
     e.preventDefault();
     const b = r.getBoundingClientRect();
@@ -202,9 +210,9 @@ export function wireLayers() {
   });
   list.addEventListener('dragend', () => {
     LY.drag = null;
-    list
-      .querySelectorAll('.dragging, .drop-a, .drop-b')
-      .forEach(x => x.classList.remove('dragging', 'drop-a', 'drop-b'));
+    list.querySelectorAll('.dragging, .drop-a, .drop-b').forEach(x => {
+      x.classList.remove('dragging', 'drop-a', 'drop-b');
+    });
   });
   list.addEventListener('drop', e => {
     const r = closestTo(e.target, '.drop-a, .drop-b', HTMLElement);

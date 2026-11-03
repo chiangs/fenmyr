@@ -1,21 +1,20 @@
-import { cardEl, oneIn } from '../ui/dom.ts';
-import { cloneForDrag } from './clipboard.ts';
-import { ROT_FIXED, toWorld } from './handles.ts';
-import { titleW } from './render.ts';
-import { applyView } from './view.ts';
-import { byId, renderWires, selectOnly, wireGeom } from './wires.ts';
 import { CGAP, CPAD, CW, layoutColl } from '../cards/collection.ts';
 import { collAt } from '../cards/kanban.ts';
 import { clamp } from '../core/base.ts';
 import { $, cardsEl, stage, world } from '../core/dom.ts';
+import { appState, session } from '../core/state.ts';
 import { docTarget } from '../docs/drop.ts';
 import { fsMul, SIZED } from '../selbar/textSize.ts';
 import { penMove, penT } from '../tools/pen.ts';
+import { cardEl, oneIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
 import { groupOf, snapWF } from '../wireframe/tilt.ts';
-import { appState, session } from '../core/state.ts';
-
+import { cloneForDrag } from './clipboard.ts';
+import { ROT_FIXED, toWorld } from './handles.ts';
 import { overTray, setFs } from './pointerKit.ts';
+import { titleW } from './render.ts';
+import { applyView } from './view.ts';
+import { byId, renderWires, selectOnly, wireGeom } from './wires.ts';
 
 // the pointer moving with a button held: one step of whatever the press started
 export function onDragMove(e: PointerEvent) {
@@ -59,7 +58,9 @@ export function onDragMove(e: PointerEvent) {
     $('tray').classList.toggle('drop', overTray(e));
     const loose = d.start.filter(s => s.c.type !== 'coll'),
       skip = new Set(d.start.filter(s => s.c.type === 'coll').map(s => s.c.id));
-    cardsEl.querySelectorAll('.drop-in, .drop-col').forEach(n => n.classList.remove('drop-in', 'drop-col'));
+    cardsEl.querySelectorAll('.drop-in, .drop-col').forEach(n => {
+      n.classList.remove('drop-in', 'drop-col');
+    });
     const dt = loose.length && !skip.size && docTarget(e, w, loose);
     $('docview').classList.toggle('drop', dt === 'page');
     if (dt && dt !== 'page') {
@@ -81,8 +82,8 @@ export function onDragMove(e: PointerEvent) {
     }
     if (c.type === 'stamp' || c.type === 'icon') {
       c.w = c.h = clamp(d.w0 + Math.max(w.x - d.sx, w.y - d.sy), 24, 400);
-      Object.assign(el.style, { width: c.w + 'px', height: c.h + 'px' });
-      el.style.setProperty('--sz', c.w + 'px');
+      Object.assign(el.style, { width: `${c.w}px`, height: `${c.h}px` });
+      el.style.setProperty('--sz', `${c.w}px`);
       return;
     }
     // Shift + resize scales the whole thing: same shape, and the words (and everything inside) grow or shrink with it
@@ -106,8 +107,8 @@ export function onDragMove(e: PointerEvent) {
       el.classList.add('fixedw');
     }
     if (c.type === 'note' || c.type === 'todo') c.userH = c.h;
-    el.style.width = c.w + 'px';
-    if (c.type !== 'title') el.style.height = c.h + 'px';
+    el.style.width = `${c.w}px`;
+    if (c.type !== 'title') el.style.height = `${c.h}px`;
     else c.h = el.offsetHeight;
     renderWires();
     if (scaling) return;
@@ -130,15 +131,15 @@ export function onDragMove(e: PointerEvent) {
       const el = cardEl(c.id);
       if (el) {
         Object.assign(el.style, {
-          left: c.x + 'px',
-          top: c.y + 'px',
+          left: `${c.x}px`,
+          top: `${c.y}px`,
           width: titleW(c),
-          height: c.type === 'title' ? 'auto' : c.h + 'px',
+          height: c.type === 'title' ? 'auto' : `${c.h}px`,
         });
         el.style.setProperty('--fs', String(fsMul(c)));
         if (c.type === 'text') {
           const tx = oneIn(el, '.tx');
-          if (tx) tx.style.fontSize = (c.size || 18) + 'px';
+          if (tx) tx.style.fontSize = `${c.size || 18}px`;
         }
       }
     });
@@ -158,10 +159,10 @@ export function onDragMove(e: PointerEvent) {
       const el = cardEl(c.id);
       if (el)
         Object.assign(el.style, {
-          left: c.x + 'px',
-          top: c.y + 'px',
+          left: `${c.x}px`,
+          top: `${c.y}px`,
           width: titleW(c),
-          height: c.type === 'title' ? 'auto' : c.h + 'px',
+          height: c.type === 'title' ? 'auto' : `${c.h}px`,
         });
     });
     renderWires();
@@ -188,24 +189,24 @@ export function onDragMove(e: PointerEvent) {
       c.y = ny - it.h / 2;
       const el = cardEl(c.id);
       if (el) {
-        el.style.left = c.x + 'px';
-        el.style.top = c.y + 'px';
+        el.style.left = `${c.x}px`;
+        el.style.top = `${c.y}px`;
       }
       if (ROT_FIXED.includes(c.type)) return;
       if (it.wf) {
         c.rot = +(it.r0 + a).toFixed(2);
-        el?.style.setProperty('--rot', c.rot + 'deg');
+        el?.style.setProperty('--rot', `${c.rot}deg`);
       } else {
         c.r = +(it.r0 + a).toFixed(2);
         if (c.type === 'stamp') c.tilted = true;
-        el?.style.setProperty('--tilt', c.r + 'deg');
+        el?.style.setProperty('--tilt', `${c.r}deg`);
       }
     });
     renderWires();
     const rb = $('rotBadge');
-    rb.textContent = Math.round(a) + '°';
-    rb.style.left = e.clientX + 18 + 'px';
-    rb.style.top = e.clientY - 34 + 'px';
+    rb.textContent = `${Math.round(a)}°`;
+    rb.style.left = `${e.clientX + 18}px`;
+    rb.style.top = `${e.clientY - 34}px`;
     rb.classList.add('on');
   }
   if (d.mode === 'rotate') {
@@ -217,16 +218,16 @@ export function onDragMove(e: PointerEvent) {
     if (d.tilt) {
       d.c.r = Math.round(a);
       d.c.tilted = true;
-      cardEl(d.c.id)?.style.setProperty('--tilt', d.c.r + 'deg');
+      cardEl(d.c.id)?.style.setProperty('--tilt', `${d.c.r}deg`);
     } else {
       d.c.rot = Math.round(a);
-      cardEl(d.c.id)?.style.setProperty('--rot', d.c.rot + 'deg');
+      cardEl(d.c.id)?.style.setProperty('--rot', `${d.c.rot}deg`);
       syncDesign();
     }
     const rb = $('rotBadge');
-    rb.textContent = Math.round(a) + '°';
-    rb.style.left = e.clientX + 18 + 'px';
-    rb.style.top = e.clientY - 34 + 'px';
+    rb.textContent = `${Math.round(a)}°`;
+    rb.style.left = `${e.clientX + 18}px`;
+    rb.style.top = `${e.clientY - 34}px`;
     rb.classList.add('on');
   }
   if (d.mode === 'drawbox') {
@@ -239,10 +240,10 @@ export function onDragMove(e: PointerEvent) {
     const x = Math.min(d.sx, w.x),
       y = Math.min(d.sy, w.y);
     Object.assign(r.style, {
-      left: x + 'px',
-      top: y + 'px',
-      width: Math.abs(w.x - d.sx) + 'px',
-      height: Math.abs(w.y - d.sy) + 'px',
+      left: `${x}px`,
+      top: `${y}px`,
+      width: `${Math.abs(w.x - d.sx)}px`,
+      height: `${Math.abs(w.y - d.sy)}px`,
     });
   }
   if (d.mode === 'bend') {
@@ -274,10 +275,10 @@ export function onDragMove(e: PointerEvent) {
       y1 = Math.max(d.sy, e.clientY);
     Object.assign(m.style, {
       display: 'block',
-      left: x0 - r.left + 'px',
-      top: y0 - r.top + 'px',
-      width: x1 - x0 + 'px',
-      height: y1 - y0 + 'px',
+      left: `${x0 - r.left}px`,
+      top: `${y0 - r.top}px`,
+      width: `${x1 - x0}px`,
+      height: `${y1 - y0}px`,
     });
     const a = toWorld(x0, y0),
       b = toWorld(x1, y1),

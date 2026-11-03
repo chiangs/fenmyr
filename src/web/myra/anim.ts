@@ -1,8 +1,8 @@
-import { partyMyra, setPose, timerPose, wantedPose } from '../features/timer.ts';
-import { goo, hopMyra } from './goos.ts';
-import { reply } from '../settings/licenses.ts';
 import { appState } from '../core/state.ts';
+import { partyMyra, setPose, timerPose, wantedPose } from '../features/timer.ts';
 import type { Pose } from '../goo.ts';
+import { reply } from '../settings/licenses.ts';
+import { goo, hopMyra } from './goos.ts';
 
 // an animation either plays something (play) or holds a face for a while (pose)
 type Anim = { name: string; desc: string; line: string; ms: number; play?: () => void; pose?: Pose };

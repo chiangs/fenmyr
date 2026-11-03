@@ -1,10 +1,10 @@
 import type { TestHooks } from './app/testHooks.ts';
 import type { FenmyrApi } from './bridge.ts';
-import type { Goo as makeGoo } from './goo.ts';
-import type { Phone } from './platform/phone.ts';
 import type { DocxBundle, EditorBundle } from './docs/editorTypes.ts';
 import type { TimerLine } from './features/timer.ts';
+import type { Goo as makeGoo } from './goo.ts';
 import type { BirthdayDue, BirthdayLine } from './myra/birthday.ts';
+import type { Phone } from './platform/phone.ts';
 
 declare global {
   function Icon(name: string, opts?: { size?: number; cls?: string; title?: string }): string;

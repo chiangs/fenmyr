@@ -1,4 +1,4 @@
-import { type CardOf } from '../../shared/model.ts';
+import type { CardOf } from '../../shared/model.ts';
 import { closestTo, elementById } from '../ui/dom.ts';
 import type { DocEditor } from './editorTypes.ts';
 
@@ -10,16 +10,17 @@ export function editorBundle() {
   if (!b) throw new Error("The doc editor didn't load.");
   return b;
 }
+
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { CIC } from '../cards/shapes.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
+import { useFont } from '../wireframe/tilt.ts';
+import { docHTML, fontsIn } from './docText.ts';
 import { hidePop, showPop } from './menus.ts';
 import { buildTools, paintTools } from './toolbar.ts';
-import { useFont } from '../wireframe/tilt.ts';
-import { session } from '../core/state.ts';
-import { docHTML, fontsIn } from './docText.ts';
 
 // ---------- docs: a real document editor (styles, fonts, sizes, colors, lists, tables, images, Myra on any words), beside the board ----------
 // A doc keeps its rich content in c.doc (the editor's own structured format) and a plain-text copy in c.body (for the card, search and Myra).
@@ -58,13 +59,17 @@ function ensureEditor() {
         if (!fs.length) return false;
         e.preventDefault();
         const pos = v.posAtCoords({ left: e.clientX, top: e.clientY })?.pos;
-        fs.forEach(f => addDocImage(f, pos));
+        fs.forEach(f => {
+          addDocImage(f, pos);
+        });
         return true;
       },
       handlePaste: (_v, e) => {
         const fs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/'));
         if (!fs.length) return false;
-        fs.forEach(f => addDocImage(f));
+        fs.forEach(f => {
+          addDocImage(f);
+        });
         return true;
       },
     },
@@ -107,9 +112,10 @@ function placeBubble() {
   }
   const sel = getSelection();
   // where the selected words really are on screen
-  let rc: { left: number; right: number; top: number; bottom: number; width?: number } | null =
-    sel && sel.rangeCount ? sel.getRangeAt(0).getBoundingClientRect() : null;
-  if (!rc || !rc.width) {
+  let rc: { left: number; right: number; top: number; bottom: number; width?: number } | null = sel?.rangeCount
+    ? sel.getRangeAt(0).getBoundingClientRect()
+    : null;
+  if (!rc?.width) {
     const { from, to } = ed.state.selection,
       a = ed.view.coordsAtPos(from),
       b = ed.view.coordsAtPos(to);
@@ -125,8 +131,8 @@ function placeBubble() {
     h = bubbleEl.offsetHeight;
   const cx = (rc.left + rc.right) / 2,
     top = rc.top - h - 10;
-  bubbleEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, cx - w / 2)) + 'px';
-  bubbleEl.style.top = Math.max(8, Math.min(innerHeight - h - 8, top < 8 ? rc.bottom + 10 : top)) + 'px';
+  bubbleEl.style.left = `${Math.max(8, Math.min(innerWidth - w - 8, cx - w / 2))}px`;
+  bubbleEl.style.top = `${Math.max(8, Math.min(innerHeight - h - 8, top < 8 ? rc.bottom + 10 : top))}px`;
 }
 
 export function syncDoc() {
@@ -200,7 +206,7 @@ export function closeDoc() {
 export const pagePref = () => {
   try {
     return localStorage.getItem('fenmyr:docPage') || 'auto';
-  } catch (e) {
+  } catch (_e) {
     return 'auto';
   }
 };
@@ -255,7 +261,9 @@ export function init53() {
   document.body.appendChild(imgPick);
 
   imgPick.onchange = () => {
-    [...(imgPick.files ?? [])].forEach(f => addDocImage(f));
+    [...(imgPick.files ?? [])].forEach(f => {
+      addDocImage(f);
+    });
     imgPick.value = '';
   };
 

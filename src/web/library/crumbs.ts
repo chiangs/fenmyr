@@ -1,7 +1,7 @@
 import type { BoardSummary } from '../../shared/ops.ts';
 import { $ } from '../core/dom.ts';
-import { folderChain } from './tree.ts';
 import { appState, session } from '../core/state.ts';
+import { folderChain } from './tree.ts';
 
 export const where = () => {
   const f = appState.folders.find(x => x.id === session.board?.folder),

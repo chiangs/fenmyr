@@ -6,28 +6,29 @@ const closeTplPick = () => {
   $('tplPick').classList.remove('on');
   $('tools').querySelector('[data-add="tpl"]')?.classList.remove('on');
 };
-import { showDialog } from '../ui/popover.ts';
-import { esc } from '../ui/dom.ts';
+
 import { typesWith } from '../../shared/cardTypes.ts';
 import { fit, placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { FRAMEWORKS } from '../content/frameworks.ts';
-import { STARTERS, TPL_IC, placeFramework } from '../content/placeFramework.ts';
+import { placeFramework, STARTERS, TPL_IC } from '../content/placeFramework.ts';
 import { hasAll, queryWords, uid } from '../core/base.ts';
-import { instantiate, templateFrom } from './templateCards.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { cardName } from './export.ts';
-import { openBoard } from '../library/home.ts';
+import { session } from '../core/state.ts';
+import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { foldersIn } from '../library/tree.ts';
-import { TEMPLATES, newBoard } from '../model/boards.ts';
+import { newBoard, TEMPLATES } from '../model/boards.ts';
 import { say } from '../settings/licenses.ts';
 import { stopPlacing } from '../tools/place.ts';
+import { esc } from '../ui/dom.ts';
+import { showDialog } from '../ui/popover.ts';
 import { scope } from '../ui/toolbar.ts';
-import { session } from '../core/state.ts';
+import { cardName } from './export.ts';
+import { instantiate, templateFrom } from './templateCards.ts';
 
 // ---------- your own templates: save a selection (or the whole board); use it on a board or as a new one (Settings decides) ----------
 export let myTpls: Template[] = [];
@@ -51,7 +52,7 @@ export async function saveAsTemplate(
   ids: string[] | null | undefined,
   opts: { desc?: string; mode?: string } = {},
 ) {
-  const cs = ids && ids.length ? ids.map(byId).filter(c => c !== undefined) : session.board.cards;
+  const cs = ids?.length ? ids.map(byId).filter(c => c !== undefined) : session.board.cards;
   if (!cs.some(c => !NO_KEEP.includes(c.type))) {
     say('There’s nothing here I can keep in a template yet ✦', 3000);
     return null;
@@ -130,7 +131,7 @@ function templateDialog(t: { name?: string; desc?: string; mode?: string }, edit
 
 // right-click → ask how it should be kept → save
 export async function saveWithDialog(ids: string[] | null) {
-  const cs = ids && ids.length ? ids.map(byId).filter(c => c !== undefined) : session.board.cards;
+  const cs = ids?.length ? ids.map(byId).filter(c => c !== undefined) : session.board.cards;
   if (!cs.some(c => !NO_KEEP.includes(c.type))) {
     say('There’s nothing here I can keep in a template yet ✦', 3000);
     return;
@@ -173,7 +174,9 @@ export async function useTemplate(t: Template, as?: string) {
   const inst = instantiate(t, 0, 0);
   session.board.cards.push(...inst.cards);
   session.board.links.push(...inst.links);
-  inst.cards.forEach(c => renderCard(c, true));
+  inst.cards.forEach(c => {
+    renderCard(c, true);
+  });
   layoutAll();
   placeInView(inst.cards);
   renderWires();
@@ -231,11 +234,15 @@ const searchBox = () => {
 // the search sits at the bottom, next to the toolbar button, and has the cursor when the menu opens
 export function buildTplPick() {
   const q = searchBox()?.value || '',
-    searchIcon = Icon('search', { size: 16 });
+    searchIcon = Icon('search', { size: 16 }),
+    mine = myTpls.map(mineRow).join('');
   $('tplPick').innerHTML =
     '<div class="tp-list">' +
-    TPL_GROUPS.map(([g, keys]) => `<div class="tp-h">${g}</div>` + keys.map(tplRow).join('')).join('') +
-    (myTpls.length ? '<div class="tp-h">Yours</div>' + myTpls.map(mineRow).join('') : '') +
+    TPL_GROUPS.map(([g, keys]) => {
+      const rows = keys.map(tplRow).join('');
+      return `<div class="tp-h">${g}</div>${rows}`;
+    }).join('') +
+    (myTpls.length ? `<div class="tp-h">Yours</div>${mine}` : '') +
     '<div class="tp-none" hidden>No templates match</div></div>' +
     `<label class="tp-search">${searchIcon}<input id="tpSearch" placeholder="Search templates…" autocomplete="off" spellcheck="false"></label>`;
   const box = searchBox();

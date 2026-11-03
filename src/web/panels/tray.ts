@@ -2,10 +2,10 @@ import { toWorld } from '../canvas/handles.ts';
 import { overTray } from '../canvas/pointerKit.ts';
 import { renderTray, takeFromTray } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
-import { homeAt } from '../library/home.ts';
-import { openVaultPicker } from '../vault/ask.ts';
 import { session } from '../core/state.ts';
+import { homeAt } from '../library/home.ts';
 import { closestTo } from '../ui/dom.ts';
+import { openVaultPicker } from '../vault/ask.ts';
 
 // ---------- the tray: drag ideas out onto the board ----------
 // Unsorted collapses to its title with its – button, like the other widgets, and remembers it
@@ -15,12 +15,12 @@ const trayMin = (min: boolean) => {
   $('trayMin').title = min ? 'Open' : 'Minimise';
   try {
     localStorage.setItem('fenmyr:trayMin', min ? '1' : '');
-  } catch (e) {}
+  } catch (_e) {}
 };
 export function init17() {
   try {
     trayMin(!!localStorage.getItem('fenmyr:trayMin'));
-  } catch (e) {}
+  } catch (_e) {}
 
   $('trayMin').onclick = e => {
     e.stopPropagation();
@@ -36,18 +36,18 @@ export function init17() {
     if (!c || !(ghost instanceof HTMLElement)) return;
     Object.assign(ghost.style, {
       position: 'fixed',
-      width: it.offsetWidth + 'px',
+      width: `${it.offsetWidth}px`,
       pointerEvents: 'none',
       zIndex: '99',
-      left: e.clientX - 40 + 'px',
-      top: e.clientY - 20 + 'px',
+      left: `${e.clientX - 40}px`,
+      top: `${e.clientY - 20}px`,
       rotate: '-3deg',
     });
     document.body.appendChild(ghost);
     it.style.opacity = '0.3';
     const mv = (ev: PointerEvent) => {
-      ghost.style.left = ev.clientX - 40 + 'px';
-      ghost.style.top = ev.clientY - 20 + 'px';
+      ghost.style.left = `${ev.clientX - 40}px`;
+      ghost.style.top = `${ev.clientY - 20}px`;
     };
     const up = (ev: PointerEvent) => {
       removeEventListener('pointermove', mv);

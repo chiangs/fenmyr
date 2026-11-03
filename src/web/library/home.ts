@@ -1,13 +1,15 @@
 import type { Folder, Project } from '../../shared/model.ts';
 import type { BoardSummary } from '../../shared/ops.ts';
-import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
-import { renderAll } from '../canvas/render.ts';
 import { colorHex } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
-import { resetHistory } from '../core/history.ts';
-import { dueIndex } from '../features/due.ts';
+import { appState, session } from '../core/state.ts';
 import { findClose } from '../features/find.ts';
+import { chirp } from '../settings/licenses.ts';
+import { stopPlacing } from '../tools/place.ts';
+import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
+import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
 import { draggable, dropZone, inlineRename, nestBoard, newBoardIn } from './nesting.ts';
+import { openBoard } from './openBoard.ts';
 import { refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
 import {
   boardsIn,
@@ -24,21 +26,13 @@ import {
   saveLib,
   subFolders,
 } from './tree.ts';
-import { renderChat } from '../myra/chatLog.ts';
-import { chatOpen } from '../myra/chatWindow.ts';
-import { chirp } from '../settings/licenses.ts';
-import { stopPlacing } from '../tools/place.ts';
-import { closeColor } from '../ui/colorPicker.ts';
-import { renderPalette } from '../ui/palette.ts';
-import { applyToolbar } from '../ui/toolbarConfig.ts';
-import { refreshVNotes, vnFull } from '../vault/notes.ts';
-import { appState, session } from '../core/state.ts';
-import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
+
 // and check again whenever you come back to the app
 
 // ---------- home: zoom out to see every project, then a project's folders, then a folder's boards ----------
 type HomeAt = { level: 'all'; id?: undefined } | { level: 'project' | 'folder'; id: string };
 // null means Home is closed
+let coverFor: Project | null = null;
 export let homeAt: HomeAt | null = null;
 export function openHome(go = 'all') {
   const [level, id] = go.split(':');
@@ -74,7 +68,8 @@ export function renderHome(): void {
   const f = level === 'folder' ? appState.folders.find(x => x.id === id) : null;
   if ((level === 'project' && !p) || (level === 'folder' && !f)) {
     homeAt = { level: 'all' };
-    return renderHome();
+    renderHome();
+    return;
   }
   const chainF = f ? folderChain(f) : [];
   crumbs.innerHTML =
@@ -111,7 +106,7 @@ export function renderHome(): void {
       'project',
       pp,
       `${plural(fs.length, 'folder')} · ${plural(nb, 'board')}`,
-      () => openHome('project:' + pp.id),
+      () => openHome(`project:${pp.id}`),
       [['ren', 'Rename', '✎']],
     );
     const art = child(t, '.tile-art'),
@@ -182,7 +177,7 @@ export function renderHome(): void {
         'folder',
         ff,
         [ns ? plural(ns, 'folder') : '', plural(bs.length, 'board')].filter(Boolean).join(' · '),
-        () => openHome('folder:' + ff.id),
+        () => openHome(`folder:${ff.id}`),
         [['ren', 'Rename', '✎']],
       );
     const art = child(t, '.tile-art');
@@ -211,7 +206,7 @@ export function renderHome(): void {
     const t = tile(
       'board',
       b,
-      b.updated ? 'edited ' + ago(b.updated) : '',
+      b.updated ? `edited ${ago(b.updated)}` : '',
       () => {
         closeHome();
         openBoard(b.id);
@@ -234,7 +229,9 @@ export function renderHome(): void {
     grid.appendChild(h);
   };
   if (level === 'all') {
-    appState.projects.forEach(pp => grid.appendChild(projectTile(pp)));
+    appState.projects.forEach(pp => {
+      grid.appendChild(projectTile(pp));
+    });
     add('New project', async () => {
       const pp = makeProject(uniqueName(appState.projects, 'New project'));
       await saveLib();
@@ -244,14 +241,20 @@ export function renderHome(): void {
     });
     if (looseFolders().length) {
       section('Folders not in a project · drag onto a project to file');
-      looseFolders().forEach(ff => grid.appendChild(folderTile(ff)));
+      looseFolders().forEach(ff => {
+        grid.appendChild(folderTile(ff));
+      });
     }
     if (looseBoards().length) {
       section('Boards not in a folder');
-      looseBoards().forEach(b => grid.appendChild(boardTile(b)));
+      looseBoards().forEach(b => {
+        grid.appendChild(boardTile(b));
+      });
     }
   } else if (level === 'project' && p) {
-    foldersIn(p.id).forEach(ff => grid.appendChild(folderTile(ff)));
+    foldersIn(p.id).forEach(ff => {
+      grid.appendChild(folderTile(ff));
+    });
     add('New folder', async () => {
       const ff = makeFolder(uniqueName(appState.folders, 'New folder'), p.id);
       await saveLib();
@@ -261,11 +264,17 @@ export function renderHome(): void {
     });
     if (looseBoards().length) {
       section('Boards not in a folder · drag onto a folder to file');
-      looseBoards().forEach(b => grid.appendChild(boardTile(b)));
+      looseBoards().forEach(b => {
+        grid.appendChild(boardTile(b));
+      });
     }
   } else if (f) {
-    subFolders(f.id).forEach(ff => grid.appendChild(folderTile(ff)));
-    boardsIn(f.id).forEach(b => grid.appendChild(boardTile(b)));
+    subFolders(f.id).forEach(ff => {
+      grid.appendChild(folderTile(ff));
+    });
+    boardsIn(f.id).forEach(b => {
+      grid.appendChild(boardTile(b));
+    });
     add('New board', () => newBoardIn(f.id));
     add('New folder', async () => {
       const ff = makeFolder(uniqueName(appState.folders, 'New folder'), f.project || null);
@@ -278,57 +287,6 @@ export function renderHome(): void {
   }
 }
 
-// a project's cover image: shrunk to a tidy size and saved with the library
-let coverFor: Project | null = null;
-
-export async function openBoard(id: string) {
-  // an edit still waiting to save belongs to the board you're leaving: save it first
-  if (appState.saveT && session.board) {
-    clearTimeout(appState.saveT);
-    appState.saveT = undefined;
-    session.board.view = session.view;
-    await Fenmyr.save(session.board);
-  }
-  const b = await Fenmyr.load(id);
-  if (!b) return;
-  miniCache.clear();
-  vnFull.clear();
-  appState.histOpen = false;
-  findClose(undefined);
-  session.board = { name: '', cards: [], links: [], tray: [], ...b };
-  if (chatOpen()) setTimeout(renderChat, 0);
-  session.board.palette = session.board.palette || [];
-  setTimeout(resetHistory, 0);
-  session.view = { x: 160, y: 140, z: 1, ...b.view };
-  session.sel.clear();
-  session.editing = null;
-  session.focusSet = null;
-  closeColor();
-  renderPalette();
-  session.board.cards.forEach(c => {
-    if (c.type === 'audio' && c.rec) {
-      c.rec = false;
-      c.paused = false;
-      if (!c.src) c.txNote = 'This recording got interrupted. Tap Replace to record again.';
-    }
-  });
-  session.board.cards.forEach(c => {
-    if (c.type === 'canvas' && c.board) {
-      const kb = appState.boardList.find(x => x.id === c.board);
-      if (kb && kb.name !== c.text) c.text = kb.name;
-    }
-  });
-  const field = $('boardName');
-  if (field instanceof HTMLInputElement) field.value = session.board.name;
-  renderAll();
-  refreshBoards();
-  refreshVNotes();
-  applyToolbar();
-  try {
-    localStorage.setItem('fenmyr:last', id);
-  } catch (e) {}
-  dueIndex();
-}
 export function init7() {
   $('crumbs').onclick = async e => {
     const pb = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-board]')?.dataset.board : undefined;
@@ -351,9 +309,9 @@ export function init7() {
     const f = at.level === 'folder' ? appState.folders.find(x => x.id === at.id) : undefined;
     openHome(
       f && hasParent(f)
-        ? 'folder:' + f.parent
-        : f && f.project && appState.projects.some(p => p.id === f.project)
-          ? 'project:' + f.project
+        ? `folder:${f.parent}`
+        : f?.project && appState.projects.some(p => p.id === f.project)
+          ? `project:${f.project}`
           : 'all',
     );
   };

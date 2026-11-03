@@ -1,15 +1,15 @@
-import { child } from './dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { boardMenu } from '../features/export.ts';
 import { addAtCenter } from '../panels/zoomMenu.ts';
 import { colorOf, myColors } from '../settings/colors.ts';
 import { chirp } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { session } from '../core/state.ts';
 import { boardBg, openColor, palette } from './colorPicker.ts';
+import { child } from './dom.ts';
 
 export const PRESETS: Record<string, string[]> = {
   bg: ['#faf7f2', '#ffffff', '#fff8ef', '#fffaf0', '#f4fbf6', '#f3f8ff', '#f6f2ff', '#1d1a16', '#232733', '#2c2620'],

@@ -1,13 +1,13 @@
-import { cardEl, oneIn } from '../ui/dom.ts';
 import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { parentOf } from '../cards/collection.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { startEdit } from '../edit/editing.ts';
 import { card } from '../model/boards.ts';
 import { selCards } from '../selbar/selected.ts';
-import { session } from '../core/state.ts';
+import { cardEl, oneIn } from '../ui/dom.ts';
 
 // ---------- glass sections: a frosted bubble around a bunch of things. Anything whose middle sits inside it belongs to it,
 // so dragging something in makes it join and dragging it out makes it leave, with nothing to keep in sync ----------

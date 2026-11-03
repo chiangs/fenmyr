@@ -1,16 +1,16 @@
-import { cardEl } from '../ui/dom.ts';
+import type { CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { fmtT } from './audio.ts';
-import { devicePick, openMedia, transcribe } from './devices.ts';
 import { ask } from '../myra/chat.ts';
 import { chirp } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import type { CardOf } from '../../shared/model.ts';
+import { cardEl } from '../ui/dom.ts';
+import { fmtT } from './audio.ts';
+import { devicePick, openMedia, transcribe } from './devices.ts';
 import { fillVideo } from './videoFile.ts';
 
 export type VideoCard = CardOf<'video'>;
@@ -63,7 +63,7 @@ export function setupVideo(c: VideoCard, el: HTMLElement) {
         if (!e2) return;
         const f = (player.currentTime || 0) / (player.duration || c.dur || 1);
         const bar = e2.querySelector('.vd-prog i');
-        if (bar instanceof HTMLElement) bar.style.width = (f * 100).toFixed(2) + '%';
+        if (bar instanceof HTMLElement) bar.style.width = `${(f * 100).toFixed(2)}%`;
         const t = e2.querySelector('.vd-time');
         if (t)
           t.textContent =
@@ -73,12 +73,12 @@ export function setupVideo(c: VideoCard, el: HTMLElement) {
       };
       player.addEventListener('timeupdate', paint);
       player.addEventListener('seeked', paint);
-      ['play', 'pause', 'ended'].forEach(t =>
+      ['play', 'pause', 'ended'].forEach(t => {
         player.addEventListener(t, () => {
           vEl(c.id)?.classList.toggle('playing', !player.paused);
           paint();
-        }),
-      );
+        });
+      });
       player.addEventListener('loadedmetadata', () => {
         if (!c.dur && Number.isFinite(player.duration)) {
           c.dur = player.duration;
@@ -107,7 +107,7 @@ export async function camOn(c: VideoCard): Promise<Cam | null> {
   let stream: MediaStream;
   try {
     stream = await openMedia(true);
-  } catch (e) {
+  } catch (_e) {
     c.camErr = `Fenmyr needs the camera. Turn it on in ${privacy('Camera')}, then click Start recording again.`;
     c.camRest = false;
     renderCard(c);
@@ -142,7 +142,9 @@ export function camOff(id: string) {
   const cam = cams.get(id);
   if (!cam) return;
   clearInterval(cam.tick);
-  cam.stream.getTracks().forEach(t => t.stop());
+  cam.stream.getTracks().forEach(t => {
+    t.stop();
+  });
   cams.delete(id);
 }
 
@@ -184,13 +186,15 @@ async function videoRecord(c: VideoCard) {
         }
         g.drawImage(cam.view, (fw - sw) / 2, 0, sw, fh, 0, 0, W, H);
         g.restore();
-      } catch (e) {}
+      } catch (_e) {}
       requestAnimationFrame(slice);
     })(); // re-measured every frame, in case the camera changes size; flip can change mid-recording
     stream = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...cam.stream.getAudioTracks()]);
     stopSlice = () => {
       on = false;
-      stream.getVideoTracks().forEach(t => t.stop());
+      stream.getVideoTracks().forEach(t => {
+        t.stop();
+      });
     };
   }
   const rec = new MediaRecorder(

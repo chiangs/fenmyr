@@ -6,6 +6,7 @@ import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { hasAll, queryWords, uid } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { placeAt, placing, startPlacing, stopPlacing } from '../tools/place.ts';
@@ -13,7 +14,6 @@ import { closestTo, htmlIn, oneIn, textField } from '../ui/dom.ts';
 import { pickWF } from './designPanel.ts';
 import { PIECES } from './pieces.ts';
 import { fileIntoFrame } from './tilt.ts';
-import { session } from '../core/state.ts';
 
 type Point = { x: number; y: number };
 
@@ -86,7 +86,7 @@ const pieceBtn = (n: string) => {
 };
 
 // the groups fold (Layouts starts folded), and the choice is remembered
-let dzOpen: Record<string, boolean> = { layouts: false };
+const dzOpen: Record<string, boolean> = { layouts: false };
 
 const dzWords = () => queryWords(textField('dzSearch').value);
 

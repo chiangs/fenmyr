@@ -1,14 +1,14 @@
-import { esc } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
+import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { type DocCard, docCard, ed, editorBundle, syncDoc } from './editor.ts';
-import { docHTML, mdToHTML } from './docText.ts';
-import type { Card } from '../../shared/model.ts';
-import { say } from '../settings/licenses.ts';
 import { session } from '../core/state.ts';
+import { say } from '../settings/licenses.ts';
+import { esc } from '../ui/dom.ts';
+import { docHTML, mdToHTML } from './docText.ts';
+import { type DocCard, docCard, ed, editorBundle, syncDoc } from './editor.ts';
 
 // ---------- dropping cards into a doc: they arrive as real content (a checklist stays a checklist) ----------
 const WORDY = typesWith('wordy');
@@ -36,8 +36,9 @@ const lead = (words: string | undefined) => {
 function cardHTML(c: Card) {
   if (c.type === 'note') return lead(c.name) + mdToHTML(c.text);
   if (c.type === 'todo') {
-    const items = taskItems(c.items);
-    return lead(c.text) + `<ul data-type="taskList">${items}</ul>`;
+    const first = lead(c.text),
+      items = taskItems(c.items);
+    return `${first}<ul data-type="taskList">${items}</ul>`;
   }
   if (c.type === 'link') {
     const url = esc(c.url),
@@ -107,7 +108,7 @@ export function dropIntoDoc(t: 'page' | DocCard, cs: Card[], e: MouseEvent) {
   renderCard(doc);
   renderWires();
   save();
-  say(`Copied ${cs.length === 1 ? 'that' : cs.length + ' cards'} into “${doc.text || 'Untitled'}” ✦`, 6000, [
+  say(`Copied ${cs.length === 1 ? 'that' : `${cs.length} cards`} into “${doc.text || 'Untitled'}” ✦`, 6000, [
     {
       label: 'Undo',
       run: () => {

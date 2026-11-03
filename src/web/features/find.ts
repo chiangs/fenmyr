@@ -1,23 +1,24 @@
-import { closestTo, elementById, esc, textField } from '../ui/dom.ts';
 import type { Card } from '../../shared/model.ts';
 import type { SlashEntry } from '../myra/greet.ts';
+import { closestTo, elementById, esc, textField } from '../ui/dom.ts';
 
 type TextBox = HTMLInputElement | HTMLTextAreaElement;
 // one row of the slash menu: fill puts ready-made words in the box; cmd is a command to start
 type SlashRow = { key: string; title: string; desc: string; fill?: string; cmd?: SlashEntry };
 const findField = () => elementById('fbQ', HTMLInputElement);
+
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { find, hasAll, queryWords } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { applyDim } from './focus.ts';
-import { cleanTag } from './tags.ts';
-import { timer } from './timer.ts';
+import { session } from '../core/state.ts';
 import { ANIMS } from '../myra/anim.ts';
 import { addMsg } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
-import { SLASH, glideTo, helpText, wordsOf } from '../myra/greet.ts';
+import { glideTo, helpText, SLASH, wordsOf } from '../myra/greet.ts';
 import { reply } from '../settings/licenses.ts';
-import { session } from '../core/state.ts';
+import { applyDim } from './focus.ts';
+import { cleanTag } from './tags.ts';
+import { timer } from './timer.ts';
 
 // ---------- the find bar: opens next to Myra when /find or /tag runs; searches as you type, steps through the matches, closes with Esc ----------
 const readingOrder = (a: Card, b: Card) => Math.round(a.y / 90) - Math.round(b.y / 90) || a.x - b.x;
@@ -34,7 +35,7 @@ function findRun(keep: boolean) {
   $('fbCount').textContent = !words.length
     ? 'Type to find'
     : find.hits.length
-      ? `${find.i + 1} of ${find.hits.length}` + (tray ? ` · +${tray} in Unsorted` : '')
+      ? `${find.i + 1} of ${find.hits.length}${tray ? ` · +${tray} in Unsorted` : ''}`
       : tray
         ? `${tray} in Unsorted`
         : 'No matches';
@@ -125,7 +126,7 @@ export function slashTag(arg: string) {
             ' ✦'
         : 'No tags on this board yet. Type # in a note to add one ✦',
     );
-  const n = findOpen('#' + t);
+  const n = findOpen(`#${t}`);
   reply(
     n
       ? `Found ${n} ${n === 1 ? 'card' : 'cards'} tagged #${t}. Step through them with the bar next to me ✦`
@@ -171,10 +172,10 @@ const slashMatches = (el: TextBox): SlashRow[] => {
     return [
       { key: '/animate', title: '<b>/animate</b> Surprise me', desc: 'A random one', fill: '/animate' },
       ...ANIMS.map(a => ({
-        key: '/animate ' + a.name,
+        key: `/animate ${a.name}`,
         title: `<b>/animate</b> ${a.name}`,
         desc: a.desc,
-        fill: '/animate ' + a.name,
+        fill: `/animate ${a.name}`,
       })),
     ];
   const typed = /^\/(\w*)$/.exec(el.value)?.[1];
@@ -200,9 +201,9 @@ function showSlash(el: TextBox) {
     .join('');
   const r = (el.closest('form') || el).getBoundingClientRect();
   slashMenu.hidden = false;
-  slashMenu.style.left = r.left + 'px';
-  slashMenu.style.width = Math.max(260, r.width) + 'px';
-  slashMenu.style.bottom = innerHeight - r.top + 6 + 'px';
+  slashMenu.style.left = `${r.left}px`;
+  slashMenu.style.width = `${Math.max(260, r.width)}px`;
+  slashMenu.style.bottom = `${innerHeight - r.top + 6}px`;
   slashMenu.dataset.for = el.id;
 }
 
@@ -218,7 +219,7 @@ function pickSlash(key: string) {
   }
   const c = it.cmd;
   if (!c) return;
-  el.value = '/' + c.cmd + (c.arg ? ' ' : '');
+  el.value = `/${c.cmd}${c.arg ? ' ' : ''}`;
   el.focus();
   el.setSelectionRange(el.value.length, el.value.length);
   if (!c.arg) el.closest('form')?.requestSubmit();

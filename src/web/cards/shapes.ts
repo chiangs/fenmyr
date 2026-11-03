@@ -1,6 +1,6 @@
+import type { CardOf } from '../../shared/model.ts';
 import { skStyle } from '../canvas/render.ts';
 import { roundedD } from '../tools/pen.ts';
-import type { CardOf } from '../../shared/model.ts';
 
 type Shape = CardOf<'shape'>;
 export let CIC: Record<string, string> = {};
@@ -8,7 +8,7 @@ export let CIC: Record<string, string> = {};
 export const host = (u: string) => {
   try {
     return new URL(u).hostname.replace(/^www\./, '');
-  } catch (e) {
+  } catch (_e) {
     return u;
   }
 };
@@ -57,9 +57,9 @@ function squigPath(c: Shape) {
       x = t * 100;
       y = 50 - A * (tri * (1 - mix) + sn * mix) * wobAmp(u) + drift(u);
     }
-    pts.push(x.toFixed(2) + ' ' + y.toFixed(2));
+    pts.push(`${x.toFixed(2)} ${y.toFixed(2)}`);
   }
-  return 'M' + pts.join(' L');
+  return `M${pts.join(' L')}`;
 }
 
 const STAR: [number, number][] = [

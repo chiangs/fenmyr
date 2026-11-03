@@ -1,4 +1,3 @@
-import { clickIn, isTyping } from '../ui/dom.ts';
 import { endTour, obKeys } from '../app/onboarding.ts';
 import { copyCards, lastClip, pasteCards } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
@@ -8,15 +7,16 @@ import { cropping, endCrop } from '../cards/crop.ts';
 import { copyOf, tilt, uid } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { remember, save, travel } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
 import { closeDoc, docCard } from '../docs/editor.ts';
+import { endEdit } from '../edit/editing.ts';
 import { startFind } from '../features/find.ts';
 import { capture, setFocus } from '../features/focus.ts';
-import { endEdit } from '../edit/editing.ts';
 import { closeHome, homeAt } from '../library/home.ts';
 import { readyToRecord } from '../media/devices.ts';
-import { wonderIfEmpty } from '../myra/perch.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { removeSelected } from '../myra/helpers.ts';
+import { wonderIfEmpty } from '../myra/perch.ts';
 import { zoomFit, zoomStep, zoomTo } from '../panels/zoomMenu.ts';
 import { closeSettings } from '../settings/colors.ts';
 import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
@@ -24,17 +24,20 @@ import { drawPen, endPen, penT, startPen } from '../tools/pen.ts';
 import { addCard, drawVec, endVec, refit, vec, vecCard } from '../tools/penEdit.ts';
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { closeColor } from '../ui/colorPicker.ts';
+import { clickIn, isTyping } from '../ui/dom.ts';
 import { toPointer } from '../ui/toolbar.ts';
-import { groupSel, restack } from '../wireframe/stack.ts';
 import { pickWF } from '../wireframe/designPanel.ts';
 import { makeSection } from '../wireframe/sections.ts';
-import { appState, session } from '../core/state.ts';
+import { groupSel, restack } from '../wireframe/stack.ts';
+
 let CLEAN_EL: Element[] = [];
 
 function setClean(on: boolean) {
   if (on === document.body.classList.contains('clean') || (on && document.body.classList.contains('phone'))) return;
   const fade = (from: number, to: number) =>
-    CLEAN_EL.forEach(el => el.animate([{ opacity: from }, { opacity: to }], { duration: 220, easing: 'ease' }));
+    CLEAN_EL.forEach(el => {
+      el.animate([{ opacity: from }, { opacity: to }], { duration: 220, easing: 'ease' });
+    });
   if (on) {
     closeColor();
     myraOpen(false);
@@ -60,7 +63,9 @@ export function init20() {
 
   $('cleanBack').onclick = () => setClean(false);
 
-  ['pointerdown', 'mousedown', 'dblclick'].forEach(t => $('cleanBack').addEventListener(t, e => e.stopPropagation()));
+  ['pointerdown', 'mousedown', 'dblclick'].forEach(t => {
+    $('cleanBack').addEventListener(t, e => e.stopPropagation());
+  });
 
   addEventListener('keydown', e => {
     const typing = isTyping(e.target);

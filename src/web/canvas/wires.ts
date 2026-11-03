@@ -1,12 +1,12 @@
-import { cardEl, esc } from '../ui/dom.ts';
+import type { Card, Link } from '../../shared/model.ts';
 import { $, stage, wires } from '../core/dom.ts';
+import { session } from '../core/state.ts';
 import { LY, layersSoon } from '../panels/layers.ts';
 import { chirp } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { addCard } from '../tools/penEdit.ts';
-import { session } from '../core/state.ts';
-import type { Card, Link } from '../../shared/model.ts';
+import { cardEl, esc } from '../ui/dom.ts';
 
 type Point = { x: number; y: number };
 type Pin = { u: number; v: number };
@@ -170,7 +170,7 @@ export function renderTray() {
     const d = document.createElement('div');
     d.className = 'tray-item';
     d.dataset.id = c.id;
-    d.style.setProperty('--tilt', (c.r ?? 0) / 2 + 'deg');
+    d.style.setProperty('--tilt', `${(c.r ?? 0) / 2}deg`);
     const src = c.type === 'image' ? esc(c.src) : '';
     d.innerHTML = c.type === 'image' ? `<img src="${src}">` : esc(c.type === 'link' ? c.title || c.url : c.text);
     list.appendChild(d);
@@ -188,7 +188,9 @@ export function sendToTray(cards: Card[]) {
     for (let next = up.get(id); next !== undefined && next !== id; next = up.get(id)) id = next;
     return id;
   };
-  joined.forEach(l => up.set(root(l.a), root(l.b)));
+  joined.forEach(l => {
+    up.set(root(l.a), root(l.b));
+  });
   const size: Record<string, number> = {};
   cards.forEach(c => {
     const r = root(c.id);
@@ -258,7 +260,7 @@ export function selectOnly(ids: string[]) {
   layersSoon();
   session.board.cards.forEach(c => {
     const el = cardEl(c.id);
-    el && el.classList.toggle('sel', session.sel.has(c.id));
+    el?.classList.toggle('sel', session.sel.has(c.id));
   });
 }
 export function init11() {

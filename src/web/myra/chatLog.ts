@@ -1,12 +1,11 @@
-import type { SayAction } from '../settings/licenses.ts';
-import { esc } from '../ui/dom.ts';
+import type { ChatMsg } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { settings } from '../settings/settings.ts';
 import { appState, session } from '../core/state.ts';
-import type { ChatMsg } from '../../shared/model.ts';
-import { closestTo, textField } from '../ui/dom.ts';
+import type { SayAction } from '../settings/licenses.ts';
+import { settings } from '../settings/settings.ts';
+import { closestTo, esc, textField } from '../ui/dom.ts';
 
 // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
 import { ask } from './chat.ts';
@@ -107,7 +106,7 @@ const IDEAS = [
 
 function msgEl(m: ChatMsg & { acts?: SayAction[] }) {
   const d = document.createElement('div');
-  d.className = 'mc-msg ' + m.who;
+  d.className = `mc-msg ${m.who}`;
   d.textContent = m.text;
   if (m.acts?.length) {
     const box = document.createElement('div');
@@ -148,7 +147,9 @@ export function renderChat() {
         };
     return;
   }
-  msgs.forEach(m => list.appendChild(msgEl(m)));
+  msgs.forEach(m => {
+    list.appendChild(msgEl(m));
+  });
   list.scrollTop = list.scrollHeight;
 }
 
