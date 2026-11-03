@@ -123,7 +123,15 @@ const B = (x, y, w, h, o = {}) => ({ type: 'box', x, y, w, h, fill: '#e4e4e7', r
 const IC = (x, y, name, s = 24, o = {}) => ({ type: 'icon', x, y, w: s, h: s, name, color: '#3f3f46', ...o });
 
 // each piece can take its own words: (width, { title, text, sub, label, tabs, h, align, style… })
-export const PIECES = {
+type PieceItem = { type: string; x: number; y: number; w: number; h: number; [field: string]: unknown };
+// bar: where a bar sits on a screen ('top' or 'bottom'); w: the width it's made at
+export type Piece = {
+  icon: string;
+  bar?: string;
+  w?: number;
+  make(W: number, o?: Record<string, unknown>): PieceItem[];
+};
+export const PIECES: Record<string, Piece> = {
   'Nav bar': {
     icon: 'browser',
     bar: 'top',

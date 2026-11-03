@@ -22,7 +22,7 @@ import { layersSoon, wireLayers } from '../panels/layers.ts';
 import { SIZED, fsMul } from '../selbar/selbar.ts';
 import { applyColors } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
-import { inkPath } from '../tools/draw.ts';
+import { inkPath } from '../tools/ink.ts';
 import { pathD } from '../tools/pen.ts';
 import { pxSrc } from '../tools/stamps.ts';
 import { vnFull, vnMd } from '../vault/notes.ts';
@@ -74,7 +74,7 @@ function inner(c: Card): string {
     case 'path':
       return `<svg class="pth" viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none"><path d="${pathD(c.pts, c.closed, c.radius || 0, c.ow / Math.max(1, c.w))}" fill="${c.closed && c.fill ? c.fill : 'none'}" stroke="${c.stroke && (c.sw ?? 0) > 0 ? c.stroke : 'none'}" stroke-width="${c.sw || 0}" stroke-linecap="round" stroke-linejoin="round"${skStyle(c) === 'dash' ? ` stroke-dasharray="${c.dl ?? 8} ${c.dg ?? 6}"` : skStyle(c) === 'dot' ? ` stroke-dasharray="0 ${(c.dg ?? 6) + (c.sw ?? 0)}"` : ''} vector-effect="non-scaling-stroke"/></svg>`;
     case 'ink':
-      return `<svg viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none">${inkPath(c.pts, c.pen, c.size, c.ink, true)}</svg>`;
+      return `<svg viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none">${inkPath(c.pts, c.pen ?? 'pen', c.size, c.ink, true)}</svg>`;
     case 'frame':
       return `<div class="fr-body"></div><div class="fr-name">${esc(c.name || 'Screen')}</div>`;
     case 'section':

@@ -5,7 +5,8 @@ import { applyStroke } from '../canvas/render.ts';
 // ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
 export const WF = typesWith('wireframe');
 
-export const DEVICES = {
+// width, height and corner radius
+export const DEVICES: Record<string, [w: number, h: number, radius: number]> = {
   iPhone: [393, 852, 44],
   Android: [412, 915, 28],
   iPad: [834, 1194, 20],
