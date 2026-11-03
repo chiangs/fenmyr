@@ -99,6 +99,32 @@ export type VaultNoteForMyra = { vault: string; path: string; title: string; tag
 
 type ImageJob = { id: string; label: string };
 
+// what a folder is to git, so the page can say what linking it would mean
+export type GitChange = {
+  path: string;
+  change: 'added' | 'modified' | 'deleted' | 'renamed' | 'untracked' | 'conflict';
+};
+export type GitStatus =
+  | { kind: 'noGit' }
+  | { kind: 'missing' }
+  | { kind: 'folder' }
+  // root differs from the folder asked about when that folder sits inside a repo
+  | {
+      kind: 'repo';
+      root: string;
+      // null when no branch is checked out
+      branch: string | null;
+      upstream: string | null;
+      ahead: number;
+      behind: number;
+      changed: GitChange[];
+      remotes: { name: string; url: string }[];
+      identity: { name: string; email: string };
+    };
+// ok is false when a sign-in needs renewing
+export type GhAccount = { host: string; login: string; active: boolean; ok: boolean };
+export type GhState = { kind: 'missing' } | { kind: 'ready'; accounts: GhAccount[] };
+
 export type Ops = {
   list: { args: None; result: BoardSummary[] };
   load: { args: { id: string }; result: Board | null };
@@ -166,6 +192,11 @@ export type Ops = {
   updateNow: { args: None; result: 'updating' };
   reveal: { args: None; result: true };
   openURL: { args: { url: string }; result: true };
+  gitStatus: { args: { path: string }; result: GitStatus };
+  gitInit: { args: { path: string }; result: GitStatus };
+  // everywhere: for every repo on this computer, not only this one
+  gitSetIdentity: { args: { path: string; name: string; email: string; everywhere: boolean }; result: GitStatus };
+  ghStatus: { args: None; result: GhState };
 };
 
 export type HostEvents = { caelestia: CaelestiaScheme | null; boardsChanged: null; settings: null };

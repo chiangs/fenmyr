@@ -45,10 +45,16 @@ export function which(name: string, dirs = (process.env.PATH || '').split(':')):
 export type RunResult = { code: number | null; out: Buffer; err: Buffer };
 
 const home = os.homedir();
-const env = () => ({
-  ...process.env,
-  PATH: [process.env.PATH || '', `${home}/.local/bin`, '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin'].join(':'),
-});
+// An app opened from the desktop gets a short PATH, so the usual install spots are added.
+export const pathDirs = () =>
+  [
+    ...(process.env.PATH || '').split(':'),
+    `${home}/.local/bin`,
+    '/opt/homebrew/bin',
+    '/usr/local/bin',
+    '/usr/bin',
+  ].filter(Boolean);
+const env = () => ({ ...process.env, PATH: pathDirs().join(':') });
 
 // collects what the program prints and stops it after `timeout` seconds
 export function run(cmd: string, args: string[], timeout: number): Promise<RunResult> {
