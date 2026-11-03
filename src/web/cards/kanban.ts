@@ -7,7 +7,7 @@ import { session } from '../core/state.ts';
 import { editField } from '../edit/text.ts';
 import { boardMenu, type MenuItem, when } from '../features/export.ts';
 import { cardEl, esc } from '../ui/dom.ts';
-import { CGAP, CHEAD, CPAD, CW, colls, KHEAD, layoutColl, parentOf } from './collection.ts';
+import { CGAP, CHEAD, CPAD, CW, colls, countBadge, KHEAD, layoutColl, parentOf } from './collection.ts';
 
 type Coll = CardOf<'coll'>;
 type Point = { x: number; y: number };
@@ -39,9 +39,8 @@ export function drawKanban(s: Coll, el: HTMLElement) {
         headTop = top + 4,
         over = lim && n > lim ? ' over' : '',
         name = esc(nm),
-        count = lim ? `${n} of ${lim} allowed` : `${n} card${n === 1 ? '' : 's'}`,
-        shown = lim ? `${n} / ${lim}` : String(n);
-      return `<i class="kb-lane" style="left:${laneLeft}px;top:${laneTop}px;width:${laneW}px;bottom:8px"></i><div class="kb-h${over}" data-k="${k}" style="left:${left}px;top:${headTop}px;width:${CW}px"><span class="text">${name}</span><b class="kb-n" title="${count}">${shown}</b></div>`;
+        badge = countBadge(n, lim);
+      return `<i class="kb-lane" style="left:${laneLeft}px;top:${laneTop}px;width:${laneW}px;bottom:8px"></i><div class="kb-h${over}" data-k="${k}" style="left:${left}px;top:${headTop}px;width:${CW}px"><span class="text">${name}</span>${badge}</div>`;
     })
     .join('');
 }

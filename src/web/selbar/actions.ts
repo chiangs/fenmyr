@@ -128,6 +128,11 @@ function onBarClick(e: MouseEvent) {
     one.head = one.head === false;
     redraw();
   }
+  if (a === 'count' && one.type === 'coll' && one.head !== false) {
+    remember();
+    one.count = !one.count;
+    redraw();
+  }
   if (a === 'hidename' && one.type === 'swatch') {
     one.hideName = !one.hideName;
     redraw();

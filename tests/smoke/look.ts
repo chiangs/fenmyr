@@ -190,3 +190,110 @@ export async function look(t: Smoke) {
   await page.evaluate(id => window.__fenmyr.openBoard(id), before);
   await page.waitForTimeout(500);
 }
+
+// a collection's header can show how many cards are inside: from the selection bar or the right-click menu, following the
+// cards as they come and go, and not available while the header is hidden
+export async function collectionCount(t: Smoke) {
+  const { page } = t;
+  const state = () =>
+    page.evaluate(() => {
+      const M = window.__fenmyr,
+        c = M.board.cards.find(x => x.type === 'coll' && x.text === 'Count me'),
+        badge = document.querySelector(`[data-id="${c?.id}"] .coll-head .kb-n`),
+        btn = document.querySelector('#selbar [data-sb="count"]');
+      return {
+        id: c?.id ?? '',
+        saved: c?.type === 'coll' ? !!c.count : null,
+        shown: badge?.textContent ?? null,
+        tip: badge?.getAttribute('title') ?? null,
+        btn: btn instanceof HTMLButtonElement ? { on: btn.classList.contains('on'), disabled: btn.disabled } : null,
+      };
+    });
+  const select = () =>
+    page.evaluate(() => {
+      const M = window.__fenmyr,
+        c = M.board.cards.find(x => x.type === 'coll' && x.text === 'Count me');
+      if (c) {
+        M.selectOnly([c.id]);
+        M.fit([c]);
+      }
+      document.getElementById('selbar')?.removeAttribute('data-key');
+      M.placeSelbar();
+    });
+  const menu = async () => {
+    const box = await page.locator('.card.coll:has-text("Count me")').boundingBox();
+    if (!box) throw new Error('no collection');
+    await page.mouse.click(box.x + 20, box.y + 20, { button: 'right' }); // the header, or the frame when the header is hidden
+    await page.waitForTimeout(250);
+    const items = await page.evaluate(() =>
+      window.__t.all('#rowMenu button').map(b => ({ text: b.textContent ?? '', disabled: b.hasAttribute('disabled') })),
+    );
+    return items;
+  };
+  await page.evaluate(async () => {
+    await window.__fenmyr.applyMyra({
+      say: 'ok',
+      collections: [{ name: 'Count me', x: 0, y: 1500 }],
+      add: [
+        { type: 'note', text: 'one', in: 'Count me' },
+        { type: 'note', text: 'two', in: 'Count me' },
+      ],
+    });
+  });
+  await page.waitForTimeout(600);
+  await select();
+  await page.waitForTimeout(200);
+  const before = await state();
+  await page.click('#selbar [data-sb="count"]');
+  await page.waitForTimeout(400);
+  const on = await state();
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(500);
+  const undone = await state();
+  await select();
+  await page.click('#selbar [data-sb="count"]');
+  await page.waitForTimeout(400);
+  await page.evaluate(async () => {
+    await window.__fenmyr.applyMyra({ say: 'ok', add: [{ type: 'note', text: 'three', in: 'Count me' }] });
+  });
+  await page.waitForTimeout(500);
+  const three = await state();
+  // right-click: Hide count turns it off, then Show count turns it back on
+  const countItem = async (label: string) => {
+    const items = await menu(),
+      item = items.find(i => i.text === label);
+    if (item && !item.disabled) await page.locator('#rowMenu button', { hasText: label }).click();
+    else await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+    return item;
+  };
+  const hideItem = await countItem('Hide count'),
+    viaMenuOff = await state(),
+    showItem = await countItem('Show count'),
+    viaMenuOn = await state();
+  await page.mouse.click(5, 300);
+  await select();
+  await page.click('#selbar [data-sb="head"]');
+  await page.waitForTimeout(400);
+  const noHeader = await state();
+  const itemsOff = await menu(),
+    showOff = itemsOff.find(i => i.text.endsWith('count'));
+  await page.keyboard.press('Escape');
+  await page.mouse.click(5, 300);
+  await select();
+  await page.click('#selbar [data-sb="head"]'); // header back: the count is still on
+  await page.waitForTimeout(400);
+  const headBack = await state();
+  t.checkAll('collectionCount', {
+    offByDefault: before.shown === null && before.saved === false,
+    buttonReady: before.btn?.disabled === false && before.btn.on === false,
+    barShows: on.shown === '2' && on.tip === '2 cards' && on.saved === true && on.btn?.on === true,
+    undo: undone.shown === null && undone.saved === false,
+    followsCards: three.shown === '3',
+    menuHides: !!hideItem && !hideItem.disabled && viaMenuOff.shown === null && viaMenuOff.saved === false,
+    menuShows: !!showItem && !showItem.disabled && viaMenuOn.shown === '3' && viaMenuOn.saved === true,
+    headerOffDisablesBar: noHeader.shown === null && noHeader.btn?.disabled === true,
+    headerOffDisablesMenu: !!showOff && showOff.disabled,
+    headerBackKeepsCount: headBack.shown === '3' && headBack.btn?.disabled === false,
+  });
+}

@@ -44,6 +44,24 @@ function naturalHeight(c: Card, el: HTMLElement) {
   return h;
 }
 
+// The little number on a collection's header and on each kanban column: the cards inside, or "inside / allowed" for a column with a limit.
+export function countBadge(n: number, limit = 0) {
+  const tip = limit ? `${n} of ${limit} allowed` : `${n} card${n === 1 ? '' : 's'}`,
+    shown = limit ? `${n} / ${limit}` : String(n);
+  return `<b class="kb-n" title="${tip}">${shown}</b>`;
+}
+
+// the header's count follows the cards, and goes when the header or the count is switched off. Only the badge is touched, so a name being typed isn't disturbed.
+function paintCount(s: CardOf<'coll'>, el: HTMLElement) {
+  const head = el.querySelector('.coll-head'),
+    old = head?.querySelector('.kb-n');
+  if (!head) return;
+  if (!s.count || s.head === false) return void old?.remove();
+  const badge = countBadge(s.kids.length);
+  if (old) old.outerHTML = badge;
+  else head.insertAdjacentHTML('beforeend', badge);
+}
+
 export function layoutColl(s: CardOf<'coll'>) {
   s.kids = s.kids.filter(id => byId(id) && id !== s.id);
   const cols = Math.max(1, s.cols || 1);
@@ -99,6 +117,7 @@ export function layoutColl(s: CardOf<'coll'>) {
   if (el) {
     Object.assign(el.style, { left: `${s.x}px`, top: `${s.y}px`, width: `${s.w}px`, height: `${s.h}px` });
     el.querySelector('.coll-empty')?.remove();
+    paintCount(s, el);
     if (s.kanban) drawKanban(s, el);
     else if (!s.kids.length)
       el.querySelector('.body')?.insertAdjacentHTML('beforeend', '<div class="coll-empty">Drop cards here</div>');
