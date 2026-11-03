@@ -67,3 +67,11 @@ export function elementById<T extends Element>(id: string, kind: abstract new (.
   if (!(el instanceof kind)) throw new Error(`#${id} is not a ${kind.name}`);
   return el;
 }
+
+// a box people type into: an input or a textarea
+export function textField(id: string) {
+  const el = document.getElementById(id);
+  if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement))
+    throw new Error(`#${id} is not a text field`);
+  return el;
+}

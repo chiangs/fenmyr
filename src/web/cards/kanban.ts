@@ -5,13 +5,11 @@ import { clamp } from '../core/base.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { editField } from '../edit/text.ts';
-import { boardMenu } from '../features/export.ts';
 import { session } from '../core/state.ts';
 import type { CardOf } from '../../shared/model.ts';
-import type { MenuItem } from '../features/export.ts';
+import { type MenuItem, boardMenu, when } from '../features/export.ts';
 
 type Coll = CardOf<'coll'>;
-const when = (on: boolean, items: MenuItem[]) => (on ? items : []);
 type Point = { x: number; y: number };
 // a kanban's column facts, made if they're missing (an older board, or a plain collection turned into one)
 const columns = (s: Coll) => ({

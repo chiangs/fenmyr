@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { parseReply } from '../../shared/myraReply.ts';
 import { $ } from '../core/dom.ts';
 import { gooSlot, keepPerch, snapshot } from '../myra/chat.ts';
@@ -6,30 +5,56 @@ import { goo, hopMyra } from '../myra/goos.ts';
 import { reply } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { appState } from '../core/state.ts';
+import { type MyraReply } from '../../shared/myraReply.ts';
+import { type Card, isRecord } from '../../shared/model.ts';
+import type { Pose } from '../goo.ts';
+import type { SayAction } from '../settings/licenses.ts';
+
+type Kind = 'break' | 'focus';
+// end: when it runs out; warned: the two-minute warning was given; kind: decided by the model at the warning
+type Timer = { end: number; secs: number; purpose: string; warned: boolean; kind?: Kind };
+type TimerAsk = { secs: number; purpose: string };
+export type TimerRequest = { stop: true } | { status: true } | TimerAsk;
+export type TimerLine = { say: string | null; kind: Kind | null } | null;
+
+// a timer left running when Fenmyr closed, as it was saved
+function readTimer(raw: unknown): Timer | null {
+  if (!isRecord(raw) || typeof raw.end !== 'number' || !raw.end) return null;
+  const secs =
+    typeof raw.secs === 'number' ? raw.secs : Math.round((typeof raw.minutes === 'number' ? raw.minutes : 1) * 60);
+  const t: Timer = {
+    end: raw.end,
+    secs,
+    purpose: typeof raw.purpose === 'string' ? raw.purpose : '',
+    warned: raw.warned === true,
+  };
+  if (raw.kind === 'break' || raw.kind === 'focus') t.kind = raw.kind;
+  return t;
+}
 
 // ---------- the timer: /timer 25 write the intro. It counts down by the clock (so it survives sleep, restarts and switching boards), warns at two minutes, and Myra makes a fuss when it's up ----------
 const TIMER_KEY = 'fenmyr:timer';
 
-export let timer = null;
-let timerTick = 0;
+export let timer: Timer | null = null;
 
 const saveTimer = () => {
   try {
-    timer ? localStorage.setItem(TIMER_KEY, JSON.stringify(timer)) : localStorage.removeItem(TIMER_KEY);
+    if (timer) localStorage.setItem(TIMER_KEY, JSON.stringify(timer));
+    else localStorage.removeItem(TIMER_KEY);
   } catch (e) {}
 };
 
-const clock = ms => {
+const clock = (ms: number) => {
   const t = Math.max(0, Math.ceil(ms / 1000)),
     h = Math.floor(t / 3600),
     m = Math.floor((t % 3600) / 60),
     sec = t % 60,
-    p = n => String(n).padStart(2, '0');
+    p = (n: number) => String(n).padStart(2, '0');
   return h ? `${h}:${p(m)}:${p(sec)}` : `${m}:${p(sec)}`;
 };
 
 // how long, exactly as entered: "25" (minutes), "25m", "1h30", "2m10s", "1 min 1 sec", "69 seconds", "half an hour". Whatever follows is the purpose.
-const UNIT_S = {
+const UNIT_S: Record<string, number> = {
   h: 3600,
   hr: 3600,
   hrs: 3600,
@@ -47,7 +72,7 @@ const UNIT_S = {
   seconds: 1,
 };
 
-const DUR_WORDS = [
+const DUR_WORDS: [RegExp, number][] = [
   [/^\s*an hour and a half\b/i, 5400],
   [/^\s*half an hour\b/i, 1800],
   [/^\s*(?:an|one) hour\b/i, 3600],
@@ -55,7 +80,7 @@ const DUR_WORDS = [
   [/^\s*a second\b/i, 1],
 ];
 
-function parseDuration(str, needUnit) {
+function parseDuration(str: string, needUnit: boolean) {
   // from the start of str: { secs, rest } or null (needUnit: a bare number is not enough, for plain sentences)
   const w = DUR_WORDS.find(([re]) => re.test(str));
   if (w) return { secs: w[1], rest: str.replace(w[0], '') };
@@ -69,10 +94,10 @@ function parseDuration(str, needUnit) {
       rest,
     );
     if (!m) break;
-    const u = m[2] ? UNIT_S[m[2].toLowerCase()] : !got ? 60 : prev === 3600 ? 60 : prev === 60 ? 1 : 0; // a bare number is minutes, or the next unit down after hours or minutes ("1h30")
+    const u = m[2] ? (UNIT_S[m[2].toLowerCase()] ?? 0) : !got ? 60 : prev === 3600 ? 60 : prev === 60 ? 1 : 0; // a bare number is minutes, or the next unit down after hours or minutes ("1h30")
     if (!u || u >= prev) break;
     if (m[2]) anyUnit = true;
-    total += +m[1] * u;
+    total += Number(m[1]) * u;
     prev = u;
     got++;
     rest = rest.slice(m[0].length);
@@ -80,13 +105,13 @@ function parseDuration(str, needUnit) {
   return got && (anyUnit || !needUnit) ? { secs: Math.round(total), rest } : null;
 }
 
-export function parseTimer(arg) {
+export function parseTimer(arg?: string): TimerAsk | null {
   const d = parseDuration(arg || '', false);
   if (!d || !/^(\s|$)/.test(d.rest)) return null;
   return d.secs >= 1 && d.secs <= 36000 ? { secs: d.secs, purpose: d.rest.trim().slice(0, 60) } : null;
 }
 
-export const durText = secs => {
+export const durText = (secs: number) => {
   const h = Math.floor(secs / 3600),
     m = Math.floor((secs % 3600) / 60),
     sec = secs % 60;
@@ -94,7 +119,7 @@ export const durText = secs => {
 };
 
 // plain sentences: "set a timer for 25 minutes for the intro", "give me a 2 minute 10 second timer", "remind me in 20 minutes to stretch", "cancel my timer", "how much time is left?"
-export function timerRequest(q) {
+export function timerRequest(q: string): TimerRequest | null {
   if (/\b(cancel|stop|clear|end|turn off|kill)\b[^.?!]*\btimer\b/i.test(q)) return { stop: true };
   if (/\b(how (much )?(time|long)\b[^.?!]*\b(left|remain\w*)|time (left|remaining))\b/i.test(q) && timer)
     return { status: true };
@@ -104,7 +129,7 @@ export function timerRequest(q) {
     ) || /^\s*timer\b/i.test(q);
   if (!asks) return null;
   for (const m of q.matchAll(/(?:\d|\b(?:half an hour|an hour|a minute|a second)\b)/gi)) {
-    const d = parseDuration(q.slice(m.index), true);
+    const d = parseDuration(q.slice(m.index ?? 0), true);
     if (!d || d.secs < 1 || d.secs > 36000) continue;
     const purpose = d.rest
       .replace(/^[\s,.-]*(?:timer|alarm)\b[\s,.]*/i, '')
@@ -117,26 +142,26 @@ export function timerRequest(q) {
   return null;
 }
 
-const timerWhat = t => t.purpose || `your ${durText(t.secs)} timer`;
+const timerWhat = (t: Timer) => t.purpose || `your ${durText(t.secs)} timer`;
 
 // what the glow says when it runs out: red for work and focus, green for a break. With thinking on the model decides (t.kind, from its warning), otherwise a break or a breather is green and everything else is red
-const timerKind = t =>
+const timerKind = (t: Timer): Kind =>
   t.kind ||
   (/\b(break(?!\s*(down|through|into|up|out|in|open)\b)|breather)\b/i.test(t.purpose || '') ? 'break' : 'focus');
 // 'break', 'coffee break', 'quick breather'; not 'break down the plan'
 // her faces follow the timer: sleepy through a break, shook in the last two minutes, and after a focus timer ends she sighs until you answer
-let glowT = 0;
+let glowT: ReturnType<typeof setTimeout> | undefined;
 let sighing = false;
-export let currentPose = null;
+export let currentPose: Pose | null = null;
 
-export const setPose = p => {
+export const setPose = (p: Pose | null) => {
   if (p !== currentPose) {
     currentPose = p;
     goo.pose(p);
   }
 };
 
-export const timerPose = () =>
+export const timerPose = (): Pose | null =>
   sighing
     ? 'sigh'
     : timer && timer.secs >= 180 && timer.end - Date.now() <= 120000
@@ -154,7 +179,7 @@ export const clearGlow = () => {
   setPose(wantedPose());
 };
 
-const setGlow = kind => {
+const setGlow = (kind: Kind) => {
   clearGlow();
   $('mPill').classList.add(kind === 'break' ? 'glow-green' : 'glow-red');
   glowT = setTimeout(clearGlow, 120000);
@@ -173,21 +198,19 @@ function paintTimer() {
   chip.hidden = false;
   $('tcTime').textContent = clock(timer.end - Date.now());
   $('tcWhat').textContent = timer.purpose || durText(timer.secs);
-  chip.style.setProperty('--left', Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.secs * 1000))));
+  chip.style.setProperty('--left', String(Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.secs * 1000)))));
   $('mPill').classList.toggle('hurry', timer.secs >= 180 && timer.end - Date.now() <= 120000);
   setPose(wantedPose());
 }
 
-export function startTimer(t, replace, quiet) {
-  if (timer && !replace)
-    return reply(
-      `You already have ${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. Start this one instead?`,
-      0,
-      [
-        { label: 'Replace it', cls: 'next', run: () => startTimer(t, true) },
-        { label: 'Keep it', ghost: true, run: () => {} },
-      ],
-    );
+export function startTimer(t: TimerAsk, replace = false, quiet = false): void {
+  if (timer && !replace) {
+    reply(`You already have ${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. Start this one instead?`, 0, [
+      { label: 'Replace it', cls: 'next', run: () => startTimer(t, true) },
+      { label: 'Keep it', ghost: true, run: () => {} },
+    ]);
+    return;
+  }
   clearGlow();
   timer = { end: Date.now() + t.secs * 1000, secs: t.secs, purpose: t.purpose, warned: t.secs < 180 };
   saveTimer();
@@ -198,21 +221,24 @@ export function startTimer(t, replace, quiet) {
 }
 
 export function stopTimer(say = true) {
-  if (!timer) return say && reply('No timer is running ✦');
+  if (!timer) {
+    if (say) reply('No timer is running ✦');
+    return;
+  }
   const t = timer;
   timer = null;
   saveTimer();
   paintTimer();
-  say && reply(`Stopped the timer for ${timerWhat(t)} ✦`);
+  if (say) reply(`Stopped the timer for ${timerWhat(t)} ✦`);
 }
 
 // a plain sentence asked for a timer (or to stop it, or how long is left)
-export function runTimerRequest(tr, say) {
-  if (tr.stop) {
+export function runTimerRequest(tr: TimerRequest, say?: boolean) {
+  if ('stop' in tr) {
     stopTimer(!!say);
     return 'stopped the timer';
   }
-  if (tr.status) {
+  if ('status' in tr) {
     slashTimer('');
     return 'told them how much time is left';
   }
@@ -220,22 +246,27 @@ export function runTimerRequest(tr, say) {
   return `set a timer for ${durText(tr.secs)}${tr.purpose ? ` (${tr.purpose})` : ''}`;
 }
 
-export function slashTimer(arg) {
+export function slashTimer(arg?: string) {
   const a = (arg || '').trim();
   if (/^(stop|cancel|off|clear)$/i.test(a)) return stopTimer();
-  if (!a)
-    return reply(
+  if (!a) {
+    reply(
       timer
         ? `${clock(timer.end - Date.now())} left on ${timerWhat(timer)}. /timer stop cancels it ✦`
         : 'Try /timer 25 write the intro, or pick a ready-made one from the list when you type /timer ✦',
     );
+    return;
+  }
   const t = parseTimer(a);
-  if (!t) return reply('I need a time first, like /timer 25 write the intro (or 1h30, 2m10s, 69 seconds) ✦');
+  if (!t) {
+    reply('I need a time first, like /timer 25 write the intro (or 1h30, 2m10s, 69 seconds) ✦');
+    return;
+  }
   startTimer(t);
 }
 
 // with thinking on, one short model call gives the warning and the finish a line that fits what you're doing (the plain line shows first and is replaced if it arrives in time)
-async function timerLine(kind, t) {
+async function timerLine(kind: 'warn' | 'done', t: Timer): Promise<TimerLine> {
   if (window.__timerLineStub) return window.__timerLineStub(kind, t); // (tests)
   if (Fenmyr.web || !settings.ai || appState.haveClaude === false || !navigator.onLine) return null;
   const what = `timer of ${durText(t.secs)}${t.purpose ? ` for "${t.purpose}"` : ''}`;
@@ -257,7 +288,7 @@ async function timerLine(kind, t) {
   }
 }
 
-export const osNotify = (title, body) => {
+export const osNotify = (title: string, body: string) => {
   if (Fenmyr.web || document.hasFocus() || typeof Notification === 'undefined') return;
   try {
     new Notification(title, { body });
@@ -267,7 +298,7 @@ export const osNotify = (title, body) => {
 const CONFETTI = ['#f2a339', '#e07a5f', '#ffdcd8', '#e0edd3', '#d9e7f3', '#ebe1f2'];
 
 // when it's up: she hops, her pill wiggles and berry confetti bursts out (calmer if she is set to calm, nothing at all if calmest)
-export function partyMyra(force) {
+export function partyMyra(force?: boolean) {
   if (window.myraMuted && !force) return;
   hopMyra();
   if ((window.myraCalm && !force) || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -299,6 +330,7 @@ export function partyMyra(force) {
 
 async function timerWarn() {
   const t = timer;
+  if (!t) return;
   t.warned = true;
   saveTimer();
   hopMyra();
@@ -315,11 +347,12 @@ async function timerWarn() {
 
 async function timerDone() {
   const t = timer;
+  if (!t) return;
   timer = null;
   saveTimer();
   paintTimer();
   const plain = `Time's up! ${durText(t.secs)}${t.purpose ? ` (${t.purpose})` : ''} ✦`,
-    acts = [
+    acts: SayAction[] = [
       { label: '5 more minutes', cls: 'next', run: () => startTimer({ secs: 300, purpose: t.purpose }, true) },
       { label: 'Thanks', ghost: true, run: clearGlow },
     ];
@@ -330,7 +363,7 @@ async function timerDone() {
   // the glow (and the sigh after focus) is decided once and never flips: when the rules are sure (a break by its words, or the model already said at the two-minute warning) it is at once; when not, the model gets a couple of seconds, then the rules decide
   const doneAt = Date.now();
   let decided = false;
-  const decide = kind => {
+  const decide = (kind: Kind) => {
     if (decided) return;
     decided = true;
     setGlow(kind);
@@ -359,13 +392,16 @@ async function timerDone() {
 export function timerCheck() {
   if (!timer) return;
   const left = timer.end - Date.now();
-  if (left <= 0) return timerDone();
+  if (left <= 0) {
+    timerDone();
+    return;
+  }
   paintTimer();
   if (!timer.warned && left <= 120000) timerWarn();
 }
 
 // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
-export const noEmoji = t =>
+export const noEmoji = (t: string) =>
   settings.emoji
     ? t
     : String(t)
@@ -373,7 +409,7 @@ export const noEmoji = t =>
         .replace(/ {2,}/g, ' ')
         .trim();
 
-export const parse = raw => {
+export const parse = (raw: unknown): MyraReply => {
   const s = String(raw),
     a = s.indexOf('{'),
     b = s.lastIndexOf('}');
@@ -385,10 +421,10 @@ export const parse = raw => {
   }
 };
 
-export function guessNext(r, added) {
-  const has = t => added.some(c => c.type === t);
+export function guessNext(r: MyraReply, added: Card[]) {
+  const has = (t: string) => added.some(c => c.type === t);
   if (r.screens?.length)
-    return added.some(c => c.img)
+    return added.some(c => c.type === 'box' && c.img)
       ? ['Make the mobile version', 'Try a different colour style', 'Write the real copy']
       : ['Add the next screen', 'Make it a website too', 'Try a different style'];
   if (has('font')) return ['Pair these with colours', 'Show them on a landing page', 'Narrow it down to two'];
@@ -399,10 +435,8 @@ export function guessNext(r, added) {
 }
 export function init38() {
   try {
-    timer = JSON.parse(localStorage.getItem(TIMER_KEY) || 'null');
-    if (!timer || !timer.end) timer = null;
-    else if (timer.secs == null) timer.secs = Math.round((timer.minutes || 1) * 60);
-  } catch (e) {
+    timer = readTimer(JSON.parse(localStorage.getItem(TIMER_KEY) || 'null'));
+  } catch {
     timer = null;
   }
 
@@ -413,7 +447,7 @@ export function init38() {
     stopTimer();
   };
 
-  timerTick = setInterval(timerCheck, 1000);
+  setInterval(timerCheck, 1000);
   paintTimer();
   setTimeout(timerCheck, 1500);
 }

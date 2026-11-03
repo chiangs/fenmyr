@@ -225,6 +225,20 @@ function isCard(x: unknown): x is Card {
 
 export const isCardOf = <T extends CardType>(x: unknown, type: T): x is CardOf<T> => isCard(x) && x.type === type;
 
+// cards kept somewhere other than a board (a template), read the same way
+export const readCards = (x: unknown): Card[] => (Array.isArray(x) ? x.map(readCard).filter(c => c !== null) : []);
+
+export function readLinks(x: unknown): Link[] {
+  if (!Array.isArray(x)) return [];
+  return x
+    .filter(isRecord)
+    .flatMap(l =>
+      typeof l.id === 'string' && typeof l.a === 'string' && typeof l.b === 'string'
+        ? [{ ...l, id: l.id, a: l.a, b: l.b, ...(typeof l.arrow === 'boolean' ? { arrow: l.arrow } : {}) }]
+        : [],
+    );
+}
+
 // Anything saved back after opening a board is all it keeps, so a card missing a number gets a default instead of being
 // dropped. Only a card with no id or an unknown type is left out, since it can't be shown.
 function readCard(x: unknown): Card | null {

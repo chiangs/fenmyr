@@ -1,5 +1,11 @@
-// @ts-nocheck
-import { esc } from '../ui/dom.ts';
+import { closestTo, elementById, esc, textField } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
+import type { SlashEntry } from '../myra/greet.ts';
+
+type TextBox = HTMLInputElement | HTMLTextAreaElement;
+// one row of the slash menu: fill puts ready-made words in the box; cmd is a command to start
+type SlashRow = { key: string; title: string; desc: string; fill?: string; cmd?: SlashEntry };
+const findField = () => elementById('fbQ', HTMLInputElement);
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { find, hasAll, queryWords } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
@@ -14,10 +20,10 @@ import { reply } from '../settings/licenses.ts';
 import { session } from '../core/state.ts';
 
 // ---------- the find bar: opens next to Myra when /find or /tag runs; searches as you type, steps through the matches, closes with Esc ----------
-const readingOrder = (a, b) => Math.round(a.y / 90) - Math.round(b.y / 90) || a.x - b.x;
+const readingOrder = (a: Card, b: Card) => Math.round(a.y / 90) - Math.round(b.y / 90) || a.x - b.x;
 
-function findRun(keep) {
-  const words = queryWords($('fbQ').value);
+function findRun(keep: boolean) {
+  const words = queryWords(findField().value);
   find.hits = words.length
     ? session.board.cards.filter(c => !c.hidden && hasAll(words, wordsOf(c))).sort(readingOrder)
     : [];
@@ -33,14 +39,16 @@ function findRun(keep) {
         ? `${tray} in Unsorted`
         : 'No matches';
   $('fbCount').classList.toggle('none', !!words.length && !find.hits.length);
-  $('fbPrev').disabled = $('fbNext').disabled = find.hits.length < 2;
+  elementById('fbPrev', HTMLButtonElement).disabled = elementById('fbNext', HTMLButtonElement).disabled =
+    find.hits.length < 2;
   applyDim();
-  if (find.cur) glideTo([byId(find.cur)]);
+  const cur = find.cur ? byId(find.cur) : undefined;
+  if (cur) glideTo([cur]);
   findFit();
   return find.hits.length;
 }
 
-function findStep(d) {
+function findStep(d: number) {
   if (find.hits.length < 2) return;
   find.i = (find.i + d + find.hits.length) % find.hits.length;
   findRun(true);
@@ -51,14 +59,14 @@ function findOpen(query = '') {
   myraOpen(false);
   selectOnly([]);
   $('findBar').hidden = false;
-  $('fbQ').value = query;
+  findField().value = query;
   const n = findRun(false);
-  $('fbQ').focus();
-  $('fbQ').select();
+  findField().focus();
+  findField().select();
   return n;
 }
 
-export function findClose(keep) {
+export function findClose(keep?: boolean) {
   if (!find.on) return;
   if (keep && find.cur && byId(find.cur)) selectOnly([find.cur]);
   find.on = false;
@@ -69,7 +77,7 @@ export function findClose(keep) {
   applyDim();
 }
 
-let findT = 0;
+let findT: ReturnType<typeof setTimeout> | undefined;
 
 // the bar always sits right of Myra's pill. When the toolbar leaves no room for it, the toolbar steps aside while you search (a very narrow window puts the bar just above her instead)
 function findFit() {
@@ -85,7 +93,7 @@ function findFit() {
   }
 }
 
-export function slashFind(arg) {
+export function slashFind(arg: string) {
   const q = arg.trim();
   if (!q) {
     findOpen();
@@ -99,7 +107,7 @@ export function slashFind(arg) {
   );
 }
 
-export function slashTag(arg) {
+export function slashTag(arg: string) {
   const t = cleanTag(arg).toLowerCase(),
     all = session.board.tags || [];
   if (!t)
@@ -125,21 +133,22 @@ export function slashTag(arg) {
   );
 }
 
-export function slash(text) {
+export function slash(text: string) {
   if (!session.board) return;
   if (!chatOpen()) myraOpen(true);
   const m = /^\/(\w*)\s*(.*)$/s.exec(text.trim()),
-    c = m && SLASH.find(x => x.cmd === m[1].toLowerCase());
+    name = m?.[1] ?? '',
+    c = m && SLASH.find(x => x.cmd === name.toLowerCase());
   if (!c) {
     addMsg('me', text);
-    return reply(helpText(`I don't know /${m ? m[1] : ''}. Here is what I can do:`));
+    return reply(helpText(`I don't know /${name}. Here is what I can do:`));
   }
   if (!c.quiet) addMsg('me', text);
-  c.run(m[2]);
+  c.run(m?.[2] ?? '');
 }
 
 let slashSel = 0;
-let slashMenu;
+let slashMenu: HTMLElement;
 
 export const hideSlash = () => {
   slashMenu.hidden = true;
@@ -152,14 +161,12 @@ const TIMER_PRESETS = [
   { fill: '/timer 5 breather', title: '5 min breather', desc: 'Stand up, look away, stretch' },
 ];
 
-const slashMatches = el => {
+const slashMatches = (el: TextBox): SlashRow[] => {
   if (/^\/timer\s*$/i.test(el.value) && !timer)
-    return TIMER_PRESETS.map(p => ({
-      key: p.fill,
-      title: `<b>/timer</b> ${esc(p.title)}`,
-      desc: p.desc,
-      fill: p.fill,
-    }));
+    return TIMER_PRESETS.map(p => {
+      const name = esc(p.title);
+      return { key: p.fill, title: `<b>/timer</b> ${name}`, desc: p.desc, fill: p.fill };
+    });
   if (/^\/animate\s*$/i.test(el.value))
     return [
       { key: '/animate', title: '<b>/animate</b> Surprise me', desc: 'A random one', fill: '/animate' },
@@ -170,26 +177,25 @@ const slashMatches = el => {
         fill: '/animate ' + a.name,
       })),
     ];
-  const m = /^\/(\w*)$/.exec(el.value);
-  return m
-    ? SLASH.filter(c => c.cmd.startsWith(m[1].toLowerCase())).map(c => ({
-        key: c.cmd,
-        title: `<b>/${c.cmd}${c.arg ? ` <i>${esc(c.arg)}</i>` : ''}</b>`,
-        desc: c.desc,
-        cmd: c,
-      }))
-    : [];
+  const typed = /^\/(\w*)$/.exec(el.value)?.[1];
+  if (typed === undefined) return [];
+  return SLASH.filter(c => c.cmd.startsWith(typed.toLowerCase())).map(c => {
+    const arg = c.arg ? ` <i>${esc(c.arg)}</i>` : '';
+    return { key: c.cmd, title: `<b>/${c.cmd}${arg}</b>`, desc: c.desc, cmd: c };
+  });
 };
 
-function showSlash(el) {
+function showSlash(el: TextBox) {
   const list = slashMatches(el);
   if (!list.length) return hideSlash();
   slashSel = Math.min(slashSel, list.length - 1);
   slashMenu.innerHTML = list
-    .map(
-      (c, i) =>
-        `<button type="button" data-key="${esc(c.key)}" class="${i === slashSel ? 'on' : ''}">${c.title}<span>${esc(c.desc)}</span></button>`,
-    )
+    .map((c, i) => {
+      const key = esc(c.key),
+        on = i === slashSel ? 'on' : '',
+        desc = esc(c.desc);
+      return `<button type="button" data-key="${key}" class="${on}">${c.title}<span>${desc}</span></button>`;
+    })
     .join('');
   const r = (el.closest('form') || el).getBoundingClientRect();
   slashMenu.hidden = false;
@@ -199,21 +205,22 @@ function showSlash(el) {
   slashMenu.dataset.for = el.id;
 }
 
-function pickSlash(key) {
-  const el = $(slashMenu.dataset.for),
-    it = el && slashMatches(el).find(x => x.key === key);
+function pickSlash(key: string) {
+  const el = textField(slashMenu.dataset.for ?? ''),
+    it = slashMatches(el).find(x => x.key === key);
   hideSlash();
   if (!it) return;
   if (it.fill) {
     el.value = it.fill;
-    el.closest('form').requestSubmit();
+    el.closest('form')?.requestSubmit();
     return;
   }
   const c = it.cmd;
+  if (!c) return;
   el.value = '/' + c.cmd + (c.arg ? ' ' : '');
   el.focus();
   el.setSelectionRange(el.value.length, el.value.length);
-  if (!c.arg) el.closest('form').requestSubmit();
+  if (!c.arg) el.closest('form')?.requestSubmit();
   else {
     slashSel = 0;
     showSlash(el);
@@ -224,17 +231,17 @@ function pickSlash(key) {
 export function startFind() {
   if (!session.board) return;
   if (find.on) {
-    $('fbQ').focus();
-    $('fbQ').select();
+    findField().focus();
+    findField().select();
     return;
   }
   myraOpen(true);
-  const el = $('mcInput'),
+  const el = textField('mcInput'),
     had = /^\/find /i.test(el.value);
   if (!had) el.value = '/find ';
   el.focus();
   el.dispatchEvent(new Event('input'));
-  had ? el.setSelectionRange(6, el.value.length) : el.setSelectionRange(el.value.length, el.value.length);
+  el.setSelectionRange(had ? 6 : el.value.length, el.value.length);
 }
 export function init34() {
   $('fbQ').addEventListener('input', () => {
@@ -268,12 +275,12 @@ export function init34() {
   slashMenu.addEventListener('pointerdown', e => e.preventDefault());
   // keep the focus in the box
   slashMenu.onclick = e => {
-    const b = e.target.closest('[data-key]');
-    if (b) pickSlash(b.dataset.key);
+    const b = closestTo(e.target, '[data-key]');
+    if (b) pickSlash(b.dataset.key ?? '');
   };
 
   ['mInput', 'mcInput'].forEach(id => {
-    const el = $(id);
+    const el = textField(id);
     el.addEventListener('input', () => {
       slashSel = 0;
       showSlash(el);
@@ -286,7 +293,7 @@ export function init34() {
     el.addEventListener(
       'keydown',
       e => {
-        if (slashMenu.hidden || slashMenu.dataset.for !== id) return;
+        if (!(e instanceof KeyboardEvent) || slashMenu.hidden || slashMenu.dataset.for !== id) return;
         const list = slashMatches(el);
         if (e.key === 'Escape') {
           e.stopImmediatePropagation();
@@ -299,20 +306,14 @@ export function init34() {
           slashSel = (slashSel + (e.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length;
           return showSlash(el);
         }
-        if (
-          (e.key === 'Enter' || e.key === 'Tab') &&
-          !e.shiftKey &&
-          list[slashSel] &&
-          !(
-            e.key === 'Enter' &&
-            list[slashSel].cmd &&
-            el.value.slice(1).toLowerCase() === list[slashSel].cmd.cmd &&
-            !list[slashSel].cmd.arg
-          )
-        ) {
+        const row = list[slashSel],
+          cmd = row?.cmd,
+          // Enter on a finished command with nothing to add sends it as typed
+          typedOut = e.key === 'Enter' && cmd && el.value.slice(1).toLowerCase() === cmd.cmd && !cmd.arg;
+        if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && row && !typedOut) {
           e.preventDefault();
           e.stopImmediatePropagation();
-          pickSlash(list[slashSel].key);
+          pickSlash(row.key);
         }
       },
       true,

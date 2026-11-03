@@ -1,4 +1,5 @@
 import { openSetup, startTour } from './onboarding.ts';
+import type { Chattiness } from '../../shared/ops.ts';
 import { copyCards, pasteCards } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderAll, renderCard } from '../canvas/render.ts';
@@ -59,7 +60,7 @@ const makeHooks = () => ({
   daily,
   dayKey,
   slashDue,
-  setGreet: (g: boolean, chat: string) => {
+  setGreet: (g: boolean, chat: Chattiness) => {
     settings.greet = g;
     settings.chat = chat;
   },
