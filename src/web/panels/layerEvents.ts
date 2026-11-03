@@ -5,7 +5,7 @@ import { $, cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { endEdit } from '../edit/editing.ts';
 import { chirp } from '../settings/licenses.ts';
-import { renderPalette } from '../ui/colorPicker.ts';
+import { renderPalette } from '../ui/palette.ts';
 import { session } from '../core/state.ts';
 import { closestTo } from '../ui/dom.ts';
 import { layerName } from './layerNames.ts';

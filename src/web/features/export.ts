@@ -17,7 +17,7 @@ import { applyColors } from '../settings/colors.ts';
 import { chirp, say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
-import { tintPicker } from '../ui/colorPicker.ts';
+import { tintPicker } from '../ui/palette.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
 import { groupSel, restack } from '../wireframe/stack.ts';

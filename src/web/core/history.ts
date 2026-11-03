@@ -11,7 +11,7 @@ import { refreshBoardsAfterSave } from '../library/rowMenu.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { say } from '../settings/licenses.ts';
-import { renderPalette } from '../ui/colorPicker.ts';
+import { renderPalette } from '../ui/palette.ts';
 import { WF } from '../wireframe/wireframes.ts';
 import { appState, session } from './state.ts';
 

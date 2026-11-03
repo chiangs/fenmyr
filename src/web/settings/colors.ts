@@ -11,7 +11,7 @@ import { myCur, paintCursor } from './cursor.ts';
 import { settings } from './settings.ts';
 import { applySettings } from './widgets.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
-import { PRESETS } from '../ui/colorPicker.ts';
+import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
 import { appState, session } from '../core/state.ts';
