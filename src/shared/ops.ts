@@ -8,6 +8,8 @@ export type BoardSummary = {
   folder: string | null;
   parent: string | null;
   updated: number;
+  // set when the board has its own vault access (not its project's): the vaults it may read, and whether AI may read them
+  vaultAccess?: { vault: string; ai: boolean }[];
 };
 export type Template = {
   id: string;

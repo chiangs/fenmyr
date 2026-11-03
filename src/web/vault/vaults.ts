@@ -14,6 +14,9 @@ import { refreshVNotes } from './notes.ts';
 
 type AccessChoice = { follow: boolean; grants: VaultGrant[] };
 
+// sent when what reads a vault may have changed, so Settings → Vaults can repaint its "Read by" lines
+export const USE_EVENT = 'fenmyr:vault-use';
+
 // ---------- Obsidian vaults: connect folders here; a project or board is then granted what it may see (read-only) ----------
 export let vaults: Vault[] = [];
 // vault id → its folders and note count from the last scan
@@ -87,11 +90,12 @@ export async function renderVaults() {
               ? ''
               : ' · doesn’t look like an Obsidian vault (no .obsidian folder), but I can still read its notes';
           return `<div class="vrow" data-id="${id}"><div class="vr-top"><div><b class="vr-name">${name}</b><small>${path}<span class="vr-c"></span>${notObsidian}</small></div>
-        <div class="set-btns"><button class="set-btn" data-vb="more">Edit</button><button class="set-btn" data-vb="scan">Rescan</button><button class="set-btn" data-vb="rm">Disconnect</button></div></div><div class="vr-more" hidden></div></div>`;
+        <div class="set-btns"><button class="set-btn" data-vb="access">Give access…</button><button class="set-btn" data-vb="more">Edit</button><button class="set-btn" data-vb="scan">Rescan</button><button class="set-btn" data-vb="rm">Disconnect</button></div></div><div class="vr-use"></div><div class="vr-more" hidden></div></div>`;
         })
         .join('')
     : '<div class="vr-none">No vault connected yet.</div>';
   paintVaultCounts();
+  document.dispatchEvent(new Event(USE_EVENT));
   vaults.forEach(v => {
     Fenmyr.vaultScan(v.id)
       .then(info => {
@@ -145,7 +149,7 @@ async function vaultAccessDialog({
           ? `<div class="tdlg-row"><span>Who decides</span><div class="seg" id="vaFollow"><button data-v="1">${followLabel}</button><button data-v="0">This board only</button></div></div>`
           : '';
     const d =
-      showDialog(`<div class="tdlg vdlg" role="dialog"><h3>Vault access</h3><p class="set-note">${shownTitle}. Notes are only read, and only from the folders you tick. Off-limits folders and #private notes are never read.</p>
+      showDialog(`<div class="tdlg vdlg" role="dialog"><h3>Vault access</h3><p class="set-note">${shownTitle}. Notes are only read, and only from the folders you tick. Off-limits folders and #private notes are never read.</p><p class="set-note">To let Myra search these notes with AI, switch on “Let Myra read these with AI” below, then tick “Search my vault” in her chat for each question.</p>
         ${followRow}
         <div class="va-list" id="vaList"></div><div class="tdlg-btns"><button class="set-btn" id="vaNo">Cancel</button><button class="set-btn hot" id="vaOk">Save</button></div></div>`);
     const list = child(d, '#vaList');
@@ -247,6 +251,7 @@ export async function editVaultAccess(kind: 'project' | 'board', obj: Project | 
         : `“${obj.name}” can’t read any vault ✦`,
       3500,
     );
+    document.dispatchEvent(new Event(USE_EVENT));
     return;
   }
   const b = session.board && session.board.id === obj.id ? session.board : await Fenmyr.load(obj.id);
@@ -267,4 +272,5 @@ export async function editVaultAccess(kind: 'project' | 'board', obj: Project | 
     applyToolbar();
   } else await Fenmyr.save(b);
   chirp(r.follow ? `“${b.name}” follows its project ✦` : `Saved: “${b.name}” has its own vault access ✦`, 3500);
+  document.dispatchEvent(new Event(USE_EVENT));
 }

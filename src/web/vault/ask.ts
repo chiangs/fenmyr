@@ -6,6 +6,7 @@ import { saveLib } from '../library/tree.ts';
 import { say } from '../settings/licenses.ts';
 import { child, closestTo, elementById, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
+import { initVaultAccess, vaultUseClick } from './access.ts';
 import { addVaultNote } from './notes.ts';
 import { activeGrants, folderChecklist, loadVaults, renderVaults, vaultById, vaultInfo } from './vaults.ts';
 
@@ -169,6 +170,7 @@ export async function openVaultPicker() {
   };
 }
 export function init39() {
+  initVaultAccess();
   // ---------- Myra reads notes with AI: only from grants with the switch on, only when you tick "Search my vault" for that question ----------
   appState.vaultChip = false;
 
@@ -184,10 +186,7 @@ export function init39() {
       if (!dir) return;
       const v = await Fenmyr.vaultAdd(dir);
       await renderVaults();
-      say(
-        `Connected “${v.name}”. Nobody can see it yet: give a project or board access from its right-click menu ✦`,
-        6000,
-      );
+      say(`Connected “${v.name}”. Nothing can read it yet: use Give access… on it to choose who may ✦`, 6000);
     } catch (e) {
       say(`Hmm: ${messageOf(e)}`, 4000);
     }
@@ -200,6 +199,7 @@ export function init39() {
     const v = vaultById(row.dataset.id ?? '');
     if (!v) return;
     const more = child(row, '.vr-more');
+    if (b.dataset.vb === 'access' || b.dataset.vb === 'edit') return vaultUseClick(b, v.id);
     if (b.dataset.vb === 'scan') {
       delete vaultInfo[v.id];
       return renderVaults();
