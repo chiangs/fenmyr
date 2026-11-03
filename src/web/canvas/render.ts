@@ -4,148 +4,27 @@ import { typesWith } from '../../shared/cardTypes.ts';
 import { applyView } from './view.ts';
 import { renderTray, renderWires } from './wires.ts';
 import { COLL, parentOf } from '../cards/collection.ts';
-import { cropping } from '../cards/crop.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { wireLinkInput } from '../cards/links.ts';
-import { CIC, host, shapeSVG } from '../cards/shapes.ts';
 import { spEmbed } from '../cards/spotify.ts';
 import { COLORS, find } from '../core/base.ts';
 import { cardsEl } from '../core/dom.ts';
 import { dueChip } from '../features/due.ts';
 import { isDim } from '../features/focus.ts';
-import { soloTagAdd, tagChips } from '../features/tags.ts';
+import { soloTagAdd } from '../features/tags.ts';
 import { mini } from '../library/homeTiles.ts';
-import { MIC, PLAY, fitAudio, fmtT } from '../media/audio.ts';
-import { devName } from '../media/devices.ts';
-import { SPK, cams, setupVideo } from '../media/video.ts';
+import { fitAudio } from '../media/audio.ts';
+import { setupVideo } from '../media/video.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { wireLayers } from '../panels/layerEvents.ts';
 import { fsMul, SIZED } from '../selbar/textSize.ts';
 import { applyColors } from '../settings/colors.ts';
-import { settings } from '../settings/settings.ts';
-import { inkPath } from '../tools/ink.ts';
-import { pathD } from '../tools/pen.ts';
-import { pxSrc } from '../tools/stamps.ts';
-import { vnFull, vnMd } from '../vault/notes.ts';
-import { isLocalFont, useFont } from '../wireframe/tilt.ts';
+import { useFont } from '../wireframe/tilt.ts';
 import { WF, styleWF } from '../wireframe/wireframes.ts';
-import { appState, session } from '../core/state.ts';
+import { session } from '../core/state.ts';
+import { inner } from './cardMarkup.ts';
 
 // ---------- rendering ----------
-
-function inner(c: Card): string {
-  switch (c.type) {
-    case 'note':
-      return `${c.myra ? `<div class="nm-head"><img class="nmyra${c.myraMv ? ' mv-' + c.myraMv : ''}" src="${esc(c.myraImg || 'stamps/myra-wave.png')}" alt=""><div class="nname">${esc(c.name || '')}</div></div>` : `<div class="nname">${esc(c.name || '')}</div>`}<div class="text">${esc(c.text)}</div>${(c.tags || []).length ? tagChips(c) : ''}`;
-    case 'doc':
-      return `<div class="pill">${CIC.doc}<span class="text">${esc(c.text)}</span></div>`;
-    case 'canvas':
-      return `<div class="cv-head">${CIC.canvas}<span class="text">${esc(c.text)}</span></div><div class="cv-prev"><em>empty canvas</em></div>`;
-    case 'shape':
-      return shapeSVG(c) + `<div class="text">${esc(c.text || '')}</div>`;
-    case 'stamp':
-      return `<div class="st">${c.src ? `<img src="${esc(c.src)}" alt="">` : pxSrc(c.emoji || '⭐') ? `<img src="${pxSrc(c.emoji || '⭐')}" alt="">` : `<span>${esc(c.emoji || '⭐')}</span>`}</div>`;
-    case 'spotify':
-      return (
-        `<div class="sp-head"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="11" fill="#1ed760"/><path d="M6.6 9.4c3.6-1.1 7.8-.8 11 1M7.2 12.6c3-.9 6.3-.6 9 .9M7.8 15.6c2.4-.6 4.9-.4 7 .8" stroke="#121212" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg><span>${esc(c.title || 'Spotify')}</span></div>` +
-        `<div class="sp-wrap">${c.image ? `<img class="sp-art" src="${esc(c.image)}" alt="">` : ''}<iframe class="sp-frame" data-src="${esc(spEmbed(c))}" src="${esc(spEmbed(c))}" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="${esc(c.title || 'Spotify')}"></iframe><div class="sp-shield" title="Click to select, then play"></div></div>`
-      );
-    case 'video': {
-      if (c.src)
-        return (
-          `<div class="vd-stage"><video class="vd-v"></video><button class="vd-play" data-act="vd-play" aria-label="Play">${PLAY}</button></div><div class="vd-bar"><button class="vd-pp" data-act="vd-play" aria-label="Play or pause">${PLAY}</button><div class="vd-prog" data-act="vd-seek"><i></i></div><span class="vd-time">${fmtT(c.dur || 0)}</span><button class="vd-mute${c.muted ? ' off' : ''}" data-act="vd-mute" aria-label="Sound">${SPK}</button><button class="vd-txb${c.text ? ' on' : ''}" data-act="vd-tx" aria-label="Write it out" data-tip="Write it out">${Icon('captions', { size: 15 })}</button></div>` +
-          (c.txShown
-            ? `<div class="vd-txt"><div class="vd-txt-body${c.text ? '' : ' wait'}">${esc(c.text || c.txNote || 'Writing it out…')}</div>${c.text ? `<div class="vd-txt-acts">${settings.ai && appState.haveClaude !== false ? '<button data-act="vd-notes">✦ Turn into notes</button>' : ''}<button data-act="vd-copy">Copy</button></div>` : c.needTx ? '<div class="vd-txt-acts"><button data-act="vd-tx">✦ Write it out</button></div>' : ''}</div>`
-            : '')
-        );
-      if (c.saving)
-        return `<div class="vd-stage"><div class="vd-msg"><b>Saving your video…</b><span>${Math.round((c.pct || 0) * 100)}%</span></div></div><div class="vd-bar"><span class="vd-title">${esc(c.title || 'Video')}</span></div>`;
-      return (
-        `<div class="vd-stage live"><video class="vd-live"></video>${c.camErr ? `<div class="vd-msg"><b>${esc(c.camErr)}</b></div>` : c.camRest ? `<button class="vd-msg vd-wake" data-act="vd-wake"><b>Your camera is resting</b><span>Click to turn it on</span></button>` : ''}${c.count ? `<div class="vd-count">${c.count}</div>` : ''}${c.rec && !c.count ? `<div class="vd-recdot"><i></i><span class="vd-rtime">0:00</span></div>` : ''}${!c.rec && !c.camErr && cams.get(c.id) ? `<button class="vd-dev" data-act="vd-dev">${Icon('camera', { size: 13 })}<span>${esc(devName(cams.get(c.id)?.stream.getVideoTracks()[0], 'Camera'))}</span><i>▾</i></button>` : ''}${!c.rec && !c.camErr && cams.get(c.id) ? `<div class="vd-look"><button class="${settings.camFlip === false ? '' : 'on'}" data-act="vd-flip" data-tip="Flip" aria-label="Flip the camera">${Icon('flip')}</button></div>` : ''}${!c.rec && !c.camErr ? `<div class="vd-shape"><button data-act="vd-wide" class="${c.vert ? '' : 'on'}"><i class="w"></i>Wide</button><button data-act="vd-tall" class="${c.vert ? 'on' : ''}"><i class="t"></i>Phone</button></div>` : ''}</div>` +
-        `<div class="vd-bar">${c.rec ? `<button class="vd-stop" data-act="vd-stop"><i></i>Stop</button>` : `<button class="vd-start" data-act="vd-start"><span class="au-rec"></span>${c.vert ? 'Record' : 'Start recording'}</button><button class="vd-file" data-act="vd-file" title="Use a video file">${c.vert ? Icon('upload', { size: 16 }) : 'Use a video file'}</button>`}</div>`
-      );
-    }
-    case 'audio':
-      return c.ready && !c.rec && !c.src
-        ? `<div class="au-top"><span class="au-mic">${MIC}</span><span class="text">${esc(c.title || 'Voice memo')}</span></div><button class="au-start" data-act="au-start"><span class="au-rec"></span>Start recording</button><button class="au-dev" data-act="au-dev">${MIC}<span>${esc(devName(appState.warm?.getAudioTracks?.()[0], 'Microphone'))}</span><i>▾</i></button>`
-        : c.rec
-          ? `<div class="au-top"><span class="au-dot${c.count || c.starting ? ' wait' : ''}"></span><b>${c.count === 'connecting' ? 'Connecting to voice…' : c.count ? 'Start talking in…' : c.starting ? 'Starting…' : c.paused ? 'Paused' : 'Recording…'}</b><span class="au-time">0:00</span></div>${c.count || c.starting ? `<div class="au-count${typeof c.count === 'string' ? ' soft' : ''}">${c.count === 'connecting' ? '<i></i><i></i><i></i>' : c.count || ''}</div>` : '<canvas class="au-live" width="520" height="68"></canvas>'}<div class="au-acts"><button data-act="au-pause">${c.paused ? 'Resume' : 'Pause'}</button><button data-act="au-stop" class="solid">Stop</button></div>`
-          : `<div class="au-top"><span class="text">${esc(c.title || 'Voice memo')}</span></div><div class="au-row"><button class="au-play" data-act="au-play">${PLAY}</button><div class="au-wave" data-act="au-seek">${(c.wave || Array(40).fill(0.2)).map(v => `<i style="height:${Math.max(8, v * 100)}%"></i>`).join('')}</div><span class="au-time">${fmtT(c.dur || 0)}</span></div>` +
-            `<div class="au-tx${c.text ? '' : ' wait'}">${c.text ? esc(c.text) : esc(c.txNote || 'Writing it out…')}</div><div class="au-acts"><button data-act="au-replace">Replace</button>${c.text ? '<button data-act="au-notes">✦ Turn into notes</button>' : c.needTx ? '<button data-act="au-tx">✦ Write it out</button>' : ''}</div>`;
-    case 'path':
-      return `<svg class="pth" viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none"><path d="${pathD(c.pts, c.closed, c.radius || 0, c.ow / Math.max(1, c.w))}" fill="${c.closed && c.fill ? c.fill : 'none'}" stroke="${c.stroke && (c.sw ?? 0) > 0 ? c.stroke : 'none'}" stroke-width="${c.sw || 0}" stroke-linecap="round" stroke-linejoin="round"${skStyle(c) === 'dash' ? ` stroke-dasharray="${c.dl ?? 8} ${c.dg ?? 6}"` : skStyle(c) === 'dot' ? ` stroke-dasharray="0 ${(c.dg ?? 6) + (c.sw ?? 0)}"` : ''} vector-effect="non-scaling-stroke"/></svg>`;
-    case 'ink':
-      return `<svg viewBox="0 0 ${c.ow} ${c.oh}" preserveAspectRatio="none">${inkPath(c.pts, c.pen ?? 'pen', c.size, c.ink, true)}</svg>`;
-    case 'frame':
-      return `<div class="fr-body"></div><div class="fr-name">${esc(c.name || 'Screen')}</div>`;
-    case 'section':
-      return `<div class="sec-glass"></div><div class="sec-name"><span class="text">${esc(c.text || 'Section')}</span></div>`;
-    case 'box':
-      return `<div class="bx"></div>${c.img && !c.src ? `<div class="bx-ph">${Icon('image')}<span class="bx-l">${esc(c.img)}</span></div>` : ''}`;
-    case 'font': {
-      const f = esc(c.font || 'Figtree');
-      useFont(c.font);
-      return `<div class="fs-aa" style="font-family:'${f}', system-ui">Aa</div><div class="fs-meta"><b>${f}</b><span class="fs-src">${isLocalFont(c.font) ? 'On your computer' : 'Google Fonts'}</span></div><div class="fs-sample text" style="font-family:'${f}', system-ui">${esc(c.text || 'The quick brown fox jumps over the lazy dog')}</div>`;
-    }
-    case 'icon':
-      return Icon(c.name || 'star', { cls: 'ci' });
-    case 'text':
-      return `<div class="text tx">${esc(c.text || '')}</div>`;
-    case 'coll':
-      return `<div class="coll-head"><span class="text">${esc(c.text)}</span></div><div class="coll-frame"></div>${c.kanban ? '<div class="kb-heads"></div>' : ''}${(c.kids || []).length || c.kanban ? '' : '<div class="coll-empty">Drop cards here</div>'}`;
-    case 'title':
-      return `<div class="text">${esc(c.text)}</div>`;
-    case 'image': {
-      // a crop shows a window onto the picture: the picture is scaled up and shifted so only the kept part shows
-      const k = !c.cropEdit && c.crop,
-        st = k
-          ? `position:absolute;width:${100 / k.w}%;height:${100 / k.h}%;left:${(-k.x / k.w) * 100}%;top:${(-k.y / k.h) * 100}%;object-fit:fill;border-radius:0`
-          : '';
-      const ui =
-        c.cropEdit && cropping
-          ? `<div class="crop-ui"><div class="crop-box" style="left:${cropping.box.x * 100}%;top:${cropping.box.y * 100}%;width:${cropping.box.w * 100}%;height:${cropping.box.h * 100}%">${['nw', 'ne', 'sw', 'se'].map(h => `<i data-h="${h}"></i>`).join('')}</div></div>`
-          : '';
-      return `<div class="imgwrap"><img src="${esc(c.src)}" alt="" style="${st}">${ui}</div>${c.cropEdit ? '' : `<button class="chip" data-act="colors">${Icon('palette', { size: 16 })}<span>Pull colours</span></button>`}`;
-    }
-    case 'vnote': {
-      const gone = c.blocked || c.missing,
-        back = c.side === 'back',
-        full = vnFull.get(c.id),
-        sm = c.props ?? [];
-      const head = `<div class="vn-head">${Icon('notebook')}<span class="vn-title text">${esc(c.title || 'Note')}</span><button class="vn-flip" data-act="vn-flip" title="${back ? 'Show the title and tags' : 'Show the content'}">${Icon('refresh')}</button></div>`;
-      const btns = `${back && !gone ? `<button class="vn-btn" data-act="vn-full">${full ? 'Show less' : 'Show full text'}</button>` : ''}<button class="vn-btn" data-act="vn-open" title="Open in Obsidian">${Icon('open')}<span>Obsidian</span></button>`;
-      const foot = `<div class="vn-foot">${btns}</div>`;
-      if (gone)
-        return `${head}<div class="vn-gone text">${c.missing ? 'I can’t find this note any more.' : 'Not available: this board isn’t allowed to read it.'}</div>${foot}`;
-      if (!back)
-        return `${head}${
-          (c.tags || []).length
-            ? `<div class="vn-tags">${(c.tags ?? [])
-                .slice(0, 6)
-                .map(t => `<i>#${esc(t)}</i>`)
-                .join('')}</div>`
-            : ''
-        }${
-          sm.length
-            ? `<div class="vn-props text">${sm
-                .slice(0, 5)
-                .map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`)
-                .join('')}</div>`
-            : ''
-        }<div class="vn-fill"></div>${foot}`;
-      return `${head}${full ? `<div class="vn-md text">${vnMd(full.body)}${full.truncated ? '<p class="vn-cut">That is the first part. The rest is in the note.</p>' : ''}</div>` : `<div class="vn-ex text">${esc(c.excerpt || '')}</div>`}${foot}`;
-    }
-    case 'link':
-      return !c.url
-        ? `<div class="link-in${c.loading ? ' loading' : ''}">${CIC.link}<input placeholder="Add a link…" value="${esc(c.draft || '')}" spellcheck="false"></div>`
-        : `<div class="thumb" style="${c.image ? `background-image:url('${esc(c.image)}')` : ''}"></div><div class="meta"><i class="fav" style="background-image:url('https://www.google.com/s2/favicons?sz=64&domain=${esc(host(c.url))}')"></i><div><b>${esc(c.title || c.url)}</b><span>${esc(c.desc || host(c.url))}</span></div></div>`;
-    case 'todo':
-      return `<div class="head">${esc(c.text)}</div><ul>${(c.items || []).map((it, i) => `<li class="${it.done ? 'done' : ''}" data-i="${i}"><input type="checkbox" ${it.done ? 'checked' : ''}><span>${esc(it.t)}</span><button class="li-x" data-act="item-x" title="Remove" aria-label="Remove this item">${Icon('close')}</button></li>`).join('')}</ul><button class="add-item" data-act="item">+ add</button>`;
-    case 'swatch':
-      return `<div class="chipcol"></div><div class="hex">${c.hideName ? '' : `<b>${esc(c.label || c.hex.toUpperCase())}</b>`}${c.hideHex ? '' : `<span>${esc(c.hex.toUpperCase())}</span>`}</div>`;
-  }
-  return '';
-}
 
 // which cards can be tilted by hand: everything except the things that hold other things (sections, screens, collections) and wireframe pieces (they rotate their own way)
 const NO_TILT = typesWith('noTilt');
