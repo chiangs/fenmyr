@@ -32,8 +32,15 @@ export function setTilt(c: Card, to: string | number, keepPop: boolean) {
 export function openTiltPop(c: Card, btn: Element) {
   const pop = $('tiltPop'),
     cur = c.type === 'stamp' && !c.tilted ? 0 : Math.round(c.r || 0);
-  pop.innerHTML = `<div class="tp-row"><label class="tp-in"><span>Tilt</span><input type="number" min="-180" max="180" step="1" value="${cur}" aria-label="Tilt in degrees"><b>°</b></label><button class="tp-reset" data-deg="0" title="Straighten it">${Icon('refresh')}Reset</button></div>
-      <div class="tp-chips">${[0, 5, 10, 15, 30, 45, 90, -5, -10, -15, -30, -45, -90].map(d => `<button data-deg="${d}" class="${d === cur ? 'on' : ''}">${d}°</button>`).join('')}</div>`;
+  const refresh = Icon('refresh'),
+    chips = [0, 5, 10, 15, 30, 45, 90, -5, -10, -15, -30, -45, -90]
+      .map(d => {
+        const on = d === cur ? 'on' : '';
+        return `<button data-deg="${d}" class="${on}">${d}°</button>`;
+      })
+      .join('');
+  pop.innerHTML = `<div class="tp-row"><label class="tp-in"><span>Tilt</span><input type="number" min="-180" max="180" step="1" value="${cur}" aria-label="Tilt in degrees"><b>°</b></label><button class="tp-reset" data-deg="0" title="Straighten it">${refresh}Reset</button></div>
+      <div class="tp-chips">${chips}</div>`;
   const r = btn.getBoundingClientRect();
   pop.classList.add('on');
   pop.style.left =
@@ -163,11 +170,17 @@ export function snapWF(start: { c: Card; x: number; y: number }[], dx: number, d
   let g = '';
   if (bx) {
     dx += bx.d;
-    g += `<line x1="${bx.at + O}" y1="${Math.min(y0, bx.o.y) + O - 10}" x2="${bx.at + O}" y2="${Math.max(y1, bx.o.y + bx.o.h) + O + 10}"/>`;
+    const x = bx.at + O,
+      top = Math.min(y0, bx.o.y) + O - 10,
+      bottom = Math.max(y1, bx.o.y + bx.o.h) + O + 10;
+    g += `<line x1="${x}" y1="${top}" x2="${x}" y2="${bottom}"/>`;
   }
   if (by) {
     dy += by.d;
-    g += `<line x1="${Math.min(x0, by.o.x) + O - 10}" y1="${by.at + O}" x2="${Math.max(x1, by.o.x + by.o.w) + O + 10}" y2="${by.at + O}"/>`;
+    const y = by.at + O,
+      left = Math.min(x0, by.o.x) + O - 10,
+      right = Math.max(x1, by.o.x + by.o.w) + O + 10;
+    g += `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}"/>`;
   }
   $('guides').innerHTML = g;
   return { dx, dy };

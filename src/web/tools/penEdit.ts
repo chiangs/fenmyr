@@ -207,21 +207,30 @@ export function drawVec() {
       c.closed,
       c.radius || 0,
     );
-  let h = `<path d="${d}" class="pl-path" style="stroke-width:${1.5 / z}px"/>`;
+  // line widths and dot sizes stay the same on screen whatever the zoom
+  const thin = 1.5 / z,
+    hair = 1 / z,
+    hdot = 3.5 / z,
+    rdot = 4 / z,
+    pt = 5 / z;
+  let h = `<path d="${d}" class="pl-path" style="stroke-width:${thin}px"/>`;
   c.pts.forEach((q, i) => {
     const p = T(q),
       on = v.sel.has(i);
     if (q.ix != null && (on || v.sel.size === 0)) {
       const A = T({ x: q.ix, y: q.iy ?? q.y }),
         B = T({ x: q.ox ?? q.x, y: q.oy ?? q.y });
-      h += `<path d="M${A.x} ${A.y} L${p.x} ${p.y} L${B.x} ${B.y}" class="pl-handle" style="stroke-width:${1 / z}px"/><circle cx="${A.x}" cy="${A.y}" r="${3.5 / z}" class="pl-hdot"/><circle cx="${B.x}" cy="${B.y}" r="${3.5 / z}" class="pl-hdot"/>`;
+      h += `<path d="M${A.x} ${A.y} L${p.x} ${p.y} L${B.x} ${B.y}" class="pl-handle" style="stroke-width:${hair}px"/><circle cx="${A.x}" cy="${A.y}" r="${hdot}" class="pl-hdot"/><circle cx="${B.x}" cy="${B.y}" r="${hdot}" class="pl-hdot"/>`;
     }
     if (on) {
       const rd = vecRadiusDot(c, i);
-      if (rd)
-        h += `<circle cx="${c.x + rd.x}" cy="${c.y + rd.y}" r="${4 / z}" class="pl-rdot" style="stroke-width:${1.5 / z}px"/>`;
+      if (rd) {
+        const at = T(rd);
+        h += `<circle cx="${at.x}" cy="${at.y}" r="${rdot}" class="pl-rdot" style="stroke-width:${thin}px"/>`;
+      }
     }
-    h += `<circle cx="${p.x}" cy="${p.y}" r="${5 / z}" class="pl-pt${on ? ' close' : ''}" style="stroke-width:${1.5 / z}px"/>`;
+    const cls = on ? ' close' : '';
+    h += `<circle cx="${p.x}" cy="${p.y}" r="${pt}" class="pl-pt${cls}" style="stroke-width:${thin}px"/>`;
   });
   v.svg.innerHTML = h;
 }
