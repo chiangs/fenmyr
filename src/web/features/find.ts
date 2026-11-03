@@ -180,7 +180,8 @@ const slashMatches = (el: TextBox): SlashRow[] => {
   const typed = /^\/(\w*)$/.exec(el.value)?.[1];
   if (typed === undefined) return [];
   return SLASH.filter(c => c.cmd.startsWith(typed.toLowerCase())).map(c => {
-    const arg = c.arg ? ` <i>${esc(c.arg)}</i>` : '';
+    const words = esc(c.arg),
+      arg = c.arg ? ` <i>${words}</i>` : '';
     return { key: c.cmd, title: `<b>/${c.cmd}${arg}</b>`, desc: c.desc, cmd: c };
   });
 };

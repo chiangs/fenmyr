@@ -92,7 +92,8 @@ export function boardFontPop(btn: Element, list: Card[]) {
     onBoard = boardFonts(),
     row = fontRow(cur),
     defCls = cur === '' ? 'on' : '',
-    used = onBoard.length ? `<div class="dp-h">Used on this board</div>${onBoard.map(row).join('')}` : '',
+    boardRows = onBoard.map(row).join(''),
+    used = onBoard.length ? `<div class="dp-h">Used on this board</div>${boardRows}` : '',
     suggested = SUGGESTED_FONTS.filter(f => !onBoard.includes(f))
       .map(row)
       .join(''),

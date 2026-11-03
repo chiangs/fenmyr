@@ -167,16 +167,27 @@ export function drawPen() {
     last = P.at(-1),
     hv = penT.hover;
   const nearFirst = hv && P.length > 2 && Math.hypot(hv.x - first.x, hv.y - first.y) < 10 / z;
-  let h = `<path d="${penD(P)}" class="pl-path" style="stroke-width:${2 / z}px"/>`;
-  if (last && hv && penT.down == null)
-    h += `<path d="${penD([last, nearFirst ? first : hv])}" class="pl-band" style="stroke-width:${1.5 / z}px;stroke-dasharray:${4 / z} ${4 / z}"/>`;
+  // line widths and dot sizes stay the same on screen whatever the zoom
+  const line = 2 / z,
+    thin = 1.5 / z,
+    hair = 1 / z,
+    dash = 4 / z,
+    hdot = 3 / z,
+    d = penD(P);
+  let h = `<path d="${d}" class="pl-path" style="stroke-width:${line}px"/>`;
+  if (last && hv && penT.down == null) {
+    const band = penD([last, nearFirst ? first : hv]);
+    h += `<path d="${band}" class="pl-band" style="stroke-width:${thin}px;stroke-dasharray:${dash} ${dash}"/>`;
+  }
   const dn = penT.down != null && P[penT.down];
   if (dn && dn.ox != null)
-    h += `<path d="M${dn.ix} ${dn.iy} L${dn.ox} ${dn.oy}" class="pl-handle" style="stroke-width:${1 / z}px"/><circle cx="${dn.ix}" cy="${dn.iy}" r="${3 / z}" class="pl-hdot"/><circle cx="${dn.ox}" cy="${dn.oy}" r="${3 / z}" class="pl-hdot"/>`;
-  P.forEach(
-    (q, i) =>
-      (h += `<circle cx="${q.x}" cy="${q.y}" r="${(i === 0 && nearFirst ? 6 : 4) / z}" class="pl-pt${i === 0 && nearFirst ? ' close' : ''}" style="stroke-width:${1.5 / z}px"/>`),
-  );
+    h += `<path d="M${dn.ix} ${dn.iy} L${dn.ox} ${dn.oy}" class="pl-handle" style="stroke-width:${hair}px"/><circle cx="${dn.ix}" cy="${dn.iy}" r="${hdot}" class="pl-hdot"/><circle cx="${dn.ox}" cy="${dn.oy}" r="${hdot}" class="pl-hdot"/>`;
+  P.forEach((q, i) => {
+    const closing = i === 0 && nearFirst,
+      r = (closing ? 6 : 4) / z,
+      cls = closing ? ' close' : '';
+    h += `<circle cx="${q.x}" cy="${q.y}" r="${r}" class="pl-pt${cls}" style="stroke-width:${thin}px"/>`;
+  });
   penT.svg.innerHTML = h;
 }
 

@@ -115,10 +115,14 @@ export function renderHome(): void {
       [['ren', 'Rename', '✎']],
     );
     const art = child(t, '.tile-art'),
-      chips = `<div class="chips">${fs
+      folderChips = fs
         .slice(0, 3)
-        .map(x => `<span class="mf"><i></i>${esc(x.name)}</span>`)
-        .join('')}</div>`;
+        .map(x => {
+          const name = esc(x.name);
+          return `<span class="mf"><i></i>${name}</span>`;
+        })
+        .join(''),
+      chips = `<div class="chips">${folderChips}</div>`;
     const first = fs.map(x => boardsIn(x.id)[0]).find(Boolean);
     if (pp.cover) {
       art.classList.add('cover');

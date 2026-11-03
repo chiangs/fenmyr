@@ -41,7 +41,12 @@ function renderSelChip() {
     el.innerHTML = '';
     return;
   }
-  el.innerHTML = `<span class="mcs-t">${one ? `${esc(labelOf(one.type))}${words ? ` · “${esc(words)}”` : ''}` : `${cs.length} cards selected`}</span><button type="button" class="mcs-x" title="Deselect" aria-label="Deselect">×</button>`;
+  const kind = one ? esc(labelOf(one.type)) : '',
+    quote = esc(words),
+    said = words ? ` · “${quote}”` : '',
+    count = cs.length,
+    what = one ? kind + said : `${count} cards selected`;
+  el.innerHTML = `<span class="mcs-t">${what}</span><button type="button" class="mcs-x" title="Deselect" aria-label="Deselect">×</button>`;
   el.hidden = false;
 }
 

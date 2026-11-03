@@ -32,7 +32,8 @@ const ICONS = readPack();
 const entry = (name: string) => ICONS[name] ?? ICONS.missing;
 const inside = (name: string, title?: string) => {
   const e = entry(name),
-    label = !ICONS[name] || title ? `<title>${esc(title || name)}</title>` : '',
+    tip = esc(title || name),
+    label = !ICONS[name] || title ? `<title>${tip}</title>` : '',
     regular = e ? e.r : '',
     duotone = e ? (e.d ?? (e.t ?? '') + e.r) : '';
   return `${label}<g class="ico-r">${regular}</g><g class="ico-d">${duotone}</g>`;

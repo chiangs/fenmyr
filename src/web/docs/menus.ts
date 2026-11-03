@@ -29,6 +29,12 @@ const FOLD_TITLES: Record<string, string> = {
 };
 const ALIGN_TITLES: Record<string, string> = { left: 'Left', center: 'Centre', right: 'Right', justify: 'Justify' };
 const on = (yes: unknown) => (yes ? 'on' : '');
+// a typed link, shown without its https://
+const linkHTML = (v: string) => {
+  const href = esc(v),
+    shown = esc(v.replace(/^https?:\/\//, ''));
+  return `<a href="${href}">${shown}</a> `;
+};
 
 // ---------- the drop-down menus ----------
 let popKind: string | null = null;
@@ -121,11 +127,7 @@ export function showPop(kind: string, btn: Element | null) {
         return hidePop();
       }
       if (!/^(https?:|mailto:|tel:)/i.test(v)) v = 'https://' + v;
-      if (ed.state.selection.empty && !ed.isActive('link'))
-        ed.chain()
-          .focus()
-          .insertContent(`<a href="${esc(v)}">${esc(v.replace(/^https?:\/\//, ''))}</a> `)
-          .run();
+      if (ed.state.selection.empty && !ed.isActive('link')) ed.chain().focus().insertContent(linkHTML(v)).run();
       else ed.chain().focus().extendMarkRange('link').setLink({ href: v }).run();
       hidePop();
     };

@@ -31,7 +31,11 @@ function renderIcons() {
     hits = words.length ? all.filter(i => hasAll(words, i.kw)) : all;
   $('iconGrid').innerHTML =
     hits
-      .map(i => `<button data-icon="${i.name}" title="${i.name.replace(/-/g, ' ')}">${Icon(i.name)}</button>`)
+      .map(i => {
+        const tip = i.name.replace(/-/g, ' '),
+          icon = Icon(i.name);
+        return `<button data-icon="${i.name}" title="${tip}">${icon}</button>`;
+      })
       .join('') + (hits.length ? '' : '<div class="more">No icons match that</div>');
 }
 

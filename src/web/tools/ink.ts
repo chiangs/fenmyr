@@ -113,8 +113,14 @@ export function inkPath(
     w = penW(tool, size);
   if (tool === 'pen') {
     const [x, y] = pts[0] ?? [0, 0];
-    if (pts.length < 2)
-      return `<path style="fill:${col}" d="M${x - w / 3} ${y} a${w / 3} ${w / 3} 0 1 0 ${w / 1.5} 0 a${w / 3} ${w / 3} 0 1 0 ${-w / 1.5} 0"/>`;
+    // a single tap is a dot: two half circles
+    if (pts.length < 2) {
+      const left = x - w / 3,
+        r = w / 3,
+        across = w / 1.5,
+        back = -w / 1.5;
+      return `<path style="fill:${col}" d="M${left} ${y} a${r} ${r} 0 1 0 ${across} 0 a${r} ${r} 0 1 0 ${back} 0"/>`;
+    }
     const d = butter(pts, finished, w);
     return `<path style="fill:${col}" d="${d}"/>`;
   }

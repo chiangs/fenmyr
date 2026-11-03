@@ -16,7 +16,12 @@ export function renderCrumbs() {
   const chainF = f ? folderChain(f) : [];
   el.innerHTML =
     (p ? `<button data-go="project:${p.id}"></button>` : '') +
-    chainF.map((x, i) => `${p || i ? '<i>/</i>' : ''}<button data-go="folder:${x.id}"></button>`).join('');
+    chainF
+      .map((x, i) => {
+        const slash = p || i ? '<i>/</i>' : '';
+        return `${slash}<button data-go="folder:${x.id}"></button>`;
+      })
+      .join('');
   const btns = [...el.querySelectorAll('button')];
   if (p) {
     const [first] = btns;
@@ -42,10 +47,8 @@ export function renderCrumbs() {
     up = pb.parent;
   }
   chain.forEach(pb => {
-    el.insertAdjacentHTML(
-      'beforeend',
-      `${el.children.length ? '<i>/</i>' : ''}<button data-board="${pb.id}"></button>`,
-    );
+    const slash = el.children.length ? '<i>/</i>' : '';
+    el.insertAdjacentHTML('beforeend', `${slash}<button data-board="${pb.id}"></button>`);
     const bt = el.lastElementChild;
     if (!(bt instanceof HTMLElement)) return;
     bt.textContent = pb.name;

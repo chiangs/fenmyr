@@ -111,25 +111,32 @@ export function vnMd(src: unknown) {
     }
     if ((m = l.match(/^(#{1,6})\s+(.*)/))) {
       close();
-      out += `<h4>${inl(m[2])}</h4>`;
+      const html = inl(m[2]);
+      out += `<h4>${html}</h4>`;
     } else if ((m = l.match(/^\s*[-*+]\s+\[( |x|X)\]\s*(.*)/))) {
       open('ul');
-      out += `<li class="vn-task">${m[1] === ' ' ? '☐' : '☑'} ${inl(m[2])}</li>`;
+      const box = m[1] === ' ' ? '☐' : '☑',
+        html = inl(m[2]);
+      out += `<li class="vn-task">${box} ${html}</li>`;
     } else if ((m = l.match(/^\s*[-*+]\s+(.*)/))) {
       open('ul');
-      out += `<li>${inl(m[1])}</li>`;
+      const html = inl(m[1]);
+      out += `<li>${html}</li>`;
     } else if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) {
       open('ol');
-      out += `<li>${inl(m[1])}</li>`;
+      const html = inl(m[1]);
+      out += `<li>${html}</li>`;
     } else if ((m = l.match(/^>\s?(.*)/))) {
       close();
-      out += `<blockquote>${inl(m[1])}</blockquote>`;
+      const html = inl(m[1]);
+      out += `<blockquote>${html}</blockquote>`;
     } else if (/^(---+|\*\*\*+)$/.test(l.trim())) {
       close();
       out += '<hr>';
     } else {
       close();
-      out += `<p>${inl(l)}</p>`;
+      const html = inl(l);
+      out += `<p>${html}</p>`;
     }
   }
   close();
