@@ -149,7 +149,7 @@ export function initIcons() {
     open: Icon('open'),
     link: Icon('link'),
     flip: Icon('refresh'),
-    count: Icon('hash'),
+    count: Icon('count'),
   };
   addEventListener('resize', snapSoon);
   setTimeout(snapSoon, 300);
