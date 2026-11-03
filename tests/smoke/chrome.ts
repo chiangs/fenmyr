@@ -47,12 +47,32 @@ export async function boardOrder(t: Smoke) {
     await Fenmyr.saveFolders({ projects: [], folders: [{ id: 'of', name: 'Order folder', open: true }] });
     await window.__fenmyr.refreshBoards();
   });
-  const row = (n: string) => page.locator('.board-row', { hasText: n }).first(),
-    names = () => page.evaluate(() => window.__fenmyr.boardsOf('of'));
+  const names = () => page.evaluate(() => window.__fenmyr.boardsOf('of'));
+  // The drag is fired in the page: Playwright's real drag sometimes loses the race with Chromium's own drag start on a
+  // slow machine, and the drag that never ends then swallows every later click in the run.
+  const drag = async (from: string, to: string, y: number) => {
+    await page.evaluate(
+      ([from, to, y]) => {
+        const row = (n: string) =>
+            [...document.querySelectorAll<HTMLElement>('.board-row')].find(r => r.textContent?.includes(n)),
+          src = row(from),
+          dst = row(to);
+        if (!src || !dst) throw new Error(`no row for ${from} or ${to}`);
+        const r = dst.getBoundingClientRect(),
+          dataTransfer = new DataTransfer(),
+          at = { bubbles: true, cancelable: true, dataTransfer, clientX: r.left + 40, clientY: r.top + y };
+        src.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer }));
+        dst.dispatchEvent(new DragEvent('dragover', at));
+        dst.dispatchEvent(new DragEvent('drop', at));
+        src.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer }));
+      },
+      [from, to, y] as const,
+    );
+  };
   // with no order saved yet the newest board comes first, so the expectations follow whatever order this is
   const before = await names(),
     [first = '', middle = '', last = ''] = before;
-  await row(last).dragTo(row(first), { targetPosition: { x: 40, y: 3 } }); // onto the top edge: just before it
+  await drag(last, first, 3); // onto the top edge: just before it
   await page.waitForTimeout(500);
   const after = await names(),
     kept = await page.evaluate(async () => {
@@ -61,7 +81,7 @@ export async function boardOrder(t: Smoke) {
         of = order && typeof order === 'object' && 'of' in order ? order.of : [];
       return JSON.stringify(of);
     });
-  await row(first).dragTo(row(middle), { targetPosition: { x: 40, y: 26 } }); // onto the bottom edge: just after it
+  await drag(first, middle, 26); // onto the bottom edge: just after it
   await page.waitForTimeout(500);
   const after2 = await names();
   t.checkAll('boardOrder', {
