@@ -1,8 +1,9 @@
 // Git for linked projects: what a folder is to git, making it a repo, and who commits. Every call names its folder
 // with -C, so a repo inside another repo is never mistaken for its parent.
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import type { GitChange, GitStatus } from '../shared/ops.ts';
+import type { GitChange, GitIdentity, GitSetup, GitStatus } from '../shared/ops.ts';
 import { run } from './util.ts';
 
 // A repo's own settings can make status run a program (core.fsmonitor). Linking a folder must never run its code.
@@ -114,21 +115,50 @@ export async function init(asked: string): Promise<GitStatus> {
   return status(dir);
 }
 
-export async function setIdentity(asked: string, name: string, email: string, everywhere: boolean) {
-  const dir = folder(asked),
-    n = name.trim(),
+function checkIdentity(name: string, email: string) {
+  const n = name.trim(),
     e = email.trim();
   if (!n || /[\r\n]/.test(n)) throw new Error('Type the name to put on your saves.');
   if (!/^[^\s@]+@[^\s@]+$/.test(e)) throw new Error('Type an email address, like you@example.com.');
+  return [
+    ['user.name', n],
+    ['user.email', e],
+  ] as const;
+}
+
+export async function setIdentity(asked: string, name: string, email: string, everywhere: boolean) {
+  const dir = folder(asked),
+    pairs = checkIdentity(name, email);
   const s = await status(dir);
   if (s.kind !== 'repo') throw new Error('Make this folder a git repo first.');
   const scope = everywhere ? ['--global'] : [];
-  for (const [key, value] of [
-    ['user.name', n],
-    ['user.email', e],
-  ] as const) {
+  for (const [key, value] of pairs) {
     const r = await git(s.root, ['config', ...scope, key, value]);
     if (r.code !== 0) throw new Error(r.err || "Git couldn't save your name and email.");
   }
   return status(dir);
+}
+
+// What setup needs to know, from the settings that apply to every repo on this computer.
+export async function setup(): Promise<GitSetup> {
+  const home = os.homedir();
+  const [version, name, email, helper] = await Promise.all([
+    git(home, ['--version']),
+    git(home, ['config', '--global', 'user.name']),
+    git(home, ['config', '--global', 'user.email']),
+    git(home, ['config', '--global', '--get-all', 'credential.https://github.com.helper']),
+  ]);
+  return {
+    git: version.code === 0,
+    identity: { name: name.out.trim(), email: email.out.trim() },
+    ghForGit: /\bgh(\.exe)? auth git-credential/.test(helper.out),
+  };
+}
+
+export async function setGlobalIdentity(name: string, email: string): Promise<GitIdentity> {
+  for (const [key, value] of checkIdentity(name, email)) {
+    const r = await git(os.homedir(), ['config', '--global', key, value]);
+    if (r.code !== 0) throw new Error(r.err || "Git couldn't save your name and email.");
+  }
+  return (await setup()).identity;
 }

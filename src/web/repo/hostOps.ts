@@ -9,6 +9,11 @@ export const repoOps = {
   ghStatus: () => call('ghStatus'),
   repoPick: () => call('repoPick'),
   packageManager: () => call('packageManager'),
+  gitSetup: () => call('gitSetup'),
+  gitSetGlobalIdentity: (name: string, email: string) => call('gitSetGlobalIdentity', { name, email }),
+  ghLogin: () => call('ghLogin'),
+  ghLoginCancel: () => call('ghLoginCancel'),
+  ghSetupGit: () => call('ghSetupGit'),
 };
 
 export const repoFallbacks: typeof repoOps = {
@@ -18,4 +23,9 @@ export const repoFallbacks: typeof repoOps = {
   ghStatus: desktopOnly,
   repoPick: desktopOnly,
   packageManager: desktopOnly,
+  gitSetup: desktopOnly,
+  gitSetGlobalIdentity: desktopOnly,
+  ghLogin: desktopOnly,
+  ghLoginCancel: desktopOnly,
+  ghSetupGit: desktopOnly,
 };

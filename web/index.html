@@ -354,6 +354,10 @@
         <label class="set-row native-only"><div><b>Let Myra search the web</b><small>She can look things up and read public pages, including public GitHub repos. Her searches can include words from your board.</small></div><input type="checkbox" class="tgl" data-set="webAccess"></label>
         <div class="web-note web-only">This is the web version, so Myra can't reach Claude Code or your helpers from here. Download the desktop app to connect them. <button class="set-link get-app">Get Fenmyr ↗</button></div><div class="set-note native-only">Helpers are the connections in your Claude account. Connect one in Claude's settings, then come back and tap <button class="set-link" id="recheck">check again</button>.</div>
       </section>
+      <section class="native-only" data-tab="helpers"><h3>Git and GitHub</h3>
+        <p class="set-lead">Prototypes are saved as code in git, which keeps every version. Set it up once for this computer.</p>
+        <div class="git-setup" id="gitSetup"></div>
+      </section>
       <section data-tab="widgets"><h3>Widgets</h3>
         <p class="set-lead">Turn on the ones you use. The Boards panel always stays, since it's home to your boards and Settings.</p>
         <label class="set-row"><div><b>Layers</b><small>Everything on the board, top first. Rename, hide, lock and restack</small></div><input type="checkbox" class="tgl" data-set="wLayers"></label>

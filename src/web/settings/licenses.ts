@@ -9,6 +9,7 @@ import { addMsg, renderChat, sessionChats } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { hopMyra } from '../myra/goos.ts';
 import { showConnections } from '../myra/helpers.ts';
+import { ghLoginEnded } from '../repo/setup.ts';
 import { closestTo, esc, htmlIn } from '../ui/dom.ts';
 import { closeSettings } from './colors.ts';
 import { flagOn, setChoice, setFlag, settings } from './settings.ts';
@@ -262,6 +263,7 @@ export function init29() {
       applySettings();
     } else if (name === 'boardsChanged') window.__boardsChanged?.();
     else if (name === 'settings') openSettingsKey();
+    else if (name === 'ghLogin') ghLoginEnded(data);
   };
   // a new wallpaper or scheme: restyle right away
   Fenmyr.caelestia()

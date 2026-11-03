@@ -7,6 +7,7 @@ import { devName, openMedia } from '../media/devices.ts';
 import { camOff, camOn, cams } from '../media/video.ts';
 import { paintBd } from '../myra/birthday.ts';
 import { showConnections } from '../myra/helpers.ts';
+import { renderGitSetup } from '../repo/setup.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
 import { luminance, mixHex } from '../ui/color.ts';
 import { child, closestTo, elementById, esc, htmlIn } from '../ui/dom.ts';
@@ -158,7 +159,10 @@ export function setTab(t: string) {
   for (const sec of htmlIn($('settings'), '.set-body section[data-tab]'))
     sec.classList.toggle('tab-off', sec.dataset.tab !== t);
   child($('settings'), '.set-body').scrollTop = 0;
-  if (t === 'helpers') showUsage();
+  if (t === 'helpers') {
+    showUsage();
+    if (Fenmyr.native) renderGitSetup();
+  }
 }
 
 // panel heights: drag the little bar at the bottom of your boards list, Layers, Wireframe or Unsorted (double-click it to go back to automatic). Layers always keeps at least one row showing

@@ -119,12 +119,15 @@ export type GitStatus =
       behind: number;
       changed: GitChange[];
       remotes: { name: string; url: string }[];
-      identity: { name: string; email: string };
+      identity: GitIdentity;
     };
 // ok is false when a sign-in needs renewing
 export type GhAccount = { host: string; login: string; active: boolean; ok: boolean };
 export type GhState = { kind: 'missing' } | { kind: 'ready'; accounts: GhAccount[] };
 export type PackageManager = 'pacman' | 'apt' | 'dnf' | 'zypper' | 'brew';
+export type GitIdentity = { name: string; email: string };
+// ghForGit: git pushes to GitHub with gh's sign-in
+export type GitSetup = { git: boolean; identity: GitIdentity; ghForGit: boolean };
 
 export type Ops = {
   list: { args: None; result: BoardSummary[] };
@@ -200,6 +203,17 @@ export type Ops = {
   ghStatus: { args: None; result: GhState };
   repoPick: { args: None; result: string | null };
   packageManager: { args: None; result: PackageManager | null };
+  gitSetup: { args: None; result: GitSetup };
+  gitSetGlobalIdentity: { args: { name: string; email: string }; result: GitIdentity };
+  // answers once gh shows its one-time code; the ghLogin event says when the sign-in ends
+  ghLogin: { args: None; result: { code: string; url: string } };
+  ghLoginCancel: { args: None; result: true };
+  ghSetupGit: { args: None; result: true };
 };
 
-export type HostEvents = { caelestia: CaelestiaScheme | null; boardsChanged: null; settings: null };
+export type HostEvents = {
+  caelestia: CaelestiaScheme | null;
+  boardsChanged: null;
+  settings: null;
+  ghLogin: { ok: boolean; message: string };
+};
