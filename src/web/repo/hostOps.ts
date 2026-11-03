@@ -17,6 +17,9 @@ export const repoOps = {
   ghRepoCreate: (o: Ops['ghRepoCreate']['args']) => call('ghRepoCreate', o),
   protoCreate: (o: Ops['protoCreate']['args']) => call('protoCreate', o),
   protoCopy: (o: Ops['protoCopy']['args']) => call('protoCopy', o),
+  protoExists: (o: Ops['protoExists']['args']) => call('protoExists', o),
+  protoRename: (o: Ops['protoRename']['args']) => call('protoRename', o),
+  protoRestore: (o: Ops['protoRestore']['args']) => call('protoRestore', o),
 };
 
 export const repoFallbacks: typeof repoOps = {
@@ -34,4 +37,7 @@ export const repoFallbacks: typeof repoOps = {
   ghRepoCreate: desktopOnly,
   protoCreate: desktopOnly,
   protoCopy: desktopOnly,
+  protoExists: desktopOnly,
+  protoRename: desktopOnly,
+  protoRestore: desktopOnly,
 };

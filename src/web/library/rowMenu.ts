@@ -17,6 +17,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
+import { offerRename } from '../repo/codeFolder.ts';
 import { linkRepo } from '../repo/link.ts';
 import { newPrototypingFolder } from '../repo/prototypes.ts';
 import { chirp, say } from '../settings/licenses.ts';
@@ -202,13 +203,13 @@ export async function renameBoard(b: { id: string }, v: string) {
     const field = $('boardName');
     if (field instanceof HTMLInputElement) field.value = v;
     save();
-  } else {
-    const bb = await Fenmyr.load(b.id);
-    if (bb) {
-      bb.name = v;
-      await Fenmyr.save(bb);
-    }
+    return offerRename(session.board);
   }
+  const bb = await Fenmyr.load(b.id);
+  if (!bb) return;
+  bb.name = v;
+  await Fenmyr.save(bb);
+  offerRename(bb);
 }
 
 export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElement) {
