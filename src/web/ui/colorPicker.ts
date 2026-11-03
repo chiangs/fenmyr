@@ -1,16 +1,16 @@
-import { closeOnOutsidePress } from './popover.ts';
-import { type Rgb, hexOf, normHex, rgbOf } from './color.ts';
-import { cardEl, closestTo, elementById, esc } from './dom.ts';
+import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { colorName } from '../cards/colorNames.ts';
 import { COLORS, clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { chirp } from '../settings/licenses.ts';
 import { session } from '../core/state.ts';
-import type { Card, CardOf } from '../../shared/model.ts';
+import { chirp } from '../settings/licenses.ts';
+import { hexOf, normHex, type Rgb, rgbOf } from './color.ts';
+import { cardEl, closestTo, elementById, esc } from './dom.ts';
 import { renderPalette, tintPicker } from './palette.ts';
+import { closeOnOutsidePress } from './popover.ts';
 
 // a colour in the app itself (the background, the accent, a doc's text) rather than a colour card
 export type Tint = {
@@ -84,12 +84,12 @@ function showHSV() {
     a = (hsv.h * Math.PI) / 180,
     rr = (hsv.s * W) / 2;
   Object.assign($('wheelRing').style, {
-    left: W / 2 + Math.cos(a) * rr + 'px',
-    top: W / 2 + Math.sin(a) * rr + 'px',
+    left: `${W / 2 + Math.cos(a) * rr}px`,
+    top: `${W / 2 + Math.sin(a) * rr}px`,
     background: hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)),
   });
   $('bright').style.background = `linear-gradient(to right, #000, ${hexOf(hsv2rgb(hsv.h, hsv.s, 1))})`;
-  Object.assign($('brightRing').style, { left: hsv.v * 100 + '%', background: hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)) });
+  Object.assign($('brightRing').style, { left: `${hsv.v * 100}%`, background: hexOf(hsv2rgb(hsv.h, hsv.s, hsv.v)) });
 }
 
 function dragOn(el: HTMLElement, fn: (e: PointerEvent) => void) {
@@ -129,8 +129,8 @@ function placeColorPop(c: Card) {
   let x = r.right + 14 - s.left,
     y = r.top - s.top;
   if (x + 270 > s.width - 250) x = r.left - 270 - s.left;
-  pop.style.left = Math.max(260, x) + 'px';
-  pop.style.top = clamp(y, 70, Math.max(70, floor - ph)) + 'px';
+  pop.style.left = `${Math.max(260, x)}px`;
+  pop.style.top = `${clamp(y, 70, Math.max(70, floor - ph))}px`;
 }
 
 // colors for the wheel's quick row: your saved board colors, then colors already used on this board (most used first); none at all → the starter set
@@ -165,7 +165,10 @@ function boardColorRows(starter: string[]) {
       const row = xs.map(dot).join('');
       return `<div class="cpq-row">${row}</div>`;
     },
-    row = (label: string, xs: Named[]) => (xs.length ? `<div class="cpq-l">${label}</div>` + dots(xs) : '');
+    row = (label: string, xs: Named[]) => {
+      const list = dots(xs);
+      return xs.length ? `<div class="cpq-l">${label}</div>${list}` : '';
+    };
   const bw = [
     { hex: '#000000', name: 'Black' },
     { hex: '#ffffff', name: 'White' },
@@ -175,14 +178,15 @@ function boardColorRows(starter: string[]) {
   const all = [...bw, ...saved, ...cards, ...used],
     FEW = 16; // two rows of dots
   if (all.length <= FEW) return dots(all);
-  const total = all.length;
+  const total = all.length,
+    firstFew = dots(all.slice(0, FEW));
   return cpAll
     ? row('Black & white', bw) +
         row('Board colours', saved) +
         row('Colour cards', cards) +
         row('On this board', used) +
         `<button class="cpq-more" data-cpq="few">Fewer</button>`
-    : dots(all.slice(0, FEW)) + `<button class="cpq-more" data-cpq="all">All board colours (${total})</button>`;
+    : `${firstFew}<button class="cpq-more" data-cpq="all">All board colours (${total})</button>`;
 }
 
 export function openColor(c: Swatch | Tint) {
@@ -214,8 +218,8 @@ export function openColor(c: Swatch | Tint) {
     pop.classList.add('on');
     const w = 252,
       h = pop.offsetHeight || 470;
-    pop.style.left = clamp(c.at.x, 12, innerWidth - w - 12) + 'px';
-    pop.style.top = clamp(c.at.y, 12, innerHeight - h - 12) + 'px';
+    pop.style.left = `${clamp(c.at.x, 12, innerWidth - w - 12)}px`;
+    pop.style.top = `${clamp(c.at.y, 12, innerHeight - h - 12)}px`;
     return;
   }
   colorCard = c;
@@ -280,7 +284,7 @@ function setColor(hex: string | null | undefined, from: string) {
 const keepCpopOnScreen = () => {
   const p = $('cpop'),
     r = p.getBoundingClientRect();
-  if (r.bottom > innerHeight - 12) p.style.top = Math.max(12, innerHeight - r.height - 12) + 'px';
+  if (r.bottom > innerHeight - 12) p.style.top = `${Math.max(12, innerHeight - r.height - 12)}px`;
 };
 
 export const boardBg = () => (typeof session.board.bg === 'string' ? session.board.bg : '');

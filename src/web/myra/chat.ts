@@ -1,34 +1,34 @@
-import type { SayAction } from '../settings/licenses.ts';
+import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { tilt } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
+import { hasDue } from '../features/due.ts';
+import { timerRequest } from '../features/duration.ts';
 import { hideSlash, slash } from '../features/find.ts';
 import { myTpls } from '../features/templates.ts';
 import { clearGlow, runTimerRequest } from '../features/timer.ts';
-import { parse } from './replyText.ts';
-import { timerRequest } from '../features/duration.ts';
 import { foldersIn, looseFolders } from '../library/tree.ts';
+import type { SayAction } from '../settings/licenses.ts';
+import { reply } from '../settings/licenses.ts';
+import { settings } from '../settings/settings.ts';
+import { elementById, textField } from '../ui/dom.ts';
+import { aiGrants, gatherVault, gatherVaultTasks, updateVaultChip, type VaultTasksUsed } from '../vault/ask.ts';
+import { FONTS } from '../wireframe/wireframes.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyMyra } from './apply.ts';
 import { birthdayFacts } from './birthday.ts';
+import { addMsg, archiveChat, chatLog, renderChat, typing } from './chatLog.ts';
 import { chatOpen, myraOpen } from './chatWindow.ts';
 import { goo } from './goos.ts';
 import { SLASH } from './greet.ts';
 import { showConnections } from './helpers.ts';
-import { reply } from '../settings/licenses.ts';
-import { settings } from '../settings/settings.ts';
-import { hasDue } from '../features/due.ts';
-import { aiGrants, gatherVault, gatherVaultTasks, updateVaultChip, type VaultTasksUsed } from '../vault/ask.ts';
-import { FONTS } from '../wireframe/wireframes.ts';
-import { appState, session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
-import { elementById, textField } from '../ui/dom.ts';
 
 import { initPerch, wonderIfEmpty } from './perch.ts';
-import { addMsg, archiveChat, chatLog, renderChat, typing } from './chatLog.ts';
+import { parse } from './replyText.ts';
 
 // what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
 export function snapshot() {
@@ -230,7 +230,7 @@ export async function ask(q: string, confirmed = false) {
     try {
       ctx.tasks = await gatherVaultTasks(q);
       ctx.used = ctx.tasks ? [] : await gatherVault(q);
-    } catch (e) {}
+    } catch (_e) {}
   }
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
   appState.vaultChip = false;
@@ -272,7 +272,7 @@ export async function ask(q: string, confirmed = false) {
         "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account.",
       );
     }
-    reply("Hmm, I couldn't reach Claude: " + why);
+    reply(`Hmm, I couldn't reach Claude: ${why}`);
   } finally {
     $('myra').classList.remove('thinking');
     goo.think(false);
@@ -338,7 +338,7 @@ export function init31() {
   chatIn.oninput = () => {
     const t = chatIn;
     t.style.height = 'auto';
-    t.style.height = Math.min(120, t.scrollHeight) + 'px';
+    t.style.height = `${Math.min(120, t.scrollHeight)}px`;
   };
 
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());

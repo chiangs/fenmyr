@@ -1,8 +1,8 @@
 import type { Folder, Project, StoredBoard } from '../../shared/model.ts';
 import type { BoardSummary } from '../../shared/ops.ts';
-import { COLORS, COLOR_NAMES, uid } from '../core/base.ts';
-import { renderCrumbsSoon, unhook } from './nesting.ts';
+import { COLOR_NAMES, COLORS, uid } from '../core/base.ts';
 import { appState, session } from '../core/state.ts';
+import { renderCrumbsSoon, unhook } from './nesting.ts';
 // the order you dragged boards into, per folder (or 'loose'): lists of board ids, kept with the folders so a reorder never rewrites a board
 export const saveLib = () =>
   Fenmyr.saveFolders({ projects: appState.projects, folders: appState.folders, order: appState.boardOrder });
@@ -46,7 +46,7 @@ export const topLevel = (b: Pick<BoardSummary, 'parent'> | StoredBoard) =>
 
 const inOrder = (key: string, list: BoardSummary[]) => {
   const o = appState.boardOrder[key];
-  if (!o || !o.length) return list;
+  if (!o?.length) return list;
   const at = (id: string) => o.indexOf(id);
   return [...list.filter(b => at(b.id) < 0), ...list.filter(b => at(b.id) >= 0).sort((a, b) => at(a.id) - at(b.id))];
 };
@@ -89,7 +89,9 @@ export const boardsUnder = (f: Folder): number =>
 
 const setProject = (f: Folder, pid: string | null) => {
   f.project = pid;
-  subFolders(f.id).forEach(x => setProject(x, pid));
+  subFolders(f.id).forEach(x => {
+    setProject(x, pid);
+  });
 };
 
 // move a folder into another folder, a project, or out to the top level (never into itself)

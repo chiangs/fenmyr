@@ -1,7 +1,7 @@
+import type { Card } from '../../shared/model.ts';
 import { card } from '../model/boards.ts';
 import { say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
-import type { Card } from '../../shared/model.ts';
 
 type Rgb = [number, number, number];
 
@@ -37,8 +37,8 @@ export function pullColors(c: Card & { src?: string }) {
         if (picks.length < 5 && picks.every(p => Math.hypot(p[0] - c3[0], p[1] - c3[1], p[2] - c3[2]) > 48))
           picks.push(c3);
       });
-    const hex = (c3: Rgb) => '#' + c3.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
-    picks.forEach((p, i) =>
+    const hex = (c3: Rgb) => `#${c3.map(v => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+    picks.forEach((p, i) => {
       addCard(
         card('swatch', {
           x: c.x + c.w + 30 + i * 128,
@@ -46,8 +46,8 @@ export function pullColors(c: Card & { src?: string }) {
           hex: hex(p),
           label: ['main', 'second', 'accent', 'shadow', 'pop'][i],
         }),
-      ),
-    );
+      );
+    });
     say(`I pulled ${picks.length} colours out of that image ✦`);
   };
   im.src = c.src ?? '';

@@ -1,13 +1,13 @@
 import { type Card, isRecord } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { uid } from '../core/base.ts';
+import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
-import { IC, type Opts, type PieceItem, T, numOf, str } from './pieceKit.ts';
+import { IC, numOf, type Opts, type PieceItem, str, T } from './pieceKit.ts';
 import { PIECES } from './pieces.ts';
 import { WEB } from './pieceWeb.ts';
 import { useFont } from './tilt.ts';
 import { DEVICES } from './wireframes.ts';
-import { session } from '../core/state.ts';
 
 const IPHONE: [number, number, number] = [393, 852, 44];
 // one entry in a screen's list: the piece's name and its options, with its numbers read

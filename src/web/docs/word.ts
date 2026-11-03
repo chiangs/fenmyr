@@ -1,10 +1,9 @@
 import { $ } from '../core/dom.ts';
-import { docCard, ed, syncDoc } from './editor.ts';
+import { say } from '../settings/licenses.ts';
 import { docHTML } from './docText.ts';
+import { docCard, ed, editorBundle, syncDoc } from './editor.ts';
 import { docPrintHTML } from './pdf.ts';
 import { fitTools } from './toolbar.ts';
-import { say } from '../settings/licenses.ts';
-import { editorBundle } from './editor.ts';
 
 const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const paperSize = () => {
@@ -53,7 +52,7 @@ export async function downloadWord() {
     const name = await Fenmyr.saveFile(b64, (doc.text || 'Document').trim() || 'Document', 'docx');
     if (name) say(`Saved “${name}” ✦`, 5000);
   } catch (err) {
-    say("I couldn't make the Word file: " + messageOf(err), 8000);
+    say(`I couldn't make the Word file: ${messageOf(err)}`, 8000);
   } finally {
     $('dvSaved').textContent = '';
   }
@@ -68,7 +67,7 @@ export async function downloadPDF() {
     const name = await Fenmyr.docPDF(docPrintHTML(paper), (docCard.text || 'Document').trim() || 'Document', paper);
     if (name) say(`Saved “${name}” ✦`, 5000);
   } catch (err) {
-    say("I couldn't make the PDF: " + messageOf(err), 8000);
+    say(`I couldn't make the PDF: ${messageOf(err)}`, 8000);
   } finally {
     $('dvSaved').textContent = '';
   }

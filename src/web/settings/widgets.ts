@@ -1,15 +1,14 @@
 import { applyGridShape } from '../canvas/gridShape.ts';
-import { COLORS, COLOR_NAMES, colorLabel } from '../core/base.ts';
+import { COLOR_NAMES, COLORS, colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
+import { appState } from '../core/state.ts';
 import { goos } from '../myra/goos.ts';
-import { applyColors, following } from './colors.ts';
-import { MYRA_COLORS, settings } from './settings.ts';
+import { closestTo, htmlIn } from '../ui/dom.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { placeTray } from '../wireframe/designPanel.ts';
 import { useFont } from '../wireframe/tilt.ts';
-import { appState } from '../core/state.ts';
-import { closestTo, htmlIn } from '../ui/dom.ts';
-import { choiceOf, flagOn, myraColors } from './settings.ts';
+import { applyColors, following } from './colors.ts';
+import { choiceOf, flagOn, MYRA_COLORS, myraColors, settings } from './settings.ts';
 
 type Side = { left: string[]; right: string[] };
 
@@ -60,10 +59,10 @@ function wgDragStart(e: PointerEvent, el: HTMLElement) {
     gy = e.clientY - r0.top;
   Object.assign(el.style, {
     position: 'fixed',
-    left: r0.left + 'px',
-    top: r0.top + 'px',
-    width: r0.width + 'px',
-    maxHeight: Math.min(r0.height, 320) + 'px',
+    left: `${r0.left}px`,
+    top: `${r0.top}px`,
+    width: `${r0.width}px`,
+    maxHeight: `${Math.min(r0.height, 320)}px`,
     overflow: 'hidden',
     zIndex: '400',
     pointerEvents: 'none',
@@ -94,8 +93,8 @@ function wgDragStart(e: PointerEvent, el: HTMLElement) {
   });
   let pick: HTMLElement | null = null;
   const move = (ev: PointerEvent) => {
-    el.style.left = ev.clientX - gx + 'px';
-    el.style.top = ev.clientY - gy + 'px';
+    el.style.left = `${ev.clientX - gx}px`;
+    el.style.top = `${ev.clientY - gy}px`;
     let best: HTMLElement | null = null,
       bd = 1e9;
     for (const s of slots) {
@@ -118,7 +117,9 @@ function wgDragStart(e: PointerEvent, el: HTMLElement) {
     removeEventListener('keydown', esc, true);
     if (drop && pick) pick.parentNode?.insertBefore(el, pick);
     else home[0]?.insertBefore(el, home[1]?.parentNode === home[0] ? home[1] : null);
-    slots.forEach(s => s.remove());
+    slots.forEach(s => {
+      s.remove();
+    });
     for (const k of [
       'position',
       'left',
@@ -165,9 +166,13 @@ export function applySettings() {
   queueMicrotask(() => applyColors());
   queueMicrotask(() => applyGridShape());
   queueMicrotask(() => applyToolbar());
-  goos.forEach(g => g.setColors(myraColors(settings.myra)));
+  goos.forEach(g => {
+    g.setColors(myraColors(settings.myra));
+  });
   // widgets: the panels people can turn off (the Boards panel always stays: it holds their boards and Settings)
-  WIDGETS.forEach(([k, el]) => el()?.classList.toggle('wg-off', !flagOn(k)));
+  WIDGETS.forEach(([k, el]) => {
+    el()?.classList.toggle('wg-off', !flagOn(k));
+  });
   for (const [sh, k] of [
     ['layers', 'wLayers'],
     ['tray', 'wTray'],
@@ -235,7 +240,9 @@ export function applySettings() {
   window.myraCalm = settings.myraCalm !== 'lively';
   document.body.classList.toggle('myra-calm', window.myraCalm);
   window.myraMuted = settings.myraCalm === 'calmest';
-  goos.forEach(gg => gg.draw());
+  goos.forEach(gg => {
+    gg.draw();
+  });
   document.body.classList.toggle('myra-hidden', settings.myraChar === false);
   document.body.classList.toggle('no-grid', !settings.grid);
   document.body.classList.toggle('neat', !settings.tilt);
@@ -253,7 +260,7 @@ export function applySettings() {
     if (t instanceof HTMLInputElement) t.checked = !!flagOn(t.dataset.set ?? '');
   try {
     localStorage.setItem('fenmyr:settings', JSON.stringify(settings));
-  } catch (e) {}
+  } catch (_e) {}
 }
 export function init26() {
   document.addEventListener(

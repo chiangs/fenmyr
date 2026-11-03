@@ -1,9 +1,9 @@
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { DICON, bubbleEl, docCard, ed, imgPick, liveEditor } from './editor.ts';
-import { BLOCKS, DOC_FONT, SIZES, docDefault, fontName } from './docText.ts';
-import { showPop } from './menus.ts';
 import { closestTo, elementById, htmlIn } from '../ui/dom.ts';
+import { BLOCKS, DOC_FONT, docDefault, fontName, SIZES } from './docText.ts';
+import { bubbleEl, DICON, docCard, ed, imgPick, liveEditor } from './editor.ts';
+import { showPop } from './menus.ts';
 
 const sizeField = () => elementById('dtSize', HTMLInputElement);
 
@@ -65,11 +65,7 @@ export function buildTools() {
     if (e.key === 'Enter') {
       e.preventDefault();
       const v = clamp(parseInt(sz.value, 10) || 16, 6, 200);
-      liveEditor()
-        .chain()
-        .focus()
-        .setFontSize(v + 'px')
-        .run();
+      liveEditor().chain().focus().setFontSize(`${v}px`).run();
     }
     if (e.key === 'Escape') {
       sz.blur();
@@ -86,8 +82,12 @@ export function fitTools() {
   if (!bar.offsetParent) return;
   const order = (el: Element) => Number(/f(\d)/.exec(el.className)?.[1] ?? 0),
     folds = htmlIn(bar, '.dt-fold').sort((a, b) => order(a) - order(b));
-  folds.forEach(b => (b.hidden = false));
-  htmlIn(bar, '.dt-sep').forEach(x => (x.hidden = false));
+  folds.forEach(b => {
+    b.hidden = false;
+  });
+  htmlIn(bar, '.dt-sep').forEach(x => {
+    x.hidden = false;
+  });
   const top = (el: Element | null) => (el instanceof HTMLElement ? el.offsetTop : 0),
     oneRow = () => top(bar.lastElementChild) - top(bar.firstElementChild) < 6;
   for (const b of folds) {
@@ -157,7 +157,7 @@ export function run(cmd: string) {
   const step = (d: number) => {
     const s = docSize();
     const n = d > 0 ? SIZES.find(x => x > s) || s + 8 : [...SIZES].reverse().find(x => x < s) || Math.max(6, s - 2);
-    return n + 'px';
+    return `${n}px`;
   };
   const how: Record<string, () => typeof c> = {
     undo: () => c.undo(),

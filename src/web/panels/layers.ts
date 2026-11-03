@@ -1,10 +1,10 @@
-import { cardEl, esc } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { applyView } from '../canvas/view.ts';
 import { byId } from '../canvas/wires.ts';
 import { $, cardsEl, stage, world } from '../core/dom.ts';
 import { session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
-import { LICON, initLayerIcons, layerIcon, layerName, lyText } from './layerNames.ts';
+import { cardEl, esc } from '../ui/dom.ts';
+import { initLayerIcons, LICON, layerIcon, layerName, lyText } from './layerNames.ts';
 
 // ---------- layers: every piece on the board, top of the stack first (like Figma). Frames and collections fold open, groups stay together ----------
 // key: a card id, or 'g:' and a group id; inColl: the collection a card sits in, which it can be reordered within
@@ -59,7 +59,7 @@ function layerTree() {
       if (c.group) {
         let g = groups.get(c.group);
         if (!g) {
-          g = { key: 'g:' + c.group, kind: 'group', ids: [], kids: [] };
+          g = { key: `g:${c.group}`, kind: 'group', ids: [], kids: [] };
           groups.set(c.group, g);
           out.push(g);
         }
@@ -67,7 +67,9 @@ function layerTree() {
         g.kids.push(nodeOf(c));
       } else out.push(nodeOf(c));
     });
-    groups.forEach(g => g.kids.sort((a, b) => zOf(b) - zOf(a)));
+    groups.forEach(g => {
+      g.kids.sort((a, b) => zOf(b) - zOf(a));
+    });
     return out.sort((a, b) => zOf(b) - zOf(a));
   };
   const nodeOf = (c: Card): LayerNode => {
@@ -114,7 +116,9 @@ export function renderLayers() {
   const walk = (ns: LayerNode[], up: string[]): void =>
     ns.forEach(n => {
       if (n.ids.some(i => session.sel.has(i)) && !(n.kind === 'group' && n.ids.every(i => session.sel.has(i))))
-        up.forEach(k => LY.open.add(k));
+        up.forEach(k => {
+          LY.open.add(k);
+        });
       walk(n.kids, [...up, n.key]);
     });
   walk(tree, []);
@@ -143,14 +147,12 @@ export function renderLayers() {
       eyeTip = hidden ? 'Show' : 'Hide',
       eyeIcon = Icon(hidden ? 'eye-off' : 'eye'),
       inside = kids && open ? n.kids.map(k => row(k, depth + 1)).join('') : '';
-    return (
-      `<div class="ly${classes}" data-key="${key}" draggable="true" style="--d:${depth}">
+    return `<div class="ly${classes}" data-key="${key}" draggable="true" style="--d:${depth}">
         <button class="ly-tw${twisty}" tabindex="-1" aria-label="${twistLabel}">${caret}</button>
         <span class="ly-ic">${icon}</span><span class="ly-n">${name}</span>
         <button class="ly-b ly-lock" title="${lockTip}">${lockIcon}</button>
         <button class="ly-b ly-eye" title="${eyeTip}">${eyeIcon}</button>
-      </div>` + inside
-    );
+      </div>${inside}`;
   };
   const st = list.scrollTop;
   const html = tree.length
@@ -186,13 +188,18 @@ export const lyFind = (key: string, ns: LayerNode[] = LY.tree): LayerNode | null
   return null;
 };
 
-export const lyHL = (ids: string[], on: boolean) => ids.forEach(i => cardEl(i)?.classList.toggle('ly-hl', on));
+export const lyHL = (ids: string[], on: boolean) =>
+  ids.forEach(i => {
+    cardEl(i)?.classList.toggle('ly-hl', on);
+  });
 
 // Myra points it out: a soft pink glow pulses around the piece and she pops up on its corner with a wave, then both fade
 export function lyFlash(ids: string[]) {
   const cs = ids.map(byId).filter((c): c is Card => !!c && !c.hidden);
   if (!cs.length) return;
-  world.querySelectorAll('.ly-flash').forEach(f => f.remove());
+  world.querySelectorAll('.ly-flash').forEach(f => {
+    f.remove();
+  });
   const pad = 10 / session.view.z,
     x0 = Math.min(...cs.map(c => c.x)) - pad,
     y0 = Math.min(...cs.map(c => c.y)) - pad,
@@ -201,7 +208,7 @@ export function lyFlash(ids: string[]) {
   const f = document.createElement('div');
   f.className = 'ly-flash';
   f.style.setProperty('--iz', (1 / session.view.z).toFixed(4));
-  Object.assign(f.style, { left: x0 + 'px', top: y0 + 'px', width: x1 - x0 + 'px', height: y1 - y0 + 'px' });
+  Object.assign(f.style, { left: `${x0}px`, top: `${y0}px`, width: `${x1 - x0}px`, height: `${y1 - y0}px` });
   f.innerHTML =
     '<i class="lf-ring"></i><i class="lf-ring two"></i><img class="lf-myra" src="stamps/myra-wave.png" alt=""><b class="lf-spark">✦</b>';
   world.appendChild(f);
@@ -230,7 +237,7 @@ export function lyBringIntoView(ids: string[]) {
     t0 = performance.now();
   const step = (t: number) => {
     const k = Math.min(1, (t - t0) / 320),
-      e = 1 - Math.pow(1 - k, 3);
+      e = 1 - (1 - k) ** 3;
     session.view.x = fx + (tx - fx) * e;
     session.view.y = fy + (ty - fy) * e;
     applyView();

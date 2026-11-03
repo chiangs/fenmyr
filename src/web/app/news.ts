@@ -1,6 +1,6 @@
+import { $ } from '../core/dom.ts';
 import { esc } from '../ui/dom.ts';
 import { startTour } from './onboarding.ts';
-import { $ } from '../core/dom.ts';
 
 // ---------- what's new: a little card, once, the first time a new version opens ----------
 // what's new in Fenmyr: one card per version (each item: [icon name, title, a line about it])
@@ -33,10 +33,10 @@ export async function maybeNews() {
   let seen = null;
   try {
     seen = localStorage.getItem(newsKey);
-  } catch (e) {}
+  } catch (_e) {}
   try {
     localStorage.setItem(newsKey, v);
-  } catch (e) {}
+  } catch (_e) {}
   // everything new since the version you last saw (a small fix release has no card of its own)
   const num = (x: string) =>
       String(x || '0')

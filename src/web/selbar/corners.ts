@@ -6,7 +6,7 @@ import { remember, save } from '../core/history.ts';
 import { drawVec, syncCornerPop, vec, vecCard } from '../tools/penEdit.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
-import { G, caret, closeSbPops, markOnce, marks, pct, pop, rebuildBar, syncPair } from './barKit.ts';
+import { caret, closeSbPops, G, markOnce, marks, pct, pop, rebuildBar, syncPair } from './barKit.ts';
 import { selCards } from './selected.ts';
 
 const CHIPS = [0, 4, 8, 12, 16, 24, 32];
@@ -75,7 +75,9 @@ function setCorners(raw: string | number, keepOpen?: boolean) {
   save();
   const p = document.querySelector('.sb-pop-corners');
   if (p) {
-    htmlIn(p, '[data-corners]').forEach(b => b.classList.toggle('on', +(b.dataset.corners ?? NaN) === v));
+    htmlIn(p, '[data-corners]').forEach(b => {
+      b.classList.toggle('on', +(b.dataset.corners ?? NaN) === v);
+    });
     const t = document.querySelector('[data-pop="corners"] b');
     if (t) t.textContent = v >= 999 ? 'Pill' : String(v);
   }

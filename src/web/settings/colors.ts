@@ -1,23 +1,22 @@
-import { luminance, mixHex } from '../ui/color.ts';
-import { esc, htmlIn } from '../ui/dom.ts';
+import type { CaelestiaScheme, UsageTotals } from '../../shared/ops.ts';
 import { checkUpdate } from '../app/updates.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
+import { appState, session } from '../core/state.ts';
 import { devName, openMedia } from '../media/devices.ts';
 import { camOff, camOn, cams } from '../media/video.ts';
 import { paintBd } from '../myra/birthday.ts';
 import { showConnections } from '../myra/helpers.ts';
-import { myCur, paintCursor } from './cursor.ts';
-import { settings } from './settings.ts';
-import { applySettings } from './widgets.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
+import { luminance, mixHex } from '../ui/color.ts';
+import { child, closestTo, elementById, esc, htmlIn } from '../ui/dom.ts';
 import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
-import { appState, session } from '../core/state.ts';
-import type { CaelestiaScheme, UsageTotals } from '../../shared/ops.ts';
-import { child, closestTo, elementById } from '../ui/dom.ts';
+import { myCur, paintCursor } from './cursor.ts';
 import { applyPanelH, fitSides, gripBulge, panelMin } from './panelHeights.ts';
+import { settings } from './settings.ts';
+import { applySettings } from './widgets.ts';
 
 type Mode = 'light' | 'dark';
 export const htmlOrNull = (el: Element | null) => (el instanceof HTMLElement ? el : null);
@@ -70,7 +69,10 @@ export function applyColors() {
     B.setProperty('--pink-deep', mine.accent);
     B.setProperty('--pink', mixHex(mine.accent, '#ffffff', 0.3));
     B.setProperty('--blush', mixHex(mine.accent, modeName() === 'dark' ? '#1d1a16' : '#ffffff', 0.82));
-  } else ['--pink-deep', '--pink', '--blush'].forEach(v => B.removeProperty(v));
+  } else
+    ['--pink-deep', '--pink', '--blush'].forEach(v => {
+      B.removeProperty(v);
+    });
   document.body.classList.toggle('board-dark', darkBg);
   document.body.classList.toggle('board-light', !darkBg && modeName() === 'dark');
   for (const b of htmlIn(document, '[data-col]'))
@@ -91,8 +93,8 @@ export function applyColors() {
           on = settings.cursor === h ? 'on' : '';
         return `<button data-cc="${h}" title="${name}" style="background:${h}" class="${on}"></button>`;
       };
-    swatches.innerHTML =
-      cursors.map(swatch).join('') + `<button class="rand${anyOn}" data-col="cursor" title="Any colour"></button>`;
+    const dots = cursors.map(swatch).join('');
+    swatches.innerHTML = `${dots}<button class="rand${anyOn}" data-col="cursor" title="Any colour"></button>`;
   }
   const pv = document.querySelector('#curPrev .mcur');
   if (pv instanceof HTMLElement) {
@@ -125,7 +127,8 @@ async function fillDevices() {
           name = esc(devName(d, `${title} ${i + 1}`));
         return `<option value="${value}">${name}</option>`;
       };
-    sel.innerHTML = `<option value="">Default ${kindName}</option>` + ds.map(option).join('');
+    const options = ds.map(option).join('');
+    sel.innerHTML = `<option value="">Default ${kindName}</option>${options}`;
     sel.value = ds.some(d => d.deviceId === settings[key]) ? (settings[key] ?? '') : '';
     sel.disabled = !ds.length && named;
     sel.onchange = () => {
@@ -133,7 +136,9 @@ async function fillDevices() {
       else delete settings[key];
       applySettings();
       if (key === 'micId' && appState.warm) {
-        appState.warm.getTracks().forEach(t => t.stop());
+        appState.warm.getTracks().forEach(t => {
+          t.stop();
+        });
         appState.warm = null;
       }
       [...cams.keys()].forEach(cid => {
@@ -165,25 +170,26 @@ export const PANELS: Record<string, () => HTMLElement | null> = {
 };
 // Claude usage (desktop app): Myra's own tally, plus a door to the plan limits page
 const kTok = (n: number) =>
-  n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1000 ? Math.round(n / 1000) + 'k' : String(Math.round(n));
+  n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(Math.round(n));
 
 const usLine = (u: UsageTotals | undefined) =>
-  !u || !u.asks ? 'No asks yet' : `${u.asks} ask${u.asks === 1 ? '' : 's'} · ${kTok(u.tokensIn + u.tokensOut)} tokens`;
+  !u?.asks ? 'No asks yet' : `${u.asks} ask${u.asks === 1 ? '' : 's'} · ${kTok(u.tokensIn + u.tokensOut)} tokens`;
 
 async function showUsage() {
   if (!Fenmyr.native) return;
   let u = null;
   try {
     u = await Fenmyr.usage();
-  } catch (e) {}
+  } catch (_e) {}
   if (!u) return;
   $('usToday').textContent = usLine(u.today);
   $('usWeek').textContent = usLine(u.week);
   $('usAll').textContent = usLine(u.all);
-  $('usNote').textContent =
-    (u.week.cost >= 0.01
+  $('usNote').textContent = `${
+    u.week.cost >= 0.01
       ? `About $${u.week.cost.toFixed(2)} this week if you paid per request (on a Pro or Max plan you don't). `
-      : '') + "Just Myra's share, counted on this computer. Your plan's limits cover everything you do with Claude.";
+      : ''
+  }Just Myra's share, counted on this computer. Your plan's limits cover everything you do with Claude.`;
 }
 export function init28() {
   // Settings → General → Follow Caelestia: the desktop's Material You scheme (from the host, live) stands in for your own colors
@@ -213,12 +219,16 @@ export function init28() {
   $('devAllow').onclick = async () => {
     try {
       const st = await openMedia(true);
-      st.getTracks().forEach(t => t.stop());
-    } catch (e) {
+      st.getTracks().forEach(t => {
+        t.stop();
+      });
+    } catch (_e) {
       try {
         const st = await openMedia(false);
-        st.getTracks().forEach(t => t.stop());
-      } catch (e2) {}
+        st.getTracks().forEach(t => {
+          t.stop();
+        });
+      } catch (_e2) {}
     }
     fillDevices();
   };
@@ -287,9 +297,9 @@ export function init28() {
   });
 
   addEventListener('resize', fitSides);
-  document
-    .querySelectorAll('.side')
-    .forEach(el => new ResizeObserver(() => requestAnimationFrame(fitSides)).observe(el));
+  document.querySelectorAll('.side').forEach(el => {
+    new ResizeObserver(() => requestAnimationFrame(fitSides)).observe(el);
+  });
 
   applyPanelH();
 

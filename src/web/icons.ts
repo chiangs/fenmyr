@@ -1,5 +1,6 @@
 import { isRecord } from '../shared/model.ts';
 import { esc } from './ui/dom.ts';
+
 // The icon facade. The app asks for a Myra icon name (Icon('note')); the pack in web/icons/pack.js (built by tools/icons.js from
 // tools/icons/set.js) says what it looks like, so the icon pack can be swapped without touching the app.
 // Every icon carries both weights; the Icon style setting (Regular or Duotone) switches a class on <body>, and only the bottom bar and the chat header show Duotone.
@@ -40,7 +41,7 @@ const inside = (name: string, title?: string) => {
 };
 // Icon('note', { cls: 'ic', size: 18, title: 'Note' }) → an <svg> string
 window.Icon = (name, o = {}) => {
-  const cls = o.cls ? ' ' + o.cls : '',
+  const cls = o.cls ? ` ${o.cls}` : '',
     size = o.size ? ` width="${o.size}" height="${o.size}"` : '',
     shown = esc(name),
     content = inside(name, o.title);

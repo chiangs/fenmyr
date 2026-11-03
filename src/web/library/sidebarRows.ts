@@ -1,9 +1,12 @@
 import type { Folder, Project } from '../../shared/model.ts';
 import type { BoardSummary } from '../../shared/ops.ts';
-
+import { appState, session } from '../core/state.ts';
+import { chirp } from '../settings/licenses.ts';
 import { child } from '../ui/dom.ts';
-import { closeHome, openBoard } from './home.ts';
+import { closeHome } from './home.ts';
 import { draggable, dropZone, inlineRename, nestBoard, newBoardIn, reorderZone } from './nesting.ts';
+import { openBoard } from './openBoard.ts';
+import { type Kind, refreshBoards, renameBoard, renameNewest, rowMenu, type Thing, uniqueName } from './rowMenu.ts';
 import {
   boardsIn,
   foldersIn,
@@ -15,9 +18,6 @@ import {
   subFolders,
   tint,
 } from './tree.ts';
-import { chirp } from '../settings/licenses.ts';
-import { appState, session } from '../core/state.ts';
-import { type Kind, type Thing, refreshBoards, renameBoard, renameNewest, rowMenu, uniqueName } from './rowMenu.ts';
 
 let FBTN: { add: string; ren: string; del: string };
 export const FBTN_OF = (a: string) => (a === 'add' ? FBTN.add : a === 'ren' ? FBTN.ren : FBTN.del);
@@ -25,7 +25,7 @@ export const FBTN_OF = (a: string) => (a === 'add' ? FBTN.add : a === 'ren' ? FB
 // the left box: a small tree (projects ▸ folders ▸ boards)
 export function boardRow(b: BoardSummary): Node {
   const r = document.createElement('div');
-  r.className = 'board-row' + (session.board && b.id === session.board.id ? ' on' : '');
+  r.className = `board-row${session.board && b.id === session.board.id ? ' on' : ''}`;
   const shade = tint(b.color);
   r.innerHTML = `<i style="background:${shade}"></i><span></span>`;
   child(r, 'span').textContent = b.name;
@@ -64,7 +64,9 @@ export function boardRow(b: BoardSummary): Node {
   const frag = document.createDocumentFragment(),
     sub = document.createElement('div');
   sub.className = 'sub-boards';
-  kids.forEach(k => sub.appendChild(boardRow(k)));
+  kids.forEach(k => {
+    sub.appendChild(boardRow(k));
+  });
   frag.appendChild(r);
   frag.appendChild(sub);
   return frag;
@@ -72,7 +74,7 @@ export function boardRow(b: BoardSummary): Node {
 
 function treeNode(obj: Thing, kind: Kind, count: number, kids: Node[], btns: [string, string, string][]) {
   const wrap = document.createElement('div');
-  wrap.className = 'node ' + kind + (obj.open ? ' open' : '');
+  wrap.className = `node ${kind}${obj.open ? ' open' : ''}`;
   const pic = kind === 'project' ? 'pic' : 'fic',
     buttons = btns
       .map(([a, t, s]) => {
@@ -85,7 +87,9 @@ function treeNode(obj: Thing, kind: Kind, count: number, kids: Node[], btns: [st
   const name = child(wrap, '.fname'),
     body = child(wrap, '.node-body');
   name.textContent = obj.name;
-  kids.forEach(k => body.appendChild(k));
+  kids.forEach(k => {
+    body.appendChild(k);
+  });
   if (!kids.length) {
     const empty = kind === 'project' ? 'No folders yet' : 'Drag boards in here';
     body.innerHTML = `<div class="folder-empty">${empty}</div>`;
@@ -161,7 +165,9 @@ export function projectNode(p: Project): HTMLElement {
     }
     if (a === 'ren') return inlineRename(name, p);
     if (a === 'del') {
-      fs.forEach(f => (f.project = null));
+      fs.forEach(f => {
+        f.project = null;
+      });
       appState.projects = appState.projects.filter(x => x !== p);
       await saveLib();
       return refreshBoards();

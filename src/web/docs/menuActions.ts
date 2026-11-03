@@ -1,18 +1,20 @@
-import { closeOnOutsidePress } from '../ui/popover.ts';
-import { closestTo } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
+import { openColor } from '../ui/colorPicker.ts';
+import { closestTo } from '../ui/dom.ts';
+import { closeOnOutsidePress } from '../ui/popover.ts';
+import { useFont } from '../wireframe/tilt.ts';
+import { docDefault, HIGHLIGHTS, TEXT_COLORS } from './docText.ts';
 import { applyDocPage, ed, liveEditor } from './editor.ts';
-import { HIGHLIGHTS, TEXT_COLORS, docDefault } from './docText.ts';
 import { hidePop, showPop } from './menus.ts';
 import { rewrite } from './rewrite.ts';
 import { run, setBlock } from './toolbar.ts';
 import { downloadPDF, downloadWord } from './word.ts';
-import { openColor } from '../ui/colorPicker.ts';
-import { useFont } from '../wireframe/tilt.ts';
 
 // ---------- what the doc menus' buttons do ----------
 const p_seg = (b: HTMLElement) =>
-  b.parentNode?.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  b.parentNode?.querySelectorAll('button').forEach(x => {
+    x.classList.toggle('on', x === b);
+  });
 export function init55() {
   $('dvPop').addEventListener('mousedown', e => {
     if (!closestTo(e.target, 'input')) e.preventDefault();
@@ -122,14 +124,14 @@ export function init55() {
     if (d.page) {
       try {
         localStorage.setItem('fenmyr:docPage', d.page);
-      } catch (er) {}
+      } catch (_er) {}
       applyDocPage();
       return hidePop();
     }
     if (d.paper) {
       try {
         localStorage.setItem('fenmyr:paper', d.paper);
-      } catch (er) {}
+      } catch (_er) {}
       p_seg(b);
       return;
     }

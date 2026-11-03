@@ -1,4 +1,3 @@
-import { cardEl } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { openCanvas, renameChild } from '../cards/canvas.ts';
@@ -6,14 +5,13 @@ import { layoutColl } from '../cards/collection.ts';
 import { wireLinkInput } from '../cards/links.ts';
 import { cardsEl } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { openDoc } from '../docs/editor.ts';
 import { editField, editTag, fitText } from '../edit/text.ts';
-import { openColor } from '../ui/colorPicker.ts';
-import { openVNote } from '../vault/notes.ts';
-import { session } from '../core/state.ts';
-import { closestTo } from '../ui/dom.ts';
-
 import { wireTagTyping } from '../features/tags.ts';
+import { openColor } from '../ui/colorPicker.ts';
+import { cardEl, closestTo } from '../ui/dom.ts';
+import { openVNote } from '../vault/notes.ts';
 
 // note text boxes already listening for Shift+Tab to the name
 const wiredNameHop = new WeakSet<HTMLElement>();
@@ -66,7 +64,7 @@ export function startEdit(id: string, target?: Element | null) {
           names[k] = v;
         },
         () => {
-          names[k] = names[k] || 'Column ' + (k + 1);
+          names[k] = names[k] || `Column ${k + 1}`;
           layoutColl(c);
           save();
         },

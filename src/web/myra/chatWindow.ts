@@ -1,11 +1,10 @@
-import { esc } from '../ui/dom.ts';
 import { labelOf } from '../../shared/cardTypes.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
-import { perchGoo } from './perch.ts';
-import { renderChat } from './chatLog.ts';
 import { session } from '../core/state.ts';
-import { closestTo, textField } from '../ui/dom.ts';
+import { closestTo, esc, textField } from '../ui/dom.ts';
+import { renderChat } from './chatLog.ts';
+import { perchGoo } from './perch.ts';
 
 // ---------- Myra's chat window: click her to open it, click again (or Esc) to close ----------
 export const chatOpen = () => $('myra').classList.contains('chat');
@@ -32,7 +31,7 @@ function renderSelChip() {
         .trim()
         .slice(0, 34)
     : '';
-  const key = cs.map(c => c.id).join(',') + '|' + words;
+  const key = `${cs.map(c => c.id).join(',')}|${words}`;
   if (key === selChipKey) return;
   selChipKey = key;
   textField('mcInput').placeholder = askHint();
@@ -73,13 +72,13 @@ export function init30() {
     }
   };
 
-  ['pointerup', 'keyup'].forEach(ev =>
+  ['pointerup', 'keyup'].forEach(ev => {
     document.addEventListener(
       ev,
       () => {
         if (chatOpen()) setTimeout(renderSelChip, 0);
       },
       true,
-    ),
-  );
+    );
+  });
 }

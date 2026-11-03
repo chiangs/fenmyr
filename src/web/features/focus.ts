@@ -1,16 +1,15 @@
-import { closeOnOutsidePress } from '../ui/popover.ts';
-import { cardEl } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderTray } from '../canvas/wires.ts';
 import { linkCard } from '../cards/spotify.ts';
 import { find } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
 import { say } from '../settings/licenses.ts';
-import { session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
-import { elementById } from '../ui/dom.ts';
+import { cardEl, elementById } from '../ui/dom.ts';
+import { closeOnOutsidePress } from '../ui/popover.ts';
 
 const captureField = () => elementById('capInput', HTMLInputElement);
 

@@ -1,15 +1,15 @@
-import { cardEl } from '../ui/dom.ts';
 import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { uid } from '../core/base.ts';
 import { $, cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { LY, layersSoon } from '../panels/layers.ts';
 import { selCards } from '../selbar/selected.ts';
 import { chirp } from '../settings/licenses.ts';
+import { cardEl } from '../ui/dom.ts';
 import { onFrame } from './tilt.ts';
-import { session } from '../core/state.ts';
 
 // ---------- stacking: bring to front / forward, send backward / to back. Later in board.cards = higher on the board, and Layers lists it top-first ----------
 // groups move as one, a frame brings everything on it along, and a card on a frame never goes behind its frame
@@ -24,7 +24,10 @@ export function restack(where: 'front' | 'back' | 'forward' | 'backward') {
   const ids = new Set<string>();
   cs.forEach(c => {
     ids.add(c.id);
-    if (c.type === 'frame' && !boxes) onFrame(c).forEach(k => ids.add(k.id));
+    if (c.type === 'frame' && !boxes)
+      onFrame(c).forEach(k => {
+        ids.add(k.id);
+      });
   });
   const all = session.board.cards,
     moving = all.filter(c => ids.has(c.id)),
@@ -36,8 +39,9 @@ export function restack(where: 'front' | 'back' | 'forward' | 'backward') {
   else if (where === 'back') at = 0;
   else if (where === 'forward') {
     const i = all.findIndex((c, k) => k > Math.max(...idx) && seen(c));
-    if (i < 0) return;
-    at = rest.findIndex(c => c === all[i]) + 1;
+    const above = all[i];
+    if (!above) return;
+    at = rest.indexOf(above) + 1;
   } else {
     let i = -1;
     for (let k = Math.min(...idx) - 1; k >= 0; k--) {
@@ -47,8 +51,9 @@ export function restack(where: 'front' | 'back' | 'forward' | 'backward') {
         break;
       }
     }
-    if (i < 0) return;
-    at = rest.findIndex(c => c === all[i]);
+    const below = all[i];
+    if (!below) return;
+    at = rest.indexOf(below);
   }
   moving.forEach(c => {
     const f = c.onFrame && !ids.has(c.onFrame) ? rest.findIndex(x => x.id === c.onFrame) : -1;
@@ -61,10 +66,11 @@ export function restack(where: 'front' | 'back' | 'forward' | 'backward') {
   remember();
   session.board.cards = next;
   // move only the restacked cards on the page, so a playing Spotify or video elsewhere keeps going
-  const after = next
-    .slice(next.findIndex(c => c === moving.at(-1)) + 1)
-    .map(c => cardEl(c.id))
-    .find(el => el && !el.classList.contains('coll'));
+  const top = moving.at(-1),
+    after = next
+      .slice(top ? next.indexOf(top) + 1 : 0)
+      .map(c => cardEl(c.id))
+      .find(el => el && !el.classList.contains('coll'));
   moving.forEach(c => {
     const el = cardEl(c.id);
     if (el) cardsEl.insertBefore(el, after || null);

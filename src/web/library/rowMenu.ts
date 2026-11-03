@@ -11,15 +11,22 @@ export type Thing = {
   parent?: string | null;
   project?: string | null;
 };
-import { keepOnScreen } from '../ui/popover.ts';
-import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
+
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
-import { homeAt, openBoard, renderHome } from './home.ts';
+import { newBoard } from '../model/boards.ts';
+import { chirp, say } from '../settings/licenses.ts';
+import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
+import { keepOnScreen } from '../ui/popover.ts';
+import { editVaultAccess } from '../vault/vaults.ts';
 import { renderCrumbs, where } from './crumbs.ts';
+import { homeAt, renderHome } from './home.ts';
 import { dropZone, inlineRename, loadLib } from './nesting.ts';
+import { openBoard } from './openBoard.ts';
+import { boardRow, folderNode, initRowIcons, projectNode } from './sidebarRows.ts';
 import {
   boardsIn,
   boardsUnder,
@@ -34,11 +41,6 @@ import {
   subFolders,
   tint,
 } from './tree.ts';
-import { newBoard } from '../model/boards.ts';
-import { chirp, say } from '../settings/licenses.ts';
-import { editVaultAccess } from '../vault/vaults.ts';
-import { appState, session } from '../core/state.ts';
-import { boardRow, folderNode, initRowIcons, projectNode } from './sidebarRows.ts';
 
 // ---------- right-click in the left box: duplicate or delete a board, folder or project ----------
 // copying a board also copies the canvases inside it, so the copy doesn't share them
@@ -65,7 +67,7 @@ async function dropBoard(id: string) {
 
 async function duplicate(kind: Kind, obj: Thing) {
   if (kind === 'board') {
-    const c = await copyBoard(obj.id, { name: obj.name + ' copy' });
+    const c = await copyBoard(obj.id, { name: `${obj.name} copy` });
     await refreshBoards();
     if (c) chirp(`Made “${c.name}” ✦`, 3500);
     return;
@@ -79,7 +81,7 @@ async function duplicate(kind: Kind, obj: Thing) {
     for (const b of boardsIn(f0.id)) await copyBoard(b.id, { folder: f.id });
     for (const x of subFolders(f0.id)) await copyFolder(x, x.name, project, f.id);
   };
-  if (kind === 'folder') await copyFolder(obj, obj.name + ' copy', obj.project || null, obj.parent || null);
+  if (kind === 'folder') await copyFolder(obj, `${obj.name} copy`, obj.project || null, obj.parent || null);
   if (kind === 'project') {
     const p: Project = { id: uid(), name: `${obj.name} copy`, open: true, ...(obj.color ? { color: obj.color } : {}) };
     appState.projects.push(p);
@@ -112,7 +114,7 @@ async function destroy(kind: Kind, obj: Thing) {
 
 // Move to…: a little map of projects and folders; pick where it goes
 function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
-  const here = kind === 'board' ? obj.folder || null : obj.parent ? 'f:' + obj.parent : obj.project || null,
+  const here = kind === 'board' ? obj.folder || null : obj.parent ? `f:${obj.parent}` : obj.project || null,
     row = (id: string | null, label: string, depth: number, icon: string) => {
       const isHere = id === here,
         cls = isHere ? ' here' : '',
@@ -131,28 +133,38 @@ function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
   let h = `<div class="mv-head">Move “${title}” to…</div><div class="mv-list">`;
   const tree = (f: Folder, d: number) => {
     if (kind === 'folder' && f.id === obj.id) return;
-    h += row(kind === 'board' ? f.id : 'f:' + f.id, f.name, d, FIC);
-    subFolders(f.id).forEach(x => tree(x, d + 1));
+    h += row(kind === 'board' ? f.id : `f:${f.id}`, f.name, d, FIC);
+    subFolders(f.id).forEach(x => {
+      tree(x, d + 1);
+    });
   };
   if (kind === 'board') {
     appState.projects.forEach(p => {
       const pic = PIC(p.color),
         name = esc(p.name);
       h += `<div class="mv-group" style="padding-left:12px">${pic}<span>${name}</span></div>`;
-      foldersIn(p.id).forEach(f => tree(f, 1));
+      foldersIn(p.id).forEach(f => {
+        tree(f, 1);
+      });
       if (!foldersIn(p.id).length) h += '<div class="mv-none">no folders yet</div>';
     });
-    looseFolders().forEach(f => tree(f, 0));
+    looseFolders().forEach(f => {
+      tree(f, 0);
+    });
     h += row(null, 'Not in a folder', 0, '<i class="mv-dot"></i>');
   } else {
     appState.projects.forEach(p => {
       h += row(p.id, p.name, 0, PIC(p.color));
-      foldersIn(p.id).forEach(f => tree(f, 1));
+      foldersIn(p.id).forEach(f => {
+        tree(f, 1);
+      });
     });
-    looseFolders().forEach(f => tree(f, 0));
+    looseFolders().forEach(f => {
+      tree(f, 0);
+    });
     h += row(null, 'Not in a project', 0, '<i class="mv-dot"></i>');
   }
-  m.innerHTML = h + '</div>';
+  m.innerHTML = `${h}</div>`;
   m.classList.add('mv');
   keepOnScreen(m);
   m.onclick = async ev => {
@@ -169,7 +181,7 @@ function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
         const p = appState.projects.find(x => x.id === f.project);
         if (p) p.open = true;
       }
-    } else if (to && to.startsWith('f:')) {
+    } else if (to?.startsWith('f:')) {
       const into = appState.folders.find(x => x.id === to.slice(2));
       if (!putFolder(obj.id, into ?? null)) return chirp("A folder can't go inside itself ✦", 2500);
     } else {
@@ -180,9 +192,9 @@ function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
     await saveLib();
     await refreshBoards();
     const dest =
-      appState.folders.find(x => x.id === to || 'f:' + x.id === to) || appState.projects.find(x => x.id === to);
+      appState.folders.find(x => x.id === to || `f:${x.id}` === to) || appState.projects.find(x => x.id === to);
     chirp(
-      `Moved “${obj.name}” ${dest ? 'to “' + dest.name + '”' : kind === 'board' ? 'out of its folder' : 'out of its project'} ✦`,
+      `Moved “${obj.name}” ${dest ? `to “${dest.name}”` : kind === 'board' ? 'out of its folder' : 'out of its project'} ✦`,
       3500,
     );
   };
@@ -217,8 +229,8 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
   const m = document.createElement('div');
   m.id = 'rowMenu';
   m.className = 'row-menu';
-  m.style.left = e.clientX + 'px';
-  m.style.top = e.clientY + 'px';
+  m.style.left = `${e.clientX}px`;
+  m.style.top = `${e.clientY}px`;
   const items =
     (nameEl ? '<button data-m="ren">Rename</button>' : '') +
     (kind !== 'project' ? '<button data-m="move">Move to…</button>' : '') +
@@ -275,7 +287,7 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
 export const uniqueName = (arr: { name: string }[], base: string) => {
   let n = base,
     k = 2;
-  while (byName(arr, n)) n = base + ' ' + k++;
+  while (byName(arr, n)) n = `${base} ${k++}`;
   return n;
 };
 
@@ -338,11 +350,17 @@ export async function refreshBoards() {
   }
   sidebarShown = sidebarKey();
   $('homeBtn').classList.remove('out');
-  appState.projects.forEach(p => el.appendChild(projectNode(p)));
-  looseFolders().forEach(f => el.appendChild(folderNode(f)));
+  appState.projects.forEach(p => {
+    el.appendChild(projectNode(p));
+  });
+  looseFolders().forEach(f => {
+    el.appendChild(folderNode(f));
+  });
   const loose = document.createElement('div');
   loose.className = 'loose-zone';
-  looseBoards().forEach(b => loose.appendChild(boardRow(b)));
+  looseBoards().forEach(b => {
+    loose.appendChild(boardRow(b));
+  });
   el.appendChild(loose);
   dropZone(loose, 'board', id => moveBoard(id, null));
   dropZone(el, 'folder', id => putFolder(id, null, null));

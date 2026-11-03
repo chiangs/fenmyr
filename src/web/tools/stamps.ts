@@ -1,10 +1,9 @@
-import { esc } from '../ui/dom.ts';
+import { isRecord } from '../../shared/model.ts';
 import { $, stage } from '../core/dom.ts';
 import { card } from '../model/boards.ts';
+import { closestTo, esc, htmlIn } from '../ui/dom.ts';
 import { addCard } from './penEdit.ts';
 import { mouse, startPlacing } from './place.ts';
-import { closestTo, htmlIn } from '../ui/dom.ts';
-import { isRecord } from '../../shared/model.ts';
 
 // a stamp: one of Myra's pictures (src) or an emoji, maybe moving (mv); n is its name in the picker
 export type Stamp = { n?: string; src?: string; emoji?: string; mv?: string };
@@ -25,7 +24,7 @@ function readWheel(raw: unknown): Stamp[] | null {
 }
 
 // ---------- stamps: Myra's emojis, moving Myras and regular emoji, stamped with a little burst ----------
-const M = (n: string) => 'stamps/myra' + (n ? '-' + n : '') + '.png';
+const M = (n: string) => `stamps/myra${n ? `-${n}` : ''}.png`;
 let STAMPS: Record<string, Stamp[]> = {};
 let wheel: Stamp[] = [];
 
@@ -64,7 +63,7 @@ export function renderWheel() {
       const a = (i / 8) * Math.PI * 2 - Math.PI / 2,
         x = 110 + Math.cos(a) * 76,
         y = 110 + Math.sin(a) * 76;
-      const moves = st.mv ? 'mv-' + st.mv : '',
+      const moves = st.mv ? `mv-${st.mv}` : '',
         pic = stampHTML(st);
       return `<button data-w="${i}" class="${moves}" style="left:${x}px;top:${y}px">${pic}</button>`;
     })
@@ -76,7 +75,7 @@ function renderPick(tab = 'myra') {
   $('spGrid').innerHTML = (STAMPS[tab] ?? [])
     .map((st, i) => {
       const name = esc(st.n),
-        moves = st.mv ? 'mv-' + st.mv : '',
+        moves = st.mv ? `mv-${st.mv}` : '',
         pic = stampHTML(st);
       return `<button data-p="${tab}:${i}" title="${name}" class="${moves}">${pic}</button>`;
     })
@@ -99,8 +98,8 @@ export function stampAt(w: { x: number; y: number }, st: Stamp) {
   const r = stage.getBoundingClientRect(),
     b = document.createElement('div');
   b.className = 'burst';
-  b.style.left = mouse.x - r.left + 'px';
-  b.style.top = mouse.y - r.top + 'px';
+  b.style.left = `${mouse.x - r.left}px`;
+  b.style.top = `${mouse.y - r.top}px`;
   b.innerHTML = [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<i style="--a:${a}deg"></i>`).join('');
   stage.appendChild(b);
   setTimeout(() => b.remove(), 500);
@@ -182,10 +181,12 @@ export function init51() {
       wheel = [clean, ...wheel].slice(0, 8);
       try {
         localStorage.setItem('fenmyr:wheel', JSON.stringify(wheel));
-      } catch (e2) {}
+      } catch (_e2) {}
     }
     pickStamp(clean);
   };
 
-  ['stampWheel', 'stampPick'].forEach(id => $(id).addEventListener('pointerdown', e => e.stopPropagation()));
+  ['stampWheel', 'stampPick'].forEach(id => {
+    $(id).addEventListener('pointerdown', e => e.stopPropagation());
+  });
 }

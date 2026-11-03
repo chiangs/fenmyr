@@ -5,7 +5,7 @@ import { card } from '../model/boards.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
-import { VBAR, type VideoCard, type VideoInfo, messageOf, vEl, vids } from './video.ts';
+import { messageOf, VBAR, type VideoCard, type VideoInfo, vEl, vids } from './video.ts';
 
 // a still from the video (for the poster and the board's thumbnails), plus its size and length
 function videoInfo(url: string) {
@@ -24,7 +24,7 @@ function videoInfo(url: string) {
     v.onloadeddata = () => {
       try {
         v.currentTime = Math.min(0.3, (v.duration || 1) / 10);
-      } catch (e) {
+      } catch (_e) {
         finish('');
       }
     };
@@ -36,7 +36,7 @@ function videoInfo(url: string) {
         cv.height = Math.round((W * v.videoHeight) / (v.videoWidth || 1)) || 270;
         cv.getContext('2d')?.drawImage(v, 0, 0, cv.width, cv.height);
         finish(cv.toDataURL('image/jpeg', 0.8));
-      } catch (e) {
+      } catch (_e) {
         finish('');
       }
     };
@@ -65,13 +65,13 @@ export async function fillVideo(c: VideoCard, blob: Blob, secs?: number) {
     src = await Fenmyr.saveMedia(blob, f => {
       c.pct = f;
       const s2 = vEl(c.id)?.querySelector('.vd-msg span');
-      if (s2) s2.textContent = Math.round(f * 100) + '%';
+      if (s2) s2.textContent = `${Math.round(f * 100)}%`;
     });
   } catch (e) {
     c.saving = false;
     c.ready = true;
     renderCard(c);
-    say("I couldn't save that video: " + messageOf(e), 8000);
+    say(`I couldn't save that video: ${messageOf(e)}`, 8000);
     return;
   }
   vids.get(c.id)?.pause();

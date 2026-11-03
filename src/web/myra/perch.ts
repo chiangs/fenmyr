@@ -1,9 +1,9 @@
 import { $ } from '../core/dom.ts';
-import { liveOff, liveOn, pickAnim, playAnim } from './anim.ts';
-import { chatOpen } from './chatWindow.ts';
 import { appState } from '../core/state.ts';
-
+import { liveOff, liveOn, pickAnim, playAnim } from './anim.ts';
 import { chatLog } from './chatLog.ts';
+import { chatOpen } from './chatWindow.ts';
+
 type Point = { x: number; y: number };
 // the slot Myra's canvas sits in, which she hops out of and back into
 export let gooSlot: HTMLElement;
@@ -178,7 +178,9 @@ export function initPerch() {
 
   addEventListener('resize', keepPerch);
   const perchWatch = new ResizeObserver(keepPerch);
-  [$('mChat'), $('mPill'), $('myra')].forEach(el => perchWatch.observe(el));
+  [$('mChat'), $('mPill'), $('myra')].forEach(el => {
+    perchWatch.observe(el);
+  });
   // the button changing width (a label appearing) moves the whole bar, and the chat with it
   gooSlot.addEventListener('click', e => {
     if (!perched) return;

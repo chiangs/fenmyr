@@ -29,7 +29,7 @@ export function init3() {
           const ms = ORDER.filter(o => [...mods].some(c => MOD[c] === o));
           return (
             ms.join('+') +
-            (key === '-' ? '-' : key ? (sp ? ' ' + key : '+' + (key === '↩' ? 'Enter' : key.toUpperCase())) : '')
+            (key === '-' ? '-' : key ? (sp ? ` ${key}` : `+${key === '↩' ? 'Enter' : key.toUpperCase()}`) : '')
           ); // "⇧ for 10" stays "Shift for 10"   // ⌘-click reads Ctrl-click
         })
         .replace(/Ctrl\+(\S)\s*\/\s*ctrl/i, 'Ctrl+$1'); // "⌘/ctrl" said twice
@@ -68,12 +68,12 @@ export function init3() {
         if (/[⌃⌥⇧⌘]/.test(t.data)) t.data = winKeys(t.data);
         sayPC(t);
       }
-      n.querySelectorAll(ATTRS.map(a => `[${a}]`).join(',')).forEach(e =>
+      n.querySelectorAll(ATTRS.map(a => `[${a}]`).join(',')).forEach(e => {
         ATTRS.forEach(a => {
           const v = e.getAttribute(a);
           if (v && /[⌃⌥⇧⌘]/.test(v)) e.setAttribute(a, winKeys(v));
-        }),
-      );
+        });
+      });
     };
     fix(document.body);
     new MutationObserver(ms =>

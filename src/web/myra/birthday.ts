@@ -1,19 +1,19 @@
+import { isRecord } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
+import { appState } from '../core/state.ts';
 import { partyMyra } from '../features/timer.ts';
-import { noEmoji, parse } from './replyText.ts';
 import { card } from '../model/boards.ts';
-import { snapshot } from './chat.ts';
-import { chatOpen, myraOpen } from './chatWindow.ts';
-import { goo } from './goos.ts';
-import { idleOK } from './idle.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { reply } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { addCard } from '../tools/penEdit.ts';
-import { appState } from '../core/state.ts';
-import { isRecord } from '../../shared/model.ts';
 import { elementById } from '../ui/dom.ts';
+import { snapshot } from './chat.ts';
+import { chatOpen, myraOpen } from './chatWindow.ts';
+import { goo } from './goos.ts';
+import { idleOK } from './idle.ts';
+import { noEmoji, parse } from './replyText.ts';
 
 // last: the year she last celebrated; hat: the day she wears it; setAt: the day the birthday was set;
 // card, cardIdx, cardKind: the card she left last time, so the next one is different
@@ -62,7 +62,7 @@ export function bdState(): BdState {
 function saveBd(st: BdState) {
   try {
     localStorage.setItem(BD_KEY, JSON.stringify(st));
-  } catch (e) {}
+  } catch (_e) {}
 }
 
 export function bdNow() {
@@ -238,7 +238,7 @@ async function birthdayLine(due: BirthdayDue): Promise<BirthdayLine> {
       say: r.say || null,
       card: typeof r.card === 'string' && r.card.trim() ? r.card.trim().slice(0, 240) : null,
     };
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 }
@@ -257,7 +257,9 @@ export async function celebrateBirthday(due: BirthdayDue, demo = false) {
   hatOn = true;
   goo.hat(true);
   if (!chatOpen()) myraOpen(true);
-  [500, 2000, 3500].forEach(ms => setTimeout(() => partyMyra(true), ms)); // waves of berry confetti, whatever her calm setting
+  [500, 2000, 3500].forEach(ms => {
+    setTimeout(() => partyMyra(true), ms);
+  }); // waves of berry confetti, whatever her calm setting
   const when = due.date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
   const canned = belated
     ? `Happy belated birthday${who}! I missed you on ${when}, so I saved the confetti ✦`

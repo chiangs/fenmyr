@@ -1,52 +1,16 @@
-import { SIL, mix } from './gooShapes.ts';
+import { grid } from './gooPixels.ts';
+import { mix } from './gooShapes.ts';
+
 // Myra in pixels: a little cloudberry (a bumpy cluster of golden beads with a leafy crown, ink eyes and blush).
 // She breathes, blinks, glances around, hops when she does something, and wiggles while she's thinking.
 // The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, wiggle, pose, hat, lively, setColors, draw }.
 
-type Pixel = 'B' | 'S' | 's' | 'D' | 'd' | 'L' | 'l';
+export type Pixel = 'B' | 'S' | 's' | 'D' | 'd' | 'L' | 'l';
 export type GooColors = { B: string; S: string; D: string; L?: string; l?: string };
 export type Pose = 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | 'curious';
 // headroom: rows of room above her; manual: the caller draws her
 type GooOptions = { headroom?: number; colors?: GooColors; manual?: boolean };
 
-const LEAVES: Record<string, Pixel> = {
-  '6,0': 'l',
-  '9,0': 'l',
-  '3,1': 'l',
-  '4,1': 'L',
-  '5,1': 'L',
-  '6,1': 'l',
-  '9,1': 'l',
-  '10,1': 'L',
-  '11,1': 'L',
-  '12,1': 'l',
-  '4,2': 'l',
-  '5,2': 'L',
-  '6,2': 'L',
-  '7,2': 'l',
-  '8,2': 'l',
-  '9,2': 'L',
-  '10,2': 'L',
-  '11,2': 'l',
-  '6,3': 'l',
-  '7,3': 'l',
-  '8,3': 'l',
-  '9,3': 'l',
-};
-// B body, S bead shine, s soft shine, D seam between beads, d shade along her bottom edge; L/l leaves
-const grid = SIL.map((row, y) =>
-  [...row].map((c, x): Pixel | null => {
-    const leaf = LEAVES[`${x},${y}`];
-    if (leaf) return leaf;
-    if (c !== 'X') return null;
-    if (y === 14 || SIL[y + 1]?.[x] !== 'X') return 'd';
-    const off = (Math.floor(y / 3) % 2) * 2;
-    if (y % 3 === 1 && (x + off) % 4 === 1) return 'S';
-    if (y % 3 === 1 && (x + off) % 4 === 2) return 's';
-    if (y % 3 === 0 && (x + off) % 4 === 3) return 'D';
-    return 'B';
-  }),
-);
 function context2d(canvas: HTMLCanvasElement) {
   const g = canvas.getContext('2d');
   if (!g) throw new Error('no 2D canvas for Myra');
@@ -65,7 +29,7 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
       k = (parseFloat(cs.height) || H0) / H0,
       extra = opts.headroom * px0;
     canvas.height = H0 + extra;
-    canvas.style.height = (H0 + extra) * k + 'px';
+    canvas.style.height = `${(H0 + extra) * k}px`;
     canvas.style.marginTop = `calc(${cs.marginTop || '0px'} - ${extra * k}px)`;
   }
   const g = context2d(canvas),
@@ -156,14 +120,14 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     if (pose === 'curious') g.rotate(Math.sin(t * 2.4) * 0.1);
     g.scale(1 - breathe * 0.5, 1 + breathe);
     g.translate(-W / 2, -H); // curious: her head tilts one way and the other
-    grid.forEach((row, y) =>
+    grid.forEach((row, y) => {
       row.forEach((c, x) => {
         if (c) {
           g.fillStyle = mute(P[c]);
           g.fillRect(ox + x * px, oy + y * px, px, px);
         }
-      }),
-    );
+      });
+    });
     const blink = t % 3.3 > 3.15,
       ex = Math.round(look),
       ink = mute('#2a1708');
@@ -171,16 +135,22 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     if (pose === 'shook') {
       // wide white eyes, a round open mouth, a sweat drop
       g.fillStyle = mute('#ffffff');
-      [3, 10].forEach(c => g.fillRect(ox + c * px, oy + 7 * px, px * 2, px * 3));
+      [3, 10].forEach(c => {
+        g.fillRect(ox + c * px, oy + 7 * px, px * 2, px * 3);
+      });
       g.fillStyle = ink;
-      [4, 11].forEach(c => g.fillRect(ox + c * px, oy + 8 * px, px, px));
+      [4, 11].forEach(c => {
+        g.fillRect(ox + c * px, oy + 8 * px, px, px);
+      });
       g.fillRect(ox + 7 * px, oy + 11 * px, px * 2, px * 2);
       g.fillStyle = mute('#c8dcf0');
       g.fillRect(ox + 14.5 * px, oy + (3.5 + Math.sin(t * 5) * 0.4) * px, px * 1.3, px * 2.4);
     } else if (pose === 'curious') {
       // eyes looking up and over, at the question mark
       g.fillStyle = ink;
-      [4, 11].forEach(c => g.fillRect(ox + (c + 1) * px, oy + 7.2 * px, px, px * 2));
+      [4, 11].forEach(c => {
+        g.fillRect(ox + (c + 1) * px, oy + 7.2 * px, px, px * 2);
+      });
     } else if (pose === 'happy') {
       // beaming: eyes as arches
       g.fillStyle = ink;
@@ -209,18 +179,26 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
           [-1, 9],
           [1, 9],
         ];
-        crosses.forEach(([dx, r]) => g.fillRect(ox + (c + dx) * px, oy + r * px, px, px));
+        crosses.forEach(([dx, r]) => {
+          g.fillRect(ox + (c + dx) * px, oy + r * px, px, px);
+        });
       });
     } else if (closed) {
       // eyes shut: sleepy, or mid-sigh
       g.fillStyle = ink;
-      [3, 10].forEach(c => g.fillRect(ox + c * px, oy + 8.5 * px, px * 3, px * 0.9));
+      [3, 10].forEach(c => {
+        g.fillRect(ox + c * px, oy + 8.5 * px, px * 3, px * 0.9);
+      });
     } else {
       g.fillStyle = ink;
-      [4, 11].forEach(c => g.fillRect(ox + (c + ex) * px, oy + (blink ? 8.5 : 8) * px, px, blink ? px * 0.4 : px * 2));
+      [4, 11].forEach(c => {
+        g.fillRect(ox + (c + ex) * px, oy + (blink ? 8.5 : 8) * px, px, blink ? px * 0.4 : px * 2);
+      });
     }
     g.fillStyle = mute('#ff8fa8');
-    [2, 13].forEach(c => g.fillRect(ox + c * px, oy + 10 * px, px, px));
+    [2, 13].forEach(c => {
+      g.fillRect(ox + c * px, oy + 10 * px, px, px);
+    });
     if (pose === 'curious') {
       g.fillStyle = ink;
       g.fillRect(ox + 7.5 * px, oy + 11 * px, px, px);
@@ -232,7 +210,9 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     } // a big open smile
     else if (pose === 'dizzy') {
       g.fillStyle = mute(P.d);
-      [6, 8, 10].forEach((c, i) => g.fillRect(ox + (c - 0.5) * px, oy + (11 + (i % 2) * 0.6) * px, px * 1.3, px * 0.8));
+      [6, 8, 10].forEach((c, i) => {
+        g.fillRect(ox + (c - 0.5) * px, oy + (11 + (i % 2) * 0.6) * px, px * 1.3, px * 0.8);
+      });
     } // a wobbly mouth
     else if (pose !== 'shook') {
       g.fillStyle = mute(P.d);
@@ -246,11 +226,11 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
         u = Math.max(1, px * 1.05);
       g.fillStyle = mute('#5b7bd5');
       g.globalAlpha = 0.75 + Math.sin(t * 5) * 0.25;
-      q.forEach((row, ry) =>
+      q.forEach((row, ry) => {
         [...row].forEach((c, rx) => {
           if (c === 'X') g.fillRect(ox + 11.5 * px + rx * u, oy - 1 * px + bob * px + ry * u, u, u);
-        }),
-      );
+        });
+      });
       g.globalAlpha = 1;
     }
     if (pose === 'happy') {
@@ -326,13 +306,13 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
         cone = ['..P..', '.LLL.', '.LSL.', 'LLLLL', 'LSLSL'],
         hx = ox + 8.4 * px,
         hy = oy - 3.6 * px;
-      cone.forEach((row, ry) =>
+      cone.forEach((row, ry) => {
         [...row].forEach((c, rx) => {
           if (c === '.') return;
           g.fillStyle = mute(c === 'L' ? '#a98bdc' : c === 'S' ? '#ffe2a8' : '#ffe2a8');
           g.fillRect(hx + rx * u, hy + ry * u, u, u);
-        }),
-      );
+        });
+      });
     }
     g.restore();
   }

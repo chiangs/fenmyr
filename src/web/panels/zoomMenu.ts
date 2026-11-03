@@ -1,15 +1,15 @@
 import type { CardType } from '../../shared/cardTypes.ts';
 import type { CardOf, View } from '../../shared/model.ts';
-import { ZOOM_STEPS, fit, toWorld } from '../canvas/handles.ts';
+import { fit, toWorld, ZOOM_STEPS } from '../canvas/handles.ts';
 import { applyView } from '../canvas/view.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
-import { boardMenu } from '../features/export.ts';
+import { session } from '../core/state.ts';
 import { startEdit } from '../edit/editing.ts';
+import { boardMenu } from '../features/export.ts';
 import { card } from '../model/boards.ts';
 import { addCard } from '../tools/penEdit.ts';
-import { session } from '../core/state.ts';
 
 // ---------- zoom from the menu (click the %) or the keyboard: it glides there, centered on the part of the board you're looking at ----------
 export function glideView(to: View) {
@@ -18,8 +18,10 @@ export function glideView(to: View) {
   stage.classList.add('moving');
   const step = (t: number) => {
     const k = Math.min(1, (t - t0) / 260),
-      e = 1 - Math.pow(1 - k, 3);
-    (['x', 'y', 'z'] as const).forEach(n => (session.view[n] = from[n] + (to[n] - from[n]) * e));
+      e = 1 - (1 - k) ** 3;
+    (['x', 'y', 'z'] as const).forEach(n => {
+      session.view[n] = from[n] + (to[n] - from[n]) * e;
+    });
     applyView();
     if (k < 1) requestAnimationFrame(step);
     else stage.classList.remove('moving');
@@ -91,7 +93,7 @@ export function init14() {
     const m = $('rowMenu');
     if (m) {
       const mr = m.getBoundingClientRect();
-      m.style.top = b.top - mr.height - 8 + 'px';
+      m.style.top = `${b.top - mr.height - 8}px`;
       m.classList.add('zoom-menu');
     }
   };

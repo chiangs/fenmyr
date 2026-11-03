@@ -3,14 +3,14 @@ import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { DOC_FONT, SUGGESTED_FONTS } from '../docs/docText.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { closeOnOutsidePress } from '../ui/popover.ts';
 import { cardEl, closestTo, esc, htmlIn, oneIn } from '../ui/dom.ts';
+import { closeOnOutsidePress } from '../ui/popover.ts';
 import { isLocalFont, useFont } from '../wireframe/tilt.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
-import { session } from '../core/state.ts';
 import { rebuildBar } from './barKit.ts';
 
 // every font this board uses: picked for notes and titles, wireframe text, font cards, and fonts set inside docs (most used first)
@@ -55,9 +55,9 @@ function fontShell(
     made.id = 'fontPop';
     made.className = 'dv-pop pop-font board-font';
     document.body.appendChild(made);
-    ['pointerdown', 'mousedown', 'wheel', 'dblclick'].forEach(t =>
-      made.addEventListener(t, e => e.stopPropagation(), { passive: true }),
-    );
+    ['pointerdown', 'mousedown', 'wheel', 'dblclick'].forEach(t => {
+      made.addEventListener(t, e => e.stopPropagation(), { passive: true });
+    });
     p = made;
   }
   const pop = p;
@@ -77,8 +77,12 @@ function fontShell(
   });
   q.addEventListener('input', () => {
     const v = q.value.trim().toLowerCase();
-    htmlIn(pop, '.dp-font').forEach(b => (b.hidden = !!v && !(b.dataset.bfont || defName).toLowerCase().includes(v)));
-    htmlIn(pop, '.dp-h').forEach(h => (h.hidden = !!v));
+    htmlIn(pop, '.dp-font').forEach(b => {
+      b.hidden = !!v && !(b.dataset.bfont || defName).toLowerCase().includes(v);
+    });
+    htmlIn(pop, '.dp-h').forEach(h => {
+      h.hidden = !!v;
+    });
   });
   setTimeout(() => q.focus(), 30);
   return { pop, q };
@@ -110,9 +114,9 @@ export function boardFontPop(btn: Element, list: Card[]) {
     btn.getBoundingClientRect(),
     (p, r) => {
       p.style.zIndex = '';
-      p.style.left = Math.max(10, Math.min(innerWidth - 270, r.left + r.width / 2 - 130)) + 'px';
-      if (r.top > innerHeight / 2) p.style.bottom = innerHeight - r.top + 8 + 'px';
-      else p.style.top = r.bottom + 8 + 'px';
+      p.style.left = `${Math.max(10, Math.min(innerWidth - 270, r.left + r.width / 2 - 130))}px`;
+      if (r.top > innerHeight / 2) p.style.bottom = `${innerHeight - r.top + 8}px`;
+      else p.style.top = `${r.bottom + 8}px`;
     },
     '',
   );
@@ -175,8 +179,8 @@ function defaultFontPop(btn: Element) {
     btn.getBoundingClientRect(),
     (p, r) => {
       p.style.zIndex = '120'; // above the Settings window
-      p.style.left = Math.max(10, Math.min(innerWidth - 270, r.right - 260)) + 'px';
-      p.style.top = innerHeight - r.bottom > 340 ? r.bottom + 8 + 'px' : Math.max(10, r.top - 8 - 330) + 'px';
+      p.style.left = `${Math.max(10, Math.min(innerWidth - 270, r.right - 260))}px`;
+      p.style.top = innerHeight - r.bottom > 340 ? `${r.bottom + 8}px` : `${Math.max(10, r.top - 8 - 330)}px`;
     },
     DOC_FONT,
   );

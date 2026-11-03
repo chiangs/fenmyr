@@ -1,14 +1,13 @@
-import { showDialog } from '../ui/popover.ts';
-import { esc } from '../ui/dom.ts';
-import { $ } from '../core/dom.ts';
-import { saveLib } from '../library/tree.ts';
-import { say } from '../settings/licenses.ts';
-import { addVaultNote } from './notes.ts';
-import { activeGrants, folderChecklist, loadVaults, renderVaults, vaultById, vaultInfo } from './vaults.ts';
-import { appState, session } from '../core/state.ts';
 import type { Board, StoredBoard, VaultGrant } from '../../shared/model.ts';
 import type { VaultHit, VaultListItem, VaultPatch, VaultTaskForMyra } from '../../shared/ops.ts';
-import { child, closestTo, elementById } from '../ui/dom.ts';
+import { $ } from '../core/dom.ts';
+import { appState, session } from '../core/state.ts';
+import { saveLib } from '../library/tree.ts';
+import { say } from '../settings/licenses.ts';
+import { child, closestTo, elementById, esc } from '../ui/dom.ts';
+import { showDialog } from '../ui/popover.ts';
+import { addVaultNote } from './notes.ts';
+import { activeGrants, folderChecklist, loadVaults, renderVaults, vaultById, vaultInfo } from './vaults.ts';
 
 type Found = VaultHit & { vault: string; vaultId: string };
 type Pickable = VaultListItem & { g: VaultGrant };
@@ -33,10 +32,10 @@ export async function gatherVault(q: string) {
     const v = vaultById(g.vault);
     if (!v) continue;
     try {
-      (await Fenmyr.vaultSearch(g.vault, g.folders, q)).forEach(h =>
-        all.push({ ...h, vault: v.name, vaultId: g.vault }),
-      );
-    } catch (e) {}
+      (await Fenmyr.vaultSearch(g.vault, g.folders, q)).forEach(h => {
+        all.push({ ...h, vault: v.name, vaultId: g.vault });
+      });
+    } catch (_e) {}
   }
   all.sort((a, b) => b.score - a.score);
   const out: Found[] = [];
@@ -72,11 +71,13 @@ export async function gatherVaultTasks(q: string): Promise<VaultTasksUsed | null
     if (!v) continue;
     try {
       const r = await Fenmyr.vaultTasks(g.vault, g.folders, q);
-      r.tasks.forEach(t => items.push({ ...t, vault: v.name }));
+      r.tasks.forEach(t => {
+        items.push({ ...t, vault: v.name });
+      });
       open += r.open;
       stopped ||= r.stopped;
       filtered ||= r.filtered;
-    } catch (e) {}
+    } catch (_e) {}
   }
   const notes = new Set(items.map(t => `${t.vault}/${t.rel}`)).size,
     which = filtered ? 'the ones that match the words of the request' : 'all of them',
@@ -153,7 +154,7 @@ export async function openVaultPicker() {
     try {
       await addVaultNote(r.g, r.rel);
     } catch (err) {
-      say('Hmm: ' + messageOf(err), 3500);
+      say(`Hmm: ${messageOf(err)}`, 3500);
     }
   };
   d.onkeydown = e => {
@@ -163,7 +164,7 @@ export async function openVaultPicker() {
       e.preventDefault();
       const r = rows[0];
       close();
-      addVaultNote(r.g, r.rel).catch(err => say('Hmm: ' + messageOf(err), 3500));
+      addVaultNote(r.g, r.rel).catch(err => say(`Hmm: ${messageOf(err)}`, 3500));
     }
   };
 }
@@ -188,7 +189,7 @@ export function init39() {
         6000,
       );
     } catch (e) {
-      say('Hmm: ' + messageOf(e), 4000);
+      say(`Hmm: ${messageOf(e)}`, 4000);
     }
   };
 

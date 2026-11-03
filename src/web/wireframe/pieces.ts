@@ -1,5 +1,5 @@
 import { isRecord } from '../../shared/model.ts';
-import { B, FIELD_LABEL, IC, type Piece, PH, T, numOf, str } from './pieceKit.ts';
+import { B, FIELD_LABEL, IC, numOf, PH, type Piece, str, T } from './pieceKit.ts';
 import { MORE } from './pieceMore.ts';
 import { WEB } from './pieceWeb.ts';
 

@@ -1,18 +1,18 @@
+import { type Card, type CardOf, isRecord } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save, showWhatMyraMade } from '../core/history.ts';
-import { parse } from '../myra/replyText.ts';
+import { session } from '../core/state.ts';
 import { DL } from '../myra/chat.ts';
 import { addMsg, typing } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { goo } from '../myra/goos.ts';
+import { parse } from '../myra/replyText.ts';
+import type { SayAction } from '../settings/licenses.ts';
 import { say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { onFrame } from '../wireframe/tilt.ts';
-import { session } from '../core/state.ts';
-import { type Card, type CardOf, isRecord } from '../../shared/model.ts';
-import type { SayAction } from '../settings/licenses.ts';
 
 type Spot = CardOf<'box'>;
 type Made = { id: string; url: string; svg: string };
@@ -28,7 +28,10 @@ const readMade = (list: unknown): Made[] =>
 export const spotsIn = (cs: Card[]) => {
   const ids = new Set<string>();
   cs.forEach(c => {
-    if (c.type === 'frame') onFrame(c).forEach(k => ids.add(k.id));
+    if (c.type === 'frame')
+      onFrame(c).forEach(k => {
+        ids.add(k.id);
+      });
     else ids.add(c.id);
   });
   return session.board.cards.filter((c): c is Spot => ids.has(c.id) && c.type === 'box' && !!c.img && !c.src);
@@ -116,7 +119,7 @@ async function quoteFill(spots: Spot[]) {
     );
   } catch (e) {
     typing(false);
-    say("I couldn't reach Higgsfield: " + messageOf(e));
+    say(`I couldn't reach Higgsfield: ${messageOf(e)}`);
   }
 }
 
@@ -128,11 +131,11 @@ async function placeImages(spots: Spot[], list: unknown, key: 'svg' | 'url') {
     try {
       c.src =
         key === 'svg'
-          ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(it.svg)
+          ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(it.svg)}`
           : await Fenmyr.fetchImage(it.url);
       renderCard(c);
       n++;
-    } catch (e) {}
+    } catch (_e) {}
   }
   save();
   return n;
@@ -164,7 +167,7 @@ async function makeFill(spots: Spot[]) {
     if (n) showWhatMyraMade(spots.filter(c => c.src));
   } catch (e) {
     typing(false);
-    say('Something went wrong making those: ' + messageOf(e));
+    say(`Something went wrong making those: ${messageOf(e)}`);
   } finally {
     $('myra').classList.remove('thinking');
     goo.think(false);
@@ -190,7 +193,7 @@ async function drawFill(spots: Spot[]) {
     if (n) showWhatMyraMade(spots.filter(c => c.src));
   } catch (e) {
     typing(false);
-    say("I couldn't draw those: " + messageOf(e));
+    say(`I couldn't draw those: ${messageOf(e)}`);
   } finally {
     $('myra').classList.remove('thinking');
     goo.think(false);

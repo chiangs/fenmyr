@@ -1,6 +1,6 @@
 import type { Card } from '../../shared/model.ts';
-import { child } from '../ui/dom.ts';
 import { COLORS } from '../core/base.ts';
+import { child } from '../ui/dom.ts';
 import { FBTN_OF } from './sidebarRows.ts';
 
 export const miniCache = new Map<string, Promise<string>>();
@@ -25,7 +25,7 @@ export async function mini(id: string): Promise<string> {
     miniCache.set(
       id,
       Fenmyr.load(id).then(b => {
-        const cs = (b && b.cards) || [];
+        const cs = b?.cards || [];
         if (!cs.length) return '';
         const x0 = Math.min(...cs.map(c => c.x)),
           y0 = Math.min(...cs.map(c => c.y)),
@@ -58,8 +58,8 @@ export function tile(
   btns: [string, string, string][] = [],
 ) {
   const t = document.createElement('div');
-  t.className = 'tile ' + kind;
-  t.style.rotate = (((obj.id.charCodeAt(0) + obj.id.charCodeAt(1)) % 5) - 2) * 0.6 + 'deg';
+  t.className = `tile ${kind}`;
+  t.style.rotate = `${(((obj.id.charCodeAt(0) + obj.id.charCodeAt(1)) % 5) - 2) * 0.6}deg`;
   const buttons = btns
     .map(([a, tt, s]) => {
       const icon = FBTN_OF(a) || s;
@@ -86,8 +86,8 @@ export const ago = (t: number) => {
   return s < 90
     ? 'just now'
     : m < 60
-      ? Math.round(m) + 'm ago'
+      ? `${Math.round(m)}m ago`
       : h < 24
-        ? Math.round(h) + 'h ago'
-        : Math.round(d) + 'd ago';
+        ? `${Math.round(h)}h ago`
+        : `${Math.round(d)}d ago`;
 };

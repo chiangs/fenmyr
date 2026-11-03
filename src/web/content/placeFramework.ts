@@ -1,4 +1,4 @@
-import { cardEl } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
@@ -6,12 +6,12 @@ import { parentOf } from '../cards/collection.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { uid } from '../core/base.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
 import { say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { stopPlacing } from '../tools/place.ts';
-import { session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
+import { cardEl } from '../ui/dom.ts';
 import { FRAMEWORKS, type FrameworkNote } from './frameworks.ts';
 
 export function placeFramework(key: string) {
@@ -113,7 +113,7 @@ export function placeFramework(key: string) {
       b.style.height = 'auto';
       c.h = Math.max(c.h, b.offsetHeight + 8);
       b.style.height = '';
-      el.style.height = c.h + 'px';
+      el.style.height = `${c.h}px`;
     });
   layoutAll();
   placeInView(made);

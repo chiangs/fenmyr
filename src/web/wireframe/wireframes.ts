@@ -1,7 +1,7 @@
 import { typesWith } from '../../shared/cardTypes.ts';
+import type { Card } from '../../shared/model.ts';
 import { applyStroke } from '../canvas/render.ts';
 import { oneIn } from '../ui/dom.ts';
-import type { Card } from '../../shared/model.ts';
 
 // ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
 export const WF = typesWith('wireframe');
@@ -20,17 +20,17 @@ export let FONTS = ['Figtree', 'Shantell Sans'];
 export function styleWF(c: Card, el: HTMLElement) {
   el.classList.add('wf');
   c.r = 0;
-  el.style.setProperty('--rot', (c.rot || 0) + 'deg');
+  el.style.setProperty('--rot', `${c.rot || 0}deg`);
   el.classList.toggle('grouped', !!c.group);
   if (!el.querySelector('.rot-h')) el.insertAdjacentHTML('beforeend', '<i class="rot-h" title="Drag to rotate"></i>');
   if (c.type === 'icon') {
-    el.style.setProperty('--isz', Math.min(c.w, c.h) + 'px');
+    el.style.setProperty('--isz', `${Math.min(c.w, c.h)}px`);
     el.style.setProperty('--ic', c.color || '#27272a');
   }
   if (c.type === 'frame') {
     el.style.setProperty('--fr-fill', c.fill === 'none' ? 'transparent' : c.fill || '#ffffff');
     el.classList.toggle('no-fill', c.fill === 'none');
-    el.style.setProperty('--fr-r', (c.radius ?? 0) + 'px');
+    el.style.setProperty('--fr-r', `${c.radius ?? 0}px`);
   }
   const bx = oneIn(el, '.bx'),
     tx = oneIn(el, '.tx');
@@ -41,7 +41,7 @@ export function styleWF(c: Card, el: HTMLElement) {
         : c.fill === 'none'
           ? 'transparent'
           : c.fill || '#e4e4e7',
-      borderRadius: (c.radius || 0) + 'px',
+      borderRadius: `${c.radius || 0}px`,
       opacity: String(c.opacity ?? 1),
       boxShadow: 'none',
       border: '0',
@@ -50,7 +50,7 @@ export function styleWF(c: Card, el: HTMLElement) {
     el.style.height = 'auto';
     Object.assign(tx.style, {
       fontFamily: `"${c.font || 'Figtree'}", system-ui`,
-      fontSize: (c.size || 18) + 'px',
+      fontSize: `${c.size || 18}px`,
       fontWeight: String(c.weight || 500),
       color: c.color && c.color !== 'none' ? c.color : '#27272a',
       textAlign: c.align || 'left',

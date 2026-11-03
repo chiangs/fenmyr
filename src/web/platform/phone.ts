@@ -2,12 +2,12 @@ import { fit, toWorld } from '../canvas/handles.ts';
 import { applyView } from '../canvas/view.ts';
 import { renderTray, selectOnly, takeFromTray } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
+import { session } from '../core/state.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
 import { goos } from '../myra/goos.ts';
 import { lyFlash, renderLayers } from '../panels/layers.ts';
 import { drawOn } from '../tools/draw.ts';
 import { placing } from '../tools/place.ts';
-import { session } from '../core/state.ts';
 import { child, closestTo } from '../ui/dom.ts';
 
 export type Phone = { on: boolean; set(on: boolean): void; hide(): void; count(): void; init(): void };
@@ -89,7 +89,9 @@ export function init62() {
       };
       $('shTabs').innerHTML = S.tabs.length > 1 ? S.tabs.map(tabButton).join('') : '';
       const body = $('shBody');
-      [...body.children].forEach(c => c.classList.remove('shown'));
+      [...body.children].forEach(c => {
+        c.classList.remove('shown');
+      });
       S.tabs.forEach(([, get], i) => {
         const el = get();
         if (!el) return;

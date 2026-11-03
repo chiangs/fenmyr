@@ -1,8 +1,8 @@
-import { esc } from '../ui/dom.ts';
-import { docCard, ed } from './editor.ts';
-import { docHTML, fontsIn } from './docText.ts';
 import { settings } from '../settings/settings.ts';
+import { esc } from '../ui/dom.ts';
 import { isLocalFont } from '../wireframe/tilt.ts';
+import { docHTML, fontsIn } from './docText.ts';
+import { docCard, ed } from './editor.ts';
 
 // ---------- a doc as a PDF: the same styles you see, laid out on real pages ----------
 // the editor's own text styles, read from the app's stylesheet, so the PDF always matches the screen
@@ -23,7 +23,7 @@ function proseCSS() {
           r.selectorText,
         )
       )
-        out += r.cssText + '\n';
+        out += `${r.cssText}\n`;
   }
   return out;
 }

@@ -1,16 +1,16 @@
-import { esc } from '../ui/dom.ts';
+import type { Board, CardOf, VaultGrant } from '../../shared/model.ts';
+import type { Vault } from '../../shared/ops.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $, cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { say, snapTo } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
+import { esc } from '../ui/dom.ts';
 import { activeGrants, loadVaults, vaultById } from './vaults.ts';
-import { session } from '../core/state.ts';
-import type { Board, CardOf, VaultGrant } from '../../shared/model.ts';
-import type { Vault } from '../../shared/ops.ts';
 
 type VaultNote = CardOf<'vnote'>;
 const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -72,7 +72,7 @@ export async function toggleVNFull(c: VaultNote) {
     renderCard(c);
   } catch (e) {
     const why = messageOf(e);
-    say(/missing/.test(why) ? 'I can’t find that note any more.' : 'Hmm: ' + why, 3500);
+    say(/missing/.test(why) ? 'I can’t find that note any more.' : `Hmm: ${why}`, 3500);
   }
 }
 
@@ -145,7 +145,7 @@ export function vnMd(src: unknown) {
 
 const grantFor = (b: Board, vaultId: string, rel: string): VaultGrant | undefined =>
   activeGrants(b).find(
-    g => g.vault === vaultId && g.folders.some(f => f === '' || rel === f || rel.startsWith(f + '/')),
+    g => g.vault === vaultId && g.folders.some(f => f === '' || rel === f || rel.startsWith(`${f}/`)),
   );
 
 // each card re-reads its note when the board opens. If the board may no longer read it (or it became private), the card forgets what it had shown

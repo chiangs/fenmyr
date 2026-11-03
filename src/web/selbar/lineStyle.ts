@@ -4,7 +4,7 @@ import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
-import { G, caret, closeSbPops, markOnce, pct, pop, syncPair } from './barKit.ts';
+import { caret, closeSbPops, G, markOnce, pct, pop, syncPair } from './barKit.ts';
 import { selCards } from './selected.ts';
 
 type Line = CardOf<'shape'>;
@@ -64,7 +64,9 @@ function syncPop(c: Line) {
   if (!(pop instanceof HTMLElement)) return;
   const st = c.squig || 'straight';
   pop.dataset.st = st;
-  htmlIn(pop, '[data-sqs]').forEach(b => b.classList.toggle('on', b.dataset.sqs === st));
+  htmlIn(pop, '[data-sqs]').forEach(b => {
+    b.classList.toggle('on', b.dataset.sqs === st);
+  });
   const lab = pop.querySelector('[data-sqk="round"] span');
   if (lab) lab.textContent = c.squig === 'loopy' ? 'Loop size' : 'Roundness';
   const now: [string, number][] = [
@@ -75,7 +77,9 @@ function syncPop(c: Line) {
     const row = pop.querySelector(`[data-sqk="${k}"]`),
       rg = row?.querySelector('[data-sq]');
     if (!row || !(rg instanceof HTMLInputElement)) continue;
-    row.querySelectorAll('input').forEach(i => (i.value = String(v)));
+    row.querySelectorAll('input').forEach(i => {
+      i.value = String(v);
+    });
     rg.style.setProperty('--p', pct(v, +rg.min, +rg.max));
   }
   const trig = $('selbar').querySelector('[data-pop="squig"] path'),
@@ -110,7 +114,7 @@ function setSquig(patch: Patch) {
   if (patch.lw !== undefined) c.lw = patch.lw;
   renderCard(c);
   const el = cardEl(c.id);
-  if (el) Object.assign(el.style, { top: c.y + 'px', height: c.h + 'px' });
+  if (el) Object.assign(el.style, { top: `${c.y}px`, height: `${c.h}px` });
   selectOnly([c.id]);
   renderWires();
   save();

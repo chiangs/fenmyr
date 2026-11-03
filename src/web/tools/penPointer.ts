@@ -1,15 +1,15 @@
+import type { PathPoint } from '../../shared/model.ts';
 import { toWorld } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
-import type { PathPoint } from '../../shared/model.ts';
 import {
-  type Hit,
-  type Point,
   drawVec,
   endVec,
+  type Hit,
+  type Point,
   refit,
   scaled,
   syncCornerPop,
@@ -186,7 +186,7 @@ export function vecMove(e: PointerEvent) {
 }
 
 export function vecUp() {
-  if (!vec || !vec.drag) return;
+  if (!vec?.drag) return;
   vec.drag = null;
   const c = vecCard();
   if (!c) return;

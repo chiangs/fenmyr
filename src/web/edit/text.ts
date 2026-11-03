@@ -1,11 +1,11 @@
-import { cardEl } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { save } from '../core/history.ts';
-import { endEdit } from './editing.ts';
 import { session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
+import { cardEl } from '../ui/dom.ts';
+import { endEdit } from './editing.ts';
 
 // ---------- editing text ----------
 // notes and checklists fit their words, like auto-height in Figma: taller as you type, back down as you delete,
@@ -25,7 +25,7 @@ export function fitText(c: Card | null | undefined) {
   const h = Math.max(c.userH, need);
   if (Math.abs(h - c.h) > 1) {
     c.h = h;
-    el.style.height = h + 'px';
+    el.style.height = `${h}px`;
     if (typeof renderWires === 'function') renderWires();
   }
 }

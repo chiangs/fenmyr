@@ -1,5 +1,3 @@
-import { closeOnOutsidePress } from '../ui/popover.ts';
-import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import type { Card } from '../../shared/model.ts';
 import { realBox } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
@@ -7,11 +5,13 @@ import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { O } from '../tools/draw.ts';
+import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
+import { closeOnOutsidePress } from '../ui/popover.ts';
 import { inSection } from './sections.ts';
 import { FONTS } from './wireframes.ts';
-import { session } from '../core/state.ts';
 
 // ---------- tilt popover: type an exact angle, or pick one ----------
 export function setTilt(c: Card, to: string | number, keepPop: boolean) {
@@ -25,7 +25,9 @@ export function setTilt(c: Card, to: string | number, keepPop: boolean) {
   save();
   const inp = $('tiltPop').querySelector('input');
   if (keepPop && inp && document.activeElement !== inp) inp.value = String(deg);
-  htmlIn($('tiltPop'), '[data-deg]').forEach(b => b.classList.toggle('on', +(b.dataset.deg ?? NaN) === deg));
+  htmlIn($('tiltPop'), '[data-deg]').forEach(b => {
+    b.classList.toggle('on', +(b.dataset.deg ?? NaN) === deg);
+  });
   if (!keepPop) closeTiltPop();
 }
 
@@ -43,9 +45,8 @@ export function openTiltPop(c: Card, btn: Element) {
       <div class="tp-chips">${chips}</div>`;
   const r = btn.getBoundingClientRect();
   pop.classList.add('on');
-  pop.style.left =
-    Math.min(innerWidth - pop.offsetWidth - 10, Math.max(10, r.left + r.width / 2 - pop.offsetWidth / 2)) + 'px';
-  pop.style.top = r.top - pop.offsetHeight - 10 + 'px';
+  pop.style.left = `${Math.min(innerWidth - pop.offsetWidth - 10, Math.max(10, r.left + r.width / 2 - pop.offsetWidth / 2))}px`;
+  pop.style.top = `${r.top - pop.offsetHeight - 10}px`;
   const inp = pop.querySelector('input');
   if (!inp) return;
   setTimeout(() => {
@@ -79,10 +80,9 @@ const DOCK_PICKS: Record<string, string> = {
   stampWheel: 'stamp',
   stampPick: 'stamp',
 };
-const DOCK_PICK_SEL =
-  Object.keys(DOCK_PICKS)
-    .map(id => '#' + id)
-    .join(', ') + ', #tools [data-add="shape"], #tools [data-add="stamp"], #tools [data-add="tpl"], #tbMore, #rowMenu';
+const DOCK_PICK_SEL = `${Object.keys(DOCK_PICKS)
+  .map(id => `#${id}`)
+  .join(', ')}, #tools [data-add="shape"], #tools [data-add="stamp"], #tools [data-add="tpl"], #tbMore, #rowMenu`;
 
 // removing a section pops the bubble but leaves everything that was inside it right where it is
 export function removeSection(secs: Card[]) {
@@ -91,7 +91,9 @@ export function removeSection(secs: Card[]) {
   const kids = secs.flatMap(inSection).map(c => c.id),
     gone = new Set(secs.map(c => c.id));
   session.board.cards = session.board.cards.filter(c => !gone.has(c.id));
-  secs.forEach(c => cardEl(c.id)?.remove());
+  secs.forEach(c => {
+    cardEl(c.id)?.remove();
+  });
   if (session.board.links) session.board.links = session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b));
   selectOnly(kids);
   renderWires();

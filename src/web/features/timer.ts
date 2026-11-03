@@ -1,15 +1,15 @@
+import { isRecord } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
-import { gooSlot, keepPerch } from '../myra/perch.ts';
+import { appState } from '../core/state.ts';
+import type { Pose } from '../goo.ts';
 import { snapshot } from '../myra/chat.ts';
 import { goo, hopMyra } from '../myra/goos.ts';
+import { gooSlot, keepPerch } from '../myra/perch.ts';
+import { noEmoji, parse } from '../myra/replyText.ts';
+import type { SayAction } from '../settings/licenses.ts';
 import { reply } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
-import { appState } from '../core/state.ts';
-import { isRecord } from '../../shared/model.ts';
-import type { Pose } from '../goo.ts';
-import type { SayAction } from '../settings/licenses.ts';
 import { durText, parseTimer } from './duration.ts';
-import { noEmoji, parse } from '../myra/replyText.ts';
 
 type Kind = 'break' | 'focus';
 // end: when it runs out; warned: the two-minute warning was given; kind: decided by the model at the warning
@@ -42,7 +42,7 @@ const saveTimer = () => {
   try {
     if (timer) localStorage.setItem(TIMER_KEY, JSON.stringify(timer));
     else localStorage.removeItem(TIMER_KEY);
-  } catch (e) {}
+  } catch (_e) {}
 };
 
 const clock = (ms: number) => {
@@ -195,7 +195,7 @@ async function timerLine(kind: 'warn' | 'done', t: Timer): Promise<TimerLine> {
     ]);
     const r = parse(raw);
     return { say: r.say || null, kind: r.kind === 'break' || r.kind === 'focus' ? r.kind : null };
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 }
@@ -204,7 +204,7 @@ export const osNotify = (title: string, body: string) => {
   if (Fenmyr.web || document.hasFocus() || typeof Notification === 'undefined') return;
   try {
     new Notification(title, { body });
-  } catch (e) {}
+  } catch (_e) {}
 };
 
 const CONFETTI = ['#f2a339', '#e07a5f', '#ffdcd8', '#e0edd3', '#d9e7f3', '#ebe1f2'];
@@ -232,8 +232,8 @@ export function partyMyra(force?: boolean) {
       d = 90 + Math.random() * 150;
     c.className = 'confetti';
     c.style.cssText = `--dx:${Math.round(Math.sin(a) * d)}px;--dy:${-Math.round(Math.cos(a) * d + 20)}px;--rot:${Math.round(Math.random() * 720 - 360)}deg;--c:${CONFETTI[i % CONFETTI.length]};animation-delay:${Math.round(Math.random() * 300)}ms`;
-    c.style.left = ox + 'px';
-    c.style.top = oy + 'px';
+    c.style.left = `${ox}px`;
+    c.style.top = `${oy}px`;
     c.style.bottom = 'auto';
     $('myra').appendChild(c);
     setTimeout(() => c.remove(), 2400);

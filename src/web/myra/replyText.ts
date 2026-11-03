@@ -1,7 +1,6 @@
-import { parseReply } from '../../shared/myraReply.ts';
+import type { Card } from '../../shared/model.ts';
+import { type MyraReply, parseReply } from '../../shared/myraReply.ts';
 import { settings } from '../settings/settings.ts';
-import { type MyraReply } from '../../shared/myraReply.ts';
-import { type Card } from '../../shared/model.ts';
 
 // emojis off means off: the prompt asks, and this makes sure (her own ✦ isn't an emoji, so it stays)
 export const noEmoji = (t: string) =>
@@ -19,7 +18,7 @@ export const parse = (raw: unknown): MyraReply => {
   if (a < 0) return { say: s.trim() };
   try {
     return parseReply(JSON.parse(s.slice(a, b + 1)));
-  } catch (e) {
+  } catch (_e) {
     return { say: s.trim() };
   }
 };

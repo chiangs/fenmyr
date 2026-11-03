@@ -1,9 +1,9 @@
-import { cardEl } from '../ui/dom.ts';
+import type { Card, CardOf } from '../../shared/model.ts';
 import { titleW } from '../canvas/render.ts';
 import { byId } from '../canvas/wires.ts';
-import { drawKanban } from './kanban.ts';
 import { session } from '../core/state.ts';
-import type { Card, CardOf } from '../../shared/model.ts';
+import { cardEl } from '../ui/dom.ts';
+import { drawKanban } from './kanban.ts';
 
 // ---------- collections: a named header over a frame; cards inside stack in columns and the frame grows to fit ----------
 export const COLL: Record<string, string[]> = {
@@ -50,7 +50,7 @@ export function layoutColl(s: CardOf<'coll'>) {
   s.cols = cols;
   s.w = s.cols * CW + (s.cols - 1) * CGAP + CPAD * 2;
   if (s.kanban) {
-    s.colNames = Array.from({ length: s.cols }, (_, i) => s.colNames?.[i] ?? 'Column ' + (i + 1));
+    s.colNames = Array.from({ length: s.cols }, (_, i) => s.colNames?.[i] ?? `Column ${i + 1}`);
     s.colLimit = Array.from({ length: s.cols }, (_, i) => s.colLimit?.[i] || 0);
   }
   const top = (s.head === false ? 0 : CHEAD) + (s.kanban ? KHEAD : 0),
@@ -76,10 +76,10 @@ export function layoutColl(s: CardOf<'coll'>) {
     c.r = 0;
     colH[k] = (colH[k] ?? 0) + c.h + CGAP;
     Object.assign(el.style, {
-      left: c.x + 'px',
-      top: c.y + 'px',
+      left: `${c.x}px`,
+      top: `${c.y}px`,
       width: titleW(c),
-      height: c.type === 'title' ? 'auto' : c.h + 'px',
+      height: c.type === 'title' ? 'auto' : `${c.h}px`,
     });
     el.classList.add('inside');
   });
@@ -97,7 +97,7 @@ export function layoutColl(s: CardOf<'coll'>) {
     });
   }
   if (el) {
-    Object.assign(el.style, { left: s.x + 'px', top: s.y + 'px', width: s.w + 'px', height: s.h + 'px' });
+    Object.assign(el.style, { left: `${s.x}px`, top: `${s.y}px`, width: `${s.w}px`, height: `${s.h}px` });
     el.querySelector('.coll-empty')?.remove();
     if (s.kanban) drawKanban(s, el);
     else if (!s.kids.length)

@@ -1,12 +1,12 @@
-import { cardEl } from '../ui/dom.ts';
+import type { Connections } from '../../shared/ops.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { cardsEl } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { GUIDE } from './chat.ts';
-import { say } from '../settings/licenses.ts';
 import { appState, session } from '../core/state.ts';
-import type { Connections } from '../../shared/ops.ts';
+import { say } from '../settings/licenses.ts';
+import { cardEl } from '../ui/dom.ts';
+import { GUIDE } from './chat.ts';
 
 // ---------- Myra's helpers: Claude Code, Mobbin, Higgsfield ----------
 let lastConn = 0;
@@ -38,7 +38,7 @@ export async function showConnections(force = false) {
     rows.forEach(([k, name, url, verb]) => {
       const r = document.createElement('div');
       const ready = !!c?.[k];
-      r.className = 'conn' + (ready ? ' on' : '');
+      r.className = `conn${ready ? ' on' : ''}`;
       r.innerHTML = `<span class="dot"></span>${name}`;
       if (ready) r.insertAdjacentHTML('beforeend', '<em>ready</em>');
       else if (!inBrowser) {
@@ -65,7 +65,9 @@ export function removeSelected() {
   const gone = new Set(session.sel);
   session.board.cards = session.board.cards.filter(c => !gone.has(c.id));
   session.board.links = session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b));
-  gone.forEach(id => cardEl(id)?.remove());
+  gone.forEach(id => {
+    cardEl(id)?.remove();
+  });
   session.sel.clear();
   for (const el of cardsEl.querySelectorAll('.card.inside'))
     if (el instanceof HTMLElement && !parentOf(el.dataset.id ?? '')) el.classList.remove('inside');

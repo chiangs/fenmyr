@@ -8,7 +8,7 @@ export async function videoAudio(c: CardOf<'video'>) {
       ac = new AudioContext();
     buf = await ac.decodeAudioData(ab);
     ac.close();
-  } catch (e) {
+  } catch (_e) {
     throw new Error('This video has no sound to write out.');
   }
   const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(buf.duration * 16000)), 16000),
@@ -19,7 +19,10 @@ export async function videoAudio(c: CardOf<'video'>) {
   const pcm = (await off.startRendering()).getChannelData(0),
     n = pcm.length,
     out = new DataView(new ArrayBuffer(44 + n * 2));
-  const str = (o: number, t: string) => [...t].forEach((ch, i) => out.setUint8(o + i, ch.charCodeAt(0)));
+  const str = (o: number, t: string) =>
+    [...t].forEach((ch, i) => {
+      out.setUint8(o + i, ch.charCodeAt(0));
+    });
   str(0, 'RIFF');
   out.setUint32(4, 36 + n * 2, true);
   str(8, 'WAVEfmt ');
@@ -36,5 +39,5 @@ export async function videoAudio(c: CardOf<'video'>) {
   const u8 = new Uint8Array(out.buffer);
   let bin = '';
   for (let i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode(...u8.subarray(i, i + 0x8000));
-  return 'data:audio/wav;base64,' + btoa(bin);
+  return `data:audio/wav;base64,${btoa(bin)}`;
 }

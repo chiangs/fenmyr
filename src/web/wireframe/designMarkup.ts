@@ -1,7 +1,7 @@
 import type { Card, CardOf } from '../../shared/model.ts';
 import { esc } from '../ui/dom.ts';
-import { DEVICES, FONTS } from './wireframes.ts';
 import { ALIGN } from './designPanel.ts';
+import { DEVICES, FONTS } from './wireframes.ts';
 
 const KIND: Record<string, string> = { frame: 'Screen', box: 'Box', text: 'Text', font: 'Font' };
 

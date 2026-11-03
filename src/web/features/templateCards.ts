@@ -1,10 +1,10 @@
-import type { Template } from '../../shared/ops.ts';
-import { type Card, readCards, readLinks } from '../../shared/model.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
+import { type Card, readCards, readLinks } from '../../shared/model.ts';
+import type { Template } from '../../shared/ops.ts';
 import { byId } from '../canvas/wires.ts';
 import { copyOf, uid } from '../core/base.ts';
-import { onFrame } from '../wireframe/tilt.ts';
 import { session } from '../core/state.ts';
+import { onFrame } from '../wireframe/tilt.ts';
 
 // ---------- the cards in a template: copied out of a board, and copied back in with fresh ids ----------
 const NO_KEEP = typesWith('notInTemplates');
@@ -17,7 +17,10 @@ export function templateFrom(cs: Card[]) {
         const kid = byId(k);
         if (kid) all.add(kid);
       }
-    if (c.type === 'frame') onFrame(c).forEach(k => all.add(k));
+    if (c.type === 'frame')
+      onFrame(c).forEach(k => {
+        all.add(k);
+      });
   });
   const kept = [...all].filter(c => !NO_KEEP.includes(c.type)),
     ids = new Set(kept.map(c => c.id));
@@ -46,7 +49,9 @@ export function instantiate(t: Template, dx: number, dy: number) {
   const ids: Record<string, string> = {},
     grp: Record<string, string> = {},
     source = readCards(copyOf(t.cards));
-  source.forEach(c => (ids[c.id] = uid()));
+  source.forEach(c => {
+    ids[c.id] = uid();
+  });
   const newId = (id: string) => ids[id] ?? '';
   const cards: Card[] = source.map(c => {
     const o = { ...c, id: newId(c.id), x: c.x + dx, y: c.y + dy };

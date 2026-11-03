@@ -1,6 +1,6 @@
-import { rhEl } from './handles.ts';
 import { $, grid, stage, world } from '../core/dom.ts';
 import { session } from '../core/state.ts';
+import { rhEl } from './handles.ts';
 
 // ---------- view ----------
 let movingT: ReturnType<typeof setTimeout> | undefined;
@@ -24,5 +24,5 @@ export function applyView() {
     grid.style.webkitMaskSize = grid.style.maskSize = `${s}px ${s}px`;
     grid.style.webkitMaskPosition = grid.style.maskPosition = `${session.view.x}px ${session.view.y}px`;
   }
-  $('zoom').textContent = Math.round(session.view.z * 100) + '%';
+  $('zoom').textContent = `${Math.round(session.view.z * 100)}%`;
 }

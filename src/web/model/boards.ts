@@ -1,8 +1,9 @@
-import { type Board, type Card, type CardOf, type Link, isCardOf } from '../../shared/model.ts';
 import { type CardType, sizeOf } from '../../shared/cardTypes.ts';
+import { type Board, type Card, type CardOf, isCardOf, type Link } from '../../shared/model.ts';
+import { workshopPlanning } from '../content/workshop.ts';
 import { COLOR_NAMES, tilt, uid } from '../core/base.ts';
 import { OS } from '../platform/osWords.ts';
-import { workshopPlanning } from '../content/workshop.ts';
+
 // the find bar next to Myra
 
 // ---------- boards ----------

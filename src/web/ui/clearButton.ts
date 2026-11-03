@@ -31,7 +31,7 @@ export function init2() {
       );
     };
     const place = () => {
-      if (!cur || !cur.isConnected || !cur.value) {
+      if (!cur?.isConnected || !cur.value) {
         btn.hidden = true;
         return;
       }
@@ -42,8 +42,8 @@ export function init2() {
       }
       const S = 20;
       btn.hidden = false;
-      btn.style.left = r.right - S - 6 + 'px';
-      btn.style.top = (cur.tagName === 'TEXTAREA' ? r.top + 6 : r.top + (r.height - S) / 2) + 'px';
+      btn.style.left = `${r.right - S - 6}px`;
+      btn.style.top = `${cur.tagName === 'TEXTAREA' ? r.top + 6 : r.top + (r.height - S) / 2}px`;
     };
     addEventListener(
       'pointerdown',

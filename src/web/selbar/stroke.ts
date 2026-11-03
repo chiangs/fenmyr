@@ -1,12 +1,12 @@
 import type { Card } from '../../shared/model.ts';
-import { STROKE_TEXT, canStroke, renderCard, skStyle } from '../canvas/render.ts';
+import { canStroke, renderCard, STROKE_TEXT, skStyle } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
-import { session } from '../core/state.ts';
-import { G, caret, closeSbPops, markOnce, openBarColor, pct, pop, syncPair } from './barKit.ts';
+import { caret, closeSbPops, G, markOnce, openBarColor, pct, pop, syncPair } from './barKit.ts';
 import { selCards } from './selected.ts';
 
 type Patch = { none?: true; color?: string; w?: number; dash?: string; dl?: number; dg?: number };
@@ -88,12 +88,12 @@ function syncPop(f: Card) {
     cur.style.setProperty('--c', f.stroke || '#27272a');
     cur.classList.toggle('none', !on);
   }
-  htmlIn(bar, '[data-skc]').forEach(b =>
-    b.classList.toggle('on', on && (f.stroke || '').toLowerCase() === b.dataset.skc),
-  );
-  htmlIn(bar, '[data-skd]').forEach(b =>
-    b.classList.toggle('on', b.dataset.skd === 'none' ? !on : on && b.dataset.skd === skStyle(f)),
-  );
+  htmlIn(bar, '[data-skc]').forEach(b => {
+    b.classList.toggle('on', on && (f.stroke || '').toLowerCase() === b.dataset.skc);
+  });
+  htmlIn(bar, '[data-skd]').forEach(b => {
+    b.classList.toggle('on', b.dataset.skd === 'none' ? !on : on && b.dataset.skd === skStyle(f));
+  });
   const dash = htmlIn(bar, '.sb-skdash')[0];
   if (dash) {
     dash.classList.toggle('off', !on || skStyle(f) === 'solid');

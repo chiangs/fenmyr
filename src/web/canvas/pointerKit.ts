@@ -1,7 +1,7 @@
-import { htmlIn } from '../ui/dom.ts';
 import type { Card } from '../../shared/model.ts';
 import { $, cardsEl, stage } from '../core/dom.ts';
 import { FS } from '../selbar/textSize.ts';
+import { htmlIn } from '../ui/dom.ts';
 
 export function clearStuckDrag() {
   htmlIn(cardsEl, '.card.dragging').forEach(el => {

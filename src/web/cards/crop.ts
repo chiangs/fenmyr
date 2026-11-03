@@ -1,9 +1,9 @@
+import type { CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $, cardsEl, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import type { CardOf } from '../../shared/model.ts';
 import { closestTo } from '../ui/dom.ts';
 
 type Box = { x: number; y: number; w: number; h: number };
@@ -98,10 +98,10 @@ export function init49() {
     const box = cardsEl.querySelector(`[data-id="${cropping.c.id}"] .crop-box`);
     if (box instanceof HTMLElement)
       Object.assign(box.style, {
-        left: b.x * 100 + '%',
-        top: b.y * 100 + '%',
-        width: b.w * 100 + '%',
-        height: b.h * 100 + '%',
+        left: `${b.x * 100}%`,
+        top: `${b.y * 100}%`,
+        width: `${b.w * 100}%`,
+        height: `${b.h * 100}%`,
       });
   });
 

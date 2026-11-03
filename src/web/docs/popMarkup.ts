@@ -1,7 +1,7 @@
-import { DICON } from './editor.ts';
-import { HIGHLIGHTS, SUGGESTED_FONTS, TEXT_COLORS } from './docText.ts';
-import { FONTS } from '../wireframe/wireframes.ts';
 import { esc } from '../ui/dom.ts';
+import { FONTS } from '../wireframe/wireframes.ts';
+import { HIGHLIGHTS, SUGGESTED_FONTS, TEXT_COLORS } from './docText.ts';
+import { DICON } from './editor.ts';
 
 // ---------- what the doc editor's drop-down menus show: values first, then the markup ----------
 

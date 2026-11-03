@@ -1,21 +1,21 @@
-import { cardEl, esc } from '../ui/dom.ts';
+import type { CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { cardsEl } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
+import type { MenuItem } from '../features/export.ts';
 import { boardMenu } from '../features/export.ts';
-import { PAUSE, PLAY, fmtT, live, players, warmMic, warmT } from './audio.ts';
-import { privacy, videoAct } from './video.ts';
-import { videoAudio } from './wav.ts';
 import { ask } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { appState, session } from '../core/state.ts';
-import type { CardOf } from '../../shared/model.ts';
-import type { MenuItem } from '../features/export.ts';
+import { cardEl, esc } from '../ui/dom.ts';
+import { fmtT, live, PAUSE, PLAY, players, warmMic, warmT } from './audio.ts';
+import { privacy, videoAct } from './video.ts';
+import { videoAudio } from './wav.ts';
 
 type AudioCard = CardOf<'audio'>;
 type DeviceKind = [kind: MediaDeviceKind, title: string, setting: 'micId' | 'camId'];
@@ -64,7 +64,7 @@ export async function devicePick(e: MouseEvent, kinds: DeviceKind[], onPick: () 
   let list: MediaDeviceInfo[] = [];
   try {
     list = await navigator.mediaDevices.enumerateDevices();
-  } catch (er) {}
+  } catch (_er) {}
   const items: MenuItem[] = [];
   for (const [kind, title, key] of kinds) {
     const ds = list.filter(d => d.kind === kind && d.deviceId && d.deviceId !== 'communications');
@@ -75,7 +75,7 @@ export async function devicePick(e: MouseEvent, kinds: DeviceKind[], onPick: () 
       cur =
         settings[key] ||
         ((def && ds.find(d => d.deviceId !== 'default' && d.groupId === def.groupId)) || def || ds[0])?.deviceId; // "default" is a stand-in: check the real device behind it
-    ds.filter(d => !(d.deviceId === 'default' && ds.length > 1)).forEach(d =>
+    ds.filter(d => !(d.deviceId === 'default' && ds.length > 1)).forEach(d => {
       items.push({
         label: deviceLabel(d.deviceId === cur, devName(d, title)),
         run: () => {
@@ -83,8 +83,8 @@ export async function devicePick(e: MouseEvent, kinds: DeviceKind[], onPick: () 
           applySettings();
           onPick();
         },
-      }),
-    );
+      });
+    });
   }
   if (!items.length) items.push({ label: 'No devices found', run: () => {} });
   boardMenu(e, items);
@@ -95,12 +95,12 @@ export async function readyToRecord() {
     if (!appState.warm)
       try {
         warmMic(await openMedia(false));
-      } catch (e) {}
+      } catch (_e) {}
     return true;
   }
   try {
     warmMic(await openMedia(false));
-  } catch (e) {
+  } catch (_e) {
     say(`Fenmyr needs the microphone for voice memos. Turn it on in ${privacy('Microphone')}, then try again ✦`, 10000);
     return false;
   }
@@ -115,12 +115,12 @@ export async function readyToRecord() {
 }
 
 async function record(c: AudioCard) {
-  let stream = appState.warm && appState.warm.active ? appState.warm : null;
+  let stream = appState.warm?.active ? appState.warm : null;
   appState.warm = null;
   clearTimeout(warmT);
   try {
     if (!stream) stream = await openMedia(false);
-  } catch (e) {
+  } catch (_e) {
     say(`I can't hear you yet. Let Fenmyr use the microphone (${privacy('Microphone')}), then try again.`, 9000);
     if (!c.src) {
       session.sel = new Set([c.id]);
@@ -149,7 +149,9 @@ async function record(c: AudioCard) {
   }; // only say "Recording…" once it's really listening
   recorder.ondataavailable = e => chunks.push(e.data);
   recorder.onstop = async () => {
-    stream.getTracks().forEach(t => t.stop());
+    stream.getTracks().forEach(t => {
+      t.stop();
+    });
     ac.close();
     live.delete(c.id);
     const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/mp4' }),
@@ -173,7 +175,7 @@ async function record(c: AudioCard) {
       }
       const top = Math.max(...wave, 0.01);
       wave = wave.map(v => +(v / top).toFixed(2));
-    } catch (e) {
+    } catch (_e) {
       wave = Array(44).fill(0.3);
     }
     const when = new Date();
@@ -283,7 +285,9 @@ export function audioAct(c: AudioCard, act: string, e?: MouseEvent) {
   if (act === 'au-stop' && L) {
     if (L.recorder.state !== 'inactive') L.recorder.stop();
     else {
-      L.stream.getTracks().forEach(t => t.stop());
+      L.stream.getTracks().forEach(t => {
+        t.stop();
+      });
       L.ac.close();
       live.delete(c.id);
       c.rec = false;
@@ -319,7 +323,9 @@ export function audioAct(c: AudioCard, act: string, e?: MouseEvent) {
   if (act === 'au-dev' && e) {
     devicePick(e, [['audioinput', 'Microphone', 'micId']], async () => {
       if (appState.warm) {
-        appState.warm.getTracks().forEach(t => t.stop());
+        appState.warm.getTracks().forEach(t => {
+          t.stop();
+        });
         appState.warm = null;
       }
       await readyToRecord();
@@ -354,7 +360,9 @@ export function audioAct(c: AudioCard, act: string, e?: MouseEvent) {
       const e2 = cardEl(c.id);
       if (!e2) return;
       const f = (p.currentTime || 0) / (c.dur || p.duration || 1);
-      e2.querySelectorAll('.au-wave i').forEach((b, i, all) => b.classList.toggle('past', i / all.length < f));
+      e2.querySelectorAll('.au-wave i').forEach((b, i, all) => {
+        b.classList.toggle('past', i / all.length < f);
+      });
       const time = e2.querySelector('.au-time'),
         pb = e2.querySelector('.au-play');
       if (time) time.textContent = `${fmtT(p.currentTime || 0)} / ${fmtT(c.dur || 0)}`;

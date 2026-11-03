@@ -1,11 +1,10 @@
-import { cardEl, esc } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { byId } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { fitText } from '../edit/text.ts';
 import { appState, session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
-import { closestTo } from '../ui/dom.ts';
+import { fitText } from '../edit/text.ts';
+import { cardEl, closestTo, esc } from '../ui/dom.ts';
 import { initTagAdd } from './tagAdd.ts';
 
 // a suggestion: one of the board's tags, or a new one to make
@@ -27,7 +26,7 @@ export const cleanTag = (t: unknown) =>
     .replace(/^#+/, '')
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[^\p{L}\p{N}_\-\/]/gu, '')
+    .replace(/[^\p{L}\p{N}_\-/]/gu, '')
     .slice(0, 30);
 
 export const realTag = (t: string) => !!t && !/^\d+$/.test(t);
@@ -182,7 +181,7 @@ export function wireTagTyping(c: Card, t: HTMLElement) {
     const node = sl?.anchorNode;
     if (!sl?.rangeCount || !(node instanceof Text) || !t.contains(node)) return null;
     const off = sl.anchorOffset,
-      word = /(^|\s)#([\p{L}\p{N}_\-\/]*)$/u.exec(node.data.slice(0, off))?.[2];
+      word = /(^|\s)#([\p{L}\p{N}_\-/]*)$/u.exec(node.data.slice(0, off))?.[2];
     return word !== undefined ? { node, start: off - word.length - 1, end: off, word } : null;
   };
   const show = () => {
@@ -200,8 +199,8 @@ export function wireTagTyping(c: Card, t: HTMLElement) {
     r.setStart(token.node, token.start);
     r.setEnd(token.node, token.end);
     const bx = r.getBoundingClientRect();
-    p.style.left = bx.left + 'px';
-    p.style.top = bx.bottom + 6 + 'px';
+    p.style.left = `${bx.left}px`;
+    p.style.top = `${bx.bottom + 6}px`;
     p.classList.add('on');
     p.onmousedown = e => {
       e.preventDefault();

@@ -5,7 +5,7 @@ import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { fitText } from '../edit/text.ts';
 import { closestTo, esc, htmlIn } from '../ui/dom.ts';
-import { G, caret, closeSbPops, markOnce, marks, pct, pop, rebuildBar, syncPair } from './barKit.ts';
+import { caret, closeSbPops, G, markOnce, marks, pct, pop, rebuildBar, syncPair } from './barKit.ts';
 import { boardFontPop } from './fontPop.ts';
 import { selCards } from './selected.ts';
 import { FS, FS_BASE, fitNote, fsPx, lhOf, lsOf, setFsPx, setSpacing, sizedCards } from './textSize.ts';
@@ -108,7 +108,7 @@ export function textBarHtml(sized: Card[]) {
     al = shared(sized, c => c.align || 'left'),
     aligns = ALIGNS.map(([k, t]) => {
       const cls = al === k ? 'on' : '',
-        icon = Icon('text-' + k);
+        icon = Icon(`text-${k}`);
       return `<button data-al="${k}" title="${t}" class="${cls}">${icon}</button>`;
     }).join(''),
     mixed = !sized.every(c => (c.font || '') === (first.font || '')),
@@ -131,7 +131,9 @@ export function textBarHtml(sized: Card[]) {
 
 // after a change made from inside the size or spacing dropdown: the cards, then the bar
 function redraw(cs: Card[]) {
-  cs.forEach(c => renderCard(c));
+  cs.forEach(c => {
+    renderCard(c);
+  });
   selectOnly(selCards().map(c => c.id));
   rebuildBar();
   save();
@@ -162,7 +164,9 @@ export function initTextBar(place: () => void) {
         renderCard(c);
         fitText(c);
       });
-      htmlIn($('selbar'), '[data-tcase]').forEach(x => x.classList.toggle('on', x === b));
+      htmlIn($('selbar'), '[data-tcase]').forEach(x => {
+        x.classList.toggle('on', x === b);
+      });
       selectOnly(selCards().map(c => c.id));
       renderWires();
       save();
@@ -270,7 +274,9 @@ export function initTextBar(place: () => void) {
       fs = closestTo(e.target, '[data-fs]')?.dataset.fs;
     if (isStyle(ts)) {
       const to = !list.every(c => isOn(c, ts));
-      list.forEach(c => (c[ts] = to));
+      list.forEach(c => {
+        c[ts] = to;
+      });
       redraw(selCards());
     }
     if (font) return boardFontPop(font, list);

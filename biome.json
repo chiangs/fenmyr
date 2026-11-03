@@ -28,7 +28,10 @@
   },
   "linter": {
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "performance": {
+        "useDomNodeTextContent": "off"
+      }
     }
   },
   "assist": {
@@ -42,10 +45,11 @@
     {
       "includes": ["src/web/**"],
       "linter": {
-        "enabled": false
-      },
-      "assist": {
-        "enabled": false
+        "rules": {
+          "suspicious": {
+            "noAssignInExpressions": "off"
+          }
+        }
       }
     }
   ]

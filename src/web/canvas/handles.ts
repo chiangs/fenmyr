@@ -1,17 +1,17 @@
-import { cardEl } from '../ui/dom.ts';
 import { typesWith } from '../../shared/cardTypes.ts';
-import { applyView } from './view.ts';
-import { nearestEmptySpot } from './emptySpot.ts';
-import { byId } from './wires.ts';
+import type { Card } from '../../shared/model.ts';
 import { cropping } from '../cards/crop.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { clamp } from '../core/base.ts';
 import { $, stage, world } from '../core/dom.ts';
+import { appState, session } from '../core/state.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { drawOn } from '../tools/draw.ts';
 import { vec } from '../tools/penEdit.ts';
-import { appState, session } from '../core/state.ts';
-import type { Card } from '../../shared/model.ts';
+import { cardEl } from '../ui/dom.ts';
+import { nearestEmptySpot } from './emptySpot.ts';
+import { applyView } from './view.ts';
+import { byId } from './wires.ts';
 
 let rh: HTMLElement;
 export let rhEl: HTMLElement;
@@ -55,9 +55,9 @@ export function anchorOf(cs: Card[]): Card | undefined {
 }
 
 function placeDot(x: number, y: number, ang: number) {
-  mrot.style.left = x + 'px';
-  mrot.style.top = y + 'px';
-  mrot.style.rotate = (ang || 0) + 'deg';
+  mrot.style.left = `${x}px`;
+  mrot.style.top = `${y}px`;
+  mrot.style.rotate = `${ang || 0}deg`;
   mrot.style.setProperty('--iz', (1 / session.view.z).toFixed(4));
 }
 
@@ -110,11 +110,10 @@ function syncRH() {
     grp = g && ids.every(i => byId(i)?.group === g) && !drawOn && !(appState.drag && appState.drag.mode === 'move');
   if (grp) {
     const cs = ids.map(byId).filter(k => k !== undefined);
-    rhFor = 'g:' + g;
+    rhFor = `g:${g}`;
     rh.classList.add('on');
-    rh.style.left = Math.max(...cs.map(k => k.x + k.w)) + 'px';
-    rh.style.top =
-      Math.max(...cs.map(k => k.y + (k.type === 'title' ? cardEl(k.id)?.offsetHeight || k.h : k.h))) + 'px';
+    rh.style.left = `${Math.max(...cs.map(k => k.x + k.w))}px`;
+    rh.style.top = `${Math.max(...cs.map(k => k.y + (k.type === 'title' ? cardEl(k.id)?.offsetHeight || k.h : k.h)))}px`;
     requestAnimationFrame(syncRH);
     return;
   }
@@ -136,8 +135,8 @@ function syncRH() {
       const pt = rs_.length
         ? toWorld(Math.max(...rs_.map(r => r.right)), Math.max(...rs_.map(r => r.bottom)))
         : { x: Math.max(...cs.map(k => k.x + R(k).w)), y: Math.max(...cs.map(k => k.y + R(k).h)) };
-      rh.style.left = pt.x + 'px';
-      rh.style.top = pt.y + 'px';
+      rh.style.left = `${pt.x}px`;
+      rh.style.top = `${pt.y}px`;
       requestAnimationFrame(syncRH);
       return;
     }
@@ -157,8 +156,8 @@ function syncRH() {
       cy = c.y + h / 2,
       dx = w / 2,
       dy = h / 2;
-    rh.style.left = cx + dx * Math.cos(a) - dy * Math.sin(a) + 'px';
-    rh.style.top = cy + dx * Math.sin(a) + dy * Math.cos(a) + 'px';
+    rh.style.left = `${cx + dx * Math.cos(a) - dy * Math.sin(a)}px`;
+    rh.style.top = `${cy + dx * Math.sin(a) + dy * Math.cos(a)}px`;
   }
   requestAnimationFrame(syncRH);
 }
@@ -201,9 +200,9 @@ export function stepZoom(cx: number, cy: number, dir: number) {
 // the part of the stage not covered by the left boxes and the tray (or Myra's chat, when it's open)
 function openSides(r: DOMRect) {
   const ph = document.body.classList.contains('phone'),
-    ch = !ph && chatOpen() && $('mChat').getBoundingClientRect();
+    ch = !ph && chatOpen() ? $('mChat').getBoundingClientRect() : null;
   if (ph) return { L: 0, R: 0 };
-  return { L: 270, R: ch && ch.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - 270 - 520)) : 260 };
+  return { L: 270, R: ch?.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - 270 - 520)) : 260 };
 }
 
 export function fit(cards: Card[], pad = 120, maxZ = 1.4) {
@@ -241,8 +240,8 @@ export function placeInView(made: Card[]) {
     c.y += spot.y - y0;
     const el = cardEl(c.id);
     if (el) {
-      el.style.left = c.x + 'px';
-      el.style.top = c.y + 'px';
+      el.style.left = `${c.x}px`;
+      el.style.top = `${c.y}px`;
     }
   });
   layoutAll();

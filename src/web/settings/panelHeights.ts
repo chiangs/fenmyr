@@ -1,6 +1,6 @@
 import { $ } from '../core/dom.ts';
+import { htmlOrNull, PANELS } from './colors.ts';
 import { settings } from './settings.ts';
-import { PANELS, htmlOrNull } from './colors.ts';
 
 // the height of one row, so a panel never shrinks past it
 const rowHeight = (list: HTMLElement, selector: string) => htmlOrNull(list.querySelector(selector))?.offsetHeight;
@@ -22,7 +22,7 @@ export function applyPanelH() {
     if (v) {
       const h = Math.max(panelMin(k), v);
       Object.assign(el.style, {
-        height: h + 'px',
+        height: `${h}px`,
         minHeight: '0',
         maxHeight: 'none',
         flex: `0 1 ${h}px`,
@@ -47,7 +47,7 @@ export function fitSides() {
       const cur = el.getBoundingClientRect().height,
         h = Math.max(panelMin(k), Math.floor(cur - over));
       if (h >= cur) return;
-      Object.assign(el.style, { height: h + 'px', flex: `0 1 ${h}px` });
+      Object.assign(el.style, { height: `${h}px`, flex: `0 1 ${h}px` });
       over -= cur - h;
     });
   });
@@ -113,8 +113,8 @@ export function gripBulge(grip: HTMLElement) {
       draw();
     } else if (!raf) raf = requestAnimationFrame(tick);
   };
-  ['pointerenter', 'pointerleave', 'pointerdown', 'pointerup', 'lostpointercapture'].forEach(ev =>
-    grip.addEventListener(ev, () => setTimeout(kick, 0)),
-  );
+  ['pointerenter', 'pointerleave', 'pointerdown', 'pointerup', 'lostpointercapture'].forEach(ev => {
+    grip.addEventListener(ev, () => setTimeout(kick, 0));
+  });
   draw();
 }

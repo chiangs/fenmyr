@@ -3,13 +3,14 @@ import { parseLibrary } from '../../shared/model.ts';
 import { renderAll } from '../canvas/render.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { closeHome, openBoard } from './home.ts';
-import { renderCrumbs } from './crumbs.ts';
-import { refreshBoards } from './rowMenu.ts';
-import { boardsIn, looseBoards, moveBoard, orderKey, saveLib, topLevel } from './tree.ts';
+import { appState, session } from '../core/state.ts';
 import { card, newBoard } from '../model/boards.ts';
 import { chirp } from '../settings/licenses.ts';
-import { appState, session } from '../core/state.ts';
+import { renderCrumbs } from './crumbs.ts';
+import { closeHome } from './home.ts';
+import { openBoard } from './openBoard.ts';
+import { refreshBoards } from './rowMenu.ts';
+import { boardsIn, looseBoards, moveBoard, orderKey, saveLib, topLevel } from './tree.ts';
 
 // ---------- canvases can go anywhere: inside another board (as a canvas card there), into a folder, or out on their own ----------
 const insideOf = (id: string, maybeAncestor: string) => {
@@ -41,7 +42,7 @@ async function editBoard<R>(id: string, fn: (b: StoredBoard) => R) {
 export async function unhook(id: string) {
   const kid =
       appState.boardList.find(x => x.id === id) || (session.board && session.board.id === id ? session.board : null),
-    p = kid && kid.parent;
+    p = kid?.parent;
   if (!p) return;
   await editBoard(p, pb => {
     const cards = pb.cards ?? [];
@@ -132,9 +133,9 @@ const dropEdge = (e: MouseEvent, el: HTMLElement) => {
 };
 
 const clearEdges = () =>
-  document
-    .querySelectorAll('.board-row.drop-before, .board-row.drop-after')
-    .forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  document.querySelectorAll('.board-row.drop-before, .board-row.drop-after').forEach(x => {
+    x.classList.remove('drop-before', 'drop-after');
+  });
 
 async function placeBoard(id: string, target: { id: string; folder?: string | null }, after: boolean) {
   const mine =
@@ -161,7 +162,7 @@ export function reorderZone(el: HTMLElement, b: { id: string; folder?: string | 
     e.preventDefault();
     e.stopImmediatePropagation();
     el.classList.remove('drop');
-    el.classList.add('drop-' + z);
+    el.classList.add(`drop-${z}`);
   });
   el.addEventListener('dragleave', e => {
     if (!(e.relatedTarget instanceof Node && el.contains(e.relatedTarget)))

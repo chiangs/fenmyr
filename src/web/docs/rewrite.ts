@@ -1,11 +1,11 @@
-import { esc } from '../ui/dom.ts';
 import { $ } from '../core/dom.ts';
-import { docCard, ed } from './editor.ts';
-import { mdToHTML } from './docText.ts';
-import { hidePop } from './menus.ts';
 import { GUIDE, SIGNIN } from '../myra/chat.ts';
 import { goo } from '../myra/goos.ts';
 import { say } from '../settings/licenses.ts';
+import { esc } from '../ui/dom.ts';
+import { mdToHTML } from './docText.ts';
+import { docCard, ed } from './editor.ts';
+import { hidePop } from './menus.ts';
 
 // ---------- Myra rewrites the words you selected ----------
 export async function rewrite(how: string) {
@@ -45,7 +45,7 @@ export async function rewrite(how: string) {
       ]);
     else
       say(
-        Fenmyr.native ? "Hmm, I couldn't rewrite that: " + m : 'Myra rewrites text with Claude in the desktop app ✦',
+        Fenmyr.native ? `Hmm, I couldn't rewrite that: ${m}` : 'Myra rewrites text with Claude in the desktop app ✦',
         8000,
       );
   } finally {
