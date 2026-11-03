@@ -158,6 +158,10 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
     throw new Error('Connecting a vault works in the desktop app');
   },
   vaultUpdate: desktopOnly,
+  gitStatus: desktopOnly,
+  gitInit: desktopOnly,
+  gitSetIdentity: desktopOnly,
+  ghStatus: desktopOnly,
   async vaultRemove() {
     return true;
   },
@@ -383,6 +387,10 @@ const nativeApi = {
   updatePrepare: () => call('updatePrepare'),
   higgsMake: (o: Ops['higgsMake']['args']) => call('higgsMake', o),
   drawFill: (o: Ops['drawFill']['args']) => call('drawFill', o),
+  gitStatus: (path: string) => call('gitStatus', { path }),
+  gitInit: (path: string) => call('gitInit', { path }),
+  gitSetIdentity: (o: Ops['gitSetIdentity']['args']) => call('gitSetIdentity', o),
+  ghStatus: () => call('ghStatus'),
 };
 export type FenmyrApi = typeof nativeApi;
 const api: FenmyrApi = native ? nativeApi : Object.assign({ native: false, platform }, browser);

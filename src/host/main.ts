@@ -5,6 +5,8 @@ import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
 import * as claude from './claude.ts';
+import * as gh from './gh.ts';
+import * as git from './git.ts';
 import { parseMacFonts } from './macFonts.ts';
 import * as net from './net.ts';
 import * as output from './output.ts';
@@ -256,6 +258,10 @@ const OPS = {
     if (/^(https?|mailto|obsidian):/i.test(u)) shell.openExternal(u);
     return true;
   },
+  gitStatus: a => git.status(text(a.path)),
+  gitInit: a => git.init(text(a.path)),
+  gitSetIdentity: a => git.setIdentity(text(a.path), text(a.name), text(a.email), a.everywhere === true),
+  ghStatus: () => gh.status(),
 } satisfies Handlers;
 
 const isOp = (op: string): op is keyof Ops => Object.hasOwn(OPS, op);

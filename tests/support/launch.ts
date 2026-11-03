@@ -21,7 +21,14 @@ export type Launched = {
   errors: string[];
   close: () => Promise<void>;
 };
-type Options = { dir?: string; boards?: Board[]; settings?: Record<string, unknown>; open?: string; flags?: string[] };
+type Options = {
+  dir?: string;
+  boards?: Board[];
+  settings?: Record<string, unknown>;
+  open?: string;
+  flags?: string[];
+  env?: Record<string, string>;
+};
 
 export async function launch({
   dir = ROOT,
@@ -29,6 +36,7 @@ export async function launch({
   settings = {},
   open,
   flags = [],
+  env = {},
 }: Options = {}): Promise<Launched> {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-h-'));
   const boardsDir = path.join(data, 'fenmyr', 'boards');
@@ -37,7 +45,7 @@ export async function launch({
   const version = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).version;
   const app = await _electron.launch({
     args: [dir, '--no-sandbox', ...HEADLESS, ...flags],
-    env: { ...process.env, XDG_DATA_HOME: data, HOME: data },
+    env: { ...process.env, ...env, XDG_DATA_HOME: data, HOME: data },
   });
   const page = await app.firstWindow();
   const errors: string[] = [];
