@@ -8,7 +8,8 @@ import { resetHistory } from '../core/history.ts';
 import { dueIndex } from '../features/due.ts';
 import { findClose } from '../features/find.ts';
 import { draggable, dropZone, inlineRename, nestBoard, newBoardIn } from './nesting.ts';
-import { FBTN_OF, refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
+import { refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
+import { FBTN_OF } from './sidebarRows.ts';
 import {
   boardsIn,
   boardsUnder,
