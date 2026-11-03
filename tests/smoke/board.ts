@@ -249,3 +249,88 @@ async function chatHistory(t: Smoke) {
     closedShown: res.closedShown,
   });
 }
+
+// "+ tag" on the note itself adds one, the x removes it, undo brings it back, and neither shows on an unselected note
+export async function noteTags(t: Smoke) {
+  const { page } = t;
+  const id = await page.evaluate(() => window.__fenmyr.newNote(120, -250));
+  await page.keyboard.type('tag me');
+  await page.keyboard.press('Escape');
+  await page.mouse.click(700, 150);
+  await page.waitForTimeout(200);
+  await page.evaluate(i => window.__fenmyr.selectOnly([i]), id);
+  await page.waitForTimeout(250);
+  const st = () =>
+    page.evaluate(i => {
+      const b = window.__fenmyr.curBoard(),
+        c = b.cards.find(k => k.id === i);
+      return { tags: c?.tags || [], board: b.tags || [] };
+    }, id);
+  const sel = `[data-id="${id}"]`,
+    vis = (s: string) => page.locator(`${sel} ${s}`).first().isVisible();
+  const soloShown = await vis('.nt-add');
+  // what the pointer and keys did, printed if the tag box never takes focus (it has failed that way once, rarely)
+  await page.evaluate(() => {
+    const trace: [number, string, string][] = [];
+    window.__tagTrace = trace;
+    for (const name of ['pointerdown', 'pointerup', 'pointercancel', 'click', 'focusin', 'keydown'])
+      addEventListener(
+        name,
+        e => {
+          const el = e.target instanceof Element ? e.target : null;
+          trace.push([Math.round(performance.now()), name, `${el?.tagName}.${el?.className}`]);
+        },
+        true,
+      );
+  });
+  await page.locator(`${sel} .nt-add`).click();
+  await page
+    .waitForFunction(() => document.activeElement?.matches('#tagAdd input'), null, { timeout: 8000 })
+    .catch(async e => {
+      const state = await page.evaluate(i => {
+        const add = document.querySelector(`[data-id="${i}"] .nt-add`),
+          b = add?.getBoundingClientRect(),
+          under = b ? document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2) : null,
+          a = document.activeElement;
+        return {
+          active: a ? `${a.tagName}#${a.id}.${a.className}` : null,
+          pop: document.getElementById('tagAdd')?.className ?? 'no pop',
+          popHasInput: !!document.querySelector('#tagAdd input'),
+          docFocus: document.hasFocus(),
+          selected: window.__t.all('.card.sel').map(c => c.dataset.id),
+          want: i,
+          addExists: !!add,
+          addRect: b ? [b.x, b.y, b.width, b.height] : null,
+          under: under ? `${under.tagName}.${under.className}` : null,
+          on: [...document.querySelectorAll('.on')].map(x => x.id || x.className).slice(0, 15),
+          editing: window.__t.all('.card.editing')[0]?.dataset.id ?? null,
+          trace: window.__tagTrace,
+        };
+      }, id);
+      console.log('TAG DIAG', JSON.stringify(state));
+      await page.screenshot({ path: '/tmp/tag-diag.png' });
+      throw e;
+    });
+  await page.keyboard.type('zeta');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(350);
+  const added = await st(),
+    xShown = await vis('.nt-x');
+  await page.locator(`${sel} .nt-x`).click();
+  await page.waitForTimeout(350);
+  const removed = await st();
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(500);
+  const undone = await st();
+  await page.mouse.click(700, 120);
+  await page.waitForTimeout(200);
+  const hidden = !(await vis('.nt-x')) && !(await vis('.nt-add'));
+  t.checkAll('noteTags', {
+    soloShown,
+    adds: added.tags.join() === 'zeta' && added.board.includes('zeta'),
+    xShown,
+    removes: removed.tags.length === 0 && !removed.board.includes('zeta'),
+    undo: undone.tags.join() === 'zeta',
+    quietWhenUnselected: hidden,
+  });
+}

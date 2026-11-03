@@ -17,6 +17,8 @@ declare global {
     __t: PageKit;
     // the arguments the stand-in Claude Code was last run with
     __readArgs(): Promise<string>;
+    // pointer and key events, kept while the tag check waits for its box to take focus
+    __tagTrace?: [number, string, string][];
   }
 }
 
