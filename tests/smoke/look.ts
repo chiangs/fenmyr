@@ -154,9 +154,30 @@ export async function look(t: Smoke) {
       overlaps,
       risks: risks?.kids.length === 6 && risks.colNames?.join() === 'To assess,High impact,Medium impact,Low impact',
       due: !!cards.find(c => c.type === 'note' && c.name === 'T-0'),
+      // frosted sections sit behind the collections they hold (in front, they would blur the collection headers)
+      behind: (() => {
+        const z = (cls: string) =>
+          Number(getComputedStyle(document.querySelector(`#cards > .card.${cls}`) ?? document.body).zIndex);
+        return z('section') < z('coll');
+      })(),
     };
   });
+  // the header of a collection and of a kanban column is what you click, not the frosted section behind it
+  const headHit = await page.evaluate(async () => {
+    const M = window.__fenmyr,
+      coll = M.board.cards.find(c => c.type === 'coll' && c.kanban);
+    if (!coll) return false;
+    M.view.z = 1;
+    M.view.x = innerWidth / 2 - (coll.x + coll.w / 2);
+    M.view.y = innerHeight / 2 - (coll.y + 60);
+    M.applyView();
+    await new Promise(r => setTimeout(r, 400));
+    const head = document.querySelector(`[data-id="${coll.id}"] .coll-head`)?.getBoundingClientRect(),
+      hit = head && document.elementFromPoint(head.x + head.width / 2, head.y + head.height / 2);
+    return hit?.closest('.card')?.getAttribute('data-id') === coll.id;
+  });
   t.checkAll('workshop', {
+    headerClickable: headHit,
     opens: opened.name && opened.cards >= 110,
     sections: workshop.sections === 9,
     kanbans: workshop.kanbans === 4,
@@ -164,6 +185,7 @@ export async function look(t: Smoke) {
     noOverlap: workshop.overlaps === 0,
     risks: workshop.risks,
     timeline: workshop.due,
+    sectionsBehind: workshop.behind,
   });
   await page.evaluate(id => window.__fenmyr.openBoard(id), before);
   await page.waitForTimeout(500);

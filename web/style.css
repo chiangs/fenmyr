@@ -407,7 +407,7 @@ html.native .home-in { padding-top: 40px; }
 .card.note .nname:empty::before { content: "Name"; color: var(--ink-faint); font-weight: 600; }
 .card.note .text:empty::before { content: "Type something…"; }
 /* ---------- collections: a named header over a frame that stacks its cards ---------- */
-.card.coll { z-index: 0 !important; rotate: 0deg !important; }
+.card.coll { z-index: 1 !important; rotate: 0deg !important; }   /* above a section (glass that would blur its header), below the cards it holds */
 .card.coll > .frame { display: none; }
 .card.coll > .body { padding: 0; overflow: visible; }
 .coll-head { position: absolute; left: 0; right: 0; top: 0; height: 40px; border-radius: 19px; corner-shape: squircle; background: var(--chead); display: grid; place-items: center; padding: 0 16px; cursor: grab; }
