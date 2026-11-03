@@ -13,7 +13,7 @@ import { bridge } from './smoke/bridge.ts';
 import { boardOrder, clearButtons, cursorEdge, heightGrips, popups, shortcutLabels } from './smoke/chrome.ts';
 import { installPageKit, makeSmoke } from './smoke/kit.ts';
 import { library } from './smoke/library.ts';
-import { look } from './smoke/look.ts';
+import { collectionCount, look } from './smoke/look.ts';
 import { myra } from './smoke/myra.ts';
 import { panels } from './smoke/panels.ts';
 import { pictures } from './smoke/pictures.ts';
@@ -85,6 +85,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   const t = makeSmoke({ app, page, data, out, errors });
   await bridge(t);
   await look(t);
+  await collectionCount(t);
   await library(t);
   await board(t);
   await panels(t);

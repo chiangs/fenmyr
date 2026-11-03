@@ -1,4 +1,4 @@
-import type { Card } from '../../shared/model.ts';
+import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard, TILTS } from '../canvas/render.ts';
 import { applyView } from '../canvas/view.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
@@ -86,7 +86,7 @@ async function exportCards(cs: Card[], name: string, pdf: boolean) {
 }
 
 // '-' draws a divider; a label may hold markup (a tick, an icon)
-export type MenuItem = '-' | { label: string; run: () => unknown; danger?: boolean };
+export type MenuItem = '-' | { label: string; run: () => unknown; danger?: boolean; disabled?: boolean };
 // menu items that only show sometimes
 export const when = (on: boolean, items: MenuItem[]) => (on ? items : []);
 export function boardMenu(e: { clientX: number; clientY: number }, items: MenuItem[]) {
@@ -99,8 +99,9 @@ export function boardMenu(e: { clientX: number; clientY: number }, items: MenuIt
   m.innerHTML = items
     .map((it, i) => {
       if (it === '-') return '<span class="rm-sep"></span>';
-      const cls = it.danger ? 'danger' : '';
-      return `<button data-i="${i}" class="${cls}">${it.label}</button>`;
+      const cls = it.danger ? 'danger' : '',
+        off = it.disabled ? ' disabled' : '';
+      return `<button data-i="${i}" class="${cls}"${off}>${it.label}</button>`;
     })
     .join('');
   document.body.appendChild(m);
@@ -110,7 +111,7 @@ export function boardMenu(e: { clientX: number; clientY: number }, items: MenuIt
     if (!b) return;
     m.remove();
     const it = items[Number(b.dataset.i)];
-    if (it && it !== '-') it.run();
+    if (it && it !== '-' && !it.disabled) it.run();
   };
   removeOnOutsidePress(m);
 }
@@ -152,7 +153,10 @@ export function init43() {
         first = cs[0],
         sections = cs.filter(c => c.type === 'section'),
         spots = spotsIn(cs),
-        oneSection = cs.length === 1 && first?.type === 'section' ? first : undefined;
+        oneSection = cs.length === 1 && first?.type === 'section' ? first : undefined,
+        collections = cs.filter((c): c is CardOf<'coll'> => c.type === 'coll'),
+        countable = collections.filter(c => c.head !== false),
+        counting = countable.length > 0 && countable.every(c => c.count);
       boardMenu(e, [
         ...when(cs.length > 1 && !cs.every(c => c.group && c.group === first?.group), [
           {
@@ -178,6 +182,22 @@ export function init43() {
         ...when(!oneSection, [{ label: 'Create section  ⌥⌘G', run: () => makeSection(cs) }]),
         ...(oneSection ? [{ label: 'Rename section', run: () => renameSection(oneSection) }] : []),
         ...when(sections.length > 0, [{ label: 'Remove section', run: () => removeSection(sections) }]),
+        ...when(collections.length > 0, [
+          {
+            label: counting ? 'Hide count' : 'Show count',
+            disabled: countable.length === 0, // a count lives in the header
+            run: () => {
+              remember();
+              for (const c of countable) {
+                c.count = !counting;
+                renderCard(c);
+              }
+              selectOnly(cs.map(c => c.id));
+              $('selbar').dataset.key = '';
+              save();
+            },
+          },
+        ]),
         ...when(
           cs.some(c => TILTS(c) && Math.round(c.type === 'stamp' && !c.tilted ? 0 : c.r || 0)),
           [

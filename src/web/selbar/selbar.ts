@@ -85,6 +85,7 @@ const KEY_FIELDS = [
   'radius',
   'color',
   'head',
+  'count',
   'tagText',
   'hideName',
   'hideHex',
@@ -129,9 +130,17 @@ function colorsHtml(cs: Card[], one: Card | null) {
     const dots = Object.keys(COLL)
         .map(n => colorDot('cc', n, COLL[n]?.[0] ?? '#fff', one.color === n))
         .join(''),
-      head = one.head === false ? 'Show the header' : 'Hide the header';
+      head = one.head === false ? 'Show the header' : 'Hide the header',
+      noHeader = one.head === false,
+      count = noHeader
+        ? 'Show the header to count its cards'
+        : one.count
+          ? 'Hide the count'
+          : 'Show a count of the cards';
     return (
-      G(2, colorPop(COLL[one.color ?? '']?.[0] || '#fff', dots) + SEP) + btn('head', 'head', head, one.head !== false)
+      G(2, colorPop(COLL[one.color ?? '']?.[0] || '#fff', dots) + SEP) +
+      btn('head', 'head', head, one.head !== false) +
+      btn('count', 'count', count, !!one.count && !noHeader, noHeader)
     );
   }
   const fill = cs.filter(c => FILLABLE.includes(c.type)),

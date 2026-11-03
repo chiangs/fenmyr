@@ -30,6 +30,8 @@ type CardFields = {
     cols?: number;
     kanban?: boolean;
     head?: boolean;
+    // a count of the cards inside, shown in the header
+    count?: boolean;
     // which column each card sits in, by card id, and each column's name and card limit (0: none)
     colOf?: Record<string, number>;
     colNames?: string[];

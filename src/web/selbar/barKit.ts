@@ -38,10 +38,11 @@ export const pop = (id: string, trig: string, body: string, tip: string) =>
 // a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first)
 export const G = (fold: number, html: string) => `<span class="sb-g" data-fold="${fold}">${html}</span>`;
 
-export const btn = (a: string, icon: string, tip: string, on?: boolean) => {
+export const btn = (a: string, icon: string, tip: string, on?: boolean, disabled?: boolean) => {
   const cls = on ? 'on' : '',
-    svg = ICON[icon] ?? '';
-  return `<button class="sb-ic ${cls}" data-sb="${a}" title="${tip}">${svg}</button>`;
+    svg = ICON[icon] ?? '',
+    off = disabled ? ' disabled' : '';
+  return `<button class="sb-ic ${cls}" data-sb="${a}" title="${tip}"${off}>${svg}</button>`;
 };
 
 export const caret = () => Icon('caret-down', { cls: 'sb-caret' });
@@ -148,6 +149,7 @@ export function initIcons() {
     open: Icon('open'),
     link: Icon('link'),
     flip: Icon('refresh'),
+    count: Icon('hash'),
   };
   addEventListener('resize', snapSoon);
   setTimeout(snapSoon, 300);

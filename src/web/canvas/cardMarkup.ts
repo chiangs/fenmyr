@@ -1,4 +1,5 @@
 import type { Card, CardOf } from '../../shared/model.ts';
+import { countBadge } from '../cards/collection.ts';
 import { cropping } from '../cards/crop.ts';
 import { CIC, host, shapeSVG } from '../cards/shapes.ts';
 import { spEmbed } from '../cards/spotify.ts';
@@ -220,8 +221,9 @@ function font(c: CardOf<'font'>) {
 function coll(c: CardOf<'coll'>) {
   const text = esc(c.text),
     heads = when(c.kanban, '<div class="kb-heads"></div>'),
-    empty = when(!(c.kids || []).length && !c.kanban, '<div class="coll-empty">Drop cards here</div>');
-  return `<div class="coll-head"><span class="text">${text}</span></div><div class="coll-frame"></div>${heads}${empty}`;
+    empty = when(!(c.kids || []).length && !c.kanban, '<div class="coll-empty">Drop cards here</div>'),
+    badge = when(!!c.count && c.head !== false, countBadge((c.kids || []).length));
+  return `<div class="coll-head"><span class="text">${text}</span>${badge}</div><div class="coll-frame"></div>${heads}${empty}`;
 }
 
 // the crop box while cropping, placed as fractions of the picture
