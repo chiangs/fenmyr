@@ -15,6 +15,8 @@ import {
   clearButtons,
   cursorEdge,
   deleteConfirm,
+  deleteCurrent,
+  deleteLastBoard,
   heightGrips,
   popups,
   shortcutLabels,
@@ -106,6 +108,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await reminders(t);
   await boardOrder(t);
   await deleteConfirm(t);
+  await deleteCurrent(t);
   await popups(t);
   await cursorEdge(t);
   await noteTags(t);
@@ -114,6 +117,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await myra(t);
   await birthday(t);
   await commandsInPrompt(t);
+  await deleteLastBoard(t);
   console.log(JSON.stringify({ ...t.results, errors, failed: t.failures }, null, 1));
   await app.close();
   const ok = !errors.length && !t.failures.length;
