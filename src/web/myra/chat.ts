@@ -78,7 +78,11 @@ export function snapshot() {
     commands: SLASH.filter(c => !c.dev).map(c => ({ cmd: c.cmd, arg: c.arg, desc: c.desc, ex: c.ex, opts: c.opts })),
     person: birthdayFacts(), // the slash commands, so she knows every one (the host puts them in her instructions)
     library: {
-      projects: appState.projects.map(p => ({ name: p.name, folders: foldersIn(p.id).map(f => f.name) })),
+      projects: appState.projects.map(p => ({
+        name: p.name,
+        folders: foldersIn(p.id).map(f => f.name),
+        repo: p.repo ? { folder: p.repo.path, github: p.repo.github ?? null } : null,
+      })),
       foldersNotInAProject: looseFolders().map(f => f.name),
       boards: appState.boardList.map(b => ({
         id: b.id,

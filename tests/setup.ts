@@ -51,8 +51,10 @@ const until = async (re: RegExp, what: string) => {
 };
 
 try {
-  await page.click('#gearBtn');
-  await page.click('#setTabs [data-tab="helpers"]');
+  await page.evaluate(() =>
+    window.__fenmyr.applyMyra({ say: 'The button below opens it.', gitSetup: true }, 'set up git'),
+  );
+  await page.locator('button:visible', { hasText: 'Set up git and GitHub' }).first().click();
   await until(/Your name and email/, 'the steps show');
   assert.match(await text(), /Git\s*Installed\./, 'git is found');
   assert.match(await text(), /GitHub’s gh tool\s*Installed\./, 'gh is found');
