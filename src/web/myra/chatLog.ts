@@ -12,7 +12,10 @@ import { ask } from './chat.ts';
 
 const CHATS_KEPT = 10;
 
-const keepsHistory = () => settings.chatKeep === 'board' && !!session.board;
+// A prototype board always keeps its chat, whatever Settings says. It's the record of how the prototype was built.
+export const chatKeep = (): string => (session.board?.kind === 'prototype' ? 'board' : settings.chatKeep);
+
+const keepsHistory = () => chatKeep() === 'board' && !!session.board;
 
 export function archiveChat() {
   const msgs = session.board?.chat ?? [],
@@ -159,7 +162,7 @@ export const sessionChats: Record<string, ChatMsg[]> = {};
 
 export function chatLog(): ChatMsg[] {
   if (!session.board) return [];
-  if (settings.chatKeep === 'board') return (session.board.chat = session.board.chat || []);
+  if (chatKeep() === 'board') return (session.board.chat = session.board.chat || []);
   return (sessionChats[session.board.id] ??= []);
 }
 
@@ -174,7 +177,7 @@ export function addMsg(who: string, text: string, acts: SayAction[] = []) {
     max = Number(settings.chatMax) || 60;
   log.push(m);
   if (log.length > max) log.splice(0, log.length - max);
-  if (settings.chatKeep === 'board') save();
+  if (chatKeep() === 'board') save();
   const list = $('mcList');
   list.querySelector('.mc-empty')?.remove();
   list.appendChild(msgEl({ ...m, acts }));
