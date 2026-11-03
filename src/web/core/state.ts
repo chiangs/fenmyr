@@ -28,15 +28,16 @@ type AppState = {
   pendingPaste: unknown;
   cae: CaelestiaScheme | null;
   deselectAt: unknown;
-  toggleLog: unknown;
-  dizzyAuto: unknown;
-  histOpen: unknown;
-  haveClaude: unknown;
+  toggleLog: number[];
+  dizzyAuto: boolean;
+  histOpen: boolean;
+  // null until the app has checked
+  haveClaude: boolean | null;
   aiAnimAt: number;
   dueHold: boolean;
-  flightLive: unknown;
-  lastActive: unknown;
-  lastKey: unknown;
+  flightLive: boolean;
+  lastActive: number;
+  lastKey: number;
   animPose: Pose | null;
   vaultChip: boolean;
   micOK: unknown;

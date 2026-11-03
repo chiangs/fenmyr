@@ -10,10 +10,10 @@ import { appState, session } from '../core/state.ts';
 import { type Card, isRecord } from '../../shared/model.ts';
 
 // one note with a due date, on any board: b the board, c the card, d its due, t when to remind, n its words, bn the board's name
-type DueItem = { b: string; c: string; d: string; t: number; n: string; bn: string };
+export type DueItem = { b: string; c: string; d: string; t: number; n: string; bn: string };
 type DueIndex = Record<string, DueItem>;
 
-function readIndex(): DueIndex {
+export function readIndex(): DueIndex {
   const raw = lsRead(DUE_KEY, {}),
     out: DueIndex = {};
   if (!isRecord(raw)) return out;

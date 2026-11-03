@@ -1,9 +1,8 @@
-// @ts-nocheck
 import type { SlashCommand } from '../../shared/ops.ts';
 import { fit } from '../canvas/handles.ts';
 import { applyView } from '../canvas/view.ts';
 import { $ } from '../core/dom.ts';
-import { DUE_KEY, dueAnnounce, dueDate, dueHeld, dueJump, dueText, lsRead, slashDue } from '../features/due.ts';
+import { type DueItem, dueAnnounce, dueDate, dueHeld, dueJump, dueText, readIndex, slashDue } from '../features/due.ts';
 import { slashFind, slashTag } from '../features/find.ts';
 import { slashTimer } from '../features/timer.ts';
 import { ANIMS, slashAnimate } from './anim.ts';
@@ -13,14 +12,20 @@ import { glideView, zoomFit } from '../panels/zoomMenu.ts';
 import { reply, say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { appState, session } from '../core/state.ts';
+import type { Card } from '../../shared/model.ts';
+import type { SayAction } from '../settings/licenses.ts';
+
+type GreetContext = { why: string; firstToday: boolean; now: Date; name: string };
+type GreetLine = { text: string; acts?: SayAction[] } | null;
+type Greeter = { id: string; order: number; line: (ctx: GreetContext) => GreetLine };
 
 // ---------- Myra's greeting: a small registry, so a feature can add a line to it without its own timer ----------
 // greeter(id, order, ctx => ({ text, acts? }) | null): lines are quick and read only what is already in memory (never scan boards). greet() runs when the app opens, and again on the first focus after midnight.
 // ctx: { why: 'start' | 'newday', firstToday: true on the first greeting of a calendar day, now: Date, name }. daily(id) is true once per calendar day, for anything that should only be said once a day.
-const GREETERS = [];
-export const greeter = (id, order, line) => GREETERS.push({ id, order, line });
+const GREETERS: Greeter[] = [];
+export const greeter = (id: string, order: number, line: Greeter['line']) => GREETERS.push({ id, order, line });
 
-export function daily(id) {
+export function daily(id: string) {
   const k = 'fenmyr:daily:' + id,
     t = dayKey(bdNow());
   try {
@@ -32,10 +37,10 @@ export function daily(id) {
 
 let greetDay = '';
 
-export function greet(why) {
+export function greet(why: string) {
   const ctx = { why, firstToday: daily('open'), now: bdNow(), name: settings.name || '' };
   greetDay = dayKey(ctx.now);
-  const lines = [];
+  const lines: NonNullable<GreetLine>[] = [];
   GREETERS.slice()
     .sort((a, b) => a.order - b.order)
     .forEach(g => {
@@ -78,21 +83,21 @@ export const helpText = (lead = 'Here is what I can do right here, no thinking n
     .join('\n') +
   '\nAsk me anything else in your own words ✦';
 
-export const wordsOf = c =>
+export const wordsOf = (c: Card) =>
   [
     c.text,
     c.name,
     c.label,
     c.title,
-    ...(c.items || []).map(i => i.t),
+    ...('items' in c ? (c.items ?? []) : []).map(i => (typeof i === 'string' ? i : i.t)),
     ...(c.tags || []).map(t => '#' + t),
-    String(c.body || '').replace(/<[^>]+>/g, ' '),
+    String(('body' in c && c.body) || '').replace(/<[^>]+>/g, ' '),
   ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
 
-export function glideTo(cs) {
+export function glideTo(cs: Card[]) {
   const from = { ...session.view };
   fit(cs, 200, 1.2);
   const to = { ...session.view };
@@ -114,19 +119,20 @@ export function init33() {
   greeter('due', 10, c => {
     // what is still due today
     if (!c.firstToday) return null;
-    const day = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`,
-      its = Object.values(lsRead(DUE_KEY, {}))
+    const day = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`,
+      its = Object.values(readIndex())
         .filter(it => {
           const t = dueDate(it.d);
           return t && t >= c.now && day(t) === day(c.now);
         })
         .sort((a, b) => a.t - b.t);
-    if (!its.length) return null;
-    const bit = it =>
+    const first = its[0];
+    if (!first) return null;
+    const bit = (it: DueItem) =>
       `“${it.n.slice(0, 40)}” ${it.d.length > 10 ? 'at ' + dueText(it.d).split(' · ')[1] : 'by tonight'}`;
     return {
       text: `${c.why === 'newday' ? `Good morning${c.name ? ' ' + c.name : ''}! ` : ''}Due today: ${its.slice(0, 3).map(bit).join(', ')}${its.length > 3 ? ` and ${its.length - 3} more` : ''} ✦`,
-      acts: [{ label: 'Show me', run: () => dueJump(its[0]) }],
+      acts: [{ label: 'Show me', run: () => dueJump(first) }],
     };
   });
 

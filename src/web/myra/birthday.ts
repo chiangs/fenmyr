@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { $ } from '../core/dom.ts';
 import { noEmoji, parse, partyMyra } from '../features/timer.ts';
 import { card } from '../model/boards.ts';
@@ -12,6 +11,19 @@ import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { appState } from '../core/state.ts';
+import { isRecord } from '../../shared/model.ts';
+import { elementById } from '../ui/dom.ts';
+
+// last: the year she last celebrated; hat: the day she wears it; setAt: the day the birthday was set;
+// card, cardIdx, cardKind: the card she left last time, so the next one is different
+type BdState = { last?: number; hat?: string; setAt?: string; card?: string; cardIdx?: number; cardKind?: string };
+export type BirthdayDue = { kind: 'today' | 'belated'; year: number; date: Date; days?: number };
+export type BirthdayLine = { say: string | null; card: string | null } | null;
+const select = (id: string) => elementById(id, HTMLSelectElement);
+const PAIRS: [month: string, day: string][] = [
+  ['setBdMonth', 'setBdDay'],
+  ['obBdMonth', 'obBdDay'],
+];
 
 // ---------- birthday: set in Settings (or at setup), kept as month and day only. On the day Myra celebrates once you are really there (the window focused, you active in the last minute, not mid-sentence). Miss it and she wishes you a belated one for up to 14 days ----------
 const BD_KEY = 'fenmyr:birthday';
@@ -30,15 +42,23 @@ const MONTHS = [
   'December',
 ];
 
-export function bdState() {
+export function bdState(): BdState {
+  let raw: unknown = null;
   try {
-    return JSON.parse(localStorage.getItem(BD_KEY) || 'null') || {};
-  } catch (e) {
-    return {};
+    raw = JSON.parse(localStorage.getItem(BD_KEY) || 'null');
+  } catch {}
+  if (!isRecord(raw)) return {};
+  const st: BdState = {};
+  if (typeof raw.last === 'number') st.last = raw.last;
+  if (typeof raw.cardIdx === 'number') st.cardIdx = raw.cardIdx;
+  for (const k of ['hat', 'setAt', 'card', 'cardKind'] as const) {
+    const v = raw[k];
+    if (typeof v === 'string') st[k] = v;
   }
+  return st;
 }
 
-function saveBd(st) {
+function saveBd(st: BdState) {
   try {
     localStorage.setItem(BD_KEY, JSON.stringify(st));
   } catch (e) {}
@@ -48,16 +68,16 @@ export function bdNow() {
   return window.__bdNow ? new Date(window.__bdNow) : new Date();
 }
 
-export function dayKey(d) {
+export function dayKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function bdParts() {
   const m = /^(\d\d)-(\d\d)$/.exec(settings.birthday || '');
-  return m ? { m: +m[1], d: +m[2] } : null;
+  return m ? { m: Number(m[1]), d: Number(m[2]) } : null;
 }
 
-function bdDate(year) {
+function bdDate(year: number) {
   // this year's birthday; February 29 is February 28 in a year without one
   const b = bdParts();
   if (!b) return null;
@@ -65,7 +85,7 @@ function bdDate(year) {
   return new Date(year, b.m - 1, b.m === 2 && b.d === 29 && !leap ? 28 : b.d);
 }
 
-export function birthdayDue(now = bdNow()) {
+export function birthdayDue(now = bdNow()): BirthdayDue | null {
   const st = bdState(),
     y = now.getFullYear(),
     thisYear = bdDate(y);
@@ -73,8 +93,9 @@ export function birthdayDue(now = bdNow()) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()),
     setAt = st.setAt || '0000-00-00';
   if (dayKey(thisYear) === dayKey(today)) return st.last === y ? null : { kind: 'today', year: y, date: thisYear };
-  const recent = thisYear <= today ? thisYear : bdDate(y - 1),
-    days = Math.round((today - recent) / 86400000);
+  const recent = thisYear <= today ? thisYear : bdDate(y - 1);
+  if (!recent) return null;
+  const days = Math.round((today.getTime() - recent.getTime()) / 86400000);
   // belated: within 14 days, not already celebrated, and only for a birthday that was set before it came round (not one you typed in afterwards)
   return days >= 1 && days <= 14 && st.last !== recent.getFullYear() && dayKey(recent) >= setAt
     ? { kind: 'belated', year: recent.getFullYear(), days, date: recent }
@@ -89,10 +110,10 @@ export function birthdayFacts() {
   return { birthday: `${MONTHS[b.m - 1]} ${b.d}`, birthdayToday: !!d && dayKey(d) === dayKey(bdNow()) };
 }
 
-export function setBirthday(m, d) {
-  m = +m;
-  d = +d;
-  const max = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1];
+export function setBirthday(month: string | number, day: string | number) {
+  const m = Number(month),
+    d = Number(day);
+  const max = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1] ?? 0;
   const next =
     m >= 1 && m <= 12 && d >= 1 && d <= max ? `${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : '';
   if (next === (settings.birthday || '')) return;
@@ -103,7 +124,7 @@ export function setBirthday(m, d) {
   applySettings(); // (the year's celebration, once done, stays done if you change the date)
 }
 
-function fillBd(mSel, dSel) {
+function fillBd(mSel: HTMLSelectElement, dSel: HTMLSelectElement) {
   mSel.innerHTML =
     '<option value="">Month</option>' + MONTHS.map((n, i) => `<option value="${i + 1}">${n}</option>`).join('');
   dSel.innerHTML =
@@ -113,15 +134,12 @@ function fillBd(mSel, dSel) {
 
 export function paintBd() {
   const b = bdParts();
-  [
-    ['setBdMonth', 'setBdDay'],
-    ['obBdMonth', 'obBdDay'],
-  ].forEach(([a, c]) => {
-    if ($(a) && $(a).options.length) {
-      $(a).value = b ? b.m : '';
-      $(c).value = b ? b.d : '';
+  for (const [a, c] of PAIRS) {
+    if (select(a).options.length) {
+      select(a).value = b ? String(b.m) : '';
+      select(c).value = b ? String(b.d) : '';
     }
-  });
+  }
 }
 
 // she wears the hat all day, once she has celebrated
@@ -140,10 +158,10 @@ function syncHat() {
 // paying attention: the window is focused, there was real input in the last minute, and nothing was typed in the last few seconds; and nothing else is going on with her
 const focusedNow = () => window.__bdFocus ?? (!document.hidden && document.hasFocus());
 
-const attentive = anyway =>
+const attentive = (anyway?: boolean) =>
   !!anyway || (focusedNow() && Date.now() - appState.lastActive < 60000 && Date.now() - appState.lastKey > 4000);
 
-const BD_LINES = [
+const BD_LINES: ((who: string) => string)[] = [
   who => `Happy birthday${who}! I put on my best hat for you ✦`,
   who => `It's your birthday${who}! Berries for everyone ✦`,
   who => `Happy birthday${who}! The board can wait a little today ✦`,
@@ -176,22 +194,22 @@ const BD_BELATED = [
 
 let lastCardIdx = -1;
 
-const fillName = t =>
+const fillName = (t: string) =>
   t.replace(/, \{n\}/g, settings.name ? `, ${settings.name}` : '').replace(/\{n\}/g, settings.name || 'friend');
 
-function pickCard(belated) {
+function pickCard(belated: boolean) {
   const pool = belated ? BD_BELATED : BD_CARDS,
     st = bdState(),
     last = st.cardIdx != null && st.cardKind === (belated ? 'b' : 'a') ? st.cardIdx : -1;
-  let i;
+  let i: number;
   do {
     i = Math.floor(Math.random() * pool.length);
   } while (pool.length > 1 && (i === last || i === lastCardIdx));
   lastCardIdx = i;
-  return { text: fillName(pool[i]), idx: i };
+  return { text: fillName(pool[i] ?? ''), idx: i };
 }
 
-async function birthdayLine(due) {
+async function birthdayLine(due: BirthdayDue): Promise<BirthdayLine> {
   // with thinking on, a greeting and a card written for the moment; otherwise (or if it is slow) null and the written ones are used
   if (window.__birthdayLineStub) return window.__birthdayLineStub(due);
   if (Fenmyr.web || !settings.ai || appState.haveClaude === false || !navigator.onLine) return null;
@@ -217,7 +235,7 @@ async function birthdayLine(due) {
   }
 }
 
-export async function celebrateBirthday(due, demo) {
+export async function celebrateBirthday(due: BirthdayDue, demo = false) {
   celebrating = true;
   const who = settings.name ? `, ${settings.name}` : '',
     belated = due.kind === 'belated';
@@ -235,12 +253,11 @@ export async function celebrateBirthday(due, demo) {
   const when = due.date.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
   const canned = belated
     ? `Happy belated birthday${who}! I missed you on ${when}, so I saved the confetti ✦`
-    : BD_LINES[Math.floor(Math.random() * BD_LINES.length)](who);
-  let ai = await Promise.race([birthdayLine(due), new Promise(r => setTimeout(() => r(null), 2200))]);
-  if (typeof ai === 'string') ai = { say: ai };
-  reply(noEmoji((ai && ai.say) || canned), 0);
-  const picked = ai && ai.card ? null : pickCard(belated),
-    words = ai && ai.card ? noEmoji(ai.card) : picked.text;
+    : (BD_LINES[Math.floor(Math.random() * BD_LINES.length)]?.(who) ?? '');
+  const ai = await Promise.race([birthdayLine(due), new Promise<BirthdayLine>(r => setTimeout(() => r(null), 2200))]);
+  reply(noEmoji(ai?.say || canned), 0);
+  const picked = ai?.card ? null : pickCard(belated),
+    words = ai?.card ? noEmoji(ai.card) : (picked?.text ?? '');
   if (!demo) {
     const st = bdState();
     st.card = words;
@@ -268,7 +285,7 @@ export async function celebrateBirthday(due, demo) {
   celebrating = false;
 }
 
-export function birthdayCheck(anyway) {
+export function birthdayCheck(anyway?: boolean) {
   syncHat();
   if (celebrating) return false;
   const due = birthdayDue();
@@ -278,24 +295,23 @@ export function birthdayCheck(anyway) {
 }
 
 // (temporary, for trying it out) /birthday plays the celebration now; /birthday belated plays the belated one. It stores nothing.
-export function slashBirthday(arg) {
+export function slashBirthday(arg?: string) {
   const belated = /^belated/i.test((arg || '').trim()),
     d = new Date();
   if (belated) d.setDate(d.getDate() - 3);
   celebrateBirthday({ kind: belated ? 'belated' : 'today', year: d.getFullYear(), days: 3, date: d }, true);
 }
 export function init37() {
-  [
-    ['setBdMonth', 'setBdDay'],
-    ['obBdMonth', 'obBdDay'],
-  ].forEach(([a, c]) => {
-    fillBd($(a), $(c));
-    $(a).onchange = $(c).onchange = () => setBirthday($(a).value, $(c).value);
-    [$(a), $(c)].forEach(el => el.addEventListener('keydown', e => e.stopPropagation()));
-  });
+  for (const [a, c] of PAIRS) {
+    const month = select(a),
+      day = select(c);
+    fillBd(month, day);
+    month.onchange = day.onchange = () => setBirthday(month.value, day.value);
+    for (const el of [month, day]) el.addEventListener('keydown', e => e.stopPropagation());
+  }
 
   $('setBdClear').onclick = () => {
-    $('setBdMonth').value = $('setBdDay').value = '';
+    select('setBdMonth').value = select('setBdDay').value = '';
     setBirthday('', '');
   };
 

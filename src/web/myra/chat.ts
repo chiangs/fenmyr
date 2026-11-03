@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { SayAction } from '../settings/licenses.ts';
 import { esc } from '../ui/dom.ts';
 import { renderCard } from '../canvas/render.ts';
@@ -23,14 +22,19 @@ import { settings } from '../settings/settings.ts';
 import { aiGrants, gatherVault, updateVaultChip } from '../vault/ask.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
 import { appState, session } from '../core/state.ts';
-export let gooSlot;
+import type { Card, ChatMsg } from '../../shared/model.ts';
+import { closestTo, elementById, textField } from '../ui/dom.ts';
+
+type Point = { x: number; y: number };
+// the slot Myra's canvas sits in, which she hops out of and back into
+export let gooSlot: HTMLElement;
 
 export let perched = false;
 let gooAt = { x: 0, y: 0 };
-let gooAnim = null;
+let gooAnim: { stop(): void } | null = null;
 let dizzyAt = 0;
 
-const gooMove = t => {
+const gooMove = (t: Point) => {
   gooAt = t;
   gooSlot.style.transform = `translate(${t.x}px, ${t.y}px)`;
 };
@@ -55,7 +59,7 @@ function perchTarget() {
 // once and settles. The landing spot is fixed when she takes off (measured again at touchdown), so she can never drift past the edge of the chat.
 const HOP = { stretch: 0.3, wobble: 0.3, arc: 100, up: 480, home: 431, squash: 0.35, wind: 140, land: 300 };
 
-const gooPose = (p, tf) => {
+const gooPose = (p: Point, tf?: string) => {
   gooAt = p;
   gooSlot.style.transform = `translate(${p.x}px, ${p.y}px)${tf || ''}`;
 };
@@ -64,7 +68,7 @@ const gooRest = () => {
   gooSlot.style.transformOrigin = '';
 };
 
-function flyGoo(to, instant) {
+function flyGoo(to: Point, instant: boolean) {
   const from = gooAt;
   if (gooAnim) {
     gooAnim.stop();
@@ -96,13 +100,13 @@ function flyGoo(to, instant) {
     dy = to.y - from.y,
     vref = Math.hypot(Math.abs(dx), Math.abs(dy) + 4 * h) / AIR;
   const t0 = performance.now(),
-    sm = k => k * k * (3 - 2 * k),
-    lerp = (a, b, k) => a + (b - a) * k;
+    sm = (k: number) => k * k * (3 - 2 * k),
+    lerp = (a: number, b: number, k: number) => a + (b - a) * k;
   let target = to,
-    landFrom = null,
+    landFrom: Point | null = null,
     raf = 0,
     stopped = false;
-  const step = now => {
+  const step = (now: number) => {
     if (stopped) return;
     const e = now - t0;
     if (e < WIND) {
@@ -155,7 +159,7 @@ function flyGoo(to, instant) {
   raf = requestAnimationFrame(step);
 }
 
-export function perchGoo(on) {
+export function perchGoo(on: boolean) {
   const hidden = document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none';
   if (hidden) return;
   const now = Date.now();
@@ -170,14 +174,13 @@ export function perchGoo(on) {
   gooSlot.classList.toggle('perched', on);
   flyGoo(
     on ? perchTarget() : { x: 0, y: 0 },
-    window.myraMuted || matchMedia('(prefers-reduced-motion: reduce)').matches,
+    !!window.myraMuted || matchMedia('(prefers-reduced-motion: reduce)').matches,
   ); // calmest and reduced motion: she just appears
 }
 
 export const keepPerch = () => {
   if (perched && !gooAnim) gooMove(perchTarget());
 };
-let perchWatch;
 // click her in the chat and she does something
 // you opened an empty chat (the button or M): once she has landed by the input she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
 export const wonderIfEmpty = () =>
@@ -195,9 +198,9 @@ const CHATS_KEPT = 10;
 const keepsHistory = () => settings.chatKeep === 'board' && !!session.board;
 
 function archiveChat() {
-  if (!keepsHistory() || !(session.board.chat || []).length) return;
-  const msgs = session.board.chat,
+  const msgs = session.board?.chat ?? [],
     first = msgs.find(m => m.who === 'me') || msgs[0];
+  if (!keepsHistory() || !first) return;
   session.board.chats = [
     {
       id: uid(),
@@ -205,14 +208,14 @@ function archiveChat() {
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 70),
-      t: msgs[msgs.length - 1].t || Date.now(),
+      t: msgs.at(-1)?.t || Date.now(),
       msgs,
     },
     ...(session.board.chats || []),
   ].slice(0, CHATS_KEPT);
 }
 
-const whenText = t => {
+const whenText = (t: number) => {
   const d = new Date(t),
     days = Math.floor((Date.now() - t) / 864e5);
   return days < 1
@@ -229,42 +232,50 @@ function renderHistory() {
     `<div class="mc-hist"><div class="mh-top"><button class="mc-btn" data-h="back">← Back to this chat</button><span>Earlier chats on this board</span></div>` +
     (chats.length
       ? chats
-          .map(
-            (c, i) =>
-              `<div class="mh-row" data-i="${i}"><button class="mh-open" data-h="open"><b></b><small>${esc(whenText(c.t))} · ${c.msgs.length} message${c.msgs.length === 1 ? '' : 's'}</small></button><button class="mh-del" data-h="del" title="Delete this chat">×</button></div>`,
-          )
+          .map((c, i) => {
+            const when = esc(whenText(c.t)),
+              n = c.msgs.length,
+              count = `${n} message${n === 1 ? '' : 's'}`;
+            return `<div class="mh-row" data-i="${i}"><button class="mh-open" data-h="open"><b></b><small>${when} · ${count}</small></button><button class="mh-del" data-h="del" title="Delete this chat">×</button></div>`;
+          })
           .join('')
       : '<div class="mc-empty">No earlier chats yet. New chat puts the current one here.</div>') +
     '</div>';
-  list.querySelectorAll('.mh-row').forEach(r => (r.querySelector('b').textContent = chats[+r.dataset.i].title));
+  for (const r of list.querySelectorAll('.mh-row')) {
+    const title = r.querySelector('b'),
+      i = r instanceof HTMLElement ? Number(r.dataset.i) : -1;
+    if (title) title.textContent = chats[i]?.title ?? '';
+  }
   list.onclick = e => {
-    const a = e.target.closest('[data-h]')?.dataset.h;
+    const a = closestTo(e.target, '[data-h]')?.dataset.h;
     if (!a) return;
     e.stopPropagation();
-    const i = +e.target.closest('.mh-row')?.dataset.i;
+    const i = Number(closestTo(e.target, '.mh-row')?.dataset.i);
     if (a === 'back') {
       appState.histOpen = false;
       return renderChat();
     }
     if (a === 'del') {
-      const del = e.target.closest('.mh-del');
+      const del = closestTo(e.target, '.mh-del');
+      if (!del) return;
       if (!del.classList.contains('sure')) {
         del.classList.add('sure');
         del.textContent = 'Delete?';
         return;
       }
-      session.board.chats.splice(i, 1);
+      chats.splice(i, 1);
       save();
       return renderChat();
     }
     if (a === 'open') {
-      const c = session.board.chats.splice(i, 1)[0];
+      const c = chats.splice(i, 1)[0];
+      if (!c) return;
       archiveChat();
       session.board.chat = c.msgs;
       save();
       appState.histOpen = false;
       renderChat();
-      $('mcInput').focus();
+      textField('mcInput').focus();
     }
   };
 }
@@ -276,7 +287,7 @@ const IDEAS = [
   'Find onboarding screens on Mobbin',
 ];
 
-function msgEl(m) {
+function msgEl(m: ChatMsg & { acts?: SayAction[] }) {
   const d = document.createElement('div');
   d.className = 'mc-msg ' + m.who;
   d.textContent = m.text;
@@ -313,12 +324,11 @@ export function renderChat() {
     )
       .map(i => `<button>${i}</button>`)
       .join('')}</div></div>`;
-    list.querySelectorAll('.mc-ideas button').forEach(
-      b =>
-        (b.onclick = () => {
-          ask(b.textContent);
-        }),
-    );
+    for (const b of list.querySelectorAll('.mc-ideas button'))
+      if (b instanceof HTMLElement)
+        b.onclick = () => {
+          ask(b.textContent ?? '');
+        };
     return;
   }
   msgs.forEach(m => list.appendChild(msgEl(m)));
@@ -327,12 +337,12 @@ export function renderChat() {
 
 // where a chat lives depends on Settings: saved with the board, kept only until Myra quits, or not kept at all
 // board id → its chat, when chats aren't saved with the board
-export const sessionChats: Record<string, unknown[]> = {};
+export const sessionChats: Record<string, ChatMsg[]> = {};
 
-function chatLog() {
+function chatLog(): ChatMsg[] {
   if (!session.board) return [];
   if (settings.chatKeep === 'board') return (session.board.chat = session.board.chat || []);
-  return (sessionChats[session.board.id] = sessionChats[session.board.id] || []);
+  return (sessionChats[session.board.id] ??= []);
 }
 
 export function addMsg(who: string, text: string, acts: SayAction[] = []) {
@@ -343,7 +353,7 @@ export function addMsg(who: string, text: string, acts: SayAction[] = []) {
   }
   const log = chatLog(),
     m = { who, text, t: Date.now() },
-    max = +settings.chatMax || 60;
+    max = Number(settings.chatMax) || 60;
   log.push(m);
   if (log.length > max) log.splice(0, log.length - max);
   if (settings.chatKeep === 'board') save();
@@ -367,7 +377,7 @@ export function typing(on: boolean) {
 
 // what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
 export function snapshot() {
-  const brief = c =>
+  const brief = (c: Card) =>
     c.type === 'vnote'
       ? { id: c.id, type: 'vnote', x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h) }
       : {
@@ -381,16 +391,16 @@ export function snapshot() {
           text: (c.text || c.title || c.label || '').slice(0, 300),
           font: c.font,
           name: c.name,
-          kids: c.kids,
+          kids: 'kids' in c ? c.kids : undefined,
           desc: c.desc,
-          body: c.body ? c.body.slice(0, 600) : undefined,
-          shape: c.shape,
+          body: 'body' in c && c.body ? c.body.slice(0, 600) : undefined,
+          shape: 'shape' in c ? c.shape : undefined,
           label: c.tagText,
           tags: (c.tags || []).length ? c.tags : undefined,
           due: c.type === 'note' ? c.due : undefined,
-          items: c.items ? c.items.map(i => i.t) : undefined,
+          items: 'items' in c && c.items ? c.items.map(i => i.t) : undefined,
           hex: c.hex,
-          url: c.url,
+          url: 'url' in c ? c.url : undefined,
           selected: session.sel.has(c.id) || undefined,
         };
   return {
@@ -418,7 +428,7 @@ export function snapshot() {
       boards: appState.boardList.map(b => ({
         id: b.id,
         name: b.name,
-        folder: (appState.folders.find(f => f.id === b.folder) || {}).name || null,
+        folder: appState.folders.find(f => f.id === b.folder)?.name || null,
         current: b.id === session.board.id || undefined,
       })),
     },
@@ -442,25 +452,35 @@ export function tidyNotes() {
   return notes.length;
 }
 
-function offlineMyra(q, why) {
-  {
-    const tr = timerRequest(q);
-    if (tr) return void runTimerRequest(tr, true);
+// set when Claude Code answered that it isn't signed in, so the next offline line offers the how-to
+let signinHint = false;
+
+function offlineMyra(q: string, why: string) {
+  const tr = timerRequest(q);
+  if (tr) {
+    runTimerRequest(tr, true);
+    return;
   }
   const an = animIntent(q);
-  if (an) return void playAnim(an === '*' ? pickAnim() : an);
+  if (an) {
+    playAnim(an === '*' ? pickAnim() : an);
+    return;
+  }
   if (/group|sort|organi[sz]e|tidy|line up/i.test(q)) {
     const n = tidyNotes();
-    if (n) return reply(`I lined your ${n} notes up in tidy rows ✦ ${why}`, 9000);
+    if (n) {
+      reply(`I lined your ${n} notes up in tidy rows ✦ ${why}`, 9000);
+      return;
+    }
   }
   reply(
     `${why} Everything else on the board works without me thinking ✦`,
     0,
-    (appState.haveClaude === false || offlineMyra.signin) && settings.ai
+    (appState.haveClaude === false || signinHint) && settings.ai
       ? [{ label: 'Show me how to connect', run: () => Fenmyr.openURL(GUIDE) }]
       : [],
   );
-  offlineMyra.signin = false;
+  signinHint = false;
 }
 
 export const GUIDE = 'https://github.com/chiangs/fenmyr#connect-claude-code';
@@ -472,13 +492,17 @@ export const getApp = () => Fenmyr.openURL(Fenmyr.getURL || 'https://github.com/
 // the button under her web-demo lines: get the desktop app
 export let DL: SayAction[] = [];
 
-function webMyra(q) {
-  {
-    const tr = timerRequest(q);
-    if (tr) return void runTimerRequest(tr, true);
+function webMyra(q: string) {
+  const tr = timerRequest(q);
+  if (tr) {
+    runTimerRequest(tr, true);
+    return;
   }
   const an = animIntent(q);
-  if (an) return void playAnim(an === '*' ? pickAnim() : an);
+  if (an) {
+    playAnim(an === '*' ? pickAnim() : an);
+    return;
+  }
   const notes = session.board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
   if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length)
     return offlineMyra(q, 'In the desktop app I can sort them by theme too, with Claude.');
@@ -497,8 +521,8 @@ function webMyra(q) {
 export let animAskedAt = 0;
 export let timerAskedAt = 0;
 
-export async function ask(q, confirmed = false) {
-  const did = []; // what the app already did for this sentence, so her answer can go with it
+export async function ask(q: string, confirmed = false) {
+  const did: string[] = []; // what the app already did for this sentence, so her answer can go with it
   if (!confirmed) {
     const an = animRequest(q);
     if (an) {
@@ -541,7 +565,7 @@ export async function ask(q, confirmed = false) {
   $('myra').classList.add('thinking');
   goo.think(true);
   typing(true);
-  const ctx = { asked: false, used: [] };
+  const ctx: { asked: boolean; used: Awaited<ReturnType<typeof gatherVault>> } = { asked: false, used: [] };
   if (appState.vaultChip && aiGrants(session.board).length) {
     ctx.asked = true;
     try {
@@ -572,21 +596,22 @@ export async function ask(q, confirmed = false) {
     );
     await applyMyra(parse(raw), q, ctx);
   } catch (err) {
-    if (/Claude Code/.test(err.message)) {
+    const why = err instanceof Error ? err.message : String(err);
+    if (/Claude Code/.test(why)) {
       appState.haveClaude = false;
       return offlineMyra(
         q,
         "I need Claude Code on this computer to think. It's a one-time setup with your Claude account.",
       );
     }
-    if (SIGNIN.test(err.message)) {
-      offlineMyra.signin = true;
+    if (SIGNIN.test(why)) {
+      signinHint = true;
       return offlineMyra(
         q,
         "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account.",
       );
     }
-    reply("Hmm, I couldn't reach Claude: " + err.message);
+    reply("Hmm, I couldn't reach Claude: " + why);
   } finally {
     $('myra').classList.remove('thinking');
     goo.think(false);
@@ -600,7 +625,7 @@ export function init31() {
   appState.dizzyAuto = true;
 
   addEventListener('resize', keepPerch);
-  perchWatch = new ResizeObserver(keepPerch);
+  const perchWatch = new ResizeObserver(keepPerch);
   [$('mChat'), $('mPill'), $('myra')].forEach(el => perchWatch.observe(el));
   // the button changing width (a label appearing) moves the whole bar, and the chat with it
   gooSlot.addEventListener('click', e => {
@@ -627,7 +652,7 @@ export function init31() {
     } else chatLog().length = 0;
     appState.histOpen = false;
     renderChat();
-    $('mcInput').focus();
+    textField('mcInput').focus();
     if (!chatLog().length) playAnim('curious', false);
   };
   // a fresh, empty chat: she tilts her head and wonders what you will ask
@@ -636,22 +661,24 @@ export function init31() {
     renderChat();
   };
 
-  $('mcForm').onsubmit = e => {
+  const chatIn = textField('mcInput'),
+    chatForm = elementById('mcForm', HTMLFormElement);
+  chatForm.onsubmit = e => {
     e.preventDefault();
-    const q = $('mcInput').value.trim();
+    const q = chatIn.value.trim();
     if (!q) return;
-    $('mcInput').value = '';
-    $('mcInput').style.height = '';
+    chatIn.value = '';
+    chatIn.style.height = '';
     hideSlash();
     if (q[0] === '/') return slash(q);
-    $('mcInput').placeholder = 'Ask Myra… “group these by theme”';
+    chatIn.placeholder = 'Ask Myra… “group these by theme”';
     ask(q);
   };
 
-  $('mcInput').onkeydown = e => {
+  chatIn.onkeydown = e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      $('mcForm').requestSubmit();
+      chatForm.requestSubmit();
     }
     if (e.key === 'Escape') {
       myraOpen(false);
@@ -659,8 +686,8 @@ export function init31() {
     }
   };
 
-  $('mcInput').oninput = () => {
-    const t = $('mcInput');
+  chatIn.oninput = () => {
+    const t = chatIn;
     t.style.height = 'auto';
     t.style.height = Math.min(120, t.scrollHeight) + 'px';
   };
@@ -675,14 +702,15 @@ export function init31() {
   ];
   appState.aiAnimAt = 0;
 
+  const pillIn = textField('mInput');
   $('mForm').onsubmit = e => {
     e.preventDefault();
-    const q = $('mInput').value.trim();
+    const q = pillIn.value.trim();
     if (!q) return;
-    $('mInput').value = '';
+    pillIn.value = '';
     if (q[0] === '/') return slash(q);
     myraOpen(false);
-    $('mInput').placeholder = 'Ask Myra… “group these by theme”';
+    pillIn.placeholder = 'Ask Myra… “group these by theme”';
     ask(q);
   };
 }

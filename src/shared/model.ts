@@ -151,6 +151,11 @@ export type Link = { id: string; a: string; b: string; arrow?: boolean };
 // What a board or project may read from one vault: '' in folders is the whole vault; ai lets Myra send matching notes to Claude.
 export type VaultGrant = { vault: string; folders: string[]; ai: boolean; write: boolean; writeTo: string };
 
+// who: 'me' or 'myra'; t: when it was said
+export type ChatMsg = { who: string; text: string; t: number };
+// an earlier chat, put away by New chat
+type SavedChat = { id: string; title: string; t: number; msgs: ChatMsg[] };
+
 export type Board = {
   id: string;
   name: string;
@@ -165,8 +170,8 @@ export type Board = {
   parent?: string | null;
   tags?: string[];
   bg?: unknown;
-  chat?: unknown;
-  chats?: unknown;
+  chat?: ChatMsg[];
+  chats?: SavedChat[];
   // its own vault access; without it the board follows its project
   vaultAccess?: VaultGrant[];
 };
@@ -264,8 +269,25 @@ export function parseBoard(raw: unknown): StoredBoard | null {
   const access = readGrants(raw.vaultAccess);
   if (access) board.vaultAccess = access;
   else delete board.vaultAccess;
+  if (Array.isArray(raw.chat)) board.chat = readMsgs(raw.chat);
+  else delete board.chat;
+  if (Array.isArray(raw.chats))
+    board.chats = raw.chats.filter(isRecord).map(c => ({
+      id: typeof c.id === 'string' ? c.id : '',
+      title: typeof c.title === 'string' ? c.title : 'Chat',
+      t: typeof c.t === 'number' ? c.t : 0,
+      msgs: readMsgs(c.msgs),
+    }));
+  else delete board.chats;
   return board;
 }
+
+const readMsgs = (x: unknown): ChatMsg[] =>
+  (Array.isArray(x) ? x : []).filter(isRecord).map(m => ({
+    who: typeof m.who === 'string' ? m.who : 'myra',
+    text: typeof m.text === 'string' ? m.text : '',
+    t: typeof m.t === 'number' ? m.t : 0,
+  }));
 
 function readGrants(x: unknown): VaultGrant[] | undefined {
   if (!Array.isArray(x)) return undefined;
