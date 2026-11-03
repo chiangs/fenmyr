@@ -1,5 +1,5 @@
 import { luminance, mixHex } from '../ui/color.ts';
-import { esc } from '../ui/dom.ts';
+import { esc, htmlIn } from '../ui/dom.ts';
 import { checkUpdate } from '../app/updates.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
@@ -19,8 +19,6 @@ import type { CaelestiaScheme, UsageTotals } from '../../shared/ops.ts';
 import { child, closestTo, elementById } from '../ui/dom.ts';
 
 type Mode = 'light' | 'dark';
-const htmlIn = (root: ParentNode, selector: string) =>
-  [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);
 const htmlOrNull = (el: Element | null) => (el instanceof HTMLElement ? el : null);
 
 // ---------- your colors: the board, its dots, the panels and the accent, set per light/dark; one board can also have its own background ----------

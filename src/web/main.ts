@@ -55,7 +55,7 @@ import * as m50 from './tools/stamps.ts';
 import * as m51 from './tools/shapes.ts';
 import * as m52 from './docs/editor.ts';
 import * as m53 from './docs/word.ts';
-import * as m54 from './docs/menus.ts';
+import * as m54 from './docs/menuActions.ts';
 import * as m55 from './selbar/selbar.ts';
 import * as m56 from './ui/colorPicker.ts';
 import * as m57 from './ui/boxes.ts';

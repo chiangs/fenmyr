@@ -1,17 +1,26 @@
-// @ts-nocheck
 import { $ } from '../core/dom.ts';
 import { docCard, docHTML, ed, syncDoc } from './editor.ts';
 import { docPrintHTML } from './pdf.ts';
 import { fitTools } from './toolbar.ts';
 import { say } from '../settings/licenses.ts';
+import { editorBundle } from './editor.ts';
+
+const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const paperSize = () => {
+  try {
+    return localStorage.getItem('fenmyr:paper') === 'a4' ? 'a4' : 'letter';
+  } catch {
+    return 'letter';
+  }
+};
 
 // ---------- a doc as a Word file: real headings, lists, tables and pictures, with Figtree built in ----------
-let docxLoading = null;
+let docxLoading: Promise<unknown> | null = null;
 
 const loadDocx = () =>
   docxLoading ||
   (docxLoading = new Promise((res, rej) => {
-    if (window.FenmyrDocx) return res();
+    if (window.FenmyrDocx) return res(true);
     const sc = document.createElement('script');
     sc.src = 'vendor/docx.js';
     sc.onload = res;
@@ -25,28 +34,25 @@ const loadDocx = () =>
 export async function downloadWord() {
   if (!docCard) return;
   syncDoc();
-  const paper = (() => {
-    try {
-      return localStorage.getItem('fenmyr:paper') || 'letter';
-    } catch (e) {
-      return 'letter';
-    }
-  })();
+  const paper = paperSize(),
+    doc = docCard;
   $('dvSaved').textContent = 'making your Word file…';
   try {
     await loadDocx();
-    const bytes = await FenmyrDocx.toDocx(
-      ed ? ed.getJSON() : docCard.doc || FenmyrEditor.generateJSON(docHTML(docCard), FenmyrEditor.extensions()),
-      { title: (docCard.text || '').trim(), paper },
-    );
+    const docx = window.FenmyrDocx;
+    if (!docx) throw new Error("the Word maker didn't load");
+    const bundle = editorBundle(),
+      bytes = await docx.toDocx(ed ? ed.getJSON() : doc.doc || bundle.generateJSON(docHTML(doc), bundle.extensions()), {
+        title: (doc.text || '').trim(),
+        paper,
+      });
     let b64 = '';
-    for (let i = 0; i < bytes.length; i += 0x8000)
-      b64 += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    for (let i = 0; i < bytes.length; i += 0x8000) b64 += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
     b64 = btoa(b64);
-    const name = await Fenmyr.saveFile(b64, (docCard.text || 'Document').trim() || 'Document', 'docx');
+    const name = await Fenmyr.saveFile(b64, (doc.text || 'Document').trim() || 'Document', 'docx');
     if (name) say(`Saved “${name}” ✦`, 5000);
   } catch (err) {
-    say("I couldn't make the Word file: " + err.message, 8000);
+    say("I couldn't make the Word file: " + messageOf(err), 8000);
   } finally {
     $('dvSaved').textContent = '';
   }
@@ -55,19 +61,13 @@ export async function downloadWord() {
 export async function downloadPDF() {
   if (!docCard) return;
   syncDoc();
-  const paper = (() => {
-    try {
-      return localStorage.getItem('fenmyr:paper') || 'letter';
-    } catch (e) {
-      return 'letter';
-    }
-  })();
+  const paper = paperSize();
   $('dvSaved').textContent = 'making your PDF…';
   try {
     const name = await Fenmyr.docPDF(docPrintHTML(paper), (docCard.text || 'Document').trim() || 'Document', paper);
     if (name) say(`Saved “${name}” ✦`, 5000);
   } catch (err) {
-    say("I couldn't make the PDF: " + err.message, 8000);
+    say("I couldn't make the PDF: " + messageOf(err), 8000);
   } finally {
     $('dvSaved').textContent = '';
   }

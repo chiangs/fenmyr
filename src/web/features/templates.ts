@@ -1,9 +1,7 @@
 import type { Template } from '../../shared/ops.ts';
-import { clickIn, closestTo, elementById } from '../ui/dom.ts';
+import { clickIn, closestTo, elementById, htmlIn } from '../ui/dom.ts';
 
 type TemplateForm = { name: string; desc: string; mode: string };
-const htmlIn = (root: ParentNode, selector: string) =>
-  [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);
 const closeTplPick = () => {
   $('tplPick').classList.remove('on');
   $('tools').querySelector('[data-add="tpl"]')?.classList.remove('on');

@@ -2,6 +2,7 @@ import type { TestHooks } from './app/testHooks.ts';
 import type { FenmyrApi } from './bridge.ts';
 import type { Goo as makeGoo } from './goo.ts';
 import type { Phone } from './platform/phone.ts';
+import type { DocxBundle, EditorBundle } from './docs/editorTypes.ts';
 import type { TimerLine } from './features/timer.ts';
 import type { BirthdayDue, BirthdayLine } from './myra/birthday.ts';
 
@@ -20,6 +21,9 @@ declare global {
     myraName?: string;
     Goo: typeof makeGoo;
     __phone?: Phone;
+    // the doc editor and Word export, once their scripts have loaded
+    FenmyrEditor?: EditorBundle;
+    FenmyrDocx?: DocxBundle;
     // tests set the clock, whether the window counts as focused, and the model's birthday and timer lines
     __bdNow?: number | string | null;
     __bdFocus?: boolean | null;

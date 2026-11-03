@@ -75,3 +75,7 @@ export function textField(id: string) {
     throw new Error(`#${id} is not a text field`);
   return el;
 }
+
+// the HTML elements matching a selector under root (an SVG match is left out)
+export const htmlIn = (root: ParentNode, selector: string) =>
+  [...root.querySelectorAll(selector)].filter(el => el instanceof HTMLElement);
