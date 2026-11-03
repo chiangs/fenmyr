@@ -10,17 +10,8 @@ import { animations } from './smoke/animations.ts';
 import { birthday } from './smoke/birthday.ts';
 import { board, noteTags } from './smoke/board.ts';
 import { bridge } from './smoke/bridge.ts';
-import {
-  boardOrder,
-  clearButtons,
-  cursorEdge,
-  deleteConfirm,
-  deleteCurrent,
-  deleteLastBoard,
-  heightGrips,
-  popups,
-  shortcutLabels,
-} from './smoke/chrome.ts';
+import { boardOrder, clearButtons, cursorEdge, heightGrips, popups, shortcutLabels } from './smoke/chrome.ts';
+import { deleteConfirm, deleteCurrent, deleteLastBoard } from './smoke/deletes.ts';
 import { installPageKit, makeSmoke } from './smoke/kit.ts';
 import { library } from './smoke/library.ts';
 import { collectionCount, look } from './smoke/look.ts';
