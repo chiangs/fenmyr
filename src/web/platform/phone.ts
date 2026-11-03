@@ -30,11 +30,15 @@ export function init62() {
     const hub = document.createElement('div');
     hub.className = 'hub';
     hub.id = 'hub';
+    const boards = Icon('boards'),
+      layers = Icon('layers'),
+      plus = Icon('plus'),
+      tray = Icon('tray');
     hub.innerHTML =
-      `<button data-sheet="boards">${Icon('boards')}<span>Boards</span></button>` +
-      `<button data-sheet="layers">${Icon('layers')}<span>Layers</span></button>` +
-      `<button class="hub-add" data-sheet="add" aria-label="Add something">${Icon('plus')}</button>` +
-      `<button data-sheet="tray">${Icon('tray')}<span>Unsorted</span><b class="hub-n" id="hubN"></b></button>` +
+      `<button data-sheet="boards">${boards}<span>Boards</span></button>` +
+      `<button data-sheet="layers">${layers}<span>Layers</span></button>` +
+      `<button class="hub-add" data-sheet="add" aria-label="Add something">${plus}</button>` +
+      `<button data-sheet="tray">${tray}<span>Unsorted</span><b class="hub-n" id="hubN"></b></button>` +
       `<button data-hub="myra"><canvas id="hubGoo" width="64" height="56"></canvas><span>Myra</span></button>`;
     const sh = document.createElement('div');
     sh.className = 'sheet';

@@ -184,7 +184,8 @@ export function renderCard(c: Card, pop?: boolean) {
     }
   }
   const body = inner(c),
-    label = c.tagText ? `<div class="tag">${esc(c.tagText)}</div>` : '',
+    tagText = esc(c.tagText),
+    label = c.tagText ? `<div class="tag">${tagText}</div>` : '',
     due = dueChip(c),
     addTag = soloTagAdd(c),
     tilt = TILTS(c) ? '<i class="rot-h" title="Drag to tilt"></i>' : '';

@@ -224,6 +224,15 @@ function coll(c: CardOf<'coll'>) {
   return `<div class="coll-head"><span class="text">${text}</span></div><div class="coll-frame"></div>${heads}${empty}`;
 }
 
+// the crop box while cropping, placed as fractions of the picture
+function cropUi(b: { x: number; y: number; w: number; h: number }, corners: string) {
+  const left = b.x * 100,
+    top = b.y * 100,
+    width = b.w * 100,
+    height = b.h * 100;
+  return `<div class="crop-ui"><div class="crop-box" style="left:${left}%;top:${top}%;width:${width}%;height:${height}%">${corners}</div></div>`;
+}
+
 // a crop shows a window onto the picture: the picture is scaled up and shifted so only the kept part shows
 function image(c: CardOf<'image'>) {
   const k = !c.cropEdit && c.crop,
@@ -232,9 +241,7 @@ function image(c: CardOf<'image'>) {
       : '',
     b = c.cropEdit && cropping ? cropping.box : null,
     corners = ['nw', 'ne', 'sw', 'se'].map(h => `<i data-h="${h}"></i>`).join(''),
-    ui = b
-      ? `<div class="crop-ui"><div class="crop-box" style="left:${b.x * 100}%;top:${b.y * 100}%;width:${b.w * 100}%;height:${b.h * 100}%">${corners}</div></div>`
-      : '',
+    ui = b ? cropUi(b, corners) : '',
     src = esc(c.src),
     palette = Icon('palette', { size: 16 }),
     pull = when(!c.cropEdit, `<button class="chip" data-act="colors">${palette}<span>Pull colours</span></button>`);
@@ -262,11 +269,18 @@ function vnote(c: CardOf<'vnote'>) {
   if (!back) {
     const tags = (c.tags ?? [])
         .slice(0, 6)
-        .map(t => `<i>#${esc(t)}</i>`)
+        .map(t => {
+          const tag = esc(t);
+          return `<i>#${tag}</i>`;
+        })
         .join(''),
       props = sm
         .slice(0, 5)
-        .map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`)
+        .map(([k, v]) => {
+          const key = esc(k),
+            value = esc(v);
+          return `<span><em>${key}</em>${value}</span>`;
+        })
         .join(''),
       tagRow = when(tags, `<div class="vn-tags">${tags}</div>`),
       propRow = when(props, `<div class="vn-props text">${props}</div>`);

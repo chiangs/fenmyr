@@ -27,8 +27,13 @@ const GRID_SHAPES: Record<string, [name: string, svg: string]> = {
   ],
 };
 
-const gridMask = (k: string) =>
-  `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" fill="#000">${(GRID_SHAPES[k] ?? GRID_SHAPES.dot)?.[1] ?? ''}</svg>`)}")`;
+const gridMask = (k: string) => {
+  const shape = (GRID_SHAPES[k] ?? GRID_SHAPES.dot)?.[1] ?? '',
+    svg = encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" fill="#000">${shape}</svg>`,
+    );
+  return `url("data:image/svg+xml,${svg}")`;
+};
 
 export function applyGridShape() {
   const k = settings.gridShape && GRID_SHAPES[settings.gridShape] ? settings.gridShape : 'dot',
@@ -40,10 +45,10 @@ export function applyGridShape() {
   if (!box) return;
   if (!box.children.length) {
     box.innerHTML = Object.entries(GRID_SHAPES)
-      .map(
-        ([id, [name]]) =>
-          `<button type="button" data-gshape="${id}" title="${name}" aria-label="${name}"><i style="--gm:${gridMask(id).replace(/"/g, '&quot;')}"></i></button>`,
-      )
+      .map(([id, [name]]) => {
+        const mask = gridMask(id).replace(/"/g, '&quot;');
+        return `<button type="button" data-gshape="${id}" title="${name}" aria-label="${name}"><i style="--gm:${mask}"></i></button>`;
+      })
       .join('');
     box.onclick = e => {
       const b = closestTo(e.target, '[data-gshape]');

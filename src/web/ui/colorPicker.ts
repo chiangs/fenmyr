@@ -161,7 +161,10 @@ function boardColorRows(starter: string[]) {
       const name = esc(x.name);
       return `<button style="background:${x.hex}" data-hex="${x.hex}" title="${name}"></button>`;
     },
-    dots = (xs: Named[]) => `<div class="cpq-row">${xs.map(dot).join('')}</div>`,
+    dots = (xs: Named[]) => {
+      const row = xs.map(dot).join('');
+      return `<div class="cpq-row">${row}</div>`;
+    },
     row = (label: string, xs: Named[]) => (xs.length ? `<div class="cpq-l">${label}</div>` + dots(xs) : '');
   const bw = [
     { hex: '#000000', name: 'Black' },

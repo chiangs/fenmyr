@@ -230,13 +230,14 @@ const searchBox = () => {
 
 // the search sits at the bottom, next to the toolbar button, and has the cursor when the menu opens
 export function buildTplPick() {
-  const q = searchBox()?.value || '';
+  const q = searchBox()?.value || '',
+    searchIcon = Icon('search', { size: 16 });
   $('tplPick').innerHTML =
     '<div class="tp-list">' +
     TPL_GROUPS.map(([g, keys]) => `<div class="tp-h">${g}</div>` + keys.map(tplRow).join('')).join('') +
     (myTpls.length ? '<div class="tp-h">Yours</div>' + myTpls.map(mineRow).join('') : '') +
     '<div class="tp-none" hidden>No templates match</div></div>' +
-    `<label class="tp-search">${Icon('search', { size: 16 })}<input id="tpSearch" placeholder="Search templates…" autocomplete="off" spellcheck="false"></label>`;
+    `<label class="tp-search">${searchIcon}<input id="tpSearch" placeholder="Search templates…" autocomplete="off" spellcheck="false"></label>`;
   const box = searchBox();
   if (box) box.value = q;
   filterTpl();

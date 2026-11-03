@@ -41,9 +41,12 @@ function shapeTag() {
   const ps = [0, Math.PI * 0.66, Math.PI * 1.33].map(ph => tagPath(w, h, ph)),
     path = child(svg, 'path', SVGPathElement);
   path.setAttribute('d', ps[0] ?? '');
+  // the outline loops through its three wobbles and back to the first
+  const values = `${ps.join(';')};${ps[0] ?? ''}`,
+    splines = '.45 0 .55 1;'.repeat(3).slice(0, -1);
   path.innerHTML = window.myraCalm
     ? ''
-    : `<animate attributeName="d" dur="5s" repeatCount="indefinite" values="${ps.join(';')};${ps[0]}" calcMode="spline" keySplines="${'.45 0 .55 1;'.repeat(3).slice(0, -1)}"/>`;
+    : `<animate attributeName="d" dur="5s" repeatCount="indefinite" values="${values}" calcMode="spline" keySplines="${splines}"/>`;
 }
 
 export function paintCursor() {

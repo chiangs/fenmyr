@@ -137,11 +137,10 @@ export function renderChat() {
   list.innerHTML = '';
   const msgs = chatLog();
   if (!msgs.length) {
-    list.innerHTML = `<div class="mc-empty"><b>Hi! I'm Myra ✦</b>Ask me to sort, write, plan or find things for this board.<div class="mc-ideas">${IDEAS.filter(
-      i => settings.mobbin || !/Mobbin/.test(i),
-    )
+    const ideas = IDEAS.filter(i => settings.mobbin || !/Mobbin/.test(i))
       .map(i => `<button>${i}</button>`)
-      .join('')}</div></div>`;
+      .join('');
+    list.innerHTML = `<div class="mc-empty"><b>Hi! I'm Myra ✦</b>Ask me to sort, write, plan or find things for this board.<div class="mc-ideas">${ideas}</div></div>`;
     for (const b of list.querySelectorAll('.mc-ideas button'))
       if (b instanceof HTMLElement)
         b.onclick = () => {

@@ -80,13 +80,15 @@ async function openLicenses() {
   if (!L) return;
   const row = (i: Licence) => {
     const name = esc(i.name),
-      version = i.version ? ` <span>${esc(i.version)}</span>` : '',
+      ver = esc(i.version),
+      version = i.version ? ` <span>${ver}</span>` : '',
       license = esc(i.license),
       where = esc(i.where),
-      link = i.url
-        ? ` · <button class="set-link" data-url="${esc(i.url)}">${esc(i.url.replace(/^https?:\/\//, ''))}</button>`
-        : '',
-      note = i.note ? `<p class="lic-note">${esc(i.note)}</p>` : '',
+      url = esc(i.url),
+      shownUrl = esc((i.url ?? '').replace(/^https?:\/\//, '')),
+      link = i.url ? ` · <button class="set-link" data-url="${url}">${shownUrl}</button>` : '',
+      noteText = esc(i.note),
+      note = i.note ? `<p class="lic-note">${noteText}</p>` : '',
       chromium =
         i.name === 'Electron' && Fenmyr.native
           ? '<p><button class="set-btn" id="licChromium">Open Chromium’s licences</button></p>'

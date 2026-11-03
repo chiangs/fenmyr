@@ -127,10 +127,17 @@ export function setBirthday(month: string | number, day: string | number) {
 
 function fillBd(mSel: HTMLSelectElement, dSel: HTMLSelectElement) {
   mSel.innerHTML =
-    '<option value="">Month</option>' + MONTHS.map((n, i) => `<option value="${i + 1}">${n}</option>`).join('');
+    '<option value="">Month</option>' +
+    MONTHS.map((n, i) => {
+      const v = i + 1;
+      return `<option value="${v}">${n}</option>`;
+    }).join('');
   dSel.innerHTML =
     '<option value="">Day</option>' +
-    Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+    Array.from({ length: 31 }, (_, i) => {
+      const d = i + 1;
+      return `<option value="${d}">${d}</option>`;
+    }).join('');
 }
 
 export function paintBd() {

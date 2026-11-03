@@ -64,7 +64,7 @@ export function docPrintHTML(paper: string) {
       .join(''),
     boardFont = dfont ? ` --board-font: "${dfont}", "Figtree", system-ui, sans-serif;` : '',
     css = proseCSS(),
-    heading = title ? `<h1 class="doc-title">${esc(title)}</h1>` : '';
+    heading = title ? `<h1 class="doc-title">${pageTitle}</h1>` : '';
   return `<!doctype html><html><head><meta charset="utf-8"><title>${pageTitle}</title>
 <link rel="stylesheet" href="__WEB__/fonts.css">${fontLinks}
 <style>

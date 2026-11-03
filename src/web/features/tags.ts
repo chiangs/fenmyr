@@ -14,7 +14,8 @@ type Token = { node: Text; start: number; end: number; word: string };
 export const nameOf = (x: Suggest) => (typeof x === 'string' ? x : x.create);
 export const suggestRow = (x: Suggest, i: number, at: number, type = '') => {
   const on = i === at ? 'on' : '',
-    label = typeof x === 'string' ? `#${esc(x)}` : `New tag <b>#${esc(x.create)}</b>`;
+    name = esc(nameOf(x)),
+    label = typeof x === 'string' ? `#${name}` : `New tag <b>#${name}</b>`;
   return `<button${type} data-i="${i}" class="${on}">${label}</button>`;
 };
 // note text boxes already listening for tags

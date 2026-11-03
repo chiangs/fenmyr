@@ -9,7 +9,8 @@ const on = (yes: unknown) => (yes ? 'on' : '');
 
 // the font list: this board's fonts, then suggestions, then everything on this computer
 export function fontListMarkup(onBoard: string[], row: (f: string) => string) {
-  const used = onBoard.length ? `<div class="dp-h">Used on this board</div>${onBoard.map(row).join('')}` : '',
+  const rows = onBoard.map(row).join(''),
+    used = onBoard.length ? `<div class="dp-h">Used on this board</div>${rows}` : '',
     suggested = SUGGESTED_FONTS.filter(f => !onBoard.includes(f))
       .map(row)
       .join(''),
@@ -33,9 +34,8 @@ export function colorMarkup(
   const attr = isHl ? 'data-hl' : 'data-tc',
     short = isHl ? 'hl' : 'tc',
     none = isHl ? 'No highlight' : 'Default colour',
-    board = boardCols.length
-      ? `<div class="dp-h">Board colours</div><div class="dp-grid">${swatches(boardCols, cur, attr)}</div>`
-      : '',
+    boardDots = swatches(boardCols, cur, attr),
+    board = boardCols.length ? `<div class="dp-h">Board colours</div><div class="dp-grid">${boardDots}</div>` : '',
     heading = isHl ? 'Highlighters' : 'Colours',
     presets = swatches(isHl ? HIGHLIGHTS : TEXT_COLORS, cur, attr);
   return `<button type="button" class="dp-row dp-none" data-${short}="">${none}</button>
