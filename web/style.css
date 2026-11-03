@@ -413,7 +413,8 @@ html.native .home-in { padding-top: 40px; }
 .coll-head { position: absolute; left: 0; right: 0; top: 0; height: 40px; border-radius: 19px; corner-shape: squircle; background: var(--chead); display: grid; place-items: center; padding: 0 16px; cursor: grab; }
 .coll-head .text { font: 700 calc(15px * var(--fs, 1))/1.2 var(--font); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; outline: none; min-width: 2em; }
 .coll-head:has(.kb-n) { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.coll-head:has(.kb-n) .text { min-width: 0; flex: 0 1 auto; }
+.coll-head:has(.kb-n) .text { min-width: 0; flex: 1; }   /* the name takes the room, so the count sits at the right edge like a kanban column's */
+body.dark .coll-head .kb-n { color: #f0ebe4; }   /* the header stays coloured in dark mode, but its count is the kanban's dark badge with light text */
 .coll-head .text:empty::before { content: "Name…"; color: rgba(73, 72, 72, .45); }
 .coll-frame { position: absolute; left: 0; right: 0; top: 52px; bottom: 0; border-radius: 30px; corner-shape: squircle; background: var(--cframe); }
 .coll-frame::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: inherit; }
