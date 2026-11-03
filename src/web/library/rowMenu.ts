@@ -22,6 +22,7 @@ import { chirp, say } from '../settings/licenses.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { keepOnScreen } from '../ui/popover.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
+import { confirmDelete } from './confirmDelete.ts';
 import { renderCrumbs, where } from './crumbs.ts';
 import { homeAt, renderHome } from './home.ts';
 import { dropZone, inlineRename, loadLib } from './nesting.ts';
@@ -263,17 +264,9 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
       return chirp(`“${obj.name}” is its own board now ✦`, 3000);
     }
     if (a === 'del') {
-      // ask first: deleting can't be undone
-      const what =
-        kind === 'board'
-          ? n > 1
-            ? `and the ${n - 1} canvas${n > 2 ? 'es' : ''} inside it`
-            : ''
-          : n
-            ? `and the ${n} board${n === 1 ? '' : 's'} inside it`
-            : '';
-      const name = esc(obj.name);
-      m.innerHTML = `<p>Delete “${name}” ${what}? This can't be undone.</p><div><button data-m="yes" class="danger solid">Delete</button><button data-m="no">Cancel</button></div>`;
+      m.classList.add('confirm');
+      m.innerHTML = confirmDelete(kind, obj, n);
+      keepOnScreen(m);
       return;
     }
     if (a === 'yes') {
