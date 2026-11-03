@@ -276,6 +276,7 @@ const OPS = {
   ghLogin: () => gh.startLogin(r => send('ghLogin', r)),
   ghLoginCancel: () => gh.cancelLogin(),
   ghSetupGit: () => gh.setupGit(),
+  ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
 } satisfies Handlers;
 
 const isOp = (op: string): op is keyof Ops => Object.hasOwn(OPS, op);

@@ -57,7 +57,12 @@ export const pathDirs = () =>
 export const env = () => ({ ...process.env, PATH: pathDirs().join(':') });
 
 // collects what the program prints and stops it after `timeout` seconds
-export function run(cmd: string, args: string[], timeout: number): Promise<RunResult> {
+export function run(
+  cmd: string,
+  args: string[],
+  timeout: number,
+  extraEnv: Record<string, string> = {},
+): Promise<RunResult> {
   return new Promise(resolve => {
     const out: Buffer[] = [],
       err: Buffer[] = [];
@@ -66,7 +71,7 @@ export function run(cmd: string, args: string[], timeout: number): Promise<RunRe
       fs.mkdirSync(P.support, { recursive: true }); // the folder we run in has to exist (a fresh install, or a test)
     } catch {}
     try {
-      p = spawn(cmd, args, { cwd: P.support, env: env(), stdio: ['ignore', 'pipe', 'pipe'] });
+      p = spawn(cmd, args, { cwd: P.support, env: { ...env(), ...extraEnv }, stdio: ['ignore', 'pipe', 'pipe'] });
     } catch (e) {
       return resolve({ code: -1, out: Buffer.alloc(0), err: Buffer.from(e instanceof Error ? e.message : String(e)) });
     }

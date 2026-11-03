@@ -46,6 +46,8 @@ jobs:
         run: node tests/link.ts
       - name: Setup test (git and GitHub in Settings, with a stand-in gh)
         run: node tests/setup.ts
+      - name: GitHub test (a project's GitHub repo, with a stand-in gh)
+        run: node tests/github.ts
       - name: Myra reply test
         run: node tests/reply.ts
       - name: Mac font list test

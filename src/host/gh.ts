@@ -1,6 +1,8 @@
 // GitHub's own command-line tool, gh, holds the sign-ins. Fenmyr never sees or stores a token.
 import { type ChildProcess, spawn } from 'node:child_process';
+import path from 'node:path';
 import type { GhAccount, GhState, HostEvents } from '../shared/ops.ts';
+import { githubOf, REPO_NAME } from '../shared/repos.ts';
 import { env, isRecord, pathDirs, run, text, which } from './util.ts';
 
 // Looked up on every call: it's a few file checks, and installing gh while Fenmyr is open then just works.
@@ -85,4 +87,29 @@ export async function setupGit() {
   const r = await run(gh, ['auth', 'setup-git', '--hostname', 'github.com'], 30);
   if (r.code !== 0) throw new Error(r.err.toString('utf8').trim() || "gh couldn't set up git.");
   return true as const;
+}
+
+const lastLine = (b: Buffer) => b.toString('utf8').trim().split('\n').pop() ?? '';
+
+// gh acts as its active account. For another one, that account's token goes to gh through its environment and never
+// leaves this process.
+async function asAccount(account: string) {
+  const gh = ghPath();
+  if (!gh) throw new Error("gh isn't installed yet.");
+  const r = await run(gh, ['auth', 'token', '--hostname', 'github.com', '--user', account], 30);
+  const token = r.out.toString('utf8').trim();
+  if (r.code !== 0 || !token) throw new Error(`Sign in to GitHub as ${account} again in Settings → Helpers.`);
+  return { gh, env: { GH_TOKEN: token } };
+}
+
+export async function createRepo(dir: string, account: string, name: string, isPrivate: boolean) {
+  if (!path.isAbsolute(dir)) throw new Error('Choose the folder by its full path.');
+  if (!REPO_NAME.test(name)) throw new Error('A repo name can use letters, numbers, dots, dashes and underscores.');
+  const { gh, env: as } = await asAccount(account);
+  const visibility = isPrivate ? '--private' : '--public';
+  const r = await run(gh, ['repo', 'create', name, visibility, '--source', dir, '--remote', 'origin'], 60, as);
+  if (r.code !== 0) throw new Error(lastLine(r.err) || "GitHub didn't make the repo.");
+  const made = githubOf(lastLine(r.out));
+  if (!made) throw new Error("GitHub made the repo, but gh didn't say where. Check github.com.");
+  return made;
 }

@@ -1,7 +1,7 @@
 // Library and board files keep what they had, keep the prototype fields when they're sound, and drop them when not.
 import assert from 'node:assert';
 import { parseBoard, parseLibrary } from '../src/shared/model.ts';
-import { repoClash } from '../src/shared/repos.ts';
+import { githubOf, readRepoLink, repoClash, repoNameFor } from '../src/shared/repos.ts';
 
 const json = (x: unknown) => JSON.parse(JSON.stringify(x));
 
@@ -64,5 +64,25 @@ assert.strictEqual(clash('x', '/code/acme2'), undefined, 'a name that only start
 assert.strictEqual(clash('a', '/code/acme'), undefined, 'a project never clashes with itself');
 const rootRepo = { id: 'r', name: 'Everything', repo: { path: '/' } };
 assert.strictEqual(repoClash([rootRepo], 'x', '/code/b')?.name, 'Everything', 'a repo at / holds every other');
+
+for (const url of [
+  'https://github.com/ann-lee/acme',
+  'https://github.com/ann-lee/acme.git',
+  'git@github.com:ann-lee/acme.git',
+  'ssh://git@github.com/ann-lee/acme.git',
+])
+  assert.deepStrictEqual(githubOf(url), { owner: 'ann-lee', name: 'acme' }, url);
+for (const url of ['https://gitlab.com/ann/acme', 'https://github.com/ann', 'https://evil.com/github.com/a/b'])
+  assert.strictEqual(githubOf(url), null, url);
+assert.strictEqual(repoNameFor('Checkout Flow!'), 'checkout-flow');
+assert.strictEqual(repoNameFor('✦✦'), 'prototypes', 'a name with nothing usable still gets one');
+
+const github = { owner: 'ann-lee', name: 'acme', account: 'ann-work' };
+assert.deepStrictEqual(readRepoLink({ path: '/code/acme', github }), { path: '/code/acme', github });
+assert.deepStrictEqual(
+  readRepoLink({ path: '/code/acme', github: { ...github, name: '../x y' } }),
+  { path: '/code/acme' },
+  'a GitHub copy with a bad part is dropped and the folder kept',
+);
 
 console.log('MODEL OK');

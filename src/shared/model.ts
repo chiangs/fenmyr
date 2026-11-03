@@ -1,4 +1,5 @@
 import { type CardType, isCardType, sizeOf } from './cardTypes.ts';
+import { readRepoLink } from './repos.ts';
 
 // What each kind of card adds. Cards also hold per-type options these fields don't list yet; typing the renderer modules adds them.
 // a point on a pen path: r rounds a sharp corner; ix, iy and ox, oy are its curve handles in and out
@@ -231,8 +232,9 @@ export type Project = {
   open?: boolean;
   cover?: string;
   vaults?: VaultGrant[];
-  // the git repo its prototypes are written to, by absolute path on this computer
-  repo?: { path: string };
+  // the git repo its prototypes are written to, by absolute path on this computer, and its copy on GitHub with the gh
+  // account that reaches it
+  repo?: { path: string; github?: { owner: string; name: string; account: string } };
 };
 export type Folder = {
   id: string;
@@ -362,8 +364,8 @@ function readProject(x: unknown): Project[] {
   const vaults = readGrants(Reflect.get(x, 'vaults'));
   if (vaults) p.vaults = vaults;
   else delete p.vaults;
-  const repo: unknown = Reflect.get(x, 'repo');
-  if (isRecord(repo) && typeof repo.path === 'string' && repo.path.startsWith('/')) p.repo = { path: repo.path };
+  const repo = readRepoLink(Reflect.get(x, 'repo'));
+  if (repo) p.repo = repo;
   else delete p.repo;
   return [p];
 }
