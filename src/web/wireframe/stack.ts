@@ -6,7 +6,7 @@ import { uid } from '../core/base.ts';
 import { $, cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { LY, layersSoon } from '../panels/layers.ts';
-import { selCards } from '../selbar/selbar.ts';
+import { selCards } from '../selbar/selected.ts';
 import { chirp } from '../settings/licenses.ts';
 import { onFrame } from './tilt.ts';
 import { session } from '../core/state.ts';

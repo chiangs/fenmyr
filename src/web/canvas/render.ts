@@ -19,7 +19,7 @@ import { MIC, PLAY, fitAudio, fmtT } from '../media/audio.ts';
 import { devName } from '../media/devices.ts';
 import { SPK, cams, setupVideo } from '../media/video.ts';
 import { layersSoon, wireLayers } from '../panels/layers.ts';
-import { SIZED, fsMul } from '../selbar/selbar.ts';
+import { fsMul, SIZED } from '../selbar/textSize.ts';
 import { applyColors } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { inkPath } from '../tools/ink.ts';
@@ -260,7 +260,7 @@ export function renderCard(c: Card, pop?: boolean) {
   el.style.setProperty('--fill', named ? (COLORS[named] ?? '#fff') : '#fff');
   el.classList.add(`c-${named && named !== 'white' ? named : 'white'}`);
   if (c.type === 'swatch') el.style.setProperty('--hex', c.hex);
-  el.style.setProperty('--fs', fsMul(c));
+  el.style.setProperty('--fs', String(fsMul(c)));
   el.classList.toggle('has-font', !!c.font && SIZED.includes(c.type));
   if (c.font && SIZED.includes(c.type)) {
     el.style.setProperty('--cf', `"${String(c.font).replace(/"/g, '')}"`);

@@ -6,7 +6,7 @@ import { cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { startEdit } from '../features/tags.ts';
 import { card } from '../model/boards.ts';
-import { selCards } from '../selbar/selbar.ts';
+import { selCards } from '../selbar/selected.ts';
 import { session } from '../core/state.ts';
 
 // ---------- glass sections: a frosted bubble around a bunch of things. Anything whose middle sits inside it belongs to it,

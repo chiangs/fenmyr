@@ -22,7 +22,7 @@ import { card } from '../model/boards.ts';
 import { animIntent, animName, playAnim } from './anim.ts';
 import { animAskedAt, ask, timerAskedAt } from './chat.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
-import { FS } from '../selbar/selbar.ts';
+import { FS } from '../selbar/textSize.ts';
 import { reply, snapTo } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { aiGrants, updateVaultChip } from '../vault/ask.ts';

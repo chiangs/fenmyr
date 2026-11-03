@@ -4,7 +4,7 @@ import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { hasAll, queryWords } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { selCards } from '../selbar/selbar.ts';
+import { selCards } from '../selbar/selected.ts';
 import { startPlacing, stopPlacing } from '../tools/place.ts';
 import { closestTo, esc, htmlIn, textField } from '../ui/dom.ts';
 import { groupSel } from './stack.ts';

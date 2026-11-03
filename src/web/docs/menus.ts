@@ -14,7 +14,7 @@ import {
 } from './editor.ts';
 import { rewrite } from './rewrite.ts';
 import { blockOf } from './toolbar.ts';
-import { boardFonts } from '../selbar/selbar.ts';
+import { boardFonts } from '../selbar/fontPop.ts';
 import { isLocalFont, useFont } from '../wireframe/tilt.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
 import { session } from '../core/state.ts';

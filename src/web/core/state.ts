@@ -11,7 +11,7 @@ type Session = {
   editing: string | null;
   space: boolean;
   focusSet: Set<string> | null;
-  selWire: unknown;
+  selWire: string | null;
 };
 // main.ts fills these before any feature reads them.
 export const session = {} as Session;
