@@ -17,7 +17,6 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
-import { newBoard } from '../model/boards.ts';
 import { chirp, say } from '../settings/licenses.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { keepOnScreen } from '../ui/popover.ts';
@@ -26,7 +25,7 @@ import { confirmDelete } from './confirmDelete.ts';
 import { renderCrumbs, where } from './crumbs.ts';
 import { homeAt, renderHome } from './home.ts';
 import { dropZone, inlineRename, loadLib } from './nesting.ts';
-import { openBoard } from './openBoard.ts';
+import { leaveForDelete } from './nextBoard.ts';
 import { boardRow, folderNode, initRowIcons, projectNode } from './sidebarRows.ts';
 import {
   boardsIn,
@@ -97,20 +96,13 @@ async function destroy(kind: Kind, obj: Thing) {
   const all = (f: Folder): Folder[] => [f, ...subFolders(f.id).flatMap(all)]; // a folder and every folder inside it
   const gone = kind === 'folder' ? all(obj) : kind === 'project' ? foldersIn(obj.id).flatMap(all) : [];
   const ids = kind === 'board' ? [obj.id] : gone.flatMap(f => boardsIn(f.id).map(b => b.id));
+  const current = session.board?.id;
+  if (current && ids.includes(current)) await leaveForDelete(new Set(ids), current);
   for (const id of ids) await dropBoard(id);
   appState.folders = appState.folders.filter(f => !gone.includes(f));
   if (kind === 'project') appState.projects = appState.projects.filter(p => p !== obj);
   await saveLib();
   await refreshBoards();
-  if (session.board && ids.includes(session.board.id)) {
-    let list = await Fenmyr.list();
-    if (!list.length) {
-      const b = newBoard('My first board');
-      await Fenmyr.save(b);
-      list = await Fenmyr.list();
-    }
-    if (list[0]) await openBoard(list[0].id);
-  }
 }
 
 // Move to…: a little map of projects and folders; pick where it goes

@@ -10,15 +10,8 @@ import { animations } from './smoke/animations.ts';
 import { birthday } from './smoke/birthday.ts';
 import { board, noteTags } from './smoke/board.ts';
 import { bridge } from './smoke/bridge.ts';
-import {
-  boardOrder,
-  clearButtons,
-  cursorEdge,
-  deleteConfirm,
-  heightGrips,
-  popups,
-  shortcutLabels,
-} from './smoke/chrome.ts';
+import { boardOrder, clearButtons, cursorEdge, heightGrips, popups, shortcutLabels } from './smoke/chrome.ts';
+import { deleteConfirm, deleteCurrent, deleteLastBoard } from './smoke/deletes.ts';
 import { installPageKit, makeSmoke } from './smoke/kit.ts';
 import { library } from './smoke/library.ts';
 import { collectionCount, look } from './smoke/look.ts';
@@ -106,6 +99,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await reminders(t);
   await boardOrder(t);
   await deleteConfirm(t);
+  await deleteCurrent(t);
   await popups(t);
   await cursorEdge(t);
   await noteTags(t);
@@ -114,6 +108,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await myra(t);
   await birthday(t);
   await commandsInPrompt(t);
+  await deleteLastBoard(t);
   console.log(JSON.stringify({ ...t.results, errors, failed: t.failures }, null, 1));
   await app.close();
   const ok = !errors.length && !t.failures.length;
