@@ -2,11 +2,13 @@ import { type Board, type Card, type CardOf, type Link, isCardOf } from '../../s
 import { type CardType, sizeOf } from '../../shared/cardTypes.ts';
 import { COLOR_NAMES, tilt, uid } from '../core/base.ts';
 import { OS } from '../platform/osWords.ts';
+import { workshopPlanning } from '../content/workshop.ts';
 // the find bar next to Myra
 
 // ---------- boards ----------
 type Starter = { cards: Card[]; links?: Link[]; tray: Card[] };
 export const TEMPLATES: Record<string, () => Starter> = {
+  'Workshop planning': () => workshopPlanning(card),
   Moodboard: () => ({
     cards: [
       card('title', { x: 0, y: -40, text: 'Moodboard' }),

@@ -125,4 +125,46 @@ export async function look(t: Smoke) {
     counts: kanban.counts === '2,1 / 3,1',
     menu: menu.includes('Rename column') && menu.includes('Delete column') && menu.includes('Limit 5'),
   });
+  // the Workshop planning board: nine sections (phases, risks, modules, lessons), the four kanbans, a checklist for every list of checks, risks as a kanban, and nothing drawn on top of anything else
+  const before = await page.evaluate(() => window.__fenmyr.board.id);
+  const opened = await page.evaluate(async () => {
+    const T = window.__t;
+    T.click('#tools [data-add="tpl"]');
+    await T.wait(200);
+    T.click('[data-starter="Workshop planning"]');
+    await T.wait(1800);
+    return {
+      name: T.input('#boardName').value === 'Workshop planning',
+      cards: document.querySelectorAll('.card').length,
+    };
+  });
+  const workshop = await page.evaluate(() => {
+    const cards = window.__fenmyr.board.cards,
+      inColl = new Set(cards.flatMap(c => (c.type === 'coll' ? c.kids : []))),
+      top = cards.filter(c => c.type !== 'section' && c.type !== 'title' && !inColl.has(c.id)),
+      kanbans = cards.flatMap(c => (c.type === 'coll' && c.kanban ? [c] : []));
+    const overlaps = top.filter((a, i) =>
+      top.slice(i + 1).some(b => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h),
+    ).length;
+    const risks = kanbans.find(k => k.text?.startsWith('9 ·'));
+    return {
+      sections: cards.filter(c => c.type === 'section').length,
+      kanbans: kanbans.length,
+      todos: cards.filter(c => c.type === 'todo').length,
+      overlaps,
+      risks: risks?.kids.length === 6 && risks.colNames?.join() === 'To assess,High impact,Medium impact,Low impact',
+      due: !!cards.find(c => c.type === 'note' && c.name === 'T-0'),
+    };
+  });
+  t.checkAll('workshop', {
+    opens: opened.name && opened.cards >= 110,
+    sections: workshop.sections === 9,
+    kanbans: workshop.kanbans === 4,
+    todos: workshop.todos === 16,
+    noOverlap: workshop.overlaps === 0,
+    risks: workshop.risks,
+    timeline: workshop.due,
+  });
+  await page.evaluate(id => window.__fenmyr.openBoard(id), before);
+  await page.waitForTimeout(500);
 }
