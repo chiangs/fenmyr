@@ -6,6 +6,10 @@ import { _electron, type ElectronApplication, type Page } from 'playwright';
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREEN = { width: 1440, height: 900 };
 export const HEADLESS = ['--ozone-platform=headless', `--ozone-override-screen-size=${SCREEN.width},${SCREEN.height}`];
+// Headless Chromium reports no mouse, so the app keeps its own cursor off. This tells it there is a mouse that hovers,
+// for tests that check that cursor. (Not on by default: the screenshots are taken without it.)
+export const MOUSE =
+  '--blink-settings=primaryPointerType=4,availablePointerTypes=4,primaryHoverType=2,availableHoverTypes=2';
 
 const QUIET = { greet: false, autoUpdate: false, caelestia: false, motion: false, tilt: false };
 
