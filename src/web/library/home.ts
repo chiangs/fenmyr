@@ -24,7 +24,7 @@ import {
   saveLib,
   subFolders,
 } from './tree.ts';
-import { renderChat } from '../myra/chat.ts';
+import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { chirp } from '../settings/licenses.ts';
 import { stopPlacing } from '../tools/place.ts';

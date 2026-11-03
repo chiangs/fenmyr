@@ -14,7 +14,7 @@ import { capture, setFocus } from '../features/focus.ts';
 import { endEdit } from '../features/tags.ts';
 import { closeHome, homeAt } from '../library/home.ts';
 import { readyToRecord } from '../media/devices.ts';
-import { wonderIfEmpty } from '../myra/chat.ts';
+import { wonderIfEmpty } from '../myra/perch.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { zoomFit, zoomStep, zoomTo } from '../panels/zoomMenu.ts';

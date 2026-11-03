@@ -2,7 +2,8 @@ import { esc } from '../ui/dom.ts';
 import { labelOf } from '../../shared/cardTypes.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
-import { perchGoo, renderChat } from './chat.ts';
+import { perchGoo } from './perch.ts';
+import { renderChat } from './chatLog.ts';
 import { session } from '../core/state.ts';
 import { closestTo, textField } from '../ui/dom.ts';
 

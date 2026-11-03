@@ -36,7 +36,8 @@ import {
   hatOn,
   setBirthday,
 } from '../myra/birthday.ts';
-import { ask, perchGoo, perched, snapshot } from '../myra/chat.ts';
+import { ask, snapshot } from '../myra/chat.ts';
+import { perchGoo, perched } from '../myra/perch.ts';
 import { SLASH, daily, greet, greeter } from '../myra/greet.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';

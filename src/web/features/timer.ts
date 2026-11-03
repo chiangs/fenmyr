@@ -1,6 +1,7 @@
 import { parseReply } from '../../shared/myraReply.ts';
 import { $ } from '../core/dom.ts';
-import { gooSlot, keepPerch, snapshot } from '../myra/chat.ts';
+import { gooSlot, keepPerch } from '../myra/perch.ts';
+import { snapshot } from '../myra/chat.ts';
 import { goo, hopMyra } from '../myra/goos.ts';
 import { reply } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
