@@ -1,4 +1,5 @@
 // @ts-nocheck
+import type { Card } from '../../shared/model.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
 import { cssToHex } from '../ui/color.ts';
 import { cardEl, esc } from '../ui/dom.ts';
@@ -124,8 +125,8 @@ function setSpacing(kind, v) {
 export const FS: Record<string, number> = { s: 0.8, m: 1, l: 1.4, xl: 2 };
 export const SIZED = typesWith('sized');
 
-export function selCards() {
-  return [...session.sel].map(byId).filter(Boolean);
+export function selCards(): Card[] {
+  return [...session.sel].map(byId).filter(c => c !== undefined);
 }
 let ICON;
 

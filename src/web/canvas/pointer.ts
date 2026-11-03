@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { cardEl } from '../ui/dom.ts';
+import { cardEl, closestTo } from '../ui/dom.ts';
+import type { Card } from '../../shared/model.ts';
 import { cloneForDrag } from './clipboard.ts';
 import {
   ROT_FIXED,
@@ -56,7 +56,7 @@ import { WF } from '../wireframe/wireframes.ts';
 import { appState, session } from '../core/state.ts';
 
 function clearStuckDrag() {
-  cardsEl.querySelectorAll('.card.dragging').forEach(el => {
+  cardsEl.querySelectorAll<HTMLElement>('.card.dragging').forEach(el => {
     el.classList.remove('dragging');
     el.style.transform = '';
     el.style.willChange = '';
@@ -64,10 +64,21 @@ function clearStuckDrag() {
   stage.classList.remove('dragging-cards', 'cloning', 'panning');
 }
 
-export const overTray = e => {
+export const overTray = (e: { clientX: number; clientY: number }) => {
   const r = $('tray').getBoundingClientRect();
   return e.clientX > r.left && e.clientY > r.top && e.clientY < r.bottom && !$('tray').classList.contains('closed');
 };
+
+// a text size from a scale: one of the named sizes when it lands on one, otherwise the number itself
+function setFs(c: Card, m0: number) {
+  const m = +m0.toFixed(4),
+    hit = Object.keys(FS).find(z => Math.abs((FS[z] ?? 0) - m) < 0.001);
+  if (hit === 'm') delete c.fs;
+  else c.fs = hit || m;
+}
+
+const targetId = (e: Event) => (e.target instanceof Element ? e.target.id : '');
+const targetHas = (e: Event, cls: string) => e.target instanceof Element && e.target.classList.contains(cls);
 
 let ctrlHeld = false;
 let wheelSum = 0;
@@ -94,12 +105,13 @@ export function init16() {
   stage.addEventListener('pointerdown', e => {
     if (!appState.drag) clearStuckDrag();
     if (
-      e.target.closest(
+      closestTo(
+        e.target,
         '.tools, .tray, .myra, .top, .capture, .side, .keys, .cpop, .home, .selbar, .dock, .docview, .shapepick, .tplpick',
       )
     )
       return;
-    const el = e.target.closest('.card'),
+    const el = closestTo(e.target, '.card'),
       w = toWorld(e.clientX, e.clientY);
     if (e.button === 2) return; // right-click opens the menu, it doesn't drag
     if (session.board) {
@@ -116,8 +128,9 @@ export function init16() {
       drawDown(e);
       return;
     }
-    if (e.target.id === 'rh' && rhFor && rhFor.startsWith('g:') && e.button === 0) {
-      const cs = session.board.cards.filter(c => c.group === rhFor.slice(2)),
+    const gid = rhFor?.startsWith('g:') ? rhFor.slice(2) : null;
+    if (targetId(e) === 'rh' && gid && e.button === 0) {
+      const cs = session.board.cards.filter(c => c.group === gid),
         bx = Math.min(...cs.map(c => c.x)),
         by = Math.min(...cs.map(c => c.y));
       appState.drag = {
@@ -133,9 +146,10 @@ export function init16() {
       stage.setPointerCapture(e.pointerId);
       return;
     }
-    if (e.target.id === 'mrot' && e.button === 0) {
+    if (targetId(e) === 'mrot' && e.button === 0) {
       const cs = selCards().filter(c => !c.locked);
-      if (cs.length >= 1) {
+      const anchor = anchorOf(cs);
+      if (anchor) {
         remember();
         const R = realBox;
         const x0 = Math.min(...cs.map(c => c.x)),
@@ -145,8 +159,19 @@ export function init16() {
         const cx = (x0 + x1) / 2,
           cy = (y0 + y1) / 2;
         const single = cs.length === 1,
-          anchor = anchorOf(cs),
           ang0 = tiltOf(anchor);
+        const items = cs.map(c => {
+          const r = R(c);
+          return {
+            c,
+            mx: c.x + r.w / 2,
+            my: c.y + r.h / 2,
+            w: r.w,
+            h: r.h,
+            r0: WF.includes(c.type) ? c.rot || 0 : c.r || 0,
+            wf: WF.includes(c.type),
+          };
+        });
         appState.drag = {
           mode: 'mrotate',
           cx,
@@ -156,31 +181,29 @@ export function init16() {
           anchor: anchor.id,
           a0: Math.atan2(w.y - cy, w.x - cx),
           dot0: { x: parseFloat(mrot.style.left), y: parseFloat(mrot.style.top) },
-          items: cs.map(c => {
-            const r = R(c);
-            return {
-              c,
-              mx: c.x + r.w / 2,
-              my: c.y + r.h / 2,
-              w: r.w,
-              h: r.h,
-              r0: WF.includes(c.type) ? c.rot || 0 : c.r || 0,
-              wf: WF.includes(c.type),
-            };
-          }),
+          items,
         };
-        appState.drag.items.forEach(it => cardEl(it.c.id)?.classList.add('tilting')); // no easing while turning, so nothing trails behind
+        items.forEach(it => cardEl(it.c.id)?.classList.add('tilting')); // no easing while turning, so nothing trails behind
         stage.setPointerCapture(e.pointerId);
         return;
       }
     }
-    if (e.target.id === 'rh' && rhFor === 'm' && e.button === 0) {
+    if (targetId(e) === 'rh' && rhFor === 'm' && e.button === 0) {
       const cs = selCards().filter(c => !c.locked && c.type !== 'ink');
       if (cs.length > 1) {
         remember();
         const items = cs.map(c => {
             const r = realBox(c);
-            return { c, x: c.x, y: c.y, w: r.w, h: r.h, fs0: fsMul(c), size0: c.size, sw0: c.sw };
+            return {
+              c,
+              x: c.x,
+              y: c.y,
+              w: r.w,
+              h: r.h,
+              fs0: fsMul(c),
+              size0: c.type === 'text' ? c.size : undefined,
+              sw0: c.sw,
+            };
           }),
           bx = Math.min(...items.map(i => i.x)),
           by = Math.min(...items.map(i => i.y));
@@ -199,7 +222,7 @@ export function init16() {
         return;
       }
     }
-    if (e.target.id === 'rh' && rhFor && e.button === 0) {
+    if (targetId(e) === 'rh' && rhFor && e.button === 0) {
       const c = byId(rhFor);
       if (c) {
         appState.drag = { mode: 'resize', id: c.id, sx: w.x, sy: w.y, w0: c.w, h0: c.h, fs0: fsMul(c) };
@@ -207,7 +230,7 @@ export function init16() {
         return;
       }
     }
-    if (cropping && e.target.closest('.crop-ui')) {
+    if (cropping && closestTo(e.target, '.crop-ui')) {
       e.preventDefault();
       cropDown(e);
       return;
@@ -224,12 +247,13 @@ export function init16() {
       placeAt(w);
       return;
     }
-    const wireEl = e.target.closest('[data-wire]');
+    const wireEl = closestTo(e.target, '[data-wire]');
     if (wireEl && !session.space) {
-      const l = linkById(wireEl.dataset.wire);
+      const l = linkById(wireEl.dataset.wire ?? ''),
+        end = wireEl.dataset.end;
       if (!l) return;
       if (wireEl.classList.contains('w-bend')) appState.drag = { mode: 'bend', l };
-      else if (wireEl.dataset.end) appState.drag = { mode: 'rewire', l, end: wireEl.dataset.end };
+      else if (end === 'a' || end === 'b') appState.drag = { mode: 'rewire', l, end };
       else {
         selectWire(l.id);
         return;
@@ -245,17 +269,18 @@ export function init16() {
       return;
     }
     if (el) {
-      const id = el.dataset.id,
+      const id = el.dataset.id ?? '',
         c = byId(id);
-      if (session.editing === id && !e.target.closest('.handle, .knob')) return; // clicking inside text you're editing
-      if (e.target.closest('input[type=checkbox], .link-in input')) return;
-      if (e.target.closest('[data-act]')) return;
+      if (!c) return;
+      if (session.editing === id && !closestTo(e.target, '.handle, .knob')) return; // clicking inside text you're editing
+      if (closestTo(e.target, 'input[type=checkbox], .link-in input')) return;
+      if (closestTo(e.target, '[data-act]')) return;
       if (
         c.type === 'section' &&
         !session.sel.has(id) &&
         e.button === 0 &&
         !e.shiftKey &&
-        !e.target.closest('.sec-name, .handle, .knob, .rot-h')
+        !closestTo(e.target, '.sec-name, .handle, .knob, .rot-h')
       ) {
         endEdit();
         selectOnly([]);
@@ -263,12 +288,13 @@ export function init16() {
         stage.setPointerCapture(e.pointerId);
         return;
       }
-      if (e.target.classList.contains('rot-h')) {
-        appState.drag = { mode: 'rotate', c, cx: c.x + c.w / 2, cy: c.y + c.h / 2, tilt: TILTS(c) };
-        if (appState.drag.tilt) el.classList.add('tilting');
-      } else if (e.target.classList.contains('handle')) {
+      if (targetHas(e, 'rot-h')) {
+        const tilt = TILTS(c);
+        appState.drag = { mode: 'rotate', c, cx: c.x + c.w / 2, cy: c.y + c.h / 2, tilt };
+        if (tilt) el.classList.add('tilting');
+      } else if (targetHas(e, 'handle')) {
         appState.drag = { mode: 'resize', id, sx: w.x, sy: w.y, w0: c.w, h0: c.h, fs0: fsMul(c) };
-      } else if (e.target.classList.contains('knob')) {
+      } else if (targetHas(e, 'knob')) {
         appState.drag = { mode: 'wire', id, a: { x: c.x + c.w, y: c.y + c.h / 2 } };
       } else {
         endEdit();
@@ -294,7 +320,7 @@ export function init16() {
           sy: w.y,
           start: [...ids]
             .map(i => byId(i))
-            .filter(Boolean)
+            .filter(c => c !== undefined)
             .map(c => ({ c, x: c.x, y: c.y })),
           moved: false,
         };
@@ -331,7 +357,7 @@ export function init16() {
           sy: W2.y,
           start: [...ids]
             .map(i => byId(i))
-            .filter(Boolean)
+            .filter(c => c !== undefined)
             .map(c => ({ c, x: c.x, y: c.y })),
           moved: false,
         };
@@ -360,25 +386,26 @@ export function init16() {
       penMove(e);
       return;
     }
-    if (!appState.drag) return;
+    const d = appState.drag;
+    if (!d) return;
     const w = toWorld(e.clientX, e.clientY);
-    if (appState.drag.mode === 'pan') {
-      session.view.x = appState.drag.vx + e.clientX - appState.drag.sx;
-      session.view.y = appState.drag.vy + e.clientY - appState.drag.sy;
+    if (d.mode === 'pan') {
+      session.view.x = d.vx + e.clientX - d.sx;
+      session.view.y = d.vy + e.clientY - d.sy;
       applyView();
     }
-    if (appState.drag.mode === 'move') {
-      let dx = w.x - appState.drag.sx,
-        dy = w.y - appState.drag.sy;
-      if (!appState.drag.moved && Math.hypot(dx, dy) > 2) {
-        appState.drag.moved = true;
+    if (d.mode === 'move') {
+      let dx = w.x - d.sx,
+        dy = w.y - d.sy;
+      if (!d.moved && Math.hypot(dx, dy) > 2) {
+        d.moved = true;
         if (e.altKey) cloneForDrag();
       }
-      const sn = snapWF(appState.drag.start, dx, dy);
+      const sn = snapWF(d.start, dx, dy);
       dx = sn.dx;
       dy = sn.dy;
       // move on the GPU: the card is lifted as an already-drawn picture and slid with a transform, so the wobbly-edge filter isn't redrawn every frame (Safari is slow at that)
-      appState.drag.start.forEach(s => {
+      d.start.forEach(s => {
         s.c.x = s.x + dx;
         s.c.y = s.y + dy;
         const el = s.el || (s.el = cardEl(s.c.id));
@@ -393,8 +420,8 @@ export function init16() {
       });
       renderWires();
       $('tray').classList.toggle('drop', overTray(e));
-      const loose = appState.drag.start.filter(s => s.c.type !== 'coll'),
-        skip = new Set(appState.drag.start.filter(s => s.c.type === 'coll').map(s => s.c.id));
+      const loose = d.start.filter(s => s.c.type !== 'coll'),
+        skip = new Set(d.start.filter(s => s.c.type === 'coll').map(s => s.c.id));
       cardsEl.querySelectorAll('.drop-in, .drop-col').forEach(n => n.classList.remove('drop-in', 'drop-col'));
       const dt = loose.length && !skip.size && docTarget(e, w, loose);
       $('docview').classList.toggle('drop', dt === 'page');
@@ -405,43 +432,37 @@ export function init16() {
         if (t) cardEl(t.s.id)?.classList.add(t.side ? 'drop-col' : 'drop-in');
       }
     }
-    if (appState.drag.mode === 'resize' && byId(appState.drag.id).type === 'coll' && !byId(appState.drag.id).kanban) {
-      const c = byId(appState.drag.id);
-      c.cols = Math.max(1, Math.round((appState.drag.w0 + w.x - appState.drag.sx - CPAD * 2 + CGAP) / (CW + CGAP)));
-      layoutColl(c);
-      renderWires();
-      return;
-    }
-    if (appState.drag.mode === 'resize' && ['stamp', 'icon'].includes(byId(appState.drag.id).type)) {
-      const c = byId(appState.drag.id);
-      c.w = c.h = clamp(appState.drag.w0 + Math.max(w.x - appState.drag.sx, w.y - appState.drag.sy), 24, 400);
-      const el = cardEl(c.id);
-      Object.assign(el.style, { width: c.w + 'px', height: c.h + 'px' });
-      el.style.setProperty('--sz', c.w + 'px');
-      return;
-    }
-    // Shift + resize scales the whole thing: same shape, and the words (and everything inside) grow or shrink with it
-    if (
-      appState.drag.mode === 'resize' &&
-      e.shiftKey &&
-      !['coll', 'frame', 'section'].includes(byId(appState.drag.id).type)
-    ) {
-      const c = byId(appState.drag.id),
-        el = cardEl(c.id),
-        kx = (appState.drag.w0 + w.x - appState.drag.sx) / appState.drag.w0,
-        ky = (appState.drag.h0 + w.y - appState.drag.sy) / appState.drag.h0;
-      const k = Math.max(
-        0.2,
-        Math.min((appState.drag.w0 * 12) / appState.drag.w0, Math.abs(kx - 1) >= Math.abs(ky - 1) ? kx : ky),
-      );
-      c.w = Math.round(appState.drag.w0 * k);
-      c.h = Math.round(appState.drag.h0 * k);
-      if (SIZED.includes(c.type)) {
-        const m = +(appState.drag.fs0 * k).toFixed(4),
-          hit = Object.keys(FS).find(z => Math.abs(FS[z] - m) < 0.001);
-        if (hit === 'm') delete c.fs;
-        else c.fs = hit || m;
-        el.style.setProperty('--fs', fsMul(c));
+    if (d.mode === 'resize') {
+      const c = byId(d.id),
+        el = c ? cardEl(c.id) : null;
+      if (!c || !el) return;
+      if (c.type === 'coll' && !c.kanban) {
+        c.cols = Math.max(1, Math.round((d.w0 + w.x - d.sx - CPAD * 2 + CGAP) / (CW + CGAP)));
+        layoutColl(c);
+        renderWires();
+        return;
+      }
+      if (c.type === 'stamp' || c.type === 'icon') {
+        c.w = c.h = clamp(d.w0 + Math.max(w.x - d.sx, w.y - d.sy), 24, 400);
+        Object.assign(el.style, { width: c.w + 'px', height: c.h + 'px' });
+        el.style.setProperty('--sz', c.w + 'px');
+        return;
+      }
+      // Shift + resize scales the whole thing: same shape, and the words (and everything inside) grow or shrink with it
+      const scaling = e.shiftKey && !['coll', 'frame', 'section'].includes(c.type);
+      if (scaling) {
+        const kx = (d.w0 + w.x - d.sx) / d.w0,
+          ky = (d.h0 + w.y - d.sy) / d.h0,
+          k = Math.max(0.2, Math.min(12, Math.abs(kx - 1) >= Math.abs(ky - 1) ? kx : ky));
+        c.w = Math.round(d.w0 * k);
+        c.h = Math.round(d.h0 * k);
+        if (SIZED.includes(c.type)) {
+          setFs(c, d.fs0 * k);
+          el.style.setProperty('--fs', String(fsMul(c)));
+        }
+      } else {
+        c.w = Math.max(80, d.w0 + w.x - d.sx);
+        c.h = Math.max(50, d.h0 + w.y - d.sy);
       }
       if (c.type === 'title' && !c.fixedW) {
         c.fixedW = true;
@@ -452,26 +473,10 @@ export function init16() {
       if (c.type !== 'title') el.style.height = c.h + 'px';
       else c.h = el.offsetHeight;
       renderWires();
-      return;
+      if (scaling) return;
     }
-    if (appState.drag.mode === 'resize') {
-      const c = byId(appState.drag.id);
-      c.w = Math.max(80, appState.drag.w0 + w.x - appState.drag.sx);
-      c.h = Math.max(50, appState.drag.h0 + w.y - appState.drag.sy);
-      const el = cardEl(c.id);
-      if (c.type === 'title' && !c.fixedW) {
-        c.fixedW = true;
-        el.classList.add('fixedw');
-      }
-      if (c.type === 'note' || c.type === 'todo') c.userH = c.h;
-      el.style.width = c.w + 'px';
-      if (c.type !== 'title') el.style.height = c.h + 'px';
-      else c.h = el.offsetHeight;
-      renderWires();
-    }
-    if (appState.drag.mode === 'gresize' && appState.drag.multi && e.shiftKey) {
-      const d = appState.drag,
-        kx = (d.bw + w.x - d.sx) / d.bw,
+    if (d.mode === 'gresize' && d.multi && e.shiftKey) {
+      const kx = (d.bw + w.x - d.sx) / d.bw,
         ky = (d.bh + w.y - d.sy) / d.bh,
         k = Math.max(0.15, Math.abs(kx - 1) >= Math.abs(ky - 1) ? kx : ky);
       d.items.forEach(it => {
@@ -481,10 +486,7 @@ export function init16() {
         c.w = Math.max(8, it.w * k);
         c.h = Math.max(8, it.h * k);
         if (SIZED.includes(c.type)) {
-          const m = +(it.fs0 * k).toFixed(4),
-            hit = Object.keys(FS).find(z => Math.abs(FS[z] - m) < 0.001);
-          if (hit === 'm') delete c.fs;
-          else c.fs = hit || m;
+          setFs(c, (it.fs0 ?? 1) * k);
         }
         if (c.type === 'text' && it.size0) c.size = Math.max(4, Math.round(it.size0 * k * 10) / 10);
         if (c.type === 'title' && c.fixedW) c.w = Math.max(8, it.w * k);
@@ -498,15 +500,14 @@ export function init16() {
           });
           el.style.setProperty('--fs', fsMul(c));
           if (c.type === 'text') {
-            const tx = el.querySelector('.tx');
+            const tx = el.querySelector<HTMLElement>('.tx');
             if (tx) tx.style.fontSize = (c.size || 18) + 'px';
           }
         }
       });
       renderWires();
-    } else if (appState.drag.mode === 'gresize') {
-      const d = appState.drag,
-        nw = Math.max(24, d.bw + w.x - d.sx),
+    } else if (d.mode === 'gresize') {
+      const nw = Math.max(24, d.bw + w.x - d.sx),
         nh = Math.max(14, d.bh + w.y - d.sy),
         kx = nw / d.bw,
         ky = nh / d.bh;
@@ -528,12 +529,11 @@ export function init16() {
       });
       renderWires();
     }
-    if (appState.drag.mode === 'wire') {
-      appState.drag.b = w;
-      renderWires({ a: appState.drag.a, b: w });
+    if (d.mode === 'wire') {
+      d.b = w;
+      renderWires({ a: d.a, b: w });
     }
-    if (appState.drag.mode === 'mrotate') {
-      const d = appState.drag;
+    if (d.mode === 'mrotate') {
       let a = ((Math.atan2(w.y - d.cy, w.x - d.cx) - d.a0) * 180) / Math.PI;
       a = ((a + 540) % 360) - 180;
       a = e.shiftKey
@@ -575,23 +575,19 @@ export function init16() {
       rb.style.top = e.clientY - 34 + 'px';
       rb.classList.add('on');
     }
-    if (appState.drag.mode === 'rotate') {
-      let a = (Math.atan2(w.y - appState.drag.cy, w.x - appState.drag.cx) * 180) / Math.PI + 90;
+    if (d.mode === 'rotate') {
+      let a = (Math.atan2(w.y - d.cy, w.x - d.cx) * 180) / Math.PI + 90;
       a = ((a % 360) + 360) % 360;
       if (a > 180) a -= 360;
       const near = Math.round(a / 15) * 15;
       if (Math.abs(a - near) < 4) a = near; // eases onto 15° steps
-      if (appState.drag.tilt) {
-        appState.drag.c.r = Math.round(a);
-        appState.drag.c.tilted = true;
-        cardsEl
-          .querySelector(`[data-id="${appState.drag.c.id}"]`)
-          ?.style.setProperty('--tilt', appState.drag.c.r + 'deg');
+      if (d.tilt) {
+        d.c.r = Math.round(a);
+        d.c.tilted = true;
+        cardEl(d.c.id)?.style.setProperty('--tilt', d.c.r + 'deg');
       } else {
-        appState.drag.c.rot = Math.round(a);
-        cardsEl
-          .querySelector(`[data-id="${appState.drag.c.id}"]`)
-          ?.style.setProperty('--rot', appState.drag.c.rot + 'deg');
+        d.c.rot = Math.round(a);
+        cardEl(d.c.id)?.style.setProperty('--rot', d.c.rot + 'deg');
         syncDesign();
       }
       const rb = $('rotBadge');
@@ -600,48 +596,49 @@ export function init16() {
       rb.style.top = e.clientY - 34 + 'px';
       rb.classList.add('on');
     }
-    if (appState.drag.mode === 'drawbox') {
-      let r = appState.drag.rect;
+    if (d.mode === 'drawbox') {
+      let r = d.rect;
       if (!r) {
-        r = appState.drag.rect = document.createElement('div');
+        r = d.rect = document.createElement('div');
         r.className = 'draw-rect';
         world.appendChild(r);
       }
-      const x = Math.min(appState.drag.sx, w.x),
-        y = Math.min(appState.drag.sy, w.y);
+      const x = Math.min(d.sx, w.x),
+        y = Math.min(d.sy, w.y);
       Object.assign(r.style, {
         left: x + 'px',
         top: y + 'px',
-        width: Math.abs(w.x - appState.drag.sx) + 'px',
-        height: Math.abs(w.y - appState.drag.sy) + 'px',
+        width: Math.abs(w.x - d.sx) + 'px',
+        height: Math.abs(w.y - d.sy) + 'px',
       });
     }
-    if (appState.drag.mode === 'bend') {
-      const a = byId(appState.drag.l.a),
-        b = byId(appState.drag.l.b);
+    if (d.mode === 'bend') {
+      const a = byId(d.l.a),
+        b = byId(d.l.b);
       if (a && b) {
-        appState.drag.l.bend = 0;
-        const g = wireGeom(appState.drag.l, a, b),
+        d.l.bend = 0;
+        const g = wireGeom(d.l, a, b),
           bend = 2 * ((w.x - g.mid.x) * g.n.x + (w.y - g.mid.y) * g.n.y);
-        appState.drag.l.bend = Math.abs(bend) < 12 ? 0 : Math.round(bend);
+        d.l.bend = Math.abs(bend) < 12 ? 0 : Math.round(bend);
         renderWires();
       }
     } // pull it flat and it snaps straight
-    if (appState.drag.mode === 'rewire') {
-      const ke = appState.drag.end === 'a' ? 'b' : 'a',
-        keep = byId(appState.drag.l[ke]);
-      if (keep) {
-        const g = wireGeom(appState.drag.l, byId(appState.drag.l.a), byId(appState.drag.l.b));
+    if (d.mode === 'rewire') {
+      const ke = d.end === 'a' ? 'b' : 'a',
+        a = byId(d.l.a),
+        b = byId(d.l.b);
+      if (a && b) {
+        const g = wireGeom(d.l, a, b);
         renderWires({ a: ke === 'a' ? g.p0 : g.p2, b: w });
       }
     }
-    if (appState.drag.mode === 'marquee') {
+    if (d.mode === 'marquee') {
       const m = $('marquee'),
         r = stage.getBoundingClientRect(),
-        x0 = Math.min(appState.drag.sx, e.clientX),
-        y0 = Math.min(appState.drag.sy, e.clientY),
-        x1 = Math.max(appState.drag.sx, e.clientX),
-        y1 = Math.max(appState.drag.sy, e.clientY);
+        x0 = Math.min(d.sx, e.clientX),
+        y0 = Math.min(d.sy, e.clientY),
+        x1 = Math.max(d.sx, e.clientX),
+        y1 = Math.max(d.sy, e.clientY);
       Object.assign(m.style, {
         display: 'block',
         left: x0 - r.left + 'px',
@@ -661,7 +658,7 @@ export function init16() {
                 : c.x < b.x && c.x + c.w > a.x && c.y < b.y && c.y + c.h > a.y),
           )
           .flatMap(c => groupOf(c.id));
-      selectOnly([...new Set([...appState.drag.base, ...hit])]);
+      selectOnly([...new Set([...d.base, ...hit])]);
     }
   });
 
@@ -704,10 +701,10 @@ export function init16() {
         return;
       }
       cardsEl.querySelectorAll('.drop-in, .drop-col').forEach(n => n.classList.remove('drop-in', 'drop-col'));
+      const lead = d.start[0]?.c;
       if (d.moved) {
-        if (settings.snap) {
-          const lead = d.start[0].c,
-            dx = snapTo(lead.x) - lead.x,
+        if (settings.snap && lead) {
+          const dx = snapTo(lead.x) - lead.x,
             dy = snapTo(lead.y) - lead.y;
           d.start.forEach(s2 => {
             s2.c.x += dx;
@@ -739,12 +736,12 @@ export function init16() {
           else
             ids.forEach(id => {
               const from = parentOf(id);
-              if (from) {
+              const c = byId(id);
+              if (from && c) {
                 from.kids = from.kids.filter(k => k !== id);
-                const el = cardEl(id);
-                el?.classList.remove('inside');
-                byId(id).r = tilt();
-                renderCard(byId(id));
+                cardEl(id)?.classList.remove('inside');
+                c.r = tilt();
+                renderCard(c);
               }
             });
         }
@@ -753,26 +750,26 @@ export function init16() {
         renderWires();
       } else if (
         d.start.length === 1 &&
-        d.start[0].c.type === 'swatch' &&
+        lead?.type === 'swatch' &&
         document.elementFromPoint(e.clientX, e.clientY)?.closest('.chipcol')
       )
-        openColor(d.start[0].c); // only the color itself opens the wheel; the rest of the card just selects it
-      else {
+        openColor(lead); // only the color itself opens the wheel; the rest of the card just selects it
+      else if (lead) {
         // our own double-click check (pointer events don't count clicks everywhere), on whatever is really under the pointer
         const now = Date.now(),
-          id = d.start[0].c.id,
+          id = lead.id,
           under = document.elementFromPoint(e.clientX, e.clientY);
-        if (under && under.matches('.card.todo li span') && !under.isContentEditable) {
+        if (under instanceof HTMLElement && under.matches('.card.todo li span') && !under.isContentEditable) {
           appState.lastTap = {};
           startEdit(id, under);
           return;
         } // list items edit with one click
-        const pid = under?.closest('.card')?.dataset.id || id;
-        if (appState.lastTap.id === pid && now - appState.lastTap.t < 420) {
+        const pid = under?.closest<HTMLElement>('.card')?.dataset.id || id;
+        if (appState.lastTap.id === pid && now - (appState.lastTap.t ?? 0) < 420) {
           appState.lastTap = {};
           if (session.sel.size > 1 && byId(pid)?.group && session.sel.has(pid)) {
             selectOnly([pid]);
-            if (['text', 'note', 'title', 'todo'].includes(byId(pid).type)) startEdit(pid, under);
+            if (['text', 'note', 'title', 'todo'].includes(byId(pid)?.type ?? '')) startEdit(pid, under);
             return;
           } // into the group: just this piece
           startEdit(pid, under);
@@ -842,8 +839,13 @@ export function init16() {
             w.y < c.y + (c.type === 'title' ? 50 : c.h) + pad,
         );
       if (t) {
-        d.l[d.end] = t.id;
-        d.l['p' + d.end] = pinAt(t, w);
+        if (d.end === 'a') {
+          d.l.a = t.id;
+          d.l.pa = pinAt(t, w);
+        } else {
+          d.l.b = t.id;
+          d.l.pb = pinAt(t, w);
+        }
         save();
       }
       renderWires();
@@ -863,12 +865,10 @@ export function init16() {
 
   stage.addEventListener('dblclick', e => {
     if (penT) {
-      const P = penT.pts;
-      if (
-        P.length > 1 &&
-        Math.hypot(P[P.length - 1].x - P[P.length - 2].x, P[P.length - 1].y - P[P.length - 2].y) < 4 / session.view.z
-      )
-        P.pop();
+      const P = penT.pts,
+        last = P.at(-1),
+        prev = P.at(-2);
+      if (last && prev && Math.hypot(last.x - prev.x, last.y - prev.y) < 4 / session.view.z) P.pop();
       endPen(true);
       return;
     } // a double-click finishes the line
@@ -881,7 +881,8 @@ export function init16() {
     )
       return;
     if (
-      e.target.closest(
+      closestTo(
+        e.target,
         '.card:not(.section), .tools, .tray, .myra, .top, .capture, .side, .keys, .cpop, .home, .selbar, .docview, .hub, .sheet',
       )
     )
@@ -897,16 +898,20 @@ export function init16() {
 
   // card buttons: pull colours, checklist items
   cardsEl.addEventListener('click', e => {
-    const el = e.target.closest('.card');
+    const el = closestTo(e.target, '.card');
     if (!el) return;
-    const c = byId(el.dataset.id),
-      act = e.target.closest('[data-act]')?.dataset.act;
-    if (act && act.startsWith('vd-')) return videoAct(c, act, e);
-    if (act && act.startsWith('au-')) return audioAct(c, act, e);
+    const c = byId(el.dataset.id ?? ''),
+      act = closestTo(e.target, '[data-act]')?.dataset.act;
+    if (!c) return;
+    if (c.type === 'video' && act?.startsWith('vd-')) return videoAct(c, act, e);
+    if (c.type === 'audio' && act?.startsWith('au-')) return audioAct(c, act, e);
     if (act === 'colors') pullColors(c);
-    if (act === 'vn-open') return openVNote(c);
-    if (act === 'vn-flip') return flipVNote(c);
-    if (act === 'vn-full') return toggleVNFull(c);
+    if (c.type === 'vnote') {
+      if (act === 'vn-open') return openVNote(c);
+      if (act === 'vn-flip') return flipVNote(c);
+      if (act === 'vn-full') return toggleVNFull(c);
+    }
+    if (c.type !== 'todo') return;
     if (act === 'item') {
       c.items = c.items || [];
       c.items.push({ t: 'new thing', done: false });
@@ -915,24 +920,25 @@ export function init16() {
       save();
     }
     if (act === 'item-x') {
-      const i = +e.target.closest('li').dataset.i;
+      const i = +(closestTo(e.target, 'li')?.dataset.i ?? -1);
       remember();
       endEdit();
-      c.items.splice(i, 1);
+      if (i >= 0) c.items?.splice(i, 1);
       renderCard(c);
       fitText(c);
       selectOnly([c.id]);
       save();
       return;
     }
-    const li = e.target.closest('li');
-    if (li && c.type === 'todo') {
-      const i = +li.dataset.i;
-      if (e.target.matches('input')) {
-        c.items[i].done = e.target.checked;
-        li.classList.toggle('done', c.items[i].done);
+    const li = closestTo(e.target, 'li');
+    const item = c.items?.[+(li?.dataset.i ?? -1)],
+      t = e.target;
+    if (li && item) {
+      if (t instanceof HTMLInputElement) {
+        item.done = t.checked;
+        li.classList.toggle('done', item.done);
         save();
-      } else if (e.target.matches('span') && !e.target.isContentEditable) startEdit(c.id, e.target);
+      } else if (t instanceof HTMLSpanElement && !t.isContentEditable) startEdit(c.id, t);
     }
   });
 
@@ -941,7 +947,8 @@ export function init16() {
     'wheel',
     e => {
       if (
-        e.target.closest(
+        closestTo(
+          e.target,
           '.tray, .m-bubble, .cpop, .home, .m-chat, .design, .side, .row-menu, .stamp-pick, .wheel-stamps, .docview, .settings, .shapepick, .tplpick',
         )
       )

@@ -1,6 +1,7 @@
 import type { BoardSummary, CaelestiaScheme } from '../../shared/ops.ts';
 import type { Board, BoardOrder, Folder, Project, View } from '../../shared/model.ts';
 import type { Pose } from '../goo.ts';
+import type { Drag } from '../canvas/drag.ts';
 
 // What one open board holds, kept together so a second view can have its own later (split screen, issue #49).
 type Session = {
@@ -22,12 +23,14 @@ type AppState = {
   boardList: BoardSummary[];
   boardOrder: BoardOrder;
   saveT: ReturnType<typeof setTimeout> | undefined;
-  mrotKeep: unknown;
-  lastTap: unknown;
-  drag: unknown;
-  pendingPaste: unknown;
+  // after turning several pieces, which one keeps the turn dot
+  mrotKeep: { key: string; anchor: string } | null;
+  // the last tap on a card, for telling a double-click
+  lastTap: { id?: string; t?: number };
+  drag: Drag | null;
+  pendingPaste: boolean;
   cae: CaelestiaScheme | null;
-  deselectAt: unknown;
+  deselectAt: number;
   toggleLog: number[];
   dizzyAuto: boolean;
   histOpen: boolean;

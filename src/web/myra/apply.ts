@@ -175,7 +175,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     const c = session.board.tray.find(x => x.id === o.id);
     if (!c) return;
     place(o);
-    takeFromTray(c, { x: o.x, y: o.y }).forEach(m => added.push(m));
+    takeFromTray(c, { x: o.x ?? c.x, y: o.y ?? c.y }).forEach(m => added.push(m));
   });
   (r.move || []).forEach(o => {
     const c = byId(o.id);
