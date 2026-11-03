@@ -1,4 +1,22 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Smoke } from './kit.ts';
+
+// every icon the code asks for by name, wherever it is on screen: Icon('name') anywhere in the renderer
+function namedIcons() {
+  const root = path.join(import.meta.dirname, '../../src/web'),
+    names = new Set<string>(),
+    walk = (dir: string) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (e.name.endsWith('.ts'))
+          for (const m of fs.readFileSync(p, 'utf8').matchAll(/\bIcon\('([a-z0-9-]+)'/g)) names.add(m[1] ?? '');
+      }
+    };
+  walk(root);
+  return [...names];
+}
 
 // Icons, the default board font, the starter boards and the Kanban template.
 export async function look(t: Smoke) {
@@ -32,8 +50,10 @@ export async function look(t: Smoke) {
     return res;
   });
   t.check('gridShapes', ico.gridShapes === 'dot,cross,square,cloudberry,berry,leaf', ico.gridShapes);
+  const unknown = await page.evaluate(names => names.filter(n => !window.iconKnown(n)), namedIcons());
   t.checkAll('icons', {
     noneMissing: !ico.missing.length,
+    namesKnown: !unknown.length,
     count: ico.count >= 19,
     pick: ico.pick > 150,
     placeholder: ico.placeholder,

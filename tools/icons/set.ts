@@ -304,6 +304,7 @@ export const icons: IconEntry[] = [
   ['header', 'browser', 'heading bar top'],
   ['name', 'textbox', 'bold name'],
   ['hex', 'hash', 'color code number'],
+  ['count', 'number-square-zero', 'count number how many cards'],
   ['crop', 'crop', 'trim cut'],
   ['open', 'arrow-square-out', 'external open link out'],
   ['caret-down', 'caret-down', 'arrow chevron open menu'],

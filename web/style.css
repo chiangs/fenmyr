@@ -2037,6 +2037,8 @@ body.dark .selbar { --pill: rgba(255, 255, 255, .08); }
 .selbar .sb-sizes.sb-style button.on { background: var(--ink); color: #fff; }
 body.dark .selbar .sb-sizes.sb-style button.on { background: #f6f2ee; color: #302c26; }
 .selbar > .sb-ic:hover, .selbar > .sb-g > .sb-ic:hover, .selbar .sb-poptrig:hover, .selbar .sb-tilt:hover, .selbar .sb-font:hover { background: var(--blush); }
+.selbar .sb-ic:disabled { opacity: .35; cursor: default; }   /* e.g. the count, while the header is hidden */
+.selbar > .sb-g > .sb-ic:disabled:hover { background: var(--pill); color: var(--ink-soft); }
 .selbar .sb-label { padding: 0 6px 0 10px; }
 .sb-morebody > .sb-g > * { background: var(--pill); border-radius: var(--pill-r); corner-shape: squircle; }
 body.dark .sb-glass { background: rgba(248, 189, 130, .2) !important; color: var(--ink) !important; box-shadow: inset 0 0 0 1px rgba(250, 208, 165, .35) !important; }
