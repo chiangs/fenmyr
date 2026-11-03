@@ -24,7 +24,7 @@ import { currentPose, timer, timerCheck } from '../features/timer.ts';
 import { openHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
-import { boardsIn } from '../library/tree.ts';
+import { boardsIn, moveBoard, putFolder } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
 import { ANIMS, animIntent, animName, animRequest, lastAnim, playAnim, stopAnim } from '../myra/anim.ts';
 import { applyMyra } from '../myra/apply.ts';
@@ -82,6 +82,9 @@ const makeHooks = () => ({
   curBoard: () => session.board,
 
   refreshBoards: () => refreshBoards(),
+  // what dropping a board or folder in the library calls
+  moveBoard,
+  putFolder,
   boardOrder: () => appState.boardOrder,
   boardsOf: (fid: string) => boardsIn(fid).map(b => b.name),
   slashNames: () => SLASH.filter(c => !c.dev).map(c => c.cmd),

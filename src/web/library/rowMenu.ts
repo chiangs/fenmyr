@@ -178,7 +178,7 @@ function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
       }
     } else if (to?.startsWith('f:')) {
       const into = appState.folders.find(x => x.id === to.slice(2));
-      if (!putFolder(obj.id, into ?? null)) return chirp("A folder can't go inside itself ✦", 2500);
+      putFolder(obj.id, into ?? null);
     } else {
       putFolder(obj.id, null, to);
       const p = appState.projects.find(x => x.id === to);

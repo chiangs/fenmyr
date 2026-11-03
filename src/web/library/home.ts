@@ -5,7 +5,6 @@ import { $, stage } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { findClose } from '../features/find.ts';
 import { newPrototypeIn } from '../repo/prototypes.ts';
-import { chirp } from '../settings/licenses.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
@@ -199,7 +198,7 @@ export function renderHome(): void {
     draggable(t, 'folder', ff.id);
     dropZone(t, 'board', bid => moveBoard(bid, ff.id));
     dropZone(t, 'folder', fid => {
-      if (fid !== ff.id && !putFolder(fid, ff)) chirp("A folder can't go inside itself ✦", 2500);
+      if (fid !== ff.id) putFolder(fid, ff);
     });
     return t;
   };

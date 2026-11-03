@@ -8,9 +8,12 @@ import path from 'node:path';
 import { launch } from './support/launch.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-proto-')));
-const repo = path.join(work, 'acme');
-fs.mkdirSync(repo);
-execFileSync('git', ['-C', repo, 'init', '-q', '-b', 'main']);
+const repo = path.join(work, 'acme'),
+  lionRepo = path.join(work, 'lion');
+for (const r of [repo, lionRepo]) {
+  fs.mkdirSync(r);
+  execFileSync('git', ['-C', r, 'init', '-q', '-b', 'main']);
+}
 fs.writeFileSync(path.join(repo, 'design.md'), '# Our own design notes\n');
 
 const l = await launch();
@@ -41,17 +44,25 @@ const newPrototype = async (name: string, stack: 'react' | 'html') => {
 };
 
 try {
-  await page.evaluate(async repo => {
-    await window.Fenmyr.saveFolders({
-      projects: [
-        { id: 'p1', name: 'Acme', open: true, repo: { path: repo } },
-        { id: 'p2', name: 'Personal', open: true },
-      ],
-      folders: [],
-      order: {},
-    });
-    await window.__fenmyr.refreshBoards();
-  }, repo);
+  await page.evaluate(
+    async ([repo, lionRepo]) => {
+      await window.Fenmyr.saveFolders({
+        projects: [
+          { id: 'p1', name: 'Acme', open: true, repo: { path: repo } },
+          { id: 'p2', name: 'Personal', open: true },
+          { id: 'p3', name: 'Lioness', open: true, repo: { path: lionRepo } },
+        ],
+        folders: [
+          { id: 'fa', name: 'Planning', project: 'p1' },
+          { id: 'pl', name: 'Lion prototypes', project: 'p3', kind: 'prototyping' },
+        ],
+        order: {},
+      });
+      await window.Fenmyr.save({ id: 'plainboard', name: 'Research', folder: 'fa', cards: [], links: [], tray: [] });
+      await window.__fenmyr.refreshBoards();
+    },
+    [repo, lionRepo],
+  );
 
   await menu('Personal', 'protoFolder');
   assert.match(
@@ -59,11 +70,16 @@ try {
     /Repo for “Personal”/,
     'an unlinked project is asked to link a repo first',
   );
-  assert.deepStrictEqual(library().folders, [], 'and gets no prototyping folder yet');
+  assert.ok(
+    !library().folders.some((f: { project: string }) => f.project === 'p2'),
+    'and gets no prototyping folder yet',
+  );
   await page.keyboard.press('Escape');
 
   await menu('Acme', 'protoFolder');
-  const [folder] = library().folders;
+  const folder = library().folders.find(
+    (f: { kind?: string; project: string }) => f.kind === 'prototyping' && f.project === 'p1',
+  );
   assert.deepStrictEqual(
     { name: folder.name, project: folder.project, kind: folder.kind },
     {
@@ -106,6 +122,49 @@ try {
   );
   for (const f of ['index.html', 'style.css', 'script.js'])
     assert.ok(fs.existsSync(path.join(repo, 'prototypes/checkout-flow-2', f)), `plain HTML has ${f}`);
+
+  const said = () => page.evaluate(() => document.getElementById('mBubble')?.textContent ?? '');
+  await page.evaluate(id => window.__fenmyr.moveBoard(id, 'fa'), first.id);
+  assert.match(
+    await said(),
+    /Prototype boards live in prototyping folders/,
+    'a prototype can’t leave prototyping folders',
+  );
+  assert.strictEqual(boardFile(first.id).folder, folder.id, 'and stays put');
+  await page.evaluate(() => window.__fenmyr.moveBoard('plainboard', 'pl'));
+  assert.match(await said(), /hold only prototype boards/, 'a plain board can’t go into a prototyping folder');
+  assert.strictEqual(boardFile('plainboard').folder, 'fa');
+
+  await page.evaluate(id => window.__fenmyr.moveBoard(id, 'pl'), first.id);
+  await page.waitForTimeout(800);
+  assert.match(await said(), /Copied it to “Lioness”\. The original stays/);
+  assert.strictEqual(boardFile(first.id).folder, folder.id, 'the original stays in Acme');
+  const copies = fs
+    .readdirSync(path.join(l.data, 'fenmyr', 'boards'))
+    .map(f => JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', f), 'utf8')))
+    .filter(b => b.folder === 'pl');
+  assert.strictEqual(copies.length, 1, 'one copy lands in Lioness');
+  const [copy] = copies;
+  assert.deepStrictEqual(copy.proto, { dir: 'prototypes/checkout-flow', stack: 'react' });
+  assert.ok(
+    fs.existsSync(path.join(lionRepo, 'prototypes/checkout-flow/src/App.tsx')),
+    'its code is copied into Lioness’s repo',
+  );
+  assert.deepStrictEqual(
+    copy.chat.map((m: { who: string; text: string }) => [m.who, m.text.slice(0, 40)]),
+    [
+      ['myra', 'I copied “Checkout {flow}” from Acme int'],
+      ['myra', 'Committing saves it in Lioness’s history'],
+    ],
+    'Myra says where it came from, in git’s terms and then in plain words',
+  );
+  assert.match(copy.chat[0].text, /lion\/prototypes\/checkout-flow\. 4 new files, not committed yet\./);
+  const untracked = execFileSync('git', ['-C', lionRepo, 'status', '--porcelain']).toString();
+  assert.match(untracked, /\?\? prototypes\//, 'nothing is committed for them');
+
+  await page.evaluate(id => window.__fenmyr.putFolder(id, null, 'p2'), folder.id);
+  assert.match(await said(), /Link “Personal” to a repo first/, 'an unlinked project can’t take prototypes');
+  assert.strictEqual(library().folders.find((f: { id: string }) => f.id === folder.id).project, 'p1');
   assert.deepStrictEqual(l.errors, []);
   console.log('PROTOTYPE OK');
 } finally {

@@ -40,6 +40,8 @@ jobs:
         run: node tests/persist.ts
       - name: Model test (board and library files, prototype fields)
         run: node tests/model.ts
+      - name: Placement test (moving and copying boards and folders with prototypes)
+        run: node tests/placement.ts
       - name: Git test (the git and gh bridge, with real git and a stand-in gh)
         run: node tests/git.ts
       - name: Link test (a project's repo, from its menu)

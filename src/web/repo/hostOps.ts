@@ -16,6 +16,7 @@ export const repoOps = {
   ghSetupGit: () => call('ghSetupGit'),
   ghRepoCreate: (o: Ops['ghRepoCreate']['args']) => call('ghRepoCreate', o),
   protoCreate: (o: Ops['protoCreate']['args']) => call('protoCreate', o),
+  protoCopy: (o: Ops['protoCopy']['args']) => call('protoCopy', o),
 };
 
 export const repoFallbacks: typeof repoOps = {
@@ -32,4 +33,5 @@ export const repoFallbacks: typeof repoOps = {
   ghSetupGit: desktopOnly,
   ghRepoCreate: desktopOnly,
   protoCreate: desktopOnly,
+  protoCopy: desktopOnly,
 };

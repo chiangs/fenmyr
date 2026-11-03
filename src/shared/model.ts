@@ -326,7 +326,7 @@ export function parseBoard(raw: unknown): StoredBoard | null {
 }
 
 // flat under prototypes/, so where the board sits in the library never decides where its code is
-const PROTO_DIR = /^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/;
+export const PROTO_DIR = /^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/;
 const STACKS: readonly Proto['stack'][] = ['react', 'html'];
 
 function readProto(x: unknown): Proto | null {

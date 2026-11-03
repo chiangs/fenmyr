@@ -216,6 +216,7 @@ export type Ops = {
     args: { root: string; name: string; stack: 'react' | 'html' };
     result: { dir: string; stack: 'react' | 'html' };
   };
+  protoCopy: { args: { fromRoot: string; dir: string; toRoot: string }; result: { dir: string; files: number } };
   ghRepoCreate: {
     args: { path: string; account: string; name: string; private: boolean };
     result: { owner: string; name: string };
