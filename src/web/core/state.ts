@@ -16,7 +16,7 @@ type Session = {
 // main.ts fills these before any feature reads them.
 export const session = {} as Session;
 
-// App-wide values more than one module assigns. Typing the modules that own one replaces its `unknown`.
+// App-wide values more than one module assigns.
 type AppState = {
   projects: Project[];
   folders: Folder[];
@@ -43,8 +43,36 @@ type AppState = {
   lastKey: number;
   animPose: Pose | null;
   vaultChip: boolean;
-  micOK: unknown;
+  // the microphone answered once, so recording can start without asking again
+  micOK: boolean;
   warm: MediaStream | null;
-  firstRunSetup: unknown;
+  // this start-up is the first, and setup is showing
+  firstRunSetup: boolean;
 };
-export const appState = {} as AppState;
+export const appState: AppState = {
+  projects: [],
+  folders: [],
+  boardList: [],
+  boardOrder: {},
+  saveT: undefined,
+  mrotKeep: null,
+  lastTap: {},
+  drag: null,
+  pendingPaste: false,
+  cae: null,
+  deselectAt: 0,
+  toggleLog: [],
+  dizzyAuto: true,
+  histOpen: false,
+  haveClaude: null,
+  aiAnimAt: 0,
+  dueHold: false,
+  flightLive: false,
+  lastActive: 0,
+  lastKey: 0,
+  animPose: null,
+  vaultChip: false,
+  micOK: false,
+  warm: null,
+  firstRunSetup: false,
+};
