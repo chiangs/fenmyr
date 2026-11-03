@@ -180,7 +180,11 @@ export type ChatMsg = { who: string; text: string; t: number };
 // an earlier chat, put away by New chat
 type SavedChat = { id: string; title: string; t: number; msgs: ChatMsg[] };
 
-export type Board = {
+// A prototype board's code lives in one folder of its project's repo. The board finds it by dir, never by its name,
+// so renaming or refiling the board can't lose it.
+type Proto = { dir: string; stack: 'react' | 'html' };
+
+type BoardBase = {
   id: string;
   name: string;
   color?: string;
@@ -199,6 +203,8 @@ export type Board = {
   // its own vault access; without it the board follows its project
   vaultAccess?: VaultGrant[];
 };
+type BoardKind = { kind?: undefined; proto?: undefined } | { kind: 'prototype'; proto: Proto };
+export type Board = BoardBase & BoardKind;
 
 // True only while the app runs. A video saved with `saving` would show "Saving…" forever after reopening.
 // `rec` and `paused` stay: reopening a board finds an interrupted recording by them.
@@ -216,7 +222,7 @@ export function storedBoard<T extends { cards?: object[]; tray?: object[] }>(boa
 }
 
 // A board as read from disk: older or hand-written files can lack any list, and opening one fills them in.
-export type StoredBoard = Partial<Board> & { id: string };
+export type StoredBoard = Partial<BoardBase> & { id: string } & BoardKind;
 
 export type Project = {
   id: string;
@@ -225,6 +231,8 @@ export type Project = {
   open?: boolean;
   cover?: string;
   vaults?: VaultGrant[];
+  // the git repo its prototypes are written to, by absolute path on this computer
+  repo?: { path: string };
 };
 export type Folder = {
   id: string;
@@ -233,6 +241,8 @@ export type Folder = {
   parent?: string | null;
   open?: boolean;
   cover?: string;
+  // a prototyping folder holds only prototype boards
+  kind?: 'prototyping';
 };
 export type BoardOrder = Record<string, string[]>;
 type Library = { projects: Project[]; folders: Folder[]; order: BoardOrder };
@@ -289,7 +299,14 @@ function readCard(x: unknown): Card | null {
 export function parseBoard(raw: unknown): StoredBoard | null {
   if (!isRecord(raw) || typeof raw.id !== 'string') return null;
   const cards = (x: unknown) => (Array.isArray(x) ? x.map(readCard).filter(c => c !== null) : undefined);
-  const board: StoredBoard = { ...raw, id: raw.id, cards: cards(raw.cards), tray: cards(raw.tray) };
+  const proto = raw.kind === 'prototype' ? readProto(raw.proto) : null;
+  const board: StoredBoard = {
+    ...raw,
+    id: raw.id,
+    cards: cards(raw.cards),
+    tray: cards(raw.tray),
+    ...(proto ? { kind: 'prototype', proto } : { kind: undefined, proto: undefined }),
+  };
   const access = readGrants(raw.vaultAccess);
   if (access) board.vaultAccess = access;
   else delete board.vaultAccess;
@@ -304,6 +321,15 @@ export function parseBoard(raw: unknown): StoredBoard | null {
     }));
   else delete board.chats;
   return board;
+}
+
+// flat under prototypes/, so where the board sits in the library never decides where its code is
+const PROTO_DIR = /^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/;
+const STACKS: readonly Proto['stack'][] = ['react', 'html'];
+
+function readProto(x: unknown): Proto | null {
+  if (!isRecord(x) || typeof x.dir !== 'string' || !PROTO_DIR.test(x.dir)) return null;
+  return { dir: x.dir, stack: STACKS.find(s => s === x.stack) ?? 'react' };
 }
 
 const readMsgs = (x: unknown): ChatMsg[] =>
@@ -336,12 +362,22 @@ function readProject(x: unknown): Project[] {
   const vaults = readGrants(Reflect.get(x, 'vaults'));
   if (vaults) p.vaults = vaults;
   else delete p.vaults;
+  const repo: unknown = Reflect.get(x, 'repo');
+  if (isRecord(repo) && typeof repo.path === 'string' && repo.path.startsWith('/')) p.repo = { path: repo.path };
+  else delete p.repo;
   return [p];
+}
+
+function readFolder(x: unknown): Folder[] {
+  if (!isNamed<Folder>(x)) return [];
+  const f: Folder = { ...x };
+  if (Reflect.get(x, 'kind') !== 'prototyping') delete f.kind;
+  return [f];
 }
 
 // Whatever this returns gets saved back, so it keeps every readable row: one bad row must not empty the library.
 export function parseLibrary(raw: unknown): Library {
-  if (Array.isArray(raw)) return { projects: [], folders: raw.filter(isNamed<Folder>), order: {} };
+  if (Array.isArray(raw)) return { projects: [], folders: raw.flatMap(readFolder), order: {} };
   if (!isRecord(raw)) return { projects: [], folders: [], order: {} };
   const list = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
   const order: BoardOrder = {};
@@ -349,7 +385,7 @@ export function parseLibrary(raw: unknown): Library {
     for (const [k, v] of Object.entries(raw.order)) order[k] = list(v).filter(id => typeof id === 'string');
   return {
     projects: list(raw.projects).flatMap(readProject),
-    folders: list(raw.folders).filter(isNamed<Folder>),
+    folders: list(raw.folders).flatMap(readFolder),
     order,
   };
 }

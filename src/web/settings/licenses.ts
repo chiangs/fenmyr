@@ -111,13 +111,14 @@ async function openLicenses() {
 
 const closeLicenses = () => $('licView').classList.remove('on');
 
-// switching chats off (or to "until I quit") removes what's saved in the board files right away
-async function clearSavedChats() {
+// Switching chats off (or to "until I quit") removes what's saved in the board files right away. Prototype boards always
+// keep their chat, so that switch leaves them alone. Clear all chats clears them too.
+async function clearSavedChats(keepPrototypes: boolean) {
   const list = await Fenmyr.list();
   for (const b of list) {
     const bb = b.id === session.board?.id ? session.board : await Fenmyr.load(b.id);
     const has = (log: unknown) => Array.isArray(log) && log.length > 0;
-    if (bb && (has(bb.chat) || has(bb.chats))) {
+    if (bb && !(keepPrototypes && bb.kind === 'prototype') && (has(bb.chat) || has(bb.chats))) {
       bb.chat = [];
       delete bb.chats;
       await Fenmyr.save(bb);
@@ -221,7 +222,7 @@ export function init29() {
   $('recheck').onclick = () => showConnections(true);
 
   $('clearChats').onclick = async () => {
-    await clearSavedChats();
+    await clearSavedChats(false);
     Object.keys(sessionChats).forEach(k => {
       delete sessionChats[k];
     });
@@ -237,7 +238,7 @@ export function init29() {
       if (v === undefined) return;
       setChoice(key, v);
       applySettings();
-      if (key === 'chatKeep' && v !== 'board') clearSavedChats();
+      if (key === 'chatKeep' && v !== 'board') clearSavedChats(true);
       if (key === 'chatKeep') renderChat();
     };
   }

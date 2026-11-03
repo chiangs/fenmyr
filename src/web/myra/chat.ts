@@ -21,7 +21,7 @@ import { FONTS } from '../wireframe/wireframes.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyMyra } from './apply.ts';
 import { birthdayFacts } from './birthday.ts';
-import { addMsg, archiveChat, chatLog, renderChat, typing } from './chatLog.ts';
+import { addMsg, archiveChat, chatKeep, chatLog, renderChat, typing } from './chatLog.ts';
 import { chatOpen, myraOpen } from './chatWindow.ts';
 import { goo } from './goos.ts';
 import { SLASH } from './greet.ts';
@@ -71,7 +71,7 @@ export function snapshot() {
       0,
       400,
     ),
-    recentChat: (settings.chatKeep === 'off' ? chatLog().slice(-2) : chatLog().slice(-8)).map(
+    recentChat: (chatKeep() === 'off' ? chatLog().slice(-2) : chatLog().slice(-8)).map(
       m => `${m.who === 'me' ? 'Person' : 'Myra'}: ${m.text}`,
     ),
     myraStyle: { name: settings.name || '', chat: settings.chat, emoji: !!settings.emoji }, // the host turns these into words (TONES in linux/prompts.js)
@@ -295,7 +295,7 @@ export function init31() {
 
   $('mcNew').onclick = () => {
     archiveChat();
-    if (settings.chatKeep === 'board') {
+    if (chatKeep() === 'board') {
       session.board.chat = [];
       save();
     } else chatLog().length = 0;
