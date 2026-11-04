@@ -2789,6 +2789,21 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 .pc-file { flex: none; white-space: nowrap; padding: 4px 8px; border: 0; border-radius: 8px; background: none; cursor: pointer; font: 500 11.5px/1 ui-monospace, monospace; color: var(--ink-soft); }
 .pc-file.on { background: rgba(150, 95, 35, .12); color: var(--ink); }
 .pc-text { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 12px 14px; font: 12px/1.55 ui-monospace, monospace; white-space: pre; tab-size: 2; color: var(--ink); }
+/* code colours, mixed from the theme's own with its ink, so they read in light, dark and Caelestia alike */
+.pc-text { position: relative; --c-kw: color-mix(in srgb, var(--pink-deep) 88%, var(--ink)); --c-str: color-mix(in srgb, var(--mint-deep) 78%, var(--ink)); --c-num: color-mix(in srgb, var(--coral) 85%, var(--ink)); --c-tag: color-mix(in srgb, var(--sky-deep) 85%, var(--ink)); --c-attr: color-mix(in srgb, var(--lilac-deep) 88%, var(--ink)); --c-fn: color-mix(in srgb, var(--sky-deep) 62%, var(--ink)); }
+.pc-text .token:is(.comment, .prolog, .doctype, .cdata) { color: var(--ink-faint); font-style: italic; }
+.pc-text .token:is(.keyword, .boolean, .important, .atrule, .rule) { color: var(--c-kw); }
+.pc-text .token:is(.string, .char, .attr-value, .regex, .template-string, .url) { color: var(--c-str); }
+.pc-text .token:is(.number, .constant, .symbol, .unit) { color: var(--c-num); }
+.pc-text .token:is(.tag, .selector, .class-name, .builtin) { color: var(--c-tag); }
+.pc-text .token:is(.attr-name, .property) { color: var(--c-attr); }
+.pc-text .token.function { color: var(--c-fn); }
+.pc-text .token:is(.punctuation, .operator) { color: var(--ink-soft); }
+/* the line Point came from */
+.pc-mark { position: absolute; left: 0; min-width: 100%; pointer-events: none; background: color-mix(in srgb, var(--pink-deep) 20%, transparent); box-shadow: inset 3px 0 0 var(--pink-deep); animation: pc-mark .9s ease-out; }
+@keyframes pc-mark { from { background: color-mix(in srgb, var(--pink-deep) 55%, transparent); } }
+body.calm .pc-mark { animation: none; }
+@media (prefers-reduced-motion: reduce) { .pc-mark { animation: none; } }
 body.proto .stage { left: var(--slot-l); top: var(--slot-t); width: var(--slot-w); height: var(--slot-h); right: auto; bottom: auto; }
 body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side { display: none; }
 /* one column of widgets beside the board, clear of the toolbar; it holds both sides' widgets, so it can scroll */

@@ -14,6 +14,7 @@ It includes software made by others, listed here with their licenses. This file 
 | [react](https://react.dev/) | 19.3.1 | MIT | Prototype previews (web/dist) |
 | [react-dom](https://react.dev/) | 19.3.1 | MIT | Prototype previews (web/dist) |
 | [scheduler](https://react.dev/) | 0.28.0 | MIT | Prototype previews (web/dist) |
+| [prismjs](https://github.com/PrismJS/prism) | 1.30.0 | MIT | Code pane colours (web/dist) |
 | [@tiptap/core](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
 | [@tiptap/extension-bold](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
 | [@tiptap/extension-character-count](https://tiptap.dev) | 3.32.0 | MIT | Docs editor and Word export (web/vendor) |
@@ -386,6 +387,32 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+## prismjs 1.30.0
+
+```
+MIT LICENSE
+
+Copyright (c) 2012 Lea Verou
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 ```
 
 ## @tiptap/core 3.32.0

@@ -3,6 +3,7 @@ import { $ } from '../core/dom.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { closestTo, esc } from '../ui/dom.ts';
 import { closeOnOutsidePress, keepOnScreen } from '../ui/popover.ts';
+import { highlighted } from './highlight.ts';
 import { valuesText } from './values.ts';
 
 // The code pane: what a developer needs to build the prototype again. Fenmyr's own wiring in a React prototype (the
@@ -12,6 +13,8 @@ const VALUES = ':values';
 const WIRING = new Set(['index.html', 'src/main.tsx', 'src/tweaks.ts', 'src/tweaks.json']);
 
 let shown = '';
+// the prototype the pane shows, for Point to open its files
+let here: { root: string; dir: string } | null = null;
 let all = false;
 // the width the tabs need on one row, measured when they're drawn
 let needed = 0;
@@ -107,11 +110,30 @@ async function showFile(root: string, dir: string, file: string) {
   const pick = el.querySelector('.pc-pick span');
   if (pick) pick.textContent = labelOf(file);
   const read = (f: string) => Fenmyr.protoRead({ root, dir, file: f });
-  const text = await (file === VALUES ? read('src/tweaks.json').then(valuesText) : read(file)).catch(e =>
-    e instanceof Error ? e.message : String(e),
+  const shownAs = await (file === VALUES ? read('src/tweaks.json').then(valuesText) : read(file)).then(
+    text => highlighted(file, text),
+    e => esc(e instanceof Error ? e.message : String(e)),
   );
+  el.querySelector('.pc-mark')?.remove();
   const view = el.querySelector('.pc-text code');
-  if (view) view.textContent = text;
+  if (view) view.innerHTML = shownAs;
+}
+
+// Point in the preview: the file and line the clicked element comes from, opened and marked here
+export async function showSource(at: string) {
+  const m = at.match(/^(.+):(\d+)$/);
+  if (!m?.[1] || !here) return;
+  await showFile(here.root, here.dir, m[1]);
+  const pre = $('pr-code').querySelector<HTMLElement>('.pc-text');
+  if (!pre) return;
+  const style = getComputedStyle(pre),
+    lineH = Number.parseFloat(style.lineHeight) || 18,
+    top = (Number.parseFloat(style.paddingTop) || 0) + (Number(m[2]) - 1) * lineH;
+  const mark = document.createElement('div');
+  mark.className = 'pc-mark';
+  Object.assign(mark.style, { top: `${top}px`, height: `${lineH}px`, width: `${pre.scrollWidth}px` });
+  pre.appendChild(mark);
+  pre.scrollTop = Math.max(0, top - pre.clientHeight / 3);
 }
 
 // what the pane lists: every file in a plain HTML prototype, which is all its own; the prototype's code otherwise
@@ -134,6 +156,7 @@ export async function renderCode(b: Board) {
     return;
   }
   const { dir, stack } = b.proto;
+  here = { root, dir };
   const files = await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
   if (!files.length) {
     const where = esc(dir);

@@ -163,8 +163,9 @@ const items: Item[] = [
     url: 'https://openfontlicense.org',
     text: must(path.join(ROOT, 'web', 'fonts', 'OFL.txt')),
   },
-  // prototype previews: esbuild-wasm bundles them in the page, and they run on this copy of React (web/dist)
-  ...['@tailwindcss/browser', 'esbuild-wasm', 'react', 'react-dom', 'scheduler'].map(name => {
+  // prototype previews: esbuild-wasm bundles them in the page, and they run on this copy of React (web/dist); Prism
+  // colours their code in the code pane
+  ...['@tailwindcss/browser', 'esbuild-wasm', 'react', 'react-dom', 'scheduler', 'prismjs'].map(name => {
     const dir = path.join(ROOT, 'node_modules', name);
     const j = pkg(dir);
     const file = fs.readdirSync(dir).find(f => /^licen[cs]e(\.md|\.txt)?$/i.test(f));
@@ -172,7 +173,7 @@ const items: Item[] = [
       name,
       version: j.version,
       license: j.license,
-      where: 'Prototype previews (web/dist)',
+      where: name === 'prismjs' ? 'Code pane colours (web/dist)' : 'Prototype previews (web/dist)',
       url: (j.homepage || j.repository).replace(/^git\+/, '').replace(/\.git$/, ''),
       text: file ? must(path.join(dir, file)) : MIT(j.author || name),
     };

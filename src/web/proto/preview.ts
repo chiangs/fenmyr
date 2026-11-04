@@ -4,6 +4,7 @@ import { $ } from '../core/dom.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { child, closestTo, esc, textField } from '../ui/dom.ts';
 import { buildPreview } from './bundle.ts';
+import { showSource } from './code.ts';
 import { renderGitBar } from './gitbar.ts';
 import { loadKnobs, sendTweaks, tweakFromFrame } from './knobs.ts';
 
@@ -124,6 +125,7 @@ addEventListener('message', e => {
     field.value = `${field.value}${field.value ? ' ' : ''}[this: ${String(d.selector)}${said}${where}] `;
     field.focus();
     setPointing(false);
+    if (d.at) showSource(String(d.at));
   }
   if (log.length > 200) log.splice(0, log.length - 200);
   showLog();
