@@ -64,6 +64,8 @@ jobs:
         run: node tests/packages.ts
       - name: Sync test (fetch, pull and clashes with a stand-in GitHub)
         run: node tests/sync.ts
+      - name: Controls test (a prototype's knobs above the preview)
+        run: node tests/controls.ts
       - name: Myra reply test
         run: node tests/reply.ts
       - name: Mac font list test

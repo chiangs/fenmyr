@@ -31,6 +31,7 @@ export const repoOps = {
   gitPull: (o: Ops['gitPull']['args']) => call('gitPull', o),
   gitKeepMine: (o: Ops['gitKeepMine']['args']) => call('gitKeepMine', o),
   gitTakeTheirs: (o: Ops['gitTakeTheirs']['args']) => call('gitTakeTheirs', o),
+  protoWriteTweaks: (o: Ops['protoWriteTweaks']['args']) => call('protoWriteTweaks', o),
   gitCommit: (o: Ops['gitCommit']['args']) => call('gitCommit', o),
   gitPush: (o: Ops['gitPush']['args']) => call('gitPush', o),
 };
@@ -64,6 +65,7 @@ export const repoFallbacks: typeof repoOps = {
   gitPull: desktopOnly,
   gitKeepMine: desktopOnly,
   gitTakeTheirs: desktopOnly,
+  protoWriteTweaks: desktopOnly,
   gitCommit: desktopOnly,
   gitPush: desktopOnly,
 };

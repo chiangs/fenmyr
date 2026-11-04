@@ -219,3 +219,13 @@ export async function install(root: string, packages: string[]) {
   if (r.code !== 0) throw new Error(r.err.toString('utf8').trim().split('\n').pop() || 'npm couldn’t install that.');
   return packages;
 }
+
+// The values Keep these values saves: only the prototype's src/tweaks.json, and only as JSON.
+export async function writeTweaks(root: string, dir: string, json: string) {
+  const repo = await inRepo(root, dir);
+  const parsed: unknown = JSON.parse(json);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+    throw new Error("Those controls aren't valid.");
+  fs.writeFileSync(path.join(repo, dir, 'src', 'tweaks.json'), `${JSON.stringify(parsed, null, 2)}\n`);
+  return true as const;
+}

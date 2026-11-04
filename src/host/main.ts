@@ -299,6 +299,7 @@ const OPS = {
   gitKeepMine: async a =>
     git.keepMine(text(a.root), text(a.branch), text(a.account) ? await gh.asAccount(text(a.account)) : null),
   gitTakeTheirs: a => git.takeTheirs(text(a.root)),
+  protoWriteTweaks: a => prototypes.writeTweaks(text(a.root), text(a.dir), text(a.json)),
   gitCommit: a => git.commitFolder(text(a.root), text(a.dir), text(a.message)),
   gitPush: async a => git.push(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
   ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
