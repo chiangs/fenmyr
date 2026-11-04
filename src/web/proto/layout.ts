@@ -56,14 +56,25 @@ const remember = () => {
 
 // left to right: the board, the preview, the code, then Myra's chat
 const ORDER: Pane[] = ['canvas', 'preview', 'code'];
+// the way each folding column folds: the board to the window's left edge, the code towards Myra. Its arrow points
+// that way while it's open, and back the other way on the strip it folds into.
+const FOLD_TO: Partial<Record<Pane, 'left' | 'right'>> = { canvas: 'left', code: 'right' };
+const MOVE_MS = 240;
+let animate = false;
+const moving = () =>
+  animate && !document.body.classList.contains('calm') && !matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function build() {
   const panes = ORDER.map((p, i) => {
     const label = LABEL[p],
       divider = i ? `<div class="pr-div" data-d="${p}"></div>` : '',
-      folds = FOLD_ORDER.some(f => f === p),
-      fold = folds ? `<button class="pr-fold" data-fold="${p}" title="Fold">‹</button>` : '',
-      strip = folds ? `<button class="pr-strip" data-open="${p}" title="Open">${label}</button>` : '';
+      side = FOLD_TO[p],
+      shut = side ? Icon(`caret-${side}`, { size: 14 }) : '',
+      open = side ? Icon(side === 'left' ? 'caret-right' : 'caret-left', { size: 14 }) : '',
+      fold = side ? `<button class="pr-fold" data-fold="${p}" title="Fold">${shut}</button>` : '',
+      strip = side
+        ? `<button class="pr-strip" data-open="${p}" title="Open">${open}<span>${label}</span></button>`
+        : '';
     return `${divider}<section class="pr-pane" data-p="${p}"><header class="pr-head"><b>${label}</b>${fold}</header><div class="pr-body" id="pr-${p}"></div>${strip}</section>`;
   }).join('');
   const el = document.createElement('div');
@@ -80,7 +91,9 @@ function build() {
     // opening a column the window had folded makes room by folding the other one that folds first
     if (t.dataset.open && fit(l, innerWidth).includes(p)) l.closed.push(p === 'canvas' ? 'code' : 'canvas');
     remember();
+    animate = true;
     place();
+    animate = false;
   });
   for (const d of el.querySelectorAll<HTMLElement>('.pr-div')) dragDivider(d);
   inputGrip();
@@ -121,6 +134,28 @@ function placeStage() {
   s.setProperty('--slot-h', `${r.height}px`);
 }
 
+// A column folding or opening slides: every column's width moves together, the folding one's content stays until it's
+// a strip, and an opening one shows its content as it grows. Dragging and window resizes stay immediate.
+function slide(pane: HTMLElement, p: Pane, isFolded: boolean) {
+  const r = root;
+  if (!r) return;
+  r.classList.add('pr-animating');
+  if (p === 'canvas') document.body.classList.add('proto-canvas-moving');
+  if (!isFolded) {
+    pane.classList.remove('folded');
+    if (p === 'canvas') document.body.classList.remove('proto-canvas-folded');
+  }
+  setTimeout(() => {
+    r.classList.remove('pr-animating');
+    if (p === 'canvas') document.body.classList.remove('proto-canvas-moving');
+    // the window may have changed meanwhile, so what's folded is worked out again
+    const now = fit(layout(), innerWidth).some(f => f === p);
+    pane.classList.toggle('folded', now);
+    if (p === 'canvas') document.body.classList.toggle('proto-canvas-folded', now);
+    placeStage();
+  }, MOVE_MS);
+}
+
 function place() {
   if (!root) return;
   const l = layout(),
@@ -128,11 +163,13 @@ function place() {
     // the first open column, the board unless it's folded, takes what's left
     flexer = ORDER.find(p => !folded.some(f => f === p));
   root.style.setProperty('--chat-w', `${l.chat}px`);
+  const slides = moving();
   for (const p of PANES) {
     const pane = root.querySelector<HTMLElement>(`[data-p="${p}"]`);
     if (!pane) continue;
     const isFolded = folded.some(f => f === p);
-    pane.classList.toggle('folded', isFolded);
+    if (slides && pane.classList.contains('folded') !== isFolded) slide(pane, p, isFolded);
+    else if (!root.classList.contains('pr-animating')) pane.classList.toggle('folded', isFolded);
     // the last open column takes what's left; the others keep the width they were dragged to
     pane.style.flex = isFolded
       ? `0 0 ${STRIP}px`
@@ -141,7 +178,8 @@ function place() {
         : `0 0 ${p === 'canvas' ? MIN.canvas : l[p]}px`;
   }
   for (const d of root.querySelectorAll<HTMLElement>('.pr-div')) d.style.flex = `0 0 ${DIVIDER}px`;
-  document.body.classList.toggle('proto-canvas-folded', folded.includes('canvas'));
+  if (!root.classList.contains('pr-animating'))
+    document.body.classList.toggle('proto-canvas-folded', folded.includes('canvas'));
   placeStage();
 }
 

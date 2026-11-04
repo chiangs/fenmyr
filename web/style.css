@@ -2754,7 +2754,12 @@ body.proto .pr-root { display: flex; position: fixed; inset: 0; z-index: 5; poin
 .pr-strip { display: none; }
 .pr-pane.folded > :not(.pr-strip) { display: none; }
 .pr-pane.folded { pointer-events: auto; background: var(--panel, var(--surface, #fff)); }
-.pr-pane.folded .pr-strip { display: flex; flex: 1; align-items: flex-start; justify-content: center; padding-top: 12px; writing-mode: vertical-rl; border: 0; background: none; cursor: pointer; font: 700 12px/1 var(--font); color: var(--ink-soft); }
+.pr-pane.folded .pr-strip { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 8px; padding-top: 10px; border: 0; background: none; cursor: pointer; font: 700 12px/1 var(--font); color: var(--ink-soft); }
+.pr-strip span { writing-mode: vertical-rl; }
+.pr-fold { display: grid; place-items: center; }
+/* folding and opening a column slides every column's width together; the folding one is clipped as it narrows */
+.pr-root.pr-animating .pr-pane { transition: flex .24s cubic-bezier(.2, .8, .2, 1); overflow: hidden; }
+body.proto-canvas-moving .side { opacity: 0; transition: opacity .12s; }
 .pr-pane.folded .pr-strip:hover { color: var(--ink); background: rgba(150, 95, 35, .06); }
 .pr-div { pointer-events: auto; cursor: col-resize; background: rgba(150, 95, 35, .1); }
 body.pr-dragging #pr-preview iframe { pointer-events: none; }
