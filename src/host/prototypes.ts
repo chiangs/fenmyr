@@ -5,7 +5,7 @@ import path from 'node:path';
 import { PROTO_DIR, type Proto, protoSlug } from '../shared/repos.ts';
 import { status } from './git.ts';
 import { SHARED_FILES, STARTERS } from './protoStarter.ts';
-import { run } from './util.ts';
+import { pathDirs, run, which } from './util.ts';
 
 function write(root: string, files: Record<string, string>, overwrite: boolean) {
   for (const [rel, body] of Object.entries(files)) {
@@ -175,4 +175,47 @@ export async function undo(root: string, dir: string, commit: string) {
     if (r.code !== 0) throw new Error(r.err.toString('utf8').trim() || 'Git couldn’t put the snapshot back.');
   }
   return true as const;
+}
+
+// A file of an installed package, for the preview's bundler: only from prototypes/node_modules, and null when it
+// isn't there, since the bundler tries several names.
+export async function moduleFile(root: string, file: string) {
+  const base = path.join(await repoRoot(root), 'prototypes', 'node_modules'),
+    f = path.resolve(base, file);
+  if (!f.startsWith(`${base}/`)) throw new Error("That isn't part of an installed package.");
+  try {
+    return fs.statSync(f).isFile() && fs.statSync(f).size < 4_000_000 ? fs.readFileSync(f, 'utf8') : null;
+  } catch {
+    return null;
+  }
+}
+
+// the packages prototypes/package.json lists, for the builder to know what it may import
+export function installed(repo: string) {
+  try {
+    const j: unknown = JSON.parse(fs.readFileSync(path.join(repo, 'prototypes', 'package.json'), 'utf8'));
+    const deps = typeof j === 'object' && j !== null && 'dependencies' in j ? j.dependencies : null;
+    return typeof deps === 'object' && deps !== null ? Object.keys(deps) : [];
+  } catch {
+    return [];
+  }
+}
+
+const PACKAGE = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+
+// npm install into prototypes/, with no install scripts run, after the person said yes to these names.
+export async function install(root: string, packages: string[]) {
+  const repo = await repoRoot(root);
+  const bad = packages.find(p => !PACKAGE.test(p));
+  if (!packages.length || bad) throw new Error(`“${bad ?? ''}” isn't a package name npm accepts.`);
+  const npm = which('npm', pathDirs());
+  if (!npm) throw new Error('npm isn’t installed on this computer. Install Node.js from nodejs.org, then try again.');
+  const prefix = path.join(repo, 'prototypes');
+  const r = await run(
+    npm,
+    ['install', '--prefix', prefix, '--ignore-scripts', '--no-audit', '--no-fund', '--save', ...packages],
+    300,
+  );
+  if (r.code !== 0) throw new Error(r.err.toString('utf8').trim().split('\n').pop() || 'npm couldn’t install that.');
+  return packages;
 }

@@ -21,6 +21,7 @@ import { card } from '../model/boards.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { startBuild } from '../proto/build.ts';
 import { gitAction } from '../proto/gitActions.ts';
+import { askInstall } from '../proto/install.ts';
 import { applyNewPrototype, repoActs } from '../repo/myra.ts';
 import { FS } from '../selbar/textSize.ts';
 import { reply, snapTo } from '../settings/licenses.ts';
@@ -375,6 +376,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
   acts.push(...repoActs(r), ...(await applyNewPrototype(r)));
   if (r.build?.request) startBuild(r.build.request);
   if (r.git?.action) gitAction(r.git.action, r.git.message);
+  if (r.install?.packages?.length) askInstall(r.install.packages);
   const next = acts.length
     ? []
     : (r.next?.length ? r.next : guessNext(r, added))

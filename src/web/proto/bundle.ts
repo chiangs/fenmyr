@@ -6,6 +6,8 @@ import { previewBridge } from './previewBridge.ts';
 // bundled here with esbuild-wasm on the copy of React Fenmyr ships; plain HTML ones have their CSS and JS inlined.
 export type Built = { kind: 'ok'; html: string } | { kind: 'error'; message: string };
 type Reader = (file: string) => Promise<string>;
+// a file of an installed package in prototypes/node_modules, or null when there's none by that name
+type ModuleReader = (file: string) => Promise<string | null>;
 
 // what the page may reach: nothing of Fenmyr's, no local files, and the open web over https
 const POLICY =
@@ -70,7 +72,48 @@ async function plainPage(files: string[], read: Reader) {
   return withHead(html, head());
 }
 
-async function reactPage(files: string[], read: Reader) {
+const MODULE_EXTS = ['', '.js', '.mjs', '.cjs', '.json', '/index.js', '/index.mjs'];
+const CONDITIONS = ['browser', 'import', 'module', 'default'];
+const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+// the file an entry in package.json's exports points at, preferring what a browser bundle wants
+const pick = (x: unknown): string | null =>
+  typeof x === 'string' ? x : isObj(x) ? (CONDITIONS.map(k => pick(x[k])).find(f => f !== null) ?? null) : null;
+
+async function firstFile(base: string, readModule: ModuleReader) {
+  for (const e of MODULE_EXTS) if ((await readModule(base + e)) !== null) return base + e;
+  return null;
+}
+
+// a bare import ("d3", "d3-scale/src/x") to a file in prototypes/node_modules, through its package.json
+async function packageFile(spec: string, readModule: ModuleReader) {
+  const parts = spec.split('/'),
+    scoped = spec.startsWith('@'),
+    name = parts.slice(0, scoped ? 2 : 1).join('/'),
+    sub = parts.slice(scoped ? 2 : 1).join('/');
+  const raw = await readModule(`${name}/package.json`);
+  if (raw === null) return null;
+  let pkg: unknown;
+  try {
+    pkg = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  const exp = isObj(pkg) ? pkg.exports : undefined,
+    main = isObj(exp) && Object.keys(exp).some(k => k.startsWith('.')) ? exp['.'] : exp;
+  const target = sub
+    ? (pick(isObj(exp) ? exp[`./${sub}`] : undefined) ?? sub)
+    : (pick(main) ?? (isObj(pkg) ? (pick(pkg.module) ?? pick(pkg.main)) : null) ?? 'index.js');
+  return firstFile(join(`${name}/package.json`, target), readModule);
+}
+
+async function reactPage(files: string[], read: Reader, moduleFile: ModuleReader) {
+  // each build reads a package file once, whatever imports it
+  const seen = new Map<string, Promise<string | null>>();
+  const readModule: ModuleReader = f => {
+    const known = seen.get(f) ?? moduleFile(f);
+    seen.set(f, known);
+    return known;
+  };
   const html = await inlineCss(await read('index.html'), files, read);
   const tag = html.match(/<script[^>]*type="module"[^>]*src="\.?\/?([^"]+)"[^>]*><\/script>/i);
   if (!tag?.[1]) throw new Error('index.html has no <script type="module" src="…"> to start from.');
@@ -89,22 +132,29 @@ async function reactPage(files: string[], read: Reader) {
       {
         name: 'prototype',
         setup(b) {
-          b.onResolve({ filter: /.*/ }, a => {
+          b.onResolve({ filter: /.*/ }, async a => {
             if (REACT.has(a.path)) return { path: a.path, namespace: 'react' };
             // Tailwind runs in the frame instead, reading this CSS as its input
             if (a.path === 'tailwindcss' && a.kind === 'import-rule') return { path: a.path, namespace: 'nothing' };
-            const f =
-              a.kind === 'entry-point'
-                ? found(a.path)
-                : /^\.\.?\//.test(a.path)
-                  ? found(join(a.importer, a.path))
-                  : null;
+            const relative = /^\.\.?\//.test(a.path);
+            if (a.namespace === 'module' && relative) {
+              const m = await firstFile(join(a.importer, a.path), readModule);
+              if (m) return { path: m, namespace: 'module' };
+            }
+            const mine = relative && a.namespace !== 'module' ? found(join(a.importer, a.path)) : null;
+            const f = a.kind === 'entry-point' ? found(a.path) : mine;
             if (f) return { path: f, namespace: 'proto' };
+            const m = relative ? null : await packageFile(a.path, readModule);
+            if (m) return { path: m, namespace: 'module' };
             const what = /^\.\.?\//.test(a.path)
               ? `There's no file ${a.path} next to ${a.importer}.`
-              : `“${a.path}” isn't a package the preview has. It has React built in; other packages need a dev server, which isn't part of Fenmyr yet.`;
+              : `“${a.path}” isn't installed in this repo's prototypes folder. Ask Myra to install it.`;
             return { errors: [{ text: what }] };
           });
+          b.onLoad({ filter: /.*/, namespace: 'module' }, async a => ({
+            contents: (await readModule(a.path)) ?? '',
+            loader: a.path.endsWith('.json') ? 'json' : a.path.endsWith('.css') ? 'css' : 'js',
+          }));
           b.onLoad({ filter: /.*/, namespace: 'nothing' }, () => ({ contents: '', loader: 'css' }));
           b.onLoad({ filter: /.*/, namespace: 'react' }, a => ({
             contents: `module.exports = globalThis.__fenmyrReact[${JSON.stringify(a.path)}];`,
@@ -130,11 +180,19 @@ async function reactPage(files: string[], read: Reader) {
   return withHead(body, head() + styles);
 }
 
-export async function buildPreview(stack: Proto['stack'], files: string[], read: Reader): Promise<Built> {
+export async function buildPreview(
+  stack: Proto['stack'],
+  files: string[],
+  read: Reader,
+  moduleFile: ModuleReader,
+): Promise<Built> {
   if (!files.includes('index.html'))
     return { kind: 'error', message: 'This prototype has no index.html to start from.' };
   try {
-    return { kind: 'ok', html: await (stack === 'react' ? reactPage(files, read) : plainPage(files, read)) };
+    return {
+      kind: 'ok',
+      html: await (stack === 'react' ? reactPage(files, read, moduleFile) : plainPage(files, read)),
+    };
   } catch (e) {
     // esbuild's errors say the file and line
     const first: unknown = e && typeof e === 'object' && 'errors' in e && Array.isArray(e.errors) ? e.errors[0] : null;

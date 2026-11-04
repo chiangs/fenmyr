@@ -135,7 +135,7 @@ try {
   await page.click('[data-pv="refresh"]');
   await until(
     async () =>
-      /“lodash” isn't a package the preview has/.test(
+      /“lodash” isn't installed in this repo's prototypes folder/.test(
         await page.evaluate(() => document.querySelector('.pv-error')?.textContent ?? ''),
       ),
     'a package Fenmyr doesn’t ship is explained',

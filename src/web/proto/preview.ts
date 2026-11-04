@@ -68,7 +68,12 @@ async function refreshPreview() {
   if (!board || !root) return;
   const { dir, stack } = board.proto;
   const files = await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
-  const built = await buildPreview(stack, files, file => Fenmyr.protoRead({ root, dir, file }));
+  const built = await buildPreview(
+    stack,
+    files,
+    file => Fenmyr.protoRead({ root, dir, file }),
+    file => Fenmyr.protoModule({ root, file }),
+  );
   log.length = 0;
   const problem = $('pr-preview').querySelector<HTMLElement>('.pv-error');
   if (built.kind === 'error') {

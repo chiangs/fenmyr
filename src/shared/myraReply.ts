@@ -38,6 +38,7 @@ const reply = z.looseObject({
   gitSetup: opt(z.boolean()),
   build: opt(z.looseObject({ request: txt })),
   git: opt(z.looseObject({ action: txt, message: txt })),
+  install: opt(z.looseObject({ packages: opt(z.array(z.string())) })),
   newPrototype: opt(z.looseObject({ name: txt, stack: txt, purpose: txt, device: txt, project: txt, folder: txt })),
   stopTimer: opt(z.boolean()),
   timer: opt(z.looseObject({ minutes: num, seconds: num, purpose: txt })),
