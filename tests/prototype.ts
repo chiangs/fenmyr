@@ -100,7 +100,7 @@ try {
     assert.ok(fs.existsSync(path.join(code, f)), `${f} is there`);
   assert.match(
     fs.readFileSync(path.join(code, 'src/App.tsx'), 'utf8'),
-    /<h1>Checkout flow<\/h1>/,
+    /const title = "Checkout flow";/,
     'braces never reach JSX',
   );
   for (const f of ['package.json', 'tsconfig.json', '.gitignore', 'myra.md'])

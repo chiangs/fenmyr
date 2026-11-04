@@ -4,14 +4,16 @@ import type { Proto } from '../shared/repos.ts';
 
 type Files = Record<string, string>;
 
-const react = (title: string): Files => ({
-  'index.html': `<!doctype html>
+const react = (title: string): Files => {
+  // a name like Ann's flow stays one string in the code
+  const quoted = JSON.stringify(title);
+  return {
+    'index.html': `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title}</title>
-    <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
     <div id="root"></div>
@@ -19,24 +21,30 @@ const react = (title: string): Files => ({
   </body>
 </html>
 `,
-  'src/main.tsx': `import { createRoot } from 'react-dom/client';
+    'src/main.tsx': `import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import './styles.css';
 
 createRoot(document.getElementById('root')!).render(<App />);
 `,
-  'src/App.tsx': `export function App() {
+    'src/App.tsx': `export function App() {
+  const title = ${quoted};
+  const hint = 'Select cards on the board and ask Myra to build this flow.';
+  const page = 'grid min-h-screen place-content-center gap-2 p-6 text-center';
+  const heading = 'text-2xl font-semibold';
+  const note = 'text-sm text-neutral-500';
   return (
-    <main className="empty">
-      <h1>${title}</h1>
-      <p>Select cards on the board and ask Myra to build this flow.</p>
+    <main className={page}>
+      <h1 className={heading}>{title}</h1>
+      <p className={note}>{hint}</p>
     </main>
   );
 }
 `,
-  'src/styles.css': `body { margin: 0; font-family: system-ui, sans-serif; }
-.empty { min-height: 100vh; display: grid; place-content: center; text-align: center; padding: 24px; }
+    'src/styles.css': `@import "tailwindcss";
 `,
-});
+  };
+};
 
 const html = (title: string): Files => ({
   'index.html': `<!doctype html>
@@ -71,7 +79,7 @@ export const SHARED_FILES = (repoName: string): Files => ({
       name: `${repoName}-prototypes`,
       private: true,
       type: 'module',
-      scripts: { dev: 'vite' },
+      scripts: { dev: 'vite --config vite.config.ts' },
       dependencies: { react: '^19.0.0', 'react-dom': '^19.0.0' },
       devDependencies: {
         '@types/react': '^19.0.0',
@@ -97,6 +105,11 @@ export const SHARED_FILES = (repoName: string): Files => ({
     2,
   )}\n`,
   '.gitignore': 'node_modules/\ndist/\n',
+  'vite.config.ts': `import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({ plugins: [tailwindcss()] });
+`,
   'design.md': `# Design
 
 Myra reads this before she writes code for any prototype in this repo. Keep it short and specific.
@@ -114,7 +127,8 @@ Myra reads this before she writes code for any prototype in this repo. Keep it s
 Myra follows this for every prototype here. Change it to suit the team.
 
 ## Stack
-- React with TypeScript. No other packages unless the person installed them.
+- React with TypeScript and Tailwind CSS. No other packages unless the person installed them.
+- Style with Tailwind classes. Theme values (colours, fonts) go in an @theme block in src/styles.css.
 - One component per file in src/components/. App.tsx only puts them together.
 - State lives in the component that owns it. No global state libraries.
 
