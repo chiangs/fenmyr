@@ -92,12 +92,21 @@ const field = (key: string, k: Exclude<Knob, { kind: 'custom' }>) => {
 
 const changed = () => JSON.stringify(current) !== saved;
 
+// Reset and Keep, shown once something was moved; drawn on their own so a slider being dragged is never replaced
+function drawActs(el: HTMLElement) {
+  const acts = el.querySelector('.kb-acts');
+  if (!acts) return;
+  acts.innerHTML = changed()
+    ? '<button class="pv-btn kb-reset">Reset</button><button class="pv-btn hot kb-keep">Keep these values</button>'
+    : '';
+}
+
 function draw(el: HTMLElement) {
-  const shown = Object.entries(knobs).flatMap(([key, k]) => (k.kind === 'custom' ? [] : [field(key, k)]));
-  const keep = changed() ? '<button class="pv-btn hot kb-keep">Keep these values</button>' : '',
+  const shown = Object.entries(knobs).flatMap(([key, k]) => (k.kind === 'custom' ? [] : [field(key, k)])),
     fields = shown.join('');
   el.hidden = !Object.keys(knobs).length;
-  el.innerHTML = `${fields}${keep}`;
+  el.innerHTML = `${fields}<div class="kb-acts"></div>`;
+  drawActs(el);
 }
 
 export function sendTweaks(frame: HTMLIFrameElement | null) {
@@ -138,13 +147,20 @@ export async function loadKnobs(
     current[key] =
       input.type === 'range' ? Number(input.value) : input.type === 'checkbox' ? input.checked : input.value;
     sendTweaks(frame());
-    if (input.type === 'range') draw(el);
-    else el.querySelector('.kb-keep') ?? draw(el);
+    const k = knobs[key],
+      readout = input.closest('.kb')?.querySelector('b');
+    if (k?.kind === 'number' && readout) readout.textContent = `${current[key]}${k.unit}`;
+    drawActs(el);
   };
   el.onclick = async e => {
     const t = e.target instanceof HTMLElement ? e.target : null;
     if (t?.dataset.k && t.dataset.v !== undefined) {
       current[t.dataset.k] = t.dataset.v;
+      sendTweaks(frame());
+      draw(el);
+    }
+    if (t?.classList.contains('kb-reset')) {
+      current = { ...JSON.parse(saved) };
       sendTweaks(frame());
       draw(el);
     }
