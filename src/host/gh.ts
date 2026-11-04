@@ -111,5 +111,8 @@ export async function createRepo(dir: string, account: string, name: string, isP
   if (r.code !== 0) throw new Error(lastLine(r.err) || "GitHub didn't make the repo.");
   const made = githubOf(lastLine(r.out));
   if (!made) throw new Error("GitHub made the repo, but gh didn't say where. Check github.com.");
+  // gh names the origin in the person's chosen protocol, often SSH; HTTPS lets Push use this gh sign-in whatever their
+  // SSH setup is
+  await run('git', ['-C', dir, 'remote', 'set-url', 'origin', `https://github.com/${made.owner}/${made.name}.git`], 30);
   return made;
 }
