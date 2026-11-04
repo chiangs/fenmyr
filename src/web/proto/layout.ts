@@ -3,9 +3,10 @@ import { $ } from '../core/dom.ts';
 import { playAnim } from '../myra/anim.ts';
 import { chatLog } from '../myra/chatLog.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
+import { heightGrip } from '../settings/panelHeights.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
-import { DEFAULT_LAYOUT, DIVIDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
+import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
 import { renderPreview } from './preview.ts';
 import { startSync } from './sync.ts';
@@ -37,7 +38,7 @@ const readLayouts = (): Record<string, Layout> => {
             chat: n('chat'),
             preview: n('preview'),
             code: n('code'),
-            closed: PANES.filter(p => Array.isArray(closed) && closed.includes(p)),
+            closed: FOLD_ORDER.filter(p => Array.isArray(closed) && closed.includes(p)),
           },
         ];
       }),
@@ -59,8 +60,11 @@ const ORDER: Pane[] = ['canvas', 'preview', 'code'];
 function build() {
   const panes = ORDER.map((p, i) => {
     const label = LABEL[p],
-      divider = i ? `<div class="pr-div" data-d="${p}"></div>` : '';
-    return `${divider}<section class="pr-pane" data-p="${p}"><header class="pr-head"><b>${label}</b><button class="pr-fold" data-fold="${p}" title="Fold">‹</button></header><div class="pr-body" id="pr-${p}"></div><button class="pr-strip" data-open="${p}" title="Open">${label}</button></section>`;
+      divider = i ? `<div class="pr-div" data-d="${p}"></div>` : '',
+      folds = FOLD_ORDER.some(f => f === p),
+      fold = folds ? `<button class="pr-fold" data-fold="${p}" title="Fold">‹</button>` : '',
+      strip = folds ? `<button class="pr-strip" data-open="${p}" title="Open">${label}</button>` : '';
+    return `${divider}<section class="pr-pane" data-p="${p}"><header class="pr-head"><b>${label}</b>${fold}</header><div class="pr-body" id="pr-${p}"></div>${strip}</section>`;
   }).join('');
   const el = document.createElement('div');
   el.className = 'pr-root';
@@ -69,7 +73,7 @@ function build() {
   document.body.appendChild(el);
   el.addEventListener('click', e => {
     const t = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-fold], [data-open]') : null;
-    const p = PANES.find(x => x === (t?.dataset.fold ?? t?.dataset.open));
+    const p = FOLD_ORDER.find(x => x === (t?.dataset.fold ?? t?.dataset.open));
     if (!p || !t) return;
     const l = layout();
     l.closed = t.dataset.fold ? [...l.closed, p] : l.closed.filter(x => x !== p);
@@ -122,14 +126,15 @@ function place() {
   const l = layout(),
     folded = fit(l, innerWidth),
     // the first open column, the board unless it's folded, takes what's left
-    flexer = ORDER.find(p => !folded.includes(p));
+    flexer = ORDER.find(p => !folded.some(f => f === p));
   root.style.setProperty('--chat-w', `${l.chat}px`);
   for (const p of PANES) {
     const pane = root.querySelector<HTMLElement>(`[data-p="${p}"]`);
     if (!pane) continue;
-    pane.classList.toggle('folded', folded.includes(p));
+    const isFolded = folded.some(f => f === p);
+    pane.classList.toggle('folded', isFolded);
     // the last open column takes what's left; the others keep the width they were dragged to
-    pane.style.flex = folded.includes(p)
+    pane.style.flex = isFolded
       ? `0 0 ${STRIP}px`
       : p === flexer
         ? '1 1 0'
@@ -156,31 +161,29 @@ function dockChat(on: boolean) {
   $('mcInput').style.height = '';
 }
 
-const INPUT_KEY = 'fenmyr:protoInputH';
+const INPUT_KEY = 'fenmyr:protoInputH',
+  INPUT_H = 140;
 const inputHeight = (h: number) => {
   const px = Math.round(Math.max(64, Math.min(innerHeight * 0.6, h)));
   $('prChat').style.setProperty('--input-h', `${px}px`);
   return px;
 };
 
-// a handle above Myra's input: drag it up for more room to write a build request
+// the panels' height grip, above Myra's input: drag it up for more room to write a build request
 function inputGrip() {
-  const grip = document.createElement('div');
-  grip.className = 'mc-grip';
-  grip.title = 'Drag to make the box taller or shorter';
+  const grip = heightGrip('Drag to change the height · double-click for automatic', {
+    start: () => {
+      const h0 = $('mcInput').offsetHeight;
+      return dy => localStorage.setItem(INPUT_KEY, String(inputHeight(h0 - dy)));
+    },
+    reset: () => {
+      localStorage.removeItem(INPUT_KEY);
+      inputHeight(INPUT_H);
+    },
+  });
+  grip.classList.add('mc-grip');
   $('mcForm').before(grip);
-  inputHeight(Number(localStorage.getItem(INPUT_KEY)) || 140);
-  grip.onpointerdown = e => {
-    const start = $('mcInput').offsetHeight,
-      y0 = e.clientY;
-    grip.setPointerCapture(e.pointerId);
-    grip.onpointermove = m => {
-      localStorage.setItem(INPUT_KEY, String(inputHeight(start - (m.clientY - y0))));
-    };
-    grip.onpointerup = () => {
-      grip.onpointermove = null;
-    };
-  };
+  inputHeight(Number(localStorage.getItem(INPUT_KEY)) || INPUT_H);
 }
 
 export function showProto(b: Board) {

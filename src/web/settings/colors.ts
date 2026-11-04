@@ -15,7 +15,7 @@ import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
 import { myCur, paintCursor } from './cursor.ts';
-import { applyPanelH, fitSides, gripBulge, panelMin } from './panelHeights.ts';
+import { applyPanelH, fitSides, heightGrip, panelMin } from './panelHeights.ts';
 import { settings } from './settings.ts';
 import { applySettings } from './widgets.ts';
 
@@ -258,46 +258,31 @@ export function init28() {
   Object.entries(PANELS).forEach(([k, f]) => {
     const el = f();
     if (!el) return;
-    const grip = document.createElement('div');
-    grip.className = 'rz-grip';
-    grip.title = 'Drag to change the height · double-click for automatic';
+    const grip = heightGrip('Drag to change the height · double-click for automatic', {
+      start: () => {
+        const h0 = el.getBoundingClientRect().height;
+        return dy => {
+          settings.panelH = {
+            ...settings.panelH,
+            [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + dy))),
+          };
+          applyPanelH();
+          const got = Math.round(el.getBoundingClientRect().height);
+          const want = settings.panelH[k];
+          if (want !== undefined && got < want) settings.panelH[k] = got;
+        };
+      },
+      end: applySettings,
+      reset: () => {
+        const p = { ...settings.panelH };
+        delete p[k];
+        settings.panelH = p;
+        applyPanelH();
+        applySettings();
+      },
+    });
     grip.dataset.panel = k;
     el.insertAdjacentElement('afterend', grip);
-    gripBulge(grip);
-    grip.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      const y0 = e.clientY,
-        h0 = el.getBoundingClientRect().height;
-      grip.setPointerCapture(e.pointerId);
-      grip.classList.add('on');
-      const mv = (ev: PointerEvent) => {
-        settings.panelH = {
-          ...settings.panelH,
-          [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))),
-        };
-        applyPanelH();
-        const got = Math.round(el.getBoundingClientRect().height);
-        const want = settings.panelH[k];
-        if (want !== undefined && got < want) settings.panelH[k] = got;
-      };
-      const up = () => {
-        grip.classList.remove('on');
-        grip.removeEventListener('pointermove', mv);
-        grip.removeEventListener('pointerup', up);
-        applySettings();
-      };
-      grip.addEventListener('pointermove', mv);
-      grip.addEventListener('pointerup', up);
-    });
-    grip.addEventListener('dblclick', e => {
-      e.stopPropagation();
-      const p = { ...settings.panelH };
-      delete p[k];
-      settings.panelH = p;
-      applyPanelH();
-      applySettings();
-    });
   });
 
   addEventListener('resize', fitSides);

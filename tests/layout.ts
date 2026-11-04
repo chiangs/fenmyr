@@ -106,6 +106,11 @@ try {
     'never in the bubble',
   );
 
+  assert.strictEqual(
+    await page.locator('#prChat .mc-grip.rz-grip svg').count(),
+    1,
+    'the input’s handle is the panels’ height grip',
+  );
   const box = await page.locator('#prChat .mc-grip').boundingBox();
   if (!box) throw new Error('no grip');
   const before = await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0);
@@ -115,6 +120,12 @@ try {
   await page.mouse.up();
   const after = await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0);
   assert.ok(after >= before + 100, `dragging the handle makes the input taller (${before} to ${after})`);
+  await page.dblclick('#prChat .mc-grip');
+  assert.strictEqual(
+    await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0),
+    before,
+    'and a double-click puts it back',
+  );
 
   const cards = await page.evaluate(() => window.__fenmyr.curBoard()?.cards.length ?? 0);
   await page.evaluate(() => {
@@ -144,6 +155,11 @@ try {
   await page.waitForTimeout(300);
   assert.match((await state()).code, /export function App/, 'picking a file shows it');
 
+  assert.strictEqual(
+    await page.locator('[data-fold="preview"], [data-open="preview"]').count(),
+    0,
+    'the preview never folds',
+  );
   await page.click('[data-fold="code"]');
   await page.waitForTimeout(300);
   s = await state();

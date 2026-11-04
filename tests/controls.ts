@@ -122,6 +122,18 @@ try {
     async () => (await page.locator('.kb-keep').count()) === 1,
     'a custom control inside the frame reports back',
   );
+  await page.click('.pv-knobs .kb-colour[data-colour="accent"]');
+  assert.strictEqual(await page.locator('#cpFmt .on').textContent(), 'HSL', 'the colour picker opens in HSL');
+  assert.match(await page.inputValue('#cpHex'), /^hsl\(\d+ \d+% \d+%\)$/, 'and writes the colour that way');
+  await page.fill('#cpHex', 'hsl(0 100% 50%)');
+  await until(
+    async () =>
+      (await frame.locator('input.field').evaluate(i => getComputedStyle(i).borderTopColor)) === 'rgb(255, 0, 0)',
+    'a colour typed in HSL reaches the preview',
+  );
+  await page.click('#cpFmt [data-fmt="rgb"]');
+  assert.strictEqual(await page.inputValue('#cpHex'), 'rgb(255 0 0)', 'RGB is there too');
+  await page.click('#cpDone');
   await page.click('.kb-keep');
   await until(
     async () => JSON.parse(fs.readFileSync(file, 'utf8')).radius.value === 8,
@@ -129,8 +141,8 @@ try {
   );
   const kept = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.deepStrictEqual(
-    [kept.inputType.value, kept.mood.value, kept.radius.unit],
-    ['Email', 'happy', 'px'],
+    [kept.inputType.value, kept.mood.value, kept.radius.unit, kept.accent.value],
+    ['Email', 'happy', 'px', 'rgb(255 0 0)'],
     'every value, and the rest of each control',
   );
   assert.strictEqual(await page.locator('.kb-keep').count(), 0, 'and the button goes once they’re kept');

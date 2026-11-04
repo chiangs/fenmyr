@@ -1235,6 +1235,9 @@ body.dark .col-chip { background: rgba(255, 255, 255, .05); }
 .cpop .cp-title { display: none; font: 700 13px/1 var(--font); margin: 0 0 12px; }
 .cpop.tint .cp-title { display: block; } .cpop.tint #cpName, .cpop.tint #cpSave { display: none; }
 .cpop .cp-reset { display: none; } .cpop.tint .cp-reset { display: inline-block; }
+/* a prototype's colour control offers HSL, RGB and hex */
+.cp-fmt { display: none; } .cpop.fmt .cp-fmt { display: flex; margin: 0 0 10px; } .cpop.fmt .cp-fmt button { flex: 1; padding: 6px 0; font: 600 11.5px/1 var(--font); }
+.cpop.fmt #cpHex { text-transform: none; letter-spacing: 0; }
 
 /* ---------- your cursor (a pointer and name tag in Myra's color) ---------- */
 body.fancy-cursor, body.fancy-cursor * { cursor: none !important; }
@@ -2787,7 +2790,7 @@ body.proto .dock { max-width: calc(100% - 16px); overflow-x: auto; scrollbar-wid
 .kb span { display: flex; justify-content: space-between; gap: 8px; }
 .kb b { font-weight: 500; text-transform: none; color: var(--ink); }
 .kb input[type="text"] { padding: 6px 9px; border-radius: 9px; border: 1.5px solid rgba(150, 95, 35, .2); background: transparent; font: 500 12.5px/1.2 var(--font); color: var(--ink); text-transform: none; }
-.kb input[type="color"] { width: 44px; height: 26px; padding: 0; border: 0; background: none; }
+.kb-colour { width: 44px; height: 26px; padding: 0; border: 1.5px solid rgba(150, 95, 35, .2); border-radius: 9px; cursor: pointer; }
 .kb .seg button { padding: 5px 9px; font: 600 11.5px/1 var(--font); text-transform: none; letter-spacing: 0; }
 .kb-toggle { min-width: 0; }
 .pv-btn.hot { background: var(--ink); border-color: var(--ink); color: #fff; }
@@ -2805,8 +2808,6 @@ body.proto .mc-head .mc-ic { display: none; }
 .mc-head .goo-slot { width: 40px; height: 35px; flex: none; display: grid; place-items: center; }
 .mc-head .goo-slot canvas { width: 40px; height: 35px; }
 .mc-grip { display: none; }
-body.proto .mc-grip { display: block; height: 10px; margin: 0 10px; cursor: ns-resize; position: relative; }
-body.proto .mc-grip::after { content: ''; position: absolute; left: 50%; top: 4px; width: 36px; height: 3px; margin-left: -18px; border-radius: 2px; background: rgba(150, 95, 35, .3); }
-body.proto .mc-grip:hover::after { background: var(--pink-deep); }
+body.proto .mc-grip { display: block; align-self: stretch; margin: 2px 10px; }
 body.proto #mcInput { height: var(--input-h, 140px) !important; max-height: none; overflow-y: auto; resize: none; }
 body.proto .mc-form { align-items: flex-end; }
