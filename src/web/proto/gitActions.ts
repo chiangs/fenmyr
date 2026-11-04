@@ -4,6 +4,7 @@ import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { say } from '../settings/licenses.ts';
 import { renderGitBar } from './gitbar.ts';
+import { pullNow } from './sync.ts';
 
 // What Myra and the git bar may do with git. Nothing runs without the person's say-so: a commit takes one tap, a push a
 // button that names where it goes.
@@ -78,5 +79,6 @@ export function gitAction(action: string, message = '') {
   const b = session.board;
   if (b?.kind !== 'prototype') return;
   if (action === 'commit') return askCommit(b, message.trim() || `Update ${b.name}`);
+  if (action === 'pull') return pullNow(b);
   return action === 'push' ? askPush(b) : undefined;
 }

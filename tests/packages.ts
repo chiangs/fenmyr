@@ -40,6 +40,16 @@ const problem = () => page.evaluate(() => document.querySelector('.pv-error')?.t
 // her question comes before her own reply, so all her words are read
 const lastMyra = () =>
   page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg.myra')].map(m => m.textContent ?? '').join(' | '));
+// Playwright reads this button as never settling, though its box stays put (follow-up), so it's pressed in the page
+const press = (label: string) =>
+  page.evaluate(
+    label =>
+      [...document.querySelectorAll<HTMLElement>('#mcList .m-acts button')]
+        .filter(b => b.textContent === label)
+        .at(-1)
+        ?.click(),
+    label,
+  );
 const until = async (check: () => Promise<boolean>, what: string) => {
   const end = Date.now() + 15000;
   while (Date.now() < end) {
@@ -94,7 +104,7 @@ try {
     async () => /Install d3 into acme\/prototypes with npm install --ignore-scripts\?/.test(await lastMyra()),
     'Myra asks first',
   );
-  await page.locator('#mcList .m-acts button', { hasText: 'Install d3' }).last().click();
+  await press('Install d3');
   await until(async () => /Installed d3/.test(await lastMyra()), 'and installs after a yes');
   const args = fs.readFileSync(path.join(work, 'npm-args.txt'), 'utf8').trim();
   assert.strictEqual(
@@ -103,7 +113,7 @@ try {
   );
 
   await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Hm.', install: { packages: ['rm -rf'] } }, 'x'));
-  await page.locator('#mcList .m-acts button', { hasText: 'Install rm -rf' }).last().click();
+  await press('Install rm -rf');
   await until(
     async () => /isn't a package name npm accepts/.test(await lastMyra()),
     'a name npm wouldn’t accept is refused',

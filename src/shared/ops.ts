@@ -246,6 +246,13 @@ export type Ops = {
   // a file of an installed package, or null when there's none by that name
   protoModule: { args: { root: string; file: string }; result: string | null };
   protoInstall: { args: { root: string; packages: string[] }; result: string[] };
+  gitFetch: { args: { root: string; account: string }; result: GitStatus };
+  gitPull: {
+    args: { root: string; account: string };
+    result: { kind: 'pulled' } | { kind: 'conflict'; files: string[] };
+  };
+  gitKeepMine: { args: { root: string; account: string; branch: string }; result: GitStatus };
+  gitTakeTheirs: { args: { root: string }; result: GitStatus };
   gitCommit: { args: { root: string; dir: string; message: string }; result: GitStatus };
   // account: the gh login that reaches this project's GitHub copy, if it has one
   gitPush: { args: { root: string; account: string }; result: GitStatus };
