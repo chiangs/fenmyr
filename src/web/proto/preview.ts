@@ -4,6 +4,8 @@ import { $ } from '../core/dom.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { child, closestTo, esc, textField } from '../ui/dom.ts';
 import { buildPreview } from './bundle.ts';
+import { renderGitBar } from './gitbar.ts';
+import { loadKnobs, sendTweaks, tweakFromFrame } from './knobs.ts';
 
 // The preview pane: the prototype running in a frame that may run scripts and nothing else, at a device's width or any
 // width dragged to, scaled down to fit when the pane is narrower. What happens inside comes back as a log.
@@ -86,7 +88,14 @@ async function refreshPreview() {
     if (problem) problem.hidden = true;
     html = built.html;
     const f = frame();
-    if (f) f.srcdoc = html;
+    await loadKnobs(child($('pr-preview'), '.pv-knobs'), { root, dir, files }, frame, () => {
+      if (board) renderGitBar(board);
+    });
+    if (f) {
+      // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
+      f.onload = () => sendTweaks(f);
+      f.srcdoc = html;
+    }
   }
   showLog();
 }
@@ -107,6 +116,7 @@ addEventListener('message', e => {
   if (d.type === 'error') log.push({ kind: 'error', text: d.where ? `${text} (${String(d.where)})` : text });
   if (d.type === 'console')
     log.push({ kind: d.level === 'error' ? 'error' : d.level === 'warn' ? 'warn' : 'log', text });
+  if (d.type === 'tweak') tweakFromFrame(child($('pr-preview'), '.pv-knobs'), String(d.key), String(d.value));
   if (d.type === 'point') {
     const field = textField('mcInput'),
       said = text ? ` “${text}”` : '';
@@ -148,7 +158,7 @@ export async function renderPreview(b: Board) {
     const label = `${d.charAt(0).toUpperCase()}${d.slice(1)}`;
     return `<button data-dev="${d}">${label}</button>`;
   }).join('');
-  el.innerHTML = `<div class="pv-bar"><div class="seg pv-dev">${devices}</div><span class="pv-w"></span><button class="pv-btn" data-pv="point" title="Click something in the preview to point Myra at it">Point</button><button class="pv-btn" data-pv="refresh">Refresh</button><button class="pv-btn" data-pv="open">Open in browser</button></div><div class="pv-stage"><div class="pv-frame"><iframe sandbox="allow-scripts" title="Prototype preview"></iframe><div class="pv-handle" title="Drag to any width"></div></div><p class="pv-error" hidden></p></div><div class="pv-log"></div>`;
+  el.innerHTML = `<div class="pv-bar"><div class="seg pv-dev">${devices}</div><span class="pv-w"></span><button class="pv-btn" data-pv="point" title="Click something in the preview to point Myra at it">Point</button><button class="pv-btn" data-pv="refresh">Refresh</button><button class="pv-btn" data-pv="open">Open in browser</button></div><div class="pv-knobs" hidden></div><div class="pv-stage"><div class="pv-frame"><iframe sandbox="allow-scripts" title="Prototype preview"></iframe><div class="pv-handle" title="Drag to any width"></div></div><p class="pv-error" hidden></p></div><div class="pv-log"></div>`;
   el.onclick = e => {
     const dev = closestTo(e.target, '[data-dev]')?.dataset.dev,
       act = closestTo(e.target, '[data-pv]')?.dataset.pv;

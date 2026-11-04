@@ -43,6 +43,45 @@ createRoot(document.getElementById('root')!).render(<App />);
 `,
     'src/styles.css': `@import "tailwindcss";
 `,
+    // the prototype's controls: what they are and their saved values; Fenmyr draws the common kinds above the preview
+    'src/tweaks.json': '{}\n',
+    'src/tweaks.ts': `import { useSyncExternalStore } from 'react';
+import saved from './tweaks.json';
+
+// The values of the controls in tweaks.json. In Fenmyr's preview they change as the person moves a control;
+// anywhere else they're the saved ones.
+type Tweak = { kind: string; value: unknown };
+const listeners = new Set<() => void>();
+let values: Record<string, unknown> = Object.fromEntries(
+  Object.entries(saved as Record<string, Tweak>).map(([key, t]) => [key, t.value]),
+);
+const set = (next: Record<string, unknown>) => {
+  values = { ...values, ...next };
+  for (const l of listeners) l();
+};
+
+addEventListener('message', e => {
+  if (e.source === parent && e.data?.fenmyrTweaks) set(e.data.fenmyrTweaks);
+});
+
+export const useTweaks = () =>
+  useSyncExternalStore(
+    l => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    () => values,
+  );
+
+// for a custom control built in src/knobs/: it changes the value here and tells Fenmyr, so Keep these values saves it
+export function setTweak(key: string, value: unknown) {
+  set({ [key]: value });
+  parent.postMessage({ fenmyrPreview: true, type: 'tweak', key, value: JSON.stringify(value) }, '*');
+}
+
+// custom controls show only in Fenmyr's preview, never in the shared prototype
+export const inFenmyr = () => (globalThis as { __fenmyr?: boolean }).__fenmyr === true;
+`,
   };
 };
 

@@ -253,6 +253,7 @@ export type Ops = {
   };
   gitKeepMine: { args: { root: string; account: string; branch: string }; result: GitStatus };
   gitTakeTheirs: { args: { root: string }; result: GitStatus };
+  protoWriteTweaks: { args: { root: string; dir: string; json: string }; result: true };
   gitCommit: { args: { root: string; dir: string; message: string }; result: GitStatus };
   // account: the gh login that reaches this project's GitHub copy, if it has one
   gitPush: { args: { root: string; account: string }; result: GitStatus };

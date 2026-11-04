@@ -171,7 +171,7 @@ try {
     ],
     'Myra says where it came from, in git’s terms and then in plain words',
   );
-  assert.match(copy.chat.at(-2).text, /lion\/prototypes\/checkout-flow\. 4 new files, not committed yet\./);
+  assert.match(copy.chat.at(-2).text, /lion\/prototypes\/checkout-flow\. 6 new files, not committed yet\./);
   const untracked = execFileSync('git', ['-C', lionRepo, 'status', '--porcelain']).toString();
   assert.match(untracked, /\?\? prototypes\//, 'nothing is committed for them');
 
