@@ -117,7 +117,10 @@ try {
   );
   assert.doesNotMatch(await lastMyra(), /CARDS:/, 'the builder’s card line stays out of the chat');
   await until(
-    async () => /I built it from these cards on the board:↗ Checkout: show the total first/.test(await lastMyra()),
+    async () =>
+      /I built it from these cards on the board: “Checkout: show the total first”\.↗ Checkout: show the total first/.test(
+        await lastMyra(),
+      ),
     'Myra links the code back to the card it came from',
   );
   const sources = () =>

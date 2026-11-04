@@ -10,7 +10,7 @@ import { gitAction } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
 import { picturesOf } from './pictures.ts';
 import { previewErrors, renderPreview } from './preview.ts';
-import { cardButtons, keepSources } from './sources.ts';
+import { cardButtons, cardsLine, keepSources } from './sources.ts';
 import { beforeBuild } from './sync.ts';
 
 // Myra's "build": the host writes the code with Claude Code while the chat shows what's being written, then the code,
@@ -90,7 +90,7 @@ export function buildEvent(data: unknown) {
   const message = request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
   addMsg('myra', String(e.text), [{ label: 'Commit', cls: 'next', run: () => gitAction('commit', message) }, undoIt]);
   const used = session.board?.id === board ? keepSources(readSources(e.sources)) : [];
-  if (used.length) addMsg('myra', 'I built it from these cards on the board:', cardButtons(used));
+  if (used.length) addMsg('myra', cardsLine(used), cardButtons(used));
   if (strays.length)
     say(
       `I also changed files outside this prototype: ${strays.join(', ')}. Undo only puts this prototype back, so check those in the git bar.`,

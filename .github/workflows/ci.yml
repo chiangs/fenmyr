@@ -66,6 +66,8 @@ jobs:
         run: node tests/sync.ts
       - name: Controls test (a prototype's knobs above the preview)
         run: node tests/controls.ts
+      - name: Done test (link, prototype, build, point, commit, push, reopen)
+        run: node tests/done.ts
       - name: Myra reply test
         run: node tests/reply.ts
       - name: Mac font list test
