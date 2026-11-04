@@ -188,19 +188,30 @@ try {
 } finally {
   base.remove();
 }
+// States a branch changes on purpose, each with the reason, in tools/visual-expected.json. The file is reviewed in the
+// PR like code; an entry whose state no longer differs is reported so it can be removed.
+const expected: Record<string, string> = (() => {
+  const raw: unknown = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'visual-expected.json'), 'utf8'));
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+  return Object.fromEntries(Object.entries(raw).filter((e): e is [string, string] => typeof e[1] === 'string'));
+})();
 const judge = await launch({ boards: [everyOfflineCard()], open: 'every' });
-let failed = 0;
+let failed = 0,
+  meant = 0;
 for (const f of fs.readdirSync(path.join(out, 'ref')).sort()) {
   const r = await compare(judge.page, path.join(out, 'ref', f), path.join(out, 'head', f), path.join(out, `diff-${f}`));
   const allowed = Number(process.env.VISUAL_ALLOW_PIXELS) || (STRAY_PIXELS_SCALED[f] ?? STRAY_PIXELS);
-  const ok = r.changed >= 0 && r.changed <= allowed;
-  if (!ok) failed++;
-  console.log(
-    `${ok ? 'same' : 'DIFF'}  ${f.replace('.png', '').padEnd(20)} ${r.changed < 0 ? 'size changed' : `${r.changed} px`}`,
-  );
+  const ok = r.changed >= 0 && r.changed <= allowed,
+    name = f.replace('.png', ''),
+    why = expected[name];
+  if (!ok && !why) failed++;
+  if (!ok && why) meant++;
+  const verdict = ok ? (why ? 'stale' : 'same') : why ? 'meant' : 'DIFF';
+  const note = why ? `  (${ok ? 'listed in tools/visual-expected.json but unchanged: remove it' : why})` : '';
+  console.log(`${verdict}  ${name.padEnd(20)} ${r.changed < 0 ? 'size changed' : `${r.changed} px`}${note}`);
 }
 await judge.close();
 console.log(
-  `${failed ? 'VISUAL CHANGED' : 'VISUAL SAME'}: ${failed} of ${fs.readdirSync(path.join(out, 'ref')).length} states differ from ${ref}. Screenshots in ${out}`,
+  `${failed ? 'VISUAL CHANGED' : 'VISUAL SAME'}: ${failed} of ${fs.readdirSync(path.join(out, 'ref')).length} states differ from ${ref} unexpectedly, ${meant} as listed in tools/visual-expected.json. Screenshots in ${out}`,
 );
 process.exit(failed ? 1 : 0);
