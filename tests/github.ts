@@ -30,7 +30,7 @@ case "$*" in
   "auth token --hostname github.com --user "*) echo "tok-$6" ;;
   "repo create "*)
     echo "$GH_TOKEN $*" >> ${calls}
-    git -C "$6" remote add origin "https://github.com/ann-work/$3.git"
+    git -C "$6" remote add origin "git@github.com:ann-work/$3.git"
     echo "https://github.com/ann-work/$3" ;;
 esac
 `,
