@@ -120,7 +120,8 @@ addEventListener('message', e => {
   if (d.type === 'point') {
     const field = textField('mcInput'),
       said = text ? ` “${text}”` : '';
-    field.value = `${field.value}${field.value ? ' ' : ''}[this: ${String(d.selector)}${said}] `;
+    const where = d.at ? ` at ${String(d.at)}` : '';
+    field.value = `${field.value}${field.value ? ' ' : ''}[this: ${String(d.selector)}${said}${where}] `;
     field.focus();
     setPointing(false);
   }

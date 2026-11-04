@@ -291,6 +291,18 @@ const OPS = {
     return true as const;
   },
   protoBuild: a => startBuild(a, e => send('protoBuild', e)),
+  captureArea: async a => {
+    const r = { x: Number(a.x) || 0, y: Number(a.y) || 0, width: Number(a.w) || 0, height: Number(a.h) || 0 };
+    if (r.width < 4 || r.height < 4) throw new Error('Nothing to capture there.');
+    const img = await theWindow().webContents.capturePage({
+      x: Math.round(r.x),
+      y: Math.round(r.y),
+      width: Math.round(r.width),
+      height: Math.round(r.height),
+    });
+    return img.toDataURL();
+  },
+  protoLastChange: a => prototypes.lastChange(text(a.root), text(a.dir)),
   protoUndo: a => prototypes.undo(text(a.root), text(a.dir), text(a.snapshot)),
   protoModule: a => prototypes.moduleFile(text(a.root), text(a.file)),
   protoInstall: a => prototypes.install(text(a.root), strings(a.packages)),

@@ -4,6 +4,7 @@ import { colorHex } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { findClose } from '../features/find.ts';
+import { showLastChange } from '../proto/homeInfo.ts';
 import { newPrototypeIn } from '../repo/prototypes.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
@@ -220,6 +221,7 @@ export function renderHome(): void {
     draggable(t, 'board', b.id);
     dropZone(t, 'board', id => nestBoard(id, b.id));
     t.oncontextmenu = e => rowMenu(e, 'board', b, child(t, '.tile-meta b'));
+    if (b.kind === 'prototype') showLastChange(t, b);
     return t;
   };
   const section = (label: string) => {

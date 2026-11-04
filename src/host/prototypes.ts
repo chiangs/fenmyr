@@ -229,3 +229,14 @@ export async function writeTweaks(root: string, dir: string, json: string) {
   fs.writeFileSync(path.join(repo, dir, 'src', 'tweaks.json'), `${JSON.stringify(parsed, null, 2)}\n`);
   return true as const;
 }
+
+// For the prototyping folder's home: the branch, and the last commit that touched this prototype's folder.
+export async function lastChange(root: string, dir: string) {
+  const repo = await inRepo(root, dir);
+  const [log, head] = await Promise.all([
+    run('git', ['-C', repo, 'log', '-1', '--format=%ct%x09%s', '--', dir], 30),
+    run('git', ['-C', repo, 'branch', '--show-current'], 30),
+  ]);
+  const [when = '', subject = ''] = log.out.toString('utf8').trim().split('\t');
+  return { branch: head.out.toString('utf8').trim(), when: Number(when) || 0, subject: subject.slice(0, 120) };
+}

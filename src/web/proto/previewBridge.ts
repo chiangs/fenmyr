@@ -56,7 +56,8 @@ export function previewBridge() {
       if (!pointing || !(e.target instanceof Element)) return;
       e.preventDefault();
       e.stopPropagation();
-      send('point', { selector: describe(e.target), text: (e.target.textContent ?? '').trim().slice(0, 80) });
+      const at = e.target.closest('[data-fenmyr-src]')?.getAttribute('data-fenmyr-src') ?? '';
+      send('point', { selector: describe(e.target), text: (e.target.textContent ?? '').trim().slice(0, 80), at });
     },
     true,
   );

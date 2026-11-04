@@ -72,6 +72,17 @@ async function plainPage(files: string[], read: Reader) {
   return withHead(html, head());
 }
 
+// In the preview only, each lowercase JSX tag is marked with where it is in the code, so pointing at an element tells
+// Myra the file and line. The files on disk are never changed.
+function markSource(file: string, code: string) {
+  const lineAt = (i: number) => code.slice(0, i).split('\n').length;
+  return code.replace(
+    /(^|[\s(>{?:&|,])<([a-z][a-z0-9-]*)(?=[\s/>])/g,
+    (_m, before: string, tag: string, at: number) =>
+      `${before}<${tag} data-fenmyr-src="${file}:${lineAt(at + before.length)}"`,
+  );
+}
+
 const MODULE_EXTS = ['', '.js', '.mjs', '.cjs', '.json', '/index.js', '/index.mjs'];
 const CONDITIONS = ['browser', 'import', 'module', 'default'];
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
@@ -160,10 +171,13 @@ async function reactPage(files: string[], read: Reader, moduleFile: ModuleReader
             contents: `module.exports = globalThis.__fenmyrReact[${JSON.stringify(a.path)}];`,
             loader: 'js',
           }));
-          b.onLoad({ filter: /.*/, namespace: 'proto' }, async a => ({
-            contents: await read(a.path),
-            loader: LOADERS[a.path.split('.').pop() ?? ''] ?? 'text',
-          }));
+          b.onLoad({ filter: /.*/, namespace: 'proto' }, async a => {
+            const code = await read(a.path);
+            return {
+              contents: /\.[jt]sx$/.test(a.path) ? markSource(a.path, code) : code,
+              loader: LOADERS[a.path.split('.').pop() ?? ''] ?? 'text',
+            };
+          });
         },
       },
     ],

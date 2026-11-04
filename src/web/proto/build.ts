@@ -7,6 +7,7 @@ import { say } from '../settings/licenses.ts';
 import { renderCode } from './code.ts';
 import { gitAction } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
+import { picturesOf } from './pictures.ts';
 import { previewErrors, renderPreview } from './preview.ts';
 import { beforeBuild } from './sync.ts';
 
@@ -34,7 +35,9 @@ export async function startBuild(request: string, synced = false) {
   if (running) return say('I’m still writing the last change. I’ll start on this once it’s done.', 6000);
   if (!synced) return beforeBuild(b, request, () => startBuild(request, true));
   const picked = b.cards.filter(c => session.sel.has(c.id));
-  const cards = JSON.stringify((picked.length ? picked : b.cards).slice(0, 80).map(brief));
+  const chosen = (picked.length ? picked : b.cards).slice(0, 80),
+    cards = JSON.stringify(chosen.map(brief)),
+    pictures = await picturesOf(chosen);
   const { dir, stack, purpose = '', device = '' } = b.proto;
   status('Writing code…');
   try {
@@ -47,6 +50,7 @@ export async function startBuild(request: string, synced = false) {
       device,
       cards,
       errors: previewErrors(),
+      pictures,
     });
     running = { id, board: b.id, root, dir, request };
   } catch (e) {
