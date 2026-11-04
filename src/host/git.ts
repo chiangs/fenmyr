@@ -7,7 +7,9 @@ import type { GitChange, GitIdentity, GitSetup, GitStatus } from '../shared/ops.
 import { run } from './util.ts';
 
 // A repo's own settings can make status run a program (core.fsmonitor). Linking a folder must never run its code.
-const SAFE = ['-c', 'core.fsmonitor=false'];
+// --no-optional-locks: reading status never takes git's index lock, so a git the person runs at the same time doesn't
+// fail with "index.lock exists".
+const SAFE = ['--no-optional-locks', '-c', 'core.fsmonitor=false'];
 
 async function git(dir: string, args: string[]) {
   const r = await run('git', [...SAFE, '-C', dir, ...args], 30);
