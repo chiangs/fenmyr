@@ -217,6 +217,13 @@ export type Ops = {
     result: { dir: string; stack: 'react' | 'html' };
   };
   protoCopy: { args: { fromRoot: string; dir: string; toRoot: string }; result: { dir: string; files: number } };
+  protoExists: { args: { root: string; dir: string }; result: boolean };
+  protoRename: { args: { root: string; dir: string; name: string }; result: { dir: string } };
+  // restored: from the last commit; fresh: starter files, since it was never committed
+  protoRestore: {
+    args: { root: string; dir: string; name: string; stack: 'react' | 'html' };
+    result: 'restored' | 'fresh';
+  };
   ghRepoCreate: {
     args: { path: string; account: string; name: string; private: boolean };
     result: { owner: string; name: string };

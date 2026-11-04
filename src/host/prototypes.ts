@@ -2,17 +2,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { PROTO_DIR, type Proto } from '../shared/model.ts';
+import { protoSlug } from '../shared/repos.ts';
 import { status } from './git.ts';
 import { ROOT_FILES, STARTERS } from './protoStarter.ts';
-
-const slugOf = (name: string) =>
-  name
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
-    .replace(/-+$/, '') || 'prototype';
+import { run } from './util.ts';
 
 function write(root: string, files: Record<string, string>, overwrite: boolean) {
   for (const [rel, body] of Object.entries(files)) {
@@ -39,7 +32,7 @@ function freeDir(root: string, base: string) {
 // Makes the prototype's folder and the shared root files the repo lacks.
 export async function create(root: string, name: string, stack: Proto['stack']): Promise<Proto> {
   const repo = await repoRoot(root);
-  const dir = freeDir(repo, slugOf(name));
+  const dir = freeDir(repo, protoSlug(name));
   write(
     repo,
     ROOT_FILES(
@@ -73,4 +66,32 @@ export async function copy(fromRoot: string, dir: string, toRoot: string) {
     },
   });
   return { dir: made, files };
+}
+
+const inRepo = async (root: string, dir: string) => {
+  if (!PROTO_DIR.test(dir)) throw new Error("That isn't a prototype's folder.");
+  return repoRoot(root);
+};
+
+export async function exists(root: string, dir: string) {
+  return fs.existsSync(path.join(await inRepo(root, dir), dir));
+}
+
+// Its folder renamed to match the board's new name. git mv keeps the history with it; a folder git doesn't track yet
+// is simply renamed.
+export async function rename(root: string, dir: string, name: string) {
+  const repo = await inRepo(root, dir),
+    to = freeDir(repo, protoSlug(name));
+  const r = await run('git', ['-C', repo, 'mv', dir, to], 30);
+  if (r.code !== 0) fs.renameSync(path.join(repo, dir), path.join(repo, to));
+  return { dir: to };
+}
+
+// A missing folder back as it was at the last commit, or fresh starter files when it was never committed.
+export async function restore(root: string, dir: string, name: string, stack: Proto['stack']) {
+  const repo = await inRepo(root, dir);
+  const r = await run('git', ['-C', repo, 'checkout', 'HEAD', '--', dir], 30);
+  if (r.code === 0) return 'restored' as const;
+  write(path.join(repo, dir), STARTERS[stack](name.replace(/[<>&{}]/g, '')), true);
+  return 'fresh' as const;
 }

@@ -39,3 +39,13 @@ export function readRepoLink(x: unknown): RepoLink | null {
     account = word(gh.account, /^[A-Za-z0-9-]+$/);
   return owner && name && account ? { path: x.path, github: { owner, name, account } } : { path: x.path };
 }
+
+// a prototype's folder name under prototypes/, from its board's name
+export const protoSlug = (name: string) =>
+  name
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .replace(/-+$/, '') || 'prototype';

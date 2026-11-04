@@ -165,6 +165,43 @@ try {
   await page.evaluate(id => window.__fenmyr.putFolder(id, null, 'p2'), folder.id);
   assert.match(await said(), /Link “Personal” to a repo first/, 'an unlinked project can’t take prototypes');
   assert.strictEqual(library().folders.find((f: { id: string }) => f.id === folder.id).project, 'p1');
+
+  // Myra's own buttons, in her bubble or her chat
+  const tap = (label: string) => page.locator(':is(#mActs, #mcList) button:visible', { hasText: label }).last().click();
+  const git = (...args: string[]) =>
+    execFileSync('git', ['-C', repo, '-c', 'user.name=T', '-c', 'user.email=t@e.st', ...args]).toString();
+  git('add', '-A');
+  git('commit', '-qm', 'two prototypes');
+  await page.fill('#boardName', 'Landing page');
+  await page.press('#boardName', 'Enter');
+  await page.locator('#boardName').blur();
+  await page.waitForTimeout(400);
+  assert.match(await said(), /I can rename prototypes\/checkout-flow-2 to prototypes\/landing-page with git mv/);
+  assert.match(await said(), /Your code keeps working either way/, 'the question comes in plain words too');
+  await tap('Rename');
+  await page.waitForTimeout(800);
+  assert.strictEqual(boardFile(second.id).proto.dir, 'prototypes/landing-page', 'the board follows its folder');
+  assert.match(
+    git('status', '--porcelain'),
+    /R {2}prototypes\/checkout-flow-2\/index\.html -> prototypes\/landing-page\/index\.html/,
+    'git mv keeps the history',
+  );
+
+  fs.rmSync(path.join(repo, 'prototypes/checkout-flow'), { recursive: true });
+  await page.evaluate(id => window.__fenmyr.openBoard(id), first.id);
+  await page.waitForTimeout(800);
+  assert.match(
+    await said(),
+    /I can't find prototypes\/checkout-flow in/,
+    'a missing code folder is noticed on opening',
+  );
+  await tap('Bring it back');
+  await page.waitForTimeout(800);
+  assert.ok(
+    fs.existsSync(path.join(repo, 'prototypes/checkout-flow/src/App.tsx')),
+    'it comes back from the last commit',
+  );
+  assert.match(await said(), /back as it was at the last commit/);
   assert.deepStrictEqual(l.errors, []);
   console.log('PROTOTYPE OK');
 } finally {

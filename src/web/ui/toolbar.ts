@@ -12,6 +12,7 @@ import { foldersIn, makeFolder, makeProject, saveLib } from '../library/tree.ts'
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
 import { newBoard } from '../model/boards.ts';
+import { offerRename } from '../repo/codeFolder.ts';
 import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { endPen, penT, startPen } from '../tools/pen.ts';
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
@@ -147,6 +148,7 @@ export function init21() {
     session.board.name = nameField.value || 'Untitled board';
     save();
   };
+  nameField.onchange = () => offerRename(session.board);
 
   $('newBoard').onclick = async () => {
     const { f, p } = scope(),
