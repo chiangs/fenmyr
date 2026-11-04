@@ -1,5 +1,6 @@
 // A prototype's own folder of code, under prototypes/ in its project's repo.
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { PROTO_DIR, type Proto, protoSlug } from '../shared/repos.ts';
 import { status } from './git.ts';
@@ -121,4 +122,13 @@ export async function read(root: string, dir: string, file: string) {
   const buf = fs.readFileSync(f);
   if (buf.length > 300_000) return `This file is ${Math.round(buf.length / 1000)} KB, too big to show here.`;
   return buf.includes(0) ? 'This file isn’t text, so it isn’t shown here.' : buf.toString('utf8');
+}
+
+// A built preview as a file the browser can open, in a folder of its own under the system's temporary folder.
+export function previewFile(html: string, name: string) {
+  const dir = path.join(os.tmpdir(), 'fenmyr-preview');
+  fs.mkdirSync(dir, { recursive: true });
+  const f = path.join(dir, `${protoSlug(name)}.html`);
+  fs.writeFileSync(f, html);
+  return f;
 }

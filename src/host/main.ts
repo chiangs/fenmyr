@@ -41,7 +41,7 @@ protocol.registerSchemesAsPrivileged([
       stream: true,
       supportFetchAPI: true,
       corsEnabled: true,
-      bypassCSP: true,
+      // no bypassCSP: Fenmyr's own page sets no policy, and a prototype's preview must not get round its own
     },
   },
 ]);
@@ -284,6 +284,11 @@ const OPS = {
   protoRestore: a => prototypes.restore(text(a.root), text(a.dir), text(a.name), a.stack === 'html' ? 'html' : 'react'),
   protoFiles: a => prototypes.files(text(a.root), text(a.dir)),
   protoRead: a => prototypes.read(text(a.root), text(a.dir), text(a.file)),
+  previewOpen: async a => {
+    const err = await shell.openPath(prototypes.previewFile(text(a.html), text(a.name)));
+    if (err) throw new Error(err);
+    return true as const;
+  },
   ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
 } satisfies Handlers;
 

@@ -106,6 +106,8 @@ const IDEAS = [
   'Make a checklist from this',
   'Find onboarding screens on Mobbin',
 ];
+// on a prototype board she starts from the wireframes and notes the person brings
+const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
 
 function msgEl(m: ChatMsg & { acts?: SayAction[] }) {
   const d = document.createElement('div');
@@ -139,7 +141,8 @@ export function renderChat() {
   list.innerHTML = '';
   const msgs = chatLog();
   if (!msgs.length) {
-    const ideas = IDEAS.filter(i => settings.mobbin || !/Mobbin/.test(i))
+    const ideas = (session.board?.kind === 'prototype' ? PROTOTYPE_IDEAS : IDEAS)
+      .filter(i => settings.mobbin || !/Mobbin/.test(i))
       .map(i => `<button>${i}</button>`)
       .join('');
     const lead =
