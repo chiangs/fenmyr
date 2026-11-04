@@ -67,7 +67,7 @@ try {
     kind: 'repo',
     root: repo,
     branch: 'main',
-    hasCommits: false,
+    head: null,
     upstream: null,
     ahead: 0,
     behind: 0,
@@ -101,7 +101,7 @@ try {
   fs.writeFileSync(path.join(sub, 'package.json'), '{}');
   fs.writeFileSync(path.join(repo, 'notes.txt'), 'n');
   const unborn = Object(await value('gitStatus', repo));
-  assert.strictEqual(unborn.hasCommits, false, 'a repo nobody has committed to says so');
+  assert.strictEqual(unborn.head, null, 'a repo nobody has committed to says so');
   assert.ok(
     unborn.changed.some((c: { path: string }) => c.path === 'prototypes/card/src/App.tsx'),
     'a new prototype’s files are listed one by one, not as prototypes/',

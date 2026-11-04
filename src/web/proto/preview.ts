@@ -1,9 +1,10 @@
 import type { Board } from '../../shared/model.ts';
-import type { Proto } from '../../shared/repos.ts';
+import type { Capture, Proto } from '../../shared/repos.ts';
 import { $ } from '../core/dom.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { child, closestTo, esc, textField } from '../ui/dom.ts';
 import { buildPreview } from './bundle.ts';
+import { takeCapture } from './capture.ts';
 import { showSource } from './code.ts';
 import { renderGitBar } from './gitbar.ts';
 import { loadKnobs, sendTweaks, tweakFromFrame } from './knobs.ts';
@@ -20,6 +21,8 @@ let root = '';
 let width = WIDTHS.phone;
 let html = '';
 let pointing = false;
+// a capture whose commit the preview shows instead of the files on disk, until Back to latest or the next build
+let viewing: Capture | null = null;
 // what went wrong and what was logged since the last build, newest last
 const log: Line[] = [];
 
@@ -67,14 +70,30 @@ function showLog() {
   el.scrollTop = el.scrollHeight;
 }
 
+// the banner over a capture's commit, and what's off while it shows: pointing and the controls, which are today's
+function showViewing(problem: string) {
+  const el = $('pr-preview'),
+    then = el.querySelector<HTMLElement>('.pv-then'),
+    point = el.querySelector<HTMLButtonElement>('[data-pv="point"]');
+  if (point) point.disabled = !!viewing;
+  if (!then) return;
+  then.hidden = !viewing;
+  const when = viewing ? new Date(viewing.at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '',
+    words = viewing ? `Showing ${viewing.commit.slice(0, 7)}, captured ${when}. Your files are unchanged.` : '';
+  child(then, 'span').textContent = problem || words;
+}
+
 async function refreshPreview() {
   if (!board || !root) return;
   const { dir, stack } = board.proto;
-  const files = await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
+  const then = viewing ? await Fenmyr.protoAtCommit({ root, dir, commit: viewing.commit }).catch(() => null) : null;
+  if (viewing && !then) return showViewing('That version isn’t in this repo any more.');
+  showViewing('');
+  const files = then ? Object.keys(then) : await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
   const built = await buildPreview(
     stack,
     files,
-    file => Fenmyr.protoRead({ root, dir, file }),
+    file => (then ? Promise.resolve(then[file] ?? '') : Fenmyr.protoRead({ root, dir, file })),
     file => Fenmyr.protoModule({ root, file }),
   );
   log.length = 0;
@@ -88,10 +107,13 @@ async function refreshPreview() {
   } else {
     if (problem) problem.hidden = true;
     html = built.html;
-    const f = frame();
-    await loadKnobs(child($('pr-preview'), '.pv-knobs'), { root, dir, files }, frame, () => {
-      if (board) renderGitBar(board);
-    });
+    const f = frame(),
+      knobs = child($('pr-preview'), '.pv-knobs');
+    if (then) knobs.hidden = true;
+    else
+      await loadKnobs(knobs, { root, dir, files }, frame, () => {
+        if (board) renderGitBar(board);
+      });
     if (f) {
       // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
       f.onload = () => sendTweaks(f);
@@ -155,8 +177,29 @@ function dragWidth(handle: HTMLElement) {
   };
 }
 
+// a capture's commit in the preview, at the width it was taken at
+export async function showCommit(c: Capture) {
+  viewing = c;
+  if (c.width) width = c.width;
+  setPointing(false);
+  scale();
+  await refreshPreview();
+}
+
+// what a capture takes: the part of the preview that shows, at which device and width
+export function previewShot() {
+  const f = frame()?.getBoundingClientRect(),
+    stage = $('pr-preview').querySelector('.pv-stage')?.getBoundingClientRect();
+  if (!f || !stage) return null;
+  const x = Math.max(f.left, stage.left),
+    y = Math.max(f.top, stage.top),
+    rect = { x, y, w: Math.min(f.right, stage.right) - x, h: Math.min(f.bottom, stage.bottom) - y };
+  return { rect, width, device: DEVICES.find(d => WIDTHS[d] === width) ?? 'custom' };
+}
+
 export async function renderPreview(b: Board) {
   const el = $('pr-preview');
+  viewing = null;
   root = rootOf(b) ?? '';
   if (b.kind !== 'prototype' || !root) {
     board = null;
@@ -169,7 +212,8 @@ export async function renderPreview(b: Board) {
     const label = `${d.charAt(0).toUpperCase()}${d.slice(1)}`;
     return `<button data-dev="${d}">${label}</button>`;
   }).join('');
-  el.innerHTML = `<div class="pv-bar"><div class="seg pv-dev">${devices}</div><span class="pv-w"></span><button class="pv-btn" data-pv="point" title="Click something in the preview to point Myra at it">Point</button><button class="pv-btn" data-pv="refresh">Refresh</button><button class="pv-btn" data-pv="open">Open in browser</button></div><div class="pv-knobs" hidden></div><div class="pv-stage"><div class="pv-frame"><iframe sandbox="allow-scripts" title="Prototype preview"></iframe><div class="pv-handle" title="Drag to any width"></div></div><p class="pv-error" hidden></p></div><div class="pv-log"></div>`;
+  const camera = Icon('camera', { size: 15 });
+  el.innerHTML = `<div class="pv-bar"><div class="seg pv-dev">${devices}</div><span class="pv-w"></span><button class="pv-btn pv-ic" data-pv="capture" title="Put a capture of the preview on the board">${camera}</button><button class="pv-btn" data-pv="point" title="Click something in the preview to point Myra at it">Point</button><button class="pv-btn" data-pv="refresh">Refresh</button><button class="pv-btn" data-pv="open">Open in browser</button></div><div class="pv-then" hidden><span></span><button class="pv-btn" data-pv="latest">Back to latest</button></div><div class="pv-knobs" hidden></div><div class="pv-stage"><div class="pv-frame"><iframe sandbox="allow-scripts" title="Prototype preview"></iframe><div class="pv-handle" title="Drag to any width"></div></div><p class="pv-error" hidden></p></div><div class="pv-log"></div>`;
   el.onclick = e => {
     const dev = closestTo(e.target, '[data-dev]')?.dataset.dev,
       act = closestTo(e.target, '[data-pv]')?.dataset.pv;
@@ -179,6 +223,11 @@ export async function renderPreview(b: Board) {
       scale();
     }
     if (act === 'point') setPointing(!pointing);
+    if (act === 'capture') takeCapture(b);
+    if (act === 'latest') {
+      viewing = null;
+      refreshPreview();
+    }
     if (act === 'refresh') refreshPreview();
     if (act === 'open' && html) Fenmyr.previewOpen({ html, name: b.name || 'prototype' });
   };

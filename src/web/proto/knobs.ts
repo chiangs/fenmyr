@@ -110,13 +110,14 @@ const field = (key: string, k: Exclude<Knob, { kind: 'custom' }>) => {
   }
 };
 
-const changed = () => JSON.stringify(current) !== saved;
+// moved but not kept: a capture waits for these, since they are not in any commit
+export const knobsChanged = () => JSON.stringify(current) !== saved;
 
 // Reset and Keep, shown once something was moved; drawn on their own so a slider being dragged is never replaced
 function drawActs(el: HTMLElement) {
   const acts = el.querySelector('.kb-acts');
   if (!acts) return;
-  acts.innerHTML = changed()
+  acts.innerHTML = knobsChanged()
     ? '<button class="pv-btn kb-reset">Reset</button><button class="pv-btn hot kb-keep">Keep these values</button>'
     : '';
 }

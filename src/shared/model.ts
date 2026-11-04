@@ -1,5 +1,5 @@
 import { type CardType, isCardType, sizeOf } from './cardTypes.ts';
-import { type Proto, readProto, readRepoLink } from './repos.ts';
+import { type Capture, type Proto, readProto, readRepoLink } from './repos.ts';
 
 // What each kind of card adds. Cards also hold per-type options these fields don't list yet; typing the renderer modules adds them.
 // a point on a pen path: r rounds a sharp corner; ix, iy and ox, oy are its curve handles in and out
@@ -22,7 +22,13 @@ type CardFields = {
   note: { myra?: boolean; myraMv?: string; myraImg?: string };
   todo: { items?: { t: string; done?: boolean }[] };
   title: { text?: string };
-  image: { src?: string; crop?: { x: number; y: number; w: number; h: number }; cropEdit?: boolean };
+  image: {
+    src?: string;
+    crop?: { x: number; y: number; w: number; h: number };
+    cropEdit?: boolean;
+    // set when it's a capture of a prototype's preview
+    capture?: Capture;
+  };
   link: { url?: string; image?: string; loading?: boolean; draft?: string };
   // autoName: the label follows the colour until someone names it
   swatch: { hex: string; hideName?: boolean; hideHex?: boolean; autoName?: boolean };

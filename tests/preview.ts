@@ -156,6 +156,52 @@ try {
     'a desktop width scales to fit',
   );
 
+  const git = (...a: string[]) =>
+    execFileSync('git', ['-C', repo, ...a])
+      .toString()
+      .trim();
+  git('config', 'user.name', 'Ann');
+  git('config', 'user.email', 'ann@example.com');
+  git('add', '-A');
+  git('commit', '-qm', 'Counter');
+  const counter = git('rev-parse', 'HEAD');
+  const captures = () =>
+    page.evaluate(() =>
+      (window.__fenmyr.curBoard()?.cards ?? []).flatMap(c => {
+        const cap: unknown = Reflect.get(c, 'capture');
+        return c.type === 'image' && cap ? [{ id: c.id, commit: String(Reflect.get(Object(cap), 'commit')) }] : [];
+      }),
+    );
+  await page.click('[data-pv="capture"]');
+  await until(
+    async () => (await captures())[0]?.commit === counter,
+    'the camera captures a committed prototype at once',
+  );
+  fs.writeFileSync(path.join(repo, dir, 'src/App.tsx'), 'export const App = () => <h1>Second</h1>;\n');
+  await page.click('[data-pv="refresh"]');
+  await until(async () => (await frame.locator('h1').textContent()) === 'Second', 'the change runs');
+  await page.click('[data-pv="capture"]');
+  const myra = () =>
+    page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg.myra')].pop()?.textContent ?? '');
+  await until(
+    async () => /has 1 changed file not committed[\s\S]*has to be committed before I can capture it/.test(await myra()),
+    'with changes not committed, Myra says they must be committed first',
+  );
+  await page.locator('#mcList .m-acts button', { hasText: 'Commit and capture' }).last().click();
+  await until(async () => (await captures()).length === 2, 'and offers to commit and capture');
+  assert.strictEqual((await captures())[1]?.commit, git('rev-parse', 'HEAD'), 'the second capture is the new commit');
+  await page.locator(`.card[data-id="${(await captures())[0]?.id}"]`).evaluate(el => {
+    const r = el.getBoundingClientRect(),
+      at = { bubbles: true, clientX: r.x + 20, clientY: r.y + 20, pointerId: 1 };
+    el.dispatchEvent(new PointerEvent('pointerdown', at));
+    el.dispatchEvent(new PointerEvent('pointerup', at));
+  });
+  await until(async () => (await frame.locator('button.count').count()) === 1, 'clicking a capture shows its commit');
+  assert.match((await page.textContent('.pv-then')) ?? '', /Your files are unchanged/, 'saying so, files untouched');
+  assert.match(fs.readFileSync(path.join(repo, dir, 'src/App.tsx'), 'utf8'), /Second/);
+  await page.click('[data-pv="latest"]');
+  await until(async () => (await frame.locator('h1').textContent()) === 'Second', 'Back to latest');
+
   fs.writeFileSync(
     path.join(repo, dir, 'src/App.tsx'),
     "import _ from 'lodash';\n// TypeScript drops imports nothing uses, so this one is used\nexport const App = () => <p>{String(_)}</p>;\n",
