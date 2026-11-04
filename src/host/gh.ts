@@ -102,17 +102,49 @@ export async function asAccount(account: string) {
   return { gh, env: { GH_TOKEN: token } };
 }
 
+// GitHub's own trouble, not a refusal: worth trying another way
+const SERVER_TROUBLE = /\b50[234]\b|bad gateway|service unavailable|gateway time|timed? ?out|something went wrong/i;
+const fullName = (b: Buffer) => githubOf(`https://github.com/${b.toString('utf8').trim()}`);
+
+// When GraphQL fails on GitHub's side: GitHub may have made the repo before it failed to answer, so look first, then
+// make it through the REST API as the same account.
+async function createByRest(gh: string, as: Record<string, string>, account: string, name: string, isPrivate: boolean) {
+  const seen = await run(gh, ['api', `repos/${account}/${name}`, '--jq', '.full_name'], 30, as);
+  const there = seen.code === 0 ? fullName(seen.out) : null;
+  if (there) return there;
+  const r = await run(
+    gh,
+    ['api', '--method', 'POST', 'user/repos', '-f', `name=${name}`, '-F', `private=${isPrivate}`, '--jq', '.full_name'],
+    60,
+    as,
+  );
+  const why = lastLine(r.err);
+  if (r.code !== 0)
+    throw new Error(
+      SERVER_TROUBLE.test(why)
+        ? 'GitHub isn’t answering right now. Try again in a minute.'
+        : why || "GitHub didn't make the repo.",
+    );
+  const made = fullName(r.out);
+  if (!made) throw new Error("GitHub made the repo, but didn't say where. Check github.com.");
+  return made;
+}
+
 export async function createRepo(dir: string, account: string, name: string, isPrivate: boolean) {
   if (!path.isAbsolute(dir)) throw new Error('Choose the folder by its full path.');
   if (!REPO_NAME.test(name)) throw new Error('A repo name can use letters, numbers, dots, dashes and underscores.');
   const { gh, env: as } = await asAccount(account);
   const visibility = isPrivate ? '--private' : '--public';
   const r = await run(gh, ['repo', 'create', name, visibility, '--source', dir, '--remote', 'origin'], 60, as);
-  if (r.code !== 0) throw new Error(lastLine(r.err) || "GitHub didn't make the repo.");
-  const made = githubOf(lastLine(r.out));
-  if (!made) throw new Error("GitHub made the repo, but gh didn't say where. Check github.com.");
-  // gh names the origin in the person's chosen protocol, often SSH; HTTPS lets Push use this gh sign-in whatever their
-  // SSH setup is
-  await run('git', ['-C', dir, 'remote', 'set-url', 'origin', `https://github.com/${made.owner}/${made.name}.git`], 30);
+  let made = r.code === 0 ? githubOf(lastLine(r.out)) : null;
+  if (!made) {
+    const why = lastLine(r.err);
+    if (r.code !== 0 && !SERVER_TROUBLE.test(why)) throw new Error(why || "GitHub didn't make the repo.");
+    made = await createByRest(gh, as, account, name, isPrivate);
+  }
+  // HTTPS, whatever protocol gh would pick, so Push can use this gh sign-in whatever the person's SSH setup is
+  const url = `https://github.com/${made.owner}/${made.name}.git`;
+  const set = await run('git', ['-C', dir, 'remote', 'set-url', 'origin', url], 30);
+  if (set.code !== 0) await run('git', ['-C', dir, 'remote', 'add', 'origin', url], 30);
   return made;
 }

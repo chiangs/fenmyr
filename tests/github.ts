@@ -20,6 +20,15 @@ for (const d of [acme, lion]) {
   git(d, 'config', 'user.email', 'ann@example.com');
 }
 git(lion, 'remote', 'add', 'origin', 'git@github.com:ann-lee/lion.git');
+const flaky = path.join(work, 'flaky'),
+  half = path.join(work, 'half'),
+  taken = path.join(work, 'taken');
+for (const d of [flaky, half, taken]) {
+  fs.mkdirSync(d);
+  git(d, 'init', '-q', '-b', 'main');
+  git(d, 'config', 'user.name', 'Ann Lee');
+  git(d, 'config', 'user.email', 'ann@example.com');
+}
 const accounts =
   '{"hosts":{"github.com":[{"state":"success","active":true,"host":"github.com","login":"ann-lee"},{"state":"success","active":false,"host":"github.com","login":"ann-work"}]}}';
 fs.writeFileSync(
@@ -28,6 +37,15 @@ fs.writeFileSync(
 case "$*" in
   "auth status --json hosts") echo '${accounts}' ;;
   "auth token --hostname github.com --user "*) echo "tok-$6" ;;
+  "repo create flaky "*|"repo create halfmade "*)
+    echo "HTTP 502: Bad Gateway (https://api.github.com/graphql)" >&2; exit 1 ;;
+  "repo create taken "*)
+    echo "GraphQL: Name already exists on this account (createRepository)" >&2; exit 1 ;;
+  "api repos/ann-work/halfmade --jq .full_name") echo "ann-work/halfmade" ;;
+  "api repos/"*) echo "HTTP 404: Not Found" >&2; exit 1 ;;
+  "api --method POST user/repos "*)
+    echo "$GH_TOKEN $*" >> ${calls}
+    echo "ann-work/flaky" ;;
   "repo create "*)
     echo "$GH_TOKEN $*" >> ${calls}
     git -C "$6" remote add origin "git@github.com:ann-work/$3.git"
@@ -61,18 +79,21 @@ const openRepo = async (name: string) => {
 
 try {
   await page.evaluate(
-    async ([acme, lion]) => {
+    async ([acme, lion, flaky, half, taken]) => {
       await window.Fenmyr.saveFolders({
         projects: [
           { id: 'p1', name: 'Acme Checkout', open: true, repo: { path: acme } },
           { id: 'p2', name: 'Lioness', open: true, repo: { path: lion } },
+          { id: 'p3', name: 'Flaky', open: true, repo: { path: flaky } },
+          { id: 'p4', name: 'Halfmade', open: true, repo: { path: half } },
+          { id: 'p5', name: 'Taken', open: true, repo: { path: taken } },
         ],
         folders: [],
         order: {},
       });
       await window.__fenmyr.refreshBoards();
     },
-    [acme, lion],
+    [acme, lion, flaky, half, taken],
   );
 
   await openRepo('Acme Checkout');
@@ -120,6 +141,38 @@ try {
     1,
     'using an existing copy makes nothing',
   );
+
+  await press('done');
+  const create = async (project: string) => {
+    await openRepo(project);
+    await press('github');
+    await page.selectOption('#rlAcct', 'ann-work');
+    await press('createGitHub');
+  };
+  await create('Flaky');
+  assert.strictEqual(
+    git(flaky, 'remote', 'get-url', 'origin').toString().trim(),
+    'https://github.com/ann-work/flaky.git',
+    'a 502 from GraphQL falls back to REST',
+  );
+  assert.match(
+    fs.readFileSync(calls, 'utf8'),
+    /tok-ann-work api --method POST user\/repos -f name=flaky -F private=true/,
+    'made as the same account, still private',
+  );
+  await press('done');
+  await create('Halfmade');
+  assert.strictEqual(
+    git(half, 'remote', 'get-url', 'origin').toString().trim(),
+    'https://github.com/ann-work/halfmade.git',
+    'a repo GitHub made before failing is used',
+  );
+  assert.doesNotMatch(fs.readFileSync(calls, 'utf8'), /name=halfmade/, 'and not made twice');
+  await press('done');
+  await create('Taken');
+  assert.match(await screen(), /Name already exists on this account/, 'a real refusal is explained, not retried');
+  assert.ok(!git(taken, 'remote').toString().trim(), 'and nothing is set');
+  await page.keyboard.press('Escape');
 
   const seen = (await page.content()) + library();
   assert.ok(!seen.includes('tok-'), 'no token reaches the page or the library file');

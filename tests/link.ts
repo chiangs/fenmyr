@@ -70,6 +70,11 @@ try {
   assert.match(await screen(), /Branch\s*main/);
   assert.match(await screen(), /Only on this computer/);
   assert.deepStrictEqual(library().projects[0].repo, { path: folder }, 'the link is saved with the project');
+  assert.deepStrictEqual(
+    library().folders.map((f: { name: string; project: string; kind?: string }) => [f.name, f.project, f.kind]),
+    [['Prototypes', 'p1', 'prototyping']],
+    'linking makes a prototyping folder in the project',
+  );
   const who = execFileSync('git', ['-C', folder, 'config', '--local', 'user.email']).toString().trim();
   assert.strictEqual(who, 'ann@example.com', 'the name and email are saved for this repo only');
   await press('done');
