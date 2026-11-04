@@ -2729,7 +2729,7 @@ body.dark .vr-chip { background: rgba(255, 255, 255, .08); } body.dark .vr-chip:
 /* a prototype board: Myra's chat docked left, then the preview, the code and the canvas (src/web/proto) */
 .pr-root { display: none; }
 body.proto .pr-root { display: flex; position: fixed; inset: 0; z-index: 5; pointer-events: none; }
-.pr-chat { flex: 0 0 var(--chat-w); display: flex; min-width: 0; pointer-events: auto; background: var(--panel, #fff); border-right: 1px solid rgba(150, 95, 35, .14); }
+.pr-chat { flex: 0 0 var(--chat-w); display: flex; min-width: 0; pointer-events: auto; background: var(--panel, #fff); border-left: 1px solid rgba(150, 95, 35, .14); }
 .pr-chat .m-chat { position: static; width: 100%; height: 100%; border-radius: 0; opacity: 1; visibility: visible; pointer-events: auto; transform: none; box-shadow: none; }
 .pr-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .pr-git { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 14px; pointer-events: auto; background: var(--panel, #fff); border-bottom: 1px solid rgba(150, 95, 35, .14); font: 500 12.5px/1 var(--font); color: var(--ink-soft); white-space: nowrap; overflow: hidden; }
@@ -2797,3 +2797,15 @@ body .git-setup .set-btn.hot:hover, body .rl-body .set-btn.hot:hover, body #npOk
 body.following-caelestia .git-setup .set-btn.hot, body.following-caelestia .rl-body .set-btn.hot, body.following-caelestia #npOk, body.following-caelestia .pv-btn.hot { background: var(--pink-deep); border-color: var(--pink-deep); color: var(--panel); }
 .kb-acts { display: flex; gap: 6px; margin-left: auto; }
 .kb-acts:empty { display: none; }
+/* a prototype board: Myra lives in the docked chat, so her toolbar button and bubble are hidden, and her pixel-art self
+   sits in the chat's header where the chat icon was */
+body.proto #mPill, body.proto #mBubble { display: none !important; }
+body.proto .mc-head .mc-ic { display: none; }
+.mc-head .goo-slot { width: 40px; height: 35px; flex: none; display: grid; place-items: center; }
+.mc-head .goo-slot canvas { width: 40px; height: 35px; }
+.mc-grip { display: none; }
+body.proto .mc-grip { display: block; height: 10px; margin: 0 10px; cursor: ns-resize; position: relative; }
+body.proto .mc-grip::after { content: ''; position: absolute; left: 50%; top: 4px; width: 36px; height: 3px; margin-left: -18px; border-radius: 2px; background: rgba(150, 95, 35, .3); }
+body.proto .mc-grip:hover::after { background: var(--pink-deep); }
+body.proto #mcInput { height: var(--input-h, 140px) !important; max-height: none; overflow-y: auto; resize: none; }
+body.proto .mc-form { align-items: flex-end; }
