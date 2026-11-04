@@ -75,16 +75,11 @@ try {
     'Unsorted and Wireframe join the left column, beside the board',
   );
   const folded = () =>
-    page.evaluate(() =>
-      Object.fromEntries(
-        [
-          ['boards', '.box[data-box="boards"]'],
-          ['layers', '.box[data-box="layers"]'],
-          ['colors', '.box[data-box="colors"]'],
-          ['design', '#design'],
-        ].map(([k, sel]) => [k, !!document.querySelector(sel ?? '')?.classList.contains('min')]),
-      ),
-    );
+    page.evaluate(() => {
+      const min = (k: string) =>
+        !!document.querySelector(k === 'design' ? '#design' : `.box[data-box="${k}"]`)?.classList.contains('min');
+      return { boards: min('boards'), layers: min('layers'), colors: min('colors'), design: min('design') };
+    });
   assert.deepStrictEqual(
     await folded(),
     { boards: false, layers: true, colors: true, design: true },
