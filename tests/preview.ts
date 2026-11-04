@@ -121,6 +121,33 @@ try {
       /\[this: .*main > button\.count[^“]* “Count 1” at src\/App\.tsx:10\]/.test(await page.inputValue('#mcInput')),
     'pointing hands the element to Myra’s input',
   );
+  await until(
+    async () =>
+      page.evaluate(() => {
+        const pre = document.querySelector('.pc-text'),
+          mark = pre?.querySelector('.pc-mark')?.getBoundingClientRect(),
+          box = pre?.getBoundingClientRect();
+        if (!pre || !mark || !box) return false;
+        const style = getComputedStyle(pre),
+          line =
+            (mark.top - box.top + pre.scrollTop - Number.parseFloat(style.paddingTop)) /
+              Number.parseFloat(style.lineHeight) +
+            1;
+        const text = pre.querySelector('code')?.textContent?.split('\n')[9] ?? '';
+        return Math.round(line) === 10 && /<button/.test(text) && mark.top >= box.top && mark.bottom <= box.bottom;
+      }),
+    'and the code pane opens its file with that line marked',
+  );
+  assert.deepStrictEqual(
+    await page.evaluate(() =>
+      ['keyword', 'string', 'function'].map(k => {
+        const t = document.querySelector(`.pc-text .token.${k}`);
+        return !!t && getComputedStyle(t).color !== getComputedStyle(document.querySelector('.pc-text') ?? t).color;
+      }),
+    ),
+    [true, true, true],
+    'the code is coloured: keywords, strings and functions each stand out',
+  );
 
   await page.click('[data-dev="desktop"]');
   assert.match(
