@@ -5,7 +5,6 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
 import { closeHome, homeAt } from '../library/home.ts';
-import { newBoardIn } from '../library/nesting.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, renameNewest, uniqueName } from '../library/rowMenu.ts';
 import { foldersIn, makeFolder, makeProject, saveLib } from '../library/tree.ts';
@@ -13,6 +12,7 @@ import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
 import { newBoard } from '../model/boards.ts';
 import { offerRename } from '../repo/codeFolder.ts';
+import { addBoardTo } from '../repo/prototypes.ts';
 import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { endPen, penT, startPen } from '../tools/pen.ts';
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
@@ -153,7 +153,7 @@ export function init21() {
   $('newBoard').onclick = async () => {
     const { f, p } = scope(),
       into = f || (p && foldersIn(p.id)[0]);
-    if (into) return newBoardIn(into.id);
+    if (into) return addBoardTo(into);
     const b = newBoard();
     await Fenmyr.save(b);
     closeHome();

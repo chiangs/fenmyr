@@ -191,9 +191,33 @@ try {
   assert.strictEqual((await bar()).dropdown, false, 'a wider code column has room for the tabs again');
   await drag(300);
   assert.strictEqual((await bar()).dropdown, true, 'and a narrower one goes back to the dropdown');
-  await page.selectOption('.pc-pick', 'src/components/PromoField.tsx');
+  await page.click('.pc-pick');
+  assert.deepStrictEqual(
+    await page.evaluate(() => [...document.querySelectorAll('.row-menu.pc-menu > *')].map(e => e.textContent)),
+    ['App.tsx', 'styles.css', 'Values', 'components/', 'PromoField.tsx'],
+    'the dropdown is Fenmyr’s own menu, files grouped by folder',
+  );
+  await page.click('.pc-menu [data-file="src/components/PromoField.tsx"]');
   await page.waitForTimeout(300);
-  assert.match((await state()).code, /PromoField/, 'picking from the dropdown shows the file');
+  assert.match((await state()).code, /PromoField/, 'picking from it shows the file');
+  assert.strictEqual(await page.locator('.pc-menu').count(), 0, 'and closes it');
+  assert.strictEqual(await page.textContent('.pc-pick'), 'components/PromoField.tsx', 'the picker names the file');
+  await page.click('.pc-copy');
+  await page.waitForTimeout(200);
+  assert.strictEqual(
+    await l.app.evaluate(({ clipboard }) => clipboard.readText()),
+    'export const PromoField = () => null;\n',
+    'Copy puts the file on the clipboard',
+  );
+
+  await page.click('#newBoard');
+  await page.waitForSelector('#npName');
+  assert.match(
+    (await page.textContent('.tdlg h3')) ?? '',
+    /New prototype in “Prototypes”/,
+    '+ Board in a prototyping folder makes a prototype',
+  );
+  await page.keyboard.press('Escape');
 
   assert.strictEqual(
     await page.locator('[data-fold="preview"], [data-open="preview"]').count(),

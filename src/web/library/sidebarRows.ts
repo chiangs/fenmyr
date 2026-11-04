@@ -1,10 +1,10 @@
 import type { Folder, Project } from '../../shared/model.ts';
 import type { BoardSummary } from '../../shared/ops.ts';
 import { appState, session } from '../core/state.ts';
-import { newPrototypeIn } from '../repo/prototypes.ts';
+import { addBoardTo } from '../repo/prototypes.ts';
 import { child } from '../ui/dom.ts';
 import { closeHome } from './home.ts';
-import { draggable, dropZone, inlineRename, nestBoard, newBoardIn, reorderZone } from './nesting.ts';
+import { draggable, dropZone, inlineRename, nestBoard, reorderZone } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
 import { type Kind, refreshBoards, renameBoard, renameNewest, rowMenu, type Thing, uniqueName } from './rowMenu.ts';
 import {
@@ -118,7 +118,7 @@ export function folderNode(f: Folder): HTMLElement {
   wrap.classList.toggle('proto', f.kind === 'prototyping');
   child(wrap, '.node-head').onclick = async e => {
     const a = e.target instanceof Element ? e.target.closest<HTMLElement>('.f-btn')?.dataset.a : undefined;
-    if (a === 'add') return f.kind === 'prototyping' ? newPrototypeIn(f) : newBoardIn(f.id);
+    if (a === 'add') return addBoardTo(f);
     if (a === 'ren') return inlineRename(name, f);
     if (a === 'del') {
       for (const b of inside) await moveBoard(b.id, null);
