@@ -2733,31 +2733,30 @@ body.dark .vr-chip { background: rgba(255, 255, 255, .08); } body.dark .vr-chip:
 /* a prototype board: Myra's chat docked left, then the preview, the code and the canvas (src/web/proto) */
 .pr-root { display: none; }
 body.proto .pr-root { display: flex; position: fixed; inset: 0; z-index: 5; pointer-events: none; }
-.pr-chat { flex: 0 0 var(--chat-w); display: flex; min-width: 0; pointer-events: auto; background: var(--panel, #fff); border-left: 1px solid rgba(150, 95, 35, .14); }
+.pr-chat { flex: 0 0 var(--chat-w); display: flex; min-width: 0; pointer-events: auto; background: var(--panel, var(--surface, #fff)); border-left: 1px solid rgba(150, 95, 35, .14); }
 .pr-chat .m-chat { position: static; width: 100%; height: 100%; border-radius: 0; opacity: 1; visibility: visible; pointer-events: auto; transform: none; box-shadow: none; }
 .pr-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.pr-git { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 14px; pointer-events: auto; background: var(--panel, #fff); border-bottom: 1px solid rgba(150, 95, 35, .14); font: 500 12.5px/1 var(--font); color: var(--ink-soft); white-space: nowrap; overflow: hidden; }
+.pr-git { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 14px; pointer-events: auto; background: var(--panel, var(--surface, #fff)); border-bottom: 1px solid rgba(150, 95, 35, .14); font: 500 12.5px/1 var(--font); color: var(--ink-soft); white-space: nowrap; overflow: hidden; }
 .pg-repo { color: var(--ink); font-weight: 700; }
 .pg-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 8px; background: rgba(150, 95, 35, .1); color: var(--ink); }
 .pr-git .pv-btn, .pg-sync { display: inline-flex; align-items: center; gap: 5px; }
 .pg-sync { margin-left: auto; }
 .pg-warn { color: #d6455d; }
 .pr-row { flex: 1; display: flex; min-height: 0; }
-.pr-pane { display: flex; flex-direction: column; min-width: 0; pointer-events: auto; background: var(--panel, #fff); }
+/* --panel when Caelestia or tinted panels set it, the dark theme's surface, or white */
+.pr-pane { display: flex; flex-direction: column; min-width: 0; pointer-events: auto; background: var(--panel, var(--surface, #fff)); }
 .pr-pane[data-p="canvas"] { background: transparent; pointer-events: none; }
-.pr-pane[data-p="canvas"] .pr-head { pointer-events: auto; background: var(--panel, #fff); }
+.pr-pane[data-p="canvas"] .pr-head { pointer-events: auto; background: var(--panel, var(--surface, #fff)); }
 .pr-head { display: flex; align-items: center; justify-content: space-between; height: 32px; flex: none; padding: 0 8px 0 12px; border-bottom: 1px solid rgba(150, 95, 35, .1); font: 700 12px/1 var(--font); color: var(--ink); }
 .pr-fold { border: 0; background: none; width: 24px; height: 24px; border-radius: 8px; cursor: pointer; color: var(--ink-soft); font: 600 14px/1 var(--font); }
 .pr-fold:hover { background: rgba(150, 95, 35, .1); }
 .pr-body { flex: 1; min-height: 0; overflow: auto; }
 .pr-strip { display: none; }
 .pr-pane.folded > :not(.pr-strip) { display: none; }
-.pr-pane.folded { pointer-events: auto; background: var(--panel, #fff); }
+.pr-pane.folded { pointer-events: auto; background: var(--panel, var(--surface, #fff)); }
 .pr-pane.folded .pr-strip { display: flex; flex: 1; align-items: flex-start; justify-content: center; padding-top: 12px; writing-mode: vertical-rl; border: 0; background: none; cursor: pointer; font: 700 12px/1 var(--font); color: var(--ink-soft); }
 .pr-pane.folded .pr-strip:hover { color: var(--ink); background: rgba(150, 95, 35, .06); }
 .pr-div { pointer-events: auto; cursor: col-resize; background: rgba(150, 95, 35, .1); }
-/* the plain dark theme sets no --panel, so the prototype screen takes its surface colour like the other panels */
-body.dark :is(.pr-pane:not([data-p="canvas"]), .pr-pane.folded, .pr-pane .pr-head, .pr-git, .pr-chat) { background: var(--surface); }
 body.pr-dragging #pr-preview iframe { pointer-events: none; }
 .pr-div:hover { background: var(--select); }
 .pr-note { margin: 0; padding: 16px; font: 500 12.5px/1.45 var(--font); color: var(--ink-soft); }
@@ -2769,6 +2768,7 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 #pr-code.pc-many .pc-files { display: none; }
 #pr-code.pc-many .pc-pick { display: block; }
 .pc-acts { display: flex; gap: 6px; flex: none; margin-left: auto; }
+.pc-acts .pv-btn { display: inline-flex; align-items: center; gap: 5px; }
 .pc-menu { max-height: 60vh; overflow-y: auto; }
 .pc-menu button { font-family: ui-monospace, monospace; font-weight: 500; }
 .pc-menu button.on { background: var(--blush); }

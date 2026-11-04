@@ -38,6 +38,9 @@ function fitBar() {
   el.classList.toggle('pc-many', needed > bar.clientWidth - 16 - acts - 6);
 }
 
+// wide enough for a component's file name without wrapping
+const MENU_W = 260;
+
 const closePicker = () => document.querySelector('.pc-menu')?.remove();
 
 // The files as a menu under the picker: the same menu as a row's right-click menu, so it follows the theme
@@ -64,7 +67,7 @@ function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
   m.innerHTML = items;
   document.body.appendChild(m);
   const r = btn.getBoundingClientRect();
-  Object.assign(m.style, { left: `${r.left}px`, top: `${r.bottom + 4}px`, minWidth: `${r.width}px` });
+  Object.assign(m.style, { left: `${r.left}px`, top: `${r.bottom + 4}px`, minWidth: `${Math.max(r.width, MENU_W)}px` });
   keepOnScreen(m);
   m.querySelector<HTMLElement>('.on')?.focus();
   m.onclick = e => {
@@ -78,14 +81,20 @@ function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
   };
 }
 
+const copyLabel = (done: boolean) => {
+  const icon = Icon(done ? 'check' : 'copy', { size: 14 }),
+    word = done ? 'Copied' : 'Copy';
+  return `${icon}${word}`;
+};
+
 function copyShown(btn: Element) {
   const text = $('pr-code').querySelector('.pc-text code')?.textContent ?? '';
   navigator.clipboard
     .writeText(text)
     .then(() => {
-      btn.textContent = 'Copied';
+      btn.innerHTML = copyLabel(true);
       setTimeout(() => {
-        btn.textContent = 'Copy';
+        btn.innerHTML = copyLabel(false);
       }, 1500);
     })
     .catch(() => {});
@@ -141,9 +150,13 @@ export async function renderCode(b: Board) {
     })
     .join('');
   const allLabel = all ? 'Fewer files' : 'All files',
-    toggle = hidden ? `<button class="pv-btn pc-all" title="Fenmyr’s own wiring too">${allLabel}</button>` : '';
+    allIcon = Icon(all ? 'eye-off' : 'eye', { size: 14 }),
+    toggle = hidden
+      ? `<button class="pv-btn pc-all" title="Fenmyr’s own wiring too">${allIcon}${allLabel}</button>`
+      : '';
+  const copy = copyLabel(false);
   el.classList.remove('pc-many');
-  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"></button><div class="pc-acts"><button class="pv-btn pc-copy" title="Copy this file">Copy</button>${toggle}</div></div><pre class="pc-text"><code></code></pre>`;
+  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"></button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><pre class="pc-text"><code></code></pre>`;
   needed = el.querySelector('.pc-files')?.scrollWidth ?? 0;
   fitBar();
   if (!watching) {
