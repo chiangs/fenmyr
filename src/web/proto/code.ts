@@ -4,6 +4,7 @@ import { rootOf } from '../repo/codeFolder.ts';
 import { closestTo, esc } from '../ui/dom.ts';
 import { closeOnOutsidePress, keepOnScreen } from '../ui/popover.ts';
 import { highlighted } from './highlight.ts';
+import { fromCards, showCard } from './sources.ts';
 import { valuesText } from './values.ts';
 
 // The code pane: what a developer needs to build the prototype again. Fenmyr's own wiring in a React prototype (the
@@ -115,6 +116,8 @@ async function showFile(root: string, dir: string, file: string) {
     e => esc(e instanceof Error ? e.message : String(e)),
   );
   el.querySelector('.pc-mark')?.remove();
+  const from = el.querySelector('.pc-from-slot');
+  if (from) from.innerHTML = file === VALUES ? '' : fromCards(file);
   const view = el.querySelector('.pc-text code');
   if (view) view.innerHTML = shownAs;
 }
@@ -180,7 +183,7 @@ export async function renderCode(b: Board) {
   const copy = copyLabel(false),
     caret = Icon('caret-down', { size: 12 });
   el.classList.remove('pc-many');
-  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"><span></span>${caret}</button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><pre class="pc-text"><code></code></pre>`;
+  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"><span></span>${caret}</button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><div class="pc-from-slot"></div><pre class="pc-text"><code></code></pre>`;
   needed = el.querySelector('.pc-files')?.scrollWidth ?? 0;
   fitBar();
   if (!watching) {
@@ -191,6 +194,8 @@ export async function renderCode(b: Board) {
   el.onclick = e => {
     const f = closestTo(e.target, '[data-file]')?.dataset.file;
     if (f) showFile(root, dir, f);
+    const card = closestTo(e.target, '[data-card]')?.dataset.card;
+    if (card) showCard(card);
     const pick = closestTo(e.target, '.pc-pick');
     if (pick)
       return document.querySelector('.pc-menu') ? closePicker() : openPicker(pick, list, f => showFile(root, dir, f));

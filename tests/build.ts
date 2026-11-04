@@ -34,7 +34,7 @@ case "$*" in
     echo 'export function App() { return <h1>Built by Myra</h1>; }' > src/App.tsx
     case "$2" in *OUTSIDE*) echo stray > ../../stray.txt ;; esac
     echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'"$PWD"'/src/App.tsx"}}]}}'
-    echo '{"type":"result","is_error":false,"result":"I built the heading from your Checkout note."}' ;;
+    printf '%s\\n' '{"type":"result","is_error":false,"result":"I built the heading from your Checkout note.\\nCARDS: src/App.tsx=n1"}' ;;
   *) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"ok\\"}"}' ;;
 esac
 `,
@@ -115,6 +115,23 @@ try {
     async () => /I built the heading from your Checkout note/.test(await lastMyra()),
     'her explanation arrives',
   );
+  assert.doesNotMatch(await lastMyra(), /CARDS:/, 'the builder’s card line stays out of the chat');
+  await until(
+    async () => /I built it from these cards on the board:↗ Checkout: show the total first/.test(await lastMyra()),
+    'Myra links the code back to the card it came from',
+  );
+  const sources = () =>
+    JSON.stringify(JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', 'pb.json'), 'utf8')).proto.sources);
+  await until(
+    async () => sources() === JSON.stringify({ 'src/App.tsx': ['n1'] }),
+    'the board keeps which card each file came from',
+  );
+  await until(
+    async () => (await page.textContent('#pr-code .pc-from')) === 'From the boardCheckout: show the total first',
+    'the code pane shows the card a file came from',
+  );
+  await page.click('#pr-code .pc-card');
+  assert.deepStrictEqual(await page.evaluate(() => window.__fenmyr.sel), ['n1'], 'and a click selects it on the board');
   assert.match(fs.readFileSync(app, 'utf8'), /Built by Myra/, 'the code is written in the prototype’s folder');
   const prompt = fs.readFileSync(path.join(work, 'prompt.txt'), 'utf8');
   assert.match(prompt, /Make the Checkout heading\./, 'the builder gets the request');

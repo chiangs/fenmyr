@@ -283,6 +283,7 @@ export type HostEvents = {
   // outside: paths beyond the prototype's folder that the build changed
   protoBuild:
     | { id: string; type: 'edit'; file: string }
-    | { id: string; type: 'done'; text: string; snapshot: string; outside: string[] }
+    // sources: which cards each file it wrote came from
+    | { id: string; type: 'done'; text: string; snapshot: string; outside: string[]; sources: Record<string, string[]> }
     | { id: string; type: 'error'; text: string };
 };

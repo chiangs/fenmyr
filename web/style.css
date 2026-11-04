@@ -2781,6 +2781,11 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 /* only while open: a folded column hides its body, and an id here would outrank that */
 .pr-pane:not(.folded) > #pr-code { display: flex; flex-direction: column; overflow: hidden; }
 .pc-bar { flex: none; }
+/* the cards a file came from, under the file bar */
+.pc-from { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 6px 10px; border-bottom: 1px solid rgba(150, 95, 35, .1); font: 600 10.5px/1 var(--font); color: var(--ink-soft); text-transform: uppercase; letter-spacing: .04em; }
+.pc-from-slot { flex: none; }
+.pc-card { padding: 4px 8px; border: 1px solid rgba(150, 95, 35, .2); border-radius: 8px; background: none; cursor: pointer; font: 500 11.5px/1 var(--font); color: var(--ink); text-transform: none; letter-spacing: 0; }
+.pc-card:hover { border-color: var(--pink-deep); }
 .pc-acts { display: flex; gap: 6px; flex: none; margin-left: auto; }
 .pc-acts .pv-btn { display: inline-flex; align-items: center; gap: 5px; }
 .pc-menu { max-height: 60vh; overflow-y: auto; }
