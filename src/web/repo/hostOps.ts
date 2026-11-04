@@ -25,6 +25,8 @@ export const repoOps = {
   previewOpen: (o: Ops['previewOpen']['args']) => call('previewOpen', o),
   protoBuild: (o: Ops['protoBuild']['args']) => call('protoBuild', o),
   protoUndo: (o: Ops['protoUndo']['args']) => call('protoUndo', o),
+  protoModule: (o: Ops['protoModule']['args']) => call('protoModule', o),
+  protoInstall: (o: Ops['protoInstall']['args']) => call('protoInstall', o),
   gitCommit: (o: Ops['gitCommit']['args']) => call('gitCommit', o),
   gitPush: (o: Ops['gitPush']['args']) => call('gitPush', o),
 };
@@ -52,6 +54,8 @@ export const repoFallbacks: typeof repoOps = {
   previewOpen: desktopOnly,
   protoBuild: desktopOnly,
   protoUndo: desktopOnly,
+  protoModule: desktopOnly,
+  protoInstall: desktopOnly,
   gitCommit: desktopOnly,
   gitPush: desktopOnly,
 };

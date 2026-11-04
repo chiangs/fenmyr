@@ -243,6 +243,9 @@ export type Ops = {
     result: { id: string };
   };
   protoUndo: { args: { root: string; dir: string; snapshot: string }; result: true };
+  // a file of an installed package, or null when there's none by that name
+  protoModule: { args: { root: string; file: string }; result: string | null };
+  protoInstall: { args: { root: string; packages: string[] }; result: string[] };
   gitCommit: { args: { root: string; dir: string; message: string }; result: GitStatus };
   // account: the gh login that reaches this project's GitHub copy, if it has one
   gitPush: { args: { root: string; account: string }; result: GitStatus };

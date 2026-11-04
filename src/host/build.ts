@@ -7,7 +7,7 @@ import { claudeCode } from './claudeCode.ts';
 import type { CodeAgent } from './codeAgent.ts';
 import { status } from './git.ts';
 import * as prompts from './prompts.ts';
-import { snapshot } from './prototypes.ts';
+import { installed, snapshot } from './prototypes.ts';
 import { text, type Untrusted } from './util.ts';
 
 type Event = HostEvents['protoBuild'];
@@ -50,6 +50,7 @@ export function startBuild(
       errors: text(a.errors).slice(0, 4000),
       design: shared(path.join(s.root, 'prototypes'), 'design.md'),
       myra: shared(path.join(s.root, 'prototypes'), 'myra.md'),
+      packages: installed(s.root).join(', '),
     });
     const said = await agent({ cwd: path.join(s.root, dir), prompt }, file => send({ id, type: 'edit', file }));
     const strays = (await outside(s.root, dir)).filter(p => !before.has(p));
