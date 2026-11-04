@@ -79,3 +79,18 @@ export function readProto(x: unknown): Proto | null {
     ...(device ? { device } : {}),
   };
 }
+
+// A capture card: a picture of the preview, the commit it shows, the device and width it was taken at, and when.
+// Clicking the card shows that commit in the preview again.
+export type Capture = { commit: string; device: string; width: number; at: number };
+export const COMMIT = /^[0-9a-f]{7,40}$/;
+
+export function readCapture(x: unknown): Capture | null {
+  if (!isRecord(x) || typeof x.commit !== 'string' || !COMMIT.test(x.commit)) return null;
+  return {
+    commit: x.commit,
+    device: typeof x.device === 'string' ? x.device : '',
+    width: typeof x.width === 'number' ? x.width : 0,
+    at: typeof x.at === 'number' ? x.at : 0,
+  };
+}

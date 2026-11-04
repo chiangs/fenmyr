@@ -14,7 +14,7 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 
 // where the commits stand against GitHub
 function syncOf(s: Repo) {
-  if (!s.hasCommits) return { text: 'No commits yet', icon: '', tip: 'Commit to start this repo’s history.' };
+  if (!s.head) return { text: 'No commits yet', icon: '', tip: 'Commit to start this repo’s history.' };
   if (!s.remotes.length) return { text: 'Not on GitHub', icon: '', tip: 'This repo is only on this computer.' };
   if (!s.upstream) return { text: 'Not pushed yet', icon: 'cloud-up', tip: 'GitHub doesn’t have this branch yet.' };
   const parts = [s.ahead ? `${plural(s.ahead, 'commit')} to push` : '', s.behind ? `${s.behind} to pull` : ''].filter(

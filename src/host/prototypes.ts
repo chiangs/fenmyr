@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { PROTO_DIR, type Proto, protoSlug } from '../shared/repos.ts';
+import { COMMIT, PROTO_DIR, type Proto, protoSlug } from '../shared/repos.ts';
 import { status } from './git.ts';
 import { SHARED_FILES, STARTERS } from './protoStarter.ts';
 import { pathDirs, run, which } from './util.ts';
@@ -115,6 +115,26 @@ export async function restore(root: string, dir: string, name: string, stack: Pr
 }
 
 const SKIP = new Set(['node_modules', '.git', 'dist']);
+
+const MAX_AT_COMMIT = 8_000_000;
+
+// A prototype's files at a commit, read from git: the folder on disk is never touched.
+export async function atCommit(root: string, dir: string, commit: string) {
+  const repo = await inRepo(root, dir);
+  if (!COMMIT.test(commit)) throw new Error("That isn't a commit.");
+  const ls = await run('git', ['-C', repo, 'ls-tree', '-r', '-z', '--name-only', commit, '--', dir], 30);
+  if (ls.code !== 0) throw new Error('That version isn’t in this repo any more.');
+  const out: Record<string, string> = {};
+  let total = 0;
+  for (const p of ls.out.toString('utf8').split('\0').filter(Boolean)) {
+    if (p.split('/').some(part => SKIP.has(part))) continue;
+    const r = await run('git', ['-C', repo, 'show', `${commit}:${p}`], 30);
+    total += r.out.length;
+    if (r.code !== 0 || total > MAX_AT_COMMIT) break;
+    out[p.slice(dir.length + 1)] = r.out.toString('utf8');
+  }
+  return out;
+}
 
 // The prototype's files for the code pane, by path inside its folder.
 export async function files(root: string, dir: string) {

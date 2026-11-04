@@ -115,8 +115,8 @@ export type GitStatus =
       root: string;
       // null when no branch is checked out
       branch: string | null;
-      // false until the repo's first commit, when there's nothing yet to push
-      hasCommits: boolean;
+      // the commit checked out; null until the repo's first commit, when there's nothing yet to push
+      head: string | null;
       upstream: string | null;
       ahead: number;
       behind: number;
@@ -229,6 +229,8 @@ export type Ops = {
     result: 'restored' | 'fresh';
   };
   protoFiles: { args: { root: string; dir: string }; result: string[] };
+  // a prototype's files as they were at a commit, by path inside its folder, for showing a capture again
+  protoAtCommit: { args: { root: string; dir: string; commit: string }; result: Record<string, string> };
   protoRead: { args: { root: string; dir: string; file: string }; result: string };
   // a built preview, saved as a page and opened in the person's browser
   previewOpen: { args: { html: string; name: string }; result: true };

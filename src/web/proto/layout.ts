@@ -6,6 +6,7 @@ import { myraOpen } from '../myra/chatWindow.ts';
 import { heightGrip } from '../settings/panelHeights.ts';
 import { applyLayout } from '../settings/widgets.ts';
 import { applyBoxes } from '../ui/boxes.ts';
+import { watchCaptures } from './capture.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
 import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
@@ -100,6 +101,7 @@ function build() {
   for (const d of el.querySelectorAll<HTMLElement>('.pr-div')) dragDivider(d);
   inputGrip();
   initChatPictures();
+  watchCaptures();
   new ResizeObserver(placeStage).observe(el.querySelector('[data-p="canvas"] .pr-body') ?? el);
   addEventListener('resize', place);
   return el;

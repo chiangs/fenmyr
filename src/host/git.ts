@@ -25,9 +25,9 @@ const CHANGE: Record<string, GitChange['change']> = { A: 'added', D: 'deleted' }
 
 // `git status --porcelain=v2 --branch -z`: header lines start with #, and a rename's old path is its own record
 function readStatus(out: string) {
-  const s: { branch: string | null; hasCommits: boolean; upstream: string | null; ahead: number; behind: number } = {
+  const s: { branch: string | null; head: string | null; upstream: string | null; ahead: number; behind: number } = {
     branch: null,
-    hasCommits: true,
+    head: null,
     upstream: null,
     ahead: 0,
     behind: 0,
@@ -38,7 +38,7 @@ function readStatus(out: string) {
     const rec = records[i] ?? '',
       f = rec.split(' ');
     if (rec.startsWith('# branch.head ')) s.branch = f[2] === '(detached)' ? null : (f[2] ?? null);
-    else if (rec.startsWith('# branch.oid ')) s.hasCommits = f[2] !== '(initial)';
+    else if (rec.startsWith('# branch.oid ')) s.head = f[2] && f[2] !== '(initial)' ? f[2] : null;
     else if (rec.startsWith('# branch.upstream ')) s.upstream = f[2] ?? null;
     else if (rec.startsWith('# branch.ab ')) {
       s.ahead = Math.abs(Number(f[2]) || 0);
@@ -225,7 +225,7 @@ export async function commitFolder(root: string, dir: string, message: string) {
 export async function push(root: string, credential: { gh: string; env: Record<string, string> } | null) {
   const s = await status(root);
   if (s.kind !== 'repo' || !s.branch) throw new Error('There’s no branch to push.');
-  if (!s.hasCommits) throw new Error('There’s nothing to push yet. Commit this prototype first, then push.');
+  if (!s.head) throw new Error('There’s nothing to push yet. Commit this prototype first, then push.');
   if (!s.remotes.some(x => x.name === 'origin'))
     throw new Error('This repo has no GitHub copy yet. Put it on GitHub first.');
   const helper = credential

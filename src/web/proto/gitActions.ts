@@ -58,7 +58,7 @@ async function askPush(b: Prototype) {
   if (!where) return;
   const s = await Fenmyr.gitStatus(where.root).catch(() => null);
   if (s?.kind !== 'repo' || !s.branch) return say('There’s no branch to push.', 5000);
-  if (!s.hasCommits) return say('There’s nothing to push yet. Commit this prototype first, then push.', 6000);
+  if (!s.head) return say('There’s nothing to push yet. Commit this prototype first, then push.', 6000);
   const origin = s.remotes.find(r => r.name === 'origin')?.url;
   if (!origin) return say('This project isn’t on GitHub yet. Its Repo… menu can put it there.', 6000);
   const project = appState.projects.find(p => p.repo?.path === where.root),
