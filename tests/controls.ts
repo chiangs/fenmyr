@@ -97,7 +97,7 @@ try {
   await page.mouse.down();
   for (const f of [0.2, 0.4, 0.6, 0.75]) await page.mouse.move(track.x + track.width * f, y, { steps: 3 });
   await page.mouse.up();
-  await until(async () => Number.parseInt(await field('radius'), 10) >= 26, 'dragging the slider moves it all the way');
+  await until(async () => Number.parseInt(String(await field('radius')), 10) >= 26, 'dragging the slider moves it all the way');
   await page.click('.kb-reset');
   await until(async () => (await field('radius')) === '24px', 'Reset puts the saved values back');
   assert.strictEqual(await page.locator('.kb-keep').count(), 0, 'and there is nothing to keep');
