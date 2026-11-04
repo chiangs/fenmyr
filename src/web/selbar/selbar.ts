@@ -300,7 +300,8 @@ export function placeSelbar() {
   bar.classList.toggle('on', !!show);
   if (!show) {
     closeSbPops();
-    bar.dataset.ids = '';
+    // this runs every frame, so it only writes when something changed
+    if (bar.dataset.ids) bar.dataset.ids = '';
     if (bar.dataset.key !== '') {
       bar.dataset.key = '';
       renderDesign();

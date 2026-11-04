@@ -40,7 +40,8 @@ const problem = () => page.evaluate(() => document.querySelector('.pv-error')?.t
 // her question comes before her own reply, so all her words are read
 const lastMyra = () =>
   page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg.myra')].map(m => m.textContent ?? '').join(' | '));
-// Playwright reads this button as never settling, though its box stays put (follow-up), so it's pressed in the page
+// Under a full test run, Playwright sometimes reads this button as never settling though its box stays put (see
+// decision 32), so it's pressed in the page
 const press = (label: string) =>
   page.evaluate(
     label =>

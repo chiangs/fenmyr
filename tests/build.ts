@@ -30,6 +30,7 @@ fs.writeFileSync(
 case "$*" in
   *stream-json*)
     printf '%s' "$2" > ${work}/prompt.txt
+    seen=''; for a in "$@"; do [ "$seen" = 1 ] && ls "$a" > ${work}/pictures.txt && echo "$a" > ${work}/picture-dir.txt; seen=''; [ "$a" = --add-dir ] && seen=1; done
     echo 'export function App() { return <h1>Built by Myra</h1>; }' > src/App.tsx
     case "$2" in *OUTSIDE*) echo stray > ../../stray.txt ;; esac
     echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'"$PWD"'/src/App.tsx"}}]}}'
@@ -69,7 +70,32 @@ try {
       folder: 'pf',
       kind: 'prototype',
       proto,
-      cards: [{ id: 'n1', type: 'note', x: 0, y: 0, w: 220, h: 120, text: 'Checkout: show the total first' }],
+      cards: [
+        { id: 'n1', type: 'note', x: 0, y: 0, w: 220, h: 120, text: 'Checkout: show the total first' },
+        {
+          id: 'i1',
+          type: 'image',
+          x: 300,
+          y: 0,
+          w: 100,
+          h: 100,
+          src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        },
+        {
+          id: 'k1',
+          type: 'ink',
+          x: 450,
+          y: 0,
+          w: 40,
+          h: 40,
+          pts: [
+            [0, 0],
+            [20, 30],
+          ],
+          ow: 40,
+          oh: 40,
+        },
+      ],
       links: [],
       tray: [],
     });
@@ -94,6 +120,16 @@ try {
   assert.match(prompt, /Make the Checkout heading\./, 'the builder gets the request');
   assert.match(prompt, /Checkout: show the total first/, 'and the cards');
   assert.match(prompt, /Buttons are always mint\./, 'and design.md');
+  assert.deepStrictEqual(
+    fs.readFileSync(path.join(work, 'pictures.txt'), 'utf8').trim().split('\n'),
+    ['1.png', '2.png'],
+    'and pictures of the image and the drawing',
+  );
+  assert.match(prompt, /PICTURES OF THEM[\s\S]*1\.png \(image /, 'named in its instructions');
+  assert.ok(
+    !fs.existsSync(fs.readFileSync(path.join(work, 'picture-dir.txt'), 'utf8').trim()),
+    'which are gone after the build',
+  );
   const frame = page.frameLocator('#pr-preview iframe');
   await until(
     async () =>
@@ -155,11 +191,21 @@ try {
     'GitHub’s stand-in has the commit',
   );
 
+  git('config', '--unset', 'user.name');
+  git('config', '--unset', 'user.email');
+  fs.writeFileSync(app, 'export const App = () => <p>one more</p>;\n');
+  await page.click('#prGit [data-git="commit"]');
+  await until(async () => (await lastMyra()).split('Commit 1 changed file').length === 3, 'Myra asks again');
+  await tapMyra('Commit');
+  await until(async () => /Git doesn’t know who is committing/.test(await lastMyra()), 'a commit git refuses says why');
+
   await build('OUTSIDE this time.');
   await until(
     async () => /I also changed files outside this prototype: stray\.txt/.test(await lastMyra()),
     'a change outside the folder is reported',
   );
+  const shot = await page.evaluate(() => window.Fenmyr.captureArea({ x: 0, y: 0, w: 40, h: 30 }));
+  assert.match(shot, /^data:image\/png;base64,/, 'a wireframe can be captured as it looks');
   assert.deepStrictEqual(l.errors, []);
   console.log('BUILD OK');
 } finally {

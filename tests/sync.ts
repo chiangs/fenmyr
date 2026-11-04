@@ -136,6 +136,17 @@ try {
     /refs\/fenmyr\/before-pull\//,
     'mine is kept on a hidden ref',
   );
+  await page.evaluate(() => window.__fenmyr.openHome('folder:pf'));
+  const tileSays = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('.tile.board')]
+        .map(t => t.querySelector('.tile-meta small')?.textContent ?? '')
+        .join(' | '),
+    );
+  await until(
+    async () => /main · “Their heading”/.test(await tileSays()),
+    'the folder home shows each prototype’s branch and last change',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('SYNC OK');
 } finally {

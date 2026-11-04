@@ -117,7 +117,8 @@ try {
   await page.click('[data-pv="point"]');
   await frame.locator('button.count').click();
   await until(
-    async () => /\[this: .*main > button\.count[^“]* “Count 1”\]/.test(await page.inputValue('#mcInput')),
+    async () =>
+      /\[this: .*main > button\.count[^“]* “Count 1” at src\/App\.tsx:10\]/.test(await page.inputValue('#mcInput')),
     'pointing hands the element to Myra’s input',
   );
 

@@ -9,7 +9,7 @@ import { env, isRecord, text } from './util.ts';
 const TOOLS = ['Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep'];
 const EDITS = new Set(['Write', 'Edit', 'MultiEdit']);
 
-export const claudeCode: CodeAgent = async ({ cwd, prompt }, edited) => {
+export const claudeCode: CodeAgent = async ({ cwd, prompt, readable }, edited) => {
   const claude = await claudePath();
   if (!claude) throw new Error('I need Claude Code to write code. Settings → Helpers shows how to set it up.');
   const args = [
@@ -23,6 +23,7 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt }, edited) => {
     'acceptEdits',
   ];
   args.push('--allowedTools', TOOLS.join(','), '--disallowedTools', 'Bash,WebFetch,WebSearch,Task');
+  for (const d of readable) args.push('--add-dir', d);
   return new Promise((res, rej) => {
     const p = spawn(claude, args, { cwd, env: env(), stdio: ['ignore', 'pipe', 'pipe'] });
     let buf = '',

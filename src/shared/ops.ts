@@ -239,9 +239,15 @@ export type Ops = {
       device: string;
       cards: string;
       errors: string;
+      // what the sketches, screenshots and wireframes look like, as data: URLs
+      pictures: { name: string; data: string }[];
     };
     result: { id: string };
   };
+  // part of the window as a PNG data: URL, for a wireframe's picture
+  captureArea: { args: { x: number; y: number; w: number; h: number }; result: string };
+  // when: seconds since 1970 of the last commit touching it, 0 when it has none
+  protoLastChange: { args: { root: string; dir: string }; result: { branch: string; when: number; subject: string } };
   protoUndo: { args: { root: string; dir: string; snapshot: string }; result: true };
   // a file of an installed package, or null when there's none by that name
   protoModule: { args: { root: string; file: string }; result: string | null };
