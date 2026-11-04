@@ -5,6 +5,7 @@ import { chatLog } from '../myra/chatLog.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
 import { heightGrip } from '../settings/panelHeights.ts';
 import { applyLayout } from '../settings/widgets.ts';
+import { applyBoxes } from '../ui/boxes.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
 import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
@@ -233,6 +234,7 @@ export function showProto(b: Board) {
   boardId = b.id;
   document.body.classList.toggle('proto', on);
   applyLayout();
+  applyBoxes();
   dockChat(on);
   myraOpen(on);
   if (!on) return startSync(b);

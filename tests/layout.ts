@@ -74,6 +74,41 @@ try {
     ['side', 'side'],
     'Unsorted and Wireframe join the left column, beside the board',
   );
+  const folded = () =>
+    page.evaluate(() => {
+      const min = (k: string) =>
+        !!document.querySelector(k === 'design' ? '#design' : `.box[data-box="${k}"]`)?.classList.contains('min');
+      return { boards: min('boards'), layers: min('layers'), colors: min('colors'), design: min('design') };
+    });
+  assert.deepStrictEqual(
+    await folded(),
+    { boards: false, layers: true, colors: true, design: true },
+    'a prototype board opens with only the board list and Unsorted unfolded',
+  );
+  assert.deepStrictEqual(
+    await page.evaluate(() => {
+      const d = document.getElementById('design');
+      const grip = d?.querySelector(':scope > .rz-grip');
+      return [!!grip && getComputedStyle(grip).display, !!d && d.scrollHeight <= d.clientHeight];
+    }),
+    ['none', true],
+    'a folded Wireframe shows its whole title, with no grip and no scrollbar',
+  );
+  await page.click('.box[data-box="layers"] .mini');
+  await page.evaluate(() => window.__fenmyr.openBoard('plain'));
+  await page.waitForTimeout(300);
+  assert.deepStrictEqual(
+    await folded(),
+    { boards: false, layers: false, colors: false, design: false },
+    'other boards keep their own',
+  );
+  await page.evaluate(() => window.__fenmyr.openBoard('pb'));
+  await page.waitForTimeout(300);
+  assert.deepStrictEqual(
+    await folded(),
+    { boards: false, layers: false, colors: true, design: true },
+    'and what the person opens on a prototype board stays open there',
+  );
   assert.ok(s.proto && s.docked === 'prChat' && s.chatOpen, 'a prototype board docks Myra’s chat open on the left');
   assert.deepStrictEqual(s.folded, [], 'at 1440 px every column shows');
   assert.match(

@@ -222,12 +222,6 @@ export function initDesign() {
     startPlacing('frame', { device: b.dataset.dev });
   };
 
-  $('dzMin').onclick = () => {
-    const m = $('design').classList.toggle('min');
-    $('dzMin').textContent = m ? '+' : '–';
-    placeTray();
-  };
-
   $('design').addEventListener('pointerdown', e => e.stopPropagation());
 
   addEventListener('resize', placeTray);
