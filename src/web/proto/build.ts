@@ -86,7 +86,7 @@ export function buildEvent(data: unknown) {
   if (session.board?.id === board) refresh();
   // the commit message she suggests: the first line of what she was asked to do
   const message = request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
-  addMsg('myra', String(e.text), [{ label: 'Commit…', cls: 'next', run: () => gitAction('commit', message) }, undoIt]);
+  addMsg('myra', String(e.text), [{ label: 'Commit', cls: 'next', run: () => gitAction('commit', message) }, undoIt]);
   if (strays.length)
     say(
       `I also changed files outside this prototype: ${strays.join(', ')}. Undo only puts this prototype back, so check those in the git bar.`,

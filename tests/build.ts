@@ -156,7 +156,7 @@ try {
   await build('Make the Checkout heading. Then more.');
   await until(async () => (await lastMyra()).split('I built the heading').length === 3, 'a second build');
   const tapMyra = (label: string) => page.locator('#mcList .m-acts button', { hasText: label }).last().click();
-  await tapMyra('Commit…');
+  await tapMyra('Commit');
   await until(
     async () =>
       /Commit 1 changed file in acme\/prototypes\/checkout to main\? Message: “Make the Checkout heading”/.test(
