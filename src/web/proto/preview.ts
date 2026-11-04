@@ -20,6 +20,13 @@ let pointing = false;
 // what went wrong and what was logged since the last build, newest last
 const log: Line[] = [];
 
+// the errors, for Myra to fix with her next change
+export const previewErrors = () =>
+  log
+    .filter(l => l.kind === 'error')
+    .map(l => l.text)
+    .join('\n');
+
 // other parts of the page post messages too, so this can run before any preview exists
 const frame = () => document.querySelector<HTMLIFrameElement>('#pr-preview iframe');
 

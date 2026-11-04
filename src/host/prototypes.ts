@@ -132,3 +132,47 @@ export function previewFile(html: string, name: string) {
   fs.writeFileSync(f, html);
   return f;
 }
+
+// Before every change Myra makes, the prototype's folder is saved on a hidden git ref, so the change can be undone.
+// It goes through an index of its own, so nothing the person has staged is touched.
+export async function snapshot(root: string, dir: string) {
+  const repo = await inRepo(root, dir),
+    index = path.join(os.tmpdir(), `fenmyr-index-${process.pid}-${Date.now()}`),
+    own = { GIT_INDEX_FILE: index };
+  const git = async (args: string[]) => {
+    const r = await run(
+      'git',
+      ['-C', repo, '-c', 'user.name=Fenmyr', '-c', 'user.email=fenmyr@localhost', ...args],
+      30,
+      own,
+    );
+    if (r.code !== 0) throw new Error(r.err.toString('utf8').trim() || 'Git couldn’t save a snapshot.');
+    return r.out.toString('utf8').trim();
+  };
+  try {
+    await git(['add', '-A', '--', dir]);
+    const tree = await git(['write-tree']);
+    const head = await run('git', ['-C', repo, 'rev-parse', '--verify', '-q', 'HEAD'], 30);
+    const parent = head.code === 0 ? ['-p', head.out.toString('utf8').trim()] : [];
+    const commit = await git(['commit-tree', tree, ...parent, '-m', `Before Myra's change to ${dir}`]);
+    await git(['update-ref', `refs/fenmyr/snapshots/${path.basename(dir)}/${Date.now()}`, commit]);
+    return commit;
+  } finally {
+    fs.rmSync(index, { force: true });
+  }
+}
+
+// The folder exactly as a snapshot had it: files added since are removed, and the index is left alone.
+export async function undo(root: string, dir: string, commit: string) {
+  if (!/^[0-9a-f]{40,64}$/.test(commit)) throw new Error("That isn't a snapshot.");
+  const repo = await inRepo(root, dir);
+  const listed = await run('git', ['-C', repo, 'ls-tree', '-r', '--name-only', commit, '--', dir], 30);
+  const kept = new Set(listed.out.toString('utf8').split('\n').filter(Boolean));
+  for (const f of await files(root, dir))
+    if (!kept.has(`${dir}/${f}`)) fs.rmSync(path.join(repo, dir, f), { force: true });
+  if (kept.size) {
+    const r = await run('git', ['-C', repo, 'restore', `--source=${commit}`, '--worktree', '--', dir], 30);
+    if (r.code !== 0) throw new Error(r.err.toString('utf8').trim() || 'Git couldn’t put the snapshot back.');
+  }
+  return true as const;
+}

@@ -23,6 +23,8 @@ export const repoOps = {
   protoFiles: (o: Ops['protoFiles']['args']) => call('protoFiles', o),
   protoRead: (o: Ops['protoRead']['args']) => call('protoRead', o),
   previewOpen: (o: Ops['previewOpen']['args']) => call('previewOpen', o),
+  protoBuild: (o: Ops['protoBuild']['args']) => call('protoBuild', o),
+  protoUndo: (o: Ops['protoUndo']['args']) => call('protoUndo', o),
 };
 
 export const repoFallbacks: typeof repoOps = {
@@ -46,4 +48,6 @@ export const repoFallbacks: typeof repoOps = {
   protoFiles: desktopOnly,
   protoRead: desktopOnly,
   previewOpen: desktopOnly,
+  protoBuild: desktopOnly,
+  protoUndo: desktopOnly,
 };

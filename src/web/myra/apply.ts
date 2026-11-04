@@ -19,6 +19,7 @@ import { refreshBoards } from '../library/rowMenu.ts';
 import { byName, findFolder, makeFolder, makeProject, moveBoard, putFolder, saveLib } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
+import { startBuild } from '../proto/build.ts';
 import { applyNewPrototype, repoActs } from '../repo/myra.ts';
 import { FS } from '../selbar/textSize.ts';
 import { reply, snapTo } from '../settings/licenses.ts';
@@ -371,6 +372,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     });
   // what next: Myra's own ideas, or a sensible guess from what she just made
   acts.push(...repoActs(r), ...(await applyNewPrototype(r)));
+  if (r.build?.request) startBuild(r.build.request);
   const next = acts.length
     ? []
     : (r.next?.length ? r.next : guessNext(r, added))
