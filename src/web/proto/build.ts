@@ -5,12 +5,13 @@ import { addMsg } from '../myra/chatLog.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { say } from '../settings/licenses.ts';
 import { renderCode } from './code.ts';
+import { gitAction } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
 import { previewErrors, renderPreview } from './preview.ts';
 
 // Myra's "build": the host writes the code with Claude Code while the chat shows what's being written, then the code,
 // the preview and the git bar catch up and her explanation arrives with an Undo.
-let running: { id: string; board: string; root: string; dir: string } | null = null;
+let running: { id: string; board: string; root: string; dir: string; request: string } | null = null;
 
 // what the builder reads from the board: the selected cards, or all of them, without positions or styling
 const brief = (c: Card) =>
@@ -44,7 +45,7 @@ export async function startBuild(request: string) {
       cards,
       errors: previewErrors(),
     });
-    running = { id, board: b.id, root, dir };
+    running = { id, board: b.id, root, dir, request };
   } catch (e) {
     status('');
     say(e instanceof Error ? e.message : String(e), 8000);
@@ -68,7 +69,7 @@ export function buildEvent(data: unknown) {
   const e: Record<string, unknown> = { ...data };
   if (e.id !== running.id) return;
   if (e.type === 'edit') return status(`Writing ${String(e.file)}…`);
-  const { root, dir, board } = running;
+  const { root, dir, board, request } = running;
   running = null;
   status('');
   if (e.type === 'error') return say(`I couldn’t finish that. ${String(e.text)}`, 10000);
@@ -76,7 +77,9 @@ export function buildEvent(data: unknown) {
     strays = Array.isArray(e.outside) ? e.outside.map(String) : [];
   const undoIt = { label: 'Undo', ghost: true, run: () => undo(root, dir, snapshot) };
   if (session.board?.id === board) refresh();
-  addMsg('myra', String(e.text), [undoIt]);
+  // the commit message she suggests: the first line of what she was asked to do
+  const message = request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
+  addMsg('myra', String(e.text), [{ label: 'Commit…', cls: 'next', run: () => gitAction('commit', message) }, undoIt]);
   if (strays.length)
     say(
       `I also changed files outside this prototype: ${strays.join(', ')}. Undo only puts this prototype back, so check those in the git bar.`,

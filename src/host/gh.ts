@@ -93,7 +93,7 @@ const lastLine = (b: Buffer) => b.toString('utf8').trim().split('\n').pop() ?? '
 
 // gh acts as its active account. For another one, that account's token goes to gh through its environment and never
 // leaves this process.
-async function asAccount(account: string) {
+export async function asAccount(account: string) {
   const gh = ghPath();
   if (!gh) throw new Error("gh isn't installed yet.");
   const r = await run(gh, ['auth', 'token', '--hostname', 'github.com', '--user', account], 30);
