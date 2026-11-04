@@ -2777,7 +2777,8 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 #pr-code.pc-many .pc-files { display: none; }
 #pr-code.pc-many .pc-pick { display: flex; }
 /* the bar stays put: only the code under it scrolls, both ways */
-#pr-code { display: flex; flex-direction: column; overflow: hidden; }
+/* only while open: a folded column hides its body, and an id here would outrank that */
+.pr-pane:not(.folded) > #pr-code { display: flex; flex-direction: column; overflow: hidden; }
 .pc-bar { flex: none; }
 .pc-acts { display: flex; gap: 6px; flex: none; margin-left: auto; }
 .pc-acts .pv-btn { display: inline-flex; align-items: center; gap: 5px; }

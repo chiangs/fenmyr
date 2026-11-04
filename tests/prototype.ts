@@ -247,6 +247,22 @@ try {
     device: 'phone',
   });
   assert.strictEqual(made.folder, folder.id, 'in the project’s prototyping folder');
+  const chat = () => page.evaluate(() => document.getElementById('mcList')?.textContent ?? '');
+  const before = await chat();
+  await page.evaluate(() => {
+    window.__fenmyr.setGreet(true, 'normal');
+    window.__fenmyr.greet('start');
+    window.__fenmyr.setGreet(false, 'normal');
+  });
+  assert.strictEqual(await chat(), before, 'her start-up hello never piles up in a prototype board’s chat');
+  await page.click('[data-fold="code"]');
+  await page.waitForTimeout(400);
+  assert.strictEqual(
+    await page.evaluate(() => getComputedStyle(document.getElementById('pr-code') ?? document.body).display),
+    'none',
+    'a folded code column hides its body, scrollbars and all',
+  );
+  await page.click('[data-open="code"]');
   await page.evaluate(() =>
     window.__fenmyr.applyMyra(
       { say: 'Link it first.', newPrototype: { name: 'Diary', project: 'Personal' } },
