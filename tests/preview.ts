@@ -21,7 +21,7 @@ const probe = async (what: string, go: () => Promise<unknown>) => {
 
 export function App() {
   const [n, setN] = useState(0);
-  return <main><button className="count" onClick={() => setN(n + 1)}>Count {n}</button></main>;
+  return <main><button className="count p-4" onClick={() => setN(n + 1)}>Count {n}</button></main>;
 }
 console.log('hello from the prototype');
 probe('media', () => fetch('fenmyrmedia://media/x.webm').then(r => r.text()));
@@ -88,12 +88,17 @@ try {
     'rgb(1, 2, 3)',
     'imported CSS applies',
   );
+  assert.strictEqual(
+    await frame.locator('button.count').evaluate(b => getComputedStyle(b).paddingTop),
+    '16px',
+    'Tailwind classes apply, offline',
+  );
   await frame.locator('button.count').click();
   assert.strictEqual(await frame.locator('button.count').textContent(), 'Count 1', 'React state works');
   assert.match(
     await frame.locator('body').evaluate(b => getComputedStyle(b).fontFamily),
-    /system-ui/,
-    'the stylesheet index.html links to applies',
+    /sans-serif/,
+    'the starter’s Tailwind stylesheet applies',
   );
   await until(
     async () => /parent:/.test(await logText()) && /media:/.test(await logText()) && /file:/.test(await logText()),
@@ -112,7 +117,7 @@ try {
   await page.click('[data-pv="point"]');
   await frame.locator('button.count').click();
   await until(
-    async () => /\[this: .*main > button\.count “Count 1”\]/.test(await page.inputValue('#mcInput')),
+    async () => /\[this: .*main > button\.count[^“]* “Count 1”\]/.test(await page.inputValue('#mcInput')),
     'pointing hands the element to Myra’s input',
   );
 

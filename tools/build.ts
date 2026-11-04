@@ -29,6 +29,8 @@ await Promise.all([
 // Prototype previews bundle in the page with esbuild-wasm, and every React prototype runs on this one copy of React,
 // so a prototype needs no npm install to show.
 fs.copyFileSync('node_modules/esbuild-wasm/esbuild.wasm', 'web/dist/esbuild.wasm');
+// Tailwind's browser build makes a prototype's CSS from its classes inside the preview, offline
+fs.copyFileSync('node_modules/@tailwindcss/browser/dist/index.global.js', 'web/dist/proto-tailwind.js');
 await build({
   stdin: {
     contents: `globalThis.__fenmyrReact = {

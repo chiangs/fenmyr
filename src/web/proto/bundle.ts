@@ -24,8 +24,10 @@ const LOADERS: Record<string, esbuild.Loader> = {
 
 let started: Promise<void> | null = null;
 let reactRuntime: Promise<string> | null = null;
+let tailwindRuntime: Promise<string> | null = null;
 const start = () => (started ??= esbuild.initialize({ wasmURL: 'dist/esbuild.wasm' }));
 const runtime = () => (reactRuntime ??= fetch('dist/proto-react.js').then(r => r.text()));
+const tailwind = () => (tailwindRuntime ??= fetch('dist/proto-tailwind.js').then(r => r.text()));
 
 // inline text can't end the script or style it sits in
 const inline = (tag: 'script' | 'style', body: string) =>
@@ -89,6 +91,8 @@ async function reactPage(files: string[], read: Reader) {
         setup(b) {
           b.onResolve({ filter: /.*/ }, a => {
             if (REACT.has(a.path)) return { path: a.path, namespace: 'react' };
+            // Tailwind runs in the frame instead, reading this CSS as its input
+            if (a.path === 'tailwindcss' && a.kind === 'import-rule') return { path: a.path, namespace: 'nothing' };
             const f =
               a.kind === 'entry-point'
                 ? found(a.path)
@@ -101,6 +105,7 @@ async function reactPage(files: string[], read: Reader) {
               : `“${a.path}” isn't a package the preview has. It has React built in; other packages need a dev server, which isn't part of Fenmyr yet.`;
             return { errors: [{ text: what }] };
           });
+          b.onLoad({ filter: /.*/, namespace: 'nothing' }, () => ({ contents: '', loader: 'css' }));
           b.onLoad({ filter: /.*/, namespace: 'react' }, a => ({
             contents: `module.exports = globalThis.__fenmyrReact[${JSON.stringify(a.path)}];`,
             loader: 'js',
@@ -118,7 +123,11 @@ async function reactPage(files: string[], read: Reader) {
   const scripts = inline('script', await runtime()) + inline('script', js);
   // a function, so the $ signs in minified code are put in as they are
   const body = html.replace(tag[0], () => scripts);
-  return withHead(body, head() + (css ? inline('style', css) : ''));
+  // Tailwind's runtime turns its classes, and this CSS with any @theme in it, into styles as the page runs
+  const styles =
+    inline('script', await tailwind()) +
+    (css ? inline('style', css).replace('<style>', '<style type="text/tailwindcss">') : '');
+  return withHead(body, head() + styles);
 }
 
 export async function buildPreview(stack: Proto['stack'], files: string[], read: Reader): Promise<Built> {

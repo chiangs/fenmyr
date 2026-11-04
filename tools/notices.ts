@@ -164,7 +164,7 @@ const items: Item[] = [
     text: must(path.join(ROOT, 'web', 'fonts', 'OFL.txt')),
   },
   // prototype previews: esbuild-wasm bundles them in the page, and they run on this copy of React (web/dist)
-  ...['esbuild-wasm', 'react', 'react-dom', 'scheduler'].map(name => {
+  ...['@tailwindcss/browser', 'esbuild-wasm', 'react', 'react-dom', 'scheduler'].map(name => {
     const dir = path.join(ROOT, 'node_modules', name);
     const j = pkg(dir);
     const file = fs.readdirSync(dir).find(f => /^licen[cs]e(\.md|\.txt)?$/i.test(f));

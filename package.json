@@ -87,6 +87,7 @@
     }
   },
   "dependencies": {
+    "@tailwindcss/browser": "^4.3.4",
     "esbuild": "^0.28.2",
     "esbuild-wasm": "^0.28.2",
     "react": "^19.3.1",
