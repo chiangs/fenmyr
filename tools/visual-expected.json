@@ -1,4 +1,7 @@
 {
   "settings-helpers": "Settings → Helpers gains the Git and GitHub section (#173), so the tab is longer and its scrollbar thumb shorter.",
-  "settings-myra": "Settings → Myra’s “Remember chats” says prototype boards always keep theirs, so that row wraps a line further and the scrollbar thumb is shorter."
+  "settings-myra": "Settings → Myra’s “Remember chats” says prototype boards always keep theirs, so that row wraps a line further and the scrollbar thumb is shorter.",
+  "proto-wide-screen": "The prototype screen at 1,440 px. main has no prototype boards yet, so its side shows an ordinary board; this becomes the baseline once the feature lands on main.",
+  "proto-medium-screen": "The prototype screen at 1,200 px. main has no prototype boards yet, so its side shows an ordinary board; this becomes the baseline once the feature lands on main.",
+  "proto-narrow-screen": "The prototype screen at 900 px. main has no prototype boards yet, so its side shows an ordinary board; this becomes the baseline once the feature lands on main."
 }

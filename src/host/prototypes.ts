@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { COMMIT, PROTO_DIR, type Proto, protoSlug } from '../shared/repos.ts';
-import { status } from './git.ts';
+import { topLevel } from './git.ts';
 import { SHARED_FILES, STARTERS } from './protoStarter.ts';
 import { pathDirs, run, which } from './util.ts';
 
@@ -16,10 +16,11 @@ function write(root: string, files: Record<string, string>, overwrite: boolean) 
   }
 }
 
+// the project's repo, still a repo and still rooted where it was linked; it runs on every file read, so one git call
 async function repoRoot(root: string) {
-  const s = await status(root);
-  if (s.kind !== 'repo' || s.root !== path.resolve(root)) throw new Error("This project's repo isn't there any more.");
-  return s.root;
+  const top = fs.existsSync(root) ? await topLevel(root) : null;
+  if (top !== path.resolve(root)) throw new Error("This project's repo isn't there any more.");
+  return top;
 }
 
 // prototypes/<slug>, numbered when the name is taken

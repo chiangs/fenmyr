@@ -67,6 +67,12 @@ const readRemotes = (out: string) =>
     .filter(m => m !== null)
     .map(m => ({ name: m[1] ?? '', url: (m[2] ?? '').replace(/^([a-z+]+:\/\/)[^@/]+@/i, '$1') }));
 
+// The repo a folder belongs to, or null: one git call, for checks made on every file a prototype reads.
+export async function topLevel(asked: string) {
+  const r = await git(folder(asked), ['rev-parse', '--show-toplevel']);
+  return r.code === 0 ? r.out.trim() : null;
+}
+
 export async function status(asked: string): Promise<GitStatus> {
   const dir = folder(asked);
   if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return { kind: 'missing' };

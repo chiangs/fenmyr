@@ -213,6 +213,30 @@ try {
   await page.click('[data-pv="latest"]');
   await until(async () => (await frame.locator('h1').textContent()) === 'Second', 'Back to latest');
 
+  // bundle time, for a prototype of 13 files: seven components, App, and the starter's own
+  const parts = Array.from({ length: 7 }, (_, i) => `Part${i + 1}`);
+  fs.mkdirSync(path.join(repo, dir, 'src/components'), { recursive: true });
+  for (const n of parts)
+    fs.writeFileSync(
+      path.join(repo, dir, 'src/components', `${n}.tsx`),
+      `import { useState } from 'react';\nexport function ${n}() {\n  const [on, setOn] = useState(false);\n  const label = on ? 'on' : 'off';\n  return <button className="p-2 border" onClick={() => setOn(!on)}>{label}</button>;\n}\n`,
+    );
+  const times: number[] = [];
+  for (let run = 1; run <= 3; run++) {
+    const imports = parts.map(n => `import { ${n} } from './components/${n}';`).join('\n'),
+      shown = parts.map(n => `<${n} key="${n}" />`).join(', ');
+    fs.writeFileSync(
+      path.join(repo, dir, 'src/App.tsx'),
+      `${imports}\nexport function App() {\n  const all = [${shown}];\n  return <main><h1>Run ${run}</h1>{all}</main>;\n}\n`,
+    );
+    const t0 = Date.now();
+    await page.click('[data-pv="refresh"]');
+    await frame.locator('h1', { hasText: `Run ${run}` }).waitFor({ timeout: 30000 });
+    times.push(Date.now() - t0);
+  }
+  console.log(`BUNDLE 13 files, refresh to running: ${times.join(', ')} ms`);
+  assert.ok(Math.min(...times) < 3000, `a 13-file prototype rebuilds in under 3 s (${times.join(', ')} ms)`);
+
   fs.writeFileSync(
     path.join(repo, dir, 'src/App.tsx'),
     "import _ from 'lodash';\n// TypeScript drops imports nothing uses, so this one is used\nexport const App = () => <p>{String(_)}</p>;\n",
