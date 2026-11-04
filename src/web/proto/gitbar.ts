@@ -29,8 +29,10 @@ export async function renderGitBar(b: Board) {
         : s.ahead || s.behind
           ? `↑${s.ahead} ↓${s.behind}`
           : 'Up to date',
-    where = esc(s.root);
-  el.innerHTML = `<b class="pg-repo" title="${where}">${repo}</b><span class="pg-chip">${branch}</span><span>${changes}</span><span class="pg-sync">${sync}</span><button class="pv-btn" data-git="commit">Commit…</button><button class="pv-btn" data-git="push">Push</button>`;
+    where = esc(s.root),
+    behind = s.behind,
+    pull = behind ? `<button class="pv-btn" data-git="pull">Pull ${behind} from GitHub</button>` : '';
+  el.innerHTML = `<b class="pg-repo" title="${where}">${repo}</b><span class="pg-chip">${branch}</span><span>${changes}</span><span class="pg-sync">${sync}</span>${pull}<button class="pv-btn" data-git="commit">Commit…</button><button class="pv-btn" data-git="push">Push</button>`;
   el.onclick = e => {
     const a = closestTo(e.target, '[data-git]')?.dataset.git;
     if (a) gitAction(a);

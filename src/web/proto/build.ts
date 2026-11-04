@@ -8,6 +8,7 @@ import { renderCode } from './code.ts';
 import { gitAction } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
 import { previewErrors, renderPreview } from './preview.ts';
+import { beforeBuild } from './sync.ts';
 
 // Myra's "build": the host writes the code with Claude Code while the chat shows what's being written, then the code,
 // the preview and the git bar catch up and her explanation arrives with an Undo.
@@ -25,11 +26,13 @@ const status = (words: string) => {
   $('mcStatus').textContent = words;
 };
 
-export async function startBuild(request: string) {
+// synced: the repo was checked against GitHub just now (beforeBuild), so this is the go-ahead
+export async function startBuild(request: string, synced = false) {
   const b = session.board;
   const root = b ? rootOf(b) : null;
   if (b?.kind !== 'prototype' || !root) return;
   if (running) return say('I’m still writing the last change. I’ll start on this once it’s done.', 6000);
+  if (!synced) return beforeBuild(b, request, () => startBuild(request, true));
   const picked = b.cards.filter(c => session.sel.has(c.id));
   const cards = JSON.stringify((picked.length ? picked : b.cards).slice(0, 80).map(brief));
   const { dir, stack, purpose = '', device = '' } = b.proto;

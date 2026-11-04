@@ -294,6 +294,11 @@ const OPS = {
   protoUndo: a => prototypes.undo(text(a.root), text(a.dir), text(a.snapshot)),
   protoModule: a => prototypes.moduleFile(text(a.root), text(a.file)),
   protoInstall: a => prototypes.install(text(a.root), strings(a.packages)),
+  gitFetch: async a => git.fetchOrigin(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+  gitPull: async a => git.pull(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+  gitKeepMine: async a =>
+    git.keepMine(text(a.root), text(a.branch), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+  gitTakeTheirs: a => git.takeTheirs(text(a.root)),
   gitCommit: a => git.commitFolder(text(a.root), text(a.dir), text(a.message)),
   gitPush: async a => git.push(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
   ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),

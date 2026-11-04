@@ -5,6 +5,7 @@ import { renderCode } from './code.ts';
 import { DEFAULT_LAYOUT, DIVIDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
 import { renderPreview } from './preview.ts';
+import { startSync } from './sync.ts';
 
 // A prototype board's screen: Myra's chat docked on the left and always open, then the preview, the code and the
 // canvas. The canvas is the ordinary board, moved into its column, so everything on it works as on any other board.
@@ -146,9 +147,10 @@ export function showProto(b: Board) {
   document.body.classList.toggle('proto', on);
   dockChat(on);
   myraOpen(on);
-  if (!on) return;
+  if (!on) return startSync(b);
   place();
   renderGitBar(b);
   renderCode(b);
   renderPreview(b);
+  startSync(b);
 }

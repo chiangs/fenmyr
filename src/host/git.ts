@@ -208,3 +208,75 @@ export async function push(root: string, credential: { gh: string; env: Record<s
   if (r.code !== 0) throw new Error(plain(r.err.toString('utf8').trim().split('\n').pop() ?? ''));
   return status(s.root);
 }
+
+type Credential = { gh: string; env: Record<string, string> } | null;
+const remote = async (root: string, credential: Credential, args: string[], timeout = 120) => {
+  const helper = credential
+    ? ['-c', 'credential.helper=', '-c', `credential.helper=!${credential.gh} auth git-credential`]
+    : [];
+  const r = await run('git', [...SAFE, ...helper, '-C', root, ...args], timeout, {
+    ...credential?.env,
+    GIT_TERMINAL_PROMPT: '0',
+  });
+  return { code: r.code, out: r.out.toString('utf8'), err: r.err.toString('utf8').trim() };
+};
+
+// What GitHub has that this computer doesn't. It only reads, so it runs without asking.
+export async function fetchOrigin(root: string, credential: Credential) {
+  const s = await status(root);
+  if (s.kind !== 'repo' || !s.remotes.some(x => x.name === 'origin')) return s;
+  await remote(s.root, credential, ['fetch', '--quiet', 'origin'], 60);
+  return status(s.root);
+}
+
+// A fast-forward when GitHub only moved ahead; a rebase when both sides did. A conflict stops at once and leaves the
+// files as they were, naming the ones that clashed.
+export async function pull(
+  root: string,
+  credential: Credential,
+): Promise<{ kind: 'pulled' } | { kind: 'conflict'; files: string[] }> {
+  const s = await status(root);
+  if (s.kind !== 'repo' || !s.upstream) throw new Error('This branch has no GitHub copy to pull from.');
+  const ff = await remote(s.root, credential, ['pull', '--ff-only', '--quiet']);
+  if (ff.code === 0) return { kind: 'pulled' };
+  if (/would be overwritten|uncommitted|unstaged/i.test(ff.err))
+    throw new Error('Commit your changes first, then pull.');
+  const rebase = await remote(s.root, credential, [
+    '-c',
+    'user.name=Fenmyr',
+    '-c',
+    'user.email=fenmyr@localhost',
+    'pull',
+    '--rebase',
+    '--quiet',
+  ]);
+  if (rebase.code === 0) return { kind: 'pulled' };
+  const clashed = await git(s.root, ['diff', '--name-only', '--diff-filter=U']);
+  await git(s.root, ['rebase', '--abort']);
+  const files = clashed.out.split('\n').filter(Boolean);
+  if (!files.length) throw new Error(plain(rebase.err.split('\n').pop() ?? ''));
+  return { kind: 'conflict', files };
+}
+
+// After a conflict: this computer's version goes to a new branch on GitHub, so nothing is lost.
+export async function keepMine(root: string, branch: string, credential: Credential) {
+  if (!/^prototype\/[a-z0-9-]+$/.test(branch)) throw new Error("That isn't a branch name Fenmyr makes.");
+  const s = await status(root);
+  if (s.kind !== 'repo') throw new Error("This repo isn't there any more.");
+  const sw = await git(s.root, ['switch', '-c', branch]);
+  if (sw.code !== 0) throw new Error(plain(sw.err));
+  const r = await remote(s.root, credential, ['push', '-u', 'origin', branch]);
+  if (r.code !== 0) throw new Error(plain(r.err.split('\n').pop() ?? ''));
+  return status(s.root);
+}
+
+// After a conflict: GitHub's version. This computer's commit is kept on a hidden ref first, so it can be found again.
+export async function takeTheirs(root: string) {
+  const s = await status(root);
+  if (s.kind !== 'repo' || !s.upstream) throw new Error('This branch has no GitHub copy.');
+  const kept = await git(s.root, ['update-ref', `refs/fenmyr/before-pull/${Date.now()}`, 'HEAD']);
+  if (kept.code !== 0) throw new Error(plain(kept.err));
+  const r = await git(s.root, ['reset', '--hard', '@{u}']);
+  if (r.code !== 0) throw new Error(plain(r.err));
+  return status(s.root);
+}

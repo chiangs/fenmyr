@@ -27,6 +27,10 @@ export const repoOps = {
   protoUndo: (o: Ops['protoUndo']['args']) => call('protoUndo', o),
   protoModule: (o: Ops['protoModule']['args']) => call('protoModule', o),
   protoInstall: (o: Ops['protoInstall']['args']) => call('protoInstall', o),
+  gitFetch: (o: Ops['gitFetch']['args']) => call('gitFetch', o),
+  gitPull: (o: Ops['gitPull']['args']) => call('gitPull', o),
+  gitKeepMine: (o: Ops['gitKeepMine']['args']) => call('gitKeepMine', o),
+  gitTakeTheirs: (o: Ops['gitTakeTheirs']['args']) => call('gitTakeTheirs', o),
   gitCommit: (o: Ops['gitCommit']['args']) => call('gitCommit', o),
   gitPush: (o: Ops['gitPush']['args']) => call('gitPush', o),
 };
@@ -56,6 +60,10 @@ export const repoFallbacks: typeof repoOps = {
   protoUndo: desktopOnly,
   protoModule: desktopOnly,
   protoInstall: desktopOnly,
+  gitFetch: desktopOnly,
+  gitPull: desktopOnly,
+  gitKeepMine: desktopOnly,
+  gitTakeTheirs: desktopOnly,
   gitCommit: desktopOnly,
   gitPush: desktopOnly,
 };
