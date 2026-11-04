@@ -1,6 +1,7 @@
 import type { Board, Folder, Project } from '../../shared/model.ts';
 import type { Proto } from '../../shared/repos.ts';
 import { appState } from '../core/state.ts';
+import { newBoardIn } from '../library/nesting.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
 import { makeFolder, saveLib } from '../library/tree.ts';
@@ -62,8 +63,12 @@ export async function adoptPrototypes(p: Project) {
   chirp(`I found ${what} already in prototypes/ and gave each a board in “${f.name}” ✦`, 6000);
 }
 
+// What adding a board to a folder means: a prototype in a prototyping folder, which holds nothing else, and an
+// ordinary board everywhere else.
+export const addBoardTo = (f: Folder) => (f.kind === 'prototyping' ? newPrototypeIn(f) : newBoardIn(f.id));
+
 // Name and stack, then createPrototype.
-export function newPrototypeIn(f: Folder) {
+function newPrototypeIn(f: Folder) {
   const p = projectOf(f);
   if (!p?.repo) {
     if (p) linkRepo(p);

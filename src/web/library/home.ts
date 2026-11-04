@@ -5,11 +5,11 @@ import { $, stage } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { findClose } from '../features/find.ts';
 import { showLastChange } from '../proto/homeInfo.ts';
-import { newPrototypeIn } from '../repo/prototypes.ts';
+import { addBoardTo } from '../repo/prototypes.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
-import { draggable, dropZone, inlineRename, nestBoard, newBoardIn } from './nesting.ts';
+import { draggable, dropZone, inlineRename, nestBoard } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
 import { refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
 import {
@@ -277,9 +277,9 @@ export function renderHome(): void {
     boardsIn(f.id).forEach(b => {
       grid.appendChild(boardTile(b));
     });
-    if (f.kind === 'prototyping') add('New prototype', () => newPrototypeIn(f));
+    if (f.kind === 'prototyping') add('New prototype', () => addBoardTo(f));
     else {
-      add('New board', () => newBoardIn(f.id));
+      add('New board', () => addBoardTo(f));
       add('New folder', async () => {
         const ff = makeFolder(uniqueName(appState.folders, 'New folder'), f.project || null);
         ff.parent = f.id;
