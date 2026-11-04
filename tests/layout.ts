@@ -61,7 +61,7 @@ try {
   assert.deepStrictEqual(s.folded, [], 'at 1440 px every column shows');
   assert.match(
     s.git,
-    /acme\s*main\s*\d+ changes\s*Only on this computer/,
+    /acme\s*main\s*\d+ changes?\s*Only on this computer/,
     'the git bar names the repo, branch, changes and sync',
   );
   assert.match(s.code, /<div id="root"><\/div>/, 'the code pane opens on index.html');

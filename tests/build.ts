@@ -17,7 +17,8 @@ git('init', '-q', '-b', 'main');
 // linking a repo makes sure git knows who commits
 git('config', 'user.name', 'Ann Lee');
 git('config', 'user.email', 'ann@example.com');
-fs.writeFileSync(path.join(repo, 'design.md'), 'Buttons are always mint.\n');
+fs.mkdirSync(path.join(repo, 'prototypes'));
+fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), 'Buttons are always mint.\n');
 
 const bin = path.join(work, 'bin');
 fs.mkdirSync(bin);

@@ -108,7 +108,7 @@ function render() {
     steps =
       gitStep +
       nameStep(setup) +
-      '<p class="set-note">GitHub is optional. It keeps a copy of your prototypes online and gives you a link to share. Everything else works without it.</p>' +
+      '<p class="set-note">GitHub is optional. It keeps a copy of your prototypes online and gives you a link to share. Everything else works without it. Repos Fenmyr makes for you on GitHub start private, so only you can see them until you change that on GitHub.</p>' +
       ghStep +
       signInStep(gh) +
       step(5, setup.ghForGit, 'Let git use your sign-in', useBody);

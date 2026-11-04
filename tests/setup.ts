@@ -58,6 +58,7 @@ try {
   await until(/Your name and email/, 'the steps show');
   assert.match(await text(), /Git\s*Installed\./, 'git is found');
   assert.match(await text(), /GitHub’s gh tool\s*Installed\./, 'gh is found');
+  assert.match(await text(), /start private/, 'it says new GitHub repos start private');
 
   await page.fill('#gsName', 'Ann Lee');
   await page.fill('#gsEmail', 'nope');
