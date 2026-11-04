@@ -14,7 +14,8 @@ for (const r of [repo, lionRepo]) {
   fs.mkdirSync(r);
   execFileSync('git', ['-C', r, 'init', '-q', '-b', 'main']);
 }
-fs.writeFileSync(path.join(repo, 'design.md'), '# Our own design notes\n');
+fs.mkdirSync(path.join(repo, 'prototypes'));
+fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), '# Our own design notes\n');
 
 const l = await launch();
 const { page } = l;
@@ -103,11 +104,17 @@ try {
     'braces never reach JSX',
   );
   for (const f of ['package.json', 'tsconfig.json', '.gitignore', 'myra.md'])
-    assert.ok(fs.existsSync(path.join(repo, f)), `the shared ${f} is made`);
+    assert.ok(fs.existsSync(path.join(repo, 'prototypes', f)), `the shared ${f} is made in prototypes/`);
   assert.strictEqual(
-    fs.readFileSync(path.join(repo, 'design.md'), 'utf8'),
+    fs.readFileSync(path.join(repo, 'prototypes', 'design.md'), 'utf8'),
     '# Our own design notes\n',
     'the repo’s own design.md is kept',
+  );
+  assert.deepStrictEqual(fs.readdirSync(repo).sort(), ['.git', 'prototypes'], 'nothing lands at the repo root');
+  assert.match(
+    fs.readFileSync(path.join(repo, 'prototypes', 'myra.md'), 'utf8'),
+    /The JSX return holds no logic/,
+    'the default coding guidance is there to edit',
   );
   assert.ok(
     await page.evaluate(() => !!document.querySelector('#boards .board-row.proto.on')),

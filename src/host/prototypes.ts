@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { PROTO_DIR, type Proto, protoSlug } from '../shared/repos.ts';
 import { status } from './git.ts';
-import { ROOT_FILES, STARTERS } from './protoStarter.ts';
+import { SHARED_FILES, STARTERS } from './protoStarter.ts';
 import { run } from './util.ts';
 
 function write(root: string, files: Record<string, string>, overwrite: boolean) {
@@ -29,13 +29,13 @@ function freeDir(root: string, base: string) {
   return `prototypes/${slug}`;
 }
 
-// Makes the prototype's folder and the shared root files the repo lacks.
+// Makes the prototype's folder, and the files every prototype shares in prototypes/ where the repo lacks them.
 export async function create(root: string, name: string, stack: Proto['stack']): Promise<Proto> {
   const repo = await repoRoot(root);
   const dir = freeDir(repo, protoSlug(name));
   write(
-    repo,
-    ROOT_FILES(
+    path.join(repo, 'prototypes'),
+    SHARED_FILES(
       path
         .basename(repo)
         .toLowerCase()

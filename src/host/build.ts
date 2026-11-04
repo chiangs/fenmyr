@@ -48,8 +48,8 @@ export function startBuild(
       device: text(a.device).slice(0, 20),
       cards: text(a.cards).slice(0, 30_000),
       errors: text(a.errors).slice(0, 4000),
-      design: shared(s.root, 'design.md'),
-      myra: shared(s.root, 'myra.md'),
+      design: shared(path.join(s.root, 'prototypes'), 'design.md'),
+      myra: shared(path.join(s.root, 'prototypes'), 'myra.md'),
     });
     const said = await agent({ cwd: path.join(s.root, dir), prompt }, file => send({ id, type: 'edit', file }));
     const strays = (await outside(s.root, dir)).filter(p => !before.has(p));

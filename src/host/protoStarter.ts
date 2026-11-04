@@ -64,11 +64,11 @@ const html = (title: string): Files => ({
 
 export const STARTERS: Record<Proto['stack'], (title: string) => Files> = { react, html };
 
-// written only where missing, so a repo's own versions always win
-export const ROOT_FILES = (repoName: string): Files => ({
+// written in prototypes/ only where missing, so the repo's own versions always win and nothing lands at its root
+export const SHARED_FILES = (repoName: string): Files => ({
   'package.json': `${JSON.stringify(
     {
-      name: repoName,
+      name: `${repoName}-prototypes`,
       private: true,
       type: 'module',
       scripts: { dev: 'vite' },
@@ -111,6 +111,28 @@ Myra reads this before she writes code for any prototype in this repo. Keep it s
 `,
   'myra.md': `# How Myra works in this repo
 
-Anything Myra should always do here: naming, accessibility, patterns to follow or avoid.
+Myra follows this for every prototype here. Change it to suit the team.
+
+## Stack
+- React with TypeScript. No other packages unless the person installed them.
+- One component per file in src/components/. App.tsx only puts them together.
+- State lives in the component that owns it. No global state libraries.
+
+## Components
+- The JSX return holds no logic. Work out every value first, including text, class lists,
+  conditions and lists, and give each a name. The return only puts named values in place.
+
+      const title = 'Your basket';
+      const totalText = formatTotal(total);
+      const card = 'basket-card';
+      const items = lines.map(line => <Line key={line.id} line={line} />);
+      return <section className={card}><h2>{title}</h2>{items}<p>{totalText}</p></section>;
+
+- No ternaries, && or .map inside the return.
+- Real words from the cards, never placeholder text.
+
+## Markup and access
+- Semantic HTML: real buttons and links, a label for every input, headings in order.
+- Mobile first, at the prototype's device width.
 `,
 });
