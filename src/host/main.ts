@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
+import { startBuild } from './build.ts';
 import * as claude from './claude.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
@@ -289,6 +290,8 @@ const OPS = {
     if (err) throw new Error(err);
     return true as const;
   },
+  protoBuild: a => startBuild(a, e => send('protoBuild', e)),
+  protoUndo: a => prototypes.undo(text(a.root), text(a.dir), text(a.snapshot)),
   ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
 } satisfies Handlers;
 

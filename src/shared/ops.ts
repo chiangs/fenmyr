@@ -228,6 +228,21 @@ export type Ops = {
   protoRead: { args: { root: string; dir: string; file: string }; result: string };
   // a built preview, saved as a page and opened in the person's browser
   previewOpen: { args: { html: string; name: string }; result: true };
+  // Myra writing a prototype's code: answers with the build's id at once; protoBuild events follow
+  protoBuild: {
+    args: {
+      root: string;
+      dir: string;
+      stack: 'react' | 'html';
+      request: string;
+      purpose: string;
+      device: string;
+      cards: string;
+      errors: string;
+    };
+    result: { id: string };
+  };
+  protoUndo: { args: { root: string; dir: string; snapshot: string }; result: true };
   ghRepoCreate: {
     args: { path: string; account: string; name: string; private: boolean };
     result: { owner: string; name: string };
@@ -239,4 +254,9 @@ export type HostEvents = {
   boardsChanged: null;
   settings: null;
   ghLogin: { ok: boolean; message: string };
+  // outside: paths beyond the prototype's folder that the build changed
+  protoBuild:
+    | { id: string; type: 'edit'; file: string }
+    | { id: string; type: 'done'; text: string; snapshot: string; outside: string[] }
+    | { id: string; type: 'error'; text: string };
 };

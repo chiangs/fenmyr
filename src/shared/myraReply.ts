@@ -36,6 +36,7 @@ const reply = z.looseObject({
   offerVault: opt(z.boolean()),
   openRepo: txt,
   gitSetup: opt(z.boolean()),
+  build: opt(z.looseObject({ request: txt })),
   newPrototype: opt(z.looseObject({ name: txt, stack: txt, purpose: txt, device: txt, project: txt, folder: txt })),
   stopTimer: opt(z.boolean()),
   timer: opt(z.looseObject({ minutes: num, seconds: num, purpose: txt })),

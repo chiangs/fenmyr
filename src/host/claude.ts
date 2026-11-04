@@ -29,7 +29,7 @@ const isExe = (f: string) => {
 let found: string | null = null,
   missingSince = 0,
   looking: Promise<string | null> | null = null;
-async function claudePath(): Promise<string | null> {
+export async function claudePath(): Promise<string | null> {
   if (found && isExe(found)) return found;
   if (Date.now() - missingSince < 20000) return null;
   looking ??= findClaude()
@@ -99,6 +99,11 @@ function claudeResult(data: Buffer) {
     return { text: raw, isError: false };
   }
   if (!isRecord(j) || typeof j.result !== 'string') return { text: raw, isError: isRecord(j) && Boolean(j.is_error) };
+  noteUsage(j);
+  return { text: j.result, isError: j.is_error === true };
+}
+// one call's tokens and cost, from Claude Code's result
+export function noteUsage(j: Record<string, unknown>) {
   const u = isRecord(j.usage) ? j.usage : {},
     n = (k: string) => Number(u[k]) || 0;
   const all = readUsage();
@@ -112,7 +117,6 @@ function claudeResult(data: Buffer) {
   try {
     fs.writeFileSync(P.usageFile, JSON.stringify(all));
   } catch {}
-  return { text: j.result, isError: j.is_error === true };
 }
 // tokens in include the context Claude re-reads from its cache
 export function usageSummary(): UsageSummary {
@@ -136,7 +140,7 @@ export function resetUsage(): true {
 
 // Myra's calls always run with Claude Code hooks switched off, so hooks meant for the person's own Claude Code sessions (a desktop pet's
 // thinking meter, reply bubbles…) don't fire for her background requests. Skills, plugins, connectors and the login are unaffected.
-const hookArgs = () => ['--settings', JSON.stringify({ disableAllHooks: true })];
+export const hookArgs = () => ['--settings', JSON.stringify({ disableAllHooks: true })];
 
 async function runClaude(prompt: string, tools: string[], timeout: number, need = 'I need Claude Code to do that.') {
   const claude = await claudePath();

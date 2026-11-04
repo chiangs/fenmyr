@@ -76,6 +76,10 @@ export function snapshot() {
     ),
     myraStyle: { name: settings.name || '', chat: settings.chat, emoji: !!settings.emoji }, // the host turns these into words (TONES in linux/prompts.js)
     commands: SLASH.filter(c => !c.dev).map(c => ({ cmd: c.cmd, arg: c.arg, desc: c.desc, ex: c.ex, opts: c.opts })),
+    prototype:
+      session.board.kind === 'prototype'
+        ? { stack: session.board.proto.stack, purpose: session.board.proto.purpose, device: session.board.proto.device }
+        : undefined,
     person: birthdayFacts(), // the slash commands, so she knows every one (the host puts them in her instructions)
     library: {
       projects: appState.projects.map(p => ({

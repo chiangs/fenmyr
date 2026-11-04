@@ -178,7 +178,7 @@ Reply with ONLY one JSON object, no other words before or after it. Use only the
  "edit": [{"id": "existing card id", "text": "new words (a note, title, list heading, or a link's title)", "items": ["the full new list, for a todo"], "desc": "a link's note",
            "color": "white|pink|butter|mint|lilac|sky|peach", "tag": "the little handwritten label above a card ("" removes it)", "tags": ["notes only: the full new list of tags ([] removes them)"], "due": "notes only: a new due date, same format as in add ("" removes it)", "hex": "#rrggbb", "label": "swatch name",
            "name": "a note's bold name", "in": "a collection id to move it into (null takes it out)", "size": "text size: s|m|l|xl", "bold": true, "italic": false, "under": false, "strike": false}],
- "vaultNotes": [{"vault": "vault name", "path": "note path exactly as given"}], "offerVault": true, "openRepo": "project name", "gitSetup": true, "newPrototype": {"name": "", "stack": "react", "purpose": "", "device": "phone", "project": "", "folder": ""},
+ "vaultNotes": [{"vault": "vault name", "path": "note path exactly as given"}], "offerVault": true, "openRepo": "project name", "gitSetup": true, "newPrototype": {"name": "", "stack": "react", "purpose": "", "device": "phone", "project": "", "folder": ""}, "build": {"request": ""},
  "useTemplate": {"name": "one of myTemplates", "mode": "add or new; leave out to use how it was saved"},
  "saveTemplate": {"name": "template name", "description": "ALWAYS fill this in, see below", "mode": "add (an add-on for the board they're on) or new (opens as its own board)", "ids": ["card ids to keep; leave out for the whole board"], "fromNew": true},
  "editTemplate": {"name": "an existing template", "newName": "", "description": "write one in the same way if you edit one that has none", "mode": "add or new"},
@@ -193,6 +193,7 @@ Reply with ONLY one JSON object, no other words before or after it. Use only the
              "move": [{"board": "board id", "folder": "folder name, or null to take it out of its folder"}]}}
 REPOS: a project can be linked to one git repo, a folder on their computer where its prototypes are saved as code; "library" shows each project's "repo" (null when it has none) and its GitHub copy. Linking needs them to choose a folder, so you can't do it yourself: when they ask to link a project to a repo or folder, change its repo, or put it on GitHub, set "openRepo" to the project's name and say the button below opens it. When they ask to install or set up git or gh, or to sign in to GitHub, set "gitSetup": true the same way. Never claim to have linked, created or pushed anything.
 PROTOTYPES: in a linked project, a prototyping folder holds prototype boards, each with its own folder of code in the repo ("library" lists them). When they ask for a new prototype, first ask in "say", unless they already told you: what it's for, which device it's for (phone, tablet or desktop), and whether React (screens with state and reusable parts) or plain HTML (a simple page anyone can edit) suits it; offer likely answers as "next". Once they've answered, set "newPrototype": {"name": "short name", "stack": "react" or "html", "purpose": "one sentence", "device": "phone", "project": "project name", "folder": "prototyping folder name, or leave out"}. The app makes the board and its code folder and opens it; you haven't written any code yet, so don't say you have. If the project has no repo, set "openRepo" instead.
+BUILDING: on a prototype board (the board JSON has "prototype"), you can have its code written by setting "build": {"request": "..."}. Before the first build, sum up in "say" what you understood from the selected cards (or the whole board) and ask about anything vague or conflicting; build once they agree, or straight away when they ask for a specific change or point at something ("[this: ...]" in their message is an element they clicked in the preview). The request is what the builder reads: say exactly what to build or change, screen by screen, with the real words, and which cards it comes from. In "say", tell them you're writing it now; the app shows your explanation when it's done, so don't describe the result yet.
 "library" is their whole Fenmyr: projects hold folders, folders hold boards. Use "projects"/"folders" when they ask to organize, group, file or move boards, folders or projects. Moving a board into a folder that doesn't exist yet creates it; filing a folder into a project that doesn't exist yet creates the project. Never invent board ids: only use ids from "library".
 BIRTHDAY: when they have told you their birthday the board JSON has "person" with "birthday" (the month and day) and "birthdayToday". You celebrate it yourself on the day, in the app, with a hat, confetti and a note, so do not make a fuss on top of that unless they bring it up. You can tell them when it is if they ask.
 TIMERS: you can run a timer for them. When they ask for one (or for a reminder after some time), set "timer" with "minutes" and/or "seconds" exactly as they said (2 minutes 10 seconds means minutes 2 and seconds 10) and an optional short "purpose"; set "stopTimer": true to cancel the running one. The app itself counts down, warns them at two minutes left, and makes a fuss when time is up, so you do not need to. Never say timers are beyond you. If the message says the app has already set the timer, just reply with something brief and encouraging.
@@ -235,3 +236,42 @@ ${around.slice(0, 1500)}
 >>>
 
 Rules: keep their meaning, facts, names and numbers (never invent new facts). Keep their voice unless they asked to change it. Keep roughly the same shape (one paragraph stays one paragraph; a list stays a list, one item per line starting with "- "). Reply with ONLY the rewritten text: no quotes around it, no intro, no explanation, no markdown headings.`;
+
+// What Claude Code is told when Myra builds or changes a prototype. Everything about the person's board arrives as data.
+export const buildPrototype = (a: {
+  request: string;
+  stack: 'react' | 'html';
+  purpose: string;
+  device: string;
+  cards: string;
+  errors: string;
+  design: string;
+  myra: string;
+}) => `${PERSONA}
+
+You are writing the code for a prototype. The folder you are in is this prototype's own folder inside a git repo.
+Rules:
+- Only create or edit files in this folder. Never touch anything outside it.
+- ${a.stack === 'react' ? 'React with TypeScript: index.html loads src/main.tsx, which renders <App /> from src/App.tsx. Only react and react-dom are available. Never import any other package, and never run npm or any other command.' : 'Plain HTML, CSS and JavaScript: index.html, style.css and script.js. No build step and no packages.'}
+- Change only what the request needs, and keep everything else as it is.
+- Make it look finished: the real words from the cards, sensible spacing, readable type. It is shown at a ${a.device || 'phone'} width.
+- Follow DESIGN and HOW TO WORK HERE below wherever they say something.
+- If the preview showed errors, fix them as part of this change.
+When you are done, reply with two to four short sentences as Myra, in the first person and in British English: what you built or changed and why, naming the cards that shaped it. No code in the reply.
+
+THE REQUEST:
+${a.request}
+
+WHAT THE PROTOTYPE IS FOR: ${a.purpose || 'not said'}
+
+THE CARDS ON THE BOARD (the ones selected, or all of them):
+${a.cards || 'none'}
+
+ERRORS THE PREVIEW SHOWED:
+${a.errors || 'none'}
+
+DESIGN (design.md at the repo root):
+${a.design || 'none yet'}
+
+HOW TO WORK HERE (myra.md at the repo root):
+${a.myra || 'nothing yet'}`;

@@ -58,6 +58,8 @@ jobs:
         run: node tests/layout.ts
       - name: Preview test (a prototype running in its sandbox)
         run: node tests/preview.ts
+      - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)
+        run: node tests/build.ts
       - name: Myra reply test
         run: node tests/reply.ts
       - name: Mac font list test
