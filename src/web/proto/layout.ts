@@ -4,6 +4,7 @@ import { myraOpen } from '../myra/chatWindow.ts';
 import { renderCode } from './code.ts';
 import { DEFAULT_LAYOUT, DIVIDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
+import { renderPreview } from './preview.ts';
 
 // A prototype board's screen: Myra's chat docked on the left and always open, then the preview, the code and the
 // canvas. The canvas is the ordinary board, moved into its column, so everything on it works as on any other board.
@@ -140,9 +141,6 @@ export function showProto(b: Board) {
   const on = b.kind === 'prototype';
   if (!on && !document.body.classList.contains('proto')) return;
   root ??= build();
-  const preview = $('pr-preview');
-  if (!preview.childElementCount)
-    preview.innerHTML = '<p class="pr-note">The preview shows here once the prototype has code to run.</p>';
   if (!Object.keys(layouts).length) layouts = readLayouts();
   boardId = b.id;
   document.body.classList.toggle('proto', on);
@@ -152,4 +150,5 @@ export function showProto(b: Board) {
   place();
   renderGitBar(b);
   renderCode(b);
+  renderPreview(b);
 }

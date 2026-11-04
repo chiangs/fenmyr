@@ -59,7 +59,10 @@ export async function launch({
     ...(open ? { 'fenmyr:last': open } : {}),
   };
   await app.context().addInitScript(s => {
-    for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);
+    // it runs in every frame, and a prototype's sandboxed preview has no storage
+    try {
+      for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);
+    } catch {}
   }, store);
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));

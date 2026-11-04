@@ -226,6 +226,8 @@ export type Ops = {
   };
   protoFiles: { args: { root: string; dir: string }; result: string[] };
   protoRead: { args: { root: string; dir: string; file: string }; result: string };
+  // a built preview, saved as a page and opened in the person's browser
+  previewOpen: { args: { html: string; name: string }; result: true };
   ghRepoCreate: {
     args: { path: string; account: string; name: string; private: boolean };
     result: { owner: string; name: string };

@@ -9,6 +9,6 @@
     "src/web/main.ts"
   ],
   "project": ["src/**/*.ts", "tests/**/*.ts", "tools/**/*.ts", "!tools/editor/**", ".claude/hooks/*.ts"],
-  "ignoreDependencies": ["@phosphor-icons/core"],
+  "ignoreDependencies": ["@phosphor-icons/core", "react", "react-dom"],
   "ignoreBinaries": ["fc-list", "system_profiler"]
 }

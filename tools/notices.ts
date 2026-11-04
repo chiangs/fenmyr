@@ -163,6 +163,20 @@ const items: Item[] = [
     url: 'https://openfontlicense.org',
     text: must(path.join(ROOT, 'web', 'fonts', 'OFL.txt')),
   },
+  // prototype previews: esbuild-wasm bundles them in the page, and they run on this copy of React (web/dist)
+  ...['esbuild-wasm', 'react', 'react-dom', 'scheduler'].map(name => {
+    const dir = path.join(ROOT, 'node_modules', name);
+    const j = pkg(dir);
+    const file = fs.readdirSync(dir).find(f => /^licen[cs]e(\.md|\.txt)?$/i.test(f));
+    return {
+      name,
+      version: j.version,
+      license: j.license,
+      where: 'Prototype previews (web/dist)',
+      url: (j.homepage || j.repository).replace(/^git\+/, '').replace(/\.git$/, ''),
+      text: file ? must(path.join(dir, file)) : MIT(j.author || name),
+    };
+  }),
   ...(await bundled()),
 ];
 
