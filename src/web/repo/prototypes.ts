@@ -43,6 +43,25 @@ export async function createPrototype(f: Folder, root: string, w: Wish) {
   return b;
 }
 
+// A repo that already holds prototypes, newly linked: each one no board in the project uses yet gets a board in the
+// project's prototyping folder.
+export async function adoptPrototypes(p: Project) {
+  const root = p.repo?.path,
+    f = appState.folders.find(x => x.project === p.id && x.kind === 'prototyping');
+  if (!root || !f) return;
+  const mine = new Set(appState.folders.filter(x => x.project === p.id).map(x => x.id)),
+    used = new Set(
+      appState.boardList.flatMap(b => (b.kind === 'prototype' && b.folder && mine.has(b.folder) ? [b.dir] : [])),
+    );
+  const found = (await Fenmyr.protoFind({ root }).catch(() => [])).filter(x => !used.has(x.dir));
+  if (!found.length) return;
+  for (const x of found)
+    await Fenmyr.save({ ...newBoard(x.name), kind: 'prototype', proto: { dir: x.dir, stack: x.stack }, folder: f.id });
+  await refreshBoards();
+  const what = found.length === 1 ? 'a prototype' : `${found.length} prototypes`;
+  chirp(`I found ${what} already in prototypes/ and gave each a board in “${f.name}” ✦`, 6000);
+}
+
 // Name and stack, then createPrototype.
 export function newPrototypeIn(f: Folder) {
   const p = projectOf(f);

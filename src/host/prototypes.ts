@@ -68,6 +68,24 @@ export async function copy(fromRoot: string, dir: string, toRoot: string) {
   return { dir: made, files };
 }
 
+// The prototypes a repo already holds, for a project newly linked to it: each folder under prototypes/ with a page,
+// named by that page's title.
+export async function find(root: string) {
+  const base = path.join(await repoRoot(root), 'prototypes');
+  if (!fs.existsSync(base)) return [];
+  return fs.readdirSync(base, { withFileTypes: true }).flatMap(e => {
+    const dir = `prototypes/${e.name}`,
+      page = path.join(base, e.name, 'index.html');
+    if (!e.isDirectory() || !PROTO_DIR.test(dir) || !fs.existsSync(page)) return [];
+    const title = fs
+      .readFileSync(page, 'utf8')
+      .match(/<title>([^<]{1,100})<\/title>/)?.[1]
+      ?.trim();
+    const stack: Proto['stack'] = fs.existsSync(path.join(base, e.name, 'src', 'main.tsx')) ? 'react' : 'html';
+    return [{ dir, stack, name: title || e.name }];
+  });
+}
+
 const inRepo = async (root: string, dir: string) => {
   if (!PROTO_DIR.test(dir)) throw new Error("That isn't a prototype's folder.");
   return repoRoot(root);

@@ -10,7 +10,7 @@ import { chirp } from '../settings/licenses.ts';
 import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { installCommand } from './install.ts';
-import { newPrototypingFolder } from './prototypes.ts';
+import { adoptPrototypes, newPrototypingFolder } from './prototypes.ts';
 
 type Repo = Extract<GitStatus, { kind: 'repo' }>;
 type GitHubLink = NonNullable<NonNullable<Project['repo']>['github']>;
@@ -172,6 +172,7 @@ export function linkRepo(first: Project) {
       chirp(`Linked “${p.name}” to its repo ✦`, 3000);
       // a linked project is ready for prototypes, so it gets somewhere to keep them
       if (!appState.folders.some(f => f.project === p.id && f.kind === 'prototyping')) await newPrototypingFolder(p);
+      await adoptPrototypes(live());
     }
     show({ kind: 'linked', repo: r, github: live().repo?.github ?? null });
   };

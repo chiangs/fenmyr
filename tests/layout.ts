@@ -61,7 +61,7 @@ try {
   assert.deepStrictEqual(s.folded, [], 'at 1440 px every column shows');
   assert.match(
     s.git,
-    /acme\s*main\s*\d+ changes?\s*Only on this computer/,
+    /acme\s*main\s*\d+ changes?\s*No commits yet/,
     'the git bar names the repo, branch, changes and sync',
   );
   assert.match(s.code, /<div id="root"><\/div>/, 'the code pane opens on index.html');
@@ -88,13 +88,19 @@ try {
     'she asks what she’s building',
   );
 
-  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'A reply for the chat.' }, 'hello'));
+  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'A reply for the chat.', next: ['Build it'] }, 'hello'));
   await page.waitForTimeout(300);
   assert.match(
     await page.evaluate(() => document.getElementById('mcList')?.textContent ?? ''),
     /A reply for the chat\./,
     'her replies land in the chat',
   );
+  const inside = await page.evaluate(() => {
+    const m = [...document.querySelectorAll('#mcList .mc-msg.myra')].pop()?.getBoundingClientRect(),
+      c = document.getElementById('mcList')?.getBoundingClientRect();
+    return !!m && !!c && m.left >= c.left && m.right <= c.right && m.top >= c.top && m.bottom <= c.bottom;
+  });
+  assert.ok(inside, 'and are drawn inside it, not over the board');
   assert.ok(
     !(await page.evaluate(() => document.getElementById('mBubble')?.classList.contains('on'))),
     'never in the bubble',

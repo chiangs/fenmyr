@@ -65,6 +65,9 @@ export const PROTO_DIR = /^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/;
 const STACKS: readonly Proto['stack'][] = ['react', 'html'];
 const DEVICES: readonly NonNullable<Proto['device']>[] = ['phone', 'tablet', 'desktop'];
 
+// What a prototype's commit takes: its own folder, and the files every prototype shares at the top of prototypes/
+export const inCommit = (dir: string, file: string) => file.startsWith(`${dir}/`) || /^prototypes\/[^/]+$/.test(file);
+
 export function readProto(x: unknown): Proto | null {
   if (!isRecord(x) || typeof x.dir !== 'string' || !PROTO_DIR.test(x.dir)) return null;
   const device = DEVICES.find(d => d === x.device),

@@ -22,13 +22,15 @@ export async function renderGitBar(b: Board) {
     repo = esc(s.root.split('/').pop() ?? s.root),
     branch = esc(s.branch ?? 'no branch'),
     changes = n ? `${n} change${n === 1 ? '' : 's'}` : 'No changes',
-    sync = !s.remotes.length
-      ? 'Only on this computer'
-      : !s.upstream
-        ? 'Not pushed yet'
-        : s.ahead || s.behind
-          ? `↑${s.ahead} ↓${s.behind}`
-          : 'Up to date',
+    sync = !s.hasCommits
+      ? 'No commits yet'
+      : !s.remotes.length
+        ? 'Only on this computer'
+        : !s.upstream
+          ? 'Not pushed yet'
+          : s.ahead || s.behind
+            ? `↑${s.ahead} ↓${s.behind}`
+            : 'Up to date',
     where = esc(s.root),
     behind = s.behind,
     pull = behind ? `<button class="pv-btn" data-git="pull">Pull ${behind} from GitHub</button>` : '';

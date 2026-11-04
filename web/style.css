@@ -777,7 +777,8 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-btn.x { font-size: 18px; padding: 2px 9px; }
 .mc-list { flex: 1; overflow: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 8px; user-select: text; -webkit-user-select: text; }
 .mc-msg { max-width: 82%; padding: 9px 13px 10px; border-radius: 24px; corner-shape: squircle; font: 400 13.5px/1.45 var(--font); white-space: pre-wrap; word-break: break-word; animation: mc-in .25s cubic-bezier(.2, .9, .3, 1.2); }
-.mc-msg.myra { align-self: flex-start; background: #f7f4f1; border-bottom-left-radius: 6px; }
+/* her messages share the class of her own figure (.myra), whose placement must not follow them out of the dock */
+.mc-msg.myra { align-self: flex-start; background: #f7f4f1; border-bottom-left-radius: 6px; position: relative; left: auto; bottom: auto; transform: none; z-index: 2; }
 .mc-msg.me { align-self: flex-end; background: #fdecdb; border-bottom-right-radius: 6px; }
 .mc-msg .m-acts { margin-top: 8px; }
 .mc-msg .m-acts button { background: var(--ink); color: #fff; border-color: var(--ink); }

@@ -108,6 +108,30 @@ try {
   await page.waitForTimeout(300);
   assert.match(await screen(), /Choose an empty folder/, 'Myra’s button opens the project’s repo dialog');
   await press('done');
+
+  const old = path.join(folder, 'prototypes', 'old-flow');
+  fs.mkdirSync(path.join(old, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(old, 'index.html'), '<!doctype html><title>Old flow</title>');
+  fs.writeFileSync(path.join(old, 'src', 'main.tsx'), '');
+  fs.mkdirSync(path.join(folder, 'prototypes', 'node_modules'));
+  await openMenu('Acme');
+  await page.click('#rowMenu [data-m="repo"]');
+  await press('pick');
+  await page.waitForFunction(() => document.querySelector('.rl-body')?.textContent?.includes('Online copy'));
+  const boards = () =>
+    fs
+      .readdirSync(path.join(l.data, 'fenmyr', 'boards'))
+      .map(f => JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', f), 'utf8')))
+      .filter(b => b.kind === 'prototype')
+      .map(b => [b.name, b.proto.dir, b.proto.stack, b.folder]);
+  const into = library().folders.find((f: { kind?: string }) => f.kind === 'prototyping').id;
+  await page.waitForFunction(() => document.querySelector('#boards')?.textContent?.includes('Old flow'));
+  assert.deepStrictEqual(
+    boards(),
+    [['Old flow', 'prototypes/old-flow', 'react', into]],
+    'a repo’s prototypes get boards when a project links to it',
+  );
+  await press('done');
   assert.deepStrictEqual(l.errors, []);
   console.log('LINK OK');
 } finally {

@@ -281,6 +281,7 @@ const OPS = {
   protoCreate: a => prototypes.create(text(a.root), text(a.name), a.stack === 'html' ? 'html' : 'react'),
   protoCopy: a => prototypes.copy(text(a.fromRoot), text(a.dir), text(a.toRoot)),
   protoExists: a => prototypes.exists(text(a.root), text(a.dir)),
+  protoFind: a => prototypes.find(text(a.root)),
   protoRename: a => prototypes.rename(text(a.root), text(a.dir), text(a.name)),
   protoRestore: a => prototypes.restore(text(a.root), text(a.dir), text(a.name), a.stack === 'html' ? 'html' : 'react'),
   protoFiles: a => prototypes.files(text(a.root), text(a.dir)),
