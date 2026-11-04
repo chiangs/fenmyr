@@ -37,10 +37,14 @@ function wgLayout() {
 }
 
 let wgLast = '';
+const onProto = () => document.body.classList.contains('proto');
+const layoutKey = () => JSON.stringify([wgLayout(), onProto()]);
 
-function applyLayout() {
+// A prototype board has one column of widgets, on the left with the board: the right edge is Myra's chat. The saved
+// layout is left as it is, and comes back on every other board.
+export function applyLayout() {
   const L = wgLayout(),
-    key = JSON.stringify(L);
+    key = layoutKey();
   if (key === wgLast) return;
   wgLast = key;
   const put = (col: HTMLElement, keys: string[]) =>
@@ -48,8 +52,8 @@ function applyLayout() {
       const el = wgEl(k);
       if (el && !el.classList.contains('in-sheet')) col.appendChild(el);
     }); // a widget showing in a phone sheet goes home when the sheet closes
-  put($('side'), L.left);
-  put($('sideR'), L.right);
+  put($('side'), onProto() ? [...L.left, ...L.right] : L.left);
+  put($('sideR'), onProto() ? [] : L.right);
 }
 
 function wgDragStart(e: PointerEvent, el: HTMLElement) {
@@ -137,7 +141,7 @@ function wgDragStart(e: PointerEvent, el: HTMLElement) {
     if (drop && pick) {
       const keys = (col: HTMLElement) => [...col.children].map(wgKey).filter(k => WG_ALL.includes(k));
       settings.layout = { left: keys($('side')), right: keys($('sideR')) };
-      wgLast = JSON.stringify(wgLayout());
+      wgLast = layoutKey();
       applySettings();
       placeTray();
     }
@@ -268,6 +272,8 @@ export function init26() {
     e => {
       const h = closestTo(e.target, '.side .box > header, .side #design .dz-head, .side #tray .tray-head');
       if (!h || e.button !== 0 || e.pointerType === 'touch' || closestTo(e.target, 'button, input, .brand')) return;
+      // there's one column on a prototype board, so widgets are arranged on the others
+      if (onProto()) return;
       const el = h.parentElement;
       if (!el || el.dataset.box === 'boards') return;
       const x0 = e.clientX,
