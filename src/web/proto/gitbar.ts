@@ -1,7 +1,8 @@
 import type { Board } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { esc } from '../ui/dom.ts';
+import { closestTo, esc } from '../ui/dom.ts';
+import { gitAction } from './gitActions.ts';
 
 // The git bar always says which repo this prototype uses, its branch, what's changed and whether GitHub is up to date.
 export async function renderGitBar(b: Board) {
@@ -29,5 +30,9 @@ export async function renderGitBar(b: Board) {
           ? `↑${s.ahead} ↓${s.behind}`
           : 'Up to date',
     where = esc(s.root);
-  el.innerHTML = `<b class="pg-repo" title="${where}">${repo}</b><span class="pg-chip">${branch}</span><span>${changes}</span><span class="pg-sync">${sync}</span>`;
+  el.innerHTML = `<b class="pg-repo" title="${where}">${repo}</b><span class="pg-chip">${branch}</span><span>${changes}</span><span class="pg-sync">${sync}</span><button class="pv-btn" data-git="commit">Commit…</button><button class="pv-btn" data-git="push">Push</button>`;
+  el.onclick = e => {
+    const a = closestTo(e.target, '[data-git]')?.dataset.git;
+    if (a) gitAction(a);
+  };
 }

@@ -14,6 +14,9 @@ fs.mkdirSync(repo);
 const git = (...args: string[]) =>
   execFileSync('git', ['-C', repo, '-c', 'user.name=T', '-c', 'user.email=t@e.st', ...args]).toString();
 git('init', '-q', '-b', 'main');
+// linking a repo makes sure git knows who commits
+git('config', 'user.name', 'Ann Lee');
+git('config', 'user.email', 'ann@example.com');
 fs.writeFileSync(path.join(repo, 'design.md'), 'Buttons are always mint.\n');
 
 const bin = path.join(work, 'bin');
@@ -110,6 +113,45 @@ try {
     git('diff', '--cached', '--name-only').trim(),
     'staged.txt',
     'what was staged stays staged, and only that',
+  );
+
+  await build('Make the Checkout heading. Then more.');
+  await until(async () => (await lastMyra()).split('I built the heading').length === 3, 'a second build');
+  const tapMyra = (label: string) => page.locator('#mcList .m-acts button', { hasText: label }).last().click();
+  await tapMyra('Commit…');
+  await until(
+    async () =>
+      /Commit 1 changed file in acme\/prototypes\/checkout to main\? Message: “Make the Checkout heading”/.test(
+        await lastMyra(),
+      ),
+    'Myra asks before committing, in git’s terms',
+  );
+  assert.match(await lastMyra(), /It stays on this computer until you push/, 'and in plain words');
+  await tapMyra('Commit');
+  await until(async () => /Committed\./.test(await lastMyra()), 'the commit is made');
+  assert.strictEqual(git('log', '-1', '--format=%s').trim(), 'Make the Checkout heading');
+  assert.deepStrictEqual(
+    git('show', '--name-only', '--format=', 'HEAD').trim().split('\n'),
+    [`${dir}/src/App.tsx`],
+    'only the prototype’s folder',
+  );
+  assert.strictEqual(
+    git('diff', '--cached', '--name-only').trim(),
+    'staged.txt',
+    'what the person staged stays staged',
+  );
+
+  const bare = path.join(work, 'github.git');
+  execFileSync('git', ['init', '-q', '--bare', bare]);
+  git('remote', 'add', 'origin', bare);
+  await page.click('#prGit [data-git="push"]');
+  await until(async () => /Push main of acme to /.test(await lastMyra()), 'Myra asks before pushing');
+  await page.locator('#mcList .m-acts button.danger', { hasText: 'Push main to' }).last().click();
+  await until(async () => /Pushed\./.test(await lastMyra()), 'the push is made');
+  assert.strictEqual(
+    execFileSync('git', ['-C', bare, 'log', '-1', '--format=%s', 'main']).toString().trim(),
+    'Make the Checkout heading',
+    'GitHub’s stand-in has the commit',
   );
 
   await build('OUTSIDE this time.');

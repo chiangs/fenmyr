@@ -3,6 +3,7 @@ import { PROTO_DIR, protoSlug } from '../../shared/repos.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { say } from '../settings/licenses.ts';
+import { askGit } from './askGit.ts';
 
 type Prototype = Extract<StoredBoard, { kind: 'prototype' }>;
 
@@ -12,8 +13,6 @@ export const rootOf = (b: { folder?: string | null }) => {
   return appState.projects.find(p => p.id === f?.project)?.repo?.path ?? null;
 };
 
-// Myra asks about git in two lines: what happens in git's terms, then the same in plain words.
-const ask = (tech: string, plain: string, acts: Parameters<typeof say>[2]) => say(`${tech}\n\n${plain}`, 0, acts, true);
 const failed = (e: unknown) => say(e instanceof Error ? e.message : String(e), 6000);
 
 async function setDir(id: string, dir: string) {
@@ -34,7 +33,7 @@ export function offerRename(b: StoredBoard) {
     want = protoSlug(b.name ?? '');
   if (!root || now === want || now.startsWith(`${want}-`)) return;
   const { dir } = b.proto;
-  ask(
+  askGit(
     `I can rename ${dir} to prototypes/${want} with git mv. Rename it?`,
     'Your code keeps working either way. Renaming only makes the folder name match the board, and the history follows it.',
     [
@@ -66,7 +65,7 @@ export async function checkCode(b: StoredBoard) {
   const root = rootOf(b);
   if (!root || (await Fenmyr.protoExists({ root, dir: b.proto.dir }).catch(() => true))) return;
   const { dir, stack } = b.proto;
-  ask(
+  askGit(
     `I can't find ${dir} in ${root}. It may have been moved or deleted outside Fenmyr.`,
     'Show me where it is now, or I can bring it back as it was at the last commit (or as a fresh start if it was never committed).',
     [

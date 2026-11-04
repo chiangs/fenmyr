@@ -162,3 +162,47 @@ export async function setGlobalIdentity(name: string, email: string): Promise<Gi
   }
   return (await setup()).identity;
 }
+
+const plain = (err: string) =>
+  /author identity unknown|tell me who you are/i.test(err)
+    ? 'Git doesn’t know who is committing. Add your name and email in Settings → Helpers → Git and GitHub.'
+    : /conflict/i.test(err)
+      ? 'Git found changes that clash with these. Pull first, then sort out the files it lists.'
+      : /rejected|non-fast-forward|fetch first/i.test(err)
+        ? 'GitHub has commits this computer doesn’t have yet. Pull first, then push again.'
+        : /authentication|could not read username|permission denied|403/i.test(err)
+          ? 'GitHub didn’t accept the sign-in. Sign in again in Settings → Helpers.'
+          : err || 'Git couldn’t do that.';
+
+// Commits the prototype's folder only: anything else the person has staged stays staged and out of this commit.
+export async function commitFolder(root: string, dir: string, message: string) {
+  const s = await status(root);
+  if (s.kind !== 'repo') throw new Error("This prototype's repo isn't there any more.");
+  const m = message.trim();
+  if (!m) throw new Error('Write a few words about what changed.');
+  const add = await git(s.root, ['add', '-A', '--', dir]);
+  if (add.code !== 0) throw new Error(plain(add.err));
+  const r = await git(s.root, ['commit', '-q', '-m', m, '--only', '--', dir]);
+  if (r.code !== 0)
+    throw new Error(
+      /nothing to commit|no changes added/i.test(r.err + r.out) ? 'There’s nothing new to commit.' : plain(r.err),
+    );
+  return status(s.root);
+}
+
+// Pushes the branch to origin. With a GitHub account named, gh's sign-in for it does the authenticating.
+export async function push(root: string, credential: { gh: string; env: Record<string, string> } | null) {
+  const s = await status(root);
+  if (s.kind !== 'repo' || !s.branch) throw new Error('There’s no branch to push.');
+  if (!s.remotes.some(x => x.name === 'origin'))
+    throw new Error('This repo has no GitHub copy yet. Put it on GitHub first.');
+  const helper = credential
+    ? ['-c', 'credential.helper=', '-c', `credential.helper=!${credential.gh} auth git-credential`]
+    : [];
+  const r = await run('git', [...SAFE, ...helper, '-C', s.root, 'push', '-u', 'origin', s.branch], 120, {
+    ...credential?.env,
+    GIT_TERMINAL_PROMPT: '0',
+  });
+  if (r.code !== 0) throw new Error(plain(r.err.toString('utf8').trim().split('\n').pop() ?? ''));
+  return status(s.root);
+}

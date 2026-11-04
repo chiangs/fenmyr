@@ -243,6 +243,9 @@ export type Ops = {
     result: { id: string };
   };
   protoUndo: { args: { root: string; dir: string; snapshot: string }; result: true };
+  gitCommit: { args: { root: string; dir: string; message: string }; result: GitStatus };
+  // account: the gh login that reaches this project's GitHub copy, if it has one
+  gitPush: { args: { root: string; account: string }; result: GitStatus };
   ghRepoCreate: {
     args: { path: string; account: string; name: string; private: boolean };
     result: { owner: string; name: string };
