@@ -129,12 +129,20 @@ addEventListener('message', e => {
   showLog();
 });
 
+// The preview runs in a frame of its own, which takes the pointer from a drag passing over it, even a captured one, so
+// the drag would stop and never end. A drag turns the frame's pointer off until it's done.
+export function dragOverFrame(el: HTMLElement, e: PointerEvent) {
+  el.setPointerCapture(e.pointerId);
+  document.body.classList.add('pr-dragging');
+  el.addEventListener('lostpointercapture', () => document.body.classList.remove('pr-dragging'), { once: true });
+}
+
 function dragWidth(handle: HTMLElement) {
   handle.onpointerdown = e => {
     const start = width,
       x0 = e.clientX,
       s = Math.min(1, ((handle.closest<HTMLElement>('.pv-stage')?.clientWidth ?? width) - 24) / width);
-    handle.setPointerCapture(e.pointerId);
+    dragOverFrame(handle, e);
     handle.onpointermove = m => {
       width = Math.round(Math.max(240, Math.min(1920, start + (m.clientX - x0) / s)));
       scale();

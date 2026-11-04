@@ -64,7 +64,7 @@ try {
     /acme\s*main\s*\d+ changes?\s*No commits yet/,
     'the git bar names the repo, branch, changes and sync',
   );
-  assert.match(s.code, /<div id="root"><\/div>/, 'the code pane opens on index.html');
+  assert.match(s.code, /export function App/, 'the code pane opens on App.tsx');
   assert.deepStrictEqual(s.stage, s.slot, 'the canvas sits exactly in its column');
 
   const places = await page.evaluate(() => {
@@ -151,9 +151,49 @@ try {
   await page.evaluate(() => document.getElementById('mcClose')?.click());
   assert.ok((await state()).chatOpen, 'neither Esc nor the close button closes it');
 
-  await page.click('.pc-file:has-text("src/App.tsx")');
+  const bar = () =>
+    page.evaluate(() => ({
+      tabs: [...document.querySelectorAll('.pc-file')].map(b => b.textContent),
+      dropdown: document.getElementById('pr-code')?.classList.contains('pc-many'),
+    }));
+  assert.deepStrictEqual(
+    await bar(),
+    { tabs: ['App.tsx', 'Values'], dropdown: false },
+    'the code pane lists the prototype’s code: not Fenmyr’s wiring, nor a styles.css holding only Tailwind',
+  );
+  await page.click('.pc-file:has-text("Values")');
   await page.waitForTimeout(300);
-  assert.match((await state()).code, /export function App/, 'picking a file shows it');
+  assert.match((await state()).code, /no controls yet/, 'Values stands in for tweaks.json');
+  await page.click('.pc-all');
+  await page.waitForTimeout(300);
+  assert.ok((await bar()).tabs.includes('index.html'), 'All files shows the wiring too');
+  const src = path.join(repo, 'prototypes', 'checkout-flow', 'src');
+  fs.writeFileSync(path.join(src, 'styles.css'), '@import "tailwindcss";\n@theme { --color-brand: #f60; }\n');
+  fs.mkdirSync(path.join(src, 'components'));
+  fs.writeFileSync(path.join(src, 'components', 'PromoField.tsx'), 'export const PromoField = () => null;\n');
+  await page.click('.pc-all');
+  await page.waitForTimeout(300);
+  assert.deepStrictEqual(
+    await bar(),
+    { tabs: ['App.tsx', 'components/PromoField.tsx', 'styles.css', 'Values'], dropdown: true },
+    'a styles.css with styles of its own counts, and tabs that no longer fit become a dropdown',
+  );
+  const drag = async (dx: number) => {
+    const div = await page.locator('.pr-div[data-d="code"]').boundingBox();
+    if (!div) throw new Error('no divider');
+    await page.mouse.move(div.x + 3, div.y + 200);
+    await page.mouse.down();
+    await page.mouse.move(div.x + 3 + dx, div.y + 200, { steps: 5 });
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+  };
+  await drag(-300);
+  assert.strictEqual((await bar()).dropdown, false, 'a wider code column has room for the tabs again');
+  await drag(300);
+  assert.strictEqual((await bar()).dropdown, true, 'and a narrower one goes back to the dropdown');
+  await page.selectOption('.pc-pick', 'src/components/PromoField.tsx');
+  await page.waitForTimeout(300);
+  assert.match((await state()).code, /PromoField/, 'picking from the dropdown shows the file');
 
   assert.strictEqual(
     await page.locator('[data-fold="preview"], [data-open="preview"]').count(),
