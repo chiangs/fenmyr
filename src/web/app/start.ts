@@ -1,6 +1,7 @@
 import { fit } from '../canvas/handles.ts';
 import { appState, session } from '../core/state.ts';
 import { loadTemplates } from '../features/templates.ts';
+import { loadLib } from '../library/nesting.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { newBoard } from '../model/boards.ts';
 import { greet } from '../myra/greet.ts';
@@ -27,6 +28,8 @@ export function init64() {
       last = localStorage.getItem('fenmyr:last');
     } catch (_e) {}
     const first = list.find(b => b.id === last) ?? list[0];
+    // projects and folders before the first board: a prototype board finds its repo through them
+    await loadLib();
     if (first) await openBoard(first.id);
     applySettings();
     phone.init();

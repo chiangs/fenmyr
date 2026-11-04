@@ -4,6 +4,7 @@ import { playAnim } from '../myra/anim.ts';
 import { chatLog } from '../myra/chatLog.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
 import { heightGrip } from '../settings/panelHeights.ts';
+import { applyLayout } from '../settings/widgets.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
 import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
@@ -231,6 +232,7 @@ export function showProto(b: Board) {
   if (!Object.keys(layouts).length) layouts = readLayouts();
   boardId = b.id;
   document.body.classList.toggle('proto', on);
+  applyLayout();
   dockChat(on);
   myraOpen(on);
   if (!on) return startSync(b);

@@ -55,8 +55,25 @@ try {
     await window.__fenmyr.refreshBoards();
     await window.__fenmyr.openBoard('pb');
   }, repo);
+  // the app starting with the prototype board as the last one open
+  await l.app.context().addInitScript(() => {
+    try {
+      localStorage.setItem('fenmyr:last', 'pb');
+    } catch {}
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'pb');
   await page.waitForTimeout(800);
   let s = await state();
+  assert.doesNotMatch(s.git, /isn’t linked/, 'starting the app on a prototype board finds its repo straight away');
+  assert.deepStrictEqual(
+    await page.evaluate(() => [
+      document.getElementById('tray')?.parentElement?.id,
+      document.getElementById('design')?.parentElement?.id,
+    ]),
+    ['side', 'side'],
+    'Unsorted and Wireframe join the left column, beside the board',
+  );
   assert.ok(s.proto && s.docked === 'prChat' && s.chatOpen, 'a prototype board docks Myra’s chat open on the left');
   assert.deepStrictEqual(s.folded, [], 'at 1440 px every column shows');
   assert.match(
@@ -311,6 +328,11 @@ try {
   assert.ok(
     !s.proto && s.docked === 'myra' && !s.chatOpen,
     'a plain board gets the chat back under Myra’s button, closed',
+  );
+  assert.strictEqual(
+    await page.evaluate(() => document.getElementById('tray')?.parentElement?.id),
+    'sideR',
+    'and Unsorted goes back to the right',
   );
   assert.deepStrictEqual(l.errors, []);
   console.log('LAYOUT OK');

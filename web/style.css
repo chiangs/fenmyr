@@ -2783,7 +2783,8 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 .pc-text { margin: 0; padding: 12px 14px; font: 12px/1.55 ui-monospace, monospace; white-space: pre; tab-size: 2; color: var(--ink); }
 body.proto .stage { left: var(--slot-l); top: var(--slot-t); width: var(--slot-w); height: var(--slot-h); right: auto; bottom: auto; }
 body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side { display: none; }
-body.proto .side { left: calc(var(--slot-l) + 14px); top: calc(var(--slot-t) + 14px); bottom: 14px; }
+/* one column of widgets beside the board, clear of the toolbar; it holds both sides' widgets, so it can scroll */
+body.proto .side { left: calc(var(--slot-l) + 14px); top: calc(var(--slot-t) + 14px); bottom: 84px; scrollbar-width: thin; }
 body.proto #mcClose { display: none; }
 body.proto #keys { display: none; }
 body.proto .dock { max-width: calc(100% - 16px); overflow-x: auto; scrollbar-width: none; }
