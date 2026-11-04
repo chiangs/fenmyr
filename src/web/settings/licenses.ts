@@ -151,7 +151,8 @@ export function tip(text: string) {
 export type SayAction = { label: string; cls?: string; ghost?: boolean; run: () => unknown };
 export function say(text: string, ms = 6000, acts: SayAction[] = [], keep = false) {
   $('mBubble').classList.remove('party');
-  if (chatOpen()) {
+  // a prototype board shows everything in its docked chat, never in the bubble
+  if (chatOpen() || document.body.classList.contains('proto')) {
     if (text) addMsg('myra', text, acts);
     return;
   }

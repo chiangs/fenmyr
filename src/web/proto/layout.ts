@@ -1,6 +1,9 @@
 import type { Board } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
+import { playAnim } from '../myra/anim.ts';
+import { chatLog } from '../myra/chatLog.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
+import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
 import { DEFAULT_LAYOUT, DIVIDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
@@ -50,15 +53,19 @@ const remember = () => {
   } catch {}
 };
 
+// left to right: the board, the preview, the code, then Myra's chat
+const ORDER: Pane[] = ['canvas', 'preview', 'code'];
+
 function build() {
-  const panes = PANES.map(p => {
-    const label = LABEL[p];
-    return `<div class="pr-div" data-d="${p}"></div><section class="pr-pane" data-p="${p}"><header class="pr-head"><b>${label}</b><button class="pr-fold" data-fold="${p}" title="Fold">‹</button></header><div class="pr-body" id="pr-${p}"></div><button class="pr-strip" data-open="${p}" title="Open">${label}</button></section>`;
+  const panes = ORDER.map((p, i) => {
+    const label = LABEL[p],
+      divider = i ? `<div class="pr-div" data-d="${p}"></div>` : '';
+    return `${divider}<section class="pr-pane" data-p="${p}"><header class="pr-head"><b>${label}</b><button class="pr-fold" data-fold="${p}" title="Fold">‹</button></header><div class="pr-body" id="pr-${p}"></div><button class="pr-strip" data-open="${p}" title="Open">${label}</button></section>`;
   }).join('');
   const el = document.createElement('div');
   el.className = 'pr-root';
   el.id = 'proto';
-  el.innerHTML = `<div class="pr-chat" id="prChat"></div><div class="pr-main"><div class="pr-git" id="prGit"></div><div class="pr-row">${panes}</div></div>`;
+  el.innerHTML = `<div class="pr-main"><div class="pr-git" id="prGit"></div><div class="pr-row">${panes}</div></div><div class="pr-div" data-d="chat"></div><div class="pr-chat" id="prChat"></div>`;
   document.body.appendChild(el);
   el.addEventListener('click', e => {
     const t = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-fold], [data-open]') : null;
@@ -72,21 +79,23 @@ function build() {
     place();
   });
   for (const d of el.querySelectorAll<HTMLElement>('.pr-div')) dragDivider(d);
+  inputGrip();
+  initChatPictures();
   new ResizeObserver(placeStage).observe(el.querySelector('[data-p="canvas"] .pr-body') ?? el);
   addEventListener('resize', place);
   return el;
 }
 
-// The divider left of a column resizes the column before it: Myra's chat, the preview or the code.
+// A divider resizes the column to its right: the preview, the code or Myra's chat. The board takes what's left.
 function dragDivider(d: HTMLElement) {
   d.onpointerdown = e => {
-    const before = d.dataset.d === 'preview' ? 'chat' : d.dataset.d === 'code' ? 'preview' : 'code';
+    const right = d.dataset.d === 'preview' ? 'preview' : d.dataset.d === 'code' ? 'code' : 'chat';
     const l = layout(),
-      start = l[before],
+      start = l[right],
       x0 = e.clientX;
     d.setPointerCapture(e.pointerId);
     d.onpointermove = m => {
-      l[before] = Math.max(MIN[before], Math.min(1200, start + m.clientX - x0));
+      l[right] = Math.max(MIN[right], Math.min(1200, start - (m.clientX - x0)));
       place();
     };
     d.onpointerup = () => {
@@ -112,8 +121,8 @@ function place() {
   if (!root) return;
   const l = layout(),
     folded = fit(l, innerWidth),
-    open = PANES.filter(p => !folded.includes(p)),
-    last = open.at(-1);
+    // the first open column, the board unless it's folded, takes what's left
+    flexer = ORDER.find(p => !folded.includes(p));
   root.style.setProperty('--chat-w', `${l.chat}px`);
   for (const p of PANES) {
     const pane = root.querySelector<HTMLElement>(`[data-p="${p}"]`);
@@ -122,20 +131,56 @@ function place() {
     // the last open column takes what's left; the others keep the width they were dragged to
     pane.style.flex = folded.includes(p)
       ? `0 0 ${STRIP}px`
-      : p === last
+      : p === flexer
         ? '1 1 0'
         : `0 0 ${p === 'canvas' ? MIN.canvas : l[p]}px`;
-    root.querySelector<HTMLElement>(`.pr-div[data-d="${p}"]`)?.style.setProperty('flex', `0 0 ${DIVIDER}px`);
   }
+  for (const d of root.querySelectorAll<HTMLElement>('.pr-div')) d.style.flex = `0 0 ${DIVIDER}px`;
   document.body.classList.toggle('proto-canvas-folded', folded.includes('canvas'));
   placeStage();
 }
 
 // Myra's chat moves into the left column on a prototype board, and back under her button everywhere else.
+// Her pixel-art self sits in the chat's header there, where the chat icon was; her button in the toolbar is hidden.
 function dockChat(on: boolean) {
-  const chat = $('mChat');
-  const home = on ? $('prChat') : $('myra');
+  const chat = $('mChat'),
+    home = on ? $('prChat') : $('myra');
   if (chat.parentElement !== home) home.prepend(chat);
+  const slot = $('gooSlot'),
+    spot = on ? chat.querySelector('.mc-head') : $('mPill');
+  if (spot && slot.parentElement !== spot) {
+    slot.classList.remove('perched');
+    slot.style.transform = '';
+    spot.prepend(slot);
+  }
+  $('mcInput').style.height = '';
+}
+
+const INPUT_KEY = 'fenmyr:protoInputH';
+const inputHeight = (h: number) => {
+  const px = Math.round(Math.max(64, Math.min(innerHeight * 0.6, h)));
+  $('prChat').style.setProperty('--input-h', `${px}px`);
+  return px;
+};
+
+// a handle above Myra's input: drag it up for more room to write a build request
+function inputGrip() {
+  const grip = document.createElement('div');
+  grip.className = 'mc-grip';
+  grip.title = 'Drag to make the box taller or shorter';
+  $('mcForm').before(grip);
+  inputHeight(Number(localStorage.getItem(INPUT_KEY)) || 140);
+  grip.onpointerdown = e => {
+    const start = $('mcInput').offsetHeight,
+      y0 = e.clientY;
+    grip.setPointerCapture(e.pointerId);
+    grip.onpointermove = m => {
+      localStorage.setItem(INPUT_KEY, String(inputHeight(start - (m.clientY - y0))));
+    };
+    grip.onpointerup = () => {
+      grip.onpointermove = null;
+    };
+  };
 }
 
 export function showProto(b: Board) {
@@ -148,6 +193,8 @@ export function showProto(b: Board) {
   dockChat(on);
   myraOpen(on);
   if (!on) return startSync(b);
+  // an empty chat: she tilts her head, wondering what you'll build
+  if (!chatLog().length) playAnim('curious', false);
   place();
   renderGitBar(b);
   renderCode(b);
