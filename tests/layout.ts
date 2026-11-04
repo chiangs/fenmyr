@@ -88,9 +88,7 @@ try {
     'she asks what she’s building',
   );
 
-  await page.evaluate(() =>
-    window.__fenmyr.applyMyra({ say: 'A reply for the chat.', next: ['Build it'] }, 'hello'),
-  );
+  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'A reply for the chat.', next: ['Build it'] }, 'hello'));
   await page.waitForTimeout(300);
   assert.match(
     await page.evaluate(() => document.getElementById('mcList')?.textContent ?? ''),
