@@ -1,3 +1,5 @@
+import { openColor } from '../ui/colorPicker.ts';
+import { type ColourFormat, readColour, writeColour } from '../ui/colourFormat.ts';
 import { esc } from '../ui/dom.ts';
 
 // The prototype's controls from its src/tweaks.json, drawn above the preview the same way in every prototype. Moving
@@ -15,6 +17,8 @@ let knobs: Record<string, Knob> = {};
 let current: Record<string, unknown> = {};
 let saved = '';
 let where: { root: string; dir: string } | null = null;
+// the format each colour control is written in, HSL until the person picks another
+const formats: Record<string, ColourFormat> = {};
 
 const num = (x: unknown, d: number) => (typeof x === 'number' && Number.isFinite(x) ? x : d);
 const str = (x: unknown, d = '') => (typeof x === 'string' ? x : d);
@@ -42,7 +46,7 @@ function readKnob(x: unknown): Knob | null {
     case 'text':
       return { kind: 'text', label, value: str(t.value) };
     case 'colour':
-      return { kind: 'colour', label, value: /^#[0-9a-f]{6}$/i.test(str(t.value)) ? str(t.value) : '#000000' };
+      return { kind: 'colour', label, value: readColour(str(t.value)) ? str(t.value) : '#000000' };
     case 'toggle':
       return { kind: 'toggle', label, value: t.value === true };
     case 'custom':
@@ -76,8 +80,9 @@ const field = (key: string, k: Exclude<Knob, { kind: 'custom' }>) => {
       return `<label class="kb"><span>${label}</span><input type="text" data-k="${name}" value="${v}"></label>`;
     }
     case 'colour': {
-      const v = esc(str(current[key], k.value));
-      return `<label class="kb"><span>${label}</span><input type="color" data-k="${name}" value="${v}"></label>`;
+      const hex = readColour(str(current[key], k.value)) ?? '#000000',
+        shown = esc(writeColour(hex, formats[key] ?? 'hsl'));
+      return `<div class="kb"><span>${label}<b>${shown}</b></span><button class="kb-colour" data-colour="${name}" style="background:${hex}" title="Choose a colour"></button></div>`;
     }
     case 'toggle': {
       const checked = current[key] === true ? ' checked' : '';
@@ -152,8 +157,39 @@ export async function loadKnobs(
     if (k?.kind === 'number' && readout) readout.textContent = `${current[key]}${k.unit}`;
     drawActs(el);
   };
+  // the colour picker Fenmyr uses everywhere, in HSL unless the person picks RGB or hex
+  const pickColour = (key: string, at: DOMRect) => {
+    const k = knobs[key];
+    if (k?.kind !== 'colour') return;
+    const set = (hex: string) => {
+      current[key] = writeColour(hex, formats[key] ?? 'hsl');
+      sendTweaks(frame());
+      draw(el);
+    };
+    openColor({
+      tint: true,
+      title: k.label,
+      hex: readColour(str(current[key], k.value)) ?? '#000000',
+      presets: [],
+      at: { x: at.left, y: at.bottom + 8 },
+      format: {
+        value: formats[key] ?? 'hsl',
+        pick: f => {
+          formats[key] = f;
+          set(readColour(str(current[key], k.value)) ?? '#000000');
+        },
+      },
+      apply: set,
+      reset: () => {
+        current[key] = k.value;
+        sendTweaks(frame());
+        draw(el);
+      },
+    });
+  };
   el.onclick = async e => {
     const t = e.target instanceof HTMLElement ? e.target : null;
+    if (t?.dataset.colour) return pickColour(t.dataset.colour, t.getBoundingClientRect());
     if (t?.dataset.k && t.dataset.v !== undefined) {
       current[t.dataset.k] = t.dataset.v;
       sendTweaks(frame());
