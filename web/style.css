@@ -2742,6 +2742,7 @@ body.proto .pr-root { display: flex; position: fixed; inset: 0; z-index: 5; poin
 .pg-repo { color: var(--ink); font-weight: 700; }
 .pg-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 8px; background: rgba(150, 95, 35, .1); color: var(--ink); }
 .pr-git .pv-btn, .pg-sync { display: inline-flex; align-items: center; gap: 5px; }
+.pr-git .pg-gh { padding: 4px 7px; }
 .pg-sync { margin-left: auto; }
 .pg-warn { color: #d6455d; }
 .pr-row { flex: 1; display: flex; min-height: 0; }

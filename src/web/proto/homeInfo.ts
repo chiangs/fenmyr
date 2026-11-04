@@ -1,4 +1,5 @@
 import type { BoardSummary } from '../../shared/ops.ts';
+import { protoSlug } from '../../shared/repos.ts';
 import { ago } from '../library/homeTiles.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 
@@ -11,6 +12,8 @@ export async function showLastChange(tile: HTMLElement, b: BoardSummary) {
   const sub = tile.querySelector('.tile-meta small');
   if (!c || !sub) return;
   const branch = c.branch || 'no branch',
-    last = c.when ? `“${c.subject}” ${ago(c.when)}` : 'not committed yet';
-  sub.textContent = `${branch} · ${last}`;
+    last = c.when ? `“${c.subject}” ${ago(c.when)}` : 'not committed yet',
+    // kept apart after a rename the person declined: the folder says where its code is
+    dir = board.proto.dir === `prototypes/${protoSlug(board.name ?? '')}` ? '' : ` · ${board.proto.dir}`;
+  sub.textContent = `${branch} · ${last}${dir}`;
 }

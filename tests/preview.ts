@@ -177,6 +177,17 @@ try {
     async () => (await captures())[0]?.commit === counter,
     'the camera captures a committed prototype at once',
   );
+  assert.ok(
+    await page.evaluate(
+      id => {
+        const card = document.querySelector(`.card[data-id="${id}"]`)?.getBoundingClientRect(),
+          side = document.getElementById('side')?.getBoundingClientRect();
+        return !!card && !!side && card.left >= side.right;
+      },
+      (await captures())[0]?.id,
+    ),
+    'a new card lands beside the widgets, not under them',
+  );
   fs.writeFileSync(path.join(repo, dir, 'src/App.tsx'), 'export const App = () => <h1>Second</h1>;\n');
   await page.click('[data-pv="refresh"]');
   await until(async () => (await frame.locator('h1').textContent()) === 'Second', 'the change runs');

@@ -162,6 +162,7 @@ export const pickable: Pickable[] = [
   ['terminal', 'terminal-window'],
   'git-branch',
   'git-commit',
+  ['github', 'github-logo'],
   'bug',
   'sliders',
   ['toggle', 'toggle-right'],

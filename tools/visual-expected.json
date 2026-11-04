@@ -1,3 +1,4 @@
 {
-  "settings-helpers": "Settings → Helpers gains the Git and GitHub section (#173), so the tab is longer and its scrollbar thumb shorter."
+  "settings-helpers": "Settings → Helpers gains the Git and GitHub section (#173), so the tab is longer and its scrollbar thumb shorter.",
+  "settings-myra": "Settings → Myra’s “Remember chats” says prototype boards always keep theirs, so that row wraps a line further and the scrollbar thumb is shorter."
 }

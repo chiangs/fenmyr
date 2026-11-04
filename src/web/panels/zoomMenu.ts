@@ -60,8 +60,19 @@ export function zoomFit() {
   glideView(to);
 }
 
+// half a usual card's width and a margin: in a narrow free strip a new card starts at its left edge, so it shows
+const HALF_CARD = 146;
+
 export function centerWorld() {
   const r = stage.getBoundingClientRect();
+  // a prototype board's widgets cover the left of its narrow column, so new cards go just right of them
+  const side = document.body.classList.contains('proto')
+    ? document.getElementById('side')?.getBoundingClientRect()
+    : null;
+  if (side?.width) {
+    const left = Math.max(r.left, side.right + 16);
+    return toWorld(left + Math.max((r.right - left) / 2, HALF_CARD), r.top + r.height / 2);
+  }
   return toWorld(r.left + 270 + (r.width - 530) / 2, r.top + r.height / 2);
 }
 

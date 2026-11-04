@@ -88,7 +88,7 @@ try {
           { id: 'p4', name: 'Halfmade', open: true, repo: { path: half } },
           { id: 'p5', name: 'Taken', open: true, repo: { path: taken } },
         ],
-        folders: [],
+        folders: [{ id: 'pf', name: 'Prototypes', project: 'p1', kind: 'prototyping', open: true }],
         order: {},
       });
       await window.__fenmyr.refreshBoards();
@@ -173,6 +173,38 @@ try {
   assert.match(await screen(), /Name already exists on this account/, 'a real refusal is explained, not retried');
   assert.ok(!git(taken, 'remote').toString().trim(), 'and nothing is set');
   await page.keyboard.press('Escape');
+
+  await l.app.evaluate(({ shell }) => {
+    shell.openExternal = async (url: string) => {
+      Reflect.set(globalThis, '__opened', url);
+    };
+  });
+  await page.evaluate(
+    async ([acme, folder]) => {
+      const proto = await window.Fenmyr.protoCreate({ root: String(acme), name: 'Hub', stack: 'react' });
+      await window.Fenmyr.save({
+        id: 'hub',
+        name: 'Hub',
+        folder,
+        kind: 'prototype',
+        proto,
+        cards: [],
+        links: [],
+        tray: [],
+      });
+      await window.__fenmyr.refreshBoards();
+      await window.__fenmyr.openBoard('hub');
+    },
+    [acme, 'pf'],
+  );
+  await page.waitForSelector('#prGit [data-git="github"]');
+  await page.click('#prGit [data-git="github"]');
+  await page.waitForTimeout(300);
+  assert.strictEqual(
+    await l.app.evaluate(() => Reflect.get(globalThis, '__opened')),
+    'https://github.com/ann-work/acme-protos',
+    'the git bar’s GitHub button opens the repo’s page',
+  );
 
   const seen = (await page.content()) + library();
   assert.ok(!seen.includes('tok-'), 'no token reaches the page or the library file');
