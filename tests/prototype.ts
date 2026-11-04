@@ -274,6 +274,15 @@ try {
     await page.locator('button:visible', { hasText: 'Link “Personal” to a repo' }).count(),
     'an unlinked project gets the link button instead',
   );
+  assert.match(
+    await page.evaluate(() =>
+      [...document.querySelectorAll('[data-seg="chatKeep"]')]
+        .map(s => s.closest('.set-row')?.textContent ?? '')
+        .join(' | '),
+    ),
+    /Prototype boards always keep theirs/,
+    'Settings says prototype boards keep their chats',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('PROTOTYPE OK');
 } finally {

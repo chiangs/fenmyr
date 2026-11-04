@@ -147,7 +147,7 @@ try {
   assert.ok(places.pill === 'none' && places.gooInHeader, 'her button is gone and she sits in the chat header');
   assert.match(
     await page.evaluate(() => document.getElementById('mcList')?.textContent ?? ''),
-    /What are we building\?/,
+    /What are we building\?[\s\S]*the preview runs what I build, and the code pane shows its files/,
     'she asks what she’s building',
   );
 

@@ -1,8 +1,8 @@
 import type { Board } from '../../shared/model.ts';
 import type { GitStatus } from '../../shared/ops.ts';
-import { inCommit } from '../../shared/repos.ts';
+import { githubOf, inCommit } from '../../shared/repos.ts';
 import { $ } from '../core/dom.ts';
-import { session } from '../core/state.ts';
+import { appState, session } from '../core/state.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { closestTo, esc } from '../ui/dom.ts';
 import { gitAction } from './gitActions.ts';
@@ -31,6 +31,14 @@ function syncOf(s: Repo) {
         icon: 'cloud-check',
         tip: 'Changes you haven’t committed stay on this computer.',
       };
+}
+
+// the repo's page on GitHub: the project's own link, else where origin points; '' when it isn't on GitHub
+function githubUrl(s: Repo) {
+  const linked = appState.projects.find(p => p.repo?.path === s.root)?.repo?.github,
+    origin = s.remotes.find(r => r.name === 'origin')?.url ?? '',
+    gh = linked ?? githubOf(origin);
+  return gh ? `https://github.com/${gh.owner}/${gh.name}` : '';
 }
 
 // files change outside Fenmyr too (an editor, a terminal commit), so coming back to the window reads the repo again
@@ -74,11 +82,16 @@ export async function renderGitBar(b: Board) {
     commitIcon = Icon('git-commit', { size: 14 }),
     pushIcon = Icon('cloud-up', { size: 14 }),
     pullIcon = Icon('cloud-down', { size: 14 }),
+    hub = githubUrl(s),
+    hubIcon = Icon('github', { size: 15 }),
+    hubTitle = esc(`Open ${hub.replace('https://', '')} in your browser`),
+    github = hub ? `<button class="pv-btn pg-gh" data-git="github" title="${hubTitle}">${hubIcon}</button>` : '',
     behind = s.behind,
     pull = behind ? `<button class="pv-btn" data-git="pull">${pullIcon}Pull ${behind} from GitHub</button>` : '';
-  el.innerHTML = `<b class="pg-repo" title="${where}">${repo}</b><span class="pg-chip">${branchIcon}${branch}</span><span title="${changesTip}">${changes}</span><span class="pg-sync" title="${syncTip}">${syncIcon}${syncText}</span>${pull}<button class="pv-btn" data-git="commit">${commitIcon}Commit</button><button class="pv-btn" data-git="push">${pushIcon}Push</button>`;
+  el.innerHTML = `<b class="pg-repo" title="${where}">${repo}</b><span class="pg-chip">${branchIcon}${branch}</span><span title="${changesTip}">${changes}</span><span class="pg-sync" title="${syncTip}">${syncIcon}${syncText}</span>${pull}<button class="pv-btn" data-git="commit">${commitIcon}Commit</button><button class="pv-btn" data-git="push">${pushIcon}Push</button>${github}`;
   el.onclick = e => {
     const a = closestTo(e.target, '[data-git]')?.dataset.git;
-    if (a) gitAction(a);
+    if (a === 'github') Fenmyr.openURL(hub);
+    else if (a) gitAction(a);
   };
 }

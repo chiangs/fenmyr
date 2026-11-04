@@ -147,6 +147,25 @@ try {
     async () => /main · “Their heading”/.test(await tileSays()),
     'the folder home shows each prototype’s branch and last change',
   );
+  await page.evaluate(async () => {
+    // away from the board first, so its own save can't put the old name back
+    await window.__fenmyr.openBoard('other');
+    const b = await window.Fenmyr.load('pb');
+    if (b) await window.Fenmyr.save({ ...b, name: 'Checkout v2' });
+    await window.__fenmyr.refreshBoards();
+    await window.__fenmyr.openHome('folder:pf');
+  });
+  await until(
+    async () => /“Their heading” .* · prototypes\/checkout$/.test(await tileSays()),
+    'a board renamed without its folder says where its code is',
+  );
+  await reopen();
+  fs.writeFileSync(path.join(repo, app), 'export const App = () => <h1>Edited outside</h1>;\n');
+  await page.click('[data-pv="refresh"]');
+  await until(
+    async () => /Edited outside/.test(await page.evaluate(() => document.querySelector('.pc-text')?.textContent ?? '')),
+    'Refresh reads the files again for the code pane too',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('SYNC OK');
 } finally {

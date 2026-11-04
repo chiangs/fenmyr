@@ -147,7 +147,7 @@ export function renderChat() {
       .join('');
     const lead =
       session.board?.kind === 'prototype'
-        ? 'What are we building? Tell me what it’s for and who uses it. Put wireframes, sketches, screenshots and notes on the board, or drop pictures right here, and select the ones that matter. Then ask me to build it. This chat is kept with the prototype.'
+        ? 'What are we building? Tell me what it’s for and who uses it. Put wireframes, sketches, screenshots and notes on the board, or drop pictures right here, and select the ones that matter. Then ask me to build it. The board on the left holds what you bring, the preview runs what I build, and the code pane shows its files. This chat is kept with the prototype.'
         : 'Ask me to sort, write, plan or find things for this board.';
     list.innerHTML = `<div class="mc-empty"><b>Hi! I'm Myra ✦</b>${lead}<div class="mc-ideas">${ideas}</div></div>`;
     for (const b of list.querySelectorAll('.mc-ideas button'))

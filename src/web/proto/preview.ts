@@ -5,7 +5,7 @@ import { rootOf } from '../repo/codeFolder.ts';
 import { child, closestTo, esc, textField } from '../ui/dom.ts';
 import { buildPreview } from './bundle.ts';
 import { takeCapture } from './capture.ts';
-import { showSource } from './code.ts';
+import { renderCode, showSource } from './code.ts';
 import { renderGitBar } from './gitbar.ts';
 import { loadKnobs, sendTweaks, tweakFromFrame } from './knobs.ts';
 
@@ -228,7 +228,12 @@ export async function renderPreview(b: Board) {
       viewing = null;
       refreshPreview();
     }
-    if (act === 'refresh') refreshPreview();
+    // Refresh reads the files again everywhere, for changes made outside Fenmyr
+    if (act === 'refresh') {
+      refreshPreview();
+      renderCode(b);
+      renderGitBar(b);
+    }
     if (act === 'open' && html) Fenmyr.previewOpen({ html, name: b.name || 'prototype' });
   };
   dragWidth(child(el, '.pv-handle'));
