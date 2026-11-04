@@ -264,12 +264,38 @@ try {
     0,
     'the preview never folds',
   );
+  const arrows = () =>
+    page.evaluate(() =>
+      Object.fromEntries(
+        [...document.querySelectorAll('.pr-head [data-fold] svg, .pr-pane.folded [data-open] svg')].map(i => [
+          i.closest('[data-fold], [data-open]')?.getAttribute('data-fold') ??
+            `open ${i.closest('[data-open]')?.getAttribute('data-open')}`,
+          i.getAttribute('data-ico'),
+        ]),
+      ),
+    );
+  assert.deepStrictEqual(
+    await arrows(),
+    { canvas: 'caret-left', code: 'caret-right' },
+    'each fold arrow points the way its column folds: the board left, the code towards Myra',
+  );
+  await page.evaluate(() => document.body.classList.remove('calm'));
+  const codeWidth = () =>
+    page.evaluate(() => document.querySelector('[data-p="code"]')?.getBoundingClientRect().width ?? 0);
+  const open = await codeWidth();
   await page.click('[data-fold="code"]');
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(90);
+  const midway = await codeWidth();
+  assert.ok(midway < open && midway > 40, `with motion on, the column slides shut (${open} → ${midway} px midway)`);
+  await page.waitForTimeout(400);
   s = await state();
   assert.deepStrictEqual(s.folded, ['code'], 'the code column folds to a strip');
   assert.deepStrictEqual(s.stage, s.slot, 'and the canvas follows its column');
+  assert.strictEqual((await arrows())['open code'], 'caret-left', 'its strip’s arrow points back to open it');
   await page.click('[data-open="code"]');
+  await page.waitForTimeout(400);
+  assert.ok(Math.abs((await codeWidth()) - open) < 2, 'and opening it slides it back to its width');
+  await page.evaluate(() => document.body.classList.add('calm'));
 
   await resize(1200);
   await page.waitForTimeout(500);
