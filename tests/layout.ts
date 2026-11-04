@@ -251,6 +251,27 @@ try {
     'export const PromoField = () => null;\n',
     'Copy puts the file on the clipboard',
   );
+  const sticky = await page.evaluate(() => {
+    const r = (sel: string) => document.querySelector(sel)?.getBoundingClientRect();
+    const pick = r('.pc-pick'),
+      acts = r('.pc-acts'),
+      files = r('.pc-bar');
+    const text = document.querySelector('.pc-text');
+    const before = r('.pc-bar')?.top;
+    if (text) {
+      text.textContent = 'x\n'.repeat(400);
+      text.scrollTop = 2000;
+    }
+    return {
+      fills: !!pick && !!acts && !!files && pick.left - files.left < 12 && acts.left - pick.right < 10,
+      stays: r('.pc-bar')?.top === before && (text?.scrollTop ?? 0) > 0,
+    };
+  });
+  assert.deepStrictEqual(
+    sticky,
+    { fills: true, stays: true },
+    'the file button fills the bar, and scrolling the code leaves the bar in view',
+  );
 
   const panes = await page.evaluate(() => {
     document.body.classList.add('dark', 'following-caelestia');

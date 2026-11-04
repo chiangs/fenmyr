@@ -104,7 +104,7 @@ async function showFile(root: string, dir: string, file: string) {
   shown = file;
   const el = $('pr-code');
   for (const b of el.querySelectorAll<HTMLElement>('[data-file]')) b.classList.toggle('on', b.dataset.file === file);
-  const pick = el.querySelector('.pc-pick');
+  const pick = el.querySelector('.pc-pick span');
   if (pick) pick.textContent = labelOf(file);
   const read = (f: string) => Fenmyr.protoRead({ root, dir, file: f });
   const text = await (file === VALUES ? read('src/tweaks.json').then(valuesText) : read(file)).catch(e =>
@@ -154,9 +154,10 @@ export async function renderCode(b: Board) {
     toggle = hidden
       ? `<button class="pv-btn pc-all" title="Fenmyr’s own wiring too">${allIcon}${allLabel}</button>`
       : '';
-  const copy = copyLabel(false);
+  const copy = copyLabel(false),
+    caret = Icon('caret-down', { size: 12 });
   el.classList.remove('pc-many');
-  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"></button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><pre class="pc-text"><code></code></pre>`;
+  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"><span></span>${caret}</button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><pre class="pc-text"><code></code></pre>`;
   needed = el.querySelector('.pc-files')?.scrollWidth ?? 0;
   fitBar();
   if (!watching) {
