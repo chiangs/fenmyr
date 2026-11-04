@@ -1,7 +1,7 @@
 // Library and board files keep what they had, keep the prototype fields when they're sound, and drop them when not.
 import assert from 'node:assert';
 import { parseBoard, parseLibrary } from '../src/shared/model.ts';
-import { githubOf, readRepoLink, repoClash, repoNameFor } from '../src/shared/repos.ts';
+import { githubOf, readRepoLink, repoClash, repoNameFor, splitCardsLine } from '../src/shared/repos.ts';
 
 const json = (x: unknown) => JSON.parse(JSON.stringify(x));
 
@@ -84,5 +84,13 @@ assert.deepStrictEqual(
   { path: '/code/acme' },
   'a GitHub copy with a bad part is dropped and the folder kept',
 );
+
+assert.deepStrictEqual(
+  splitCardsLine('I built it.\nCARDS: src/App.tsx=a1, b2; ./src/Field.tsx=c3; ../outside.txt=z9'),
+  { text: 'I built it.', sources: { 'src/App.tsx': ['a1', 'b2'], 'src/Field.tsx': ['c3'] } },
+  'the builder’s card line comes off its reply, and a path outside the folder is dropped',
+);
+assert.deepStrictEqual(splitCardsLine('I built it.\nCARDS: none'), { text: 'I built it.', sources: {} });
+assert.deepStrictEqual(splitCardsLine('No line at all.'), { text: 'No line at all.', sources: {} });
 
 console.log('MODEL OK');

@@ -52,13 +52,51 @@ export const protoSlug = (name: string) =>
 
 // A prototype board's code lives in one folder of its project's repo. The board finds it by dir, never by its name,
 // so renaming or refiling the board can't lose it.
+// which cards each of a prototype's files came from, by path inside its folder, as the builder reported them
+export type Sources = Record<string, string[]>;
+
 export type Proto = {
   dir: string;
   stack: 'react' | 'html';
   // what it's for and the screen it's for, as the person told Myra when it was made
   purpose?: string;
   device?: 'phone' | 'tablet' | 'desktop';
+  sources?: Sources;
 };
+
+const MAX_SOURCE_FILES = 200;
+const MAX_CARDS_PER_FILE = 12;
+
+export function readSources(x: unknown): Sources {
+  if (!isRecord(x)) return {};
+  return Object.fromEntries(
+    Object.entries(x)
+      .slice(0, MAX_SOURCE_FILES)
+      .flatMap(([file, ids]) =>
+        Array.isArray(ids) && file.length < 300 && !file.startsWith('/') && !file.split('/').includes('..')
+          ? [[file, ids.filter(i => typeof i === 'string' && i.length <= 64).slice(0, MAX_CARDS_PER_FILE)]]
+          : [],
+      ),
+  );
+}
+
+// The builder ends its reply with "CARDS: src/App.tsx=a1,b2; src/Field.tsx=c3", or "CARDS: none". The line is taken
+// off what the person reads.
+export function splitCardsLine(said: string): { text: string; sources: Sources } {
+  const m = said.match(/(^|\n)[ \t]*CARDS:[ \t]*(.*)\s*$/i);
+  if (!m) return { text: said.trim(), sources: {} };
+  const found: Sources = {};
+  for (const part of (m[2] ?? '').split(';')) {
+    const [file, ids] = part.split('=');
+    const f = file?.trim().replace(/^\.\//, '');
+    if (f && ids)
+      found[f] = ids
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+  }
+  return { text: said.slice(0, m.index).trim(), sources: readSources(found) };
+}
 
 // flat under prototypes/, so where the board sits in the library never decides where its code is
 export const PROTO_DIR = /^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -71,12 +109,14 @@ export const inCommit = (dir: string, file: string) => file.startsWith(`${dir}/`
 export function readProto(x: unknown): Proto | null {
   if (!isRecord(x) || typeof x.dir !== 'string' || !PROTO_DIR.test(x.dir)) return null;
   const device = DEVICES.find(d => d === x.device),
-    purpose = typeof x.purpose === 'string' ? x.purpose.slice(0, 500) : '';
+    purpose = typeof x.purpose === 'string' ? x.purpose.slice(0, 500) : '',
+    sources = readSources(x.sources);
   return {
     dir: x.dir,
     stack: STACKS.find(s => s === x.stack) ?? 'react',
     ...(purpose ? { purpose } : {}),
     ...(device ? { device } : {}),
+    ...(Object.keys(sources).length ? { sources } : {}),
   };
 }
 

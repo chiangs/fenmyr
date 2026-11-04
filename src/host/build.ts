@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { HostEvents, Ops } from '../shared/ops.ts';
-import { PROTO_DIR } from '../shared/repos.ts';
+import { PROTO_DIR, splitCardsLine } from '../shared/repos.ts';
 import { claudeCode } from './claudeCode.ts';
 import type { CodeAgent } from './codeAgent.ts';
 import { status } from './git.ts';
@@ -68,7 +68,8 @@ export function startBuild(
       send({ id, type: 'edit', file }),
     ).finally(() => fs.rmSync(shots, { recursive: true, force: true }));
     const strays = (await outside(s.root, dir)).filter(p => !before.has(p));
-    send({ id, type: 'done', text: said, snapshot: snap, outside: strays });
+    const { text: reply, sources } = splitCardsLine(said);
+    send({ id, type: 'done', text: reply, snapshot: snap, outside: strays, sources });
   };
   run().catch(e => send({ id, type: 'error', text: e instanceof Error ? e.message : String(e) }));
   return { id };
