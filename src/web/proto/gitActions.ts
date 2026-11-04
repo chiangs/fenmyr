@@ -1,4 +1,5 @@
 import type { Board } from '../../shared/model.ts';
+import { inCommit } from '../../shared/repos.ts';
 import { appState, session } from '../core/state.ts';
 import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
@@ -26,12 +27,20 @@ async function askCommit(b: Prototype, message: string) {
   const where = projectOf(b);
   if (!where) return;
   const s = await Fenmyr.gitStatus(where.root).catch(() => null);
-  const n = s?.kind === 'repo' ? s.changed.filter(c => c.path.startsWith(`${b.proto.dir}/`)).length : 0;
-  if (!n) return say('There’s nothing new in this prototype to commit.', 5000);
-  const branch = s?.kind === 'repo' ? (s.branch ?? 'this branch') : 'this branch',
-    files = n === 1 ? '1 changed file' : `${n} changed files`;
+  const changed = s?.kind === 'repo' ? s.changed.filter(c => inCommit(b.proto.dir, c.path)) : [];
+  if (!changed.length) return say('There’s nothing new in this prototype to commit.', 5000);
+  const own = changed.filter(c => c.path.startsWith(`${b.proto.dir}/`)).length,
+    shared = changed.length - own,
+    count = (n: number) => (n === 1 ? '1 changed file' : `${n} changed files`),
+    files = [
+      own ? `${count(own)} in ${where.repo}/${b.proto.dir}` : '',
+      shared ? `${count(shared)} every prototype shares in ${where.repo}/prototypes` : '',
+    ]
+      .filter(Boolean)
+      .join(' and '),
+    branch = s?.kind === 'repo' ? (s.branch ?? 'this branch') : 'this branch';
   askGit(
-    `Commit ${files} in ${where.repo}/${b.proto.dir} to ${branch}? Message: “${message}”`,
+    `Commit ${files} to ${branch}? Message: “${message}”`,
     'Committing saves this version in the project’s history, so you can always come back to it. It stays on this computer until you push, which sends it to GitHub.',
     [
       {
@@ -49,6 +58,7 @@ async function askPush(b: Prototype) {
   if (!where) return;
   const s = await Fenmyr.gitStatus(where.root).catch(() => null);
   if (s?.kind !== 'repo' || !s.branch) return say('There’s no branch to push.', 5000);
+  if (!s.hasCommits) return say('There’s nothing to push yet. Commit this prototype first, then push.', 6000);
   const origin = s.remotes.find(r => r.name === 'origin')?.url;
   if (!origin) return say('This project isn’t on GitHub yet. Its Repo… menu can put it there.', 6000);
   const project = appState.projects.find(p => p.repo?.path === where.root),

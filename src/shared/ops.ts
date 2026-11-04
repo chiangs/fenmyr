@@ -8,10 +8,10 @@ export type BoardSummary = {
   folder: string | null;
   parent: string | null;
   updated: number;
-  kind?: 'prototype';
   // set when the board has its own vault access (not its project's): the vaults it may read, and whether AI may read them
   vaultAccess?: { vault: string; ai: boolean }[];
-};
+  // a prototype board carries its code folder, so the library knows which folders boards already use
+} & ({ kind?: never; dir?: never } | { kind: 'prototype'; dir: string });
 export type Template = {
   id: string;
   name: string;
@@ -115,6 +115,8 @@ export type GitStatus =
       root: string;
       // null when no branch is checked out
       branch: string | null;
+      // false until the repo's first commit, when there's nothing yet to push
+      hasCommits: boolean;
       upstream: string | null;
       ahead: number;
       behind: number;
@@ -218,6 +220,8 @@ export type Ops = {
   };
   protoCopy: { args: { fromRoot: string; dir: string; toRoot: string }; result: { dir: string; files: number } };
   protoExists: { args: { root: string; dir: string }; result: boolean };
+  // the prototypes already in a repo's prototypes/ folder, named by their page's title
+  protoFind: { args: { root: string }; result: { dir: string; stack: 'react' | 'html'; name: string }[] };
   protoRename: { args: { root: string; dir: string; name: string }; result: { dir: string } };
   // restored: from the last commit; fresh: starter files, since it was never committed
   protoRestore: {

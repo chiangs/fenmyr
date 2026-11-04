@@ -25,8 +25,9 @@ const CHANGE: Record<string, GitChange['change']> = { A: 'added', D: 'deleted' }
 
 // `git status --porcelain=v2 --branch -z`: header lines start with #, and a rename's old path is its own record
 function readStatus(out: string) {
-  const s: { branch: string | null; upstream: string | null; ahead: number; behind: number } = {
+  const s: { branch: string | null; hasCommits: boolean; upstream: string | null; ahead: number; behind: number } = {
     branch: null,
+    hasCommits: true,
     upstream: null,
     ahead: 0,
     behind: 0,
@@ -37,6 +38,7 @@ function readStatus(out: string) {
     const rec = records[i] ?? '',
       f = rec.split(' ');
     if (rec.startsWith('# branch.head ')) s.branch = f[2] === '(detached)' ? null : (f[2] ?? null);
+    else if (rec.startsWith('# branch.oid ')) s.hasCommits = f[2] !== '(initial)';
     else if (rec.startsWith('# branch.upstream ')) s.upstream = f[2] ?? null;
     else if (rec.startsWith('# branch.ab ')) {
       s.ahead = Math.abs(Number(f[2]) || 0);
@@ -76,7 +78,8 @@ export async function status(asked: string): Promise<GitStatus> {
   }
   const root = top.out.trim();
   const [st, remotes, name, email] = await Promise.all([
-    git(root, ['status', '--porcelain=v2', '--branch', '-z']),
+    // every untracked file, not just its folder: a new prototype is prototypes/<slug>/..., never only prototypes/
+    git(root, ['status', '--porcelain=v2', '--branch', '--untracked-files=all', '-z']),
     git(root, ['remote', '-v']),
     git(root, ['config', 'user.name']),
     git(root, ['config', 'user.email']),
@@ -165,6 +168,15 @@ export async function setGlobalIdentity(name: string, email: string): Promise<Gi
   return (await setup()).identity;
 }
 
+// git ends a failure with a summary ("failed to push some refs"); the line that says why comes first
+const firstLine = (err: string) => {
+  const lines = err
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+  return (lines.find(l => /^(error|fatal):/.test(l)) ?? lines[0] ?? '').replace(/^(error|fatal):\s*/, '');
+};
+
 const plain = (err: string) =>
   /author identity unknown|tell me who you are/i.test(err)
     ? 'Git doesn’t know who is committing. Add your name and email in Settings → Helpers → Git and GitHub.'
@@ -174,17 +186,34 @@ const plain = (err: string) =>
         ? 'GitHub has commits this computer doesn’t have yet. Pull first, then push again.'
         : /authentication|could not read username|permission denied|403/i.test(err)
           ? 'GitHub didn’t accept the sign-in. Sign in again in Settings → Helpers.'
-          : err || 'Git couldn’t do that.';
+          : /src refspec .* does not match/i.test(err)
+            ? 'There’s nothing to push yet. Commit this prototype first, then push.'
+            : firstLine(err) || 'Git couldn’t do that.';
 
-// Commits the prototype's folder only: anything else the person has staged stays staged and out of this commit.
+// The files every prototype shares (package.json, myra.md…) sit beside the prototypes' folders. A prototype's code
+// needs them, so they go into its commits too.
+const sharedFiles = (root: string) => {
+  try {
+    return fs
+      .readdirSync(path.join(root, 'prototypes'), { withFileTypes: true })
+      .filter(e => e.isFile())
+      .map(e => `prototypes/${e.name}`);
+  } catch {
+    return [];
+  }
+};
+
+// Commits the prototype's folder and the shared files only: anything else the person has staged stays staged and out
+// of this commit.
 export async function commitFolder(root: string, dir: string, message: string) {
   const s = await status(root);
   if (s.kind !== 'repo') throw new Error("This prototype's repo isn't there any more.");
   const m = message.trim();
   if (!m) throw new Error('Write a few words about what changed.');
-  const add = await git(s.root, ['add', '-A', '--', dir]);
+  const paths = [dir, ...sharedFiles(s.root)];
+  const add = await git(s.root, ['add', '-A', '--', ...paths]);
   if (add.code !== 0) throw new Error(plain(add.err));
-  const r = await git(s.root, ['commit', '-q', '-m', m, '--only', '--', dir]);
+  const r = await git(s.root, ['commit', '-q', '-m', m, '--only', '--', ...paths]);
   if (r.code !== 0)
     throw new Error(
       /nothing to commit|no changes added/i.test(r.err + r.out) ? 'There’s nothing new to commit.' : plain(r.err),
@@ -196,6 +225,7 @@ export async function commitFolder(root: string, dir: string, message: string) {
 export async function push(root: string, credential: { gh: string; env: Record<string, string> } | null) {
   const s = await status(root);
   if (s.kind !== 'repo' || !s.branch) throw new Error('There’s no branch to push.');
+  if (!s.hasCommits) throw new Error('There’s nothing to push yet. Commit this prototype first, then push.');
   if (!s.remotes.some(x => x.name === 'origin'))
     throw new Error('This repo has no GitHub copy yet. Put it on GitHub first.');
   const helper = credential
@@ -205,7 +235,7 @@ export async function push(root: string, credential: { gh: string; env: Record<s
     ...credential?.env,
     GIT_TERMINAL_PROMPT: '0',
   });
-  if (r.code !== 0) throw new Error(plain(r.err.toString('utf8').trim().split('\n').pop() ?? ''));
+  if (r.code !== 0) throw new Error(plain(r.err.toString('utf8').trim()));
   return status(s.root);
 }
 
@@ -254,7 +284,7 @@ export async function pull(
   const clashed = await git(s.root, ['diff', '--name-only', '--diff-filter=U']);
   await git(s.root, ['rebase', '--abort']);
   const files = clashed.out.split('\n').filter(Boolean);
-  if (!files.length) throw new Error(plain(rebase.err.split('\n').pop() ?? ''));
+  if (!files.length) throw new Error(plain(rebase.err));
   return { kind: 'conflict', files };
 }
 
@@ -266,7 +296,7 @@ export async function keepMine(root: string, branch: string, credential: Credent
   const sw = await git(s.root, ['switch', '-c', branch]);
   if (sw.code !== 0) throw new Error(plain(sw.err));
   const r = await remote(s.root, credential, ['push', '-u', 'origin', branch]);
-  if (r.code !== 0) throw new Error(plain(r.err.split('\n').pop() ?? ''));
+  if (r.code !== 0) throw new Error(plain(r.err));
   return status(s.root);
 }
 
