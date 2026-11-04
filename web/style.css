@@ -2755,10 +2755,17 @@ body.proto .pr-root { display: flex; position: fixed; inset: 0; z-index: 5; poin
 .pr-pane.folded .pr-strip { display: flex; flex: 1; align-items: flex-start; justify-content: center; padding-top: 12px; writing-mode: vertical-rl; border: 0; background: none; cursor: pointer; font: 700 12px/1 var(--font); color: var(--ink-soft); }
 .pr-pane.folded .pr-strip:hover { color: var(--ink); background: rgba(150, 95, 35, .06); }
 .pr-div { pointer-events: auto; cursor: col-resize; background: rgba(150, 95, 35, .1); }
+body.pr-dragging #pr-preview iframe { pointer-events: none; }
 .pr-div:hover { background: var(--select); }
 .pr-note { margin: 0; padding: 16px; font: 500 12.5px/1.45 var(--font); color: var(--ink-soft); }
-.pc-files { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid rgba(150, 95, 35, .1); }
-.pc-file { padding: 4px 8px; border: 0; border-radius: 8px; background: none; cursor: pointer; font: 500 11.5px/1 ui-monospace, monospace; color: var(--ink-soft); }
+/* the code pane's files: a row of tabs while they fit on one line, a dropdown when they don't */
+.pc-bar { display: flex; align-items: center; gap: 6px; padding: 8px; border-bottom: 1px solid rgba(150, 95, 35, .1); }
+.pc-files { display: flex; gap: 4px; flex: 1; min-width: 0; overflow: hidden; }
+.pc-pick { display: none; flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid rgba(150, 95, 35, .2); border-radius: 9px; background: none; font: 500 11.5px/1.2 ui-monospace, monospace; color: var(--ink); }
+#pr-code.pc-many .pc-files { display: none; }
+#pr-code.pc-many .pc-pick { display: block; }
+.pc-all { flex: none; margin-left: auto; }
+.pc-file { flex: none; white-space: nowrap; padding: 4px 8px; border: 0; border-radius: 8px; background: none; cursor: pointer; font: 500 11.5px/1 ui-monospace, monospace; color: var(--ink-soft); }
 .pc-file.on { background: rgba(150, 95, 35, .12); color: var(--ink); }
 .pc-text { margin: 0; padding: 12px 14px; font: 12px/1.55 ui-monospace, monospace; white-space: pre; tab-size: 2; color: var(--ink); }
 body.proto .stage { left: var(--slot-l); top: var(--slot-t); width: var(--slot-w); height: var(--slot-h); right: auto; bottom: auto; }

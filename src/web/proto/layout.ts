@@ -8,7 +8,7 @@ import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
 import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
-import { renderPreview } from './preview.ts';
+import { dragOverFrame, renderPreview } from './preview.ts';
 import { startSync } from './sync.ts';
 
 // A prototype board's screen: Myra's chat docked on the left and always open, then the preview, the code and the
@@ -97,7 +97,7 @@ function dragDivider(d: HTMLElement) {
     const l = layout(),
       start = l[right],
       x0 = e.clientX;
-    d.setPointerCapture(e.pointerId);
+    dragOverFrame(d, e);
     d.onpointermove = m => {
       l[right] = Math.max(MIN[right], Math.min(1200, start - (m.clientX - x0)));
       place();

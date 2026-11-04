@@ -5,7 +5,7 @@ import { esc } from '../ui/dom.ts';
 // The prototype's controls from its src/tweaks.json, drawn above the preview the same way in every prototype. Moving
 // one changes the preview at once; nothing is saved until Keep these values. A custom control is the prototype's own
 // and shows inside the frame instead; its changes still come back here to be kept.
-type Knob =
+export type Knob =
   | { kind: 'choice'; label: string; options: string[]; value: string }
   | { kind: 'number'; label: string; min: number; max: number; step: number; unit: string; value: number }
   | { kind: 'text'; label: string; value: string }
@@ -54,6 +54,21 @@ function readKnob(x: unknown): Knob | null {
     default:
       return null;
   }
+}
+
+// src/tweaks.json's text as controls by key, leaving out what can't be read
+export function readKnobs(raw: string): Record<string, Knob> {
+  let parsed: unknown = {};
+  try {
+    parsed = JSON.parse(raw);
+  } catch {}
+  const entries = typeof parsed === 'object' && parsed !== null ? Object.entries(parsed) : [];
+  return Object.fromEntries(
+    entries.flatMap(([key, x]) => {
+      const k = readKnob(x);
+      return k ? [[key, k]] : [];
+    }),
+  );
 }
 
 const field = (key: string, k: Exclude<Knob, { kind: 'custom' }>) => {
@@ -130,17 +145,7 @@ export async function loadKnobs(
   const raw = files.includes('src/tweaks.json')
     ? await Fenmyr.protoRead({ root, dir, file: 'src/tweaks.json' }).catch(() => '{}')
     : '{}';
-  let parsed: unknown = {};
-  try {
-    parsed = JSON.parse(raw);
-  } catch {}
-  const entries = typeof parsed === 'object' && parsed !== null ? Object.entries(parsed) : [];
-  knobs = Object.fromEntries(
-    entries.flatMap(([key, x]) => {
-      const k = readKnob(x);
-      return k ? [[key, k]] : [];
-    }),
-  );
+  knobs = readKnobs(raw);
   const before = current;
   current = Object.fromEntries(Object.entries(knobs).map(([key, k]) => [key, key in before ? before[key] : k.value]));
   saved = JSON.stringify(Object.fromEntries(Object.entries(knobs).map(([key, k]) => [key, k.value])));
