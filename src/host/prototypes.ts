@@ -94,3 +94,31 @@ export async function restore(root: string, dir: string, name: string, stack: Pr
   write(path.join(repo, dir), STARTERS[stack](name.replace(/[<>&{}]/g, '')), true);
   return 'fresh' as const;
 }
+
+const SKIP = new Set(['node_modules', '.git', 'dist']);
+
+// The prototype's files for the code pane, by path inside its folder.
+export async function files(root: string, dir: string) {
+  const base = path.join(await inRepo(root, dir), dir),
+    out: string[] = [];
+  const walk = (rel: string) => {
+    for (const e of fs.readdirSync(path.join(base, rel), { withFileTypes: true })) {
+      if (SKIP.has(e.name) || out.length >= 500) continue;
+      const r = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) walk(r);
+      else if (e.isFile()) out.push(r);
+    }
+  };
+  if (fs.existsSync(base)) walk('');
+  return out.sort();
+}
+
+// One file's text, only from inside the prototype's folder.
+export async function read(root: string, dir: string, file: string) {
+  const base = path.join(await inRepo(root, dir), dir),
+    f = path.resolve(base, file);
+  if (!f.startsWith(`${base}/`)) throw new Error("That file isn't part of this prototype.");
+  const buf = fs.readFileSync(f);
+  if (buf.length > 300_000) return `This file is ${Math.round(buf.length / 1000)} KB, too big to show here.`;
+  return buf.includes(0) ? 'This file isn’t text, so it isn’t shown here.' : buf.toString('utf8');
+}

@@ -20,6 +20,8 @@ export const repoOps = {
   protoExists: (o: Ops['protoExists']['args']) => call('protoExists', o),
   protoRename: (o: Ops['protoRename']['args']) => call('protoRename', o),
   protoRestore: (o: Ops['protoRestore']['args']) => call('protoRestore', o),
+  protoFiles: (o: Ops['protoFiles']['args']) => call('protoFiles', o),
+  protoRead: (o: Ops['protoRead']['args']) => call('protoRead', o),
 };
 
 export const repoFallbacks: typeof repoOps = {
@@ -40,4 +42,6 @@ export const repoFallbacks: typeof repoOps = {
   protoExists: desktopOnly,
   protoRename: desktopOnly,
   protoRestore: desktopOnly,
+  protoFiles: desktopOnly,
+  protoRead: desktopOnly,
 };

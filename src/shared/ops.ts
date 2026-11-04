@@ -224,6 +224,8 @@ export type Ops = {
     args: { root: string; dir: string; name: string; stack: 'react' | 'html' };
     result: 'restored' | 'fresh';
   };
+  protoFiles: { args: { root: string; dir: string }; result: string[] };
+  protoRead: { args: { root: string; dir: string; file: string }; result: string };
   ghRepoCreate: {
     args: { path: string; account: string; name: string; private: boolean };
     result: { owner: string; name: string };

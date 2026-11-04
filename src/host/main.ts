@@ -282,6 +282,8 @@ const OPS = {
   protoExists: a => prototypes.exists(text(a.root), text(a.dir)),
   protoRename: a => prototypes.rename(text(a.root), text(a.dir), text(a.name)),
   protoRestore: a => prototypes.restore(text(a.root), text(a.dir), text(a.name), a.stack === 'html' ? 'html' : 'react'),
+  protoFiles: a => prototypes.files(text(a.root), text(a.dir)),
+  protoRead: a => prototypes.read(text(a.root), text(a.dir), text(a.file)),
   ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
 } satisfies Handlers;
 
