@@ -1,5 +1,5 @@
 import type { StoredBoard } from '../../shared/model.ts';
-import { protoSlug } from '../../shared/repos.ts';
+import { PROTO_DIR, protoSlug } from '../../shared/repos.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { say } from '../settings/licenses.ts';
@@ -55,8 +55,7 @@ async function findIt(b: Prototype, root: string) {
   const picked = await Fenmyr.repoPick();
   if (!picked) return;
   const rel = picked.startsWith(`${root}/`) ? picked.slice(root.length + 1) : '';
-  if (!/^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/.test(rel))
-    return say(`That folder isn't one of the prototypes in ${root}/prototypes.`, 6000);
+  if (!PROTO_DIR.test(rel)) return say(`That folder isn't one of the prototypes in ${root}/prototypes.`, 6000);
   await setDir(b.id, rel);
   say(`Found it. This board uses ${rel} now ✦`, 4000);
 }

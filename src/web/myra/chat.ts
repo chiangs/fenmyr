@@ -81,6 +81,9 @@ export function snapshot() {
       projects: appState.projects.map(p => ({
         name: p.name,
         folders: foldersIn(p.id).map(f => f.name),
+        prototypingFolders: foldersIn(p.id)
+          .filter(f => f.kind === 'prototyping')
+          .map(f => f.name),
         repo: p.repo ? { folder: p.repo.path, github: p.repo.github ?? null } : null,
       })),
       foldersNotInAProject: looseFolders().map(f => f.name),
@@ -89,6 +92,7 @@ export function snapshot() {
         name: b.name,
         folder: appState.folders.find(f => f.id === b.folder)?.name || null,
         current: b.id === session.board.id || undefined,
+        prototype: b.kind === 'prototype' || undefined,
       })),
     },
   };

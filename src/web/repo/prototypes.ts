@@ -1,4 +1,5 @@
 import type { Board, Folder, Project } from '../../shared/model.ts';
+import type { Proto } from '../../shared/repos.ts';
 import { appState } from '../core/state.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
@@ -24,7 +25,25 @@ export async function newPrototypingFolder(p: Project) {
   return f;
 }
 
-// Name and stack, then a board and its own folder of code in the repo.
+type Wish = { name: string; stack: Proto['stack']; purpose?: string; device?: Proto['device'] };
+
+// A prototype board and its own folder of code in the repo, opened.
+export async function createPrototype(f: Folder, root: string, w: Wish) {
+  const made = await Fenmyr.protoCreate({ root, name: w.name, stack: w.stack });
+  const proto: Proto = {
+    ...made,
+    ...(w.purpose ? { purpose: w.purpose } : {}),
+    ...(w.device ? { device: w.device } : {}),
+  };
+  const b: Board = { ...newBoard(w.name), kind: 'prototype', proto, folder: f.id };
+  await Fenmyr.save(b);
+  await refreshBoards();
+  await openBoard(b.id);
+  chirp(`Made “${w.name}”. Its code is in ${proto.dir} ✦`, 4000);
+  return b;
+}
+
+// Name and stack, then createPrototype.
 export function newPrototypeIn(f: Folder) {
   const p = projectOf(f);
   if (!p?.repo) {
@@ -43,15 +62,9 @@ export function newPrototypeIn(f: Folder) {
   const name = child(d, '#npName', HTMLInputElement);
   name.focus();
   const create = async () => {
-    const shown = name.value.trim() || 'Untitled prototype';
     try {
-      const proto = await Fenmyr.protoCreate({ root, name: shown, stack });
-      const b: Board = { ...newBoard(shown), kind: 'prototype', proto, folder: f.id };
-      await Fenmyr.save(b);
+      await createPrototype(f, root, { name: name.value.trim() || 'Untitled prototype', stack });
       d.remove();
-      await refreshBoards();
-      await openBoard(b.id);
-      chirp(`Made “${shown}”. Its code is in ${proto.dir} ✦`, 4000);
     } catch (e) {
       child(d, '#npProblem').textContent = e instanceof Error ? e.message : String(e);
     }

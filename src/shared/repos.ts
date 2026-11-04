@@ -49,3 +49,30 @@ export const protoSlug = (name: string) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 60)
     .replace(/-+$/, '') || 'prototype';
+
+// A prototype board's code lives in one folder of its project's repo. The board finds it by dir, never by its name,
+// so renaming or refiling the board can't lose it.
+export type Proto = {
+  dir: string;
+  stack: 'react' | 'html';
+  // what it's for and the screen it's for, as the person told Myra when it was made
+  purpose?: string;
+  device?: 'phone' | 'tablet' | 'desktop';
+};
+
+// flat under prototypes/, so where the board sits in the library never decides where its code is
+export const PROTO_DIR = /^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/;
+const STACKS: readonly Proto['stack'][] = ['react', 'html'];
+const DEVICES: readonly NonNullable<Proto['device']>[] = ['phone', 'tablet', 'desktop'];
+
+export function readProto(x: unknown): Proto | null {
+  if (!isRecord(x) || typeof x.dir !== 'string' || !PROTO_DIR.test(x.dir)) return null;
+  const device = DEVICES.find(d => d === x.device),
+    purpose = typeof x.purpose === 'string' ? x.purpose.slice(0, 500) : '';
+  return {
+    dir: x.dir,
+    stack: STACKS.find(s => s === x.stack) ?? 'react',
+    ...(purpose ? { purpose } : {}),
+    ...(device ? { device } : {}),
+  };
+}

@@ -1,5 +1,5 @@
 import { type CardType, isCardType, sizeOf } from './cardTypes.ts';
-import { readRepoLink } from './repos.ts';
+import { type Proto, readProto, readRepoLink } from './repos.ts';
 
 // What each kind of card adds. Cards also hold per-type options these fields don't list yet; typing the renderer modules adds them.
 // a point on a pen path: r rounds a sharp corner; ix, iy and ox, oy are its curve handles in and out
@@ -181,10 +181,6 @@ export type ChatMsg = { who: string; text: string; t: number };
 // an earlier chat, put away by New chat
 type SavedChat = { id: string; title: string; t: number; msgs: ChatMsg[] };
 
-// A prototype board's code lives in one folder of its project's repo. The board finds it by dir, never by its name,
-// so renaming or refiling the board can't lose it.
-export type Proto = { dir: string; stack: 'react' | 'html' };
-
 type BoardBase = {
   id: string;
   name: string;
@@ -323,15 +319,6 @@ export function parseBoard(raw: unknown): StoredBoard | null {
     }));
   else delete board.chats;
   return board;
-}
-
-// flat under prototypes/, so where the board sits in the library never decides where its code is
-export const PROTO_DIR = /^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/;
-const STACKS: readonly Proto['stack'][] = ['react', 'html'];
-
-function readProto(x: unknown): Proto | null {
-  if (!isRecord(x) || typeof x.dir !== 'string' || !PROTO_DIR.test(x.dir)) return null;
-  return { dir: x.dir, stack: STACKS.find(s => s === x.stack) ?? 'react' };
 }
 
 const readMsgs = (x: unknown): ChatMsg[] =>
