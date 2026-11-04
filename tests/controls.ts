@@ -89,6 +89,26 @@ try {
     i.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await until(async () => (await field('radius')) === '8px', 'the slider changes the preview');
+  // a real drag, the way a person moves it, not one value set at once
+  const track = await page.locator('.pv-knobs input[data-k="radius"]').boundingBox();
+  if (!track) throw new Error('no slider');
+  const y = track.y + track.height / 2;
+  await page.mouse.move(track.x + 4, y);
+  await page.mouse.down();
+  for (const f of [0.2, 0.4, 0.6, 0.75]) await page.mouse.move(track.x + track.width * f, y, { steps: 3 });
+  await page.mouse.up();
+  await until(
+    async () => Number.parseInt(String(await field('radius')), 10) >= 26,
+    'dragging the slider moves it all the way',
+  );
+  await page.click('.kb-reset');
+  await until(async () => (await field('radius')) === '24px', 'Reset puts the saved values back');
+  assert.strictEqual(await page.locator('.kb-keep').count(), 0, 'and there is nothing to keep');
+  await page.locator('.pv-knobs input[data-k="radius"]').evaluate(i => {
+    if (!(i instanceof HTMLInputElement)) return;
+    i.value = '8';
+    i.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   await page.click('.pv-knobs [data-k="inputType"][data-v="Email"]');
   await until(async () => (await field('type')) === 'email', 'so does a choice');
   assert.ok(

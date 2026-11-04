@@ -2789,6 +2789,11 @@ body.proto .dock { max-width: calc(100% - 16px); overflow-x: auto; scrollbar-wid
 .kb input[type="color"] { width: 44px; height: 26px; padding: 0; border: 0; background: none; }
 .kb .seg button { padding: 5px 9px; font: 600 11.5px/1 var(--font); text-transform: none; letter-spacing: 0; }
 .kb-toggle { min-width: 0; }
-.kb-keep { margin-left: auto; }
 .pv-btn.hot { background: var(--ink); border-color: var(--ink); color: #fff; }
 .kb input[type="range"] { accent-color: var(--ink); }
+/* calls to action in the git and GitHub setup, the repo and prototype dialogs, and Keep these values use the accent */
+body .git-setup .set-btn.hot, body .rl-body .set-btn.hot, body #npOk, body .pv-btn.hot { background: var(--pink-deep); border-color: var(--pink-deep); color: #fff; }
+body .git-setup .set-btn.hot:hover, body .rl-body .set-btn.hot:hover, body #npOk:hover, body .pv-btn.hot:hover { filter: brightness(1.08); }
+body.following-caelestia .git-setup .set-btn.hot, body.following-caelestia .rl-body .set-btn.hot, body.following-caelestia #npOk, body.following-caelestia .pv-btn.hot { background: var(--pink-deep); border-color: var(--pink-deep); color: var(--panel); }
+.kb-acts { display: flex; gap: 6px; margin-left: auto; }
+.kb-acts:empty { display: none; }
