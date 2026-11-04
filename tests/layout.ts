@@ -202,7 +202,21 @@ try {
   assert.strictEqual((await bar()).dropdown, false, 'a wider code column has room for the tabs again');
   await drag(300);
   assert.strictEqual((await bar()).dropdown, true, 'and a narrower one goes back to the dropdown');
+  assert.deepStrictEqual(
+    await page.evaluate(() =>
+      [...document.querySelectorAll('.pc-acts button')].map(b => [b.className, b.querySelector('svg')?.dataset.ico]),
+    ),
+    [
+      ['pv-btn pc-all', 'eye'],
+      ['pv-btn pc-copy', 'copy'],
+    ],
+    'Copy sits right of All/Fewer files, each with an icon',
+  );
   await page.click('.pc-pick');
+  assert.ok(
+    ((await page.locator('.pc-menu').boundingBox())?.width ?? 0) >= 260,
+    'the file menu is wide enough for a component’s name',
+  );
   assert.deepStrictEqual(
     await page.evaluate(() => [...document.querySelectorAll('.row-menu.pc-menu > *')].map(e => e.textContent)),
     ['App.tsx', 'styles.css', 'Values', 'components/', 'PromoField.tsx'],
@@ -219,6 +233,21 @@ try {
     await l.app.evaluate(({ clipboard }) => clipboard.readText()),
     'export const PromoField = () => null;\n',
     'Copy puts the file on the clipboard',
+  );
+
+  const panes = await page.evaluate(() => {
+    document.body.classList.add('dark', 'following-caelestia');
+    document.body.style.setProperty('--panel', 'rgb(16, 20, 30)');
+    const bg = (sel: string) => getComputedStyle(document.querySelector(sel) ?? document.body).backgroundColor;
+    const out = [bg('[data-p="code"]'), bg('#prGit'), bg('#prChat')];
+    document.body.classList.remove('dark', 'following-caelestia');
+    document.body.style.removeProperty('--panel');
+    return out;
+  });
+  assert.deepStrictEqual(
+    panes,
+    ['rgb(16, 20, 30)', 'rgb(16, 20, 30)', 'rgb(16, 20, 30)'],
+    'with Caelestia’s dark panels, the prototype screen takes its panel colour',
   );
 
   await page.click('#newBoard');
