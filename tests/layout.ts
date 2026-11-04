@@ -61,8 +61,19 @@ try {
   assert.deepStrictEqual(s.folded, [], 'at 1440 px every column shows');
   assert.match(
     s.git,
-    /acme\s*main\s*\d+ changes?\s*No commits yet/,
+    /acme\s*main\s*\d+ changes? not committed\s*No commits yet/,
     'the git bar names the repo, branch, changes and sync',
+  );
+  const gitBar = await page.evaluate(() => {
+    return {
+      icons: [...document.querySelectorAll('#prGit svg[data-ico]')].map(i => i.getAttribute('data-ico')),
+      commit: document.querySelector('#prGit [data-git="commit"]')?.textContent,
+    };
+  });
+  assert.deepStrictEqual(
+    gitBar,
+    { icons: ['git-branch', 'git-commit', 'cloud-up'], commit: 'Commit' },
+    'the branch and buttons carry icons, and Commit has no ellipsis',
   );
   assert.match(s.code, /export function App/, 'the code pane opens on App.tsx');
   assert.deepStrictEqual(s.stage, s.slot, 'the canvas sits exactly in its column');
