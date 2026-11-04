@@ -183,6 +183,7 @@ Myra follows this for every prototype here. Change it to suit the team.
 
 - No ternaries, && or .map inside the return.
 - Real words from the cards, never placeholder text.
+- Only the product on screen: no hints, captions or notes about the prototype itself.
 
 ## Markup and access
 - Semantic HTML: real buttons and links, a label for every input, headings in order.

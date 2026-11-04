@@ -120,6 +120,7 @@ try {
   assert.match(prompt, /Make the Checkout heading\./, 'the builder gets the request');
   assert.match(prompt, /Checkout: show the total first/, 'and the cards');
   assert.match(prompt, /Buttons are always mint\./, 'and design.md');
+  assert.match(prompt, /Build only the product itself\./, 'and that the preview holds only the product');
   assert.deepStrictEqual(
     fs.readFileSync(path.join(work, 'pictures.txt'), 'utf8').trim().split('\n'),
     ['1.png', '2.png'],
