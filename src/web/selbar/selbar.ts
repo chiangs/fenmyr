@@ -7,6 +7,7 @@ import { cropping } from '../cards/crop.ts';
 import { COLOR_NAMES, COLORS, colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
+import { editedNoteBody } from '../edit/noteKeys.ts';
 import { hasDue } from '../features/due.ts';
 import { tagEditor } from '../features/tags.ts';
 import { homeAt } from '../library/home.ts';
@@ -34,7 +35,7 @@ import { initLineStyle, lineStyleHtml } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
 import { selCards } from './selected.ts';
 import { initStroke, strokeHtml } from './stroke.ts';
-import { initTextBar, textBarHtml } from './textBar.ts';
+import { initTextBar, syncTypingFormats, textBarHtml } from './textBar.ts';
 import { SIZED } from './textSize.ts';
 import { initWireBar, wireBarHtml, wireKey } from './wireBar.ts';
 
@@ -312,6 +313,11 @@ export function placeSelbar() {
       renderDesign();
     }
     return;
+  }
+  const typing = !!editedNoteBody();
+  if (bar.classList.contains('typing') !== typing) {
+    bar.classList.toggle('typing', typing);
+    syncTypingFormats();
   }
   const key =
     (document.body.classList.contains('dark') ? 'd' : 'l') + Math.round(innerWidth / 30) + cs.map(cardKey).join();

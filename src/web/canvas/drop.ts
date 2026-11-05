@@ -50,7 +50,7 @@ export function init23() {
       editing = body && session.editing ? byId(session.editing) : undefined;
     if (body && editing?.type === 'note') {
       e.preventDefault();
-      pasteIntoNote(editing, body, clip, plain);
+      pasteIntoNote(body, clip, plain);
       return;
     }
     const capturing = e.target instanceof Element && e.target.id === 'capInput';
