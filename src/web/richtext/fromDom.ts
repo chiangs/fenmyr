@@ -1,4 +1,4 @@
-import { keptAddress, serialise } from './dialect.ts';
+import { serialise } from './dialect.ts';
 import {
   addRun,
   BOLD,
@@ -9,6 +9,7 @@ import {
   ITALIC,
   type Line,
   type ListKind,
+  linkAddress,
   normalise,
   type Run,
   STRIKE,
@@ -60,6 +61,7 @@ type Ctx = {
   readonly item: boolean;
   readonly pre: boolean;
   readonly cell: boolean;
+  readonly href: string | undefined;
 };
 
 type Head =
@@ -167,7 +169,7 @@ export function docFromDom(root: WalkNode, source: Source): Doc {
     if (!t) return;
     if (gap && !cur.runs.length && lines.length) lines.push({ kind: 'text', runs: [] });
     gap = false;
-    addRun(cur.runs, t, ctx.heading ? ctx.marks | BOLD : ctx.marks);
+    addRun(cur.runs, t, ctx.heading ? ctx.marks | BOLD : ctx.marks, ctx.href);
   };
   const text = (s: string, ctx: Ctx) => {
     const words = s.replace(/\r/g, '');
@@ -250,10 +252,12 @@ export function docFromDom(root: WalkNode, source: Source): Doc {
         break;
       case 'link': {
         const line = cur,
-          before = wordsOf(cur.runs).length;
-        kids(node, inner);
+          before = wordsOf(cur.runs).length,
+          linked = { ...inner, href: linkAddress(node.getAttribute?.('href') ?? '') ?? ctx.href };
+        kids(node, linked);
         const label = wordsOf(cur.runs).slice(line === cur ? before : 0);
-        add(keptAddress(label, node.getAttribute?.('href') ?? ''), inner);
+        // a link with no words, such as one around a picture, shows its address
+        if (linked.href && !label.trim()) add(linked.href, linked);
         break;
       }
       case 'inline':
@@ -275,6 +279,7 @@ export function docFromDom(root: WalkNode, source: Source): Doc {
     item: false,
     pre: source === 'editor',
     cell: false,
+    href: undefined,
   };
   kids(root, top);
   if (cur.runs.length || cur.keepEmpty) push();
@@ -285,7 +290,7 @@ function trimEnd(runs: Run[]) {
   for (let last = runs.at(-1); last; last = runs.at(-1)) {
     const text = last.text.trimEnd();
     if (text) {
-      runs[runs.length - 1] = { text, marks: last.marks };
+      runs[runs.length - 1] = { ...last, text };
       return;
     }
     runs.pop();

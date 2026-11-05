@@ -1,4 +1,4 @@
-import { ASCII_PUNCTUATION, keptAddress, serialise } from './dialect.ts';
+import { ASCII_PUNCTUATION, serialise } from './dialect.ts';
 import {
   addRun,
   BOLD,
@@ -7,6 +7,7 @@ import {
   depthOf,
   ITALIC,
   type Line,
+  linkAddress,
   normalise,
   type Run,
   STRIKE,
@@ -30,7 +31,7 @@ const BARE_URL = /https?:\/\/[^\s<>]{1,2000}/y;
 // GitHub's rule for where a bare address ends: these characters at its end belong to the sentence.
 const URL_END_PUNCTUATION = '?!.,:;*_~\'")';
 
-type Cell = { readonly c: string; readonly literal: boolean };
+type Cell = { readonly c: string; readonly literal: boolean; readonly href?: string };
 type Delim = {
   readonly at: number;
   readonly len: number;
@@ -53,8 +54,8 @@ const matchAt = (re: RegExp, s: string, i: number) => {
 function cellsOf(s: string): { cells: Cell[]; found: boolean } {
   const cells: Cell[] = [];
   let found = false;
-  const put = (text: string, literal: boolean) => {
-    for (const c of text) cells.push({ c, literal });
+  const put = (text: string, literal: boolean, href?: string) => {
+    for (const c of text) cells.push(href ? { c, literal, href } : { c, literal });
   };
   for (let i = 0; i < s.length; ) {
     const c = s[i] ?? '',
@@ -86,12 +87,15 @@ function cellsOf(s: string): { cells: Cell[]; found: boolean } {
       found = true;
       i += m[0].length;
     } else if (c === '[' && (m = matchAt(LINK, s, i))) {
-      put(m[1] ?? '', false);
-      put(keptAddress(m[1] ?? '', m[2] ?? ''), true);
+      const label = m[1] ?? '',
+        href = linkAddress(m[2] ?? '');
+      if (href && !label.trim()) put(href, true, href);
+      else put(label, false, href);
       found = true;
       i += m[0].length;
     } else if (c === '<' && (m = matchAt(AUTOLINK, s, i))) {
-      put(keptAddress('', m[1] ?? ''), true);
+      const href = linkAddress(m[1] ?? '');
+      if (href) put(href, true, href);
       found = true;
       i += m[0].length;
     } else if (c === 'h' && !word(s[i - 1] ?? '') && (m = matchAt(BARE_URL, s, i))) {
@@ -171,7 +175,7 @@ function runsOf(s: string, extra: number) {
   for (const span of spans) for (let i = span.from; i < span.to; i++) marks[i] = (marks[i] ?? 0) | span.bit;
   const runs: Run[] = [];
   cells.forEach((cell, i) => {
-    if (!used.has(i)) addRun(runs, cell.c, marks[i] ?? 0);
+    if (!used.has(i)) addRun(runs, cell.c, marks[i] ?? 0, cell.href);
   });
   return { runs, found: found || spans.length > 0 };
 }

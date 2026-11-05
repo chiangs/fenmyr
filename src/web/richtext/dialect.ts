@@ -1,9 +1,9 @@
 // The dialect a rich note's `text` is stored in: a small Markdown that older versions and Myra can read as it is.
-//   inline  **bold**  *italic*  ~~strike~~  <u>underline</u>
+//   inline  **bold**  *italic*  ~~strike~~  <u>underline</u>  [label](address)
 //   block   a line; "- " bullet; "3. " numbered, the first number of a list kept and the rest counted on from it;
 //           two spaces of indent per level; a continuation row indented under its item
-//   escape  \ before * ~ [ < \; before the "-" or "." of a line that would read as an item;
-//           before a space that starts a plain line under a list
+//   escape  \ before * ~ [ < \; before ] in a label and ( ) \ in an address; before the "-" or "." of a line that would
+//           read as an item; before a space that starts a plain line under a list
 // Delimiters toggle, so a change of style between two runs is written as the marks that flip there. Only text this
 // file writes needs to round-trip exactly; anything else still parses, with unmatched delimiters kept as text.
 import {
@@ -13,6 +13,7 @@ import {
   depthOf,
   ITALIC,
   indentLevels,
+  isLinkAddress,
   type Line,
   normalise,
   type Run,
@@ -23,20 +24,44 @@ import {
 const ITEM = /^( *)(?:(-)|(\d{1,9})\.) /;
 export const ASCII_PUNCTUATION = /^[!-/:-@[-`{-~]$/;
 const SPECIAL = /[\\*~[<]/g;
+const LABEL_SPECIAL = /[\\*~[\]<]/g;
+const ADDRESS_SPECIAL = /[\\()]/g;
 const ASTERISKS = ['', '*', '**', '***'];
 const FLIPS = [0, ITALIC, BOLD, BOLD | ITALIC];
 
 type Token =
   | { readonly kind: 'text'; readonly text: string }
   | { readonly kind: 'flip'; readonly marks: number }
-  | { readonly kind: 'under'; readonly on: boolean };
+  | { readonly kind: 'under'; readonly on: boolean }
+  | { readonly kind: 'link'; readonly href: string }
+  | { readonly kind: 'unlink' };
 
 const flipText = (marks: number) =>
   (ASTERISKS[(marks & BOLD ? 2 : 0) + (marks & ITALIC ? 1 : 0)] ?? '') + (marks & STRIKE ? '~~' : '');
 
+const escaped = (s: string, i: number) => s[i] === '\\' && (ASCII_PUNCTUATION.test(s[i + 1] ?? '') || s[i + 1] === ' ');
+
+type LinkSpan = { readonly labelEnd: number; readonly end: number; readonly href: string };
+
+// A label holds no unescaped "[", so links never nest.
+function linkAt(s: string, i: number): LinkSpan | null {
+  let j = i + 1;
+  while (j < s.length && s[j] !== ']' && s[j] !== '[') j += escaped(s, j) ? 2 : 1;
+  if (j === i + 1 || s[j] !== ']' || s[j + 1] !== '(') return null;
+  let href = '',
+    k = j + 2;
+  for (; k < s.length && s[k] !== ')'; k++) {
+    if (escaped(s, k)) k++;
+    else if (/[\s(]/.test(s[k] ?? '')) return null;
+    href += s[k];
+  }
+  return k < s.length && isLinkAddress(href) ? { labelEnd: j, end: k + 1, href } : null;
+}
+
 function tokens(s: string): Token[] {
   const out: Token[] = [];
-  let text = '';
+  let text = '',
+    link: LinkSpan | null = null;
   const flush = () => {
     if (text) out.push({ kind: 'text', text });
     text = '';
@@ -44,7 +69,18 @@ function tokens(s: string): Token[] {
   for (let i = 0; i < s.length; ) {
     const c = s[i] ?? '';
     const next = s[i + 1] ?? '';
-    if (c === '\\' && (ASCII_PUNCTUATION.test(next) || next === ' ')) {
+    const opened: LinkSpan | null = c === '[' && !link ? linkAt(s, i) : null;
+    if (link && i === link.labelEnd) {
+      flush();
+      out.push({ kind: 'unlink' });
+      i = link.end;
+      link = null;
+    } else if (opened) {
+      flush();
+      out.push({ kind: 'link', href: opened.href });
+      link = opened;
+      i++;
+    } else if (c === '\\' && (ASCII_PUNCTUATION.test(next) || next === ' ')) {
       text += next;
       i += 2;
     } else if (c === '*' || c === '~') {
@@ -102,11 +138,18 @@ function unmatchedAsText(toks: readonly Token[]): Token[] {
 
 function inline(s: string): Run[] {
   const runs: Run[] = [];
-  let marks = 0;
+  let marks = 0,
+    href: string | undefined;
   for (const t of unmatchedAsText(tokens(s))) {
     switch (t.kind) {
       case 'text':
-        addRun(runs, t.text, marks);
+        addRun(runs, t.text, marks, href);
+        break;
+      case 'link':
+        href = t.href;
+        break;
+      case 'unlink':
+        href = undefined;
         break;
       case 'flip':
         marks ^= t.marks;
@@ -160,14 +203,25 @@ function boundary(was: number, now: number) {
   );
 }
 
+// Where a link starts or ends, marks that stop are written before the bracket and marks that start after it, so a
+// label holds its own emphasis.
+function edge(was: number, wasHref: string | undefined, now: number, href: string | undefined) {
+  if (wasHref === href) return boundary(was, now);
+  const close = wasHref === undefined ? '' : `](${wasHref.replace(ADDRESS_SPECIAL, '\\$&')})`,
+    open = href === undefined ? '' : '[';
+  return boundary(was, was & now) + close + open + boundary(was & now, now);
+}
+
 function inlineText(runs: readonly Run[]) {
   let out = '',
-    was = 0;
+    was = 0,
+    wasHref: string | undefined;
   for (const r of runs) {
-    out += boundary(was, r.marks) + r.text.replace(SPECIAL, '\\$&');
+    out += edge(was, wasHref, r.marks, r.href) + r.text.replace(r.href ? LABEL_SPECIAL : SPECIAL, '\\$&');
     was = r.marks;
+    wasHref = r.href;
   }
-  return out + boundary(was, 0);
+  return out + edge(was, wasHref, 0, undefined);
 }
 
 function escapeItemMarker(s: string) {
@@ -180,19 +234,6 @@ function escapeItemMarker(s: string) {
 // Leading spaces on a plain line straight under a list would make it a continuation row.
 const escapePlainLine = (s: string, underList: boolean) =>
   underList && s.startsWith(' ') ? `\\${s}` : escapeItemMarker(s);
-
-export function keptAddress(label: string, href: string) {
-  const address = href.replace(/\s+/g, '');
-  if (!/^(https?|mailto):/i.test(address)) return '';
-  const bare = (s: string) =>
-    s
-      .trim()
-      .replace(/^(https?:\/\/|mailto:)/i, '')
-      .replace(/\/$/, '')
-      .toLowerCase();
-  if (bare(label) === bare(address)) return '';
-  return label.trim() ? ` (${address})` : address;
-}
 
 export function serialise(doc: Doc): string {
   const indents = indentLevels(doc);

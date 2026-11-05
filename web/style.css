@@ -86,6 +86,8 @@ body.dark .card.sel::after { box-shadow: 0 0 0 3px rgba(25, 21, 16, .85), inset 
 /* markers outside the words would stay at the left edge while centred or right-aligned words move away from them */
 @container style(--ta: center) or style(--ta: right) { .card.note .text :is(ul, ol) { list-style-position: inside; } }
 .card.editing .text { user-select: text; -webkit-user-select: text; cursor: text; }
+/* a link in a note has the colour of a link in a Doc */
+.card.note .text a { color: #b8621a; text-decoration-line: underline; text-decoration-color: rgba(220, 163, 106, .6); text-underline-offset: 3px; -webkit-user-drag: none; }
 /* title: big type, no frame */
 .card.title .frame { display: none; }
 .card.title .body { padding: 0; overflow: visible; }

@@ -1,6 +1,15 @@
 import { esc } from '../ui/dom.ts';
 import { parse } from './dialect.ts';
-import { type Doc, indentLevels, type ListKind, MARKS_OUTERMOST_FIRST, type Run, textDoc, wordsOf } from './doc.ts';
+import {
+  type Doc,
+  indentLevels,
+  isLinkAddress,
+  type ListKind,
+  MARKS_OUTERMOST_FIRST,
+  type Run,
+  textDoc,
+  wordsOf,
+} from './doc.ts';
 
 const LIST_TAG = { bullet: 'ul', number: 'ol' } as const;
 
@@ -13,9 +22,31 @@ const wrap = (tag: string, html: string) => `<${tag}>${html}</${tag}>`;
 const runHtml = (r: Run) =>
   MARKS_OUTERMOST_FIRST.reduceRight((html, m) => (r.marks & m.bit ? wrap(m.tag, html) : html), esc(r.text));
 
+function linkHtml(href: string | undefined, html: string) {
+  if (!href || !isLinkAddress(href)) return html;
+  const address = esc(href);
+  return `<a href="${address}">${html}</a>`;
+}
+
+// Runs side by side with the same address are one link, so its label may change style partway.
+function byLink(runs: readonly Run[]) {
+  const groups: { readonly href: string | undefined; readonly runs: Run[] }[] = [];
+  for (const r of runs) {
+    const last = groups.at(-1);
+    if (last && last.href === r.href) last.runs.push(r);
+    else groups.push({ href: r.href, runs: [r] });
+  }
+  return groups;
+}
+
+const runsHtml = (runs: readonly Run[]) =>
+  byLink(runs)
+    .map(g => linkHtml(g.href, g.runs.map(runHtml).join('')))
+    .join('');
+
 // pre-wrap doesn't show a newline that ends its box, so an empty last row needs a second one.
 function rowsHtml(rows: Rows) {
-  const texts = rows.map(r => r.map(runHtml).join(''));
+  const texts = rows.map(runsHtml);
   return texts.join('\n') + (texts.at(-1) === '' ? '\n' : '');
 }
 
@@ -81,7 +112,7 @@ const editRowsHtml = (rows: Rows) => {
 const rowDivs = (rows: Rows) =>
   rows
     .map(r => {
-      const row = r.map(runHtml).join('') || '<br>';
+      const row = runsHtml(r) || '<br>';
       return `<div>${row}</div>`;
     })
     .join('');
@@ -94,7 +125,7 @@ export const renderForEditing = (doc: Doc) => blocks(doc).map(editBlockHtml).joi
 // Other apps ignore newlines in HTML and space lists out, so the copy for them breaks an item's rows with <br> and keeps
 // its lists as tight as a note draws them.
 const TIGHT = ' style="margin:0"';
-const clipRowsHtml = (rows: Rows) => rows.map(r => r.map(runHtml).join('')).join('<br>') || '<br>';
+const clipRowsHtml = (rows: Rows) => rows.map(runsHtml).join('<br>') || '<br>';
 const clipBlockHtml = (b: Block) => (b.kind === 'list' ? listHtml(b.entries, clipRowsHtml, TIGHT) : rowDivs(b.rows));
 export const clipboardHtmlOf = (note: Note) =>
   blocks(note.rich ? parse(note.text ?? '') : textDoc(note.text ?? ''))
@@ -120,6 +151,21 @@ export function htmlOf(note: Note) {
   return html;
 }
 
+const bare = (s: string) =>
+  s
+    .trim()
+    .replace(/^(https?:\/\/|mailto:)/i, '')
+    .replace(/\/$/, '')
+    .toLowerCase();
+
+const plainWords = (runs: readonly Run[]) =>
+  byLink(runs)
+    .map(({ href, runs }) => {
+      const label = wordsOf(runs);
+      return !href || bare(label) === bare(href) ? label : `${label} (${href})`;
+    })
+    .join('');
+
 export function plainOf(note: Note) {
   const text = note.text ?? '';
   if (!note.rich) return text;
@@ -128,7 +174,7 @@ export function plainOf(note: Note) {
   return doc
     .map((line, i) => {
       const marker = line.kind !== 'item' ? '' : line.list === 'number' ? `${line.n}. ` : '• ';
-      return '  '.repeat(indents[i] ?? 0) + marker + wordsOf(line.runs);
+      return '  '.repeat(indents[i] ?? 0) + marker + plainWords(line.runs);
     })
     .join('\n');
 }
