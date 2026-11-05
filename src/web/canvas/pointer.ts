@@ -4,6 +4,7 @@ import { cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { endEdit, startEdit } from '../edit/editing.ts';
+import { linkUnder } from '../edit/noteLinks.ts';
 import { fitText } from '../edit/text.ts';
 import { audioAct } from '../media/devices.ts';
 import { videoAct } from '../media/video.ts';
@@ -15,6 +16,7 @@ import { endPen, penT } from '../tools/pen.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
 import { flipVNote, openVNote, toggleVNFull } from '../vault/notes.ts';
+import { revealCards } from '../wireframe/drawer.ts';
 import { onDragMove } from './dragMove.ts';
 import { stepZoom, toWorld, viewSoon, zoomAt } from './handles.ts';
 import { clearStuckDrag } from './pointerKit.ts';
@@ -82,6 +84,20 @@ export function init16() {
     addCard(c);
     selectOnly([c.id]);
     startEdit(c.id);
+  });
+
+  // A press on a note's link opens it on release, so a click that reaches the link came from the keyboard.
+  cardsEl.addEventListener('click', e => {
+    const href = linkUnder(closestTo(e.target, 'a'));
+    if (!href) return;
+    e.preventDefault();
+    Fenmyr.openURL(href);
+  });
+  // Tab can land on a link in a note out of sight. A click focuses the link too, and must not move the board.
+  cardsEl.addEventListener('focusin', e => {
+    const a = closestTo(e.target, 'a:focus-visible'),
+      c = byId(closestTo(a, '.card')?.dataset.id ?? '');
+    if (c && linkUnder(a)) revealCards([c]);
   });
 
   // card buttons: pull colours, checklist items
