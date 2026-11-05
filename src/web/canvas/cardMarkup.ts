@@ -9,6 +9,7 @@ import { fmtT, MIC, PLAY } from '../media/audio.ts';
 import { devName } from '../media/devices.ts';
 import { cams, SPK } from '../media/video.ts';
 import { captureTag } from '../proto/capture.ts';
+import { htmlOf } from '../richtext/render.ts';
 import { settings } from '../settings/settings.ts';
 import { inkPath } from '../tools/ink.ts';
 import { pathD } from '../tools/pen.ts';
@@ -18,15 +19,13 @@ import { vnFull, vnMd } from '../vault/notes.ts';
 import { isLocalFont, useFont } from '../wireframe/tilt.ts';
 import { skStyle } from './render.ts';
 
-// ---------- what goes inside each kind of card: values are worked out first, then put into the markup ----------
-
 // a piece of markup, or nothing
 const when = (on: unknown, html: string) => (on ? html : '');
 const cls = (name: string, on: unknown) => (on ? ` ${name}` : '');
 
 function note(c: CardOf<'note'>) {
   const name = esc(c.name || ''),
-    text = esc(c.text),
+    text = htmlOf(c),
     mv = cls(`mv-${c.myraMv}`, c.myraMv),
     img = esc(c.myraImg || 'stamps/myra-wave.png'),
     head = c.myra

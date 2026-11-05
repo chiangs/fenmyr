@@ -72,7 +72,24 @@ export const render = (doc: Doc) =>
     .map(b => (b.kind === 'text' ? rowsHtml(b.rows) : listHtml(b.entries)))
     .join('');
 
-export function plainOf(note: { readonly text?: string; readonly rich?: boolean }) {
+type Note = { readonly text?: string; readonly rich?: boolean };
+
+const HTML_BY_TEXT_MAX = 2000;
+const htmlByText = new Map<string, string>();
+
+export function htmlOf(note: Note) {
+  if (!note.rich) return esc(note.text);
+  const text = note.text ?? '';
+  let html = htmlByText.get(text);
+  if (html === undefined) {
+    html = render(parse(text));
+    if (htmlByText.size >= HTML_BY_TEXT_MAX) htmlByText.delete(htmlByText.keys().next().value ?? '');
+    htmlByText.set(text, html);
+  }
+  return html;
+}
+
+export function plainOf(note: Note) {
   const text = note.text ?? '';
   if (!note.rich) return text;
   const doc = parse(text),

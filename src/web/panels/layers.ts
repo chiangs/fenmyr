@@ -3,6 +3,7 @@ import { applyView } from '../canvas/view.ts';
 import { byId } from '../canvas/wires.ts';
 import { $, cardsEl, stage, world } from '../core/dom.ts';
 import { session } from '../core/state.ts';
+import { plainOf } from '../richtext/render.ts';
 import { cardEl, esc } from '../ui/dom.ts';
 import { initLayerIcons, LICON, layerIcon, layerName, lyText } from './layerNames.ts';
 
@@ -99,7 +100,7 @@ const groupName = (ids: string[]) => {
   if (cs[0]?.gn) return cs[0].gn;
   const t = cs
     .filter(c => ['text', 'title', 'note'].includes(c.type))
-    .map(c => lyText(c.text))
+    .map(c => lyText(plainOf(c)))
     .filter(Boolean)[0];
   return t || (cs.some(c => c.type === 'box' && c.img) ? 'Image spot' : 'Group');
 };

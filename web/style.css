@@ -82,6 +82,9 @@ body.dark .card.sel::after { box-shadow: 0 0 0 3px rgba(25, 21, 16, .85), inset 
 /* note */
 .card.note .text { font-size: calc(15px * var(--fs, 1)); line-height: 1.45; white-space: pre-wrap; word-break: break-word; outline: none; min-height: 1em; }
 .card.note .text:empty::before { content: "type something…"; color: var(--ink-faint); }
+.card.note .text :is(ul, ol) { margin: 0; padding-inline-start: 1.3em; }
+/* markers outside the words would stay at the left edge while centred or right-aligned words move away from them */
+@container style(--ta: center) or style(--ta: right) { .card.note .text :is(ul, ol) { list-style-position: inside; } }
 .card.editing .text { user-select: text; -webkit-user-select: text; cursor: text; }
 /* title: big type, no frame */
 .card.title .frame { display: none; }
@@ -581,6 +584,7 @@ html.native .dv-bar { padding-top: 14px; }
 
 /* bold / italic / underline / strikethrough, for the whole card's words */
 .card :is(.text, .nname, .head, li span) { text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.card.note .text :is(u, s) { text-decoration-thickness: 1.5px; }
 .card.t-bold :is(.text, .nname, .head, li span) { font-weight: 800; }
 .card.t-nobold :is(.text, .nname, .head, li span) { font-weight: 400; }
 .card.t-italic :is(.text, .nname, .head, li span) { font-style: italic; }
