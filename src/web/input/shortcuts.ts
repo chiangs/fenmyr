@@ -1,5 +1,5 @@
 import { endTour, obKeys } from '../app/onboarding.ts';
-import { copyCards, lastClip, pasteCards } from '../canvas/clipboard.ts';
+import { copyCards, lastClip, pasteCards, writeClip } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires, selectOnly, selectWire } from '../canvas/wires.ts';
@@ -268,7 +268,7 @@ export function init20() {
     if ((e.metaKey || e.ctrlKey) && ['c', 'x'].includes(e.key.toLowerCase()) && session.sel.size && !homeAt) {
       const r = copyCards();
       if (r) {
-        navigator.clipboard?.writeText(r.text).catch(() => {});
+        writeClip(r).catch(() => {});
         if (e.key.toLowerCase() === 'x') {
           e.preventDefault();
           removeSelected();

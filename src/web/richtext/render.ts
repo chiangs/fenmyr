@@ -36,14 +36,14 @@ function blocks(doc: Doc) {
   return out;
 }
 
-function openTag(e: Entry) {
-  if (e.list === 'bullet') return '<ul>';
-  if (e.start === 1) return '<ol>';
+function openTag(e: Entry, attrs: string) {
+  if (e.list === 'bullet') return `<ul${attrs}>`;
+  if (e.start === 1) return `<ol${attrs}>`;
   const start = e.start;
-  return `<ol start="${start}">`;
+  return `<ol start="${start}"${attrs}>`;
 }
 
-function listHtml(entries: readonly Entry[], rowsOf = rowsHtml) {
+function listHtml(entries: readonly Entry[], rowsOf = rowsHtml, attrs = '') {
   const open: ListKind[] = [];
   let html = '';
   const closeTo = (depth: number) => {
@@ -57,7 +57,7 @@ function listHtml(entries: readonly Entry[], rowsOf = rowsHtml) {
     if (open.length === e.depth && open[e.depth - 1] !== e.list) closeTo(e.depth - 1);
     if (open.length === e.depth) html += '</li>';
     else {
-      html += openTag(e);
+      html += openTag(e, attrs);
       open.push(e.list);
     }
     const rows = rowsOf(e.rows);
@@ -78,19 +78,28 @@ const editRowsHtml = (rows: Rows) => {
   const html = rowsHtml(rows);
   return html === '\n' ? '<br>' : html;
 };
-function editBlockHtml(b: Block) {
-  if (b.kind === 'list') return listHtml(b.entries, editRowsHtml);
-  return b.rows
+const rowDivs = (rows: Rows) =>
+  rows
     .map(r => {
       const row = r.map(runHtml).join('') || '<br>';
       return `<div>${row}</div>`;
     })
     .join('');
-}
+const editBlockHtml = (b: Block) => (b.kind === 'list' ? listHtml(b.entries, editRowsHtml) : rowDivs(b.rows));
 
 type Note = { readonly text?: string; readonly rich?: boolean };
 
 export const renderForEditing = (doc: Doc) => blocks(doc).map(editBlockHtml).join('');
+
+// Other apps ignore newlines in HTML and space lists out, so the copy for them breaks an item's rows with <br> and keeps
+// its lists as tight as a note draws them.
+const TIGHT = ' style="margin:0"';
+const clipRowsHtml = (rows: Rows) => rows.map(r => r.map(runHtml).join('')).join('<br>') || '<br>';
+const clipBlockHtml = (b: Block) => (b.kind === 'list' ? listHtml(b.entries, clipRowsHtml, TIGHT) : rowDivs(b.rows));
+export const clipboardHtmlOf = (note: Note) =>
+  blocks(note.rich ? parse(note.text ?? '') : textDoc(note.text ?? ''))
+    .map(clipBlockHtml)
+    .join('');
 
 // pre-wrap hides a plain note's last newline, so the editor leaves it out too.
 export const editHtmlOf = (note: Note) =>
