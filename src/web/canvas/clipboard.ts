@@ -31,7 +31,8 @@ function readClip(raw: unknown) {
   };
 }
 
-export function copyCards() {
+// the cards and everything they hold: a collection's cards, a frame's pieces, the rest of a group
+function gather(from: Card[]) {
   const ids = new Set<string>();
   const take = (c: Card | undefined) => {
     if (!c || ids.has(c.id)) return;
@@ -43,9 +44,12 @@ export function copyCards() {
     if (c.type === 'frame') onFrame(c).forEach(take);
     if (c.group) session.board.cards.filter(x => x.group === c.group).forEach(take);
   };
-  selCards().forEach(c => {
-    take(c);
-  });
+  from.forEach(take);
+  return ids;
+}
+
+export function copyCards() {
+  const ids = gather(selCards());
   if (!ids.size) return null;
   const cards = session.board.cards.filter(c => ids.has(c.id)).map(c => plainCopy(c));
   const links = session.board.links.filter(l => ids.has(l.a) && ids.has(l.b)).map(l => ({ ...l }));
@@ -81,6 +85,21 @@ function copyOf(c: Card, map: Record<string, string>, gmap: Record<string, strin
   }
   if (n.group) n.group = gmap[n.group] ??= uid();
   return n;
+}
+
+// Copies of these cards and all they hold, with new ids and the links between them, for another board
+export function freshCopies(from: Card[]) {
+  const ids = gather(from),
+    src = session.board.cards.filter(c => ids.has(c.id)),
+    map: Record<string, string> = {},
+    gmap: Record<string, string> = {};
+  for (const c of src) map[c.id] = uid();
+  return {
+    cards: src.map(c => copyOf(c, map, gmap)),
+    links: session.board.links
+      .filter(l => ids.has(l.a) && ids.has(l.b))
+      .map(l => ({ ...l, id: uid(), a: map[l.a] ?? l.a, b: map[l.b] ?? l.b })),
+  };
 }
 
 // Option-drag (Alt on Windows): the originals stay put and a copy comes along with the cursor, like in Figma

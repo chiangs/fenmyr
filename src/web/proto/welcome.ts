@@ -50,3 +50,11 @@ export function prototypeWelcome(): Card[] {
     card('stamp', { x: LEFT - 34, y: -62, w: 56, h: 56, src: 'stamps/myra-bounce.gif', r: -4 }),
   ];
 }
+
+// cards brought to a new prototype, moved as one under Myra's notes
+export function belowWelcome(cards: Card[]) {
+  if (!cards.length) return [];
+  const dx = LEFT - Math.min(...cards.map(c => c.x)),
+    dy = H + GAP * 2 - Math.min(...cards.map(c => c.y));
+  return cards.map(c => ({ ...c, x: c.x + dx, y: c.y + dy }));
+}

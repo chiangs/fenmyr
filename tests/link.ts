@@ -171,6 +171,60 @@ try {
     'started outside a project, it asks which one, or a new one',
   );
   await page.keyboard.press('Escape');
+
+  // two screens on a board outside any project: Myra offers to prototype them, once
+  await page.evaluate(async () => {
+    await window.Fenmyr.save({ id: 'sketch', name: 'Sketches', cards: [], links: [], tray: [] });
+    await window.__fenmyr.refreshBoards();
+  });
+  await page.click('#boards .board-row:has-text("Sketches")');
+  await page.waitForFunction(
+    () => window.__fenmyr.curBoard()?.id === 'sketch' && !document.getElementById('home')?.classList.contains('on'),
+  );
+  const stage = await page.locator('#stage').boundingBox();
+  if (!stage) throw new Error('no stage');
+  for (const x of [0.45, 0.7]) {
+    await page.click('[data-wf="frame"]');
+    await page.click('#dzPresets [data-dev="iPhone"]');
+    await page.mouse.click(stage.x + stage.width * x, stage.y + 120);
+  }
+  await page.waitForFunction(() =>
+    /Want to see these working\?/.test(document.getElementById('mSay')?.textContent ?? ''),
+  );
+  await page.evaluate(() => {
+    const frame = window.__fenmyr.curBoard()?.cards.find(c => c.type === 'frame');
+    if (frame) window.__fenmyr.selectOnly([frame.id]);
+  });
+  assert.strictEqual(await page.locator('[data-sb="prototype"]').count(), 1, 'a selected screen offers Prototype this');
+  await page.locator('#mActs button', { hasText: 'Prototype these screens' }).click();
+  await page.waitForSelector('.sp-list');
+  await page.click('.sp-list [data-project="p1"]');
+  await page.fill('#npName', 'From sketches');
+  await page.click('#npOk');
+  await page.waitForFunction(() => window.__fenmyr.curBoard()?.name === 'From sketches');
+  const made = await page.evaluate(() => {
+    const b = window.__fenmyr.curBoard(),
+      frames = b?.cards.filter(c => c.type === 'frame') ?? [];
+    return { frames: frames.length, selected: frames.every(f => window.__fenmyr.sel.includes(f.id)), kind: b?.kind };
+  });
+  assert.deepStrictEqual(
+    made,
+    { frames: 2, selected: true, kind: 'prototype' },
+    'the screens are copied into a new prototype, selected for Myra to build from',
+  );
+  await page.evaluate(() => window.__fenmyr.openBoard('sketch'));
+  await page.click('[data-wf="frame"]');
+  await page.click('#dzPresets [data-dev="iPhone"]');
+  await page.mouse.click(stage.x + stage.width * 0.55, stage.y + 500);
+  await page.waitForTimeout(500);
+  assert.ok(
+    !(await page.evaluate(
+      () =>
+        document.getElementById('mBubble')?.classList.contains('on') &&
+        /Want to see these working/.test(document.getElementById('mSay')?.textContent ?? ''),
+    )),
+    'and she says it only once',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('LINK OK');
 } finally {
