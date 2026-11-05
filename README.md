@@ -152,6 +152,23 @@ The first memo downloads the speech model, about 140 MB, into `~/.local/share/fe
 | **Ctrl+,** | Settings |
 | **Ctrl+Q · F11** | Quit · full screen |
 
+### Formatting a note
+
+While you type in a note, you can format single words and make lists. The formatting stays when you save, undo, copy or reopen the board, and notes you wrote before stay as they were.
+
+| | |
+|---|---|
+| **Ctrl+B · Ctrl+I · Ctrl+U** | Bold, italic, underline: the selected words, or what you type next |
+| **Ctrl+Shift+X** | Strikethrough |
+| **Ctrl+\\** | Clear the formatting |
+| **Ctrl+Shift+8 · Ctrl+Shift+7** | Make the line a bulleted or numbered list, or back into a plain line |
+| **- or 1. and a space** | Start a list at the start of a line. Backspace straight after gives back what you typed |
+| **Enter · Shift+Enter** | A new item · a new line in the same item. Enter on an empty item ends the list |
+| **Tab · Shift+Tab** | Nest an item one level deeper, three at most · bring it back |
+| **Ctrl+Shift+V** | Paste as plain text |
+
+Pasting keeps the lists, bold, italic, underline and strikethrough from web pages, Obsidian, Markdown files and PDFs. The bar's B, I, U and S buttons format the selected words while you type, and the whole card when it is only selected. When you copy note cards, other apps get their formatting too. Myra can write and edit formatted notes.
+
 ## The window
 
 The board fills the window, with no title bar. Move and resize it the way your compositor does. For close, minimise and maximise buttons, switch on **Settings → General → Window buttons**. Three small dots appear at the top left, with a strip beside them to drag the window by.
