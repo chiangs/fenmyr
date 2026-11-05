@@ -11,6 +11,7 @@ import { startEdit } from '../edit/editing.ts';
 import { editTag } from '../edit/text.ts';
 import { setDue } from '../features/due.ts';
 import { removeSelected } from '../myra/helpers.ts';
+import { prototypeThis } from '../repo/start.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { closestTo } from '../ui/dom.ts';
 import { flipVNote, openVNote } from '../vault/notes.ts';
@@ -73,6 +74,7 @@ function onBarClick(e: MouseEvent) {
     return groupSel(a === 'group');
   }
   if (a === 'section') return makeSection(cs);
+  if (a === 'prototype') return prototypeThis(cs);
   if (a === 'unsection') return removeSection(cs.filter(c => c.type === 'section'));
   if (!one) return;
   if (a === 'untilt') return setTilt(one, 0, false);

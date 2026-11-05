@@ -1,5 +1,6 @@
-import type { Board, Folder, Project } from '../../shared/model.ts';
+import type { Board, Card, Folder, Link, Project } from '../../shared/model.ts';
 import type { Proto } from '../../shared/repos.ts';
+import { selectOnly } from '../canvas/wires.ts';
 import { appState } from '../core/state.ts';
 import { closeHome } from '../library/home.ts';
 import { newBoardIn } from '../library/nesting.ts';
@@ -7,7 +8,7 @@ import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
 import { makeFolder, saveLib } from '../library/tree.ts';
 import { newBoard } from '../model/boards.ts';
-import { prototypeWelcome } from '../proto/welcome.ts';
+import { belowWelcome, prototypeWelcome } from '../proto/welcome.ts';
 import { chirp } from '../settings/licenses.ts';
 import { child, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
@@ -29,21 +30,33 @@ export async function newPrototypingFolder(p: Project) {
 }
 
 type Wish = { name: string; stack: Proto['stack']; purpose?: string; device?: Proto['device'] };
+// cards brought from another board, such as wireframe screens picked with Prototype this
+export type Seed = { cards: Card[]; links: Link[] };
 
-// A prototype board and its own folder of code in the repo, opened.
-export async function createPrototype(f: Folder, root: string, w: Wish) {
+// A prototype board and its own folder of code in the repo, opened. Brought cards go under Myra's notes, selected,
+// so asking her to build uses them.
+export async function createPrototype(f: Folder, root: string, w: Wish, seed?: Seed) {
   const made = await Fenmyr.protoCreate({ root, name: w.name, stack: w.stack });
   const proto: Proto = {
     ...made,
     ...(w.purpose ? { purpose: w.purpose } : {}),
     ...(w.device ? { device: w.device } : {}),
   };
-  const b: Board = { ...newBoard(w.name), kind: 'prototype', proto, folder: f.id, cards: prototypeWelcome() };
+  const brought = seed ? belowWelcome(seed.cards) : [];
+  const b: Board = {
+    ...newBoard(w.name),
+    kind: 'prototype',
+    proto,
+    folder: f.id,
+    cards: [...prototypeWelcome(), ...brought],
+    links: seed?.links ?? [],
+  };
   await Fenmyr.save(b);
   await refreshBoards();
   // made from a folder's home, it opens in place of the home, as a new board does
   closeHome();
   await openBoard(b.id);
+  if (brought.length) selectOnly(brought.map(c => c.id));
   chirp(`Made “${w.name}”. Its code is in ${proto.dir} ✦`, 4000);
   return b;
 }
@@ -72,7 +85,7 @@ export async function adoptPrototypes(p: Project) {
 export const addBoardTo = (f: Folder) => (f.kind === 'prototyping' ? newPrototypeIn(f) : newBoardIn(f.id));
 
 // Name and stack, then createPrototype.
-export function newPrototypeIn(f: Folder) {
+export function newPrototypeIn(f: Folder, seed?: Seed) {
   const p = projectOf(f);
   if (!p?.repo) {
     if (p) linkRepo(p);
@@ -91,7 +104,7 @@ export function newPrototypeIn(f: Folder) {
   name.focus();
   const create = async () => {
     try {
-      await createPrototype(f, root, { name: name.value.trim() || 'Untitled prototype', stack });
+      await createPrototype(f, root, { name: name.value.trim() || 'Untitled prototype', stack }, seed);
       d.remove();
     } catch (e) {
       child(d, '#npProblem').textContent = e instanceof Error ? e.message : String(e);
