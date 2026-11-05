@@ -62,6 +62,8 @@ export type Proto = {
   purpose?: string;
   device?: 'phone' | 'tablet' | 'desktop';
   sources?: Sources;
+  // a copy from another project whose code hasn't been asked about yet: Myra asks to commit it when it first opens
+  copied?: { from: string; files: number };
 };
 
 const MAX_SOURCE_FILES = 200;
@@ -110,13 +112,18 @@ export function readProto(x: unknown): Proto | null {
   if (!isRecord(x) || typeof x.dir !== 'string' || !PROTO_DIR.test(x.dir)) return null;
   const device = DEVICES.find(d => d === x.device),
     purpose = typeof x.purpose === 'string' ? x.purpose.slice(0, 500) : '',
-    sources = readSources(x.sources);
+    sources = readSources(x.sources),
+    copied =
+      isRecord(x.copied) && typeof x.copied.from === 'string'
+        ? { from: x.copied.from.slice(0, 200), files: typeof x.copied.files === 'number' ? x.copied.files : 0 }
+        : null;
   return {
     dir: x.dir,
     stack: STACKS.find(s => s === x.stack) ?? 'react',
     ...(purpose ? { purpose } : {}),
     ...(device ? { device } : {}),
     ...(Object.keys(sources).length ? { sources } : {}),
+    ...(copied ? { copied } : {}),
   };
 }
 

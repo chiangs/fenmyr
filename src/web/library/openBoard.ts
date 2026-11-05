@@ -8,6 +8,7 @@ import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { showProto } from '../proto/layout.ts';
 import { checkCode } from '../repo/codeFolder.ts';
+import { askAboutCopy } from '../repo/copy.ts';
 import { closeColor } from '../ui/colorPicker.ts';
 import { renderPalette } from '../ui/palette.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
@@ -32,6 +33,7 @@ export async function openBoard(id: string) {
   session.board = { name: '', cards: [], links: [], tray: [], ...b };
   checkCode(session.board);
   showProto(session.board);
+  askAboutCopy(session.board);
   if (chatOpen()) setTimeout(renderChat, 0);
   session.board.palette = session.board.palette || [];
   setTimeout(resetHistory, 0);
