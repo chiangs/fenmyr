@@ -8,6 +8,9 @@ import { env, isRecord, text } from './util.ts';
 // writes inside its working folder, and Fenmyr checks afterwards that nothing outside changed.
 const TOOLS = ['Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep'];
 const EDITS = new Set(['Write', 'Edit', 'MultiEdit']);
+// Its file tools refuse to read or write outside the prototype's folder and the folders added for it (the cards'
+// pictures), whatever permission mode it runs in. Claude Code enforces this; Fenmyr still checks writes afterwards.
+const FOLDER_ONLY = { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true };
 
 export const claudeCode: CodeAgent = async ({ cwd, prompt, readable }, edited) => {
   const claude = await claudePath();
@@ -18,7 +21,7 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable }, edited) =
     '--output-format',
     'stream-json',
     '--verbose',
-    ...hookArgs(),
+    ...hookArgs({ permissions: FOLDER_ONLY }),
     '--permission-mode',
     'acceptEdits',
   ];

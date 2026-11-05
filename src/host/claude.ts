@@ -140,7 +140,10 @@ export function resetUsage(): true {
 
 // Myra's calls always run with Claude Code hooks switched off, so hooks meant for the person's own Claude Code sessions (a desktop pet's
 // thinking meter, reply bubbles…) don't fire for her background requests. Skills, plugins, connectors and the login are unaffected.
-export const hookArgs = () => ['--settings', JSON.stringify({ disableAllHooks: true })];
+export const hookArgs = (more: Record<string, unknown> = {}) => [
+  '--settings',
+  JSON.stringify({ disableAllHooks: true, ...more }),
+];
 
 async function runClaude(prompt: string, tools: string[], timeout: number, need = 'I need Claude Code to do that.') {
   const claude = await claudePath();
