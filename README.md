@@ -205,6 +205,10 @@ Fenmyr has two layers, written in TypeScript, that talk through one channel:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it. [DESIGN.md](DESIGN.md) holds the visual and copy rules.
 
+[![Fenmyr's code map: every source file as a circle, larger when more files connect to it](https://code-map.fenmyr.com/preview.svg)](https://code-map.fenmyr.com/)
+
+The [code map](https://code-map.fenmyr.com/) shows every source file as a circle and every import as a line, with a line on what each file and area is for. It is rebuilt on every merge to `main`. From a checkout, `node tools/code-map/query.ts <file>` says what a file is for, what it imports and what imports it.
+
 To run the app from the code without installing, run `npm ci && node node_modules/electron/install.js && npm start`.
 
 Icons are [Phosphor Icons](https://phosphoricons.com) (MIT), plus Fenmyr's own cloudberry icons. Fonts are Figtree and Shantell Sans (OFL).
