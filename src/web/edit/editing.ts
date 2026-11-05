@@ -12,6 +12,7 @@ import { wireTagTyping } from '../features/tags.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
 import { openVNote } from '../vault/notes.ts';
+import { keepEditedText } from './noteBody.ts';
 
 // note text boxes already listening for Shift+Tab to the name
 const wiredNameHop = new WeakSet<HTMLElement>();
@@ -190,7 +191,8 @@ export function startEdit(id: string, target?: Element | null) {
   s?.removeAllRanges();
   s?.addRange(r);
   t.oninput = () => {
-    c.text = t.innerText.replace(/\n$/, '');
+    if (c.type === 'note') keepEditedText(c, t);
+    else c.text = t.innerText.replace(/\n$/, '');
     fitText(c);
     save();
   };

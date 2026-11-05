@@ -1,8 +1,9 @@
-import type { Card } from '../../shared/model.ts';
+import type { Card, CardOf } from '../../shared/model.ts';
 import { byId } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
+import { keepEditedText } from '../edit/noteBody.ts';
 import { fitText } from '../edit/text.ts';
 import { cardEl, closestTo, esc } from '../ui/dom.ts';
 import { initTagAdd } from './tagAdd.ts';
@@ -160,7 +161,7 @@ const redrawTags = ({ box, c }: { box: HTMLElement; c: Card }) => {
 
 let tagPop: HTMLElement | null = null;
 
-export function wireTagTyping(c: Card, t: HTMLElement) {
+export function wireTagTyping(c: CardOf<'note'>, t: HTMLElement) {
   if (wiredTags.has(t)) return;
   wiredTags.add(t);
   let items: Suggest[] = [],
@@ -220,7 +221,7 @@ export function wireTagTyping(c: Card, t: HTMLElement) {
     sl?.removeAllRanges();
     sl?.addRange(r);
     close();
-    c.text = t.innerText.replace(/\n$/, '');
+    keepEditedText(c, t);
     addTag(c, name);
   };
   t.addEventListener('input', () => {
