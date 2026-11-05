@@ -7,6 +7,7 @@ import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
 import { makeFolder, saveLib } from '../library/tree.ts';
 import { newBoard } from '../model/boards.ts';
+import { prototypeWelcome } from '../proto/welcome.ts';
 import { chirp } from '../settings/licenses.ts';
 import { child, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
@@ -37,7 +38,7 @@ export async function createPrototype(f: Folder, root: string, w: Wish) {
     ...(w.purpose ? { purpose: w.purpose } : {}),
     ...(w.device ? { device: w.device } : {}),
   };
-  const b: Board = { ...newBoard(w.name), kind: 'prototype', proto, folder: f.id };
+  const b: Board = { ...newBoard(w.name), kind: 'prototype', proto, folder: f.id, cards: prototypeWelcome() };
   await Fenmyr.save(b);
   await refreshBoards();
   // made from a folder's home, it opens in place of the home, as a new board does
