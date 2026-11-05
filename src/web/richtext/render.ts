@@ -1,0 +1,86 @@
+import { esc } from '../ui/dom.ts';
+import { parse } from './dialect.ts';
+import { type Doc, indentLevels, type ListKind, MARKS_OUTERMOST_FIRST, type Run, wordsOf } from './doc.ts';
+
+const LIST_TAG = { bullet: 'ul', number: 'ol' } as const;
+
+type Rows = (readonly Run[])[];
+type Entry = { readonly list: ListKind; readonly start: number; readonly depth: number; readonly rows: Rows };
+type Block = { readonly kind: 'text'; readonly rows: Rows } | { readonly kind: 'list'; readonly entries: Entry[] };
+
+const wrap = (tag: string, html: string) => `<${tag}>${html}</${tag}>`;
+
+const runHtml = (r: Run) =>
+  MARKS_OUTERMOST_FIRST.reduceRight((html, m) => (r.marks & m.bit ? wrap(m.tag, html) : html), esc(r.text));
+
+// pre-wrap doesn't show a newline that ends its box, so an empty last row needs a second one.
+function rowsHtml(rows: Rows) {
+  const texts = rows.map(r => r.map(runHtml).join(''));
+  return texts.join('\n') + (texts.at(-1) === '' ? '\n' : '');
+}
+
+function blocks(doc: Doc) {
+  const out: Block[] = [];
+  for (const line of doc) {
+    const last = out.at(-1);
+    if (line.kind === 'text') {
+      if (last?.kind === 'text') last.rows.push(line.runs);
+      else out.push({ kind: 'text', rows: [line.runs] });
+    } else if (line.kind === 'item') {
+      const start = line.list === 'number' ? line.n : 0,
+        entry = { list: line.list, start, depth: line.depth, rows: [line.runs] };
+      if (last?.kind === 'list') last.entries.push(entry);
+      else out.push({ kind: 'list', entries: [entry] });
+    } else if (last?.kind === 'list') last.entries.at(-1)?.rows.push(line.runs);
+  }
+  return out;
+}
+
+function openTag(e: Entry) {
+  if (e.list === 'bullet') return '<ul>';
+  if (e.start === 1) return '<ol>';
+  const start = e.start;
+  return `<ol start="${start}">`;
+}
+
+function listHtml(entries: readonly Entry[]) {
+  const open: ListKind[] = [];
+  let html = '';
+  const closeTo = (depth: number) => {
+    while (open.length > depth) {
+      const tag = LIST_TAG[open.pop() ?? 'bullet'];
+      html += `</li></${tag}>`;
+    }
+  };
+  for (const e of entries) {
+    closeTo(e.depth);
+    if (open.length === e.depth && open[e.depth - 1] !== e.list) closeTo(e.depth - 1);
+    if (open.length === e.depth) html += '</li>';
+    else {
+      html += openTag(e);
+      open.push(e.list);
+    }
+    const rows = rowsHtml(e.rows);
+    html += `<li>${rows}`;
+  }
+  closeTo(0);
+  return html;
+}
+
+export const render = (doc: Doc) =>
+  blocks(doc)
+    .map(b => (b.kind === 'text' ? rowsHtml(b.rows) : listHtml(b.entries)))
+    .join('');
+
+export function plainOf(note: { readonly text?: string; readonly rich?: boolean }) {
+  const text = note.text ?? '';
+  if (!note.rich) return text;
+  const doc = parse(text),
+    indents = indentLevels(doc);
+  return doc
+    .map((line, i) => {
+      const marker = line.kind !== 'item' ? '' : line.list === 'number' ? `${line.n}. ` : '• ';
+      return '  '.repeat(indents[i] ?? 0) + marker + wordsOf(line.runs);
+    })
+    .join('\n');
+}
