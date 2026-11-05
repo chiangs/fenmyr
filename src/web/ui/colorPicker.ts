@@ -7,7 +7,8 @@ import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { chirp } from '../settings/licenses.ts';
-import { hexOf, normHex, type Rgb, rgbOf } from './color.ts';
+import { hexOf, type Rgb, rgbOf } from './color.ts';
+import { type ColourFormat, FORMATS, readColour, writeColour } from './colourFormat.ts';
 import { cardEl, closestTo, elementById, esc } from './dom.ts';
 import { renderPalette, tintPicker } from './palette.ts';
 import { closeOnOutsidePress } from './popover.ts';
@@ -23,10 +24,18 @@ export type Tint = {
   reset: () => void;
   boardColors?: boolean;
   fromBar?: boolean;
+  // set to offer HSL, RGB and hex, and to hear which one the person picks
+  format?: { value: ColourFormat; pick: (f: ColourFormat) => void };
 };
 type Swatch = CardOf<'swatch'>;
 type Named = { hex: string; name: string };
 const hexField = () => elementById('cpHex', HTMLInputElement);
+let fmt: ColourFormat = 'hex';
+const showHex = (hex: string) => {
+  hexField().value = fmt === 'hex' ? hex.toUpperCase() : writeColour(hex, fmt);
+  for (const b of $('cpFmt').querySelectorAll<HTMLElement>('[data-fmt]'))
+    b.classList.toggle('on', b.dataset.fmt === fmt);
+};
 const nameField = () => elementById('cpName', HTMLInputElement);
 export const palette = () => (session.board.palette ??= []);
 
@@ -191,6 +200,8 @@ function boardColorRows(starter: string[]) {
 
 export function openColor(c: Swatch | Tint) {
   const tint = 'tint' in c ? c : null;
+  fmt = tint?.format?.value ?? 'hex';
+  $('cpop').classList.toggle('fmt', !!tint?.format);
   $('cpop').classList.toggle('tint', !!tint);
   $('cpop').classList.toggle('from-bar', !!tint?.fromBar);
   if (tint) document.body.appendChild($('cpop'));
@@ -200,7 +211,7 @@ export function openColor(c: Swatch | Tint) {
     colorCard = c;
     hsv = hex2hsv(c.hex);
     drawIfV();
-    hexField().value = c.hex.toUpperCase();
+    showHex(c.hex);
     $('cpDot').style.background = c.hex;
     $('cpTitle').textContent = c.title;
     $('cpQuick').innerHTML = c.boardColors
@@ -225,7 +236,7 @@ export function openColor(c: Swatch | Tint) {
   colorCard = c;
   hsv = hex2hsv(c.hex);
   drawIfV();
-  hexField().value = c.hex.toUpperCase();
+  showHex(c.hex);
   nameField().value = c.label || '';
   $('cpDot').style.background = c.hex;
   $('cpQuick').innerHTML = palette()
@@ -249,7 +260,7 @@ function setColor(hex: string | null | undefined, from: string) {
   if (colorCard && 'tint' in colorCard && hex) {
     colorCard.hex = hex;
     $('cpDot').style.background = hex;
-    if (from !== 'hex') hexField().value = hex.toUpperCase();
+    if (from !== 'hex') showHex(hex);
     if (from !== 'wheel') {
       hsv = hex2hsv(hex);
       drawIfV();
@@ -260,7 +271,7 @@ function setColor(hex: string | null | undefined, from: string) {
   if (!colorCard || 'tint' in colorCard || !hex) return;
   colorCard.hex = hex;
   $('cpDot').style.background = hex;
-  if (from !== 'hex') hexField().value = hex.toUpperCase();
+  if (from !== 'hex') showHex(hex);
   if (from !== 'wheel') {
     hsv = hex2hsv(hex);
     drawIfV();
@@ -314,8 +325,16 @@ export function init57() {
   });
 
   hexField().oninput = () => {
-    const h = normHex(hexField().value);
+    const h = readColour(hexField().value);
     if (h) setColor(h, 'hex');
+  };
+
+  $('cpFmt').onclick = e => {
+    const f = FORMATS.find(x => x === closestTo(e.target, '[data-fmt]')?.dataset.fmt);
+    if (!f || !colorCard || !('tint' in colorCard)) return;
+    fmt = f;
+    colorCard.format?.pick(f);
+    showHex(colorCard.hex);
   };
 
   nameField().oninput = () => {

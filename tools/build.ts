@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { type BuildOptions, build } from 'esbuild';
 
 const host: BuildOptions = {
@@ -24,3 +25,28 @@ await Promise.all([
     logLevel: 'warning',
   }),
 ]);
+
+// Prototype previews bundle in the page with esbuild-wasm, and every React prototype runs on this one copy of React,
+// so a prototype needs no npm install to show.
+fs.copyFileSync('node_modules/esbuild-wasm/esbuild.wasm', 'web/dist/esbuild.wasm');
+// Tailwind's browser build makes a prototype's CSS from its classes inside the preview, offline
+fs.copyFileSync('node_modules/@tailwindcss/browser/dist/index.global.js', 'web/dist/proto-tailwind.js');
+await build({
+  stdin: {
+    contents: `globalThis.__fenmyrReact = {
+      react: require('react'),
+      'react-dom': require('react-dom'),
+      'react-dom/client': require('react-dom/client'),
+      'react/jsx-runtime': require('react/jsx-runtime'),
+    };`,
+    resolveDir: '.',
+    loader: 'js',
+  },
+  outfile: 'web/dist/proto-react.js',
+  bundle: true,
+  format: 'iife',
+  minify: true,
+  target: 'chrome130',
+  define: { 'process.env.NODE_ENV': '"production"' },
+  logLevel: 'warning',
+});

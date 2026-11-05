@@ -4,11 +4,12 @@ import { colorHex } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { findClose } from '../features/find.ts';
-import { chirp } from '../settings/licenses.ts';
+import { showLastChange } from '../proto/homeInfo.ts';
+import { addBoardTo } from '../repo/prototypes.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
-import { draggable, dropZone, inlineRename, nestBoard, newBoardIn } from './nesting.ts';
+import { draggable, dropZone, inlineRename, nestBoard } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
 import { refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
 import {
@@ -198,7 +199,7 @@ export function renderHome(): void {
     draggable(t, 'folder', ff.id);
     dropZone(t, 'board', bid => moveBoard(bid, ff.id));
     dropZone(t, 'folder', fid => {
-      if (fid !== ff.id && !putFolder(fid, ff)) chirp("A folder can't go inside itself ✦", 2500);
+      if (fid !== ff.id) putFolder(fid, ff);
     });
     return t;
   };
@@ -220,6 +221,7 @@ export function renderHome(): void {
     draggable(t, 'board', b.id);
     dropZone(t, 'board', id => nestBoard(id, b.id));
     t.oncontextmenu = e => rowMenu(e, 'board', b, child(t, '.tile-meta b'));
+    if (b.kind === 'prototype') showLastChange(t, b);
     return t;
   };
   const section = (label: string) => {
@@ -275,15 +277,18 @@ export function renderHome(): void {
     boardsIn(f.id).forEach(b => {
       grid.appendChild(boardTile(b));
     });
-    add('New board', () => newBoardIn(f.id));
-    add('New folder', async () => {
-      const ff = makeFolder(uniqueName(appState.folders, 'New folder'), f.project || null);
-      ff.parent = f.id;
-      await saveLib();
-      await refreshBoards();
-      const t = [...grid.querySelectorAll('.tile.folder')].pop();
-      if (t) inlineRename(child(t, '.tile-meta b'), ff);
-    });
+    if (f.kind === 'prototyping') add('New prototype', () => addBoardTo(f));
+    else {
+      add('New board', () => addBoardTo(f));
+      add('New folder', async () => {
+        const ff = makeFolder(uniqueName(appState.folders, 'New folder'), f.project || null);
+        ff.parent = f.id;
+        await saveLib();
+        await refreshBoards();
+        const t = [...grid.querySelectorAll('.tile.folder')].pop();
+        if (t) inlineRename(child(t, '.tile-meta b'), ff);
+      });
+    }
   }
 }
 

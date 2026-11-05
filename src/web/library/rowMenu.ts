@@ -17,6 +17,9 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
+import { offerRename } from '../repo/codeFolder.ts';
+import { linkRepo } from '../repo/link.ts';
+import { newPrototypingFolder } from '../repo/prototypes.ts';
 import { chirp, say } from '../settings/licenses.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { keepOnScreen } from '../ui/popover.ts';
@@ -176,7 +179,7 @@ function moveMenu(m: HTMLElement, kind: Kind, obj: Thing) {
       }
     } else if (to?.startsWith('f:')) {
       const into = appState.folders.find(x => x.id === to.slice(2));
-      if (!putFolder(obj.id, into ?? null)) return chirp("A folder can't go inside itself ✦", 2500);
+      putFolder(obj.id, into ?? null);
     } else {
       putFolder(obj.id, null, to);
       const p = appState.projects.find(x => x.id === to);
@@ -200,13 +203,13 @@ export async function renameBoard(b: { id: string }, v: string) {
     const field = $('boardName');
     if (field instanceof HTMLInputElement) field.value = v;
     save();
-  } else {
-    const bb = await Fenmyr.load(b.id);
-    if (bb) {
-      bb.name = v;
-      await Fenmyr.save(bb);
-    }
+    return offerRename(session.board);
   }
+  const bb = await Fenmyr.load(b.id);
+  if (!bb) return;
+  bb.name = v;
+  await Fenmyr.save(bb);
+  offerRename(bb);
 }
 
 export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElement) {
@@ -224,11 +227,15 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
   m.className = 'row-menu';
   m.style.left = `${e.clientX}px`;
   m.style.top = `${e.clientY}px`;
+  const project = kind === 'project' ? appState.projects.find(x => x.id === obj.id) : undefined,
+    repoLabel = project?.repo ? 'Repo…' : 'Link a repo…',
+    repoItem = `<button data-m="repo">${repoLabel}</button><button data-m="protoFolder">New prototyping folder</button>`;
   const items =
     (nameEl ? '<button data-m="ren">Rename</button>' : '') +
     (kind !== 'project' ? '<button data-m="move">Move to…</button>' : '') +
     (kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : '') +
-    (kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : '');
+    (kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : '') +
+    (kind === 'project' && Fenmyr.native ? repoItem : '');
   m.innerHTML = `${items}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
   document.body.appendChild(m);
   keepOnScreen(m);
@@ -242,6 +249,10 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
     if (a === 'dup') {
       m.remove();
       return duplicate(kind, obj);
+    }
+    if ((a === 'repo' || a === 'protoFolder') && project) {
+      m.remove();
+      return a === 'repo' ? linkRepo(project) : newPrototypingFolder(project);
     }
     if (a === 'vault' && kind !== 'folder') {
       m.remove();

@@ -231,6 +231,11 @@ function endHtml(cs: Card[], one: Card | null) {
       9,
       `${sep}<button class="sb-txt sb-glass" data-sb="section" title="Create section · ⌥⌘G">Create section</button>`,
     ); // these tuck into ··· before the text controls do
+  if (cs.some(c => c.type === 'frame') && session.board.kind !== 'prototype')
+    h += G(
+      9,
+      `${sep}<button class="sb-txt sb-glass" data-sb="prototype" title="Make a clickable prototype from these screens">Prototype this</button>`,
+    );
   if (one?.type === 'section') {
     const dots = COLOR_NAMES.map(n => colorDot('sc', n, COLORS[n] ?? '', (one.color || 'white') === n)).join('');
     h +=
@@ -300,7 +305,8 @@ export function placeSelbar() {
   bar.classList.toggle('on', !!show);
   if (!show) {
     closeSbPops();
-    bar.dataset.ids = '';
+    // this runs every frame, so it only writes when something changed
+    if (bar.dataset.ids) bar.dataset.ids = '';
     if (bar.dataset.key !== '') {
       bar.dataset.key = '';
       renderDesign();

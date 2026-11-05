@@ -49,7 +49,8 @@ export function greet(why: string) {
         if (l?.text) lines.push(l);
       } catch (_e) {}
     });
-  const shown = settings.greet && settings.chat !== 'quiet' && lines.length;
+  // a prototype board's chat is kept with it and starts with her own welcome, so hellos would pile up there
+  const shown = settings.greet && settings.chat !== 'quiet' && lines.length && session.board?.kind !== 'prototype';
   if (shown)
     say(
       lines

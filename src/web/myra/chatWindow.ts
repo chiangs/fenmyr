@@ -15,7 +15,9 @@ const askHint = () =>
     ? 'Change this… “make it say…”, “turn it mint”'
     : session.sel.size > 1
       ? `Change these ${session.sel.size}… “rename to step 1, 2, 3”`
-      : 'Ask Myra… “group these by theme”';
+      : session.board?.kind === 'prototype'
+        ? 'Ask Myra about this prototype…'
+        : 'Ask Myra… “group these by theme”';
 
 // a little chip above the box says which cards are selected (they go along with what you send); it follows the selection while the chat is open
 let selChipKey: string | null = null;
@@ -50,6 +52,8 @@ function renderSelChip() {
 }
 
 export function myraOpen(on: boolean) {
+  // a prototype board keeps her chat docked open
+  if (!on && document.body.classList.contains('proto')) return;
   const was = chatOpen(),
     active = document.activeElement;
   if (!on && active instanceof HTMLElement && $('mChat').contains(active))

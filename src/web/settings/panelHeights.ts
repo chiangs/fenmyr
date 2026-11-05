@@ -54,7 +54,7 @@ export function fitSides() {
 }
 
 // the height grips bulge on hover: the line widens and swells into a small round peak above and below, with a wobble that settles (a damped spring on its width and thickness)
-export function gripBulge(grip: HTMLElement) {
+function gripBulge(grip: HTMLElement) {
   const NS = 'http://www.w3.org/2000/svg',
     svg = document.createElementNS(NS, 'svg'),
     path = document.createElementNS(NS, 'path');
@@ -117,4 +117,38 @@ export function gripBulge(grip: HTMLElement) {
     grip.addEventListener(ev, () => setTimeout(kick, 0));
   });
   draw();
+}
+
+// A height grip: drag it to resize what it belongs to, double-click it to go back to the automatic height. Under
+// Layers, Wireframe and Unsorted, and above Myra's input on a prototype board.
+export function heightGrip(
+  title: string,
+  h: { start: () => (dy: number) => void; end?: () => void; reset: () => void },
+) {
+  const grip = document.createElement('div');
+  grip.className = 'rz-grip';
+  grip.title = title;
+  gripBulge(grip);
+  grip.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const y0 = e.clientY,
+      move = h.start();
+    grip.setPointerCapture(e.pointerId);
+    grip.classList.add('on');
+    const mv = (ev: PointerEvent) => move(ev.clientY - y0);
+    const up = () => {
+      grip.classList.remove('on');
+      grip.removeEventListener('pointermove', mv);
+      grip.removeEventListener('pointerup', up);
+      h.end?.();
+    };
+    grip.addEventListener('pointermove', mv);
+    grip.addEventListener('pointerup', up);
+  });
+  grip.addEventListener('dblclick', e => {
+    e.stopPropagation();
+    h.reset();
+  });
+  return grip;
 }

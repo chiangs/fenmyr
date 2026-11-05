@@ -38,6 +38,36 @@ jobs:
         run: node tests/vault.ts
       - name: Save test (running-only flags stay out of board files)
         run: node tests/persist.ts
+      - name: Model test (board and library files, prototype fields)
+        run: node tests/model.ts
+      - name: Placement test (moving and copying boards and folders with prototypes)
+        run: node tests/placement.ts
+      - name: Fit test (how a prototype board's columns fold)
+        run: node tests/fit.ts
+      - name: Git test (the git and gh bridge, with real git and a stand-in gh)
+        run: node tests/git.ts
+      - name: Link test (a project's repo, from its menu)
+        run: node tests/link.ts
+      - name: Setup test (git and GitHub in Settings, with a stand-in gh)
+        run: node tests/setup.ts
+      - name: GitHub test (a project's GitHub repo, with a stand-in gh)
+        run: node tests/github.ts
+      - name: Prototype test (prototyping folders and new prototypes in a linked repo)
+        run: node tests/prototype.ts
+      - name: Layout test (a prototype board's screen)
+        run: node tests/layout.ts
+      - name: Preview test (a prototype running in its sandbox)
+        run: node tests/preview.ts
+      - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)
+        run: node tests/build.ts
+      - name: Packages test (installed packages in a prototype, with a stand-in npm)
+        run: node tests/packages.ts
+      - name: Sync test (fetch, pull and clashes with a stand-in GitHub)
+        run: node tests/sync.ts
+      - name: Controls test (a prototype's knobs above the preview)
+        run: node tests/controls.ts
+      - name: Done test (link, prototype, build, point, commit, push, reopen)
+        run: node tests/done.ts
       - name: Myra reply test
         run: node tests/reply.ts
       - name: Mac font list test
@@ -56,13 +86,6 @@ jobs:
         run: node tests/update.ts
       - name: Caelestia theme test
         run: node tests/theme.ts
-      - name: Visual check against main
-        run: VISUAL_OUT=/tmp/visual node tools/visual-diff.ts origin/main
-      - uses: actions/upload-artifact@v5
-        if: failure()
-        with:
-          name: visual-diff
-          path: /tmp/visual
       - name: Install from a fresh clone, run the installed copy, uninstall
         run: |
           # each part's output goes to a file; on failure its last lines become annotations, so they're readable without the full log
@@ -73,6 +96,14 @@ jobs:
           su tester -c "cd ~/fenmyr && npm ci --ignore-scripts --no-audit --no-fund && FENMYR_APP=\$HOME/.local/lib/fenmyr/app node tests/smoke.ts" > smoke.log 2>&1 || report installed-smoke smoke.log
           su tester -c 'cd ~/fenmyr && ./uninstall.sh --purge' > uninstall.log 2>&1 || report uninstall uninstall.log
           test ! -e /home/tester/.local/bin/fenmyr
+      # last, so a deliberate pixel change still lets every other check run; it fails the job all the same
+      - name: Visual check against main
+        run: VISUAL_OUT=/tmp/visual node tools/visual-diff.ts origin/main
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: visual-diff
+          path: /tmp/visual
       - name: Build the AppImage
         if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         run: npx electron-builder --linux AppImage --x64 --publish never

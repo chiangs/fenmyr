@@ -8,6 +8,7 @@ import { tagChips } from '../features/tags.ts';
 import { fmtT, MIC, PLAY } from '../media/audio.ts';
 import { devName } from '../media/devices.ts';
 import { cams, SPK } from '../media/video.ts';
+import { captureTag } from '../proto/capture.ts';
 import { settings } from '../settings/settings.ts';
 import { inkPath } from '../tools/ink.ts';
 import { pathD } from '../tools/pen.ts';
@@ -246,8 +247,9 @@ function image(c: CardOf<'image'>) {
     ui = b ? cropUi(b, corners) : '',
     src = esc(c.src),
     palette = Icon('palette', { size: 16 }),
-    pull = when(!c.cropEdit, `<button class="chip" data-act="colors">${palette}<span>Pull colours</span></button>`);
-  return `<div class="imgwrap"><img src="${src}" alt="" style="${st}">${ui}</div>${pull}`;
+    pull = when(!c.cropEdit, `<button class="chip" data-act="colors">${palette}<span>Pull colours</span></button>`),
+    tag = captureTag(c);
+  return `<div class="imgwrap"><img src="${src}" alt="" style="${st}">${ui}</div>${tag}${pull}`;
 }
 
 function vnote(c: CardOf<'vnote'>) {

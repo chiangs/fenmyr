@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Board, BoardSummary, Template } from '../shared/ops.ts';
+import { readProto } from '../shared/repos.ts';
 import P from './paths.ts';
 import { isRecord, jsonSafe, readJSON, writeAtomic } from './util.ts';
 
@@ -42,15 +43,17 @@ export function list(): BoardSummary[] {
       if (known && known.mtimeMs === st.mtimeMs && known.size === st.size) return known.row;
       const j = readJSON(full);
       if (!isRecord(j)) return null;
-      const row: BoardSummary = {
-        id: stringOr(j.id, ''),
-        name: stringOr(j.name, 'Untitled'),
-        color: stringOr(j.color, 'pink'),
-        folder: stringOr(j.folder, null),
-        parent: stringOr(j.parent, null),
-        updated: st.mtimeMs / 1000,
-        ...grantSummary(j.vaultAccess),
-      };
+      const base = {
+          id: stringOr(j.id, ''),
+          name: stringOr(j.name, 'Untitled'),
+          color: stringOr(j.color, 'pink'),
+          folder: stringOr(j.folder, null),
+          parent: stringOr(j.parent, null),
+          updated: st.mtimeMs / 1000,
+          ...grantSummary(j.vaultAccess),
+        },
+        proto = j.kind === 'prototype' ? readProto(j.proto) : null;
+      const row: BoardSummary = proto ? { ...base, kind: 'prototype', dir: proto.dir } : base;
       summaries.set(f, { mtimeMs: st.mtimeMs, size: st.size, row });
       return row;
     })

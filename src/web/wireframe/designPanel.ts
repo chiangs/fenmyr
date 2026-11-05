@@ -4,6 +4,8 @@ import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { hasAll, queryWords } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
+import { prototypeThis } from '../repo/start.ts';
 import { selCards } from '../selbar/selected.ts';
 import { startPlacing, stopPlacing } from '../tools/place.ts';
 import { closestTo, htmlIn, textField } from '../ui/dom.ts';
@@ -101,6 +103,8 @@ export function renderDesign() {
   if (one?.type === 'box') h += boxSection(one);
   if (one?.type === 'text') h += textSection(one);
   if (cs.length > 1 || (one?.onFrame && byId(one.onFrame))) h += alignSection(cs.length);
+  if (cs.some(c => c.type === 'frame') && session.board.kind !== 'prototype')
+    h += sec('<button class="set-btn dz-proto" data-proto="1">Prototype these screens</button>');
   el.innerHTML = h;
 }
 
@@ -222,12 +226,6 @@ export function initDesign() {
     startPlacing('frame', { device: b.dataset.dev });
   };
 
-  $('dzMin').onclick = () => {
-    const m = $('design').classList.toggle('min');
-    $('dzMin').textContent = m ? '+' : '–';
-    placeTray();
-  };
-
   $('design').addEventListener('pointerdown', e => e.stopPropagation());
 
   addEventListener('resize', placeTray);
@@ -283,6 +281,7 @@ export function initDesign() {
   });
 
   $('dzProps').addEventListener('click', e => {
+    if (closestTo(e.target, '[data-proto]')) return prototypeThis(selCards());
     if (closestTo(e.target, '[data-swap]')) {
       iconSwap = selCards()[0]?.id ?? null;
       pickWF('icon');

@@ -4,13 +4,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
+import { startBuild } from './build.ts';
 import * as claude from './claude.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
+import { packageManager } from './install.ts';
 import { parseMacFonts } from './macFonts.ts';
 import * as net from './net.ts';
 import * as output from './output.ts';
 import P from './paths.ts';
+import * as prototypes from './prototypes.ts';
 import * as speech from './speech.ts';
 import * as storage from './storage.ts';
 import * as theme from './theme.ts';
@@ -39,7 +42,7 @@ protocol.registerSchemesAsPrivileged([
       stream: true,
       supportFetchAPI: true,
       corsEnabled: true,
-      bypassCSP: true,
+      // no bypassCSP: Fenmyr's own page sets no policy, and a prototype's preview must not get round its own
     },
   },
 ]);
@@ -262,6 +265,58 @@ const OPS = {
   gitInit: a => git.init(text(a.path)),
   gitSetIdentity: a => git.setIdentity(text(a.path), text(a.name), text(a.email), a.everywhere === true),
   ghStatus: () => gh.status(),
+  repoPick: async () => {
+    const r = await dialog.showOpenDialog(theWindow(), {
+      title: "Choose the folder for this project's prototypes",
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    return r.canceled ? null : (r.filePaths[0] ?? null);
+  },
+  packageManager: () => packageManager(),
+  gitSetup: () => git.setup(),
+  gitSetGlobalIdentity: a => git.setGlobalIdentity(text(a.name), text(a.email)),
+  ghLogin: () => gh.startLogin(r => send('ghLogin', r)),
+  ghLoginCancel: () => gh.cancelLogin(),
+  ghSetupGit: () => gh.setupGit(),
+  protoCreate: a => prototypes.create(text(a.root), text(a.name), a.stack === 'html' ? 'html' : 'react'),
+  protoCopy: a => prototypes.copy(text(a.fromRoot), text(a.dir), text(a.toRoot)),
+  protoExists: a => prototypes.exists(text(a.root), text(a.dir)),
+  protoFind: a => prototypes.find(text(a.root)),
+  protoAtCommit: a => prototypes.atCommit(text(a.root), text(a.dir), text(a.commit)),
+  protoRename: a => prototypes.rename(text(a.root), text(a.dir), text(a.name)),
+  protoRestore: a => prototypes.restore(text(a.root), text(a.dir), text(a.name), a.stack === 'html' ? 'html' : 'react'),
+  protoFiles: a => prototypes.files(text(a.root), text(a.dir)),
+  protoRead: a => prototypes.read(text(a.root), text(a.dir), text(a.file)),
+  previewOpen: async a => {
+    const err = await shell.openPath(prototypes.previewFile(text(a.html), text(a.name)));
+    if (err) throw new Error(err);
+    return true as const;
+  },
+  protoBuild: a => startBuild(a, e => send('protoBuild', e)),
+  captureArea: async a => {
+    const r = { x: Number(a.x) || 0, y: Number(a.y) || 0, width: Number(a.w) || 0, height: Number(a.h) || 0 };
+    if (r.width < 4 || r.height < 4) throw new Error('Nothing to capture there.');
+    const img = await theWindow().webContents.capturePage({
+      x: Math.round(r.x),
+      y: Math.round(r.y),
+      width: Math.round(r.width),
+      height: Math.round(r.height),
+    });
+    return img.toDataURL();
+  },
+  protoLastChange: a => prototypes.lastChange(text(a.root), text(a.dir)),
+  protoUndo: a => prototypes.undo(text(a.root), text(a.dir), text(a.snapshot)),
+  protoModule: a => prototypes.moduleFile(text(a.root), text(a.file)),
+  protoInstall: a => prototypes.install(text(a.root), strings(a.packages)),
+  gitFetch: async a => git.fetchOrigin(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+  gitPull: async a => git.pull(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+  gitKeepMine: async a =>
+    git.keepMine(text(a.root), text(a.branch), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+  gitTakeTheirs: a => git.takeTheirs(text(a.root)),
+  protoWriteTweaks: a => prototypes.writeTweaks(text(a.root), text(a.dir), text(a.json)),
+  gitCommit: a => git.commitFolder(text(a.root), text(a.dir), text(a.message)),
+  gitPush: async a => git.push(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+  ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
 } satisfies Handlers;
 
 const isOp = (op: string): op is keyof Ops => Object.hasOwn(OPS, op);

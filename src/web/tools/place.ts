@@ -15,6 +15,7 @@ import { coolMic } from '../media/audio.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { camOn } from '../media/video.ts';
 import { card, newBoard } from '../model/boards.ts';
+import { frameTip } from '../repo/start.ts';
 import { newNoteColor, snapTo, tip } from '../settings/licenses.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { htmlIn } from '../ui/dom.ts';
@@ -236,6 +237,7 @@ export function placeAt(w: Point) {
   if (['note', 'todo', 'title', 'doc', 'canvas', 'text'].includes(type)) startEdit(c.id); // ready to type right away, so the first letters never act as shortcuts
   if (type === 'coll') startEdit(c.id);
   if (c.type === 'swatch') setTimeout(() => openColor(c), 60);
+  if (c.type === 'frame') frameTip();
   if (c.type === 'audio') {
     c.ready = true;
     renderCard(c);

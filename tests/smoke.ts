@@ -19,6 +19,7 @@ import { myra } from './smoke/myra.ts';
 import { panels } from './smoke/panels.ts';
 import { pictures } from './smoke/pictures.ts';
 import { reminders } from './smoke/reminders.ts';
+import { repoOps } from './smoke/repoOps.ts';
 import { commandsInPrompt, slash } from './smoke/slash.ts';
 import { timers } from './smoke/timers.ts';
 import { HEADLESS, MOUSE } from './support/launch.ts';
@@ -85,6 +86,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await page.evaluate(installPageKit);
   const t = makeSmoke({ app, page, data, out, errors });
   await bridge(t);
+  await repoOps(t);
   await look(t);
   await collectionCount(t);
   await library(t);

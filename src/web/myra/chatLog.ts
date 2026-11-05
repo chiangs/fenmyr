@@ -106,6 +106,8 @@ const IDEAS = [
   'Make a checklist from this',
   'Find onboarding screens on Mobbin',
 ];
+// on a prototype board she starts from the wireframes and notes the person brings
+const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
 
 function msgEl(m: ChatMsg & { acts?: SayAction[] }) {
   const d = document.createElement('div');
@@ -139,10 +141,15 @@ export function renderChat() {
   list.innerHTML = '';
   const msgs = chatLog();
   if (!msgs.length) {
-    const ideas = IDEAS.filter(i => settings.mobbin || !/Mobbin/.test(i))
+    const ideas = (session.board?.kind === 'prototype' ? PROTOTYPE_IDEAS : IDEAS)
+      .filter(i => settings.mobbin || !/Mobbin/.test(i))
       .map(i => `<button>${i}</button>`)
       .join('');
-    list.innerHTML = `<div class="mc-empty"><b>Hi! I'm Myra ✦</b>Ask me to sort, write, plan or find things for this board.<div class="mc-ideas">${ideas}</div></div>`;
+    const lead =
+      session.board?.kind === 'prototype'
+        ? 'What are we building? Tell me what it’s for and who uses it. Put wireframes, sketches, screenshots and notes on the board, or drop pictures right here, and select the ones that matter. Then ask me to build it. The board on the left holds what you bring, the preview runs what I build, and the code pane shows its files. This chat is kept with the prototype.'
+        : 'Ask me to sort, write, plan or find things for this board.';
+    list.innerHTML = `<div class="mc-empty"><b>Hi! I'm Myra ✦</b>${lead}<div class="mc-ideas">${ideas}</div></div>`;
     for (const b of list.querySelectorAll('.mc-ideas button'))
       if (b instanceof HTMLElement)
         b.onclick = () => {

@@ -7,6 +7,7 @@ import { devName, openMedia } from '../media/devices.ts';
 import { camOff, camOn, cams } from '../media/video.ts';
 import { paintBd } from '../myra/birthday.ts';
 import { showConnections } from '../myra/helpers.ts';
+import { renderGitSetup } from '../repo/setup.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
 import { luminance, mixHex } from '../ui/color.ts';
 import { child, closestTo, elementById, esc, htmlIn } from '../ui/dom.ts';
@@ -14,7 +15,7 @@ import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
 import { myCur, paintCursor } from './cursor.ts';
-import { applyPanelH, fitSides, gripBulge, panelMin } from './panelHeights.ts';
+import { applyPanelH, fitSides, heightGrip, panelMin } from './panelHeights.ts';
 import { settings } from './settings.ts';
 import { applySettings } from './widgets.ts';
 
@@ -158,7 +159,10 @@ export function setTab(t: string) {
   for (const sec of htmlIn($('settings'), '.set-body section[data-tab]'))
     sec.classList.toggle('tab-off', sec.dataset.tab !== t);
   child($('settings'), '.set-body').scrollTop = 0;
-  if (t === 'helpers') showUsage();
+  if (t === 'helpers') {
+    showUsage();
+    if (Fenmyr.native) renderGitSetup();
+  }
 }
 
 // panel heights: drag the little bar at the bottom of your boards list, Layers, Wireframe or Unsorted (double-click it to go back to automatic). Layers always keeps at least one row showing
@@ -254,46 +258,31 @@ export function init28() {
   Object.entries(PANELS).forEach(([k, f]) => {
     const el = f();
     if (!el) return;
-    const grip = document.createElement('div');
-    grip.className = 'rz-grip';
-    grip.title = 'Drag to change the height · double-click for automatic';
+    const grip = heightGrip('Drag to change the height · double-click for automatic', {
+      start: () => {
+        const h0 = el.getBoundingClientRect().height;
+        return dy => {
+          settings.panelH = {
+            ...settings.panelH,
+            [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + dy))),
+          };
+          applyPanelH();
+          const got = Math.round(el.getBoundingClientRect().height);
+          const want = settings.panelH[k];
+          if (want !== undefined && got < want) settings.panelH[k] = got;
+        };
+      },
+      end: applySettings,
+      reset: () => {
+        const p = { ...settings.panelH };
+        delete p[k];
+        settings.panelH = p;
+        applyPanelH();
+        applySettings();
+      },
+    });
     grip.dataset.panel = k;
     el.insertAdjacentElement('afterend', grip);
-    gripBulge(grip);
-    grip.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      const y0 = e.clientY,
-        h0 = el.getBoundingClientRect().height;
-      grip.setPointerCapture(e.pointerId);
-      grip.classList.add('on');
-      const mv = (ev: PointerEvent) => {
-        settings.panelH = {
-          ...settings.panelH,
-          [k]: Math.round(Math.max(panelMin(k), Math.min(innerHeight - 140, h0 + ev.clientY - y0))),
-        };
-        applyPanelH();
-        const got = Math.round(el.getBoundingClientRect().height);
-        const want = settings.panelH[k];
-        if (want !== undefined && got < want) settings.panelH[k] = got;
-      };
-      const up = () => {
-        grip.classList.remove('on');
-        grip.removeEventListener('pointermove', mv);
-        grip.removeEventListener('pointerup', up);
-        applySettings();
-      };
-      grip.addEventListener('pointermove', mv);
-      grip.addEventListener('pointerup', up);
-    });
-    grip.addEventListener('dblclick', e => {
-      e.stopPropagation();
-      const p = { ...settings.panelH };
-      delete p[k];
-      settings.panelH = p;
-      applyPanelH();
-      applySettings();
-    });
   });
 
   addEventListener('resize', fitSides);

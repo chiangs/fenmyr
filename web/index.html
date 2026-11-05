@@ -219,8 +219,9 @@
     <div class="cp-title" id="cpTitle"></div>
     <div class="wheel" id="wheel"><canvas id="wheelCv" width="440" height="440"></canvas><i class="ring" id="wheelRing"></i></div>
     <div class="bright" id="bright"><i class="ring" id="brightRing"></i></div>
+    <div class="seg cp-fmt" id="cpFmt"><button data-fmt="hsl">HSL</button><button data-fmt="rgb">RGB</button><button data-fmt="hex">Hex</button></div>
     <div class="cp-row"><span class="cp-dot" id="cpDot"></span>
-      <div class="cp-fields"><input id="cpHex" maxlength="7" spellcheck="false" aria-label="Hex"><input id="cpName" placeholder="Name it" spellcheck="false" aria-label="Colour name"></div></div>
+      <div class="cp-fields"><input id="cpHex" maxlength="24" spellcheck="false" aria-label="Colour"><input id="cpName" placeholder="Name it" spellcheck="false" aria-label="Colour name"></div></div>
     <div class="cp-quick" id="cpQuick"></div>
     <div class="cp-acts"><button id="cpSave" class="solid">Save to board colours</button><button id="cpReset" class="cp-reset">Use the default</button><button id="cpDone">Done</button></div>
   </div>
@@ -321,7 +322,7 @@
         <div class="set-row"><div><b>Her colour</b><small>Myra in the dock and the logo</small></div><div class="myra-colors" id="myraColors"></div></div>
         <div class="set-row"><div><b>How chatty she is</b><small>Quiet talks only when you ask. Chatty adds tips and cheers.</small></div><div class="seg" data-seg="chat"><button data-v="quiet">Quiet</button><button data-v="normal">Normal</button><button data-v="chatty">Chatty</button></div></div>
         <label class="set-row"><div><b>Emojis in her replies</b><small>A few ✨ 🌸 here and there</small></div><input type="checkbox" class="tgl" data-set="emoji"></label>
-        <div class="set-row"><div><b>Remember chats</b><small>Saved in your board files on this computer. Off forgets each chat.</small></div><div class="seg" data-seg="chatKeep"><button data-v="off">Off</button><button data-v="session">Until I quit</button><button data-v="board">On each board</button></div></div>
+        <div class="set-row"><div><b>Remember chats</b><small>Saved in your board files on this computer. Off forgets each chat. Prototype boards always keep theirs.</small></div><div class="seg" data-seg="chatKeep"><button data-v="off">Off</button><button data-v="session">Until I quit</button><button data-v="board">On each board</button></div></div>
         <div class="set-row"><div><b>How many messages to keep</b><small>Older messages fall off the top</small></div><div class="seg" data-seg="chatMax"><button data-v="20">20</button><button data-v="60">60</button><button data-v="200">200</button></div></div>
         <div class="set-row"><div><b>Saved chats</b><small>Deletes Myra's chat history from every board</small></div><button class="set-btn" id="clearChats">Clear all chats</button></div>
         <label class="set-row"><div><b>Say hi when I open the app</b><small>Myra's welcome bubble</small></div><input type="checkbox" class="tgl" data-set="greet"></label>
@@ -353,6 +354,10 @@
         <label class="set-row native-only"><div><b>Let Myra use Higgsfield</b><small>Generates images. It costs credits, so Myra always asks first. You can't turn that check off.</small></div><input type="checkbox" class="tgl" data-set="higgs"></label>
         <label class="set-row native-only"><div><b>Let Myra search the web</b><small>She can look things up and read public pages, including public GitHub repos. Her searches can include words from your board.</small></div><input type="checkbox" class="tgl" data-set="webAccess"></label>
         <div class="web-note web-only">This is the web version, so Myra can't reach Claude Code or your helpers from here. Download the desktop app to connect them. <button class="set-link get-app">Get Fenmyr ↗</button></div><div class="set-note native-only">Helpers are the connections in your Claude account. Connect one in Claude's settings, then come back and tap <button class="set-link" id="recheck">check again</button>.</div>
+      </section>
+      <section class="native-only" data-tab="helpers"><h3>Git and GitHub</h3>
+        <p class="set-lead">Prototypes are saved as code in git, which keeps every version. Set it up once for this computer.</p>
+        <div class="git-setup" id="gitSetup"></div>
       </section>
       <section data-tab="widgets"><h3>Widgets</h3>
         <p class="set-lead">Turn on the ones you use. The Boards panel always stays, since it's home to your boards and Settings.</p>

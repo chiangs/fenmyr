@@ -1,0 +1,92 @@
+import type { Card } from '../../shared/model.ts';
+import { applyView } from '../canvas/view.ts';
+import { clamp } from '../core/base.ts';
+import { stage } from '../core/dom.ts';
+import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
+import { card } from '../model/boards.ts';
+
+// A new prototype board's first cards: three notes from Myra on how to start, and her, bouncing on the first one.
+// Ordinary cards, so people move, edit or delete them like any other.
+// one column, since a prototype board's canvas column is narrow; each note's height fits its words at this width
+const W = 400,
+  HEIGHTS = [500, 480, 330],
+  GAP = 40,
+  // right of the widget column, which covers the left of a prototype board's narrow column
+  LEFT = 300,
+  // Myra stands above the first note
+  STAMP_TOP = -62;
+
+const WHAT_WE_BUILD = `This is where ideas stop being pictures and start being things you can click. I write the code, it lives in a folder of your project’s repo, and nothing is locked inside Fenmyr.
+
+What we can build
+
+Components: a button, a card, a form, a menu. The small things that make a big difference.
+
+Layouts: whole screens, at phone or desktop size.
+Workflows: a few screens linked into a flow you can click through, and argue about.
+
+Complete apps: let’s not make the same mistakes as the Jurassic Park scientists; just because we could, doesn’t mean we should. 😅
+
+This chat stays with the board, so we’ll always know how it got built.`;
+
+const WHAT_I_NEED = `I’m good, but I’m not a mind reader. Put these on the board (paste them in or draw them here) and select the ones that matter before you ask. I read what you’ve selected every time I build.
+
+A description: what is it, and who is it for?
+The goal: what should be true when it works?
+User stories: the things people need to do, one line each.
+Wireframes: draw them with the wireframe pieces, or drop in sketches.
+
+A design or style guide: colours, fonts, spacing, tone. Pictures of things you like count too.
+Real content: the actual words, numbers and images, not “lorem ipsum” if you can help it.
+
+You don’t need all six. A description and one wireframe is a perfectly respectable start.`;
+
+const HOW_WE_WORK = `Ask for one thing: “build the sign-in screen from my wireframe”. Have a look at the preview and tell me what’s wrong with it. I’ll take it well, mostly.
+
+As I build, I’ll ask which things you’d like to adjust yourself: colours, sizes, spacing, text. I’ll give each one a control in the preview, so you can fiddle without having to ask.
+
+I only write inside this prototype’s folder, and I’ll show you which files I touched. Nothing gets committed, pushed or sent anywhere until you press the button ✦`;
+
+const topOf = (i: number) => HEIGHTS.slice(0, i).reduce((y, h) => y + h + GAP, 0);
+
+export function prototypeWelcome(): Card[] {
+  const note = (i: number, name: string, text: string, color: string, r: number, tagText = '') =>
+    card('note', {
+      x: LEFT,
+      y: topOf(i),
+      w: W,
+      h: HEIGHTS[i] ?? 400,
+      r,
+      name,
+      text,
+      color,
+      ...(tagText ? { tagText } : {}),
+    });
+  return [
+    note(0, 'A new prototype? Exciting!', WHAT_WE_BUILD, 'butter', -1, 'Welcome!'),
+    note(1, 'The more I know, the less I guess', WHAT_I_NEED, 'sky', 0.5),
+    note(2, 'Start small, then steer', HOW_WE_WORK, 'mint', 1),
+    card('stamp', { x: LEFT - 34, y: STAMP_TOP, w: 56, h: 56, src: 'stamps/myra-bounce.gif', r: -4 }),
+  ];
+}
+
+// cards brought to a new prototype, moved as one beside Myra's notes
+export function besideWelcome(cards: Card[]) {
+  if (!cards.length) return [];
+  const dx = LEFT + W + GAP * 2 - Math.min(...cards.map(c => c.x)),
+    dy = -Math.min(...cards.map(c => c.y));
+  return cards.map(c => ({ ...c, x: c.x + dx, y: c.y + dy }));
+}
+
+// A new prototype opens with the notes in view: their column starts just right of the widgets, zoomed to fit the
+// width that's free, but never so small the words can't be read.
+export function showWelcome() {
+  const r = stage.getBoundingClientRect(),
+    side = document.getElementById('side')?.getBoundingClientRect(),
+    left = (side?.width ? Math.max(r.left, side.right) : r.left) + 24,
+    z = clamp((r.right - 24 - left) / W, 0.6, 1);
+  session.view = { x: left - r.left - LEFT * z, y: 110 - STAMP_TOP * z, z };
+  applyView();
+  save();
+}

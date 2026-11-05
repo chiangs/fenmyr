@@ -5,7 +5,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { card, newBoard } from '../model/boards.ts';
-import { chirp } from '../settings/licenses.ts';
+import { chirp, say } from '../settings/licenses.ts';
 import { renderCrumbs } from './crumbs.ts';
 import { closeHome } from './home.ts';
 import { openBoard } from './openBoard.ts';
@@ -63,6 +63,11 @@ export async function nestBoard(id: string, intoId: string, at?: { x: number; y:
   if (!kid || kid.parent === intoId) return false;
   const into = session.board && session.board.id === intoId ? session.board : await Fenmyr.load(intoId);
   if (!into) return false;
+  // nesting sets the inner board's folder, which would carry a prototype out of its prototyping folder
+  if (kid.kind === 'prototype' || into.kind === 'prototype') {
+    say('Prototype boards stay on their own. They don’t go inside other boards, and nothing goes inside them ✦', 5000);
+    return false;
+  }
   await unhook(id);
   await editBoard(id, b => {
     b.parent = intoId;

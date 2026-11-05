@@ -10,7 +10,8 @@ export type BoardSummary = {
   updated: number;
   // set when the board has its own vault access (not its project's): the vaults it may read, and whether AI may read them
   vaultAccess?: { vault: string; ai: boolean }[];
-};
+  // a prototype board carries its code folder, so the library knows which folders boards already use
+} & ({ kind?: never; dir?: never } | { kind: 'prototype'; dir: string });
 export type Template = {
   id: string;
   name: string;
@@ -114,16 +115,22 @@ export type GitStatus =
       root: string;
       // null when no branch is checked out
       branch: string | null;
+      // the commit checked out; null until the repo's first commit, when there's nothing yet to push
+      head: string | null;
       upstream: string | null;
       ahead: number;
       behind: number;
       changed: GitChange[];
       remotes: { name: string; url: string }[];
-      identity: { name: string; email: string };
+      identity: GitIdentity;
     };
 // ok is false when a sign-in needs renewing
 export type GhAccount = { host: string; login: string; active: boolean; ok: boolean };
 export type GhState = { kind: 'missing' } | { kind: 'ready'; accounts: GhAccount[] };
+export type PackageManager = 'pacman' | 'apt' | 'dnf' | 'zypper' | 'brew';
+export type GitIdentity = { name: string; email: string };
+// ghForGit: git pushes to GitHub with gh's sign-in
+export type GitSetup = { git: boolean; identity: GitIdentity; ghForGit: boolean };
 
 export type Ops = {
   list: { args: None; result: BoardSummary[] };
@@ -197,6 +204,86 @@ export type Ops = {
   // everywhere: for every repo on this computer, not only this one
   gitSetIdentity: { args: { path: string; name: string; email: string; everywhere: boolean }; result: GitStatus };
   ghStatus: { args: None; result: GhState };
+  repoPick: { args: None; result: string | null };
+  packageManager: { args: None; result: PackageManager | null };
+  gitSetup: { args: None; result: GitSetup };
+  gitSetGlobalIdentity: { args: { name: string; email: string }; result: GitIdentity };
+  // answers once gh shows its one-time code; the ghLogin event says when the sign-in ends
+  ghLogin: { args: None; result: { code: string; url: string } };
+  ghLoginCancel: { args: None; result: true };
+  ghSetupGit: { args: None; result: true };
+  // a new GitHub repo for a linked folder, made by that account and set as its origin
+  // a new prototype's code folder and starter files in a linked repo
+  protoCreate: {
+    args: { root: string; name: string; stack: 'react' | 'html' };
+    result: { dir: string; stack: 'react' | 'html' };
+  };
+  protoCopy: { args: { fromRoot: string; dir: string; toRoot: string }; result: { dir: string; files: number } };
+  protoExists: { args: { root: string; dir: string }; result: boolean };
+  // the prototypes already in a repo's prototypes/ folder, named by their page's title
+  protoFind: { args: { root: string }; result: { dir: string; stack: 'react' | 'html'; name: string }[] };
+  protoRename: { args: { root: string; dir: string; name: string }; result: { dir: string } };
+  // restored: from the last commit; fresh: starter files, since it was never committed
+  protoRestore: {
+    args: { root: string; dir: string; name: string; stack: 'react' | 'html' };
+    result: 'restored' | 'fresh';
+  };
+  protoFiles: { args: { root: string; dir: string }; result: string[] };
+  // a prototype's files as they were at a commit, by path inside its folder, for showing a capture again
+  protoAtCommit: { args: { root: string; dir: string; commit: string }; result: Record<string, string> };
+  protoRead: { args: { root: string; dir: string; file: string }; result: string };
+  // a built preview, saved as a page and opened in the person's browser
+  previewOpen: { args: { html: string; name: string }; result: true };
+  // Myra writing a prototype's code: answers with the build's id at once; protoBuild events follow
+  protoBuild: {
+    args: {
+      root: string;
+      dir: string;
+      stack: 'react' | 'html';
+      request: string;
+      purpose: string;
+      device: string;
+      cards: string;
+      errors: string;
+      // what the sketches, screenshots and wireframes look like, as data: URLs
+      pictures: { name: string; data: string }[];
+    };
+    result: { id: string };
+  };
+  // part of the window as a PNG data: URL, for a wireframe's picture
+  captureArea: { args: { x: number; y: number; w: number; h: number }; result: string };
+  // when: seconds since 1970 of the last commit touching it, 0 when it has none
+  protoLastChange: { args: { root: string; dir: string }; result: { branch: string; when: number; subject: string } };
+  protoUndo: { args: { root: string; dir: string; snapshot: string }; result: true };
+  // a file of an installed package, or null when there's none by that name
+  protoModule: { args: { root: string; file: string }; result: string | null };
+  protoInstall: { args: { root: string; packages: string[] }; result: string[] };
+  gitFetch: { args: { root: string; account: string }; result: GitStatus };
+  gitPull: {
+    args: { root: string; account: string };
+    result: { kind: 'pulled' } | { kind: 'conflict'; files: string[] };
+  };
+  gitKeepMine: { args: { root: string; account: string; branch: string }; result: GitStatus };
+  gitTakeTheirs: { args: { root: string }; result: GitStatus };
+  protoWriteTweaks: { args: { root: string; dir: string; json: string }; result: true };
+  gitCommit: { args: { root: string; dir: string; message: string }; result: GitStatus };
+  // account: the gh login that reaches this project's GitHub copy, if it has one
+  gitPush: { args: { root: string; account: string }; result: GitStatus };
+  ghRepoCreate: {
+    args: { path: string; account: string; name: string; private: boolean };
+    result: { owner: string; name: string };
+  };
 };
 
-export type HostEvents = { caelestia: CaelestiaScheme | null; boardsChanged: null; settings: null };
+export type HostEvents = {
+  caelestia: CaelestiaScheme | null;
+  boardsChanged: null;
+  settings: null;
+  ghLogin: { ok: boolean; message: string };
+  // outside: paths beyond the prototype's folder that the build changed
+  protoBuild:
+    | { id: string; type: 'edit'; file: string }
+    // sources: which cards each file it wrote came from
+    | { id: string; type: 'done'; text: string; snapshot: string; outside: string[]; sources: Record<string, string[]> }
+    | { id: string; type: 'error'; text: string };
+};

@@ -8,7 +8,14 @@ import { launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
 
 type Step = (page: Page) => Promise<void>;
-type Group = { settings?: Record<string, unknown>; phone?: boolean; states: [string, Step][] };
+// width: the window's, for the prototype screen at each of its layouts; proto: open a prototype board first
+type Group = {
+  settings?: Record<string, unknown>;
+  phone?: boolean;
+  width?: number;
+  proto?: boolean;
+  states: [string, Step][];
+};
 
 const FROZEN_MOTION =
   '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
@@ -61,8 +68,12 @@ const board: [string, Step][] = [
     },
   ],
 ];
+const screen: [string, Step][] = [['screen', async () => {}]];
 const GROUPS: Record<string, Group> = {
   light: { states: board },
+  'proto-wide': { proto: true, width: 1440, states: screen },
+  'proto-medium': { proto: true, width: 1200, states: screen },
+  'proto-narrow': { proto: true, width: 900, states: screen },
   dark: { settings: { theme: 'dark' }, states: board.slice(0, 3) },
   phone: { phone: true, states: [['board', async () => {}]] },
   settings: {
@@ -94,18 +105,54 @@ const GROUPS: Record<string, Group> = {
   },
 };
 
+// A prototype board in a fresh repo, its starter running in the preview. A checkout without prototypes (main, until
+// the feature lands) has no protoCreate, so it shows its ordinary board and the state is listed as meant.
+async function openPrototype(page: Page) {
+  // a fixed name, since the git bar shows it
+  const repo = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-repo-')), 'acme');
+  fs.mkdirSync(repo);
+  execFileSync('git', ['-C', repo, 'init', '-q', '-b', 'main']);
+  const made = await page.evaluate(async repo => {
+    const api: Record<string, unknown> = { ...window.Fenmyr };
+    if (typeof api.protoCreate !== 'function') return false;
+    await window.Fenmyr.saveFolders({
+      projects: [{ id: 'vp', name: 'Acme', open: true, repo: { path: repo } }],
+      folders: [{ id: 'vf', name: 'Prototypes', project: 'vp', kind: 'prototyping', open: true }],
+      order: {},
+    });
+    const proto = await window.Fenmyr.protoCreate({ root: repo, name: 'Checkout', stack: 'react' });
+    await window.Fenmyr.save({
+      id: 'vb',
+      name: 'Checkout',
+      folder: 'vf',
+      kind: 'prototype',
+      proto,
+      cards: [],
+      links: [],
+      tray: [],
+    });
+    await window.__fenmyr.refreshBoards();
+    await window.__fenmyr.openBoard('vb');
+    return true;
+  }, repo);
+  if (made) await page.frameLocator('#pr-preview iframe').locator('h1').waitFor({ timeout: 30000 });
+  await settle(page, 800);
+}
+
 async function shoot(dir: string, out: string) {
   fs.mkdirSync(out, { recursive: true });
   for (const [name, group] of Object.entries(GROUPS)) {
     const l = await launch({ dir, boards: [everyOfflineCard()], open: 'every', settings: group.settings });
-    if (group.phone) {
-      await l.app.evaluate(({ BrowserWindow }) => {
+    const width = group.phone ? 600 : group.width;
+    if (width) {
+      await l.app.evaluate(({ BrowserWindow }, w) => {
         const [win] = BrowserWindow.getAllWindows();
         if (!win) throw new Error('no window');
-        win.setSize(600, 900);
-      });
+        win.setSize(w, 900);
+      }, width);
       await settle(l.page);
     }
+    if (group.proto) await openPrototype(l.page);
     await l.page.addStyleTag({
       content: FROZEN_MOTION + HIDDEN_RANDOM_CANVASES + HIDDEN_UPDATE_STATE + HIDDEN_TIMED_BUBBLE,
     });
@@ -188,19 +235,30 @@ try {
 } finally {
   base.remove();
 }
+// States a branch changes on purpose, each with the reason, in tools/visual-expected.json. The file is reviewed in the
+// PR like code; an entry whose state no longer differs is reported so it can be removed.
+const expected: Record<string, string> = (() => {
+  const raw: unknown = JSON.parse(fs.readFileSync(path.join(ROOT, 'tools', 'visual-expected.json'), 'utf8'));
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+  return Object.fromEntries(Object.entries(raw).filter((e): e is [string, string] => typeof e[1] === 'string'));
+})();
 const judge = await launch({ boards: [everyOfflineCard()], open: 'every' });
-let failed = 0;
+let failed = 0,
+  meant = 0;
 for (const f of fs.readdirSync(path.join(out, 'ref')).sort()) {
   const r = await compare(judge.page, path.join(out, 'ref', f), path.join(out, 'head', f), path.join(out, `diff-${f}`));
   const allowed = Number(process.env.VISUAL_ALLOW_PIXELS) || (STRAY_PIXELS_SCALED[f] ?? STRAY_PIXELS);
-  const ok = r.changed >= 0 && r.changed <= allowed;
-  if (!ok) failed++;
-  console.log(
-    `${ok ? 'same' : 'DIFF'}  ${f.replace('.png', '').padEnd(20)} ${r.changed < 0 ? 'size changed' : `${r.changed} px`}`,
-  );
+  const ok = r.changed >= 0 && r.changed <= allowed,
+    name = f.replace('.png', ''),
+    why = expected[name];
+  if (!ok && !why) failed++;
+  if (!ok && why) meant++;
+  const verdict = ok ? (why ? 'stale' : 'same') : why ? 'meant' : 'DIFF';
+  const note = why ? `  (${ok ? 'listed in tools/visual-expected.json but unchanged: remove it' : why})` : '';
+  console.log(`${verdict}  ${name.padEnd(20)} ${r.changed < 0 ? 'size changed' : `${r.changed} px`}${note}`);
 }
 await judge.close();
 console.log(
-  `${failed ? 'VISUAL CHANGED' : 'VISUAL SAME'}: ${failed} of ${fs.readdirSync(path.join(out, 'ref')).length} states differ from ${ref}. Screenshots in ${out}`,
+  `${failed ? 'VISUAL CHANGED' : 'VISUAL SAME'}: ${failed} of ${fs.readdirSync(path.join(out, 'ref')).length} states differ from ${ref} unexpectedly, ${meant} as listed in tools/visual-expected.json. Screenshots in ${out}`,
 );
 process.exit(failed ? 1 : 0);

@@ -4,36 +4,64 @@ import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { placeTray, renderDesign } from '../wireframe/designPanel.ts';
 
-// which boxes are minimised, by name
+// Which widgets are minimised, by name, remembered between launches. A prototype board keeps its own set, where all
+// but the board list and Unsorted start minimised so the board, preview and code get the room; what the person
+// changes there is kept for prototype boards.
+const KEYS = { plain: 'fenmyr:boxes', proto: 'fenmyr:protoBoxes' } as const;
+const PROTO_START: Record<string, boolean> = { layers: true, colors: true, design: true };
+type Mode = keyof typeof KEYS;
+const mode = (): Mode => (document.body.classList.contains('proto') ? 'proto' : 'plain');
 let boxState: Record<string, boolean> = {};
-const readBoxes = (): Record<string, boolean> => {
+const readBoxes = (m: Mode): Record<string, boolean> => {
+  const start = m === 'proto' ? PROTO_START : {};
   try {
-    const saved: unknown = JSON.parse(localStorage.getItem('fenmyr:boxes') || '{}');
-    return isRecord(saved) ? Object.fromEntries(Object.entries(saved).map(([k, v]) => [k, v === true])) : {};
+    const saved: unknown = JSON.parse(localStorage.getItem(KEYS[m]) || '{}');
+    return {
+      ...start,
+      ...(isRecord(saved) ? Object.fromEntries(Object.entries(saved).map(([k, v]) => [k, v === true])) : {}),
+    };
   } catch {
-    return {};
+    return { ...start };
   }
 };
-export function init58() {
-  // ---------- the floating boxes: minimize to their title, remembered between launches ----------
-  boxState = readBoxes();
 
+// each widget that minimises, with its button: the boxes, and Wireframe
+const widgets = (): [string, HTMLElement, HTMLElement][] => {
+  const out: [string, HTMLElement, HTMLElement][] = [];
   for (const b of document.querySelectorAll('.box')) {
     const btn = b.querySelector('.mini:not(.home-btn):not(.gear)');
-    if (!(b instanceof HTMLElement) || !(btn instanceof HTMLElement)) continue;
-    const k = b.dataset.box ?? '';
-    const set = (min: boolean) => {
-      b.classList.toggle('min', min);
-      btn.textContent = min ? '+' : '–';
-      btn.title = min ? 'Open' : 'Minimise';
+    if (b instanceof HTMLElement && btn instanceof HTMLElement) out.push([b.dataset.box ?? '', b, btn]);
+  }
+  out.push(['design', $('design'), $('dzMin')]);
+  return out;
+};
+
+const show = (el: HTMLElement, btn: HTMLElement, min: boolean) => {
+  el.classList.toggle('min', min);
+  btn.textContent = min ? '+' : '–';
+  btn.title = min ? 'Open' : 'Minimise';
+};
+
+// on the way into or out of a prototype board: that kind of board's set
+export function applyBoxes() {
+  boxState = readBoxes(mode());
+  for (const [k, el, btn] of widgets()) show(el, btn, !!boxState[k]);
+  placeTray();
+}
+
+export function init58() {
+  // ---------- the floating boxes: minimize to their title ----------
+  for (const [k, el, btn] of widgets())
+    btn.onclick = () => {
+      const min = !el.classList.contains('min');
+      show(el, btn, min);
       boxState[k] = min;
       try {
-        localStorage.setItem('fenmyr:boxes', JSON.stringify(boxState));
+        localStorage.setItem(KEYS[mode()], JSON.stringify(boxState));
       } catch (_e) {}
+      placeTray();
     };
-    set(!!boxState[k]);
-    btn.onclick = () => set(!b.classList.contains('min'));
-  }
+  applyBoxes();
 
   $('keysX').onclick = () => {
     settings.keys = false;

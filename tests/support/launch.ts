@@ -28,6 +28,8 @@ type Options = {
   open?: string;
   flags?: string[];
   env?: Record<string, string>;
+  // a data folder to use, and keep when the app closes, so a test can quit and open the app again
+  data?: string;
 };
 
 export async function launch({
@@ -37,8 +39,9 @@ export async function launch({
   open,
   flags = [],
   env = {},
+  data: kept,
 }: Options = {}): Promise<Launched> {
-  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-h-'));
+  const data = kept ?? fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-h-'));
   const boardsDir = path.join(data, 'fenmyr', 'boards');
   fs.mkdirSync(boardsDir, { recursive: true });
   for (const b of boards) fs.writeFileSync(path.join(boardsDir, `${b.id}.json`), JSON.stringify(b));
@@ -59,14 +62,17 @@ export async function launch({
     ...(open ? { 'fenmyr:last': open } : {}),
   };
   await app.context().addInitScript(s => {
-    for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);
+    // it runs in every frame, and a prototype's sandboxed preview has no storage
+    try {
+      for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);
+    } catch {}
   }, store);
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
   await settle(page);
   const close = async () => {
     await app.close();
-    fs.rmSync(data, { recursive: true, force: true });
+    if (!kept) fs.rmSync(data, { recursive: true, force: true });
   };
   return { app, page, data, errors, close };
 }

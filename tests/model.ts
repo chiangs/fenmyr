@@ -1,6 +1,7 @@
 // Library and board files keep what they had, keep the prototype fields when they're sound, and drop them when not.
 import assert from 'node:assert';
 import { parseBoard, parseLibrary } from '../src/shared/model.ts';
+import { githubOf, readRepoLink, repoClash, repoNameFor, splitCardsLine } from '../src/shared/repos.ts';
 
 const json = (x: unknown) => JSON.parse(JSON.stringify(x));
 
@@ -52,5 +53,44 @@ for (const dir of ['../escape', 'prototypes/../../etc', 'prototypes/a/b', 'src/a
 }
 const strayProto = json(parseBoard({ id: 'b3', name: 'Plain', proto: { dir: 'prototypes/x', stack: 'react' } }));
 assert.ok(!('proto' in strayProto), 'a code folder without the prototype kind is dropped');
+
+const acme = { id: 'a', name: 'Acme', repo: { path: '/code/acme' } },
+  none = { id: 'c', name: 'None' };
+const clash = (self: string, root: string) => repoClash([acme, none], self, root)?.name;
+assert.strictEqual(clash('x', '/code/acme'), 'Acme', 'the same repo is taken');
+assert.strictEqual(clash('x', '/code/acme/inner'), 'Acme', 'a repo inside a linked one is taken');
+assert.strictEqual(clash('x', '/code'), 'Acme', 'a repo around a linked one is taken');
+assert.strictEqual(clash('x', '/code/acme2'), undefined, 'a name that only starts the same is free');
+assert.strictEqual(clash('a', '/code/acme'), undefined, 'a project never clashes with itself');
+const rootRepo = { id: 'r', name: 'Everything', repo: { path: '/' } };
+assert.strictEqual(repoClash([rootRepo], 'x', '/code/b')?.name, 'Everything', 'a repo at / holds every other');
+
+for (const url of [
+  'https://github.com/ann-lee/acme',
+  'https://github.com/ann-lee/acme.git',
+  'git@github.com:ann-lee/acme.git',
+  'ssh://git@github.com/ann-lee/acme.git',
+])
+  assert.deepStrictEqual(githubOf(url), { owner: 'ann-lee', name: 'acme' }, url);
+for (const url of ['https://gitlab.com/ann/acme', 'https://github.com/ann', 'https://evil.com/github.com/a/b'])
+  assert.strictEqual(githubOf(url), null, url);
+assert.strictEqual(repoNameFor('Checkout Flow!'), 'checkout-flow');
+assert.strictEqual(repoNameFor('✦✦'), 'prototypes', 'a name with nothing usable still gets one');
+
+const github = { owner: 'ann-lee', name: 'acme', account: 'ann-work' };
+assert.deepStrictEqual(readRepoLink({ path: '/code/acme', github }), { path: '/code/acme', github });
+assert.deepStrictEqual(
+  readRepoLink({ path: '/code/acme', github: { ...github, name: '../x y' } }),
+  { path: '/code/acme' },
+  'a GitHub copy with a bad part is dropped and the folder kept',
+);
+
+assert.deepStrictEqual(
+  splitCardsLine('I built it.\nCARDS: src/App.tsx=a1, b2; ./src/Field.tsx=c3; ../outside.txt=z9'),
+  { text: 'I built it.', sources: { 'src/App.tsx': ['a1', 'b2'], 'src/Field.tsx': ['c3'] } },
+  'the builder’s card line comes off its reply, and a path outside the folder is dropped',
+);
+assert.deepStrictEqual(splitCardsLine('I built it.\nCARDS: none'), { text: 'I built it.', sources: {} });
+assert.deepStrictEqual(splitCardsLine('No line at all.'), { text: 'No line at all.', sources: {} });
 
 console.log('MODEL OK');

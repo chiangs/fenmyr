@@ -76,15 +76,27 @@ export function snapshot() {
     ),
     myraStyle: { name: settings.name || '', chat: settings.chat, emoji: !!settings.emoji }, // the host turns these into words (TONES in linux/prompts.js)
     commands: SLASH.filter(c => !c.dev).map(c => ({ cmd: c.cmd, arg: c.arg, desc: c.desc, ex: c.ex, opts: c.opts })),
+    prototype:
+      session.board.kind === 'prototype'
+        ? { stack: session.board.proto.stack, purpose: session.board.proto.purpose, device: session.board.proto.device }
+        : undefined,
     person: birthdayFacts(), // the slash commands, so she knows every one (the host puts them in her instructions)
     library: {
-      projects: appState.projects.map(p => ({ name: p.name, folders: foldersIn(p.id).map(f => f.name) })),
+      projects: appState.projects.map(p => ({
+        name: p.name,
+        folders: foldersIn(p.id).map(f => f.name),
+        prototypingFolders: foldersIn(p.id)
+          .filter(f => f.kind === 'prototyping')
+          .map(f => f.name),
+        repo: p.repo ? { folder: p.repo.path, github: p.repo.github ?? null } : null,
+      })),
       foldersNotInAProject: looseFolders().map(f => f.name),
       boards: appState.boardList.map(b => ({
         id: b.id,
         name: b.name,
         folder: appState.folders.find(f => f.id === b.folder)?.name || null,
         current: b.id === session.board.id || undefined,
+        prototype: b.kind === 'prototype' || undefined,
       })),
     },
   };
@@ -336,6 +348,8 @@ export function init31() {
   };
 
   chatIn.oninput = () => {
+    // on a prototype board the person sets its height with the handle above it
+    if (document.body.classList.contains('proto')) return;
     const t = chatIn;
     t.style.height = 'auto';
     t.style.height = `${Math.min(120, t.scrollHeight)}px`;

@@ -16,9 +16,13 @@ import { buildTplPick, freeName, myTpls, saveAsTemplate, useTemplate } from '../
 import { startTimer, stopTimer, timer } from '../features/timer.ts';
 import { loadLib } from '../library/nesting.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
-import { byName, findFolder, makeFolder, makeProject, moveBoard, saveLib } from '../library/tree.ts';
+import { byName, findFolder, makeFolder, makeProject, moveBoard, putFolder, saveLib } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
+import { startBuild } from '../proto/build.ts';
+import { gitAction } from '../proto/gitActions.ts';
+import { askInstall } from '../proto/install.ts';
+import { applyNewPrototype, repoActs } from '../repo/myra.ts';
 import { FS } from '../selbar/textSize.ts';
 import { reply, snapTo } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
@@ -74,12 +78,12 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     });
     (fo?.file ?? []).forEach(o => {
       const f = findFolder(o.folder) || makeFolder(o.folder);
-      f.project = o.project ? makeProject(o.project).id : null;
+      putFolder(f.id, null, o.project ? makeProject(o.project).id : null);
     });
     for (const m of fo?.move ?? []) {
       if (!appState.boardList.some(b => b.id === m.board)) continue;
       const f = m.folder ? makeFolder(m.folder) : null;
-      if (f && m.project) f.project = makeProject(m.project).id;
+      if (f && m.project) putFolder(f.id, null, makeProject(m.project).id);
       await moveBoard(m.board, f ? f.id : null);
     }
     for (const x of [...appState.projects, ...appState.folders]) x.open = true;
@@ -369,6 +373,10 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       },
     });
   // what next: Myra's own ideas, or a sensible guess from what she just made
+  acts.push(...repoActs(r), ...(await applyNewPrototype(r)));
+  if (r.build?.request) startBuild(r.build.request);
+  if (r.git?.action) gitAction(r.git.action, r.git.message);
+  if (r.install?.packages?.length) askInstall(r.install.packages);
   const next = acts.length
     ? []
     : (r.next?.length ? r.next : guessNext(r, added))
