@@ -132,6 +132,45 @@ try {
     'a repo’s prototypes get boards when a project links to it',
   );
   await press('done');
+
+  // Templates → Prototype in a project with no repo: link it, then name the prototype, in one go
+  const lion = path.join(work, 'lion');
+  fs.mkdirSync(lion);
+  await l.app.evaluate(({ dialog }, dir) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] });
+  }, lion);
+  await page.evaluate(() => window.__fenmyr.openHome('project:p2'));
+  await page.evaluate(() => document.querySelector<HTMLElement>('#tplPick [data-prototype]')?.click());
+  await page.waitForSelector('.rl-body');
+  await press('pick');
+  await press('init');
+  await page.fill('#rlName', 'Lee');
+  await page.fill('#rlEmail', 'lee@example.com');
+  await press('identity');
+  await page.waitForFunction(() => /Online copy/.test(document.querySelector('.rl-body')?.textContent ?? ''));
+  await press('done');
+  await page.waitForSelector('#npName');
+  await page.fill('#npName', 'Sign in');
+  await page.click('#npOk');
+  await page.waitForFunction(() => window.__fenmyr.curBoard()?.name === 'Sign in');
+  assert.deepStrictEqual(
+    await page.evaluate(() => {
+      const b = window.__fenmyr.curBoard();
+      return [b?.kind, b?.cards.filter(c => c.type === 'note').length, b?.cards.some(c => c.type === 'stamp')];
+    }),
+    ['prototype', 3, true],
+    'Templates → Prototype links the repo, makes the folder, and opens a prototype with Myra’s notes',
+  );
+
+  await page.evaluate(() => window.__fenmyr.openHome('all'));
+  await page.evaluate(() => document.querySelector<HTMLElement>('#tplPick [data-prototype]')?.click());
+  await page.waitForSelector('.sp-list');
+  assert.deepStrictEqual(
+    await page.evaluate(() => [...document.querySelectorAll('.sp-list button')].map(b => b.textContent)),
+    ['Acme', 'Lioness', 'A new project'],
+    'started outside a project, it asks which one, or a new one',
+  );
+  await page.keyboard.press('Escape');
   assert.deepStrictEqual(l.errors, []);
   console.log('LINK OK');
 } finally {

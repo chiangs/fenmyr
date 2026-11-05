@@ -149,8 +149,9 @@ function screen(s: Step): string {
 }
 
 // The project menu's Repo… dialog: choose a folder, make it a repo if needed, name who commits, and link it.
-// Saving reloads the library, so the project is looked up by id each time rather than kept.
-export function linkRepo(first: Project) {
+// Saving reloads the library, so the project is looked up by id each time rather than kept. then: what comes next
+// once it's linked, such as naming a new prototype; Done goes on to it.
+export function linkRepo(first: Project, then?: () => unknown) {
   const live = () => appState.projects.find(x => x.id === first.id) ?? first;
   const title = esc(`Repo for “${first.name}”`);
   const d = showDialog(`<div class="tdlg rl" role="dialog"><h3>${title}</h3><div class="rl-body"></div></div>`);
@@ -243,8 +244,11 @@ export function linkRepo(first: Project) {
 
   const act = async (a: string) => {
     switch (a) {
-      case 'done':
-        return d.remove();
+      case 'done': {
+        d.remove();
+        if (live().repo) then?.();
+        return;
+      }
       case 'pick': {
         const dir = await Fenmyr.repoPick();
         return dir ? check(dir) : show(step);

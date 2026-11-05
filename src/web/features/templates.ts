@@ -22,6 +22,7 @@ import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { foldersIn } from '../library/tree.ts';
 import { newBoard, TEMPLATES } from '../model/boards.ts';
+import { startPrototypeHere } from '../repo/start.ts';
 import { say } from '../settings/licenses.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { esc } from '../ui/dom.ts';
@@ -190,15 +191,23 @@ export async function loadTemplates() {
   buildTplPick();
 }
 
+// not a set of cards but a prototype: it goes through startPrototype, and its board starts with Myra's notes
+const PROTOTYPE = 'prototype';
+
 // grouped by what you're doing; frameworks add to this board, starters open a new one (tagged "New ↗")
 const TPL_GROUPS: [heading: string, keys: string[]][] = [
   ['Think', ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix']],
   ['Capture', ['Moodboard', 'Brain dump']],
   ['Plan', ['OKRs and opportunities', 'Product kickoff', 'App plan', 'Workshop planning', 'kanban']],
   ['Look back', ['retro']],
+  ['Build', [PROTOTYPE]],
 ];
 
 const tplRow = (k: string) => {
+  if (k === PROTOTYPE) {
+    const icon = Icon('code');
+    return `<button data-prototype="1"><span class="tp-e">${icon}</span><span class="tp-t"><b>Prototype</b><small>A clickable prototype Myra codes from your wireframes and notes</small><em class="tp-k new">Opens a new prototype ↗</em></span></button>`;
+  }
   const F = FRAMEWORKS[k];
   if (F) {
     const icon = Icon(TPL_IC[k] ?? ''),
@@ -297,6 +306,10 @@ export function init42() {
   });
 
   $('tplPick').onclick = async e => {
+    if (closestTo(e.target, '[data-prototype]')) {
+      closeTplPick();
+      return startPrototypeHere();
+    }
     const st = closestTo(e.target, '[data-starter]');
     if (st) {
       closeTplPick();
