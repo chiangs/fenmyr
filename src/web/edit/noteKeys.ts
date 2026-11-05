@@ -46,11 +46,6 @@ const wired = new WeakSet<HTMLElement>();
 
 export const isFormat = (f: string | undefined): f is Format => !!f && Object.hasOwn(FORMATS, f);
 
-export function editedNoteBody() {
-  const t = document.activeElement;
-  return t instanceof HTMLElement && t.isContentEditable && t.matches('.card.note .text') ? t : null;
-}
-
 export function formatOn(f: Format) {
   const format = FORMATS[f];
   return format.kind !== 'clear' && document.queryCommandState(format.command);
