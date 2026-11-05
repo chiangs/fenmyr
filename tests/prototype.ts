@@ -158,20 +158,15 @@ try {
     .filter(b => b.folder === 'pl');
   assert.strictEqual(copies.length, 1, 'one copy lands in Lioness');
   const [copy] = copies;
-  assert.deepStrictEqual(copy.proto, { dir: 'prototypes/checkout-flow', stack: 'react' });
+  assert.deepStrictEqual(copy.proto, {
+    dir: 'prototypes/checkout-flow',
+    stack: 'react',
+    copied: { from: 'Acme', files: 6 },
+  });
   assert.ok(
     fs.existsSync(path.join(lionRepo, 'prototypes/checkout-flow/src/App.tsx')),
     'its code is copied into Lioness’s repo',
   );
-  assert.deepStrictEqual(
-    copy.chat.slice(-2).map((m: { who: string; text: string }) => [m.who, m.text.slice(0, 40)]),
-    [
-      ['myra', 'I copied “Checkout {flow}” from Acme int'],
-      ['myra', 'Committing saves it in Lioness’s history'],
-    ],
-    'Myra says where it came from, in git’s terms and then in plain words',
-  );
-  assert.match(copy.chat.at(-2).text, /lion\/prototypes\/checkout-flow\. 6 new files, not committed yet\./);
   const untracked = execFileSync('git', ['-C', lionRepo, 'status', '--porcelain']).toString();
   assert.match(untracked, /\?\? prototypes\//, 'nothing is committed for them');
 
@@ -274,6 +269,30 @@ try {
     await page.locator('button:visible', { hasText: 'Link “Personal” to a repo' }).count(),
     'an unlinked project gets the link button instead',
   );
+  execFileSync('git', ['-C', lionRepo, 'config', 'user.name', 'Lee']);
+  execFileSync('git', ['-C', lionRepo, 'config', 'user.email', 'lee@example.com']);
+  await page.evaluate(id => window.__fenmyr.openBoard(id), copy.id);
+  await page.waitForTimeout(800);
+  assert.match(
+    await said(),
+    /I copied “Checkout \{flow\}” from Acme into lion\/prototypes\/checkout-flow\. 6 new files, not committed yet\. Commit them to main\?[\s\S]*Committing saves it in Lioness’s history/,
+    'a copy opened for the first time: Myra says where it came from, in git’s terms and in plain words',
+  );
+  assert.deepStrictEqual(
+    await page.evaluate(
+      () => [...document.querySelectorAll('#mcList .mc-msg.myra')].at(-1)?.querySelectorAll('.m-acts button').length,
+    ),
+    3,
+    'with Commit, Show files and Not now',
+  );
+  await tap('Commit');
+  await page.waitForTimeout(800);
+  assert.match(
+    execFileSync('git', ['-C', lionRepo, 'log', '-1', '--format=%s']).toString(),
+    /Copy “Checkout \{flow\}” from Acme/,
+    'Commit commits the copied code',
+  );
+  assert.strictEqual(boardFile(copy.id).proto.copied, undefined, 'and she asks only once');
   assert.match(
     await page.evaluate(() =>
       [...document.querySelectorAll('[data-seg="chatKeep"]')]

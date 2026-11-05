@@ -9,7 +9,7 @@ import { applyBoxes } from '../ui/boxes.ts';
 import { watchCaptures } from './capture.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
-import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
+import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, type Foldable, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
 import { dragOverFrame, renderPreview } from './preview.ts';
 import { startSync } from './sync.ts';
@@ -226,6 +226,17 @@ function inputGrip() {
   grip.classList.add('mc-grip');
   $('mcForm').before(grip);
   inputHeight(Number(localStorage.getItem(INPUT_KEY)) || INPUT_H);
+}
+
+// a folded column opened by something other than its strip, such as Myra's Show files
+export function openColumn(p: Foldable) {
+  const l = layout();
+  if (!l.closed.includes(p)) return;
+  l.closed = l.closed.filter(x => x !== p);
+  remember();
+  animate = true;
+  place();
+  animate = false;
 }
 
 export function showProto(b: Board) {
