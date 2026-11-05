@@ -1,13 +1,21 @@
 import type { Card } from '../../shared/model.ts';
+import { applyView } from '../canvas/view.ts';
+import { clamp } from '../core/base.ts';
+import { stage } from '../core/dom.ts';
+import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
 
 // A new prototype board's first cards: three notes from Myra on how to start, and her, bouncing on the first one.
 // Ordinary cards, so people move, edit or delete them like any other.
-const W = 440,
-  H = 470,
-  GAP = 60,
+// one column, since a prototype board's canvas column is narrow; each note's height fits its words at this width
+const W = 400,
+  HEIGHTS = [500, 480, 330],
+  GAP = 40,
   // right of the widget column, which covers the left of a prototype board's narrow column
-  LEFT = 300;
+  LEFT = 300,
+  // Myra stands above the first note
+  STAMP_TOP = -62;
 
 const WHAT_WE_BUILD = `This is where ideas stop being pictures and start being things you can click. I write the code, it lives in a folder of your project’s repo, and nothing is locked inside Fenmyr.
 
@@ -40,21 +48,45 @@ As I build, I’ll ask which things you’d like to adjust yourself: colours, si
 
 I only write inside this prototype’s folder, and I’ll show you which files I touched. Nothing gets committed, pushed or sent anywhere until you press the button ✦`;
 
+const topOf = (i: number) => HEIGHTS.slice(0, i).reduce((y, h) => y + h + GAP, 0);
+
 export function prototypeWelcome(): Card[] {
   const note = (i: number, name: string, text: string, color: string, r: number, tagText = '') =>
-    card('note', { x: LEFT + i * (W + GAP), y: 0, w: W, h: H, r, name, text, color, ...(tagText ? { tagText } : {}) });
+    card('note', {
+      x: LEFT,
+      y: topOf(i),
+      w: W,
+      h: HEIGHTS[i] ?? 400,
+      r,
+      name,
+      text,
+      color,
+      ...(tagText ? { tagText } : {}),
+    });
   return [
     note(0, 'A new prototype? Exciting!', WHAT_WE_BUILD, 'butter', -1, 'Welcome!'),
     note(1, 'The more I know, the less I guess', WHAT_I_NEED, 'sky', 0.5),
     note(2, 'Start small, then steer', HOW_WE_WORK, 'mint', 1),
-    card('stamp', { x: LEFT - 34, y: -62, w: 56, h: 56, src: 'stamps/myra-bounce.gif', r: -4 }),
+    card('stamp', { x: LEFT - 34, y: STAMP_TOP, w: 56, h: 56, src: 'stamps/myra-bounce.gif', r: -4 }),
   ];
 }
 
-// cards brought to a new prototype, moved as one under Myra's notes
-export function belowWelcome(cards: Card[]) {
+// cards brought to a new prototype, moved as one beside Myra's notes
+export function besideWelcome(cards: Card[]) {
   if (!cards.length) return [];
-  const dx = LEFT - Math.min(...cards.map(c => c.x)),
-    dy = H + GAP * 2 - Math.min(...cards.map(c => c.y));
+  const dx = LEFT + W + GAP * 2 - Math.min(...cards.map(c => c.x)),
+    dy = -Math.min(...cards.map(c => c.y));
   return cards.map(c => ({ ...c, x: c.x + dx, y: c.y + dy }));
+}
+
+// A new prototype opens with the notes in view: their column starts just right of the widgets, zoomed to fit the
+// width that's free, but never so small the words can't be read.
+export function showWelcome() {
+  const r = stage.getBoundingClientRect(),
+    side = document.getElementById('side')?.getBoundingClientRect(),
+    left = (side?.width ? Math.max(r.left, side.right) : r.left) + 24,
+    z = clamp((r.right - 24 - left) / W, 0.6, 1);
+  session.view = { x: left - r.left - LEFT * z, y: 110 - STAMP_TOP * z, z };
+  applyView();
+  save();
 }
