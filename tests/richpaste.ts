@@ -112,6 +112,7 @@ const markdown: [string, string | null, string][] = [
   ['1. a\n2) b', '1. a\n2. b', 'numbered with a dot or a bracket'],
   ['- a\n    - b\n\t- c\n  - d', '- a\n  - b\n  - c\n  - d', 'nesting by tabs or by two to four spaces'],
   ['**b** __b__ *i* _i_ ~~s~~ <u>u</u>', '**b** **b** *i* *i* ~~s~~ <u>u</u>', 'every emphasis Markdown has'],
+  ['**b**<u>u</u> and <u>u</u>*i*', '**b**<u>u</u> and <u>u</u>*i*', 'emphasis right up against underline'],
   ['# Heading\ntext', '**Heading**\ntext', 'a heading is a bold line'],
   ['## Learn C#\n## Closed ##', '**Learn C#**\n**Closed**', 'closing hashes need a space before them'],
   ['- [ ] task\n- [x] done', '- ☐ task\n- ☑ done', 'task boxes'],
@@ -140,6 +141,11 @@ const markdown: [string, string | null, string][] = [
   ['cp *.txt backup/*.bak', null, 'nor is a shell pattern'],
 ];
 for (const [input, expected, why] of markdown) assert.strictEqual(markdownToSubset(input), expected, why);
+assert.strictEqual(
+  markdownToSubset('- a\nafter\n\n- b', 'strict'),
+  '- a\nafter\n\n- b',
+  'text written in the dialect ends a list at an unindented line or a blank one',
+);
 
 const pdf: [string, string, string][] = [
   ['• one\n• two\n◦ sub', '- one\n- two\n- sub', 'PDF bullets'],

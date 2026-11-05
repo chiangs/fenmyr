@@ -2,6 +2,7 @@ import type { CardOf } from '../../shared/model.ts';
 import { serialise } from '../richtext/dialect.ts';
 import { type Doc, hasFormatting, textDoc, wordsOf } from '../richtext/doc.ts';
 import { docFromDom } from '../richtext/fromDom.ts';
+import { docFromMarkdown } from '../richtext/fromMarkdown.ts';
 import { fromClipboard } from '../richtext/paste.ts';
 import { renderForEditing } from '../richtext/render.ts';
 import { say } from '../settings/licenses.ts';
@@ -24,6 +25,14 @@ export function keepEditedText(c: Note, t: HTMLElement) {
   const doc = docFromDom(t, 'editor'),
     rich = !!c.rich || hasFormatting(doc);
   setNoteText(c, rich ? serialise(doc) : wordsIn(doc), rich);
+}
+
+// Myra answers in Markdown, where a star with no word against it is just a star, so her words go through the importer.
+// A note she gives no formatting keeps the kind it was.
+export function keepMyraText(c: Note, words: string) {
+  const doc = docFromMarkdown(words, 'strict');
+  if (doc && hasFormatting(doc)) setNoteText(c, serialise(doc), true);
+  else setNoteText(c, c.rich ? serialise(textDoc(words)) : words, !!c.rich);
 }
 
 function readPaste(clip: DataTransfer, asPlain: boolean): Paste {

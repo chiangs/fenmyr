@@ -13,15 +13,15 @@ import { FS, FS_BASE, fitNote, fsPx, lhOf, lsOf, setFsPx, setSpacing, sizedCards
 
 type Style = 'bold' | 'italic' | 'under' | 'strike';
 const STYLES: [Style, string, string][] = [
-  ['bold', '<b>B</b>', 'Bold'],
-  ['italic', '<i>I</i>', 'Italic'],
-  ['under', '<u>U</u>', 'Underline'],
+  ['bold', '<b>B</b>', 'Bold · ⌘B'],
+  ['italic', '<i>I</i>', 'Italic · ⌘I'],
+  ['under', '<u>U</u>', 'Underline · ⌘U'],
   ['strike', '<s>S</s>', 'Strikethrough'],
 ];
 const TYPING_FORMATS = [
-  ['bullets', 'bullets', 'Bulleted list'],
-  ['numbered', 'numbered', 'Numbered list'],
-  ['clear', 'clear-format', 'Clear formatting'],
+  ['bullets', 'bullets', 'Bulleted list · ⇧⌘8'],
+  ['numbered', 'numbered', 'Numbered list · ⇧⌘7'],
+  ['clear', 'clear-format', 'Clear formatting · ⌘\\'],
 ] as const;
 const ALIGNS = [
   ['left', 'Align left'],

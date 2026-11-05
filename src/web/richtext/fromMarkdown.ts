@@ -118,8 +118,9 @@ function delimsOf(cells: readonly Cell[]): Delim[] {
     }
     let len = 1;
     while (cells[i + len]?.c === cell.c && !cells[i + len]?.literal) len++;
-    const before = cells[i - 1]?.c ?? '',
-      after = cells[i + len]?.c ?? '',
+    // a <u> or </u> next to a delimiter counts as its angle bracket, as raw HTML does in CommonMark
+    const before = (cells[i - 1]?.c ?? '').replace(/^<\/?u>$/, '>'),
+      after = (cells[i + len]?.c ?? '').replace(/^<\/?u>$/, '<'),
       leftFlank = !space(after) && (!punct(after) || space(before) || punct(before)),
       rightFlank = !space(before) && (!punct(before) || space(after) || punct(after)),
       shellGlob = cell.c === '*' && after === '.',
@@ -183,7 +184,11 @@ function headingText(s: string) {
   return closed ? t.slice(0, end).trimEnd() : t;
 }
 
-export function docFromMarkdown(plain: string): Doc | null {
+// Pasted Markdown and PDF text carry a list on past a blank line or an unindented row. Text written in the dialect, as
+// Myra's is, ends a list at either.
+type Lists = 'loose' | 'strict';
+
+export function docFromMarkdown(plain: string, lists: Lists = 'loose'): Doc | null {
   const lines: Line[] = [];
   let found = false,
     fenced = false,
@@ -214,7 +219,7 @@ export function docFromMarkdown(plain: string): Doc | null {
     let line = raw.trimEnd();
     while (QUOTE.test(line)) line = line.replace(QUOTE, '');
     if (!line.trim()) {
-      if (inList()) blanksInList++;
+      if (inList() && lists === 'loose') blanksInList++;
       else lines.push({ kind: 'text', runs: [] });
       continue;
     }
@@ -247,7 +252,7 @@ export function docFromMarkdown(plain: string): Doc | null {
     } else if (breakLine) {
       endList();
       lines.push({ kind: 'text', runs: [{ text: line, marks: 0 }] });
-    } else if (inList() && (!blanksInList || INDENTED.test(line))) {
+    } else if (inList() && ((!blanksInList && lists === 'loose') || INDENTED.test(line))) {
       // with no blank line before it, an unindented line still belongs to the item: a wrapped line in a PDF list
       blanksInList = 0;
       lines.push({ kind: 'continuation', runs: inline(line.trim()) });
@@ -259,7 +264,7 @@ export function docFromMarkdown(plain: string): Doc | null {
   return found ? normalise(collapseBlankLines(lines)) : null;
 }
 
-export function markdownToSubset(plain: string) {
-  const doc = docFromMarkdown(plain);
+export function markdownToSubset(plain: string, lists?: Lists) {
+  const doc = docFromMarkdown(plain, lists);
   return doc && serialise(doc);
 }
