@@ -167,10 +167,11 @@ While you type in a note, you can format single words and make lists. The format
 | **Tab · Shift+Tab** | Nest an item one level deeper, three at most · bring it back |
 | **Ctrl+Shift+V** | Paste as plain text |
 | **Ctrl+K** | Link the selected words, or add a link where you type. Inside a link, change its address or remove it |
+| **F10** | Move to the bar's formatting buttons. Tab moves between them, Enter or Space presses one, and Esc goes back to the note |
 | `**word**` · `*word*` · `~~word~~` | Bold, italic or strikethrough, as you type the last mark |
 | `[words](https://…)` | A link, as you type the last bracket |
 
-Pasting keeps the lists, bold, italic, underline, strikethrough and links from web pages, Obsidian, Markdown files and PDFs. Click a link in a note to open it in your browser. The bar's B, I, U and S buttons format the selected words while you type, and the whole card when it is only selected. When you copy note cards, other apps get their formatting too. Myra can write and edit formatted notes.
+Pasting keeps the lists, bold, italic, underline, strikethrough and links from web pages, Obsidian, Markdown files and PDFs. Click a link in a note, or press Enter on it, to open it in your browser. The bar's B, I, U and S buttons format the selected words while you type, and the whole card when it is only selected. When you copy note cards, other apps get their formatting too. Myra can write and edit formatted notes.
 
 ## The window
 
