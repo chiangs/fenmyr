@@ -39,13 +39,37 @@ export function addRun(runs: Run[], text: string, marks: number) {
 
 export const wordsOf = (runs: readonly Run[]) => runs.map(r => r.text).join('');
 
+// Markdown reads ** * ~~ only against a word, so bold, italic and strike never start or end on a space. Underline is
+// a tag, so it may.
+function marksOffEdgeSpaces(runs: readonly Run[]): Run[] {
+  const chars = runs.flatMap(r => Array.from(r.text)),
+    marks = runs.flatMap(r => Array.from(r.text, () => r.marks)),
+    space = (i: number) => /\s/.test(chars[i] ?? '');
+  for (const bit of [BOLD, ITALIC, STRIKE])
+    for (let from = 0; from < marks.length; ) {
+      if (!((marks[from] ?? 0) & bit)) {
+        from++;
+        continue;
+      }
+      let to = from;
+      while (to < marks.length && (marks[to] ?? 0) & bit) to++;
+      for (let i = from; i < to && space(i); i++) marks[i] = (marks[i] ?? 0) & ~bit;
+      for (let i = to - 1; i >= from && space(i); i--) marks[i] = (marks[i] ?? 0) & ~bit;
+      from = to;
+    }
+  const out: Run[] = [];
+  chars.forEach((c, i) => {
+    addRun(out, c, marks[i] ?? 0);
+  });
+  return out;
+}
+
 export function normalise(lines: readonly Line[]): Line[] {
   const out: Line[] = [];
   let depth = 0;
   const lastNumber: (number | undefined)[] = [];
   for (const line of lines) {
-    const runs: Run[] = [];
-    for (const r of line.runs) addRun(runs, r.text, r.marks);
+    const runs = marksOffEdgeSpaces(line.runs);
     if (line.kind === 'item') {
       const d = depthOf(Math.min(line.depth, depth + 1));
       lastNumber.length = d + 1;

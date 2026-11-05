@@ -55,6 +55,13 @@ const reads: [string, Doc, string][] = [
   ],
   ['- item\nnot part of it', [bullet(1, run('item')), text(run('not part of it'))], 'an unindented row ends the list'],
   ['', [], 'an empty body is no lines'],
+  [
+    '**Friday **at *noon*~~ x~~',
+    [text(run('Friday', BOLD), run(' at '), run('noon', ITALIC), run(' '), run('x', STRIKE))],
+    'bold, italic and strike never start or end on a space, so Markdown readers see them',
+  ],
+  ['**a b**', [text(run('a b', BOLD))], 'spaces inside a styled span keep its style'],
+  ['<u>a </u>b', [text(run('a ', UNDER), run('b'))], 'underline is a tag, so it may end on a space'],
 ];
 for (const [input, doc, why] of reads) assert.deepStrictEqual(parse(input), doc, why);
 
