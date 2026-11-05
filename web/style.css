@@ -2874,3 +2874,7 @@ body.proto .mc-head .mc-ic { display: none; }
 body.proto .mc-grip { display: block; align-self: stretch; margin: 2px 10px; }
 body.proto #mcInput { height: var(--input-h, 140px) !important; max-height: none; overflow-y: auto; resize: none; }
 body.proto .mc-form { align-items: flex-end; }
+/* which project a new prototype is for, when started outside one */
+.sp-list { display: grid; gap: 6px; }
+.sp-list .set-btn { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; }
+.sp-list .set-btn small { font-weight: 500; color: var(--ink-soft); }

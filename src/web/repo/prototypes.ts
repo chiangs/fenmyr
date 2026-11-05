@@ -72,7 +72,7 @@ export async function adoptPrototypes(p: Project) {
 export const addBoardTo = (f: Folder) => (f.kind === 'prototyping' ? newPrototypeIn(f) : newBoardIn(f.id));
 
 // Name and stack, then createPrototype.
-function newPrototypeIn(f: Folder) {
+export function newPrototypeIn(f: Folder) {
   const p = projectOf(f);
   if (!p?.repo) {
     if (p) linkRepo(p);
