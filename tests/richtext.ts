@@ -4,6 +4,7 @@ import { canonical, parse, serialise } from '../src/web/richtext/dialect.ts';
 import { BOLD, type Doc, ITALIC, type Line, normalise, type Run, STRIKE, UNDER } from '../src/web/richtext/doc.ts';
 import { domToSubset } from '../src/web/richtext/fromDom.ts';
 import { plainOf, render } from '../src/web/richtext/render.ts';
+import { typedFormat } from '../src/web/richtext/typed.ts';
 
 const body = (html: string) =>
   new DOMParser().parseFromString(`<!doctype html><html><body>${html}</body></html>`, 'text/html').body;
@@ -159,6 +160,28 @@ assert.strictEqual(
   'read the guide (https://x.org/g) at x.org or mail (mailto:a@x.org)',
   'plain words keep a link’s address, once when the label is the address',
 );
+
+const typing: [string, string, ReturnType<typeof typedFormat>, string][] = [
+  ['a **word**', '', { length: 8, label: [2, 6], marks: BOLD }, 'typed bold'],
+  ['*word*', ' ', { length: 6, label: [1, 5], marks: ITALIC }, 'typed italic, with a space after it'],
+  ['~~a b~~', '', { length: 7, label: [2, 5], marks: STRIKE }, 'typed strike'],
+  ['***both*** x **c**', '', { length: 5, label: [2, 3], marks: BOLD }, 'only the span the last star closes'],
+  ['**word*', '', null, 'one star of two waits for the second'],
+  ['5 * 3 *', '', null, 'arithmetic stays as typed'],
+  ['2*3*', '', null, 'even with no spaces'],
+  ['a ** b **', '', null, 'stars against spaces stay'],
+  ['*word*', 's', null, 'a word straight after stops it'],
+  ['~word~', '', null, 'strike takes two tildes'],
+  [
+    'see [the *guide*](https://x.org/a_(b))',
+    '',
+    { length: 34, label: [1, 12], marks: 0, href: 'https://x.org/a_(b)' },
+    'a typed link, its address with brackets in it',
+  ],
+  ['[x](javascript:alert(1))', '', null, 'a typed link to a script stays words'],
+  ['[x](x.org) and [ ](https://x.org)', '', null, 'as does one with no scheme or no label'],
+];
+for (const [typed, after, want, why] of typing) assert.deepStrictEqual(typedFormat(typed, after), want, why);
 
 const started = performance.now();
 render(parse('line\n'.repeat(25_000)));

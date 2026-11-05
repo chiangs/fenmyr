@@ -88,6 +88,8 @@ body.dark .card.sel::after { box-shadow: 0 0 0 3px rgba(25, 21, 16, .85), inset 
 .card.editing .text { user-select: text; -webkit-user-select: text; cursor: text; }
 /* a link in a note has the colour of a link in a Doc */
 .card.note .text a { color: #b8621a; text-decoration-line: underline; text-decoration-color: rgba(220, 163, 106, .6); text-underline-offset: 3px; -webkit-user-drag: none; }
+.card.note:not(.editing) .text a { cursor: pointer; }
+.note-link { position: fixed; z-index: 60; }
 /* title: big type, no frame */
 .card.title .frame { display: none; }
 .card.title .body { padding: 0; overflow: visible; }

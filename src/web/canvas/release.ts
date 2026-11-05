@@ -20,6 +20,8 @@ import { overTray } from './pointerKit.ts';
 import { renderCard } from './render.ts';
 import { byId, pinAt, renderTray, renderWires, selectOnly, sendToTray } from './wires.ts';
 
+const DOUBLE_TAP_MS = 420;
+
 // letting go: the drag lands (snaps, files into a column or a screen, goes to Unsorted) and is saved
 export function onRelease(e: PointerEvent) {
   if (penT) {
@@ -126,7 +128,8 @@ export function onRelease(e: PointerEvent) {
         return;
       } // list items edit with one click
       const pid = under?.closest<HTMLElement>('.card')?.dataset.id || id;
-      if (appState.lastTap.id === pid && now - (appState.lastTap.t ?? 0) < 420) {
+      if (appState.lastTap.id === pid && now - (appState.lastTap.t ?? 0) < DOUBLE_TAP_MS) {
+        clearTimeout(appState.lastTap.opening);
         appState.lastTap = {};
         if (session.sel.size > 1 && byId(pid)?.group && session.sel.has(pid)) {
           selectOnly([pid]);
@@ -134,7 +137,12 @@ export function onRelease(e: PointerEvent) {
           return;
         } // into the group: just this piece
         startEdit(pid, under);
-      } else appState.lastTap = { id: pid, t: now };
+      } else {
+        // a link opens once the tap can't be the first of a double-click, which edits the note
+        const link = d.link,
+          opening = link ? setTimeout(() => Fenmyr.openURL(link), DOUBLE_TAP_MS) : undefined;
+        appState.lastTap = { id: pid, t: now, opening };
+      }
     }
   }
   if (d.mode === 'resize') save();

@@ -111,7 +111,15 @@ function cellsOf(s: string): { cells: Cell[]; found: boolean } {
   return { cells, found };
 }
 
-// Flanking as defined in https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run
+// Flanking as defined in https://spec.commonmark.org/0.31.2/#left-flanking-delimiter-run, except that an opener never
+// has a word on its left and a closer never has one on its right, so snake_case and 2*3*4 stay as written.
+export function delimiterRun(c: string, before: string, after: string) {
+  const leftFlank = !space(after) && (!punct(after) || space(before) || punct(before)),
+    rightFlank = !space(before) && (!punct(before) || space(after) || punct(after)),
+    shellGlob = c === '*' && after === '.';
+  return { open: leftFlank && !word(before) && !shellGlob, close: rightFlank && !word(after) };
+}
+
 function delimsOf(cells: readonly Cell[]): Delim[] {
   const out: Delim[] = [];
   for (let i = 0; i < cells.length; ) {
@@ -125,11 +133,7 @@ function delimsOf(cells: readonly Cell[]): Delim[] {
     // a <u> or </u> next to a delimiter counts as its angle bracket, as raw HTML does in CommonMark
     const before = (cells[i - 1]?.c ?? '').replace(/^<\/?u>$/, '>'),
       after = (cells[i + len]?.c ?? '').replace(/^<\/?u>$/, '<'),
-      leftFlank = !space(after) && (!punct(after) || space(before) || punct(before)),
-      rightFlank = !space(before) && (!punct(before) || space(after) || punct(after)),
-      shellGlob = cell.c === '*' && after === '.',
-      open = leftFlank && !word(before) && !shellGlob,
-      close = rightFlank && !word(after);
+      { open, close } = delimiterRun(cell.c, before, after);
     if ((open || close) && (cell.c !== '~' || len === 2)) out.push({ at: i, len, c: cell.c, open, close, left: len });
     i += len;
   }

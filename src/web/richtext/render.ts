@@ -39,7 +39,7 @@ function byLink(runs: readonly Run[]) {
   return groups;
 }
 
-const runsHtml = (runs: readonly Run[]) =>
+export const runsHtml = (runs: readonly Run[]) =>
   byLink(runs)
     .map(g => linkHtml(g.href, g.runs.map(runHtml).join('')))
     .join('');

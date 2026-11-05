@@ -1,7 +1,9 @@
 // Changes go through execCommand because Chromium's undo history skips direct DOM edits.
-import type { Line, ListKind } from '../richtext/doc.ts';
+import { BOLD, ITALIC, type Line, type ListKind, STRIKE } from '../richtext/doc.ts';
 import { docFromDom } from '../richtext/fromDom.ts';
-import { renderForEditing } from '../richtext/render.ts';
+import { renderForEditing, runsHtml } from '../richtext/render.ts';
+import { typedFormat } from '../richtext/typed.ts';
+import { openLinkPop } from './noteLinks.ts';
 
 const FORMATS = {
   bold: { kind: 'mark', command: 'bold' },
@@ -33,6 +35,11 @@ const STARTERS = new Map<string, ListKind>([
   ['•', 'bullet'],
   ['1.', 'number'],
 ]);
+const TYPED_MARKS = [
+  [BOLD, 'bold'],
+  [ITALIC, 'italic'],
+  [STRIKE, 'strike'],
+] as const;
 const MAX_DEPTH = 3;
 const graphemes = new Intl.Segmenter();
 const wired = new WeakSet<HTMLElement>();
@@ -85,15 +92,46 @@ function atStartOf(li: Element) {
   return r.toString() === '';
 }
 
-// Chromium's paragraphs are the dialect's lines, a row broken with Shift+Enter included.
-export function lineBeforeCaret(s: Selection) {
+// Moving the selection drops the style Chromium keeps for the next characters, such as Ctrl+B with no words selected,
+// so a look around the caret puts it back.
+function lookAround(s: Selection, look: () => string) {
   const node = s.focusNode,
     offset = s.focusOffset;
   if (!node || !s.isCollapsed) return '';
-  s.modify('extend', 'backward', 'paragraphboundary');
-  const typed = s.toString();
+  const styled = MARKS.map(m => document.queryCommandState(m.command)),
+    seen = look();
   s.collapse(node, offset);
-  return typed;
+  MARKS.forEach((m, i) => {
+    if (document.queryCommandState(m.command) !== styled[i]) document.execCommand(m.command);
+  });
+  return seen;
+}
+
+// Chromium's paragraphs are the dialect's lines, a row broken with Shift+Enter included.
+export const lineBeforeCaret = (s: Selection) =>
+  lookAround(s, () => {
+    s.modify('extend', 'backward', 'paragraphboundary');
+    return s.toString();
+  });
+
+const charAfterCaret = (s: Selection) =>
+  lookAround(s, () => {
+    s.modify('extend', 'forward', 'character');
+    return s.toString();
+  });
+
+function pointBefore(t: HTMLElement, node: Text, offset: number, back: number) {
+  const walk = document.createTreeWalker(t, NodeFilter.SHOW_TEXT);
+  walk.currentNode = node;
+  let at: Node | null = node,
+    length = offset,
+    left = back;
+  while (at && left > length) {
+    left -= length;
+    at = walk.previousNode();
+    length = at?.textContent?.length ?? 0;
+  }
+  return at && { node: at, offset: length - left };
 }
 
 type Caret = { readonly node: Node | null; readonly offset: number; readonly html: string };
@@ -155,6 +193,30 @@ export function runFormat(t: HTMLElement, f: Format) {
   }
 }
 
+// The last * ~ or ) of **word**, ~~word~~ or [label](address) formats what was typed, in one insertHTML so a single
+// Ctrl+Z gives the characters back. The words typed next carry on unformatted.
+function formatTyped(t: HTMLElement, s: Selection) {
+  const node = s.focusNode,
+    offset = s.focusOffset;
+  if (!(node instanceof Text) || !s.isCollapsed) return;
+  const f = typedFormat(lineBeforeCaret(s), charAfterCaret(s)),
+    start = f && pointBefore(t, node, offset, f.length),
+    from = f && pointBefore(t, node, offset, f.length - f.label[0]),
+    to = f && pointBefore(t, node, offset, f.length - f.label[1]);
+  if (!f || !start || !from || !to) return;
+  const label = document.createRange();
+  label.setStart(from.node, from.offset);
+  label.setEnd(to.node, to.offset);
+  const runs = (docFromDom(label.cloneContents(), 'editor')[0]?.runs ?? []).map(r =>
+      f.href ? { ...r, marks: r.marks | f.marks, href: f.href } : { ...r, marks: r.marks | f.marks },
+    ),
+    before = caretIn(t, s);
+  s.setBaseAndExtent(start.node, start.offset, node, offset);
+  document.execCommand('insertHTML', false, runsHtml(runs));
+  recordStep(t, before, s);
+  for (const [bit, format] of TYPED_MARKS) if (f.marks & bit && formatOn(format)) runFormat(t, format);
+}
+
 function startList(t: HTMLElement, s: Selection, list: ListKind) {
   // typed first, so Ctrl+Z after the list gives back the characters that made it
   document.execCommand('insertText', false, ' ');
@@ -184,6 +246,12 @@ export function wireNoteKeys(t: HTMLElement) {
       const just = listJustTyped;
       listJustTyped = null;
       if (!t.isContentEditable || e.isComposing) return;
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        e.stopPropagation();
+        openLinkPop(t);
+        return;
+      }
       const format = shortcutOf(e);
       if (format) {
         e.preventDefault();
@@ -215,7 +283,10 @@ export function wireNoteKeys(t: HTMLElement) {
     listJustTyped = itemAtCaret(t);
   });
   t.addEventListener('input', e => {
-    if (e instanceof InputEvent) keepCaretThroughUndo(t, e);
+    if (!(e instanceof InputEvent)) return;
+    keepCaretThroughUndo(t, e);
+    const s = getSelection();
+    if (e.inputType === 'insertText' && !e.isComposing && /^[*~)]$/.test(e.data ?? '') && s) formatTyped(t, s);
   });
   t.addEventListener('mousedown', () => {
     listJustTyped = null;
