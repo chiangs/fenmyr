@@ -166,6 +166,7 @@ export const LATE_PHASES: Phase[] = [
         name: 'Suggested exit questions',
         col: 3,
         text: '1. Did we achieve the purpose? (1–5)\n2. What was most valuable?\n3. What should change?\n4. Are you clear on your next action?',
+        rich: true,
       },
       {
         k: 'todo',
