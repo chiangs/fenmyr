@@ -47,8 +47,23 @@ const html: [string, string, string][] = [
     '- a\n  - b\n    1. c\n    - d',
     'lists deeper than three levels flatten to the third',
   ],
-  ['<p>one</p><p>two</p><div>three<br>four</div>', 'one\ntwo\nthree\nfour', 'paragraphs and breaks are lines'],
-  ['<h2>Title</h2><p>body</p>', '**Title**\nbody', 'a heading is a bold line'],
+  [
+    '<p>one</p><p>two</p><div>three<br>four</div>',
+    'one\n\ntwo\n\nthree\nfour',
+    'a gap after a paragraph is a blank line; divs and breaks are just lines',
+  ],
+  [
+    '<p style="margin: 0px 0px 28px">a</p><h2 style="margin-top:0;margin-bottom:0">b</h2>',
+    'a\n\n**b**',
+    "a page's own margins decide the gap",
+  ],
+  [
+    '<p style="margin-top:0pt;margin-bottom:0pt">a</p><p style="margin-top:0pt;margin-bottom:0pt">b</p>',
+    'a\nb',
+    'lines drawn with no gap stay line by line, as Google Docs draws them',
+  ],
+  ['<ul><li><p>a</p></li><li><p>b</p></li></ul><p>c</p>', '- a\n- b\n\nc', 'no blank lines inside a list'],
+  ['<h2>Title</h2><p>body</p>', '**Title**\n\nbody', 'a heading is a bold line'],
   ['<h3><span style="font-weight:400">Docs title</span></h3>', '**Docs title**', 'even when its spans are light'],
   [
     '<a href="https://example.com/">https://example.com/</a> <a href="mailto:me@x.org">write</a> <a href="javascript:alert(1)">click</a>',
@@ -140,7 +155,7 @@ for (const [input, expected, why] of pdf) assert.strictEqual(markdownToSubset(in
 assert.strictEqual(pasted('<p>a <b>bold</b> word</p>', 'a bold word'), 'a **bold** word', 'HTML with formatting wins');
 assert.strictEqual(
   pasted('<h2>1. Introduction</h2><p>This is <b>important</b>.</p>', '1. Introduction\n\nThis is important.'),
-  '**1. Introduction**\nThis is **important**.',
+  '**1. Introduction**\n\nThis is **important**.',
   'even when its words read as Markdown',
 );
 assert.strictEqual(pasted('<p>- a</p><p>- b</p>', '- a\n- b'), '- a\n- b', 'HTML with nothing more yields to Markdown');

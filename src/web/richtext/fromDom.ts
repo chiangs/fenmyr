@@ -110,6 +110,31 @@ const decorationOf = (name: string, style: ReadonlyMap<string, string>) =>
 
 const startOf = (attr: string | null | undefined) => (attr && /^\s*\d{1,9}\s*$/.test(attr) ? Number(attr) : 1);
 
+// Blocks a browser spaces out when the page sets no margin of its own.
+const SPACED_BY_DEFAULT = new Set('P H1 H2 H3 H4 H5 H6 UL OL BLOCKQUOTE PRE FIGURE DL HR'.split(' '));
+const positive = (length: string | undefined) => (Number.parseFloat(length ?? '') || 0) > 0;
+
+// Whether the source drew a gap above and below a block, from its own margins or a browser's defaults.
+function gapsOf(name: string, style: ReadonlyMap<string, string>) {
+  let above = SPACED_BY_DEFAULT.has(name),
+    below = above;
+  const margin = style.get('margin')?.split(/\s+/),
+    block = style.get('margin-block')?.split(/\s+/);
+  if (margin) {
+    above = positive(margin[0]);
+    below = positive(margin[2] ?? margin[0]);
+  }
+  if (block) {
+    above = positive(block[0]);
+    below = positive(block[1] ?? block[0]);
+  }
+  const top = style.get('margin-top') ?? style.get('margin-block-start'),
+    bottom = style.get('margin-bottom') ?? style.get('margin-block-end');
+  if (top !== undefined) above = positive(top);
+  if (bottom !== undefined) below = positive(bottom);
+  return { above, below };
+}
+
 export function docFromDom(root: WalkNode, source: Source): Doc {
   const lines: Line[] = [];
   const fresh = (item: boolean): Open => ({
@@ -131,9 +156,17 @@ export function docFromDom(root: WalkNode, source: Source): Doc {
     if (cur.runs.length) lineBreak(ctx);
     else if (!cur.keepEmpty) cur = fresh(ctx.item);
   };
+  // A gap between two blocks of a pasted page becomes one blank line, but never inside a list or a table.
+  let gap = false;
+  const gapAt = (ctx: Ctx, drawn: boolean) => {
+    if (drawn && source === 'paste' && !ctx.depth && !ctx.cell) gap = true;
+  };
   const add = (s: string, ctx: Ctx) => {
     const last = cur.runs.at(-1)?.text ?? '';
     const t = !ctx.pre && (!last || last.endsWith(' ')) ? s.replace(/^ /, '') : s;
+    if (!t) return;
+    if (gap && !cur.runs.length && lines.length) lines.push({ kind: 'text', runs: [] });
+    gap = false;
     addRun(cur.runs, t, ctx.heading ? ctx.marks | BOLD : ctx.marks);
   };
   const text = (s: string, ctx: Ctx) => {
@@ -157,7 +190,8 @@ export function docFromDom(root: WalkNode, source: Source): Doc {
     if (node.nodeType !== 1) return;
     const name = node.nodeName.toUpperCase(),
       style = styleOf(node),
-      role = ROLES.get(name) ?? 'inline';
+      role = ROLES.get(name) ?? 'inline',
+      gaps = gapsOf(name, style);
     if (style.get('display') === 'none') return;
     const inner: Ctx = {
       ...ctx,
@@ -178,11 +212,14 @@ export function docFromDom(root: WalkNode, source: Source): Doc {
       case 'block':
         if (ctx.cell) add(' ', ctx);
         else breakIfWords(ctx);
+        gapAt(ctx, gaps.above);
         kids(node, inner);
         if (!ctx.cell) breakIfWords(ctx);
+        gapAt(ctx, gaps.below);
         break;
       case 'list':
         breakIfWords(ctx);
+        gapAt(ctx, gaps.above);
         kids(node, {
           ...inner,
           list: name === 'OL' ? 'number' : 'bullet',
@@ -191,6 +228,7 @@ export function docFromDom(root: WalkNode, source: Source): Doc {
           item: false,
         });
         breakIfWords(ctx);
+        gapAt(ctx, gaps.below);
         break;
       case 'item':
         breakIfWords(ctx);

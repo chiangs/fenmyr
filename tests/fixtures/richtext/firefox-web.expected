@@ -1,0 +1,7 @@
+**Investigation items to settle before phase 1** (marked in the file):
+
+- **I0:** reproduce the bug in the running app.
+- **I1:** check what markup this Electron’s Chromium produces for Enter and bold.
+- **I4:** check how fitText and the collection layout measure lists.
+- **I5:** list every place that reads a note’s words. I only sampled these.
+- **I8:** collect real copied text from Word, Google Docs, Obsidian, Notion and others. Word and Google Docs paste oddly, so this decides paste quality. If you can send me copies of a bulleted list from the apps you use, that would help most.
