@@ -7,7 +7,6 @@ import { cropping } from '../cards/crop.ts';
 import { COLOR_NAMES, COLORS, colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
-import { editedNoteBody } from '../edit/noteKeys.ts';
 import { hasDue } from '../features/due.ts';
 import { tagEditor } from '../features/tags.ts';
 import { homeAt } from '../library/home.ts';
@@ -37,6 +36,7 @@ import { selCards } from './selected.ts';
 import { initStroke, strokeHtml } from './stroke.ts';
 import { initTextBar, syncTypingFormats, textBarHtml } from './textBar.ts';
 import { SIZED } from './textSize.ts';
+import { editedNoteBody, initTypingFocus } from './typingFocus.ts';
 import { initWireBar, wireBarHtml, wireKey } from './wireBar.ts';
 
 // ---------- the dock swaps to tools for whatever is selected ----------
@@ -363,6 +363,7 @@ export function init56() {
   initStroke(placeSelbar);
   initCorners();
   initTextBar(placeSelbar);
+  initTypingFocus();
   initArrange();
   initActions();
 }

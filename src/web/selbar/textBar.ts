@@ -3,13 +3,14 @@ import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { editedNoteBody, formatOn, isFormat, runFormat } from '../edit/noteKeys.ts';
+import { formatOn, isFormat, runFormat } from '../edit/noteKeys.ts';
 import { fitText } from '../edit/text.ts';
 import { closestTo, esc, htmlIn } from '../ui/dom.ts';
 import { caret, closeSbPops, G, markOnce, marks, pct, pop, rebuildBar, syncPair } from './barKit.ts';
 import { boardFontPop } from './fontPop.ts';
 import { selCards } from './selected.ts';
 import { FS, FS_BASE, fitNote, fsPx, lhOf, lsOf, setFsPx, setSpacing, sizedCards } from './textSize.ts';
+import { backToNote, editedNoteBody } from './typingFocus.ts';
 
 type Style = 'bold' | 'italic' | 'under' | 'strike';
 const STYLES: [Style, string, string][] = [
@@ -108,12 +109,18 @@ const typedIn = (sized: Card[]) => {
   return sized.length === 1 && body?.closest('.card')?.getAttribute('data-id') === sized[0]?.id ? body : null;
 };
 
+// The tooltip's words before its shortcut. The tooltip itself moves out of title on hover, so it can't be the name.
+const nameOf = (tip: string) => tip.split(' · ')[0] ?? tip;
+
 // Drawn with every note and shown only while it is typed in, so starting to type doesn't rebuild the bar.
 function typingFormatsHtml(typing: boolean) {
   const buttons = TYPING_FORMATS.map(([k, icon, t]) => {
-    const cls = typing && formatOn(k) ? 'on' : '',
+    const on = typing && formatOn(k),
+      cls = on ? 'on' : '',
+      pressed = k === 'clear' ? '' : ` aria-pressed="${on}"`,
+      name = nameOf(t),
       svg = Icon(icon);
-    return `<button data-fmt="${k}" title="${t}" class="${cls}">${svg}</button>`;
+    return `<button data-fmt="${k}" title="${t}" aria-label="${name}"${pressed} class="${cls}">${svg}</button>`;
   }).join('');
   return `<span class="sb-g sb-typing" data-fold="1"><div class="sb-sizes sb-style sb-align">${buttons}</div></span>`;
 }
@@ -125,8 +132,9 @@ export function textBarHtml(sized: Card[]) {
   const typing = typedIn(sized),
     styles = STYLES.map(([k, l, t]) => {
       const on = typing ? formatOn(k) : sized.every(c => isOn(c, k)),
-        cls = on ? 'on' : '';
-      return `<button data-ts="${k}" title="${t}" class="${cls}">${l}</button>`;
+        cls = on ? 'on' : '',
+        name = nameOf(t);
+      return `<button data-ts="${k}" title="${t}" aria-label="${name}" aria-pressed="${on}" class="${cls}">${l}</button>`;
     }).join(''),
     al = shared(sized, c => c.align || 'left'),
     aligns = ALIGNS.map(([k, t]) => {
@@ -175,7 +183,10 @@ export function syncTypingFormats() {
     cards = sizedCards();
   htmlIn($('selbar'), '[data-ts], [data-fmt]').forEach(b => {
     const f = b.dataset.ts ?? b.dataset.fmt;
-    if (isFormat(f)) b.classList.toggle('on', typing ? formatOn(f) : isStyle(f) && cards.every(c => isOn(c, f)));
+    if (!isFormat(f)) return;
+    const on = typing ? formatOn(f) : isStyle(f) && cards.every(c => isOn(c, f));
+    b.classList.toggle('on', on);
+    if (b.hasAttribute('aria-pressed')) b.ariaPressed = String(on);
   });
 }
 
@@ -315,6 +326,7 @@ export function initTextBar(place: () => void) {
       word = closestTo(e.target, '[data-ts], [data-fmt]'),
       format = word?.dataset.ts ?? word?.dataset.fmt;
     if (body && isFormat(format)) {
+      backToNote();
       runFormat(body, format);
       syncTypingFormats();
       return;

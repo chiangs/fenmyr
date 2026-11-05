@@ -52,6 +52,8 @@ jobs:
         run: node tests/richIntegration.ts
       - name: Rich links test (links and typed Markdown in notes, in the real app)
         run: node tests/richLinks.ts
+      - name: Rich access test (rich notes with a keyboard and a screen reader, in the real app)
+        run: node tests/richAccess.ts
       - name: Rich docs test (a rich note dropped into a Doc keeps its formatting, in the real app)
         run: node tests/richDocs.ts
       - name: Placement test (moving and copying boards and folders with prototypes)

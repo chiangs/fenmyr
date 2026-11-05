@@ -3,16 +3,9 @@ import { linkAddress } from '../richtext/doc.ts';
 import { runsHtml } from '../richtext/render.ts';
 import { child } from '../ui/dom.ts';
 import { closeOnOutsidePress, keepOnScreen } from '../ui/popover.ts';
+import { type Away, comeBack, type Return, stepAway } from './noteAway.ts';
 
-type Open = {
-  readonly t: HTMLElement;
-  readonly range: Range;
-  readonly link: Element | null;
-  readonly resume: HTMLElement['onblur'];
-  readonly pop: HTMLElement;
-};
-// back: focus went back into the note by itself. refocus: the note gets its selection back. leave: the edit ends.
-type Close = 'back' | 'refocus' | 'leave';
+type Open = Away & { readonly link: Element | null; readonly pop: HTMLElement };
 
 let open: Open | null = null,
   closesOnOutsidePress = false;
@@ -31,17 +24,12 @@ function addressOf(typed: string) {
   return v ? linkAddress(/^(https?|mailto):/i.test(v) ? v : `https://${v}`) : undefined;
 }
 
-function close(how: Close) {
+function close(how: Return) {
   const o = open;
   if (!o) return null;
   open = null;
   o.pop.remove();
-  o.t.onblur = o.resume;
-  if (how === 'refocus') {
-    o.t.focus();
-    getSelection()?.removeAllRanges();
-    getSelection()?.addRange(o.range);
-  } else if (how === 'leave' && document.activeElement !== o.t) o.t.dispatchEvent(new FocusEvent('blur'));
+  comeBack(o, how);
   return o;
 }
 
@@ -71,34 +59,35 @@ function act(what: string | undefined, href: string) {
 }
 
 export function openLinkPop(t: HTMLElement) {
-  const s = getSelection();
-  if (open || !s?.rangeCount) return;
+  const away = open ? null : stepAway(t);
+  if (!away) return;
   if (!closesOnOutsidePress) closeOnOutsidePress('.note-link, .card.editing', () => close('leave'));
   closesOnOutsidePress = true;
-  const range = s.getRangeAt(0).cloneRange(),
+  const { range } = away,
     at = range.commonAncestorContainer,
     link = (at instanceof Element ? at : at.parentElement)?.closest('a[href]') ?? null,
     href = link?.getAttribute('href') ?? '',
     pop = document.createElement('div'),
     spot = range.getClientRects()[0] ?? t.getBoundingClientRect();
   pop.className = 'dv-pop pop-link note-link';
+  pop.role = 'dialog';
+  pop.ariaLabel = 'Link';
   pop.innerHTML = linkMarkup(href);
   pop.style.left = `${spot.left}px`;
   pop.style.top = `${spot.bottom + 8}px`;
   document.body.append(pop);
   keepOnScreen(pop);
-  open = { t, range, link: link && t.contains(link) ? link : null, resume: t.onblur, pop };
-  t.onblur = null;
+  open = { ...away, link: link && t.contains(link) ? link : null, pop };
   const input = child(pop, 'input', HTMLInputElement);
   child(pop, 'form', HTMLFormElement).onsubmit = e => {
     e.preventDefault();
     apply(input.value);
   };
-  input.addEventListener('keydown', e => {
+  pop.addEventListener('keydown', e => {
     e.stopPropagation();
     if (e.key === 'Escape') close('refocus');
   });
-  input.addEventListener('blur', e => {
+  pop.addEventListener('focusout', e => {
     const to = e.relatedTarget instanceof Node ? e.relatedTarget : null;
     if (!pop.contains(to)) close(to && t.contains(to) ? 'back' : 'leave');
   });
