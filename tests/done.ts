@@ -134,6 +134,20 @@ try {
     !(await page.evaluate(() => document.getElementById('home')?.classList.contains('on'))),
     'and the folder’s home closes for it',
   );
+  assert.deepStrictEqual(
+    await page.evaluate(() =>
+      (window.__fenmyr.curBoard()?.cards ?? []).map(c =>
+        c.type === 'note' ? [c.name, c.tagText ?? ''] : [c.type, c.type === 'stamp' ? (c.src ?? '') : ''],
+      ),
+    ),
+    [
+      ['A new prototype? Exciting!', 'Welcome!'],
+      ['The more I know, the less I guess', ''],
+      ['Start small, then steer', ''],
+      ['stamp', 'stamps/myra-bounce.gif'],
+    ],
+    'it starts with Myra’s three notes on how to begin, and her bouncing on the first',
+  );
   await shot('new-prototype');
 
   // a note on the board, selected, and Myra asked to build the flow
