@@ -50,7 +50,7 @@ export function linkMarkup(href: string) {
     acts = href
       ? `<div class="dp-linkacts"><button type="button" class="dp-row" data-link="open">Open ↗</button><button type="button" class="dp-row" data-link="remove">Remove link</button></div>`
       : '';
-  return `<form class="dp-link" id="dpLink"><input id="dpLinkIn" placeholder="Paste a link…" value="${value}" autocomplete="off" spellcheck="false"><button class="dp-go" type="submit">${go}</button></form>
+  return `<form class="dp-link" id="dpLink"><input id="dpLinkIn" placeholder="Paste a link…" aria-label="Link address" value="${value}" autocomplete="off" spellcheck="false"><button class="dp-go" type="submit">${go}</button></form>
         ${acts}`;
 }
 

@@ -20,6 +20,8 @@ import { wireNoteKeys } from './noteKeys.ts';
 const wiredNameHop = new WeakSet<HTMLElement>();
 // redrawing a body between edits would strand Chromium's undo history
 const drawnForTyping = new WeakSet<HTMLElement>();
+// a note's body reads as a text field only while it can be typed in
+const NOTE_FIELD = { role: 'textbox', 'aria-multiline': 'true', 'aria-label': 'Note text' };
 
 export function startEdit(id: string, target?: Element | null) {
   const el = cardEl(id),
@@ -189,6 +191,7 @@ export function startEdit(id: string, target?: Element | null) {
     drawnForTyping.add(t);
     t.innerHTML = editHtmlOf(c);
   }
+  if (c.type === 'note') for (const [k, v] of Object.entries(NOTE_FIELD)) t.setAttribute(k, v);
   t.contentEditable = 'true';
   t.focus();
   if (c.userH == null && c.type === 'note') c.userH = c.h;
@@ -235,7 +238,10 @@ export function endEdit() {
   const el = cardEl(session.editing);
   if (el) {
     el.classList.remove('editing');
-    for (const n of el.querySelectorAll('[contenteditable]')) if (n instanceof HTMLElement) n.contentEditable = 'false';
+    for (const n of el.querySelectorAll('[contenteditable]')) {
+      if (n instanceof HTMLElement) n.contentEditable = 'false';
+      for (const k of Object.keys(NOTE_FIELD)) n.removeAttribute(k);
+    }
   }
   session.editing = null;
 }

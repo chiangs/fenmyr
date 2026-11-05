@@ -12,11 +12,11 @@ import { initTagAdd } from './tagAdd.ts';
 export type Suggest = string | { create: string };
 type Token = { node: Text; start: number; end: number; word: string };
 export const nameOf = (x: Suggest) => (typeof x === 'string' ? x : x.create);
-export const suggestRow = (x: Suggest, i: number, at: number, type = '') => {
+export const suggestRow = (x: Suggest, i: number, at: number, attrs = '') => {
   const on = i === at ? 'on' : '',
     name = esc(nameOf(x)),
     label = typeof x === 'string' ? `#${name}` : `New tag <b>#${name}</b>`;
-  return `<button${type} data-i="${i}" class="${on}">${label}</button>`;
+  return `<button${attrs} data-i="${i}" class="${on}">${label}</button>`;
 };
 // note text boxes already listening for tags
 const wiredTags = new WeakSet<HTMLElement>();
@@ -171,10 +171,17 @@ export function wireTagTyping(c: CardOf<'note'>, t: HTMLElement) {
   const pop = () =>
     tagPop ||
     (tagPop = document.body.appendChild(
-      Object.assign(document.createElement('div'), { className: 'tag-pop', id: 'tagPop' }),
+      Object.assign(document.createElement('div'), {
+        className: 'tag-pop',
+        id: 'tagPop',
+        role: 'listbox',
+        ariaLabel: 'Tag suggestions',
+      }),
     ));
   const close = () => {
     tagPop?.classList.remove('on');
+    t.removeAttribute('aria-controls');
+    t.removeAttribute('aria-activedescendant');
     token = null;
   };
   const tokenAtCaret = () => {
@@ -195,7 +202,15 @@ export function wireTagTyping(c: CardOf<'note'>, t: HTMLElement) {
     if (!items.length) return close();
     at = Math.min(at, items.length - 1);
     const p = pop();
-    p.innerHTML = items.map((x, i) => suggestRow(x, i, at)).join('');
+    p.innerHTML = items
+      .map((x, i) => {
+        const picked = i === at;
+        return suggestRow(x, i, at, ` role="option" id="tagPop-${i}" aria-selected="${picked}"`);
+      })
+      .join('');
+    // focus stays in the note, so the note points at the suggestion Enter would pick
+    t.setAttribute('aria-controls', p.id);
+    t.setAttribute('aria-activedescendant', `tagPop-${at}`);
     const r = document.createRange();
     r.setStart(token.node, token.start);
     r.setEnd(token.node, token.end);
