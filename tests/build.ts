@@ -29,7 +29,7 @@ fs.writeFileSync(
   `#!/bin/sh
 case "$*" in
   *stream-json*)
-    printf '%s' "$2" > ${work}/prompt.txt
+    printf '%s' "$2" > ${work}/prompt.txt; printf '%s\\n' "$@" > ${work}/args.txt
     seen=''; for a in "$@"; do [ "$seen" = 1 ] && ls "$a" > ${work}/pictures.txt && echo "$a" > ${work}/picture-dir.txt; seen=''; [ "$a" = --add-dir ] && seen=1; done
     echo 'export function App() { return <h1>Built by Myra</h1>; }' > src/App.tsx
     case "$2" in *OUTSIDE*) echo stray > ../../stray.txt ;; esac
@@ -140,6 +140,17 @@ try {
   assert.match(prompt, /Make the Checkout heading\./, 'the builder gets the request');
   assert.match(prompt, /Checkout: show the total first/, 'and the cards');
   assert.match(prompt, /Buttons are always mint\./, 'and design.md');
+  const settings = JSON.parse(
+    fs
+      .readFileSync(path.join(work, 'args.txt'), 'utf8')
+      .split('\n')
+      .find(a => a.startsWith('{')) ?? '{}',
+  );
+  assert.deepStrictEqual(
+    settings.permissions,
+    { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true },
+    'the builder’s file tools may read and write only in the prototype’s folder and its pictures',
+  );
   assert.match(prompt, /Build only the product itself\./, 'and that the preview holds only the product');
   assert.deepStrictEqual(
     fs.readFileSync(path.join(work, 'pictures.txt'), 'utf8').trim().split('\n'),
