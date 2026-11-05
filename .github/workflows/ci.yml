@@ -40,6 +40,10 @@ jobs:
         run: node tests/persist.ts
       - name: Model test (board and library files, prototype fields)
         run: node tests/model.ts
+      - name: Rich text test (the note dialect, its markup, and round trips)
+        run: node tests/richtext.ts
+      - name: Rich paste test (HTML, Markdown and PDF clipboards into notes)
+        run: node tests/richpaste.ts
       - name: Placement test (moving and copying boards and folders with prototypes)
         run: node tests/placement.ts
       - name: Fit test (how a prototype board's columns fold)
