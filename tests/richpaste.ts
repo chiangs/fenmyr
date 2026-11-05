@@ -129,6 +129,7 @@ const markdown: [string, string | null, string][] = [
   ],
   ['![[photo.png]]\n- a', '- a', 'embeds are dropped'],
   ['`co*de*` and *x*', 'co\\*de\\* and *x*', 'code keeps its characters'],
+  ['- [x] Photos\n> Quiet morning', '- ☑ Photos\nQuiet morning', 'a quote line after a list ends the list'],
   ['> - quoted\n> **line**', '- quoted\n  **line**', 'quote marks go, the words stay'],
   [
     '1. Preheat the oven\n\n2. Mix the flour\n\n3. Bake',

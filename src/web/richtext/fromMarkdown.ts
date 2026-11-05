@@ -199,6 +199,7 @@ type Lists = 'loose' | 'strict';
 export function docFromMarkdown(plain: string, lists: Lists = 'loose'): Doc | null {
   const lines: Line[] = [];
   let found = false,
+    lastQuoted = false,
     fenced = false,
     blanksInList = 0,
     levels: number[] = [];
@@ -225,6 +226,9 @@ export function docFromMarkdown(plain: string, lists: Lists = 'loose'): Doc | nu
       continue;
     }
     let line = raw.trimEnd();
+    const quoted = QUOTE.test(line),
+      quoteStarts = quoted && !lastQuoted;
+    lastQuoted = quoted;
     while (QUOTE.test(line)) line = line.replace(QUOTE, '');
     if (!line.trim()) {
       if (inList() && lists === 'loose') blanksInList++;
@@ -260,7 +264,7 @@ export function docFromMarkdown(plain: string, lists: Lists = 'loose'): Doc | nu
     } else if (breakLine) {
       endList();
       lines.push({ kind: 'text', runs: [{ text: line, marks: 0 }] });
-    } else if (inList() && ((!blanksInList && lists === 'loose') || INDENTED.test(line))) {
+    } else if (inList() && !quoteStarts && ((!blanksInList && lists === 'loose') || INDENTED.test(line))) {
       // with no blank line before it, an unindented line still belongs to the item: a wrapped line in a PDF list
       blanksInList = 0;
       lines.push({ kind: 'continuation', runs: inline(line.trim()) });
