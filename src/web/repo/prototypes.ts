@@ -8,7 +8,7 @@ import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
 import { makeFolder, saveLib } from '../library/tree.ts';
 import { newBoard } from '../model/boards.ts';
-import { belowWelcome, prototypeWelcome } from '../proto/welcome.ts';
+import { besideWelcome, prototypeWelcome, showWelcome } from '../proto/welcome.ts';
 import { chirp } from '../settings/licenses.ts';
 import { child, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
@@ -33,7 +33,7 @@ type Wish = { name: string; stack: Proto['stack']; purpose?: string; device?: Pr
 // cards brought from another board, such as wireframe screens picked with Prototype this
 export type Seed = { cards: Card[]; links: Link[] };
 
-// A prototype board and its own folder of code in the repo, opened. Brought cards go under Myra's notes, selected,
+// A prototype board and its own folder of code in the repo, opened. Brought cards go beside Myra's notes, selected,
 // so asking her to build uses them.
 export async function createPrototype(f: Folder, root: string, w: Wish, seed?: Seed) {
   const made = await Fenmyr.protoCreate({ root, name: w.name, stack: w.stack });
@@ -42,7 +42,7 @@ export async function createPrototype(f: Folder, root: string, w: Wish, seed?: S
     ...(w.purpose ? { purpose: w.purpose } : {}),
     ...(w.device ? { device: w.device } : {}),
   };
-  const brought = seed ? belowWelcome(seed.cards) : [];
+  const brought = seed ? besideWelcome(seed.cards) : [];
   const b: Board = {
     ...newBoard(w.name),
     kind: 'prototype',
@@ -56,6 +56,7 @@ export async function createPrototype(f: Folder, root: string, w: Wish, seed?: S
   // made from a folder's home, it opens in place of the home, as a new board does
   closeHome();
   await openBoard(b.id);
+  showWelcome();
   if (brought.length) selectOnly(brought.map(c => c.id));
   chirp(`Made “${w.name}”. Its code is in ${proto.dir} ✦`, 4000);
   return b;

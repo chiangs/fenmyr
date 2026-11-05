@@ -148,6 +148,15 @@ try {
     ],
     'it starts with Myra’s three notes on how to begin, and her bouncing on the first',
   );
+  assert.ok(
+    await page.evaluate(() => {
+      const note = document.querySelector('#cards .card.note')?.getBoundingClientRect(),
+        side = document.getElementById('side')?.getBoundingClientRect(),
+        z = window.__fenmyr.view.z;
+      return !!note && !!side && Math.abs(note.left - side.right - 24) < 30 && z >= 0.6 && z <= 1;
+    }),
+    'the notes open in view, just right of the widgets, at a readable zoom',
+  );
   await shot('new-prototype');
 
   // a note on the board, selected, and Myra asked to build the flow
