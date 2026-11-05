@@ -215,3 +215,21 @@ export function serialise(doc: Doc): string {
     })
     .join('\n');
 }
+
+// CommonMark reads ** * ~~ only against a word, so for a Markdown reader (Myra, and the importer her replies go
+// through) a space at either end of a styled run moves outside it. It looks the same, except that a struck space
+// loses its line.
+function spacesOutside(runs: readonly Run[]) {
+  const out: Run[] = [];
+  for (const r of runs) {
+    const [, before = '', words = '', after = ''] = /^(\s*)(.*?)(\s*)$/s.exec(r.text) ?? [],
+      outside = r.marks & ~(BOLD | ITALIC | STRIKE);
+    addRun(out, before, outside);
+    addRun(out, words, r.marks);
+    addRun(out, after, outside);
+  }
+  return out;
+}
+
+export const markdownOf = (text: string) =>
+  serialise(parse(text).map((line): Line => ({ ...line, runs: spacesOutside(line.runs) })));

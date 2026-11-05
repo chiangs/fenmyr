@@ -10,6 +10,7 @@ import { save, showWhatMyraMade } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { mdToHTML } from '../docs/docText.ts';
 import { docCard, ed } from '../docs/editor.ts';
+import { keepMyraText } from '../edit/noteBody.ts';
 import { dueDate, hasDue } from '../features/due.ts';
 import { cleanTags, existingTag } from '../features/tags.ts';
 import { buildTplPick, freeName, myTpls, saveAsTemplate, useTemplate } from '../features/templates.ts';
@@ -150,6 +151,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       tagText: o.tag ?? undefined,
       name: o.name,
     });
+    if (c.type === 'note' && o.text) keepMyraText(c, o.text);
     if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag);
     if (hasDue(c) && o.due && dueDate(o.due)) c.due = o.due;
     addCard(c);
@@ -189,6 +191,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     if (!c) return;
     if (o.text != null) {
       if (c.type === 'link') c.title = o.text;
+      else if (c.type === 'note') keepMyraText(c, o.text);
       else c.text = o.text;
     }
     if (o.desc != null) c.desc = o.desc;
