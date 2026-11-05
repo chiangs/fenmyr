@@ -5,6 +5,8 @@
     "src/host/preload.ts",
     "tests/*.ts",
     "tools/*.ts",
+    "tools/code-map/{build,check,query}.ts",
+    "tools/code-map/page/main.ts",
     ".claude/hooks/*.ts",
     "src/web/main.ts"
   ],

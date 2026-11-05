@@ -36,6 +36,8 @@ jobs:
         run: npm run build
       - name: Vault test (reading notes, privacy rules)
         run: node tests/vault.ts
+      - name: Code map test (imports, cycles, descriptions, the lookup command)
+        run: node tests/codemap.ts
       - name: Save test (running-only flags stay out of board files)
         run: node tests/persist.ts
       - name: Model test (board and library files, prototype fields)
