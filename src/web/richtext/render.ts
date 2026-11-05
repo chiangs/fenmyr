@@ -132,6 +132,17 @@ export const clipboardHtmlOf = (note: Note) =>
     .map(clipBlockHtml)
     .join('');
 
+// Docs' editor holds a list item as a paragraph with any list under it after that paragraph, and a row break as <br>.
+// A Doc already spaces its paragraphs, so a blank line goes, as it does when a plain note drops in.
+const docsRowsHtml = (rows: Rows) => wrap('p', rows.map(runsHtml).join('<br>'));
+const paragraphs = (rows: Rows) =>
+  rows
+    .filter(r => wordsOf(r).trim())
+    .map(r => wrap('p', runsHtml(r)))
+    .join('');
+const docsBlockHtml = (b: Block) => (b.kind === 'list' ? listHtml(b.entries, docsRowsHtml) : paragraphs(b.rows));
+export const docsHtmlOf = (text: string) => blocks(parse(text)).map(docsBlockHtml).join('');
+
 // pre-wrap hides a plain note's last newline, so the editor leaves it out too.
 export const editHtmlOf = (note: Note) =>
   renderForEditing(note.rich ? parse(note.text ?? '') : textDoc((note.text ?? '').replace(/\n$/, '')));
