@@ -19,7 +19,8 @@ type RecordingFields = {
 };
 
 type CardFields = {
-  note: { myra?: boolean; myraMv?: string; myraImg?: string };
+  // rich: text is in the note dialect (src/web/richtext/dialect.ts)
+  note: { myra?: boolean; myraMv?: string; myraImg?: string; rich?: true };
   todo: { items?: { t: string; done?: boolean }[] };
   title: { text?: string };
   image: {

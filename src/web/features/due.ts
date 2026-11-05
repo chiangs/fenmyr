@@ -6,6 +6,7 @@ import { appState, session } from '../core/state.ts';
 import { closeHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { bdNow } from '../myra/birthday.ts';
+import { plainOf } from '../richtext/render.ts';
 import { chirp, reply, say } from '../settings/licenses.ts';
 import { cardEl, esc } from '../ui/dom.ts';
 import { osNotify } from './timer.ts';
@@ -132,7 +133,7 @@ export function dueIndex(force = false) {
       c: c.id,
       d,
       t: at.getTime(),
-      n: String(c.name || c.text || 'Note')
+      n: String(c.name || plainOf(c) || 'Note')
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 60),

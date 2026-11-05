@@ -7,6 +7,7 @@ import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
+import { plainOf } from '../richtext/render.ts';
 import { selCards } from '../selbar/selected.ts';
 import { chirp } from '../settings/licenses.ts';
 import { closestTo } from '../ui/dom.ts';
@@ -55,7 +56,7 @@ export function copyCards() {
   const links = session.board.links.filter(l => ids.has(l.a) && ids.has(l.b)).map(l => ({ ...l }));
   const text =
     cards
-      .map(c => c.text || c.title || c.name || c.label || '')
+      .map(c => plainOf(c) || c.title || c.name || c.label || '')
       .filter(Boolean)
       .join('\n') || `${cards.length} Fenmyr card${cards.length > 1 ? 's' : ''}`;
   lastClip = { cards, links, from: session.board.id, text };

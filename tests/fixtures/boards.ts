@@ -157,6 +157,12 @@ export function bigBoard(n = 500, pictures = 10): FixtureBoard {
             name: `Note ${i}`,
             text: `Idea number ${i}, written out in a sentence or two so the note has some text.`,
             color: ['butter', 'mint', 'sky', 'white'][i % 4],
+            ...(i % KINDS.length === 0
+              ? {
+                  text: `Idea number **${i}**, written out:\n- a *first* point\n- a second one\n  - with a detail`,
+                  rich: true,
+                }
+              : {}),
           }
         : type === 'todo'
           ? {
@@ -198,4 +204,32 @@ export function bigBoard(n = 500, pictures = 10): FixtureBoard {
     view: { x: 160, y: 140, z: 0.4 },
     palette: [],
   };
+}
+
+export function richNotes(): FixtureBoard {
+  const rich = (id: string, x: number, y: number, h: number, text: string, more: Record<string, unknown> = {}) =>
+    at(id, 'note', x, y, 240, h, { text, rich: true, color: 'butter', ...more });
+  const cards: Card[] = [
+    rich(
+      'rn-list',
+      0,
+      0,
+      270,
+      'Shopping **list**\n- milk *semi* skimmed\n  - organic\n    - local\n- eggs ~~six~~ <u>twelve</u>\n\n3. third\n4. fourth\n  1. sub one\n  2. sub two',
+      { name: 'Errands' },
+    ),
+    rich('rn-bold', 280, 0, 110, 'Card bold\n- **word bold** plain', { bold: true }),
+    rich('rn-nobold', 280, 140, 110, 'Card not bold\n- **word bold** plain', { bold: false }),
+    rich('rn-lines', 560, 0, 110, 'Card struck\n- <u>underlined</u> *italic*', { strike: true, italic: true }),
+    rich('rn-empty', 560, 140, 110, ''),
+    rich('rn-centre', 0, 290, 140, 'Centred\n- a long item that wraps onto a second line\n- short', {
+      align: 'center',
+    }),
+    rich('rn-right', 280, 290, 140, 'Right\n1. one\n2. two\n  - **both**', { align: 'right', tcase: 'upper' }),
+    rich('rn-big', 560, 290, 140, 'Larger\n- one\n  - two', { fs: 'l' }),
+    at('rn-coll', 'coll', 840, 0, 288, 200, { text: 'Inside a collection', kids: ['rn-in1', 'rn-in2'] }),
+    rich('rn-in1', 0, 0, 100, 'First\n- a\n- b\n  - c'),
+    rich('rn-in2', 0, 0, 100, '**Second**\n1. wraps onto a second line in the column'),
+  ];
+  return { id: 'rich', name: 'Rich notes', color: 'mint', cards, links: [], tray: [], view: { x: 160, y: 140, z: 1 } };
 }

@@ -1,5 +1,6 @@
 import type { Card } from '../../shared/model.ts';
 import { CIC, host } from '../cards/shapes.ts';
+import { plainOf } from '../richtext/render.ts';
 import { pxSrc } from '../tools/stamps.ts';
 import { esc } from '../ui/dom.ts';
 
@@ -32,7 +33,7 @@ function ownName(c: Card): string {
     case 'vnote':
       return c.title || 'Vault note';
     case 'note':
-      return lyText(c.name) || lyText(c.text);
+      return lyText(c.name) || lyText(plainOf(c));
     case 'text':
     case 'title':
       return lyText(c.text);
