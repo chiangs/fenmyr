@@ -86,9 +86,10 @@ body.dark .card.sel::after { box-shadow: 0 0 0 3px rgba(25, 21, 16, .85), inset 
 /* markers outside the words would stay at the left edge while centred or right-aligned words move away from them */
 @container style(--ta: center) or style(--ta: right) { .card.note .text :is(ul, ol) { list-style-position: inside; } }
 .card.editing .text { user-select: text; -webkit-user-select: text; cursor: text; }
-/* a link in a note has the colour of a link in a Doc */
-.card.note .text a { color: #b8621a; text-decoration-line: underline; text-decoration-color: rgba(220, 163, 106, .6); text-underline-offset: 3px; -webkit-user-drag: none; }
+/* a link in a note: a Doc link's colour, deep enough to read at 4.5:1 on every note colour, and a dark Doc's on dark Snow */
+.card.note .text a { color: #9a4f12; text-decoration-line: underline; text-decoration-color: rgba(220, 163, 106, .6); text-underline-offset: 3px; -webkit-user-drag: none; }
 .card.note:not(.editing) .text a { cursor: pointer; }
+body.dark .card.note.c-white .text a { color: #f9c795; }
 .note-link { position: fixed; z-index: 60; }
 /* title: big type, no frame */
 .card.title .frame { display: none; }
