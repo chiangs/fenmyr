@@ -9,13 +9,17 @@ import { session } from '../core/state.ts';
 import { openDoc } from '../docs/editor.ts';
 import { editField, editTag, fitText } from '../edit/text.ts';
 import { wireTagTyping } from '../features/tags.ts';
+import { editHtmlOf } from '../richtext/render.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
 import { openVNote } from '../vault/notes.ts';
 import { keepEditedText } from './noteBody.ts';
+import { wireNoteKeys } from './noteKeys.ts';
 
 // note text boxes already listening for Shift+Tab to the name
 const wiredNameHop = new WeakSet<HTMLElement>();
+// redrawing a body between edits would strand Chromium's undo history
+const drawnForTyping = new WeakSet<HTMLElement>();
 
 export function startEdit(id: string, target?: Element | null) {
   const el = cardEl(id),
@@ -181,6 +185,10 @@ export function startEdit(id: string, target?: Element | null) {
   if (!t) return;
   session.editing = id;
   el.classList.add('editing');
+  if (c.type === 'note' && !drawnForTyping.has(t)) {
+    drawnForTyping.add(t);
+    t.innerHTML = editHtmlOf(c);
+  }
   t.contentEditable = 'true';
   t.focus();
   if (c.userH == null && c.type === 'note') c.userH = c.h;
@@ -190,7 +198,9 @@ export function startEdit(id: string, target?: Element | null) {
   const s = getSelection();
   s?.removeAllRanges();
   s?.addRange(r);
-  t.oninput = () => {
+  t.oninput = e => {
+    // a note's words are kept when the composition ends
+    if (c.type === 'note' && e instanceof InputEvent && e.isComposing) return;
     if (c.type === 'note') keepEditedText(c, t);
     else c.text = t.innerText.replace(/\n$/, '');
     fitText(c);
@@ -199,6 +209,7 @@ export function startEdit(id: string, target?: Element | null) {
   t.onblur = () => endEdit();
   if (c.type === 'note') {
     wireTagTyping(c, t);
+    wireNoteKeys(t);
     if (!wiredNameHop.has(t)) {
       wiredNameHop.add(t);
       t.addEventListener(

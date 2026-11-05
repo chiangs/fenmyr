@@ -2043,6 +2043,7 @@ body.dark .sb-popw.open > .sb-poptrig, body.dark .sb-sizelist button.on { backgr
 body.dark .selbar { --pill: rgba(255, 255, 255, .08); }
 .selbar > .sb-ic, .selbar > .sb-txt, .selbar > .sb-popw > .sb-poptrig, .selbar > .sb-tilt, .selbar > .sb-sizes, .selbar > .sb-font,
 .selbar > .sb-g > .sb-ic, .selbar > .sb-g > .sb-txt, .selbar > .sb-g > .sb-popw > .sb-poptrig, .selbar > .sb-g > .sb-tilt, .selbar > .sb-g > .sb-sizes, .selbar > .sb-g > .sb-font { background: var(--pill); border-radius: var(--pill-r); corner-shape: squircle; }
+#selbar:not(.typing) .sb-typing { display: none; }
 .selbar .sb-sizes.sb-style { padding: 0 3px; gap: 0; }
 .selbar .sb-sizes.sb-style button { background: none; }
 .selbar .sb-sizes.sb-style button:hover { background: rgba(128, 110, 92, .1); }

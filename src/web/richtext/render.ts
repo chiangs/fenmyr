@@ -1,6 +1,6 @@
 import { esc } from '../ui/dom.ts';
 import { parse } from './dialect.ts';
-import { type Doc, indentLevels, type ListKind, MARKS_OUTERMOST_FIRST, type Run, wordsOf } from './doc.ts';
+import { type Doc, indentLevels, type ListKind, MARKS_OUTERMOST_FIRST, type Run, textDoc, wordsOf } from './doc.ts';
 
 const LIST_TAG = { bullet: 'ul', number: 'ol' } as const;
 
@@ -43,7 +43,7 @@ function openTag(e: Entry) {
   return `<ol start="${start}">`;
 }
 
-function listHtml(entries: readonly Entry[]) {
+function listHtml(entries: readonly Entry[], rowsOf = rowsHtml) {
   const open: ListKind[] = [];
   let html = '';
   const closeTo = (depth: number) => {
@@ -60,7 +60,7 @@ function listHtml(entries: readonly Entry[]) {
       html += openTag(e);
       open.push(e.list);
     }
-    const rows = rowsHtml(e.rows);
+    const rows = rowsOf(e.rows);
     html += `<li>${rows}`;
   }
   closeTo(0);
@@ -72,7 +72,29 @@ export const render = (doc: Doc) =>
     .map(b => (b.kind === 'text' ? rowsHtml(b.rows) : listHtml(b.entries)))
     .join('');
 
+// While a note is typed in, every line outside a list is a block of its own: the shape Chromium's list commands keep
+// intact. A newline beside a list would join two lines when an item leaves it.
+const editRowsHtml = (rows: Rows) => {
+  const html = rowsHtml(rows);
+  return html === '\n' ? '<br>' : html;
+};
+function editBlockHtml(b: Block) {
+  if (b.kind === 'list') return listHtml(b.entries, editRowsHtml);
+  return b.rows
+    .map(r => {
+      const row = r.map(runHtml).join('') || '<br>';
+      return `<div>${row}</div>`;
+    })
+    .join('');
+}
+
 type Note = { readonly text?: string; readonly rich?: boolean };
+
+export const renderForEditing = (doc: Doc) => blocks(doc).map(editBlockHtml).join('');
+
+// pre-wrap hides a plain note's last newline, so the editor leaves it out too.
+export const editHtmlOf = (note: Note) =>
+  renderForEditing(note.rich ? parse(note.text ?? '') : textDoc((note.text ?? '').replace(/\n$/, '')));
 
 const HTML_BY_TEXT_MAX = 2000;
 const htmlByText = new Map<string, string>();

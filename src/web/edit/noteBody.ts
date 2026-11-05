@@ -1,11 +1,11 @@
 import type { CardOf } from '../../shared/model.ts';
 import { serialise } from '../richtext/dialect.ts';
-import { type Doc, hasFormatting, wordsOf } from '../richtext/doc.ts';
-import { domToSubset } from '../richtext/fromDom.ts';
+import { type Doc, hasFormatting, textDoc, wordsOf } from '../richtext/doc.ts';
+import { docFromDom } from '../richtext/fromDom.ts';
 import { fromClipboard } from '../richtext/paste.ts';
-import { render } from '../richtext/render.ts';
+import { renderForEditing } from '../richtext/render.ts';
 import { say } from '../settings/licenses.ts';
-import { esc } from '../ui/dom.ts';
+import { lineBeforeCaret } from './noteKeys.ts';
 
 type Note = CardOf<'note'>;
 type Paste = { readonly kind: 'rich'; readonly doc: Doc } | { readonly kind: 'plain'; readonly words: string };
@@ -18,10 +18,13 @@ function setNoteText(c: Note, text: string, rich: boolean) {
   else delete c.rich;
 }
 
-export const keepEditedText = (c: Note, t: HTMLElement) =>
-  setNoteText(c, c.rich ? domToSubset(t, 'editor') : t.innerText.replace(/\n$/, ''), !!c.rich);
-
 const wordsIn = (doc: Doc) => doc.map(l => wordsOf(l.runs)).join('\n');
+
+export function keepEditedText(c: Note, t: HTMLElement) {
+  const doc = docFromDom(t, 'editor'),
+    rich = !!c.rich || hasFormatting(doc);
+  setNoteText(c, rich ? serialise(doc) : wordsIn(doc), rich);
+}
 
 function readPaste(clip: DataTransfer, asPlain: boolean): Paste {
   const plain = clip.getData('text/plain').replace(/\r\n?/g, '\n'),
@@ -58,12 +61,21 @@ function pasted(clip: DataTransfer, asPlain: boolean) {
   return kept;
 }
 
+// Words typed into an empty note sit outside any block, and Chromium joins them to the first item of a list pasted
+// straight after them once that item leaves the list, unless a break ends their line.
+function breakBefore(t: HTMLElement, doc: Doc) {
+  const s = getSelection(),
+    n = s?.anchorNode,
+    block = (n instanceof Element ? n : n?.parentElement)?.closest('div, li');
+  return doc[0]?.kind === 'item' && s && block === t && lineBeforeCaret(s) ? '<br>' : '';
+}
+
 // Inserted the way typing is, so the editor's own undo takes the paste back out.
-export function pasteIntoNote(c: Note, t: HTMLElement, clip: DataTransfer, asPlain: boolean) {
-  const p = pasted(clip, asPlain);
-  if (p.kind === 'rich' && !c.rich) setNoteText(c, domToSubset(t, 'editor'), true);
-  const html = p.kind === 'rich' ? render(p.doc) : esc(p.words);
-  if (html) document.execCommand('insertHTML', false, html);
+export function pasteIntoNote(t: HTMLElement, clip: DataTransfer, asPlain: boolean) {
+  const p = pasted(clip, asPlain),
+    doc = p.kind === 'rich' ? p.doc : textDoc(p.words),
+    html = renderForEditing(doc);
+  if (html) document.execCommand('insertHTML', false, breakBefore(t, doc) + html);
 }
 
 export function pastedNote(clip: DataTransfer): { text: string; rich?: true } {

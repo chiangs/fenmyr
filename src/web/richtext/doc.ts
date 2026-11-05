@@ -82,6 +82,9 @@ export function collapseBlankLines(lines: readonly Line[]): Line[] {
   return kept;
 }
 
+export const textDoc = (s: string) =>
+  normalise(s.split('\n').map((t): Line => ({ kind: 'text', runs: t ? [{ text: t, marks: 0 }] : [] })));
+
 export const hasFormatting = (doc: Doc) => doc.some(l => l.kind !== 'text' || l.runs.some(r => r.marks));
 
 export function indentLevels(doc: Doc) {
