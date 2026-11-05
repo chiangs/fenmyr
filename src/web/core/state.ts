@@ -25,8 +25,8 @@ type AppState = {
   saveT: ReturnType<typeof setTimeout> | undefined;
   // after turning several pieces, which one keeps the turn dot
   mrotKeep: { key: string; anchor: string } | null;
-  // the last tap on a card, for telling a double-click
-  lastTap: { id?: string; t?: number };
+  // the last tap on a card, for telling a double-click, and a link it will open unless a second tap comes
+  lastTap: { id?: string; t?: number; opening?: ReturnType<typeof setTimeout> };
   drag: Drag | null;
   pendingPaste: boolean;
   cae: CaelestiaScheme | null;

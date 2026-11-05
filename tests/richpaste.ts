@@ -34,7 +34,7 @@ const html: [string, string, string][] = [
   ['<i>i</i> <em>e</em> <span style="font-style: italic">s</span>', '*i* *e* *s*', 'italic from tags and style'],
   [
     '<u>u</u> <span style="text-decoration: underline">d</span> <a href="https://x.org" style="text-decoration:underline">site</a>',
-    '<u>u</u> <u>d</u> site (https://x.org)',
+    '<u>u</u> <u>d</u> [site](https://x.org)',
     "underline from tags and style, but not a link's own",
   ],
   [
@@ -67,8 +67,13 @@ const html: [string, string, string][] = [
   ['<h3><span style="font-weight:400">Docs title</span></h3>', '**Docs title**', 'even when its spans are light'],
   [
     '<a href="https://example.com/">https://example.com/</a> <a href="mailto:me@x.org">write</a> <a href="javascript:alert(1)">click</a>',
-    'https://example.com/ write (mailto:me@x.org) click',
-    'links keep their address once; other schemes keep only the label',
+    '[https://example.com/](https://example.com/) [write](mailto:me@x.org) click',
+    'links stay links, a label that is the address included; other schemes keep only the label',
+  ],
+  [
+    '<a href="https://x.org/a(b)"><b>bold</b> <i>label</i></a> <a href="https://x.org/pic"><img src="p.png"></a>',
+    '[**bold** *label*](https://x.org/a\\(b\\)) [https://x.org/pic](https://x.org/pic)',
+    'a label keeps its emphasis, and a link with no words shows its address',
   ],
   [
     '<style>p{color:red}</style><script>alert(1)</script><p style="color:red;font-family:Comic Sans;font-size:30px">words<img src="x.png" onerror="alert(1)"></p>',
@@ -96,7 +101,7 @@ const html: [string, string, string][] = [
   ['<ol start="3"><li>three</li><li>four</li></ol>', '3. three\n4. four', 'a list keeps the number it starts at'],
   [
     '<p>see <a href="https://x.org/a\n- b">here</a></p>',
-    'see here (https://x.org/a-b)',
+    'see [here](https://x.org/a-b)',
     'an address never breaks the line',
   ],
   [
@@ -116,7 +121,12 @@ const markdown: [string, string | null, string][] = [
   ['# Heading\ntext', '**Heading**\ntext', 'a heading is a bold line'],
   ['## Learn C#\n## Closed ##', '**Learn C#**\n**Closed**', 'closing hashes need a space before them'],
   ['- [ ] task\n- [x] done', '- ☐ task\n- ☑ done', 'task boxes'],
-  ['[site](https://x.org) [[Page]] [[Page|label]]', 'site (https://x.org) Page label', 'links and wiki links'],
+  ['[site](https://x.org) [[Page]] [[Page|label]]', '[site](https://x.org) Page label', 'links and wiki links'],
+  [
+    '[**b** l](https://x.org/Foo_(bar)) <mailto:me@x.org> [](https://x.org)',
+    '[**b** l](https://x.org/Foo_\\(bar\\)) [mailto:me@x.org](mailto:me@x.org) [https://x.org](https://x.org)',
+    'a label keeps its emphasis, and an address with no label is its own label',
+  ],
   ['![[photo.png]]\n- a', '- a', 'embeds are dropped'],
   ['`co*de*` and *x*', 'co\\*de\\* and *x*', 'code keeps its characters'],
   ['> - quoted\n> **line**', '- quoted\n  **line**', 'quote marks go, the words stay'],
@@ -133,7 +143,7 @@ const markdown: [string, string | null, string][] = [
     'see https://docs.python.org/3/x.html#object.__init__, and *this*',
     'an address is never emphasis',
   ],
-  ['[label](javascript:alert(1)) **b**', 'label **b**', 'a link to a script keeps only its label'],
+  ['[label](javascript:alert(1)) [file](ftp://x.org/f) **b**', 'label file **b**', 'other schemes keep only the label'],
   ['5 * 3 = 15 and 2*3*4', null, 'arithmetic is not Markdown'],
   ['a - b - c, then snake_case_name and file_name.txt', null, 'dashes and underscores inside prose are not'],
   ['Price: *50% off', null, 'a lone asterisk is not'],
@@ -173,10 +183,10 @@ const linkOnly = fromClipboard(
 );
 assert.strictEqual(
   linkOnly && serialise(linkOnly),
-  'Read the install guide (https://example.org/guide) first.',
-  "a link's address is kept",
+  'Read the [install guide](https://example.org/guide) first.',
+  'a link stays a link',
 );
-assert.ok(linkOnly && !hasFormatting(linkOnly), 'without making the note rich');
+assert.ok(linkOnly && hasFormatting(linkOnly), 'so the note is rich, the only kind that keeps a link');
 
 const slow = (what: string, convert: () => unknown) => {
   const started = performance.now();

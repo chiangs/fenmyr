@@ -193,8 +193,8 @@ const linked = await newNote(page, 0, 1);
 await paste(page, '<p>See <a href="https://example.com/a">the page</a></p>', 'See the page');
 assert.deepStrictEqual(
   await stored(page, linked),
-  { text: 'See the page (https://example.com/a)', rich: undefined },
-  'a link with no formatting pastes as plain words that keep its address',
+  { text: 'See [the page](https://example.com/a)', rich: true },
+  'a pasted link stays a link, so the note becomes rich',
 );
 await stopEditing(page);
 

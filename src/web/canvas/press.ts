@@ -3,6 +3,7 @@ import { stage } from '../core/dom.ts';
 import { remember, snapT } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
+import { linkUnder } from '../edit/noteLinks.ts';
 import { selCards } from '../selbar/selected.ts';
 import { fsMul } from '../selbar/textSize.ts';
 import { drawDown, drawOn } from '../tools/draw.ts';
@@ -250,6 +251,7 @@ export function onPress(e: PointerEvent) {
           .filter(c => c !== undefined)
           .map(c => ({ c, x: c.x, y: c.y })),
         moved: false,
+        link: linkUnder(closestTo(e.target, 'a')),
       };
     }
     stage.setPointerCapture(e.pointerId);

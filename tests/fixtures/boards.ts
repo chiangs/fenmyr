@@ -226,7 +226,7 @@ export function richNotes(): FixtureBoard {
       align: 'center',
     }),
     rich('rn-right', 280, 290, 140, 'Right\n1. one\n2. two\n  - **both**', { align: 'right', tcase: 'upper' }),
-    rich('rn-big', 560, 290, 140, 'Larger\n- one\n  - two', { fs: 'l' }),
+    rich('rn-big', 560, 290, 140, 'Larger\n- one [link](https://example.org)\n  - two', { fs: 'l' }),
     at('rn-coll', 'coll', 840, 0, 288, 200, { text: 'Inside a collection', kids: ['rn-in1', 'rn-in2'] }),
     rich('rn-in1', 0, 0, 100, 'First\n- a\n- b\n  - c'),
     rich('rn-in2', 0, 0, 100, '**Second**\n1. wraps onto a second line in the column'),

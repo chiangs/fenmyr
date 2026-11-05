@@ -4,6 +4,6 @@
   "proto-wide-screen": "The prototype screen at 1,440 px. main has no prototype boards yet, so its side shows an ordinary board; this becomes the baseline once the feature lands on main.",
   "proto-medium-screen": "The prototype screen at 1,200 px. main has no prototype boards yet, so its side shows an ordinary board; this becomes the baseline once the feature lands on main.",
   "proto-narrow-screen": "The prototype screen at 900 px. main has no prototype boards yet, so its side shows an ordinary board; this becomes the baseline once the feature lands on main.",
-  "rich-notes": "Rich notes: lists, emphasis, card-level styles, alignment and a collection. main has no rich notes yet, so its side shows the same notes’ stored text, Markdown characters and all; this becomes the baseline once the feature lands on main.",
+  "rich-notes": "Rich notes: lists, emphasis, a link, card-level styles, alignment and a collection. main has no rich notes yet, so its side shows the same notes’ stored text, Markdown characters and all; this becomes the baseline once the feature lands on main.",
   "rich-select": "The same rich notes with one selected. main shows their stored text, as in rich-notes."
 }
