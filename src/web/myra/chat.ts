@@ -12,6 +12,7 @@ import { hideSlash, slash } from '../features/find.ts';
 import { myTpls } from '../features/templates.ts';
 import { clearGlow, runTimerRequest } from '../features/timer.ts';
 import { foldersIn, looseFolders } from '../library/tree.ts';
+import { canonical } from '../richtext/dialect.ts';
 import type { SayAction } from '../settings/licenses.ts';
 import { reply } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
@@ -26,12 +27,13 @@ import { chatOpen, myraOpen } from './chatWindow.ts';
 import { goo } from './goos.ts';
 import { SLASH } from './greet.ts';
 import { showConnections } from './helpers.ts';
-
 import { initPerch, wonderIfEmpty } from './perch.ts';
 import { parse } from './replyText.ts';
 
 // what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
 export function snapshot() {
+  const words = (c: Card) =>
+    c.type === 'note' && c.rich ? canonical(c.text ?? '') : c.text || c.title || c.label || '';
   const brief = (c: Card) =>
     c.type === 'vnote'
       ? { id: c.id, type: 'vnote', x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h) }
@@ -43,7 +45,7 @@ export function snapshot() {
           w: Math.round(c.w),
           h: Math.round(c.h),
           color: c.color,
-          text: (c.text || c.title || c.label || '').slice(0, 300),
+          text: words(c).slice(0, 300),
           font: c.font,
           name: c.name,
           kids: 'kids' in c ? c.kids : undefined,

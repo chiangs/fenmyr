@@ -42,6 +42,22 @@ jobs:
         run: node tests/persist.ts
       - name: Model test (board and library files, prototype fields)
         run: node tests/model.ts
+      - name: Rich text test (the note dialect, its markup, and round trips)
+        run: node tests/richtext.ts
+      - name: Rich paste test (HTML, Markdown and PDF clipboards into notes)
+        run: node tests/richpaste.ts
+      - name: Rich notes test (pasted formatting kept through redraw, save and reopen, in the real app)
+        run: node tests/richNotes.ts
+      - name: Rich typing test (shortcuts, lists by hand, list keys and the selection bar, in the real app)
+        run: node tests/richTyping.ts
+      - name: Rich integration test (Myra, the clipboard, tags, collection heights and the Workshop starter with rich notes, in the real app)
+        run: node tests/richIntegration.ts
+      - name: Rich links test (links and typed Markdown in notes, in the real app)
+        run: node tests/richLinks.ts
+      - name: Rich access test (rich notes with a keyboard and a screen reader, in the real app)
+        run: node tests/richAccess.ts
+      - name: Rich docs test (a rich note dropped into a Doc keeps its formatting, in the real app)
+        run: node tests/richDocs.ts
       - name: Placement test (moving and copying boards and folders with prototypes)
         run: node tests/placement.ts
       - name: Fit test (how a prototype board's columns fold)

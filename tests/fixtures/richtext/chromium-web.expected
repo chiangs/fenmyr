@@ -1,0 +1,10 @@
+**What Translation Loss Actually Costs**
+
+REF_002 // ONE SIGNAL READ DIFFERENTLY
+
+The losses are not immediately noticeable. They do not appear on risk registers or post-mortems. They accumulate quietly, at every boundary, across every handoff, until they are visible only in the gap between what the organisation intended to build and what it actually delivered.
+
+**The implementation gap — Engineering ↔ Design**
+The designer specified intent. The engineer implemented reality. Neither is wrong. The designer made decisions about how something should behave; the engineer made decisions about how to build it within the constraints of the system. <u>Both were doing their job.</u>
+
+But the gap between intent and implementation is where the user experience quietly degrades. It's not negligence — it's the accumulation of small decisions made at the boundary between two disciplines, in the absence of anyone who could hold both simultaneously. The hover state that was slightly wrong. The transition that was close enough to ship but not quite what was meant. The loading behaviour the product owner approved in the prototype was a spinner; the engineer implemented a skeleton screen because that was the pattern in the design system. Both are valid. Each one minor. Together, the difference between a product that feels deliberate and one that feels assembled.

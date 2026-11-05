@@ -4,7 +4,7 @@ export type Note = { name: string; text?: string };
 export type Group =
   | { k: 'coll'; name: string; notes: Note[]; col: number; span?: 1 | 2 }
   | { k: 'todo'; text: string; items: string[]; col: number }
-  | { k: 'note'; name: string; text: string; col: number }
+  | { k: 'note'; name: string; text: string; rich?: true; col: number }
   | { k: 'kanban'; name: string; cols: { name: string; notes?: Note[] }[]; col: number; span: 2 | 3 | 4 };
 export type Phase = { title: string; color: string; cols: number; groups: Group[] };
 

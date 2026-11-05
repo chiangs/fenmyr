@@ -66,7 +66,7 @@ export function workshopPlanning(card: Make) {
           }),
         ];
       case 'note':
-        return [card('note', { x, y, w: 260, name: g.name, text: g.text, color, r: 0 })];
+        return [card('note', { x, y, w: 260, h: groupH(g), name: g.name, text: g.text, rich: g.rich, color, r: 0 })];
       case 'coll': {
         const kids = notesIn(g.notes, color);
         return [

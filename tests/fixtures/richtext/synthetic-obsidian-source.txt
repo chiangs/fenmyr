@@ -1,0 +1,6 @@
+## Plan
+- Buy **milk**
+- [ ] Call _mum_
+	- See [[Contacts|phone list]]
+- ~~Done thing~~
+![[photo.png]]

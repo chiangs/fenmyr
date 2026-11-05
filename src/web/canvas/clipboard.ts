@@ -7,6 +7,7 @@ import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
+import { clipboardHtmlOf, plainOf } from '../richtext/render.ts';
 import { selCards } from '../selbar/selected.ts';
 import { chirp } from '../settings/licenses.ts';
 import { closestTo } from '../ui/dom.ts';
@@ -48,16 +49,40 @@ function gather(from: Card[]) {
   return ids;
 }
 
+type Clip = { cards: Card[]; text: string };
+
+const wordsOf = (c: Card) => plainOf(c) || c.title || c.name || c.label || '';
+// Only a copy with a rich note in it carries HTML, so copying plain cards stays as it was.
+const clipHtml = (cards: Card[]) =>
+  cards.some(c => c.type === 'note' && c.rich)
+    ? cards.map(c => clipboardHtmlOf(c.type === 'note' && c.rich ? c : { text: wordsOf(c) })).join('')
+    : '';
+
+function putClip(e: ClipboardEvent, r: Clip) {
+  e.preventDefault();
+  const html = clipHtml(r.cards);
+  e.clipboardData?.setData('text/plain', r.text);
+  if (html) e.clipboardData?.setData('text/html', html);
+  e.clipboardData?.setData('text/x-fenmyr', '1');
+}
+
+// async, so a browser with no ClipboardItem turns down the write the way a denied one does, rather than throwing
+export async function writeClip(r: Clip) {
+  const html = clipHtml(r.cards),
+    blob = (type: string, data: string) => new Blob([data], { type });
+  if (!html) return navigator.clipboard?.writeText(r.text);
+  return navigator.clipboard?.write([
+    new ClipboardItem({ 'text/plain': blob('text/plain', r.text), 'text/html': blob('text/html', html) }),
+  ]);
+}
+
 export function copyCards() {
   const ids = gather(selCards());
   if (!ids.size) return null;
   const cards = session.board.cards.filter(c => ids.has(c.id)).map(c => plainCopy(c));
   const links = session.board.links.filter(l => ids.has(l.a) && ids.has(l.b)).map(l => ({ ...l }));
   const text =
-    cards
-      .map(c => c.text || c.title || c.name || c.label || '')
-      .filter(Boolean)
-      .join('\n') || `${cards.length} Fenmyr card${cards.length > 1 ? 's' : ''}`;
+    cards.map(wordsOf).filter(Boolean).join('\n') || `${cards.length} Fenmyr card${cards.length > 1 ? 's' : ''}`;
   lastClip = { cards, links, from: session.board.id, text };
   pasteN = 0;
   try {
@@ -183,19 +208,14 @@ export function init22() {
   addEventListener('copy', e => {
     if (closestTo(e.target, 'input, textarea, [contenteditable="true"]') || !session.sel.size || homeAt) return;
     const r = copyCards();
-    if (!r) return;
-    e.preventDefault();
-    e.clipboardData?.setData('text/plain', r.text);
-    e.clipboardData?.setData('text/x-fenmyr', '1');
+    if (r) putClip(e, r);
   });
 
   addEventListener('cut', e => {
     if (closestTo(e.target, 'input, textarea, [contenteditable="true"]') || !session.sel.size || homeAt) return;
     const r = copyCards();
     if (!r) return;
-    e.preventDefault();
-    e.clipboardData?.setData('text/plain', r.text);
-    e.clipboardData?.setData('text/x-fenmyr', '1');
+    putClip(e, r);
     removeSelected();
   });
 }

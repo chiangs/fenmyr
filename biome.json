@@ -11,6 +11,7 @@
       "!tools/editor",
       "!src/host/icon-names.json",
       "!tests/sample-vault",
+      "!tests/fixtures/richtext",
       "!.claude/settings.local.json",
       "!.claude/scheduled_tasks.lock"
     ]

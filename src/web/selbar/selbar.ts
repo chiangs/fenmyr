@@ -34,8 +34,9 @@ import { initLineStyle, lineStyleHtml } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
 import { selCards } from './selected.ts';
 import { initStroke, strokeHtml } from './stroke.ts';
-import { initTextBar, textBarHtml } from './textBar.ts';
+import { initTextBar, syncTypingFormats, textBarHtml } from './textBar.ts';
 import { SIZED } from './textSize.ts';
+import { editedNoteBody, initTypingFocus } from './typingFocus.ts';
 import { initWireBar, wireBarHtml, wireKey } from './wireBar.ts';
 
 // ---------- the dock swaps to tools for whatever is selected ----------
@@ -313,6 +314,11 @@ export function placeSelbar() {
     }
     return;
   }
+  const typing = !!editedNoteBody();
+  if (bar.classList.contains('typing') !== typing) {
+    bar.classList.toggle('typing', typing);
+    syncTypingFormats();
+  }
   const key =
     (document.body.classList.contains('dark') ? 'd' : 'l') + Math.round(innerWidth / 30) + cs.map(cardKey).join();
   // never rebuild under an open dropdown for the SAME things (it would yank the slider out from under you); a new selection always gets a fresh bar
@@ -357,6 +363,7 @@ export function init56() {
   initStroke(placeSelbar);
   initCorners();
   initTextBar(placeSelbar);
+  initTypingFocus();
   initArrange();
   initActions();
 }

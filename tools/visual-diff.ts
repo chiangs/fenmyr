@@ -3,14 +3,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
-import { everyOfflineCard } from '../tests/fixtures/boards.ts';
-import { launch, ROOT, settle } from '../tests/support/launch.ts';
+import { everyOfflineCard, richNotes } from '../tests/fixtures/boards.ts';
+import { type Board, launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
 
 type Step = (page: Page) => Promise<void>;
 // width: the window's, for the prototype screen at each of its layouts; proto: open a prototype board first
 type Group = {
   settings?: Record<string, unknown>;
+  board?: () => Board;
   phone?: boolean;
   width?: number;
   proto?: boolean;
@@ -76,6 +77,13 @@ const GROUPS: Record<string, Group> = {
   'proto-narrow': { proto: true, width: 900, states: screen },
   dark: { settings: { theme: 'dark' }, states: board.slice(0, 3) },
   phone: { phone: true, states: [['board', async () => {}]] },
+  rich: {
+    board: richNotes,
+    states: [
+      ['notes', async () => {}],
+      ['select', select(['rn-list'])],
+    ],
+  },
   settings: {
     states: TABS.map(t => [
       t,
@@ -142,7 +150,8 @@ async function openPrototype(page: Page) {
 async function shoot(dir: string, out: string) {
   fs.mkdirSync(out, { recursive: true });
   for (const [name, group] of Object.entries(GROUPS)) {
-    const l = await launch({ dir, boards: [everyOfflineCard()], open: 'every', settings: group.settings });
+    const shown = (group.board ?? everyOfflineCard)();
+    const l = await launch({ dir, boards: [shown], open: shown.id, settings: group.settings });
     const width = group.phone ? 600 : group.width;
     if (width) {
       await l.app.evaluate(({ BrowserWindow }, w) => {

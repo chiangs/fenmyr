@@ -5,6 +5,7 @@ import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
+import { docsHtmlOf, plainOf } from '../richtext/render.ts';
 import { say } from '../settings/licenses.ts';
 import { esc } from '../ui/dom.ts';
 import { docHTML, mdToHTML } from './docText.ts';
@@ -14,7 +15,7 @@ import { type DocCard, docCard, ed, editorBundle, syncDoc } from './editor.ts';
 const WORDY = typesWith('wordy');
 
 function cardWords(c: Card) {
-  if (c.type === 'note') return [c.name, c.text].filter(x => (x || '').trim()).join('\n');
+  if (c.type === 'note') return [c.name, plainOf(c)].filter(x => (x || '').trim()).join('\n');
   if (c.type === 'todo')
     return [(c.text || '').trim(), ...(c.items || []).map(i => (i.done ? '☑ ' : '☐ ') + i.t)]
       .filter(Boolean)
@@ -34,7 +35,7 @@ const lead = (words: string | undefined) => {
 };
 
 function cardHTML(c: Card) {
-  if (c.type === 'note') return lead(c.name) + mdToHTML(c.text);
+  if (c.type === 'note') return lead(c.name) + (c.rich ? docsHtmlOf(c.text ?? '') : mdToHTML(c.text));
   if (c.type === 'todo') {
     const first = lead(c.text),
       items = taskItems(c.items);

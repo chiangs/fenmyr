@@ -11,6 +11,7 @@ import { session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
 import { DL } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';
+import { plainOf } from '../richtext/render.ts';
 import { selCards } from '../selbar/selected.ts';
 import { applyColors } from '../settings/colors.ts';
 import { chirp, say } from '../settings/licenses.ts';
@@ -120,7 +121,7 @@ const KIND_NAMES: Record<string, string> = { image: 'Image', stamp: 'Stamp', sha
 export const cardName = (cs: Card[]) => {
   const one = cs.length === 1 ? cs[0] : undefined,
     name = one
-      ? one.name || one.text || one.title || one.label || KIND_NAMES[one.type] || 'Card'
+      ? one.name || plainOf(one) || one.title || one.label || KIND_NAMES[one.type] || 'Card'
       : `${session.board.name} – ${cs.length} cards`;
   return name.slice(0, 60).trim() || 'Card';
 };

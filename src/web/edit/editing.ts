@@ -9,12 +9,19 @@ import { session } from '../core/state.ts';
 import { openDoc } from '../docs/editor.ts';
 import { editField, editTag, fitText } from '../edit/text.ts';
 import { wireTagTyping } from '../features/tags.ts';
+import { editHtmlOf } from '../richtext/render.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
 import { openVNote } from '../vault/notes.ts';
+import { keepEditedText } from './noteBody.ts';
+import { wireNoteKeys } from './noteKeys.ts';
 
 // note text boxes already listening for Shift+Tab to the name
 const wiredNameHop = new WeakSet<HTMLElement>();
+// redrawing a body between edits would strand Chromium's undo history
+const drawnForTyping = new WeakSet<HTMLElement>();
+// a note's body reads as a text field only while it can be typed in
+const NOTE_FIELD = { role: 'textbox', 'aria-multiline': 'true', 'aria-label': 'Note text' };
 
 export function startEdit(id: string, target?: Element | null) {
   const el = cardEl(id),
@@ -180,6 +187,11 @@ export function startEdit(id: string, target?: Element | null) {
   if (!t) return;
   session.editing = id;
   el.classList.add('editing');
+  if (c.type === 'note' && !drawnForTyping.has(t)) {
+    drawnForTyping.add(t);
+    t.innerHTML = editHtmlOf(c);
+  }
+  if (c.type === 'note') for (const [k, v] of Object.entries(NOTE_FIELD)) t.setAttribute(k, v);
   t.contentEditable = 'true';
   t.focus();
   if (c.userH == null && c.type === 'note') c.userH = c.h;
@@ -189,14 +201,18 @@ export function startEdit(id: string, target?: Element | null) {
   const s = getSelection();
   s?.removeAllRanges();
   s?.addRange(r);
-  t.oninput = () => {
-    c.text = t.innerText.replace(/\n$/, '');
+  t.oninput = e => {
+    // a note's words are kept when the composition ends
+    if (c.type === 'note' && e instanceof InputEvent && e.isComposing) return;
+    if (c.type === 'note') keepEditedText(c, t);
+    else c.text = t.innerText.replace(/\n$/, '');
     fitText(c);
     save();
   };
   t.onblur = () => endEdit();
   if (c.type === 'note') {
     wireTagTyping(c, t);
+    wireNoteKeys(t);
     if (!wiredNameHop.has(t)) {
       wiredNameHop.add(t);
       t.addEventListener(
@@ -222,7 +238,10 @@ export function endEdit() {
   const el = cardEl(session.editing);
   if (el) {
     el.classList.remove('editing');
-    for (const n of el.querySelectorAll('[contenteditable]')) if (n instanceof HTMLElement) n.contentEditable = 'false';
+    for (const n of el.querySelectorAll('[contenteditable]')) {
+      if (n instanceof HTMLElement) n.contentEditable = 'false';
+      for (const k of Object.keys(NOTE_FIELD)) n.removeAttribute(k);
+    }
   }
   session.editing = null;
 }

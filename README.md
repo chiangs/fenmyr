@@ -126,7 +126,7 @@ The first memo downloads the speech model, about 140 MB, into `~/.local/share/fe
 
 | | |
 |---|---|
-| **Ctrl+K** | Quick capture into Unsorted |
+| **Ctrl+K** | Quick capture into Unsorted (while you type in a note, it makes a link) |
 | **Ctrl+F** | Find on the board: opens Myra's chat with `/find` ready (works without AI); the find bar then lets you edit the search and step through matches (Enter, Shift+Enter, Esc) |
 | **double-click** | New note |
 | **N · C · T · D · G** | Note, checklist, title, doc, collection |
@@ -151,6 +151,27 @@ The first memo downloads the speech model, about 140 MB, into `~/.local/share/fe
 | **space + drag** | Pan |
 | **Ctrl+,** | Settings |
 | **Ctrl+Q · F11** | Quit · full screen |
+
+### Formatting a note
+
+While you type in a note, you can format single words and make lists. The formatting stays when you save, undo, copy or reopen the board, and notes you wrote before stay as they were.
+
+| | |
+|---|---|
+| **Ctrl+B · Ctrl+I · Ctrl+U** | Bold, italic, underline: the selected words, or what you type next |
+| **Ctrl+Shift+X** | Strikethrough |
+| **Ctrl+\\** | Clear the formatting |
+| **Ctrl+Shift+8 · Ctrl+Shift+7** | Make the line a bulleted or numbered list, or back into a plain line |
+| **- or 1. and a space** | Start a list at the start of a line. Backspace straight after gives back what you typed |
+| **Enter · Shift+Enter** | A new item · a new line in the same item. Enter on an empty item ends the list |
+| **Tab · Shift+Tab** | Nest an item one level deeper, three at most · bring it back |
+| **Ctrl+Shift+V** | Paste as plain text |
+| **Ctrl+K** | Link the selected words, or add a link where you type. Inside a link, change its address or remove it |
+| **F10** | Move to the bar's formatting buttons. Tab moves between them, Enter or Space presses one, and Esc goes back to the note |
+| `**word**` · `*word*` · `~~word~~` | Bold, italic or strikethrough, as you type the last mark |
+| `[words](https://…)` | A link, as you type the last bracket |
+
+Pasting keeps the lists, bold, italic, underline, strikethrough and links from web pages, Obsidian, Markdown files and PDFs. Click a link in a note, or press Enter on it, to open it in your browser. The bar's B, I, U and S buttons format the selected words while you type, and the whole card when it is only selected. When you copy note cards, other apps get their formatting too. Myra can write and edit formatted notes.
 
 ## The window
 

@@ -12,7 +12,16 @@ type Turning = { c: Card; mx: number; my: number; w: number; h: number; r0: numb
 // sx, sy: where the press began (world or screen, as each mode needs)
 export type Drag =
   | { mode: 'pan'; sx: number; sy: number; vx: number; vy: number }
-  | { mode: 'move'; sx: number; sy: number; start: Moving[]; moved: boolean; cloned?: boolean }
+  | {
+      mode: 'move';
+      sx: number;
+      sy: number;
+      start: Moving[];
+      moved: boolean;
+      cloned?: boolean;
+      // the address of the link in a note the press began on, followed if the press is a tap
+      link?: string;
+    }
   | { mode: 'resize'; id: string; sx: number; sy: number; w0: number; h0: number; fs0: number }
   | {
       mode: 'gresize';

@@ -16,7 +16,7 @@
     "knip": "knip",
     "budget": "node tools/budget.ts",
     "check:fast": "npm run typecheck && npm run lint && npm run knip && npm run budget && node tools/check-names.ts && node tools/code-map/check.ts",
-    "test": "npm run build && node tests/vault.ts && node tests/codemap.ts && node tests/persist.ts && node tests/model.ts && node tests/placement.ts && node tests/fit.ts && node tests/git.ts && node tests/link.ts && node tests/setup.ts && node tests/github.ts && node tests/prototype.ts && node tests/layout.ts && node tests/preview.ts && node tests/build.ts && node tests/packages.ts && node tests/sync.ts && node tests/controls.ts && node tests/done.ts && node tests/reply.ts && node tests/mac.ts && node tests/smoke.ts && node tests/zoom.ts && node tests/theme.ts && node tests/docs.ts && node tests/phone.ts && node tests/popups.ts && node tests/update.ts",
+    "test": "npm run build && node tests/vault.ts && node tests/codemap.ts && node tests/persist.ts && node tests/model.ts && node tests/richtext.ts && node tests/richpaste.ts && node tests/richNotes.ts && node tests/richTyping.ts && node tests/richIntegration.ts && node tests/richLinks.ts && node tests/richAccess.ts && node tests/richDocs.ts && node tests/placement.ts && node tests/fit.ts && node tests/git.ts && node tests/link.ts && node tests/setup.ts && node tests/github.ts && node tests/prototype.ts && node tests/layout.ts && node tests/preview.ts && node tests/build.ts && node tests/packages.ts && node tests/sync.ts && node tests/controls.ts && node tests/done.ts && node tests/reply.ts && node tests/mac.ts && node tests/smoke.ts && node tests/zoom.ts && node tests/theme.ts && node tests/docs.ts && node tests/phone.ts && node tests/popups.ts && node tests/update.ts",
     "check": "npm run check:fast && npm test",
     "voice": "node tests/voice.ts",
     "dist": "npm run build && electron-builder --linux AppImage",
@@ -36,6 +36,7 @@
     "electron": "44.9.1",
     "electron-builder": "26.15.3",
     "knip": "^6.44.0",
+    "linkedom": "^0.18.15",
     "playwright": "1.63.0",
     "typescript": "^6.0.3"
   },
