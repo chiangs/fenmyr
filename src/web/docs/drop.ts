@@ -5,6 +5,7 @@ import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
+import { docsHtmlOf } from '../richtext/render.ts';
 import { say } from '../settings/licenses.ts';
 import { esc } from '../ui/dom.ts';
 import { docHTML, mdToHTML } from './docText.ts';
@@ -34,7 +35,7 @@ const lead = (words: string | undefined) => {
 };
 
 function cardHTML(c: Card) {
-  if (c.type === 'note') return lead(c.name) + mdToHTML(c.text);
+  if (c.type === 'note') return lead(c.name) + (c.rich ? docsHtmlOf(c.text ?? '') : mdToHTML(c.text));
   if (c.type === 'todo') {
     const first = lead(c.text),
       items = taskItems(c.items);
