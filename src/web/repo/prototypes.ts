@@ -1,6 +1,7 @@
 import type { Board, Folder, Project } from '../../shared/model.ts';
 import type { Proto } from '../../shared/repos.ts';
 import { appState } from '../core/state.ts';
+import { closeHome } from '../library/home.ts';
 import { newBoardIn } from '../library/nesting.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
@@ -39,6 +40,8 @@ export async function createPrototype(f: Folder, root: string, w: Wish) {
   const b: Board = { ...newBoard(w.name), kind: 'prototype', proto, folder: f.id };
   await Fenmyr.save(b);
   await refreshBoards();
+  // made from a folder's home, it opens in place of the home, as a new board does
+  closeHome();
   await openBoard(b.id);
   chirp(`Made “${w.name}”. Its code is in ${proto.dir} ✦`, 4000);
   return b;

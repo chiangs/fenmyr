@@ -47,6 +47,15 @@ export function keepSources(sources: Sources) {
   return [...used];
 }
 
+// Myra's line naming the cards a build came from: their buttons don't outlast the window, so the words name them too
+export function cardsLine(ids: string[]) {
+  const names = ids.flatMap(id => {
+    const c = cardById(id);
+    return c ? [`“${nameOf(c)}”`] : [];
+  });
+  return `I built it from these cards on the board: ${names.join(', ')}.`;
+}
+
 // buttons under Myra's reply, one per card the build came from
 export const cardButtons = (ids: string[]) =>
   ids.slice(0, MAX_BUTTONS).flatMap(id => {
