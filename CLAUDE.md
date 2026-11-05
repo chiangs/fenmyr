@@ -15,6 +15,7 @@ Fenmyr is an Electron canvas app for Linux. The renderer in `src/web/` draws boa
 | `node tests/perf.ts origin/main` | Times opening, dragging, zooming and editing a 500-card board on both sides and fails when this side is clearly slower. |
 | Mac build | Start it from the Actions tab, or run `npm run dist:mac` on a Mac. The result is unsigned. |
 | `node tools/budget.ts --write` | Lowers the budget after you pay part of it down. It never raises it. |
+| `node tools/code-map/query.ts <file or area>` | Says what a file is for, what it imports and what imports it. |
 
 Node runs `.ts` files directly, so tests and tools need no build step. Write imports with the `.ts` extension.
 
@@ -29,6 +30,10 @@ Node runs `.ts` files directly, so tests and tools need no build step. Write imp
 | `tests/` | Headless Electron tests, the perf benchmark, fixtures and the launch helper. |
 | `tools/` | The build, the budget, the visual diff, metrics, and generators for icons, notices and the app icon. |
 | `tools/editor/` | A separate npm package that builds `web/vendor/editor.js` and `docx.js`. |
+
+## Code map
+
+`node tools/code-map/query.ts <file or area>` says what a file is for, what it imports and what imports it. Use it before changing a shared file, to see what depends on it, and when you need to find where something lives. The same map, rebuilt on every merge to `main`, is at https://code-map.fenmyr.com/ (`code-map.json` and `code-map.md` for tools).
 
 ## Add a bridge operation
 
@@ -46,6 +51,7 @@ Each rule names the check that enforces it.
 - **One area per module, at most 400 lines.** Before writing a popover, menu, dialog, drag loop or colour helper, look for the shared one. Enforced by the budget's `longFiles` count.
 - **Card types live in one table.** Per-type facts go in `src/shared/cardTypes.ts`, not in new lists. Data from outside is parsed once where it enters: `src/shared/myraReply.ts` is the pattern.
 - **No dead code.** knip and `noUnused*` fail on unused files, exports, dependencies, locals and parameters.
+- **Every source file has a one-line description.** Add it to `tools/code-map/descriptions.json` when you add a file, and remove it when you delete one. Enforced by `tools/code-map/check.ts`, part of `check:fast`.
 - **Comments say why.** Keep a comment only when it explains something the code can't show. No section banners and no comments that restate the code.
 - **Prove behaviour, not compilation.** A renderer change runs `npm run visual` and `node tests/perf.ts origin/main`. A new bridge operation gets a smoke check.
 - **User-facing text.** Myra speaks in the first person in her own lines, with ✦ used sparingly. Menus, tooltips, settings and errors are plain and neutral. Use British English.

@@ -34,6 +34,12 @@ npm test               # builds, then runs every test headless
 
 The smoke test uses a throwaway data folder and stand-in `claude` and `whisper-cli` programs, so it never touches your boards or spends Claude usage.
 
+## The code map
+
+Every source file has a one-line description in `tools/code-map/descriptions.json`, and so does every area (a folder under `src/web/`, `host`, `shared`, `tests`, `tools`). Add one when you add a file, change it when the file's job changes, and remove it when you delete the file. `npm run check:fast` fails until they match.
+
+The descriptions feed the [code map](https://code-map.fenmyr.com/), which is rebuilt on every merge to `main`. To see what a file is for and what depends on it before you change it, run `node tools/code-map/query.ts <file or area>`. `npm run code-map` builds the site into `site/` to look at it locally.
+
 ## Releasing
 
 Nothing has been released yet, so Fenmyr stays at 1.0.0 until the first release. After that, bump the patch number for fixes and small changes, and the minor number for new features. Add an entry to `NEWS` in `src/web/app/news.ts` for anything people should hear about.

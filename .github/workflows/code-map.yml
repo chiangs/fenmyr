@@ -1,0 +1,43 @@
+name: Code map
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'tests/**', 'tools/**', 'web/*.js', '.claude/**', 'package.json', '.github/workflows/code-map.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false   # a deploy that has started finishes; the newest run follows it
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - name: Dependencies (the map needs TypeScript and esbuild; no install scripts run)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build the map
+        run: node tools/code-map/build.ts site
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
