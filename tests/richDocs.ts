@@ -136,6 +136,15 @@ assert.strictEqual(
   `p(Notes) ${RICH_IN_A_DOC}`,
   'I-5: a rich note dropped on a Doc card arrives as bold, italic, underline, strike, a link, nested lists and a list starting at 3',
 );
+const docBody = await page.evaluate(() => {
+  const c = window.__fenmyr.board.cards.find(c => c.id === 'Rich doc');
+  return c?.type === 'doc' ? (c.body ?? '') : '';
+});
+assert.ok(
+  docBody.includes('Plan for Friday with care, under and old\nRead the best guide (https://example.org/guide)') &&
+    !/\*\*|~~|<u>/.test(docBody),
+  "the Doc's text copy, which search and Myra read, holds the note's words without its markers",
+);
 
 await drag('#cards [data-id="plain"]', '#cards [data-id="Plain doc"]');
 assert.strictEqual(
