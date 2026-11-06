@@ -77,6 +77,12 @@ async function menuKeys(t: Smoke) {
   const { page } = t;
   await page.fill('#mcInput', '/ti');
   const listed = await look(t);
+  // a screen reader hears a row's description once; hovering the cut-off words still shows them whole
+  const named = await page.evaluate(() => ({
+    send: window.__t.el('.mc-send').getAttribute('aria-label'),
+    rowTitles: window.__t.all('.slash-menu button[title]').length,
+    descTitles: window.__t.all('.slash-menu button > span[title]').length,
+  }));
   await page.keyboard.press('ArrowDown');
   const down = await look(t);
   await page.keyboard.press('ArrowDown');
@@ -105,6 +111,7 @@ async function menuKeys(t: Smoke) {
     enterRuns: ran.val === '' && ran.last === '/tidy' && /Lined|No loose notes/.test(ran.said),
     escClosesOnlyTheMenu: closed.menu === '' && closed.chat && closed.val === '/ti',
     thenEnterAddsALine: thenLine.val === '/ti\n' && thenLine.sent === ran.sent,
+    named: named.send === 'Send' && named.rowTitles === 0 && named.descTitles === 2,
   });
 }
 

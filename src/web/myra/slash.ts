@@ -122,7 +122,7 @@ function show() {
         on = i === sel ? 'on' : '',
         title = r.title,
         desc = esc(r.desc);
-      return `${head}<button type="button" data-key="${key}" class="${on}" title="${desc}">${title}<span>${desc}</span></button>`;
+      return `${head}<button type="button" data-key="${key}" class="${on}">${title}<span title="${desc}">${desc}</span></button>`;
     })
     .join('');
   const f = (el.form ?? el).getBoundingClientRect();
