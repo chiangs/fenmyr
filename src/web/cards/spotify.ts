@@ -129,7 +129,7 @@ export async function linkCard(url: string, at?: Point | null, toTray?: boolean)
 const MOVING = ['image/gif', 'image/webp', 'image/apng'];
 const MOVING_MAX = 12e6;
 
-function imageFromFile(file: File) {
+export function imageFromFile(file: File) {
   return new Promise<{ src: string; w: number; h: number }>(res => {
     const fr = new FileReader();
     fr.onload = () => {
