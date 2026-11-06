@@ -38,7 +38,6 @@ const hide = () => {
   menu.hidden = true;
 };
 
-// what the keys see: the menu open, a whole command on one line (/find cloud, or /tidy after Esc), or anything else
 export function boxState(value: string): BoxState {
   if (!menu.hidden) return 'menu';
   const name = /^\/(\w+)(\s|$)/.exec(value)?.[1]?.toLowerCase();
@@ -49,6 +48,7 @@ export function menuKey(k: MenuKey) {
   switch (k.type) {
     case 'move': {
       const n = rows(box().value).length;
+      if (!n) return hide();
       sel = (sel + k.by + n) % n;
       return show();
     }
@@ -132,8 +132,8 @@ function show() {
   menu.style.bottom = `${innerHeight - f.top + 6}px`;
 }
 
-// run is Enter and a click, fill is Tab. A command that takes words gets "/cmd " either way and waits for them; the
-// input event that brings shows what comes next, such as /timer's presets.
+// Enter and a click run a row, Tab fills it in. A command that takes words is filled in either way, to wait for them,
+// and setChatText's input event reopens the menu on what comes next, such as /timer's presets.
 function pick(how: 'run' | 'fill', r: SlashRow | undefined) {
   hide();
   if (!r) return;
