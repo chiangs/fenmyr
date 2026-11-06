@@ -1,1 +1,6 @@
-{}
+{
+  "panels-myra-chat": "Phase 1 (#242): Myra's input gets a footer row with “Ctrl+Enter to send” beside Send, so the thread above is one row shorter.",
+  "proto-wide-screen": "Phase 1 (#242): the docked chat's input gets the footer row with “Ctrl+Enter to send” beside Send; the thread above is one row shorter.",
+  "proto-medium-screen": "Phase 1 (#242): the docked chat's input gets the footer row with “Ctrl+Enter to send” beside Send; the thread above is one row shorter.",
+  "proto-narrow-screen": "Phase 1 (#242): the docked chat's input gets the footer row with “Ctrl+Enter to send” beside Send; the thread above is one row shorter."
+}
