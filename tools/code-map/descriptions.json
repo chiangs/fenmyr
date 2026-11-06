@@ -283,6 +283,7 @@
     "tests/capture.ts": "Quick capture in the real app: Enter to Unsorted, Shift+Enter to write on the board first, and the edge cases.",
     "tests/chatKeys.ts": "Checks every row of the chat input’s key table, IME composition included.",
     "tests/codemap.ts": "Tests the code map: import extraction, cycles, descriptions check, JSON and Markdown output and the lookup command.",
+    "tests/contextBar.ts": "The selection bar in the real app: the typing state, crop bar, Wireframe panel and phone strip.",
     "tests/controls.ts": "Tests a prototype’s controls: drawn from tweaks.json, live changes and Keep these values.",
     "tests/docs.ts": "Checks the doc editor keeps formatting through save and reload, and that its menus work.",
     "tests/done.ts": "The end-to-end test of the Rapid Prototyping plan, from linking a repo to a pushed commit.",
