@@ -44,6 +44,8 @@ jobs:
         run: node tests/persist.ts
       - name: Model test (board and library files, prototype fields)
         run: node tests/model.ts
+      - name: Context bar placement test (above, flipped, stuck and beside a line, without the app)
+        run: node tests/barPlace.ts
       - name: Rich text test (the note dialect, its markup, and round trips)
         run: node tests/richtext.ts
       - name: Rich paste test (HTML, Markdown and PDF clipboards into notes)
