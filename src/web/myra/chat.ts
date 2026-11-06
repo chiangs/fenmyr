@@ -6,7 +6,6 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { timerRequest } from '../features/duration.ts';
-import { hideSlash, slash } from '../features/find.ts';
 import { clearGlow, runTimerRequest } from '../features/timer.ts';
 import { settings } from '../settings/settings.ts';
 import { elementById, textField } from '../ui/dom.ts';
@@ -21,6 +20,7 @@ import { initPerch, wonderIfEmpty } from './perch.ts';
 import { parse } from './replyText.ts';
 import type { SayAction } from './say.ts';
 import { reply } from './say.ts';
+import { hideSlash, initSlashMenu, slash } from './slash.ts';
 import { snapshot } from './snapshot.ts';
 
 // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
@@ -275,6 +275,8 @@ export function init31() {
     t.style.height = 'auto';
     t.style.height = `${Math.min(120, t.scrollHeight)}px`;
   };
+
+  initSlashMenu();
 
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());
 
