@@ -12,6 +12,7 @@
       "!src/host/icon-names.json",
       "!tests/sample-vault",
       "!tests/fixtures/richtext",
+      "!tests/fixtures/replies.json",
       "!.claude/settings.local.json",
       "!.claude/scheduled_tasks.lock",
       "!!.claude/worktrees"
