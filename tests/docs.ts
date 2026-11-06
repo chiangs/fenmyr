@@ -285,6 +285,34 @@ const DOC: Node = {
   await page.evaluate(doc => window.__fenmyr.docEditor().commands.setContent(doc), DOC);
   await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(out, 'doc.png') });
+  // the PDF page copies the doc's styles; the colours they take from the app's variables must come with them
+  const pdf = await page.evaluate(async () => {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:fixed;left:0;top:0;width:800px;height:600px;opacity:0';
+    f.srcdoc = window.__fenmyr.docPrintHTML('letter').replace(/__WEB__\//g, location.href.replace(/[^/]*$/, ''));
+    document.body.appendChild(f);
+    await new Promise(r => f.addEventListener('load', r, { once: true }));
+    const d = f.contentDocument;
+    if (!d) return { missing: ['no document'], colours: {} };
+    const css = [...d.querySelectorAll('style')].map(s => s.textContent ?? '').join(''),
+      root = getComputedStyle(d.documentElement),
+      missing = [...new Set(css.match(/var\(--[\w-]+(?=\))/g) ?? [])]
+        .map(v => v.slice(4))
+        .filter(n => !root.getPropertyValue(n).trim()),
+      seen = (sel: string, prop: string) => {
+        const el = d.querySelector(sel);
+        return el ? getComputedStyle(el).getPropertyValue(prop) : 'none';
+      },
+      colours = {
+        code: seen('.dv-prose code', 'background-color'),
+        pre: seen('.dv-prose pre', 'background-color'),
+        th: seen('.dv-prose th', 'background-color'),
+        quote: seen('.dv-prose blockquote', 'border-left-color'),
+        rule: seen('.dv-prose hr', 'background-color'),
+      };
+    f.remove();
+    return { missing, colours };
+  });
   const r = {
     editorLoaded,
     round: { types: round.types, marks: round.marks },
@@ -301,6 +329,7 @@ const DOC: Node = {
     toolbarBold,
     table,
     docx,
+    pdf,
     errors,
   };
   console.log(JSON.stringify(r, null, 1));
@@ -321,6 +350,15 @@ const DOC: Node = {
     r.table &&
     r.docx.zip &&
     r.docx.size > 5000 &&
+    !r.pdf.missing.length &&
+    JSON.stringify(r.pdf.colours) ===
+      JSON.stringify({
+        code: 'rgb(246, 242, 239)',
+        pre: 'rgb(41, 38, 34)',
+        th: 'rgb(250, 248, 245)',
+        quote: 'rgb(232, 138, 36)',
+        rule: 'rgb(237, 232, 228)',
+      }) &&
     !errors.length;
   if (process.env.KEEP) console.log('output in', out);
   else fs.rmSync(data, { recursive: true, force: true });
