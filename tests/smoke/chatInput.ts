@@ -18,6 +18,7 @@ export async function chatInput(t: Smoke) {
   await pen(t);
   await grows(t);
   await counts(t);
+  await clears(t);
   await freshChat(t);
 }
 
@@ -277,5 +278,35 @@ async function counts(t: Smoke) {
   t.checkAll('chatCounts', {
     emptyBoxNoCountNoBar: empty.wraps && empty.count === '' && empty.bar === 0,
     paragraphScrollsWithoutACount: paragraph.wraps && paragraph.fade && paragraph.count === '',
+  });
+}
+
+// the × sits clear of a long draft's scrollbar, and Ctrl+Z brings back what it cleared
+async function clears(t: Smoke) {
+  const { page } = t;
+  const draft = Array.from({ length: 12 }, (_, i) => `line ${i + 1}`).join('\n'),
+    value = () => page.evaluate(() => window.__t.field('#mcInput').value);
+  await page.focus('#mcInput');
+  await page.fill('#mcInput', draft);
+  await page.waitForTimeout(150);
+  const where = await page.evaluate(() => {
+    const el = window.__t.field('#mcInput'),
+      btn = window.__t.el('#clrBtn'),
+      bar = el.offsetWidth - el.clientWidth;
+    return {
+      shown: !btn.hidden,
+      bar,
+      clear: btn.getBoundingClientRect().right <= el.getBoundingClientRect().right - bar,
+    };
+  });
+  await page.click('#clrBtn');
+  const cleared = await value();
+  await page.keyboard.press('Control+Z');
+  const back = await value();
+  await page.fill('#mcInput', '');
+  t.checkAll('chatClear', {
+    besideTheScrollbar: where.shown && where.bar > 0 && where.clear,
+    clears: cleared === '',
+    undoBringsItBack: back === draft,
   });
 }
