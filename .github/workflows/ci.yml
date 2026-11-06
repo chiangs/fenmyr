@@ -34,6 +34,8 @@ jobs:
         run: npm run check:fast
       - name: Build
         run: npm run build
+      - name: Theme test (every colour theme's contrast, and card colours that stay apart for colour blindness)
+        run: node tests/themes.ts
       - name: Vault test (reading notes, privacy rules)
         run: node tests/vault.ts
       - name: Code map test (imports, cycles, descriptions, the lookup command)
@@ -104,6 +106,10 @@ jobs:
         run: node tests/phone.ts
       - name: Popup test
         run: node tests/popups.ts
+      - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
+        run: node tests/capture.ts
+      - name: Image actions test (download, copy and replace a picture, in the real app)
+        run: node tests/imageActions.ts
       - name: Updater test
         run: node tests/update.ts
       - name: Caelestia theme test

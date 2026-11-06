@@ -344,6 +344,7 @@
     "tests/zoom.ts": "Tests zoom steps, pinch, reset and the zoom menu.",
     "tools/budget.ts": "Counts untyped files, any, casts, long files and markup logic, and fails if any rises.",
     "tools/build.ts": "Bundles the host and the renderer with esbuild.",
+    "tools/check-ci.ts": "Fails when a test in npm test has no step in CI, or the other way round.",
     "tools/check-names.ts": "Fails on undeclared names in modules that skip type checking.",
     "tools/code-map/areas.ts": "Names the area and zone a file belongs to, from its path.",
     "tools/code-map/build.ts": "Builds the code map site: the interactive page, code-map.json, code-map.md and the README preview.",
