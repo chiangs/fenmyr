@@ -7,7 +7,7 @@ import { stage, world } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { closestTo } from '../ui/dom.ts';
 import { pathD, penT } from './pen.ts';
 import { vecDown, vecHit, vecMove, vecToggle, vecUp } from './penPointer.ts';

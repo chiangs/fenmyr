@@ -6,8 +6,8 @@ import { appState, session } from '../core/state.ts';
 import { closeHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { bdNow } from '../myra/birthday.ts';
+import { chirp, reply, say } from '../myra/say.ts';
 import { plainOf } from '../richtext/render.ts';
-import { chirp, reply, say } from '../settings/licenses.ts';
 import { cardEl, esc } from '../ui/dom.ts';
 import { osNotify } from './timer.ts';
 

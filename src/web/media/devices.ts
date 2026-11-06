@@ -9,7 +9,7 @@ import type { MenuItem } from '../features/export.ts';
 import { boardMenu } from '../features/export.ts';
 import { ask } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { cardEl, esc } from '../ui/dom.ts';

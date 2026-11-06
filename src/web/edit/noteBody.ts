@@ -1,11 +1,11 @@
 import type { CardOf } from '../../shared/model.ts';
+import { say } from '../myra/say.ts';
 import { serialise } from '../richtext/dialect.ts';
 import { type Doc, hasFormatting, textDoc, wordsOf } from '../richtext/doc.ts';
 import { docFromDom } from '../richtext/fromDom.ts';
 import { docFromMarkdown } from '../richtext/fromMarkdown.ts';
 import { fromClipboard } from '../richtext/paste.ts';
 import { renderForEditing } from '../richtext/render.ts';
-import { say } from '../settings/licenses.ts';
 import { lineBeforeCaret } from './noteKeys.ts';
 
 type Note = CardOf<'note'>;

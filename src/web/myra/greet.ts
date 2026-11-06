@@ -8,12 +8,12 @@ import { type DueItem, dueAnnounce, dueDate, dueHeld, dueJump, dueText, readInde
 import { slashFind, slashTag } from '../features/find.ts';
 import { slashTimer } from '../features/timer.ts';
 import { glideView, zoomFit } from '../panels/zoomMenu.ts';
-import type { SayAction } from '../settings/licenses.ts';
-import { reply, say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { ANIMS, slashAnimate } from './anim.ts';
 import { bdNow, dayKey, slashBirthday } from './birthday.ts';
 import { tidyNotes } from './chat.ts';
+import type { SayAction } from './say.ts';
+import { reply, say } from './say.ts';
 
 type GreetContext = { why: string; firstToday: boolean; now: Date; name: string };
 type GreetLine = { text: string; acts?: SayAction[] } | null;
@@ -72,8 +72,15 @@ export function greet(why: string) {
     shown ? 10000 : 0,
   ); // what came due while the app was closed is said after the greeting, not over it
 }
+// the slash menu's groups, in the order it lists them; every command names one, so a new command can't go unplaced
+export const SLASH_GROUPS = { board: 'On this board', make: 'Make something', chat: 'In this chat' } as const;
 // dev: only listed in development builds; quiet: the command doesn't echo into the chat
-export type SlashEntry = SlashCommand & { dev?: boolean; quiet?: boolean; run: (arg: string) => unknown };
+export type SlashEntry = SlashCommand & {
+  group: keyof typeof SLASH_GROUPS;
+  dev?: boolean;
+  quiet?: boolean;
+  run: (arg: string) => unknown;
+};
 export let SLASH: SlashEntry[];
 
 export const helpText = (lead = 'Here is what I can do right here, no thinking needed:') =>
@@ -139,10 +146,18 @@ export function init33() {
 
   SLASH = [
     // every command here is handed to Myra in her instructions (see snapshot()), so a new one only needs a desc (and an ex / opts if they help her explain it)
-    { cmd: 'find', arg: '<words>', desc: 'Find cards that mention something', ex: '/find berries', run: slashFind },
-    { cmd: 'tag', arg: '<tag>', desc: 'Show the cards with a tag', ex: '/tag food', run: slashTag },
+    {
+      cmd: 'find',
+      group: 'board',
+      arg: '<words>',
+      desc: 'Find cards that mention something',
+      ex: '/find berries',
+      run: slashFind,
+    },
+    { cmd: 'tag', group: 'board', arg: '<tag>', desc: 'Show the cards with a tag', ex: '/tag food', run: slashTag },
     {
       cmd: 'tidy',
+      group: 'board',
       desc: 'Line the loose notes up in rows',
       run: () => {
         const n = tidyNotes();
@@ -151,6 +166,7 @@ export function init33() {
     },
     {
       cmd: 'due',
+      group: 'board',
       arg: '[overdue|today]',
       desc: 'List what is overdue and coming up on every board. Use /due overdue or /due today to narrow it.',
       ex: ['/due', '/due overdue', '/due today'],
@@ -159,6 +175,7 @@ export function init33() {
     },
     {
       cmd: 'fit',
+      group: 'board',
       desc: 'Zoom to see everything',
       run: () => {
         zoomFit();
@@ -167,6 +184,7 @@ export function init33() {
     },
     {
       cmd: 'timer',
+      group: 'board',
       arg: '<minutes> <purpose>',
       desc: 'Start a timer, with an optional purpose. /timer stop cancels it, and /timer shows the time left.',
       ex: ['/timer 25 write the intro', '/timer 2m10s tea', '/timer 1h30'],
@@ -175,12 +193,14 @@ export function init33() {
     },
     {
       cmd: 'birthday',
+      group: 'chat',
       desc: '(demo, temporary) play the birthday celebration; /birthday belated plays the belated one',
       dev: true,
       run: a => slashBirthday(a),
     },
     {
       cmd: 'animate',
+      group: 'chat',
       arg: '<name>',
       desc: 'Make me move: a surprise, or pick one',
       ex: '/animate love',
@@ -189,7 +209,7 @@ export function init33() {
       },
       run: slashAnimate,
     },
-    { cmd: 'clear', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
-    { cmd: 'help', desc: 'What I can do without thinking', run: () => reply(helpText()) },
+    { cmd: 'clear', group: 'chat', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
+    { cmd: 'help', group: 'chat', desc: 'What I can do without thinking', run: () => reply(helpText()) },
   ];
 }

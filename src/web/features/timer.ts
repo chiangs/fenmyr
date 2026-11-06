@@ -2,12 +2,12 @@ import { isRecord } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { appState } from '../core/state.ts';
 import type { Pose } from '../goo.ts';
-import { snapshot } from '../myra/chat.ts';
 import { goo, hopMyra } from '../myra/goos.ts';
 import { gooSlot, keepPerch } from '../myra/perch.ts';
 import { noEmoji, parse } from '../myra/replyText.ts';
-import type { SayAction } from '../settings/licenses.ts';
-import { reply } from '../settings/licenses.ts';
+import type { SayAction } from '../myra/say.ts';
+import { reply } from '../myra/say.ts';
+import { snapshot } from '../myra/snapshot.ts';
 import { settings } from '../settings/settings.ts';
 import { durText, parseTimer } from './duration.ts';
 

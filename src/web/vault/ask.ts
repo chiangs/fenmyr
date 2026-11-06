@@ -3,7 +3,7 @@ import type { VaultHit, VaultListItem, VaultPatch, VaultTaskForMyra } from '../.
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { saveLib } from '../library/tree.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { child, closestTo, elementById, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { initVaultAccess, vaultUseClick } from './access.ts';

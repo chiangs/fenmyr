@@ -1,5 +1,5 @@
 import { $ } from '../core/dom.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { docHTML } from './docText.ts';
 import { docCard, ed, editorBundle, syncDoc } from './editor.ts';
 import { docPrintHTML } from './pdf.ts';

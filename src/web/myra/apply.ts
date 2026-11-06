@@ -25,7 +25,7 @@ import { gitAction } from '../proto/gitActions.ts';
 import { askInstall } from '../proto/install.ts';
 import { applyNewPrototype, repoActs } from '../repo/myra.ts';
 import { FS } from '../selbar/textSize.ts';
-import { reply, snapTo } from '../settings/licenses.ts';
+import { snapTo } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { cardEl } from '../ui/dom.ts';
 import { aiGrants, tasksLine, updateVaultChip } from '../vault/ask.ts';
@@ -34,6 +34,7 @@ import { animIntent, animName, playAnim } from './anim.ts';
 import { MYRA_ADDS, type NoteUsed, type Picked } from './applyTypes.ts';
 import { animAskedAt, ask, timerAskedAt } from './chat.ts';
 import { guessNext, noEmoji } from './replyText.ts';
+import { reply } from './say.ts';
 
 export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked: false, used: [] }) {
   // her templates: use one of theirs, or keep what's on the board as one
