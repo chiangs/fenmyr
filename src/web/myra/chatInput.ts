@@ -54,11 +54,12 @@ function onKey(e: KeyboardEvent, el: HTMLTextAreaElement) {
   }
 }
 
-// CSS sets the height and its cap; this only reads whether the text goes past it. Lines are counted as written.
+// CSS sets the height and its cap; this only reads whether the text goes past it. Lines are counted as written, so one
+// long paragraph scrolls with no count. An empty box never counts: its scroll height measures a wrapped placeholder.
 function showSize(el: HTMLTextAreaElement, lines: HTMLElement) {
-  const over = el.scrollHeight - el.clientHeight > 1,
+  const over = !!el.value && el.scrollHeight - el.clientHeight > 1,
     n = el.value.split('\n').length;
-  lines.hidden = !over;
-  lines.textContent = n === 1 ? '1 line' : `${n} lines`;
+  lines.hidden = !over || n < 2;
+  lines.textContent = `${n} lines`;
   el.classList.toggle('fade-top', over && el.scrollTop > 0);
 }

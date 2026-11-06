@@ -17,6 +17,7 @@ export async function chatInput(t: Smoke) {
   await ime(t);
   await pen(t);
   await grows(t);
+  await counts(t);
   await freshChat(t);
 }
 
@@ -236,5 +237,45 @@ async function grows(t: Smoke) {
     thirdOfTheWindow: short.cap < full.cap && Math.abs(short.h - short.cap) <= 1,
     oneLineAfterSending: Math.abs(sent.h - first) <= 1 && sent.count === '',
     heights: hs.map(Math.round).join(),
+  });
+}
+
+// the count is of lines as written: an empty box under a placeholder that wraps (her name can be 18 letters) shows
+// neither a count nor a scrollbar, and one long paragraph scrolls with the fade but no count
+async function counts(t: Smoke) {
+  const { page } = t;
+  const seen = () =>
+    page.evaluate(() => {
+      const el = window.__t.field('#mcInput'),
+        lines = window.__t.el('#mcLines');
+      return {
+        count: lines.hidden ? '' : lines.textContent,
+        bar: el.offsetWidth - el.clientWidth,
+        wraps: el.scrollHeight - el.clientHeight > 1,
+        fade: el.classList.contains('fade-top'),
+      };
+    });
+  const name = (n: string) =>
+    page.evaluate(n => {
+      const el = window.__t.input('#myraNameIn');
+      el.value = n;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }, n);
+  await name('Wilhelmina-Rosamun');
+  await page.fill('#mcInput', '');
+  await page.waitForTimeout(150);
+  const empty = await seen();
+  await name('');
+  await page.fill('#mcInput', 'word '.repeat(150).trim());
+  await page.evaluate(() => {
+    const el = window.__t.el('#mcInput');
+    el.scrollTop = el.scrollHeight;
+  });
+  await page.waitForTimeout(150);
+  const paragraph = await seen();
+  await page.fill('#mcInput', '');
+  t.checkAll('chatCounts', {
+    emptyBoxNoCountNoBar: empty.wraps && empty.count === '' && empty.bar === 0,
+    paragraphScrollsWithoutACount: paragraph.wraps && paragraph.fade && paragraph.count === '',
   });
 }

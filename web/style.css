@@ -805,7 +805,7 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-form { display: flex; align-items: flex-end; gap: 8px; margin: 8px 10px 10px; padding: 6px 6px 6px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: #f7f4f1; }
 .mc-form { flex-direction: column; align-items: stretch; gap: 2px; }
 .mc-form textarea { min-width: 0; border: 0; background: none; resize: none; outline: none; font: 400 14px/1.4 var(--font); color: var(--ink); field-sizing: content; max-height: min(calc(6lh + 12px), calc(100vh / 3)); padding: 6px 0; user-select: text; -webkit-user-select: text; }
-.mc-form textarea:placeholder-shown { max-height: calc(1lh + 12px); }
+.mc-form textarea:placeholder-shown { max-height: calc(1lh + 12px); overflow: hidden; }
 /* a mask reads only alpha, so any solid colour stands for shown */
 .mc-form textarea.fade-top { mask-image: linear-gradient(transparent, var(--ink) 1lh); }
 .mc-form textarea::placeholder { color: var(--ink-faint); }
