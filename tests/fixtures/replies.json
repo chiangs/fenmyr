@@ -1142,7 +1142,11 @@
    {
     "who": "myra",
     "text": "Sorted.",
-    "acts": []
+    "acts": [
+     "Group these by theme",
+     "What am I missing?",
+     "Turn this into a plan"
+    ]
    }
   ],
   "timer": null,
@@ -1198,9 +1202,29 @@
    {
     "cards": [
      {
-      "id": "@3",
+      "id": "@1",
       "type": "note",
       "x": 0,
+      "y": 30,
+      "w": 220,
+      "h": 140,
+      "color": "white",
+      "text": "First note"
+     },
+     {
+      "id": "@2",
+      "type": "note",
+      "x": 260,
+      "y": 30,
+      "w": 220,
+      "h": 140,
+      "color": "white",
+      "text": "Second note"
+     },
+     {
+      "id": "@3",
+      "type": "note",
+      "x": 174,
       "y": 0,
       "w": 220,
       "h": 140,
@@ -1208,7 +1232,13 @@
       "text": "For the template"
      }
     ],
-    "links": [],
+    "links": [
+     {
+      "id": "@4",
+      "a": "@1",
+      "b": "@2"
+     }
+    ],
     "id": "@5",
     "name": "From new",
     "desc": "Made by Myra",

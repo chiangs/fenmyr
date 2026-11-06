@@ -54,10 +54,15 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       if (playAnim(n, false)) appState.aiAnimAt = Date.now();
     }
   } // her own pick: about once per ten minutes, and confetti only if asked
+  let fromTemplate: Card[] = [];
   if (r.useTemplate) {
     const o = r.useTemplate,
-      t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase());
+      t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase()),
+      board = session.board,
+      had = new Set(board.cards);
     if (t) await useTemplate(t, o.mode === 'new' || o.mode === 'add' ? o.mode : undefined);
+    // cards a template added to this board are among what she made
+    if (session.board === board) fromTemplate = board.cards.filter(c => !had.has(c));
   }
   // folders first: create, rename, and move boards around the library
   const fo = r.folders,
@@ -97,7 +102,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     if (from?.type === 'coll') from.kids = from.kids.filter((x: string) => x !== c.id);
   };
   const center = centerWorld(),
-    added: Card[] = [];
+    added: Card[] = [...fromTemplate];
   let i = 0;
   const place = (o: { x?: number | undefined; y?: number | undefined; type?: string | undefined }) => {
     if (o.x == null || o.y == null) {
@@ -167,9 +172,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     const c = session.board.tray.find(x => x.id === o.id);
     if (!c) return;
     place(o);
-    takeFromTray(c, { x: o.x ?? c.x, y: o.y ?? c.y }).forEach(m => {
-      added.push(m);
-    });
+    added.push(...takeFromTray(c, { x: o.x ?? c.x, y: o.y ?? c.y }));
   });
   (r.move || []).forEach(o => {
     const c = byId(o.id);
@@ -264,9 +267,7 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     r.screens.forEach(sp => {
       const { f, made } = buildScreen(sp, sx, sy);
       builtFrames.push(f);
-      made.forEach(c => {
-        added.push(c);
-      });
+      added.push(...made);
       const noFlow = typeof sp === 'object' && sp !== null && 'flow' in sp && sp.flow === false;
       if (prev && !noFlow) session.board.links.push({ id: uid(), a: prev.id, b: f.id, arrow: true });
       prev = f;
@@ -311,6 +312,26 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       } catch (_e) {}
     }
   }
+  // notes she says she used (only ones she was actually given) land on the board as vault note cards
+  const given = (r.vaultNotes || [])
+    .map(x => ctx.used.find(n => n.vault === x.vault && n.rel === x.path))
+    .filter((n, i, a): n is NoteUsed => !!n && a.indexOf(n) === i);
+  given.forEach((n, k) => {
+    const w = centerWorld(),
+      c = card('vnote', {
+        vault: n.vaultId,
+        path: n.rel,
+        title: n.title,
+        tags: n.tags,
+        props: n.props,
+        excerpt: n.excerpt,
+        color: 'lilac',
+      });
+    c.x = snapTo(w.x - 460 + (k % 3) * (c.w + 20));
+    c.y = snapTo(w.y + 140 + Math.floor(k / 3) * (c.h + 20));
+    addCard(c, true);
+    added.push(c);
+  });
   layoutAll();
   renderTray();
   renderWires();
@@ -332,26 +353,6 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
     }
   }
   if (added.length) setTimeout(() => showWhatMyraMade(added), 250);
-  // notes she says she used (only ones she was actually given) land on the board as vault note cards
-  const given = (r.vaultNotes || [])
-    .map(x => ctx.used.find(n => n.vault === x.vault && n.rel === x.path))
-    .filter((n, i, a): n is NoteUsed => !!n && a.indexOf(n) === i);
-  given.forEach((n, k) => {
-    const w = centerWorld(),
-      c = card('vnote', {
-        vault: n.vaultId,
-        path: n.rel,
-        title: n.title,
-        tags: n.tags,
-        props: n.props,
-        excerpt: n.excerpt,
-        color: 'lilac',
-      });
-    c.x = snapTo(w.x - 460 + (k % 3) * (c.w + 20));
-    c.y = snapTo(w.y + 140 + Math.floor(k / 3) * (c.h + 20));
-    addCard(c, true);
-    added.push(c);
-  });
   const read = !ctx.asked
     ? ''
     : ctx.tasks
@@ -359,7 +360,6 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
       : ctx.used.length
         ? ` I read ${ctx.used.length} note${ctx.used.length === 1 ? '' : 's'} from your vault: ${ctx.used.map(n => n.title).join(', ')}.`
         : ' I looked in your vault, but found no notes matching that in the folders you allowed.';
-  if (given.length) save();
   const acts: { label: string; run: () => unknown; ghost?: boolean; cls?: string }[] = r.confirm
     ? [
         { label: `${r.confirm || 'Yes, make it'} ✦`, run: () => ask(q ?? '', true) },

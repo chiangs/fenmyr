@@ -4,6 +4,8 @@
 // The golden file was first recorded from apply.ts as it was before #241. Changed on purpose since:
 // - "I touched N cards" counts each card once. A card she moved and edited counted twice, and fewer cards can mean
 //   no guessed next steps.
+// - Cards a template adds to the board, and her vault note cards, are among the cards she touched: a template she
+//   saves "from new" keeps them, she glides to them, counts them and guesses next steps from them.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
