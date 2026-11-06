@@ -6,6 +6,7 @@
 LIB="$HOME/.local/lib/fenmyr"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}/fenmyr"
 CONF="${XDG_CONFIG_HOME:-$HOME/.config}/Fenmyr"    # Electron keeps the app's settings here (name, theme, the tour…)
+[ "$(uname)" = Darwin ] && CONF="$HOME/Library/Application Support/Fenmyr"
 PURGE=0; YES=0
 for a in "$@"; do case "$a" in --purge) PURGE=1;; --yes|-y) YES=1;; esac; done
 
@@ -13,6 +14,8 @@ echo ""
 echo "  Removing Fenmyr…"
 pkill -f "lectron[^ ]* .*$LIB/app( |$)" 2>/dev/null || true
 pkill -x fenmyr 2>/dev/null || true   # the AppImage
+pkill -f "Fenmyr.app/Contents/MacOS/Fenmyr" 2>/dev/null && sleep 1 || true   # the Mac app
+for d in /Applications "$HOME/Applications"; do [ -d "$d/Fenmyr.app" ] && rm -rf "$d/Fenmyr.app" && echo "  ✓ Removed $d/Fenmyr.app"; done
 rm -rf "$LIB"
 rm -f "$HOME/.local/bin/fenmyr" "$HOME/.local/share/applications/fenmyr.desktop"
 for f in "$HOME"/Applications/Fenmyr*.AppImage; do [ -e "$f" ] && rm -f "$f" && echo "  ✓ Removed $f"; done

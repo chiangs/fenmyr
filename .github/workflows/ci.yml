@@ -27,7 +27,7 @@ jobs:
       - name: Trust the checkout (the container runs as a different user)
         run: git config --global --add safe.directory "$PWD"
       - name: Shell syntax
-        run: bash -n install.sh && bash -n uninstall.sh && bash -n make-release.sh
+        run: bash -n install.sh && bash -n uninstall.sh && bash -n make-release.sh && bash -n packaging/install-mac.sh
       - name: Dependencies
         run: npm ci --no-audit --no-fund && node node_modules/electron/install.js
       - name: Types, lint, unused code and the budget

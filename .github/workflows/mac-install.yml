@@ -1,0 +1,43 @@
+name: Mac install
+# Runs install.sh on a Mac the way a person would: builds Fenmyr.app, installs it, opens it,
+# reinstalls over the running copy, then uninstalls. Only when the installers change.
+on:
+  pull_request:
+    paths: [install.sh, uninstall.sh, packaging/install-mac.sh, src/host/update.ts, package.json, .github/workflows/mac-install.yml]
+  workflow_dispatch:
+
+jobs:
+  install:
+    runs-on: macos-latest
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install
+        run: ./install.sh --yes --no-open
+      - name: Check the installed app
+        run: |
+          app=/Applications/Fenmyr.app
+          codesign --verify --deep --strict "$app"
+          ! xattr -p com.apple.quarantine "$app" 2>/dev/null
+          node -e 'const j = require(process.argv[1]); if (j.repo !== process.cwd() || !j.commit) process.exit(1)' "$app/Contents/Resources/install.json"
+      - name: Open it
+        run: |
+          open /Applications/Fenmyr.app
+          sleep 15
+          pgrep -f "Fenmyr.app/Contents/MacOS/Fenmyr"
+      - name: Reinstall over the running copy
+        run: |
+          ./install.sh --yes --no-open
+          ! pgrep -f "Fenmyr.app/Contents/MacOS/Fenmyr"
+          codesign --verify --deep --strict /Applications/Fenmyr.app
+      - name: Uninstall
+        run: |
+          ./uninstall.sh --yes
+          test ! -e /Applications/Fenmyr.app
+      - name: Installer log
+        if: failure()
+        run: cat build/install-mac.log || true
