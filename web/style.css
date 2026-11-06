@@ -11,7 +11,7 @@
   --sh: 150, 95, 35; --sh-k: 1;   /* shadow color and strength: warm amber in light mode */
   --pill-r: 12px;   /* what used to be pill-shaped (toolbar, buttons, tags, tooltips) is a squircle now */
   /* amber used as text (links, counts) is deeper than the amber fill, so it reads at 4.5:1; text on the amber fill is ink */
-  --accent-text: #b15800; --on-accent: #3b342d;
+  --accent-text: #b15800; --on-accent: #3b342d; --card-link: #a24900;
   /* card fills; render.ts points each card's --fill here, so dark mode can dim them without redrawing */
   --card-white: #ffffff; --card-pink: #ffd7d3; --card-butter: #ffe3bd; --card-mint: #e2eed0; --card-lilac: #ece0ec; --card-sky: #d6e8fb; --card-peach: #f1ebe2;
   /* card colours and the shades used on and around cards; #251 turns these into per-theme tokens */
@@ -105,7 +105,7 @@ body.dark .card.sel::after { box-shadow: 0 0 0 3px rgb(from var(--dark-ring) r g
 @container style(--ta: center) or style(--ta: right) { .card.note .text :is(ul, ol) { list-style-position: inside; } }
 .card.editing .text { user-select: text; -webkit-user-select: text; cursor: text; }
 /* a link in a note: a Doc link's colour, deep enough to read at 4.5:1 on every note colour, and a dark Doc's on dark Snow */
-.card.note .text a { color: var(--accent-text); text-decoration-line: underline; text-decoration-color: rgb(from var(--link-line) r g b / .6); text-underline-offset: 3px; -webkit-user-drag: none; }
+.card.note .text a { color: var(--card-link); text-decoration-line: underline; text-decoration-color: rgb(from var(--link-line) r g b / .6); text-underline-offset: 3px; -webkit-user-drag: none; }
 .card.note:not(.editing) .text a { cursor: pointer; }
 body.dark .card.note.c-white .text a { color: var(--link-on-dark); }
 .note-link { position: fixed; z-index: 60; }
@@ -748,7 +748,7 @@ body.exporting .card.sel::after { display: none; }
 /* ---------- dark mode ---------- */
 body.dark { --sh: 0, 0, 0; --sh-k: 2.2;   /* dark mode: plain dark shadows, not an amber glow */
   --ink: #f6f2ec; --ink-soft: #c6bcae; --ink-faint: #8f8576; --blush: #3d2f22; --dot: #332d25; --surface: #242019; --surface-2: #2e2922; color-scheme: dark; 
-  --accent-text: #e88a24; --on-accent: #1d1a16;
+  --accent-text: #e88a24; --on-accent: #1d1a16; --card-link: #842e00;
   --card-white: #38332d; --card-pink: #e2b0ac; --card-butter: #e0bd8c; --card-mint: #bccba5; --card-lilac: #cabbca; --card-sky: #aec5dc; --card-peach: #cdc6bb; }
 body.dark, body.dark .stage { background: var(--body-bg); }
 body.dark .box, body.dark .tools, body.dark .tray, body.dark .selbar, body.dark .find-bar, body.dark .drawbar, body.dark .cpop, body.dark .capture, body.dark .shapepick, body.dark .wheel-stamps,
