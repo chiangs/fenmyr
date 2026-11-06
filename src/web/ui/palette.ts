@@ -8,8 +8,9 @@ import { addAtCenter } from '../panels/zoomMenu.ts';
 import { colorOf, myColors } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { boardBg, openColor, palette } from './colorPicker.ts';
+import { boardBg, openColor } from './colorPicker.ts';
 import { child } from './dom.ts';
+import { palette } from './wheelColors.ts';
 
 export const PRESETS: Record<string, string[]> = {
   bg: ['#faf7f2', '#ffffff', '#fff8ef', '#fffaf0', '#f4fbf6', '#f3f8ff', '#f6f2ff', '#1d1a16', '#232733', '#2c2620'],
