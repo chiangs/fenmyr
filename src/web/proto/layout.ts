@@ -200,7 +200,6 @@ function dockChat(on: boolean) {
     slot.style.transform = '';
     spot.prepend(slot);
   }
-  $('mcInput').style.height = '';
 }
 
 const INPUT_KEY = 'fenmyr:protoInputH',

@@ -40,9 +40,11 @@ export function init2() {
         btn.hidden = true;
         return;
       }
-      const S = 20;
+      const S = 20,
+        cs = getComputedStyle(cur),
+        bar = cur.offsetWidth - cur.clientWidth - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth);
       btn.hidden = false;
-      btn.style.left = `${r.right - S - 6}px`;
+      btn.style.left = `${r.right - Math.max(0, bar) - S - 6}px`;
       btn.style.top = `${cur.tagName === 'TEXTAREA' ? r.top + 6 : r.top + (r.height - S) / 2}px`;
     };
     addEventListener(
@@ -114,9 +116,10 @@ export function init2() {
       e.stopPropagation();
       if (!cur) return;
       const el = cur;
-      el.value = '';
-      el.dispatchEvent(new Event('input', { bubbles: true }));
       el.focus();
+      el.select();
+      // as an edit, not a new value, so Ctrl+Z brings the text back; it sends the input event itself
+      document.execCommand('delete');
       place();
     });
   }

@@ -84,7 +84,7 @@ export function makeSmoke(o: Pick<Smoke, 'app' | 'page' | 'data' | 'out' | 'erro
 // types a line into Myra's chat box and sends it
 export async function send(t: Smoke, line: string, ms = 200) {
   await t.page.fill('#mcInput', line);
-  await t.page.keyboard.press('Enter');
+  await t.page.keyboard.press('ControlOrMeta+Enter');
   await t.page.waitForTimeout(ms);
 }
 

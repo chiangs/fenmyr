@@ -6,13 +6,13 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { timerRequest } from '../features/duration.ts';
-import { hideSlash, slash } from '../features/find.ts';
 import { clearGlow, runTimerRequest } from '../features/timer.ts';
 import { settings } from '../settings/settings.ts';
 import { elementById, textField } from '../ui/dom.ts';
 import { aiGrants, gatherVault, gatherVaultTasks, updateVaultChip, type VaultTasksUsed } from '../vault/ask.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyMyra } from './apply.ts';
+import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat, typing } from './chatLog.ts';
 import { chatOpen, myraOpen } from './chatWindow.ts';
 import { goo } from './goos.ts';
@@ -21,6 +21,7 @@ import { initPerch, wonderIfEmpty } from './perch.ts';
 import { parse } from './replyText.ts';
 import type { SayAction } from './say.ts';
 import { reply } from './say.ts';
+import { initSlashMenu, slash } from './slash.ts';
 import { snapshot } from './snapshot.ts';
 
 // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
@@ -248,33 +249,15 @@ export function init31() {
   chatForm.onsubmit = e => {
     e.preventDefault();
     const q = chatIn.value.trim();
+    setChatText('');
     if (!q) return;
-    chatIn.value = '';
-    chatIn.style.height = '';
-    hideSlash();
     if (q[0] === '/') return slash(q);
     chatIn.placeholder = 'Ask Myra… “group these by theme”';
     ask(q);
   };
 
-  chatIn.onkeydown = e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      chatForm.requestSubmit();
-    }
-    if (e.key === 'Escape') {
-      myraOpen(false);
-      e.stopPropagation();
-    }
-  };
-
-  chatIn.oninput = () => {
-    // on a prototype board the person sets its height with the handle above it
-    if (document.body.classList.contains('proto')) return;
-    const t = chatIn;
-    t.style.height = 'auto';
-    t.style.height = `${Math.min(120, t.scrollHeight)}px`;
-  };
+  initChatInput();
+  initSlashMenu();
 
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());
 

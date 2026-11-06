@@ -1,6 +1,7 @@
 import type { Board } from '../../shared/model.ts';
 import type { Capture, Proto } from '../../shared/repos.ts';
 import { $ } from '../core/dom.ts';
+import { setChatText } from '../myra/chatInput.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { child, closestTo, esc, textField } from '../ui/dom.ts';
 import { buildPreview } from './bundle.ts';
@@ -144,7 +145,7 @@ addEventListener('message', e => {
     const field = textField('mcInput'),
       said = text ? ` “${text}”` : '';
     const where = d.at ? ` at ${String(d.at)}` : '';
-    field.value = `${field.value}${field.value ? ' ' : ''}[this: ${String(d.selector)}${said}${where}] `;
+    setChatText(`${field.value}${field.value ? ' ' : ''}[this: ${String(d.selector)}${said}${where}] `);
     field.focus();
     setPointing(false);
     if (d.at) showSource(String(d.at));

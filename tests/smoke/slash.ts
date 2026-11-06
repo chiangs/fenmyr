@@ -14,7 +14,7 @@ const note = (i: number, text: string) => ({
   r: 0,
 });
 
-// / lists what Myra can do without AI, Ctrl+F opens her with /find ready; /find opens the find bar beside her pill (live search, cycling, closes)
+// / lists what Myra can do without AI, in groups, Ctrl+F opens her with /find ready; /find opens the find bar beside her pill (live search, cycling, closes)
 export async function slash(t: Smoke) {
   const { page } = t;
   await page.evaluate(
@@ -75,8 +75,8 @@ export async function slash(t: Smoke) {
   await page.fill('#mcInput', '/');
   const menu = await page.evaluate(() =>
     window.__t
-      .all('.slash-menu button')
-      .map(b => b.dataset.key)
+      .all('.slash-menu > *')
+      .map(b => b.dataset.key ?? `#${b.textContent}`)
       .join(),
   );
   await page.keyboard.press('Escape');
@@ -96,7 +96,7 @@ export async function slash(t: Smoke) {
     live: b4.count === '1 of 1' && b4.prevOff,
     none: b5.count === 'No matches' && b5.dim === 0,
     closes: !b6.shown && b6.dim === 0 && b6.cur === 0,
-    menu: menu === 'find,tag,tidy,due,fit,timer,birthday,animate,clear,help',
+    menu: menu === '#On this board,find,tag,tidy,due,fit,timer,#In this chat,birthday,animate,clear,help',
     closed,
     tidy: /Lined 4 notes/.test(said),
   });
