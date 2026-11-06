@@ -9,7 +9,7 @@ export type Anchor = { box: Box; prefer: Side };
 /** The bar's top-left, the side it ended on, and the edge of the free view holding it when neither side had room. */
 export type Placement = { x: number; y: number; side: Side; stuck: 'top' | 'bottom' | null };
 
-const GAP = 12;
+export const GAP = 12;
 
 const OPPOSITE: Record<Side, Side> = { above: 'below', below: 'above', left: 'right', right: 'left' };
 const upright = (s: Side) => s === 'above' || s === 'below';

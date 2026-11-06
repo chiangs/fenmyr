@@ -218,7 +218,7 @@ export function fit(cards: Card[], pad = 120, maxZ = 1.4) {
   session.view.x = L + (r.width - L - R - (x1 - x0) * session.view.z) / 2 - x0 * session.view.z;
   session.view.y = (r.height - (ph ? 90 : 0) - (y1 - y0) * session.view.z) / 2 - y0 * session.view.z + (ph ? 20 : 0);
   world.style.transition = 'transform .5s cubic-bezier(.2,.8,.3,1)';
-  applyView();
+  applyView(520);
   setTimeout(() => (world.style.transition = ''), 520);
 }
 // New cards go in the empty space nearest the middle of the view. The view only moves if that leaves them off screen,

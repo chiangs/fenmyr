@@ -1,8 +1,9 @@
-import { $, stage } from '../core/dom.ts';
+import { $ } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
+import { opensUp } from './float.ts';
 
 // the bar's icons, drawn once the icon set has loaded
 export let ICON: Record<string, string> = {};
@@ -61,7 +62,7 @@ export function closeSbPops() {
   if (was) $('selbar').dataset.key = '';
 }
 
-// the colour wheel, opened above the bar for one of its colour settings
+// the colour wheel for one of the bar's colour settings, on the side of the bar away from the selection
 export function openBarColor(o: {
   title: string;
   hex: string;
@@ -69,13 +70,14 @@ export function openBarColor(o: {
   apply: (hex: string) => void;
   reset: () => void;
 }) {
-  const r = $('selbar').getBoundingClientRect();
+  const bar = $('selbar'),
+    r = bar.getBoundingClientRect();
   closeSbPops();
   openColor({
     tint: true,
     boardColors: true,
     fromBar: true,
-    at: { x: r.left + r.width / 2 - 140, y: r.top - 480 },
+    at: { x: r.left + r.width / 2 - 140, y: opensUp(bar) ? r.top - 480 : r.bottom + 12 },
     ...o,
   });
 }
@@ -86,25 +88,16 @@ export const rebuildBar = () => {
 };
 
 // when the bar runs out of room (a narrow window, or bigger icons), groups move into the ··· menu, least important first
-export function foldSelbar(bar: HTMLElement) {
+export function foldSelbar(bar: HTMLElement, room: number) {
   const body = bar.querySelector('.sb-morebody'),
     wrap = htmlIn(bar, '[data-popw="more"]')[0],
     sep = htmlIn(bar, '.sb-moresep')[0];
   if (!body || !wrap || !sep) return;
-  const room = () => {
-    const s = stage.getBoundingClientRect(),
-      m = document.getElementById('mPill')?.getBoundingClientRect();
-    return Math.max(
-      260,
-      (m && m.left > s.left ? m.left - 16 : s.right - 16) -
-        Math.max(s.left + 16, s.left + (document.body.classList.contains('phone') ? 8 : 280)),
-    );
-  };
   const groups = htmlIn(bar, '.sb-g')
     .filter(g => +(g.dataset.fold ?? 0) > 0)
     .sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0)); // 0 = never folds
   for (const g of groups) {
-    if (bar.scrollWidth <= room()) break;
+    if (bar.scrollWidth <= room) break;
     htmlIn(g, ':scope > .sb-sep').forEach(x => {
       x.remove();
     });

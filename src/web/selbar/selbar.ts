@@ -1,15 +1,12 @@
 import { typesWith } from '../../shared/cardTypes.ts';
-import type { Card } from '../../shared/model.ts';
+import type { Card, Link } from '../../shared/model.ts';
 import { canStroke, TILTS } from '../canvas/render.ts';
-import { linkById } from '../canvas/wires.ts';
 import { COLL } from '../cards/collection.ts';
-import { cropping } from '../cards/crop.ts';
 import { COLOR_NAMES, COLORS, colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { appState, session } from '../core/state.ts';
+import { session } from '../core/state.ts';
 import { hasDue } from '../features/due.ts';
 import { tagEditor } from '../features/tags.ts';
-import { homeAt } from '../library/home.ts';
 import { esc } from '../ui/dom.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
 import { initActions } from './actions.ts';
@@ -27,19 +24,19 @@ import {
   pop,
   snapSoon,
 } from './barKit.ts';
+import { type BarContext, barContext, barPaused } from './context.ts';
 import { cornersHtml, initCorners, roundable } from './corners.ts';
 import { boxFillHtml, fillable, initFills, initShapeFill, shapeFillHtml, textFillHtml } from './fill.ts';
+import { barRoom, floatBar } from './float.ts';
 import { initFontPop } from './fontPop.ts';
 import { initLineStyle, lineStyleHtml } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
-import { selCards } from './selected.ts';
 import { initStroke, strokeHtml } from './stroke.ts';
 import { initTextBar, syncTypingFormats, textBarHtml } from './textBar.ts';
 import { SIZED } from './textSize.ts';
-import { editedNoteBody, initTypingFocus } from './typingFocus.ts';
+import { initTypingFocus } from './typingFocus.ts';
 import { initWireBar, wireBarHtml, wireKey } from './wireBar.ts';
 
-// ---------- the dock swaps to tools for whatever is selected ----------
 const FILLABLE = typesWith('fillable');
 
 const SEP = '<span class="sb-sep"></span>';
@@ -68,7 +65,8 @@ const KIND: Record<string, string> = {
   font: 'Font',
 };
 
-// the bar is rebuilt only when one of these changes on a selected card (moving and resizing don't count)
+// the bar is rebuilt only when one of these changes on a selected card: moving and resizing don't count, but dropping
+// into a screen does, since the Wireframe panel then offers to align with it
 const KEY_FIELDS = [
   'id',
   'tcase',
@@ -98,6 +96,7 @@ const KEY_FIELDS = [
   'under',
   'strike',
   'group',
+  'onFrame',
 ];
 function cardKey(c: Card) {
   const r: Record<string, unknown> = c,
@@ -279,44 +278,12 @@ function cardBarHtml(cs: Card[]) {
   return h + endHtml(cs, one);
 }
 
-export function placeSelbar() {
-  const bar = $('selbar'),
-    dock = $('dock'),
-    cs = selCards(),
-    lw = session.selWire ? linkById(session.selWire) : undefined;
-  if (lw && !homeAt) {
-    dock.classList.add('ctx');
-    bar.classList.add('on');
-    const key = wireKey(lw);
-    if (bar.dataset.key === key) return;
-    bar.dataset.key = key;
-    bar.innerHTML = wireBarHtml(lw);
-    return;
-  }
-  // hidden only while a drag is really happening, or a wheel that isn't from this bar is really on screen (left-over state never hides the bar)
-  const cpop = $('cpop'),
-    wheelUp =
-      cpop.classList.contains('on') &&
-      cpop.classList.contains('tint') &&
-      !cpop.classList.contains('from-bar') &&
-      cpop.offsetParent &&
-      $('settings').classList.contains('on');
-  const show = cs.length && !homeAt && !(appState.drag?.mode === 'move' && appState.drag.moved) && !wheelUp; // a wheel opened from this bar keeps the bar
-  dock.classList.toggle('ctx', !!show);
-  bar.classList.toggle('on', !!show);
-  if (!show) {
-    closeSbPops();
-    // this runs every frame, so it only writes when something changed
-    if (bar.dataset.ids) bar.dataset.ids = '';
-    if (bar.dataset.key !== '') {
-      bar.dataset.key = '';
-      renderDesign();
-    }
-    return;
-  }
-  const typing = !!editedNoteBody();
-  if (bar.classList.contains('typing') !== typing) {
-    bar.classList.toggle('typing', typing);
+const CROP_BAR = `<span class="sb-label">Crop</span><button class="sb-txt" data-crop="cancel">Cancel</button><button class="sb-txt" data-crop="reset">Reset</button><button class="sb-txt on" data-crop="done">Done</button>`;
+
+function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection' }>) {
+  const cs = ctx.cards;
+  if (bar.classList.contains('typing') !== ctx.typing) {
+    bar.classList.toggle('typing', ctx.typing);
     syncTypingFormats();
   }
   const key =
@@ -333,14 +300,65 @@ export function placeSelbar() {
   }
   bar.dataset.key = key;
   renderDesign();
-  const one = cs.length === 1 ? cs[0] : undefined;
-  if (one?.type === 'image' && cropping?.c === one) {
-    bar.innerHTML = `<span class="sb-label">Crop</span><button class="sb-txt" data-crop="cancel">Cancel</button><button class="sb-txt" data-crop="reset">Reset</button><button class="sb-txt on" data-crop="done">Done</button>`;
+  if (ctx.crop) {
+    bar.innerHTML = CROP_BAR;
     return;
   }
   bar.innerHTML = cardBarHtml(cs);
-  foldSelbar(bar);
+  foldSelbar(bar, barRoom());
   snapSoon();
+}
+
+function drawWire(bar: HTMLElement, link: Link) {
+  const key = wireKey(link);
+  if (bar.dataset.key === key) return;
+  bar.dataset.key = key;
+  bar.innerHTML = wireBarHtml(link);
+}
+
+// this runs every frame, so it only writes when something changed
+function clearBar(bar: HTMLElement) {
+  closeSbPops();
+  if (bar.dataset.ids) bar.dataset.ids = '';
+  if (bar.dataset.key !== '') {
+    bar.dataset.key = '';
+    renderDesign();
+  }
+}
+
+function drawBar(bar: HTMLElement, ctx: BarContext | null) {
+  const show = (on: boolean) => {
+    $('dock').classList.toggle('ctx', on); // on a phone the strip takes the hub's place
+    bar.classList.toggle('on', on);
+  };
+  if (!ctx) {
+    show(false);
+    return clearBar(bar);
+  }
+  switch (ctx.kind) {
+    case 'selection':
+      show(true);
+      return drawCards(bar, ctx);
+    case 'connector':
+      show(true);
+      return drawWire(bar, ctx.link);
+    case 'tool':
+      show(false);
+      return clearBar(bar);
+    default: {
+      const unknown: never = ctx;
+      return unknown;
+    }
+  }
+}
+
+// The content stays current during a gesture though no one sees it: Ctrl+B presses the bar's own Bold, and the bar
+// is back the moment the gesture ends.
+export function placeSelbar() {
+  const bar = $('selbar'),
+    ctx = barContext();
+  drawBar(bar, ctx);
+  floatBar(bar, ctx, barPaused());
 }
 
 export function init56() {

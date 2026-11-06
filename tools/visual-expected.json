@@ -1,4 +1,12 @@
 {
-  "rich-notes": "A link in a note is a deeper amber, so it reads at 4.5:1 on every note colour; the accent text it used since #276 is made for the panel and fell to 3.98:1 on butter.",
-  "rich-select": "A link in a note is a deeper amber, so it reads at 4.5:1 on every note colour; the accent text it used since #276 is made for the panel and fell to 3.98:1 on butter."
+  "select-note": "The selection bar floats 12 px above the note and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
+  "select-shape": "The selection bar floats 12 px above the shape and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
+  "select-several": "The selection bar floats 12 px above the three cards and their turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
+  "card-menu": "The three cards stay selected under the right-click menu, so their bar floats above them instead of in the bottom bar, and the tools stay (#244, 3a).",
+  "zoom-in": "The three cards are still selected; zoomed in, their top is above the view, so their bar holds at the top of the view instead of sitting in the bottom bar (#244, 3a).",
+  "zoom-out": "The three cards are still selected; zoomed out there is no room above them, so their bar flips below them, and the pointer left from the right-click rests on it and shows a tip (#244, 3a).",
+  "dark-select-note": "The selection bar floats 12 px above the note and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
+  "dark-select-shape": "The selection bar floats 12 px above the shape and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
+  "rich-select": "The selection bar floats 12 px above the note and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
+  "panels-myra-chat": "The doc stays selected after its editor closes, so its bar floats above it and the tools stay in the bottom bar (#244, 3a)."
 }
