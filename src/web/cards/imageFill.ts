@@ -9,8 +9,8 @@ import { addMsg, typing } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { goo } from '../myra/goos.ts';
 import { parse } from '../myra/replyText.ts';
-import type { SayAction } from '../settings/licenses.ts';
-import { say } from '../settings/licenses.ts';
+import type { SayAction } from '../myra/say.ts';
+import { say } from '../myra/say.ts';
 import { settings } from '../settings/settings.ts';
 import { onFrame } from '../wireframe/tilt.ts';
 

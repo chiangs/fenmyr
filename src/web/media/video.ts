@@ -5,7 +5,7 @@ import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { ask } from '../myra/chat.ts';
-import { chirp } from '../settings/licenses.ts';
+import { chirp } from '../myra/say.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { cardEl } from '../ui/dom.ts';

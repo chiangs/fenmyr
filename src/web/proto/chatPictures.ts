@@ -2,7 +2,7 @@ import { selectOnly } from '../canvas/wires.ts';
 import { addImages } from '../cards/spotify.ts';
 import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 
 // On a prototype board, pictures pasted or dropped into Myra's chat go on the board, selected, so she can use them as
 // context for what she builds.

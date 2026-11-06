@@ -1,6 +1,6 @@
 import type { GhState, GitSetup } from '../../shared/ops.ts';
 import { $ } from '../core/dom.ts';
-import { chirp } from '../settings/licenses.ts';
+import { chirp } from '../myra/say.ts';
 import { child, closestTo, esc } from '../ui/dom.ts';
 import { installCommand } from './install.ts';
 

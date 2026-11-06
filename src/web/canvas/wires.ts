@@ -1,8 +1,8 @@
 import type { Card, Link } from '../../shared/model.ts';
 import { $, stage, wires } from '../core/dom.ts';
 import { session } from '../core/state.ts';
+import { chirp } from '../myra/say.ts';
 import { LY, layersSoon } from '../panels/layers.ts';
-import { chirp } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { addCard } from '../tools/penEdit.ts';

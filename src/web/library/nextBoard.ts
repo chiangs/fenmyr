@@ -1,7 +1,7 @@
 import type { Folder } from '../../shared/model.ts';
 import { appState } from '../core/state.ts';
 import { newBoard } from '../model/boards.ts';
-import { chirp } from '../settings/licenses.ts';
+import { chirp } from '../myra/say.ts';
 import { openBoard } from './openBoard.ts';
 import { boardsIn, foldersIn, looseBoards, looseFolders, subFolders } from './tree.ts';
 

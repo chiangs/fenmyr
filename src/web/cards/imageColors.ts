@@ -1,6 +1,6 @@
 import type { Card } from '../../shared/model.ts';
 import { card } from '../model/boards.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { addCard } from '../tools/penEdit.ts';
 
 type Rgb = [number, number, number];

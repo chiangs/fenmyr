@@ -4,9 +4,9 @@ import { save } from '../core/history.ts';
 import { appState } from '../core/state.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { boardsIn, saveLib } from '../library/tree.ts';
+import { say } from '../myra/say.ts';
 import { renderGitBar } from '../proto/gitbar.ts';
 import { openColumn } from '../proto/layout.ts';
-import { say } from '../settings/licenses.ts';
 import { askGit } from './askGit.ts';
 import { rootOf } from './codeFolder.ts';
 

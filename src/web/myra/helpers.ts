@@ -4,9 +4,9 @@ import { parentOf } from '../cards/collection.ts';
 import { cardsEl } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
-import { say } from '../settings/licenses.ts';
 import { cardEl } from '../ui/dom.ts';
 import { GUIDE } from './chat.ts';
+import { say } from './say.ts';
 
 // ---------- Myra's helpers: Claude Code, Mobbin, Higgsfield ----------
 let lastConn = 0;

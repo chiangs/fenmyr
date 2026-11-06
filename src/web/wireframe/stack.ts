@@ -5,9 +5,9 @@ import { uid } from '../core/base.ts';
 import { $, cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
+import { chirp } from '../myra/say.ts';
 import { LY, layersSoon } from '../panels/layers.ts';
 import { selCards } from '../selbar/selected.ts';
-import { chirp } from '../settings/licenses.ts';
 import { cardEl } from '../ui/dom.ts';
 import { onFrame } from './tilt.ts';
 

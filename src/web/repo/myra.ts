@@ -2,8 +2,8 @@ import type { MyraReply } from '../../shared/myraReply.ts';
 import type { Proto } from '../../shared/repos.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
+import { type SayAction, say } from '../myra/say.ts';
 import { setTab } from '../settings/colors.ts';
-import { type SayAction, say } from '../settings/licenses.ts';
 import { linkRepo } from './link.ts';
 import { createPrototype, newPrototypingFolder } from './prototypes.ts';
 

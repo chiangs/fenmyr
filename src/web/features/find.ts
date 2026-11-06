@@ -15,7 +15,7 @@ import { ANIMS } from '../myra/anim.ts';
 import { addMsg } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { glideTo, helpText, SLASH, wordsOf } from '../myra/greet.ts';
-import { reply } from '../settings/licenses.ts';
+import { reply } from '../myra/say.ts';
 import { applyDim } from './focus.ts';
 import { cleanTag } from './tags.ts';
 import { timer } from './timer.ts';

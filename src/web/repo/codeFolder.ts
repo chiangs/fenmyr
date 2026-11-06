@@ -2,7 +2,7 @@ import type { StoredBoard } from '../../shared/model.ts';
 import { PROTO_DIR, protoSlug } from '../../shared/repos.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { askGit } from './askGit.ts';
 
 type Prototype = Extract<StoredBoard, { kind: 'prototype' }>;

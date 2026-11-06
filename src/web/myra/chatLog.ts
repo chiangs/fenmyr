@@ -3,12 +3,11 @@ import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
-import type { SayAction } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
-
 // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
 import { ask } from './chat.ts';
+import type { SayAction } from './say.ts';
 
 const CHATS_KEPT = 10;
 

@@ -8,12 +8,12 @@ import { type DueItem, dueAnnounce, dueDate, dueHeld, dueJump, dueText, readInde
 import { slashFind, slashTag } from '../features/find.ts';
 import { slashTimer } from '../features/timer.ts';
 import { glideView, zoomFit } from '../panels/zoomMenu.ts';
-import type { SayAction } from '../settings/licenses.ts';
-import { reply, say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { ANIMS, slashAnimate } from './anim.ts';
 import { bdNow, dayKey, slashBirthday } from './birthday.ts';
 import { tidyNotes } from './chat.ts';
+import type { SayAction } from './say.ts';
+import { reply, say } from './say.ts';
 
 type GreetContext = { why: string; firstToday: boolean; now: Date; name: string };
 type GreetLine = { text: string; acts?: SayAction[] } | null;

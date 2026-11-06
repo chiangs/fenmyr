@@ -13,8 +13,6 @@ import { myTpls } from '../features/templates.ts';
 import { clearGlow, runTimerRequest } from '../features/timer.ts';
 import { foldersIn, looseFolders } from '../library/tree.ts';
 import { canonical } from '../richtext/dialect.ts';
-import type { SayAction } from '../settings/licenses.ts';
-import { reply } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { elementById, textField } from '../ui/dom.ts';
 import { aiGrants, gatherVault, gatherVaultTasks, updateVaultChip, type VaultTasksUsed } from '../vault/ask.ts';
@@ -29,6 +27,8 @@ import { SLASH } from './greet.ts';
 import { showConnections } from './helpers.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
 import { parse } from './replyText.ts';
+import type { SayAction } from './say.ts';
+import { reply } from './say.ts';
 
 // what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
 export function snapshot() {

@@ -6,7 +6,7 @@ import { COLORS, clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
-import { chirp } from '../settings/licenses.ts';
+import { chirp } from '../myra/say.ts';
 import { hexOf, type Rgb, rgbOf } from './color.ts';
 import { type ColourFormat, FORMATS, readColour, writeColour } from './colourFormat.ts';
 import { cardEl, closestTo, elementById, esc } from './dom.ts';
