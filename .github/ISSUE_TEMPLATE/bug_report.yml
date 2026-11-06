@@ -1,0 +1,85 @@
+name: Bug report
+description: Something in Fenmyr doesn't work the way it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. Please leave out anything private from your boards or vaults: issues are public.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What went wrong, in a sentence or two.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen
+      description: What you did, step by step, so someone else can see it too.
+      placeholder: |
+        1. Open a board
+        2. Press Ctrl+K and type an idea
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where in Fenmyr
+      options:
+        - Board, cards and connectors
+        - Notes and formatting
+        - Myra
+        - Unsorted and quick capture
+        - Templates
+        - Docs
+        - Wireframes
+        - Prototypes
+        - Vaults (Obsidian)
+        - Export (image, PDF, Word)
+        - Voice memos and video
+        - Settings, colours and themes
+        - Installing and updating
+        - Something else
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you installed Fenmyr
+      options:
+        - Linux, from the code with install.sh
+        - Linux, AppImage
+        - Mac, from the code with install.sh
+        - Mac, a downloaded .dmg
+        - Running from a checkout (npm start)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Fenmyr version
+      description: Settings → Updates shows the version, or the date of your copy.
+      placeholder: 1.0.0, or "version from Nov 6"
+  - type: input
+    id: system
+    attributes:
+      label: Computer
+      description: Your Linux distribution or macOS version, and for a Mac whether it's Apple Silicon or Intel.
+      placeholder: CachyOS (Hyprland), or macOS 15 on Apple Silicon
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or logs
+      description: |
+        Drag in screenshots or a screen recording. For problems installing or updating, the end of ~/.local/share/fenmyr/update.log helps (and on a Mac, build/install-mac.log in your Fenmyr folder).
