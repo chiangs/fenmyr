@@ -19,6 +19,7 @@ export async function chatInput(t: Smoke) {
   await grows(t);
   await counts(t);
   await clears(t);
+  await narrowFooter(t);
   await findKeepsDraft(t);
   await freshChat(t);
 }
@@ -310,6 +311,34 @@ async function clears(t: Smoke) {
     clears: cleared === '',
     undoBringsItBack: back === draft,
   });
+}
+
+// at the prototype chat's narrowest (280 px) the footer still fits: the hint gives way, the count and Send do not
+async function narrowFooter(t: Smoke) {
+  const { page } = t;
+  await page.fill('#mcInput', Array.from({ length: 12 }, (_, i) => `line ${i + 1}`).join('\n'));
+  const fit = await page.evaluate(async () => {
+    const T = window.__t,
+      chat = T.el('#mChat'),
+      vault = T.el('#mcVault'),
+      was = vault.hidden;
+    chat.style.width = '280px';
+    vault.hidden = false;
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const foot = T.el('.mc-foot'),
+      lines = T.el('#mcLines'),
+      r = (s: string) => T.el(s).getBoundingClientRect(),
+      seen = {
+        inside: foot.scrollWidth <= foot.clientWidth && r('.mc-send').right <= r('#mcForm').right,
+        countOnOneLine: !lines.hidden && lines.offsetHeight <= parseFloat(getComputedStyle(lines).lineHeight) + 1,
+        hintGivesWay: T.el('#mcHint').scrollWidth > T.el('#mcHint').clientWidth,
+      };
+    chat.style.width = '';
+    vault.hidden = was;
+    return seen;
+  });
+  await page.fill('#mcInput', '');
+  t.checkAll('chatNarrowFooter', fit);
 }
 
 // Ctrl+F over a draft opens the find bar on its own and leaves the draft as it was
