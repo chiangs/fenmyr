@@ -74,6 +74,17 @@ try {
     before,
     'and a double-click puts it back',
   );
+  await page.fill('#mcInput', Array.from({ length: 12 }, (_, i) => `line ${i + 1}`).join('\n'));
+  const long = await page.evaluate(() => ({
+    h: document.getElementById('mcInput')?.offsetHeight ?? 0,
+    count: document.getElementById('mcLines')?.hidden === false ? document.getElementById('mcLines')?.textContent : '',
+  }));
+  assert.deepStrictEqual(
+    long,
+    { h: before, count: '12 lines' },
+    'a long draft scrolls with a count; the box keeps its height',
+  );
+  await page.fill('#mcInput', '');
 
   const cards = await page.evaluate(() => window.__fenmyr.curBoard()?.cards.length ?? 0);
   await page.evaluate(() => {
