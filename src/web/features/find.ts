@@ -128,7 +128,7 @@ export function slashTag(arg: string) {
   );
 }
 
-// Ctrl+F: Myra's chat opens ready to search
+// Ctrl+F: Myra's chat opens ready to search. A draft in her box stays, so the find bar opens on its own.
 export function startFind() {
   if (!session.board) return;
   if (find.on) {
@@ -136,9 +136,13 @@ export function startFind() {
     findField().select();
     return;
   }
-  myraOpen(true);
   const el = textField('mcInput'),
     had = /^\/find /i.test(el.value);
+  if (el.value.trim() && !/^\/find\b/i.test(el.value)) {
+    findOpen();
+    return;
+  }
+  myraOpen(true);
   if (!had) setChatText('/find ');
   el.focus();
   el.setSelectionRange(had ? 6 : el.value.length, el.value.length);

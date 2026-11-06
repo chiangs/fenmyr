@@ -19,6 +19,7 @@ export async function chatInput(t: Smoke) {
   await grows(t);
   await counts(t);
   await clears(t);
+  await findKeepsDraft(t);
   await freshChat(t);
 }
 
@@ -308,5 +309,28 @@ async function clears(t: Smoke) {
     besideTheScrollbar: where.shown && where.bar > 0 && where.clear,
     clears: cleared === '',
     undoBringsItBack: back === draft,
+  });
+}
+
+// Ctrl+F over a draft opens the find bar on its own and leaves the draft as it was
+async function findKeepsDraft(t: Smoke) {
+  const { page } = t;
+  const draft = 'a draft\nof two lines';
+  await page.fill('#mcInput', draft);
+  await page.keyboard.press('Control+f');
+  await page.waitForTimeout(200);
+  const seen = await page.evaluate(() => ({
+    bar: !window.__t.el('#findBar').hidden,
+    focus: document.activeElement?.id,
+    val: window.__t.field('#mcInput').value,
+  }));
+  await page.keyboard.press('Escape');
+  await page.click('#mPill');
+  await page.waitForTimeout(1300);
+  const after = await page.evaluate(() => window.__t.field('#mcInput').value);
+  await page.fill('#mcInput', '');
+  t.checkAll('chatFindKeepsDraft', {
+    barOpens: seen.bar && seen.focus === 'fbQ',
+    draftStays: seen.val === draft && after === draft,
   });
 }
