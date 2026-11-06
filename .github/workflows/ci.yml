@@ -96,6 +96,8 @@ jobs:
         run: node tests/changes.ts
       - name: Myra replies test (what each kind of reply does to the board, her chat, the library and templates)
         run: node tests/replies.ts
+      - name: Reply undo test (one undo step per reply, replies in turn, previews that change nothing)
+        run: node tests/replyUndo.ts
       - name: Chat keys test (what each key does in Myra's chat input)
         run: node tests/chatKeys.ts
       - name: Mac font list test
