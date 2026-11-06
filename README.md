@@ -166,6 +166,7 @@ The first memo downloads the speech model, about 140 MB, into `~/.local/share/fe
 | **S · E · P · Shift+P** | Shapes, stamps, draw, the Pen |
 | **R · X** | Wireframe box, wireframe text |
 | **M** | Ask Myra |
+| **Ctrl+Enter** | Send to Myra; Enter adds a line |
 | **F** | Focus on the selection |
 | **0** | Fit the whole board |
 | **Ctrl + scroll** | Zoom in even steps (…90 · 100 · 110 · 125…%). A touchpad pinch zooms smoothly |

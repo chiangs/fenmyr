@@ -256,14 +256,6 @@ export function init31() {
     ask(q);
   };
 
-  chatIn.oninput = () => {
-    // on a prototype board the person sets its height with the handle above it
-    if (document.body.classList.contains('proto')) return;
-    const t = chatIn;
-    t.style.height = 'auto';
-    t.style.height = `${Math.min(120, t.scrollHeight)}px`;
-  };
-
   initChatInput();
   initSlashMenu();
 

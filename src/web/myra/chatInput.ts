@@ -1,3 +1,4 @@
+import { $ } from '../core/dom.ts';
 import { elementById } from '../ui/dom.ts';
 import { chatKey } from './chatKeys.ts';
 import { myraOpen } from './chatWindow.ts';
@@ -13,8 +14,14 @@ export function setChatText(text: string) {
 }
 
 export function initChatInput() {
-  const el = box();
+  const el = box(),
+    lines = $('mcLines'),
+    size = () => showSize(el, lines);
   el.addEventListener('keydown', e => onKey(e, el));
+  el.addEventListener('input', size);
+  el.addEventListener('scroll', size);
+  // a window resize, a grip drag or docking changes how much fits, with no input event
+  new ResizeObserver(size).observe(el);
 }
 
 function onKey(e: KeyboardEvent, el: HTMLTextAreaElement) {
@@ -44,4 +51,13 @@ function onKey(e: KeyboardEvent, el: HTMLTextAreaElement) {
       return unhandled;
     }
   }
+}
+
+// CSS sets the height and its cap; this only reads whether the text goes past it. Lines are counted as written.
+function showSize(el: HTMLTextAreaElement, lines: HTMLElement) {
+  const over = el.scrollHeight - el.clientHeight > 1,
+    n = el.value.split('\n').length;
+  lines.hidden = !over;
+  lines.textContent = n === 1 ? '1 line' : `${n} lines`;
+  el.classList.toggle('fade-top', over && el.scrollTop > 0);
 }
