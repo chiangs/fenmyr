@@ -3,6 +3,7 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
+import util from 'node:util';
 import type { Page } from 'playwright';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -264,6 +265,18 @@ if (writing) {
 } else {
   const golden: unknown = JSON.parse(fs.readFileSync(GOLDEN, 'utf8'));
   assert(typeof golden === 'object' && golden !== null);
-  for (const [k, v] of Object.entries(now)) assert.deepStrictEqual(v, Reflect.get(golden, k), k);
+  const differ = Object.entries(now).filter(([k, v]) => !util.isDeepStrictEqual(v, Reflect.get(golden, k)));
+  for (const [k, v] of differ) {
+    try {
+      assert.deepStrictEqual(v, Reflect.get(golden, k), k);
+    } catch (e) {
+      console.error(e instanceof Error ? e.message : e);
+    }
+  }
+  assert.deepStrictEqual(
+    differ.map(([k]) => k),
+    [],
+    'replies that differ from the golden file',
+  );
 }
 console.log('REPLIES OK');
