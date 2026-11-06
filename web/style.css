@@ -353,7 +353,7 @@ html.native .home-in { padding-top: 40px; }
 .board-name { width: 100%; min-width: 0; text-overflow: ellipsis; }
 
 /* the bar above the selection */
-.selbar { position: absolute; left: 0; top: 0; z-index: 14; display: none; align-items: center; gap: 2px; padding: 5px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; box-shadow: 0 10px 28px rgba(var(--sh), calc(.2 * var(--sh-k))); white-space: nowrap; }
+.selbar { position: absolute; left: 0; top: 0; z-index: 14; display: none; align-items: center; gap: 6px; height: 50px; padding: 6px 7px; border-radius: var(--pill-r); corner-shape: squircle; white-space: nowrap; }
 .selbar.on { display: flex; }
 .selbar button { border: 0; background: none; padding: 7px 11px; border-radius: var(--pill-r); corner-shape: squircle; font: 600 12px/1 var(--font); color: var(--ink); cursor: pointer; }
 .selbar button:hover { background: var(--blush); }
@@ -410,7 +410,6 @@ html.native .home-in { padding-top: 40px; }
 .dock .tools button.on .ic { color: var(--ink); }
 .dock .myra { position: relative; left: auto; bottom: auto; transform: none; }
 .dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px); margin: 0; width: max-content; }
-.selbar { height: 50px; }
 .selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
 .selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
 .selbar .sb-ic { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; }
@@ -2090,7 +2089,6 @@ body.dark .sb-pop { background: #302b25; box-shadow: 0 16px 40px rgba(0, 0, 0, .
 body.dark .sb-popw.open > .sb-poptrig, body.dark .sb-sizelist button.on { background: rgba(255, 255, 255, .12); }
 /* no divider lines: each control (or tight group, like B I U S) is its own soft pill */
 .selbar .sb-sep { display: none !important; }
-.selbar { gap: 6px; padding: 6px 7px; }
 .selbar { --pill: rgba(128, 110, 92, .07); }
 body.dark .selbar { --pill: rgba(255, 255, 255, .08); }
 .selbar > .sb-ic, .selbar > .sb-txt, .selbar > .sb-popw > .sb-poptrig, .selbar > .sb-tilt, .selbar > .sb-sizes, .selbar > .sb-font,
@@ -2108,11 +2106,11 @@ body.dark .selbar .sb-sizes.sb-style button.on { background: #f6f2ee; color: #30
 .sb-morebody > .sb-g > * { background: var(--pill); border-radius: var(--pill-r); corner-shape: squircle; }
 body.dark .sb-glass { background: rgba(248, 189, 130, .2) !important; color: var(--ink) !important; box-shadow: inset 0 0 0 1px rgba(250, 208, 165, .35) !important; }
 /* the selection bar itself is frosted glass (the pills inside stay as they are) */
-.selbar { background: rgba(255, 255, 255, .55); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .6), 0 10px 30px rgba(137, 110, 83, .16); }
+.selbar { background: rgb(from var(--hilite) r g b / .55); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .95), inset 0 0 0 1px rgb(from var(--hilite) r g b / .6), 0 10px 30px rgb(from var(--sec-shadow) r g b / .16); }
 .selbar { --pill: rgba(255, 255, 255, .7); }
 .selbar .sb-sizes.sb-style button:hover { background: rgba(255, 255, 255, .9); }
-body.dark .selbar { background: rgba(47, 41, 35, .55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 0 0 1px rgba(255, 255, 255, .08), 0 10px 30px rgba(0, 0, 0, .35); }
+body.dark .selbar { box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .16), inset 0 0 0 1px rgb(from var(--hilite) r g b / .08), 0 10px 30px rgb(from var(--shade) r g b / .35); }   /* its background is the dark surface (body.dark .selbar, above) */
 /* ---------- one look for every selection bar: same icon size, color and line weight; same text size and color ---------- */
 .selbar { --sb-icon: 19px; --sb-ink: var(--ink-soft); --sb-on: var(--ink); --sb-text: 600 12.5px/1 var(--font); }
 .selbar svg:not(.sb-caret):not(.sb-dots3) { width: var(--sb-icon) !important; height: var(--sb-icon) !important; }
