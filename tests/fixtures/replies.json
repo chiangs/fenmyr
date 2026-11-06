@@ -1166,22 +1166,6 @@
    ],
    "boards": [
     {
-     "id": "library",
-     "name": "library",
-     "folder": "Plans",
-     "current": true
-    },
-    {
-     "id": "vault",
-     "name": "vault",
-     "folder": null
-    },
-    {
-     "id": "everything",
-     "name": "everything",
-     "folder": null
-    },
-    {
      "id": "buttons",
      "name": "buttons",
      "folder": null
@@ -1192,8 +1176,24 @@
      "folder": null
     },
     {
+     "id": "everything",
+     "name": "everything",
+     "folder": null
+    },
+    {
+     "id": "library",
+     "name": "library",
+     "folder": "Plans",
+     "current": true
+    },
+    {
      "id": "newBoard",
      "name": "newBoard",
+     "folder": null
+    },
+    {
+     "id": "vault",
+     "name": "vault",
      "folder": null
     }
    ]

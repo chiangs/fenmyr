@@ -216,7 +216,11 @@ await page.evaluate(async () => {
 await page.waitForTimeout(1000);
 result.library = {
   ...(await shot(page)),
-  library: await page.evaluate(() => window.__fenmyr.lib()),
+  // boards are listed in the order they were last saved, which the pin doesn't care about
+  library: await page.evaluate(() => {
+    const lib = window.__fenmyr.lib();
+    return { ...lib, boards: lib.boards.sort((a, b) => a.id.localeCompare(b.id)) };
+  }),
   templates: await page.evaluate(async () =>
     (await window.Fenmyr.templates()).sort((a, b) => a.name.localeCompare(b.name)),
   ),
