@@ -1,7 +1,7 @@
 import { $ } from '../core/dom.ts';
 import { GUIDE, SIGNIN } from '../myra/chat.ts';
 import { goo } from '../myra/goos.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { esc } from '../ui/dom.ts';
 import { mdToHTML } from './docText.ts';
 import { docCard, ed } from './editor.ts';

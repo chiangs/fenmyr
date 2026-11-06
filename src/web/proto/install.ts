@@ -1,7 +1,7 @@
 import { session } from '../core/state.ts';
+import { say } from '../myra/say.ts';
 import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { say } from '../settings/licenses.ts';
 import { renderPreview } from './preview.ts';
 
 // Myra's "install": packages a prototype needs beyond React and Tailwind, installed into prototypes/ only after the

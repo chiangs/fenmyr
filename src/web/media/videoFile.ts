@@ -2,8 +2,8 @@ import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { save } from '../core/history.ts';
 import { card } from '../model/boards.ts';
+import { say } from '../myra/say.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
-import { say } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { messageOf, VBAR, type VideoCard, type VideoInfo, vEl, vids } from './video.ts';
 

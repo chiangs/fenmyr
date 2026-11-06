@@ -1,8 +1,8 @@
 import type { Board } from '../../shared/model.ts';
 import { appState, session } from '../core/state.ts';
+import { say } from '../myra/say.ts';
 import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { say } from '../settings/licenses.ts';
 import { startBuild } from './build.ts';
 import { renderCode } from './code.ts';
 import { renderGitBar } from './gitbar.ts';

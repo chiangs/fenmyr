@@ -5,7 +5,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { card, newBoard } from '../model/boards.ts';
-import { chirp, say } from '../settings/licenses.ts';
+import { chirp, say } from '../myra/say.ts';
 import { renderCrumbs } from './crumbs.ts';
 import { closeHome } from './home.ts';
 import { openBoard } from './openBoard.ts';

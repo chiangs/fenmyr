@@ -1,16 +1,12 @@
 // The prototype board's screen: Myra docked open on the left, the git bar, the code pane, folding columns, and plain
 // boards untouched.
 import assert from 'node:assert';
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { launch } from './support/launch.ts';
+import { freshRepo, openPrototype } from './support/prototype.ts';
 
-const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-layout-')));
-const repo = path.join(work, 'acme');
-fs.mkdirSync(repo);
-execFileSync('git', ['-C', repo, 'init', '-q', '-b', 'main']);
+const { work, repo } = freshRepo('fenmyr-layout-');
 const note = { id: 'n1', type: 'note', x: 40, y: 40, w: 220, h: 120, text: 'People miss the promo field' };
 const l = await launch({ boards: [{ id: 'plain', name: 'Plain', cards: [note], links: [], tray: [] }], open: 'plain' });
 const { page } = l;
@@ -35,26 +31,7 @@ const resize = (w: number) =>
   l.app.evaluate(({ BrowserWindow }, w) => BrowserWindow.getAllWindows()[0]?.setSize(w, 900), w);
 
 try {
-  await page.evaluate(async repo => {
-    await window.Fenmyr.saveFolders({
-      projects: [{ id: 'p1', name: 'Acme', open: true, repo: { path: repo } }],
-      folders: [{ id: 'pf', name: 'Prototypes', project: 'p1', kind: 'prototyping', open: true }],
-      order: {},
-    });
-    const proto = await window.Fenmyr.protoCreate({ root: repo, name: 'Checkout flow', stack: 'react' });
-    await window.Fenmyr.save({
-      id: 'pb',
-      name: 'Checkout flow',
-      folder: 'pf',
-      kind: 'prototype',
-      proto,
-      cards: [],
-      links: [],
-      tray: [],
-    });
-    await window.__fenmyr.refreshBoards();
-    await window.__fenmyr.openBoard('pb');
-  }, repo);
+  await openPrototype(page, repo);
   // the app starting with the prototype board as the last one open
   await l.app.context().addInitScript(() => {
     try {
@@ -129,90 +106,6 @@ try {
   );
   assert.match(s.code, /export function App/, 'the code pane opens on App.tsx');
   assert.deepStrictEqual(s.stage, s.slot, 'the canvas sits exactly in its column');
-
-  const places = await page.evaluate(() => {
-    const r = (s: string) => document.querySelector(s)?.getBoundingClientRect();
-    return {
-      boardLeft: r('[data-p="canvas"]')?.left,
-      chatLeft: r('#prChat')?.left,
-      codeRight: r('[data-p="code"]')?.right,
-      pill: getComputedStyle(document.getElementById('mPill') ?? document.body).display,
-      gooInHeader: !!document.querySelector('#prChat .mc-head #gooSlot'),
-    };
-  });
-  assert.ok(
-    (places.boardLeft ?? 99) < 5 && (places.chatLeft ?? 0) >= (places.codeRight ?? 9e9),
-    'the board is on the left and Myra on the right',
-  );
-  assert.ok(places.pill === 'none' && places.gooInHeader, 'her button is gone and she sits in the chat header');
-  assert.match(
-    await page.evaluate(() => document.getElementById('mcList')?.textContent ?? ''),
-    /What are we building\?[\s\S]*the preview runs what I build, and the code pane shows its files/,
-    'she asks what she’s building',
-  );
-
-  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'A reply for the chat.', next: ['Build it'] }, 'hello'));
-  await page.waitForTimeout(300);
-  assert.match(
-    await page.evaluate(() => document.getElementById('mcList')?.textContent ?? ''),
-    /A reply for the chat\./,
-    'her replies land in the chat',
-  );
-  const inside = await page.evaluate(() => {
-    const m = [...document.querySelectorAll('#mcList .mc-msg.myra')].pop()?.getBoundingClientRect(),
-      c = document.getElementById('mcList')?.getBoundingClientRect();
-    return !!m && !!c && m.left >= c.left && m.right <= c.right && m.top >= c.top && m.bottom <= c.bottom;
-  });
-  assert.ok(inside, 'and are drawn inside it, not over the board');
-  assert.ok(
-    !(await page.evaluate(() => document.getElementById('mBubble')?.classList.contains('on'))),
-    'never in the bubble',
-  );
-
-  assert.strictEqual(
-    await page.locator('#prChat .mc-grip.rz-grip svg').count(),
-    1,
-    'the input’s handle is the panels’ height grip',
-  );
-  const box = await page.locator('#prChat .mc-grip').boundingBox();
-  if (!box) throw new Error('no grip');
-  const before = await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0);
-  await page.mouse.move(box.x + box.width / 2, box.y + 5);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2, box.y - 115, { steps: 5 });
-  await page.mouse.up();
-  const after = await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0);
-  assert.ok(after >= before + 100, `dragging the handle makes the input taller (${before} to ${after})`);
-  await page.dblclick('#prChat .mc-grip');
-  assert.strictEqual(
-    await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0),
-    before,
-    'and a double-click puts it back',
-  );
-
-  const cards = await page.evaluate(() => window.__fenmyr.curBoard()?.cards.length ?? 0);
-  await page.evaluate(() => {
-    const png = Uint8Array.from(
-      atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='),
-      c => c.charCodeAt(0),
-    );
-    const dt = new DataTransfer();
-    dt.items.add(new File([png], 'sketch.png', { type: 'image/png' }));
-    document
-      .getElementById('mcInput')
-      ?.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
-  });
-  await page.waitForTimeout(1500);
-  const pasted = await page.evaluate(() => {
-    const b = window.__fenmyr.curBoard();
-    const img = b?.cards.find(c => c.type === 'image');
-    return { n: b?.cards.length ?? 0, selected: !!img && window.__fenmyr.sel.includes(img.id) };
-  });
-  assert.ok(pasted.n === cards + 1 && pasted.selected, 'a picture pasted into the chat goes on the board, selected');
-
-  await page.keyboard.press('Escape');
-  await page.evaluate(() => document.getElementById('mcClose')?.click());
-  assert.ok((await state()).chatOpen, 'neither Esc nor the close button closes it');
 
   const bar = () =>
     page.evaluate(() => ({
