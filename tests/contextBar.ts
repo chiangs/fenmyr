@@ -1,73 +1,11 @@
-// The selection bar in the real app. First what it already did before it floated: the typing state and F10, the crop
-// bar, the Wireframe panel and the phone strip.
+// The selection bar in the real app. First what it did before it floated: the typing state and F10, the crop bar, the
+// Wireframe panel and the phone strip. Then where it floats, for a selection and a connector, and that it steps aside
+// during a drag, resize, pan or zoom.
 import assert from 'node:assert';
-import { launch, settle } from './support/launch.ts';
+import { type Edges, near, openBar } from './support/bar.ts';
+import { settle } from './support/launch.ts';
 
-const at = (id: string, type: string, x: number, y: number, w: number, h: number, more = {}) => ({
-  id,
-  type,
-  x,
-  y,
-  w,
-  h,
-  r: 0,
-  color: 'white',
-  ...more,
-});
-const board = {
-  id: 'bar',
-  name: 'Bar',
-  cards: [
-    at('title', 'title', 0, -200, 320, 50, { text: 'A title' }),
-    at('note', 'note', 0, 0, 220, 140, { name: '', text: 'Plan the week', rich: true, color: 'butter' }),
-    at('pic', 'image', 400, 0, 260, 220, { src: 'stamps/myra-happy.png' }),
-    at('wf', 'box', 800, 0, 160, 100),
-    at('tall', 'note', 1200, -1000, 220, 2400, { name: '', text: 'Tall' }),
-    at('ha', 'note', 0, 600, 120, 80, { name: '', text: 'a' }),
-    at('hb', 'note', 500, 600, 120, 80, { name: '', text: 'b' }),
-    at('va', 'note', 900, 500, 120, 80, { name: '', text: 'c' }),
-    at('vb', 'note', 900, 1000, 120, 80, { name: '', text: 'd' }),
-  ],
-  links: [
-    { id: 'h', a: 'ha', b: 'hb', bend: 0 },
-    { id: 'v', a: 'va', b: 'vb', bend: 0 },
-  ],
-  tray: [],
-  view: { x: 0, y: 0, z: 1 },
-};
-
-const l = await launch({ boards: [board], open: 'bar' });
-const { page } = l;
-const frames = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-const still = () => page.waitForFunction(() => !document.getElementById('stage')?.classList.contains('moving'));
-const view = async (x: number, y: number, z = 1) => {
-  await page.evaluate(
-    v => {
-      Object.assign(window.__fenmyr.view, v);
-      window.__fenmyr.applyView();
-    },
-    { x, y, z },
-  );
-  await still();
-  await frames();
-};
-const select = async (ids: string[]) => {
-  await page.evaluate(ids => window.__fenmyr.selectOnly(ids), ids);
-  await frames();
-};
-const cardOf = (id: string) =>
-  page.evaluate(id => {
-    const c = window.__fenmyr.board.cards.find(c => c.id === id);
-    return c ? { x: c.x, h: c.h, cropEdit: 'cropEdit' in c } : null;
-  }, id);
-const focused = () =>
-  page.evaluate(() => {
-    const a = document.activeElement;
-    if (!(a instanceof HTMLElement)) return null;
-    if (a.closest('#selbar'))
-      return `bar:${a.dataset.ts ?? a.dataset.pop ?? a.dataset.sb ?? a.dataset.crop ?? a.tagName}`;
-    return a.closest('.card')?.getAttribute('data-id') ?? a.tagName;
-  });
+const { l, page, frames, still, view, select, selectWire, cardOf, focused, shape, check, done } = await openBar();
 const barText = () =>
   page.evaluate(() => [...document.querySelectorAll('#selbar.on > *')].map(e => e.textContent?.trim() ?? ''));
 
@@ -113,8 +51,131 @@ await page.keyboard.press('Escape');
 await frames();
 assert.ok(await page.locator('#dzProps .dz-hint').count(), 'with nothing selected the panel shows its hint');
 
+const top = (s: { card: Edges | null; dot: Edges | null }) => Math.min(s.card?.t ?? NaN, s.dot?.t ?? Infinity);
+// 12 px over the selection, or over its turn dot when it has one
+const above = async (id: string) => {
+  const s = await shape(id);
+  assert.ok(!s.inDock && s.tools, 'the bar is not in the bottom bar, and the tools stay');
+  assert.ok(s.shown, 'the bar is up');
+  near(s.bar?.b, top(s) - 12, 'its bottom');
+  assert.ok(s.bar && s.card && s.bar.l < s.card.r && s.bar.r > s.card.l, 'it is over the selection');
+};
+for (const id of ['title', 'note'])
+  await check(`a ${id}'s bar floats above it`, async () => {
+    await view(500, 400);
+    await select([id]);
+    await above(id);
+  });
+await check('near the top of the view the bar flips below', async () => {
+  await view(500, (await shape()).header + 30);
+  await select(['note']);
+  const s = await shape('note');
+  near(s.bar?.t, (s.card?.b ?? NaN) + 12, 'its top');
+});
+await check('a selection taller than the view keeps the bar at the top', async () => {
+  await view(-1000, 0);
+  await select(['tall']);
+  const s = await shape('tall');
+  near(s.bar?.t, s.header + 12, 'its top');
+});
+await check('the bar stays clear of the side widgets', async () => {
+  await view(100, 400);
+  await select(['note']);
+  const s = await shape('note');
+  near(s.bar?.l, s.leftWidgets + 12, 'its left');
+  near(s.bar?.b, top(s) - 12, 'its bottom');
+});
+
+const steps = { steps: 8 };
+const gestures: [string, (x: number, y: number) => Promise<void>, () => Promise<void>][] = [
+  [
+    'drag',
+    async (x, y) => {
+      await page.mouse.move(x + 60, y + 50);
+      await page.mouse.down();
+      await page.mouse.move(x + 140, y + 110, steps);
+    },
+    () => page.mouse.up(),
+  ],
+  [
+    'resize',
+    async () => {
+      const rh = await page.locator('#rh').boundingBox();
+      assert.ok(rh, 'the resize corner is up');
+      await page.mouse.move(rh.x + rh.width / 2, rh.y + rh.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(rh.x + 60, rh.y + 40, steps);
+    },
+    () => page.mouse.up(),
+  ],
+  [
+    'pan',
+    async () => {
+      await page.keyboard.down('Space');
+      await page.mouse.move(800, 700);
+      await page.mouse.down();
+      await page.mouse.move(740, 660, steps);
+    },
+    async () => {
+      await page.mouse.up();
+      await page.keyboard.up('Space');
+    },
+  ],
+  [
+    'zoom',
+    async () => {
+      await page.mouse.move(800, 700);
+      await page.keyboard.down('Control');
+      await page.mouse.wheel(0, -120);
+      await frames();
+    },
+    () => page.keyboard.up('Control'),
+  ],
+];
+for (const [name, start, end] of gestures)
+  await check(`the bar steps aside for a ${name} and comes back over the note`, async () => {
+    await view(500, 400);
+    await select(['note']);
+    await start(500, 400);
+    assert.ok(!(await shape()).shown, `no bar during the ${name}`);
+    await end();
+    await still();
+    await above('note');
+  });
+
+const middle = (id: string) =>
+  page.evaluate(id => {
+    const r = document.querySelector(`.w-hit[data-wire="${id}"]`)?.getBoundingClientRect();
+    return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null;
+  }, id);
+await check('a level connector has its bar above its middle', async () => {
+  await view(400, -300);
+  await selectWire('h');
+  const s = await shape(),
+    m = await middle('h');
+  near(s.bar?.b, (m?.y ?? NaN) - 12, 'its bottom');
+  near(((s.bar?.l ?? 0) + (s.bar?.r ?? 0)) / 2, m?.x ?? NaN, 'its middle');
+});
+await check('an upright connector has its bar beside its middle', async () => {
+  await view(-100, -300);
+  await selectWire('v');
+  const s = await shape(),
+    m = await middle('v');
+  near(s.bar?.r, (m?.x ?? NaN) - 12, 'its right');
+  near(((s.bar?.t ?? 0) + (s.bar?.b ?? 0)) / 2, m?.y ?? NaN, 'its middle');
+});
+await check('an upright connector by the left widgets has its bar on its other side', async () => {
+  await view(-560, -300);
+  await selectWire('v');
+  const s = await shape(),
+    m = await middle('v');
+  near(s.bar?.l, (m?.x ?? NaN) + 12, 'its left');
+});
+await page.keyboard.press('Escape');
+
 await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(600, 900));
 await settle(l.page);
+await view(100, 300);
 await select(['note']);
 const strip = await page.evaluate(() => {
   const bar = document.getElementById('selbar')?.getBoundingClientRect(),
@@ -131,12 +192,19 @@ assert.deepStrictEqual(
   { phone: true, centred: true, bottom: 10, hub: false },
   'on a phone the bar is a strip at the bottom, in place of the hub',
 );
+await check('on a phone the strip stays through a drag', async () => {
+  const note = await page.locator('#cards [data-id="note"]').boundingBox(),
+    x0 = (await cardOf('note'))?.x;
+  assert.ok(note, 'the note is on screen');
+  await page.mouse.move(note.x + 30, note.y + 30);
+  await page.mouse.down();
+  await page.mouse.move(note.x + 80, note.y + 60, steps);
+  assert.notStrictEqual((await cardOf('note'))?.x, x0, 'the note is moving');
+  assert.ok((await shape()).shown, 'the strip is still up');
+});
 await select([]);
 assert.ok(
   await page.evaluate(() => document.getElementById('hub')?.checkVisibility()),
   'deselecting brings the hub back',
 );
-
-assert.deepStrictEqual(l.errors, []);
-await l.close();
-console.log('CONTEXT BAR OK');
+await done('CONTEXT BAR OK');

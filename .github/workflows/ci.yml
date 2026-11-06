@@ -108,8 +108,10 @@ jobs:
         run: node tests/phone.ts
       - name: Popup test
         run: node tests/popups.ts
-      - name: Selection bar test (the typing state, crop bar, Wireframe panel and phone strip)
+      - name: Selection bar test (what it kept, where it floats, and that it steps aside for gestures)
         run: node tests/contextBar.ts
+      - name: Selection bar keyboard test (F10 in, Space and Enter, Escape out, names after a hover)
+        run: node tests/barKeyboard.ts
       - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
         run: node tests/capture.ts
       - name: Image actions test (download, copy and replace a picture, in the real app)
