@@ -114,9 +114,12 @@ jobs:
           su tester -c "cd ~/fenmyr && npm ci --ignore-scripts --no-audit --no-fund && FENMYR_APP=\$HOME/.local/lib/fenmyr/app node tests/smoke.ts" > smoke.log 2>&1 || report installed-smoke smoke.log
           su tester -c 'cd ~/fenmyr && ./uninstall.sh --purge' > uninstall.log 2>&1 || report uninstall uninstall.log
           test ! -e /home/tester/.local/bin/fenmyr
-      # last, so a deliberate pixel change still lets every other check run; it fails the job all the same
-      - name: Visual check against main
-        run: VISUAL_OUT=/tmp/visual node tools/visual-diff.ts origin/main
+      # last, so a deliberate pixel change still lets every other check run; it fails the job all the same.
+      # A pull request is compared with the branch it merges into, so one into a feature branch lists only its own changes.
+      - name: Visual check against the base branch
+        env:
+          BASE: ${{ github.base_ref || 'main' }}
+        run: VISUAL_OUT=/tmp/visual node tools/visual-diff.ts "origin/$BASE"
       - uses: actions/upload-artifact@v5
         if: failure()
         with:
