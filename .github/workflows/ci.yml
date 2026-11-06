@@ -90,6 +90,8 @@ jobs:
         run: node tests/done.ts
       - name: Myra reply test
         run: node tests/reply.ts
+      - name: Chat keys test (what each key does in Myra's chat input)
+        run: node tests/chatKeys.ts
       - name: Mac font list test
         run: node tests/mac.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)
