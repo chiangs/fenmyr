@@ -1,5 +1,9 @@
 // What Myra's replies do to a board, her chat, the library and the templates, pinned against a golden file so a
 // change in how a reply is applied cannot go unnoticed. `node tests/replies.ts --write` records it from this build.
+//
+// The golden file was first recorded from apply.ts as it was before #241. Changed on purpose since:
+// - "I touched N cards" counts each card once. A card she moved and edited counted twice, and fewer cards can mean
+//   no guessed next steps.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';

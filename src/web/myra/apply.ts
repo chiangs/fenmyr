@@ -381,18 +381,17 @@ export async function applyMyra(r: MyraReply, q?: string, ctx: Picked = { asked:
   if (r.build?.request) startBuild(r.build.request);
   if (r.git?.action) gitAction(r.git.action, r.git.message);
   if (r.install?.packages?.length) askInstall(r.install.packages);
-  const next = acts.length
-    ? []
-    : (r.next?.length ? r.next : guessNext(r, added))
-        .filter((t: unknown): t is string => typeof t === 'string')
-        .map(noEmoji)
-        .filter(Boolean)
-        .slice(0, 3);
-  next.forEach(t => {
-    acts.push({ label: t.trim(), cls: 'next', run: () => ask(t.trim()) });
-  });
+  const touched = [...new Set(added)],
+    next = acts.length
+      ? []
+      : (r.next?.length ? r.next : guessNext(r, touched))
+          .filter((t: unknown): t is string => typeof t === 'string')
+          .map(noEmoji)
+          .filter(Boolean)
+          .slice(0, 3);
+  for (const t of next) acts.push({ label: t.trim(), cls: 'next', run: () => ask(t.trim()) });
   reply(
-    ((r.say && noEmoji(r.say)) || (added.length ? `Done! I touched ${added.length} cards.` : 'Done!')) + read,
+    ((r.say && noEmoji(r.say)) || (touched.length ? `Done! I touched ${touched.length} cards.` : 'Done!')) + read,
     r.confirm ? 0 : next.length ? 16000 : 9000,
     acts,
   );

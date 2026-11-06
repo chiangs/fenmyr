@@ -1844,12 +1844,8 @@
   "chat": [
    {
     "who": "myra",
-    "text": "Done! I touched 3 cards.",
-    "acts": [
-     "Group these by theme",
-     "What am I missing?",
-     "Turn this into a plan"
-    ]
+    "text": "Done! I touched 2 cards.",
+    "acts": []
    },
    {
     "who": "myra",
