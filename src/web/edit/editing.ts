@@ -233,9 +233,15 @@ export function startEdit(id: string, target?: Element | null) {
   }
 }
 
+const editEnded: ((id: string) => void)[] = [];
+export const onEditEnd = (f: (id: string) => void) => {
+  editEnded.push(f);
+};
+
 export function endEdit() {
-  if (!session.editing) return;
-  const el = cardEl(session.editing);
+  const id = session.editing;
+  if (!id) return;
+  const el = cardEl(id);
   if (el) {
     el.classList.remove('editing');
     for (const n of el.querySelectorAll('[contenteditable]')) {
@@ -244,4 +250,5 @@ export function endEdit() {
     }
   }
   session.editing = null;
+  for (const f of editEnded) f(id);
 }

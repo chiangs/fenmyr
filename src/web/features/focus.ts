@@ -10,6 +10,7 @@ import { card } from '../model/boards.ts';
 import { say } from '../settings/licenses.ts';
 import { cardEl, elementById } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
+import { initCaptureNote, writeOnBoard } from './captureNote.ts';
 
 const captureField = () => elementById('capInput', HTMLInputElement);
 
@@ -58,18 +59,28 @@ export function init18() {
     if ($('capture').classList.contains('on')) capture(false);
   });
 
+  // Enter saves the idea to Unsorted; Shift+Enter puts it on the board to write out first (a link has nothing to write, so it goes straight in)
+  const keep = (onBoard: boolean) => {
+    const v = captureField().value.trim();
+    capture(false);
+    if (!v) return;
+    if (/^https?:\/\//.test(v)) linkCard(v, null, true);
+    else if (onBoard) return writeOnBoard(v);
+    else {
+      session.board.tray.unshift(card('note', { text: v }));
+      renderTray();
+      save();
+    }
+    $('tray').classList.remove('closed');
+  };
   $('capForm').onsubmit = e => {
     e.preventDefault();
-    const v = captureField().value.trim();
-    if (v) {
-      if (/^https?:\/\//.test(v)) linkCard(v, null, true);
-      else {
-        session.board.tray.unshift(card('note', { text: v }));
-        renderTray();
-        save();
-      }
-      $('tray').classList.remove('closed');
-    }
-    capture(false);
+    keep(false);
   };
+  captureField().addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || !e.shiftKey || e.isComposing) return;
+    e.preventDefault();
+    keep(true);
+  });
+  initCaptureNote();
 }
