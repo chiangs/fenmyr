@@ -20,7 +20,16 @@ Card colours have names people see and keys the code and board files use. Always
 | Heather | `lilac` | `#ebe1f2` |
 | Birch | `peach` | `#f1ebe2` |
 
-The interface uses these variables, so use them rather than new hex values:
+The interface takes every colour from a variable. Never write a new hex, `rgb()`/`rgba()` or `hsl()`/`hsla()` value into a rule:
+
+- **Use the token:** `color: var(--ink-soft)`.
+- **A shade or a transparency of a token** is made from it, so it changes with the theme: `color-mix(in oklch, var(--pink-deep) 20%, var(--paper))`, or `rgb(from var(--ink) r g b / .4)`.
+- **A colour that's really new** becomes a token in the `:root` block (and its dark value in `body.dark`), with a name for what it's for, not what it looks like.
+- **Token values are hex.** Work out lightness and contrast in OKLCH, which is perceptually even; HSL isn't, so two HSL colours with the same lightness can differ a lot in contrast.
+
+`npm run budget` counts raw colours in `web/style.css` and fails when the count rises. #251 is moving the rest of the stylesheet onto tokens and adding themes.
+
+The main variables:
 
 | Variable | Value | Use |
 |---|---|---|

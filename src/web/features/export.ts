@@ -2,6 +2,7 @@ import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard, TILTS } from '../canvas/render.ts';
 import { applyView } from '../canvas/view.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
+import { imageMenu } from '../cards/imageActions.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { kanbanMenu } from '../cards/kanban.ts';
 import { copyOf, tilt, uid } from '../core/base.ts';
@@ -159,6 +160,7 @@ export function init43() {
         countable = collections.filter(c => c.head !== false),
         counting = countable.length > 0 && countable.every(c => c.count);
       boardMenu(e, [
+        ...(cs.length === 1 && first?.type === 'image' ? imageMenu(first, cardName(cs)) : []),
         ...when(cs.length > 1 && !cs.every(c => c.group && c.group === first?.group), [
           {
             label: 'Group  ⌘G',

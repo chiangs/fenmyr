@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import type { CDPSession, Page } from 'playwright';
 import { bigBoard, everyOfflineCard } from './fixtures/boards.ts';
 import { launch, ROOT } from './support/launch.ts';
@@ -10,6 +11,9 @@ type Metrics = {
   zoomTaskMsPerStep: number;
   editTaskMs: number;
   heapMB: number;
+  appMB: number;
+  mainMB: number;
+  windowMB: number;
 };
 const RUNS = Number(process.env.PERF_RUNS ?? 5);
 
@@ -24,6 +28,16 @@ async function mainThread(cdp: CDPSession, act: () => Promise<unknown>) {
   const before = await metric(cdp, 'TaskDuration');
   await act();
   return ((await metric(cdp, 'TaskDuration')) - before) * 1000;
+}
+
+// Memory per process as PSS: pages shared between Chromium's processes are split between them rather than counted in
+// each, so the sum is what the app really costs. /proc is Linux only; elsewhere it falls back to the working set.
+function pssMB(pid: number, workingSetKB: number) {
+  try {
+    const kb = fs.readFileSync(`/proc/${pid}/smaps_rollup`, 'utf8').match(/^Pss:\s+(\d+) kB/m)?.[1];
+    if (kb) return Number(kb) / 1024;
+  } catch {}
+  return workingSetKB / 1024;
 }
 
 async function measure(dir: string): Promise<Metrics> {
@@ -107,6 +121,13 @@ async function measure(dir: string): Promise<Metrics> {
   });
   await cdp.send('HeapProfiler.collectGarbage');
   const heapMB = (await metric(cdp, 'JSHeapUsedSize')) / 2 ** 20;
+  await page.waitForTimeout(1000);
+  const procs = (
+    await app.evaluate(({ app }) =>
+      app.getAppMetrics().map(p => ({ pid: p.pid, type: p.type, kb: p.memory.workingSetSize })),
+    )
+  ).map(p => ({ type: p.type, mb: pssMB(p.pid, p.kb) }));
+  const sum = (type?: string) => procs.filter(p => !type || p.type === type).reduce((n, p) => n + p.mb, 0);
   if (l.errors.length) throw new Error(`page errors: ${l.errors.join('; ')}`);
   await l.close();
   return {
@@ -116,6 +137,9 @@ async function measure(dir: string): Promise<Metrics> {
     zoomTaskMsPerStep: zoomTask / STEPS,
     editTaskMs,
     heapMB,
+    appMB: sum(),
+    mainMB: sum('Browser'),
+    windowMB: sum('Tab'),
   };
 }
 
@@ -124,7 +148,17 @@ const saved = async (page: Page) => {
   await page.waitForFunction(() => document.getElementById('saved')?.textContent === 'saved');
 };
 
-const METRICS = ['openMs', 'openTaskMs', 'dragTaskMsPerMove', 'zoomTaskMsPerStep', 'editTaskMs', 'heapMB'] as const;
+const METRICS = [
+  'openMs',
+  'openTaskMs',
+  'dragTaskMsPerMove',
+  'zoomTaskMsPerStep',
+  'editTaskMs',
+  'heapMB',
+  'appMB',
+  'mainMB',
+  'windowMB',
+] as const;
 const SLOWER = 1.1;
 type Spread = { median: number; min: number; max: number };
 const clearlyWorse = (head: Spread, base: Spread) => head.median > base.median * SLOWER && head.min > base.max;
@@ -144,6 +178,9 @@ function summary(runs: Metrics[]): Record<keyof Metrics, Spread> {
     zoomTaskMsPerStep: of('zoomTaskMsPerStep'),
     editTaskMs: of('editTaskMs'),
     heapMB: of('heapMB'),
+    appMB: of('appMB'),
+    mainMB: of('mainMB'),
+    windowMB: of('windowMB'),
   };
 }
 

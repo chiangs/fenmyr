@@ -1,12 +1,13 @@
 // Counts what the codebase is paying down and fails when any count goes up:
-// files that skip type checking, `any`, `as` casts, files over the line limit, and logic inside markup templates.
+// files that skip type checking, `any`, `as` casts, files over the line limit, logic inside markup templates,
+// and raw colours in the stylesheet that should come from a variable.
 // Lower the budget after paying some down: node tools/budget.ts --write
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 
-const KINDS = ['uncheckedFiles', 'anys', 'casts', 'longFiles', 'markupLogic'] as const;
+const KINDS = ['uncheckedFiles', 'anys', 'casts', 'longFiles', 'markupLogic', 'rawColours'] as const;
 type Kind = (typeof KINDS)[number];
 type Counts = Record<Kind, number>;
 type Finding = { file: string; line: number; kind: Kind };
@@ -53,8 +54,26 @@ function inspect(file: string): Finding[] {
   return found;
 }
 
-const findings = files.flatMap(inspect);
-const counts: Counts = { uncheckedFiles: 0, anys: 0, casts: 0, longFiles: 0, markupLogic: 0 };
+// A colour is defined once, as a custom property (--ink: #3b342d), and used through var(). A hex, rgb() or hsl() value
+// written straight into any other property is raw. Comments are blanked first, keeping their newlines for line numbers.
+const STYLESHEETS = ['web/style.css'];
+const RAW_COLOUR = /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|hsl)a?\(\s*[\d.]/g;
+function rawColours(file: string): Finding[] {
+  const css = fs
+    .readFileSync(path.join(ROOT, file), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, c => c.replace(/[^\n]/g, ' '));
+  const found: Finding[] = [];
+  for (const d of css.matchAll(/([^{};]+):([^{};]*)/g)) {
+    if (d[1]?.trim().startsWith('--')) continue;
+    const line = css.slice(0, d.index).split('\n').length,
+      n = (d[2] ?? '').match(RAW_COLOUR)?.length ?? 0;
+    found.push(...Array.from({ length: n }, () => ({ file, line, kind: 'rawColours' as const })));
+  }
+  return found;
+}
+
+const findings = [...files.flatMap(inspect), ...STYLESHEETS.flatMap(rawColours)];
+const counts: Counts = { uncheckedFiles: 0, anys: 0, casts: 0, longFiles: 0, markupLogic: 0, rawColours: 0 };
 for (const f of findings) counts[f.kind]++;
 const raw: unknown = fs.existsSync(BUDGET) ? JSON.parse(fs.readFileSync(BUDGET, 'utf8')) : {};
 const saved = (k: Kind) => {
@@ -67,6 +86,7 @@ const budget: Counts = {
   casts: saved('casts'),
   longFiles: saved('longFiles'),
   markupLogic: saved('markupLogic'),
+  rawColours: saved('rawColours'),
 };
 const keys = KINDS;
 
