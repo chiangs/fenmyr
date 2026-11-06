@@ -9,7 +9,7 @@ import { paintBd } from '../myra/birthday.ts';
 import { showConnections } from '../myra/helpers.ts';
 import { renderGitSetup } from '../repo/setup.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
-import { luminance, mixHex } from '../ui/color.ts';
+import { bestInk, luminance, mixHex, readableShade } from '../ui/color.ts';
 import { child, closestTo, elementById, esc, htmlIn } from '../ui/dom.ts';
 import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
@@ -71,8 +71,11 @@ export function applyColors() {
     B.setProperty('--pink-deep', mine.accent);
     B.setProperty('--pink', mixHex(mine.accent, '#ffffff', 0.3));
     B.setProperty('--blush', mixHex(mine.accent, modeName() === 'dark' ? '#1d1a16' : '#ffffff', 0.82));
+    // a custom accent still has to make readable links and readable button text
+    B.setProperty('--accent-text', readableShade(mine.accent, [colorOf('panel'), bg], 4.5));
+    B.setProperty('--on-accent', bestInk(mine.accent, ['#ffffff', modeName() === 'dark' ? '#1d1a16' : '#3b342d']));
   } else
-    ['--pink-deep', '--pink', '--blush'].forEach(v => {
+    ['--pink-deep', '--pink', '--blush', '--accent-text', '--on-accent'].forEach(v => {
       B.removeProperty(v);
     });
   document.body.classList.toggle('board-dark', darkBg);

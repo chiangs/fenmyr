@@ -12,6 +12,7 @@ type Tokens = {
   ink: string;
   inkSoft: string;
   accent: string;
+  accentText: string;
   onAccent: string;
   focus: string;
   cards: Record<string, CardColour>;
@@ -19,20 +20,30 @@ type Tokens = {
 type CheckId = 'text' | 'softText' | 'accentText' | 'onAccent' | 'focus' | 'cardText' | 'cardsApart';
 type Theme = { id: string; name: string; mode: Mode; target: Target; tokens: Tokens; knownGaps: CheckId[] };
 
-// the card colours as they look today, keyed as boards store them; core/base.ts reads them from here
+// The card colours, keyed as boards store them; core/base.ts reads them from here. Lingonberry, Moss, Fjord and
+// Heather were nudged apart (#251) so no two look alike for any kind of colour blindness.
 export const PASTELS: Record<string, string> = {
   white: '#ffffff',
-  pink: '#ffdcd8',
+  pink: '#ffd7d3',
   butter: '#ffe3bd',
-  mint: '#e0edd3',
-  lilac: '#ebe1f2',
-  sky: '#d9e7f3',
+  mint: '#e2eed0',
+  lilac: '#ece0ec',
+  sky: '#d6e8fb',
   peach: '#f1ebe2',
+};
+// the same colours dimmed for a dark board, so they don't glare; Snow is a dark card there
+const DARK_FILLS: Record<string, string> = {
+  white: '#38332d',
+  pink: '#e2b0ac',
+  butter: '#e0bd8c',
+  mint: '#bccba5',
+  lilac: '#cabbca',
+  sky: '#aec5dc',
+  peach: '#cdc6bb',
 };
 const cardsOf = (fills: Record<string, string>, ink: string, own: Record<string, CardColour> = {}) =>
   Object.fromEntries(Object.keys(PASTELS).map(k => [k, own[k] ?? { fill: fills[k] ?? '#ffffff', ink }]));
 
-// Today's look, before #251 fixes it. Its known gaps are what the colour test records rather than fails.
 export const THEMES: Theme[] = [
   {
     id: 'default-light',
@@ -44,13 +55,14 @@ export const THEMES: Theme[] = [
       dot: '#e4dccf',
       panel: '#ffffff',
       ink: '#3b342d',
-      inkSoft: '#8a7f73',
+      inkSoft: '#796f63',
       accent: '#e88a24',
-      onAccent: '#ffffff',
-      focus: '#0d99ff',
+      accentText: '#b15800',
+      onAccent: '#3b342d',
+      focus: '#0090f5',
       cards: cardsOf(PASTELS, '#3b342d'),
     },
-    knownGaps: ['softText', 'accentText', 'onAccent', 'focus', 'cardsApart'],
+    knownGaps: [],
   },
   {
     id: 'default-dark',
@@ -64,11 +76,12 @@ export const THEMES: Theme[] = [
       ink: '#f6f2ec',
       inkSoft: '#c6bcae',
       accent: '#e88a24',
-      onAccent: '#ffffff',
-      focus: '#0d99ff',
-      cards: cardsOf(PASTELS, '#3f3a34', { white: { fill: '#38332d', ink: '#f6f2ec' } }),
+      accentText: '#e88a24',
+      onAccent: '#1d1a16',
+      focus: '#0090f5',
+      cards: cardsOf(DARK_FILLS, '#3f3a34', { white: { fill: '#38332d', ink: '#f6f2ec' } }),
     },
-    knownGaps: ['onAccent', 'cardsApart'],
+    knownGaps: [],
   },
 ];
 
@@ -85,7 +98,7 @@ type Check = { id: CheckId; got: number; need: number; worst: string };
 
 // every promise a theme makes, with the weakest pair it found
 export function checksOf(t: Theme): Check[] {
-  const { bg, panel, ink, inkSoft, accent, onAccent, focus, cards } = t.tokens,
+  const { bg, panel, ink, inkSoft, accent, accentText, onAccent, focus, cards } = t.tokens,
     text = TEXT[t.target],
     weakest = (pairs: [string, number][]) => pairs.reduce((a, b) => (b[1] < a[1] ? b : a)),
     check = (id: CheckId, need: number, pairs: [string, number][]): Check => {
@@ -107,7 +120,10 @@ export function checksOf(t: Theme): Check[] {
       ['quiet text on panel', contrast(inkSoft, panel)],
       ['quiet text on board', contrast(inkSoft, bg)],
     ]),
-    check('accentText', text, [['accent on panel', contrast(accent, panel)]]),
+    check('accentText', text, [
+      ['accent text on panel', contrast(accentText, panel)],
+      ['accent text on board', contrast(accentText, bg)],
+    ]),
     check('onAccent', text, [['text on accent', contrast(onAccent, accent)]]),
     check('focus', NON_TEXT[t.target], [
       ['focus on board', contrast(focus, bg)],

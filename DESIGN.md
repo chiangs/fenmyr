@@ -10,15 +10,17 @@ Fenmyr looks like a Nordic bog in summer: snow-white paper, a soft birch dot gri
 
 Card colours have names people see and keys the code and board files use. Always show the name in the UI, and never show the key.
 
-| Name | Key | Hex |
-|---|---|---|
-| Snow | `white` | `#ffffff` |
-| Cloudberry | `butter` | `#ffe3bd` |
-| Lingonberry | `pink` | `#ffdcd8` |
-| Moss | `mint` | `#e0edd3` |
-| Fjord | `sky` | `#d9e7f3` |
-| Heather | `lilac` | `#ebe1f2` |
-| Birch | `peach` | `#f1ebe2` |
+| Name | Key | Light | Dark |
+|---|---|---|---|
+| Snow | `white` | `#ffffff` | `#38332d` |
+| Cloudberry | `butter` | `#ffe3bd` | `#e0bd8c` |
+| Lingonberry | `pink` | `#ffd7d3` | `#e2b0ac` |
+| Moss | `mint` | `#e2eed0` | `#bccba5` |
+| Fjord | `sky` | `#d6e8fb` | `#aec5dc` |
+| Heather | `lilac` | `#ece0ec` | `#cabbca` |
+| Birch | `peach` | `#f1ebe2` | `#cdc6bb` |
+
+They live in `src/web/settings/themes.ts`, and a card's fill is `var(--card-<key>)`. No two look alike for any kind of colour blindness, and dark mode dims them so they don't glare; `tests/themes.ts` checks both.
 
 The interface takes every colour from a variable. Never write a new hex, `rgb()`/`rgba()` or `hsl()`/`hsla()` value into a rule:
 
@@ -33,10 +35,12 @@ The main variables:
 
 | Variable | Value | Use |
 |---|---|---|
-| `--ink`, `--ink-soft`, `--ink-faint` | `#3b342d`, `#8a7f73`, `#bcb1a3` | Text, from strongest to quietest |
-| `--pink-deep` | `#e88a24` | The accent. The name is older than the colour |
+| `--ink`, `--ink-soft`, `--ink-faint` | `#3b342d`, `#796f63`, `#bcb1a3` | Text, from strongest to quietest. `--ink-faint` is for placeholders and decoration only |
+| `--pink-deep` | `#e88a24` | The accent, as a fill. The name is older than the colour |
+| `--accent-text` | `#b15800` (dark mode `#e88a24`) | The accent as text: links, counts. Reads at 4.5:1; a custom accent gets its own shade |
+| `--on-accent` | `#3b342d` (dark mode `#1d1a16`) | Text on the accent fill |
 | `--dot` | `#e4dccf` | The grid dots |
-| `--select` | `#0d99ff` | Selection handles, the one cold colour |
+| `--select` | `#0090f5` | Selection handles and focus, the one cold colour |
 | `--sh` | `150, 95, 35` | The shadow colour, warm amber in light mode |
 
 People can change the board, dots, panels and accent per light and dark mode, and Follow Caelestia can replace them. New UI must therefore read its colours from these variables and must work in dark mode (`body.dark`).

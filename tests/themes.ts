@@ -4,7 +4,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { checksOf, THEMES } from '../src/web/settings/themes.ts';
-import { apart, contrast } from '../src/web/ui/color.ts';
+import { apart, bestInk, contrast, readableShade } from '../src/web/ui/color.ts';
 
 assert.strictEqual(Math.round(contrast('#000000', '#ffffff') * 10) / 10, 21, 'black on white is 21:1');
 assert.strictEqual(contrast('#777777', '#777777'), 1, 'a colour on itself is 1:1');
@@ -13,6 +13,19 @@ assert.ok(
   apart('#ff0000', '#00ff00', 'typical') > apart('#ff0000', '#00ff00', 'deutan'),
   'red and green close up for deutan vision',
 );
+
+// a custom accent of any colour still makes links and button text that read at 4.5:1
+for (const accent of ['#e88a24', '#ffd76a', '#7fb86a', '#0d99ff', '#7c4dff', '#ff5a6e', '#ffffff', '#000000'])
+  for (const [mode, surfaces, ink] of [
+    ['light', ['#ffffff', '#faf7f2'], '#3b342d'],
+    ['dark', ['#242019', '#12100d'], '#1d1a16'],
+  ] as const) {
+    const text = readableShade(accent, [...surfaces], 4.5);
+    for (const s of surfaces)
+      assert.ok(contrast(text, s) >= 4.5, `${mode}: links from accent ${accent} read on ${s} (${text})`);
+    const on = bestInk(accent, ['#ffffff', ink]);
+    assert.ok(contrast(on, accent) >= 4, `${mode}: text on accent ${accent} reads (${on})`);
+  }
 
 const problems: string[] = [];
 for (const t of THEMES) {
@@ -34,12 +47,17 @@ const ROOT = /:root \{([^}]*)\}/,
 const light = THEMES.find(t => t.id === 'default-light')?.tokens,
   dark = THEMES.find(t => t.id === 'default-dark')?.tokens;
 assert.ok(light && dark, 'both Default themes are in the table');
+const cardVars = (t: typeof light): [string, string][] =>
+  Object.entries(t.cards).map(([k, c]): [string, string] => [`--card-${k}`, c.fill]);
 const lightVars: [string, string][] = [
   ['--ink', light.ink],
   ['--ink-soft', light.inkSoft],
   ['--dot', light.dot],
   ['--pink-deep', light.accent],
   ['--select', light.focus],
+  ['--accent-text', light.accentText],
+  ['--on-accent', light.onAccent],
+  ...cardVars(light),
 ];
 for (const [name, value] of lightVars)
   assert.strictEqual(declared(ROOT, name), value, `style.css :root ${name} matches the light Default`);
@@ -48,6 +66,9 @@ const darkVars: [string, string][] = [
   ['--ink', dark.ink],
   ['--ink-soft', dark.inkSoft],
   ['--dot', dark.dot],
+  ['--accent-text', dark.accentText],
+  ['--on-accent', dark.onAccent],
+  ...cardVars(dark),
 ];
 for (const [name, value] of darkVars)
   assert.ok(darkCss.includes(`${name}: ${value}`), `style.css body.dark ${name} matches the dark Default`);

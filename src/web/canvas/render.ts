@@ -136,9 +136,10 @@ export function renderCard(c: Card, pop?: boolean) {
       if (el.offsetHeight) c.h = el.offsetHeight;
     });
   el.style.setProperty('--tilt', `${c.type === 'stamp' && !c.tilted ? 0 : c.r}deg`);
+  // a card colour follows the mode (dimmer in dark mode); a card without one, like a wireframe screen, stays white
   const named = c.color && COLORS[c.color] ? c.color : '';
-  el.style.setProperty('--fill', named ? (COLORS[named] ?? '#fff') : '#fff');
-  el.classList.add(`c-${named && named !== 'white' ? named : 'white'}`);
+  el.style.setProperty('--fill', named ? `var(--card-${named})` : 'var(--snow)');
+  el.classList.add(`c-${named || 'white'}`);
   if (c.type === 'swatch') el.style.setProperty('--hex', c.hex);
   el.style.setProperty('--fs', String(fsMul(c)));
   el.classList.toggle('has-font', !!c.font && SIZED.includes(c.type));

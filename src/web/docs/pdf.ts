@@ -92,7 +92,6 @@ ${css}
 .dv-prose p { orphans: 3; widows: 3; }
 .dv-prose .keep { break-inside: avoid; page-break-inside: avoid; }
 .dv-prose .keep > :first-child { margin-top: 0; } .dv-prose > .keep { margin-top: 1.5em; } .dv-prose > .keep:first-child { margin-top: 0; }
-.dv-prose a { color: #b8621a; }
 .dv-prose ul[data-type="taskList"] input[type="checkbox"] { pointer-events: none; }
 </style></head><body>${heading}<div class="dv-prose">${body}</div></body></html>`;
 }
