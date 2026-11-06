@@ -63,7 +63,8 @@ export function zoomFit() {
 // half a usual card's width and a margin: in a narrow free strip a new card starts at its left edge, so it shows
 const HALF_CARD = 146;
 
-export function centerWorld() {
+// the middle of the view (or of `v`, a view it is about to move to), in board coordinates
+export function centerWorld(v: View = session.view) {
   const r = stage.getBoundingClientRect();
   // a prototype board's widgets cover the left of its narrow column, so new cards go just right of them
   const side = document.body.classList.contains('proto')
@@ -71,9 +72,9 @@ export function centerWorld() {
     : null;
   if (side?.width) {
     const left = Math.max(r.left, side.right + 16);
-    return toWorld(left + Math.max((r.right - left) / 2, HALF_CARD), r.top + r.height / 2);
+    return toWorld(left + Math.max((r.right - left) / 2, HALF_CARD), r.top + r.height / 2, v);
   }
-  return toWorld(r.left + 270 + (r.width - 530) / 2, r.top + r.height / 2);
+  return toWorld(r.left + 270 + (r.width - 530) / 2, r.top + r.height / 2, v);
 }
 
 export function addAtCenter<T extends CardType>(type: T, extra: Partial<CardOf<T>> = {}) {

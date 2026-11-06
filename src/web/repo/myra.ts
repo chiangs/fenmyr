@@ -36,10 +36,9 @@ const same = (a: string | undefined, b: string | undefined) =>
 
 // Myra's "newPrototype", set once the person has said what it's for, the device and the stack: the app makes it in
 // the project named (or the open board's), in the prototyping folder named (or the first, or a new one).
-export async function applyNewPrototype(r: MyraReply): Promise<SayAction[]> {
-  const w = r.newPrototype,
-    name = w?.name?.trim();
-  if (!w || !name) return [];
+export async function applyNewPrototype(w: NonNullable<MyraReply['newPrototype']>): Promise<SayAction[]> {
+  const name = w.name?.trim();
+  if (!name) return [];
   const here = appState.folders.find(f => f.id === session.board?.folder);
   const p = appState.projects.find(x => same(x.name, w.project)) ?? appState.projects.find(x => x.id === here?.project);
   if (!p) {

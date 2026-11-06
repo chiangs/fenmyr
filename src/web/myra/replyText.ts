@@ -23,7 +23,7 @@ export const parse = (raw: unknown): MyraReply => {
   }
 };
 
-export function guessNext(r: MyraReply, added: Card[]) {
+export function guessNext(r: MyraReply, added: readonly Card[]) {
   const has = (t: string) => added.some(c => c.type === t);
   if (r.screens?.length)
     return added.some(c => c.type === 'box' && c.img)
