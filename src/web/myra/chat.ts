@@ -249,8 +249,8 @@ export function init31() {
   chatForm.onsubmit = e => {
     e.preventDefault();
     const q = chatIn.value.trim();
-    if (!q) return;
     setChatText('');
+    if (!q) return;
     if (q[0] === '/') return slash(q);
     chatIn.placeholder = 'Ask Myra… “group these by theme”';
     ask(q);

@@ -67,9 +67,15 @@ async function keys(t: Smoke) {
   await page.waitForTimeout(200);
   const sent = await look(t);
   await replied(t);
+  await page.focus('#mcInput');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Control+Enter');
+  await page.waitForTimeout(150);
+  const blank = await look(t);
   t.checkAll('chatKeys', {
     enterAddsALine: typed.val === 'one\ntwo' && typed.sent === before.sent,
     ctrlEnterSends: sent.sent === before.sent + 1 && /one\s*two/.test(sent.last) && sent.val === '',
+    blankDraftClearsUnsent: blank.val === '' && blank.sent === sent.sent,
   });
 }
 
