@@ -41,3 +41,64 @@ export function mixHex(a: string, b: string, k: number) {
   const [br, bg, bb] = rgbOf(b);
   return hexOf([ar * (1 - k) + br * k, ag * (1 - k) + bg * k, ab * (1 - k) + bb * k]);
 }
+
+// WCAG contrast between two colours, from 1 to 21
+export function contrast(a: string, b: string) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return ((hi ?? 0) + 0.05) / ((lo ?? 0) + 0.05);
+}
+
+export type Vision = 'typical' | 'protan' | 'deutan' | 'tritan';
+// Machado, Oliveira and Fernandes (2009), full severity, applied to linear RGB
+const SIMULATE: Record<Exclude<Vision, 'typical'>, number[][]> = {
+  protan: [
+    [0.152286, 1.052583, -0.204868],
+    [0.114503, 0.786281, 0.099216],
+    [-0.003882, -0.048116, 1.051998],
+  ],
+  deutan: [
+    [0.367322, 0.860646, -0.227968],
+    [0.280085, 0.672501, 0.047413],
+    [-0.01182, 0.04294, 0.968881],
+  ],
+  tritan: [
+    [1.255528, -0.076749, -0.178779],
+    [-0.078411, 0.930809, 0.147602],
+    [0.004733, 0.691367, 0.3039],
+  ],
+};
+const linear = (n: number) => {
+  const c = n / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+};
+// OKLab of a colour as someone with that vision sees it
+function seenOklab(hex: string, vision: Vision): Rgb {
+  let rgb = rgbOf(hex).map(linear);
+  if (vision !== 'typical') {
+    const m = SIMULATE[vision];
+    rgb = m.map(row =>
+      Math.min(
+        1,
+        Math.max(
+          0,
+          row.reduce((sum, k, i) => sum + k * (rgb[i] ?? 0), 0),
+        ),
+      ),
+    );
+  }
+  const [r = 0, g = 0, b = 0] = rgb,
+    l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b),
+    m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b),
+    s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+// how far apart two colours look, in OKLab; below about 0.02 they read as the same colour
+export function apart(a: string, b: string, vision: Vision) {
+  const p = seenOklab(a, vision),
+    q = seenOklab(b, vision);
+  return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+}
