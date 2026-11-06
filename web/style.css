@@ -412,6 +412,7 @@ html.native .home-in { padding-top: 40px; }
 .dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px); margin: 0; width: max-content; }
 .selbar { height: 50px; }
 .selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
+.selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
 .selbar .sb-ic { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; }
 .selbar .sb-ic svg { width: 18px; height: 18px; }
 .selbar button.on { background: var(--blush); }

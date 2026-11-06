@@ -1,7 +1,7 @@
 import { $ } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';
-import { closestTo, htmlIn } from '../ui/dom.ts';
+import { closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
 import { opensUp } from './float.ts';
 
@@ -158,35 +158,44 @@ const TIP_NAMES: Record<string, string> = {
   strike: 'Strikethrough',
 };
 
-// hover a button in the selection bar: a quick little name bubble above it (the same look as the main toolbar's)
+// hover a button in the selection bar, or reach it from the keyboard: a quick little name bubble above it (the same
+// look as the main toolbar's), or below it when the bar is at the top of the view
 export function initTips() {
   const tipEl = document.createElement('div');
   tipEl.className = 'sb-tipbub';
   document.body.appendChild(tipEl);
   let tT: ReturnType<typeof setTimeout> | undefined;
-  $('selbar').addEventListener('pointerover', e => {
-    const b = closestTo(e.target, 'button, .sb-tilt', HTMLElement);
+  const tip = (target: EventTarget | null) => {
+    const b = closestTo(target, 'button, .sb-tilt', HTMLElement);
     if (!b || b.closest('.sb-pop')) return;
     if (b.title) {
+      // our bubble instead of the slow system one; an icon keeps the name the title gave it
+      if (!b.ariaLabel && !b.textContent?.trim()) b.ariaLabel = b.title;
       b.dataset.tt = b.title;
       b.removeAttribute('title');
-    } // our bubble instead of the slow system one
+    }
     const txt =
       b.dataset.tt || TIP_NAMES[b.dataset.pop ?? ''] || b.getAttribute('aria-label') || TIP_NAMES[b.dataset.ts ?? ''];
     if (!txt || b.closest('.sb-popw.open')) return;
     clearTimeout(tT);
     tT = setTimeout(() => {
-      const r = b.getBoundingClientRect();
+      const r = b.getBoundingClientRect(),
+        above = r.top - tipEl.offsetHeight - 10;
       tipEl.textContent = txt;
       tipEl.classList.add('on');
       tipEl.style.left = `${Math.max(8, Math.min(innerWidth - tipEl.offsetWidth - 8, r.left + r.width / 2 - tipEl.offsetWidth / 2))}px`;
-      tipEl.style.top = `${r.top - tipEl.offsetHeight - 10}px`;
+      tipEl.style.top = `${above < 8 ? r.bottom + 10 : above}px`;
     }, 250);
-  });
+  };
   const hide = () => {
     clearTimeout(tT);
     tipEl.classList.remove('on');
   };
+  $('selbar').addEventListener('pointerover', e => tip(e.target));
+  $('selbar').addEventListener('focusin', e => {
+    if (e.target instanceof Element && e.target.matches(':focus-visible')) tip(e.target);
+  });
+  $('selbar').addEventListener('focusout', hide);
   $('selbar').addEventListener('pointerout', e => {
     const to = e.relatedTarget instanceof Element ? e.relatedTarget : null;
     if (!to?.closest('#selbar') || !to.closest('button, .sb-tilt')) hide();
@@ -202,10 +211,13 @@ export function initPops() {
   addEventListener(
     'keydown',
     e => {
-      if (e.key === 'Escape' && document.querySelector('.sb-popw.open')) {
-        closeSbPops();
-        e.stopPropagation();
-      }
+      const open = document.querySelector('.sb-popw.open');
+      if (e.key !== 'Escape' || !open) return;
+      // focus inside the closing dropdown goes back to the button that opened it, not to the page
+      const trigger = open.contains(document.activeElement) ? oneIn(open, ':scope > [data-pop]') : null;
+      closeSbPops();
+      trigger?.focus();
+      e.stopPropagation();
     },
     true,
   );

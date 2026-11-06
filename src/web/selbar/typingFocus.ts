@@ -23,18 +23,19 @@ function release(how: Return) {
 // A button pressed from the keyboard gives the note its selection back first, so it works as it does under the mouse.
 export const backToNote = () => release('refocus');
 
+// F10 from a note being typed in: the note waits while its formatting buttons have the keys
+export function enterFromNote() {
+  const t = noteBodyInFocus(),
+    first = htmlIn($('selbar'), FORMAT_BUTTONS).find(b => b.checkVisibility()),
+    away = t && first ? stepAway(t) : null;
+  if (!away || !first) return false;
+  held = away;
+  first.focus();
+  return true;
+}
+
 export function initTypingFocus() {
   const bar = $('selbar');
-  addEventListener('keydown', e => {
-    if (e.key !== 'F10' || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-    const t = noteBodyInFocus(),
-      first = htmlIn(bar, FORMAT_BUTTONS).find(b => b.checkVisibility()),
-      away = t && first ? stepAway(t) : null;
-    if (!away || !first) return;
-    held = away;
-    e.preventDefault();
-    first.focus();
-  });
   // Keys on a formatting button stay off the board's shortcuts while the note waits.
   bar.addEventListener('keydown', e => {
     if (!held || !closestTo(e.target, FORMAT_BUTTONS)) return;

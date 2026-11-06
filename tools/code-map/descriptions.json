@@ -224,6 +224,7 @@
     "src/web/richtext/typed.ts": "Recognises Markdown typed into a note, such as **word** or [label](url), as its last character goes in.",
     "src/web/selbar/actions.ts": "The due-date box in the selection bar.",
     "src/web/selbar/arrange.ts": "Align and space-evenly buttons for several selected things.",
+    "src/web/selbar/barKeys.ts": "F10 reaches whichever bar is up and Escape leaves it with the selection kept; a redraw keeps focus on the same control.",
     "src/web/selbar/barKit.ts": "Shared building blocks for the bar: icons, dropdown buttons and undo steps.",
     "src/web/selbar/context.ts": "What the selection bar is about this frame, a selection, a connector or a tool, and whether a gesture pauses it.",
     "src/web/selbar/corners.ts": "Corner roundness controls for what can have round corners.",

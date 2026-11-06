@@ -67,7 +67,17 @@ export function init20() {
     $('cleanBack').addEventListener(t, e => e.stopPropagation());
   });
 
+  // The button Tab or F10 moved to. A clicked button keeps focus too, and Space there still pans; that can't be told
+  // at the key press, since any key makes the focused button :focus-visible.
+  let keyedButton: EventTarget | null = null;
+  addEventListener('focusin', e => {
+    keyedButton = e.target instanceof HTMLButtonElement && e.target.matches(':focus-visible') ? e.target : null;
+  });
+
   addEventListener('keydown', e => {
+    // Space and Enter press a button the keyboard is on, so Enter on the crop bar's Cancel cancels
+    if ((e.key === ' ' || e.key === 'Enter') && !e.metaKey && !e.ctrlKey && !e.altKey && e.target === keyedButton)
+      return;
     const typing = isTyping(e.target);
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();

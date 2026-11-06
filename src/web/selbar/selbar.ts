@@ -11,6 +11,7 @@ import { esc } from '../ui/dom.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
 import { initActions } from './actions.ts';
 import { arrangeHtml, initArrange } from './arrange.ts';
+import { initBarKeys, keepFocus } from './barKeys.ts';
 import {
   btn,
   caret,
@@ -300,12 +301,10 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
   }
   bar.dataset.key = key;
   renderDesign();
-  if (ctx.crop) {
-    bar.innerHTML = CROP_BAR;
-    return;
-  }
-  bar.innerHTML = cardBarHtml(cs);
-  foldSelbar(bar, barRoom());
+  keepFocus(bar, () => {
+    bar.innerHTML = ctx.crop ? CROP_BAR : cardBarHtml(cs);
+    if (!ctx.crop) foldSelbar(bar, barRoom());
+  });
   snapSoon();
 }
 
@@ -313,7 +312,9 @@ function drawWire(bar: HTMLElement, link: Link) {
   const key = wireKey(link);
   if (bar.dataset.key === key) return;
   bar.dataset.key = key;
-  bar.innerHTML = wireBarHtml(link);
+  keepFocus(bar, () => {
+    bar.innerHTML = wireBarHtml(link);
+  });
 }
 
 // this runs every frame, so it only writes when something changed
@@ -382,6 +383,7 @@ export function init56() {
   initCorners();
   initTextBar(placeSelbar);
   initTypingFocus();
+  initBarKeys();
   initArrange();
   initActions();
 }
