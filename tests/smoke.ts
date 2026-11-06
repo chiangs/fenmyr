@@ -10,6 +10,7 @@ import { animations } from './smoke/animations.ts';
 import { birthday } from './smoke/birthday.ts';
 import { board, noteTags } from './smoke/board.ts';
 import { bridge } from './smoke/bridge.ts';
+import { chatInput } from './smoke/chatInput.ts';
 import { boardOrder, clearButtons, cursorEdge, heightGrips, popups, shortcutLabels } from './smoke/chrome.ts';
 import { deleteConfirm, deleteCurrent, deleteLastBoard } from './smoke/deletes.ts';
 import { installPageKit, makeSmoke } from './smoke/kit.ts';
@@ -94,6 +95,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await panels(t);
   await page.evaluate(() => window.__fenmyr.dizzyAuto(false)); // opening and closing the chat over and over makes her dizzy, which would land in the middle of other checks; it is switched back on for its own check below
   await slash(t);
+  await chatInput(t);
   await pictures(t);
   await shortcutLabels(t);
   await timers(t);

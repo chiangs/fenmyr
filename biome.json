@@ -13,7 +13,8 @@
       "!tests/sample-vault",
       "!tests/fixtures/richtext",
       "!.claude/settings.local.json",
-      "!.claude/scheduled_tasks.lock"
+      "!.claude/scheduled_tasks.lock",
+      "!!.claude/worktrees"
     ]
   },
   "formatter": {

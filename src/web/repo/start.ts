@@ -3,7 +3,7 @@ import { freshCopies } from '../canvas/clipboard.ts';
 import { appState, session } from '../core/state.ts';
 import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
 import { makeProject, saveLib } from '../library/tree.ts';
-import { chirp } from '../settings/licenses.ts';
+import { chirp } from '../myra/say.ts';
 import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { scope } from '../ui/toolbar.ts';

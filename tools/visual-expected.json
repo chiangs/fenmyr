@@ -1,21 +1,6 @@
 {
-  "board": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "card-menu": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "dark-board": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "dark-select-note": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "dark-select-shape": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "panels-doc-editor": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "panels-myra-chat": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "phone-board": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "select-note": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "select-several": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "select-shape": "The demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "settings-about": "The board behind the Settings dialog: the demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "settings-board": "The board behind the Settings dialog: the demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "settings-general": "The board behind the Settings dialog: the demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "settings-helpers": "The board behind the Settings dialog: the demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "settings-myra": "The board behind the Settings dialog: the demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "settings-toolbar": "The board behind the Settings dialog: the demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "settings-vaults": "The board behind the Settings dialog: the demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped.",
-  "settings-widgets": "The board behind the Settings dialog: the demo board's stamp gains its white sticker outline and soft shadow, and its section its frosted tint and shine: both were invalid CSS (a broken rgba()) that the browser dropped."
+  "panels-myra-chat": "Phase 1 (#242): Myra's input gets a footer row with “Ctrl+Enter to send” beside Send, so the thread above is one row shorter.",
+  "proto-wide-screen": "Phase 1 (#242): the docked chat's input gets the footer row with “Ctrl+Enter to send” beside Send; the thread above is one row shorter.",
+  "proto-medium-screen": "Phase 1 (#242): the docked chat's input gets the footer row with “Ctrl+Enter to send” beside Send; the thread above is one row shorter.",
+  "proto-narrow-screen": "Phase 1 (#242): the docked chat's input gets the footer row with “Ctrl+Enter to send” beside Send; the thread above is one row shorter."
 }

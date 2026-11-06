@@ -6,7 +6,8 @@ import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { onEditEnd, startEdit } from '../edit/editing.ts';
 import { card } from '../model/boards.ts';
-import { newNoteColor, say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
+import { newNoteColor } from '../settings/licenses.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { cardEl } from '../ui/dom.ts';
 

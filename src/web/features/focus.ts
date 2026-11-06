@@ -7,7 +7,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { cardEl, elementById } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
 import { initCaptureNote, writeOnBoard } from './captureNote.ts';

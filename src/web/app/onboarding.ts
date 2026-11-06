@@ -11,11 +11,12 @@ import { refreshBoards } from '../library/rowMenu.ts';
 import { foldersIn } from '../library/tree.ts';
 import { newBoard } from '../model/boards.ts';
 import { ask, getApp } from '../myra/chat.ts';
+import { setChatText } from '../myra/chatInput.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { goos, hopMyra } from '../myra/goos.ts';
 import { showConnections } from '../myra/helpers.ts';
+import { say } from '../myra/say.ts';
 import { closeSettings } from '../settings/colors.ts';
-import { say } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { closestTo, elementById } from '../ui/dom.ts';
@@ -183,7 +184,7 @@ function tourGo(i: number) {
         cls: 'next',
         run: () => {
           myraOpen(true);
-          elementById('mcInput', HTMLTextAreaElement).value = 'Build me a landing page for ';
+          setChatText('Build me a landing page for ');
           $('mcInput').focus();
         },
       },

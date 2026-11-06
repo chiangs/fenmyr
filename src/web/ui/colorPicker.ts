@@ -2,16 +2,17 @@ import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { colorName } from '../cards/colorNames.ts';
-import { COLORS, clamp } from '../core/base.ts';
+import { clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
-import { chirp } from '../settings/licenses.ts';
+import { chirp } from '../myra/say.ts';
 import { hexOf, type Rgb, rgbOf } from './color.ts';
 import { type ColourFormat, FORMATS, readColour, writeColour } from './colourFormat.ts';
 import { cardEl, closestTo, elementById, esc } from './dom.ts';
 import { renderPalette, tintPicker } from './palette.ts';
 import { closeOnOutsidePress } from './popover.ts';
+import { boardColorRows, palette } from './wheelColors.ts';
 
 // a colour in the app itself (the background, the accent, a doc's text) rather than a colour card
 export type Tint = {
@@ -28,7 +29,6 @@ export type Tint = {
   format?: { value: ColourFormat; pick: (f: ColourFormat) => void };
 };
 type Swatch = CardOf<'swatch'>;
-type Named = { hex: string; name: string };
 const hexField = () => elementById('cpHex', HTMLInputElement);
 let fmt: ColourFormat = 'hex';
 const showHex = (hex: string) => {
@@ -37,7 +37,6 @@ const showHex = (hex: string) => {
     b.classList.toggle('on', b.dataset.fmt === fmt);
 };
 const nameField = () => elementById('cpName', HTMLInputElement);
-export const palette = () => (session.board.palette ??= []);
 
 // ---------- colors: the editor beside a color card, and the board's own palette ----------
 // the wheel works in HSV: hue = angle, saturation = distance from the middle, value = the brightness slider
@@ -142,61 +141,8 @@ function placeColorPop(c: Card) {
   pop.style.top = `${clamp(y, 70, Math.max(70, floor - ph))}px`;
 }
 
-// colors for the wheel's quick row: your saved board colors, then colors already used on this board (most used first); none at all → the starter set
-// the wheel's quick colors: black + white always, then saved board colors, the color cards on the board (with their names), then other colors in use
-let cpAll = false;
 // the wheel's colors: two easy rows, or every color on the board (remembered while the app is open)
-function boardColorRows(starter: string[]) {
-  const norm = (v: unknown) =>
-      typeof v !== 'string' ? null : /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : COLORS[v] || null,
-    seen = new Set(['#000000', '#ffffff']);
-  const take = (list: Named[]) => list.filter(x => x.hex && !seen.has(x.hex) && seen.add(x.hex));
-  const saved = take(palette().map(p => ({ hex: p.hex.toLowerCase(), name: p.name ?? '' })));
-  const cards = take(
-    session.board.cards.flatMap(c =>
-      c.type === 'swatch' && c.hex ? [{ hex: c.hex.toLowerCase(), name: c.label || c.hex.toUpperCase() }] : [],
-    ),
-  );
-  const count = new Map<string, number>();
-  for (const c of session.board.cards) {
-    if (c.type === 'swatch') continue;
-    for (const v of [c.color, 'fill' in c ? c.fill : undefined, c.stroke]) {
-      const h = norm(v);
-      if (h) count.set(h, (count.get(h) || 0) + 1);
-    }
-  }
-  const used = take([...count].sort((a, b) => b[1] - a[1]).map(([h]) => ({ hex: h, name: h.toUpperCase() })));
-  const dot = (x: Named) => {
-      const name = esc(x.name);
-      return `<button style="background:${x.hex}" data-hex="${x.hex}" title="${name}"></button>`;
-    },
-    dots = (xs: Named[]) => {
-      const row = xs.map(dot).join('');
-      return `<div class="cpq-row">${row}</div>`;
-    },
-    row = (label: string, xs: Named[]) => {
-      const list = dots(xs);
-      return xs.length ? `<div class="cpq-l">${label}</div>${list}` : '';
-    };
-  const bw = [
-    { hex: '#000000', name: 'Black' },
-    { hex: '#ffffff', name: 'White' },
-  ];
-  if (!saved.length && !cards.length && !used.length)
-    return dots([...bw, ...take(starter.map(h => ({ hex: h.toLowerCase(), name: h.toUpperCase() })))]);
-  const all = [...bw, ...saved, ...cards, ...used],
-    FEW = 16; // two rows of dots
-  if (all.length <= FEW) return dots(all);
-  const total = all.length,
-    firstFew = dots(all.slice(0, FEW));
-  return cpAll
-    ? row('Black & white', bw) +
-        row('Board colours', saved) +
-        row('Colour cards', cards) +
-        row('On this board', used) +
-        `<button class="cpq-more" data-cpq="few">Fewer</button>`
-    : `${firstFew}<button class="cpq-more" data-cpq="all">All board colours (${total})</button>`;
-}
+let cpAll = false;
 
 export function openColor(c: Swatch | Tint) {
   const tint = 'tint' in c ? c : null;
@@ -215,7 +161,7 @@ export function openColor(c: Swatch | Tint) {
     $('cpDot').style.background = c.hex;
     $('cpTitle').textContent = c.title;
     $('cpQuick').innerHTML = c.boardColors
-      ? boardColorRows(c.presets)
+      ? boardColorRows(c.presets, cpAll)
       : c.presets
           .map(h => {
             const name = h.toUpperCase();
@@ -351,7 +297,10 @@ export function init57() {
     if (m) {
       cpAll = m.dataset.cpq === 'all';
       const starter: unknown = JSON.parse($('cpQuick').dataset.starter || '[]');
-      $('cpQuick').innerHTML = boardColorRows(Array.isArray(starter) ? starter.filter(h => typeof h === 'string') : []);
+      $('cpQuick').innerHTML = boardColorRows(
+        Array.isArray(starter) ? starter.filter(h => typeof h === 'string') : [],
+        cpAll,
+      );
       keepCpopOnScreen();
       return;
     }

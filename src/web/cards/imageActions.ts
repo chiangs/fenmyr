@@ -4,7 +4,7 @@ import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { remember, save } from '../core/history.ts';
 import type { MenuItem } from '../features/export.ts';
-import { chirp, say } from '../settings/licenses.ts';
+import { chirp, say } from '../myra/say.ts';
 import { imageFromFile } from './spotify.ts';
 
 type ImageCard = CardOf<'image'>;

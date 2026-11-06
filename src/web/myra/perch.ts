@@ -178,7 +178,7 @@ export function initPerch() {
 
   addEventListener('resize', keepPerch);
   const perchWatch = new ResizeObserver(keepPerch);
-  [$('mChat'), $('mPill'), $('myra')].forEach(el => {
+  [$('mChat'), $('mPill'), $('myra'), $('mcForm')].forEach(el => {
     perchWatch.observe(el);
   });
   // the button changing width (a label appearing) moves the whole bar, and the chat with it

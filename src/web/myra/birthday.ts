@@ -4,16 +4,16 @@ import { appState } from '../core/state.ts';
 import { partyMyra } from '../features/timer.ts';
 import { card } from '../model/boards.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
-import { reply } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { elementById } from '../ui/dom.ts';
-import { snapshot } from './chat.ts';
 import { chatOpen, myraOpen } from './chatWindow.ts';
 import { goo } from './goos.ts';
 import { idleOK } from './idle.ts';
 import { noEmoji, parse } from './replyText.ts';
+import { reply } from './say.ts';
+import { snapshot } from './snapshot.ts';
 
 // last: the year she last celebrated; hat: the day she wears it; setAt: the day the birthday was set;
 // card, cardIdx, cardKind: the card she left last time, so the next one is different

@@ -3,8 +3,8 @@ import type { BoardSummary } from '../../shared/ops.ts';
 import { placeBoard, placeFolder } from '../../shared/placement.ts';
 import { COLOR_NAMES, COLORS, uid } from '../core/base.ts';
 import { appState, session } from '../core/state.ts';
+import { chirp, say } from '../myra/say.ts';
 import { copyPrototype, copyPrototypingFolder } from '../repo/copy.ts';
-import { chirp, say } from '../settings/licenses.ts';
 import { renderCrumbsSoon, unhook } from './nesting.ts';
 // the order you dragged boards into, per folder (or 'loose'): lists of board ids, kept with the folders so a reorder never rewrites a board
 export const saveLib = () =>

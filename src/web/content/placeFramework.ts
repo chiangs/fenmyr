@@ -8,7 +8,7 @@ import { uid } from '../core/base.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
-import { say } from '../settings/licenses.ts';
+import { say } from '../myra/say.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { cardEl } from '../ui/dom.ts';
