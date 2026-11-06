@@ -17,16 +17,17 @@ import { renderVaults } from '../vault/vaults.ts';
 import { myCur, paintCursor } from './cursor.ts';
 import { applyPanelH, fitSides, heightGrip, panelMin } from './panelHeights.ts';
 import { settings } from './settings.ts';
+import { type Mode, themeOf } from './themes.ts';
 import { applySettings } from './widgets.ts';
 
-type Mode = 'light' | 'dark';
 export const htmlOrNull = (el: Element | null) => (el instanceof HTMLElement ? el : null);
 
 // ---------- your colors: the board, its dots, the panels and the accent, set per light/dark; one board can also have its own background ----------
-const COLOR_DEFAULTS: Record<Mode, Record<string, string>> = {
-  light: { bg: '#faf7f2', dot: '#e4dccf', panel: '#ffffff', accent: '#e88a24' },
-  dark: { bg: '#12100d', dot: '#332d25', panel: '#242019', accent: '#e88a24' },
+const defaultsOf = (mode: Mode): Record<string, string> => {
+  const t = themeOf(mode)?.tokens;
+  return t ? { bg: t.bg, dot: t.dot, panel: t.panel, accent: t.accent } : {};
 };
+const COLOR_DEFAULTS: Record<Mode, Record<string, string>> = { light: defaultsOf('light'), dark: defaultsOf('dark') };
 
 const modeName = (): Mode => (document.body.classList.contains('dark') ? 'dark' : 'light');
 
