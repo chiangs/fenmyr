@@ -1,0 +1,50 @@
+name: Feature request
+description: An idea for something Fenmyr could do, or do better.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you're trying to do
+      description: The task or moment where Fenmyr falls short. Describing the problem helps more than a solution on its own.
+      placeholder: When I'm sorting ideas after a meeting, I…
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you'd like
+      description: How you imagine it working.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where in Fenmyr
+      options:
+        - Board, cards and connectors
+        - Notes and formatting
+        - Myra
+        - Unsorted and quick capture
+        - Templates
+        - Docs
+        - Wireframes
+        - Prototypes
+        - Vaults (Obsidian)
+        - Export (image, PDF, Word)
+        - Voice memos and video
+        - Settings, colours and themes
+        - Installing and updating
+        - Something new
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How you manage today
+      description: Any workaround you use now, or another app that does this well.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Sketches or examples
+      description: Drag in a sketch, a screenshot or a link to show what you mean.
