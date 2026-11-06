@@ -69,6 +69,37 @@ chmod +x Fenmyr-x86_64.AppImage
 
 AppImages need FUSE 2 (`sudo pacman -S fuse2` on Arch). The AppImage updates itself from GitHub Releases. Say yes once, and new versions install when you quit. To add it to your app launcher, use [Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) or AppImageLauncher, or keep it in `~/Applications`.
 
+### Mac
+
+Fenmyr isn't signed with a paid Apple Developer ID, so macOS treats a downloaded copy with suspicion. A copy you build on your own Mac isn't marked as downloaded, so it opens without any warning. That's the recommended way.
+
+#### Build it on your Mac (recommended)
+
+```bash
+xcode-select --install    # once, if you don't have Apple's command line tools yet
+git clone https://github.com/chiangs/fenmyr.git
+cd fenmyr
+./install.sh
+```
+
+The installer does the following:
+
+1. Checks for Node.js 22.18 or newer, and offers to install it with Homebrew (`brew install node`).
+2. Builds `Fenmyr.app` for your Mac, whether it's Apple Silicon or Intel. The first build takes a few minutes, since it downloads Electron and the build tools.
+3. Puts it in `/Applications`, or in `~/Applications` if you can't write to `/Applications`.
+4. Opens it.
+
+Updates work as on Linux: **Update now** in Settings, or `./install.sh --update` in a terminal. The options are the same: `--update`, `--yes`, `--no-open`.
+
+#### A downloaded .dmg
+
+If someone sent you a `.dmg` (one is made by the **Mac build** in the Actions tab), drag Fenmyr to Applications. The first time you open it, macOS says it can't check Fenmyr for malicious software, or that Fenmyr is damaged. It isn't. That's how macOS treats any app that isn't signed with a paid Apple Developer ID. To open it, do one of these once:
+
+- Open it, close the warning, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. On macOS 14 and earlier you can instead right-click Fenmyr in Applications and choose **Open**, then **Open** again.
+- Or, in Terminal, run `xattr -cr /Applications/Fenmyr.app`. This also fixes the "damaged" message.
+
+A copy from a `.dmg` doesn't update itself. To get updates, install it from the code as described above.
+
 ### Uninstall
 
 ```bash
@@ -76,7 +107,7 @@ AppImages need FUSE 2 (`sudo pacman -S fuse2` on Arch). The AppImage updates its
 ./uninstall.sh --purge    # also deletes your boards and settings
 ```
 
-It removes everything `install.sh` added, and any `~/Applications/Fenmyr*.AppImage`. Electron from pacman stays, since other apps may use it. To remove it, run `sudo pacman -Rs electron`.
+It removes everything `install.sh` added, any `~/Applications/Fenmyr*.AppImage`, and `Fenmyr.app` from `/Applications` or `~/Applications` on a Mac. Electron from pacman stays, since other apps may use it. To remove it, run `sudo pacman -Rs electron`.
 
 ## Connect Claude Code
 

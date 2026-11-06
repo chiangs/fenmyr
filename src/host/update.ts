@@ -22,11 +22,20 @@ const assetName = () => `Fenmyr-${process.arch === 'x64' ? 'x86_64' : process.ar
 const preview = () => process.env.FENMYR_PREVIEW_UPDATE === '1';
 export const appVersion = () => app.getVersion();
 
-// the folder the app was installed from (install.sh writes it into install.json), if it's still a git checkout
+// install.sh writes install.json next to the app on Linux, and into Fenmyr.app/Contents/Resources on a Mac,
+// because there the app itself is packed into an archive
+function installInfo() {
+  for (const dir of [app.getAppPath(), process.resourcesPath]) {
+    const install = readJSON(path.join(dir, 'install.json'));
+    if (isRecord(install)) return install;
+  }
+  return null;
+}
+// the folder the app was installed from, if it's still a git checkout
 function repoDir() {
   const root = app.getAppPath();
-  const install = readJSON(path.join(root, 'install.json'));
-  let dir = isRecord(install) ? text(install.repo) : '';
+  const install = installInfo();
+  let dir = install ? text(install.repo) : '';
   if (!dir && !process.env.APPIMAGE) dir = root; // running straight from a checkout (npm start)
   return dir && fs.existsSync(path.join(dir, '.git')) ? dir : null;
 }
@@ -39,8 +48,8 @@ async function git(args: string[], dir: string, timeout = 30) {
 // What is actually installed, not what the folder has: a `git pull` there must not hide an update.
 // Older installs didn't record it, and history can be rewritten, so the folder is the fallback.
 async function installedCommit(dir: string) {
-  const install = readJSON(path.join(app.getAppPath(), 'install.json'));
-  const commit = isRecord(install) ? text(install.commit) : '';
+  const install = installInfo();
+  const commit = install ? text(install.commit) : '';
   return commit && (await git(['cat-file', '-e', `${commit}^{commit}`], dir)).ok ? commit : 'HEAD';
 }
 function newer(a: string, b: string) {
@@ -183,13 +192,16 @@ export async function now(): Promise<'updating'> {
       '/usr/local/bin',
       '/usr/bin',
     ];
+    const getNode = process.platform === 'darwin' ? 'brew install node' : 'sudo pacman -S nodejs npm';
     if (!which('npm', searchPath))
-      throw new Error('Updating needs Node.js and npm. Install them (sudo pacman -S nodejs npm), then try again.');
-    // the installer pulls, builds, reinstalls and reopens the app; it runs on its own so it can close this one
+      throw new Error(`Updating needs Node.js and npm. Install them (${getNode}), then try again.`);
+    // the installer pulls, builds, reinstalls and reopens the app; it runs on its own so it can close this one.
+    // An app opened from the desktop has a short PATH, so it gets the folders npm was found in.
     const log = fs.openSync(P.updateLog, 'w');
     spawn('/bin/bash', ['-c', 'cd "$0" && exec ./install.sh --update', dir], {
       detached: true,
       stdio: ['ignore', log, log],
+      env: { ...process.env, PATH: searchPath.join(':') },
     }).unref();
     return 'updating';
   }

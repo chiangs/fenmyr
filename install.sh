@@ -1,8 +1,9 @@
 #!/bin/bash
 # Fenmyr installer for Linux: puts the app in ~/.local, adds it to your app launcher and opens it.
+# On a Mac it builds Fenmyr.app and puts it in Applications instead (packaging/install-mac.sh).
 #   ./install.sh            install (or reinstall) and open
 #   ./install.sh --update   get the newest version from GitHub first
-#   ./install.sh --yes      no questions: installs what's missing with pacman when it can
+#   ./install.sh --yes      no questions: installs what's missing with pacman (Homebrew on a Mac) when it can
 #   ./install.sh --no-open  install without opening it
 # Your boards live in ~/.local/share/fenmyr and are never touched. To remove Fenmyr: ./uninstall.sh
 set -e
@@ -17,6 +18,8 @@ for a in "$@"; do case "$a" in --update) UPDATE=1;; --yes|-y) YES=1;; --no-open)
 ask() { if [ "$YES" = 1 ]; then REPLY="${2:-y}"; else read -r -p "$1" REPLY || true; REPLY="${REPLY:-${2:-y}}"; fi; }
 
 if [ "$UPDATE" = 1 ]; then echo "  Getting the newest Fenmyr…"; git pull --ff-only; fi
+# after the pull, so an update runs the newest Mac installer
+if [ "$(uname)" = Darwin ]; then exec ./packaging/install-mac.sh "$@"; fi
 
 echo ""
 echo "  🫧  Installing Fenmyr…"
