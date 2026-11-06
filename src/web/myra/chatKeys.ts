@@ -9,6 +9,8 @@ export type MenuKey = { type: 'move'; by: 1 | -1 } | { type: 'pick'; how: 'run' 
 
 type ChatKeyAction =
   | { type: 'pass' }
+  // the IME owns the key, and the window's shortcuts must not see it either (a composing Esc would close the chat)
+  | { type: 'ime' }
   // the browser adds the line; the window's shortcuts must not see the Enter (the Pen's would end a stroke and eat it)
   | { type: 'line' }
   | { type: 'send' }
@@ -19,7 +21,7 @@ type KeyFacts = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' |
 
 export function chatKey(e: KeyFacts, box: BoxState): ChatKeyAction {
   // keyCode 229: Safari (the web demo) ends composition before the Enter that chose the words, and flags only this
-  if (e.isComposing || e.keyCode === 229) return { type: 'pass' };
+  if (e.isComposing || e.keyCode === 229) return { type: 'ime' };
   const mod = e.ctrlKey || e.metaKey;
   if (box === 'menu')
     switch (e.key) {

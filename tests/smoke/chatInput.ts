@@ -1,8 +1,8 @@
 import { freshChat, type Smoke } from './kit.ts';
 
-// Myra's input: Enter adds a line and Ctrl+Enter sends; the slash menu takes Up, Down, Tab, Enter and Esc first; an
-// IME's Enter never sends; the box grows to six lines or a third of the window, then scrolls with a count and a fade,
-// and she stays perched on it as it grows
+// Myra's input: Enter adds a line and Ctrl+Enter sends; the slash menu takes Up, Down, Tab, Enter and Esc first; keys
+// an IME is composing with stay in the box; the box grows to six lines or a third of the window, then scrolls with a
+// count and a fade, and she stays perched on it as it grows
 export async function chatInput(t: Smoke) {
   const { page } = t;
   await page.evaluate(() => {
@@ -15,6 +15,7 @@ export async function chatInput(t: Smoke) {
   await keys(t);
   await menuKeys(t);
   await ime(t);
+  await pen(t);
   await grows(t);
   await freshChat(t);
 }
@@ -123,10 +124,50 @@ async function ime(t: Smoke) {
   const sent = await look(t);
   await cdp.detach();
   await replied(t);
+  const imeEsc = await page.evaluate(() => {
+    const M = window.__fenmyr,
+      T = window.__t,
+      id = M.board.cards[0]?.id ?? '';
+    M.selectOnly([id]);
+    T.el('#mcInput').focus();
+    T.el('#mcInput').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', isComposing: true, bubbles: true }));
+    const kept = { chat: T.el('#myra').classList.contains('chat'), sel: !!id && M.sel.join() === id };
+    M.selectOnly([]);
+    return kept;
+  });
   t.checkAll('chatIme', {
     nothingSentWhileComposing: composing.sent === before.sent,
     chosenWordsSend: sent.sent === before.sent + 1 && sent.last.includes('日本') && sent.val === '',
+    composingEscStaysInTheBox: imeEsc.chat && imeEsc.sel,
     seen: `${composing.val} → ${chosen.val}`,
+  });
+}
+
+// the Pen ends its line on Enter, but not on an Enter typed into Myra's box
+async function pen(t: Smoke) {
+  const { page } = t;
+  const penOn = () => page.evaluate(() => window.__t.el('#stage').classList.contains('pen-mode'));
+  await page.evaluate(() => window.__t.el('#mcInput').blur());
+  await page.keyboard.press('Shift+P');
+  const started = await penOn();
+  await page.focus('#mcInput');
+  await page.keyboard.type('a');
+  await page.keyboard.press('Enter');
+  const plain = { val: await page.evaluate(() => window.__t.field('#mcInput').value), pen: await penOn() };
+  await page.evaluate(() =>
+    window.__t
+      .el('#mcInput')
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true })),
+  );
+  const composing = await penOn();
+  await page.fill('#mcInput', '');
+  await page.evaluate(() => window.__t.el('#mcInput').blur());
+  await page.keyboard.press('Escape');
+  t.checkAll('chatPen', {
+    started,
+    enterAddsALine: plain.val === 'a\n' && plain.pen,
+    composingEnterLeavesThePen: composing,
+    endsOnTheBoard: !(await penOn()),
   });
 }
 

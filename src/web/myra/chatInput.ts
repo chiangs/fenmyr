@@ -29,6 +29,7 @@ function onKey(e: KeyboardEvent, el: HTMLTextAreaElement) {
   switch (a.type) {
     case 'pass':
       return;
+    case 'ime':
     case 'line':
       e.stopPropagation();
       return;

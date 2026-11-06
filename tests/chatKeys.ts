@@ -14,6 +14,7 @@ const k = (key: string, m: Mods = {}) => ({
 });
 
 const pass = { type: 'pass' },
+  ime = { type: 'ime' },
   line = { type: 'line' },
   send = { type: 'send' },
   close = { type: 'close' },
@@ -40,12 +41,12 @@ for (const [name, facts, want] of TABLE)
     assert.deepStrictEqual(chatKey(facts, box), want[box], `${name} with the box in its ${box} state`);
     assert.deepStrictEqual(
       chatKey({ ...facts, isComposing: true }, box),
-      pass,
+      ime,
       `${name} while an IME composes, ${box} state: the IME has it`,
     );
     assert.deepStrictEqual(
       chatKey({ ...facts, keyCode: 229 }, box),
-      pass,
+      ime,
       `${name} with keyCode 229 (Safari's composing Enter), ${box} state: the IME has it`,
     );
   }
