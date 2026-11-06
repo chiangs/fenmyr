@@ -4,7 +4,7 @@ import { apart, contrast, type Vision } from '../ui/color.ts';
 
 export type Mode = 'light' | 'dark';
 type Target = 'aa' | 'aaa';
-type CardColour = { fill: string; ink: string };
+type CardColour = { fill: string; ink: string; link: string };
 type Tokens = {
   bg: string;
   dot: string;
@@ -17,7 +17,7 @@ type Tokens = {
   focus: string;
   cards: Record<string, CardColour>;
 };
-type CheckId = 'text' | 'softText' | 'accentText' | 'onAccent' | 'focus' | 'cardText' | 'cardsApart';
+type CheckId = 'text' | 'softText' | 'accentText' | 'onAccent' | 'focus' | 'cardText' | 'cardLink' | 'cardsApart';
 type Theme = { id: string; name: string; mode: Mode; target: Target; tokens: Tokens; knownGaps: CheckId[] };
 
 // The card colours, keyed as boards store them; core/base.ts reads them from here. Lingonberry, Moss, Fjord and
@@ -41,8 +41,10 @@ const DARK_FILLS: Record<string, string> = {
   sky: '#aec5dc',
   peach: '#cdc6bb',
 };
-const cardsOf = (fills: Record<string, string>, ink: string, own: Record<string, CardColour> = {}) =>
-  Object.fromEntries(Object.keys(PASTELS).map(k => [k, own[k] ?? { fill: fills[k] ?? '#ffffff', ink }]));
+// a link in a note is its own shade of the accent: the accent text is made for the panel and board, and on a pastel
+// card it falls under 4.5:1
+const cardsOf = (fills: Record<string, string>, ink: string, link: string, own: Record<string, CardColour> = {}) =>
+  Object.fromEntries(Object.keys(PASTELS).map(k => [k, own[k] ?? { fill: fills[k] ?? '#ffffff', ink, link }]));
 
 export const THEMES: Theme[] = [
   {
@@ -60,7 +62,7 @@ export const THEMES: Theme[] = [
       accentText: '#b15800',
       onAccent: '#3b342d',
       focus: '#0090f5',
-      cards: cardsOf(PASTELS, '#3b342d'),
+      cards: cardsOf(PASTELS, '#3b342d', '#a24900'),
     },
     knownGaps: [],
   },
@@ -79,7 +81,7 @@ export const THEMES: Theme[] = [
       accentText: '#e88a24',
       onAccent: '#1d1a16',
       focus: '#0090f5',
-      cards: cardsOf(DARK_FILLS, '#3f3a34', { white: { fill: '#38332d', ink: '#f6f2ec' } }),
+      cards: cardsOf(DARK_FILLS, '#3f3a34', '#842e00', { white: { fill: '#38332d', ink: '#f6f2ec', link: '#f9c795' } }),
     },
     knownGaps: [],
   },
@@ -133,6 +135,11 @@ export function checksOf(t: Theme): Check[] {
       'cardText',
       text,
       fills.map(([k, c]) => [`text on ${k}`, contrast(c.ink, c.fill)]),
+    ),
+    check(
+      'cardLink',
+      text,
+      fills.map(([k, c]) => [`link on ${k}`, contrast(c.link, c.fill)]),
     ),
     check('cardsApart', APART[t.target], pairsApart),
   ];

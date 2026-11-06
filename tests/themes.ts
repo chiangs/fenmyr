@@ -47,8 +47,10 @@ const ROOT = /:root \{([^}]*)\}/,
 const light = THEMES.find(t => t.id === 'default-light')?.tokens,
   dark = THEMES.find(t => t.id === 'default-dark')?.tokens;
 assert.ok(light && dark, 'both Default themes are in the table');
-const cardVars = (t: typeof light): [string, string][] =>
-  Object.entries(t.cards).map(([k, c]): [string, string] => [`--card-${k}`, c.fill]);
+const cardVars = (t: typeof light): [string, string][] => [
+  ...Object.entries(t.cards).map(([k, c]): [string, string] => [`--card-${k}`, c.fill]),
+  ['--card-link', t.cards.pink?.link ?? ''],
+];
 const lightVars: [string, string][] = [
   ['--ink', light.ink],
   ['--ink-soft', light.inkSoft],
@@ -72,5 +74,11 @@ const darkVars: [string, string][] = [
 ];
 for (const [name, value] of darkVars)
   assert.ok(darkCss.includes(`${name}: ${value}`), `style.css body.dark ${name} matches the dark Default`);
+
+assert.strictEqual(
+  declared(ROOT, '--link-on-dark'),
+  dark.cards.white?.link,
+  'a link on a dark Snow note matches --link-on-dark',
+);
 
 console.log(`THEMES OK (${THEMES.length} themes)`);
