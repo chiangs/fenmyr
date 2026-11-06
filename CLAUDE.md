@@ -47,6 +47,7 @@ Node runs `.ts` files directly, so tests and tools need no build step. Write imp
 Each rule names the check that enforces it.
 
 - **Strict TypeScript.** No `any`. No `as` except straight after a parse. Data from disk, the network, child processes and IPC is `unknown` until it is narrowed where it enters. Variants are unions with a `type` or `kind` field, and a `switch` over them ends with a `never` check. Enforced by `tsc` and the budget.
+- **Colours come from variables.** CSS uses `var(--token)`, never a new hex, `rgb()`/`rgba()` or `hsl()`/`hsla()` value. A shade or transparency of a token is made from it with `color-mix(in oklch, var(--ink) 40%, transparent)` or `rgb(from var(--ink) r g b / .4)`, so it follows the theme. A colour that's really new becomes a token first. Token values are hex; work out lightness and contrast in OKLCH, not HSL. DESIGN.md lists the tokens. Enforced by the budget's `rawColours` count.
 - **Markup templates hold values, not logic.** Compute every value into a named `const` first. Inside `${}` in a template that builds markup, use only a name or a chain of property reads: no ternaries, calls, `.map` or `.join`. Enforced by the budget's `markupLogic` count.
 - **One area per module, at most 400 lines.** Before writing a popover, menu, dialog, drag loop or colour helper, look for the shared one. Enforced by the budget's `longFiles` count.
 - **Card types live in one table.** Per-type facts go in `src/shared/cardTypes.ts`, not in new lists. Data from outside is parsed once where it enters: `src/shared/myraReply.ts` is the pattern.
@@ -57,4 +58,4 @@ Each rule names the check that enforces it.
 - **User-facing text.** Myra speaks in the first person in her own lines, with ✦ used sparingly. Menus, tooltips, settings and errors are plain and neutral. Use British English.
 - **Commits.** The subject is a plain sentence. GitHub adds the PR number on merge.
 
-The budget in `tools/budget.json` counts untyped files, `any`, casts, long files and logic in markup. All are zero except three casts, each at a boundary: the bridge's reply, `$`, and `session` before a board loads. `npm run budget` fails when any count rises.
+The budget in `tools/budget.json` counts untyped files, `any`, casts, long files, logic in markup and raw colours in `web/style.css`. All are zero except three casts, each at a boundary (the bridge's reply, `$`, and `session` before a board loads), and the raw colours, which #251 pays down area by area. `npm run budget` fails when any count rises.
