@@ -87,7 +87,7 @@ const press = async (action: string) => {
 };
 const ask = async (words: string) => {
   await page.fill('#mcInput', words);
-  await page.press('#mcInput', 'Enter');
+  await page.press('#mcInput', 'ControlOrMeta+Enter');
 };
 const git = (...a: string[]) =>
   execFileSync('git', ['-C', repo, ...a])
@@ -185,7 +185,7 @@ try {
   await until(async () => /\[this: .*h1.*“Checkout”/.test(await page.inputValue('#mcInput')), 'pointing names it');
   await shot('pointed');
   await page.fill('#mcInput', `${await page.inputValue('#mcInput')} make it say Pay now`);
-  await page.press('#mcInput', 'Enter');
+  await page.press('#mcInput', 'ControlOrMeta+Enter');
   await until(async () => (await heading()) === 'Pay now', 'the change runs');
   await shot('changed');
 

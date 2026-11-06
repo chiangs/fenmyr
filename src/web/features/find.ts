@@ -7,6 +7,7 @@ import { byId, selectOnly } from '../canvas/wires.ts';
 import { find, hasAll, queryWords } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
+import { setChatText } from '../myra/chatInput.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
 import { glideTo, wordsOf } from '../myra/greet.ts';
 import { reply } from '../myra/say.ts';
@@ -138,9 +139,8 @@ export function startFind() {
   myraOpen(true);
   const el = textField('mcInput'),
     had = /^\/find /i.test(el.value);
-  if (!had) el.value = '/find ';
+  if (!had) setChatText('/find ');
   el.focus();
-  el.dispatchEvent(new Event('input'));
   el.setSelectionRange(had ? 6 : el.value.length, el.value.length);
 }
 export function init34() {

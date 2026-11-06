@@ -5,7 +5,7 @@
 export type BoxState = 'text' | 'command' | 'menu';
 
 // what the slash menu should do; myra/slash.ts carries it out
-type MenuKey = { type: 'move'; by: 1 | -1 } | { type: 'pick'; how: 'run' | 'fill' } | { type: 'close' };
+export type MenuKey = { type: 'move'; by: 1 | -1 } | { type: 'pick'; how: 'run' | 'fill' } | { type: 'close' };
 
 type ChatKeyAction =
   | { type: 'pass' }

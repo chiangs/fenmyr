@@ -1,16 +1,21 @@
 import { session } from '../core/state.ts';
 import { timer } from '../features/timer.ts';
-import { closestTo, esc, textField } from '../ui/dom.ts';
+import { closestTo, elementById, esc } from '../ui/dom.ts';
 import { ANIMS } from './anim.ts';
+import { setChatText } from './chatInput.ts';
+import type { BoxState, MenuKey } from './chatKeys.ts';
 import { addMsg } from './chatLog.ts';
 import { chatOpen, myraOpen } from './chatWindow.ts';
-import type { SlashEntry } from './greet.ts';
-import { helpText, SLASH } from './greet.ts';
+import { helpText, SLASH, SLASH_GROUPS, type SlashEntry } from './greet.ts';
 import { reply } from './say.ts';
 
-type TextBox = HTMLInputElement | HTMLTextAreaElement;
-// one row of the slash menu: fill puts ready-made words in the box; cmd is a command to start
-type SlashRow = { key: string; title: string; desc: string; fill?: string; cmd?: SlashEntry };
+// one row of the menu: a command to start, or ready-made words (a /timer preset, an /animate name)
+type SlashRow = { key: string; title: string; desc: string } & (
+  | { kind: 'cmd'; cmd: SlashEntry }
+  | { kind: 'fill'; fill: string }
+);
+
+const box = () => elementById('mcInput', HTMLTextAreaElement);
 
 export function slash(text: string) {
   if (!session.board) return;
@@ -26,138 +31,153 @@ export function slash(text: string) {
   c.run(m?.[2] ?? '');
 }
 
-let slashSel = 0;
-let slashMenu: HTMLElement;
+let sel = 0;
+let menu: HTMLElement;
 
-export const hideSlash = () => {
-  slashMenu.hidden = true;
+const hide = () => {
+  menu.hidden = true;
 };
 
-// the menu lists commands; typing just /timer lists ready-made timers instead
+// what the keys see: the menu open, a whole command on one line (/find cloud, or /tidy after Esc), or anything else
+export function boxState(value: string): BoxState {
+  if (!menu.hidden) return 'menu';
+  const name = /^\/(\w+)(\s|$)/.exec(value)?.[1]?.toLowerCase();
+  return !value.includes('\n') && SLASH.some(c => c.cmd === name) ? 'command' : 'text';
+}
+
+export function menuKey(k: MenuKey) {
+  switch (k.type) {
+    case 'move': {
+      const n = rows(box().value).length;
+      sel = (sel + k.by + n) % n;
+      return show();
+    }
+    case 'pick':
+      return pick(k.how, rows(box().value)[sel]);
+    case 'close':
+      return hide();
+    default: {
+      const unhandled: never = k;
+      return unhandled;
+    }
+  }
+}
+
+// typing just /timer lists ready-made timers instead of commands
 const TIMER_PRESETS = [
   { fill: '/timer 15 break', title: '15 min break', desc: 'A short break' },
   { fill: '/timer 50 focus', title: '50 min focus', desc: 'A long stretch of focus' },
   { fill: '/timer 5 breather', title: '5 min breather', desc: 'Stand up, look away, stretch' },
 ];
 
-const slashMatches = (el: TextBox): SlashRow[] => {
-  if (/^\/timer\s*$/i.test(el.value) && !timer)
-    return TIMER_PRESETS.map(p => {
-      const name = esc(p.title);
-      return { key: p.fill, title: `<b>/timer</b> ${name}`, desc: p.desc, fill: p.fill };
-    });
-  if (/^\/animate\s*$/i.test(el.value))
-    return [
-      { key: '/animate', title: '<b>/animate</b> Surprise me', desc: 'A random one', fill: '/animate' },
-      ...ANIMS.map(a => ({
-        key: `/animate ${a.name}`,
-        title: `<b>/animate</b> ${a.name}`,
-        desc: a.desc,
-        fill: `/animate ${a.name}`,
-      })),
-    ];
-  const typed = /^\/(\w*)$/.exec(el.value)?.[1];
-  if (typed === undefined) return [];
-  return SLASH.filter(c => c.cmd.startsWith(typed.toLowerCase())).map(c => {
-    const words = esc(c.arg),
-      arg = c.arg ? ` <i>${words}</i>` : '';
-    return { key: c.cmd, title: `<b>/${c.cmd}${arg}</b>`, desc: c.desc, cmd: c };
-  });
-};
+const GROUP_ORDER = Object.keys(SLASH_GROUPS);
 
-function showSlash(el: TextBox) {
-  const list = slashMatches(el);
-  if (!list.length) return hideSlash();
-  slashSel = Math.min(slashSel, list.length - 1);
-  slashMenu.innerHTML = list
-    .map((c, i) => {
-      const key = esc(c.key),
-        on = i === slashSel ? 'on' : '',
-        desc = esc(c.desc);
-      return `<button type="button" data-key="${key}" class="${on}">${c.title}<span>${desc}</span></button>`;
-    })
-    .join('');
-  const r = (el.closest('form') || el).getBoundingClientRect();
-  slashMenu.hidden = false;
-  slashMenu.style.left = `${r.left}px`;
-  slashMenu.style.width = `${Math.max(260, r.width)}px`;
-  slashMenu.style.bottom = `${innerHeight - r.top + 6}px`;
-  slashMenu.dataset.for = el.id;
+function rows(value: string): SlashRow[] {
+  if (/^\/timer *$/i.test(value) && !timer)
+    return TIMER_PRESETS.map((p): SlashRow => {
+      const name = esc(p.title);
+      return { kind: 'fill', key: p.fill, title: `<b>/timer</b> ${name}`, desc: p.desc, fill: p.fill };
+    });
+  if (/^\/animate *$/i.test(value))
+    return [
+      { kind: 'fill', key: '/animate', title: '<b>/animate</b> Surprise me', desc: 'A random one', fill: '/animate' },
+      ...ANIMS.map(
+        (a): SlashRow => ({
+          kind: 'fill',
+          key: `/animate ${a.name}`,
+          title: `<b>/animate</b> ${a.name}`,
+          desc: a.desc,
+          fill: `/animate ${a.name}`,
+        }),
+      ),
+    ];
+  const typed = /^\/(\w*)$/.exec(value)?.[1];
+  if (typed === undefined) return [];
+  // a stable sort, so the registry's order holds inside each group
+  return SLASH.filter(c => c.cmd.startsWith(typed.toLowerCase()))
+    .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group))
+    .map((c): SlashRow => {
+      const words = esc(c.arg),
+        arg = c.arg ? ` <i>${words}</i>` : '';
+      return { kind: 'cmd', key: c.cmd, title: `<b>/${c.cmd}${arg}</b>`, desc: c.desc, cmd: c };
+    });
 }
 
-function pickSlash(key: string) {
-  const el = textField(slashMenu.dataset.for ?? ''),
-    it = slashMatches(el).find(x => x.key === key);
-  hideSlash();
-  if (!it) return;
-  if (it.fill) {
-    el.value = it.fill;
-    el.closest('form')?.requestSubmit();
-    return;
+// the group's name above its first command; ready-made rows have no group, so their list has no headers
+function groupHead(r: SlashRow, prev: SlashRow | undefined) {
+  if (r.kind !== 'cmd' || (prev?.kind === 'cmd' && prev.cmd.group === r.cmd.group)) return '';
+  const label = SLASH_GROUPS[r.cmd.group];
+  return `<div class="slash-group">${label}</div>`;
+}
+
+function show() {
+  const el = box(),
+    list = rows(el.value);
+  if (!list.length) return hide();
+  sel = Math.min(sel, list.length - 1);
+  menu.innerHTML = list
+    .map((r, i) => {
+      const head = groupHead(r, list[i - 1]),
+        key = esc(r.key),
+        on = i === sel ? 'on' : '',
+        title = r.title,
+        desc = esc(r.desc);
+      return `${head}<button type="button" data-key="${key}" class="${on}">${title}<span>${desc}</span></button>`;
+    })
+    .join('');
+  const f = (el.form ?? el).getBoundingClientRect();
+  menu.hidden = false;
+  menu.style.left = `${f.left}px`;
+  menu.style.width = `${Math.max(260, f.width)}px`;
+  menu.style.bottom = `${innerHeight - f.top + 6}px`;
+}
+
+// run is Enter and a click, fill is Tab. A command that takes words gets "/cmd " either way and waits for them; the
+// input event that brings shows what comes next, such as /timer's presets.
+function pick(how: 'run' | 'fill', r: SlashRow | undefined) {
+  hide();
+  if (!r) return;
+  const run = () => box().form?.requestSubmit();
+  switch (r.kind) {
+    case 'fill':
+      setChatText(r.fill);
+      if (how === 'run') run();
+      return;
+    case 'cmd':
+      setChatText(`/${r.cmd.cmd}${r.cmd.arg ? ' ' : ''}`);
+      if (how === 'run' && !r.cmd.arg) run();
+      return;
+    default: {
+      const unhandled: never = r;
+      return unhandled;
+    }
   }
-  const c = it.cmd;
-  if (!c) return;
-  el.value = `/${c.cmd}${c.arg ? ' ' : ''}`;
-  el.focus();
-  el.setSelectionRange(el.value.length, el.value.length);
-  if (!c.arg) el.closest('form')?.requestSubmit();
-  else {
-    slashSel = 0;
-    showSlash(el);
-  } // /timer then lists its ready-made timers
 }
 
 export function initSlashMenu() {
-  slashMenu = document.createElement('div');
-  slashMenu.className = 'slash-menu';
-  slashMenu.hidden = true;
-  document.body.appendChild(slashMenu);
-
-  slashMenu.addEventListener('pointerdown', e => e.preventDefault());
+  menu = document.createElement('div');
+  menu.className = 'slash-menu';
+  menu.hidden = true;
+  document.body.appendChild(menu);
   // keep the focus in the box
-  slashMenu.onclick = e => {
-    const b = closestTo(e.target, '[data-key]');
-    if (b) pickSlash(b.dataset.key ?? '');
+  menu.addEventListener('pointerdown', e => e.preventDefault());
+  menu.onclick = e => {
+    const key = closestTo(e.target, '[data-key]')?.dataset.key;
+    if (key !== undefined)
+      pick(
+        'run',
+        rows(box().value).find(r => r.key === key),
+      );
   };
-
-  ['mInput', 'mcInput'].forEach(id => {
-    const el = textField(id);
-    el.addEventListener('input', () => {
-      slashSel = 0;
-      showSlash(el);
-    });
-    el.addEventListener('blur', () =>
-      setTimeout(() => {
-        if (document.activeElement !== el) hideSlash();
-      }, 120),
-    ); // (not if it has the cursor again by then)
-    el.addEventListener(
-      'keydown',
-      e => {
-        if (!(e instanceof KeyboardEvent) || slashMenu.hidden || slashMenu.dataset.for !== id) return;
-        const list = slashMatches(el);
-        if (e.key === 'Escape') {
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          return hideSlash();
-        }
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          slashSel = (slashSel + (e.key === 'ArrowDown' ? 1 : list.length - 1)) % list.length;
-          return showSlash(el);
-        }
-        const row = list[slashSel],
-          cmd = row?.cmd,
-          // Enter on a finished command with nothing to add sends it as typed
-          typedOut = e.key === 'Enter' && cmd && el.value.slice(1).toLowerCase() === cmd.cmd && !cmd.arg;
-        if ((e.key === 'Enter' || e.key === 'Tab') && !e.shiftKey && row && !typedOut) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          pickSlash(row.key);
-        }
-      },
-      true,
-    );
+  const el = box();
+  el.addEventListener('input', () => {
+    sel = 0;
+    show();
   });
+  // not if it has the cursor again by then
+  el.addEventListener('blur', () =>
+    setTimeout(() => {
+      if (document.activeElement !== el) hide();
+    }, 120),
+  );
 }
