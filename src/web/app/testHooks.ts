@@ -6,6 +6,7 @@ import { applyView } from '../canvas/view.ts';
 import { renderTray, selectOnly, selectWire } from '../canvas/wires.ts';
 import { appState, session } from '../core/state.ts';
 import { liveEditor } from '../docs/editor.ts';
+import { docPrintHTML } from '../docs/pdf.ts';
 import { startEdit } from '../edit/editing.ts';
 import {
   DUE_FIRED,
@@ -155,6 +156,7 @@ const makeHooks = () => ({
   fit,
   lib: () => snapshot().library,
   docEditor: liveEditor,
+  docPrintHTML,
   openHome,
   get editing() {
     return session.editing;

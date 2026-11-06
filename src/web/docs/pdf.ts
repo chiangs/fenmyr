@@ -28,6 +28,17 @@ function proseCSS() {
   return out;
 }
 
+// The copied rules take their colours from the app's variables, which the PDF page doesn't have, so it gets their
+// values. The page's own --paper variables stay as they are: downloads are always light pages.
+function varsFor(css: string) {
+  const root = getComputedStyle(document.documentElement),
+    names = new Set(css.match(/var\(--[\w-]+/g)?.map(v => v.slice(4)));
+  return [...names]
+    .filter(n => !/^--(paper|board-font|desk)/.test(n) && root.getPropertyValue(n).trim())
+    .map(n => `${n}: ${root.getPropertyValue(n).trim()};`)
+    .join(' ');
+}
+
 export function docPrintHTML(paper: string) {
   // glue each heading to the block after it, so a heading never sits alone at the bottom of a page (WebKit's print ignores break-after)
   const glue = (html: string) => {
@@ -64,6 +75,7 @@ export function docPrintHTML(paper: string) {
       .join(''),
     boardFont = dfont ? ` --board-font: "${dfont}", "Figtree", system-ui, sans-serif;` : '',
     css = proseCSS(),
+    vars = varsFor(css),
     heading = title ? `<h1 class="doc-title">${pageTitle}</h1>` : '';
   return `<!doctype html><html><head><meta charset="utf-8"><title>${pageTitle}</title>
 <link rel="stylesheet" href="__WEB__/fonts.css">${fontLinks}
@@ -71,7 +83,7 @@ export function docPrintHTML(paper: string) {
 @page { size: ${size}; margin: 0.8in 0.85in 0.85in; }   /* browsers use these; the desktop app sets the same margins when it prints */
 html, body { margin: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { padding: 0; }
-:root { --paper: #ffffff; --paper-ink: #2b2630; --paper-soft: #6b6370;${boardFont} }   /* downloads are always light pages */
+:root { --paper: #ffffff; --paper-ink: #2b2630; --paper-soft: #6b6370;${boardFont} ${vars} }   /* downloads are always light pages */
 .doc-title { margin: 0 0 18px; font: 800 36px/1.1 var(--board-font, "Figtree", system-ui, sans-serif); letter-spacing: -.035em; color: #2b2630; }
 ${css}
 .dv-prose { min-height: 0; }
