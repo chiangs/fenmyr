@@ -77,9 +77,13 @@ const openToolbarSettings = () => {
   renderTbList();
 };
 
+// A joined chat is worth tucking tools for only while Select and the first three tools (Note, Doc and Checklist by
+// default) still show: a bar of Select alone costs more than a wide chat does.
+const JOIN_KEEPS = 4;
+
 // tools that don't fit tuck into ··· at the end: the bar ends 16 px inside the window, or 14 px before the right
 // widgets where they reach down to it, so it never covers them. On a computer they also leave room for Myra's chat to
-// open joined to them, open or not so nothing jumps, unless even ··· alone can't leave it.
+// open joined to them, open or not so nothing jumps, unless that would tuck past JOIN_KEEPS.
 function fitToolbar() {
   const box = $('tools'),
     more = $('tbMore');
@@ -96,7 +100,7 @@ function fitToolbar() {
     desk = !body.contains('phone') && !body.contains('proto'),
     joinRoom = Math.min(room, innerWidth - JOIN_RESERVE - box.getBoundingClientRect().left),
     width = () => box.getBoundingClientRect().width; // to the fraction of a pixel, as the bar is laid out
-  const fit = (limit: number) => {
+  const fit = (limit: number, keep: number) => {
     box.querySelectorAll(':scope > .tb-over').forEach(b => {
       b.classList.remove('tb-over');
     });
@@ -104,10 +108,10 @@ function fitToolbar() {
     if (width() <= limit) return true;
     more.hidden = false;
     const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden);
-    for (let i = shown.length - 1; i > 0 && width() > limit; i--) shown[i]?.classList.add('tb-over');
+    for (let i = shown.length - 1; i >= keep && width() > limit; i--) shown[i]?.classList.add('tb-over');
     return width() <= limit;
   };
-  if (!desk || !fit(joinRoom)) fit(room);
+  if (!desk || !fit(joinRoom, JOIN_KEEPS)) fit(room, 1);
 }
 
 export const tbRect = (b: Element) => (b.classList.contains('tb-over') ? $('tbMore') : b).getBoundingClientRect();

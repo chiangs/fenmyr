@@ -213,6 +213,40 @@ await check(
   },
 );
 
+await check('at 800 px Select and the next three tools still show', async () => {
+  await size(800);
+  const row = await toolRow();
+  await size(1440);
+  assert.ok(row.shown.length >= 4, `${row.shown.length} tools show`);
+});
+
+// the drawing bar's colours that something else covers where they are pressed
+const coveredColours = () =>
+  page.evaluate(
+    () =>
+      [...document.querySelectorAll<HTMLElement>('#dbColors > *')].filter(c => {
+        const r = c.getBoundingClientRect();
+        return !c.contains(document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2));
+      }).length,
+  );
+for (const w of [1100, 1280]) {
+  await check(`at ${w} px, drawing with her chat open, the drawing bar keeps clear of the chat`, async () => {
+    await size(w, 800);
+    await page.keyboard.press('p');
+    await setChat(true);
+    const { mChat, modebar } = await edges(['mChat', 'modebar']),
+      colours = await page.locator('#dbColors > *').count(),
+      covered = await coveredColours();
+    await setChat(false);
+    await page.keyboard.press('Escape');
+    await size(1440);
+    assert.ok(mChat && modebar, 'her chat and the drawing bar are up');
+    assert.ok(!overlaps(mChat, modebar), `the chat ${JSON.stringify(mChat)} meets the bar ${JSON.stringify(modebar)}`);
+    assert.ok(colours > 0, 'the drawing bar has colours');
+    assert.strictEqual(covered, 0, `${covered} of ${colours} colours are covered`);
+  });
+}
+
 await check('she hops from her box into the chat’s header', async () => {
   const between = await flight();
   assert.ok(between > 5, `she is between her box and the header in ${between} frames`);

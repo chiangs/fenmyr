@@ -115,6 +115,32 @@ for (const [tool, picker] of [
     assert.strictEqual(top, picker);
   });
 }
+// with the tools before Shape hidden, it shows on the bar at 860 px, where her chat still opens wide over the bar
+const showTools = async (tools: string[], shown: boolean) => {
+  await page.click('#gearBtn');
+  await page.click('#setTabs [data-tab="toolbar"]');
+  for (const t of tools) await page.locator(`#setTbList [data-tb="${t}"] input`).setChecked(shown);
+  await page.click('#setClose');
+  await still();
+};
+const beforeShape = ['title', 'coll', 'canvas', 'link', 'image', 'audio', 'video', 'swatch'];
+await check('with Myra’s chat open, #shapePick opens over it from the Shape tool on the bar', async () => {
+  await showTools(beforeShape, false);
+  await size(860, 900);
+  await setChat(true);
+  const [tucked, place] = await page.evaluate(() => [
+    !!document.querySelector('#tools [data-add="shape"]')?.classList.contains('tb-over'),
+    document.getElementById('mChat')?.dataset.place,
+  ]);
+  await page.click('#tools [data-add="shape"]');
+  await still();
+  const top = await onTopWhereMeets('#shapePick', '#mChat');
+  await closeAll();
+  await setChat(false);
+  await showTools(beforeShape, true);
+  assert.deepStrictEqual([tucked, place], [false, 'wide'], 'Shape shows on the bar, and the chat opens wide');
+  assert.strictEqual(top, '#shapePick');
+});
 await check('with Myra’s chat open, a colour card’s wheel opens over it', async () => {
   // the colour card just over the top left of her chat, joined to the tools at 1440 px
   await size(1440, 900);

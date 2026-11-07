@@ -4,7 +4,7 @@ import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
 import { renderChat } from './chatLog.ts';
-import { askHint, type Geometry, type Placement, placeChat, type Rect } from './chatRules.ts';
+import { askHint, type Geometry, type ModeBar, type Placement, placeChat, type Rect } from './chatRules.ts';
 import { keepPerch, perchGoo } from './perch.ts';
 
 // Myra's chat window: click her box to open it, click again (or Esc) to close
@@ -35,6 +35,15 @@ export function boxRect(): Rect {
   return { l, t, r: l + pill.offsetWidth, b: t + pill.offsetHeight };
 }
 
+let mode: ModeBar | null = null;
+
+/** Drawing's or find's bar came up, went, or changed: the chat places itself around it again. */
+export function setModeBar(m: ModeBar | null) {
+  if (m?.lift === mode?.lift && m?.l === mode?.l && m?.w === mode?.w) return;
+  mode = m;
+  relayout();
+}
+
 function measure(): Geometry {
   const bar = $('dock').getBoundingClientRect(),
     body = document.body.classList;
@@ -42,7 +51,7 @@ function measure(): Geometry {
     view: { w: innerWidth, h: innerHeight },
     bar: { l: bar.left, t: bar.top, r: bar.right, b: bar.bottom },
     box: boxRect(),
-    modeLift: parseFloat(document.body.style.getPropertyValue('--mode-h')) || 0,
+    mode,
     timer: !$('timerChip').hidden,
     where: body.contains('phone') ? 'phone' : body.contains('proto') ? 'proto' : 'desk',
   };
