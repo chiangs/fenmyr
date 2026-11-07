@@ -90,6 +90,8 @@ function renderHistory() {
       const c = chats.splice(i, 1)[0];
       if (!c) return;
       archiveChat();
+      // her buttons there were for the board as it was then, so the chat comes back without them
+      for (const m of c.msgs) delete m.acts;
       session.board.chat = c.msgs;
       save();
       appState.histOpen = false;

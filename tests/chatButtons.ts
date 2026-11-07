@@ -1,6 +1,6 @@
 // The buttons under Myra's replies: her next-step chips show in the chat and in her bubble, a click sends the chip's
 // words as your question and takes the row away, and the stored kinds come back when the chat or the board opens
-// again while one-off buttons don't. Each reply that changes the board keeps what it changed with her line, and its
+// again while one-off buttons don't, except in a chat brought back from History. Each reply that changes the board keeps what it changed with her line, and its
 // before-states in memory for the last 20 replies until another board opens.
 import assert from 'node:assert';
 import fs from 'node:fs';
@@ -183,6 +183,16 @@ await check('the before-states of the last 20 replies are kept, until another bo
     [ids[20]],
     'and her line still has what the reply changed',
   );
+});
+
+await check('a chat brought back from History comes back without her buttons', async () => {
+  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Earlier.', next: ['Later'] }, 'q'));
+  await page.evaluate(() => document.getElementById('mcNew')?.click());
+  await page.evaluate(() => document.getElementById('mcHist')?.click());
+  await page.locator('#mcList .mh-open').first().click();
+  await settle(page, 300);
+  assert.deepStrictEqual(await actsOf(page, 'Earlier.'), [], 'none show');
+  assert.deepStrictEqual(await storedActs('Earlier.'), [], 'and none are kept');
 });
 
 assert.deepStrictEqual(l.errors, []);
