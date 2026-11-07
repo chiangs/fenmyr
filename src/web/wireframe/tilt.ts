@@ -15,7 +15,7 @@ import { inSection } from './sections.ts';
 import { FONTS } from './wireframes.ts';
 
 // ---------- tilt popover: type an exact angle, or pick one ----------
-export function setTilt(c: Card, to: string | number, keepPop: boolean) {
+function setTilt(c: Card, to: string | number, keepPop: boolean) {
   remember();
   const deg = Math.max(-180, Math.min(180, Math.round(+to || 0)));
   c.r = deg;

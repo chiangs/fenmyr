@@ -6,6 +6,7 @@ import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
 import { G } from './barKit.ts';
+import { group, many } from './group.ts';
 import { selCards } from './selected.ts';
 
 const ARRANGE: [string, string, string][] = [
@@ -20,7 +21,7 @@ const ARRANGE: [string, string, string][] = [
 ];
 
 // the align buttons for two or more things; spacing evenly needs three
-export function arrangeHtml(n: number) {
+function arrangeHtml(n: number) {
   const buttons = ARRANGE.slice(0, n > 2 ? 8 : 6)
     .map(([k, t, icon], i) => {
       const gap = i === 3 || i === 6 ? '<i class="sb-gap"></i>' : '',
@@ -32,7 +33,7 @@ export function arrangeHtml(n: number) {
 }
 
 // line selected things up with each other, or space them evenly (titles use their real drawn height)
-function arrange(how: string) {
+function arrangeAs(how: string) {
   const cs = selCards().filter(c => !c.locked);
   if (cs.length < 2) return;
   remember();
@@ -153,15 +154,17 @@ function arrange(how: string) {
   save();
 }
 
-export function initArrange() {
+function initArrange() {
   $('selbar').addEventListener(
     'click',
     e => {
       const how = closestTo(e.target, '[data-arr]')?.dataset.arr;
       if (!how) return;
       e.stopImmediatePropagation();
-      arrange(how);
+      arrangeAs(how);
     },
     true,
   );
 }
+
+export const arrange = group({ on: many, html: cs => arrangeHtml(cs.length), init: initArrange });

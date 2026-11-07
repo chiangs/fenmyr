@@ -1,13 +1,15 @@
-import type { CardOf } from '../../shared/model.ts';
+import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import { caret, closeSbPops, G, markOnce, pct, pop, syncPair } from './barKit.ts';
+import { group, one } from './group.ts';
 import { selCards } from './selected.ts';
 
 type Line = CardOf<'shape'>;
+const isLine = (c: Card): c is Line => c.type === 'shape' && c.shape === 'line';
 type Patch = { squig?: string; height?: number; waves?: number; round?: number; wobble?: number; lw?: number };
 
 const STYLES: [string, string][] = [
@@ -30,7 +32,7 @@ const slider = (k: string, label: string, v: number, min: number, max: number, u
   return `<div class="sbc-top sb-sqrow" data-sqk="${k}"><span>${label}</span><input type="range" min="${min}" max="${max}" step="1" value="${v}" style="--p:${p}" data-sq="${k}"><input type="number" min="${min}" max="${max}" value="${v}" data-sqn="${k}" aria-label="${label}"><b class="sb-unit">${unit}</b></div>`;
 };
 
-export function lineStyleHtml(one: Line) {
+function lineStyleHtml(one: Line) {
   const st = one.squig || 'straight',
     icon = PATH[st] ?? '',
     chips = STYLES.map(([k, t]) => {
@@ -88,7 +90,7 @@ function syncPop(c: Line) {
 }
 
 function setSquig(patch: Patch) {
-  const c = selCards().find((k): k is Line => k.type === 'shape' && k.shape === 'line');
+  const c = selCards().find(isLine);
   if (!c) return;
   if (patch.squig) {
     if (patch.squig === 'straight') delete c.squig;
@@ -121,7 +123,7 @@ function setSquig(patch: Patch) {
   if (patch.squig) syncPop(c);
 }
 
-export function initLineStyle(place: () => void) {
+function initLineStyle(place: () => void) {
   $('selbar').addEventListener(
     'click',
     e => {
@@ -152,3 +154,12 @@ export function initLineStyle(place: () => void) {
     }
   });
 }
+
+export const lineStyle = group({
+  on: ctx => {
+    const c = one(ctx);
+    return c && isLine(c) ? c : null;
+  },
+  html: lineStyleHtml,
+  init: initLineStyle,
+});
