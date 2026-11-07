@@ -6,6 +6,7 @@ import { dueIndex } from '../features/due.ts';
 import { findClose } from '../features/find.ts';
 import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
+import { forgetReplies } from '../myra/replyMemory.ts';
 import { showProto } from '../proto/layout.ts';
 import { checkCode } from '../repo/codeFolder.ts';
 import { askAboutCopy } from '../repo/copy.ts';
@@ -37,6 +38,7 @@ export async function openBoard(id: string) {
   if (chatOpen()) setTimeout(renderChat, 0);
   session.board.palette = session.board.palette || [];
   setTimeout(resetHistory, 0);
+  forgetReplies();
   session.view = { x: 160, y: 140, z: 1, ...b.view };
   session.sel.clear();
   session.editing = null;

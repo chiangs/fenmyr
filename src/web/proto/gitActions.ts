@@ -23,7 +23,8 @@ async function commit(b: Prototype, root: string, message: string) {
   if (session.board?.id === b.id) renderGitBar(b);
 }
 
-async function askCommit(b: Prototype, message: string) {
+// message: the one she suggests, or a plain one when it's empty
+export async function askCommit(b: Prototype, message: string) {
   const where = projectOf(b);
   if (!where) return;
   const s = await Fenmyr.gitStatus(where.root).catch(() => null);
@@ -38,15 +39,16 @@ async function askCommit(b: Prototype, message: string) {
     ]
       .filter(Boolean)
       .join(' and '),
-    branch = s?.kind === 'repo' ? (s.branch ?? 'this branch') : 'this branch';
+    branch = s?.kind === 'repo' ? (s.branch ?? 'this branch') : 'this branch',
+    said = message.trim() || `Update ${b.name}`;
   askGit(
-    `Commit ${files} to ${branch}? Message: “${message}”`,
+    `Commit ${files} to ${branch}? Message: “${said}”`,
     'Committing saves this version in the project’s history, so you can always come back to it. It stays on this computer until you push, which sends it to GitHub.',
     [
       {
         label: 'Commit',
         cls: 'next',
-        run: () => commit(b, where.root, message).catch(failed),
+        run: () => commit(b, where.root, said).catch(failed),
       },
       { label: 'Not now', ghost: true, run: () => {} },
     ],
@@ -88,7 +90,7 @@ async function askPush(b: Prototype) {
 export function gitAction(action: string, message = '') {
   const b = session.board;
   if (b?.kind !== 'prototype') return;
-  if (action === 'commit') return askCommit(b, message.trim() || `Update ${b.name}`);
+  if (action === 'commit') return askCommit(b, message);
   if (action === 'pull') return pullNow(b);
   return action === 'push' ? askPush(b) : undefined;
 }

@@ -1,6 +1,7 @@
 // A saved card keeps its content and loses what only mattered while the app was running.
 import assert from 'node:assert';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { everyOfflineCard } from './fixtures/boards.ts';
 import { launch } from './support/launch.ts';
@@ -68,3 +69,57 @@ assert(proto.includes('An earlier answer.'), 'switching chat saving keeps a prot
 assert(proto.includes('I built two screens.'), 'a prototype board saves new chat with chat saving off');
 assert.deepStrictEqual(plain, [], 'switching chat saving still clears a plain board’s chat');
 console.log('PROTOTYPE CHAT OK');
+
+// Her stored buttons come back from the board file, and a reply's are written to it and come back after a restart.
+const shown = (page: typeof p.page, text: string) =>
+  page.evaluate(text => {
+    document.getElementById('mPill')?.click();
+    const m = [...document.querySelectorAll('#mcList .mc-msg')].find(d => d.firstChild?.textContent === text);
+    return m ? [...m.querySelectorAll('.m-acts button')].map(b => b.textContent) : null;
+  }, text);
+const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-acts-'));
+const stored = {
+  id: 'acts',
+  name: 'Acts',
+  cards: [cartNote],
+  links: [],
+  tray: [],
+  chat: [
+    {
+      who: 'myra',
+      text: 'From the file.',
+      t: 1,
+      acts: [
+        { kind: 'next', text: 'Make it a list' },
+        { kind: 'offer', board: 'x' },
+        { kind: 'source', card: 'n' },
+        { kind: 'source', card: 'gone' },
+        { kind: 'commit', board: 'acts', message: 'Add the cart' },
+      ],
+    },
+  ],
+};
+let a = await launch({ boards: [stored], open: 'acts', data });
+try {
+  assert.deepStrictEqual(
+    await shown(a.page, 'From the file.'),
+    ['Make it a list', '↗ Cart'],
+    'a board saved with buttons opens with them, without kinds it doesn’t know, cards that are gone or a Commit for a board that isn’t a prototype',
+  );
+  await a.page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Saved with me.', next: ['Sort them'] }, 'q'));
+  const file = path.join(data, 'fenmyr', 'boards', 'acts.json');
+  const savedNext = () => {
+    const b = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return b.chat.find((m: { text: string }) => m.text === 'Saved with me.')?.acts?.[0];
+  };
+  const until = Date.now() + 5000;
+  while (Date.now() < until && !savedNext()) await a.page.waitForTimeout(100);
+  assert.deepStrictEqual(savedNext(), { kind: 'next', text: 'Sort them' }, 'a reply’s next step is written to disk');
+  await a.close();
+  a = await launch({ open: 'acts', data });
+  assert.deepStrictEqual(await shown(a.page, 'Saved with me.'), ['Sort them'], 'and is back after a restart');
+} finally {
+  await a.close();
+  fs.rmSync(data, { recursive: true, force: true });
+}
+console.log('STORED BUTTONS OK');
