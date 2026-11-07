@@ -2695,7 +2695,7 @@ body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-
 /* her reply clears the higher of the timer and drawing's or find's bar; with the chat open the timer sits over its
    middle */
 .dock .myra.timing .m-bubble { bottom: calc(100% + 12px + max(40px, var(--mode-h, 0px))); }
-body:not(.phone) .dock .myra.chat .timer-chip { position: fixed; left: calc(var(--chat-l) + var(--chat-w) / 2); bottom: calc(100vh - var(--chat-t) + 8px); }
+.dock .myra.chat:has(> .m-chat:is([data-place="joined"], [data-place="wide"])) .timer-chip { position: fixed; left: calc(var(--chat-l) + var(--chat-w) / 2); bottom: calc(100vh - var(--chat-t) + 8px); }
 .m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
 .myra.partying:not(.chat) .m-pill { animation: m-party .55s ease-in-out 6; }
 .myra.partying.chat .goo-slot.perched #goo { transform-origin: 50% 100%; animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she wiggles herself; on the sprite, because rotate/scale on the slot would scale and swing her whole offset from the button */
