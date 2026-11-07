@@ -865,7 +865,8 @@ body.dark .mc-ideas button { border-color: #464038; }
 .m-pill canvas { transform: translateY(-4px); }
 .mc-head canvas { margin-top: -9px; }
 .mc-head .mc-ic { flex: none; color: var(--ink); }
-.mc-perch { flex: none; width: 40px; height: 35px; display: grid; place-items: center; }
+.mc-perch { flex: none; display: grid; place-items: center; }
+body:not(.phone) .mc-perch { width: 40px; height: 35px; }
 body:not(.phone, .myra-hidden) .myra.chat .mc-perch .mc-ic { visibility: hidden; }
 .m-pill { overflow: visible; }
 #goo.hopping { animation: myra-hop .62s cubic-bezier(.3, .7, .4, 1) both; transform-origin: 50% 100%; }

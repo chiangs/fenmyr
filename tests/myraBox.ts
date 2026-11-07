@@ -65,16 +65,20 @@ await check('with the chat open, fitting the board keeps the cards out from unde
   await setChat(false);
 });
 
-await check('on a phone her chat is a sheet 8 px from both sides', async () => {
+await check('on a phone her chat is a sheet 8 px from both sides, its header as it was', async () => {
   await size(600);
   await page.click('[data-hub="myra"]');
   await page.waitForTimeout(450);
-  const { mChat } = await edges(['mChat']);
+  const { mChat, mcPerch } = await edges(['mChat', 'mcPerch']),
+    head = await page.evaluate(() => document.querySelector('#mChat .mc-head')?.getBoundingClientRect().height);
   await page.click('#mcClose');
   await size(1440);
-  assert.ok(mChat, 'her chat is open');
+  assert.ok(mChat && mcPerch, 'her chat and its icon are up');
   near(mChat.l, 8, 'the sheet’s left');
   near(mChat.r, 600 - 8, 'the sheet’s right');
+  near(mcPerch.l, mChat.l + 16, 'the chat icon’s left, on the header’s padding');
+  near(mcPerch.r - mcPerch.l, 28, 'the chat icon’s width');
+  near(head, 12 + 28 + 10 + 1, 'the header’s height: its padding, the 28 px icon and its rule');
 });
 
 // Settings → Myra, one change, then closed again
