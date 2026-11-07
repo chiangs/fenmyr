@@ -94,7 +94,7 @@ const stored = {
         { kind: 'offer', board: 'x' },
         { kind: 'source', card: 'n' },
         { kind: 'source', card: 'gone' },
-        { kind: 'commit', message: 'Add the cart' },
+        { kind: 'commit', board: 'acts', message: 'Add the cart' },
       ],
     },
   ],
@@ -103,8 +103,8 @@ let a = await launch({ boards: [stored], open: 'acts', data });
 try {
   assert.deepStrictEqual(
     await shown(a.page, 'From the file.'),
-    ['Make it a list', '↗ Cart', 'Commit'],
-    'a board saved with buttons opens with them, without kinds it doesn’t know or cards that are gone',
+    ['Make it a list', '↗ Cart'],
+    'a board saved with buttons opens with them, without kinds it doesn’t know, cards that are gone or a Commit for a board that isn’t a prototype',
   );
   await a.page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Saved with me.', next: ['Sort them'] }, 'q'));
   const file = path.join(data, 'fenmyr', 'boards', 'acts.json');

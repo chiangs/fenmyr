@@ -84,6 +84,8 @@ jobs:
         run: node tests/preview.ts
       - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)
         run: node tests/build.ts
+      - name: Build buttons test (Myra's stored Commit and Undo across builds and boards)
+        run: node tests/buildButtons.ts
       - name: Packages test (installed packages in a prototype, with a stand-in npm)
         run: node tests/packages.ts
       - name: Sync test (fetch, pull and clashes with a stand-in GitHub)

@@ -33,7 +33,7 @@ const everyKind = [
   { kind: 'changes', reply: 'r1', set },
   { kind: 'source', card: 'n1' },
   { kind: 'buildUndo', board: 'pb', snapshot: 'abc123' },
-  { kind: 'commit', message: 'Make the heading' },
+  { kind: 'commit', board: 'pb', message: 'Make the heading' },
 ];
 const withActs = (acts: unknown) => ({
   id: 'b1',
@@ -58,9 +58,10 @@ assert.deepStrictEqual(
     { kind: 'changes', reply: 'r1', set: { ...set, relaid: { kb: 'k1' } } },
     'next',
     null,
-    { kind: 'commit', message: 'Keep me' },
+    { kind: 'commit', message: 'No board' },
+    { kind: 'commit', board: 'pb', message: 'Keep me' },
   ])?.acts,
-  [{ kind: 'commit', message: 'Keep me' }],
+  [{ kind: 'commit', board: 'pb', message: 'Keep me' }],
   'an unknown kind and a malformed button are dropped, and the rest kept',
 );
 assert.deepStrictEqual(

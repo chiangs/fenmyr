@@ -10,9 +10,10 @@ export type ChatAction =
   | { kind: 'changes'; reply: string; set: ChangeSet }
   // a card a build came from
   | { kind: 'source'; card: string }
-  // puts a prototype's folder back as it was before a build; the folder is the board's when clicked
+  // A build's buttons, shown only while `board`, the prototype it built, is open. Undo puts the folder back as it was
+  // before the build, so only the newest build's Undo shows: an older one would undo the builds after it too.
   | { kind: 'buildUndo'; board: string; snapshot: string }
-  | { kind: 'commit'; message: string };
+  | { kind: 'commit'; board: string; message: string };
 
 // who: 'me' or 'myra'; t: when it was said
 export type ChatMsg = { who: string; text: string; t: number; acts?: ChatAction[] };
@@ -57,7 +58,10 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
     typeof x.board === 'string' && typeof x.snapshot === 'string'
       ? { kind: 'buildUndo', board: x.board, snapshot: x.snapshot }
       : null,
-  commit: x => (typeof x.message === 'string' ? { kind: 'commit', message: x.message } : null),
+  commit: x =>
+    typeof x.board === 'string' && typeof x.message === 'string'
+      ? { kind: 'commit', board: x.board, message: x.message }
+      : null,
 };
 
 const isKind = (k: unknown): k is ChatAction['kind'] => typeof k === 'string' && Object.hasOwn(READ, k);
