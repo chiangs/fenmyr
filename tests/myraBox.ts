@@ -231,6 +231,16 @@ await check('at 320 px, the narrowest it joins the tools, her chat’s hint stay
   assert.strictEqual(Math.round(input.lines), 1, 'lines the hint takes');
 });
 
+await check('joined to the tools, her chat’s corner on them is square, so no notch shows', async () => {
+  await setChat(true);
+  const filled = await page.evaluate(() => {
+    const r = document.getElementById('mChat')?.getBoundingClientRect();
+    return !!r && !!document.elementFromPoint(r.left + 1, r.bottom - 1)?.closest('#mChat');
+  });
+  await setChat(false);
+  assert.ok(filled, 'the chat fills its bottom-left corner');
+});
+
 for (const hurry of [false, true]) {
   const when = hurry ? ', in a timer’s last two minutes' : '';
   await check(`perched in her open chat she keeps still while her box glows${when}`, async () => {
