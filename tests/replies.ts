@@ -6,6 +6,8 @@
 //   no guessed next steps.
 // - Cards a template adds to the board, and her vault note cards, are among the cards she touched: a template she
 //   saves "from new" keeps them, she glides to them, counts them and guesses next steps from them.
+// - Timers, animations and the library run after the board changes, not before.
+// - Pictures load three at a time, not one after another, and still land in the reply's order.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
