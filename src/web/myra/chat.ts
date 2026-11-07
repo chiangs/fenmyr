@@ -110,14 +110,20 @@ function webMyra(q: string) {
 export let animAskedAt = 0;
 export let timerAskedAt = 0;
 
+// A question as it was asked. `did`: what the app already did for the sentence; `vault`: the vault chip was ticked
+// for it.
+type Asked = { q: string; confirmed: boolean; did: string[]; vault: boolean };
+
 // The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
-// animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the board the
-// question was asked on.
+// animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the board and the
+// vault chip the question was asked with.
 export function ask(q: string, confirmed = false) {
-  const did = confirmed ? [] : actOnSentence(q);
+  const asked: Asked = { q, confirmed, did: confirmed ? [] : actOnSentence(q), vault: appState.vaultChip };
+  appState.vaultChip = false;
+  updateVaultChip();
   if (!chatOpen()) myraOpen(true);
   if (!confirmed) addMsg('me', q);
-  return Turn.take(turn => answer(turn, q, confirmed, did), session.board.id);
+  return Turn.take(turn => answer(turn, asked), session.board.id);
 }
 
 // what the app already did for this sentence, so her answer can go with it
@@ -137,7 +143,7 @@ function actOnSentence(q: string) {
   return did;
 }
 
-async function answer(turn: Turn, q: string, confirmed: boolean, did: string[]) {
+async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
   if (!turn.stillOpen()) return;
   if (Fenmyr.web) return webMyra(q);
   if (!settings.ai) return offlineMyra(q, 'My thinking is switched off in Settings, so I can only do simple tidying.');
@@ -160,7 +166,7 @@ async function answer(turn: Turn, q: string, confirmed: boolean, did: string[]) 
     used: [],
     tasks: null,
   };
-  if (appState.vaultChip && aiGrants(session.board).length) {
+  if (vault && aiGrants(session.board).length) {
     ctx.asked = true;
     try {
       ctx.tasks = await gatherVaultTasks(q);
@@ -168,8 +174,6 @@ async function answer(turn: Turn, q: string, confirmed: boolean, did: string[]) 
     } catch (_e) {}
   }
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
-  appState.vaultChip = false;
-  updateVaultChip();
   try {
     const raw = await Fenmyr.ask(
       (window.myraName && window.myraName !== 'Myra'
