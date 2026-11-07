@@ -1,6 +1,7 @@
 // The buttons under Myra's replies: her next-step chips show in the chat and in her bubble, a click sends the chip's
 // words as your question and takes the row away, and the stored kinds come back when the chat or the board opens
-// again while one-off buttons don't.
+// again while one-off buttons don't. Each reply that changes the board keeps what it changed with her line, and its
+// before-states in memory for the last 20 replies until another board opens.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -120,6 +121,68 @@ await check('one-off buttons go when the chat opens again, as before', async () 
   assert.deepStrictEqual(await actsOf(page, 'Shall I?'), [':Yes, do it ✦', 'ghost:Not now']);
   await reopenChat();
   assert.deepStrictEqual(await actsOf(page, 'Shall I?'), []);
+});
+
+const storedActs = (text: string) =>
+  page.evaluate(text => window.__fenmyr.curBoard().chat?.find(m => m.text === text)?.acts ?? [], text);
+
+await check('a reply that changes the board keeps what it changed, and the cards as they were', async () => {
+  const done = await page.evaluate(() =>
+    window.__fenmyr.applyMyra(
+      { say: 'Changed.', add: [{ text: 'A new one' }], edit: [{ id: 'n1', text: 'Now edited' }], next: ['Again'] },
+      'q',
+    ),
+  );
+  assert.ok(done);
+  const record = await page.evaluate(id => window.__fenmyr.replyRecord(id), done.reply);
+  const n1 = record?.cards.find(d => d.id === 'n1');
+  assert.deepStrictEqual(
+    [n1?.was?.item.type === 'note' && n1.was.item.text, n1?.now?.item.type === 'note' && n1.now.item.text],
+    ['First note', 'Now edited'],
+    'an edited card is kept as it was and as it is',
+  );
+  assert.ok(
+    record?.cards.some(d => d.was === null && d.now?.item.type === 'note' && d.now.item.text === 'A new one'),
+    'an added card is kept as not there before',
+  );
+  const changes = (await storedActs('Changed.')).filter(a => a.kind === 'changes');
+  assert.deepStrictEqual(
+    changes.map(a => a.kind === 'changes' && [a.reply, a.set.edited, a.set.added.length]),
+    [[done.reply, ['n1'], 1]],
+    'her line keeps the reply’s id and its change set',
+  );
+  assert.deepStrictEqual(await actsOf(page, 'Changed.'), ['next:Again'], 'which draws no button yet');
+  await page.locator('#mcList .m-acts button', { hasText: 'Again' }).click();
+  await settle(page, 300);
+  assert.deepStrictEqual(
+    (await storedActs('Changed.')).map(a => a.kind),
+    ['changes'],
+    'a click takes the row away and keeps what the reply changed',
+  );
+  const said = await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Only words.' }, 'q'));
+  assert.ok(said);
+  assert.deepStrictEqual(await storedActs('Only words.'), [], 'a reply that changes nothing keeps nothing');
+  assert.strictEqual(await page.evaluate(id => window.__fenmyr.replyRecord(id), said.reply), undefined);
+});
+
+await check('the before-states of the last 20 replies are kept, until another board opens', async () => {
+  const ids = await page.evaluate(async () => {
+    const out: string[] = [];
+    for (let i = 0; i < 21; i++) {
+      const done = await window.__fenmyr.applyMyra({ say: `Reply ${i}.`, add: [{ text: `Card ${i}` }] }, 'q');
+      if (done) out.push(done.reply);
+    }
+    return out;
+  });
+  const kept = () => page.evaluate(ids => ids.map(id => !!window.__fenmyr.replyRecord(id)), ids);
+  assert.deepStrictEqual(await kept(), [false, ...Array(20).fill(true)], 'the oldest of 21 is let go');
+  await reopenBoard();
+  assert.deepStrictEqual(await kept(), Array(21).fill(false), 'opening a board forgets them');
+  assert.deepStrictEqual(
+    (await storedActs('Reply 20.')).map(a => a.kind === 'changes' && a.reply),
+    [ids[20]],
+    'and her line still has what the reply changed',
+  );
 });
 
 assert.deepStrictEqual(l.errors, []);

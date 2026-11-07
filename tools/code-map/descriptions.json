@@ -179,6 +179,7 @@
     "src/web/myra/perch.ts": "The slot she sits in on the canvas, which she hops out of and back into.",
     "src/web/myra/plan.ts": "The board part of a reply: every card it adds, moves, edits or removes, planned on the board or on a copy.",
     "src/web/myra/replyLine.ts": "Her line after a reply, with its buttons: confirm, the vault, repos and next steps.",
+    "src/web/myra/replyMemory.ts": "What each of the last 20 replies on the open board changed, with the cards as they were, kept in memory for Undo.",
     "src/web/myra/replyText.ts": "Cleans her reply text, for example enforcing no emoji.",
     "src/web/myra/say.ts": "Myra’s short lines (say, reply, chirp, tip): her speech bubble, or the chat when it is open.",
     "src/web/myra/slash.ts": "Runs typed slash commands, and the grouped slash menu above Myra’s input with its keys.",

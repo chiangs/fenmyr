@@ -45,6 +45,7 @@ import { ask } from '../myra/chat.ts';
 import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
 import { perched, perchGoo } from '../myra/perch.ts';
+import { replyRecord } from '../myra/replyMemory.ts';
 import { snapshot } from '../myra/snapshot.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
@@ -160,6 +161,7 @@ const makeHooks = () => ({
   // a reply as if Claude had just sent it: it waits its turn behind any other
   applyMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
     Turn.take(async turn => applyHeld(turn, await holdReply(r, q, ctx)), session.board.id),
+  replyRecord,
   previewMyra: async (r: MyraReply) => previewHeld(await holdReply(r, '', NO_VAULT)),
   fit,
   lib: () => snapshot().library,
