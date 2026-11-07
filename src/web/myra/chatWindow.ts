@@ -10,13 +10,19 @@ import { keepPerch, perchGoo } from './perch.ts';
 // Myra's chat window: click her box to open it, click again (or Esc) to close
 export const chatOpen = () => $('myra').classList.contains('chat');
 
+const ruler = document.createElement('canvas').getContext('2d');
+
 // with cards selected, the hint says they go along with whatever you send
 export function renderHint() {
-  textField('mcInput').placeholder = askHint(
-    window.myraName || 'Myra',
-    session.sel.size,
-    session.board?.kind === 'prototype',
-  );
+  const field = textField('mcInput'),
+    css = getComputedStyle(field),
+    room = field.clientWidth - parseFloat(css.paddingLeft) - parseFloat(css.paddingRight),
+    fits = (hint: string) => {
+      if (!ruler) return true;
+      ruler.font = css.font;
+      return ruler.measureText(hint).width <= room;
+    };
+  field.placeholder = askHint(window.myraName || 'Myra', session.sel.size, session.board?.kind === 'prototype', fits);
 }
 
 // her box from layout values, as it wobbles
@@ -63,6 +69,7 @@ export function relayout() {
     setVar(myra, '--chat-h', c.b - c.t);
   }
   if ($('mChat').dataset.place !== p.kind) $('mChat').dataset.place = p.kind;
+  renderHint();
   keepPerch();
 }
 

@@ -80,9 +80,18 @@ assert.strictEqual(cutName('Twelve-lette'), 'Twelve-lette', '12 letters stay who
 assert.strictEqual(cutName('Bartholomew-Smithe'), 'Bartholomew…', 'past 12 letters: 11 and an ellipsis');
 assert.strictEqual(cutName('🍓🍓🍓🍓🍓🍓🍓🍓🍓🍓🍓🍓🍓'), '🍓🍓🍓🍓🍓🍓🍓🍓🍓🍓🍓…', 'letters, not code units');
 
-assert.strictEqual(askHint('Myra', 0, false), 'Ask Myra… “group these by theme”');
-assert.strictEqual(askHint('Bartholomew-Smithe', 1, false), 'Ask Bartholomew… to change this…', 'one card');
-assert.strictEqual(askHint('Pip', 3, false), 'Ask Pip to change these 3…', 'several cards');
-assert.strictEqual(askHint('Pip', 0, true), 'Ask Pip about this prototype…', 'a prototype board');
+const roomy = () => true,
+  cramped = () => false;
+assert.strictEqual(askHint('Myra', 0, false, roomy), 'Ask Myra… “group these by theme”');
+assert.strictEqual(askHint('Myra', 0, false, cramped), 'Ask Myra…', 'without room for the example, just her name');
+assert.strictEqual(
+  askHint('Bartholomew-Smithe', 0, false, roomy),
+  'Ask Bartholomew… “group these by theme”',
+  'a cut name has one ellipsis',
+);
+assert.strictEqual(askHint('Bartholomew-Smithe', 0, false, cramped), 'Ask Bartholomew…', 'a cut name, no room');
+assert.strictEqual(askHint('Bartholomew-Smithe', 1, false, roomy), 'Ask Bartholomew… to change this…', 'one card');
+assert.strictEqual(askHint('Pip', 3, false, roomy), 'Ask Pip to change these 3…', 'several cards');
+assert.strictEqual(askHint('Pip', 0, true, roomy), 'Ask Pip about this prototype…', 'a prototype board');
 
 console.log('CHAT RULES OK');

@@ -201,4 +201,30 @@ await check(
   },
 );
 
+await check('at 320 px, the narrowest it joins the tools, her chat’s hint stays on one line', async () => {
+  const { mPill } = await edges(['mPill']);
+  assert.ok(mPill, 'her box is up');
+  await inSettings(() => page.fill('#myraNameIn', 'Bartholomew-Smithe'));
+  await size(Math.round(mPill.l) + 320 + 14);
+  await setChat(true);
+  const input = await page.evaluate(() => {
+    const field = document.querySelector('textarea#mcInput');
+    if (!(field instanceof HTMLTextAreaElement)) return null;
+    // an empty input sizes to its hint, clipped to one line; unclipped, it shows how many lines the hint takes
+    field.style.maxHeight = 'none';
+    const lines = (field.clientHeight - 12) / parseFloat(getComputedStyle(field).lineHeight);
+    field.style.maxHeight = '';
+    return { hint: field.placeholder, lines, place: document.getElementById('mChat')?.dataset.place };
+  });
+  const { mChat } = await edges(['mChat']);
+  await setChat(false);
+  await size(1440);
+  await inSettings(() => page.fill('#myraNameIn', ''));
+  assert.ok(input && mChat, 'her chat and its input are up');
+  assert.strictEqual(input.place, 'joined', 'the chat joins the tools');
+  near(mChat.r - mChat.l, 320, 'the chat’s width');
+  assert.match(input.hint, /^Ask Bartholomew…(?!…)/, 'the hint has her name cut short, with one ellipsis');
+  assert.strictEqual(Math.round(input.lines), 1, 'lines the hint takes');
+});
+
 await done('MYRA BOX OK');
