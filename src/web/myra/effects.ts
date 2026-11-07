@@ -40,7 +40,7 @@ export function effectsOf({ reply: r, q }: HeldReply): Effect[] {
   const secs = Math.round((r.timer?.minutes ?? 0) * 60 + (r.timer?.seconds ?? 0));
   if (r.timer && secs >= 1 && secs <= 36000)
     out.push({ kind: 'timer', secs, purpose: String(r.timer.purpose || '').slice(0, 60) });
-  // her own pick: about once per ten minutes, and confetti only if asked
+  // confetti only when the sentence asked for it
   const name = animName(r.animate),
     intent = animIntent(q);
   if (name && (name !== 'party' || intent === 'party')) out.push({ kind: 'animate', name, asked: !!intent });
@@ -56,7 +56,7 @@ export function effectsOf({ reply: r, q }: HeldReply): Effect[] {
 }
 
 // Runs them in order. Returns the buttons they offer under her line. `touched`: the cards the reply made, moved or
-// edited, in that order.
+// edited, in the order it did so.
 export async function runEffects(effects: readonly Effect[], touched: readonly Card[]): Promise<SayAction[]> {
   const acts: SayAction[] = [];
   for (const e of effects)
@@ -68,6 +68,7 @@ export async function runEffects(effects: readonly Effect[], touched: readonly C
         if (!askedLately(timerAskedAt)) startTimer({ secs: e.secs, purpose: e.purpose }, false, true);
         break;
       case 'animate':
+        // her own pick about once per ten minutes, or the one the sentence asked for
         if (!askedLately(animAskedAt) && (Date.now() - appState.aiAnimAt > 600000 || e.asked))
           if (playAnim(e.name, false)) appState.aiAnimAt = Date.now();
         break;
@@ -117,7 +118,6 @@ export async function runEffects(effects: readonly Effect[], touched: readonly C
   return acts;
 }
 
-// folders first: create, rename, and move boards around the library
 async function sortLibrary(pr: MyraReply['projects'], fo: MyraReply['folders']) {
   await loadLib();
   for (const n of pr?.create ?? []) makeProject(n);

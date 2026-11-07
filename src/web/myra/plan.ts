@@ -201,7 +201,6 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): { skipp
       );
     });
   }
-  // notes she says she used land on the board as vault note cards
   held.notes.forEach((n, k) => {
     const c = card('vnote', {
       vault: n.vaultId,
