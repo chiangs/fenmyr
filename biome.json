@@ -13,6 +13,7 @@
       "!tests/sample-vault",
       "!tests/fixtures/richtext",
       "!tests/fixtures/replies.json",
+      "!tests/fixtures/barGroups.json",
       "!.claude/settings.local.json",
       "!.claude/scheduled_tasks.lock",
       "!!.claude/worktrees"

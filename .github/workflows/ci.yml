@@ -120,6 +120,8 @@ jobs:
         run: node tests/popups.ts
       - name: Selection bar test (what it kept, where it floats, and that it steps aside for gestures)
         run: node tests/contextBar.ts
+      - name: Selection bar groups test (which groups and buttons it shows for every kind of card, a connector and cropping)
+        run: node tests/barGroups.ts
       - name: Selection bar keyboard test (F10 in, Space and Enter, Escape out, names after a hover, clicks leave keys to the board)
         run: node tests/barKeyboard.ts
       - name: Selection bar room test (dropdowns near the top, presses on the bar, a 900 px window)

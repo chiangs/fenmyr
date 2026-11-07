@@ -291,6 +291,7 @@
     "src/web/wireframe/stack.ts": "Front and back order of cards, and keeping groups together.",
     "src/web/wireframe/tilt.ts": "The tilt popover, frames and snapping of wireframe pieces.",
     "src/web/wireframe/wireframes.ts": "Wireframes: screens, boxes and text, devices, fonts and snapping.",
+    "tests/barGroups.ts": "Which groups and buttons the selection bar shows for every kind of card, mixed selections, a connector and cropping, against a recorded list.",
     "tests/barKeyboard.ts": "Every selection bar from the keyboard: F10 in, Tab, Space and Enter, Escape out, icon names that survive a hover, and keys left to the board after a click.",
     "tests/barPlace.ts": "Checks where the context bar goes, worked out without the app: above, flipped, stuck, slid and beside a line.",
     "tests/barRoom.ts": "The selection bar where room runs short: dropdowns near the top of the view, presses on the bar, and a 900 px window.",
