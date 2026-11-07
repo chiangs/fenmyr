@@ -44,12 +44,15 @@ const l = await launch({
   env: { PATH: `${bin}:${process.env.PATH ?? ''}` },
 });
 const { page } = l;
-const builtRows = () =>
-  page.evaluate(() =>
-    [...document.querySelectorAll('#mcList .mc-msg.myra')]
-      .filter(m => m.firstChild?.textContent === 'I built it.')
-      .map(m => [...m.querySelectorAll('.m-acts button')].map(b => b.textContent ?? '')),
+const rowsOf = (text: string) =>
+  page.evaluate(
+    text =>
+      [...document.querySelectorAll('#mcList .mc-msg.myra')]
+        .filter(m => m.firstChild?.textContent === text)
+        .map(m => [...m.querySelectorAll('.m-acts button')].map(b => b.textContent ?? '')),
+    text,
   );
+const builtRows = () => rowsOf('I built it.');
 const until = async (check: () => Promise<boolean>, what: string, ms = 20000) => {
   const end = Date.now() + ms;
   while (Date.now() < end) {
@@ -97,6 +100,13 @@ try {
       cards: [{ id: 'n1', type: 'note', x: 0, y: 0, w: 220, h: 120, text: 'Checkout: show the total first' }],
       links: [],
       tray: [],
+      // builds from before they were named
+      chat: ['aaa', 'bbb'].map((snapshot, t) => ({
+        who: 'myra',
+        text: 'An older build.',
+        t,
+        acts: [{ kind: 'buildUndo', board: 'pb', snapshot }],
+      })),
     });
     await window.__fenmyr.refreshBoards();
     await window.__fenmyr.openBoard('pb');
@@ -106,8 +116,16 @@ try {
   git('add', '-A');
   git('commit', '-qm', 'start');
 
+  await open('pb');
+  assert.deepStrictEqual(
+    await rowsOf('An older build.'),
+    [[], ['Undo']],
+    'a prototype from before builds were named shows only the newest Undo in its chat',
+  );
   await build('First build.');
   await built(1);
+  await reopen('pb');
+  assert.deepStrictEqual(await rowsOf('An older build.'), [[], []], 'and none of them once a new build starts');
   await build('Second build.');
   await built(2);
   await reopen('pb');

@@ -25,6 +25,7 @@ const everyKind = [
   { kind: 'changes', reply: 'r1', set },
   { kind: 'source', card: 'n1' },
   { kind: 'buildUndo', board: 'pb', snapshot: 'abc123' },
+  { kind: 'buildUndo', board: 'pb', snapshot: 'def456', build: 'k3x9q2' },
   { kind: 'commit', board: 'pb', message: 'Make the heading' },
 ];
 const withActs = (acts: unknown) => ({
@@ -108,6 +109,10 @@ assert.deepStrictEqual(proto({ dir: 'prototypes/checkout-flow', stack: 'html' })
   stack: 'html',
 });
 assert.strictEqual(proto({ dir: 'prototypes/checkout-flow' })?.proto?.stack, 'react', 'the stack defaults to React');
+const named = { dir: 'prototypes/checkout-flow', stack: 'react', build: 'k3x9q2' };
+assert.deepStrictEqual(json(proto(named)?.proto), named, 'a prototype keeps the build it last started');
+for (const build of [7, '', 'x'.repeat(65)])
+  assert.ok(!('build' in json(proto({ ...named, build })?.proto)), `a build of ${JSON.stringify(build)} is dropped`);
 for (const dir of ['../escape', 'prototypes/../../etc', 'prototypes/a/b', 'src/app', 'prototypes/Checkout', '', 7]) {
   const b = json(proto({ dir, stack: 'react' }));
   assert.ok(!('kind' in b) && !('proto' in b), `a code folder of ${JSON.stringify(dir)} makes it a plain board`);
