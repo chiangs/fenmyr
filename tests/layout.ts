@@ -27,6 +27,20 @@ const state = () =>
       slot: rect('[data-p="canvas"] .pr-body'),
     };
   });
+// the bottom bar and the board's pane, in window pixels
+const barIn = () =>
+  page.evaluate(() => {
+    const edges = (el: Element | null | undefined) => {
+      const r = el?.getBoundingClientRect();
+      return r ? { l: Math.round(r.left), r: Math.round(r.right), b: Math.round(r.bottom) } : null;
+    };
+    const dock = document.getElementById('dock');
+    return {
+      bar: edges(dock),
+      pane: edges(document.querySelector('[data-p="canvas"] .pr-body')),
+      shown: !!dock?.checkVisibility(),
+    };
+  });
 const resize = (w: number) =>
   l.app.evaluate(({ BrowserWindow }, w) => BrowserWindow.getAllWindows()[0]?.setSize(w, 900), w);
 
@@ -88,6 +102,11 @@ try {
   );
   assert.ok(s.proto && s.docked === 'prChat' && s.chatOpen, 'a prototype board docks Myra’s chat open on the left');
   assert.deepStrictEqual(s.folded, [], 'at 1440 px every column shows');
+  const { bar: dock, pane } = await barIn();
+  assert.ok(dock && pane, 'the bottom bar and the board are up');
+  assert.ok(dock.l >= pane.l && dock.r <= pane.r, 'the bottom bar sits inside the board');
+  assert.ok(Math.abs(dock.l - pane.l - (pane.r - dock.r)) <= 1, 'in its middle');
+  assert.strictEqual(dock.b, pane.b - 18, '18 px over its bottom');
   assert.match(
     s.git,
     /acme\s*main\s*\d+ changes? not committed\s*No commits yet/,
@@ -266,6 +285,7 @@ try {
   await resize(1200);
   await page.waitForTimeout(500);
   assert.deepStrictEqual((await state()).folded, ['canvas'], 'a narrower window folds the canvas first');
+  assert.ok(!(await barIn()).shown, 'and the bottom bar goes with it');
   await resize(760);
   await page.waitForTimeout(500);
   assert.deepStrictEqual((await state()).folded, ['canvas', 'code'], 'then the code');
