@@ -131,7 +131,7 @@
     "button sb=del \"Delete\""
   ],
   "icon": [
-    "label 'Card'",
+    "label 'Icon'",
     "G6: button sb=tag \"Add a label\"",
     "G2: button pop=stroke \"Stroke\" { input skw ; input skn name=\"Stroke width\" ; button skc=#000000 \"#000000\" ; button skc=#ffffff \"#ffffff\" ; button skc=#71717a \"#71717a\" ; button skc=#a1a1aa \"#a1a1aa\" ; button skc=#ff5a6e \"#ff5a6e\" ; button skc=#f6b45e \"#f6b45e\" ; button skc=#f7b955 \"#f7b955\" ; button skc=#5fc795 \"#5fc795\" ; button skc=#4f9dff \"#4f9dff\" ; button skc=#9b7bff \"#9b7bff\" ; button skc=#e88a24 \"#e88a24\" ; button skwheel=1 \"Any colour\" }",
     "| hidden",
@@ -149,7 +149,7 @@
     "button sb=del \"Delete\""
   ],
   "image": [
-    "label 'Image'",
+    "label 'Picture'",
     "G2: button sb=crop \"Crop\" button sb=tag \"Add a caption\"",
     "G3: button pop=corners \"Corners\" '12' { input cornersRange ; input cornersNum ; button corners=0 '0' ; button corners=4 '4' ; button corners=8 '8' ; button corners=12 '12' [on] ; button corners=16 '16' ; button corners=24 '24' ; button corners=32 '32' ; button corners=999 'Pill' }",
     "G3: | button sb=tiltpop \"Tilt\" '0°'",
@@ -244,7 +244,7 @@
     "button sb=del \"Delete\""
   ],
   "frame": [
-    "label 'Screen'",
+    "label 'Frame'",
     "G6: button sb=tag \"Add a label\"",
     "G2: button pop=fill \"Fill\" { button bfill=none \"No fill\" ; button bfill=#ffffff \"#ffffff\" [on] ; button bfill=#f4f4f5 \"#f4f4f5\" ; button bfill=#e4e4e7 \"#e4e4e7\" ; button bfill=#a1a1aa \"#a1a1aa\" ; button bfill=#27272a \"#27272a\" ; button bfill=#ffdcd8 \"#ffdcd8\" ; button bfill=#ffe3bd \"#ffe3bd\" ; button bfill=#e0edd3 \"#e0edd3\" ; button bfill=#d9e7f3 \"#d9e7f3\" ; button bfill=#ebe1f2 \"#ebe1f2\" ; button bfill=#f1ebe2 \"#f1ebe2\" ; button bfill=#f6b45e \"#f6b45e\" ; button bfwheel=1 \"Any colour\" }",
     "G2: button pop=stroke \"Stroke\" { input skw ; input skn name=\"Stroke width\" ; button skc=#000000 \"#000000\" ; button skc=#ffffff \"#ffffff\" ; button skc=#71717a \"#71717a\" ; button skc=#a1a1aa \"#a1a1aa\" ; button skc=#ff5a6e \"#ff5a6e\" ; button skc=#f6b45e \"#f6b45e\" ; button skc=#f7b955 \"#f7b955\" ; button skc=#5fc795 \"#5fc795\" ; button skc=#4f9dff \"#4f9dff\" ; button skc=#9b7bff \"#9b7bff\" ; button skc=#e88a24 \"#e88a24\" ; button skwheel=1 \"Any colour\" ; button skd=solid 'Solid' ; button skd=dash 'Dashed' ; button skd=dot 'Dotted' ; button skd=none 'None' [on] ; input skr=dl ; input skrn=dl name=\"Dash\" ; input skr=dg ; input skrn=dg name=\"Gap\" }",

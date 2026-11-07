@@ -1,6 +1,6 @@
 // The one place facts about each kind of card live.
 type Traits = {
-  label?: string;
+  label: string;
   size?: readonly [width: number, height: number];
   wordy?: boolean; // its words can drop into a doc
   fillable?: boolean; // the selection bar offers a fill colour
@@ -27,22 +27,23 @@ const CARD_TYPES = {
   audio: { label: 'Voice memo', size: [290, 150], wordy: true, notInTemplates: true },
   video: { label: 'Video', size: [360, 246], notInTemplates: true },
   spotify: { label: 'Spotify', wordy: true, notInTemplates: true },
-  ink: { size: [10, 10], noRotate: true, noTilt: true },
+  ink: { label: 'Drawing', size: [10, 10], noRotate: true, noTilt: true },
   frame: { label: 'Frame', size: [393, 852], strokable: true, wireframe: true, noRotate: true, noTilt: true },
   section: { label: 'Section', noRotate: true, noTilt: true },
-  box: { size: [160, 100], strokable: true, wireframe: true, noTilt: true },
-  text: { size: [220, 24], strokable: true, wireframe: true, noTilt: true },
+  box: { label: 'Box', size: [160, 100], strokable: true, wireframe: true, noTilt: true },
+  text: { label: 'Text', size: [220, 24], strokable: true, wireframe: true, noTilt: true },
   icon: { label: 'Icon', size: [28, 28], strokable: true, wireframe: true, noTilt: true },
   font: { label: 'Font', size: [300, 210] },
   vnote: { label: 'Vault note', size: [300, 270], fillable: true, sized: true, notInTemplates: true },
-  path: { strokable: true },
+  path: { label: 'Pen shape', strokable: true },
 } as const satisfies Record<string, Traits>;
 
 export type CardType = keyof typeof CARD_TYPES;
 export const isCardType = (x: unknown): x is CardType => typeof x === 'string' && Object.hasOwn(CARD_TYPES, x);
 
 const DEFAULT_SIZE = [220, 140] as const;
-const traits = (type: string): Traits => (Object.hasOwn(CARD_TYPES, type) ? Reflect.get(CARD_TYPES, type) : {});
+const traits = (type: string): Partial<Traits> =>
+  Object.hasOwn(CARD_TYPES, type) ? Reflect.get(CARD_TYPES, type) : {};
 
 export const sizeOf = (type: string) => traits(type).size ?? DEFAULT_SIZE;
 export const labelOf = (type: string) => traits(type).label ?? type;

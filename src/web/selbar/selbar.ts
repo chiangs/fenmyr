@@ -1,4 +1,4 @@
-import { typesWith } from '../../shared/cardTypes.ts';
+import { labelOf, typesWith } from '../../shared/cardTypes.ts';
 import type { Card, Link } from '../../shared/model.ts';
 import { canStroke, TILTS } from '../canvas/render.ts';
 import { COLL } from '../cards/collection.ts';
@@ -42,30 +42,6 @@ import { initWireBar, wireBarHtml, wireKey } from './wireBar.ts';
 const FILLABLE = typesWith('fillable');
 
 const SEP = '<span class="sb-sep"></span>';
-
-const KIND: Record<string, string> = {
-  section: 'Section',
-  note: 'Note',
-  todo: 'Checklist',
-  title: 'Title',
-  image: 'Image',
-  link: 'Link',
-  swatch: 'Colour',
-  vnote: 'Vault note',
-  doc: 'Doc',
-  canvas: 'Canvas',
-  shape: 'Shape',
-  path: 'Pen shape',
-  stamp: 'Stamp',
-  audio: 'Voice memo',
-  video: 'Video',
-  spotify: 'Spotify',
-  ink: 'Drawing',
-  frame: 'Screen',
-  box: 'Box',
-  text: 'Text',
-  font: 'Font',
-};
 
 // the bar is rebuilt only when one of these changes on a selected card: moving and resizing don't count, but dropping
 // into a screen does, since the Wireframe panel then offers to align with it
@@ -267,10 +243,8 @@ function endHtml(cs: Card[], one: Card | null) {
 
 function cardBarHtml(cs: Card[]) {
   const one = cs.length === 1 ? (cs[0] ?? null) : null,
-    label = one
-      ? KIND[one.type === 'coll' ? '' : one.type] ||
-        (one.type === 'coll' ? (one.kanban ? 'Kanban' : 'Collection') : 'Card')
-      : `${cs.length} selected`;
+    // a kanban is a collection drawn as columns, and named for how it looks
+    label = !one ? `${cs.length} selected` : one.type === 'coll' && one.kanban ? 'Kanban' : labelOf(one.type);
   let h = `<span class="sb-label">${label}</span>`;
   if (cs.length > 1) h += arrangeHtml(cs.length);
   h += colorsHtml(cs, one);
