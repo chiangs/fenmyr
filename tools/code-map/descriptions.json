@@ -322,6 +322,7 @@
     "tests/modeBar.ts": "Drawing and find in the real app: what they do on a computer and a phone, and that they sit just above the bottom bar, which keeps its shape.",
     "tests/modeRoom.ts": "What sits around find's bar keeps clear of it: Myra's reply, chat and timer, on a short window too, and the toolbar's pickers.",
     "tests/model.ts": "Checks library and board files keep what they had and prototype fields are validated.",
+    "tests/myraBox.ts": "Myra's box in the bottom bar in the real app: where her chat opens from it, her bubble rising from it, fitting the board around the open chat, and a phone's sheet.",
     "tests/packages.ts": "Tests installing packages into a prototype and bundling them in the preview.",
     "tests/perf.ts": "Times opening, dragging, zooming and editing a 500-card board against another branch.",
     "tests/persist.ts": "Checks a saved card keeps its content and drops what only mattered while running.",

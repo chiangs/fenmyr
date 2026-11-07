@@ -45,14 +45,17 @@ await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.getElementById('timerChip')?.checkVisibility());
 await still();
 
-await check('with her chat open, the timer sits just above it', async () => {
+const middle = (e: Edges | null) => (e ? (e.l + e.r) / 2 : NaN);
+await check('with her chat open, the timer sits just above it, in the middle', async () => {
   const { timer, chat } = await boxes();
   near(timer?.b, (chat?.t ?? NaN) - 8, 'the timer’s bottom');
+  near(middle(timer), middle(chat), 'the timer’s middle');
 });
-await check('with her chat closed, the timer sits just over her box', async () => {
+await check('with her chat closed, the timer sits just over her box, in the middle', async () => {
   await setChat(false);
   const { timer, pill } = await boxes();
   near(timer?.b, (pill?.t ?? NaN) - 8, 'the timer’s bottom');
+  near(middle(timer), middle(pill), 'the timer’s middle');
 });
 
 await page.keyboard.press('Control+f');
