@@ -134,15 +134,15 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   bar.classList.remove('paused');
 }
 
-/** Holds drawing's and find's bar on the bottom bar, and lifts Myra's bubble, chat and timer over it, as they sit at
- *  its height. It is pinned to the bottom bar, not the board, so no gesture moves it. */
+/** Holds drawing's and find's bar on the bottom bar, and lifts Myra's bubble and chat and the toolbar's pickers over
+ *  it, as they sit at its height. It is pinned to the bottom bar, not the board, so no gesture moves it. */
 export function floatModeBar() {
   const bar = $('modebar'),
     ctx = toolContext(),
-    lift = ctx && !onPhone() ? `${bar.offsetHeight + GAP}px` : '0px',
-    dock = $('dock');
-  if (dock.style.getPropertyValue('--mode-h') !== lift) {
-    dock.style.setProperty('--mode-h', lift);
+    shown = ctx && !onPhone(),
+    lift = shown ? `${bar.offsetHeight + GAP}px` : '0px';
+  if (stage.style.getPropertyValue('--mode-h') !== lift) {
+    stage.style.setProperty('--mode-h', lift);
     keepPerch(); // she sits on the chat, which just moved
   }
   floatBar(bar, ctx, false);

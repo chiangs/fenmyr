@@ -411,7 +411,7 @@ html.native .home-in { padding-top: 40px; }
 .dock .tools button.on { background: var(--blush); }
 .dock .tools button.on .ic { color: var(--ink); }
 .dock .myra { position: relative; left: auto; bottom: auto; transform: none; }
-/* Myra's bubble, chat and timer rise over drawing's or find's bar by --mode-h, which float.ts sets */
+/* Myra's bubble and chat rise over drawing's or find's bar by --mode-h, which float.ts sets on the stage */
 .dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); margin: 0; width: max-content; }
 .selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
 .selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
@@ -804,7 +804,10 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .au-count { height: 34px; display: grid; place-items: center; font: 800 30px/1 var(--font); color: var(--accent-text); animation: pop .5s cubic-bezier(.2, .9, .3, 1.4); }
 
 /* ---------- Myra's chat window ---------- */
-.m-chat { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); width: 380px; height: min(520px, calc(100vh - 140px)); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink);
+/* its height leaves room above it for drawing's or find's bar, and for the timer, which sits on it while it is open */
+.myra { --chat-w: 380px; --chat-h: min(520px, calc(100vh - 140px - var(--mode-h, 0px))); }
+.myra.timing { --chat-h: min(520px, calc(100vh - 180px - var(--mode-h, 0px))); }
+.m-chat { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); width: var(--chat-w); height: var(--chat-h); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink);
   box-shadow: 0 20px 50px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(10px) scale(.97); transform-origin: 90% 100%; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2); }
 .myra.chat .m-chat { opacity: 1; pointer-events: auto; transform: none; }
 .myra.chat .m-bubble { display: none; }
@@ -2677,7 +2680,7 @@ body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
 @media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
 
 /* the timer: a small chip above Myra's pill, and her fuss when it runs out */
-.timer-chip { position: absolute; bottom: calc(100% + 8px + var(--mode-h, 0px)); left: 50%; transform: translateX(-50%); z-index: 3; height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 11px; max-width: 280px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))); font: 600 12px/1 var(--font); overflow: hidden; animation: fb-in .18s ease-out; }
+.timer-chip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 3; height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 11px; max-width: 280px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))); font: 600 12px/1 var(--font); overflow: hidden; animation: fb-in .18s ease-out; }
 .timer-chip[hidden] { display: none; }
 .timer-chip svg { flex: none; color: var(--ink-soft); } .timer-chip b { font-variant-numeric: tabular-nums; font-weight: 700; }
 .timer-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); font-weight: 500; }
@@ -2686,7 +2689,10 @@ body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
 .timer-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: var(--pink-deep, var(--dt-shadow)); transition: width 1s linear; }
 body.dark .timer-chip { background: rgb(from var(--clean-bg-2) r g b / .97); color: var(--hilite); } body.dark .timer-chip b { color: var(--hilite); }
 body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-panels.panel-dark .timer-chip { color: var(--coll-ink); }
-.dock .myra.timing .m-bubble { bottom: calc(100% + 52px + var(--mode-h, 0px)); } .myra.timing .m-chat { bottom: calc(100% + 52px + var(--mode-h, 0px)); }
+/* her reply clears the higher of the timer and drawing's or find's bar; with the chat open the timer sits on its middle,
+   clear of the right-hand panels */
+.dock .myra.timing .m-bubble { bottom: calc(100% + 12px + max(40px, var(--mode-h, 0px))); }
+body:not(.phone) .dock .myra.chat .timer-chip { left: calc(100% - var(--chat-w) / 2); bottom: calc(100% + 12px + var(--mode-h, 0px) + var(--chat-h) + 8px); }
 .m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
 .myra.partying:not(.chat) .m-pill { animation: m-party .55s ease-in-out 6; }
 .myra.partying.chat .goo-slot.perched #goo { transform-origin: 50% 100%; animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she wiggles herself; on the sprite, because rotate/scale on the slot would scale and swing her whole offset from the button */
