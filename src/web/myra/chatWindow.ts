@@ -4,20 +4,20 @@ import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
 import { renderChat } from './chatLog.ts';
+import { askHint } from './chatRules.ts';
 import { perchGoo } from './perch.ts';
 
-// ---------- Myra's chat window: click her to open it, click again (or Esc) to close ----------
+// Myra's chat window: click her box to open it, click again (or Esc) to close
 export const chatOpen = () => $('myra').classList.contains('chat');
 
-// with cards selected, the chat's hint says what "this" will mean: they go along with whatever you send
-const askHint = () =>
-  session.sel.size === 1
-    ? 'Change this… “make it say…”, “turn it mint”'
-    : session.sel.size > 1
-      ? `Change these ${session.sel.size}… “rename to step 1, 2, 3”`
-      : session.board?.kind === 'prototype'
-        ? 'Ask Myra about this prototype…'
-        : 'Ask Myra… “group these by theme”';
+// with cards selected, the hint says they go along with whatever you send
+export function renderHint() {
+  textField('mcInput').placeholder = askHint(
+    window.myraName || 'Myra',
+    session.sel.size,
+    session.board?.kind === 'prototype',
+  );
+}
 
 // a little chip above the box says which cards are selected (they go along with what you send); it follows the selection while the chat is open
 let selChipKey: string | null = null;
@@ -36,7 +36,7 @@ function renderSelChip() {
   const key = `${cs.map(c => c.id).join(',')}|${words}`;
   if (key === selChipKey) return;
   selChipKey = key;
-  textField('mcInput').placeholder = askHint();
+  renderHint();
   if (!cs.length) {
     el.hidden = true;
     el.innerHTML = '';
@@ -59,6 +59,7 @@ export function myraOpen(on: boolean) {
   if (!on && active instanceof HTMLElement && $('mChat').contains(active))
     active.blur(); /* a closed chat is also visibility:hidden, so nothing in it can keep or take the cursor */
   $('myra').classList.toggle('chat', on);
+  $('mPill').setAttribute('aria-expanded', String(on));
   if (on) {
     $('mBubble').classList.remove('on');
     renderChat();

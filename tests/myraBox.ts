@@ -1,5 +1,5 @@
-// Myra's box in the bottom bar and the chat that opens from it: her lines rising from the box, fitting the board
-// around the open chat, and a phone's sheet.
+// Myra's box in the bottom bar: one piece with the tools, her name cut short, her lines rising from it, fitting the
+// board around her open chat, and a phone's sheet.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
 import { settle } from './support/launch.ts';
@@ -21,23 +21,28 @@ const edges = (ids: string[]) =>
   }, ids);
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 const setChat = async (open: boolean) => {
-  if ((await isOpen()) !== open) await page.click('#mPill');
+  if ((await isOpen()) !== open) await page.click(open ? '#mPill' : '#mcClose');
   await page.waitForTimeout(450);
 };
 const overlaps = (a: Edges, b: Edges) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
-// fits the board to its cards, then where they all sit on screen together
-const fitAll = async () => {
-  await page.evaluate(() => window.__fenmyr.fit(window.__fenmyr.board.cards));
+// fits the board to these cards (all of them by default), then where they sit on screen together
+const fitAll = async (ids?: string[]) => {
+  await page.evaluate(ids => {
+    const M = window.__fenmyr;
+    M.fit(M.board.cards.filter(c => !ids || ids.includes(c.id)));
+  }, ids);
   await page.waitForTimeout(700);
-  return page.evaluate(() => {
-    const rs = [...document.querySelectorAll('#cards .card')].map(c => c.getBoundingClientRect());
+  return page.evaluate(ids => {
+    const rs = [...document.querySelectorAll<HTMLElement>('#cards .card')]
+      .filter(c => !ids || ids.includes(c.dataset.id ?? ''))
+      .map(c => c.getBoundingClientRect());
     return {
       l: Math.min(...rs.map(r => r.left)),
       t: Math.min(...rs.map(r => r.top)),
       r: Math.max(...rs.map(r => r.right)),
       b: Math.max(...rs.map(r => r.bottom)),
     };
-  });
+  }, ids);
 };
 
 await check('with the chat closed, her lines show in a bubble rising from her box', async () => {
@@ -71,5 +76,47 @@ await check('on a phone her chat is a sheet 8 px from both sides', async () => {
   near(mChat.l, 8, 'the sheet’s left');
   near(mChat.r, 600 - 8, 'the sheet’s right');
 });
+
+// Settings → Myra, one change, then closed again
+const inSettings = async (change: () => Promise<void>) => {
+  await page.click('#gearBtn');
+  await page.click('#setTabs [data-tab="myra"]');
+  await change();
+  await page.click('#setClose');
+  await page.waitForTimeout(300);
+};
+await check('her box is 200 px wide and one piece with the tools', async () => {
+  const { mPill, tools } = await edges(['mPill', 'tools']);
+  assert.ok(mPill && tools, 'her box and the tools are up');
+  near(mPill.l, tools.r, 'her box’s left, on the tools’ right');
+  near(mPill.r - mPill.l, 200, 'her box’s width');
+});
+
+await check('she has one box to ask her in', async () => {
+  const inputs = await page.evaluate(() => document.querySelectorAll('#myra input, #myra textarea').length);
+  assert.strictEqual(inputs, 1);
+});
+
+await check(
+  'with an 18-letter name her box keeps its width, and with a card selected the hint uses her name',
+  async () => {
+    const name = 'Bartholomew-Smithe';
+    await inSettings(() => page.fill('#myraNameIn', name));
+    await page.evaluate(() => window.__fenmyr.selectOnly(['note']));
+    const box = await page.evaluate(() => {
+      const r = document.getElementById('mPill')?.getBoundingClientRect(),
+        ask = document.querySelector('#mPill .m-ask');
+      return { w: r?.width, cut: !!ask && ask.scrollWidth > ask.clientWidth };
+    });
+    await setChat(true);
+    const hint = await page.evaluate(() => document.querySelector('textarea#mcInput')?.getAttribute('placeholder'));
+    await setChat(false);
+    await page.evaluate(() => window.__fenmyr.selectOnly([]));
+    await inSettings(() => page.fill('#myraNameIn', ''));
+    near(box.w, 200, 'her box’s width');
+    assert.ok(box.cut, 'her name is cut short in her box');
+    assert.match(hint ?? '', /^Ask Bartholomew…/, 'the hint starts with her name, cut short');
+  },
+);
 
 await done('MYRA BOX OK');

@@ -64,12 +64,12 @@ const focusedIn = () =>
     return a.closest('#home, #side, #sideR, #cards, #stampWheel')?.id || a.id || a.className;
   });
 
-await check('the tools and Myra’s box sit in one row, 18 px over the window’s bottom', async () => {
+await check('the tools and Myra’s box sit in one row, joined, 18 px over the window’s bottom', async () => {
   const b = await bar();
   assert.ok(b.tools && b.pill && b.dock, 'the bar is up');
   near(b.tools.b, b.h - 18, 'the tools’ bottom');
   near(b.pill.b, b.h - 18, 'her box’s bottom');
-  near(b.pill.l, b.tools.r + 10, 'her box’s left');
+  near(b.pill.l, b.tools.r, 'her box’s left, on the tools’ right');
 });
 await check('the bar starts at the canvas area’s left, 14 px from the left widgets', async () => {
   const b = await bar();
@@ -147,7 +147,7 @@ await check('a picture dropped on Myra’s open chat lands on the board', async 
   const before = await cardCount();
   await dropPicture('#mcList');
   await page.waitForFunction(n => window.__fenmyr.board.cards.length > n, before, { timeout: 3000 });
-  await page.click('#mPill');
+  await page.click('#mcClose');
   await page.waitForTimeout(400);
 });
 
@@ -167,7 +167,7 @@ await check('where Myra’s open chat meets a right widget, the chat is on top',
     );
     return el?.closest('#mChat') ? 'chat' : el?.closest('#sideR') ? 'widget' : 'nothing';
   });
-  await page.click('#mPill');
+  await page.click('#mcClose');
   await page.waitForTimeout(400);
   assert.strictEqual(top, 'chat');
 });
@@ -193,7 +193,7 @@ await check('the wheel over Myra’s open chat leaves the board still', async ()
   await page.mouse.wheel(0, 120);
   await page.waitForTimeout(150);
   const y = (await viewNow()).y;
-  await page.click('#mPill');
+  await page.click('#mcClose');
   await page.waitForTimeout(400);
   assert.strictEqual(y, 0);
 });
@@ -228,15 +228,17 @@ await check('what is being placed shows over the bar', async () => {
   assert.strictEqual(top, 'ghost');
 });
 
-await check('Tab reaches the tools after the left widgets, and moves on to the cards on the board', async () => {
+await check('Tab reaches the tools after the left widgets, then Myra’s box, then the cards on the board', async () => {
   await page.focus('#tools [data-add="pointer"]');
   await page.keyboard.press('Shift+Tab');
   const before = await focusedIn();
   await page.focus('#cleanBtn');
   await page.keyboard.press('Tab');
+  const box = await focusedIn();
+  await page.keyboard.press('Tab');
   const after = await focusedIn();
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
-  assert.deepStrictEqual([before, after], ['side', 'cards']);
+  assert.deepStrictEqual([before, box, after], ['side', 'mPill', 'cards']);
 });
 
 await check('with a doc open the tools and Myra’s box hide, and her chat shows over the doc', async () => {

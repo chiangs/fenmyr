@@ -256,8 +256,8 @@ async function grows(t: Smoke) {
   });
 }
 
-// the count is of lines as written: an empty box under a placeholder that wraps (her name can be 18 letters) shows
-// neither a count nor a scrollbar, and one long paragraph scrolls with the fade but no count
+// the count is of lines as written: an empty box under the placeholder (her name can be 18 letters, cut short there)
+// shows neither a count nor a scrollbar, and one long paragraph scrolls with the fade but no count
 async function counts(t: Smoke) {
   const { page } = t;
   const seen = () =>
@@ -291,7 +291,7 @@ async function counts(t: Smoke) {
   const paragraph = await seen();
   await page.fill('#mcInput', '');
   t.checkAll('chatCounts', {
-    emptyBoxNoCountNoBar: empty.wraps && empty.count === '' && empty.bar === 0,
+    emptyBoxNoCountNoBar: empty.count === '' && empty.bar === 0,
     paragraphScrollsWithoutACount: paragraph.wraps && paragraph.fade && paragraph.count === '',
   });
 }

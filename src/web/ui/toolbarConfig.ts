@@ -87,7 +87,7 @@ function fitToolbar() {
   });
   more.hidden = true;
   const m = $('myra'),
-    others = m?.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.getBoundingClientRect().width + 10 : 0; // only Myra's pill shares the row
+    others = m?.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.getBoundingClientRect().width : 0; // only Myra's box shares the row
   const bar = $('dock').getBoundingClientRect(),
     widgets = htmlIn($('sideR'), ':scope > *')
       .filter(w => w.checkVisibility())
