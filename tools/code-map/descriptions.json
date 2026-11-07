@@ -285,6 +285,7 @@
     "src/web/wireframe/tilt.ts": "The tilt popover, frames and snapping of wireframe pieces.",
     "src/web/wireframe/wireframes.ts": "Wireframes: screens, boxes and text, devices, fonts and snapping.",
     "tests/barKeyboard.ts": "Every selection bar from the keyboard: F10 in, Tab, Space and Enter, Escape out, icon names that survive a hover, and keys left to the board after a click.",
+    "tests/barRoom.ts": "The selection bar where room runs short: dropdowns near the top of the view, presses on the bar, and a 900 px window.",
     "tests/barPlace.ts": "Checks where the context bar goes, worked out without the app: above, flipped, stuck, slid and beside a line.",
     "tests/build.ts": "Tests Myra building a prototype through a stand-in Claude Code, with Undo.",
     "tests/capture.ts": "Quick capture in the real app: Enter to Unsorted, Shift+Enter to write on the board first, and the edge cases.",

@@ -134,7 +134,7 @@ export function init43() {
       stopPlacing();
       return;
     }
-    if (closestTo(e.target, '.dock, .side, .tray, .top, .home, .docview, .cpop, .settings')) return;
+    if (closestTo(e.target, '.dock, .selbar, .side, .tray, .top, .home, .docview, .cpop, .settings')) return;
     e.preventDefault();
     // the pointer may be captured, so look at what's really under it
     const under = document.elementFromPoint(e.clientX, e.clientY);
