@@ -1,5 +1,5 @@
-// What sits around find's bar keeps clear of it: Myra's reply and chat rise over it and stay inside a short window,
-// her timer keeps to its place (over her box, or over her open chat), and the toolbar's pickers open above it.
+// What sits around find's bar keeps clear of it: Myra's reply rises over it, her chat keeps clear of it and inside a
+// short window, her timer keeps to its place (over her box, or over her open chat), and the toolbar's pickers open above it.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
 import { settle } from './support/launch.ts';
@@ -28,7 +28,7 @@ const still = async () => {
 };
 const chatOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 const setChat = async (open: boolean) => {
-  if ((await chatOpen()) !== open) await page.click('#mPill');
+  if ((await chatOpen()) !== open) await page.click(open ? '#mPill' : '#mcClose');
   await still();
 };
 const setHeight = async (h: number) => {
@@ -70,12 +70,16 @@ await check('with find up and her chat closed, the timer stays over her box and 
   assert.ok(bubble && timer && find, 'her reply, the timer and the find bar are up');
   near(bubble.b, Math.min(timer.t, find.t) - 12, 'her reply’s bottom');
 });
-await check('with find up and her chat open, the chat clears the bar and the timer sits on the chat', async () => {
-  await setChat(true);
-  const { timer, chat, find } = await boxes();
-  near(chat?.b, (find?.t ?? NaN) - 12, 'the chat’s bottom');
-  near(timer?.b, (chat?.t ?? NaN) - 8, 'the timer’s bottom');
-});
+await check(
+  'with find up and her chat open, the chat and find’s bar keep clear of each other, and the timer sits on the chat',
+  async () => {
+    await setChat(true);
+    const { timer, chat, find } = await boxes();
+    assert.ok(chat && find, 'her chat and the find bar are up');
+    assert.ok(!overlaps(chat, find), `the chat ${JSON.stringify(chat)} meets the find bar ${JSON.stringify(find)}`);
+    near(timer?.b, chat.t - 8, 'the timer’s bottom');
+  },
+);
 for (const timing of [true, false]) {
   if (!timing) await page.click('#timerChip button');
   for (const h of [700, 640]) {
@@ -86,7 +90,7 @@ for (const timing of [true, false]) {
         const { chat, timer, find } = await boxes();
         assert.ok(chat && find, 'her chat and the find bar are up');
         assert.ok(chat.t >= 8, `her chat starts at ${chat.t}`);
-        assert.ok(chat.b <= find.t - 12, `her chat ends at ${chat.b}, over the find bar at ${find.t}`);
+        assert.ok(!overlaps(chat, find), `her chat ${JSON.stringify(chat)} meets the find bar ${JSON.stringify(find)}`);
         if (timing) assert.ok(timer && timer.t >= 8, `the timer starts at ${timer?.t}`);
       },
     );
@@ -132,12 +136,13 @@ await check('with a doc open, find’s hidden bar does not lift her chat', async
   await page.locator('.card[data-id="doc"]').dblclick();
   await page.waitForFunction(() => document.getElementById('stage')?.classList.contains('doc-open'));
   await still();
-  // the chat is placed from her box's top, whether or not it is open
-  const gap = await page.evaluate(() => {
-    const chat = document.getElementById('mChat');
-    return chat ? -(chat.offsetTop + chat.offsetHeight) : NaN;
-  });
-  assert.strictEqual(gap, 12, 'her chat would sit 12 px over her box');
+  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
+  await page.keyboard.press('m');
+  await still();
+  const [chat, bar] = await page.evaluate(() =>
+    ['mChat', 'dock'].map(id => document.getElementById(id)?.getBoundingClientRect().bottom),
+  );
+  near(chat, bar ?? NaN, 'her chat’s bottom, on the bottom bar’s');
 });
 
 await done('MODE ROOM OK');

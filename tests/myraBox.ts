@@ -1,5 +1,5 @@
-// Myra's box in the bottom bar: one piece with the tools, her name cut short, her lines rising from it, fitting the
-// board around her open chat, and a phone's sheet.
+// Myra's box in the bottom bar and the chat that opens from it: joined to the tools or wide above the bar, her lines
+// rising from the box, her name cut short, fitting the board around the chat, and a phone's sheet.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
 import { settle } from './support/launch.ts';
@@ -95,6 +95,35 @@ await check('her box is 200 px wide and one piece with the tools', async () => {
 await check('she has one box to ask her in', async () => {
   const inputs = await page.evaluate(() => document.querySelectorAll('#myra input, #myra textarea').length);
   assert.strictEqual(inputs, 1);
+});
+
+await check('at 1440 px her chat opens joined to the tools, over her box, and the tools still respond', async () => {
+  await setChat(true);
+  const { mChat, mPill, dock } = await edges(['mChat', 'mPill', 'dock']);
+  await page.click('#tools [data-add="note"]');
+  const after = await page.evaluate(() => ({
+    note: !!document.querySelector('#tools [data-add="note"]')?.classList.contains('on'),
+    open: !!document.getElementById('myra')?.classList.contains('chat'),
+  }));
+  await page.keyboard.press('Escape');
+  await setChat(false);
+  assert.ok(mChat && mPill && dock, 'her chat, her box and the bar are up');
+  near(mChat.l, mPill.l, 'the chat’s left, on her box’s');
+  near(mChat.b, dock.b, 'the chat’s bottom, on the bar’s');
+  near(mChat.r, Math.min(mPill.l + 400, 1440 - 14), 'the chat’s right');
+  assert.deepStrictEqual(after, { note: true, open: true }, 'the Note tool turns on, and the chat stays open');
+});
+
+await check('with under 320 px right of the tools her chat opens wide, above the bar', async () => {
+  await size(1100);
+  await setChat(true);
+  const { mChat, dock } = await edges(['mChat', 'dock']);
+  await setChat(false);
+  await size(1440);
+  assert.ok(mChat && dock, 'her chat and the bar are up');
+  near(mChat.l, dock.l, 'the chat’s left, on the bar’s');
+  near(mChat.r, 1100 - 14, 'the chat’s right');
+  near(mChat.b, dock.t - 12, 'the chat’s bottom');
 });
 
 await check(

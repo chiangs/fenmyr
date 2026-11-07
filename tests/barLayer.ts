@@ -50,7 +50,7 @@ const view = async () => {
 };
 const chatOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 const setChat = async (open: boolean) => {
-  if ((await chatOpen()) !== open) await page.click('#mPill');
+  if ((await chatOpen()) !== open) await page.click(open ? '#mPill' : '#mcClose');
   await still();
 };
 const closeAll = async () => {
@@ -89,7 +89,8 @@ const check = async (name: string, run: () => Promise<void>) => {
   await page.mouse.up();
 };
 
-await size(1440, 900);
+// at 1350 px every tool shows and Myra's chat opens wide, over the bar, where the pickers open
+await size(1350, 900);
 await view();
 for (const [tool, picker] of [
   ['tpl', '#tplPick'],
@@ -108,6 +109,12 @@ for (const [tool, picker] of [
   });
 }
 await check('with Myra’s chat open, a colour card’s wheel opens over it', async () => {
+  // the colour card just over the top left of her chat, joined to the tools at 1440 px
+  await size(1440, 900);
+  await page.evaluate(() => {
+    Object.assign(window.__fenmyr.view, { x: 540, y: 0, z: 1 });
+    window.__fenmyr.applyView();
+  });
   await setChat(true);
   await page.locator('.card[data-id="sw"]').dblclick();
   await still();
@@ -116,7 +123,7 @@ await check('with Myra’s chat open, a colour card’s wheel opens over it', as
   assert.strictEqual(top, '#cpop');
 });
 await check('on a short window, quick capture opens over Myra’s open chat', async () => {
-  await size(1440, 640);
+  await size(1350, 640);
   await setChat(true);
   await page.keyboard.press('Control+k');
   await still();

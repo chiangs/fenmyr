@@ -93,7 +93,7 @@ export function init23() {
     if (files.length) {
       const ed = session.editing && closestTo(e.target, '.card.editing') ? byId(session.editing) : null;
       if (ed?.type === 'note') pictureForNote(ed, files);
-      else addImages(files, w, overTray(e));
+      else addImages(files, w, !closestTo(e.target, '#dock') && overTray(e)); // Myra's chat can cover Unsorted
       return;
     }
     const u = dt.getData('text/uri-list') || dt.getData('text/plain');

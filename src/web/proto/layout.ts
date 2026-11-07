@@ -187,14 +187,14 @@ function place() {
   placeStage();
 }
 
-// Myra's chat moves into the left column on a prototype board, and back under her button everywhere else.
-// Her pixel-art self sits in the chat's header there, where the chat icon was; her button in the toolbar is hidden.
+// Myra's chat moves into the left column on a prototype board, and back to her box everywhere else.
+// Her pixel-art self sits in the chat's header there, on the spot she perches on elsewhere; her box is hidden.
 function dockChat(on: boolean) {
   const chat = $('mChat'),
     home = on ? $('prChat') : $('myra');
   if (chat.parentElement !== home) home.prepend(chat);
   const slot = $('gooSlot'),
-    spot = on ? chat.querySelector('.mc-head') : $('mPill');
+    spot = on ? $('mcPerch') : $('mPill');
   if (spot && slot.parentElement !== spot) {
     slot.classList.remove('perched');
     slot.style.transform = '';

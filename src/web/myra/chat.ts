@@ -219,7 +219,7 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
   }
 }
 export function init31() {
-  // ---------- with the chat open she perches on the top left of the input box (under her latest reply), and hops back to her button when it closes ----------
+  // with the chat open she perches at the start of its header, and hops back to her box when it closes
   initPerch();
 
   $('mPill').onclick = () => {
