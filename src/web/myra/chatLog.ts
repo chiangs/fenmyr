@@ -5,10 +5,10 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
-// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
 import { type Act, actView, storedOf } from './acts.ts';
 import { ask } from './chat.ts';
 
+// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
 const CHATS_KEPT = 10;
 
 // A prototype board always keeps its chat, whatever Settings says. It's the record of how the prototype was built.
