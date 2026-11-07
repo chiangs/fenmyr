@@ -14,6 +14,7 @@ import {
   closeWait,
   draftLabel,
   type Geometry,
+  type ModeBar,
   type Placement,
   placeChat,
   type Rect,
@@ -57,13 +58,22 @@ const HEIGHT_KEY = 'fenmyr:chatH';
 // what the top-edge grip set; placeChat fits it to the window
 let height: number | null = null;
 
+let mode: ModeBar | null = null;
+
+/** Drawing's or find's bar came up, went, or changed: the chat places itself around it again. */
+export function setModeBar(m: ModeBar | null) {
+  if (m?.lift === mode?.lift && m?.l === mode?.l && m?.w === mode?.w) return;
+  mode = m;
+  relayout();
+}
+
 function measure(): Geometry {
   const bar = $('dock').getBoundingClientRect();
   return {
     view: { w: innerWidth, h: innerHeight },
     bar: { l: bar.left, t: bar.top, r: bar.right, b: bar.bottom },
     box: boxRect(),
-    modeLift: parseFloat(document.body.style.getPropertyValue('--mode-h')) || 0,
+    mode,
     timer: !$('timerChip').hidden,
     height,
     where: whereNow(),

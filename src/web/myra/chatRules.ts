@@ -4,14 +4,18 @@
 /** Window pixels. */
 export type Rect = { l: number; t: number; r: number; b: number };
 
+/** How far drawing's or find's bar lifts what sits at its height (its height and gap), the leftmost it can sit, and
+ *  its width. */
+export type ModeBar = { lift: number; l: number; w: number };
+
 /** What chatWindow measures before placing the chat. */
 export type Geometry = {
   view: { w: number; h: number };
   /** The bottom bar: the tools, then her box. */
   bar: Rect;
   box: Rect;
-  /** Drawing's or find's bar over the bottom bar, with its gap, or 0. */
-  modeLift: number;
+  /** Drawing's or find's bar, when it is up over the bottom bar. */
+  mode: ModeBar | null;
   /** A timer chip shows, and sits above the open chat. */
   timer: boolean;
   /** The height dragged at the chat's top edge, or null for the usual 560. */
@@ -22,7 +26,8 @@ export type Geometry = {
 export type Placement =
   /** Left edge on her box's left, which is the tools' right edge, bottom on the bar's bottom: it covers her box. */
   | { kind: 'joined'; chat: Rect }
-  /** Too little room right of the tools: from the bar's left to the window's right, above the bar. */
+  /** Too little room right of the tools, or drawing's or find's bar would reach under a joined chat: from the bar's
+   *  left to the window's right, above the bar and that bar. */
   | { kind: 'wide'; chat: Rect }
   /** A phone's sheet, placed by CSS. */
   | { kind: 'sheet' }
@@ -30,6 +35,9 @@ export type Placement =
   | { kind: 'docked' };
 
 const CHAT = { w: 400, h: 560, minW: 320, minH: 240, inset: 14, gap: 12, top: 60, edge: 8, chip: 40 };
+
+/** How far the tools keep from the window's right on a computer: her box and the narrowest joined chat over it. */
+export const JOIN_RESERVE = CHAT.minW + CHAT.inset;
 
 export function placeChat(g: Geometry): Placement {
   switch (g.where) {
@@ -46,8 +54,9 @@ export function placeChat(g: Geometry): Placement {
   }
   const right = g.view.w - CHAT.inset,
     room = right - g.box.l,
-    joined = room >= CHAT.minW,
-    b = joined ? g.bar.b : g.bar.t - CHAT.gap - g.modeLift,
+    modeClear = !g.mode || g.mode.l + g.mode.w <= g.box.l - CHAT.gap,
+    joined = room >= CHAT.minW && modeClear,
+    b = joined ? g.bar.b : g.bar.t - CHAT.gap - (g.mode?.lift ?? 0),
     chip = g.timer ? CHAT.chip : 0,
     h = Math.min(Math.max(CHAT.minH, Math.min(g.height ?? CHAT.h, b - CHAT.top - chip)), b - CHAT.edge - chip),
     l = joined ? g.box.l : g.bar.l,
