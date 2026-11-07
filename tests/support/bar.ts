@@ -26,6 +26,8 @@ const board = {
     at('hb', 'note', 500, 600, 120, 80, { name: '', text: 'b' }),
     at('va', 'note', 900, 500, 120, 80, { name: '', text: 'c' }),
     at('vb', 'note', 900, 1000, 120, 80, { name: '', text: 'd' }),
+    at('s1', 'shape', 1600, 0, 100, 100, { shape: 'rect' }),
+    at('s2', 'shape', 1800, 0, 100, 100, { shape: 'rect' }),
   ],
   links: [
     { id: 'h', a: 'ha', b: 'hb', bend: 0 },

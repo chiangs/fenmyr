@@ -36,7 +36,7 @@ export function syncPair(target: EventTarget | null, rangeAttr: string, numAttr:
 export const pop = (id: string, trig: string, body: string, tip: string) =>
   `<span class="sb-popw" data-popw="${id}"><button class="sb-poptrig" data-pop="${id}" title="${tip}">${trig}</button><div class="sb-pop sb-pop-${id}">${body}</div></span>`;
 
-// a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first)
+// a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first, 0 last)
 export const G = (fold: number, html: string) => `<span class="sb-g" data-fold="${fold}">${html}</span>`;
 
 export const btn = (a: string, icon: string, tip: string, on?: boolean, disabled?: boolean) => {
@@ -87,25 +87,34 @@ export const rebuildBar = () => {
   $('selbar').dataset.key = '';
 };
 
-// when the bar runs out of room (a narrow window, or bigger icons), groups move into the ··· menu, least important first
+// the ··· menu that groups fold into, hidden while it holds none
+export const moreHtml = () => {
+  const more = pop('more', Icon('more', { cls: 'sb-l24' }), '<div class="sb-morebody"></div>', 'More');
+  return `<span class="sb-sep sb-moresep"></span>${more}`;
+};
+
+// When the bar runs out of room (a narrow window, or bigger icons), groups move into the ··· menu, least important
+// first, and then the label goes. The side panels paint over the board, so a bar wider than the room between them
+// would lose its last buttons under one.
 export function foldSelbar(bar: HTMLElement, room: number) {
   const body = bar.querySelector('.sb-morebody'),
     wrap = htmlIn(bar, '[data-popw="more"]')[0],
-    sep = htmlIn(bar, '.sb-moresep')[0];
-  if (!body || !wrap || !sep) return;
-  const groups = htmlIn(bar, '.sb-g')
-    .filter(g => +(g.dataset.fold ?? 0) > 0)
-    .sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0)); // 0 = never folds
-  for (const g of groups) {
-    if (bar.scrollWidth <= room) break;
-    htmlIn(g, ':scope > .sb-sep').forEach(x => {
-      x.remove();
-    });
-    body.appendChild(g);
+    sep = htmlIn(bar, '.sb-moresep')[0],
+    label = oneIn(bar, ':scope > .sb-label');
+  if (body && wrap && sep) {
+    const groups = htmlIn(bar, '.sb-g').sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0));
+    for (const g of groups) {
+      if (bar.scrollWidth <= room) break;
+      htmlIn(g, ':scope > .sb-sep').forEach(x => {
+        x.remove();
+      });
+      body.appendChild(g);
+    }
+    const empty = !body.children.length;
+    wrap.hidden = empty;
+    sep.hidden = empty;
   }
-  const empty = !body.children.length;
-  wrap.hidden = empty;
-  sep.hidden = empty;
+  if (label) label.hidden = bar.scrollWidth > room;
 }
 
 // pixel-snap: nudge each toolbar icon by the fraction of a screen pixel it sits off-grid, so its lines stay razor sharp

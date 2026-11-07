@@ -126,7 +126,7 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
 export function barRoom() {
   if (!onPhone()) {
     const f = readFrame();
-    return Math.max(260, f.r - f.l);
+    return f.r - f.l;
   }
   const s = stage.getBoundingClientRect(),
     m = document.getElementById('mPill')?.getBoundingClientRect();

@@ -22,6 +22,7 @@ import {
   initIcons,
   initPops,
   initTips,
+  moreHtml,
   pop,
   snapSoon,
 } from './barKit.ts';
@@ -166,16 +167,20 @@ function cardButtonsHtml(one: Card) {
   let h = '';
   const CARET = caret();
   if (one.type === 'swatch')
-    h +=
+    h += G(
+      2,
       btn('pick', 'color', 'Change the colour') +
-      btn('hidename', 'name', one.hideName ? 'Show the name' : 'Hide the name', !one.hideName) +
-      btn('hidehex', 'hex', one.hideHex ? 'Show the hex' : 'Hide the hex', !one.hideHex);
+        btn('hidename', 'name', one.hideName ? 'Show the name' : 'Hide the name', !one.hideName) +
+        btn('hidehex', 'hex', one.hideHex ? 'Show the hex' : 'Hide the hex', !one.hideHex),
+    );
   if (one.type === 'box' && one.img && !one.src)
     h += `<button class="sb-txt" data-fill="1" title="Fill this image spot">Fill image ✦</button>`;
   if (one.type === 'image')
-    h +=
+    h += G(
+      2,
       btn('crop', 'crop', 'Crop') +
-      btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText);
+        btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText),
+    );
   else if (!['coll', 'swatch', 'stamp', 'ink'].includes(one.type))
     h += G(6, btn('tag', 'tag', one.tagText ? 'Remove the label' : 'Add a label', !!one.tagText));
   if (one.type === 'note') {
@@ -183,25 +188,31 @@ function cardButtonsHtml(one: Card) {
       count = n ? `<b>${n}</b>` : '',
       tags = ICON.tags ?? '',
       editor = tagEditor(one);
-    h += pop('tags', `${tags}${count}${CARET}`, `<div class="sb-tags" data-for="${one.id}">${editor}</div>`, 'Tags');
+    h += G(
+      2,
+      pop('tags', `${tags}${count}${CARET}`, `<div class="sb-tags" data-for="${one.id}">${editor}</div>`, 'Tags'),
+    );
   }
   if (hasDue(one)) {
     const cal = Icon('calendar'),
       set = one.due ? '<b>•</b>' : '',
       day = esc((one.due || '').slice(0, 10)),
       time = esc((one.due || '').slice(11));
-    h += pop(
-      'due',
-      `${cal}${set}${CARET}`,
-      `<div class="sb-due" data-for="${one.id}"><div class="sd-row"><label><span>Date</span><input type="date" data-due-d value="${day}"></label><label><span>Time</span><input type="time" data-due-t value="${time}"></label></div><div class="sd-chips"><button data-due-q="0">Today</button><button data-due-q="1">Tomorrow</button><button data-due-q="7">Next week</button><button data-due-clear>Clear</button></div></div>`,
-      'Due date',
+    h += G(
+      2,
+      pop(
+        'due',
+        `${cal}${set}${CARET}`,
+        `<div class="sb-due" data-for="${one.id}"><div class="sd-row"><label><span>Date</span><input type="date" data-due-d value="${day}"></label><label><span>Time</span><input type="time" data-due-t value="${time}"></label></div><div class="sd-chips"><button data-due-q="0">Today</button><button data-due-q="1">Tomorrow</button><button data-due-q="7">Next week</button><button data-due-clear>Clear</button></div></div>`,
+        'Due date',
+      ),
     );
   }
   if (one.type === 'doc') h += btn('open', 'open', 'Open the doc');
   if (one.type === 'vnote') h += btn('vnflip', 'flip', 'Flip the card') + btn('vnopen', 'open', 'Open in Obsidian');
   if (one.type === 'canvas') h += btn('open', 'open', 'Open this canvas');
   if (one.type === 'link' && one.url)
-    h += btn('visit', 'open', 'Open the link') + btn('relink', 'link', 'Change the link');
+    h += G(2, btn('visit', 'open', 'Open the link') + btn('relink', 'link', 'Change the link'));
   if (one.type === 'spotify') h += btn('visit', 'open', 'Open in Spotify');
   if (one.type === 'shape' && one.shape === 'line') h += lineStyleHtml(one);
   if (one.type === 'shape') h += shapeFillHtml(one);
@@ -251,10 +262,7 @@ function endHtml(cs: Card[], one: Card | null) {
       label = grouped ? 'Ungroup' : 'Group';
     h += G(8, `${sep}<button class="sb-txt" data-sb="${act}" title="${tip}">${label}</button>`);
   }
-  const more = Icon('more', { cls: 'sb-l24' });
-  const morePop = pop('more', more, '<div class="sb-morebody"></div>', 'More');
-  h += `<span class="sb-sep sb-moresep"></span>${morePop}`;
-  return h + sep + btn('del', 'del', 'Delete');
+  return h + moreHtml() + sep + btn('del', 'del', 'Delete');
 }
 
 function cardBarHtml(cs: Card[]) {
@@ -303,17 +311,18 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
   renderDesign();
   keepFocus(bar, () => {
     bar.innerHTML = ctx.crop ? CROP_BAR : cardBarHtml(cs);
-    if (!ctx.crop) foldSelbar(bar, barRoom());
+    foldSelbar(bar, barRoom());
   });
   snapSoon();
 }
 
 function drawWire(bar: HTMLElement, link: Link) {
-  const key = wireKey(link);
+  const key = wireKey(link) + Math.round(innerWidth / 30);
   if (bar.dataset.key === key) return;
   bar.dataset.key = key;
   keepFocus(bar, () => {
     bar.innerHTML = wireBarHtml(link);
+    foldSelbar(bar, barRoom());
   });
 }
 

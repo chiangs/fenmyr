@@ -2,8 +2,9 @@
 // rather than to the board, and a window so narrow that the bar is wider than the room between the side panels.
 import assert from 'node:assert';
 import { openBar } from './support/bar.ts';
+import { settle } from './support/launch.ts';
 
-const { page, frames, view, select, check, done } = await openBar();
+const { l, page, frames, view, select, selectWire, check, done } = await openBar();
 const press = async (...keys: string[]) => {
   for (const k of keys) {
     await page.keyboard.press(k);
@@ -124,4 +125,36 @@ await check('with the bar held at the top, the tilt box opens below it, on scree
   await press('Escape');
 });
 
+// Every control on the bar is what a click reaches at its middle and near both its ends, not a side panel over it.
+const reachable = () =>
+  page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('#selbar button, #selbar .sb-tilt')]
+      .filter(b => b.checkVisibility() && !b.closest('.sb-pop'))
+      .filter(b => {
+        const r = b.getBoundingClientRect(),
+          y = r.top + r.height / 2;
+        return [r.left + 2, r.left + r.width / 2, r.right - 2].some(
+          x => !document.elementFromPoint(x, y)?.closest('#selbar'),
+        );
+      })
+      .map(b => b.dataset.sb ?? b.dataset.pop ?? b.dataset.wb ?? b.textContent?.trim()),
+  );
+
+await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(900, 800));
+await settle(l.page);
+for (const [what, ids, x] of [
+  ['three cards', ['note', 'pic', 'wf'], 300],
+  ['two shapes', ['s1', 's2'], -1300],
+] as const)
+  await check(`in a 900 px window, every control on the bar for ${what} can be clicked`, async () => {
+    await view(x, 300);
+    await select([...ids]);
+    assert.deepStrictEqual(await reachable(), [], 'none is under a side panel');
+  });
+await check('in a 900 px window, every control on a connector’s bar can be clicked', async () => {
+  await view(300, -300);
+  await selectWire('h');
+  assert.deepStrictEqual(await reachable(), [], 'none is under a side panel');
+  await press('Escape');
+});
 await done('BAR ROOM OK');
