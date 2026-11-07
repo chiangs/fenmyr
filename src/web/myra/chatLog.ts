@@ -1,4 +1,4 @@
-import type { ChatMsg } from '../../shared/chat.ts';
+import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
@@ -108,28 +108,31 @@ const IDEAS = [
 // on a prototype board she starts from the wireframes and notes the person brings
 const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
 
-// The buttons a row shows now, each with the action it came from. A click takes the row away, also from the message,
-// so a used button doesn't come back when the chat opens again; an action that shows nothing now stays.
+// A used button doesn't come back when the chat opens again: a click takes it off the message. Next steps are one
+// choice of what to ask next, so asking one takes the others with it.
+function spend(m: ChatMsg, used: ChatAction) {
+  if (!m.acts) return;
+  const left = m.acts.filter(a => a !== used && !(used.kind === 'next' && a.kind === 'next'));
+  if (left.length) m.acts = left;
+  else delete m.acts;
+  if (chatKeep() === 'board') save();
+}
+
+// The buttons a row shows now. An action that shows nothing now stays on the message.
 export function actsRow(m: ChatMsg | undefined, acts: readonly Act[]) {
-  const shown = acts.flatMap(a => {
+  return acts.flatMap(a => {
     const view = actView(a);
-    return view ? [{ a, view }] : [];
+    if (!view) return [];
+    return [
+      {
+        ...view,
+        run: () => {
+          if (m && 'kind' in a) spend(m, a);
+          return view.run();
+        },
+      },
+    ];
   });
-  const used = () => {
-    if (!m?.acts) return;
-    const left = m.acts.filter(a => !shown.some(s => s.a === a));
-    if (left.length === m.acts.length) return;
-    if (left.length) m.acts = left;
-    else delete m.acts;
-    if (chatKeep() === 'board') save();
-  };
-  return shown.map(({ view }) => ({
-    ...view,
-    run: () => {
-      used();
-      return view.run();
-    },
-  }));
 }
 
 function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {

@@ -117,6 +117,15 @@ try {
     'after two builds only the newest one’s Undo shows',
   );
 
+  await tap('Commit');
+  await until(async () => (await page.textContent('#mcList'))?.includes('Message: “Second build”') ?? false, 'asks');
+  await tap('Not now');
+  await reopen('pb');
+  assert.deepStrictEqual(
+    await builtRows(),
+    [['Commit'], ['Undo']],
+    'Commit then Not now keeps that build’s Undo, and only the Commit goes',
+  );
   await tap('Undo');
   await until(async () => fs.readFileSync(app, 'utf8').includes('Build 1'), 'Undo puts back the last build');
   assert.match(fs.readFileSync(app, 'utf8'), /Build 1/, 'and only the last build');
