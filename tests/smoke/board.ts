@@ -36,7 +36,7 @@ async function connectors(t: Smoke) {
         return s && typeof s === 'object' && 'wireStyle' in s ? s.wireStyle : undefined;
       },
       pathStyle = () => document.querySelector('.wires path.w')?.getAttribute('style') || '';
-    const order = [...bar.children]
+    const order = [...bar.querySelectorAll(':scope > :not(.sb-g), :scope > .sb-g > *')]
       .map(e => (e instanceof HTMLElement && e.className.includes('sb-popw') ? e.dataset.popw : e.textContent?.trim()))
       .slice(0, 5)
       .join();

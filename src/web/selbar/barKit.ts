@@ -1,8 +1,9 @@
-import { $, stage } from '../core/dom.ts';
+import { $ } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';
-import { closestTo, htmlIn } from '../ui/dom.ts';
+import { closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
+import { opensUp } from './float.ts';
 
 // the bar's icons, drawn once the icon set has loaded
 export let ICON: Record<string, string> = {};
@@ -35,7 +36,7 @@ export function syncPair(target: EventTarget | null, rangeAttr: string, numAttr:
 export const pop = (id: string, trig: string, body: string, tip: string) =>
   `<span class="sb-popw" data-popw="${id}"><button class="sb-poptrig" data-pop="${id}" title="${tip}">${trig}</button><div class="sb-pop sb-pop-${id}">${body}</div></span>`;
 
-// a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first)
+// a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first, 0 last)
 export const G = (fold: number, html: string) => `<span class="sb-g" data-fold="${fold}">${html}</span>`;
 
 export const btn = (a: string, icon: string, tip: string, on?: boolean, disabled?: boolean) => {
@@ -51,7 +52,7 @@ export const caret = () => Icon('caret-down', { cls: 'sb-caret' });
 export const pct = (v: number, min: number, max: number) =>
   `${Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100))}%`;
 
-// the bar's dropdowns: open on click (placed above the bar, never cut off), close on a pick or a click elsewhere
+// the bar's dropdowns: open on click (on the side of the bar with room), close on a pick or a click elsewhere
 export function closeSbPops() {
   const was = document.querySelector('.sb-popw.open');
   htmlIn(document, '.sb-popw.open').forEach(w => {
@@ -61,7 +62,7 @@ export function closeSbPops() {
   if (was) $('selbar').dataset.key = '';
 }
 
-// the colour wheel, opened above the bar for one of its colour settings
+// the colour wheel for one of the bar's colour settings, on the side of the bar away from the selection
 export function openBarColor(o: {
   title: string;
   hex: string;
@@ -69,13 +70,14 @@ export function openBarColor(o: {
   apply: (hex: string) => void;
   reset: () => void;
 }) {
-  const r = $('selbar').getBoundingClientRect();
+  const bar = $('selbar'),
+    r = bar.getBoundingClientRect();
   closeSbPops();
   openColor({
     tint: true,
     boardColors: true,
     fromBar: true,
-    at: { x: r.left + r.width / 2 - 140, y: r.top - 480 },
+    at: { x: r.left + r.width / 2 - 140, y: opensUp(bar, 480) ? r.top - 480 : r.bottom + 12 },
     ...o,
   });
 }
@@ -85,34 +87,34 @@ export const rebuildBar = () => {
   $('selbar').dataset.key = '';
 };
 
-// when the bar runs out of room (a narrow window, or bigger icons), groups move into the ··· menu, least important first
-export function foldSelbar(bar: HTMLElement) {
+// the ··· menu that groups fold into, hidden while it holds none
+export const moreHtml = () => {
+  const more = pop('more', Icon('more', { cls: 'sb-l24' }), '<div class="sb-morebody"></div>', 'More');
+  return `<span class="sb-sep sb-moresep"></span>${more}`;
+};
+
+// When the bar runs out of room (a narrow window, or bigger icons), groups move into the ··· menu, least important
+// first, and then the label goes. The side panels paint over the board, so a bar wider than the room between them
+// would lose its last buttons under one.
+export function foldSelbar(bar: HTMLElement, room: number) {
   const body = bar.querySelector('.sb-morebody'),
     wrap = htmlIn(bar, '[data-popw="more"]')[0],
-    sep = htmlIn(bar, '.sb-moresep')[0];
-  if (!body || !wrap || !sep) return;
-  const room = () => {
-    const s = stage.getBoundingClientRect(),
-      m = document.getElementById('mPill')?.getBoundingClientRect();
-    return Math.max(
-      260,
-      (m && m.left > s.left ? m.left - 16 : s.right - 16) -
-        Math.max(s.left + 16, s.left + (document.body.classList.contains('phone') ? 8 : 280)),
-    );
-  };
-  const groups = htmlIn(bar, '.sb-g')
-    .filter(g => +(g.dataset.fold ?? 0) > 0)
-    .sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0)); // 0 = never folds
-  for (const g of groups) {
-    if (bar.scrollWidth <= room()) break;
-    htmlIn(g, ':scope > .sb-sep').forEach(x => {
-      x.remove();
-    });
-    body.appendChild(g);
+    sep = htmlIn(bar, '.sb-moresep')[0],
+    label = oneIn(bar, ':scope > .sb-label');
+  if (body && wrap && sep) {
+    const groups = htmlIn(bar, '.sb-g').sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0));
+    for (const g of groups) {
+      if (bar.scrollWidth <= room) break;
+      htmlIn(g, ':scope > .sb-sep').forEach(x => {
+        x.remove();
+      });
+      body.appendChild(g);
+    }
+    const empty = !body.children.length;
+    wrap.hidden = empty;
+    sep.hidden = empty;
   }
-  const empty = !body.children.length;
-  wrap.hidden = empty;
-  sep.hidden = empty;
+  if (label) label.hidden = bar.scrollWidth > room;
 }
 
 // pixel-snap: nudge each toolbar icon by the fraction of a screen pixel it sits off-grid, so its lines stay razor sharp
@@ -165,35 +167,44 @@ const TIP_NAMES: Record<string, string> = {
   strike: 'Strikethrough',
 };
 
-// hover a button in the selection bar: a quick little name bubble above it (the same look as the main toolbar's)
+// hover a button in the selection bar, or reach it from the keyboard: a quick little name bubble above it (the same
+// look as the main toolbar's), or below it when the bar is at the top of the view
 export function initTips() {
   const tipEl = document.createElement('div');
   tipEl.className = 'sb-tipbub';
   document.body.appendChild(tipEl);
   let tT: ReturnType<typeof setTimeout> | undefined;
-  $('selbar').addEventListener('pointerover', e => {
-    const b = closestTo(e.target, 'button, .sb-tilt', HTMLElement);
+  const tip = (target: EventTarget | null) => {
+    const b = closestTo(target, 'button, .sb-tilt', HTMLElement);
     if (!b || b.closest('.sb-pop')) return;
     if (b.title) {
+      // our bubble instead of the slow system one; an icon keeps the name the title gave it
+      if (!b.ariaLabel && !b.textContent?.trim()) b.ariaLabel = b.title;
       b.dataset.tt = b.title;
       b.removeAttribute('title');
-    } // our bubble instead of the slow system one
+    }
     const txt =
       b.dataset.tt || TIP_NAMES[b.dataset.pop ?? ''] || b.getAttribute('aria-label') || TIP_NAMES[b.dataset.ts ?? ''];
     if (!txt || b.closest('.sb-popw.open')) return;
     clearTimeout(tT);
     tT = setTimeout(() => {
-      const r = b.getBoundingClientRect();
+      const r = b.getBoundingClientRect(),
+        above = r.top - tipEl.offsetHeight - 10;
       tipEl.textContent = txt;
       tipEl.classList.add('on');
       tipEl.style.left = `${Math.max(8, Math.min(innerWidth - tipEl.offsetWidth - 8, r.left + r.width / 2 - tipEl.offsetWidth / 2))}px`;
-      tipEl.style.top = `${r.top - tipEl.offsetHeight - 10}px`;
+      tipEl.style.top = `${above < 8 ? r.bottom + 10 : above}px`;
     }, 250);
-  });
+  };
   const hide = () => {
     clearTimeout(tT);
     tipEl.classList.remove('on');
   };
+  $('selbar').addEventListener('pointerover', e => tip(e.target));
+  $('selbar').addEventListener('focusin', e => {
+    if (e.target instanceof Element && e.target.matches(':focus-visible')) tip(e.target);
+  });
+  $('selbar').addEventListener('focusout', hide);
   $('selbar').addEventListener('pointerout', e => {
     const to = e.relatedTarget instanceof Element ? e.relatedTarget : null;
     if (!to?.closest('#selbar') || !to.closest('button, .sb-tilt')) hide();
@@ -209,10 +220,13 @@ export function initPops() {
   addEventListener(
     'keydown',
     e => {
-      if (e.key === 'Escape' && document.querySelector('.sb-popw.open')) {
-        closeSbPops();
-        e.stopPropagation();
-      }
+      const open = document.querySelector('.sb-popw.open');
+      if (e.key !== 'Escape' || !open) return;
+      // focus inside the closing dropdown goes back to the button that opened it, not to the page
+      const trigger = open.contains(document.activeElement) ? oneIn(open, ':scope > [data-pop]') : null;
+      closeSbPops();
+      trigger?.focus();
+      e.stopPropagation();
     },
     true,
   );
@@ -227,7 +241,11 @@ export function initPops() {
       htmlIn(document, '.sb-popw.open').forEach(x => {
         if (x === w || !x.contains(w)) x.classList.remove('open');
       }); // a dropdown inside the ··· menu keeps the menu open
-      if (!was) w.classList.add('open');
+      if (was) return;
+      w.classList.add('open');
+      // a dropdown inside the ··· menu opens to its side
+      const p = oneIn(w, ':scope > .sb-pop');
+      if (p && !w.closest('.sb-morebody')) w.classList.toggle('down', !opensUp($('selbar'), p.offsetHeight + 14));
     },
     true,
   );

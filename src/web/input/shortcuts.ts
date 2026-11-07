@@ -29,6 +29,7 @@ import { toPointer } from '../ui/toolbar.ts';
 import { pickWF } from '../wireframe/designPanel.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { groupSel, restack } from '../wireframe/stack.ts';
+import { initKeyed, keyedButton } from './keyed.ts';
 
 let CLEAN_EL: Element[] = [];
 
@@ -67,7 +68,10 @@ export function init20() {
     $('cleanBack').addEventListener(t, e => e.stopPropagation());
   });
 
+  initKeyed();
   addEventListener('keydown', e => {
+    // Space and Enter press a button the keyboard is on, so Enter on the crop bar's Cancel cancels
+    if ((e.key === ' ' || e.key === 'Enter') && !e.metaKey && !e.ctrlKey && !e.altKey && keyedButton(e.target)) return;
     const typing = isTyping(e.target);
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();

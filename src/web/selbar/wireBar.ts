@@ -5,7 +5,7 @@ import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo } from '../ui/dom.ts';
-import { caret, closeSbPops, ICON, openBarColor, pop } from './barKit.ts';
+import { caret, closeSbPops, G, ICON, moreHtml, openBarColor, pop } from './barKit.ts';
 
 const WCOL = [
   ['Default (follows the theme)', ''],
@@ -66,17 +66,25 @@ export function wireBarHtml(lw: Link) {
     del = ICON.del ?? '';
   return (
     `<span class="sb-label">Connector</span>` +
-    colorTrig +
-    weightTrig +
-    sep +
-    tb('curve', 'Curved', lw.bend !== 0, 'Curved line (drag the middle dot to bend it)') +
-    tb('straight', 'Straight', lw.bend === 0, 'Straight line') +
-    sep +
-    tb('dash', 'Dashed', !!lw.dash, 'Dashed line') +
-    tb('arrow', 'Arrow', !!lw.arrow, 'Arrow at the end') +
-    tb('flip', 'Flip', false, 'Swap which end has the arrow') +
-    (lw.pa || lw.pb ? sep + tb('auto', 'Auto ends', false, 'Let the line choose where it meets each card again') : '') +
-    (lw.w || lw.color ? sep + tb('reset', 'Reset', false, 'Back to the default weight and colour') : '') +
+    G(0, colorTrig + weightTrig) +
+    G(
+      1,
+      sep +
+        tb('curve', 'Curved', lw.bend !== 0, 'Curved line (drag the middle dot to bend it)') +
+        tb('straight', 'Straight', lw.bend === 0, 'Straight line'),
+    ) +
+    G(
+      2,
+      sep +
+        tb('dash', 'Dashed', !!lw.dash, 'Dashed line') +
+        tb('arrow', 'Arrow', !!lw.arrow, 'Arrow at the end') +
+        tb('flip', 'Flip', false, 'Swap which end has the arrow'),
+    ) +
+    (lw.pa || lw.pb
+      ? G(3, sep + tb('auto', 'Auto ends', false, 'Let the line choose where it meets each card again'))
+      : '') +
+    (lw.w || lw.color ? G(3, sep + tb('reset', 'Reset', false, 'Back to the default weight and colour')) : '') +
+    moreHtml() +
     `${sep}<button class="sb-ic" data-wb="del" title="Delete">${del}</button>`
   );
 }
