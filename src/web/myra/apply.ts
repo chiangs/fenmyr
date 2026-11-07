@@ -19,23 +19,32 @@ import { namedIn, planBoard, type ViewAt } from './plan.ts';
 import { replyLine } from './replyLine.ts';
 import { reply, say } from './say.ts';
 
+const LEFT_ALONE = 'Another board is open now, so I’ve left the one you asked about as it was.';
+
 // One reply at a time, in the order asked, so two never land in the middle of each other. Applying a reply needs a
-// Turn, and only Turn.take makes one.
+// Turn, and only Turn.take makes one. `board`: the board the question was asked on, read when it was asked rather than
+// when its turn comes.
 export class Turn {
   static #tail: Promise<unknown> = Promise.resolve();
-  // the board the question was asked on
-  readonly board = session.board.id;
-  private constructor() {}
-  static take<T>(work: (turn: Turn) => Promise<T>): Promise<T> {
-    const run = Turn.#tail.then(() => work(new Turn()));
+  readonly #board: string;
+  private constructor(board: string) {
+    this.#board = board;
+  }
+  static take<T>(work: (turn: Turn) => Promise<T>, board: string): Promise<T> {
+    const run = Turn.#tail.then(() => work(new Turn(board)));
     Turn.#tail = run.catch(() => undefined);
     return run;
+  }
+  // false when another board is open, and then she says so
+  stillOpen() {
+    if (session.board.id === this.#board) return true;
+    reply(LEFT_ALONE, 9000);
+    return false;
   }
 }
 
 export type Applied = { said: string; changes: ChangeSet };
 
-const LEFT_ALONE = 'Another board is open now, so I’ve left the one you asked about as it was.';
 const PARALLEL = 3;
 
 // Everything a reply needs from outside the board: its pictures, its template's cards and the vault notes she named.
@@ -110,10 +119,7 @@ export function previewHeld(held: HeldReply): { lists: BoardLists; changes: Chan
 
 // Null when another board is open than the one the turn was asked on: then nothing is applied.
 export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | null> {
-  if (session.board.id !== turn.board) {
-    reply(LEFT_ALONE, 9000);
-    return null;
-  }
+  if (!turn.stillOpen()) return null;
   const tpl = held.template;
   if (tpl?.mode === 'new') {
     await useTemplate(tpl.template, 'new');

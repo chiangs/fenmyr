@@ -1,12 +1,26 @@
 // One reply of Myra's is one undo step however slow its pictures are, edits the person makes while she works stay
-// their own, replies wait their turn instead of landing inside each other, a preview changes nothing, and a reply
-// for a board that is no longer open is not applied.
+// their own, replies wait their turn instead of landing inside each other, a preview changes nothing, a reply for a
+// board that is no longer open is not applied, and a queued question keeps the board it was asked on.
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['slow', 'edit', 'queue', 'preview', 'changes', 'switch', 'other', 'asks'];
+const BOARDS = [
+  'slow',
+  'edit',
+  'queue',
+  'preview',
+  'changes',
+  'switch',
+  'other',
+  'asks',
+  'asked',
+  'elsewhere',
+  'chip',
+  'throws',
+  'order',
+];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'slow' });
 const { page } = l;
 
@@ -259,6 +273,38 @@ await check(
       'first asked, first reply on the board: false',
       'second asked, first reply on the board: true',
     ]);
+  },
+);
+
+await check(
+  'two questions, then another board opened while she thinks about the first: neither reply lands on it',
+  async () => {
+    await open('asked');
+    const prompts = page.evaluate(async () => {
+      const sent: string[] = [];
+      window.Fenmyr.ask = async (prompt: string) => {
+        const one = prompt.includes('first');
+        sent.push(one ? 'first' : 'second');
+        await new Promise(res => setTimeout(res, one ? 1200 : 10));
+        return JSON.stringify({ say: one ? 'One.' : 'Two.', add: [{ text: one ? 'Asked first' : 'Asked second' }] });
+      };
+      await Promise.all([window.__fenmyr.ask('the first one'), window.__fenmyr.ask('the second one')]);
+      return sent;
+    });
+    await page.waitForTimeout(300);
+    await page.evaluate(() => window.__fenmyr.openBoard('elsewhere'));
+    const sent = await prompts;
+    await page.waitForTimeout(600);
+    assert.deepStrictEqual(
+      await onBoard(page, ['Asked first', 'Asked second']),
+      [],
+      'nothing lands on the board now open',
+    );
+    const there = await page.evaluate(async () =>
+      ((await window.Fenmyr.load('asked'))?.cards ?? []).filter(c => 'text' in c && /^Asked/.test(String(c.text))),
+    );
+    assert.deepStrictEqual(there, [], 'nor on the board they were asked on');
+    assert.deepStrictEqual(sent, ['first'], 'the second question is not sent with the other board');
   },
 );
 

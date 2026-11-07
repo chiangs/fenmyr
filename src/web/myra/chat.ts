@@ -111,12 +111,13 @@ export let animAskedAt = 0;
 export let timerAskedAt = 0;
 
 // The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
-// animation). Her answer waits its turn, so it sees the board the previous reply left.
+// animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the board the
+// question was asked on.
 export function ask(q: string, confirmed = false) {
   const did = confirmed ? [] : actOnSentence(q);
   if (!chatOpen()) myraOpen(true);
   if (!confirmed) addMsg('me', q);
-  return Turn.take(turn => answer(turn, q, confirmed, did));
+  return Turn.take(turn => answer(turn, q, confirmed, did), session.board.id);
 }
 
 // what the app already did for this sentence, so her answer can go with it
@@ -137,6 +138,7 @@ function actOnSentence(q: string) {
 }
 
 async function answer(turn: Turn, q: string, confirmed: boolean, did: string[]) {
+  if (!turn.stillOpen()) return;
   if (Fenmyr.web) return webMyra(q);
   if (!settings.ai) return offlineMyra(q, 'My thinking is switched off in Settings, so I can only do simple tidying.');
   if (appState.haveClaude === false) {
