@@ -14,7 +14,6 @@ import { reply } from '../myra/say.ts';
 import { applyDim } from './focus.ts';
 import { cleanTag } from './tags.ts';
 
-// ---------- the find bar: opens just above the bottom bar when /find or /tag runs; searches as you type, steps through the matches, closes with Esc ----------
 const readingOrder = (a: Card, b: Card) => Math.round(a.y / 90) - Math.round(b.y / 90) || a.x - b.x;
 
 function findRun(keep: boolean) {
