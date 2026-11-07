@@ -160,6 +160,41 @@ await check('while drawing the Draw button is lit, and picking another tool stop
   assert.ok(!(await seen('#drawbar')), 'picking Note stops drawing');
 });
 await stopAll();
+// A and I wait on the microphone and the file dialog, so they are left out
+for (const key of ['n', 't', 'c', 'g', 'r', 'x', 'd', 'l', 'Shift+V']) {
+  await check(`${key} picks up its tool and stops drawing, as the toolbar does`, async () => {
+    await page.keyboard.press('p');
+    await frames();
+    await page.keyboard.press(key);
+    await frames();
+    assert.ok(!(await seen('#drawbar')), 'the drawing bar goes down');
+  });
+  await stopAll();
+}
+await check('after P then N, a press on the board makes no ink', async () => {
+  await page.keyboard.press('p');
+  await page.keyboard.press('n');
+  const before = await inks();
+  await page.mouse.move(600, 400);
+  await page.mouse.down();
+  await page.mouse.move(700, 440, { steps: 6 });
+  await page.mouse.up();
+  await frames();
+  assert.strictEqual(await inks(), before, 'no drawing is left');
+});
+await stopAll();
+await check('Home puts drawing down', async () => {
+  await page.keyboard.press('p');
+  await page.evaluate(() => window.__fenmyr.openHome());
+  await frames();
+  assert.ok(!(await seen('#drawbar')), 'Home has no drawing bar');
+  await page.evaluate(() => window.__fenmyr.openBoard('bar'));
+  await page.waitForFunction(() => !document.getElementById('stage')?.classList.contains('at-home'));
+  await frames();
+  assert.ok(!(await seen('#drawbar')), 'and the board comes back without it');
+});
+await stopAll();
+await view(-3000, 0);
 for (const width of [1100, width0 ?? 0]) {
   await setWidth(width);
   await check(`at ${width} px, find leaves the bottom bar as it is, and sits just above it`, async () => {
