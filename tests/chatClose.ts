@@ -1,6 +1,7 @@
 // What opens and closes Myra's chat in the real app: Esc inside it, the fold button and a click on empty board close
-// it, while clicks on cards, drags, tools and menus leave it open; focus opens it and comes back to her box; it is a
-// labelled region; its top edge resizes it and the height is remembered; a closed chat with text shows a draft line.
+// it, while clicks on cards, drags, double-clicks, tools and menus leave it open; focus on her box only focuses it, and
+// a close hands focus back to her box past the inert chat; it is a labelled region; its top edge resizes it and the
+// height is remembered; a closed chat with text shows a draft line.
 import assert from 'node:assert';
 import { openBar } from './support/bar.ts';
 
@@ -52,13 +53,27 @@ await check('a click on her box with the chat open leaves it open', async () => 
   assert.ok(await isOpen());
 });
 
-await check('a click on empty board closes the chat', async () => {
+await check('a click on empty board closes the chat once a double-click can no longer follow', async () => {
   await open();
   const at = await emptySpot();
   assert.ok(at, 'there is empty board');
   await page.mouse.click(at.x, at.y);
-  await frames();
+  await page.waitForTimeout(700);
   assert.ok(!(await isOpen()));
+});
+
+await check('a double-click on empty board makes a note and leaves the chat open', async () => {
+  await open();
+  const at = await emptySpot();
+  assert.ok(at, 'there is empty board');
+  const count = () => page.evaluate(() => window.__fenmyr.curBoard()?.cards.length ?? 0),
+    before = await count();
+  await page.mouse.dblclick(at.x, at.y);
+  await page.waitForTimeout(700);
+  const added = (await count()) - before;
+  assert.deepStrictEqual({ open: await isOpen(), added }, { open: true, added: 1 });
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(200);
 });
 
 await check('a click on a card selects it and leaves the chat open', async () => {
@@ -143,13 +158,25 @@ await check('Esc with focus outside the chat leaves it open; Esc inside closes i
   assert.strictEqual(await active(), 'mPill', 'focus is on her box');
 });
 
-await check('focus moved to her box from a tool opens the chat, caret in the input', async () => {
+await check('focus moved to her box only focuses it; Space opens the chat, caret in the input', async () => {
   await fold();
   await page.focus('#tools [data-add="note"]');
   await page.evaluate(() => document.getElementById('mPill')?.focus());
   await page.waitForTimeout(400);
+  assert.ok(!(await isOpen()), 'still closed');
+  assert.strictEqual(await page.getAttribute('#mPill', 'aria-expanded'), 'false');
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(400);
   assert.ok(await isOpen(), 'open');
   assert.strictEqual(await active(), 'mcInput');
+});
+
+await check('Shift+Tab straight after a close skips the fading chat', async () => {
+  await open();
+  await page.click('#mcClose');
+  await page.keyboard.press('Shift+Tab');
+  const inChat = await page.evaluate(() => !!document.getElementById('mChat')?.contains(document.activeElement));
+  assert.ok(!inChat, 'focus is outside the chat');
 });
 
 await check('a closed chat with text shows a draft line in her box, and keeps the text', async () => {
@@ -162,6 +189,7 @@ await check('a closed chat with text shows a draft line in her box, and keeps th
     ask: !!document.querySelector('#mPill .m-ask')?.checkVisibility(),
   }));
   assert.deepStrictEqual(box, { draft: 'Draft · 3 lines', ask: false });
+  assert.strictEqual(await page.getByRole('button', { name: 'Ask Myra, draft, 3 lines' }).count(), 1, 'its name');
   await open();
   assert.strictEqual(await page.inputValue('#mcInput'), 'one\ntwo\nthree', 'the text survives');
   await page.fill('#mcInput', '');

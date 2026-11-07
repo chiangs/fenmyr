@@ -3,14 +3,24 @@ import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { heightGrip } from '../settings/panelHeights.ts';
+import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
 import { menuOpen, watchPresses } from '../ui/popover.ts';
 import { toolInHand } from '../ui/toolbar.ts';
 import { renderChat } from './chatLog.ts';
-import { askHint, closes, draftLabel, type Geometry, type Placement, placeChat, type Rect } from './chatRules.ts';
+import {
+  askHint,
+  closes,
+  closeWait,
+  draftLabel,
+  type Geometry,
+  type Placement,
+  placeChat,
+  type Rect,
+} from './chatRules.ts';
 import { keepPerch, perchGoo } from './perch.ts';
 
-// Myra's chat window: her box, M or focus opens it; Esc inside it, the fold button or a click on empty board closes it
+// Myra's chat window: her box or M opens it; Esc inside it, the fold button or a click on empty board closes it
 export const chatOpen = () => $('myra').classList.contains('chat');
 
 const ruler = document.createElement('canvas').getContext('2d');
@@ -133,11 +143,14 @@ export function myraOpen(on: boolean, toBox = false) {
   const was = chatOpen(),
     active = document.activeElement,
     inChat = active instanceof HTMLElement && $('mChat').contains(active);
-  if (on) relayout();
+  if (on) {
+    relayout();
+    cancelClose();
+  }
   $('myra').classList.toggle('chat', on);
   $('mPill').setAttribute('aria-expanded', String(on));
-  // a closed chat is also visibility:hidden, so nothing in it can keep the cursor. Her box can take it only once the
-  // joined chat stops covering it, and it comes from the chat, so it doesn't reopen it.
+  // a closed chat is inert, so nothing in it can keep the cursor. Her box can take it only once the joined chat stops
+  // covering it.
   if (!on && inChat) {
     if (toBox) $('mPill').focus();
     if ($('mChat').contains(document.activeElement)) active.blur();
@@ -155,11 +168,14 @@ export function myraOpen(on: boolean, toBox = false) {
 
 // a closed chat that holds text says so in her box, in place of "Ask Myra…"
 function renderDraft() {
-  const label = chatOpen() ? null : draftLabel(textField('mcInput').value),
-    draft = $('mDraft');
+  const label = chatOpen() ? null : draftLabel(textField('mcInput').value, window.myraName || 'Myra'),
+    draft = $('mDraft'),
+    pill = $('mPill');
   draft.hidden = !label;
-  draft.textContent = label ?? '';
-  $('mPill').querySelector('.m-ask')?.toggleAttribute('hidden', !!label);
+  draft.textContent = label?.shown ?? '';
+  pill.querySelector('.m-ask')?.toggleAttribute('hidden', !!label);
+  if (label) pill.setAttribute('aria-label', label.spoken);
+  else pill.removeAttribute('aria-label');
 }
 
 // the top edge's grip: drag for a taller or shorter chat, remembered; double-click for the usual height
@@ -191,6 +207,12 @@ function topGrip() {
 // leaves it open
 const emptyBoard = (t: EventTarget | null) => t instanceof Element && t.matches('#stage, #world, #cards');
 
+let closing = 0;
+function cancelClose() {
+  clearTimeout(closing);
+  closing = 0;
+}
+
 function closeRules() {
   height = Number(localStorage.getItem(HEIGHT_KEY)) || null;
   topGrip();
@@ -201,13 +223,24 @@ function closeRules() {
     if (e.key !== 'Escape') return;
     // the board's Esc would deselect, and a prototype board's docked chat stays open
     e.stopPropagation();
-    if (closes({ type: 'esc', inChat: true, menu: false, composing: e.isComposing }, whereNow())) myraOpen(false, true);
+    if (closes({ type: 'esc', composing: e.isComposing }, whereNow())) myraOpen(false, true);
   });
   watchPresses(e => {
     if (!chatOpen()) return null;
-    const press = { empty: emptyBoard(e.target), busy: toolInHand() || menuOpen(), button: e.button };
+    const press = {
+      empty: emptyBoard(e.target),
+      busy: toolInHand() || menuOpen(),
+      second: !!closing,
+      button: e.button,
+    };
+    cancelClose();
     return travel => {
-      if (chatOpen() && closes({ type: 'press', ...press, travel }, whereNow())) myraOpen(false);
+      if (!chatOpen() || !closes({ type: 'press', ...press, travel }, whereNow())) return;
+      const wait = closeWait(settings.dblNote !== false) - (performance.now() - e.timeStamp);
+      closing = window.setTimeout(() => {
+        closing = 0;
+        myraOpen(false);
+      }, wait);
     };
   });
   $('mcInput').addEventListener('input', renderDraft);

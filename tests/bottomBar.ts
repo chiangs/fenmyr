@@ -229,7 +229,7 @@ await check('what is being placed shows over the bar', async () => {
 });
 
 await check(
-  'Tab reaches the tools after the left widgets, then Myra’s box, which opens her chat, then the cards on the board',
+  'Tab reaches the tools after the left widgets, then Myra’s box without opening her chat; Enter opens it, Esc returns to the box',
   async () => {
     if (await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat')))
       await page.click('#mcClose');
@@ -240,12 +240,18 @@ await check(
     await page.focus('#cleanBtn');
     await page.keyboard.press('Tab');
     const box = await focusedIn();
+    const expanded = await page.getAttribute('#mPill', 'aria-expanded');
+    await page.keyboard.press('Enter');
+    const opened = await focusedIn();
     await page.keyboard.press('Escape');
     const back = await focusedIn();
     await page.keyboard.press('Tab');
     const after = await focusedIn();
     await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
-    assert.deepStrictEqual([before, box, back, after], ['side', 'mcInput', 'mPill', 'cards']);
+    assert.deepStrictEqual(
+      [before, box, expanded, opened, back, after],
+      ['side', 'mPill', 'false', 'mcInput', 'mPill', 'cards'],
+    );
   },
 );
 

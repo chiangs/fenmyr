@@ -876,6 +876,8 @@ body.dark .mc-ideas button { border-color: #464038; }
 body:not(.phone) .mc-perch { width: 40px; height: 35px; }
 body:not(.phone, .myra-hidden) .myra.chat .mc-perch .mc-ic { visibility: hidden; }
 .m-pill { overflow: visible; }
+/* a solid ring keeps to her box's edge; Chromium's auto ring also wraps her lifted sprite, which notches its top */
+.m-pill:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
 #goo.hopping { animation: myra-hop .62s cubic-bezier(.3, .7, .4, 1) both; transform-origin: 50% 100%; }
 @keyframes myra-hop {
   0% { transform: translateY(-4px) scale(1, 1); }
@@ -2732,6 +2734,9 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 /* a closed chat can't be focused or tabbed into (its fade still plays), so M and typing work after Esc */
 .m-chat { visibility: hidden; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2), visibility 0s .3s; }
 .myra.chat .m-chat { visibility: visible; transition-delay: 0s; }
+/* a closed chat fades for a moment before it hides, and Tab must not land in it meanwhile */
+.m-chat { interactivity: inert; }
+.myra.chat .m-chat, .pr-chat .m-chat { interactivity: auto; }
 
 /* birthday inputs: month and day, nothing else */
 .bd-pick { display: inline-flex; align-items: center; gap: 6px; }

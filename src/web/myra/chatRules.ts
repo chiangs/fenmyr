@@ -90,13 +90,14 @@ export function askHint(name: string, selected: number, proto: boolean, fits: (h
 
 /** Something that might close the open chat. */
 export type CloseInput =
-  /** Esc, with focus inside the chat or not. The slash menu and an IME composing take it first. */
-  | { type: 'esc'; inChat: boolean; menu: boolean; composing: boolean }
+  /** Esc with focus inside the chat. The slash menu takes its own Esc before the chat hears it. */
+  | { type: 'esc'; composing: boolean }
   /** The fold button in the chat's header. */
   | { type: 'fold' }
   /** A press and its release. `empty`: it started on empty board, not on a card, a connector, a panel or a widget.
-   *  `busy`: a tool was in hand or a menu was open at the press. */
-  | { type: 'press'; empty: boolean; busy: boolean; travel: number; button: number };
+   *  `busy`: a tool was in hand or a menu was open at the press. `second`: it came while an earlier click's close
+   *  was still waiting, so the two make a double-click. */
+  | { type: 'press'; empty: boolean; busy: boolean; second: boolean; travel: number; button: number };
 
 // further than this between press and release is a drag, a marquee or a pan
 const CLICK_TRAVEL = 4;
@@ -107,11 +108,11 @@ export function closes(e: CloseInput, where: Geometry['where']): boolean {
   if (where === 'proto') return false;
   switch (e.type) {
     case 'esc':
-      return e.inChat && !e.menu && !e.composing;
+      return !e.composing;
     case 'fold':
       return true;
     case 'press':
-      return where === 'desk' && e.empty && !e.busy && e.button === 0 && e.travel <= CLICK_TRAVEL;
+      return where === 'desk' && e.empty && !e.busy && !e.second && e.button === 0 && e.travel <= CLICK_TRAVEL;
     default: {
       const unknown: never = e;
       return unknown;
@@ -119,18 +120,18 @@ export function closes(e: CloseInput, where: Geometry['where']): boolean {
   }
 }
 
-/** Where focus came from when it reached her box: nowhere (the window regaining focus), the chat (a close handing it
- *  back) or any other element. */
-export type FocusFrom = 'nothing' | 'chat' | 'elsewhere';
+/** How long a click on empty board waits before it closes the chat. A double-click there makes a note beside the
+ *  chat, and the second press can only cancel a close that has not happened yet; closing at once and reopening would
+ *  flash the chat and lose the caret. 500 ms is the usual longest double-click gap. With double-click notes off, it
+ *  closes at once. */
+export const closeWait = (dblNote: boolean) => (dblNote ? 500 : 0);
 
-/** Focus arriving at her box opens the chat only when you moved it there. */
-export const opensOnFocus = (from: FocusFrom) => from === 'elsewhere';
-
-/** What her box says while the closed chat holds text, or null when it holds none. Lines are counted as written,
- *  without trailing new lines. */
-export function draftLabel(text: string): string | null {
+/** What her box shows while the closed chat holds text, and the name it has then, or null when it holds none. Lines
+ *  are counted as written, without trailing new lines. */
+export function draftLabel(text: string, name: string): { shown: string; spoken: string } | null {
   const kept = text.trimEnd();
   if (!kept) return null;
-  const n = kept.split('\n').length;
-  return n === 1 ? 'Draft · 1 line' : `Draft · ${n} lines`;
+  const n = kept.split('\n').length,
+    lines = n === 1 ? '1 line' : `${n} lines`;
+  return { shown: `Draft · ${lines}`, spoken: `Ask ${name}, draft, ${lines}` };
 }

@@ -14,7 +14,6 @@ import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat, typing } from './chatLog.ts';
-import { opensOnFocus } from './chatRules.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { goo } from './goos.ts';
 import { showConnections } from './helpers.ts';
@@ -223,19 +222,13 @@ export function init31() {
   // with the chat open she perches at the start of its header, and hops back to her box when it closes
   initPerch();
 
-  // her box only opens the chat, so a click and the focus it brings can't undo each other
-  const openFromBox = () => {
+  // her box only opens the chat; the chat's own rules close it
+  $('mPill').onclick = () => {
     clearGlow();
     const was = chatOpen();
     myraOpen(true);
     if (!was) wonderIfEmpty();
   };
-  $('mPill').onclick = openFromBox;
-  $('mPill').addEventListener('focus', e => {
-    const r = e.relatedTarget,
-      from = !r ? 'nothing' : r instanceof Node && $('mChat').contains(r) ? 'chat' : 'elsewhere';
-    if (opensOnFocus(from)) openFromBox();
-  });
 
   appState.histOpen = false;
 

@@ -5,11 +5,11 @@ import {
   askHint,
   type CloseInput,
   closes,
+  closeWait,
   cutName,
   draftLabel,
   freeOf,
   type Geometry,
-  opensOnFocus,
   placeChat,
   type Rect,
 } from '../src/web/myra/chatRules.ts';
@@ -124,8 +124,6 @@ assert.strictEqual(askHint('Pip', 0, true, roomy), 'Ask Pip about this prototype
 
 const esc = (more: Partial<Extract<CloseInput, { type: 'esc' }>> = {}): CloseInput => ({
   type: 'esc',
-  inChat: true,
-  menu: false,
   composing: false,
   ...more,
 });
@@ -133,15 +131,14 @@ const click = (more: Partial<Extract<CloseInput, { type: 'press' }>> = {}): Clos
   type: 'press',
   empty: true,
   busy: false,
+  second: false,
   travel: 0,
   button: 0,
   ...more,
 });
 const rows: [CloseInput, Geometry['where'], boolean, string][] = [
   [esc(), 'desk', true, 'Esc with focus in the chat closes it'],
-  [esc({ menu: true }), 'desk', false, 'Esc with the slash menu open closes only the menu'],
   [esc({ composing: true }), 'desk', false, 'Esc while an IME composes does nothing'],
-  [esc({ inChat: false }), 'desk', false, 'Esc with focus outside the chat leaves it open'],
   [esc(), 'phone', true, 'Esc in a phone’s sheet closes it'],
   [esc(), 'proto', false, 'a prototype board’s chat stays docked open on Esc'],
   [{ type: 'fold' }, 'desk', true, 'the fold button closes it'],
@@ -151,6 +148,7 @@ const rows: [CloseInput, Geometry['where'], boolean, string][] = [
   [click({ travel: 4.5 }), 'desk', false, 'a drag, marquee or pan leaves it open'],
   [click({ empty: false }), 'desk', false, 'a click on a card, a panel or a widget leaves it open'],
   [click({ busy: true }), 'desk', false, 'a click a tool in hand or an open menu takes leaves it open'],
+  [click({ second: true }), 'desk', false, 'the second press of a double-click on empty board leaves it open'],
   [click({ button: 2 }), 'desk', false, 'a right click leaves it open'],
   [click({ button: 1 }), 'desk', false, 'a middle click leaves it open'],
   [click(), 'phone', false, 'a phone’s sheet keeps its own rules'],
@@ -158,14 +156,19 @@ const rows: [CloseInput, Geometry['where'], boolean, string][] = [
 ];
 for (const [e, where, want, why] of rows) assert.strictEqual(closes(e, where), want, why);
 
-assert.strictEqual(opensOnFocus('elsewhere'), true, 'focus moved to her box from another element opens the chat');
-assert.strictEqual(opensOnFocus('chat'), false, 'focus handed back by a close does not reopen it');
-assert.strictEqual(opensOnFocus('nothing'), false, 'the window regaining focus does not open it');
+assert.ok(closeWait(true) >= 500, 'with double-click notes on, a click waits out a double-click before closing');
+assert.strictEqual(closeWait(false), 0, 'with them off, it closes at once');
 
-assert.strictEqual(draftLabel(''), null, 'no text, no draft');
-assert.strictEqual(draftLabel('  \n '), null, 'only spaces and new lines, no draft');
-assert.strictEqual(draftLabel('hello'), 'Draft · 1 line');
-assert.strictEqual(draftLabel('one\ntwo\nthree'), 'Draft · 3 lines', 'lines as written');
-assert.strictEqual(draftLabel('one\n\nthree\n\n'), 'Draft · 3 lines', 'blank lines inside count, trailing ones do not');
+const shown = (text: string) => draftLabel(text, 'Myra')?.shown ?? null;
+assert.strictEqual(shown(''), null, 'no text, no draft');
+assert.strictEqual(shown('  \n '), null, 'only spaces and new lines, no draft');
+assert.strictEqual(shown('hello'), 'Draft · 1 line');
+assert.strictEqual(shown('one\ntwo\nthree'), 'Draft · 3 lines', 'lines as written');
+assert.strictEqual(shown('one\n\nthree\n\n'), 'Draft · 3 lines', 'blank lines inside count, trailing ones do not');
+assert.strictEqual(
+  draftLabel('one\ntwo', 'Pip')?.spoken,
+  'Ask Pip, draft, 2 lines',
+  'her box keeps "Ask Pip" in its name',
+);
 
 console.log('CHAT RULES OK');
