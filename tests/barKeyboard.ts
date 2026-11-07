@@ -135,4 +135,26 @@ await check('after a click on a connector’s Dashed, Escape lets the connector 
   assert.ok(!(await barOn()), 'the connector’s bar is gone');
 });
 
+await check('after the Pen is picked from the keyboard, Space still pans and the Pen keeps drawing', async () => {
+  await view(500, 400);
+  await select([]);
+  await page.keyboard.press('Shift');
+  await page.focus('#tools [data-add="pen"]');
+  await press('Enter');
+  await page.mouse.click(700, 600);
+  await page.mouse.click(760, 640);
+  await page.keyboard.down('Space');
+  await page.mouse.move(900, 500);
+  await page.mouse.down();
+  await page.mouse.move(840, 460, { steps: 6 });
+  await page.mouse.up();
+  await page.keyboard.up('Space');
+  const v = await page.evaluate(() => window.__fenmyr.view);
+  assert.deepStrictEqual([v.x, v.y], [440, 360], 'the board moved with the pointer');
+  assert.ok(
+    await page.evaluate(() => document.querySelector('#tools [data-add="pen"]')?.classList.contains('on')),
+    'the Pen is still on',
+  );
+  await press('Escape', 'Escape');
+});
 await done('BAR KEYBOARD OK');
