@@ -98,6 +98,8 @@ jobs:
         run: node tests/replies.ts
       - name: Reply undo test (one undo step per reply, replies in turn, previews that change nothing)
         run: node tests/replyUndo.ts
+      - name: Chat buttons test (Myra's next steps, sources and build buttons, kept with her replies)
+        run: node tests/chatButtons.ts
       - name: Chat keys test (what each key does in Myra's chat input)
         run: node tests/chatKeys.ts
       - name: Mac font list test

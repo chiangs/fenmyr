@@ -123,6 +123,9 @@ try {
       ),
     'Myra links the code back to the card it came from',
   );
+  await page.evaluate(() => window.__fenmyr.selectOnly([]));
+  await page.locator('#mcList .m-acts button', { hasText: '↗ Checkout' }).last().click();
+  assert.deepStrictEqual(await page.evaluate(() => window.__fenmyr.sel), ['n1'], 'her card button selects it');
   const sources = () =>
     JSON.stringify(JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', 'pb.json'), 'utf8')).proto.sources);
   await until(
