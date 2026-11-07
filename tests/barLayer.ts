@@ -1,5 +1,5 @@
-// What opens over the bottom bar: with Myra's chat open, the toolbar's pickers, a colour card's wheel and quick
-// capture open over it.
+// What opens over the bottom bar and what it lets through: with Myra's chat open, the toolbar's pickers, a colour
+// card's wheel and quick capture open over it; with a doc open, presses where the bar was reach the doc.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -125,6 +125,25 @@ await check('on a short window, quick capture opens over Myra’s open chat', as
   assert.strictEqual(top, '#capture');
 });
 await setChat(false);
+
+await check('with a doc open, a press where the bar was reaches the doc', async () => {
+  await view();
+  await page.locator('.card[data-id="doc"]').dblclick();
+  await page.waitForFunction(() => document.getElementById('stage')?.classList.contains('doc-open'));
+  await still();
+  // where the hidden tools were, and where her hidden box was
+  const hits = await page.evaluate(() => {
+    const v = document.getElementById('docview')?.getBoundingClientRect();
+    return ['tools', 'mPill'].map(id => {
+      const r = document.getElementById(id)?.getBoundingClientRect();
+      if (!r || !v || r.right <= v.left) return `${id} and the doc do not meet`;
+      const el = document.elementFromPoint((Math.max(r.left, v.left) + r.right) / 2, (r.top + r.bottom) / 2);
+      return el?.closest('#docview') ? 'doc' : (el?.closest('[id]')?.id ?? 'nothing');
+    });
+  });
+  await closeAll();
+  assert.deepStrictEqual(hits, ['doc', 'doc']);
+});
 
 const errors = [...l.errors];
 await l.close();

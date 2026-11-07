@@ -525,6 +525,9 @@ html.native .dv-bar { padding-top: 14px; }
 .dv-body:empty::before { content: attr(data-ph); color: var(--ink-faint); }
 /* with a doc open, the tools step aside but Myra's bubble (and its Undo) still shows on top */
 body:has(.stage.doc-open) .dock .tools, .stage.doc-open .modebar, .stage.doc-open .selbar, body:has(.stage.doc-open) .dock .m-pill, body:has(.stage.doc-open) .shapepick { opacity: 0; pointer-events: none; }
+/* and presses where the bar was reach the doc; her bubble and chat set their own, and her timer still takes them */
+body:has(.stage.doc-open) :is(.dock, .dock .myra) { pointer-events: none; }
+body:has(.stage.doc-open) .dock .timer-chip { pointer-events: auto; }
 /* on the All projects pages the board tools hide; Myra stays to help organize */
 body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.at-home) .shapepick { display: none; }
 .sub-boards { margin-left: 16px; padding-left: 8px; border-left: 1.5px dashed var(--sub-line); display: flex; flex-direction: column; gap: 1px; }
