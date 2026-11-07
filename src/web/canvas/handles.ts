@@ -267,6 +267,7 @@ export function showPlaced(made: Card[], box: { x: number; y: number; w: number;
 
 // New cards go in the empty space nearest the middle of the view.
 export function placeInView(made: Card[]) {
+  if (!made.length) return;
   const { x: x0, y: y0, w, h } = boxOf(made),
     isNew = new Set(made),
     others = session.board.cards.filter(c => !isNew.has(c)),

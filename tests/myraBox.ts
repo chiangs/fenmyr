@@ -231,6 +231,36 @@ await check('at 320 px, the narrowest it joins the tools, her chat’s hint stay
   assert.strictEqual(Math.round(input.lines), 1, 'lines the hint takes');
 });
 
+await check('a picture dropped on her open chat lands on the board, clear of the chat', async () => {
+  await setChat(true);
+  const before = await page.evaluate(() => window.__fenmyr.board.cards.length);
+  await page.evaluate(() => {
+    const list = document.getElementById('mcList'),
+      r = list?.getBoundingClientRect(),
+      png = Uint8Array.from(
+        atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='),
+        c => c.charCodeAt(0),
+      ),
+      dt = new DataTransfer();
+    dt.items.add(new File([png], 'dropped.png', { type: 'image/png' }));
+    const at = { clientX: (r?.left ?? 0) + 100, clientY: (r?.top ?? 0) + 100 };
+    list?.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true, cancelable: true, ...at }));
+    list?.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, ...at }));
+  });
+  await page.waitForFunction(n => window.__fenmyr.board.cards.length > n, before);
+  await page.waitForTimeout(800);
+  const pic = await page.evaluate(() => {
+    const id = window.__fenmyr.board.cards.at(-1)?.id,
+      r = document.querySelector(`#cards .card[data-id="${id}"]`)?.getBoundingClientRect();
+    return r && { l: r.left, t: r.top, r: r.right, b: r.bottom };
+  });
+  const { mChat } = await edges(['mChat']);
+  await setChat(false);
+  assert.ok(pic && mChat, 'the picture and her chat are up');
+  assert.ok(!overlaps(pic, mChat), `the picture ${JSON.stringify(pic)} is under the chat ${JSON.stringify(mChat)}`);
+  assert.ok(pic.l >= 0 && pic.t >= 0 && pic.r <= 1440 && pic.b <= 900, `the picture ${JSON.stringify(pic)} shows`);
+});
+
 await check('joined to the tools, her chat’s corner on them is square, so no notch shows', async () => {
   await setChat(true);
   const filled = await page.evaluate(() => {

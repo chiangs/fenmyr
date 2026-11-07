@@ -8,7 +8,7 @@ import { refreshBoards } from '../library/rowMenu.ts';
 import { addAtCenter, centerWorld } from '../panels/zoomMenu.ts';
 import { closestTo, isTyping } from '../ui/dom.ts';
 import { lastClip, pasteCards } from './clipboard.ts';
-import { toWorld } from './handles.ts';
+import { placeInView, toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
 import { byId } from './wires.ts';
 export function init23() {
@@ -93,7 +93,9 @@ export function init23() {
     if (files.length) {
       const ed = session.editing && closestTo(e.target, '.card.editing') ? byId(session.editing) : null;
       if (ed?.type === 'note') pictureForNote(ed, files);
-      else addImages(files, w, !closestTo(e.target, '#dock') && overTray(e)); // Myra's chat can cover Unsorted
+      // the bar and Myra's open chat cover where it was dropped, and can cover Unsorted
+      else if (closestTo(e.target, '#dock')) addImages(files, w).then(placeInView);
+      else addImages(files, w, overTray(e));
       return;
     }
     const u = dt.getData('text/uri-list') || dt.getData('text/plain');
