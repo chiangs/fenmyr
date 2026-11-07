@@ -182,6 +182,26 @@ await check('drawing and find on together stack just above the bottom bar', asyn
   near(Math.max(draw.b, find.b), (dock?.t ?? NaN) - 12, 'the lower one’s bottom');
 });
 await stopAll();
+await check('Myra’s reply and her chat rise over the find bar', async () => {
+  await openFind('a');
+  const over = (id: string) =>
+    page.evaluate(id => {
+      const el = document.getElementById(id),
+        find = document.getElementById('findBar')?.getBoundingClientRect();
+      return el?.checkVisibility({ opacityProperty: true }) && find
+        ? el.getBoundingClientRect().bottom - find.top
+        : 'not up';
+    }, id);
+  await page.waitForTimeout(400); // it rises into place
+  const reply = await over('mBubble');
+  assert.ok(typeof reply === 'number' && reply <= -12, `her reply ends ${reply} px from the find bar’s top`);
+  await page.click('#mPill');
+  await page.waitForFunction(() => document.getElementById('myra')?.classList.contains('chat'));
+  await page.waitForTimeout(400);
+  const chat = await over('mChat');
+  assert.ok(typeof chat === 'number' && chat <= -12, `her chat ends ${chat} px from the find bar’s top`);
+});
+await stopAll();
 await check('a selection’s bar keeps above the find bar', async () => {
   await openFind('a');
   const { find } = await edges(),

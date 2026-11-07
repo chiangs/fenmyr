@@ -3,6 +3,7 @@ import { mrot, realBox, tiltOf } from '../canvas/handles.ts';
 import { wireGeom } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
+import { keepPerch } from '../myra/perch.ts';
 import { type BarContext, toolContext } from './context.ts';
 import { type Anchor, type Box, GAP, place } from './place.ts';
 
@@ -133,10 +134,18 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   bar.classList.remove('paused');
 }
 
-/** Holds drawing's and find's bar just above the bottom bar. It is pinned to the bottom bar, not the board, so no
- *  gesture moves it. */
+/** Holds drawing's and find's bar on the bottom bar, and lifts Myra's bubble, chat and timer over it, as they sit at
+ *  its height. It is pinned to the bottom bar, not the board, so no gesture moves it. */
 export function floatModeBar() {
-  floatBar($('modebar'), toolContext(), false);
+  const bar = $('modebar'),
+    ctx = toolContext(),
+    lift = ctx && !onPhone() ? `${bar.offsetHeight + GAP}px` : '0px',
+    dock = $('dock');
+  if (dock.style.getPropertyValue('--mode-h') !== lift) {
+    dock.style.setProperty('--mode-h', lift);
+    keepPerch(); // she sits on the chat, which just moved
+  }
+  floatBar(bar, ctx, false);
 }
 
 /** How wide the bar may grow before groups tuck into ···: the free view, or on a phone the strip beside Myra. */
