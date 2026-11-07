@@ -1,13 +1,18 @@
-import { chatOpen, freshChat, pose, type Smoke, send } from './kit.ts';
+import { chatOpen, closeChat, freshChat, pose, type Smoke, send } from './kit.ts';
 
-// a click on her button, the way the page gets it (it toggles the chat)
-const pill = (t: Smoke) => t.page.evaluate(() => window.__t.click('#mPill'));
+// opens the chat from her box, or folds it when it is open (her box only opens it), the way the page gets the clicks
+const pill = async (t: Smoke) =>
+  (await t.page.evaluate(() => window.__t.el('#myra').classList.contains('chat')))
+    ? closeChat(t)
+    : t.page.evaluate(() => window.__t.click('#mPill'));
 // her chat closed and her back on her button, whatever she was doing
-const settle = (t: Smoke) =>
-  t.page.evaluate(() => {
+const settle = async (t: Smoke) => {
+  const perched = await t.page.evaluate(() => {
     window.__fenmyr.stopAnim();
-    if (window.__fenmyr.perched()) window.__t.click('#mPill');
+    return window.__fenmyr.perched();
   });
+  if (perched) await closeChat(t);
+};
 
 // Myra herself: perching on the chat, timers from plain sentences, how a timer ends, curiosity, and Esc.
 export async function myra(t: Smoke) {
@@ -19,7 +24,7 @@ export async function myra(t: Smoke) {
   await escAndM(t);
 }
 
-// with the chat open she hops out of her button and perches on the input's top right; closing sends her home;
+// with the chat open she hops out of her box and perches at the start of the chat's header; closing sends her home;
 // toggling it over and over makes her dizzy; clicking her makes her do something
 async function perch(t: Smoke) {
   const { page } = t;
@@ -29,7 +34,7 @@ async function perch(t: Smoke) {
         const b = window.__t.el(sel).getBoundingClientRect();
         return { l: b.left, t: b.top, r: b.right, b: b.bottom };
       };
-      return { slot: g('#gooSlot'), form: g('#mcForm'), name: g('#mName'), perched: window.__fenmyr.perched() };
+      return { slot: g('#gooSlot'), perch: g('#mcPerch'), name: g('#mName'), perched: window.__fenmyr.perched() };
     });
   const chatBox = () =>
     page.evaluate(() => {
@@ -66,7 +71,7 @@ async function perch(t: Smoke) {
     await pill(t);
     await page.waitForTimeout(1300);
   }
-  // while she is thinking the button does not change width, so the chat stays put and she stays on the input
+  // while she is thinking her box does not change width, so the chat stays put and she stays in its header
   await page.click('#mPill');
   await page.waitForTimeout(1300);
   const chat0 = await chatBox();
@@ -88,23 +93,18 @@ async function perch(t: Smoke) {
   await pill(t);
   await page.waitForTimeout(1300);
   type Snap = Awaited<ReturnType<typeof where>>;
-  const onInput = (s: Snap) => Math.abs(s.slot.l - (s.form.l + 12)) < 3 && Math.abs(s.slot.b - (s.form.t + 6)) < 4;
+  const onPerch = (s: Snap) => Math.abs(s.slot.l - s.perch.l) < 3 && Math.abs(s.slot.t - s.perch.t) < 4;
   t.checkAll('perch', {
-    hopsUp:
-      up.perched &&
-      up.slot.b > up.form.t - 12 &&
-      up.slot.b < up.form.t + 14 &&
-      up.slot.l >= up.form.l &&
-      up.slot.l < up.form.l + 40,
+    hopsUp: up.perched && onPerch(up),
     namesStay: Math.abs(up.name.l - home.name.l) < 1 && Math.abs(up.name.t - home.name.t) < 1,
     backHome: !back.perched && Math.abs(back.slot.l - home.slot.l) < 2 && Math.abs(back.slot.t - home.slot.t) < 2,
     click: clicked !== '',
     dizzy: dizzy === 'dizzy',
     stillWhenThinking:
-      onInput(thinkSnap) &&
+      onPerch(thinkSnap) &&
       Math.abs(chat1.l - chat0.l) < 1 &&
-      onInput(lateSnap) &&
-      onInput(afterSnap) &&
+      onPerch(lateSnap) &&
+      onPerch(afterSnap) &&
       Math.abs(chat2.l - chat0.l) < 1,
   });
 }
@@ -176,7 +176,7 @@ async function timerEnd(t: Smoke) {
   await pill(t);
   await page.waitForTimeout(100);
   await page.evaluate(() => {
-    if (window.__fenmyr.perched()) window.__t.click('#mPill');
+    if (window.__fenmyr.perched()) window.__t.click('#mcClose');
   });
   // the model's line for the finish arrives late and calls it a break
   await page.evaluate(() => {
@@ -293,6 +293,7 @@ async function escAndM(t: Smoke) {
   const closed = await page.evaluate(() => ({
     chat: window.__t.el('#myra').classList.contains('chat'),
     inChat: window.__t.el('#mChat').contains(document.activeElement),
+    focused: document.activeElement?.id,
   }));
   await page.keyboard.press('m');
   await page.waitForTimeout(500);
@@ -301,6 +302,11 @@ async function escAndM(t: Smoke) {
     val: window.__t.field('#mcInput').value,
     focused: document.activeElement?.id,
   }));
+  await page.evaluate(() => window.__t.el('#mcInput').blur());
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(100);
+  const outsideEsc = await page.evaluate(() => window.__t.el('#myra').classList.contains('chat'));
+  await page.evaluate(() => window.__t.el('#mcInput').focus());
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
   await settle(t);
@@ -312,6 +318,8 @@ async function escAndM(t: Smoke) {
   );
   t.checkAll('escM', {
     closes: !closed.chat && !closed.inChat,
+    focusToBox: closed.focused === 'mPill',
+    stillOpenOnBoardEsc: outsideEsc,
     mReopens: reopened.chat && reopened.val === '' && reopened.focused === 'mcInput',
     throwParty: asks === 'party|party||party',
   });

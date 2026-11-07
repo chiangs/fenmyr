@@ -197,6 +197,8 @@ try {
     const frame = window.__fenmyr.curBoard()?.cards.find(c => c.type === 'frame');
     if (frame) window.__fenmyr.selectOnly([frame.id]);
   });
+  // the selection bar draws on the next frame
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
   assert.strictEqual(await page.locator('[data-sb="prototype"]').count(), 1, 'a selected screen offers Prototype this');
   await page.locator('#mActs button', { hasText: 'Prototype these screens' }).click();
   await page.waitForSelector('.sp-list');

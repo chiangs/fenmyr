@@ -98,4 +98,5 @@ export function addVideo(file: File, at?: { x: number; y: number } | null) {
   c.y = p.y - c.h / 2;
   addCard(c);
   fillVideo(c, file);
+  return c;
 }

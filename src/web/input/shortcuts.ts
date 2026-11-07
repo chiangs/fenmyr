@@ -221,7 +221,6 @@ export function init20() {
       endEdit();
       setFocus(false);
       selectOnly([]);
-      myraOpen(false);
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       return;
     }

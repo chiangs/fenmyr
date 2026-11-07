@@ -2,8 +2,9 @@ import { isRecord } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { appState } from '../core/state.ts';
 import type { Pose } from '../goo.ts';
+import { relayout } from '../myra/chatWindow.ts';
 import { goo, hopMyra } from '../myra/goos.ts';
-import { gooSlot, keepPerch } from '../myra/perch.ts';
+import { gooSlot } from '../myra/perch.ts';
 import { noEmoji, parse } from '../myra/replyText.ts';
 import type { SayAction } from '../myra/say.ts';
 import { reply } from '../myra/say.ts';
@@ -100,14 +101,15 @@ const setGlow = (kind: Kind) => {
 function paintTimer() {
   const chip = $('timerChip');
   $('myra').classList.toggle('timing', !!timer);
-  keepPerch();
+  if (chip.hidden === !!timer) {
+    chip.hidden = !timer;
+    relayout(); // the open chat makes room for the chip over it, or takes it back
+  }
   if (!timer) {
-    chip.hidden = true;
     $('mPill').classList.remove('hurry');
     setPose(wantedPose());
     return;
   }
-  chip.hidden = false;
   $('tcTime').textContent = clock(timer.end - Date.now());
   $('tcWhat').textContent = timer.purpose || durText(timer.secs);
   chip.style.setProperty('--left', String(Math.max(0, Math.min(1, (timer.end - Date.now()) / (timer.secs * 1000)))));

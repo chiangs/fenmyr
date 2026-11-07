@@ -210,8 +210,7 @@ export function init62() {
         hide();
         restoreAll();
         hub.remove();
-        stage.insertBefore($('selbar'), $('dock'));
-        stage.insertBefore($('modebar'), $('dock'));
+        $('home').after($('selbar'), $('modebar'));
       }
       child(hub, '#hubN').textContent = String(session.board?.tray?.length || '');
     }

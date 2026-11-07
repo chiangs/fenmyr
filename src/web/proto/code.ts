@@ -189,7 +189,7 @@ export async function renderCode(b: Board) {
   if (!watching) {
     watching = true;
     new ResizeObserver(fitBar).observe(el);
-    closeOnOutsidePress('.pc-menu, .pc-pick', closePicker);
+    closeOnOutsidePress('.pc-menu, .pc-pick', () => !!document.querySelector('.pc-menu'), closePicker);
   }
   el.onclick = e => {
     const f = closestTo(e.target, '[data-file]')?.dataset.file;

@@ -139,6 +139,13 @@ const GROUPS: Record<string, Group> = {
           await page.click('#mPill');
         },
       ],
+      [
+        'myra-draft',
+        async page => {
+          await page.fill('#mcInput', 'Group these by theme\nthen name each group\nand keep it short');
+          await page.keyboard.press('Escape');
+        },
+      ],
     ],
   },
 };

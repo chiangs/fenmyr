@@ -204,6 +204,13 @@ export async function clearButtons(t: Smoke) {
 // the height grips: the pointer shows the system's resize cursor over them, and the bar swells into a peak on hover
 export async function heightGrips(t: Smoke) {
   const { page } = t;
+  // her open chat, and she when perched in its header, sit over the right of the board, where the card's resize
+  // corner can be; earlier checks close the chat by its class alone, which leaves her perched
+  await page.evaluate(() => {
+    if (window.__t.el('#myra').classList.contains('chat')) window.__t.click('#mcClose');
+    if (window.__fenmyr.perched()) window.__fenmyr.perchGoo(false);
+  });
+  await page.waitForTimeout(1300);
   const g = await page.locator('.rz-grip').first().boundingBox(),
     h = () =>
       page.evaluate(() => {

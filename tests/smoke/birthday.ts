@@ -35,7 +35,7 @@ export async function birthday(t: Smoke) {
   const settle = () =>
     page.evaluate(() => {
       window.__fenmyr.stopAnim();
-      if (window.__fenmyr.perched()) window.__t.click('#mPill');
+      if (window.__fenmyr.perched()) window.__t.click('#mcClose');
     });
   const bdayNotes = () =>
     page.evaluate(

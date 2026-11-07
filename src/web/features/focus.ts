@@ -55,9 +55,11 @@ export function setFocus(on: boolean) {
 }
 export function init18() {
   // clicking anywhere outside the box closes it (what you typed isn't saved unless you pressed Enter)
-  closeOnOutsidePress('.capture', () => {
-    if ($('capture').classList.contains('on')) capture(false);
-  });
+  closeOnOutsidePress(
+    '.capture',
+    () => $('capture').classList.contains('on'),
+    () => capture(false),
+  );
 
   // Enter saves the idea to Unsorted; Shift+Enter puts it on the board to write out first (a link has nothing to write, so it goes straight in)
   const keep = (onBoard: boolean) => {

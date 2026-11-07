@@ -98,11 +98,17 @@ const edges = () =>
     };
     return {
       dock: box('dock'),
+      toolsBox: box('tools'),
       tools: !!document.getElementById('tools')?.checkVisibility(),
       inDock: !!document.querySelector('#dock #drawbar, #dock #findBar'),
       draw: box('drawbar'),
       find: box('findBar'),
       bar: box('selbar'),
+      rightWidgets: Math.min(
+        ...[...(document.getElementById('sideR')?.children ?? [])]
+          .filter(c => c.checkVisibility())
+          .map(c => c.getBoundingClientRect().left),
+      ),
     };
   });
 const middle = (e: Edges | null) => (e ? (e.l + e.r) / 2 : NaN);
@@ -126,7 +132,8 @@ const stopAll = async () => {
   await page.keyboard.press('Escape');
   await frames();
 };
-// the bottom bar as it is with no mode on; each mode must leave it so, and sit 12 px above it, in its middle
+// the bottom bar as it is with no mode on; each mode must leave it so, and sit 12 px above it, in the tools' middle or
+// as near as the right widgets allow
 const sitsAbove = async (bar: 'draw' | 'find', width: number) => {
   const plain = await edges();
   return async () => {
@@ -134,7 +141,8 @@ const sitsAbove = async (bar: 'draw' | 'find', width: number) => {
     assert.deepStrictEqual([s.dock, s.tools], [plain.dock, plain.tools], 'the bottom bar keeps its shape and tools');
     assert.ok(!s.inDock, 'the bar is not in the bottom bar');
     near(s[bar]?.b, (plain.dock?.t ?? NaN) - 12, `at ${width} px, its bottom`);
-    near(middle(s[bar]), middle(plain.dock), `at ${width} px, its middle`);
+    const half = ((s[bar]?.r ?? NaN) - (s[bar]?.l ?? NaN)) / 2;
+    near(middle(s[bar]), Math.min(middle(plain.toolsBox), s.rightWidgets - 12 - half), `at ${width} px, its middle`);
   };
 };
 const setWidth = async (w: number) => {
@@ -217,7 +225,7 @@ await check('drawing and find on together stack just above the bottom bar', asyn
   near(Math.max(draw.b, find.b), (dock?.t ?? NaN) - 12, 'the lower one’s bottom');
 });
 await stopAll();
-await check('Myra’s reply and her chat rise over the find bar', async () => {
+await check('Myra’s reply rises over the find bar, and her chat keeps clear of it', async () => {
   await openFind('a');
   const over = (id: string) =>
     page.evaluate(id => {
@@ -233,8 +241,12 @@ await check('Myra’s reply and her chat rise over the find bar', async () => {
   await page.click('#mPill');
   await page.waitForFunction(() => document.getElementById('myra')?.classList.contains('chat'));
   await page.waitForTimeout(400);
-  const chat = await over('mChat');
-  assert.ok(typeof chat === 'number' && chat <= -12, `her chat ends ${chat} px from the find bar’s top`);
+  const clear = await page.evaluate(() => {
+    const c = document.getElementById('mChat')?.getBoundingClientRect(),
+      f = document.getElementById('findBar')?.getBoundingClientRect();
+    return !!c && !!f && (c.bottom <= f.top || c.left >= f.right || c.right <= f.left);
+  });
+  assert.ok(clear, 'her chat is above the find bar or beside it');
 });
 await stopAll();
 await check('a selection’s bar keeps above the find bar', async () => {

@@ -246,7 +246,5 @@ export function init47() {
     true,
   );
 
-  closeOnOutsidePress('#tiltPop, [data-sb="tiltpop"]', () => {
-    if ($('tiltPop').classList.contains('on')) closeTiltPop();
-  });
+  closeOnOutsidePress('#tiltPop, [data-sb="tiltpop"]', () => $('tiltPop').classList.contains('on'), closeTiltPop);
 }

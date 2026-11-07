@@ -3,7 +3,7 @@ import { mrot, realBox, tiltOf } from '../canvas/handles.ts';
 import { wireGeom } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
-import { keepPerch } from '../myra/perch.ts';
+import { chatPlace, setModeBar } from '../myra/chatWindow.ts';
 import { type BarContext, toolContext } from './context.ts';
 import { type Anchor, type Box, GAP, place } from './place.ts';
 
@@ -52,7 +52,7 @@ function anchorFor(ctx: BarContext): Anchor | null {
       return { box: { l: p.x, t: p.y, r: p.x, b: p.y }, prefer: Math.abs(g.n.y) >= Math.abs(g.n.x) ? 'above' : 'left' };
     }
     case 'tool': {
-      const d = document.getElementById('dock')?.getBoundingClientRect(),
+      const d = document.getElementById('tools')?.getBoundingClientRect(),
         s = stage.getBoundingClientRect();
       if (!d?.height) return null;
       return {
@@ -124,7 +124,11 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   }
   const anchor = ctx && anchorFor(ctx);
   if (!anchor) return;
-  const p = place(anchor, readFrame(bar), { w: bar.offsetWidth, h: bar.offsetHeight }),
+  const frame = readFrame(bar),
+    chat = ctx.kind === 'tool' ? chatPlace() : null;
+  // drawing's and find's bar keeps to the left of a chat joined to the tools
+  if (chat?.kind === 'joined') frame.r = Math.min(frame.r, chat.chat.l - stage.getBoundingClientRect().left - GAP);
+  const p = place(anchor, frame, { w: bar.offsetWidth, h: bar.offsetHeight }),
     d = devicePixelRatio || 1,
     snap = (v: number) => Math.round(v * d) / d,
     at = `${snap(p.x)}px ${snap(p.y)}px`;
@@ -134,17 +138,17 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   bar.classList.remove('paused');
 }
 
-/** Holds drawing's and find's bar on the bottom bar, and lifts Myra's bubble and chat and the toolbar's pickers over
+/** Holds drawing's and find's bar over the tools, and lifts Myra's bubble, a wide chat and the toolbar's pickers over
  *  it, as they sit at its height. It is pinned to the bottom bar, not the board, so no gesture moves it. */
 export function floatModeBar() {
   const bar = $('modebar'),
     ctx = toolContext(),
     shown = ctx && !onPhone() && !stage.classList.contains('doc-open'),
-    lift = shown ? `${bar.offsetHeight + GAP}px` : '0px';
-  if (stage.style.getPropertyValue('--mode-h') !== lift) {
-    stage.style.setProperty('--mode-h', lift);
-    keepPerch(); // she sits on the chat, which just moved
-  }
+    lift = shown ? bar.offsetHeight + GAP : 0;
+  if (document.body.style.getPropertyValue('--mode-h') !== `${lift}px`)
+    document.body.style.setProperty('--mode-h', `${lift}px`);
+  // the chat joins the tools only when this bar fits left of it, from as far left as it can sit
+  setModeBar(shown ? { lift, l: readFrame(bar).l + stage.getBoundingClientRect().left, w: bar.offsetWidth } : null);
   floatBar(bar, ctx, false);
 }
 

@@ -148,9 +148,7 @@ export function init55() {
     if (d.how) rewrite(d.how);
   });
 
-  closeOnOutsidePress('#dvPop, .dt-drop, .dt-myra, #cpop', () => {
-    if (!$('dvPop').hidden) hidePop();
-  });
+  closeOnOutsidePress('#dvPop, .dt-drop, .dt-myra, #cpop', () => !$('dvPop').hidden, hidePop);
 
   $('docview').addEventListener(
     'keydown',

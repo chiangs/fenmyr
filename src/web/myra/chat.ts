@@ -14,7 +14,7 @@ import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat, typing } from './chatLog.ts';
-import { chatOpen, myraOpen } from './chatWindow.ts';
+import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { goo } from './goos.ts';
 import { showConnections } from './helpers.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
@@ -219,17 +219,17 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
   }
 }
 export function init31() {
-  // ---------- with the chat open she perches on the top left of the input box (under her latest reply), and hops back to her button when it closes ----------
+  // with the chat open she perches at the start of its header, and hops back to her box when it closes
   initPerch();
 
+  // her box only opens the chat; the chat's own rules close it
   $('mPill').onclick = () => {
     clearGlow();
-    const opening = !chatOpen();
-    myraOpen(opening);
-    if (opening) wonderIfEmpty();
+    const was = chatOpen();
+    myraOpen(true);
+    if (!was) wonderIfEmpty();
   };
 
-  $('mcClose').onclick = () => myraOpen(false);
   appState.histOpen = false;
 
   $('mcNew').onclick = () => {
@@ -257,7 +257,7 @@ export function init31() {
     setChatText('');
     if (!q) return;
     if (q[0] === '/') return slash(q);
-    chatIn.placeholder = 'Ask Myra… “group these by theme”';
+    renderHint();
     ask(q);
   };
 
@@ -273,16 +273,4 @@ export function init31() {
     { label: 'Keep playing', ghost: true, run: () => {} },
   ];
   appState.aiAnimAt = 0;
-
-  const pillIn = textField('mInput');
-  $('mForm').onsubmit = e => {
-    e.preventDefault();
-    const q = pillIn.value.trim();
-    if (!q) return;
-    pillIn.value = '';
-    if (q[0] === '/') return slash(q);
-    myraOpen(false);
-    pillIn.placeholder = 'Ask Myra… “group these by theme”';
-    ask(q);
-  };
 }

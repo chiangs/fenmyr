@@ -1,6 +1,6 @@
 import { byId } from '../canvas/wires.ts';
 import { addImages } from '../cards/spotify.ts';
-import { $, stage } from '../core/dom.ts';
+import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
@@ -19,6 +19,7 @@ import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { renderWheel } from '../tools/stamps.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { closestTo, elementById } from './dom.ts';
+import { countAsMenu } from './popover.ts';
 import { tbRect } from './toolbarConfig.ts';
 
 // links get a little paste box under the toolbar (the app can't show the browser's prompt)
@@ -29,23 +30,24 @@ export function toPointer() {
   if (penT) endPen(true);
   stopPlacing();
   if (drawOn) exitDraw();
-  ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(id => {
+  PICKERS.forEach(id => {
     $(id)?.classList.remove('on');
   });
   syncPointer();
 }
 
+const PICKERS = ['shapePick', 'tplPick', 'stampWheel', 'stampPick'];
+const pickerOpen = () => PICKERS.some(id => $(id)?.classList.contains('on'));
+
+/** Any tool but the select arrow: placing, drawing, the pen or a lit tool button. */
+export const toolInHand = () =>
+  drawOn || !!placing || !!penT || !!$('tools').querySelector('[data-add]:not([data-add="pointer"]).on');
+
 function syncPointer() {
   const p = $('tools').querySelector('[data-add="pointer"]');
   if (!p) return;
   $('tools').querySelector('[data-add="draw"]')?.classList.toggle('on', drawOn);
-  const busy =
-    drawOn ||
-    placing ||
-    penT ||
-    $('tools').querySelector('[data-add]:not([data-add="pointer"]).on') ||
-    ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].some(id => $(id)?.classList.contains('on'));
-  p.classList.toggle('on', !busy);
+  p.classList.toggle('on', !toolInHand() && !pickerOpen());
 }
 
 // + Project / + Folder / + Board: the folder and board add into wherever you are: the folder you're in, or the project you're in
@@ -69,10 +71,11 @@ export function init21() {
     const mo = new MutationObserver(() => syncPointer());
     mo.observe($('tools'), { subtree: true, attributes: true, attributeFilter: ['class'] });
     mo.observe($('drawbar'), { attributes: true, attributeFilter: ['hidden'] });
-    ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(id => {
+    PICKERS.forEach(id => {
       $(id) && mo.observe($(id), { attributes: true, attributeFilter: ['class'] });
     });
   }
+  countAsMenu(pickerOpen);
 
   $('tools').onclick = e => {
     const b = closestTo(e.target, '[data-add]');
@@ -91,10 +94,9 @@ export function init21() {
     if (t === 'stamp') {
       const on = !$('stampWheel').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b),
-        sr = stage.getBoundingClientRect();
+      const r = tbRect(b);
       ['stampWheel', 'stampPick'].forEach(id => {
-        $(id).style.left = `${r.left + r.width / 2 - sr.left}px`;
+        $(id).style.left = `${r.left + r.width / 2}px`;
       });
       renderWheel();
       $('stampWheel').classList.toggle('on', on);
@@ -105,9 +107,8 @@ export function init21() {
     if (t === 'shape') {
       const on = !$('shapePick').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b),
-        sr = stage.getBoundingClientRect();
-      $('shapePick').style.left = `${r.left + r.width / 2 - sr.left}px`;
+      const r = tbRect(b);
+      $('shapePick').style.left = `${r.left + r.width / 2}px`;
       $('shapePick').classList.toggle('on', on);
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');
@@ -116,9 +117,8 @@ export function init21() {
     if (t === 'tpl') {
       const on = !$('tplPick').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b),
-        sr = stage.getBoundingClientRect();
-      $('tplPick').style.left = `${r.left + r.width / 2 - sr.left}px`;
+      const r = tbRect(b);
+      $('tplPick').style.left = `${r.left + r.width / 2}px`;
       $('tplPick').classList.toggle('on', on);
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');

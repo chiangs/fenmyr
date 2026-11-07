@@ -6,7 +6,7 @@ import { imageMenu } from '../cards/imageActions.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { kanbanMenu } from '../cards/kanban.ts';
 import { copyOf, tilt, uid } from '../core/base.ts';
-import { $, stage } from '../core/dom.ts';
+import { $, boardLayers, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
@@ -18,9 +18,9 @@ import { selCards } from '../selbar/selected.ts';
 import { applyColors } from '../settings/colors.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
-import { cardEl, closestTo, removeOnOutsidePress } from '../ui/dom.ts';
+import { cardEl, closestTo } from '../ui/dom.ts';
 import { tintPicker } from '../ui/palette.ts';
-import { keepOnScreen } from '../ui/popover.ts';
+import { keepOnScreen, removeOnOutsidePress } from '../ui/popover.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
 import { makeSection, renameSection } from '../wireframe/sections.ts';
@@ -127,7 +127,7 @@ export const cardName = (cs: Card[]) => {
   return name.slice(0, 60).trim() || 'Card';
 };
 export function init43() {
-  stage.addEventListener('contextmenu', e => {
+  const onMenu = (e: MouseEvent) => {
     // holding something (a sticker, a note to place, a shape) or a picker is open: a right-click just puts it down, like Esc
     if (placing || ['stampWheel', 'stampPick', 'shapePick', 'tplPick'].some(id => $(id).classList.contains('on'))) {
       e.preventDefault();
@@ -275,5 +275,6 @@ export function init43() {
         { label: 'Export board as image', run: () => exportCards(session.board.cards, session.board.name, false) },
         { label: 'Export board as PDF', run: () => exportCards(session.board.cards, session.board.name, true) },
       ]);
-  });
+  };
+  for (const el of boardLayers) el.addEventListener('contextmenu', onMenu);
 }

@@ -227,9 +227,7 @@ export function initTips() {
 }
 
 export function initPops() {
-  closeOnOutsidePress('.sb-popw', () => {
-    closeSbPops();
-  });
+  closeOnOutsidePress('.sb-popw', () => !!document.querySelector('.sb-popw.open'), closeSbPops);
 
   addEventListener(
     'keydown',

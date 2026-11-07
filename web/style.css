@@ -174,13 +174,11 @@ button.zoom { justify-content: flex-end; font-family: inherit; font-size: 12px; 
 .myra { position: absolute; left: calc(50% + 8px); bottom: 22px; transform: translateX(-50%); z-index: 15; display: flex; flex-direction: column; align-items: center; }
 .m-pill { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 10px; border-radius: var(--pill-r); corner-shape: squircle; background: rgba(40, 40, 48, .94); color: #fff; box-shadow: 0 12px 30px rgba(58, 40, 22, .3); cursor: pointer; transition: width .35s cubic-bezier(.2, .8, .3, 1); }
 .m-pill canvas { width: 40px; height: 35px; image-rendering: pixelated; }
-.m-name { font: 600 15px/1 var(--font); }
-.m-form { display: none; }
-.myra.open .m-name { display: none; }
-.myra.open .m-form { display: block; }
-.m-form input { width: 440px; border: 0; background: none; color: #fff; font: 15px/1 var(--font); outline: none; }
-.m-form input::placeholder { color: rgba(255, 255, 255, .45); }
-.myra.thinking .m-name::after { content: " · thinking…"; color: #7fd8ff; }
+.m-ask { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 14px/1.2 var(--font); color: color-mix(in oklch, currentColor 70%, transparent); }
+/* a closed chat holding text: a dot and "Draft · 3 lines" in place of "Ask Myra…" */
+.m-draft { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; font: 600 14px/1.2 var(--font); }
+.m-draft::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--pink-deep); }
+.m-ask[hidden], .m-draft[hidden] { display: none; }
 .m-bubble { max-width: 460px; margin-bottom: 12px; padding: 12px 16px 14px; border-radius: 27px; corner-shape: squircle; background: rgba(40, 40, 48, .94); color: #fff; font-size: 14px; line-height: 1.5; box-shadow: 0 12px 30px rgba(58, 40, 22, .25); opacity: 0; transform: translateY(8px); transition: opacity .3s, transform .35s cubic-bezier(.2, .8, .3, 1); pointer-events: none; }
 .m-bubble.on { opacity: 1; transform: none; pointer-events: auto; }
 .m-bubble small { display: block; margin-bottom: 6px; font: 700 10px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: #7fd8ff; }
@@ -403,15 +401,26 @@ html.native .home-in { padding-top: 40px; }
 .tools button:hover::after { opacity: 1; transform: translate(-50%, 0); }
 .tools .zoom { padding: 0 10px 0 6px; }
 
-/* ---------- the dock at the bottom: tools + Myra ---------- */
-.dock { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 15; display: flex; align-items: flex-end; gap: 10px; }
+/* ---------- the bottom bar: tools + Myra ----------
+   It starts where the canvas area does, as far from the left widgets as they are from the window, on a whole pixel so
+   its icons stay crisp. It sits above the widgets (z 20), so what rises from it can cover them. What opens over it
+   (the toolbar's pickers, quick capture, a colour card's wheel) sits at body level in #overBar, above it. */
+body { --bar-b: 18px; }
+.dock { position: fixed; left: calc(var(--side) + 28px); bottom: var(--bar-b); width: max-content; z-index: 21; display: flex; align-items: flex-end; }
 .dock .tools { position: static; transform: none; left: auto; top: auto; }
 .dock .tools button::after { top: auto; bottom: calc(100% + 12px); transform: translate(-50%, 3px); }
 .dock .tools button:hover::after { transform: translate(-50%, 0); }
 .dock .tools button.on { background: var(--blush); }
 .dock .tools button.on .ic { color: var(--ink); }
 .dock .myra { position: relative; left: auto; bottom: auto; transform: none; }
-/* Myra's bubble and chat rise over drawing's or find's bar by --mode-h, which float.ts sets on the stage */
+/* her box: one piece with the tools, as wide whatever her name */
+.dock .m-pill { width: 200px; border: 0; text-align: start; }
+body:not(.proto, .phone) .dock .tools { border-start-end-radius: 0; border-end-end-radius: 0; }
+body:not(:has(.stage.at-home)) .dock .m-pill { border-start-start-radius: 0; border-end-start-radius: 0; }
+/* a joined chat covers her box, and its input is where the box was; she flies on over it into the header */
+.myra.chat:has(> .m-chat[data-place="joined"]) .m-pill { visibility: hidden; }
+.myra.chat .goo-slot { visibility: visible; }
+/* Myra's bubble rises over drawing's or find's bar by --mode-h, which float.ts sets on body */
 .dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); margin: 0; width: max-content; }
 .selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
 .selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
@@ -424,7 +433,7 @@ html.native .home-in { padding-top: 40px; }
 .keys { left: 22px; bottom: 14px; width: var(--side); flex-wrap: wrap; white-space: normal; gap: 4px 10px; }
 /* placing: the new thing rides on the cursor until you click */
 .stage.placing, .stage.placing * { cursor: copy !important; }
-.ghost { position: fixed; z-index: 9000; pointer-events: none; display: none; border-radius: 22px; corner-shape: squircle; background: rgb(from var(--hilite) r g b / .85); box-shadow: 0 14px 34px rgba(var(--sh), calc(.22 * var(--sh-k))), 0 0 0 1.5px var(--select); transform-origin: 0 0; }
+.ghost { position: fixed; z-index: 22; pointer-events: none; display: none; border-radius: 22px; corner-shape: squircle; background: rgb(from var(--hilite) r g b / .85); box-shadow: 0 14px 34px rgba(var(--sh), calc(.22 * var(--sh-k))), 0 0 0 1.5px var(--select); transform-origin: 0 0; }
 .ghost.on { display: block; }
 .ghost span { position: absolute; left: 14px; top: 12px; font: 600 13px/1 var(--font); color: var(--ink-soft); }
 .ghost.coll { background: none; box-shadow: none; }
@@ -495,7 +504,7 @@ body.dark .kb-n { background: color-mix(in srgb, var(--chead) 40%, var(--kb-bg))
 .card.shape .body { padding: 0; overflow: visible; display: grid; place-items: center; }
 .card.shape svg.sh { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .card.shape .text { position: relative; max-width: 80%; text-align: center; font: 600 calc(15px * var(--fs, 1))/1.3 var(--font); outline: none; white-space: pre-wrap; }
-.shapepick { position: absolute; left: 50%; bottom: calc(84px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 16; display: flex; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
+.shapepick { position: fixed; left: 50%; bottom: calc(var(--bar-b) + 66px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 22; display: flex; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
 .shapepick.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
 .shapepick button { width: 38px; height: 38px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; display: grid; place-items: center; cursor: pointer; color: var(--ink-soft); }
 .shapepick button:hover, .shapepick button.on { background: var(--blush); color: var(--ink); }
@@ -520,10 +529,12 @@ html.native .dv-bar { padding-top: 14px; }
 .dv-body { min-height: 60vh; outline: none; font: 400 16px/1.7 var(--font); color: var(--ink); white-space: pre-wrap; user-select: text; -webkit-user-select: text; cursor: text; }
 .dv-body:empty::before { content: attr(data-ph); color: var(--ink-faint); }
 /* with a doc open, the tools step aside but Myra's bubble (and its Undo) still shows on top */
-.stage.doc-open .dock { z-index: 24; }
-.stage.doc-open .dock .tools, .stage.doc-open .modebar, .stage.doc-open .selbar, .stage.doc-open .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
+body:has(.stage.doc-open) .dock .tools, .stage.doc-open .modebar, .stage.doc-open .selbar, body:has(.stage.doc-open) .dock .m-pill, body:has(.stage.doc-open) .shapepick { opacity: 0; pointer-events: none; }
+/* and presses where the bar was reach the doc; her bubble and chat set their own, and her timer still takes them */
+body:has(.stage.doc-open) :is(.dock, .dock .myra) { pointer-events: none; }
+body:has(.stage.doc-open) .dock .timer-chip { pointer-events: auto; }
 /* on the All projects pages the board tools hide; Myra stays to help organize */
-.stage.at-home .dock .tools, .stage.at-home .selbar, .stage.at-home .shapepick { display: none; }
+body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.at-home) .shapepick { display: none; }
 .sub-boards { margin-left: 16px; padding-left: 8px; border-left: 1.5px dashed var(--sub-line); display: flex; flex-direction: column; gap: 1px; }
 .sub-boards .board-row { font-size: 13px; }
 /* full-page docs: keep the bar clear of the floating boxes on the left */
@@ -549,14 +560,14 @@ html.native .dv-bar { padding-top: 14px; }
 .board-row span[contenteditable="true"] { background: var(--snow); box-shadow: 0 0 0 1.5px var(--select); border-radius: 4px; padding: 0 3px; outline: none; cursor: text; user-select: text; -webkit-user-select: text; }
 
 /* ---------- stamps (like FigJam's wheel) ---------- */
-.wheel-stamps { position: absolute; bottom: calc(80px + var(--mode-h, 0px)); z-index: 17; width: 220px; height: 220px; margin-left: -110px; border-radius: 50%; background: #fff; box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .15s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
+.wheel-stamps { position: fixed; bottom: calc(var(--bar-b) + 62px + var(--mode-h, 0px)); z-index: 22; width: 220px; height: 220px; margin-left: -110px; border-radius: 50%; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .15s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
 .wheel-stamps.on { opacity: 1; pointer-events: auto; transform: none; }
 .ws-ring button { position: absolute; width: 50px; height: 50px; margin: -25px 0 0 -25px; border: 0; border-radius: 50%; background: none; display: grid; place-items: center; cursor: pointer; font-size: 30px; line-height: 1; transition: transform .15s, background .15s; }
 .ws-ring button:hover { background: var(--blush); transform: scale(1.15); }
 .ws-ring img, .sp-grid img { width: 40px; height: 40px; image-rendering: pixelated; pointer-events: none; }
 .ws-mid { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border: 0; border-radius: 50%; background: var(--ws-bg); font: 300 30px/1 var(--font); color: var(--ink); cursor: pointer; box-shadow: inset 0 0 0 1px rgb(from var(--select) r g b / .15); }
 .ws-mid:hover { background: var(--ws-bg-2); }
-.stamp-pick { position: absolute; bottom: calc(80px + var(--mode-h, 0px)); z-index: 18; width: 340px; margin-left: -170px; padding: 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
+.stamp-pick { position: fixed; bottom: calc(var(--bar-b) + 62px + var(--mode-h, 0px)); z-index: 23; width: 340px; margin-left: -170px; padding: 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
 .stamp-pick.on { opacity: 1; pointer-events: auto; transform: none; }
 .sp-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 .sp-tabs button { flex: 1; padding: 8px 6px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
@@ -742,8 +753,6 @@ body.exporting .card.sel::after { display: none; }
 .m-pill { background: #fff; color: var(--ink); box-shadow: 0 12px 30px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
 .m-bubble { background: #fff; color: var(--ink); box-shadow: 0 12px 30px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
 .m-bubble small { color: var(--pink-deep); }
-.m-form input { color: var(--ink); } .m-form input::placeholder { color: var(--ink-faint); }
-.myra.thinking .m-name::after { color: var(--pink-deep); }
 .m-acts button { border-color: var(--ink); background: var(--ink); color: #fff; }
 .m-acts button.ghost { background: none; color: var(--ink); }
 
@@ -783,7 +792,6 @@ body.dark .wires path.w { stroke: var(--wires-ink); }
 /* Myra's chat goes dark with the room */
 body.dark .m-pill, body.dark .m-bubble { background: rgba(46, 42, 37, .97); color: #fff; box-shadow: 0 12px 30px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .06); }
 body.dark .m-bubble small { color: #7fd8ff; }
-body.dark .m-form input { color: #fff; } body.dark .m-form input::placeholder { color: rgba(255, 255, 255, .45); }
 body.dark .m-acts button { background: #fff; color: #222; border-color: #fff; } body.dark .m-acts button.ghost { background: none; color: #fff; }
 body { --pen-ink: #3b342d; } body.dark { --pen-ink: #f0ebe4; }
 body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: #3f3a34; } body.dark .tile.project .mf { color: var(--ink); }
@@ -804,20 +812,22 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .au-count { height: 34px; display: grid; place-items: center; font: 800 30px/1 var(--font); color: var(--accent-text); animation: pop .5s cubic-bezier(.2, .9, .3, 1.4); }
 
 /* ---------- Myra's chat window ---------- */
-/* its height leaves room above it for drawing's or find's bar, and for the timer, which sits on it while it is open */
-.myra { --m-chat-w: 380px; --m-chat-h: min(520px, calc(100vh - 140px - var(--mode-h, 0px))); }
-.myra.timing { --m-chat-h: min(520px, calc(100vh - 180px - var(--mode-h, 0px))); }
-.m-chat { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); width: var(--m-chat-w); height: var(--m-chat-h); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink);
-  box-shadow: 0 20px 50px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(10px) scale(.97); transform-origin: 90% 100%; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2); }
+/* chatWindow.ts places it in window pixels, joined to the tools or wide above the bar, leaving room for the timer over it */
+.m-chat { position: fixed; left: var(--chat-l); top: var(--chat-t); width: var(--chat-w); height: var(--chat-h); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink);
+  box-shadow: 0 20px 50px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(10px) scale(.97); transform-origin: 0 100%; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2); }
+.m-chat[data-place="wide"] { transform-origin: 50% 100%; }
+/* square where it meets the tools, so no notch shows between them */
+.m-chat[data-place="joined"] { border-end-start-radius: 0; }
 .myra.chat .m-chat { opacity: 1; pointer-events: auto; transform: none; }
 .myra.chat .m-bubble { display: none; }
 .mc-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px 16px; border-bottom: 1px solid #f3f0ec; }
 .mc-head canvas { width: 26px; height: 23px; image-rendering: pixelated; }
 .mc-head b { font: 800 15px/1 var(--font); }
+#mcHeadName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.25; }
 .mc-status { flex: 1; font: 600 11px/1 var(--font); color: var(--pink-deep); }
 .mc-btn { border: 0; background: none; padding: 6px 9px; border-radius: var(--pill-r); corner-shape: squircle; font: 600 11.5px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .mc-btn:hover { background: var(--blush); color: var(--ink); }
-.mc-btn.x { font-size: 18px; padding: 2px 9px; }
+.mc-btn.x { display: grid; place-items: center; padding: 4px 7px; }
 .mc-list { flex: 1; overflow: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 8px; user-select: text; -webkit-user-select: text; }
 .mc-msg { max-width: 82%; padding: 9px 13px 10px; border-radius: 24px; corner-shape: squircle; font: 400 13.5px/1.45 var(--font); white-space: pre-wrap; word-break: break-word; animation: mc-in .25s cubic-bezier(.2, .9, .3, 1.2); }
 /* her messages share the class of her own figure (.myra), whose placement must not follow them out of the dock */
@@ -849,8 +859,6 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-hint { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 500 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
 /* a touch screen has no Ctrl key, so Send is the way */
 @media (pointer: coarse) { .mc-hint { display: none; } .mc-send { margin-left: auto; } }
-.m-form { display: none !important; }
-.myra.open .m-name { display: inline; }
 body.dark .m-chat { background: rgba(43, 39, 34, .98); box-shadow: 0 20px 50px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06); }
 body.dark .mc-head { border-color: #3c3731; }
 body.dark .mc-msg.myra, body.dark .mc-form { background: #38332d; }
@@ -864,7 +872,12 @@ body.dark .mc-ideas button { border-color: #464038; }
 .m-pill canvas { transform: translateY(-4px); }
 .mc-head canvas { margin-top: -9px; }
 .mc-head .mc-ic { flex: none; color: var(--ink); }
+.mc-perch { flex: none; display: grid; place-items: center; }
+body:not(.phone) .mc-perch { width: 40px; height: 35px; }
+body:not(.phone, .myra-hidden) .myra.chat .mc-perch .mc-ic { visibility: hidden; }
 .m-pill { overflow: visible; }
+/* a solid ring keeps to her box's edge; Chromium's auto ring also wraps her lifted sprite, which notches its top */
+.m-pill:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
 #goo.hopping { animation: myra-hop .62s cubic-bezier(.3, .7, .4, 1) both; transform-origin: 50% 100%; }
 @keyframes myra-hop {
   0% { transform: translateY(-4px) scale(1, 1); }
@@ -1193,7 +1206,7 @@ body.dark .set-maker { background: var(--set-dark-warm); } body.dark .sm-sig { c
 .group-box span { position: absolute; left: 14px; top: -11px; padding: 3px 9px; border-radius: 134px; corner-shape: squircle; background: var(--ob-bg); color: var(--hilite); font: 700 10px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; }
 
 /* design thinking templates: a little menu above the toolbar */
-.tplpick { position: absolute; left: 50%; bottom: calc(84px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 16; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
+.tplpick { position: fixed; left: 50%; bottom: calc(var(--bar-b) + 66px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 22; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
 .tplpick { max-height: calc(100vh - 130px - var(--mode-h, 0px)); overflow: hidden; display: flex; flex-direction: column; gap: 0; }
 .tplpick .tp-list { display: grid; gap: 2px; min-height: 0; overflow: auto; scrollbar-width: thin; }
 .tplpick .tp-list [hidden] { display: none; }
@@ -1227,7 +1240,7 @@ body.following-caelestia .tplpick .tp-search { background: color-mix(in srgb, va
 body.dark .tplpick .tp-h:not(:first-child) { border-top-color: rgb(from var(--hilite) r g b / .08); }
 .tplpick b { font: 700 14px/1.2 var(--font); }
 .tplpick small { font: 500 12px/1.3 var(--font); color: var(--ink-soft); }
-.stage.doc-open .tplpick { opacity: 0; pointer-events: none; }
+body:has(.stage.doc-open) .tplpick { opacity: 0; pointer-events: none; }
 /* Myra's how-to note: a little Myra next to the title */
 .card.note .nm-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .card.note .nm-head .nname { margin: 0; }
@@ -1423,7 +1436,7 @@ body.phone .top .crumbs { display: none; }
 body.phone .board-name { font-size: 20px; width: 100%; }
 body.phone .saved { display: none; }
 /* the hub */
-body.phone .dock { left: 10px; right: 10px; bottom: calc(10px + var(--safe)); transform: none; display: block; }
+body.phone .dock { left: 10px; right: 10px; bottom: calc(10px + var(--safe)); margin-inline: auto; display: block; }
 body.phone .hub { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; height: var(--hub-h); padding: 6px 6px; border-radius: 32px; corner-shape: squircle; background: rgba(255, 255, 255, .94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 14px 34px rgba(var(--sh), calc(.18 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.05 * var(--sh-k))); }
 .hub button { position: relative; display: grid; justify-items: center; align-content: center; gap: 3px; height: 52px; border: 0; border-radius: 22px; corner-shape: squircle; background: none; color: var(--ink-soft); font: 600 10.5px/1 var(--font); -webkit-tap-highlight-color: transparent; }
@@ -1673,7 +1686,7 @@ body.dark .dt-myra { background: #f0ebe4; color: #1d1a16; }
 .dv-tools { flex-wrap: wrap; row-gap: 4px; overflow: visible; }
 .dv-prose ul[data-type="taskList"] li > label { margin-top: .28em; }
 body.phone .docview { width: 100%; } body.phone .docview .dv-bar { padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
-body.phone .stage.doc-open .dock { display: none; }   /* a doc takes the whole phone screen; Back returns to the board and its hub */
+body.phone:has(.stage.doc-open) .dock { display: none; }   /* a doc takes the whole phone screen; Back returns to the board and its hub */
 /* the toolbar's Myra: a round sparkle button that says "Myra" when you hover, so the whole toolbar fits on one row */
 .dt-myra.dt-round { position: relative; width: 32px; height: 32px; padding: 0; justify-content: center; margin-left: 4px; }
 .dt-myra.dt-round svg { width: 17px; height: 17px; }
@@ -2169,9 +2182,8 @@ body.dark .sbc-top input[type=number], body.dark .sbc-chips button { background:
 /* Lucide icons are drawn on a 24px grid: a stroke of 2 there matches the 1.7 on the old 20px grid */
 .selbar svg[viewBox="0 0 24 24"] :is(path, rect, circle, line, polyline, polygon, ellipse), .ly-ic svg[viewBox="0 0 24 24"] * { stroke-width: 2 !important; }
 .selbar .sb-l24 { width: 19px !important; height: 19px !important; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
-/* crisp icons: the dock sits on whole pixels (no half-pixel centering), and Lucide icons draw at their native 24px with a 1.5 line,
-   so on a Retina screen every line lands exactly on the pixel grid */
-.dock { left: 0; right: 0; margin-inline: auto; width: max-content; transform: none !important; }
+/* crisp icons: Lucide icons draw at their native 24px with a 1.5 line, so on a Retina screen every line lands exactly on
+   the pixel grid */
 #tools svg[viewBox="0 0 24 24"] { width: 24px !important; height: 24px !important; }
 #tools svg[viewBox="0 0 24 24"] * { stroke-width: 1.5 !important; }
 .selbar { --sb-icon: 24px; }
@@ -2690,10 +2702,10 @@ body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
 .timer-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: var(--pink-deep, var(--dt-shadow)); transition: width 1s linear; }
 body.dark .timer-chip { background: rgb(from var(--clean-bg-2) r g b / .97); color: var(--hilite); } body.dark .timer-chip b { color: var(--hilite); }
 body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-panels.panel-dark .timer-chip { color: var(--coll-ink); }
-/* her reply clears the higher of the timer and drawing's or find's bar; with the chat open the timer sits on its middle,
-   clear of the right-hand panels */
+/* her reply clears the higher of the timer and drawing's or find's bar; with the chat open the timer sits over its
+   middle */
 .dock .myra.timing .m-bubble { bottom: calc(100% + 12px + max(40px, var(--mode-h, 0px))); }
-body:not(.phone) .dock .myra.chat .timer-chip { left: calc(100% - var(--m-chat-w) / 2); bottom: calc(100% + 12px + var(--mode-h, 0px) + var(--m-chat-h) + 8px); }
+.dock .myra.chat:has(> .m-chat:is([data-place="joined"], [data-place="wide"])) .timer-chip { position: fixed; left: calc(var(--chat-l) + var(--chat-w) / 2); bottom: calc(100vh - var(--chat-t) + 8px); }
 .m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
 .myra.partying:not(.chat) .m-pill { animation: m-party .55s ease-in-out 6; }
 .myra.partying.chat .goo-slot.perched #goo { transform-origin: 50% 100%; animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she wiggles herself; on the sprite, because rotate/scale on the slot would scale and swing her whole offset from the button */
@@ -2711,19 +2723,20 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 /* the last two minutes: her own glow runs a little faster; when it ends it goes back to her normal pace */
 .m-pill.hurry { animation: m-glow 2.2s ease-in-out infinite, m-wobble 8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .m-pill.glow-red, .m-pill.glow-green, .m-pill.hurry { animation: none; } }
+/* perched in the open chat she is still inside her box, so its wobble would swing her; important beats the animation
+   and leaves its glow */
+.myra.chat .m-pill { transform: none !important; }
 
-/* Myra's sprite lives in a slot so she can hop out of her button and perch beside the chat */
+/* Myra's sprite lives in a slot so she can hop out of her box and perch in the chat's header */
 .goo-slot { position: relative; z-index: 6; display: inline-block; line-height: 0; will-change: transform; transform-origin: 50% 100%; }   /* her feet are the pivot for squash and stretch */
 .goo-slot.perched { cursor: pointer; }
-.mc-list { padding-bottom: 40px; } body.phone .mc-list { padding-bottom: 6px; }
-.mc-sel { margin-left: 66px; max-width: calc(100% - 78px); }
-
-/* with the chat open, its header already says she is thinking: the button keeps its width, so the bar and the chat don't slide sideways */
-.myra.chat.thinking .m-name::after { content: none; }
 
 /* a closed chat can't be focused or tabbed into (its fade still plays), so M and typing work after Esc */
 .m-chat { visibility: hidden; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2), visibility 0s .3s; }
 .myra.chat .m-chat { visibility: visible; transition-delay: 0s; }
+/* a closed chat fades for a moment before it hides, and Tab must not land in it meanwhile */
+.m-chat { interactivity: inert; }
+.myra.chat .m-chat, .pr-chat .m-chat { interactivity: auto; }
 
 /* birthday inputs: month and day, nothing else */
 .bd-pick { display: inline-flex; align-items: center; gap: 6px; }
@@ -2878,13 +2891,16 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 body.calm .pc-mark { animation: none; }
 @media (prefers-reduced-motion: reduce) { .pc-mark { animation: none; } }
 body.proto .stage { left: var(--slot-l); top: var(--slot-t); width: var(--slot-w); height: var(--slot-h); right: auto; bottom: auto; }
-body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side { display: none; }
+body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side, body.proto.proto-canvas-folded .dock { display: none; }
 /* one column of widgets beside the board, clear of the toolbar; it holds both sides' widgets, so it can scroll */
 body.proto .side { left: calc(var(--slot-l) + 14px); top: calc(var(--slot-t) + 14px); bottom: 84px; scrollbar-width: thin; }
 body.proto .side > .tray { min-height: 96px; }
 body.proto #mcClose { display: none; }
 body.proto #keys { display: none; }
-body.proto .dock { max-width: calc(100% - 16px); overflow-x: auto; scrollbar-width: none; }
+/* on a prototype board the bottom bar and what opens over it sit 18 px over the board pane's bottom; the bar starts
+   at the pane's left, and the widgets there sit above it */
+body.proto { --bar-b: calc(100vh - var(--slot-t) - var(--slot-h) + 18px); }
+body.proto .dock { left: calc(var(--slot-l) + 8px); max-width: calc(var(--slot-w) - 16px); overflow-x: auto; scrollbar-width: none; }
 #pr-preview { display: flex; flex-direction: column; overflow: hidden; }
 .pv-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 8px; border-bottom: 1px solid rgba(150, 95, 35, .1); font: 500 12px/1 var(--font); }
 .pv-bar .seg button { padding: 5px 9px; font: 600 11.5px/1 var(--font); }
@@ -2937,6 +2953,9 @@ body.proto .mc-head .mc-ic { display: none; }
 .mc-head .goo-slot { width: 40px; height: 35px; flex: none; display: grid; place-items: center; }
 .mc-head .goo-slot canvas { width: 40px; height: 35px; }
 .mc-grip { display: none; }
+/* the open chat's top edge: drag it for a taller or shorter chat */
+.mc-top-grip { position: absolute; left: 0; right: 0; top: -6px; margin: 0; z-index: 3; }
+body:is(.phone, .proto) .mc-top-grip { display: none; }
 body.proto .mc-grip { display: block; align-self: stretch; margin: 2px 10px; }
 body.proto #mcInput { height: var(--input-h, 140px); max-height: none; field-sizing: fixed; overflow-y: auto; resize: none; }
 /* which project a new prototype is for, when started outside one */

@@ -2,12 +2,12 @@ import { freshChat, type Smoke } from './kit.ts';
 
 // Myra's input: Enter adds a line and Ctrl+Enter sends; the slash menu takes Up, Down, Tab, Enter and Esc first; keys
 // an IME is composing with stay in the box; the box grows to six lines or a third of the window, then scrolls with a
-// count and a fade, and she stays perched on it as it grows
+// count and a fade, and she stays perched in the chat's header as it grows
 export async function chatInput(t: Smoke) {
   const { page } = t;
   await page.evaluate(() => {
     window.__fenmyr.stopAnim();
-    if (window.__fenmyr.perched()) window.__t.click('#mPill');
+    if (window.__fenmyr.perched()) window.__t.click('#mcClose');
   });
   await page.waitForTimeout(1300);
   await page.click('#mPill');
@@ -22,6 +22,9 @@ export async function chatInput(t: Smoke) {
   await narrowFooter(t);
   await findKeepsDraft(t);
   await freshChat(t);
+  // closed again, as her open chat covers Unsorted and the right of the board
+  await page.evaluate(() => window.__t.click('#mcClose'));
+  await page.waitForTimeout(1300);
 }
 
 // the draft, the menu and what has been said
@@ -196,14 +199,15 @@ async function grows(t: Smoke) {
         el = T.field('#mcInput'),
         lines = T.el('#mcLines'),
         slot = T.el('#gooSlot').getBoundingClientRect(),
-        form = T.el('#mcForm').getBoundingClientRect();
+        perch = T.el('#mcPerch').getBoundingClientRect();
       return {
         h: el.getBoundingClientRect().height,
         cap: Math.min(6 * parseFloat(getComputedStyle(el).lineHeight) + 12, innerHeight / 3),
         scrolls: el.scrollHeight > el.clientHeight,
         count: lines.hidden ? '' : lines.textContent,
         fade: el.classList.contains('fade-top'),
-        perched: window.__fenmyr.perched() && Math.abs(slot.bottom - (form.top + 6)) < 4,
+        perched:
+          window.__fenmyr.perched() && Math.abs(slot.left - perch.left) < 3 && Math.abs(slot.top - perch.top) < 4,
       };
     });
   await page.focus('#mcInput');
@@ -249,15 +253,15 @@ async function grows(t: Smoke) {
     stopsAtSixLines: rest.slice(4).every(h => Math.abs(h - full.cap) <= 1),
     thenScrolls: full.scrolls && full.count === '9 lines' && full.fade,
     fadesOnlyWithTextAbove: !top.fade && top.count === '9 lines',
-    perchFollows: full.perched,
+    perchStays: full.perched,
     thirdOfTheWindow: short.cap < full.cap && Math.abs(short.h - short.cap) <= 1,
     oneLineAfterSending: Math.abs(sent.h - first) <= 1 && sent.count === '',
     heights: hs.map(Math.round).join(),
   });
 }
 
-// the count is of lines as written: an empty box under a placeholder that wraps (her name can be 18 letters) shows
-// neither a count nor a scrollbar, and one long paragraph scrolls with the fade but no count
+// the count is of lines as written: an empty box under the placeholder (her name can be 18 letters, cut short there)
+// shows neither a count nor a scrollbar, and one long paragraph scrolls with the fade but no count
 async function counts(t: Smoke) {
   const { page } = t;
   const seen = () =>
@@ -291,7 +295,7 @@ async function counts(t: Smoke) {
   const paragraph = await seen();
   await page.fill('#mcInput', '');
   t.checkAll('chatCounts', {
-    emptyBoxNoCountNoBar: empty.wraps && empty.count === '' && empty.bar === 0,
+    emptyBoxNoCountNoBar: empty.count === '' && empty.bar === 0,
     paragraphScrollsWithoutACount: paragraph.wraps && paragraph.fade && paragraph.count === '',
   });
 }

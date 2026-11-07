@@ -61,7 +61,12 @@ function act(what: string | undefined, href: string) {
 export function openLinkPop(t: HTMLElement) {
   const away = open ? null : stepAway(t);
   if (!away) return;
-  if (!closesOnOutsidePress) closeOnOutsidePress('.note-link, .card.editing', () => close('leave'));
+  if (!closesOnOutsidePress)
+    closeOnOutsidePress(
+      '.note-link, .card.editing',
+      () => !!open,
+      () => close('leave'),
+    );
   closesOnOutsidePress = true;
   const { range } = away,
     at = range.commonAncestorContainer,

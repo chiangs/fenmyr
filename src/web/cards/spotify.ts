@@ -159,13 +159,12 @@ const imageCardFrom = async (f: File) => {
   return card('image', { src: im.src, w, h: Math.round((w * im.h) / im.w) + 16 });
 };
 
+/** Returns the cards it put on the board. */
 export async function addImages(files: File[], at?: { x: number; y: number } | null, toTray?: boolean) {
   files = [...files];
   const vfs = files.filter(f => f.type.startsWith('video/'));
   files = files.filter(f => !f.type.startsWith('video/'));
-  vfs.forEach((f, n) => {
-    addVideo(f, at ? { x: at.x + n * 30, y: at.y + n * 30 } : null);
-  });
+  const made: Card[] = vfs.map((f, n) => addVideo(f, at ? { x: at.x + n * 30, y: at.y + n * 30 } : null));
   let i = 0;
   for (const f of files) {
     if (!f.type.startsWith('image/')) continue;
@@ -180,8 +179,9 @@ export async function addImages(files: File[], at?: { x: number; y: number } | n
     c.x = p.x - c.w / 2 + i * 30;
     c.y = p.y - c.h / 2 + i * 30;
     i++;
-    addCard(c);
+    made.push(addCard(c));
   }
+  return made;
 }
 
 // a picture meant for a note becomes a card of its own, so a card never mixes kinds: an empty note turns into the picture,

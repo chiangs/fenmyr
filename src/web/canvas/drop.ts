@@ -1,5 +1,5 @@
 import { addImages, linkCard, pictureForNote, spotifyOf } from '../cards/spotify.ts';
-import { $, stage } from '../core/dom.ts';
+import { $, boardLayers } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { pastedNote, pasteIntoNote } from '../edit/noteBody.ts';
 import { capture } from '../features/focus.ts';
@@ -8,7 +8,7 @@ import { refreshBoards } from '../library/rowMenu.ts';
 import { addAtCenter, centerWorld } from '../panels/zoomMenu.ts';
 import { closestTo, isTyping } from '../ui/dom.ts';
 import { lastClip, pasteCards } from './clipboard.ts';
-import { toWorld } from './handles.ts';
+import { placeInView, toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
 import { byId } from './wires.ts';
 export function init23() {
@@ -77,9 +77,7 @@ export function init23() {
     else addAtCenter('note', { ...pastedNote(clip), color: 'butter' });
   });
 
-  stage.addEventListener('dragover', e => e.preventDefault());
-
-  stage.addEventListener('drop', e => {
+  const onDrop = (e: DragEvent) => {
     e.preventDefault();
     const dt = e.dataTransfer;
     if (!dt) return;
@@ -95,10 +93,16 @@ export function init23() {
     if (files.length) {
       const ed = session.editing && closestTo(e.target, '.card.editing') ? byId(session.editing) : null;
       if (ed?.type === 'note') pictureForNote(ed, files);
+      // the bar and Myra's open chat cover where it was dropped, and can cover Unsorted
+      else if (closestTo(e.target, '#dock')) addImages(files, w).then(placeInView);
       else addImages(files, w, overTray(e));
       return;
     }
     const u = dt.getData('text/uri-list') || dt.getData('text/plain');
     if (/^https?:/.test(u)) linkCard(u.trim(), w);
-  });
+  };
+  for (const el of boardLayers) {
+    el.addEventListener('dragover', e => e.preventDefault());
+    el.addEventListener('drop', onDrop);
+  }
 }

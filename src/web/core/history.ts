@@ -6,7 +6,8 @@ import { endEdit } from '../edit/editing.ts';
 import { dueIndex } from '../features/due.ts';
 import { syncBoardTags } from '../features/tags.ts';
 import { refreshBoardsAfterSave } from '../library/rowMenu.ts';
-import { chatOpen } from '../myra/chatWindow.ts';
+import { freeOf } from '../myra/chatRules.ts';
+import { chatOverBoard } from '../myra/chatWindow.ts';
 import { say } from '../myra/say.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { cardEl } from '../ui/dom.ts';
@@ -105,11 +106,9 @@ export function showWhatMyraMade(made: Card[]) {
   const cs = [...new Set(made)].filter(c => session.board.cards.includes(c));
   if (!cs.length) return;
   const r = stage.getBoundingClientRect(),
-    L = 270,
-    ch = chatOpen() ? $('mChat').getBoundingClientRect() : null,
-    R = ch?.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - L - 520)) : 260,
-    a = toWorld(r.left + L, r.top + 60),
-    b = toWorld(r.right - R, r.bottom - 110);
+    free = freeOf({ l: r.left + 270, t: r.top + 60, r: r.right - 260, b: r.bottom - 110 }, chatOverBoard()),
+    a = toWorld(free.l, free.t),
+    b = toWorld(free.r, free.b);
   const inView =
     cs.every(c => c.x >= a.x && c.y >= a.y && c.x + c.w <= b.x && c.y + c.h <= b.y) && session.view.z > 0.45;
   if (!inView) fit(cs, 140, 1);
