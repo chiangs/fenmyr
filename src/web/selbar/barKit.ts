@@ -52,7 +52,7 @@ export const caret = () => Icon('caret-down', { cls: 'sb-caret' });
 export const pct = (v: number, min: number, max: number) =>
   `${Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100))}%`;
 
-// the bar's dropdowns: open on click (placed above the bar, never cut off), close on a pick or a click elsewhere
+// the bar's dropdowns: open on click (on the side of the bar with room), close on a pick or a click elsewhere
 export function closeSbPops() {
   const was = document.querySelector('.sb-popw.open');
   htmlIn(document, '.sb-popw.open').forEach(w => {
@@ -77,7 +77,7 @@ export function openBarColor(o: {
     tint: true,
     boardColors: true,
     fromBar: true,
-    at: { x: r.left + r.width / 2 - 140, y: opensUp(bar) ? r.top - 480 : r.bottom + 12 },
+    at: { x: r.left + r.width / 2 - 140, y: opensUp(bar, 480) ? r.top - 480 : r.bottom + 12 },
     ...o,
   });
 }
@@ -232,7 +232,11 @@ export function initPops() {
       htmlIn(document, '.sb-popw.open').forEach(x => {
         if (x === w || !x.contains(w)) x.classList.remove('open');
       }); // a dropdown inside the ··· menu keeps the menu open
-      if (!was) w.classList.add('open');
+      if (was) return;
+      w.classList.add('open');
+      // a dropdown inside the ··· menu opens to its side
+      const p = oneIn(w, ':scope > .sb-pop');
+      if (p && !w.closest('.sb-morebody')) w.classList.toggle('down', !opensUp($('selbar'), p.offsetHeight + 14));
     },
     true,
   );

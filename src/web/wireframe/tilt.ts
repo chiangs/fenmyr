@@ -7,6 +7,7 @@ import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { layersSoon } from '../panels/layers.ts';
+import { opensUp } from '../selbar/float.ts';
 import { O } from '../tools/draw.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
@@ -46,7 +47,8 @@ export function openTiltPop(c: Card, btn: Element) {
   const r = btn.getBoundingClientRect();
   pop.classList.add('on');
   pop.style.left = `${Math.min(innerWidth - pop.offsetWidth - 10, Math.max(10, r.left + r.width / 2 - pop.offsetWidth / 2))}px`;
-  pop.style.top = `${r.top - pop.offsetHeight - 10}px`;
+  const top = opensUp($('selbar'), pop.offsetHeight + 10) ? r.top - pop.offsetHeight - 10 : r.bottom + 10;
+  pop.style.top = `${top}px`;
   const inp = pop.querySelector('input');
   if (!inp) return;
   setTimeout(() => {

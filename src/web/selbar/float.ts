@@ -133,5 +133,11 @@ export function barRoom() {
   return Math.max(260, (m && m.left > s.left ? m.left - 16 : s.right - 16) - (s.left + 16));
 }
 
-/** Popups open upward, unless the bar sits under what it is for or is held at the top of the view. */
-export const opensUp = (bar: HTMLElement) => bar.dataset.side !== 'below' && bar.dataset.stuck !== 'top';
+/** Whether a popup h px tall opens above the bar: on the side away from what the bar is for, unless only the other
+ *  side has room on screen. */
+export function opensUp(bar: HTMLElement, h: number) {
+  const r = bar.getBoundingClientRect(),
+    up = r.top - h >= GAP,
+    down = r.bottom + h <= innerHeight - GAP;
+  return bar.dataset.side !== 'below' && bar.dataset.stuck !== 'top' ? up || !down : up && !down;
+}

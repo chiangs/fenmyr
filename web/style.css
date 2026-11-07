@@ -2075,6 +2075,7 @@ body.dark .tp-reset { background: rgb(from var(--hilite) r g b / .08); color: va
 .sb-pop { position: absolute; left: 50%; bottom: calc(100% + 14px); translate: -50% 0; z-index: 30; display: none; padding: 8px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--panel, #fff);
   box-shadow: 0 16px 40px rgba(78, 60, 42, .2), 0 0 0 1px rgba(0, 0, 0, .05); white-space: nowrap; }
 .sb-popw.open > .sb-pop { display: flex; animation: sbPop .18s cubic-bezier(.3, 1.4, .5, 1); }
+.sb-popw.down > .sb-pop { bottom: auto; top: calc(100% + 14px); }   /* no room above: it drops below the bar */
 @keyframes sbPop { from { opacity: 0; transform: translateY(6px) scale(.97); } }
 .sb-pop .sb-dots { display: flex; gap: 6px; padding: 2px; }
 .sb-sizelist { display: grid; gap: 2px; min-width: 150px; }
