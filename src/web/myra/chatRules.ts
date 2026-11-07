@@ -14,6 +14,8 @@ export type Geometry = {
   modeLift: number;
   /** A timer chip shows, and sits above the open chat. */
   timer: boolean;
+  /** The height dragged at the chat's top edge, or null for the usual 560. */
+  height: number | null;
   where: 'desk' | 'phone' | 'proto';
 };
 
@@ -47,7 +49,7 @@ export function placeChat(g: Geometry): Placement {
     joined = room >= CHAT.minW,
     b = joined ? g.bar.b : g.bar.t - CHAT.gap - g.modeLift,
     chip = g.timer ? CHAT.chip : 0,
-    h = Math.min(Math.max(CHAT.minH, Math.min(CHAT.h, b - CHAT.top - chip)), b - CHAT.edge - chip),
+    h = Math.min(Math.max(CHAT.minH, Math.min(g.height ?? CHAT.h, b - CHAT.top - chip)), b - CHAT.edge - chip),
     l = joined ? g.box.l : g.bar.l,
     r = joined ? l + Math.min(CHAT.w, room) : right;
   return { kind: joined ? 'joined' : 'wide', chat: { l, t: b - h, r, b } };
@@ -84,4 +86,51 @@ export function askHint(name: string, selected: number, proto: boolean, fits: (h
   const ask = n.endsWith('…') ? `Ask ${n}` : `Ask ${n}…`,
     example = `${ask} “group these by theme”`;
   return fits(example) ? example : ask;
+}
+
+/** Something that might close the open chat. */
+export type CloseInput =
+  /** Esc, with focus inside the chat or not. The slash menu and an IME composing take it first. */
+  | { type: 'esc'; inChat: boolean; menu: boolean; composing: boolean }
+  /** The fold button in the chat's header. */
+  | { type: 'fold' }
+  /** A press and its release. `empty`: it started on empty board, not on a card, a connector, a panel or a widget.
+   *  `busy`: a tool was in hand or a menu was open at the press. */
+  | { type: 'press'; empty: boolean; busy: boolean; travel: number; button: number };
+
+// further than this between press and release is a drag, a marquee or a pan
+const CLICK_TRAVEL = 4;
+
+/** Whether the event closes the chat. A prototype board keeps it docked open, and a phone's sheet keeps its own
+ *  rules for presses. A click on a card leaves it open, so cards can be selected while chatting. */
+export function closes(e: CloseInput, where: Geometry['where']): boolean {
+  if (where === 'proto') return false;
+  switch (e.type) {
+    case 'esc':
+      return e.inChat && !e.menu && !e.composing;
+    case 'fold':
+      return true;
+    case 'press':
+      return where === 'desk' && e.empty && !e.busy && e.button === 0 && e.travel <= CLICK_TRAVEL;
+    default: {
+      const unknown: never = e;
+      return unknown;
+    }
+  }
+}
+
+/** Where focus came from when it reached her box: nowhere (the window regaining focus), the chat (a close handing it
+ *  back) or any other element. */
+export type FocusFrom = 'nothing' | 'chat' | 'elsewhere';
+
+/** Focus arriving at her box opens the chat only when you moved it there. */
+export const opensOnFocus = (from: FocusFrom) => from === 'elsewhere';
+
+/** What her box says while the closed chat holds text, or null when it holds none. Lines are counted as written,
+ *  without trailing new lines. */
+export function draftLabel(text: string): string | null {
+  const kept = text.trimEnd();
+  if (!kept) return null;
+  const n = kept.split('\n').length;
+  return n === 1 ? 'Draft · 1 line' : `Draft · ${n} lines`;
 }

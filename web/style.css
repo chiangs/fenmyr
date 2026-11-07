@@ -175,6 +175,10 @@ button.zoom { justify-content: flex-end; font-family: inherit; font-size: 12px; 
 .m-pill { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 10px; border-radius: var(--pill-r); corner-shape: squircle; background: rgba(40, 40, 48, .94); color: #fff; box-shadow: 0 12px 30px rgba(58, 40, 22, .3); cursor: pointer; transition: width .35s cubic-bezier(.2, .8, .3, 1); }
 .m-pill canvas { width: 40px; height: 35px; image-rendering: pixelated; }
 .m-ask { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 14px/1.2 var(--font); color: color-mix(in oklch, currentColor 70%, transparent); }
+/* a closed chat holding text: a dot and "Draft · 3 lines" in place of "Ask Myra…" */
+.m-draft { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; font: 600 14px/1.2 var(--font); }
+.m-draft::before { content: ''; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--pink-deep); }
+.m-ask[hidden], .m-draft[hidden] { display: none; }
 .m-bubble { max-width: 460px; margin-bottom: 12px; padding: 12px 16px 14px; border-radius: 27px; corner-shape: squircle; background: rgba(40, 40, 48, .94); color: #fff; font-size: 14px; line-height: 1.5; box-shadow: 0 12px 30px rgba(58, 40, 22, .25); opacity: 0; transform: translateY(8px); transition: opacity .3s, transform .35s cubic-bezier(.2, .8, .3, 1); pointer-events: none; }
 .m-bubble.on { opacity: 1; transform: none; pointer-events: auto; }
 .m-bubble small { display: block; margin-bottom: 6px; font: 700 10px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: #7fd8ff; }
@@ -819,10 +823,11 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px 16px; border-bottom: 1px solid #f3f0ec; }
 .mc-head canvas { width: 26px; height: 23px; image-rendering: pixelated; }
 .mc-head b { font: 800 15px/1 var(--font); }
+#mcHeadName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.25; }
 .mc-status { flex: 1; font: 600 11px/1 var(--font); color: var(--pink-deep); }
 .mc-btn { border: 0; background: none; padding: 6px 9px; border-radius: var(--pill-r); corner-shape: squircle; font: 600 11.5px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .mc-btn:hover { background: var(--blush); color: var(--ink); }
-.mc-btn.x { font-size: 18px; padding: 2px 9px; }
+.mc-btn.x { display: grid; place-items: center; padding: 4px 7px; }
 .mc-list { flex: 1; overflow: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 8px; user-select: text; -webkit-user-select: text; }
 .mc-msg { max-width: 82%; padding: 9px 13px 10px; border-radius: 24px; corner-shape: squircle; font: 400 13.5px/1.45 var(--font); white-space: pre-wrap; word-break: break-word; animation: mc-in .25s cubic-bezier(.2, .9, .3, 1.2); }
 /* her messages share the class of her own figure (.myra), whose placement must not follow them out of the dock */
@@ -2943,6 +2948,9 @@ body.proto .mc-head .mc-ic { display: none; }
 .mc-head .goo-slot { width: 40px; height: 35px; flex: none; display: grid; place-items: center; }
 .mc-head .goo-slot canvas { width: 40px; height: 35px; }
 .mc-grip { display: none; }
+/* the open chat's top edge: drag it for a taller or shorter chat */
+.mc-top-grip { position: absolute; left: 0; right: 0; top: -6px; margin: 0; z-index: 3; }
+body:is(.phone, .proto) .mc-top-grip { display: none; }
 body.proto .mc-grip { display: block; align-self: stretch; margin: 2px 10px; }
 body.proto #mcInput { height: var(--input-h, 140px); max-height: none; field-sizing: fixed; overflow-y: auto; resize: none; }
 /* which project a new prototype is for, when started outside one */

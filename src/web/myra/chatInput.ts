@@ -1,7 +1,6 @@
 import { $ } from '../core/dom.ts';
 import { elementById } from '../ui/dom.ts';
 import { chatKey } from './chatKeys.ts';
-import { myraOpen } from './chatWindow.ts';
 import { boxState, menuKey } from './slash.ts';
 
 const box = () => elementById('mcInput', HTMLTextAreaElement);
@@ -28,6 +27,8 @@ function onKey(e: KeyboardEvent, el: HTMLTextAreaElement) {
   const a = chatKey(e, boxState(el.value));
   switch (a.type) {
     case 'pass':
+    // the chat's own Esc closes it, from here or anywhere else in it
+    case 'close':
       return;
     case 'ime':
     case 'line':
@@ -37,10 +38,6 @@ function onKey(e: KeyboardEvent, el: HTMLTextAreaElement) {
       e.preventDefault();
       e.stopPropagation();
       el.form?.requestSubmit();
-      return;
-    case 'close':
-      e.stopPropagation();
-      myraOpen(false);
       return;
     case 'menu':
       e.preventDefault();

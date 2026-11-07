@@ -19,6 +19,7 @@ import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { renderWheel } from '../tools/stamps.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { closestTo, elementById } from './dom.ts';
+import { countAsMenu } from './popover.ts';
 import { tbRect } from './toolbarConfig.ts';
 
 // links get a little paste box under the toolbar (the app can't show the browser's prompt)
@@ -29,23 +30,24 @@ export function toPointer() {
   if (penT) endPen(true);
   stopPlacing();
   if (drawOn) exitDraw();
-  ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(id => {
+  PICKERS.forEach(id => {
     $(id)?.classList.remove('on');
   });
   syncPointer();
 }
 
+const PICKERS = ['shapePick', 'tplPick', 'stampWheel', 'stampPick'];
+const pickerOpen = () => PICKERS.some(id => $(id)?.classList.contains('on'));
+
+/** Any tool but the select arrow: placing, drawing, the pen or a lit tool button. */
+export const toolInHand = () =>
+  drawOn || !!placing || !!penT || !!$('tools').querySelector('[data-add]:not([data-add="pointer"]).on');
+
 function syncPointer() {
   const p = $('tools').querySelector('[data-add="pointer"]');
   if (!p) return;
   $('tools').querySelector('[data-add="draw"]')?.classList.toggle('on', drawOn);
-  const busy =
-    drawOn ||
-    placing ||
-    penT ||
-    $('tools').querySelector('[data-add]:not([data-add="pointer"]).on') ||
-    ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].some(id => $(id)?.classList.contains('on'));
-  p.classList.toggle('on', !busy);
+  p.classList.toggle('on', !toolInHand() && !pickerOpen());
 }
 
 // + Project / + Folder / + Board: the folder and board add into wherever you are: the folder you're in, or the project you're in
@@ -69,10 +71,11 @@ export function init21() {
     const mo = new MutationObserver(() => syncPointer());
     mo.observe($('tools'), { subtree: true, attributes: true, attributeFilter: ['class'] });
     mo.observe($('drawbar'), { attributes: true, attributeFilter: ['hidden'] });
-    ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(id => {
+    PICKERS.forEach(id => {
       $(id) && mo.observe($(id), { attributes: true, attributeFilter: ['class'] });
     });
   }
+  countAsMenu(pickerOpen);
 
   $('tools').onclick = e => {
     const b = closestTo(e.target, '[data-add]');

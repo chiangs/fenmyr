@@ -96,6 +96,9 @@ export const freshChat = (t: Smoke) =>
     window.__t.el('#mcInput').blur();
   });
 
+// her chat closed the way a person folds it (her box only opens it)
+export const closeChat = (t: Smoke) => t.page.evaluate(() => window.__t.click('#mcClose'));
+
 // her chat panel open or closed, without the opening animation
 export const chatOpen = (t: Smoke, on: boolean) =>
   t.page.evaluate(on => window.__t.el('#myra').classList.toggle('chat', on), on);

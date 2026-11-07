@@ -7,7 +7,7 @@ export async function chatInput(t: Smoke) {
   const { page } = t;
   await page.evaluate(() => {
     window.__fenmyr.stopAnim();
-    if (window.__fenmyr.perched()) window.__t.click('#mPill');
+    if (window.__fenmyr.perched()) window.__t.click('#mcClose');
   });
   await page.waitForTimeout(1300);
   await page.click('#mPill');
