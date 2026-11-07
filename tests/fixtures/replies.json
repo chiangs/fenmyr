@@ -1881,6 +1881,16 @@
     "who": "myra",
     "text": "Done!",
     "acts": []
+   },
+   {
+    "who": "myra",
+    "text": "Done! I touched 1 cards.",
+    "acts": []
+   },
+   {
+    "who": "myra",
+    "text": "Done! I touched 1 cards.",
+    "acts": []
    }
   ],
   "timer": "Tea"

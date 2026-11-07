@@ -55,7 +55,8 @@ export function effectsOf({ reply: r, q }: HeldReply): Effect[] {
   return out;
 }
 
-// Runs them in order. Returns the buttons they offer under her line. `touched`: the cards the reply made or changed.
+// Runs them in order. Returns the buttons they offer under her line. `touched`: the cards the reply made, moved or
+// edited, in that order.
 export async function runEffects(effects: readonly Effect[], touched: readonly Card[]): Promise<SayAction[]> {
   const acts: SayAction[] = [];
   for (const e of effects)

@@ -373,6 +373,25 @@ await check('a reply that fails part way: the board stays as it was, and the nex
   assert.strictEqual(await boardJSON(page), before, 'one Ctrl+Z takes back the next reply and leaves nothing behind');
 });
 
+await check("a template she saves from the cards she just touched keeps them in her reply's order", async () => {
+  await open('order');
+  const texts = await page.evaluate(async () => {
+    await window.__fenmyr.applyMyra(
+      {
+        say: 'ok',
+        edit: [{ id: 'n2', text: 'Edited second' }],
+        move: [{ id: 'n1', x: 40, y: 1100 }],
+        add: [{ text: 'Added' }],
+        saveTemplate: { name: 'In order', fromNew: true },
+      },
+      'q',
+    );
+    const t = (await window.Fenmyr.templates()).find(x => x.name === 'In order');
+    return t?.cards.map(c => (typeof c === 'object' && c !== null && 'text' in c ? c.text : null));
+  });
+  assert.deepStrictEqual(texts, ['Added', 'First note', 'Edited second'], 'added, then moved, then edited');
+});
+
 const errors = [...l.errors];
 await l.close();
 assert.deepStrictEqual(errors, [], 'no page errors');

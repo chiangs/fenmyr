@@ -8,7 +8,7 @@ import { guessNext, noEmoji } from './replyText.ts';
 import type { SayAction } from './say.ts';
 
 // What she says once a reply has landed, with its buttons and how long the bubble stays. `touched`: the cards the reply
-// made or changed, each once. `more`: buttons its effects offer.
+// made, moved or edited, each once. `more`: buttons its effects offer.
 export function replyLine({ reply: r, q, ctx }: HeldReply, touched: readonly Card[], more: readonly SayAction[]) {
   const read = !ctx.asked
     ? ''

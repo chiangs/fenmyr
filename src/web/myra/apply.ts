@@ -113,7 +113,7 @@ const viewAt = (): ViewAt => ({
 export function previewHeld(held: HeldReply): { lists: BoardLists; changes: ChangeSet } | null {
   if (held.template?.mode === 'new') return null;
   const lists = listsOf(session.board),
-    skipped = planBoard(lists, held, viewAt());
+    { skipped } = planBoard(lists, held, viewAt());
   return { lists, changes: changeSet(recordOf(session.board, lists), lists, { named: namedIn(held.reply), skipped }) };
 }
 
@@ -141,10 +141,10 @@ function changeBoard(held: HeldReply) {
   remember();
   const b = session.board,
     before = listsOf(b);
-  let skipped: string[];
+  let plan: ReturnType<typeof planBoard>;
   try {
-    skipped = planBoard(b, held, viewAt());
-    paint(held, before, new Set(skipped));
+    plan = planBoard(b, held, viewAt());
+    paint(held, before, new Set(plan.skipped));
   } catch (e) {
     Object.assign(b, before);
     if (!before.trayLinks) delete b.trayLinks;
@@ -152,10 +152,10 @@ function changeBoard(held: HeldReply) {
     throw e;
   }
   save();
-  const changes = changeSet(recordOf(before, b), b, { named: namedIn(held.reply), skipped });
+  const changes = changeSet(recordOf(before, b), b, { named: namedIn(held.reply), skipped: plan.skipped });
   remember();
-  const ids = new Set([...changes.added, ...changes.moved, ...changes.edited]);
-  return { changes, touched: b.cards.filter(c => ids.has(c.id)) };
+  const onBoard = new Map(b.cards.map(c => [c.id, c]));
+  return { changes, touched: plan.touched.map(id => onBoard.get(id)).filter(c => c !== undefined) };
 }
 
 function paint(held: HeldReply, before: BoardLists, skipped: ReadonlySet<string>) {

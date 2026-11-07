@@ -241,11 +241,14 @@ for (const r of [
   }, r);
 result.buttons = { ...(await shot(page)), anim: await page.evaluate(() => window.__fenmyr.lastAnimName()) };
 
-// 5. no words from her: she counts what she touched, or just says she's done
+// 5. no words from her: she counts what she touched, or just says she's done. A card she moves or edits counts even
+// when that changes nothing: a card in a kanban goes back to its column, and an edit can repeat what it says.
 await open(page, 'counted');
 for (const r of [
   { add: [{ text: 'One' }], move: [{ id: 'n1', x: 50, y: 1100 }], edit: [{ id: 'n1', text: 'Moved and edited' }] },
   { remove: ['n2'] },
+  { move: [{ id: 'k1', x: 2000, y: 2000 }] },
+  { edit: [{ id: 'n3', text: 'Third note' }] },
 ])
   await page.evaluate(async r => {
     await window.__fenmyr.applyMyra(r, 'go');

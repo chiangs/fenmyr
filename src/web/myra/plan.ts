@@ -32,11 +32,17 @@ type Edit = NonNullable<MyraReply['edit']>[number];
 export const namedIn = (r: MyraReply) => new Set([...(r.move ?? []), ...(r.edit ?? [])].map(o => o.id));
 
 // The board part of a reply, in the order its steps have always run. It changes only `b`: no drawing, no saving and
-// no waiting, so it plans on a copy for a preview as well as on the open board. Ids it can’t find are skipped. So is
-// the card being typed in, whose id it returns.
-export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[] {
+// no waiting, so it plans on a copy for a preview as well as on the open board. Ids it can’t find are skipped, and so
+// is the card being typed in: `skipped`. `touched`: every card the reply made, moved or edited, in the order it did
+// so, whether or not that changed the card.
+export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): { skipped: string[]; touched: string[] } {
   const r = held.reply,
     skipped = new Set<string>(),
+    touched = new Set<string>(),
+    add = (...cs: Card[]) => {
+      b.cards.push(...cs);
+      for (const c of cs) touched.add(c.id);
+    },
     byId = (id: string) => b.cards.find(c => c.id === id),
     colls = () => b.cards.filter((c): c is Coll => c.type === 'coll'),
     parentOf = (id: string) => colls().find(s => s.kids.includes(id)),
@@ -52,7 +58,7 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[
   if (held.template?.mode === 'add') {
     const made = structuredClone(held.template.cards),
       others = [...b.cards];
-    b.cards.push(...made);
+    add(...made);
     b.links.push(...structuredClone(held.template.links));
     arrangeAll();
     const { x: x0, y: y0, w, h } = boxOf(made),
@@ -87,7 +93,7 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[
       r: 0,
       ...kanbanFields(o),
     });
-    b.cards.push(s);
+    add(s);
     made[(o.name || '').toLowerCase()] = s;
   }
   const leaveCollection = (c: Card) => {
@@ -123,13 +129,13 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[
     if (c.type === 'note' && o.text) keepMyraText(c, o.text);
     if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag);
     if (hasDue(c) && o.due && dueDate(o.due)) c.due = o.due;
-    b.cards.push(c);
+    add(c);
     if (o.in) file(c, o.in, o.column);
   }
-  for (const o of r.titles ?? []) b.cards.push(card('title', { ...place(o), text: o.text }));
+  for (const o of r.titles ?? []) add(card('title', { ...place(o), text: o.text }));
   for (const o of r.place ?? []) {
     const c = b.tray.find(x => x.id === o.id);
-    if (c) pullFromTray(b, c, place(o));
+    if (c) for (const m of pullFromTray(b, c, place(o))) touched.add(m.id);
   }
   // every card she added so far has been laid out by now, so screens and pictures go beside where they really are
   arrangeAll();
@@ -139,6 +145,7 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[
     c.x = o.x;
     c.y = o.y ?? c.y;
     if (o.color && COLOR_NAMES.includes(o.color)) c.color = o.color;
+    touched.add(c.id);
   }
   for (const o of r.edit ?? []) {
     const c = byId(o.id) || b.tray.find(x => x.id === o.id);
@@ -148,6 +155,7 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[
       if (o.in) file(c, o.in);
       else leaveCollection(c);
     }
+    touched.add(c.id);
   }
   const gone = new Set((r.remove ?? []).filter(id => !typedIn(id)));
   if (gone.size) {
@@ -167,7 +175,7 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[
     const sy = b.cards.length ? Math.min(...b.cards.map(c => c.y)) : center.y - 400;
     for (const sp of r.screens) {
       const { f, made } = buildScreen(sp, sx, sy);
-      b.cards.push(...made);
+      add(...made);
       const noFlow = typeof sp === 'object' && sp !== null && 'flow' in sp && sp.flow === false;
       if (prev && !noFlow) b.links.push({ id: uid(), a: prev.id, b: f.id, arrow: true });
       prev = f;
@@ -181,7 +189,7 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[
       y: Math.min(...b.cards.map(c => c.y), center.y),
     };
     held.pictures.forEach((p, k) => {
-      b.cards.push(
+      add(
         card('image', {
           src: p.src,
           w: p.w,
@@ -206,9 +214,9 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): string[
     });
     c.x = snapTo(center.x - 460 + (k % 3) * (c.w + 20));
     c.y = snapTo(center.y + 140 + Math.floor(k / 3) * (c.h + 20));
-    b.cards.push(c);
+    add(c);
   });
-  return [...skipped];
+  return { skipped: [...skipped], touched: [...touched] };
 }
 
 function edit(c: Card, o: Edit) {
