@@ -11,7 +11,7 @@ import { settings } from '../settings/settings.ts';
 import { elementById, textField } from '../ui/dom.ts';
 import { aiGrants, gatherVault, gatherVaultTasks, updateVaultChip, type VaultTasksUsed } from '../vault/ask.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
-import { applyMyra } from './apply.ts';
+import { applyHeld, holdReply, Turn } from './apply.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat, typing } from './chatLog.ts';
 import { chatOpen, myraOpen } from './chatWindow.ts';
@@ -110,30 +110,42 @@ function webMyra(q: string) {
 export let animAskedAt = 0;
 export let timerAskedAt = 0;
 
-export async function ask(q: string, confirmed = false) {
-  const did: string[] = []; // what the app already did for this sentence, so her answer can go with it
-  if (!confirmed) {
-    const an = animRequest(q);
-    if (an) {
-      animAskedAt = Date.now();
-      const n = an === '*' ? pickAnim() : an;
-      if (playAnim(n, false)) did.push(`played her ${n} animation`);
-    }
-    const tr = timerRequest(q);
-    if (tr) {
-      timerAskedAt = Date.now();
-      did.push(runTimerRequest(tr));
-    }
+// A question as it was asked. `did`: what the app already did for the sentence; `vault`: the vault chip was ticked
+// for it.
+type Asked = { q: string; confirmed: boolean; did: string[]; vault: boolean };
+
+// The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
+// animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the board and the
+// vault chip the question was asked with.
+export function ask(q: string, confirmed = false) {
+  const asked: Asked = { q, confirmed, did: confirmed ? [] : actOnSentence(q), vault: appState.vaultChip };
+  appState.vaultChip = false;
+  updateVaultChip();
+  if (!chatOpen()) myraOpen(true);
+  if (!confirmed) addMsg('me', q);
+  return Turn.take(turn => answer(turn, asked), session.board.id);
+}
+
+// what the app already did for this sentence, so her answer can go with it
+function actOnSentence(q: string) {
+  const did: string[] = [];
+  const an = animRequest(q);
+  if (an) {
+    animAskedAt = Date.now();
+    const n = an === '*' ? pickAnim() : an;
+    if (playAnim(n, false)) did.push(`played her ${n} animation`);
   }
-  if (Fenmyr.web) {
-    if (!chatOpen()) myraOpen(true);
-    addMsg('me', q);
-    return webMyra(q);
+  const tr = timerRequest(q);
+  if (tr) {
+    timerAskedAt = Date.now();
+    did.push(runTimerRequest(tr));
   }
-  if (!settings.ai || appState.haveClaude === false) {
-    if (!chatOpen()) myraOpen(true);
-    addMsg('me', q);
-  }
+  return did;
+}
+
+async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
+  if (!turn.stillOpen()) return;
+  if (Fenmyr.web) return webMyra(q);
   if (!settings.ai) return offlineMyra(q, 'My thinking is switched off in Settings, so I can only do simple tidying.');
   if (appState.haveClaude === false) {
     await showConnections(true);
@@ -143,14 +155,9 @@ export async function ask(q: string, confirmed = false) {
         "I need Claude Code on this computer to think. It's a one-time setup with your Claude account.",
       );
   } // look again first: they may have just set it up
-  if (!navigator.onLine) {
-    if (!chatOpen()) myraOpen(true);
-    addMsg('me', q);
+  if (!navigator.onLine)
     return offlineMyra(q, "You're offline, so I can't think with Claude right now. I'll be back when the internet is.");
-  }
-  if (!chatOpen()) myraOpen(true);
-  if (!confirmed) addMsg('me', q);
-  else addMsg('myra', 'Making it… this can take a minute ✦');
+  if (confirmed) addMsg('myra', 'Making it… this can take a minute ✦');
   $('myra').classList.add('thinking');
   goo.think(true);
   typing(true);
@@ -159,7 +166,7 @@ export async function ask(q: string, confirmed = false) {
     used: [],
     tasks: null,
   };
-  if (appState.vaultChip && aiGrants(session.board).length) {
+  if (vault && aiGrants(session.board).length) {
     ctx.asked = true;
     try {
       ctx.tasks = await gatherVaultTasks(q);
@@ -167,8 +174,6 @@ export async function ask(q: string, confirmed = false) {
     } catch (_e) {}
   }
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
-  appState.vaultChip = false;
-  updateVaultChip();
   try {
     const raw = await Fenmyr.ask(
       (window.myraName && window.myraName !== 'Myra'
@@ -189,7 +194,7 @@ export async function ask(q: string, confirmed = false) {
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),
       },
     );
-    await applyMyra(parse(raw), q, ctx);
+    await applyHeld(turn, await holdReply(parse(raw), q, ctx));
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
     if (/Claude Code/.test(why)) {

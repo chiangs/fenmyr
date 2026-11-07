@@ -1,12 +1,14 @@
+import type { BoardLists } from '../../shared/changes.ts';
 import type { Card, Link } from '../../shared/model.ts';
 import { $, stage, wires } from '../core/dom.ts';
+import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { chirp } from '../myra/say.ts';
 import { LY, layersSoon } from '../panels/layers.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { addCard } from '../tools/penEdit.ts';
 import { cardEl, esc } from '../ui/dom.ts';
+import { renderCard } from './render.ts';
 
 type Point = { x: number; y: number };
 type Pin = { u: number; v: number };
@@ -211,8 +213,8 @@ export function sendToTray(cards: Card[]) {
 }
 
 // back onto the board with c's top-left at `at`; the rest of its group follows. Returns everything that came out.
-export function takeFromTray(c: Card, at: Point) {
-  const members = c.tie ? session.board.tray.filter(m => m.tie === c.tie) : [c];
+export function pullFromTray(b: BoardLists, c: Card, at: Point) {
+  const members = c.tie ? b.tray.filter(m => m.tie === c.tie) : [c];
   if (!members.includes(c)) members.push(c);
   const dx = at.x - c.x,
     dy = at.y - c.y,
@@ -226,26 +228,25 @@ export function takeFromTray(c: Card, at: Point) {
       m.y += dy;
     }
   });
-  const back = (session.board.trayLinks || []).filter(l => ids.has(l.a) && ids.has(l.b));
-  session.board.trayLinks = (session.board.trayLinks || []).filter(l => !back.includes(l));
-  session.board.links.push(...back);
-  session.board.tray = session.board.tray.filter(m => !ids.has(m.id));
+  const back = (b.trayLinks || []).filter(l => ids.has(l.a) && ids.has(l.b));
+  b.trayLinks = (b.trayLinks || []).filter(l => !back.includes(l));
+  b.links.push(...back);
+  b.tray = b.tray.filter(m => !ids.has(m.id));
   members.forEach(m => {
     delete m.tie;
-    addCard(m);
+    b.cards.push(m);
   });
-  if (back.length) renderWires();
   return members;
 }
 
-// a tied card that lost its partners (Myra removed them) is just an ordinary item again
-export function tidyTies() {
-  const n: Record<string, number> = {};
-  for (const c of session.board.tray) if (c.tie) n[c.tie] = (n[c.tie] || 0) + 1;
-  for (const c of session.board.tray) if (c.tie && (n[c.tie] ?? 0) < 2) delete c.tie;
-  const ids = new Set(session.board.tray.map(c => c.id));
-  session.board.trayLinks = (session.board.trayLinks || []).filter(l => ids.has(l.a) && ids.has(l.b));
-  if (!session.board.trayLinks.length) delete session.board.trayLinks;
+export function takeFromTray(c: Card, at: Point) {
+  const members = pullFromTray(session.board, c, at);
+  members.forEach(m => {
+    renderCard(m, true);
+  });
+  save();
+  renderWires();
+  return members;
 }
 
 // (the stage gets a 'multi' class when more than one thing is selected: tilt handles only show for one thing at a time)

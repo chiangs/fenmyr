@@ -30,6 +30,9 @@ type Options = {
   env?: Record<string, string>;
   // a data folder to use, and keep when the app closes, so a test can quit and open the app again
   data?: string;
+  // a stand-in Claude Code where the real one usually lives, so asking Myra takes the same path on a machine without
+  // it; a test that asks replaces the bridge's ask itself
+  claude?: boolean;
 };
 
 export async function launch({
@@ -40,10 +43,15 @@ export async function launch({
   flags = [],
   env = {},
   data: kept,
+  claude = false,
 }: Options = {}): Promise<Launched> {
   const data = kept ?? fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-h-'));
   const boardsDir = path.join(data, 'fenmyr', 'boards');
   fs.mkdirSync(boardsDir, { recursive: true });
+  if (claude) {
+    fs.mkdirSync(path.join(data, '.local/bin'), { recursive: true });
+    fs.writeFileSync(path.join(data, '.local/bin/claude'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+  }
   for (const b of boards) fs.writeFileSync(path.join(boardsDir, `${b.id}.json`), JSON.stringify(b));
   const version = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).version;
   const app = await _electron.launch({
