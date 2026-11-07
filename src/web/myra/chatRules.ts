@@ -1,5 +1,5 @@
-// Where Myra's chat window sits, and what her box and input say. No DOM, so tests/chatRules.ts checks every case in
-// Node.
+// Where Myra's chat window sits, how much board it leaves free, and what her box and input say. No DOM, so
+// tests/chatRules.ts checks every case in Node.
 
 /** Window pixels. */
 export type Rect = { l: number; t: number; r: number; b: number };
@@ -51,6 +51,19 @@ export function placeChat(g: Geometry): Placement {
     l = joined ? g.box.l : g.bar.l,
     r = joined ? l + Math.min(CHAT.w, room) : right;
   return { kind: joined ? 'joined' : 'wide', chat: { l, t: b - h, r, b } };
+}
+
+// cards fitted beside the chat keep this far from it
+const FREE_GAP = 30;
+const area = (r: Rect) => Math.max(0, r.r - r.l) * Math.max(0, r.b - r.t);
+
+/** The part of frame the open chat leaves free: left of it or above it, whichever is bigger. A joined chat usually
+ *  leaves the left part, a wide one the part above. */
+export function freeOf(frame: Rect, chat: Rect | null): Rect {
+  if (!chat) return frame;
+  const left = { ...frame, r: Math.min(frame.r, chat.l - FREE_GAP) },
+    above = { ...frame, b: Math.min(frame.b, chat.t - FREE_GAP) };
+  return area(left) >= area(above) ? left : above;
 }
 
 const NAME_MAX = 12;

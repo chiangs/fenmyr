@@ -149,13 +149,15 @@ await check('at 1440 px her chat opens joined to the tools, over her box, and th
 await check('with under 320 px right of the tools her chat opens wide, above the bar', async () => {
   await size(1100);
   await setChat(true);
-  const { mChat, dock } = await edges(['mChat', 'dock']);
+  const { mChat, dock } = await edges(['mChat', 'dock']),
+    cards = await fitAll(['note', 'pic', 'wf']);
   await setChat(false);
   await size(1440);
   assert.ok(mChat && dock, 'her chat and the bar are up');
   near(mChat.l, dock.l, 'the chat’s left, on the bar’s');
   near(mChat.r, 1100 - 14, 'the chat’s right');
   near(mChat.b, dock.t - 12, 'the chat’s bottom');
+  assert.ok(cards.b <= mChat.t - 29, `fitted cards end at ${cards.b}, over the chat’s top at ${mChat.t}`);
 });
 
 await check('she hops from her box into the chat’s header', async () => {

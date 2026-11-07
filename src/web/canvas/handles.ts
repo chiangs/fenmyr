@@ -3,9 +3,10 @@ import type { Card, View } from '../../shared/model.ts';
 import { cropping } from '../cards/crop.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { clamp } from '../core/base.ts';
-import { $, stage, world } from '../core/dom.ts';
+import { stage, world } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
-import { chatOpen } from '../myra/chatWindow.ts';
+import { freeOf, type Rect } from '../myra/chatRules.ts';
+import { chatOverBoard } from '../myra/chatWindow.ts';
 import { drawOn } from '../tools/draw.ts';
 import { vec } from '../tools/penEdit.ts';
 import { cardEl } from '../ui/dom.ts';
@@ -197,15 +198,17 @@ export function stepZoom(cx: number, cy: number, dir: number) {
   if (next) zoomAt(cx, cy, next);
 }
 
-// the part of the stage not covered by the left boxes and the tray (or Myra's chat, when it's open)
-function openSides(r: DOMRect) {
-  const ph = document.body.classList.contains('phone'),
-    ch = !ph && chatOpen() ? $('mChat').getBoundingClientRect() : null;
-  if (ph) return { L: 0, R: 0 };
-  return { L: 270, R: ch?.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - 270 - 520)) : 260 };
+// the part of the stage the left boxes, the right ones and Myra's open chat leave free, in stage pixels
+function freeArea(r: DOMRect): Rect {
+  if (document.body.classList.contains('phone')) return { l: 0, t: 0, r: r.width, b: r.height };
+  const chat = chatOverBoard();
+  return freeOf(
+    { l: 270, t: 0, r: r.width - 260, b: r.height },
+    chat && { l: chat.l - r.left, t: chat.t - r.top, r: chat.r - r.left, b: chat.b - r.top },
+  );
 }
 
-// the view that fits these cards, without moving to it
+// the view that fits these cards, without moving to it; a small free area gets a smaller margin
 function fitted(cards: Card[], pad: number, maxZ: number): View {
   const r = stage.getBoundingClientRect();
   const x0 = Math.min(...cards.map(c => c.x)),
@@ -213,12 +216,18 @@ function fitted(cards: Card[], pad: number, maxZ: number): View {
     x1 = Math.max(...cards.map(c => c.x + c.w)),
     y1 = Math.max(...cards.map(c => c.y + c.h));
   const ph = document.body.classList.contains('phone'),
-    { L, R } = openSides(r),
-    z = clamp(Math.min((r.width - L - R - pad) / (x1 - x0), (r.height - pad * 2) / (y1 - y0)), 0.2, maxZ);
+    f = freeArea(r),
+    fw = f.r - f.l,
+    fh = f.b - f.t,
+    z = clamp(
+      Math.min((fw - Math.min(pad, fw / 4)) / (x1 - x0), (fh - 2 * Math.min(pad, fh / 4)) / (y1 - y0)),
+      0.2,
+      maxZ,
+    );
   return {
     z,
-    x: L + (r.width - L - R - (x1 - x0) * z) / 2 - x0 * z,
-    y: (r.height - (ph ? 90 : 0) - (y1 - y0) * z) / 2 - y0 * z + (ph ? 20 : 0),
+    x: f.l + (fw - (x1 - x0) * z) / 2 - x0 * z,
+    y: f.t + (fh - (ph ? 90 : 0) - (y1 - y0) * z) / 2 - y0 * z + (ph ? 20 : 0),
   };
 }
 
@@ -235,20 +244,19 @@ export function fit(cards: Card[], pad = 120, maxZ = 1.4) {
 // the middle of the part of the view that panels don't cover, in board coordinates
 export function openCentre() {
   const r = stage.getBoundingClientRect(),
-    { L, R } = openSides(r),
+    f = freeArea(r),
     { x: vx, y: vy, z } = session.view;
-  return { x: ((L + r.width - R) / 2 - vx) / z, y: (r.height / 2 - vy) / z };
+  return { x: ((f.l + f.r) / 2 - vx) / z, y: ((f.t + f.b) / 2 - vy) / z };
 }
 
 // The view that shows cards just placed in `box`: the view as it is when they're on screen, else one that moves to
 // them without zooming in, so placing something never changes how close you were looking.
 export function viewShowing(made: Card[], box: { x: number; y: number; w: number; h: number }) {
-  const r = stage.getBoundingClientRect(),
-    { L, R } = openSides(r),
+  const f = freeArea(stage.getBoundingClientRect()),
     { x: vx, y: vy, z } = session.view,
     left = box.x * z + vx,
     top = box.y * z + vy,
-    onScreen = left >= L && left + box.w * z <= r.width - R && top >= 0 && top + box.h * z <= r.height;
+    onScreen = left >= f.l && left + box.w * z <= f.r && top >= f.t && top + box.h * z <= f.b;
   return onScreen ? session.view : fitted(made, 120, z);
 }
 

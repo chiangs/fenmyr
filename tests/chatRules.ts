@@ -1,6 +1,6 @@
-// Where Myra's chat sits and what her input says, for every case of the rules, in Node.
+// Where Myra's chat sits, what board it leaves free and what her input says, for every case of the rules, in Node.
 import assert from 'node:assert';
-import { askHint, cutName, type Geometry, placeChat } from '../src/web/myra/chatRules.ts';
+import { askHint, cutName, freeOf, type Geometry, placeChat, type Rect } from '../src/web/myra/chatRules.ts';
 
 // the bottom bar 18 px over the window's bottom, 50 tall, from 260 px, her 200 px box at its end
 const desk = (w: number, h: number, toolsR: number, more: Partial<Geometry> = {}): Geometry => ({
@@ -60,6 +60,20 @@ assert.deepStrictEqual(
   { kind: 'docked' },
   'docked on a prototype',
 );
+
+const frame: Rect = { l: 270, t: 60, r: 1180, b: 790 };
+assert.deepStrictEqual(freeOf(frame, null), frame, 'with the chat closed the whole frame is free');
+assert.deepStrictEqual(
+  freeOf(frame, { l: 1076, t: 322, r: 1426, b: 882 }),
+  { l: 270, t: 60, r: 1046, b: 790 },
+  'a joined chat leaves the board left of it, 30 px short',
+);
+assert.deepStrictEqual(
+  freeOf(frame, { l: 260, t: 260, r: 1086, b: 820 }),
+  { l: 270, t: 60, r: 1180, b: 230 },
+  'a wide chat leaves the board above it, 30 px short',
+);
+assert.deepStrictEqual(freeOf(frame, { l: 1300, t: 60, r: 1426, b: 882 }), frame, 'a chat past the frame takes none');
 
 assert.strictEqual(cutName('Myra'), 'Myra', 'a short name stays whole');
 assert.strictEqual(cutName('Twelve-lette'), 'Twelve-lette', '12 letters stay whole');
