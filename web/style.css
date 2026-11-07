@@ -403,15 +403,17 @@ html.native .home-in { padding-top: 40px; }
 .tools button:hover::after { opacity: 1; transform: translate(-50%, 0); }
 .tools .zoom { padding: 0 10px 0 6px; }
 
-/* ---------- the dock at the bottom: tools + Myra ---------- */
-.dock { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 15; display: flex; align-items: flex-end; gap: 10px; }
+/* ---------- the bottom bar: tools + Myra ----------
+   It starts where the canvas area does, as far from the left widgets as they are from the window, on a whole pixel so
+   its icons stay crisp. It sits above the widgets (z 20), so what rises from it can cover them. */
+.dock { position: fixed; left: calc(var(--side) + 28px); bottom: 18px; width: max-content; z-index: 21; display: flex; align-items: flex-end; gap: 10px; }
 .dock .tools { position: static; transform: none; left: auto; top: auto; }
 .dock .tools button::after { top: auto; bottom: calc(100% + 12px); transform: translate(-50%, 3px); }
 .dock .tools button:hover::after { transform: translate(-50%, 0); }
 .dock .tools button.on { background: var(--blush); }
 .dock .tools button.on .ic { color: var(--ink); }
 .dock .myra { position: relative; left: auto; bottom: auto; transform: none; }
-/* Myra's bubble and chat rise over drawing's or find's bar by --mode-h, which float.ts sets on the stage */
+/* Myra's bubble and chat rise over drawing's or find's bar by --mode-h, which float.ts sets on body */
 .dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); margin: 0; width: max-content; }
 .selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
 .selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
@@ -520,10 +522,9 @@ html.native .dv-bar { padding-top: 14px; }
 .dv-body { min-height: 60vh; outline: none; font: 400 16px/1.7 var(--font); color: var(--ink); white-space: pre-wrap; user-select: text; -webkit-user-select: text; cursor: text; }
 .dv-body:empty::before { content: attr(data-ph); color: var(--ink-faint); }
 /* with a doc open, the tools step aside but Myra's bubble (and its Undo) still shows on top */
-.stage.doc-open .dock { z-index: 24; }
-.stage.doc-open .dock .tools, .stage.doc-open .modebar, .stage.doc-open .selbar, .stage.doc-open .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
+body:has(.stage.doc-open) .dock .tools, .stage.doc-open .modebar, .stage.doc-open .selbar, body:has(.stage.doc-open) .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
 /* on the All projects pages the board tools hide; Myra stays to help organize */
-.stage.at-home .dock .tools, .stage.at-home .selbar, .stage.at-home .shapepick { display: none; }
+body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, .stage.at-home .shapepick { display: none; }
 .sub-boards { margin-left: 16px; padding-left: 8px; border-left: 1.5px dashed var(--sub-line); display: flex; flex-direction: column; gap: 1px; }
 .sub-boards .board-row { font-size: 13px; }
 /* full-page docs: keep the bar clear of the floating boxes on the left */
@@ -1423,7 +1424,7 @@ body.phone .top .crumbs { display: none; }
 body.phone .board-name { font-size: 20px; width: 100%; }
 body.phone .saved { display: none; }
 /* the hub */
-body.phone .dock { left: 10px; right: 10px; bottom: calc(10px + var(--safe)); transform: none; display: block; }
+body.phone .dock { left: 10px; right: 10px; bottom: calc(10px + var(--safe)); margin-inline: auto; display: block; }
 body.phone .hub { display: grid; grid-template-columns: repeat(5, 1fr); align-items: end; height: var(--hub-h); padding: 6px 6px; border-radius: 32px; corner-shape: squircle; background: rgba(255, 255, 255, .94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 14px 34px rgba(var(--sh), calc(.18 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.05 * var(--sh-k))); }
 .hub button { position: relative; display: grid; justify-items: center; align-content: center; gap: 3px; height: 52px; border: 0; border-radius: 22px; corner-shape: squircle; background: none; color: var(--ink-soft); font: 600 10.5px/1 var(--font); -webkit-tap-highlight-color: transparent; }
@@ -1673,7 +1674,7 @@ body.dark .dt-myra { background: #f0ebe4; color: #1d1a16; }
 .dv-tools { flex-wrap: wrap; row-gap: 4px; overflow: visible; }
 .dv-prose ul[data-type="taskList"] li > label { margin-top: .28em; }
 body.phone .docview { width: 100%; } body.phone .docview .dv-bar { padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
-body.phone .stage.doc-open .dock { display: none; }   /* a doc takes the whole phone screen; Back returns to the board and its hub */
+body.phone:has(.stage.doc-open) .dock { display: none; }   /* a doc takes the whole phone screen; Back returns to the board and its hub */
 /* the toolbar's Myra: a round sparkle button that says "Myra" when you hover, so the whole toolbar fits on one row */
 .dt-myra.dt-round { position: relative; width: 32px; height: 32px; padding: 0; justify-content: center; margin-left: 4px; }
 .dt-myra.dt-round svg { width: 17px; height: 17px; }
@@ -2169,9 +2170,8 @@ body.dark .sbc-top input[type=number], body.dark .sbc-chips button { background:
 /* Lucide icons are drawn on a 24px grid: a stroke of 2 there matches the 1.7 on the old 20px grid */
 .selbar svg[viewBox="0 0 24 24"] :is(path, rect, circle, line, polyline, polygon, ellipse), .ly-ic svg[viewBox="0 0 24 24"] * { stroke-width: 2 !important; }
 .selbar .sb-l24 { width: 19px !important; height: 19px !important; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
-/* crisp icons: the dock sits on whole pixels (no half-pixel centering), and Lucide icons draw at their native 24px with a 1.5 line,
-   so on a Retina screen every line lands exactly on the pixel grid */
-.dock { left: 0; right: 0; margin-inline: auto; width: max-content; transform: none !important; }
+/* crisp icons: Lucide icons draw at their native 24px with a 1.5 line, so on a Retina screen every line lands exactly on
+   the pixel grid */
 #tools svg[viewBox="0 0 24 24"] { width: 24px !important; height: 24px !important; }
 #tools svg[viewBox="0 0 24 24"] * { stroke-width: 1.5 !important; }
 .selbar { --sb-icon: 24px; }
@@ -2878,13 +2878,14 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 body.calm .pc-mark { animation: none; }
 @media (prefers-reduced-motion: reduce) { .pc-mark { animation: none; } }
 body.proto .stage { left: var(--slot-l); top: var(--slot-t); width: var(--slot-w); height: var(--slot-h); right: auto; bottom: auto; }
-body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side { display: none; }
+body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side, body.proto.proto-canvas-folded .dock { display: none; }
 /* one column of widgets beside the board, clear of the toolbar; it holds both sides' widgets, so it can scroll */
 body.proto .side { left: calc(var(--slot-l) + 14px); top: calc(var(--slot-t) + 14px); bottom: 84px; scrollbar-width: thin; }
 body.proto .side > .tray { min-height: 96px; }
 body.proto #mcClose { display: none; }
 body.proto #keys { display: none; }
-body.proto .dock { max-width: calc(100% - 16px); overflow-x: auto; scrollbar-width: none; }
+/* on a prototype board the bottom bar starts at the board pane's left, and the widgets there sit above it */
+body.proto .dock { left: calc(var(--slot-l) + 8px); bottom: calc(100vh - var(--slot-t) - var(--slot-h) + 18px); max-width: calc(var(--slot-w) - 16px); overflow-x: auto; scrollbar-width: none; }
 #pr-preview { display: flex; flex-direction: column; overflow: hidden; }
 .pv-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 8px; border-bottom: 1px solid rgba(150, 95, 35, .1); font: 500 12px/1 var(--font); }
 .pv-bar .seg button { padding: 5px 9px; font: 600 11.5px/1 var(--font); }

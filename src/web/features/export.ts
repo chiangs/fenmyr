@@ -127,7 +127,7 @@ export const cardName = (cs: Card[]) => {
   return name.slice(0, 60).trim() || 'Card';
 };
 export function init43() {
-  stage.addEventListener('contextmenu', e => {
+  const onMenu = (e: MouseEvent) => {
     // holding something (a sticker, a note to place, a shape) or a picker is open: a right-click just puts it down, like Esc
     if (placing || ['stampWheel', 'stampPick', 'shapePick', 'tplPick'].some(id => $(id).classList.contains('on'))) {
       e.preventDefault();
@@ -275,5 +275,7 @@ export function init43() {
         { label: 'Export board as image', run: () => exportCards(session.board.cards, session.board.name, false) },
         { label: 'Export board as PDF', run: () => exportCards(session.board.cards, session.board.name, true) },
       ]);
-  });
+  };
+  // the bottom bar sits outside the stage, and a right-click on it still puts down what is held
+  for (const el of [stage, $('dock')]) el.addEventListener('contextmenu', onMenu);
 }

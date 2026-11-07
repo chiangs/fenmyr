@@ -76,7 +76,7 @@ const openToolbarSettings = () => {
   renderTbList();
 };
 
-// tools that don't fit the screen tuck into ··· at the end (never a toolbar wider than the window)
+// tools that don't fit the screen tuck into ··· at the end (the bar ends at least 16 px inside the window)
 function fitToolbar() {
   const box = $('tools'),
     more = $('tbMore');
@@ -87,7 +87,7 @@ function fitToolbar() {
   more.hidden = true;
   const m = $('myra'),
     others = m?.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.offsetWidth + 10 : 0; // only Myra's pill shares the row
-  const room = innerWidth - 32 - others;
+  const room = innerWidth - 16 - $('dock').getBoundingClientRect().left - others;
   if (box.offsetWidth <= room) return;
   more.hidden = false;
   const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden);

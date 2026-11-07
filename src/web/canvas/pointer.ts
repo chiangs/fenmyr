@@ -1,6 +1,6 @@
 import { pullColors } from '../cards/imageColors.ts';
 import { clamp } from '../core/base.ts';
-import { cardsEl, stage } from '../core/dom.ts';
+import { $, cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { endEdit, startEdit } from '../edit/editing.ts';
@@ -147,42 +147,40 @@ export function init16() {
   });
 
   // trackpad: two fingers pan, pinch (or ctrl + scroll) zooms; the wheel pans up and down, Shift + wheel sideways
-  stage.addEventListener(
-    'wheel',
-    e => {
-      if (
-        closestTo(
-          e.target,
-          '.tray, .m-bubble, .cpop, .home, .m-chat, .design, .side, .row-menu, .stamp-pick, .wheel-stamps, .docview, .settings, .shapepick, .tplpick',
-        )
+  const onWheel = (e: WheelEvent) => {
+    if (
+      closestTo(
+        e.target,
+        '.tray, .m-bubble, .cpop, .home, .m-chat, .design, .side, .row-menu, .stamp-pick, .wheel-stamps, .docview, .settings, .shapepick, .tplpick',
       )
-        return;
-      e.preventDefault();
-      if (e.ctrlKey || e.metaKey) {
-        // a touchpad pinch also arrives as a ctrl + wheel event, but without Ctrl actually held: that one stays smooth (at most 5% per event)
-        if (!ctrlHeld)
-          return zoomAt(e.clientX, e.clientY, session.view.z * Math.exp(clamp(-e.deltaY * 0.01, -0.05, 0.05)), true);
-        // Ctrl + wheel: one step per notch. A notch is one big event, or (high-resolution wheels, two-finger scroll) small ones adding up to 40px
-        const d = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY;
-        if (Math.sign(d) !== Math.sign(wheelSum) || performance.now() - wheelAt > 250) wheelSum = 0;
-        wheelSum += d;
-        wheelAt = performance.now();
-        if (Math.abs(wheelSum) >= 40) {
-          stepZoom(e.clientX, e.clientY, wheelSum < 0 ? 1 : -1);
-          wheelSum = 0;
-        }
-      } else if (e.shiftKey) {
-        session.view.x -= Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-        viewSoon();
-      } // Shift + wheel pans sideways, as the wheel alone pans up and down
-      else {
-        session.view.x -= e.deltaX;
-        session.view.y -= e.deltaY;
-        viewSoon();
+    )
+      return;
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      // a touchpad pinch also arrives as a ctrl + wheel event, but without Ctrl actually held: that one stays smooth (at most 5% per event)
+      if (!ctrlHeld)
+        return zoomAt(e.clientX, e.clientY, session.view.z * Math.exp(clamp(-e.deltaY * 0.01, -0.05, 0.05)), true);
+      // Ctrl + wheel: one step per notch. A notch is one big event, or (high-resolution wheels, two-finger scroll) small ones adding up to 40px
+      const d = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY;
+      if (Math.sign(d) !== Math.sign(wheelSum) || performance.now() - wheelAt > 250) wheelSum = 0;
+      wheelSum += d;
+      wheelAt = performance.now();
+      if (Math.abs(wheelSum) >= 40) {
+        stepZoom(e.clientX, e.clientY, wheelSum < 0 ? 1 : -1);
+        wheelSum = 0;
       }
-    },
-    { passive: false },
-  );
+    } else if (e.shiftKey) {
+      session.view.x -= Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      viewSoon();
+    } // Shift + wheel pans sideways, as the wheel alone pans up and down
+    else {
+      session.view.x -= e.deltaX;
+      session.view.y -= e.deltaY;
+      viewSoon();
+    }
+  };
+  // the bottom bar sits outside the stage, and the wheel over it moves the board under it
+  for (const el of [stage, $('dock')]) el.addEventListener('wheel', onWheel, { passive: false });
 
   addEventListener(
     'keydown',

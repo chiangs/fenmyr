@@ -104,8 +104,8 @@ try {
   assert.deepStrictEqual(s.folded, [], 'at 1440 px every column shows');
   const { bar: dock, pane } = await barIn();
   assert.ok(dock && pane, 'the bottom bar and the board are up');
-  assert.ok(dock.l >= pane.l && dock.r <= pane.r, 'the bottom bar sits inside the board');
-  assert.ok(Math.abs(dock.l - pane.l - (pane.r - dock.r)) <= 1, 'in its middle');
+  assert.ok(dock.r <= pane.r - 8, 'the bottom bar ends 8 px inside the board, or sooner');
+  assert.strictEqual(dock.l, pane.l + 8, '8 px in from its left');
   assert.strictEqual(dock.b, pane.b - 18, '18 px over its bottom');
   assert.match(
     s.git,

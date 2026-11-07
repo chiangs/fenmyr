@@ -77,9 +77,7 @@ export function init23() {
     else addAtCenter('note', { ...pastedNote(clip), color: 'butter' });
   });
 
-  stage.addEventListener('dragover', e => e.preventDefault());
-
-  stage.addEventListener('drop', e => {
+  const onDrop = (e: DragEvent) => {
     e.preventDefault();
     const dt = e.dataTransfer;
     if (!dt) return;
@@ -100,5 +98,10 @@ export function init23() {
     }
     const u = dt.getData('text/uri-list') || dt.getData('text/plain');
     if (/^https?:/.test(u)) linkCard(u.trim(), w);
-  });
+  };
+  // the bottom bar sits outside the stage, and what is dropped on it belongs on the board under it
+  for (const el of [stage, $('dock')]) {
+    el.addEventListener('dragover', e => e.preventDefault());
+    el.addEventListener('drop', onDrop);
+  }
 }

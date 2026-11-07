@@ -71,9 +71,9 @@ await check('the tools and Myra’s box sit in one row, 18 px over the window’
   near(b.pill.b, b.h - 18, 'her box’s bottom');
   near(b.pill.l, b.tools.r + 10, 'her box’s left');
 });
-await check('the bar sits in the middle of the window', async () => {
+await check('the bar starts at the canvas area’s left, 14 px from the left widgets', async () => {
   const b = await bar();
-  near(((b.dock?.l ?? 0) + (b.dock?.r ?? 0)) / 2, b.w / 2, 'the bar’s middle');
+  near(b.dock?.l, b.leftWidgets + 14, 'the bar’s left');
 });
 await check('a press on the first tool or on Myra’s box reaches it', async () => {
   const b = await bar();
@@ -151,7 +151,7 @@ await check('a picture dropped on Myra’s open chat lands on the board', async 
   await page.waitForTimeout(400);
 });
 
-await check('where Myra’s open chat meets a right widget, the widget is on top', async () => {
+await check('where Myra’s open chat meets a right widget, the chat is on top', async () => {
   await page.click('#mPill');
   await page.waitForTimeout(400);
   const top = await page.evaluate(() => {
@@ -169,7 +169,7 @@ await check('where Myra’s open chat meets a right widget, the widget is on top
   });
   await page.click('#mPill');
   await page.waitForTimeout(400);
-  assert.strictEqual(top, 'widget');
+  assert.strictEqual(top, 'chat');
 });
 
 await check('the wheel over the tools or Myra’s box pans the board', async () => {
@@ -228,7 +228,7 @@ await check('what is being placed shows over the bar', async () => {
   assert.strictEqual(top, 'ghost');
 });
 
-await check('Tab reaches the tools after Home’s hidden buttons, and moves on to the stamp wheel', async () => {
+await check('Tab reaches the tools after the left widgets, and moves on to the cards on the board', async () => {
   await page.focus('#tools [data-add="pointer"]');
   await page.keyboard.press('Shift+Tab');
   const before = await focusedIn();
@@ -236,7 +236,7 @@ await check('Tab reaches the tools after Home’s hidden buttons, and moves on t
   await page.keyboard.press('Tab');
   const after = await focusedIn();
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
-  assert.deepStrictEqual([before, after], ['home', 'stampWheel']);
+  assert.deepStrictEqual([before, after], ['side', 'cards']);
 });
 
 await check('with a doc open the tools and Myra’s box hide, and her chat shows over the doc', async () => {
