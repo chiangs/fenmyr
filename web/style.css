@@ -2658,10 +2658,11 @@ body.dz-dragging, body.dz-dragging * { cursor: grabbing !important; }
 body.dark .slash-menu button.on, body.dark .slash-menu button:hover { background: rgb(from var(--hilite) r g b / .1); }
 
 /* the find bar: in the mode bar just above the bottom bar, with the toolbar's height and look */
-.find-bar { height: 50px; display: flex; align-items: center; gap: 4px; padding: 0 6px 0 7px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); animation: fb-in .18s ease-out; }
+.find-bar { height: 50px; display: flex; align-items: center; gap: 4px; padding: 0 6px 0 7px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); animation: fb-up .18s ease-out; }
 .find-bar[hidden] { display: none; }
 body[data-tb="s"] .find-bar { height: 46px; } body[data-tb="l"] .find-bar { height: 58px; }
 @keyframes fb-in { from { opacity: 0; transform: translateX(-6px); } }
+@keyframes fb-up { from { opacity: 0; transform: translateY(6px); } }
 .fb-field { display: flex; align-items: center; gap: 8px; height: 34px; width: 190px; padding: 0 10px; border-radius: 11px; corner-shape: squircle; background: var(--fb-bg); color: var(--ink-soft); cursor: text; }
 .fb-field svg { width: 15px; height: 15px; flex: none; }
 .fb-field input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: 500 13px/1.2 var(--font); color: var(--ink); user-select: text; -webkit-user-select: text; }
