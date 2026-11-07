@@ -84,6 +84,36 @@ const GROUPS: Record<string, Group> = {
       ['select', select(['rn-list'])],
     ],
   },
+  modes: {
+    states: [
+      [
+        'drawing',
+        async page => {
+          // a field on this board holds focus at start, and would take the P
+          await page.evaluate(() =>
+            document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
+          );
+          await page.keyboard.press('p');
+        },
+      ],
+      [
+        'find',
+        async page => {
+          await page.keyboard.press('Escape');
+          await page.keyboard.press('Control+f');
+          await page.keyboard.type('a');
+          await page.keyboard.press('Enter');
+          await page.waitForSelector('#findBar:not([hidden])');
+        },
+      ],
+      [
+        'find-chat',
+        async page => {
+          await page.click('#mPill');
+        },
+      ],
+    ],
+  },
   settings: {
     states: TABS.map(t => [
       t,
