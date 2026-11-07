@@ -66,21 +66,20 @@
   <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
   <button class="clean-btn" id="cleanBtn" aria-label="Just the board · ⌘\" data-tip="Just the board · ⌘\"><svg class="ic" data-ico="board-only" width="18" height="18"></svg></button>
   </div>
-<!-- Myra: her pill, her bar, her bubble -->
+<!-- Myra: her box, her chat, her bubble -->
   <div class="myra" id="myra">
     <!-- Myra's chat window -->
     <div class="m-chat" id="mChat">
-      <div class="mc-head"><svg class="mc-ic" data-ico="myra-chat" width="28" height="28"></svg><b id="mcHeadName">Myra</b><span class="mc-status" id="mcStatus"></span><button class="mc-btn" id="mcHist" title="Earlier chats on this board" hidden><svg data-ico="clock" width="15" height="15"></svg><span>History</span></button><button class="mc-btn" id="mcNew" title="Start a fresh chat">New chat</button><button class="mc-btn x" id="mcClose" title="Close (Esc)">×</button></div>
+      <div class="mc-head"><span class="mc-perch" id="mcPerch"><svg class="mc-ic" data-ico="myra-chat" width="28" height="28"></svg></span><b id="mcHeadName">Myra</b><span class="mc-status" id="mcStatus"></span><button class="mc-btn" id="mcHist" title="Earlier chats on this board" hidden><svg data-ico="clock" width="15" height="15"></svg><span>History</span></button><button class="mc-btn" id="mcNew" title="Start a fresh chat">New chat</button><button class="mc-btn x" id="mcClose" title="Close (Esc)">×</button></div>
       <div class="mc-list" id="mcList"></div>
       <div class="mc-sel" id="mcSel" hidden></div>
       <form class="mc-form" id="mcForm"><textarea id="mcInput" rows="1" placeholder="Ask Myra… “group these by theme”" spellcheck="true" aria-describedby="mcHint"></textarea><div class="mc-foot"><span class="mc-lines" id="mcLines" hidden></span><button type="button" class="mc-vault" id="mcVault" title="Let Myra search your vault for this question" hidden><svg data-ico="notebook" width="14" height="14"></svg><span>Vault</span></button><span class="mc-hint" id="mcHint">⌘↩ to send</span><button class="mc-send" title="Send (⌘↩)" aria-label="Send">↑</button></div></form>
     </div>
     <div class="m-bubble" id="mBubble"><small>myra</small><p id="mSay"></p><div class="m-acts" id="mActs"></div></div>
-    <div class="m-pill" id="mPill">
+    <button type="button" class="m-pill" id="mPill" aria-controls="mChat" aria-expanded="false">
       <span class="goo-slot" id="gooSlot"><canvas id="goo" width="64" height="56"></canvas></span>
-      <span class="m-name" id="mName">Myra</span>
-      <form id="mForm" class="m-form"><input id="mInput" placeholder="Ask Myra… “group these by theme”" autocomplete="off"></form>
-    </div>
+      <span class="m-ask">Ask <span id="mName">Myra</span>…</span>
+    </button>
     <div class="timer-chip" id="timerChip" hidden><svg data-ico="timer" width="15" height="15"></svg><b id="tcTime">0:00</b><span id="tcWhat"></span><button type="button" id="tcX" title="Stop the timer" aria-label="Stop the timer"><svg data-ico="close" width="13" height="13"></svg></button></div>
   </div>
 </div>

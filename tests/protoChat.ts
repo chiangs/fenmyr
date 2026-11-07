@@ -54,6 +54,17 @@ try {
     'never in the bubble',
   );
 
+  await page.fill('#mcInput', '/timer 25 write the intro');
+  await page.keyboard.press('Control+Enter');
+  await page.waitForSelector('#timerChip:not([hidden])');
+  const covered = await page.evaluate(() => {
+    const t = document.getElementById('timerChip')?.getBoundingClientRect(),
+      c = document.getElementById('prChat')?.getBoundingClientRect();
+    return !t || !c || (t.left < c.right && t.right > c.left && t.top < c.bottom && t.bottom > c.top);
+  });
+  await page.click('#tcX');
+  assert.ok(!covered, 'a timer’s chip never covers the docked chat');
+
   assert.strictEqual(
     await page.locator('#prChat .mc-grip.rz-grip svg').count(),
     1,

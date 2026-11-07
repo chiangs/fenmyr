@@ -1,7 +1,6 @@
 import { selectOnly } from '../canvas/wires.ts';
 import { addImages } from '../cards/spotify.ts';
 import { $ } from '../core/dom.ts';
-import { session } from '../core/state.ts';
 import { say } from '../myra/say.ts';
 
 // On a prototype board, pictures pasted or dropped into Myra's chat go on the board, selected, so she can use them as
@@ -13,9 +12,8 @@ async function take(files: FileList | undefined | null, e: Event) {
   if (!onPrototype() || !imgs.length) return;
   e.preventDefault();
   e.stopPropagation();
-  const before = new Set(session.board.cards.map(c => c.id));
-  await addImages(imgs, null);
-  selectOnly(session.board.cards.filter(c => !before.has(c.id)).map(c => c.id));
+  const made = await addImages(imgs, null);
+  selectOnly(made.map(c => c.id));
   const them = imgs.length === 1 ? 'it' : 'them';
   say(`I put ${them} on the board and selected ${them}, so I'll use ${them} when I build ✦`, 6000);
 }

@@ -2,7 +2,7 @@ import { $ } from '../core/dom.ts';
 import { appState } from '../core/state.ts';
 import { liveOff, liveOn, pickAnim, playAnim } from './anim.ts';
 import { chatLog } from './chatLog.ts';
-import { chatOpen } from './chatWindow.ts';
+import { boxRect, chatOpen, chatOverBoard } from './chatWindow.ts';
 
 type Point = { x: number; y: number };
 // the slot Myra's canvas sits in, which she hops out of and back into
@@ -18,22 +18,21 @@ const gooMove = (t: Point) => {
   gooSlot.style.transform = `translate(${t.x}px, ${t.y}px)`;
 };
 
-function perchTarget() {
-  // layout values only (never her own transform), so it is right while she squashes, leans and flies, and while the chat is still fading in
-  const my = $('myra').getBoundingClientRect(),
-    chat = $('mChat'),
-    cs = getComputedStyle(chat),
-    form = $('mcForm'),
+// from her slot's home in her box to the spot at the start of the chat's header; layout values only (never her own
+// transform), so it is right while she squashes, leans and flies, and while the chat is still growing in
+function perchTarget(): Point {
+  const chat = chatOverBoard();
+  if (!chat) return { x: 0, y: 0 };
+  const box = boxRect(),
     pill = $('mPill'),
-    pr = pill.getBoundingClientRect();
-  const baseL = pr.left + (gooSlot.offsetLeft - pill.offsetLeft),
-    baseT = pr.top + (gooSlot.offsetTop - pill.offsetTop); // where her slot sits in the button
-  const chatL = my.right - parseFloat(cs.right) - chat.offsetWidth,
-    chatT = my.bottom - parseFloat(cs.bottom) - chat.offsetHeight;
-  return { x: chatL + form.offsetLeft + 12 - baseL, y: chatT + form.offsetTop + 6 - gooSlot.offsetHeight - baseT };
+    spot = $('mcPerch');
+  return {
+    x: chat.l + spot.offsetLeft - (box.l + gooSlot.offsetLeft - pill.offsetLeft),
+    y: chat.t + spot.offsetTop - (box.t + gooSlot.offsetTop - pill.offsetTop),
+  };
 }
 
-// her hop is one gooey jump, no springs: a short wind-up, then she stretches along the line she is travelling (diagonally up and left leaving the button, up and right going home), most when
+// her hop is one gooey jump, no springs: a short wind-up, then she stretches along the line she is travelling (up out of her box into the chat's header, down going home), most when
 // she is fastest and round again near the top of the arc, with a soft wobble just after she leaves the ground; she slows towards the top and quickens a little coming down; on landing she squashes
 // once and settles. The landing spot is fixed when she takes off (measured again at touchdown), so she can never drift past the edge of the chat.
 const HOP = { stretch: 0.3, wobble: 0.3, arc: 100, up: 480, home: 431, squash: 0.35, wind: 140, land: 300 };
@@ -47,7 +46,27 @@ const gooRest = () => {
   gooSlot.style.transformOrigin = '';
 };
 
-function flyGoo(to: Point, instant: boolean) {
+// Calm, calmest and reduced motion: she fades out of one place and into the other, with no hop
+function fadeGoo() {
+  const out = gooSlot.animate({ opacity: [1, 0] }, { duration: 120, fill: 'forwards' });
+  let stopped = false;
+  gooAnim = {
+    stop() {
+      stopped = true;
+      out.cancel();
+    },
+  };
+  out.onfinish = () => {
+    if (stopped) return;
+    gooRest();
+    gooMove(perched ? perchTarget() : { x: 0, y: 0 });
+    gooSlot.animate({ opacity: [0, 1] }, 120);
+    out.cancel();
+    gooAnim = null;
+  };
+}
+
+function flyGoo(to: Point, fade: boolean) {
   const from = gooAt;
   if (gooAnim) {
     gooAnim.stop();
@@ -59,10 +78,15 @@ function flyGoo(to: Point, instant: boolean) {
       liveOff();
     }
   };
-  if (instant || (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1)) {
+  if (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1) {
     gooRest();
     gooMove(to);
     done();
+    return;
+  }
+  if (fade) {
+    done();
+    fadeGoo();
     return;
   }
   if (!appState.flightLive) {
@@ -153,15 +177,15 @@ export function perchGoo(on: boolean) {
   gooSlot.classList.toggle('perched', on);
   flyGoo(
     on ? perchTarget() : { x: 0, y: 0 },
-    !!window.myraMuted || matchMedia('(prefers-reduced-motion: reduce)').matches,
-  ); // calmest and reduced motion: she just appears
+    !!window.myraCalm || matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
 }
 
 export const keepPerch = () => {
   if (perched && !gooAnim) gooMove(perchTarget());
 };
 // click her in the chat and she does something
-// you opened an empty chat (the button or M): once she has landed by the input she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
+// you opened an empty chat (the button or M): once she has landed in the chat's header she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
 export const wonderIfEmpty = () =>
   setTimeout(
     () => {
@@ -176,12 +200,6 @@ export function initPerch() {
   appState.toggleLog = [];
   appState.dizzyAuto = true;
 
-  addEventListener('resize', keepPerch);
-  const perchWatch = new ResizeObserver(keepPerch);
-  [$('mChat'), $('mPill'), $('myra'), $('mcForm')].forEach(el => {
-    perchWatch.observe(el);
-  });
-  // the button changing width (a label appearing) moves the whole bar, and the chat with it
   gooSlot.addEventListener('click', e => {
     if (!perched) return;
     e.stopPropagation();

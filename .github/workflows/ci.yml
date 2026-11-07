@@ -106,6 +106,8 @@ jobs:
         run: node tests/chatButtons.ts
       - name: Chat keys test (what each key does in Myra's chat input)
         run: node tests/chatKeys.ts
+      - name: Chat rules test (her input's hint and her name cut short)
+        run: node tests/chatRules.ts
       - name: Mac font list test
         run: node tests/mac.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)
@@ -134,6 +136,8 @@ jobs:
         run: node tests/bottomBar.ts
       - name: Bar layer test (what opens over the bottom bar and Myra's chat)
         run: node tests/barLayer.ts
+      - name: Myra's box test (her box in the bottom bar, where her chat opens, her bubble, fitting around the chat)
+        run: node tests/myraBox.ts
       - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
         run: node tests/capture.ts
       - name: Image actions test (download, copy and replace a picture, in the real app)

@@ -2,6 +2,7 @@ import { applyGridShape } from '../canvas/gridShape.ts';
 import { COLOR_NAMES, COLORS, colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { appState } from '../core/state.ts';
+import { renderHint } from '../myra/chatWindow.ts';
 import { goos } from '../myra/goos.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
@@ -231,11 +232,7 @@ export function applySettings() {
     const el = document.getElementById(id);
     if (el) el.textContent = mn;
   }
-  for (const id of ['mInput', 'mcInput']) {
-    const el = document.getElementById(id);
-    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
-      el.placeholder = `Ask ${mn}… “group these by theme”`;
-  }
+  renderHint();
   const bs = $('mBubble')?.querySelector('small');
   if (bs) bs.textContent = mn.toLowerCase();
   for (const el of htmlIn(document, '[data-mname]')) el.textContent = (el.dataset.mname ?? '').replace('{name}', mn);
