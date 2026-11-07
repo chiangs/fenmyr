@@ -151,6 +151,14 @@ try {
   await tap('Not now');
   await reopen('one');
   assert.deepStrictEqual(await builtRows(), [[]], 'and they are gone once that board opens again');
+  await open('pb');
+  assert.deepStrictEqual(
+    await builtRows(),
+    [['Commit'], []],
+    'the prototype shows no Undo from before a build that landed elsewhere',
+  );
+  assert.match(fs.readFileSync(app, 'utf8'), /Build 3/, 'so that build stays');
+  await open('one');
 
   const made = await page.evaluate(() =>
     window.__fenmyr.applyMyra(
