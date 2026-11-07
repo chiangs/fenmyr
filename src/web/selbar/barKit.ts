@@ -140,7 +140,6 @@ export function initIcons() {
   ICON = {
     tags: Icon('tag'),
     tag: Icon('berry-label'),
-    edit: Icon('edit'),
     del: Icon('trash'),
     head: Icon('header'),
     caption: Icon('captions'),

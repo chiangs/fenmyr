@@ -7,7 +7,6 @@ import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { openDoc } from '../docs/editor.ts';
-import { startEdit } from '../edit/editing.ts';
 import { editTag } from '../edit/text.ts';
 import { setDue } from '../features/due.ts';
 import { removeSelected } from '../myra/helpers.ts';
@@ -17,7 +16,7 @@ import { closestTo } from '../ui/dom.ts';
 import { flipVNote, openVNote } from '../vault/notes.ts';
 import { makeSection, renameSection } from '../wireframe/sections.ts';
 import { groupSel } from '../wireframe/stack.ts';
-import { openTiltPop, removeSection, setTilt } from '../wireframe/tilt.ts';
+import { openTiltPop, removeSection } from '../wireframe/tilt.ts';
 import { closeSbPops, rebuildBar } from './barKit.ts';
 import { selCards } from './selected.ts';
 
@@ -77,7 +76,6 @@ function onBarClick(e: MouseEvent) {
   if (a === 'prototype') return prototypeThis(cs);
   if (a === 'unsection') return removeSection(cs.filter(c => c.type === 'section'));
   if (!one) return;
-  if (a === 'untilt') return setTilt(one, 0, false);
   if (a === 'tiltpop') {
     const b = closestTo(e.target, '[data-sb]');
     if (b) openTiltPop(one, b);
@@ -150,7 +148,6 @@ function onBarClick(e: MouseEvent) {
       redraw();
     } else editTag(one);
   } // tap again to take the label off
-  if (a === 'edit') startEdit(one.id);
   if (a === 'del') removeSelected();
 }
 
