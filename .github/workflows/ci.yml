@@ -120,6 +120,8 @@ jobs:
         run: node tests/barKeyboard.ts
       - name: Selection bar room test (dropdowns near the top, presses on the bar, a 900 px window)
         run: node tests/barRoom.ts
+      - name: Drawing and find test (what they do, on a computer and a phone)
+        run: node tests/modeBar.ts
       - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
         run: node tests/capture.ts
       - name: Image actions test (download, copy and replace a picture, in the real app)

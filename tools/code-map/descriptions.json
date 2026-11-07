@@ -308,6 +308,7 @@
     "tests/layout.ts": "Tests the prototype board’s screen and that plain boards are untouched.",
     "tests/link.ts": "Tests linking a project to a repo, who commits, and unlinking.",
     "tests/mac.ts": "Tests the Mac font-list reading.",
+    "tests/modeBar.ts": "Drawing and find in the real app: what they do on a computer and a phone, and that they sit just above the bottom bar, which keeps its shape.",
     "tests/model.ts": "Checks library and board files keep what they had and prototype fields are validated.",
     "tests/packages.ts": "Tests installing packages into a prototype and bundling them in the preview.",
     "tests/perf.ts": "Times opening, dragging, zooming and editing a 500-card board against another branch.",
