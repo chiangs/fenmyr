@@ -1,5 +1,1 @@
-{
-  "modes-drawing": "Drawing's pens sit in their own bar 12 px above the bottom bar, which keeps its tools; they used to replace the tools in the bottom bar.",
-  "modes-find": "The find bar sits 12 px above the bottom bar, which keeps its tools; it used to sit beside Myra while the tools stepped aside.",
-  "modes-find-chat": "With find up, Myra's chat rises over the find bar, which sits above the bottom bar; the find bar used to sit beside her while the tools stepped aside."
-}
+{}
