@@ -1,4 +1,5 @@
 import { $ } from '../core/dom.ts';
+import { keyedButton } from '../input/keyed.ts';
 import { htmlIn, isTyping, oneIn } from '../ui/dom.ts';
 import { editedNoteBody, enterFromNote } from './typingFocus.ts';
 
@@ -23,11 +24,12 @@ function leaveBar() {
   else if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 }
 
-/** Redraws the bar, and gives focus back to the control that had it, found by the data attribute that names it. */
+/** Redraws the bar, and gives focus back to the control the keyboard was on, found by the data attribute that names
+ *  it. A clicked control lets focus go, so Escape and Enter go back to the board. */
 export function keepFocus(bar: HTMLElement, redraw: () => void) {
   const had = document.activeElement,
     name =
-      had instanceof HTMLElement && bar.contains(had)
+      had instanceof HTMLElement && bar.contains(had) && keyedButton(had)
         ? [...had.attributes].find(a => a.name.startsWith('data-') && a.name !== 'data-tt')
         : undefined;
   redraw();
@@ -40,10 +42,10 @@ export function initBarKeys() {
     if (e.key !== 'F10' || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
     if (enterFromNote() || enterBar(bar)) e.preventDefault();
   });
-  // Escape leaves the bar and keeps the selection, so a second Escape is the one that clears it. A note waiting on its
-  // formatting buttons has its own way back (typingFocus).
+  // Escape leaves the bar and keeps the selection, so a second Escape is the one that clears it. After a click on the
+  // bar, Escape is the board's. A note waiting on its formatting buttons has its own way back (typingFocus).
   bar.addEventListener('keydown', e => {
-    if (e.key !== 'Escape' || editedNoteBody()) return;
+    if (e.key !== 'Escape' || !keyedButton(e.target) || editedNoteBody()) return;
     e.stopPropagation();
     leaveBar();
   });

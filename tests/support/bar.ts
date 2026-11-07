@@ -66,7 +66,15 @@ export async function openBar() {
   const cardOf = (id: string) =>
     page.evaluate(id => {
       const c = window.__fenmyr.board.cards.find(c => c.id === id);
-      return c ? { x: c.x, h: c.h, cropEdit: 'cropEdit' in c, bold: 'bold' in c && !!c.bold } : null;
+      return c
+        ? {
+            x: c.x,
+            h: c.h,
+            cropEdit: 'cropEdit' in c,
+            bold: 'bold' in c && !!c.bold,
+            italic: 'italic' in c && !!c.italic,
+          }
+        : null;
     }, id);
   const focused = () =>
     page.evaluate(() => {

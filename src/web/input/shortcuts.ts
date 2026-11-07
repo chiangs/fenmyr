@@ -29,6 +29,7 @@ import { toPointer } from '../ui/toolbar.ts';
 import { pickWF } from '../wireframe/designPanel.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { groupSel, restack } from '../wireframe/stack.ts';
+import { initKeyed, keyedButton } from './keyed.ts';
 
 let CLEAN_EL: Element[] = [];
 
@@ -67,17 +68,10 @@ export function init20() {
     $('cleanBack').addEventListener(t, e => e.stopPropagation());
   });
 
-  // The button Tab or F10 moved to. A clicked button keeps focus too, and Space there still pans; that can't be told
-  // at the key press, since any key makes the focused button :focus-visible.
-  let keyedButton: EventTarget | null = null;
-  addEventListener('focusin', e => {
-    keyedButton = e.target instanceof HTMLButtonElement && e.target.matches(':focus-visible') ? e.target : null;
-  });
-
+  initKeyed();
   addEventListener('keydown', e => {
     // Space and Enter press a button the keyboard is on, so Enter on the crop bar's Cancel cancels
-    if ((e.key === ' ' || e.key === 'Enter') && !e.metaKey && !e.ctrlKey && !e.altKey && e.target === keyedButton)
-      return;
+    if ((e.key === ' ' || e.key === 'Enter') && !e.metaKey && !e.ctrlKey && !e.altKey && keyedButton(e.target)) return;
     const typing = isTyping(e.target);
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();

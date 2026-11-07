@@ -1,5 +1,6 @@
 // Every selection's bar from the keyboard: F10 reaches it, Tab moves through it, Space and Enter press its buttons,
-// Escape leaves it with the selection kept, and an icon button keeps its name after a hover shows its tip.
+// Escape leaves it with the selection kept, and an icon button keeps its name after a hover shows its tip. A click on
+// the bar leaves Escape, Enter and Space to the board.
 import assert from 'node:assert';
 import { openBar } from './support/bar.ts';
 
@@ -92,4 +93,46 @@ await check('after a click on the bar, Space still pans the board', async () => 
   const v = await page.evaluate(() => window.__fenmyr.view);
   assert.deepStrictEqual([v.x, v.y], [440, 360], 'the board moved with the pointer');
 });
+const barOn = () => page.evaluate(() => !!document.getElementById('selbar')?.classList.contains('on'));
+await check('after a click on Italic, Escape clears the selection', async () => {
+  await view(500, 400);
+  await select(['note']);
+  await page.click('#selbar [data-ts="italic"]');
+  await frames();
+  assert.strictEqual((await cardOf('note'))?.italic, true, 'the click made the note italic');
+  await press('Escape');
+  assert.deepStrictEqual(await selected(), [], 'Escape is the board’s');
+});
+
+await check('after a click on Italic, Enter does not press it again', async () => {
+  await view(500, 400);
+  await select(['note']);
+  await page.click('#selbar [data-ts="italic"]');
+  await frames();
+  const was = (await cardOf('note'))?.italic;
+  await press('Enter');
+  assert.strictEqual((await cardOf('note'))?.italic, was, 'still as the click left it');
+  await press('Escape', 'Escape', 'Escape');
+});
+
+await check('after a click on the crop bar’s Reset, Escape cancels the crop', async () => {
+  await view(-100, 300);
+  await select(['pic']);
+  await page.click('#selbar [data-sb="crop"]');
+  await page.waitForSelector('#selbar [data-crop="reset"]');
+  await page.click('#selbar [data-crop="reset"]');
+  await press('Escape');
+  assert.ok(await page.evaluate(() => !document.querySelector('#selbar [data-crop]')), 'the crop bar is gone');
+  assert.strictEqual((await cardOf('pic'))?.cropEdit, false, 'the picture is not being cropped');
+  await press('Escape');
+});
+
+await check('after a click on a connector’s Dashed, Escape lets the connector go', async () => {
+  await view(400, -300);
+  await selectWire('h');
+  await page.click('#selbar [data-wb="dash"]');
+  await press('Escape');
+  assert.ok(!(await barOn()), 'the connector’s bar is gone');
+});
+
 await done('BAR KEYBOARD OK');
