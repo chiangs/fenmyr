@@ -3,7 +3,7 @@ import { mrot, realBox, tiltOf } from '../canvas/handles.ts';
 import { wireGeom } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
-import { chatPlace, relayout } from '../myra/chatWindow.ts';
+import { chatPlace, setModeBar } from '../myra/chatWindow.ts';
 import { type BarContext, toolContext } from './context.ts';
 import { type Anchor, type Box, GAP, place } from './place.ts';
 
@@ -144,11 +144,11 @@ export function floatModeBar() {
   const bar = $('modebar'),
     ctx = toolContext(),
     shown = ctx && !onPhone() && !stage.classList.contains('doc-open'),
-    lift = shown ? `${bar.offsetHeight + GAP}px` : '0px';
-  if (document.body.style.getPropertyValue('--mode-h') !== lift) {
-    document.body.style.setProperty('--mode-h', lift);
-    relayout(); // a wide chat rises over the bar
-  }
+    lift = shown ? bar.offsetHeight + GAP : 0;
+  if (document.body.style.getPropertyValue('--mode-h') !== `${lift}px`)
+    document.body.style.setProperty('--mode-h', `${lift}px`);
+  // the chat joins the tools only when this bar fits left of it, from as far left as it can sit
+  setModeBar(shown ? { lift, l: readFrame(bar).l + stage.getBoundingClientRect().left, w: bar.offsetWidth } : null);
   floatBar(bar, ctx, false);
 }
 
