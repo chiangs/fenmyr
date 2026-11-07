@@ -1,3 +1,4 @@
+import { typesWith } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
@@ -11,11 +12,9 @@ import { selCards } from './selected.ts';
 
 const CHIPS = [0, 4, 8, 12, 16, 24, 32];
 
-// what can have round corners: screens, boxes, pictures, pen shapes, and rectangles, triangles and stars
+const ROUNDABLE = typesWith('roundable');
 export const roundable = (c: Card) =>
-  ['frame', 'box', 'image'].includes(c.type) ||
-  c.type === 'path' ||
-  (c.type === 'shape' && ['rect', 'tri', 'star'].includes(c.shape || 'rect'));
+  ROUNDABLE.includes(c.type) && (c.type !== 'shape' || ['rect', 'tri', 'star'].includes(c.shape || 'rect'));
 
 // a picture is a little round unless you say otherwise
 const radiusOf = (c: Card) => c.radius ?? (c.type === 'image' ? 12 : 0);

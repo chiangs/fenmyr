@@ -40,7 +40,7 @@ export function strokeHtml(stk: Card[], f: Card) {
   const col = f.stroke || '#27272a',
     w = f.sw || 0,
     max = stk.every(c => STROKE_TEXT.includes(c.type)) ? 12 : 24,
-    noDash = stk.some(c => ['icon', 'title', 'text'].includes(c.type)); // dashed/dotted is for shapes, boxes and screens
+    noDash = stk.some(c => STROKE_TEXT.includes(c.type)); // dashed/dotted is for shapes, boxes and screens
   const SK = [
     '#000000',
     '#ffffff',

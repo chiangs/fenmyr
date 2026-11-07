@@ -1,5 +1,6 @@
+import { typesWith } from '../../shared/cardTypes.ts';
 import type { Card, CardOf } from '../../shared/model.ts';
-import { renderCard } from '../canvas/render.ts';
+import { renderCard, STROKE_TEXT } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { SHAPE_FILL } from '../cards/shapes.ts';
 import { colorLabel } from '../core/base.ts';
@@ -27,16 +28,18 @@ const BOX_FILLS = [
 ];
 const TEXT_FILLS = ['#27272a', '#ffffff', '#ff5a6e', '#f6b45e', '#f7b955', '#5fc795', '#4f9dff', '#9b7bff'];
 
-// what a fill applies to: boxes without a picture, screens, and closed pen shapes
+const ANY_FILL = typesWith('anyFill'),
+  TEXT_COLOUR = typesWith('textColour');
+// a box holding a picture has nothing to fill, nor has an open pen shape
 export const fillable = (c: Card) =>
-  (c.type === 'box' && !c.src) || c.type === 'frame' || (c.type === 'path' && !!c.closed);
-const isTextFill = (c: Card) => c.type === 'title' || c.type === 'text';
+  ANY_FILL.includes(c.type) && !(c.type === 'box' && c.src) && !(c.type === 'path' && !c.closed);
+export const isTextFill = (c: Card) => TEXT_COLOUR.includes(c.type);
 
 // going to No fill: if it has no border yet, it gets one in the color the fill had, so it never just disappears
 function autoBorder(c: Card, was: string | null | undefined) {
   if (c.stroke && (c.sw ?? 0) > 0) return;
   c.stroke = cssToHex(was ?? '') || '#27272a';
-  c.sw = ['title', 'text', 'icon'].includes(c.type) ? 1 : 2;
+  c.sw = STROKE_TEXT.includes(c.type) ? 1 : 2;
 }
 
 const fillOf = (c: Card) =>

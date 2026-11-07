@@ -28,7 +28,7 @@ import {
 } from './barKit.ts';
 import { type BarContext, barContext, barPaused, type SelBarContext } from './context.ts';
 import { cornersHtml, initCorners, roundable } from './corners.ts';
-import { boxFillHtml, fillable, initFills, initShapeFill, shapeFillHtml, textFillHtml } from './fill.ts';
+import { boxFillHtml, fillable, initFills, initShapeFill, isTextFill, shapeFillHtml, textFillHtml } from './fill.ts';
 import { barRoom, floatBar, floatModeBar } from './float.ts';
 import { initFontPop } from './fontPop.ts';
 import { initLineStyle, lineStyleHtml } from './lineStyle.ts';
@@ -39,7 +39,8 @@ import { SIZED } from './textSize.ts';
 import { initTypingFocus } from './typingFocus.ts';
 import { initWireBar, wireBarHtml, wireKey } from './wireBar.ts';
 
-const FILLABLE = typesWith('fillable');
+const FILLABLE = typesWith('fillable'),
+  NO_LABEL = typesWith('noLabel');
 
 const SEP = '<span class="sb-sep"></span>';
 
@@ -157,7 +158,7 @@ function cardButtonsHtml(one: Card) {
       btn('crop', 'crop', 'Crop') +
         btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText),
     );
-  else if (!['coll', 'swatch', 'stamp', 'ink'].includes(one.type))
+  else if (!NO_LABEL.includes(one.type))
     h += G(6, btn('tag', 'tag', one.tagText ? 'Remove the label' : 'Add a label', !!one.tagText));
   if (one.type === 'note') {
     const n = (one.tags || []).length,
@@ -251,11 +252,7 @@ function cardBarHtml(cs: Card[]) {
   if (one) h += cardButtonsHtml(one);
   h += textBarHtml(cs.filter(c => SIZED.includes(c.type)));
   h += forAll(cs, fillable, (_, f) => boxFillHtml(f));
-  h += forAll(
-    cs,
-    c => c.type === 'title' || c.type === 'text',
-    (_, f) => textFillHtml(f),
-  );
+  h += forAll(cs, isTextFill, (_, f) => textFillHtml(f));
   h += forAll(cs, canStroke, strokeHtml);
   h += forAll(cs, roundable, cornersHtml);
   return h + endHtml(cs, one);
