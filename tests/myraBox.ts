@@ -150,19 +150,68 @@ await check('at 1440 px her chat opens joined to the tools, over her box, and th
   assert.deepStrictEqual(after, { note: true, open: true }, 'the Note tool turns on, and the chat stays open');
 });
 
-await check('with under 320 px right of the tools her chat opens wide, above the bar', async () => {
-  await size(1100);
-  await setChat(true);
-  const { mChat, dock } = await edges(['mChat', 'dock']),
-    cards = await fitAll(['note', 'pic', 'wf']);
-  await setChat(false);
+// the tools left showing, how many are tucked into ···, and whether ··· shows
+const toolRow = () =>
+  page.evaluate(() => {
+    const tools = [...document.querySelectorAll<HTMLElement>('#tools > [data-add]')].filter(b => !b.hidden),
+      shown = tools
+        .filter(b => !b.classList.contains('tb-over'))
+        .map(b => {
+          const r = b.getBoundingClientRect();
+          return { l: r.left, t: r.top, r: r.right, b: r.bottom };
+        });
+    return { shown, tucked: tools.length - shown.length, more: !document.getElementById('tbMore')?.hidden };
+  });
+for (const [w, h] of [
+  [1280, 800],
+  [1366, 768],
+  [1440, 900],
+  [1920, 1080],
+] as const) {
+  await check(`at ${w} × ${h} the tools leave room for her chat to open joined, 320 to 400 px wide`, async () => {
+    await size(w, h);
+    const closed = await edges(['tools']);
+    await setChat(true);
+    const { mChat, tools } = await edges(['mChat', 'tools']),
+      row = await toolRow(),
+      place = await page.evaluate(() => document.getElementById('mChat')?.dataset.place);
+    await setChat(false);
+    await size(1440);
+    assert.ok(mChat && tools && closed.tools, 'her chat and the tools are up');
+    assert.strictEqual(place, 'joined', 'the chat joins the tools');
+    near(mChat.l, tools.r, 'the chat’s left, on the tools’ right');
+    near(mChat.r - mChat.l, Math.min(400, w - 14 - tools.r), 'the chat’s width');
+    assert.ok(mChat.r - mChat.l >= 320, `the chat is ${mChat.r - mChat.l} px wide`);
+    near(tools.r, closed.tools.r, 'the tools’ right, as it was before the chat opened');
+    assert.strictEqual(row.more, row.tucked > 0, `··· shows only with tools tucked into it (${row.tucked} are)`);
+    const covered = row.shown.filter(t => overlaps(t, mChat));
+    assert.deepStrictEqual(covered, [], 'the chat covers no tool that shows');
+  });
+}
+
+await check('at 1920 px every tool shows, and no ···', async () => {
+  await size(1920, 1080);
+  const row = await toolRow();
   await size(1440);
-  assert.ok(mChat && dock, 'her chat and the bar are up');
-  near(mChat.l, dock.l, 'the chat’s left, on the bar’s');
-  near(mChat.r, 1100 - 14, 'the chat’s right');
-  near(mChat.b, dock.t - 12, 'the chat’s bottom');
-  assert.ok(cards.b <= mChat.t - 29, `fitted cards end at ${cards.b}, over the chat’s top at ${mChat.t}`);
+  assert.deepStrictEqual([row.tucked, row.more], [0, false]);
 });
+
+await check(
+  'when even ··· alone leaves too little room right of the tools her chat opens wide, above the bar',
+  async () => {
+    await size(760);
+    await setChat(true);
+    const { mChat, dock } = await edges(['mChat', 'dock']),
+      cards = await fitAll(['note', 'pic', 'wf']);
+    await setChat(false);
+    await size(1440);
+    assert.ok(mChat && dock, 'her chat and the bar are up');
+    near(mChat.l, dock.l, 'the chat’s left, on the bar’s');
+    near(mChat.r, 760 - 14, 'the chat’s right');
+    near(mChat.b, dock.t - 12, 'the chat’s bottom');
+    assert.ok(cards.b <= mChat.t - 29, `fitted cards end at ${cards.b}, over the chat’s top at ${mChat.t}`);
+  },
+);
 
 await check('she hops from her box into the chat’s header', async () => {
   const between = await flight();

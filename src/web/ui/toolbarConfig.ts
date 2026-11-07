@@ -1,6 +1,7 @@
 import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { boardMenu } from '../features/export.ts';
+import { JOIN_RESERVE } from '../myra/chatRules.ts';
 import { setTab } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
@@ -77,15 +78,12 @@ const openToolbarSettings = () => {
 };
 
 // tools that don't fit tuck into ··· at the end: the bar ends 16 px inside the window, or 14 px before the right
-// widgets where they reach down to it, so it never covers them
+// widgets where they reach down to it, so it never covers them. On a computer they also leave room for Myra's chat to
+// open joined to them, open or not so nothing jumps, unless even ··· alone can't leave it.
 function fitToolbar() {
   const box = $('tools'),
     more = $('tbMore');
   if (!box || !more) return;
-  box.querySelectorAll(':scope > .tb-over').forEach(b => {
-    b.classList.remove('tb-over');
-  });
-  more.hidden = true;
   const m = $('myra'),
     others = m?.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.getBoundingClientRect().width : 0; // only Myra's box shares the row
   const bar = $('dock').getBoundingClientRect(),
@@ -94,11 +92,22 @@ function fitToolbar() {
       .map(w => w.getBoundingClientRect()),
     end = widgets.some(w => w.bottom > bar.top) ? Math.min(...widgets.map(w => w.left)) - 14 : innerWidth - 16,
     room = end - bar.left - others,
+    body = document.body.classList,
+    desk = !body.contains('phone') && !body.contains('proto'),
+    joinRoom = Math.min(room, innerWidth - JOIN_RESERVE - box.getBoundingClientRect().left),
     width = () => box.getBoundingClientRect().width; // to the fraction of a pixel, as the bar is laid out
-  if (width() <= room) return;
-  more.hidden = false;
-  const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden);
-  for (let i = shown.length - 1; i > 0 && width() > room; i--) shown[i]?.classList.add('tb-over');
+  const fit = (limit: number) => {
+    box.querySelectorAll(':scope > .tb-over').forEach(b => {
+      b.classList.remove('tb-over');
+    });
+    more.hidden = true;
+    if (width() <= limit) return true;
+    more.hidden = false;
+    const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden);
+    for (let i = shown.length - 1; i > 0 && width() > limit; i--) shown[i]?.classList.add('tb-over');
+    return width() <= limit;
+  };
+  if (!desk || !fit(joinRoom)) fit(room);
 }
 
 export const tbRect = (b: Element) => (b.classList.contains('tb-over') ? $('tbMore') : b).getBoundingClientRect();

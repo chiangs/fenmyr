@@ -29,6 +29,9 @@ export type Placement =
 
 const CHAT = { w: 400, h: 560, minW: 320, minH: 240, inset: 14, gap: 12, top: 60, edge: 8, chip: 40 };
 
+/** How far the tools keep from the window's right on a computer: her box and the narrowest joined chat over it. */
+export const JOIN_RESERVE = CHAT.minW + CHAT.inset;
+
 export function placeChat(g: Geometry): Placement {
   switch (g.where) {
     case 'phone':

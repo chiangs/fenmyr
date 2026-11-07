@@ -89,9 +89,16 @@ const check = async (name: string, run: () => Promise<void>) => {
   await page.mouse.up();
 };
 
-// at 1350 px every tool shows and Myra's chat opens wide, over the bar, where the pickers open
-await size(1350, 900);
+// at 760 px Myra's chat opens wide, over the bar, where the pickers open from ···, as the tools are tucked into it
+await size(760, 900);
 await view();
+const pick = async (tool: string) => {
+  const name = await page.$eval(`#tools [data-add="${tool}"]`, b =>
+    (b instanceof HTMLElement ? (b.dataset.tip ?? '') : '').split('·')[0]?.trim(),
+  );
+  await page.click('#tbMore');
+  await page.locator('#rowMenu .tbm-row', { hasText: name }).click();
+};
 for (const [tool, picker] of [
   ['tpl', '#tplPick'],
   ['shape', '#shapePick'],
@@ -100,7 +107,7 @@ for (const [tool, picker] of [
 ] as const) {
   await check(`with Myra’s chat open, ${picker} opens over it`, async () => {
     await setChat(true);
-    await page.click(`#tools [data-add="${tool}"]`);
+    await pick(tool);
     if (picker === '#stampPick') await page.click('#wsMid');
     await still();
     const top = await onTopWhereMeets(picker, '#mChat');
