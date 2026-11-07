@@ -24,7 +24,7 @@ export function onPress(e: PointerEvent) {
   if (
     closestTo(
       e.target,
-      '.tools, .tray, .myra, .top, .capture, .side, .keys, .cpop, .home, .selbar, .dock, .docview, .shapepick, .tplpick',
+      '.tools, .tray, .myra, .top, .capture, .side, .keys, .cpop, .home, .selbar, .modebar, .dock, .docview, .shapepick, .tplpick',
     )
   )
     return;

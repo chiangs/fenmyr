@@ -195,7 +195,9 @@ export function init62() {
       document.body.classList.toggle('phone', on);
       if (on) {
         $('dock').prepend(hub);
-        $('dock').insertBefore($('selbar'), $('drawbar')); // a strip in the bottom bar; on a computer it floats
+        // strips in the bottom bar; on a computer they float
+        $('dock').insertBefore($('selbar'), $('myra'));
+        $('dock').insertBefore($('modebar'), $('myra'));
         // no keyboard on a phone, so just the names
         for (const b of $('tools').querySelectorAll('[data-tip]'))
           if (b instanceof HTMLElement) b.dataset.name = (b.dataset.tip ?? '').split(' · ')[0];
@@ -209,6 +211,7 @@ export function init62() {
         restoreAll();
         hub.remove();
         stage.insertBefore($('selbar'), $('dock'));
+        stage.insertBefore($('modebar'), $('dock'));
       }
       child(hub, '#hubN').textContent = String(session.board?.tray?.length || '');
     }

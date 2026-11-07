@@ -39,7 +39,7 @@ export async function slash(t: Smoke) {
     page.evaluate(() => {
       const T = window.__t,
         b = T.el('#findBar'),
-        p = T.el('#mPill').getBoundingClientRect(),
+        d = T.el('#dock').getBoundingClientRect(),
         r = b.getBoundingClientRect(),
         prev = T.el('#fbPrev');
       return {
@@ -48,8 +48,8 @@ export async function slash(t: Smoke) {
         focus: document.activeElement?.id,
         dim: document.querySelectorAll('.card.dim').length,
         cur: document.querySelectorAll('.card.find-cur').length,
-        right: r.left >= p.right,
-        level: Math.abs(r.top + r.height / 2 - (p.top + p.height / 2)) < 1.5,
+        above: Math.abs(r.bottom - (d.top - 12)) < 1.5,
+        centred: Math.abs(r.left + r.right - (d.left + d.right)) < 3,
         prevOff: prev instanceof HTMLButtonElement && prev.disabled,
       };
     });
@@ -91,7 +91,7 @@ export async function slash(t: Smoke) {
     open: f1.chat && f1.val === '/find ' && f1.focus === 'mcInput',
     barOpens: b1.shown && b1.focus === 'fbQ' && b1.count === '1 of 2',
     dims: b1.dim === 2 && b1.cur === 1,
-    besideMyra: b1.right && b1.level,
+    aboveTheBottomBar: b1.above && b1.centred,
     cycles: b2.count === '2 of 2' && b3.count === '2 of 2',
     live: b4.count === '1 of 1' && b4.prevOff,
     none: b5.count === 'No matches' && b5.dim === 0,

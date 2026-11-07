@@ -111,7 +111,7 @@ export function enterDraw() {
   selectOnly([]);
   session.selWire = null;
   drawOn = true;
-  $('dock').classList.add('drawing');
+  $('drawbar').hidden = false;
   renderDrawbar();
   if (!liveSvg) {
     liveSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -128,7 +128,7 @@ export function exitDraw() {
   drawOn = false;
   stroke = null;
   erasing = false;
-  $('dock').classList.remove('drawing');
+  $('drawbar').hidden = true;
   stage.classList.remove('drawing', 'erasing');
   if (liveSvg) liveSvg.innerHTML = '';
 }
