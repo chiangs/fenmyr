@@ -188,7 +188,7 @@ await check('Home puts drawing down', async () => {
   await page.evaluate(() => window.__fenmyr.openHome());
   await frames();
   assert.ok(!(await seen('#drawbar')), 'Home has no drawing bar');
-  await page.evaluate(() => window.__fenmyr.openBoard('bar'));
+  await page.click('#homeClose');
   await page.waitForFunction(() => !document.getElementById('stage')?.classList.contains('at-home'));
   await frames();
   assert.ok(!(await seen('#drawbar')), 'and the board comes back without it');
