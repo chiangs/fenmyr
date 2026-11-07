@@ -57,6 +57,7 @@ const build = (request: string) =>
   page.evaluate(r => window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: r } }, 'build it'), request);
 
 try {
+  const home = await page.evaluate(() => window.__fenmyr.curBoard().id);
   const dir = await page.evaluate(async repo => {
     await window.Fenmyr.saveFolders({
       projects: [{ id: 'p1', name: 'Acme', open: true, repo: { path: repo } }],
@@ -123,6 +124,21 @@ try {
       ),
     'Myra links the code back to the card it came from',
   );
+  const buttons = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('#mcList .mc-msg.myra')]
+        .slice(-2)
+        .map(m => [...m.querySelectorAll('.m-acts button')].map(b => b.textContent)),
+    );
+  const built = await buttons();
+  assert.deepStrictEqual(built, [['Commit', 'Undo'], ['↗ Checkout: show the total first']]);
+  await page.waitForTimeout(500);
+  await page.evaluate(id => window.__fenmyr.openBoard(id), home);
+  await page.waitForTimeout(300);
+  await page.evaluate(() => window.__fenmyr.openBoard('pb'));
+  await until(async () => (await lastMyra()).includes('I built it from these cards'), 'the prototype opens again');
+  await page.waitForTimeout(300);
+  assert.deepStrictEqual(await buttons(), built, 'Commit, Undo and the card button are back after opening it again');
   await page.evaluate(() => window.__fenmyr.selectOnly([]));
   await page.locator('#mcList .m-acts button', { hasText: '↗ Checkout' }).last().click();
   assert.deepStrictEqual(await page.evaluate(() => window.__fenmyr.sel), ['n1'], 'her card button selects it');

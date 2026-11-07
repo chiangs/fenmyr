@@ -2,6 +2,7 @@ import type { Card } from '../../shared/model.ts';
 import { appState, session } from '../core/state.ts';
 import { repoActs } from '../repo/myra.ts';
 import { aiGrants, tasksLine, updateVaultChip } from '../vault/ask.ts';
+import type { Act } from './acts.ts';
 import type { HeldReply } from './applyTypes.ts';
 import { ask } from './chat.ts';
 import { guessNext, noEmoji } from './replyText.ts';
@@ -17,7 +18,7 @@ export function replyLine({ reply: r, q, ctx }: HeldReply, touched: readonly Car
       : ctx.used.length
         ? ` I read ${ctx.used.length} note${ctx.used.length === 1 ? '' : 's'} from your vault: ${ctx.used.map(n => n.title).join(', ')}.`
         : ' I looked in your vault, but found no notes matching that in the folders you allowed.';
-  const acts: SayAction[] = r.confirm
+  const acts: Act[] = r.confirm
     ? [
         { label: `${r.confirm || 'Yes, make it'} ✦`, run: () => ask(q, true) },
         { label: 'Not now', ghost: true, run: () => {} },
@@ -42,7 +43,7 @@ export function replyLine({ reply: r, q, ctx }: HeldReply, touched: readonly Car
         .map(noEmoji)
         .filter(Boolean)
         .slice(0, 3);
-  for (const t of next) acts.push({ label: t.trim(), cls: 'next', run: () => ask(t.trim()) });
+  for (const t of next) acts.push({ kind: 'next', text: t.trim() });
   const said = (r.say && noEmoji(r.say)) || (touched.length ? `Done! I touched ${touched.length} cards.` : 'Done!');
   return { text: said + read, ms: r.confirm ? 0 : next.length ? 16000 : 9000, acts };
 }

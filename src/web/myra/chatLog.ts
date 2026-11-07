@@ -6,8 +6,8 @@ import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
 // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
+import { type Act, actView, storedOf } from './acts.ts';
 import { ask } from './chat.ts';
-import type { SayAction } from './say.ts';
 
 const CHATS_KEPT = 10;
 
@@ -108,14 +108,39 @@ const IDEAS = [
 // on a prototype board she starts from the wireframes and notes the person brings
 const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
 
-function msgEl(m: ChatMsg, acts: SayAction[] = []) {
+// The buttons a row shows now, each with the action it came from. A click takes the row away, also from the message,
+// so a used button doesn't come back when the chat opens again; an action that shows nothing now stays.
+export function actsRow(m: ChatMsg | undefined, acts: readonly Act[]) {
+  const shown = acts.flatMap(a => {
+    const view = actView(a);
+    return view ? [{ a, view }] : [];
+  });
+  const used = () => {
+    if (!m?.acts) return;
+    const left = m.acts.filter(a => !shown.some(s => s.a === a));
+    if (left.length === m.acts.length) return;
+    if (left.length) m.acts = left;
+    else delete m.acts;
+    if (chatKeep() === 'board') save();
+  };
+  return shown.map(({ view }) => ({
+    ...view,
+    run: () => {
+      used();
+      return view.run();
+    },
+  }));
+}
+
+function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   const d = document.createElement('div');
   d.className = `mc-msg ${m.who}`;
   d.textContent = m.text;
-  if (acts.length) {
+  const row = actsRow(m, acts);
+  if (row.length) {
     const box = document.createElement('div');
     box.className = 'm-acts';
-    acts.forEach(a => {
+    row.forEach(a => {
       const b = document.createElement('button');
       b.textContent = a.label;
       b.className = a.cls || (a.ghost ? 'ghost' : '');
@@ -172,15 +197,18 @@ export function chatLog(): ChatMsg[] {
   return (sessionChats[session.board.id] ??= []);
 }
 
-export function addMsg(who: string, text: string, acts: SayAction[] = []) {
+// Shows the line with all of `acts` and keeps the stored kinds on the message, which it returns.
+export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
   if (!session.board) return;
   if (appState.histOpen) {
     appState.histOpen = false;
     renderChat();
   }
   const log = chatLog(),
-    m = { who, text, t: Date.now() },
+    m: ChatMsg = { who, text, t: Date.now() },
+    stored = storedOf(acts),
     max = Number(settings.chatMax) || 60;
+  if (stored.length) m.acts = stored;
   log.push(m);
   if (log.length > max) log.splice(0, log.length - max);
   if (chatKeep() === 'board') save();
@@ -188,6 +216,7 @@ export function addMsg(who: string, text: string, acts: SayAction[] = []) {
   list.querySelector('.mc-empty')?.remove();
   list.appendChild(msgEl(m, acts));
   list.scrollTop = list.scrollHeight;
+  return m;
 }
 
 export function typing(on: boolean) {

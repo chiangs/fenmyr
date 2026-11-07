@@ -161,6 +161,7 @@
     "src/web/media/videoFile.ts": "Adds a video file and grabs its poster still, size and length.",
     "src/web/media/wav.ts": "Turns a video’s sound into 16 kHz mono WAV for speech recognition.",
     "src/web/model/boards.ts": "Makes cards and new boards, and registers the bundled templates.",
+    "src/web/myra/acts.ts": "The buttons under Myra's lines: stored kinds and one-off closures, and how a stored one becomes a button.",
     "src/web/myra/anim.ts": "The things Myra’s sprite can do when asked, such as /animate.",
     "src/web/myra/apply.ts": "Applies Myra’s replies one at a time: gathers what each needs, changes the board in one undo step, then runs the rest.",
     "src/web/myra/applyTypes.ts": "The card kinds Myra may add, and the shape of a reply held with everything it needs.",

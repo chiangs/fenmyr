@@ -1,10 +1,12 @@
 import { labelOf } from '../../shared/cardTypes.ts';
+import type { ChatAction } from '../../shared/chat.ts';
 import type { Card } from '../../shared/model.ts';
 import type { Sources } from '../../shared/repos.ts';
 import { fit } from '../canvas/handles.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
+import type { SayAction } from '../myra/say.ts';
 import { esc } from '../ui/dom.ts';
 
 // Code linked back to the cards it came from: the builder names them for each file it writes, the board keeps that,
@@ -57,11 +59,17 @@ export function cardsLine(ids: string[]) {
 }
 
 // buttons under Myra's reply, one per card the build came from
-export const cardButtons = (ids: string[]) =>
-  ids.slice(0, MAX_BUTTONS).flatMap(id => {
-    const c = cardById(id);
-    return c ? [{ label: `↗ ${nameOf(c)}`, ghost: true, run: () => showCard(id) }] : [];
-  });
+export const cardButtons = (ids: string[]): ChatAction[] =>
+  ids
+    .slice(0, MAX_BUTTONS)
+    .filter(id => cardById(id))
+    .map(card => ({ kind: 'source', card }));
+
+// a stored card button, while its card is still on the board
+export function sourceButton(id: string): SayAction | null {
+  const c = cardById(id);
+  return c ? { label: `↗ ${nameOf(c)}`, ghost: true, run: () => showCard(id) } : null;
+}
 
 // the code pane's row of the cards a file came from
 export function fromCards(file: string) {
