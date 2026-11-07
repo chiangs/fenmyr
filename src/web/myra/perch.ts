@@ -46,7 +46,27 @@ const gooRest = () => {
   gooSlot.style.transformOrigin = '';
 };
 
-function flyGoo(to: Point, instant: boolean) {
+// Calm, calmest and reduced motion: she fades out of one place and into the other, with no hop
+function fadeGoo() {
+  const out = gooSlot.animate({ opacity: [1, 0] }, { duration: 120, fill: 'forwards' });
+  let stopped = false;
+  gooAnim = {
+    stop() {
+      stopped = true;
+      out.cancel();
+    },
+  };
+  out.onfinish = () => {
+    if (stopped) return;
+    gooRest();
+    gooMove(perched ? perchTarget() : { x: 0, y: 0 });
+    gooSlot.animate({ opacity: [0, 1] }, 120);
+    out.cancel();
+    gooAnim = null;
+  };
+}
+
+function flyGoo(to: Point, fade: boolean) {
   const from = gooAt;
   if (gooAnim) {
     gooAnim.stop();
@@ -58,10 +78,15 @@ function flyGoo(to: Point, instant: boolean) {
       liveOff();
     }
   };
-  if (instant || (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1)) {
+  if (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1) {
     gooRest();
     gooMove(to);
     done();
+    return;
+  }
+  if (fade) {
+    done();
+    fadeGoo();
     return;
   }
   if (!appState.flightLive) {
@@ -152,8 +177,8 @@ export function perchGoo(on: boolean) {
   gooSlot.classList.toggle('perched', on);
   flyGoo(
     on ? perchTarget() : { x: 0, y: 0 },
-    !!window.myraMuted || matchMedia('(prefers-reduced-motion: reduce)').matches,
-  ); // calmest and reduced motion: she just appears
+    !!window.myraCalm || matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
 }
 
 export const keepPerch = () => {

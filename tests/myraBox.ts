@@ -1,5 +1,5 @@
-// Myra's box in the bottom bar and the chat that opens from it: joined to the tools or wide above the bar, her lines
-// rising from the box, her name cut short, fitting the board around the chat, and a phone's sheet.
+// Myra's box in the bottom bar and the chat that opens from it: joined to the tools or wide above the bar, her hop
+// into its header, her lines rising from the box, her name cut short, fitting the board around the chat, a phone's sheet.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
 import { settle } from './support/launch.ts';
@@ -85,6 +85,38 @@ const inSettings = async (change: () => Promise<void>) => {
   await page.click('#setClose');
   await page.waitForTimeout(300);
 };
+const lively = (v: 'lively' | 'calm' | 'calmest') =>
+  inSettings(() => page.click(`[data-seg="myraCalm"] [data-v="${v}"]`));
+// where her slot is, every frame, from opening the chat until she has settled in it
+const flight = async () => {
+  const before = (await edges(['gooSlot'])).gooSlot;
+  const frames = page.evaluate(
+    () =>
+      new Promise<number[][]>(done => {
+        const slot = document.getElementById('gooSlot'),
+          seen: number[][] = [],
+          t0 = performance.now();
+        const tick = () => {
+          const r = slot?.getBoundingClientRect();
+          if (r) seen.push([r.left, r.top]);
+          if (performance.now() - t0 < 1600) requestAnimationFrame(tick);
+          else done(seen);
+        };
+        requestAnimationFrame(tick);
+      }),
+  );
+  await page.click('#mPill');
+  const seen = await frames,
+    { gooSlot: after, mcPerch } = await edges(['gooSlot', 'mcPerch']);
+  await setChat(false);
+  await page.waitForTimeout(900);
+  assert.ok(before && after && mcPerch, 'her slot and the header’s spot are up');
+  near(after.l, mcPerch.l, 'where she lands, left');
+  near(after.t, mcPerch.t, 'where she lands, top');
+  const off = (p: number[], q: Edges) => Math.hypot((p[0] ?? 0) - q.l, (p[1] ?? 0) - q.t);
+  return seen.filter(p => off(p, before) > 3 && off(p, after) > 3).length;
+};
+
 await check('her box is 200 px wide and one piece with the tools', async () => {
   const { mPill, tools } = await edges(['mPill', 'tools']);
   assert.ok(mPill && tools, 'her box and the tools are up');
@@ -124,6 +156,25 @@ await check('with under 320 px right of the tools her chat opens wide, above the
   near(mChat.l, dock.l, 'the chat’s left, on the bar’s');
   near(mChat.r, 1100 - 14, 'the chat’s right');
   near(mChat.b, dock.t - 12, 'the chat’s bottom');
+});
+
+await check('she hops from her box into the chat’s header', async () => {
+  const between = await flight();
+  assert.ok(between > 5, `she is between her box and the header in ${between} frames`);
+});
+for (const v of ['calm', 'calmest'] as const) {
+  await check(`with her set to ${v}, she fades into the chat’s header without a hop`, async () => {
+    await lively(v);
+    const between = await flight();
+    await lively('lively');
+    assert.strictEqual(between, 0, `she is between her box and the header in ${between} frames`);
+  });
+}
+await check('with reduced motion, she fades into the chat’s header without a hop', async () => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const between = await flight();
+  await page.emulateMedia({ reducedMotion: null });
+  assert.strictEqual(between, 0, `she is between her box and the header in ${between} frames`);
 });
 
 await check(
