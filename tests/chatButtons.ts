@@ -147,9 +147,14 @@ await check('a reply that changes the board keeps what it changed, and the cards
   );
   const changes = (await storedActs('Changed.')).filter(a => a.kind === 'changes');
   assert.deepStrictEqual(
-    changes.map(a => a.kind === 'changes' && [a.reply, a.set.edited, a.set.added.length]),
+    changes.map(a => a.kind === 'changes' && [a.reply, a.set.edited, a.set.added?.length]),
     [[done.reply, ['n1'], 1]],
     'her line keeps the reply’s id and its change set',
+  );
+  assert.deepStrictEqual(
+    changes.map(a => a.kind === 'changes' && Object.keys(a.set)),
+    [['added', 'edited']],
+    'and leaves out the lists with nothing in them',
   );
   assert.deepStrictEqual(await actsOf(page, 'Changed.'), ['next:Again'], 'which draws no button yet');
   await page.locator('#mcList .m-acts button', { hasText: 'Again' }).click();

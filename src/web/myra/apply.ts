@@ -1,4 +1,5 @@
 import { type BoardLists, type ChangeSet, changeSet, listsOf, recordOf } from '../../shared/changes.ts';
+import { storedSet } from '../../shared/chat.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
 import { boxOf } from '../canvas/emptySpot.ts';
 import { openCentre, showPlaced, viewShowing } from '../canvas/handles.ts';
@@ -141,7 +142,7 @@ export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | 
   // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one, and
   // what this reply changed means nothing there.
   const kept = changed && session.board.id === board;
-  reply(line.text, line.ms, kept ? [...line.acts, { kind: 'changes', reply: id, set: changes }] : line.acts);
+  reply(line.text, line.ms, kept ? [...line.acts, { kind: 'changes', reply: id, set: storedSet(changes) }] : line.acts);
   return { said: line.text, changes, reply: id };
 }
 

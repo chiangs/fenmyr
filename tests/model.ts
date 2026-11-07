@@ -19,15 +19,7 @@ assert.deepStrictEqual(
 const oldBoard = { id: 'b1', name: 'Plan', cards: [], links: [], tray: [], chat: [{ who: 'me', text: 'hi', t: 1 }] };
 assert.deepStrictEqual(json(parseBoard(oldBoard)), oldBoard, 'a board from before prototypes saves back unchanged');
 
-const set = {
-  added: ['a'],
-  moved: ['b'],
-  edited: [],
-  removed: ['c'],
-  relaid: { kb: ['k1', 'kb'] },
-  links: { added: ['l1'], removed: [] },
-  skipped: [],
-};
+const set = { added: ['a'], moved: ['b'], removed: ['c'], relaid: { kb: ['k1', 'kb'] }, links: { added: ['l1'] } };
 const everyKind = [
   { kind: 'next', text: 'Make it a list' },
   { kind: 'changes', reply: 'r1', set },
@@ -63,6 +55,17 @@ assert.deepStrictEqual(
   ])?.acts,
   [{ kind: 'commit', board: 'pb', message: 'Keep me' }],
   'an unknown kind and a malformed button are dropped, and the rest kept',
+);
+assert.deepStrictEqual(
+  kept([
+    {
+      kind: 'changes',
+      reply: 'r1',
+      set: { ...set, edited: [], relaid: {}, links: { added: [], removed: [] }, skipped: [] },
+    },
+  ])?.acts,
+  [{ kind: 'changes', reply: 'r1', set: { added: ['a'], moved: ['b'], removed: ['c'] } }],
+  'a change set keeps only the lists with something in them',
 );
 assert.deepStrictEqual(
   json(kept([{ kind: 'toString' }, { kind: 'next', text: 3 }])),

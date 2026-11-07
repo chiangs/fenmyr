@@ -7,13 +7,24 @@ export type ChatAction =
   // sends `text` as the person's question
   | { kind: 'next'; text: string }
   // what a reply changed and its id: Show on board, and Undo while its before-states are still in memory
-  | { kind: 'changes'; reply: string; set: ChangeSet }
+  | { kind: 'changes'; reply: string; set: StoredChangeSet }
   // a card a build came from
   | { kind: 'source'; card: string }
   // A build's buttons, shown only while `board`, the prototype it built, is open. Undo puts the folder back as it was
   // before the build, so only the newest build's Undo shows: an older one would undo the builds after it too.
   | { kind: 'buildUndo'; board: string; snapshot: string }
   | { kind: 'commit'; board: string; message: string };
+
+// A ChangeSet as her line keeps it: a list with nothing in it is left out.
+export type StoredChangeSet = {
+  added?: string[];
+  moved?: string[];
+  edited?: string[];
+  removed?: string[];
+  relaid?: Record<string, string[]>;
+  links?: { added?: string[]; removed?: string[] };
+  skipped?: string[];
+};
 
 // who: 'me' or 'myra'; t: when it was said
 export type ChatMsg = { who: string; text: string; t: number; acts?: ChatAction[] };
@@ -22,28 +33,58 @@ export type SavedChat = { id: string; title: string; t: number; msgs: ChatMsg[] 
 
 type Fields = Record<string, unknown>;
 const isRecord = (x: unknown): x is Fields => typeof x === 'object' && x !== null;
-const strings = (x: unknown): string[] | null =>
-  Array.isArray(x) && x.every(s => typeof s === 'string') ? [...x] : null;
+const strings = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => typeof s === 'string');
 
-function readChangeSet(x: unknown): ChangeSet | null {
-  if (!isRecord(x) || !isRecord(x.relaid) || !isRecord(x.links)) return null;
+const LISTS: readonly ('added' | 'moved' | 'edited' | 'removed' | 'skipped')[] = [
+  'added',
+  'moved',
+  'edited',
+  'removed',
+  'skipped',
+];
+
+export function storedSet(set: ChangeSet): StoredChangeSet {
+  const out: StoredChangeSet = {},
+    links: NonNullable<StoredChangeSet['links']> = {};
+  for (const k of LISTS) if (set[k].length) out[k] = set[k];
+  if (Object.keys(set.relaid).length) out.relaid = set.relaid;
+  if (set.links.added.length) links.added = set.links.added;
+  if (set.links.removed.length) links.removed = set.links.removed;
+  if (links.added || links.removed) out.links = links;
+  return out;
+}
+
+// a list that is left out reads as empty
+const ids = (x: unknown): string[] | null => (x === undefined ? [] : strings(x) ? x : null);
+
+function readChangeSet(x: unknown): StoredChangeSet | null {
+  if (!isRecord(x)) return null;
+  const { links = {}, relaid = {} } = x;
+  if (!isRecord(links) || !isRecord(relaid)) return null;
   const [added, moved, edited, removed, skipped, linksAdded, linksRemoved] = [
     x.added,
     x.moved,
     x.edited,
     x.removed,
     x.skipped,
-    x.links.added,
-    x.links.removed,
-  ].map(strings);
-  const relaid: Record<string, string[]> = {};
-  for (const [k, v] of Object.entries(x.relaid)) {
-    const ids = strings(v);
-    if (!ids) return null;
-    relaid[k] = ids;
+    links.added,
+    links.removed,
+  ].map(ids);
+  const laid: Record<string, string[]> = {};
+  for (const [k, v] of Object.entries(relaid)) {
+    if (!strings(v)) return null;
+    laid[k] = v;
   }
   if (!added || !moved || !edited || !removed || !skipped || !linksAdded || !linksRemoved) return null;
-  return { added, moved, edited, removed, relaid, links: { added: linksAdded, removed: linksRemoved }, skipped };
+  return storedSet({
+    added,
+    moved,
+    edited,
+    removed,
+    relaid: laid,
+    links: { added: linksAdded, removed: linksRemoved },
+    skipped,
+  });
 }
 
 // One reader per kind. The mapped type makes a kind without a reader fail the type check.
