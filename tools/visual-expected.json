@@ -1,15 +1,1 @@
-{
-  "select-note": "The selection bar floats 12 px above the note and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
-  "select-shape": "The selection bar floats 12 px above the shape and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
-  "select-several": "The selection bar floats 12 px above the three cards and their turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
-  "card-menu": "The three cards stay selected under the right-click menu, so their bar floats above them instead of in the bottom bar, and the tools stay (#244, 3a).",
-  "zoom-in": "The three cards are still selected; zoomed in, their top is above the view, so their bar holds at the top of the view instead of sitting in the bottom bar (#244, 3a).",
-  "zoom-out": "The three cards are still selected; zoomed out there is no room above them, so their bar flips below them, and the pointer left from the right-click rests on it and shows a tip (#244, 3a).",
-  "dark-select-note": "The selection bar floats 12 px above the note and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
-  "dark-select-shape": "The selection bar floats 12 px above the shape and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
-  "rich-select": "The selection bar floats 12 px above the note and its turn dot instead of taking the tools' place in the bottom bar, so the tools stay (#244, 3a).",
-  "panels-myra-chat": "The doc stays selected after its editor closes, so its bar floats above it and the tools stay in the bottom bar (#244, 3a).",
-  "modes-drawing": "Drawing's pens sit in their own bar 12 px above the bottom bar, which keeps its tools; they used to replace the tools in the bottom bar.",
-  "modes-find": "The find bar sits 12 px above the bottom bar, which keeps its tools; it used to sit beside Myra while the tools stepped aside.",
-  "modes-find-chat": "With find up, Myra's chat rises over the find bar, which sits above the bottom bar; the find bar used to sit beside her while the tools stepped aside."
-}
+{}
