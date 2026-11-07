@@ -1,6 +1,6 @@
 // What opens over the bottom bar and what it lets through: with Myra's chat open, the toolbar's pickers, a colour
-// card's wheel and quick capture open over it; a tall Unsorted list keeps the bar clear of it; and with a doc open,
-// presses where the bar was reach the doc.
+// card's wheel and quick capture open over it; a tall Unsorted list keeps the bar clear of it; what is being placed
+// stays under a menu; and with a doc open, presses where the bar was reach the doc.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -143,6 +143,27 @@ await check('at 1100 × 760 a tall Unsorted list keeps the bar 14 px clear of th
   await size(1440, 900);
   assert.ok(reaches, 'the right widgets reach down to the bar');
   assert.ok(bar <= column - 14, `the bar ends at ${bar}, the widgets start at ${column}`);
+});
+
+await check('what is being placed shows under the zoom menu', async () => {
+  await page.click('#tools [data-add="note"]');
+  await page.click('#zoom');
+  const menu = await page.locator('#rowMenu').boundingBox();
+  assert.ok(menu, 'the zoom menu is up');
+  await page.mouse.move(menu.x + 10, menu.y + 10);
+  await still();
+  // the ghost lets presses through, so for a moment it takes them, to see what is on top
+  const top = await page.evaluate(() => {
+    const g = document.getElementById('ghost');
+    if (!g?.classList.contains('on')) return 'nothing is held';
+    const r = g.getBoundingClientRect();
+    g.style.pointerEvents = 'auto';
+    const el = document.elementFromPoint(r.left + 20, r.top + 20);
+    g.style.pointerEvents = '';
+    return el?.closest('#ghost') ? 'ghost' : el?.closest('#rowMenu') ? 'menu' : (el?.id ?? 'nothing');
+  });
+  await closeAll();
+  assert.strictEqual(top, 'menu');
 });
 
 await check('with a doc open, a press where the bar was reaches the doc', async () => {

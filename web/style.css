@@ -428,7 +428,7 @@ body { --bar-b: 18px; }
 .keys { left: 22px; bottom: 14px; width: var(--side); flex-wrap: wrap; white-space: normal; gap: 4px 10px; }
 /* placing: the new thing rides on the cursor until you click */
 .stage.placing, .stage.placing * { cursor: copy !important; }
-.ghost { position: fixed; z-index: 9000; pointer-events: none; display: none; border-radius: 22px; corner-shape: squircle; background: rgb(from var(--hilite) r g b / .85); box-shadow: 0 14px 34px rgba(var(--sh), calc(.22 * var(--sh-k))), 0 0 0 1.5px var(--select); transform-origin: 0 0; }
+.ghost { position: fixed; z-index: 22; pointer-events: none; display: none; border-radius: 22px; corner-shape: squircle; background: rgb(from var(--hilite) r g b / .85); box-shadow: 0 14px 34px rgba(var(--sh), calc(.22 * var(--sh-k))), 0 0 0 1.5px var(--select); transform-origin: 0 0; }
 .ghost.on { display: block; }
 .ghost span { position: absolute; left: 14px; top: 12px; font: 600 13px/1 var(--font); color: var(--ink-soft); }
 .ghost.coll { background: none; box-shadow: none; }
