@@ -1,7 +1,5 @@
 import { type Card, isRecord } from '../../shared/model.ts';
-import { renderCard } from '../canvas/render.ts';
 import { uid } from '../core/base.ts';
-import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
 import { IC, numOf, type Opts, type PieceItem, str, T } from './pieceKit.ts';
 import { PIECES } from './pieces.ts';
@@ -94,7 +92,8 @@ const num = (v: unknown) => {
   return Number.isFinite(n) && v !== '' ? n : undefined;
 };
 
-// a whole screen from a list of pieces, top to bottom: bars hug the edges, the rest stacks with even gaps
+// a whole screen from a list of pieces, top to bottom: bars hug the edges, the rest stacks with even gaps. Returns its
+// cards, frame first, without putting them on a board.
 export function buildScreen(raw: unknown, x: number, y: number) {
   const spec = isRecord(raw) ? raw : {},
     items = (Array.isArray(spec.items) ? spec.items : []).filter(isRecord).map(
@@ -124,8 +123,6 @@ export function buildScreen(raw: unknown, x: number, y: number) {
     radius: webFirst ? 12 : dev[2],
     fill: '#ffffff',
   });
-  session.board.cards.push(f);
-  renderCard(f, true);
   const M = device === 'Desktop' ? 64 : 24,
     CW = W - M * 2,
     GAP = num(spec.gap) || 16,
@@ -143,8 +140,6 @@ export function buildScreen(raw: unknown, x: number, y: number) {
         group: list.length > 1 ? g : undefined,
         onFrame: f.id,
       });
-      session.board.cards.push(c);
-      renderCard(c, true);
       made.push(c);
     });
   };
@@ -163,10 +158,7 @@ export function buildScreen(raw: unknown, x: number, y: number) {
     tabMade = made.slice(n0);
   }
   const isWeb = items.some(it => Object.keys(WEB).some(k => k.toLowerCase() === str(it.piece).toLowerCase()));
-  if (theme?.bg) {
-    f.fill = theme.bg;
-    renderCard(f);
-  }
+  if (theme?.bg) f.fill = theme.bg;
   let cur = top + (num(spec.padTop) ?? (isWeb ? 0 : 20));
   items
     .filter(it => it !== nav && it !== tab)
@@ -191,16 +183,12 @@ export function buildScreen(raw: unknown, x: number, y: number) {
         cur += h + (full ? 0 : GAP);
       }
     });
-  if (webFirst && !tab) {
-    f.h = Math.max(200, cur - y);
-    renderCard(f);
-  } else if (cur > bottom - 12) {
+  if (webFirst && !tab) f.h = Math.max(200, cur - y);
+  else if (cur > bottom - 12) {
     const grow = cur - bottom + 24;
     f.h += grow;
-    renderCard(f);
     tabMade.forEach(c => {
       c.y += grow;
-      renderCard(c);
     });
   }
   if (spec.note) {
@@ -214,8 +202,6 @@ export function buildScreen(raw: unknown, x: number, y: number) {
       color: 'butter',
       r: 0,
     });
-    session.board.cards.push(n);
-    renderCard(n, true);
     made.push(n);
   }
   return { f, made };

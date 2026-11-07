@@ -1,6 +1,5 @@
 import type { Card, CardOf } from '../../shared/model.ts';
 import { titleW } from '../canvas/render.ts';
-import { byId } from '../canvas/wires.ts';
 import { session } from '../core/state.ts';
 import { cardEl } from '../ui/dom.ts';
 import { drawKanban } from './kanban.ts';
@@ -62,8 +61,14 @@ function paintCount(s: CardOf<'coll'>, el: HTMLElement) {
   else head.insertAdjacentHTML('beforeend', badge);
 }
 
-export function layoutColl(s: CardOf<'coll'>) {
-  s.kids = s.kids.filter(id => byId(id) && id !== s.id);
+// Where each card in a collection goes, and the collection's own size. With `measure`, heights come from the screen,
+// a card it can't measure (not drawn yet) keeps its place, and a new card's column is kept. Without it, heights are
+// the stored ones, so a new card's column is only a guess, left for the measured layout to make. Returns the cards it
+// placed.
+export function arrange(s: CardOf<'coll'>, cards: readonly Card[], measure?: (c: Card) => number | null) {
+  const find = (id: string) => cards.find(c => c.id === id),
+    height = measure ?? (c => (c.type === 'image' ? Math.round(CW * (c.h / c.w)) : c.h));
+  s.kids = s.kids.filter(id => find(id) && id !== s.id);
   const cols = Math.max(1, s.cols || 1);
   s.cols = cols;
   s.w = s.cols * CW + (s.cols - 1) * CGAP + CPAD * 2;
@@ -72,12 +77,13 @@ export function layoutColl(s: CardOf<'coll'>) {
     s.colLimit = Array.from({ length: s.cols }, (_, i) => s.colLimit?.[i] || 0);
   }
   const top = (s.head === false ? 0 : CHEAD) + (s.kanban ? KHEAD : 0),
-    colH: number[] = Array(s.cols).fill(0);
+    colH: number[] = Array(s.cols).fill(0),
+    placed: Card[] = [];
   s.kids.forEach(id => {
-    const c = byId(id),
-      el = cardEl(id);
-    if (!el || !c) return;
-    const h = naturalHeight(c, el);
+    const c = find(id),
+      h = c && height(c);
+    if (!c || h == null) return;
+    placed.push(c);
     if (c.type === 'image') {
       c.h = h;
     }
@@ -85,7 +91,7 @@ export function layoutColl(s: CardOf<'coll'>) {
     let k = s.colOf?.[id];
     if (k == null || k >= cols) {
       k = colH.indexOf(Math.min(...colH));
-      (s.colOf = s.colOf || {})[id] = k;
+      if (measure) (s.colOf = s.colOf || {})[id] = k;
     }
     c.x = s.x + CPAD + k * (CW + CGAP);
     c.y = s.y + top + CPAD + (colH[k] ?? 0);
@@ -93,6 +99,19 @@ export function layoutColl(s: CardOf<'coll'>) {
     if (['note', 'todo'].includes(c.type)) c.h = h;
     c.r = 0;
     colH[k] = (colH[k] ?? 0) + c.h + CGAP;
+  });
+  s.h = top + CPAD * 2 + Math.max(s.kanban ? 240 : 90, Math.max(...colH) - CGAP);
+  return placed;
+}
+
+export function layoutColl(s: CardOf<'coll'>) {
+  const placed = arrange(s, session.board.cards, c => {
+    const el = cardEl(c.id);
+    return el ? naturalHeight(c, el) : null;
+  });
+  placed.forEach(c => {
+    const el = cardEl(c.id);
+    if (!el) return;
     Object.assign(el.style, {
       left: `${c.x}px`,
       top: `${c.y}px`,
@@ -101,7 +120,6 @@ export function layoutColl(s: CardOf<'coll'>) {
     });
     el.classList.add('inside');
   });
-  s.h = top + CPAD * 2 + Math.max(s.kanban ? 240 : 90, Math.max(...colH) - CGAP);
   const el = cardEl(s.id);
   // cards inside always sit on top of their collection (a card made before the collection would otherwise hide under it)
   if (el) {

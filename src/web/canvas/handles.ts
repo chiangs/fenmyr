@@ -1,5 +1,5 @@
 import { typesWith } from '../../shared/cardTypes.ts';
-import type { Card } from '../../shared/model.ts';
+import type { Card, View } from '../../shared/model.ts';
 import { cropping } from '../cards/crop.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { clamp } from '../core/base.ts';
@@ -9,7 +9,7 @@ import { chatOpen } from '../myra/chatWindow.ts';
 import { drawOn } from '../tools/draw.ts';
 import { vec } from '../tools/penEdit.ts';
 import { cardEl } from '../ui/dom.ts';
-import { nearestEmptySpot } from './emptySpot.ts';
+import { boxOf, nearestEmptySpot } from './emptySpot.ts';
 import { applyView } from './view.ts';
 import { byId } from './wires.ts';
 
@@ -162,9 +162,9 @@ function syncRH() {
   requestAnimationFrame(syncRH);
 }
 // starts after the rest of the app is set up
-export const toWorld = (cx: number, cy: number) => {
+export const toWorld = (cx: number, cy: number, v: View = session.view) => {
   const r = stage.getBoundingClientRect();
-  return { x: (cx - r.left - session.view.x) / session.view.z, y: (cy - r.top - session.view.y) / session.view.z };
+  return { x: (cx - r.left - v.x) / v.z, y: (cy - r.top - v.y) / v.z };
 };
 
 // a trackpad sends several scroll/pinch steps per frame: do the math for each one, but draw only once per frame
@@ -205,36 +205,64 @@ function openSides(r: DOMRect) {
   return { L: 270, R: ch?.width ? Math.max(260, Math.min(r.right - ch.left + 30, r.width - 270 - 520)) : 260 };
 }
 
-export function fit(cards: Card[], pad = 120, maxZ = 1.4) {
-  if (!cards.length) return;
+// the view that fits these cards, without moving to it
+function fitted(cards: Card[], pad: number, maxZ: number): View {
   const r = stage.getBoundingClientRect();
   const x0 = Math.min(...cards.map(c => c.x)),
     y0 = Math.min(...cards.map(c => c.y)),
     x1 = Math.max(...cards.map(c => c.x + c.w)),
     y1 = Math.max(...cards.map(c => c.y + c.h));
   const ph = document.body.classList.contains('phone'),
-    { L, R } = openSides(r);
-  session.view.z = clamp(Math.min((r.width - L - R - pad) / (x1 - x0), (r.height - pad * 2) / (y1 - y0)), 0.2, maxZ);
-  session.view.x = L + (r.width - L - R - (x1 - x0) * session.view.z) / 2 - x0 * session.view.z;
-  session.view.y = (r.height - (ph ? 90 : 0) - (y1 - y0) * session.view.z) / 2 - y0 * session.view.z + (ph ? 20 : 0);
+    { L, R } = openSides(r),
+    z = clamp(Math.min((r.width - L - R - pad) / (x1 - x0), (r.height - pad * 2) / (y1 - y0)), 0.2, maxZ);
+  return {
+    z,
+    x: L + (r.width - L - R - (x1 - x0) * z) / 2 - x0 * z,
+    y: (r.height - (ph ? 90 : 0) - (y1 - y0) * z) / 2 - y0 * z + (ph ? 20 : 0),
+  };
+}
+
+function glideTo(v: View) {
+  Object.assign(session.view, v);
   world.style.transition = 'transform .5s cubic-bezier(.2,.8,.3,1)';
   applyView(520);
   setTimeout(() => (world.style.transition = ''), 520);
 }
-// New cards go in the empty space nearest the middle of the view. The view only moves if that leaves them off screen,
-// and then it doesn't zoom in, so placing something never changes how close you were looking.
-export function placeInView(made: Card[]) {
+
+export function fit(cards: Card[], pad = 120, maxZ = 1.4) {
+  if (cards.length) glideTo(fitted(cards, pad, maxZ));
+}
+// the middle of the part of the view that panels don't cover, in board coordinates
+export function openCentre() {
+  const r = stage.getBoundingClientRect(),
+    { L, R } = openSides(r),
+    { x: vx, y: vy, z } = session.view;
+  return { x: ((L + r.width - R) / 2 - vx) / z, y: (r.height / 2 - vy) / z };
+}
+
+// The view that shows cards just placed in `box`: the view as it is when they're on screen, else one that moves to
+// them without zooming in, so placing something never changes how close you were looking.
+export function viewShowing(made: Card[], box: { x: number; y: number; w: number; h: number }) {
   const r = stage.getBoundingClientRect(),
     { L, R } = openSides(r),
     { x: vx, y: vy, z } = session.view,
-    x0 = Math.min(...made.map(c => c.x)),
-    y0 = Math.min(...made.map(c => c.y)),
-    w = Math.max(...made.map(c => c.x + c.w)) - x0,
-    h = Math.max(...made.map(c => c.y + c.h)) - y0,
+    left = box.x * z + vx,
+    top = box.y * z + vy,
+    onScreen = left >= L && left + box.w * z <= r.width - R && top >= 0 && top + box.h * z <= r.height;
+  return onScreen ? session.view : fitted(made, 120, z);
+}
+
+export function showPlaced(made: Card[], box: { x: number; y: number; w: number; h: number }) {
+  const v = viewShowing(made, box);
+  if (v !== session.view) glideTo(v);
+}
+
+// New cards go in the empty space nearest the middle of the view.
+export function placeInView(made: Card[]) {
+  const { x: x0, y: y0, w, h } = boxOf(made),
     isNew = new Set(made),
     others = session.board.cards.filter(c => !isNew.has(c)),
-    centre = { x: ((L + r.width - R) / 2 - vx) / z, y: (r.height / 2 - vy) / z },
-    spot = nearestEmptySpot({ w, h }, centre, others);
+    spot = nearestEmptySpot({ w, h }, openCentre(), others);
   made.forEach(c => {
     c.x += spot.x - x0;
     c.y += spot.y - y0;
@@ -245,10 +273,7 @@ export function placeInView(made: Card[]) {
     }
   });
   layoutAll();
-  const left = spot.x * z + vx,
-    top = spot.y * z + vy,
-    onScreen = left >= L && left + w * z <= r.width - R && top >= 0 && top + h * z <= r.height;
-  if (!onScreen) fit(made, 120, z);
+  showPlaced(made, { x: spot.x, y: spot.y, w, h });
 }
 
 export function init9() {
