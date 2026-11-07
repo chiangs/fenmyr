@@ -2,7 +2,7 @@ import { type BoardLists, type ChangeSet, changeSet, listsOf, recordOf } from '.
 import type { MyraReply } from '../../shared/myraReply.ts';
 import { boxOf } from '../canvas/emptySpot.ts';
 import { openCentre, showPlaced, viewShowing } from '../canvas/handles.ts';
-import { renderCard } from '../canvas/render.ts';
+import { renderAll, renderCard } from '../canvas/render.ts';
 import { renderTray, renderWires } from '../canvas/wires.ts';
 import { remember, save, showWhatMyraMade } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
@@ -135,13 +135,22 @@ export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | 
   return { said: line.text, changes };
 }
 
-// Not async on purpose: an await in here would let the undo timer cut the reply into several steps.
+// Not async on purpose: an await in here would let the undo timer cut the reply into several steps. A reply that
+// fails part way puts the board back as it was, so no half of it stays in the board or in the undo history.
 function changeBoard(held: HeldReply) {
   remember();
   const b = session.board,
-    before = listsOf(b),
+    before = listsOf(b);
+  let skipped: string[];
+  try {
     skipped = planBoard(b, held, viewAt());
-  paint(held, before, new Set(skipped));
+    paint(held, before, new Set(skipped));
+  } catch (e) {
+    Object.assign(b, before);
+    if (!before.trayLinks) delete b.trayLinks;
+    renderAll();
+    throw e;
+  }
   save();
   const changes = changeSet(recordOf(before, b), b, { named: namedIn(held.reply), skipped });
   remember();

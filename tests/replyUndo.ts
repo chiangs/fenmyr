@@ -1,6 +1,7 @@
 // One reply of Myra's is one undo step however slow its pictures are, edits the person makes while she works stay
 // their own, replies wait their turn instead of landing inside each other, a preview changes nothing, a reply for a
-// board that is no longer open is not applied, and a queued question keeps the board and vault chip it was asked with.
+// board that is no longer open is not applied, a queued question keeps the board and vault chip it was asked with,
+// and a reply that fails part way leaves the board as it was.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -340,6 +341,8 @@ await check(
       document.getElementById('mcVault')?.click();
       const two = M.ask('question two');
       await Promise.all([zero, one, two]);
+      // the chip hands focus to the chat box, where Ctrl+Z would undo typing rather than the board
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       return read;
     }, vault);
     assert.deepStrictEqual(
@@ -349,6 +352,26 @@ await check(
     );
   },
 );
+
+await check('a reply that fails part way: the board stays as it was, and the next reply is one undo step', async () => {
+  await open('throws');
+  const before = await boardJSON(page);
+  const thrown = await page.evaluate(async () => {
+    try {
+      // @ts-expect-error a connection the reply check would never let through
+      await window.__fenmyr.applyMyra({ say: 'boom', add: [{ text: 'Ghost' }], connect: [null] }, 'q');
+      return '';
+    } catch (e) {
+      return String(e);
+    }
+  });
+  assert.match(thrown, /TypeError/, 'the error still reaches the caller');
+  assert.strictEqual(await boardJSON(page), before, 'nothing of the failed reply stays on the board');
+  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'ok', add: [{ text: 'After' }] }, 'q'));
+  await page.waitForTimeout(400);
+  await undo();
+  assert.strictEqual(await boardJSON(page), before, 'one Ctrl+Z takes back the next reply and leaves nothing behind');
+});
 
 const errors = [...l.errors];
 await l.close();
