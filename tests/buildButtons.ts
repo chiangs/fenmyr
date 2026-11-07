@@ -1,6 +1,7 @@
 // The buttons under Myra's build lines once they are stored: after two builds only the newest Undo shows, and it puts
 // back only that build; Commit and Undo show only on the prototype they built; a build that lands while another board is
-// open leaves its buttons there for that visit alone.
+// open leaves its buttons there for that visit alone; and a reply that opens a new prototype doesn't take what it
+// changed on the old board with it.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -151,6 +152,23 @@ try {
   await reopen('one');
   assert.deepStrictEqual(await builtRows(), [[]], 'and they are gone once that board opens again');
 
+  const made = await page.evaluate(() =>
+    window.__fenmyr.applyMyra(
+      { say: 'Made it.', add: [{ text: 'On board one' }], newPrototype: { name: 'Shop', project: 'Acme' } },
+      'q',
+    ),
+  );
+  await settle(page, 1200);
+  const now = await page.evaluate(() => window.__fenmyr.curBoard());
+  assert.strictEqual(now.kind, 'prototype', 'the reply opens the new prototype');
+  assert.ok(made, 'and is applied');
+  const line = now.chat?.find(m => m.text === 'Made it.');
+  assert.ok(line, 'her line lands on the new prototype');
+  assert.deepStrictEqual(line.acts ?? [], [], 'without what the reply changed on board one');
+  assert.ok(
+    fileOf('one').cards.some((c: { text?: string }) => c.text === 'On board one'),
+    'which board one keeps',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('BUILD BUTTONS OK');
 } finally {

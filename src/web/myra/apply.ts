@@ -132,12 +132,16 @@ export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | 
   while (appState.drag) await new Promise(requestAnimationFrame);
   const { changes, record, touched } = changeBoard(held),
     id = uid(),
-    changed = record.cards.length > 0 || record.links.length > 0;
+    changed = record.cards.length > 0 || record.links.length > 0,
+    board = session.board.id;
   if (changed) keepReply(id, record);
   if (tpl?.mode === 'add') say(`Here’s “${tpl.name}” ✦ It’s all yours to change.`, 4000);
   if (touched.length) setTimeout(() => showWhatMyraMade(touched), 250);
   const line = replyLine(held, touched, await runEffects(effectsOf(held), touched));
-  reply(line.text, line.ms, changed ? [...line.acts, { kind: 'changes', reply: id, set: changes }] : line.acts);
+  // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one, and
+  // what this reply changed means nothing there.
+  const kept = changed && session.board.id === board;
+  reply(line.text, line.ms, kept ? [...line.acts, { kind: 'changes', reply: id, set: changes }] : line.acts);
   return { said: line.text, changes, reply: id };
 }
 
