@@ -1,6 +1,6 @@
 import { pullColors } from '../cards/imageColors.ts';
 import { clamp } from '../core/base.ts';
-import { $, cardsEl, stage } from '../core/dom.ts';
+import { boardLayers, cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { endEdit, startEdit } from '../edit/editing.ts';
@@ -179,8 +179,7 @@ export function init16() {
       viewSoon();
     }
   };
-  // the bottom bar sits outside the stage, and the wheel over it moves the board under it
-  for (const el of [stage, $('dock')]) el.addEventListener('wheel', onWheel, { passive: false });
+  for (const el of boardLayers) el.addEventListener('wheel', onWheel, { passive: false });
 
   addEventListener(
     'keydown',

@@ -296,6 +296,7 @@
     "src/web/wireframe/wireframes.ts": "Wireframes: screens, boxes and text, devices, fonts and snapping.",
     "tests/barGroups.ts": "Which groups and buttons the selection bar shows for every kind of card, mixed selections, a connector and cropping, against a recorded list.",
     "tests/barKeyboard.ts": "Every selection bar from the keyboard: F10 in, Tab, Space and Enter, Escape out, icon names that survive a hover, and keys left to the board after a click.",
+    "tests/barLayer.ts": "What opens over the bottom bar in the real app: the toolbar's pickers, a colour card's wheel and quick capture over Myra's open chat.",
     "tests/barPlace.ts": "Checks where the context bar goes, worked out without the app: above, flipped, stuck, slid and beside a line.",
     "tests/barRoom.ts": "The selection bar where room runs short: dropdowns near the top of the view, presses on the bar, and a 900 px window.",
     "tests/bottomBar.ts": "The bottom bar in the real app: where it sits, what hides it, pictures dropped and the wheel on it, its place in Tab order, and a phone's strips.",

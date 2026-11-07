@@ -146,23 +146,6 @@
       <button type="button" class="fb-b" id="fbX" title="Close (Esc)" aria-label="Close find"><svg data-ico="close" width="16" height="16"></svg></button>
     </div>
   </div>
-  <!-- stamps: a wheel of favorites; the middle opens every stamp -->
-  <div class="wheel-stamps" id="stampWheel"><div class="ws-ring" id="wsRing"></div><button class="ws-mid" id="wsMid" title="All stamps">+</button></div>
-  <div class="stamp-pick" id="stampPick">
-    <div class="sp-tabs"><button data-tab="myra" class="on">Myra</button><button data-tab="moving">Moving Myra</button><button data-tab="emoji">Emoji</button></div>
-    <div class="sp-grid" id="spGrid"></div>
-  </div>
-  <!-- shapes: pick one, then place it -->
-  <!-- design thinking templates: affinity map, opportunity map… -->
-  <div class="tplpick" id="tplPick"></div>
-  <div class="shapepick" id="shapePick">
-    <button data-shape="line" title="Line"><svg data-ico="line"></svg></button>
-    <button data-shape="rect" title="Rectangle"><svg data-ico="rectangle"></svg></button>
-    <button data-shape="circle" title="Circle"><svg data-ico="circle"></svg></button>
-    <button data-shape="tri" title="Triangle"><svg data-ico="triangle"></svg></button>
-    <button data-shape="star" title="Star"><svg data-ico="star"></svg></button>
-    <button data-shape="heart" title="Heart"><svg data-ico="heart"></svg></button>
-  </div>
   <!-- a doc opens beside the board (or full page), with a clear way back -->
   <aside class="docview" id="docview">
     <div class="dv-bar"><button class="dv-back" id="dvBack">← Back to board</button><span class="dv-where" id="dvWhere"></span><button class="dv-btn dv-pagebtn" id="dvPageMode" title="Page colour" aria-label="Page colour"><svg data-ico="page-color"></svg></button><button class="dv-dl" id="dvExport" title="Download this doc as a PDF"><svg data-ico="download"></svg>Download</button><button class="dv-btn" id="dvWide" title="Full page">⤢</button><button class="dv-btn" id="dvClose" title="Close">×</button></div>
@@ -176,9 +159,6 @@
     <div class="dv-bubble" id="dvBubble"></div>
   </aside>
 
-  <div class="capture" id="capture">
-    <form id="capForm"><input id="capInput" placeholder="Save an idea or image to Unsorted. Shift+Enter to write more first" autocomplete="off"></form>
-  </div>
   <button class="clean-back" id="cleanBack" type="button">Show panels <kbd>⌘\</kbd></button>
   <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>⌘K</kbd> quick capture</span><span><kbd>⌘F</kbd> find</span><span><kbd>space</kbd> drag to pan</span><span><kbd>⌘\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
   <!-- wireframes: screens, boxes and text, plus a design panel for the selection -->
@@ -218,6 +198,32 @@
   </aside>
   <div class="place-hint" id="placeHint" hidden></div>
   <svg class="guides" id="guides"></svg>
+  <input type="file" id="filePick" accept="image/*,video/*" multiple hidden>
+  <input type="file" id="coverPick" accept="image/*" hidden>
+</main>
+
+<!-- what opens over the bottom bar and Myra’s chat: the toolbar’s pickers, quick capture and a colour card’s wheel -->
+<div id="overBar">
+  <!-- stamps: a wheel of favorites; the middle opens every stamp -->
+  <div class="wheel-stamps" id="stampWheel"><div class="ws-ring" id="wsRing"></div><button class="ws-mid" id="wsMid" title="All stamps">+</button></div>
+  <div class="stamp-pick" id="stampPick">
+    <div class="sp-tabs"><button data-tab="myra" class="on">Myra</button><button data-tab="moving">Moving Myra</button><button data-tab="emoji">Emoji</button></div>
+    <div class="sp-grid" id="spGrid"></div>
+  </div>
+  <!-- design thinking templates: affinity map, opportunity map… -->
+  <div class="tplpick" id="tplPick"></div>
+  <!-- shapes: pick one, then place it -->
+  <div class="shapepick" id="shapePick">
+    <button data-shape="line" title="Line"><svg data-ico="line"></svg></button>
+    <button data-shape="rect" title="Rectangle"><svg data-ico="rectangle"></svg></button>
+    <button data-shape="circle" title="Circle"><svg data-ico="circle"></svg></button>
+    <button data-shape="tri" title="Triangle"><svg data-ico="triangle"></svg></button>
+    <button data-shape="star" title="Star"><svg data-ico="star"></svg></button>
+    <button data-shape="heart" title="Heart"><svg data-ico="heart"></svg></button>
+  </div>
+  <div class="capture" id="capture">
+    <form id="capForm"><input id="capInput" placeholder="Save an idea or image to Unsorted. Shift+Enter to write more first" autocomplete="off"></form>
+  </div>
   <!-- the color editor: pops up beside a color card -->
   <div class="cpop" id="cpop">
     <div class="cp-title" id="cpTitle"></div>
@@ -229,9 +235,7 @@
     <div class="cp-quick" id="cpQuick"></div>
     <div class="cp-acts"><button id="cpSave" class="solid">Save to board colours</button><button id="cpReset" class="cp-reset">Use the default</button><button id="cpDone">Done</button></div>
   </div>
-  <input type="file" id="filePick" accept="image/*,video/*" multiple hidden>
-  <input type="file" id="coverPick" accept="image/*" hidden>
-</main>
+</div>
 
 <!-- settings -->
 <!-- what's new: shows once, the first time someone opens a new version -->

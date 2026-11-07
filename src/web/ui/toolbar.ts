@@ -1,6 +1,6 @@
 import { byId } from '../canvas/wires.ts';
 import { addImages } from '../cards/spotify.ts';
-import { $, stage } from '../core/dom.ts';
+import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
@@ -91,10 +91,9 @@ export function init21() {
     if (t === 'stamp') {
       const on = !$('stampWheel').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b),
-        sr = stage.getBoundingClientRect();
+      const r = tbRect(b);
       ['stampWheel', 'stampPick'].forEach(id => {
-        $(id).style.left = `${r.left + r.width / 2 - sr.left}px`;
+        $(id).style.left = `${r.left + r.width / 2}px`;
       });
       renderWheel();
       $('stampWheel').classList.toggle('on', on);
@@ -105,9 +104,8 @@ export function init21() {
     if (t === 'shape') {
       const on = !$('shapePick').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b),
-        sr = stage.getBoundingClientRect();
-      $('shapePick').style.left = `${r.left + r.width / 2 - sr.left}px`;
+      const r = tbRect(b);
+      $('shapePick').style.left = `${r.left + r.width / 2}px`;
       $('shapePick').classList.toggle('on', on);
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');
@@ -116,9 +114,8 @@ export function init21() {
     if (t === 'tpl') {
       const on = !$('tplPick').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b),
-        sr = stage.getBoundingClientRect();
-      $('tplPick').style.left = `${r.left + r.width / 2 - sr.left}px`;
+      const r = tbRect(b);
+      $('tplPick').style.left = `${r.left + r.width / 2}px`;
       $('tplPick').classList.toggle('on', on);
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');

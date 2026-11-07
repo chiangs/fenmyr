@@ -6,7 +6,7 @@ import { imageMenu } from '../cards/imageActions.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { kanbanMenu } from '../cards/kanban.ts';
 import { copyOf, tilt, uid } from '../core/base.ts';
-import { $, stage } from '../core/dom.ts';
+import { $, boardLayers, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
@@ -276,6 +276,5 @@ export function init43() {
         { label: 'Export board as PDF', run: () => exportCards(session.board.cards, session.board.name, true) },
       ]);
   };
-  // the bottom bar sits outside the stage, and a right-click on it still puts down what is held
-  for (const el of [stage, $('dock')]) el.addEventListener('contextmenu', onMenu);
+  for (const el of boardLayers) el.addEventListener('contextmenu', onMenu);
 }

@@ -1,5 +1,5 @@
 import { addImages, linkCard, pictureForNote, spotifyOf } from '../cards/spotify.ts';
-import { $, stage } from '../core/dom.ts';
+import { $, boardLayers } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { pastedNote, pasteIntoNote } from '../edit/noteBody.ts';
 import { capture } from '../features/focus.ts';
@@ -99,8 +99,7 @@ export function init23() {
     const u = dt.getData('text/uri-list') || dt.getData('text/plain');
     if (/^https?:/.test(u)) linkCard(u.trim(), w);
   };
-  // the bottom bar sits outside the stage, and what is dropped on it belongs on the board under it
-  for (const el of [stage, $('dock')]) {
+  for (const el of boardLayers) {
     el.addEventListener('dragover', e => e.preventDefault());
     el.addEventListener('drop', onDrop);
   }
