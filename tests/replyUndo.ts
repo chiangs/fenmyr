@@ -4,7 +4,6 @@
 // and a reply that fails part way leaves the board as it was.
 import assert from 'node:assert';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { replyBoard } from './fixtures/boards.ts';
@@ -25,12 +24,7 @@ const BOARDS = [
   'throws',
   'order',
 ];
-// a stand-in Claude Code where the real one usually lives, so asking takes the same path on a machine without it;
-// the checks that ask replace the bridge's ask themselves
-const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-reply-undo-'));
-fs.mkdirSync(path.join(data, '.local/bin'), { recursive: true });
-fs.writeFileSync(path.join(data, '.local/bin/claude'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
-const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'slow', data });
+const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'slow', claude: true });
 const { page } = l;
 
 const boardJSON = (p: Page) =>
@@ -400,7 +394,6 @@ await check("a template she saves from the cards she just touched keeps them in 
 
 const errors = [...l.errors];
 await l.close();
-fs.rmSync(data, { recursive: true, force: true });
 assert.deepStrictEqual(errors, [], 'no page errors');
 assert.deepStrictEqual(failed, [], 'checks that failed');
 console.log('REPLY UNDO OK');
