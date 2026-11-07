@@ -2675,7 +2675,7 @@ body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
 .card.find-cur { outline: 2.5px solid var(--select); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
 .find-bar.up { left: auto; right: 0; bottom: calc(100% + 12px); }
-.dock.finding .tools, .dock.finding .selbar.on { display: none !important; }
+.dock.finding .tools { display: none !important; }
 
 /* the timer: a small chip above Myra's pill, and her fuss when it runs out */
 .timer-chip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 3; height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 11px; max-width: 280px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))); font: 600 12px/1 var(--font); overflow: hidden; animation: fb-in .18s ease-out; }
