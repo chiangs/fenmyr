@@ -227,4 +227,34 @@ await check('at 320 px, the narrowest it joins the tools, her chat’s hint stay
   assert.strictEqual(Math.round(input.lines), 1, 'lines the hint takes');
 });
 
+for (const hurry of [false, true]) {
+  const when = hurry ? ', in a timer’s last two minutes' : '';
+  await check(`perched in her open chat she keeps still while her box glows${when}`, async () => {
+    await setChat(true);
+    const seen = await page.evaluate(hurry => {
+      const pill = document.getElementById('mPill'),
+        slot = document.getElementById('gooSlot');
+      pill?.classList.toggle('hurry', hurry);
+      const anims = pill?.getAnimations() ?? [],
+        xs: number[] = [],
+        ys: number[] = [];
+      // 9 s of her box's animations, every 50 ms
+      for (let t = 0; t <= 9000; t += 50) {
+        for (const a of anims) a.currentTime = t;
+        const r = slot?.getBoundingClientRect();
+        xs.push(r?.left ?? 0);
+        ys.push(r?.top ?? 0);
+      }
+      pill?.classList.remove('hurry');
+      return {
+        glows: anims.some(a => a instanceof CSSAnimation && a.animationName === 'm-glow'),
+        travel: Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)),
+      };
+    }, hurry);
+    await setChat(false);
+    assert.ok(seen.glows, 'her box still glows');
+    assert.ok(seen.travel < 5, `she travels ${seen.travel} px`);
+  });
+}
+
 await done('MYRA BOX OK');
