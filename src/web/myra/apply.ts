@@ -1,9 +1,11 @@
 import { type BoardLists, type ChangeSet, changeSet, listsOf, recordOf } from '../../shared/changes.ts';
+import { storedSet } from '../../shared/chat.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
 import { boxOf } from '../canvas/emptySpot.ts';
 import { openCentre, showPlaced, viewShowing } from '../canvas/handles.ts';
 import { renderAll, renderCard } from '../canvas/render.ts';
 import { renderTray, renderWires } from '../canvas/wires.ts';
+import { uid } from '../core/base.ts';
 import { remember, save, showWhatMyraMade } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { mdToHTML } from '../docs/docText.ts';
@@ -17,6 +19,7 @@ import type { HeldReply, NoteUsed, Picked, Picture } from './applyTypes.ts';
 import { effectsOf, runEffects } from './effects.ts';
 import { namedIn, planBoard, type ViewAt } from './plan.ts';
 import { replyLine } from './replyLine.ts';
+import { keepReply } from './replyMemory.ts';
 import { reply, say } from './say.ts';
 
 const LEFT_ALONE = 'Another board is open now, so I’ve left the one you asked about as it was.';
@@ -43,7 +46,8 @@ export class Turn {
   }
 }
 
-export type Applied = { said: string; changes: ChangeSet };
+// reply: its id, under which its before-states are kept while the board stays open
+export type Applied = { said: string; changes: ChangeSet; reply: string };
 
 const PARALLEL = 3;
 
@@ -127,12 +131,19 @@ export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | 
     await new Promise(res => setTimeout(res, 0));
   }
   while (appState.drag) await new Promise(requestAnimationFrame);
-  const { changes, touched } = changeBoard(held);
+  const { changes, record, touched } = changeBoard(held),
+    id = uid(),
+    changed = record.cards.length > 0 || record.links.length > 0,
+    board = session.board.id;
+  if (changed) keepReply(id, record);
   if (tpl?.mode === 'add') say(`Here’s “${tpl.name}” ✦ It’s all yours to change.`, 4000);
   if (touched.length) setTimeout(() => showWhatMyraMade(touched), 250);
   const line = replyLine(held, touched, await runEffects(effectsOf(held), touched));
-  reply(line.text, line.ms, line.acts);
-  return { said: line.text, changes };
+  // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one, and
+  // what this reply changed means nothing there.
+  const kept = changed && session.board.id === board;
+  reply(line.text, line.ms, kept ? [...line.acts, { kind: 'changes', reply: id, set: storedSet(changes) }] : line.acts);
+  return { said: line.text, changes, reply: id };
 }
 
 // Not async on purpose: an await in here would let the undo timer cut the reply into several steps. A reply that
@@ -152,10 +163,11 @@ function changeBoard(held: HeldReply) {
     throw e;
   }
   save();
-  const changes = changeSet(recordOf(before, b), b, { named: namedIn(held.reply), skipped: plan.skipped });
+  const record = recordOf(before, b),
+    changes = changeSet(record, b, { named: namedIn(held.reply), skipped: plan.skipped });
   remember();
   const onBoard = new Map(b.cards.map(c => [c.id, c]));
-  return { changes, touched: plan.touched.map(id => onBoard.get(id)).filter(c => c !== undefined) };
+  return { changes, record, touched: plan.touched.map(id => onBoard.get(id)).filter(c => c !== undefined) };
 }
 
 function paint(held: HeldReply, before: BoardLists, skipped: ReadonlySet<string>) {

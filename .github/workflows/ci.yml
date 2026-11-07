@@ -84,6 +84,8 @@ jobs:
         run: node tests/preview.ts
       - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)
         run: node tests/build.ts
+      - name: Build buttons test (Myra's stored Commit and Undo across builds and boards)
+        run: node tests/buildButtons.ts
       - name: Packages test (installed packages in a prototype, with a stand-in npm)
         run: node tests/packages.ts
       - name: Sync test (fetch, pull and clashes with a stand-in GitHub)
@@ -100,6 +102,8 @@ jobs:
         run: node tests/replies.ts
       - name: Reply undo test (one undo step per reply, replies in turn, previews that change nothing)
         run: node tests/replyUndo.ts
+      - name: Chat buttons test (Myra's next steps, sources and build buttons, kept with her replies)
+        run: node tests/chatButtons.ts
       - name: Chat keys test (what each key does in Myra's chat input)
         run: node tests/chatKeys.ts
       - name: Mac font list test
