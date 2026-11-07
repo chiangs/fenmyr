@@ -416,7 +416,7 @@ body:not(:has(.stage.at-home)) .dock .m-pill { border-start-start-radius: 0; bor
 /* a joined chat covers her box, and its input is where the box was; she flies on over it into the header */
 .myra.chat:has(> .m-chat[data-place="joined"]) .m-pill { visibility: hidden; }
 .myra.chat .goo-slot { visibility: visible; }
-/* Myra's bubble and chat rise over drawing's or find's bar by --mode-h, which float.ts sets on body */
+/* Myra's bubble rises over drawing's or find's bar by --mode-h, which float.ts sets on body */
 .dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); margin: 0; width: max-content; }
 .selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
 .selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
@@ -808,7 +808,7 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .au-count { height: 34px; display: grid; place-items: center; font: 800 30px/1 var(--font); color: var(--accent-text); animation: pop .5s cubic-bezier(.2, .9, .3, 1.4); }
 
 /* ---------- Myra's chat window ---------- */
-/* its height leaves room above it for drawing's or find's bar, and for the timer, which sits on it while it is open */
+/* chatWindow.ts places it in window pixels, joined to the tools or wide above the bar, leaving room for the timer over it */
 .m-chat { position: fixed; left: var(--chat-l); top: var(--chat-t); width: var(--chat-w); height: var(--chat-h); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink);
   box-shadow: 0 20px 50px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(10px) scale(.97); transform-origin: 0 100%; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2); }
 .m-chat[data-place="wide"] { transform-origin: 50% 100%; }
@@ -2692,8 +2692,8 @@ body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
 .timer-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: var(--pink-deep, var(--dt-shadow)); transition: width 1s linear; }
 body.dark .timer-chip { background: rgb(from var(--clean-bg-2) r g b / .97); color: var(--hilite); } body.dark .timer-chip b { color: var(--hilite); }
 body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-panels.panel-dark .timer-chip { color: var(--coll-ink); }
-/* her reply clears the higher of the timer and drawing's or find's bar; with the chat open the timer sits on its middle,
-   clear of the right-hand panels */
+/* her reply clears the higher of the timer and drawing's or find's bar; with the chat open the timer sits over its
+   middle */
 .dock .myra.timing .m-bubble { bottom: calc(100% + 12px + max(40px, var(--mode-h, 0px))); }
 body:not(.phone) .dock .myra.chat .timer-chip { position: fixed; left: calc(var(--chat-l) + var(--chat-w) / 2); bottom: calc(100vh - var(--chat-t) + 8px); }
 .m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
@@ -2714,11 +2714,9 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 .m-pill.hurry { animation: m-glow 2.2s ease-in-out infinite, m-wobble 8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .m-pill.glow-red, .m-pill.glow-green, .m-pill.hurry { animation: none; } }
 
-/* Myra's sprite lives in a slot so she can hop out of her button and perch beside the chat */
+/* Myra's sprite lives in a slot so she can hop out of her box and perch in the chat's header */
 .goo-slot { position: relative; z-index: 6; display: inline-block; line-height: 0; will-change: transform; transform-origin: 50% 100%; }   /* her feet are the pivot for squash and stretch */
 .goo-slot.perched { cursor: pointer; }
-
-/* with the chat open, its header already says she is thinking: the button keeps its width, so the bar and the chat don't slide sideways */
 
 /* a closed chat can't be focused or tabbed into (its fade still plays), so M and typing work after Esc */
 .m-chat { visibility: hidden; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2), visibility 0s .3s; }
