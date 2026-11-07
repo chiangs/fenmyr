@@ -228,18 +228,32 @@ await check('what is being placed shows over the bar', async () => {
   assert.strictEqual(top, 'ghost');
 });
 
-await check('Tab reaches the tools after the left widgets, then Myra’s box, then the cards on the board', async () => {
-  await page.focus('#tools [data-add="pointer"]');
-  await page.keyboard.press('Shift+Tab');
-  const before = await focusedIn();
-  await page.focus('#cleanBtn');
-  await page.keyboard.press('Tab');
-  const box = await focusedIn();
-  await page.keyboard.press('Tab');
-  const after = await focusedIn();
-  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
-  assert.deepStrictEqual([before, box, after], ['side', 'mPill', 'cards']);
-});
+await check(
+  'Tab reaches the tools after the left widgets, then Myra’s box without opening her chat; Enter opens it, Esc returns to the box',
+  async () => {
+    if (await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat')))
+      await page.click('#mcClose');
+    await page.waitForTimeout(400);
+    await page.focus('#tools [data-add="pointer"]');
+    await page.keyboard.press('Shift+Tab');
+    const before = await focusedIn();
+    await page.focus('#cleanBtn');
+    await page.keyboard.press('Tab');
+    const box = await focusedIn();
+    const expanded = await page.getAttribute('#mPill', 'aria-expanded');
+    await page.keyboard.press('Enter');
+    const opened = await focusedIn();
+    await page.keyboard.press('Escape');
+    const back = await focusedIn();
+    await page.keyboard.press('Tab');
+    const after = await focusedIn();
+    await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
+    assert.deepStrictEqual(
+      [before, box, expanded, opened, back, after],
+      ['side', 'mPill', 'false', 'mcInput', 'mPill', 'cards'],
+    );
+  },
+);
 
 await check('with a doc open the tools and Myra’s box hide, and her chat shows over the doc', async () => {
   await page.evaluate(() => {

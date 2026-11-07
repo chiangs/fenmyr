@@ -199,10 +199,15 @@ function defaultFontPop(btn: Element) {
 }
 
 export function initFontPop() {
-  closeOnOutsidePress('#fontPop, [data-sbfont]', () => {
-    const p = document.getElementById('fontPop');
-    if (p) p.hidden = true;
-  });
+  const pop = () => document.getElementById('fontPop');
+  closeOnOutsidePress(
+    '#fontPop, [data-sbfont]',
+    () => pop()?.hidden === false,
+    () => {
+      const p = pop();
+      if (p) p.hidden = true;
+    },
+  );
 
   $('defaultFontBtn').onclick = e => {
     e.stopPropagation();

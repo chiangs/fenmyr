@@ -1,13 +1,18 @@
-import { chatOpen, freshChat, pose, type Smoke, send } from './kit.ts';
+import { chatOpen, closeChat, freshChat, pose, type Smoke, send } from './kit.ts';
 
-// a click on her button, the way the page gets it (it toggles the chat)
-const pill = (t: Smoke) => t.page.evaluate(() => window.__t.click('#mPill'));
+// opens the chat from her box, or folds it when it is open (her box only opens it), the way the page gets the clicks
+const pill = async (t: Smoke) =>
+  (await t.page.evaluate(() => window.__t.el('#myra').classList.contains('chat')))
+    ? closeChat(t)
+    : t.page.evaluate(() => window.__t.click('#mPill'));
 // her chat closed and her back on her button, whatever she was doing
-const settle = (t: Smoke) =>
-  t.page.evaluate(() => {
+const settle = async (t: Smoke) => {
+  const perched = await t.page.evaluate(() => {
     window.__fenmyr.stopAnim();
-    if (window.__fenmyr.perched()) window.__t.click('#mPill');
+    return window.__fenmyr.perched();
   });
+  if (perched) await closeChat(t);
+};
 
 // Myra herself: perching on the chat, timers from plain sentences, how a timer ends, curiosity, and Esc.
 export async function myra(t: Smoke) {
@@ -171,7 +176,7 @@ async function timerEnd(t: Smoke) {
   await pill(t);
   await page.waitForTimeout(100);
   await page.evaluate(() => {
-    if (window.__fenmyr.perched()) window.__t.click('#mPill');
+    if (window.__fenmyr.perched()) window.__t.click('#mcClose');
   });
   // the model's line for the finish arrives late and calls it a break
   await page.evaluate(() => {
@@ -288,6 +293,7 @@ async function escAndM(t: Smoke) {
   const closed = await page.evaluate(() => ({
     chat: window.__t.el('#myra').classList.contains('chat'),
     inChat: window.__t.el('#mChat').contains(document.activeElement),
+    focused: document.activeElement?.id,
   }));
   await page.keyboard.press('m');
   await page.waitForTimeout(500);
@@ -296,6 +302,11 @@ async function escAndM(t: Smoke) {
     val: window.__t.field('#mcInput').value,
     focused: document.activeElement?.id,
   }));
+  await page.evaluate(() => window.__t.el('#mcInput').blur());
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(100);
+  const outsideEsc = await page.evaluate(() => window.__t.el('#myra').classList.contains('chat'));
+  await page.evaluate(() => window.__t.el('#mcInput').focus());
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
   await settle(t);
@@ -307,6 +318,8 @@ async function escAndM(t: Smoke) {
   );
   t.checkAll('escM', {
     closes: !closed.chat && !closed.inChat,
+    focusToBox: closed.focused === 'mPill',
+    stillOpenOnBoardEsc: outsideEsc,
     mReopens: reopened.chat && reopened.val === '' && reopened.focused === 'mcInput',
     throwParty: asks === 'party|party||party',
   });

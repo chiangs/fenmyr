@@ -324,9 +324,7 @@ export function init57() {
 
   $('cpDone').onclick = closeColor;
 
-  closeOnOutsidePress('.cpop, .card.swatch, [data-col]', () => {
-    if ($('cpop').classList.contains('on')) closeColor();
-  });
+  closeOnOutsidePress('.cpop, .card.swatch, [data-col]', () => $('cpop').classList.contains('on'), closeColor);
 
   $('cpReset').onclick = () => {
     if (colorCard && 'tint' in colorCard) {

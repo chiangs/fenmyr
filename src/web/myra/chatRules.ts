@@ -18,6 +18,8 @@ export type Geometry = {
   mode: ModeBar | null;
   /** A timer chip shows, and sits above the open chat. */
   timer: boolean;
+  /** The height dragged at the chat's top edge, or null for the usual 560. */
+  height: number | null;
   where: 'desk' | 'phone' | 'proto';
 };
 
@@ -56,7 +58,7 @@ export function placeChat(g: Geometry): Placement {
     joined = room >= CHAT.minW && modeClear,
     b = joined ? g.bar.b : g.bar.t - CHAT.gap - (g.mode?.lift ?? 0),
     chip = g.timer ? CHAT.chip : 0,
-    h = Math.min(Math.max(CHAT.minH, Math.min(CHAT.h, b - CHAT.top - chip)), b - CHAT.edge - chip),
+    h = Math.min(Math.max(CHAT.minH, Math.min(g.height ?? CHAT.h, b - CHAT.top - chip)), b - CHAT.edge - chip),
     l = joined ? g.box.l : g.bar.l,
     r = joined ? l + Math.min(CHAT.w, room) : right;
   return { kind: joined ? 'joined' : 'wide', chat: { l, t: b - h, r, b } };
@@ -93,4 +95,52 @@ export function askHint(name: string, selected: number, proto: boolean, fits: (h
   const ask = n.endsWith('…') ? `Ask ${n}` : `Ask ${n}…`,
     example = `${ask} “group these by theme”`;
   return fits(example) ? example : ask;
+}
+
+/** Something that might close the open chat. */
+export type CloseInput =
+  /** Esc with focus inside the chat. The slash menu takes its own Esc before the chat hears it. */
+  | { type: 'esc'; composing: boolean }
+  /** The fold button in the chat's header. */
+  | { type: 'fold' }
+  /** A press and its release. `empty`: it started on empty board, not on a card, a connector, a panel or a widget.
+   *  `busy`: a tool was in hand or a menu was open at the press. `second`: it came while an earlier click's close
+   *  was still waiting, so the two make a double-click. */
+  | { type: 'press'; empty: boolean; busy: boolean; second: boolean; travel: number; button: number };
+
+// further than this between press and release is a drag, a marquee or a pan
+const CLICK_TRAVEL = 4;
+
+/** Whether the event closes the chat. A prototype board keeps it docked open, and a phone's sheet keeps its own
+ *  rules for presses. A click on a card leaves it open, so cards can be selected while chatting. */
+export function closes(e: CloseInput, where: Geometry['where']): boolean {
+  if (where === 'proto') return false;
+  switch (e.type) {
+    case 'esc':
+      return !e.composing;
+    case 'fold':
+      return true;
+    case 'press':
+      return where === 'desk' && e.empty && !e.busy && !e.second && e.button === 0 && e.travel <= CLICK_TRAVEL;
+    default: {
+      const unknown: never = e;
+      return unknown;
+    }
+  }
+}
+
+/** How long a click on empty board waits before it closes the chat. A double-click there makes a note beside the
+ *  chat, and the second press can only cancel a close that has not happened yet; closing at once and reopening would
+ *  flash the chat and lose the caret. 500 ms is the usual longest double-click gap. With double-click notes off, it
+ *  closes at once. */
+export const closeWait = (dblNote: boolean) => (dblNote ? 500 : 0);
+
+/** What her box shows while the closed chat holds text, and the name it has then, or null when it holds none. Lines
+ *  are counted as written, without trailing new lines. */
+export function draftLabel(text: string, name: string): { shown: string; spoken: string } | null {
+  const kept = text.trimEnd();
+  if (!kept) return null;
+  const n = kept.split('\n').length,
+    lines = n === 1 ? '1 line' : `${n} lines`;
+  return { shown: `Draft · ${lines}`, spoken: `Ask ${name}, draft, ${lines}` };
 }

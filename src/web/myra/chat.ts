@@ -222,14 +222,14 @@ export function init31() {
   // with the chat open she perches at the start of its header, and hops back to her box when it closes
   initPerch();
 
+  // her box only opens the chat; the chat's own rules close it
   $('mPill').onclick = () => {
     clearGlow();
-    const opening = !chatOpen();
-    myraOpen(opening);
-    if (opening) wonderIfEmpty();
+    const was = chatOpen();
+    myraOpen(true);
+    if (!was) wonderIfEmpty();
   };
 
-  $('mcClose').onclick = () => myraOpen(false);
   appState.histOpen = false;
 
   $('mcNew').onclick = () => {

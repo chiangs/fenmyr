@@ -9,18 +9,6 @@ export const cardEl = (id: string): HTMLElement | null => cardsEl.querySelector(
 export const isTyping = (target: EventTarget | null) =>
   target instanceof Element && target.closest('input, textarea, [contenteditable="true"]') !== null;
 
-// Waits a tick so the press that opened the popup doesn't close it.
-export function removeOnOutsidePress(popup: Element) {
-  setTimeout(() => {
-    const onPress = (e: PointerEvent) => {
-      if (e.target instanceof Node && popup.contains(e.target)) return;
-      popup.remove();
-      removeEventListener('pointerdown', onPress, true);
-    };
-    addEventListener('pointerdown', onPress, true);
-  });
-}
-
 // For elements the code just created from its own markup, so a miss is a bug worth stopping at.
 export function child(root: ParentNode, selector: string): HTMLElement;
 export function child<T extends Element>(
