@@ -26,10 +26,10 @@ import {
   pop,
   snapSoon,
 } from './barKit.ts';
-import { type BarContext, barContext, barPaused } from './context.ts';
+import { type BarContext, barContext, barPaused, type SelBarContext } from './context.ts';
 import { cornersHtml, initCorners, roundable } from './corners.ts';
 import { boxFillHtml, fillable, initFills, initShapeFill, shapeFillHtml, textFillHtml } from './fill.ts';
-import { barRoom, floatBar } from './float.ts';
+import { barRoom, floatBar, floatModeBar } from './float.ts';
 import { initFontPop } from './fontPop.ts';
 import { initLineStyle, lineStyleHtml } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
@@ -336,7 +336,7 @@ function clearBar(bar: HTMLElement) {
   }
 }
 
-function drawBar(bar: HTMLElement, ctx: BarContext | null) {
+function drawBar(bar: HTMLElement, ctx: SelBarContext | null) {
   const show = (on: boolean) => {
     $('dock').classList.toggle('ctx', on); // on a phone the strip takes the hub's place
     bar.classList.toggle('on', on);
@@ -352,9 +352,6 @@ function drawBar(bar: HTMLElement, ctx: BarContext | null) {
     case 'connector':
       show(true);
       return drawWire(bar, ctx.link);
-    case 'tool':
-      show(false);
-      return clearBar(bar);
     default: {
       const unknown: never = ctx;
       return unknown;
@@ -363,10 +360,11 @@ function drawBar(bar: HTMLElement, ctx: BarContext | null) {
 }
 
 // The content stays current during a gesture though no one sees it: Ctrl+B presses the bar's own Bold, and the bar
-// is back the moment the gesture ends.
+// is back the moment the gesture ends. The mode bar goes first, as the selection bar keeps above it.
 export function placeSelbar() {
   const bar = $('selbar'),
     ctx = barContext();
+  floatModeBar();
   drawBar(bar, ctx);
   floatBar(bar, ctx, barPaused());
 }

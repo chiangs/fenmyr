@@ -1,9 +1,9 @@
 import type { Card } from '../../shared/model.ts';
 import { mrot, realBox, tiltOf } from '../canvas/handles.ts';
 import { wireGeom } from '../canvas/wires.ts';
-import { stage } from '../core/dom.ts';
+import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
-import type { BarContext } from './context.ts';
+import { type BarContext, toolContext } from './context.ts';
 import { type Anchor, type Box, GAP, place } from './place.ts';
 
 // the turn dot stands this far above a selection on screen, at any zoom
@@ -50,8 +50,15 @@ function anchorFor(ctx: BarContext): Anchor | null {
         p = toStage(g.handle);
       return { box: { l: p.x, t: p.y, r: p.x, b: p.y }, prefer: Math.abs(g.n.y) >= Math.abs(g.n.x) ? 'above' : 'left' };
     }
-    case 'tool':
-      return null;
+    case 'tool': {
+      const d = document.getElementById('dock')?.getBoundingClientRect(),
+        s = stage.getBoundingClientRect();
+      if (!d?.height) return null;
+      return {
+        box: { l: d.left - s.left, t: d.top - s.top, r: d.right - s.left, b: d.bottom - s.top },
+        prefer: 'above',
+      };
+    }
     default: {
       const unknown: never = ctx;
       return unknown;
@@ -66,14 +73,18 @@ const rectsIn = (id: string) =>
     .filter(r => r.width && r.height);
 
 // The part of the board nothing else covers, in stage pixels: right of the left widgets, left of the right ones, under
-// the header and its saved line, above the bottom bar. Read from the screen, so moved widgets, a folded tray and a
-// prototype's narrower board all count.
-function readFrame(): Box {
+// the header and its saved line, above the bottom bar and the mode bar on it (unless that is the bar being placed).
+// Read from the screen, so moved widgets, a folded tray and a prototype's narrower board all count.
+function readFrame(placing?: HTMLElement): Box {
   const s = stage.getBoundingClientRect(),
     head = [document.querySelector('.top'), document.getElementById('saved')]
       .filter(el => el?.checkVisibility())
       .map(el => el?.getBoundingClientRect().bottom ?? 0),
-    dock = document.getElementById('dock')?.getBoundingClientRect();
+    floor = [document.getElementById('dock'), document.getElementById('modebar')]
+      .filter((el): el is HTMLElement => !!el && el !== placing)
+      .map(el => el.getBoundingClientRect())
+      .filter(r => r.height)
+      .map(r => r.top - s.top - GAP);
   return {
     l: Math.max(
       GAP,
@@ -88,7 +99,7 @@ function readFrame(): Box {
         .filter(r => r.left < s.right)
         .map(r => r.left - s.left - GAP),
     ),
-    b: Math.min(s.height - GAP, dock?.height ? dock.top - s.top - GAP : Infinity),
+    b: Math.min(s.height - GAP, ...floor),
   };
 }
 
@@ -112,7 +123,7 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   }
   const anchor = ctx && anchorFor(ctx);
   if (!anchor) return;
-  const p = place(anchor, readFrame(), { w: bar.offsetWidth, h: bar.offsetHeight }),
+  const p = place(anchor, readFrame(bar), { w: bar.offsetWidth, h: bar.offsetHeight }),
     d = devicePixelRatio || 1,
     snap = (v: number) => Math.round(v * d) / d,
     at = `${snap(p.x)}px ${snap(p.y)}px`;
@@ -120,6 +131,12 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   writeData(bar, 'side', p.side);
   writeData(bar, 'stuck', p.stuck ?? '');
   bar.classList.remove('paused');
+}
+
+/** Holds drawing's and find's bar just above the bottom bar. It is pinned to the bottom bar, not the board, so no
+ *  gesture moves it. */
+export function floatModeBar() {
+  floatBar($('modebar'), toolContext(), false);
 }
 
 /** How wide the bar may grow before groups tuck into ···: the free view, or on a phone the strip beside Myra. */

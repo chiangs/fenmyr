@@ -305,7 +305,7 @@ export function init48() {
         placing &&
         placing.type === 'piece' &&
         !over?.closest(
-          '.design, .side, .tray, .tools, .dock, .myra, .selbar, .m-chat, .keys, .top, .hub, .sheet, .settings',
+          '.design, .side, .tray, .tools, .dock, .myra, .selbar, .modebar, .m-chat, .keys, .top, .hub, .sheet, .settings',
         )
       )
         placeAt(toWorld(e.clientX, e.clientY));

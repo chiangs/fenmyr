@@ -56,9 +56,10 @@ export const openSettingsKey = () => {
 };
 export function init20() {
   // ---------- just the board: every panel tucks away (Ctrl+\, like Figma), and comes back with Ctrl+\ or Esc ----------
-  CLEAN_EL = [...['side', 'tray', 'dock', 'keys', 'design'].map(id => $(id)), document.querySelector('.top')].filter(
-    el => el !== null,
-  );
+  CLEAN_EL = [
+    ...['side', 'tray', 'dock', 'modebar', 'keys', 'design'].map(id => $(id)),
+    document.querySelector('.top'),
+  ].filter(el => el !== null);
 
   $('cleanBtn').onclick = () => setClean(true);
 

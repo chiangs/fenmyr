@@ -110,7 +110,11 @@ const openFind = async (q: string) => {
   await page.keyboard.press('Control+f');
   await page.keyboard.type(q);
   await page.keyboard.press('Enter');
-  await page.waitForFunction(() => document.getElementById('findBar')?.checkVisibility());
+  // it slides in, so it is measured once it is still
+  await page.waitForFunction(() => {
+    const bar = document.getElementById('findBar');
+    return bar?.checkVisibility() && !bar.getAnimations().length;
+  });
   await frames();
 };
 const stopAll = async () => {
