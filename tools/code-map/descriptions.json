@@ -61,6 +61,7 @@
     "src/host/vaultTasks.ts": "Finds unfinished checkbox tasks in vault notes, with sub-tasks and due dates, under the same read rules.",
     "src/shared/cardTypes.ts": "The one table of facts about each kind of card: size, label and which kinds share a trait.",
     "src/shared/changes.ts": "The record of what one Myra reply changed, card by card, and the change set read from it.",
+    "src/shared/chat.ts": "Myra's chat messages as a board stores them, with the buttons that are kept as data, and their reader.",
     "src/shared/model.ts": "The types for boards, cards, links, views and vault grants that the whole app shares.",
     "src/shared/myraReply.ts": "Checks Myra’s reply field by field, so one bad field is dropped and the rest still applies.",
     "src/shared/ops.ts": "The bridge contract: every operation between page and host, with its arguments and result.",

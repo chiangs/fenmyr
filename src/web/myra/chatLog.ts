@@ -1,4 +1,4 @@
-import type { ChatMsg } from '../../shared/model.ts';
+import type { ChatMsg } from '../../shared/chat.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
@@ -108,14 +108,14 @@ const IDEAS = [
 // on a prototype board she starts from the wireframes and notes the person brings
 const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
 
-function msgEl(m: ChatMsg & { acts?: SayAction[] }) {
+function msgEl(m: ChatMsg, acts: SayAction[] = []) {
   const d = document.createElement('div');
   d.className = `mc-msg ${m.who}`;
   d.textContent = m.text;
-  if (m.acts?.length) {
+  if (acts.length) {
     const box = document.createElement('div');
     box.className = 'm-acts';
-    m.acts.forEach(a => {
+    acts.forEach(a => {
       const b = document.createElement('button');
       b.textContent = a.label;
       b.className = a.cls || (a.ghost ? 'ghost' : '');
@@ -186,7 +186,7 @@ export function addMsg(who: string, text: string, acts: SayAction[] = []) {
   if (chatKeep() === 'board') save();
   const list = $('mcList');
   list.querySelector('.mc-empty')?.remove();
-  list.appendChild(msgEl({ ...m, acts }));
+  list.appendChild(msgEl(m, acts));
   list.scrollTop = list.scrollHeight;
 }
 

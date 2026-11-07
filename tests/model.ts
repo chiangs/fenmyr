@@ -19,6 +19,63 @@ assert.deepStrictEqual(
 const oldBoard = { id: 'b1', name: 'Plan', cards: [], links: [], tray: [], chat: [{ who: 'me', text: 'hi', t: 1 }] };
 assert.deepStrictEqual(json(parseBoard(oldBoard)), oldBoard, 'a board from before prototypes saves back unchanged');
 
+const set = {
+  added: ['a'],
+  moved: ['b'],
+  edited: [],
+  removed: ['c'],
+  relaid: { kb: ['k1', 'kb'] },
+  links: { added: ['l1'], removed: [] },
+  skipped: [],
+};
+const everyKind = [
+  { kind: 'next', text: 'Make it a list' },
+  { kind: 'changes', reply: 'r1', set },
+  { kind: 'source', card: 'n1' },
+  { kind: 'buildUndo', board: 'pb', snapshot: 'abc123' },
+  { kind: 'commit', message: 'Make the heading' },
+];
+const withActs = (acts: unknown) => ({
+  id: 'b1',
+  name: 'Plan',
+  cards: [],
+  links: [],
+  tray: [],
+  chat: [{ who: 'myra', text: 'Done!', t: 2, acts }],
+});
+assert.deepStrictEqual(
+  json(parseBoard(withActs(everyKind))),
+  withActs(everyKind),
+  'every kind of stored button saves back as it was',
+);
+const kept = (acts: unknown) => parseBoard(withActs(acts))?.chat?.[0];
+assert.deepStrictEqual(
+  kept([
+    { kind: 'offer', board: 'x' },
+    { kind: 'next' },
+    { kind: 'source', card: 7 },
+    { kind: 'changes', reply: 'r1', set: { ...set, moved: [1] } },
+    { kind: 'changes', reply: 'r1', set: { ...set, relaid: { kb: 'k1' } } },
+    'next',
+    null,
+    { kind: 'commit', message: 'Keep me' },
+  ])?.acts,
+  [{ kind: 'commit', message: 'Keep me' }],
+  'an unknown kind and a malformed button are dropped, and the rest kept',
+);
+assert.deepStrictEqual(
+  json(kept([{ kind: 'toString' }, { kind: 'next', text: 3 }])),
+  { who: 'myra', text: 'Done!', t: 2 },
+  'a message whose buttons are all unreadable stays, with no buttons key',
+);
+assert.deepStrictEqual(json(kept('next')), { who: 'myra', text: 'Done!', t: 2 }, 'buttons that are not a list too');
+const earlier = {
+  id: 'b1',
+  name: 'Plan',
+  chats: [{ id: 'c1', title: 'Before', t: 1, msgs: withActs(everyKind).chat }],
+};
+assert.deepStrictEqual(json(parseBoard(earlier)), earlier, 'an earlier chat keeps its buttons too');
+
 const lib = parseLibrary({
   projects: [
     { id: 'p1', name: 'Acme', repo: { path: '/home/me/code/acme' } },
