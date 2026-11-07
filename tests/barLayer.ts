@@ -1,5 +1,6 @@
 // What opens over the bottom bar and what it lets through: with Myra's chat open, the toolbar's pickers, a colour
-// card's wheel and quick capture open over it; with a doc open, presses where the bar was reach the doc.
+// card's wheel and quick capture open over it; a tall Unsorted list keeps the bar clear of it; and with a doc open,
+// presses where the bar was reach the doc.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -125,6 +126,24 @@ await check('on a short window, quick capture opens over Myra’s open chat', as
   assert.strictEqual(top, '#capture');
 });
 await setChat(false);
+
+await check('at 1100 × 760 a tall Unsorted list keeps the bar 14 px clear of the right widgets', async () => {
+  await size(1100, 760);
+  const { bar, column, reaches } = await page.evaluate(() => {
+    const dock = document.getElementById('dock')?.getBoundingClientRect(),
+      widgets = [...(document.getElementById('sideR')?.children ?? [])]
+        .filter(c => c.checkVisibility())
+        .map(c => c.getBoundingClientRect());
+    return {
+      bar: dock?.right ?? NaN,
+      column: Math.min(...widgets.map(r => r.left)),
+      reaches: widgets.some(r => dock && r.bottom > dock.top),
+    };
+  });
+  await size(1440, 900);
+  assert.ok(reaches, 'the right widgets reach down to the bar');
+  assert.ok(bar <= column - 14, `the bar ends at ${bar}, the widgets start at ${column}`);
+});
 
 await check('with a doc open, a press where the bar was reaches the doc', async () => {
   await view();
