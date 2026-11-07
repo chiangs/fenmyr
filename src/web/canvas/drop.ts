@@ -1,5 +1,5 @@
 import { addImages, linkCard, pictureForNote, spotifyOf } from '../cards/spotify.ts';
-import { $, stage } from '../core/dom.ts';
+import { $, boardLayers } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { pastedNote, pasteIntoNote } from '../edit/noteBody.ts';
 import { capture } from '../features/focus.ts';
@@ -77,9 +77,7 @@ export function init23() {
     else addAtCenter('note', { ...pastedNote(clip), color: 'butter' });
   });
 
-  stage.addEventListener('dragover', e => e.preventDefault());
-
-  stage.addEventListener('drop', e => {
+  const onDrop = (e: DragEvent) => {
     e.preventDefault();
     const dt = e.dataTransfer;
     if (!dt) return;
@@ -100,5 +98,9 @@ export function init23() {
     }
     const u = dt.getData('text/uri-list') || dt.getData('text/plain');
     if (/^https?:/.test(u)) linkCard(u.trim(), w);
-  });
+  };
+  for (const el of boardLayers) {
+    el.addEventListener('dragover', e => e.preventDefault());
+    el.addEventListener('drop', onDrop);
+  }
 }

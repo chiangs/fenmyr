@@ -103,6 +103,11 @@ const edges = () =>
       draw: box('drawbar'),
       find: box('findBar'),
       bar: box('selbar'),
+      rightWidgets: Math.min(
+        ...[...(document.getElementById('sideR')?.children ?? [])]
+          .filter(c => c.checkVisibility())
+          .map(c => c.getBoundingClientRect().left),
+      ),
     };
   });
 const middle = (e: Edges | null) => (e ? (e.l + e.r) / 2 : NaN);
@@ -126,7 +131,8 @@ const stopAll = async () => {
   await page.keyboard.press('Escape');
   await frames();
 };
-// the bottom bar as it is with no mode on; each mode must leave it so, and sit 12 px above it, in its middle
+// the bottom bar as it is with no mode on; each mode must leave it so, and sit 12 px above it, in its middle or as near
+// as the right widgets allow
 const sitsAbove = async (bar: 'draw' | 'find', width: number) => {
   const plain = await edges();
   return async () => {
@@ -134,7 +140,8 @@ const sitsAbove = async (bar: 'draw' | 'find', width: number) => {
     assert.deepStrictEqual([s.dock, s.tools], [plain.dock, plain.tools], 'the bottom bar keeps its shape and tools');
     assert.ok(!s.inDock, 'the bar is not in the bottom bar');
     near(s[bar]?.b, (plain.dock?.t ?? NaN) - 12, `at ${width} px, its bottom`);
-    near(middle(s[bar]), middle(plain.dock), `at ${width} px, its middle`);
+    const half = ((s[bar]?.r ?? NaN) - (s[bar]?.l ?? NaN)) / 2;
+    near(middle(s[bar]), Math.min(middle(plain.dock), s.rightWidgets - 12 - half), `at ${width} px, its middle`);
   };
 };
 const setWidth = async (w: number) => {

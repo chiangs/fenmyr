@@ -130,15 +130,13 @@ function placeColorPop(c: Card) {
   if (!el) return;
   const r = el.getBoundingClientRect(),
     s = stage.getBoundingClientRect(),
-    pop = $('cpop');
-  const dock = $('dock').getBoundingClientRect(),
-    floor = Math.min(s.height, dock.top - s.top - 14),
-    ph = pop.offsetHeight || 470; // never over the bottom bar
-  let x = r.right + 14 - s.left,
-    y = r.top - s.top;
-  if (x + 270 > s.width - 250) x = r.left - 270 - s.left;
-  pop.style.left = `${Math.max(260, x)}px`;
-  pop.style.top = `${clamp(y, 70, Math.max(70, floor - ph))}px`;
+    pop = $('cpop'),
+    floor = Math.min(s.bottom, $('dock').getBoundingClientRect().top - 14), // never over the bottom bar
+    ph = pop.offsetHeight || 470;
+  let x = r.right + 14;
+  if (x + 270 > s.right - 250) x = r.left - 270;
+  pop.style.left = `${Math.max(s.left + 260, x)}px`;
+  pop.style.top = `${clamp(r.top, s.top + 70, Math.max(s.top + 70, floor - ph))}px`;
 }
 
 // the wheel's colors: two easy rows, or every color on the board (remembered while the app is open)
@@ -150,8 +148,6 @@ export function openColor(c: Swatch | Tint) {
   $('cpop').classList.toggle('fmt', !!tint?.format);
   $('cpop').classList.toggle('tint', !!tint);
   $('cpop').classList.toggle('from-bar', !!tint?.fromBar);
-  if (tint) document.body.appendChild($('cpop'));
-  else if ($('cpop').parentNode !== stage) stage.appendChild($('cpop')); // UI colors sit above Settings; card colors stay on the board
   if ('tint' in c) {
     // a UI color, not a color card: no name or palette, a few starting points, and a way back to the default
     colorCard = c;

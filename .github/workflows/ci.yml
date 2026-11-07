@@ -130,6 +130,10 @@ jobs:
         run: node tests/modeBar.ts
       - name: Mode bar room test (Myra's chat, her timer and the toolbar's pickers keep clear of find's bar)
         run: node tests/modeRoom.ts
+      - name: Bottom bar test (where it sits, what hides it, drops and the wheel on it, Tab order, a phone's strips)
+        run: node tests/bottomBar.ts
+      - name: Bar layer test (what opens over the bottom bar and Myra's chat)
+        run: node tests/barLayer.ts
       - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
         run: node tests/capture.ts
       - name: Image actions test (download, copy and replace a picture, in the real app)

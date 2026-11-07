@@ -141,8 +141,8 @@ export function floatModeBar() {
     ctx = toolContext(),
     shown = ctx && !onPhone() && !stage.classList.contains('doc-open'),
     lift = shown ? `${bar.offsetHeight + GAP}px` : '0px';
-  if (stage.style.getPropertyValue('--mode-h') !== lift) {
-    stage.style.setProperty('--mode-h', lift);
+  if (document.body.style.getPropertyValue('--mode-h') !== lift) {
+    document.body.style.setProperty('--mode-h', lift);
     keepPerch(); // she sits on the chat, which just moved
   }
   floatBar(bar, ctx, false);

@@ -76,7 +76,8 @@ const openToolbarSettings = () => {
   renderTbList();
 };
 
-// tools that don't fit the screen tuck into ··· at the end (never a toolbar wider than the window)
+// tools that don't fit tuck into ··· at the end: the bar ends 16 px inside the window, or 14 px before the right
+// widgets where they reach down to it, so it never covers them
 function fitToolbar() {
   const box = $('tools'),
     more = $('tbMore');
@@ -86,12 +87,18 @@ function fitToolbar() {
   });
   more.hidden = true;
   const m = $('myra'),
-    others = m?.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.offsetWidth + 10 : 0; // only Myra's pill shares the row
-  const room = innerWidth - 32 - others;
-  if (box.offsetWidth <= room) return;
+    others = m?.offsetWidth && getComputedStyle(m).position !== 'absolute' ? m.getBoundingClientRect().width + 10 : 0; // only Myra's pill shares the row
+  const bar = $('dock').getBoundingClientRect(),
+    widgets = htmlIn($('sideR'), ':scope > *')
+      .filter(w => w.checkVisibility())
+      .map(w => w.getBoundingClientRect()),
+    end = widgets.some(w => w.bottom > bar.top) ? Math.min(...widgets.map(w => w.left)) - 14 : innerWidth - 16,
+    room = end - bar.left - others,
+    width = () => box.getBoundingClientRect().width; // to the fraction of a pixel, as the bar is laid out
+  if (width() <= room) return;
   more.hidden = false;
   const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden);
-  for (let i = shown.length - 1; i > 0 && box.offsetWidth > room; i--) shown[i]?.classList.add('tb-over');
+  for (let i = shown.length - 1; i > 0 && width() > room; i--) shown[i]?.classList.add('tb-over');
 }
 
 export const tbRect = (b: Element) => (b.classList.contains('tb-over') ? $('tbMore') : b).getBoundingClientRect();
@@ -172,5 +179,9 @@ export function init19() {
     $('rowMenu')?.classList.add('tb-menu');
   };
 
-  addEventListener('resize', () => requestAnimationFrame(fitToolbar));
+  const fitSoon = () => requestAnimationFrame(fitToolbar);
+  addEventListener('resize', fitSoon);
+  // the right widgets grow as Unsorted fills and shrink as one folds, and the bar keeps clear of them
+  const widgetSizes = new ResizeObserver(fitSoon);
+  for (const w of htmlIn(document, '#tray, #design, .box[data-box]')) widgetSizes.observe(w);
 }

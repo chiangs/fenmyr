@@ -41,6 +41,52 @@
   </section>
 </aside>
 
+<!-- the bottom bar: the tools, then Myra. It sits over the board and the widgets, so it lives outside the stage -->
+<div class="dock" id="dock">
+<div class="tools" id="tools">
+    <button data-add="pointer" aria-label="Select · V" data-tip="Select · V" class="on"><svg class="ic" data-ico="select" width="18" height="18"></svg></button>
+  <button data-add="note" aria-label="Note · N" data-tip="Note · N"><svg class="ic" data-ico="note" width="18" height="18"></svg></button>
+  <button data-add="vnote" aria-label="Vault note · Alt+N" data-tip="Vault note · Alt+N" hidden><svg class="ic" data-ico="notebook" width="18" height="18"></svg></button>
+    <button data-add="doc" aria-label="Doc · D" data-tip="Doc · D"><svg class="ic" data-ico="doc" width="18" height="18"></svg></button>
+  <button data-add="todo" aria-label="Checklist · C" data-tip="Checklist · C"><svg class="ic" data-ico="checklist" width="18" height="18"></svg></button>
+    <button data-add="title" aria-label="Big title · T" data-tip="Big title · T"><svg class="ic" data-ico="title" width="18" height="18"></svg></button>
+    <button data-add="coll" aria-label="Collection · G" data-tip="Collection · G"><svg class="ic" data-ico="collection" width="18" height="18"></svg></button>
+    <button data-add="canvas" aria-label="Canvas (a board inside this one)" data-tip="Canvas"><svg class="ic" data-ico="canvas" width="18" height="18"></svg></button>
+  <button data-add="link" aria-label="Link · L" data-tip="Link · L"><svg class="ic" data-ico="link" width="18" height="18"></svg></button>
+    <button data-add="image" aria-label="Image · I" data-tip="Image · I"><svg class="ic" data-ico="image" width="18" height="18"></svg></button>
+    <button data-add="audio" aria-label="Voice memo · A" data-tip="Voice memo · A"><svg class="ic" data-ico="mic" width="18" height="18"></svg></button>
+    <button data-add="video" aria-label="Video · ⇧V" data-tip="Video · ⇧V"><svg class="ic" data-ico="video" width="18" height="18"></svg></button>
+  <button data-add="swatch" aria-label="Colour" data-tip="Colour"><svg class="ic" data-ico="palette" width="18" height="18"></svg></button>
+    <button data-add="shape" aria-label="Shapes · S" data-tip="Shapes · S"><svg class="ic" data-ico="shapes" width="18" height="18"></svg></button>
+  <button data-add="stamp" aria-label="Stamps · E" data-tip="Stamps · E"><svg class="ic" data-ico="stamp" width="18" height="18"></svg></button>
+  <button data-add="tpl" aria-label="Templates" data-tip="Templates"><svg class="ic" data-ico="templates" width="18" height="18"></svg></button>
+  <button data-add="pen" aria-label="Pen · ⇧P" data-tip="Pen · ⇧P"><svg class="ic" data-ico="pen" width="18" height="18"></svg></button>
+  <button data-add="draw" aria-label="Draw · P" data-tip="Draw · P"><svg class="ic" data-ico="draw" width="18" height="18"></svg></button>
+  <button class="tb-more" id="tbMore" aria-label="More tools" data-tip="More tools" aria-haspopup="menu" hidden><svg class="ic" data-ico="more" width="18" height="18"></svg></button>
+  <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
+  <button class="clean-btn" id="cleanBtn" aria-label="Just the board · ⌘\" data-tip="Just the board · ⌘\"><svg class="ic" data-ico="board-only" width="18" height="18"></svg></button>
+  </div>
+<!-- Myra: her pill, her bar, her bubble -->
+  <div class="myra" id="myra">
+    <!-- Myra's chat window -->
+    <div class="m-chat" id="mChat">
+      <div class="mc-head"><svg class="mc-ic" data-ico="myra-chat" width="28" height="28"></svg><b id="mcHeadName">Myra</b><span class="mc-status" id="mcStatus"></span><button class="mc-btn" id="mcHist" title="Earlier chats on this board" hidden><svg data-ico="clock" width="15" height="15"></svg><span>History</span></button><button class="mc-btn" id="mcNew" title="Start a fresh chat">New chat</button><button class="mc-btn x" id="mcClose" title="Close (Esc)">×</button></div>
+      <div class="mc-list" id="mcList"></div>
+      <div class="mc-sel" id="mcSel" hidden></div>
+      <form class="mc-form" id="mcForm"><textarea id="mcInput" rows="1" placeholder="Ask Myra… “group these by theme”" spellcheck="true" aria-describedby="mcHint"></textarea><div class="mc-foot"><span class="mc-lines" id="mcLines" hidden></span><button type="button" class="mc-vault" id="mcVault" title="Let Myra search your vault for this question" hidden><svg data-ico="notebook" width="14" height="14"></svg><span>Vault</span></button><span class="mc-hint" id="mcHint">⌘↩ to send</span><button class="mc-send" title="Send (⌘↩)" aria-label="Send">↑</button></div></form>
+    </div>
+    <div class="m-bubble" id="mBubble"><small>myra</small><p id="mSay"></p><div class="m-acts" id="mActs"></div></div>
+    <div class="m-pill" id="mPill">
+      <span class="goo-slot" id="gooSlot"><canvas id="goo" width="64" height="56"></canvas></span>
+      <span class="m-name" id="mName">Myra</span>
+      <form id="mForm" class="m-form"><input id="mInput" placeholder="Ask Myra… “group these by theme”" autocomplete="off"></form>
+    </div>
+    <div class="timer-chip" id="timerChip" hidden><svg data-ico="timer" width="15" height="15"></svg><b id="tcTime">0:00</b><span id="tcWhat"></span><button type="button" id="tcX" title="Stop the timer" aria-label="Stop the timer"><svg data-ico="close" width="13" height="13"></svg></button></div>
+  </div>
+</div>
+<!-- what is being placed rides on the pointer, and over the bottom bar too -->
+<div class="ghost" id="ghost"></div>
+
 <main class="stage" id="stage">
   <div class="grid" id="grid"></div>
   <div class="world" id="world">
@@ -100,69 +146,6 @@
       <button type="button" class="fb-b" id="fbX" title="Close (Esc)" aria-label="Close find"><svg data-ico="close" width="16" height="16"></svg></button>
     </div>
   </div>
-  <!-- the dock: tools and Myra, together at the bottom -->
-  <div class="dock" id="dock">
-  <div class="tools" id="tools">
-      <button data-add="pointer" aria-label="Select · V" data-tip="Select · V" class="on"><svg class="ic" data-ico="select" width="18" height="18"></svg></button>
-    <button data-add="note" aria-label="Note · N" data-tip="Note · N"><svg class="ic" data-ico="note" width="18" height="18"></svg></button>
-    <button data-add="vnote" aria-label="Vault note · Alt+N" data-tip="Vault note · Alt+N" hidden><svg class="ic" data-ico="notebook" width="18" height="18"></svg></button>
-      <button data-add="doc" aria-label="Doc · D" data-tip="Doc · D"><svg class="ic" data-ico="doc" width="18" height="18"></svg></button>
-    <button data-add="todo" aria-label="Checklist · C" data-tip="Checklist · C"><svg class="ic" data-ico="checklist" width="18" height="18"></svg></button>
-      <button data-add="title" aria-label="Big title · T" data-tip="Big title · T"><svg class="ic" data-ico="title" width="18" height="18"></svg></button>
-      <button data-add="coll" aria-label="Collection · G" data-tip="Collection · G"><svg class="ic" data-ico="collection" width="18" height="18"></svg></button>
-      <button data-add="canvas" aria-label="Canvas (a board inside this one)" data-tip="Canvas"><svg class="ic" data-ico="canvas" width="18" height="18"></svg></button>
-    <button data-add="link" aria-label="Link · L" data-tip="Link · L"><svg class="ic" data-ico="link" width="18" height="18"></svg></button>
-      <button data-add="image" aria-label="Image · I" data-tip="Image · I"><svg class="ic" data-ico="image" width="18" height="18"></svg></button>
-      <button data-add="audio" aria-label="Voice memo · A" data-tip="Voice memo · A"><svg class="ic" data-ico="mic" width="18" height="18"></svg></button>
-      <button data-add="video" aria-label="Video · ⇧V" data-tip="Video · ⇧V"><svg class="ic" data-ico="video" width="18" height="18"></svg></button>
-    <button data-add="swatch" aria-label="Colour" data-tip="Colour"><svg class="ic" data-ico="palette" width="18" height="18"></svg></button>
-      <button data-add="shape" aria-label="Shapes · S" data-tip="Shapes · S"><svg class="ic" data-ico="shapes" width="18" height="18"></svg></button>
-    <button data-add="stamp" aria-label="Stamps · E" data-tip="Stamps · E"><svg class="ic" data-ico="stamp" width="18" height="18"></svg></button>
-    <button data-add="tpl" aria-label="Templates" data-tip="Templates"><svg class="ic" data-ico="templates" width="18" height="18"></svg></button>
-    <button data-add="pen" aria-label="Pen · ⇧P" data-tip="Pen · ⇧P"><svg class="ic" data-ico="pen" width="18" height="18"></svg></button>
-    <button data-add="draw" aria-label="Draw · P" data-tip="Draw · P"><svg class="ic" data-ico="draw" width="18" height="18"></svg></button>
-    <button class="tb-more" id="tbMore" aria-label="More tools" data-tip="More tools" aria-haspopup="menu" hidden><svg class="ic" data-ico="more" width="18" height="18"></svg></button>
-    <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
-    <button class="clean-btn" id="cleanBtn" aria-label="Just the board · ⌘\" data-tip="Just the board · ⌘\"><svg class="ic" data-ico="board-only" width="18" height="18"></svg></button>
-    </div>
-  <!-- Myra: her pill, her bar, her bubble -->
-    <div class="myra" id="myra">
-      <!-- Myra's chat window -->
-      <div class="m-chat" id="mChat">
-        <div class="mc-head"><svg class="mc-ic" data-ico="myra-chat" width="28" height="28"></svg><b id="mcHeadName">Myra</b><span class="mc-status" id="mcStatus"></span><button class="mc-btn" id="mcHist" title="Earlier chats on this board" hidden><svg data-ico="clock" width="15" height="15"></svg><span>History</span></button><button class="mc-btn" id="mcNew" title="Start a fresh chat">New chat</button><button class="mc-btn x" id="mcClose" title="Close (Esc)">×</button></div>
-        <div class="mc-list" id="mcList"></div>
-        <div class="mc-sel" id="mcSel" hidden></div>
-        <form class="mc-form" id="mcForm"><textarea id="mcInput" rows="1" placeholder="Ask Myra… “group these by theme”" spellcheck="true" aria-describedby="mcHint"></textarea><div class="mc-foot"><span class="mc-lines" id="mcLines" hidden></span><button type="button" class="mc-vault" id="mcVault" title="Let Myra search your vault for this question" hidden><svg data-ico="notebook" width="14" height="14"></svg><span>Vault</span></button><span class="mc-hint" id="mcHint">⌘↩ to send</span><button class="mc-send" title="Send (⌘↩)" aria-label="Send">↑</button></div></form>
-      </div>
-      <div class="m-bubble" id="mBubble"><small>myra</small><p id="mSay"></p><div class="m-acts" id="mActs"></div></div>
-      <div class="m-pill" id="mPill">
-        <span class="goo-slot" id="gooSlot"><canvas id="goo" width="64" height="56"></canvas></span>
-        <span class="m-name" id="mName">Myra</span>
-        <form id="mForm" class="m-form"><input id="mInput" placeholder="Ask Myra… “group these by theme”" autocomplete="off"></form>
-      </div>
-      <div class="timer-chip" id="timerChip" hidden><svg data-ico="timer" width="15" height="15"></svg><b id="tcTime">0:00</b><span id="tcWhat"></span><button type="button" id="tcX" title="Stop the timer" aria-label="Stop the timer"><svg data-ico="close" width="13" height="13"></svg></button></div>
-    </div>
-  
-    <!-- paste a link: drops under the toolbar -->
-  </div>
-  <div class="ghost" id="ghost"></div>
-  <!-- stamps: a wheel of favorites; the middle opens every stamp -->
-  <div class="wheel-stamps" id="stampWheel"><div class="ws-ring" id="wsRing"></div><button class="ws-mid" id="wsMid" title="All stamps">+</button></div>
-  <div class="stamp-pick" id="stampPick">
-    <div class="sp-tabs"><button data-tab="myra" class="on">Myra</button><button data-tab="moving">Moving Myra</button><button data-tab="emoji">Emoji</button></div>
-    <div class="sp-grid" id="spGrid"></div>
-  </div>
-  <!-- shapes: pick one, then place it -->
-  <!-- design thinking templates: affinity map, opportunity map… -->
-  <div class="tplpick" id="tplPick"></div>
-  <div class="shapepick" id="shapePick">
-    <button data-shape="line" title="Line"><svg data-ico="line"></svg></button>
-    <button data-shape="rect" title="Rectangle"><svg data-ico="rectangle"></svg></button>
-    <button data-shape="circle" title="Circle"><svg data-ico="circle"></svg></button>
-    <button data-shape="tri" title="Triangle"><svg data-ico="triangle"></svg></button>
-    <button data-shape="star" title="Star"><svg data-ico="star"></svg></button>
-    <button data-shape="heart" title="Heart"><svg data-ico="heart"></svg></button>
-  </div>
   <!-- a doc opens beside the board (or full page), with a clear way back -->
   <aside class="docview" id="docview">
     <div class="dv-bar"><button class="dv-back" id="dvBack">← Back to board</button><span class="dv-where" id="dvWhere"></span><button class="dv-btn dv-pagebtn" id="dvPageMode" title="Page colour" aria-label="Page colour"><svg data-ico="page-color"></svg></button><button class="dv-dl" id="dvExport" title="Download this doc as a PDF"><svg data-ico="download"></svg>Download</button><button class="dv-btn" id="dvWide" title="Full page">⤢</button><button class="dv-btn" id="dvClose" title="Close">×</button></div>
@@ -176,9 +159,6 @@
     <div class="dv-bubble" id="dvBubble"></div>
   </aside>
 
-  <div class="capture" id="capture">
-    <form id="capForm"><input id="capInput" placeholder="Save an idea or image to Unsorted. Shift+Enter to write more first" autocomplete="off"></form>
-  </div>
   <button class="clean-back" id="cleanBack" type="button">Show panels <kbd>⌘\</kbd></button>
   <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>⌘K</kbd> quick capture</span><span><kbd>⌘F</kbd> find</span><span><kbd>space</kbd> drag to pan</span><span><kbd>⌘\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
   <!-- wireframes: screens, boxes and text, plus a design panel for the selection -->
@@ -218,6 +198,32 @@
   </aside>
   <div class="place-hint" id="placeHint" hidden></div>
   <svg class="guides" id="guides"></svg>
+  <input type="file" id="filePick" accept="image/*,video/*" multiple hidden>
+  <input type="file" id="coverPick" accept="image/*" hidden>
+</main>
+
+<!-- what opens over the bottom bar and Myra’s chat: the toolbar’s pickers, quick capture and a colour card’s wheel -->
+<div id="overBar">
+  <!-- stamps: a wheel of favorites; the middle opens every stamp -->
+  <div class="wheel-stamps" id="stampWheel"><div class="ws-ring" id="wsRing"></div><button class="ws-mid" id="wsMid" title="All stamps">+</button></div>
+  <div class="stamp-pick" id="stampPick">
+    <div class="sp-tabs"><button data-tab="myra" class="on">Myra</button><button data-tab="moving">Moving Myra</button><button data-tab="emoji">Emoji</button></div>
+    <div class="sp-grid" id="spGrid"></div>
+  </div>
+  <!-- design thinking templates: affinity map, opportunity map… -->
+  <div class="tplpick" id="tplPick"></div>
+  <!-- shapes: pick one, then place it -->
+  <div class="shapepick" id="shapePick">
+    <button data-shape="line" title="Line"><svg data-ico="line"></svg></button>
+    <button data-shape="rect" title="Rectangle"><svg data-ico="rectangle"></svg></button>
+    <button data-shape="circle" title="Circle"><svg data-ico="circle"></svg></button>
+    <button data-shape="tri" title="Triangle"><svg data-ico="triangle"></svg></button>
+    <button data-shape="star" title="Star"><svg data-ico="star"></svg></button>
+    <button data-shape="heart" title="Heart"><svg data-ico="heart"></svg></button>
+  </div>
+  <div class="capture" id="capture">
+    <form id="capForm"><input id="capInput" placeholder="Save an idea or image to Unsorted. Shift+Enter to write more first" autocomplete="off"></form>
+  </div>
   <!-- the color editor: pops up beside a color card -->
   <div class="cpop" id="cpop">
     <div class="cp-title" id="cpTitle"></div>
@@ -229,9 +235,7 @@
     <div class="cp-quick" id="cpQuick"></div>
     <div class="cp-acts"><button id="cpSave" class="solid">Save to board colours</button><button id="cpReset" class="cp-reset">Use the default</button><button id="cpDone">Done</button></div>
   </div>
-  <input type="file" id="filePick" accept="image/*,video/*" multiple hidden>
-  <input type="file" id="coverPick" accept="image/*" hidden>
-</main>
+</div>
 
 <!-- settings -->
 <!-- what's new: shows once, the first time someone opens a new version -->
