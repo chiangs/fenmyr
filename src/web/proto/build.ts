@@ -1,7 +1,9 @@
 import type { ChatAction } from '../../shared/chat.ts';
 import type { Board, Card } from '../../shared/model.ts';
 import { readSources } from '../../shared/repos.ts';
+import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
+import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import type { Act } from '../myra/acts.ts';
 import { addMsg, chatLog } from '../myra/chatLog.ts';
@@ -18,7 +20,7 @@ import { beforeBuild } from './sync.ts';
 // Myra's "build": the host writes the code with Claude Code while the chat shows what's being written, then the code,
 // the preview and the git bar catch up and her explanation arrives with an Undo.
 type Prototype = Extract<Board, { kind: 'prototype' }>;
-let running: { id: string; proto: Prototype; root: string; request: string } | null = null;
+let running: { id: string; build: string; proto: Prototype; root: string; request: string } | null = null;
 
 // what the builder reads from the board: the selected cards, or all of them, without positions or styling
 const brief = (c: Card) =>
@@ -39,6 +41,10 @@ export async function startBuild(request: string, synced = false) {
   if (b?.kind !== 'prototype' || !root) return;
   if (running) return say('I’m still writing the last change. I’ll start on this once it’s done.', 6000);
   if (!synced) return beforeBuild(b, request, () => startBuild(request, true));
+  // kept before anything is awaited, while this prototype is surely the open board
+  const build = uid();
+  b.proto = { ...b.proto, build };
+  save();
   const picked = b.cards.filter(c => session.sel.has(c.id));
   const chosen = (picked.length ? picked : b.cards).slice(0, 80),
     cards = JSON.stringify(chosen.map(brief)),
@@ -57,7 +63,7 @@ export async function startBuild(request: string, synced = false) {
       errors: previewErrors(),
       pictures,
     });
-    running = { id, proto: b, root, request };
+    running = { id, build, proto: b, root, request };
   } catch (e) {
     status('');
     say(e instanceof Error ? e.message : String(e), 8000);
@@ -97,10 +103,14 @@ const newestUndo = (board: string) =>
     .flatMap(m => m.acts ?? [])
     .findLast((a): a is BuildUndo => a.kind === 'buildUndo' && a.board === board);
 
+// A board from before builds were named goes by the newest Undo in its chat.
+const isLatest = (b: Prototype, a: BuildUndo) =>
+  b.proto.build ? a.build === b.proto.build : newestUndo(a.board)?.snapshot === a.snapshot;
+
 export function buildUndoButton(a: BuildUndo): SayAction | null {
   const b = openProto(a.board),
     root = b && rootOf(b);
-  if (!b || !root || newestUndo(a.board)?.snapshot !== a.snapshot) return null;
+  if (!b || !root || !isLatest(b, a)) return null;
   return undoView(root, b.proto.dir, a.snapshot);
 }
 
@@ -115,7 +125,7 @@ export function buildEvent(data: unknown) {
   const e: Record<string, unknown> = { ...data };
   if (e.id !== running.id) return;
   if (e.type === 'edit') return status(`Writing ${String(e.file)}…`);
-  const { root, proto, request } = running;
+  const { root, build, proto, request } = running;
   running = null;
   status('');
   if (e.type === 'error') return say(`I couldn’t finish that. ${String(e.text)}`, 10000);
@@ -130,7 +140,7 @@ export function buildEvent(data: unknown) {
   const acts: Act[] = here
     ? [
         { kind: 'commit', board, message },
-        { kind: 'buildUndo', board, snapshot },
+        { kind: 'buildUndo', board, snapshot, build },
       ]
     : [commitView(proto, message), undoView(root, proto.proto.dir, snapshot)];
   if (here) refresh();

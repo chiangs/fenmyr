@@ -11,8 +11,9 @@ export type ChatAction =
   // a card a build came from
   | { kind: 'source'; card: string }
   // A build's buttons, shown only while `board`, the prototype it built, is open. Undo puts the folder back as it was
-  // before the build, so only the newest build's Undo shows: an older one would undo the builds after it too.
-  | { kind: 'buildUndo'; board: string; snapshot: string }
+  // before the build, so only the newest build's Undo shows: an older one would undo the builds after it too. `build`
+  // names the build, which boards from before it was kept don't have.
+  | { kind: 'buildUndo'; board: string; snapshot: string; build?: string }
   | { kind: 'commit'; board: string; message: string };
 
 // A ChangeSet as her line keeps it: a list with nothing in it is left out.
@@ -97,7 +98,12 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
   source: x => (typeof x.card === 'string' ? { kind: 'source', card: x.card } : null),
   buildUndo: x =>
     typeof x.board === 'string' && typeof x.snapshot === 'string'
-      ? { kind: 'buildUndo', board: x.board, snapshot: x.snapshot }
+      ? {
+          kind: 'buildUndo',
+          board: x.board,
+          snapshot: x.snapshot,
+          ...(typeof x.build === 'string' ? { build: x.build } : {}),
+        }
       : null,
   commit: x =>
     typeof x.board === 'string' && typeof x.message === 'string'
