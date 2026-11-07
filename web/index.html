@@ -75,7 +75,9 @@
     </div>
   </section>
 
-  <!-- the dock: tools (or tools for what's selected) and Myra, together at the bottom -->
+  <!-- the bar for what's selected floats beside it; on a phone it moves into the dock as a strip -->
+  <div class="selbar" id="selbar" role="group" aria-label="Selection"></div>
+  <!-- the dock: tools and Myra, together at the bottom -->
   <div class="dock" id="dock">
   <div class="tools" id="tools">
       <button data-add="pointer" aria-label="Select · V" data-tip="Select · V" class="on"><svg class="ic" data-ico="select" width="18" height="18"></svg></button>
@@ -100,7 +102,6 @@
     <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
     <button class="clean-btn" id="cleanBtn" aria-label="Just the board · ⌘\" data-tip="Just the board · ⌘\"><svg class="ic" data-ico="board-only" width="18" height="18"></svg></button>
     </div>
-    <div class="selbar" id="selbar"></div>
     <!-- drawing: pens, sizes, colors, eraser -->
     <div class="drawbar" id="drawbar">
       <button class="db-done" data-db="done" title="Done drawing (Esc)">Done</button><span class="sb-sep"></span>

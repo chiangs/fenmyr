@@ -225,7 +225,7 @@ function fitted(cards: Card[], pad: number, maxZ: number): View {
 function glideTo(v: View) {
   Object.assign(session.view, v);
   world.style.transition = 'transform .5s cubic-bezier(.2,.8,.3,1)';
-  applyView();
+  applyView(520);
   setTimeout(() => (world.style.transition = ''), 520);
 }
 

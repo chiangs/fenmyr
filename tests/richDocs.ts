@@ -121,6 +121,9 @@ const at = async (selector: string) => {
   return box;
 };
 async function drag(from: string, to: string, down = 0.5) {
+  // nothing selected, so the selection bar floating over the board can't cover the corner pressed here
+  await page.evaluate(() => window.__fenmyr.selectOnly([]));
+  await page.waitForTimeout(50);
   const a = await at(from),
     b = await at(to);
   await page.mouse.move(a.x + 8, a.y + 8);

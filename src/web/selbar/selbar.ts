@@ -1,19 +1,17 @@
 import { typesWith } from '../../shared/cardTypes.ts';
-import type { Card } from '../../shared/model.ts';
+import type { Card, Link } from '../../shared/model.ts';
 import { canStroke, TILTS } from '../canvas/render.ts';
-import { linkById } from '../canvas/wires.ts';
 import { COLL } from '../cards/collection.ts';
-import { cropping } from '../cards/crop.ts';
 import { COLOR_NAMES, COLORS, colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { appState, session } from '../core/state.ts';
+import { session } from '../core/state.ts';
 import { hasDue } from '../features/due.ts';
 import { tagEditor } from '../features/tags.ts';
-import { homeAt } from '../library/home.ts';
 import { esc } from '../ui/dom.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
 import { initActions } from './actions.ts';
 import { arrangeHtml, initArrange } from './arrange.ts';
+import { initBarKeys, keepFocus } from './barKeys.ts';
 import {
   btn,
   caret,
@@ -24,22 +22,23 @@ import {
   initIcons,
   initPops,
   initTips,
+  moreHtml,
   pop,
   snapSoon,
 } from './barKit.ts';
+import { type BarContext, barContext, barPaused } from './context.ts';
 import { cornersHtml, initCorners, roundable } from './corners.ts';
 import { boxFillHtml, fillable, initFills, initShapeFill, shapeFillHtml, textFillHtml } from './fill.ts';
+import { barRoom, floatBar } from './float.ts';
 import { initFontPop } from './fontPop.ts';
 import { initLineStyle, lineStyleHtml } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
-import { selCards } from './selected.ts';
 import { initStroke, strokeHtml } from './stroke.ts';
 import { initTextBar, syncTypingFormats, textBarHtml } from './textBar.ts';
 import { SIZED } from './textSize.ts';
-import { editedNoteBody, initTypingFocus } from './typingFocus.ts';
+import { initTypingFocus } from './typingFocus.ts';
 import { initWireBar, wireBarHtml, wireKey } from './wireBar.ts';
 
-// ---------- the dock swaps to tools for whatever is selected ----------
 const FILLABLE = typesWith('fillable');
 
 const SEP = '<span class="sb-sep"></span>';
@@ -68,7 +67,8 @@ const KIND: Record<string, string> = {
   font: 'Font',
 };
 
-// the bar is rebuilt only when one of these changes on a selected card (moving and resizing don't count)
+// the bar is rebuilt only when one of these changes on a selected card: moving and resizing don't count, but dropping
+// into a screen does, since the Wireframe panel then offers to align with it
 const KEY_FIELDS = [
   'id',
   'tcase',
@@ -98,6 +98,7 @@ const KEY_FIELDS = [
   'under',
   'strike',
   'group',
+  'onFrame',
 ];
 function cardKey(c: Card) {
   const r: Record<string, unknown> = c,
@@ -166,16 +167,20 @@ function cardButtonsHtml(one: Card) {
   let h = '';
   const CARET = caret();
   if (one.type === 'swatch')
-    h +=
+    h += G(
+      2,
       btn('pick', 'color', 'Change the colour') +
-      btn('hidename', 'name', one.hideName ? 'Show the name' : 'Hide the name', !one.hideName) +
-      btn('hidehex', 'hex', one.hideHex ? 'Show the hex' : 'Hide the hex', !one.hideHex);
+        btn('hidename', 'name', one.hideName ? 'Show the name' : 'Hide the name', !one.hideName) +
+        btn('hidehex', 'hex', one.hideHex ? 'Show the hex' : 'Hide the hex', !one.hideHex),
+    );
   if (one.type === 'box' && one.img && !one.src)
     h += `<button class="sb-txt" data-fill="1" title="Fill this image spot">Fill image ✦</button>`;
   if (one.type === 'image')
-    h +=
+    h += G(
+      2,
       btn('crop', 'crop', 'Crop') +
-      btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText);
+        btn('tag', 'caption', one.tagText ? 'Remove the caption' : 'Add a caption', !!one.tagText),
+    );
   else if (!['coll', 'swatch', 'stamp', 'ink'].includes(one.type))
     h += G(6, btn('tag', 'tag', one.tagText ? 'Remove the label' : 'Add a label', !!one.tagText));
   if (one.type === 'note') {
@@ -183,25 +188,31 @@ function cardButtonsHtml(one: Card) {
       count = n ? `<b>${n}</b>` : '',
       tags = ICON.tags ?? '',
       editor = tagEditor(one);
-    h += pop('tags', `${tags}${count}${CARET}`, `<div class="sb-tags" data-for="${one.id}">${editor}</div>`, 'Tags');
+    h += G(
+      2,
+      pop('tags', `${tags}${count}${CARET}`, `<div class="sb-tags" data-for="${one.id}">${editor}</div>`, 'Tags'),
+    );
   }
   if (hasDue(one)) {
     const cal = Icon('calendar'),
       set = one.due ? '<b>•</b>' : '',
       day = esc((one.due || '').slice(0, 10)),
       time = esc((one.due || '').slice(11));
-    h += pop(
-      'due',
-      `${cal}${set}${CARET}`,
-      `<div class="sb-due" data-for="${one.id}"><div class="sd-row"><label><span>Date</span><input type="date" data-due-d value="${day}"></label><label><span>Time</span><input type="time" data-due-t value="${time}"></label></div><div class="sd-chips"><button data-due-q="0">Today</button><button data-due-q="1">Tomorrow</button><button data-due-q="7">Next week</button><button data-due-clear>Clear</button></div></div>`,
-      'Due date',
+    h += G(
+      2,
+      pop(
+        'due',
+        `${cal}${set}${CARET}`,
+        `<div class="sb-due" data-for="${one.id}"><div class="sd-row"><label><span>Date</span><input type="date" data-due-d value="${day}"></label><label><span>Time</span><input type="time" data-due-t value="${time}"></label></div><div class="sd-chips"><button data-due-q="0">Today</button><button data-due-q="1">Tomorrow</button><button data-due-q="7">Next week</button><button data-due-clear>Clear</button></div></div>`,
+        'Due date',
+      ),
     );
   }
   if (one.type === 'doc') h += btn('open', 'open', 'Open the doc');
   if (one.type === 'vnote') h += btn('vnflip', 'flip', 'Flip the card') + btn('vnopen', 'open', 'Open in Obsidian');
   if (one.type === 'canvas') h += btn('open', 'open', 'Open this canvas');
   if (one.type === 'link' && one.url)
-    h += btn('visit', 'open', 'Open the link') + btn('relink', 'link', 'Change the link');
+    h += G(2, btn('visit', 'open', 'Open the link') + btn('relink', 'link', 'Change the link'));
   if (one.type === 'spotify') h += btn('visit', 'open', 'Open in Spotify');
   if (one.type === 'shape' && one.shape === 'line') h += lineStyleHtml(one);
   if (one.type === 'shape') h += shapeFillHtml(one);
@@ -251,10 +262,7 @@ function endHtml(cs: Card[], one: Card | null) {
       label = grouped ? 'Ungroup' : 'Group';
     h += G(8, `${sep}<button class="sb-txt" data-sb="${act}" title="${tip}">${label}</button>`);
   }
-  const more = Icon('more', { cls: 'sb-l24' });
-  const morePop = pop('more', more, '<div class="sb-morebody"></div>', 'More');
-  h += `<span class="sb-sep sb-moresep"></span>${morePop}`;
-  return h + sep + btn('del', 'del', 'Delete');
+  return h + moreHtml() + sep + btn('del', 'del', 'Delete');
 }
 
 function cardBarHtml(cs: Card[]) {
@@ -279,44 +287,12 @@ function cardBarHtml(cs: Card[]) {
   return h + endHtml(cs, one);
 }
 
-export function placeSelbar() {
-  const bar = $('selbar'),
-    dock = $('dock'),
-    cs = selCards(),
-    lw = session.selWire ? linkById(session.selWire) : undefined;
-  if (lw && !homeAt) {
-    dock.classList.add('ctx');
-    bar.classList.add('on');
-    const key = wireKey(lw);
-    if (bar.dataset.key === key) return;
-    bar.dataset.key = key;
-    bar.innerHTML = wireBarHtml(lw);
-    return;
-  }
-  // hidden only while a drag is really happening, or a wheel that isn't from this bar is really on screen (left-over state never hides the bar)
-  const cpop = $('cpop'),
-    wheelUp =
-      cpop.classList.contains('on') &&
-      cpop.classList.contains('tint') &&
-      !cpop.classList.contains('from-bar') &&
-      cpop.offsetParent &&
-      $('settings').classList.contains('on');
-  const show = cs.length && !homeAt && !(appState.drag?.mode === 'move' && appState.drag.moved) && !wheelUp; // a wheel opened from this bar keeps the bar
-  dock.classList.toggle('ctx', !!show);
-  bar.classList.toggle('on', !!show);
-  if (!show) {
-    closeSbPops();
-    // this runs every frame, so it only writes when something changed
-    if (bar.dataset.ids) bar.dataset.ids = '';
-    if (bar.dataset.key !== '') {
-      bar.dataset.key = '';
-      renderDesign();
-    }
-    return;
-  }
-  const typing = !!editedNoteBody();
-  if (bar.classList.contains('typing') !== typing) {
-    bar.classList.toggle('typing', typing);
+const CROP_BAR = `<span class="sb-label">Crop</span><button class="sb-txt" data-crop="cancel">Cancel</button><button class="sb-txt" data-crop="reset">Reset</button><button class="sb-txt on" data-crop="done">Done</button>`;
+
+function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection' }>) {
+  const cs = ctx.cards;
+  if (bar.classList.contains('typing') !== ctx.typing) {
+    bar.classList.toggle('typing', ctx.typing);
     syncTypingFormats();
   }
   const key =
@@ -333,14 +309,66 @@ export function placeSelbar() {
   }
   bar.dataset.key = key;
   renderDesign();
-  const one = cs.length === 1 ? cs[0] : undefined;
-  if (one?.type === 'image' && cropping?.c === one) {
-    bar.innerHTML = `<span class="sb-label">Crop</span><button class="sb-txt" data-crop="cancel">Cancel</button><button class="sb-txt" data-crop="reset">Reset</button><button class="sb-txt on" data-crop="done">Done</button>`;
-    return;
-  }
-  bar.innerHTML = cardBarHtml(cs);
-  foldSelbar(bar);
+  keepFocus(bar, () => {
+    bar.innerHTML = ctx.crop ? CROP_BAR : cardBarHtml(cs);
+    foldSelbar(bar, barRoom());
+  });
   snapSoon();
+}
+
+function drawWire(bar: HTMLElement, link: Link) {
+  const key = wireKey(link) + Math.round(innerWidth / 30);
+  if (bar.dataset.key === key) return;
+  bar.dataset.key = key;
+  keepFocus(bar, () => {
+    bar.innerHTML = wireBarHtml(link);
+    foldSelbar(bar, barRoom());
+  });
+}
+
+// this runs every frame, so it only writes when something changed
+function clearBar(bar: HTMLElement) {
+  closeSbPops();
+  if (bar.dataset.ids) bar.dataset.ids = '';
+  if (bar.dataset.key !== '') {
+    bar.dataset.key = '';
+    renderDesign();
+  }
+}
+
+function drawBar(bar: HTMLElement, ctx: BarContext | null) {
+  const show = (on: boolean) => {
+    $('dock').classList.toggle('ctx', on); // on a phone the strip takes the hub's place
+    bar.classList.toggle('on', on);
+  };
+  if (!ctx) {
+    show(false);
+    return clearBar(bar);
+  }
+  switch (ctx.kind) {
+    case 'selection':
+      show(true);
+      return drawCards(bar, ctx);
+    case 'connector':
+      show(true);
+      return drawWire(bar, ctx.link);
+    case 'tool':
+      show(false);
+      return clearBar(bar);
+    default: {
+      const unknown: never = ctx;
+      return unknown;
+    }
+  }
+}
+
+// The content stays current during a gesture though no one sees it: Ctrl+B presses the bar's own Bold, and the bar
+// is back the moment the gesture ends.
+export function placeSelbar() {
+  const bar = $('selbar'),
+    ctx = barContext();
+  drawBar(bar, ctx);
+  floatBar(bar, ctx, barPaused());
 }
 
 export function init56() {
@@ -364,6 +392,7 @@ export function init56() {
   initCorners();
   initTextBar(placeSelbar);
   initTypingFocus();
+  initBarKeys();
   initArrange();
   initActions();
 }

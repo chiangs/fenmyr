@@ -27,7 +27,7 @@ export function init63() {
         const x0 = e.clientX,
           y0 = e.clientY,
           tgt = e.target;
-        if (pts.size === 1 && tgt && !closestTo(tgt, '.dock, .hub, .sheet, .top, .m-chat'))
+        if (pts.size === 1 && tgt && !closestTo(tgt, '.dock, .selbar, .hub, .sheet, .top, .m-chat'))
           hold = setTimeout(() => {
             // press and hold: the same menu as a right-click
             if (pts.size !== 1) return;
