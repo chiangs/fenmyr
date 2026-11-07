@@ -139,7 +139,7 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
 export function floatModeBar() {
   const bar = $('modebar'),
     ctx = toolContext(),
-    shown = ctx && !onPhone(),
+    shown = ctx && !onPhone() && !stage.classList.contains('doc-open'),
     lift = shown ? `${bar.offsetHeight + GAP}px` : '0px';
   if (stage.style.getPropertyValue('--mode-h') !== lift) {
     stage.style.setProperty('--mode-h', lift);

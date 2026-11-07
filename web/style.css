@@ -521,7 +521,7 @@ html.native .dv-bar { padding-top: 14px; }
 .dv-body:empty::before { content: attr(data-ph); color: var(--ink-faint); }
 /* with a doc open, the tools step aside but Myra's bubble (and its Undo) still shows on top */
 .stage.doc-open .dock { z-index: 24; }
-.stage.doc-open .dock .tools, .stage.doc-open .find-bar, .stage.doc-open .selbar, .stage.doc-open .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
+.stage.doc-open .dock .tools, .stage.doc-open .modebar, .stage.doc-open .selbar, .stage.doc-open .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
 /* on the All projects pages the board tools hide; Myra stays to help organize */
 .stage.at-home .dock .tools, .stage.at-home .selbar, .stage.at-home .shapepick { display: none; }
 .sub-boards { margin-left: 16px; padding-left: 8px; border-left: 1.5px dashed var(--sub-line); display: flex; flex-direction: column; gap: 1px; }
