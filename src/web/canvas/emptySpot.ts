@@ -1,6 +1,13 @@
 type Point = { x: number; y: number };
 type Box = Point & { w: number; h: number };
 
+// the smallest box around some cards
+export function boxOf(cs: readonly Box[]): Box {
+  const x = Math.min(...cs.map(c => c.x)),
+    y = Math.min(...cs.map(c => c.y));
+  return { x, y, w: Math.max(...cs.map(c => c.x + c.w)) - x, h: Math.max(...cs.map(c => c.y + c.h)) - y };
+}
+
 const GAP = 60;
 
 const nearestFirst = (values: number[], wanted: number) =>

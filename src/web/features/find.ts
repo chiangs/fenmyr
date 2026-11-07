@@ -14,7 +14,6 @@ import { reply } from '../myra/say.ts';
 import { applyDim } from './focus.ts';
 import { cleanTag } from './tags.ts';
 
-// ---------- the find bar: opens next to Myra when /find or /tag runs; searches as you type, steps through the matches, closes with Esc ----------
 const readingOrder = (a: Card, b: Card) => Math.round(a.y / 90) - Math.round(b.y / 90) || a.x - b.x;
 
 function findRun(keep: boolean) {
@@ -39,7 +38,6 @@ function findRun(keep: boolean) {
   applyDim();
   const cur = find.cur ? byId(find.cur) : undefined;
   if (cur) glideTo([cur]);
-  findFit();
   return find.hits.length;
 }
 
@@ -68,36 +66,21 @@ export function findClose(keep?: boolean) {
   find.set = find.cur = null;
   find.hits = [];
   $('findBar').hidden = true;
-  findFit();
   applyDim();
 }
 
 let findT: ReturnType<typeof setTimeout> | undefined;
 
-// the bar always sits right of Myra's pill. When the toolbar leaves no room for it, the toolbar steps aside while you search (a very narrow window puts the bar just above her instead)
-function findFit() {
-  const b = $('findBar'),
-    d = $('dock'),
-    over = () => b.getBoundingClientRect().right > innerWidth - 12;
-  d.classList.remove('finding');
-  b.classList.remove('up');
-  if (b.hidden) return;
-  if (over()) {
-    d.classList.add('finding');
-    if (over()) b.classList.add('up');
-  }
-}
-
 export function slashFind(arg: string) {
   const q = arg.trim();
   if (!q) {
     findOpen();
-    return reply('Type what to look for in the bar next to me ✦');
+    return reply('Type what to look for in the find bar ✦');
   }
   const n = findOpen(q);
   reply(
     n
-      ? `Found ${n} ${n === 1 ? 'card' : 'cards'} for “${q}”. Step through them with the bar next to me ✦`
+      ? `Found ${n} ${n === 1 ? 'card' : 'cards'} for “${q}”. Step through them with the find bar ✦`
       : `Nothing for “${q}”.`,
   );
 }
@@ -123,7 +106,7 @@ export function slashTag(arg: string) {
   const n = findOpen(`#${t}`);
   reply(
     n
-      ? `Found ${n} ${n === 1 ? 'card' : 'cards'} tagged #${t}. Step through them with the bar next to me ✦`
+      ? `Found ${n} ${n === 1 ? 'card' : 'cards'} tagged #${t}. Step through them with the find bar ✦`
       : `Nothing tagged #${t}.`,
   );
 }
@@ -166,8 +149,4 @@ export function init34() {
   $('fbNext').onclick = () => findStep(1);
   $('fbPrev').onclick = () => findStep(-1);
   $('fbX').onclick = () => findClose(true);
-
-  addEventListener('resize', () => {
-    if (find.on) findFit();
-  });
 }

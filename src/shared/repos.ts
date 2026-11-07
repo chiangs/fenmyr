@@ -64,6 +64,8 @@ export type Proto = {
   sources?: Sources;
   // a copy from another project whose code hasn't been asked about yet: Myra asks to commit it when it first opens
   copied?: { from: string; files: number };
+  // the newest build started on it: only that build's Undo shows, even when it landed while another board was open
+  build?: string;
 };
 
 const MAX_SOURCE_FILES = 200;
@@ -116,7 +118,8 @@ export function readProto(x: unknown): Proto | null {
     copied =
       isRecord(x.copied) && typeof x.copied.from === 'string'
         ? { from: x.copied.from.slice(0, 200), files: typeof x.copied.files === 'number' ? x.copied.files : 0 }
-        : null;
+        : null,
+    build = typeof x.build === 'string' && x.build.length <= 64 ? x.build : '';
   return {
     dir: x.dir,
     stack: STACKS.find(s => s === x.stack) ?? 'react',
@@ -124,6 +127,7 @@ export function readProto(x: unknown): Proto | null {
     ...(device ? { device } : {}),
     ...(Object.keys(sources).length ? { sources } : {}),
     ...(copied ? { copied } : {}),
+    ...(build ? { build } : {}),
   };
 }
 

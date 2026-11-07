@@ -44,6 +44,8 @@ jobs:
         run: node tests/persist.ts
       - name: Model test (board and library files, prototype fields)
         run: node tests/model.ts
+      - name: Context bar placement test (above, flipped, stuck and beside a line, without the app)
+        run: node tests/barPlace.ts
       - name: Rich text test (the note dialect, its markup, and round trips)
         run: node tests/richtext.ts
       - name: Rich paste test (HTML, Markdown and PDF clipboards into notes)
@@ -82,6 +84,8 @@ jobs:
         run: node tests/preview.ts
       - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)
         run: node tests/build.ts
+      - name: Build buttons test (Myra's stored Commit and Undo across builds and boards)
+        run: node tests/buildButtons.ts
       - name: Packages test (installed packages in a prototype, with a stand-in npm)
         run: node tests/packages.ts
       - name: Sync test (fetch, pull and clashes with a stand-in GitHub)
@@ -92,6 +96,14 @@ jobs:
         run: node tests/done.ts
       - name: Myra reply test
         run: node tests/reply.ts
+      - name: Change record test (what a reply changed, sorted into added, moved, edited, removed and re-laid)
+        run: node tests/changes.ts
+      - name: Myra replies test (what each kind of reply does to the board, her chat, the library and templates)
+        run: node tests/replies.ts
+      - name: Reply undo test (one undo step per reply, replies in turn, previews that change nothing)
+        run: node tests/replyUndo.ts
+      - name: Chat buttons test (Myra's next steps, sources and build buttons, kept with her replies)
+        run: node tests/chatButtons.ts
       - name: Chat keys test (what each key does in Myra's chat input)
         run: node tests/chatKeys.ts
       - name: Mac font list test
@@ -106,6 +118,18 @@ jobs:
         run: node tests/phone.ts
       - name: Popup test
         run: node tests/popups.ts
+      - name: Selection bar test (what it kept, where it floats, and that it steps aside for gestures)
+        run: node tests/contextBar.ts
+      - name: Selection bar groups test (which groups and buttons it shows for every kind of card, a connector and cropping)
+        run: node tests/barGroups.ts
+      - name: Selection bar keyboard test (F10 in, Space and Enter, Escape out, names after a hover, clicks leave keys to the board)
+        run: node tests/barKeyboard.ts
+      - name: Selection bar room test (dropdowns near the top, presses on the bar, a 900 px window)
+        run: node tests/barRoom.ts
+      - name: Drawing and find test (what they do, on a computer and a phone)
+        run: node tests/modeBar.ts
+      - name: Mode bar room test (Myra's chat, her timer and the toolbar's pickers keep clear of find's bar)
+        run: node tests/modeRoom.ts
       - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
         run: node tests/capture.ts
       - name: Image actions test (download, copy and replace a picture, in the real app)

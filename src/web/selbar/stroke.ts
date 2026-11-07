@@ -7,6 +7,7 @@ import { session } from '../core/state.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
 import { caret, closeSbPops, G, markOnce, openBarColor, pct, pop, syncPair } from './barKit.ts';
+import { every, group } from './group.ts';
 import { selCards } from './selected.ts';
 
 type Patch = { none?: true; color?: string; w?: number; dash?: string; dl?: number; dg?: number };
@@ -36,11 +37,11 @@ function dashHtml(f: Card, w: number) {
   return `<div class="sbc-chips sb-skstyles">${chips}</div><div class="sb-skdash${off}" data-skst="${st}">${rows}</div>`;
 }
 
-export function strokeHtml(stk: Card[], f: Card) {
+function strokeHtml(stk: Card[], f: Card) {
   const col = f.stroke || '#27272a',
     w = f.sw || 0,
     max = stk.every(c => STROKE_TEXT.includes(c.type)) ? 12 : 24,
-    noDash = stk.some(c => ['icon', 'title', 'text'].includes(c.type)); // dashed/dotted is for shapes, boxes and screens
+    noDash = stk.some(c => STROKE_TEXT.includes(c.type)); // dashed/dotted is for shapes, boxes and screens
   const SK = [
     '#000000',
     '#ffffff',
@@ -136,7 +137,7 @@ function setStroke(patch: Patch) {
   syncPop(f);
 }
 
-export function initStroke(place: () => void) {
+function initStroke(place: () => void) {
   $('selbar').addEventListener('input', e => {
     const p = syncPair(e.target, 'data-skw', 'data-skn');
     if (!p) return;
@@ -193,3 +194,5 @@ export function initStroke(place: () => void) {
     true,
   );
 }
+
+export const stroke = group({ on: every(canStroke), html: cs => strokeHtml(cs, cs[0]), init: initStroke });

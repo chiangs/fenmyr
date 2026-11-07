@@ -6,6 +6,7 @@ import { appState, session } from '../core/state.ts';
 import { findClose } from '../features/find.ts';
 import { showLastChange } from '../proto/homeInfo.ts';
 import { addBoardTo } from '../repo/prototypes.ts';
+import { exitDraw } from '../tools/draw.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc, removeOnOutsidePress } from '../ui/dom.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
@@ -42,6 +43,7 @@ export function openHome(go = 'all') {
   $('home').classList.add('on');
   stage.classList.add('at-home');
   stopPlacing();
+  exitDraw();
   refreshBoards();
 }
 

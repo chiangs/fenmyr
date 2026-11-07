@@ -184,6 +184,8 @@ try {
   const stage = await page.locator('#stage').boundingBox();
   if (!stage) throw new Error('no stage');
   for (const x of [0.45, 0.7]) {
+    // the first screen is taller than the view, so its selection bar holds at the top, where the second one goes
+    await page.evaluate(() => window.__fenmyr.selectOnly([]));
     await page.click('[data-wf="frame"]');
     await page.click('#dzPresets [data-dev="iPhone"]');
     await page.mouse.click(stage.x + stage.width * x, stage.y + 120);

@@ -257,7 +257,7 @@ export function init12() {
     'pointerdown',
     e => {
       if (!vec || e.button !== 0 || session.space) return;
-      if (closestTo(e.target, '.tools, .selbar, .dock, .side, .top, .cpop, .myra')) return;
+      if (closestTo(e.target, '.tools, .selbar, .modebar, .dock, .side, .top, .cpop, .myra')) return;
       if (vecDown(e)) {
         e.preventDefault();
         e.stopImmediatePropagation();

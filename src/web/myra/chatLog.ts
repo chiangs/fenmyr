@@ -1,14 +1,14 @@
-import type { ChatMsg } from '../../shared/model.ts';
+import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
-// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
+import { type Act, actView, storedOf } from './acts.ts';
 import { ask } from './chat.ts';
-import type { SayAction } from './say.ts';
 
+// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
 const CHATS_KEPT = 10;
 
 // A prototype board always keeps its chat, whatever Settings says. It's the record of how the prototype was built.
@@ -90,6 +90,8 @@ function renderHistory() {
       const c = chats.splice(i, 1)[0];
       if (!c) return;
       archiveChat();
+      // her buttons there were for the board as it was then, so the chat comes back without them
+      for (const m of c.msgs) delete m.acts;
       session.board.chat = c.msgs;
       save();
       appState.histOpen = false;
@@ -108,14 +110,42 @@ const IDEAS = [
 // on a prototype board she starts from the wireframes and notes the person brings
 const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
 
-function msgEl(m: ChatMsg & { acts?: SayAction[] }) {
+// A used button doesn't come back when the chat opens again: a click takes it off the message. Next steps are one
+// choice of what to ask next, so asking one takes the others with it.
+function spend(m: ChatMsg, used: ChatAction) {
+  if (!m.acts) return;
+  const left = m.acts.filter(a => a !== used && !(used.kind === 'next' && a.kind === 'next'));
+  if (left.length) m.acts = left;
+  else delete m.acts;
+  if (chatKeep() === 'board') save();
+}
+
+// The buttons a row shows now. An action that shows nothing now stays on the message.
+export function actsRow(m: ChatMsg | undefined, acts: readonly Act[]) {
+  return acts.flatMap(a => {
+    const view = actView(a);
+    if (!view) return [];
+    return [
+      {
+        ...view,
+        run: () => {
+          if (m && 'kind' in a) spend(m, a);
+          return view.run();
+        },
+      },
+    ];
+  });
+}
+
+function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   const d = document.createElement('div');
   d.className = `mc-msg ${m.who}`;
   d.textContent = m.text;
-  if (m.acts?.length) {
+  const row = actsRow(m, acts);
+  if (row.length) {
     const box = document.createElement('div');
     box.className = 'm-acts';
-    m.acts.forEach(a => {
+    row.forEach(a => {
       const b = document.createElement('button');
       b.textContent = a.label;
       b.className = a.cls || (a.ghost ? 'ghost' : '');
@@ -172,22 +202,26 @@ export function chatLog(): ChatMsg[] {
   return (sessionChats[session.board.id] ??= []);
 }
 
-export function addMsg(who: string, text: string, acts: SayAction[] = []) {
+// Shows the line with all of `acts` and keeps the stored kinds on the message, which it returns.
+export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
   if (!session.board) return;
   if (appState.histOpen) {
     appState.histOpen = false;
     renderChat();
   }
   const log = chatLog(),
-    m = { who, text, t: Date.now() },
+    m: ChatMsg = { who, text, t: Date.now() },
+    stored = storedOf(acts),
     max = Number(settings.chatMax) || 60;
+  if (stored.length) m.acts = stored;
   log.push(m);
   if (log.length > max) log.splice(0, log.length - max);
   if (chatKeep() === 'board') save();
   const list = $('mcList');
   list.querySelector('.mc-empty')?.remove();
-  list.appendChild(msgEl({ ...m, acts }));
+  list.appendChild(msgEl(m, acts));
   list.scrollTop = list.scrollHeight;
+  return m;
 }
 
 export function typing(on: boolean) {

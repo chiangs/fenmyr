@@ -19,6 +19,68 @@ assert.deepStrictEqual(
 const oldBoard = { id: 'b1', name: 'Plan', cards: [], links: [], tray: [], chat: [{ who: 'me', text: 'hi', t: 1 }] };
 assert.deepStrictEqual(json(parseBoard(oldBoard)), oldBoard, 'a board from before prototypes saves back unchanged');
 
+const set = { added: ['a'], moved: ['b'], removed: ['c'], relaid: { kb: ['k1', 'kb'] }, links: { added: ['l1'] } };
+const everyKind = [
+  { kind: 'next', text: 'Make it a list' },
+  { kind: 'changes', reply: 'r1', set },
+  { kind: 'source', card: 'n1' },
+  { kind: 'buildUndo', board: 'pb', snapshot: 'abc123' },
+  { kind: 'buildUndo', board: 'pb', snapshot: 'def456', build: 'k3x9q2' },
+  { kind: 'commit', board: 'pb', message: 'Make the heading' },
+];
+const withActs = (acts: unknown) => ({
+  id: 'b1',
+  name: 'Plan',
+  cards: [],
+  links: [],
+  tray: [],
+  chat: [{ who: 'myra', text: 'Done!', t: 2, acts }],
+});
+assert.deepStrictEqual(
+  json(parseBoard(withActs(everyKind))),
+  withActs(everyKind),
+  'every kind of stored button saves back as it was',
+);
+const kept = (acts: unknown) => parseBoard(withActs(acts))?.chat?.[0];
+assert.deepStrictEqual(
+  kept([
+    { kind: 'offer', board: 'x' },
+    { kind: 'next' },
+    { kind: 'source', card: 7 },
+    { kind: 'changes', reply: 'r1', set: { ...set, moved: [1] } },
+    { kind: 'changes', reply: 'r1', set: { ...set, relaid: { kb: 'k1' } } },
+    'next',
+    null,
+    { kind: 'commit', message: 'No board' },
+    { kind: 'commit', board: 'pb', message: 'Keep me' },
+  ])?.acts,
+  [{ kind: 'commit', board: 'pb', message: 'Keep me' }],
+  'an unknown kind and a malformed button are dropped, and the rest kept',
+);
+assert.deepStrictEqual(
+  kept([
+    {
+      kind: 'changes',
+      reply: 'r1',
+      set: { ...set, edited: [], relaid: {}, links: { added: [], removed: [] }, skipped: [] },
+    },
+  ])?.acts,
+  [{ kind: 'changes', reply: 'r1', set: { added: ['a'], moved: ['b'], removed: ['c'] } }],
+  'a change set keeps only the lists with something in them',
+);
+assert.deepStrictEqual(
+  json(kept([{ kind: 'toString' }, { kind: 'next', text: 3 }])),
+  { who: 'myra', text: 'Done!', t: 2 },
+  'a message whose buttons are all unreadable stays, with no buttons key',
+);
+assert.deepStrictEqual(json(kept('next')), { who: 'myra', text: 'Done!', t: 2 }, 'buttons that are not a list too');
+const earlier = {
+  id: 'b1',
+  name: 'Plan',
+  chats: [{ id: 'c1', title: 'Before', t: 1, msgs: withActs(everyKind).chat }],
+};
+assert.deepStrictEqual(json(parseBoard(earlier)), earlier, 'an earlier chat keeps its buttons too');
+
 const lib = parseLibrary({
   projects: [
     { id: 'p1', name: 'Acme', repo: { path: '/home/me/code/acme' } },
@@ -47,6 +109,10 @@ assert.deepStrictEqual(proto({ dir: 'prototypes/checkout-flow', stack: 'html' })
   stack: 'html',
 });
 assert.strictEqual(proto({ dir: 'prototypes/checkout-flow' })?.proto?.stack, 'react', 'the stack defaults to React');
+const named = { dir: 'prototypes/checkout-flow', stack: 'react', build: 'k3x9q2' };
+assert.deepStrictEqual(json(proto(named)?.proto), named, 'a prototype keeps the build it last started');
+for (const build of [7, '', 'x'.repeat(65)])
+  assert.ok(!('build' in json(proto({ ...named, build })?.proto)), `a build of ${JSON.stringify(build)} is dropped`);
 for (const dir of ['../escape', 'prototypes/../../etc', 'prototypes/a/b', 'src/app', 'prototypes/Checkout', '', 7]) {
   const b = json(proto({ dir, stack: 'react' }));
   assert.ok(!('kind' in b) && !('proto' in b), `a code folder of ${JSON.stringify(dir)} makes it a plain board`);

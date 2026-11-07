@@ -6,10 +6,11 @@ import { remember, save } from '../core/history.ts';
 import { formatOn, isFormat, runFormat } from '../edit/noteKeys.ts';
 import { fitText } from '../edit/text.ts';
 import { closestTo, esc, htmlIn } from '../ui/dom.ts';
-import { caret, closeSbPops, G, markOnce, marks, pct, pop, rebuildBar, syncPair } from './barKit.ts';
+import { caret, closeSbPops, G, markOnce, marks, pct, pop, rebuildBar, redraw, syncPair } from './barKit.ts';
 import { boardFontPop } from './fontPop.ts';
+import { group, some } from './group.ts';
 import { selCards } from './selected.ts';
-import { FS, FS_BASE, fitNote, fsPx, lhOf, lsOf, setFsPx, setSpacing, sizedCards } from './textSize.ts';
+import { FS, FS_BASE, fitNote, fsPx, lhOf, lsOf, SIZED, setFsPx, setSpacing, sizedCards } from './textSize.ts';
 import { backToNote, editedNoteBody } from './typingFocus.ts';
 
 type Style = 'bold' | 'italic' | 'under' | 'strike';
@@ -126,10 +127,9 @@ function typingFormatsHtml(typing: boolean) {
 }
 
 // the text controls for notes, titles, checklists, shapes and collections
-export function textBarHtml(sized: Card[]) {
-  const first = sized[0];
-  if (!first) return '';
-  const typing = typedIn(sized),
+function textBarHtml(sized: [Card, ...Card[]]) {
+  const first = sized[0],
+    typing = typedIn(sized),
     styles = STYLES.map(([k, l, t]) => {
       const on = typing ? formatOn(k) : sized.every(c => isOn(c, k)),
         cls = on ? 'on' : '',
@@ -161,16 +161,6 @@ export function textBarHtml(sized: Card[]) {
   );
 }
 
-// after a change made from inside the size or spacing dropdown: the cards, then the bar
-function redraw(cs: Card[]) {
-  cs.forEach(c => {
-    renderCard(c);
-  });
-  selectOnly(selCards().map(c => c.id));
-  rebuildBar();
-  save();
-}
-
 const stepSize = (from: number, by: number) => String(Math.max(6, Math.min(400, from + by)));
 
 function keepTypingFocus(e: MouseEvent) {
@@ -190,7 +180,7 @@ export function syncTypingFormats() {
   });
 }
 
-export function initTextBar(place: () => void) {
+function initTextBar(place: () => void) {
   $('selbar').addEventListener('mousedown', keepTypingFocus);
   document.addEventListener('selectionchange', () => {
     if (editedNoteBody()) syncTypingFormats();
@@ -353,3 +343,5 @@ export function initTextBar(place: () => void) {
     }
   });
 }
+
+export const text = group({ on: some(c => SIZED.includes(c.type)), html: textBarHtml, init: initTextBar });

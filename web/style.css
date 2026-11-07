@@ -353,7 +353,9 @@ html.native .home-in { padding-top: 40px; }
 .board-name { width: 100%; min-width: 0; text-overflow: ellipsis; }
 
 /* the bar above the selection */
-.selbar { position: absolute; z-index: 14; display: none; align-items: center; gap: 2px; padding: 5px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; box-shadow: 0 10px 28px rgba(var(--sh), calc(.2 * var(--sh-k))); transform: translate(-50%, -100%); white-space: nowrap; }
+.selbar { position: absolute; left: 0; top: 0; z-index: 14; display: none; align-items: center; gap: 6px; height: 50px; padding: 6px 7px; border-radius: var(--pill-r); corner-shape: squircle; white-space: nowrap; }
+/* drawing's and find's bars, stacked; float.ts holds it 12 px above the bottom bar */
+.modebar { position: absolute; left: 0; top: 0; z-index: 14; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .selbar.on { display: flex; }
 .selbar button { border: 0; background: none; padding: 7px 11px; border-radius: var(--pill-r); corner-shape: squircle; font: 600 12px/1 var(--font); color: var(--ink); cursor: pointer; }
 .selbar button:hover { background: var(--blush); }
@@ -408,10 +410,11 @@ html.native .home-in { padding-top: 40px; }
 .dock .tools button:hover::after { transform: translate(-50%, 0); }
 .dock .tools button.on { background: var(--blush); }
 .dock .tools button.on .ic { color: var(--ink); }
-.dock.ctx .tools { display: none; }
 .dock .myra { position: relative; left: auto; bottom: auto; transform: none; }
-.dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px); margin: 0; width: max-content; }
-.dock .selbar { position: static; transform: none; height: 50px; padding: 6px; box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); }
+/* Myra's bubble and chat rise over drawing's or find's bar by --mode-h, which float.ts sets on the stage */
+.dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); margin: 0; width: max-content; }
+.selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
+.selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
 .selbar .sb-ic { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; }
 .selbar .sb-ic svg { width: 18px; height: 18px; }
 .selbar button.on { background: var(--blush); }
@@ -492,7 +495,7 @@ body.dark .kb-n { background: color-mix(in srgb, var(--chead) 40%, var(--kb-bg))
 .card.shape .body { padding: 0; overflow: visible; display: grid; place-items: center; }
 .card.shape svg.sh { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .card.shape .text { position: relative; max-width: 80%; text-align: center; font: 600 calc(15px * var(--fs, 1))/1.3 var(--font); outline: none; white-space: pre-wrap; }
-.shapepick { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(6px); z-index: 16; display: flex; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
+.shapepick { position: absolute; left: 50%; bottom: calc(84px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 16; display: flex; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
 .shapepick.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
 .shapepick button { width: 38px; height: 38px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; display: grid; place-items: center; cursor: pointer; color: var(--ink-soft); }
 .shapepick button:hover, .shapepick button.on { background: var(--blush); color: var(--ink); }
@@ -518,9 +521,9 @@ html.native .dv-bar { padding-top: 14px; }
 .dv-body:empty::before { content: attr(data-ph); color: var(--ink-faint); }
 /* with a doc open, the tools step aside but Myra's bubble (and its Undo) still shows on top */
 .stage.doc-open .dock { z-index: 24; }
-.stage.doc-open .dock .tools, .stage.doc-open .dock .find-bar, .stage.doc-open .dock .selbar, .stage.doc-open .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
+.stage.doc-open .dock .tools, .stage.doc-open .modebar, .stage.doc-open .selbar, .stage.doc-open .dock .m-pill, .stage.doc-open .shapepick { opacity: 0; pointer-events: none; }
 /* on the All projects pages the board tools hide; Myra stays to help organize */
-.stage.at-home .dock .tools, .stage.at-home .dock .selbar, .stage.at-home .shapepick { display: none; }
+.stage.at-home .dock .tools, .stage.at-home .selbar, .stage.at-home .shapepick { display: none; }
 .sub-boards { margin-left: 16px; padding-left: 8px; border-left: 1.5px dashed var(--sub-line); display: flex; flex-direction: column; gap: 1px; }
 .sub-boards .board-row { font-size: 13px; }
 /* full-page docs: keep the bar clear of the floating boxes on the left */
@@ -546,14 +549,14 @@ html.native .dv-bar { padding-top: 14px; }
 .board-row span[contenteditable="true"] { background: var(--snow); box-shadow: 0 0 0 1.5px var(--select); border-radius: 4px; padding: 0 3px; outline: none; cursor: text; user-select: text; -webkit-user-select: text; }
 
 /* ---------- stamps (like FigJam's wheel) ---------- */
-.wheel-stamps { position: absolute; bottom: 80px; z-index: 17; width: 220px; height: 220px; margin-left: -110px; border-radius: 50%; background: #fff; box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .15s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
+.wheel-stamps { position: absolute; bottom: calc(80px + var(--mode-h, 0px)); z-index: 17; width: 220px; height: 220px; margin-left: -110px; border-radius: 50%; background: #fff; box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .15s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
 .wheel-stamps.on { opacity: 1; pointer-events: auto; transform: none; }
 .ws-ring button { position: absolute; width: 50px; height: 50px; margin: -25px 0 0 -25px; border: 0; border-radius: 50%; background: none; display: grid; place-items: center; cursor: pointer; font-size: 30px; line-height: 1; transition: transform .15s, background .15s; }
 .ws-ring button:hover { background: var(--blush); transform: scale(1.15); }
 .ws-ring img, .sp-grid img { width: 40px; height: 40px; image-rendering: pixelated; pointer-events: none; }
 .ws-mid { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border: 0; border-radius: 50%; background: var(--ws-bg); font: 300 30px/1 var(--font); color: var(--ink); cursor: pointer; box-shadow: inset 0 0 0 1px rgb(from var(--select) r g b / .15); }
 .ws-mid:hover { background: var(--ws-bg-2); }
-.stamp-pick { position: absolute; bottom: 80px; z-index: 18; width: 340px; margin-left: -170px; padding: 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
+.stamp-pick { position: absolute; bottom: calc(80px + var(--mode-h, 0px)); z-index: 18; width: 340px; margin-left: -170px; padding: 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
 .stamp-pick.on { opacity: 1; pointer-events: auto; transform: none; }
 .sp-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 .sp-tabs button { flex: 1; padding: 8px 6px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
@@ -694,15 +697,14 @@ body.calm .card.stamp .st img, body.calm .sp-grid img, body.calm .ws-ring img { 
 
 .row-menu .rm-sep { height: 1px; margin: 4px 6px; background: var(--pn-menu-sep); }
 /* while exporting: just the cards, no app around them */
-body.exporting .side, body.exporting .dock, body.exporting .tray, body.exporting .top, body.exporting .keys, body.exporting .ghost, body.exporting .grid,
+body.exporting .side, body.exporting .dock, body.exporting .selbar, body.exporting .modebar, body.exporting .tray, body.exporting .top, body.exporting .keys, body.exporting .ghost, body.exporting .grid,
 body.exporting .marquee, body.exporting .shapepick, body.exporting .wheel-stamps, body.exporting .stamp-pick { visibility: hidden !important; }
 body.exporting .card .handle, body.exporting .card .knob, body.exporting .card .chip { display: none !important; }
 body.exporting .card.sel::after { display: none; }
 
 /* ---------- drawing ---------- */
-.drawbar { display: none; align-items: center; gap: 2px; height: 50px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); }
-.dock.drawing .tools, .dock.drawing .selbar { display: none !important; }
-.dock.drawing .drawbar { display: flex; }
+.drawbar { display: flex; align-items: center; gap: 2px; height: 50px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); }
+.drawbar[hidden] { display: none; }
 .db-done { height: 38px; padding: 0 16px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--hilite); font: 600 12.5px/1 var(--font); cursor: pointer; }
 .db-tool { width: 38px; height: 38px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; display: grid; place-items: center; cursor: pointer; color: var(--ink-soft); }
 .db-tool svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -802,7 +804,10 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .au-count { height: 34px; display: grid; place-items: center; font: 800 30px/1 var(--font); color: var(--accent-text); animation: pop .5s cubic-bezier(.2, .9, .3, 1.4); }
 
 /* ---------- Myra's chat window ---------- */
-.m-chat { position: absolute; right: 0; bottom: calc(100% + 12px); width: 380px; height: min(520px, calc(100vh - 140px)); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink);
+/* its height leaves room above it for drawing's or find's bar, and for the timer, which sits on it while it is open */
+.myra { --m-chat-w: 380px; --m-chat-h: min(520px, calc(100vh - 140px - var(--mode-h, 0px))); }
+.myra.timing { --m-chat-h: min(520px, calc(100vh - 180px - var(--mode-h, 0px))); }
+.m-chat { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); width: var(--m-chat-w); height: var(--m-chat-h); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; color: var(--ink);
   box-shadow: 0 20px 50px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(10px) scale(.97); transform-origin: 90% 100%; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2); }
 .myra.chat .m-chat { opacity: 1; pointer-events: auto; transform: none; }
 .myra.chat .m-bubble { display: none; }
@@ -1188,8 +1193,8 @@ body.dark .set-maker { background: var(--set-dark-warm); } body.dark .sm-sig { c
 .group-box span { position: absolute; left: 14px; top: -11px; padding: 3px 9px; border-radius: 134px; corner-shape: squircle; background: var(--ob-bg); color: var(--hilite); font: 700 10px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; }
 
 /* design thinking templates: a little menu above the toolbar */
-.tplpick { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(6px); z-index: 16; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
-.tplpick { max-height: calc(100vh - 130px); overflow: hidden; display: flex; flex-direction: column; gap: 0; }
+.tplpick { position: absolute; left: 50%; bottom: calc(84px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 16; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
+.tplpick { max-height: calc(100vh - 130px - var(--mode-h, 0px)); overflow: hidden; display: flex; flex-direction: column; gap: 0; }
 .tplpick .tp-list { display: grid; gap: 2px; min-height: 0; overflow: auto; scrollbar-width: thin; }
 .tplpick .tp-list [hidden] { display: none; }
 .tplpick .tp-none { padding: 14px 10px; font: 500 12.5px/1.4 var(--font); color: var(--ink-soft); text-align: center; }
@@ -1386,7 +1391,6 @@ body.dark .ly-n[contenteditable="true"] { background: var(--pn-dark-ink); }
 body.dark .dbs-track::before { background: rgb(from var(--hilite) r g b / .1); }
 body.dark .dbs-bub { background: var(--dbs-bg); box-shadow: 0 8px 24px rgb(from var(--shade) r g b / .45); }
 body.dark .dbs-knob { background: var(--coll-ink); }
-.dock.drawing .drawbar { position: relative; z-index: 40; }   /* the size bubble floats above Myra's hello */
 .db-size { position: relative; z-index: 2; }
 
 /* Myra points out the piece you picked in Layers */
@@ -1433,7 +1437,7 @@ body.phone .hub { display: grid; grid-template-columns: repeat(5, 1fr); align-it
 .hub-n:empty { display: none; }
 body.phone .dock .tools:not(.in-sheet) { display: none; }
 /* what's selected (or the pen) takes over the bottom bar */
-body.phone .dock.ctx .hub, body.phone .dock.drawing .hub { display: none; }
+body.phone .dock.ctx .hub, body.phone .dock:has(.drawbar:not([hidden])) .hub { display: none; }
 body.phone .dock .selbar, body.phone .dock .drawbar { width: 100%; height: var(--hub-h); overflow-x: auto; scrollbar-width: none; border-radius: 32px; corner-shape: squircle; padding: 6px 8px; justify-content: flex-start; }
 body.phone .dock .selbar::-webkit-scrollbar, body.phone .dock .drawbar::-webkit-scrollbar { display: none; }
 body.phone .dock .selbar > *, body.phone .dock .drawbar > * { flex: none; }
@@ -1727,7 +1731,7 @@ body.dark .dp-pdf { background: rgb(from var(--hilite) r g b / .07); }
 /* just the board: panels tuck away, a faint pill brings them back */
 .clean-btn { display: grid; place-items: center; width: 34px; height: 34px; margin-left: -4px; border: 0; border-radius: 14px; corner-shape: squircle; background: none; color: var(--ink-soft, var(--clean-ink-2)); cursor: pointer; }
 .clean-btn:hover { background: rgb(from var(--clean-bg) r g b / .08); color: var(--ink, var(--vd-ink)); }
-body.clean #side, body.clean #tray, body.clean #dock, body.clean #keys, body.clean #design, body.clean .top { opacity: 0 !important; visibility: hidden; pointer-events: none !important; }
+body.clean #side, body.clean #tray, body.clean #dock, body.clean #selbar, body.clean #modebar, body.clean #keys, body.clean #design, body.clean .top { opacity: 0 !important; visibility: hidden; pointer-events: none !important; }
 .clean-back { position: fixed; z-index: 60; left: 50%; bottom: 22px; translate: -50% 12px; display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 15px; border: 0; border-radius: var(--pill-r); corner-shape: squircle;
   background: rgb(from var(--hilite) r g b / .92); color: var(--ink, var(--vd-ink)); font: 600 13px/1 var(--font, "Figtree"), sans-serif; cursor: pointer; box-shadow: 0 8px 24px rgba(var(--sh), calc(.16 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k)));
   opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s, translate .35s cubic-bezier(.3, 1.4, .5, 1), visibility .3s; }
@@ -2075,6 +2079,7 @@ body.dark .tp-reset { background: rgb(from var(--hilite) r g b / .08); color: va
 .sb-pop { position: absolute; left: 50%; bottom: calc(100% + 14px); translate: -50% 0; z-index: 30; display: none; padding: 8px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--panel, #fff);
   box-shadow: 0 16px 40px rgba(78, 60, 42, .2), 0 0 0 1px rgba(0, 0, 0, .05); white-space: nowrap; }
 .sb-popw.open > .sb-pop { display: flex; animation: sbPop .18s cubic-bezier(.3, 1.4, .5, 1); }
+.sb-popw.down > .sb-pop { bottom: auto; top: calc(100% + 14px); }   /* no room above: it drops below the bar */
 @keyframes sbPop { from { opacity: 0; transform: translateY(6px) scale(.97); } }
 .sb-pop .sb-dots { display: flex; gap: 6px; padding: 2px; }
 .sb-sizelist { display: grid; gap: 2px; min-width: 150px; }
@@ -2089,7 +2094,6 @@ body.dark .sb-pop { background: #302b25; box-shadow: 0 16px 40px rgba(0, 0, 0, .
 body.dark .sb-popw.open > .sb-poptrig, body.dark .sb-sizelist button.on { background: rgba(255, 255, 255, .12); }
 /* no divider lines: each control (or tight group, like B I U S) is its own soft pill */
 .selbar .sb-sep { display: none !important; }
-.dock .selbar { gap: 6px; padding: 6px 7px; }
 .selbar { --pill: rgba(128, 110, 92, .07); }
 body.dark .selbar { --pill: rgba(255, 255, 255, .08); }
 .selbar > .sb-ic, .selbar > .sb-txt, .selbar > .sb-popw > .sb-poptrig, .selbar > .sb-tilt, .selbar > .sb-sizes, .selbar > .sb-font,
@@ -2107,11 +2111,11 @@ body.dark .selbar .sb-sizes.sb-style button.on { background: #f6f2ee; color: #30
 .sb-morebody > .sb-g > * { background: var(--pill); border-radius: var(--pill-r); corner-shape: squircle; }
 body.dark .sb-glass { background: rgba(248, 189, 130, .2) !important; color: var(--ink) !important; box-shadow: inset 0 0 0 1px rgba(250, 208, 165, .35) !important; }
 /* the selection bar itself is frosted glass (the pills inside stay as they are) */
-.dock .selbar { background: rgba(255, 255, 255, .55); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 0 0 1px rgba(255, 255, 255, .6), 0 10px 30px rgba(137, 110, 83, .16); }
+.selbar { background: rgb(from var(--hilite) r g b / .55); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .95), inset 0 0 0 1px rgb(from var(--hilite) r g b / .6), 0 10px 30px rgb(from var(--sec-shadow) r g b / .16); }
 .selbar { --pill: rgba(255, 255, 255, .7); }
 .selbar .sb-sizes.sb-style button:hover { background: rgba(255, 255, 255, .9); }
-body.dark .dock .selbar { background: rgba(47, 41, 35, .55); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 0 0 1px rgba(255, 255, 255, .08), 0 10px 30px rgba(0, 0, 0, .35); }
+body.dark .selbar { box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .16), inset 0 0 0 1px rgb(from var(--hilite) r g b / .08), 0 10px 30px rgb(from var(--shade) r g b / .35); }   /* its background is the dark surface (body.dark .selbar, above) */
 /* ---------- one look for every selection bar: same icon size, color and line weight; same text size and color ---------- */
 .selbar { --sb-icon: 19px; --sb-ink: var(--ink-soft); --sb-on: var(--ink); --sb-text: 600 12.5px/1 var(--font); }
 .selbar svg:not(.sb-caret):not(.sb-dots3) { width: var(--sb-icon) !important; height: var(--sb-icon) !important; }
@@ -2365,7 +2369,7 @@ body.dark .rz-grip:hover > svg path, body.dark .rz-grip.on > svg path { fill: va
 .sb-cases button.on { background: var(--blush) !important; } body.dark .sb-cases button.on { background: rgba(255, 255, 255, .14) !important; }
 .sb-cases button.on, .sb-cases button.on b { color: var(--ink) !important; } body.dark .sb-cases button.on, body.dark .sb-cases button.on b { color: #fff !important; }
 /* the selection bar (and anything that opens from it, like dropdowns inside ···) sits above Myra's pill */
-.dock .selbar { position: relative; z-index: 6; } .dock .myra { z-index: 2; } .dock .selbar .sb-popw.open { z-index: 10; }
+.dock .selbar, .dock .modebar { position: relative; z-index: 6; } .dock .myra { z-index: 2; } .dock .selbar .sb-popw.open { z-index: 10; }
 .set-feedback { background: var(--set-feedback); } .set-feedback .sf-ic { font-size: 24px; flex: none; } body.dark .set-feedback { background: rgb(from var(--set-feedback-dark) r g b / .14); }
 
 /* About → Licenses: the same panel as Settings, above it */
@@ -2653,11 +2657,12 @@ body.dz-dragging, body.dz-dragging * { cursor: grabbing !important; }
 .slash-menu button.on, .slash-menu button:hover { background: rgb(from var(--shade) r g b / .06); }
 body.dark .slash-menu button.on, body.dark .slash-menu button:hover { background: rgb(from var(--hilite) r g b / .1); }
 
-/* the find bar: sits to the right of Myra's pill on the same line, the toolbar's height and look */
-.find-bar { position: absolute; left: calc(100% + 10px); bottom: 0; height: 50px; display: flex; align-items: center; gap: 4px; padding: 0 6px 0 7px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); animation: fb-in .18s ease-out; }
+/* the find bar: in the mode bar just above the bottom bar, with the toolbar's height and look */
+.find-bar { height: 50px; display: flex; align-items: center; gap: 4px; padding: 0 6px 0 7px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); animation: fb-up .18s ease-out; }
 .find-bar[hidden] { display: none; }
 body[data-tb="s"] .find-bar { height: 46px; } body[data-tb="l"] .find-bar { height: 58px; }
 @keyframes fb-in { from { opacity: 0; transform: translateX(-6px); } }
+@keyframes fb-up { from { opacity: 0; transform: translateY(6px); } }
 .fb-field { display: flex; align-items: center; gap: 8px; height: 34px; width: 190px; padding: 0 10px; border-radius: 11px; corner-shape: squircle; background: var(--fb-bg); color: var(--ink-soft); cursor: text; }
 .fb-field svg { width: 15px; height: 15px; flex: none; }
 .fb-field input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: 500 13px/1.2 var(--font); color: var(--ink); user-select: text; -webkit-user-select: text; }
@@ -2674,8 +2679,6 @@ body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
 /* the card you are on gets a ring (the ones that don't match fade, as in Focus mode) */
 .card.find-cur { outline: 2.5px solid var(--select); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
-.find-bar.up { left: auto; right: 0; bottom: calc(100% + 12px); }
-.dock.finding .tools, .dock.finding .selbar.on { display: none !important; }
 
 /* the timer: a small chip above Myra's pill, and her fuss when it runs out */
 .timer-chip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 3; height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 11px; max-width: 280px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))); font: 600 12px/1 var(--font); overflow: hidden; animation: fb-in .18s ease-out; }
@@ -2687,7 +2690,10 @@ body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
 .timer-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: var(--pink-deep, var(--dt-shadow)); transition: width 1s linear; }
 body.dark .timer-chip { background: rgb(from var(--clean-bg-2) r g b / .97); color: var(--hilite); } body.dark .timer-chip b { color: var(--hilite); }
 body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-panels.panel-dark .timer-chip { color: var(--coll-ink); }
-.dock .myra.timing .m-bubble { bottom: calc(100% + 52px); } .myra.timing .m-chat { bottom: calc(100% + 52px); }
+/* her reply clears the higher of the timer and drawing's or find's bar; with the chat open the timer sits on its middle,
+   clear of the right-hand panels */
+.dock .myra.timing .m-bubble { bottom: calc(100% + 12px + max(40px, var(--mode-h, 0px))); }
+body:not(.phone) .dock .myra.chat .timer-chip { left: calc(100% - var(--m-chat-w) / 2); bottom: calc(100% + 12px + var(--mode-h, 0px) + var(--m-chat-h) + 8px); }
 .m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
 .myra.partying:not(.chat) .m-pill { animation: m-party .55s ease-in-out 6; }
 .myra.partying.chat .goo-slot.perched #goo { transform-origin: 50% 100%; animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she wiggles herself; on the sprite, because rotate/scale on the slot would scale and swing her whole offset from the button */

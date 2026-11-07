@@ -38,6 +38,7 @@ export function toPointer() {
 function syncPointer() {
   const p = $('tools').querySelector('[data-add="pointer"]');
   if (!p) return;
+  $('tools').querySelector('[data-add="draw"]')?.classList.toggle('on', drawOn);
   const busy =
     drawOn ||
     placing ||
@@ -67,7 +68,7 @@ export function init21() {
   {
     const mo = new MutationObserver(() => syncPointer());
     mo.observe($('tools'), { subtree: true, attributes: true, attributeFilter: ['class'] });
-    mo.observe($('dock'), { attributes: true, attributeFilter: ['class'] });
+    mo.observe($('drawbar'), { attributes: true, attributeFilter: ['hidden'] });
     ['shapePick', 'tplPick', 'stampWheel', 'stampPick'].forEach(id => {
       $(id) && mo.observe($(id), { attributes: true, attributeFilter: ['class'] });
     });
@@ -79,7 +80,8 @@ export function init21() {
     const t = b.dataset.add ?? '';
     if (t === 'pointer') return toPointer();
     if (t === 'pen') return penT ? endPen(true) : startPen();
-    if (penT) endPen(true); // picking another tool finishes the pen line
+    if (penT) endPen(true); // picking another tool finishes the pen line, and drawing
+    if (drawOn && t !== 'draw') exitDraw();
     if (t === 'vnote') {
       stopPlacing();
       return openVaultPicker();

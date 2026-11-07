@@ -233,3 +233,65 @@ export function richNotes(): FixtureBoard {
   ];
   return { id: 'rich', name: 'Rich notes', color: 'mint', cards, links: [], tray: [], view: { x: 160, y: 140, z: 1 } };
 }
+
+// A board for Myra's replies: a kanban and a plain collection with cards in them, linked notes, a list, a doc, a
+// picture, a swatch, and Unsorted with two tied pairs and a loose card.
+export function replyBoard(id = 'reply', name = 'Replies'): FixtureBoard {
+  const note = (nid: string, x: number, y: number, text: string, more: Record<string, unknown> = {}) =>
+    at(nid, 'note', x, y, 220, 140, { text, ...more });
+  const cards: Card[] = [
+    at('kb', 'coll', 0, 0, 836, 300, {
+      text: 'Backlog',
+      color: 'sky',
+      kanban: true,
+      cols: 3,
+      colNames: ['To do', 'Doing', 'Done'],
+      colLimit: [0, 0, 0],
+      colOf: { k1: 0, k2: 0 },
+      kids: ['k1', 'k2'],
+    }),
+    note('k1', 0, 0, 'Write the brief'),
+    note('k2', 0, 0, 'Book the room'),
+    at('ideas', 'coll', 900, 0, 288, 200, { text: 'Ideas', color: 'mint', cols: 1, kids: ['i1'] }),
+    note('i1', 0, 0, 'A picnic'),
+    note('n1', 0, 500, 'First note'),
+    note('n2', 260, 500, 'Second note'),
+    note('n3', 520, 500, 'Third note'),
+    note('n4', 780, 500, 'Fourth note', { tags: ['idea'] }),
+    at('t1', 'todo', 0, 700, 240, 180, {
+      text: 'Errands',
+      items: [
+        { t: 'milk', done: true },
+        { t: 'bread', done: false },
+      ],
+    }),
+    at('d1', 'doc', 300, 700, 240, 52, { text: 'Plan', body: '# Plan\n\nFirst draft' }),
+    at('p1', 'image', 600, 700, 240, 200, { src: 'stamps/myra-happy.png' }),
+    at('s1', 'swatch', 900, 700, 120, 150, { hex: '#e88a24', label: 'Cloudberry' }),
+  ];
+  const tray = [
+    note('u1', 0, 0, 'Tied one', { tie: 'u1' }),
+    note('u2', 240, 0, 'Tied two', { tie: 'u1' }),
+    note('u3', 0, 0, 'Loose idea'),
+    note('u4', 0, 0, 'Tied three', { tie: 'u4' }),
+    note('u5', 240, 0, 'Tied four', { tie: 'u4' }),
+  ];
+  return {
+    id,
+    name,
+    color: 'butter',
+    cards,
+    links: [
+      { id: 'L1', a: 'n1', b: 'n2' },
+      { id: 'L2', a: 'n3', b: 'n4', arrow: true },
+    ],
+    tray,
+    trayLinks: [
+      { id: 'TL1', a: 'u1', b: 'u2' },
+      { id: 'TL2', a: 'u4', b: 'u5' },
+    ],
+    tags: ['idea'],
+    view: { x: 160, y: 140, z: 1 },
+    palette: [],
+  };
+}

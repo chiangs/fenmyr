@@ -1,3 +1,4 @@
+import type { MyraReply } from '../../shared/myraReply.ts';
 import type { Chattiness } from '../../shared/ops.ts';
 import { copyCards, pasteCards } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
@@ -28,7 +29,8 @@ import { refreshBoards } from '../library/rowMenu.ts';
 import { boardsIn, moveBoard, putFolder } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
 import { ANIMS, animIntent, animName, animRequest, lastAnim, playAnim, stopAnim } from '../myra/anim.ts';
-import { applyMyra } from '../myra/apply.ts';
+import { applyHeld, holdReply, previewHeld, Turn } from '../myra/apply.ts';
+import type { Picked } from '../myra/applyTypes.ts';
 import {
   bdState,
   birthdayCheck,
@@ -43,6 +45,7 @@ import { ask } from '../myra/chat.ts';
 import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
 import { perched, perchGoo } from '../myra/perch.ts';
+import { replyRecord } from '../myra/replyMemory.ts';
 import { snapshot } from '../myra/snapshot.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
@@ -56,6 +59,8 @@ import { GROUPS, placePiece } from '../wireframe/drawer.ts';
 import { PIECES } from '../wireframe/pieces.ts';
 import { restack } from '../wireframe/stack.ts';
 import { openSetup, startTour } from './onboarding.ts';
+
+const NO_VAULT: Picked = { asked: false, used: [] };
 
 // what tests reach through window.__fenmyr
 const makeHooks = () => ({
@@ -153,7 +158,11 @@ const makeHooks = () => ({
   get board() {
     return session.board;
   },
-  applyMyra,
+  // a reply as if Claude had just sent it: it waits its turn behind any other
+  applyMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
+    Turn.take(async turn => applyHeld(turn, await holdReply(r, q, ctx)), session.board.id),
+  replyRecord,
+  previewMyra: async (r: MyraReply) => previewHeld(await holdReply(r, '', NO_VAULT)),
   fit,
   lib: () => snapshot().library,
   docEditor: liveEditor,

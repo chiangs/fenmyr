@@ -29,8 +29,11 @@ import { toPointer } from '../ui/toolbar.ts';
 import { pickWF } from '../wireframe/designPanel.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { groupSel, restack } from '../wireframe/stack.ts';
+import { initKeyed, keyedButton } from './keyed.ts';
 
 let CLEAN_EL: Element[] = [];
+// the letters below that start placing a card, a wireframe piece or a picture (Shift+V, video, is checked on its own)
+const TOOL_KEYS = ['n', 't', 'c', 'g', 'r', 'x', 'd', 'l', 'a', 'i'];
 
 function setClean(on: boolean) {
   if (on === document.body.classList.contains('clean') || (on && document.body.classList.contains('phone'))) return;
@@ -55,9 +58,10 @@ export const openSettingsKey = () => {
 };
 export function init20() {
   // ---------- just the board: every panel tucks away (Ctrl+\, like Figma), and comes back with Ctrl+\ or Esc ----------
-  CLEAN_EL = [...['side', 'tray', 'dock', 'keys', 'design'].map(id => $(id)), document.querySelector('.top')].filter(
-    el => el !== null,
-  );
+  CLEAN_EL = [
+    ...['side', 'tray', 'dock', 'modebar', 'keys', 'design'].map(id => $(id)),
+    document.querySelector('.top'),
+  ].filter(el => el !== null);
 
   $('cleanBtn').onclick = () => setClean(true);
 
@@ -67,7 +71,10 @@ export function init20() {
     $('cleanBack').addEventListener(t, e => e.stopPropagation());
   });
 
+  initKeyed();
   addEventListener('keydown', e => {
+    // Space and Enter press a button the keyboard is on, so Enter on the crop bar's Cancel cancels
+    if ((e.key === ' ' || e.key === 'Enter') && !e.metaKey && !e.ctrlKey && !e.altKey && keyedButton(e.target)) return;
     const typing = isTyping(e.target);
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
@@ -303,6 +310,8 @@ export function init20() {
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
+    // a letter that picks up another tool puts drawing down, as picking it from the toolbar does
+    if (drawOn && (TOOL_KEYS.includes(k) || (k === 'v' && e.shiftKey))) exitDraw();
     if (k === 'f') setFocus(!session.focusSet);
     if (k === 'n') startPlacing('note');
     if (k === 't') startPlacing('title');
