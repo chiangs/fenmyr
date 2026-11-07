@@ -8,21 +8,21 @@ import { drawVec, syncCornerPop, vec, vecCard } from '../tools/penEdit.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
 import { caret, closeSbPops, G, markOnce, marks, pct, pop, rebuildBar, syncPair } from './barKit.ts';
+import { every, group } from './group.ts';
 import { selCards } from './selected.ts';
 
 const CHIPS = [0, 4, 8, 12, 16, 24, 32];
 
 const ROUNDABLE = typesWith('roundable');
-export const roundable = (c: Card) =>
+const roundable = (c: Card) =>
   ROUNDABLE.includes(c.type) && (c.type !== 'shape' || ['rect', 'tri', 'star'].includes(c.shape || 'rect'));
 
 // a picture is a little round unless you say otherwise
 const radiusOf = (c: Card) => c.radius ?? (c.type === 'image' ? 12 : 0);
 
-export function cornersHtml(rnd: Card[]) {
-  const first = rnd[0];
-  if (!first) return '';
-  const cr = radiusOf(first),
+function cornersHtml(rnd: [Card, ...Card[]]) {
+  const first = rnd[0],
+    cr = radiusOf(first),
     same = rnd.every(c => radiusOf(c) === cr),
     label = same ? (cr >= 999 ? 'Pill' : String(cr)) : '–',
     range = Math.min(80, cr),
@@ -86,7 +86,7 @@ function setCorners(raw: string | number, keepOpen?: boolean) {
   }
 }
 
-export function initCorners() {
+function initCorners() {
   $('selbar').addEventListener('input', e => {
     const p = syncPair(e.target, 'data-corners-range', 'data-corners-num');
     if (!p) return;
@@ -119,3 +119,5 @@ export function initCorners() {
     true,
   );
 }
+
+export const corners = group({ on: every(roundable), html: cornersHtml, init: initCorners });

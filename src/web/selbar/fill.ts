@@ -10,6 +10,7 @@ import { cssToHex } from '../ui/color.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
 import { caret, closeSbPops, G, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
+import { every, group, only } from './group.ts';
 import { selCards } from './selected.ts';
 
 const BOX_FILLS = [
@@ -31,9 +32,9 @@ const TEXT_FILLS = ['#27272a', '#ffffff', '#ff5a6e', '#f6b45e', '#f7b955', '#5fc
 const ANY_FILL = typesWith('anyFill'),
   TEXT_COLOUR = typesWith('textColour');
 // a box holding a picture has nothing to fill, nor has an open pen shape
-export const fillable = (c: Card) =>
+const fillable = (c: Card) =>
   ANY_FILL.includes(c.type) && !(c.type === 'box' && c.src) && !(c.type === 'path' && !c.closed);
-export const isTextFill = (c: Card) => TEXT_COLOUR.includes(c.type);
+const isTextFill = (c: Card) => TEXT_COLOUR.includes(c.type);
 
 // going to No fill: if it has no border yet, it gets one in the color the fill had, so it never just disappears
 function autoBorder(c: Card, was: string | null | undefined) {
@@ -51,7 +52,7 @@ const dot = (attr: string, v: string, on: boolean) => {
 };
 
 // box (and screen) fill: wireframe grays, your pastels, and any color
-export function boxFillHtml(f: Card) {
+function boxFillHtml(f: Card) {
   const cur = fillOf(f) || '#ffffff',
     none = cur === 'none',
     noneCls = none ? ' sb-none' : '',
@@ -71,7 +72,7 @@ export function boxFillHtml(f: Card) {
 }
 
 // text color for titles and wireframe text, with No fill (hollow letters)
-export function textFillHtml(f: Card) {
+function textFillHtml(f: Card) {
   const cur = f.type === 'title' ? f.tc || '' : f.color || '#27272a',
     none = cur === 'none',
     noneCls = none ? ' sb-none' : '',
@@ -91,7 +92,7 @@ export function textFillHtml(f: Card) {
 }
 
 // a shape's colour: the named shape colours, No fill (not for lines), or any colour
-export function shapeFillHtml(one: CardOf<'shape'>) {
+function shapeFillHtml(one: CardOf<'shape'>) {
   const fill = one.fill || 'gray',
     named = !!SHAPE_FILL[fill],
     cur = named ? `var(--sh-${fill})` : fill,
@@ -168,7 +169,7 @@ function setFill(v: string, keep?: boolean) {
   }
 }
 
-export function initShapeFill() {
+function initShapeFill() {
   $('selbar').addEventListener('click', e => {
     const v = closestTo(e.target, '[data-sf]')?.dataset.sf,
       cs = selCards(),
@@ -198,7 +199,7 @@ export function initShapeFill() {
   });
 }
 
-export function initFills() {
+function initTextFill() {
   $('selbar').addEventListener(
     'click',
     e => {
@@ -226,7 +227,9 @@ export function initFills() {
     },
     true,
   );
+}
 
+function initFill() {
   $('selbar').addEventListener(
     'click',
     e => {
@@ -287,3 +290,7 @@ export function initFills() {
     }
   });
 }
+
+export const fill = group({ on: every(fillable), html: cs => boxFillHtml(cs[0]), init: initFill });
+export const textColour = group({ on: every(isTextFill), html: cs => textFillHtml(cs[0]), init: initTextFill });
+export const shapeFill = group({ on: ctx => only(ctx, 'shape'), html: shapeFillHtml, init: initShapeFill });

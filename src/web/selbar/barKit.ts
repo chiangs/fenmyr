@@ -1,5 +1,8 @@
+import type { Card } from '../../shared/model.ts';
+import { renderCard } from '../canvas/render.ts';
+import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
-import { remember } from '../core/history.ts';
+import { remember, save } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
@@ -38,6 +41,8 @@ export const pop = (id: string, trig: string, body: string, tip: string) =>
 
 // a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first, 0 last)
 export const G = (fold: number, html: string) => `<span class="sb-g" data-fold="${fold}">${html}</span>`;
+
+export const SEP = '<span class="sb-sep"></span>';
 
 export const btn = (a: string, icon: string, tip: string, on?: boolean, disabled?: boolean) => {
   const cls = on ? 'on' : '',
@@ -86,6 +91,16 @@ export function openBarColor(o: {
 export const rebuildBar = () => {
   $('selbar').dataset.key = '';
 };
+
+// after a change made from the bar: the cards, then the bar
+export function redraw(cs: Card[]) {
+  cs.forEach(c => {
+    renderCard(c);
+  });
+  selectOnly(cs.map(c => c.id));
+  rebuildBar();
+  save();
+}
 
 // the ··· menu that groups fold into, hidden while it holds none
 export const moreHtml = () => {

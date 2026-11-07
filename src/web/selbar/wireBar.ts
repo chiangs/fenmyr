@@ -6,6 +6,7 @@ import { session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo } from '../ui/dom.ts';
 import { caret, closeSbPops, G, ICON, moreHtml, openBarColor, pop } from './barKit.ts';
+import { group } from './group.ts';
 
 const WCOL = [
   ['Default (follows the theme)', ''],
@@ -37,7 +38,7 @@ const wline = (n: number) =>
 export const wireKey = (lw: Link) => `w${lw.id}${lw.bend}${lw.dash}${lw.arrow}${!!(lw.pa || lw.pb)}${lw.w}${lw.color}`;
 
 // the bar for a selected connector: colour, weight, curved or straight, dashes, arrow, ends
-export function wireBarHtml(lw: Link) {
+function wireBarHtml(lw: Link) {
   const cw = wireColor(lw),
     ww = wireW(lw),
     CARET = caret();
@@ -65,7 +66,6 @@ export function wireBarHtml(lw: Link) {
   const sep = `<span class="sb-sep"></span>`,
     del = ICON.del ?? '';
   return (
-    `<span class="sb-label">Connector</span>` +
     G(0, colorTrig + weightTrig) +
     G(
       1,
@@ -95,7 +95,7 @@ const keepSettings = () => {
   } catch {}
 };
 
-export function initWireBar(place: () => void) {
+function initWireBar(place: () => void) {
   $('selbar').addEventListener(
     'click',
     e => {
@@ -179,3 +179,9 @@ export function initWireBar(place: () => void) {
     true,
   );
 }
+
+export const wire = group({
+  on: ctx => (ctx.kind === 'connector' ? ctx.link : null),
+  html: wireBarHtml,
+  init: initWireBar,
+});
