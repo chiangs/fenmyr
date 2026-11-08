@@ -10,7 +10,7 @@ import { ask } from './chat.ts';
 import { drawActs } from './replyView.ts';
 import { paintStatus } from './status.ts';
 
-// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
+// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and Earlier chats brings one back
 const CHATS_KEPT = 10;
 
 // A prototype board always keeps its chat, whatever Settings says. It's the record of how the prototype was built.

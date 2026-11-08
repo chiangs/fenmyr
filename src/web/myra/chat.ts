@@ -25,7 +25,7 @@ import type { Sees } from './sees.ts';
 import { takeSees } from './seesStrip.ts';
 import { initSlashMenu, slash } from './slash.ts';
 import { snapshot } from './snapshot.ts';
-import { initStatus, paintStatus, startJob } from './status.ts';
+import { initStatus, noteSignIn, paintStatus, startJob } from './status.ts';
 
 // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
 export function tidyNotes() {
@@ -201,6 +201,7 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),
       },
     );
+    noteSignIn(false);
     await applyHeld(turn, await holdReply(parse(raw), q, ctx));
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
@@ -213,6 +214,7 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
     }
     if (SIGNIN.test(why)) {
       signinHint = true;
+      noteSignIn(true);
       return offlineMyra(
         q,
         "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account.",

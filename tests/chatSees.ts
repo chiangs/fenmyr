@@ -1,11 +1,15 @@
 // The "Myra sees" strip and the chat's status line. In Node: which chips show, what they send, and how × and + change
 // one message. In the app: the board chip can't be removed, × on the selection leaves the cards out of that message
 // and keeps them selected, the web and a vault go with one message as the strip says, a queued question keeps the
-// chips it was sent with, and the header says Ready, Thinking… or Reading N notes.
+// chips it was sent with, even when the vault or the web is taken away before its turn, "Yes, make it" and "Search my
+// vault" ask again with the chips the question had, and the header says Ready, Thinking…, Reading N notes, Not signed
+// in or Needs Claude Code.
 import assert from 'node:assert';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { capture, chipsOf, NO_FLIPS, type SeesInput, toggle } from '../src/web/myra/sees.ts';
+import { contrast } from '../src/web/ui/color.ts';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
@@ -62,14 +66,15 @@ async function check(name: string, run: () => Promise<void>) {
   }
 }
 
-type Sent = { q: string; selected: string[]; web: boolean; read: boolean; notes: number };
-// her answers record what went with each question; a question holding "slow" waits until `release()`
+type Sent = { q: string; selected: string[]; web: boolean; read: boolean; notes: number; confirmed: boolean };
+// her answers record what went with each question; a question holding "slow" waits until `release()`, one holding
+// CONFIRM asks before making something, OFFER offers to search the vault, and SIGNIN fails as signed out
 await page.evaluate(() => {
   const sent: Sent[] = [];
   Reflect.set(window, 'sent', sent);
   let open: () => void = () => {};
   Reflect.set(window, 'release', () => open());
-  window.Fenmyr.ask = async (prompt, snap, _confirmed, opts) => {
+  window.Fenmyr.ask = async (prompt, snap, confirmed, opts) => {
     const cards: unknown[] = Array.isArray(snap.cards) ? snap.cards : [],
       field = (c: unknown, k: string): unknown => (typeof c === 'object' && c ? Reflect.get(c, k) : undefined);
     sent.push({
@@ -78,8 +83,12 @@ await page.evaluate(() => {
       web: !!opts?.web,
       read: !opts?.canVault,
       notes: opts?.vaultNotes?.length ?? 0,
+      confirmed: !!confirmed,
     });
     if (prompt.includes('slow')) await new Promise<void>(r => (open = r));
+    if (prompt.includes('SIGNIN')) throw new Error('Not logged in');
+    if (prompt.includes('CONFIRM') && !confirmed) return JSON.stringify({ say: 'Shall I?', confirm: 'Yes, make it' });
+    if (prompt.includes('OFFER') && opts?.canVault) return JSON.stringify({ say: 'I could look', offerVault: true });
     return JSON.stringify({ say: 'ok' });
   };
 });
@@ -123,12 +132,48 @@ await check('× on the selection leaves the cards out of that message and keeps 
     return chip ? getComputedStyle(chip).borderTopColor === want : false;
   });
   assert.ok(blue, 'the selection chip is blue like selection');
+  const target = await page.evaluate(() => {
+    const x = document.querySelector('#mcSees [data-chip="sel"] .mcs-x'),
+      r = x?.getBoundingClientRect();
+    if (!x || !r) return [];
+    const cx = r.left + r.width / 2,
+      cy = r.top + r.height / 2;
+    return [
+      [cx - 11.5, cy],
+      [cx + 11.5, cy],
+      [cx, cy - 11.5],
+      [cx, cy + 11.5],
+    ].map(([px = 0, py = 0]) => x.contains(document.elementFromPoint(px, py)));
+  });
+  assert.deepStrictEqual(target, [true, true, true, true], '× answers across a 24 px target');
   await page.click(strip('[data-chip="sel"] .mcs-x'));
   assert.doesNotMatch(
     (await page.getAttribute('#mcInput', 'placeholder')) ?? '',
     /these 2/,
     'the hint stops saying so',
   );
+  // hovered, it turns to full ink
+  await page.mouse.move(1, 1);
+  for (const dark of [false, true]) {
+    const [ink, ground] = await page.evaluate(dark => {
+      document.body.classList.toggle('dark', dark);
+      const t = document.querySelector('#mcSees [data-chip="sel"] .mcs-t'),
+        hex = (c: string) =>
+          `#${(c.match(/\d+(\.\d+)?/g) ?? [])
+            .slice(0, 3)
+            .map(n => Math.round(Number(n)).toString(16).padStart(2, '0'))
+            .join('')}`;
+      let el = t instanceof Element ? t : null;
+      while (el && /rgba\(.*, 0\)|transparent/.test(getComputedStyle(el).backgroundColor)) el = el.parentElement;
+      const out = [hex(t ? getComputedStyle(t).color : ''), hex(el ? getComputedStyle(el).backgroundColor : '')];
+      document.body.classList.remove('dark');
+      return out;
+    }, dark);
+    assert.ok(
+      contrast(ink ?? '', ground ?? '') >= 4.5,
+      `${dark ? 'dark' : 'light'}: the left-out selection chip reads at 4.5:1 (${ink} on ${ground})`,
+    );
+  }
   const one = await asked('question one');
   assert.deepStrictEqual(one.selected, [], 'the message goes without the cards');
   assert.deepStrictEqual(await page.evaluate(() => window.__fenmyr.sel.sort()), ['n1', 'n2'], 'they stay selected');
@@ -213,6 +258,113 @@ await check('a queued question keeps the chips it was sent with', async () => {
   assert.strictEqual(sent.two?.read, true, 'and the vault added for it');
 });
 
+const flip = (chip: string) => page.click(strip(`[data-chip="${chip}"]${chip === 'vault' ? '' : ' .mcs-x'}`));
+const setAccess = (ai: boolean, web: boolean) =>
+  page.evaluate(
+    ([ai, web]) => {
+      const M = window.__fenmyr,
+        grant = M.board.vaultAccess?.[0],
+        box = document.querySelector<HTMLInputElement>('[data-set="webAccess"]');
+      if (!grant || !box) throw new Error('no vault grant or web setting');
+      grant.ai = ai;
+      box.checked = web;
+      box.dispatchEvent(new Event('change', { bubbles: true }));
+      M.applyToolbar();
+    },
+    [ai, web] as const,
+  );
+const sentSince = async (n: number) => {
+  await page.waitForFunction(n => Reflect.get(window, 'sent').length > n, n);
+  const all: Sent[] = await page.evaluate(() => Reflect.get(window, 'sent'));
+  return all.slice(n);
+};
+const sentCount = () => page.evaluate(() => Reflect.get(window, 'sent').length);
+const tap = (name: RegExp) => page.getByRole('button', { name }).last().click();
+
+await check('a queued question goes without a vault or the web taken away before its turn', async () => {
+  const zero = page.evaluate(() => window.__fenmyr.ask('slow first'));
+  await page.waitForFunction(() => Reflect.get(window, 'sent').some((s: Sent) => s.q.endsWith('slow first')));
+  await flip('vault');
+  const queued = page.evaluate(() => window.__fenmyr.ask('taken away: what do I know about cloudberries?'));
+  await setAccess(false, false);
+  await page.evaluate(() => Reflect.get(window, 'release')());
+  await Promise.all([zero, queued]);
+  const all: Sent[] = await page.evaluate(() => Reflect.get(window, 'sent'));
+  const s = all.findLast(x => x.q.includes('taken away'));
+  assert.strictEqual(s?.notes, 0, 'no notes from the vault whose access was taken away');
+  assert.strictEqual(s?.web, false, 'and no web once it was turned off');
+  await setAccess(true, true);
+});
+
+await check('"Yes, make it" asks again with the chips the question had', async () => {
+  await page.evaluate(() => {
+    window.__fenmyr.selectOnly(['n1', 'n2']);
+    window.__fenmyr.applyToolbar();
+  });
+  await flip('sel');
+  await flip('web');
+  await flip('vault');
+  const n = await sentCount();
+  await asked('CONFIRM cloudberries');
+  const [first] = await sentSince(n);
+  assert.deepStrictEqual(
+    [first?.selected, first?.web, (first?.notes ?? 0) > 0],
+    [[], false, true],
+    'the question goes without the cards and the web, with the vault',
+  );
+  await tap(/Yes, make it/);
+  const [again] = await sentSince(n + 1);
+  assert.ok(again?.confirmed, 'it asks again to make it');
+  assert.deepStrictEqual(
+    [again?.selected, again?.web, (again?.notes ?? 0) > 0],
+    [[], false, true],
+    'with the same chips, not the strip as it is now',
+  );
+});
+
+await check('"Search my vault" keeps the chips the question had and adds the vault', async () => {
+  await page.evaluate(() => {
+    window.__fenmyr.selectOnly(['n1', 'n2']);
+    window.__fenmyr.applyToolbar();
+  });
+  await flip('sel');
+  await flip('web');
+  const n = await sentCount();
+  await asked('OFFER cloudberries');
+  const [first] = await sentSince(n);
+  assert.deepStrictEqual(
+    [first?.selected, first?.web, first?.notes],
+    [[], false, 0],
+    'the question goes as the strip said',
+  );
+  await tap(/Search my vault/);
+  const [again] = await sentSince(n + 1);
+  assert.deepStrictEqual(
+    [again?.selected, again?.web, (again?.notes ?? 0) > 0],
+    [[], false, true],
+    'asking again keeps the cards and the web out, and reads the vault',
+  );
+  await page.evaluate(() => window.__fenmyr.selectOnly([]));
+});
+
+await check('the header says Not signed in until an answer comes back', async () => {
+  await asked('SIGNIN hello');
+  assert.strictEqual(await status(), 'Not signed in');
+  await asked('hello again');
+  assert.strictEqual(await status(), 'Ready');
+});
+
 assert.deepStrictEqual(l.errors, []);
 await l.close();
+
+// without Claude Code the header says so before anything is asked
+const PATH = (process.env.PATH ?? '')
+  .split(':')
+  .filter(p => !p.startsWith(os.homedir()))
+  .join(':');
+const bare = await launch({ boards: [replyBoard('bare', 'Bare')], open: 'bare', env: { PATH } });
+await bare.page.click('#mPill');
+await bare.page.waitForFunction(() => document.getElementById('mcStatus')?.textContent === 'Needs Claude Code');
+assert.deepStrictEqual(bare.errors, []);
+await bare.close();
 console.log('SEES OK');

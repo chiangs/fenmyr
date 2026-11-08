@@ -259,6 +259,11 @@ try {
   await page.evaluate(() => window.__fenmyr.ask('Is it nearly done?'));
   assert.match(await lastMyra(), /\| ok$/, 'a question answered while the build runs');
   assert.match(await status(), /^Building/, 'leaves Building in the header');
+  assert.strictEqual(
+    await page.textContent('#mcStatus [role="status"]'),
+    'Building',
+    'screen readers hear Building, not each file it writes',
+  );
   await until(async () => (await lastMyra()).split('I built the heading').length === 4, 'the slow build ends');
   assert.strictEqual(await status(), 'Ready', 'and then the header is Ready');
 

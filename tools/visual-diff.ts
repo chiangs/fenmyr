@@ -171,6 +171,8 @@ const GROUPS: Record<string, Group> = {
           await page.click('#mPill');
           const web = page.locator('#mcSees [data-chip="web"] .mcs-x');
           if (await web.count()) await web.click();
+          // the resting look, not the hovered one
+          await page.mouse.move(1, 1);
         },
       ],
     ],
