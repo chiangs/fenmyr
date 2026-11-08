@@ -39,6 +39,22 @@ export function copy<T>(v: T): T {
   return out;
 }
 
+const idOf = (v: unknown) => (typeof v === 'object' && v && 'id' in v && typeof v.id === 'string' ? v.id : undefined);
+
+// Swaps each long string in `fresh` for the equal one at the same place in `old` (cards and connectors matched by id),
+// so a board read back from saved text shares its pictures' data URLs again and comparing them stays a pointer check.
+export function shareStrings(fresh: unknown, old: unknown) {
+  if (typeof fresh !== 'object' || !fresh || typeof old !== 'object' || !old) return;
+  const byId = Array.isArray(old) ? new Map(old.map(o => [idOf(o), o])) : undefined;
+  for (const k of Object.keys(fresh)) {
+    const v = Reflect.get(fresh, k),
+      id = idOf(v),
+      o = byId && id ? byId.get(id) : Reflect.get(old, k);
+    if (typeof v !== 'string') shareStrings(v, o);
+    else if (v.length > 1024 && v === o) Reflect.set(fresh, k, o);
+  }
+}
+
 const defined = (o: object, drop?: ReadonlySet<string>) =>
   Object.keys(o).filter(k => Reflect.get(o, k) !== undefined && !drop?.has(k));
 

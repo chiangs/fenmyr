@@ -83,14 +83,21 @@ export function countLines(set: StoredChangeSet): string[] {
 
 const NAMED = 2;
 
+function namedList(cards: readonly Named[]) {
+  const names = cards.slice(0, NAMED).map(c => `“${cardName(c)}”`),
+    more = cards.length - names.length;
+  return more ? `${names.join(', ')} and ${plural(more, 'more card', 'more cards')}` : names.join(' and ');
+}
+
 // skipped: the cards she left because they changed after the reply, whether the person or a later reply of hers
-// changed them
-export function undoLine({ undone, skipped }: { undone: number; skipped: readonly Named[] }) {
+// changed them. back: how many were already as they were before it, as after Ctrl+Z.
+export function undoLine({ undone, skipped, back }: { undone: number; skipped: readonly Named[]; back: number }) {
+  const list = namedList(skipped),
+    one = skipped.length === 1;
+  if (!undone && skipped.length)
+    return `${list} ${one ? 'has' : 'have'} changed since that reply, so I’ve left the board as it is.`;
+  if (!undone && back) return 'That reply is already undone.';
   if (!undone) return 'Everything from that reply has changed since, so I’ve left the board as it is.';
   if (!skipped.length) return 'I’ve put the board back as it was before that reply.';
-  const names = skipped.slice(0, NAMED).map(c => `“${cardName(c)}”`),
-    more = skipped.length - names.length,
-    list = more ? `${names.join(', ')} and ${plural(more, 'more card', 'more cards')}` : names.join(' and '),
-    one = skipped.length === 1;
   return `I’ve put back what that reply changed, apart from ${list}, which ${one ? 'has' : 'have'} changed since. I’ve left ${one ? 'it as it is' : 'those as they are'}.`;
 }

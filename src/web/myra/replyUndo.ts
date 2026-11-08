@@ -42,7 +42,7 @@ function undoReply(id: string) {
     save();
     remember();
   }
-  reply(undoLine(plan ?? { undone: 0, skipped: [] }), 6000);
+  reply(undoLine(plan ?? { undone: 0, skipped: [], back: 0 }), 6000);
 }
 
 // Undo shows while the reply's before-states are in memory and something it changed is still as it left it, so it

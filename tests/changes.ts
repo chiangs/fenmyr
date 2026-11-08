@@ -1,7 +1,7 @@
 // The record of what a reply changed, and the change set read from it, over boards built by hand.
 import assert from 'node:assert';
 import { countLines, summaryLines, undoLine } from '../src/shared/changeSummary.ts';
-import { type BoardLists, changeSet, listsOf, recordOf } from '../src/shared/changes.ts';
+import { type BoardLists, changeSet, listsOf, recordOf, shareStrings } from '../src/shared/changes.ts';
 import type { Card } from '../src/shared/model.ts';
 import { planUndo, undoable } from '../src/shared/replyUndo.ts';
 
@@ -153,6 +153,7 @@ assert.deepStrictEqual(whole.skipped, []);
 assert.strictEqual(undoLine(whole), 'I’ve put the board back as it was before that reply.');
 const again = planUndo(record4, whole.lists, new Set());
 assert.deepStrictEqual([again.undone, again.lists], [0, whole.lists], 'a second Undo puts back nothing more');
+assert.strictEqual(undoLine(again), 'That reply is already undone.', 'and she says it was already undone, not changed');
 assert.deepStrictEqual(
   [undoable(record4, after4), undoable(record4, whole.lists)],
   [true, false],
@@ -211,11 +212,11 @@ assert.deepStrictEqual(
   'a connector goes back only when both its cards are there',
 );
 assert.strictEqual(
-  undoLine({ undone: 2, skipped: [note('x', 0, 0, 'One'), note('y', 0, 0, 'Two'), note('z', 0, 0, 'Three')] }),
+  undoLine({ undone: 2, skipped: [note('x', 0, 0, 'One'), note('y', 0, 0, 'Two'), note('z', 0, 0, 'Three')], back: 0 }),
   'I’ve put back what that reply changed, apart from “One”, “Two” and 1 more card, which have changed since. I’ve left those as they are.',
 );
 assert.strictEqual(
-  undoLine({ undone: 0, skipped: [note('x', 0, 0)] }),
+  undoLine({ undone: 0, skipped: [], back: 0 }),
   'Everything from that reply has changed since, so I’ve left the board as it is.',
 );
 
@@ -254,6 +255,27 @@ assert.strictEqual(
   'I’ve put back what that reply changed, apart from “Ship it”, which has changed since. I’ve left it as it is.',
   'and she names it',
 );
+const onlyHers = listsOf(board());
+onlyHers.cards.push(note('h1', 0, 900, 'Hers'), note('h2', 300, 900, 'Also hers'));
+const hersRecord = recordOf(board(), onlyHers);
+onlyHers.links.push({ id: 'P4', a: 'h1', b: 'a' });
+const linked = planUndo(hersRecord, onlyHers, new Set());
+assert.deepStrictEqual(
+  [linked.undone, linked.skipped.map(c => c.id), undoLine(linked)],
+  [
+    1,
+    ['h1'],
+    'I’ve put back what that reply changed, apart from “Hers”, which has changed since. I’ve left it as it is.',
+  ],
+  'a card of hers the person drew a connector to is named',
+);
+onlyHers.links.push({ id: 'P5', a: 'h2', b: 'h1' });
+const linkedBoth = planUndo(hersRecord, onlyHers, new Set());
+assert.deepStrictEqual(
+  [linkedBoth.undone, undoLine(linkedBoth)],
+  [0, '“Hers” and “Also hers” have changed since that reply, so I’ve left the board as it is.'],
+  'when connectors are the only change since, she names the cards they touch',
+);
 const fromTray = listsOf(board()),
   t1 = fromTray.tray.splice(0, 1)[0];
 if (!t1) throw new Error('no u1');
@@ -283,5 +305,15 @@ assert.strictEqual(
   find(planUndo(record4, after4, new Set()).lists, 'k2'),
   untouched,
   'a card Undo does not put back is the same object, so an open editor still writes to the board',
+);
+
+const pic = (fill: string): Card => ({ id: fill, type: 'image', x: 0, y: 0, w: 10, h: 10, src: fill.repeat(2000) });
+const held = { cards: [pic('p'), pic('q')], links: [] },
+  readBack = JSON.parse(JSON.stringify({ cards: [{ ...pic('q'), src: 'r'.repeat(2000) }, pic('p')], links: [] }));
+shareStrings(readBack, held);
+assert.deepStrictEqual(
+  readBack,
+  { cards: [{ ...pic('q'), src: 'r'.repeat(2000) }, pic('p')], links: [] },
+  'sharing strings with the board before Ctrl+Z changes no value, whatever order the cards come back in',
 );
 console.log('CHANGES OK');

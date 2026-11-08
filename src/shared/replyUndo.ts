@@ -73,7 +73,7 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
             spread = true;
           }
   }
-  return { cards, skipped, cur, byId, linksBack };
+  return { cards, skipped, cur, byId, linksBack, linkFates };
 }
 
 export function undoable(record: BoardPatch, now: BoardLists) {
@@ -81,7 +81,8 @@ export function undoable(record: BoardPatch, now: BoardLists) {
   return [...cards.values()].includes('undo') || linksBack.length > 0;
 }
 
-export type Undone = { lists: BoardLists; undone: number; skipped: Card[] };
+// back: cards and connectors already as they were before the reply
+export type Undone = { lists: BoardLists; undone: number; skipped: Card[]; back: number };
 
 function putBack<T extends { id: string }>(
   lists: Record<'board' | 'tray', T[]>,
@@ -100,7 +101,7 @@ function putBack<T extends { id: string }>(
 // one stays on the board. Running it again on what it returns puts back nothing more. It takes away nothing but what
 // the reply made or changed, as she left it.
 export function planUndo(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>): Undone {
-  const { cards, skipped, cur, byId, linksBack } = fates(record, now, keep),
+  const { cards, skipped, cur, byId, linksBack, linkFates } = fates(record, now, keep),
     lists: BoardLists = { cards: [...now.cards], tray: [...now.tray], links: [...now.links] },
     goes = record.cards.filter(d => cards.get(d.id) === 'undo'),
     trayLinks = [...(now.trayLinks ?? [])];
@@ -110,6 +111,7 @@ export function planUndo(record: BoardPatch, now: BoardLists, keep: ReadonlySet<
   return {
     lists,
     undone: goes.length + linksBack.length,
+    back: [...cards.values()].filter(f => f === 'back').length + linkFates.filter(l => l.fate === 'back').length,
     skipped: skipped.flatMap(id => cur.get(id)?.item ?? byId.get(id)?.now?.item ?? []),
   };
 }
