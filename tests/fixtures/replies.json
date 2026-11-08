@@ -519,6 +519,7 @@
      "✎ 8 cards changed",
      "− 2 notes removed"
     ],
+    "sources": [],
     "acts": [
      "Show on board",
      "Undo",
@@ -531,6 +532,7 @@
     "who": "myra",
     "text": "There is 1 image spot waiting for pictures. Higgsfield makes real photos (that uses credits, and I check the price with you first), or I can draw simple illustrations for free.",
     "summary": [],
+    "sources": [],
     "acts": [
      "Fill 1 with Higgsfield ✦",
      "Draw simple illustrations (free)",
@@ -837,9 +839,16 @@
   "chat": [
    {
     "who": "myra",
-    "text": "From your vault. I read 2 notes from your vault: Alpha, Beta.",
+    "text": "From your vault.",
     "summary": [
      "+ 2 vault notes"
+    ],
+    "sources": [
+     [
+      "I read 2 notes from your vault",
+      "Alpha",
+      "Beta"
+     ]
     ],
     "acts": [
      "Show on board",
@@ -850,6 +859,7 @@
     "who": "myra",
     "text": "Nothing there. I looked in your vault, but found no notes matching that in the folders you allowed.",
     "summary": [],
+    "sources": [],
     "acts": []
    }
   ],
@@ -1157,6 +1167,7 @@
     "who": "myra",
     "text": "Here’s “Starter” ✦ It’s all yours to change.",
     "summary": [],
+    "sources": [],
     "acts": []
    },
    {
@@ -1166,6 +1177,7 @@
      "+ 3 notes",
      "+ 1 connector"
     ],
+    "sources": [],
     "acts": [
      "Show on board",
      "Undo",
@@ -1605,6 +1617,7 @@
     "who": "myra",
     "text": "Shall I make it?",
     "summary": [],
+    "sources": [],
     "acts": [
      "Yes, build it ✦",
      "Not now"
@@ -1612,14 +1625,27 @@
    },
    {
     "who": "myra",
+    "text": "Shall I, and then?",
+    "summary": [],
+    "sources": [],
+    "acts": [
+     "Yes ✦",
+     "Not now",
+     "After that"
+    ]
+   },
+   {
+    "who": "myra",
     "text": "Maybe the vault?",
     "summary": [],
+    "sources": [],
     "acts": []
    },
    {
     "who": "myra",
     "text": "What next?",
     "summary": [],
+    "sources": [],
     "acts": [
      "Do this",
      "Then that",
@@ -1632,6 +1658,7 @@
     "summary": [
      "+ 1 colour"
     ],
+    "sources": [],
     "acts": [
      "Show on board",
      "Undo",
@@ -1643,6 +1670,7 @@
     "who": "myra",
     "text": "Tea time",
     "summary": [],
+    "sources": [],
     "acts": []
    }
   ],
@@ -1914,6 +1942,7 @@
      "+ 1 note, “One”",
      "✎ 1 note reworded"
     ],
+    "sources": [],
     "acts": [
      "Show on board",
      "Undo"
@@ -1925,6 +1954,7 @@
     "summary": [
      "− 1 note removed"
     ],
+    "sources": [],
     "acts": [
      "Undo"
     ]
@@ -1933,12 +1963,14 @@
     "who": "myra",
     "text": "Done! I touched 1 cards.",
     "summary": [],
+    "sources": [],
     "acts": []
    },
    {
     "who": "myra",
     "text": "Done! I touched 1 cards.",
     "summary": [],
+    "sources": [],
     "acts": []
    }
   ],
@@ -1991,6 +2023,7 @@
     "summary": [
      "+ 1 note, “On the new board”"
     ],
+    "sources": [],
     "acts": [
      "Show on board",
      "Undo"

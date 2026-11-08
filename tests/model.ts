@@ -28,6 +28,11 @@ const everyKind = [
   { kind: 'buildUndo', board: 'pb', snapshot: 'abc123' },
   { kind: 'buildUndo', board: 'pb', snapshot: 'def456', build: 'k3x9q2' },
   { kind: 'commit', board: 'pb', message: 'Make the heading' },
+  {
+    kind: 'read',
+    notes: [{ vault: 'v1', rel: 'Plans/Roadmap.md', title: 'Roadmap' }],
+    pages: [{ url: 'https://example.com/a', title: 'Planning in phases' }],
+  },
 ];
 const withActs = (acts: unknown) => ({
   id: 'b1',
@@ -80,6 +85,34 @@ assert.deepStrictEqual(
   'a message whose buttons are all unreadable stays, with no buttons key',
 );
 assert.deepStrictEqual(json(kept('next')), { who: 'myra', text: 'Done!', t: 2 }, 'buttons that are not a list too');
+assert.deepStrictEqual(
+  kept([
+    {
+      kind: 'read',
+      notes: [
+        { vault: 'v1', rel: 'a.md', title: 'A' },
+        { vault: 'v1', rel: 'b.md' },
+      ],
+      pages: [
+        { url: 'javascript:alert(1)', title: 'Script' },
+        { url: 'file:///etc/passwd', title: 'File' },
+        { url: 'obsidian://open?vault=x', title: 'App' },
+        { url: 'http://example.com/', title: 'Kept' },
+      ],
+    },
+    { kind: 'read', pages: [{ url: 'https://example.com/b', title: 'Only pages' }] },
+    { kind: 'read', notes: [], pages: [{ url: 'javascript:void 0', title: 'Nothing left' }] },
+  ])?.acts,
+  [
+    {
+      kind: 'read',
+      notes: [{ vault: 'v1', rel: 'a.md', title: 'A' }],
+      pages: [{ url: 'http://example.com/', title: 'Kept' }],
+    },
+    { kind: 'read', notes: [], pages: [{ url: 'https://example.com/b', title: 'Only pages' }] },
+  ],
+  'what she read keeps only sound notes and http or https pages, a missing list reads as empty, and an empty one goes',
+);
 const earlier = {
   id: 'b1',
   name: 'Plan',

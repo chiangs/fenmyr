@@ -161,10 +161,16 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
   $('myra').classList.add('thinking');
   goo.think(true);
   typing(true);
-  const ctx: { asked: boolean; used: Awaited<ReturnType<typeof gatherVault>>; tasks: VaultTasksUsed | null } = {
+  const ctx: {
+    asked: boolean;
+    used: Awaited<ReturnType<typeof gatherVault>>;
+    tasks: VaultTasksUsed | null;
+    web: boolean;
+  } = {
     asked: false,
     used: [],
     tasks: null,
+    web: !!settings.webAccess,
   };
   if (vault && aiGrants(session.board).length) {
     ctx.asked = true;
@@ -188,7 +194,7 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
       {
         mobbin: settings.mobbin,
         higgs: settings.higgs,
-        web: !!settings.webAccess,
+        web: ctx.web,
         canVault,
         vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })),
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),

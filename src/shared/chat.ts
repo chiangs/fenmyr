@@ -15,7 +15,23 @@ export type ChatAction =
   // before the build, so only the newest build's Undo shows: an older one would undo the builds after it too. `build`
   // names the build, which boards from before it was kept don't have.
   | { kind: 'buildUndo'; board: string; snapshot: string; build?: string }
-  | { kind: 'commit'; board: string; message: string };
+  | { kind: 'commit'; board: string; message: string }
+  // what she read for this reply: notes from a vault, and pages on the web
+  | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] };
+
+// vault: the vault's id; rel: the note's path in it
+export type ReadNote = { vault: string; rel: string; title: string };
+export type WebPage = { url: string; title: string };
+
+// Only these open in the browser; a page address comes from model output and from the board file, so both check it.
+export function isWebAddress(s: string) {
+  try {
+    const { protocol } = new URL(s);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 // A ChangeSet as her line keeps it: a list with nothing in it is left out.
 export type StoredChangeSet = {
@@ -89,6 +105,18 @@ function readChangeSet(x: unknown): StoredChangeSet | null {
   });
 }
 
+const readNote = (x: unknown): ReadNote | null =>
+  isRecord(x) && typeof x.vault === 'string' && typeof x.rel === 'string' && typeof x.title === 'string'
+    ? { vault: x.vault, rel: x.rel, title: x.title }
+    : null;
+const readPage = (x: unknown): WebPage | null =>
+  isRecord(x) && typeof x.url === 'string' && isWebAddress(x.url) && typeof x.title === 'string'
+    ? { url: x.url, title: x.title }
+    : null;
+// a bad entry drops alone; a list that is left out reads as empty
+const entries = <T>(x: unknown, read: (x: unknown) => T | null): T[] =>
+  (Array.isArray(x) ? x : []).map(read).filter(e => e !== null);
+
 // One reader per kind. The mapped type makes a kind without a reader fail the type check.
 const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { kind: K }> | null } = {
   next: x => (typeof x.text === 'string' ? { kind: 'next', text: x.text } : null),
@@ -111,6 +139,11 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
     typeof x.board === 'string' && typeof x.message === 'string'
       ? { kind: 'commit', board: x.board, message: x.message }
       : null,
+  read: x => {
+    const notes = entries(x.notes, readNote),
+      pages = entries(x.pages, readPage);
+    return notes.length || pages.length ? { kind: 'read', notes, pages } : null;
+  },
 };
 
 const isKind = (k: unknown): k is ChatAction['kind'] => typeof k === 'string' && Object.hasOwn(READ, k);
