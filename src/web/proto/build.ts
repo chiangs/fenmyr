@@ -2,12 +2,12 @@ import type { ChatAction } from '../../shared/chat.ts';
 import type { Board, Card } from '../../shared/model.ts';
 import { readSources } from '../../shared/repos.ts';
 import { uid } from '../core/base.ts';
-import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import type { Act } from '../myra/acts.ts';
 import { addMsg, chatLog } from '../myra/chatLog.ts';
 import { type SayAction, say } from '../myra/say.ts';
+import { type Job, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { renderCode } from './code.ts';
 import { askCommit } from './gitActions.ts';
@@ -20,7 +20,7 @@ import { beforeBuild } from './sync.ts';
 // Myra's "build": the host writes the code with Claude Code while the chat shows what's being written, then the code,
 // the preview and the git bar catch up and her explanation arrives with an Undo.
 type Prototype = Extract<Board, { kind: 'prototype' }>;
-let running: { id: string; build: string; proto: Prototype; root: string; request: string } | null = null;
+let running: { id: string; build: string; proto: Prototype; root: string; request: string; job: Job } | null = null;
 
 // what the builder reads from the board: the selected cards, or all of them, without positions or styling
 const brief = (c: Card) =>
@@ -30,27 +30,25 @@ const brief = (c: Card) =>
     ),
   );
 
-const status = (words: string) => {
-  $('mcStatus').textContent = words;
-};
-
-// synced: the repo was checked against GitHub just now (beforeBuild), so this is the go-ahead
-export async function startBuild(request: string, synced = false) {
+// `cards`: the selection the request was sent with; null reads the selection now. `synced`: the repo was checked
+// against GitHub just now (beforeBuild), so this is the go-ahead.
+export async function startBuild(request: string, cards: readonly string[] | null, synced = false) {
   const b = session.board;
   const root = b ? rootOf(b) : null;
   if (b?.kind !== 'prototype' || !root) return;
   if (running) return say('I’m still writing the last change. I’ll start on this once it’s done.', 6000);
-  if (!synced) return beforeBuild(b, request, () => startBuild(request, true));
+  if (!synced) return beforeBuild(b, request, () => startBuild(request, cards, true));
   // kept before anything is awaited, while this prototype is surely the open board
   const build = uid();
   b.proto = { ...b.proto, build };
   save();
-  const picked = b.cards.filter(c => session.sel.has(c.id));
+  const sel = new Set(cards ?? session.sel),
+    picked = b.cards.filter(c => sel.has(c.id));
   const chosen = (picked.length ? picked : b.cards).slice(0, 80),
-    cards = JSON.stringify(chosen.map(brief)),
+    briefs = JSON.stringify(chosen.map(brief)),
     pictures = await picturesOf(chosen);
   const { dir, stack, purpose = '', device = '' } = b.proto;
-  status('Writing code…');
+  const job = startJob({ kind: 'building', file: null });
   try {
     const { id } = await Fenmyr.protoBuild({
       root,
@@ -59,13 +57,13 @@ export async function startBuild(request: string, synced = false) {
       request,
       purpose,
       device,
-      cards,
+      cards: briefs,
       errors: previewErrors(),
       pictures,
     });
-    running = { id, build, proto: b, root, request };
+    running = { id, build, proto: b, root, request, job };
   } catch (e) {
-    status('');
+    job.end();
     say(e instanceof Error ? e.message : String(e), 8000);
   }
 }
@@ -124,10 +122,10 @@ export function buildEvent(data: unknown) {
   if (!running || typeof data !== 'object' || data === null) return;
   const e: Record<string, unknown> = { ...data };
   if (e.id !== running.id) return;
-  if (e.type === 'edit') return status(`Writing ${String(e.file)}…`);
-  const { root, build, proto, request } = running;
+  if (e.type === 'edit') return running.job.show({ kind: 'building', file: String(e.file).split('/').at(-1) ?? null });
+  const { root, build, proto, request, job } = running;
   running = null;
-  status('');
+  job.end();
   if (e.type === 'error') return say(`I couldn’t finish that. ${String(e.text)}`, 10000);
   const snapshot = String(e.snapshot),
     strays = Array.isArray(e.outside) ? e.outside.map(String) : [],

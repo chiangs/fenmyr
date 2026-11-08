@@ -1,7 +1,7 @@
 import { $ } from '../core/dom.ts';
 import { GUIDE, SIGNIN } from '../myra/chat.ts';
-import { goo } from '../myra/goos.ts';
 import { say } from '../myra/say.ts';
+import { startJob } from '../myra/status.ts';
 import { esc } from '../ui/dom.ts';
 import { mdToHTML } from './docText.ts';
 import { docCard, ed } from './editor.ts';
@@ -18,7 +18,7 @@ export async function rewrite(how: string) {
     size = e.state.doc.content.size;
   const around = e.state.doc.textBetween(Math.max(0, from - 700), Math.min(size, to + 700), '\n');
   $('docview').classList.add('myra-busy');
-  goo.think(true);
+  const job = startJob({ kind: 'rewriting' });
   $('dvSaved').textContent = 'Myra is rewriting…';
   try {
     const out = ((await Fenmyr.rewrite(text, how, docCard?.text || '', around)) || '').trim();
@@ -50,7 +50,7 @@ export async function rewrite(how: string) {
       );
   } finally {
     $('docview').classList.remove('myra-busy');
-    goo.think(false);
+    job.end();
     $('dvSaved').textContent = '';
   }
 }

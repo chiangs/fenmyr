@@ -112,6 +112,8 @@ jobs:
         run: node tests/chatKeys.ts
       - name: Chat rules test (her input's hint and her name cut short)
         run: node tests/chatRules.ts
+      - name: Chat sees test (the "Myra sees" chips, what each message is sent with, and the header's status line)
+        run: node tests/chatSees.ts
       - name: Mac font list test
         run: node tests/mac.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)

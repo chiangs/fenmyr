@@ -27,14 +27,14 @@ export type Effect =
   | { kind: 'editTemplate'; spec: Part<'editTemplate'> }
   | { kind: 'offerFill'; screens: number }
   | { kind: 'newPrototype'; want: Part<'newPrototype'> }
-  | { kind: 'build'; request: string }
+  | { kind: 'build'; request: string; cards: readonly string[] }
   | { kind: 'git'; action: string; message: string | undefined }
   | { kind: 'install'; packages: string[] };
 
 // someone who just asked for a timer or an animation in words got it already; her own pick waits
 const askedLately = (at: number) => Date.now() - at <= 30000;
 
-export function effectsOf({ reply: r, q }: HeldReply): Effect[] {
+export function effectsOf({ reply: r, q, ctx }: HeldReply): Effect[] {
   const out: Effect[] = [];
   if (r.stopTimer) out.push({ kind: 'stopTimer' });
   const secs = Math.round((r.timer?.minutes ?? 0) * 60 + (r.timer?.seconds ?? 0));
@@ -49,7 +49,7 @@ export function effectsOf({ reply: r, q }: HeldReply): Effect[] {
   if (r.editTemplate) out.push({ kind: 'editTemplate', spec: r.editTemplate });
   if (r.screens?.length) out.push({ kind: 'offerFill', screens: r.screens.length });
   if (r.newPrototype) out.push({ kind: 'newPrototype', want: r.newPrototype });
-  if (r.build?.request) out.push({ kind: 'build', request: r.build.request });
+  if (r.build?.request) out.push({ kind: 'build', request: r.build.request, cards: ctx.sees.sel });
   if (r.git?.action) out.push({ kind: 'git', action: r.git.action, message: r.git.message });
   if (r.install?.packages?.length) out.push({ kind: 'install', packages: r.install.packages });
   return out;
@@ -102,7 +102,7 @@ export async function runEffects(effects: readonly Effect[], touched: readonly C
         acts.push(...(await applyNewPrototype(e.want)));
         break;
       case 'build':
-        startBuild(e.request);
+        startBuild(e.request, e.cards);
         break;
       case 'git':
         gitAction(e.action, e.message);

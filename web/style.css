@@ -829,11 +829,13 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .m-chat[data-place="joined"] { border-end-start-radius: 0; }
 .myra.chat .m-chat { opacity: 1; pointer-events: auto; transform: none; }
 .myra.chat .m-bubble { display: none; }
-.mc-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px 16px; border-bottom: 1px solid #f3f0ec; }
+.mc-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px 16px; border-bottom: 1px solid rgb(from var(--ink) r g b / .07); }
 .mc-head canvas { width: 26px; height: 23px; image-rendering: pixelated; }
 .mc-head b { font: 800 15px/1 var(--font); }
 #mcHeadName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.25; }
-.mc-status { flex: 1; font: 600 11px/1 var(--font); color: var(--pink-deep); }
+.mc-status { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 11px/1 var(--font); color: var(--ink-soft); }
+/* busy shows as a dot: --pink-deep text at 11 px would be too faint to read */
+.mc-status.busy::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: var(--pink-deep); vertical-align: 1px; }
 .mc-btn { border: 0; background: none; padding: 6px 9px; border-radius: var(--pill-r); corner-shape: squircle; font: 600 11.5px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .mc-btn:hover { background: var(--blush); color: var(--ink); }
 .mc-btn.x { display: grid; place-items: center; padding: 4px 7px; }
@@ -869,7 +871,6 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 /* a touch screen has no Ctrl key, so Send is the way */
 @media (pointer: coarse) { .mc-hint { display: none; } .mc-send { margin-left: auto; } }
 body.dark .m-chat { background: rgba(43, 39, 34, .98); box-shadow: 0 20px 50px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06); }
-body.dark .mc-head { border-color: #3c3731; }
 body.dark .mc-msg.myra, body.dark .mc-form { background: #38332d; }
 body.dark .mc-msg.me { background: #584a3c; color: #fff; }
 body.dark .mc-msg .m-acts button { background: #fff; color: #222; border-color: #fff; } body.dark .mc-msg .m-acts button.ghost { background: none; color: #fff; }
@@ -2558,18 +2559,23 @@ body.dark .card.vnote.c-white .vn-md hr { border-top-color: rgb(from var(--hilit
 body.dark .sb-dots button[data-c="white"] { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
 body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--select), inset 0 0 0 1px rgba(255, 255, 255, .3); }
 
-/* the "Search my vault" chip in Myra's chat */
-/* what "this" means: the cards selected right now, which go along with whatever you send */
-.mc-sel { display: flex; align-items: center; gap: 4px; width: fit-content; max-width: calc(100% - 24px); margin: 8px 12px 0; padding: 4px 5px 4px 11px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--blush); color: var(--ink); font: 600 11.5px/1.2 var(--font); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pink-deep) 55%, transparent); }
-.mc-sel[hidden] { display: none; }
+/* "Myra sees": what goes with the next message. A chip that goes is solid with ×; one that doesn't is dashed with +.
+   It shows two rows and a glimpse of a third, so many vaults scroll instead of pushing the chat down */
+.mc-sees { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; max-height: 76px; overflow-y: auto; padding: 8px 12px 2px 16px; font: 600 11.5px/1.2 var(--font); }
+.mcs-lead { max-width: 8em; margin-right: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-soft); }
+.mcs-chip { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; height: 24px; padding: 0 3px 0 9px; border: 1px solid rgb(from var(--ink) r g b / .16); border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--ink) r g b / .05); color: var(--ink); font: inherit; }
+.mcs-chip.board { padding-right: 9px; }
+.mcs-chip.sel { border-color: var(--select); background: rgb(from var(--select) r g b / .12); }
+.mcs-chip.out { border-style: dashed; border-color: currentColor; background: none; color: var(--ink-soft); cursor: pointer; }
+.mcs-chip.sel.out { border-color: var(--select); }
+.mcs-chip.out:hover { color: var(--ink); }
+.mcs-chip svg { flex: none; width: 13px; height: 13px; }
 .mcs-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mcs-x { flex: none; width: 18px; height: 18px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: inherit; font: 700 14px/1 var(--font); opacity: .65; cursor: pointer; }
-.mcs-x:hover { opacity: 1; background: rgb(from var(--shade) r g b / .08); }
-body.dark .mcs-x:hover { background: rgb(from var(--hilite) r g b / .12); }
-.mc-vault { flex: none; display: flex; align-items: center; gap: 5px; padding: 0 10px; height: 30px; border: 1.5px solid currentColor; border-radius: 15px; corner-shape: squircle; background: none; font: 600 11.5px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
-.mc-vault[hidden] { display: none; }
-.mc-vault svg { width: 14px; height: 14px; }
-.mc-vault.on { color: var(--butter-deep); }
+.mcs-x { position: relative; flex: none; width: 18px; height: 18px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: inherit; font: 700 14px/1 var(--font); opacity: .65; cursor: pointer; }
+/* a 24 px target around the 18 px circle */
+.mcs-x::after { content: ''; position: absolute; inset: -3px; }
+.mcs-x:hover, .mcs-chip.out:hover .mcs-x { opacity: 1; background: rgb(from var(--shade) r g b / .08); }
+body.dark :is(.mcs-x:hover, .mcs-chip.out:hover .mcs-x) { background: rgb(from var(--hilite) r g b / .12); }
 
 /* connector weight and colour in the selection bar */
 .sb-wl { display: block; flex: none; }

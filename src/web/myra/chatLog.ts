@@ -8,8 +8,9 @@ import { closestTo, esc, textField } from '../ui/dom.ts';
 import { type Act, storedOf } from './acts.ts';
 import { ask } from './chat.ts';
 import { drawActs } from './replyView.ts';
+import { paintStatus } from './status.ts';
 
-// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
+// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and Earlier chats brings one back
 const CHATS_KEPT = 10;
 
 // A prototype board always keeps its chat, whatever Settings says. It's the record of how the prototype was built.
@@ -151,6 +152,8 @@ export function renderChat() {
   msgs.forEach(m => {
     list.appendChild(msgEl(m));
   });
+  // a chat reopened while she is still answering gets her dots back
+  paintStatus();
   list.scrollTop = list.scrollHeight;
 }
 
@@ -184,16 +187,4 @@ export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
   list.appendChild(msgEl(m, acts));
   list.scrollTop = list.scrollHeight;
   return m;
-}
-
-export function typing(on: boolean) {
-  $('mcList').querySelector('.typing')?.remove();
-  $('mcStatus').textContent = on ? 'thinking…' : '';
-  if (on) {
-    const d = document.createElement('div');
-    d.className = 'mc-msg myra typing';
-    d.innerHTML = '<i></i><i></i><i></i>';
-    $('mcList').appendChild(d);
-    $('mcList').scrollTop = 1e9;
-  }
 }
