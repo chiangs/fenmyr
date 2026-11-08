@@ -1,4 +1,5 @@
 import { z } from 'zod/mini';
+import { type WebPage, webPage } from './chat.ts';
 
 // Myra's reply is model output. A field of the wrong kind is dropped, so the rest of her answer still applies.
 const opt = <T extends z.core.$ZodType>(schema: T) => z.catch(z.optional(schema), undefined);
@@ -89,6 +90,8 @@ const reply = z.looseObject({
   screens: list(z.unknown()),
   images: list(z.looseObject({ url: z.string(), x: num, y: num, caption: txt })),
   vaultNotes: list(z.looseObject({ vault: txt, path: txt })),
+  // a bad entry drops alone, so one odd page doesn't cost her the others
+  pages: list(opt(z.looseObject({ url: z.string(), title: txt }))),
   next: list(z.unknown()),
 });
 
@@ -97,4 +100,18 @@ export type MyraReply = z.infer<typeof reply>;
 export function parseReply(json: unknown): MyraReply {
   const parsed = z.safeParse(reply, json);
   return parsed.success ? parsed.data : {};
+}
+
+const MAX_PAGES = 6;
+
+// The pages she says she read that can open in the browser, once each, named by their title or else their site.
+export function webPagesOf(r: MyraReply): WebPage[] {
+  const out: WebPage[] = [];
+  for (const p of r.pages ?? []) {
+    const page = p && webPage(p.url, p.title ?? '');
+    if (!page || out.some(o => o.url === page.url)) continue;
+    out.push(page);
+    if (out.length === MAX_PAGES) break;
+  }
+  return out;
 }

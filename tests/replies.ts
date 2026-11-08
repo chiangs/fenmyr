@@ -11,6 +11,9 @@
 // - 4a: a reply that changes the board shows Changed on the board with its lines, then Show on board and Undo; the
 //   buttons under a line follow a fixed order of rows, not the order they are kept in. A new collection's line counts
 //   the cards filed into it, which are then no move of their own, and a card taken out of a collection is a move.
+// - 4b: the notes she read move from her words to a line of links under them, naming the notes she used, or every
+//   note she was given when she named none. Her own next steps show beside her other buttons; guessed ones still give
+//   way to them.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -64,6 +67,7 @@ async function shot(page: Page) {
       who: d.classList.contains('me') ? 'me' : 'myra',
       text: d.firstChild?.textContent ?? '',
       summary: [...d.querySelectorAll('.m-summary li')].map(li => li.textContent ?? ''),
+      sources: [...d.querySelectorAll('.m-sources')].map(s => [...s.children].map(c => c.textContent ?? '')),
       acts: [...d.querySelectorAll('.m-acts button')].map(a => a.textContent ?? ''),
     }));
     return {
@@ -236,6 +240,7 @@ result.library = {
 await open(page, 'buttons');
 for (const r of [
   { say: 'Shall I make it?', confirm: 'Yes, build it' },
+  { say: 'Shall I, and then?', confirm: 'Yes', next: ['After that'] },
   { say: 'Maybe the vault?', offerVault: true },
   { say: 'What next? 🎉', next: ['Do this 🎉', 'Then that', 'And more', 'Too many'] },
   { say: 'A swatch for you.', add: [{ type: 'swatch', hex: '#123456' }] },

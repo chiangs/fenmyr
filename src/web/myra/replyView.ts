@@ -2,7 +2,7 @@
 // drawn from the acts the line still has.
 import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import { save } from '../core/history.ts';
-import { type Act, type After, type Piece, piecesOf, SLOTS, storedOf } from './acts.ts';
+import { type Act, type After, type Button, type Piece, piecesOf, SLOTS, storedOf } from './acts.ts';
 import { chatKeep } from './chatLog.ts';
 
 const HEADING = 'Changed on the board';
@@ -30,6 +30,13 @@ function summaryEl(lines: readonly string[]) {
   return box;
 }
 
+function sourcesEl(head: string) {
+  const box = document.createElement('div');
+  box.className = 'm-sources';
+  box.appendChild(document.createElement('b')).textContent = head;
+  return box;
+}
+
 // Draws `acts` into `host`. A click takes away what its button says, spends the stored ones on `m`, tells `onClick`,
 // runs, and draws again from what is left, so a button that stays shows only while it still applies.
 export function drawActs(
@@ -42,33 +49,42 @@ export function drawActs(
   drawn.set(host, turn);
   host.replaceChildren();
   const pieces = acts.flatMap(a => piecesOf(a).map((p): [Act, Piece] => [a, p]));
+  const button = (
+    into: HTMLElement,
+    { label, cls, ghost, title, after, run }: Button,
+    a: Act,
+    slotActs: readonly Act[],
+  ) => {
+    const b = into.appendChild(document.createElement('button'));
+    b.textContent = label;
+    b.className = cls || (ghost ? 'ghost' : '');
+    if (title) b.title = title;
+    b.onclick = () => {
+      const gone = after === 'stay' ? [] : after === 'self' ? [a] : slotActs;
+      if (m) spend(m, storedOf(gone));
+      onClick?.(after);
+      run();
+      if (drawn.get(host) === turn)
+        drawActs(
+          host,
+          m,
+          acts.filter(x => !gone.includes(x)),
+          onClick,
+        );
+    };
+  };
   for (const slot of SLOTS) {
-    const here = pieces.filter(([, p]) => p.slot === slot);
+    const here = pieces.filter(([, p]) => p.slot === slot),
+      all = here.map(([x]) => x);
     const row = document.createElement('div');
     row.className = 'm-acts';
     for (const [a, p] of here) {
       if (p.slot === 'summary') {
         if (p.lines.length) host.appendChild(summaryEl(p.lines));
-        continue;
-      }
-      const { label, cls, ghost, title, after, run } = p.button,
-        b = row.appendChild(document.createElement('button'));
-      b.textContent = label;
-      b.className = cls || (ghost ? 'ghost' : '');
-      if (title) b.title = title;
-      b.onclick = () => {
-        const taken = after === 'stay' ? [] : after === 'self' ? [a] : here.map(([x]) => x);
-        if (m) spend(m, storedOf(taken));
-        onClick?.(after);
-        run();
-        if (drawn.get(host) === turn)
-          drawActs(
-            host,
-            m,
-            acts.filter(x => !taken.includes(x)),
-            onClick,
-          );
-      };
+      } else if (p.slot === 'sources') {
+        const box = host.appendChild(sourcesEl(p.head));
+        for (const l of p.links) button(box, { ...l, cls: 'm-link' }, a, all);
+      } else button(row, p.button, a, all);
     }
     if (row.childElementCount) host.appendChild(row);
   }

@@ -17,7 +17,8 @@ export type NoteUsed = {
   excerpt: string;
   text: string;
 };
-export type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null };
+// web: the web was on for this request, so pages she says she read can be real
+export type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null; web?: boolean };
 
 // a picture she fetched, sized for its card
 export type Picture = {
