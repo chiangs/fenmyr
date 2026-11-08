@@ -579,7 +579,7 @@ body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.a
 .card.stamp > .frame { display: none; }
 .card.stamp { rotate: var(--tilt); }   /* upright until you tilt it yourself (see renderCard) */
 .card.stamp .body { padding: 0; overflow: visible; display: grid; place-items: center; }
-.card.stamp .st { width: 100%; height: 100%; display: grid; place-items: center; filter: drop-shadow(0 0 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(0 4px 6px rgba(150, 95, 35, .2)); }
+.card.stamp .st { width: 100%; height: 100%; display: grid; place-items: center; filter: drop-shadow(0 0 0 var(--hilite)) drop-shadow(2px 0 0 var(--hilite)) drop-shadow(-2px 0 0 var(--hilite)) drop-shadow(0 2px 0 var(--hilite)) drop-shadow(0 -2px 0 var(--hilite)) drop-shadow(0 4px 6px rgb(from var(--pn-amber) r g b / .2)); }
 .card.stamp .st img { width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
 .card.stamp .st span { font-size: calc(var(--sz, 56px) * .82); line-height: 1; }
 .card.stamp .knob { display: none; }
@@ -1983,15 +1983,16 @@ body.dark .vd-bar .vd-txb:hover, body.dark .vd-bar .vd-mute:hover { background: 
 /* an open doc slides over the right side: the right widget column steps back behind it (the board area is its own layer, so the doc can't rise above the column on its own) */
 body:has(.stage.doc-open) #sideR { z-index: 0; }
 
+:root { --sec-tint: #fce1c6; }   /* the warm tint in a section's frosted glass */
 /* ---------- glass sections: a soft frosted bubble around a bunch of things ---------- */
 .card.section { z-index: 0 !important; border-radius: 54px; corner-shape: squircle; --tilt: 0deg !important; }
 .card.section .sec-glass { position: absolute; inset: 0; border-radius: 54px; corner-shape: squircle; pointer-events: auto;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 46%, transparent), color-mix(in srgb, var(--fill) 16%, rgba(252, 225, 198, .12)));
+  background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 46%, transparent), color-mix(in srgb, var(--fill) 16%, rgb(from var(--sec-tint) r g b / .12)));
   backdrop-filter: blur(3px) saturate(1.2); -webkit-backdrop-filter: blur(3px) saturate(1.2);
   box-shadow: inset 0 1.5px 0 var(--hilite), inset 0 0 0 2px rgb(from var(--hilite) r g b / .85), inset 0 -18px 40px rgb(from var(--hilite) r g b / .3), 0 0 0 1px rgb(from var(--sec-edge) r g b / .12), 0 18px 50px rgb(from var(--sec-shadow) r g b / .14); }
 /* a little shine across the top, like light on glass */
 .card.section .sec-glass::before { content: ""; position: absolute; left: 5%; right: 5%; top: 6px; height: 18%; border-radius: 40px 40px 60% 60% / 40px 40px 100% 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, 0)); pointer-events: none; }
+  background: linear-gradient(180deg, rgb(from var(--hilite) r g b / .45), rgb(from var(--hilite) r g b / 0)); pointer-events: none; }
 .card.section .sec-name { position: absolute; left: 22px; top: 16px; top: auto; bottom: calc(100% - 50px); transform-origin: 0 100%; scale: var(--secz, 1); transition: scale .15s ease; display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px 7px; border-radius: var(--pill-r); corner-shape: squircle;
   background: rgb(from var(--hilite) r g b / .78); box-shadow: 0 2px 8px rgb(from var(--sec-shadow) r g b / .1), inset 0 0 0 1px rgb(from var(--hilite) r g b / .9); font: 700 14px/1.1 var(--font); color: var(--ink); white-space: nowrap; }
 .card.section .sec-name::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--fill) 40%, var(--pink-deep)); }
@@ -2001,9 +2002,9 @@ body:has(.stage.doc-open) #sideR { z-index: 0; }
 .card.section.pop { animation: secIn .5s cubic-bezier(.3, 1.4, .5, 1); }
 @keyframes secIn { from { opacity: 0; transform: scale(.94); } }
 .card.section .rot-h { display: none !important; }
-body.dark .card.section .sec-glass { background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 16%, rgba(255, 255, 255, .1)), color-mix(in srgb, var(--fill) 8%, rgba(255, 255, 255, .03)));
+body.dark .card.section .sec-glass { background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 16%, rgb(from var(--hilite) r g b / .1)), color-mix(in srgb, var(--fill) 8%, rgb(from var(--hilite) r g b / .03)));
   box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .28), inset 0 0 0 1.5px rgb(from var(--hilite) r g b / .14), 0 18px 50px rgb(from var(--shade) r g b / .3); }
-body.dark .card.section .sec-glass::before { background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0)); height: 18%; }
+body.dark .card.section .sec-glass::before { background: linear-gradient(180deg, rgb(from var(--hilite) r g b / .05), rgb(from var(--hilite) r g b / 0)); height: 18%; }
 body.dark .card.section .sec-name { background: rgb(from var(--hilite) r g b / .1); color: var(--ink); box-shadow: inset 0 0 0 1px rgb(from var(--hilite) r g b / .16); }
 .sb-glass { background: linear-gradient(150deg, rgba(255, 255, 255, .9), rgba(253, 239, 225, .7)) !important; box-shadow: inset 0 0 0 1px rgba(248, 189, 130, .35); }
 .card.section > .frame { display: none; }   /* no paper behind the glass */
