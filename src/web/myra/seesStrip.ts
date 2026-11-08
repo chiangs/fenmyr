@@ -5,6 +5,7 @@ import { settings } from '../settings/settings.ts';
 import { closestTo, esc } from '../ui/dom.ts';
 import { aiGrants } from '../vault/ask.ts';
 import { vaultById } from '../vault/vaults.ts';
+import { chatLog, renderChat } from './chatLog.ts';
 import { renderHint } from './chatWindow.ts';
 import { type Chip, capture, chipsOf, type Flips, NO_FLIPS, type Sees, type SeesInput, toggle } from './sees.ts';
 
@@ -105,6 +106,8 @@ export function renderSees() {
   drawn = html;
   el.innerHTML = html;
   renderHint();
+  // the empty chat's starters fit what goes with the next message
+  if (!chatLog().length) renderChat();
 }
 
 /** How many selected cards go with the next message. */
