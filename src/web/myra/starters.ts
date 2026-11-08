@@ -8,7 +8,9 @@ export type StarterInput = {
   selected: number;
   prototype: boolean;
   mobbin: boolean;
-  /** YYYY-MM-DD a week from today; a due date compares by its first 10 characters */
+  /** YYYY-MM-DD; a due date compares by its first 10 characters */
+  today: string;
+  /** YYYY-MM-DD a week from today */
   dueBy: string;
 };
 
@@ -17,6 +19,8 @@ type Facts = {
   looseNotes: number;
   openTasks: number;
   dueSoon: number;
+  overdue: number;
+  kanbans: number;
   docs: number;
   links: number;
   pictures: number;
@@ -33,15 +37,21 @@ const DAY = /^\d{4}-\d{2}-\d{2}/;
 function factsOf(input: StarterInput): Facts {
   const { cards } = input,
     inColl = new Set(cards.flatMap(c => (c.type === 'coll' ? c.kids : []))),
-    count = (type: Card['type']) => cards.filter(c => c.type === type).length;
+    count = (type: Card['type']) => cards.filter(c => c.type === type).length,
+    // a checklist with every item ticked is finished, whatever its date says
+    dues = cards.flatMap(c =>
+      (c.type === 'note' || (c.type === 'todo' && !(c.items?.length && c.items.every(i => i.done)))) &&
+      DAY.test(c.due ?? '')
+        ? [(c.due ?? '').slice(0, 10)]
+        : [],
+    );
   return {
     cards: cards.length,
     looseNotes: cards.filter(c => c.type === 'note' && !inColl.has(c.id)).length,
     openTasks: cards.reduce((n, c) => n + (c.type === 'todo' ? (c.items ?? []).filter(i => !i.done).length : 0), 0),
-    dueSoon: cards.filter(
-      c =>
-        (c.type === 'note' || c.type === 'todo') && DAY.test(c.due ?? '') && (c.due ?? '').slice(0, 10) <= input.dueBy,
-    ).length,
+    dueSoon: dues.filter(d => d <= input.dueBy).length,
+    overdue: dues.filter(d => d < input.today).length,
+    kanbans: cards.filter(c => c.type === 'coll' && c.kanban).length,
     docs: count('doc'),
     links: count('link'),
     pictures: count('image'),
@@ -56,7 +66,8 @@ const say = (text: string) => () => text;
 
 // These are the person's words, sent as their question, in priority order.
 const BOARD: readonly Starter[] = [
-  { when: f => f.selected >= 2, text: f => `Group these ${f.selected} cards by theme` },
+  { when: f => f.selected >= 3, text: f => `Group these ${f.selected} cards by theme` },
+  { when: f => f.selected === 2, text: say('Compare these 2 cards') },
   { when: f => f.selected === 1, text: say('What could I add to this?') },
   { when: f => f.looseNotes >= 5 && f.selected < 2, text: f => `Group my ${f.looseNotes} notes by theme` },
   {
@@ -66,7 +77,11 @@ const BOARD: readonly Starter[] = [
         ? 'Find a place for the idea in Unsorted'
         : `Find places for the ${f.unsorted} ideas in Unsorted`,
   },
-  { when: f => f.dueSoon >= 1, text: say('What’s due this week?') },
+  { when: f => f.dueSoon >= 1, text: f => (f.overdue ? 'What’s due or overdue?' : 'What’s due this week?') },
+  {
+    when: f => f.kanbans >= 1,
+    text: f => (f.kanbans === 1 ? 'What should move next on my kanban?' : 'What should move next on my kanbans?'),
+  },
   { when: f => f.openTasks >= 3, text: f => `Which of my ${f.openTasks} open tasks comes first?` },
   { when: f => f.docs >= 1, text: f => (f.docs === 1 ? 'Sum up my doc' : `Sum up my ${f.docs} docs`) },
   { when: f => f.links >= 3, text: f => `Group my ${f.links} links by topic` },
@@ -83,10 +98,9 @@ const BOARD: readonly Starter[] = [
 
 // A prototype board starts from the wireframes and notes the person brings.
 const PROTOTYPE: readonly Starter[] = [
-  {
-    when: f => f.cards >= 1,
-    text: f => (f.selected >= 1 ? 'Sum up what these cards say' : 'Sum up what’s on the board'),
-  },
+  { when: f => f.selected === 1, text: say('Sum up what this card says') },
+  { when: f => f.selected >= 2, text: say('Sum up what these cards say') },
+  { when: f => f.cards >= 1 && f.selected === 0, text: say('Sum up what’s on the board') },
   { when: () => true, text: say('What should the first screen show?') },
   { when: f => f.frames >= 1, text: say('Build the first screen from my wireframes') },
   { when: f => f.cards >= 1, text: say('What am I missing?') },

@@ -7,7 +7,7 @@ import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
 import { menuOpen, watchPresses } from '../ui/popover.ts';
 import { toolInHand } from '../ui/toolbar.ts';
-import { renderChat } from './chatLog.ts';
+import { chatLog, renderChat } from './chatLog.ts';
 import {
   askHint,
   closes,
@@ -132,6 +132,8 @@ function renderSelChip() {
   if (key === selChipKey) return;
   selChipKey = key;
   renderHint();
+  // the empty chat's starters fit the selection
+  if (!chatLog().length) renderChat();
   if (!cs.length) {
     el.hidden = true;
     el.innerHTML = '';

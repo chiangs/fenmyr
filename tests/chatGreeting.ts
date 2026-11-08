@@ -85,6 +85,45 @@ await check('the starters count what is on the board and in Unsorted', async () 
   ]);
 });
 
+await check('selecting cards with the chat open updates the starters', async () => {
+  const box = await page.locator('.card[data-id="n0"]').boundingBox();
+  if (!box) throw new Error('no card on screen');
+  await page.mouse.click(box.x + 20, box.y + 10);
+  await page.waitForTimeout(200);
+  assert.strictEqual((await ideas())[0], 'What could I add to this?', 'one card');
+  const other = await page.locator('.card[data-id="n1"]').boundingBox();
+  if (!other) throw new Error('no second card on screen');
+  await page.keyboard.down('Shift');
+  await page.mouse.click(other.x + 20, other.y + 10);
+  await page.keyboard.up('Shift');
+  await page.waitForTimeout(200);
+  assert.strictEqual((await ideas())[0], 'Compare these 2 cards', 'two cards');
+});
+
+await check('clearing the selection with the chat open brings back the board starters', async () => {
+  await page.click('#mcSel .mcs-x');
+  await page.waitForTimeout(200);
+  assert.strictEqual((await ideas())[0], 'Group my 6 notes by theme');
+});
+
+await check('a long name with no spaces wraps in a 280 px chat', async () => {
+  await page.evaluate(() => {
+    const chat = document.getElementById('mChat'),
+      field = document.getElementById('myraNameIn');
+    if (!chat || !(field instanceof HTMLInputElement)) throw new Error('no chat or name field');
+    chat.style.width = '280px';
+    field.value = 'WWWWWWWWWWWWWWWWWW';
+    field.dispatchEvent(new Event('input'));
+  });
+  await page.waitForTimeout(100);
+  const fit = await page.evaluate(() => {
+    const list = document.getElementById('mcList');
+    return { scroll: list?.scrollWidth ?? 0, client: list?.clientWidth ?? 0 };
+  });
+  await page.evaluate(() => document.getElementById('mChat')?.style.removeProperty('width'));
+  assert.ok(fit.client > 0 && fit.scroll <= fit.client, `list scrolls sideways: ${fit.scroll} > ${fit.client}`);
+});
+
 await check('with one card selected the starters offer to add to it', async () => {
   await closeChat();
   await page.evaluate(() => window.__fenmyr.selectOnly(['n0']));

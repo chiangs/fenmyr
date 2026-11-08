@@ -28,6 +28,7 @@ export function renderGreeting(list: HTMLElement) {
     selected: session.sel.size,
     prototype,
     mobbin: settings.mobbin,
+    today: dayKey(new Date()),
     dueBy: dayKey(new Date(Date.now() + 7 * 864e5)),
   });
   for (const text of lines) {

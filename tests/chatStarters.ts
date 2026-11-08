@@ -9,7 +9,16 @@ const at = { x: 0, y: 0, w: 100, h: 100 };
 const note = (more: object = {}): Card => ({ id: `n${n++}`, type: 'note', ...at, ...more });
 const many = (k: number, make: () => Card) => Array.from({ length: k }, make);
 const of = (cards: Card[], more: Partial<StarterInput> = {}) =>
-  starters({ cards, unsorted: 0, selected: 0, prototype: false, mobbin: false, dueBy: '2026-11-15', ...more });
+  starters({
+    cards,
+    unsorted: 0,
+    selected: 0,
+    prototype: false,
+    mobbin: false,
+    today: '2026-11-08',
+    dueBy: '2026-11-15',
+    ...more,
+  });
 
 assert.deepStrictEqual(
   of([]),
@@ -47,6 +56,7 @@ assert.deepStrictEqual(
   'a selection of three is grouped, and the loose-notes starter steps aside',
 );
 assert.strictEqual(of(many(6, note), { selected: 1 })[0], 'What could I add to this?', 'one selected card');
+assert.strictEqual(of(many(6, note), { selected: 2 })[0], 'Compare these 2 cards', 'two selected cards are compared');
 
 assert.strictEqual(of([note()], { unsorted: 1 })[0], 'Find a place for the idea in Unsorted', 'one idea in Unsorted');
 assert.strictEqual(
@@ -72,9 +82,30 @@ assert.strictEqual(
   'What’s due this week?',
   'due on the last day of the week',
 );
-assert.strictEqual(of([note({ due: '2025-01-01' })])[0], 'What’s due this week?', 'overdue counts');
+assert.strictEqual(of([note({ due: '2025-01-01' })])[0], 'What’s due or overdue?', 'an overdue card is named as such');
+assert.strictEqual(
+  of([note({ due: '2026-11-07' }), note({ due: '2026-11-10' })])[0],
+  'What’s due or overdue?',
+  'overdue alongside due this week',
+);
+assert.strictEqual(of([note({ due: '2026-11-08' })])[0], 'What’s due this week?', 'due today is not overdue');
+assert.deepStrictEqual(
+  of([todo([true, true], '2026-11-01')]),
+  ['What should I add next?'],
+  'a checklist with every item ticked is not due',
+);
+assert.strictEqual(
+  of([todo([true, false], '2026-11-01')])[0],
+  'What’s due or overdue?',
+  'a checklist with an unticked item still is',
+);
 assert.deepStrictEqual(of([note({ due: '2026-11-16' })]), ['What should I add next?'], 'due next week does not');
 assert.deepStrictEqual(of([note({ due: 'soon' })]), ['What should I add next?'], 'a due that is not a date does not');
+
+const lane = many(3, note),
+  kanban: Card = { id: 'k', type: 'coll', ...at, kanban: true, kids: lane.map(k => k.id) };
+assert.ok(of([...lane, kanban]).includes('What should move next on my kanban?'), 'a kanban board asks what moves next');
+assert.ok(!of([...kids, coll]).some(l => /kanban/.test(l)), 'a plain collection is not a kanban');
 
 const doc = (): Card => ({ id: `d${n++}`, type: 'doc', ...at });
 assert.strictEqual(of([doc()])[0], 'Sum up my doc', 'one doc');
@@ -111,7 +142,16 @@ assert.deepStrictEqual(
   ],
   'a prototype board with a wireframe',
 );
-assert.strictEqual(of([note()], { ...proto, selected: 1 })[0], 'Sum up what these cards say', 'a prototype selection');
+assert.strictEqual(
+  of([note()], { ...proto, selected: 1 })[0],
+  'Sum up what this card says',
+  'one card selected on a prototype',
+);
+assert.strictEqual(
+  of([note(), note()], { ...proto, selected: 2 })[0],
+  'Sum up what these cards say',
+  'two cards selected on a prototype',
+);
 assert.deepStrictEqual(
   of([note()], { ...proto, mobbin: true }),
   [
