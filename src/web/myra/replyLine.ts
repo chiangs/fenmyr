@@ -1,7 +1,7 @@
 import type { Card } from '../../shared/model.ts';
-import { appState, session } from '../core/state.ts';
+import { session } from '../core/state.ts';
 import { repoActs } from '../repo/myra.ts';
-import { aiGrants, tasksLine, updateVaultChip } from '../vault/ask.ts';
+import { aiGrants, tasksLine } from '../vault/ask.ts';
 import type { Act } from './acts.ts';
 import type { HeldReply } from './applyTypes.ts';
 import { ask } from './chat.ts';
@@ -20,7 +20,7 @@ export function replyLine({ reply: r, q, ctx }: HeldReply, touched: readonly Car
         : ' I looked in your vault, but found no notes matching that in the folders you allowed.';
   const acts: Act[] = r.confirm
     ? [
-        { label: `${r.confirm || 'Yes, make it'} ✦`, run: () => ask(q, true) },
+        { label: `${r.confirm || 'Yes, make it'} ✦`, run: () => ask(q, true, ctx.sees) },
         { label: 'Not now', ghost: true, run: () => {} },
       ]
     : [];
@@ -28,11 +28,7 @@ export function replyLine({ reply: r, q, ctx }: HeldReply, touched: readonly Car
     acts.push({
       label: 'Search my vault ✦',
       cls: 'next',
-      run: () => {
-        appState.vaultChip = true;
-        updateVaultChip();
-        ask(q);
-      },
+      run: () => ask(q, false, { ...ctx.sees, vaults: aiGrants(session.board).map(g => g.vault) }),
     });
   // what next: Myra's own ideas, or a sensible guess from what she just made
   acts.push(...repoActs(r), ...more);

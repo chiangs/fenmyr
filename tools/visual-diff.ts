@@ -144,6 +144,24 @@ const GROUPS: Record<string, Group> = {
       ],
     ],
   },
+  // what goes with the next message: the board, two selected cards, and the web left out
+  sees: {
+    settings: { webAccess: true },
+    states: [
+      [
+        'chat',
+        async page => {
+          await page.evaluate(() =>
+            document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
+          );
+          await page.evaluate(() => window.__fenmyr.selectOnly(['note', 'todo']));
+          await page.click('#mPill');
+          const web = page.locator('#mcSees [data-chip="web"] .mcs-x');
+          if (await web.count()) await web.click();
+        },
+      ],
+    ],
+  },
   settings: {
     states: TABS.map(t => [
       t,

@@ -70,10 +70,10 @@
   <div class="myra" id="myra">
     <!-- Myra's chat window -->
     <section class="m-chat" id="mChat" aria-labelledby="mcHeadName">
-      <div class="mc-head"><span class="mc-perch" id="mcPerch"><svg class="mc-ic" data-ico="myra-chat" width="28" height="28"></svg></span><b id="mcHeadName">Myra</b><span class="mc-status" id="mcStatus"></span><button class="mc-btn" id="mcHist" title="Earlier chats on this board" hidden><svg data-ico="clock" width="15" height="15"></svg><span>History</span></button><button class="mc-btn" id="mcNew" title="Start a fresh chat">New chat</button><button class="mc-btn x" id="mcClose" title="Close (Esc)" aria-label="Close"><svg data-ico="caret-down" width="16" height="16"></svg></button></div>
+      <div class="mc-head"><span class="mc-perch" id="mcPerch"><svg class="mc-ic" data-ico="myra-chat" width="28" height="28"></svg></span><b id="mcHeadName">Myra</b><span class="mc-status" id="mcStatus" role="status"></span><button class="mc-btn" id="mcHist" title="Earlier chats on this board" aria-label="Earlier chats" hidden><svg data-ico="clock" width="15" height="15"></svg></button><button class="mc-btn" id="mcNew" title="Start a fresh chat">New chat</button><button class="mc-btn x" id="mcClose" title="Close (Esc)" aria-label="Close"><svg data-ico="caret-down" width="16" height="16"></svg></button></div>
+      <div class="mc-sees" id="mcSees" role="group" aria-label="What goes with your next message"></div>
       <div class="mc-list" id="mcList"></div>
-      <div class="mc-sel" id="mcSel" hidden></div>
-      <form class="mc-form" id="mcForm"><textarea id="mcInput" rows="1" placeholder="Ask Myra… “group these by theme”" spellcheck="true" aria-describedby="mcHint"></textarea><div class="mc-foot"><span class="mc-lines" id="mcLines" hidden></span><button type="button" class="mc-vault" id="mcVault" title="Let Myra search your vault for this question" hidden><svg data-ico="notebook" width="14" height="14"></svg><span>Vault</span></button><span class="mc-hint" id="mcHint">⌘↩ to send</span><button class="mc-send" title="Send (⌘↩)" aria-label="Send">↑</button></div></form>
+      <form class="mc-form" id="mcForm"><textarea id="mcInput" rows="1" placeholder="Ask Myra… “group these by theme”" spellcheck="true" aria-describedby="mcHint"></textarea><div class="mc-foot"><span class="mc-lines" id="mcLines" hidden></span><span class="mc-hint" id="mcHint">⌘↩ to send</span><button class="mc-send" title="Send (⌘↩)" aria-label="Send">↑</button></div></form>
     </section>
     <div class="m-bubble" id="mBubble"><small>myra</small><p id="mSay"></p><div class="m-parts" id="mActs"></div></div>
     <button type="button" class="m-pill" id="mPill" aria-controls="mChat" aria-expanded="false">
@@ -341,7 +341,7 @@
         <ol class="vr-steps">
           <li><b>Connect</b> a vault below.</li>
           <li><b>Give access.</b> Each project or board chooses which folders it may read. Use <i>Give access…</i> on the vault, or right-click a project or board and choose Vault access.</li>
-          <li><b>Allow AI reading</b> (optional). In the same dialog, switch on “Let Myra read these with AI”. Then tick <i>Search my vault</i> in Myra’s chat for the questions where you want her to look. Only then are matching notes sent to Claude, a cloud service.</li>
+          <li><b>Allow AI reading</b> (optional). In the same dialog, switch on “Let Myra read these with AI”. Then add the vault under <i>Myra sees</i> in Myra’s chat for the messages where you want her to look. Only then are matching notes sent to Claude, a cloud service.</li>
         </ol>
         <p class="set-note">Folders you mark off-limits, and any note tagged <b>#private</b>, are never read.</p>
         <div id="vaultList"></div>

@@ -4,7 +4,7 @@ import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { saveLib } from '../library/tree.ts';
 import { say } from '../myra/say.ts';
-import { child, closestTo, elementById, esc } from '../ui/dom.ts';
+import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { initVaultAccess, vaultUseClick } from './access.ts';
 import { addVaultNote } from './notes.ts';
@@ -16,20 +16,10 @@ const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export const aiGrants = (b: Board | StoredBoard) => activeGrants(b).filter(g => g.ai);
 
-export function updateVaultChip() {
-  const b = $('mcVault');
-  if (!b) return;
-  const can = !!(Fenmyr.native && session.board && aiGrants(session.board).length);
-  b.hidden = !can;
-  if (!can) appState.vaultChip = false;
-  b.classList.toggle('on', appState.vaultChip);
-  b.setAttribute('aria-pressed', appState.vaultChip ? 'true' : 'false');
-}
-
-// the app (never Claude) finds the notes: the best few across the allowed folders, cut short
-export async function gatherVault(q: string) {
+// the app (never Claude) finds the notes: the best few across the allowed folders of `grants`, cut short
+export async function gatherVault(q: string, grants: readonly VaultGrant[]) {
   const all: Found[] = [];
-  for (const g of aiGrants(session.board)) {
+  for (const g of grants) {
     const v = vaultById(g.vault);
     if (!v) continue;
     try {
@@ -61,13 +51,13 @@ export type VaultTasksUsed = {
   stopped: boolean;
   filtered: boolean;
 };
-export async function gatherVaultTasks(q: string): Promise<VaultTasksUsed | null> {
+export async function gatherVaultTasks(q: string, grants: readonly VaultGrant[]): Promise<VaultTasksUsed | null> {
   if (!ABOUT_TASKS.test(q)) return null;
   const items: VaultTaskForMyra[] = [];
   let open = 0,
     stopped = false,
     filtered = false;
-  for (const g of aiGrants(session.board)) {
+  for (const g of grants) {
     const v = vaultById(g.vault);
     if (!v) continue;
     try {
@@ -171,15 +161,6 @@ export async function openVaultPicker() {
 }
 export function init39() {
   initVaultAccess();
-  // ---------- Myra reads notes with AI: only from grants with the switch on, only when you tick "Search my vault" for that question ----------
-  appState.vaultChip = false;
-
-  $('mcVault').onclick = () => {
-    appState.vaultChip = !appState.vaultChip;
-    updateVaultChip();
-    elementById('mcInput', HTMLTextAreaElement).focus();
-  };
-
   $('vaultAdd').onclick = async () => {
     try {
       const dir = await Fenmyr.vaultPick();

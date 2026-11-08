@@ -1,16 +1,15 @@
 import { type Card, type CardOf, isRecord } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId } from '../canvas/wires.ts';
-import { $ } from '../core/dom.ts';
 import { save, showWhatMyraMade } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { DL } from '../myra/chat.ts';
-import { addMsg, typing } from '../myra/chatLog.ts';
+import { addMsg } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
-import { goo } from '../myra/goos.ts';
 import { parse } from '../myra/replyText.ts';
 import type { SayAction } from '../myra/say.ts';
 import { say } from '../myra/say.ts';
+import { startJob } from '../myra/status.ts';
 import { settings } from '../settings/settings.ts';
 import { onFrame } from '../wireframe/tilt.ts';
 
@@ -87,10 +86,10 @@ export function offerFill(spots: Spot[]) {
 async function quoteFill(spots: Spot[]) {
   if (!chatOpen()) myraOpen(true);
   addMsg('myra', 'Checking your Higgsfield balance and the price per image…');
-  typing(true);
+  const job = startJob({ kind: 'thinking' });
   try {
     const q = parse(await Fenmyr.higgsQuote({ model: 'nano_banana_2' }));
-    typing(false);
+    job.end();
     const per = Number(q.perImage),
       bal = Number(q.balance),
       total = Number.isFinite(per) ? Math.ceil(per * spots.length) : null;
@@ -118,7 +117,7 @@ async function quoteFill(spots: Spot[]) {
           ],
     );
   } catch (e) {
-    typing(false);
+    job.end();
     say(`I couldn't reach Higgsfield: ${messageOf(e)}`);
   }
 }
@@ -146,9 +145,7 @@ async function makeFill(spots: Spot[]) {
     'myra',
     `Making ${spots.length} image${spots.length > 1 ? 's' : ''} with Higgsfield… this can take a minute or two ✦`,
   );
-  typing(true);
-  $('myra').classList.add('thinking');
-  goo.think(true);
+  const job = startJob({ kind: 'pictures', n: spots.length });
   try {
     const r = parse(
       await Fenmyr.higgsMake({
@@ -158,7 +155,7 @@ async function makeFill(spots: Spot[]) {
       }),
     );
     const n = await placeImages(spots, r.images, 'url');
-    typing(false);
+    job.end();
     say(
       n
         ? `Done! ${n} image${n > 1 ? 's are' : ' is'} in place ✦`
@@ -166,20 +163,15 @@ async function makeFill(spots: Spot[]) {
     );
     if (n) showWhatMyraMade(spots.filter(c => c.src));
   } catch (e) {
-    typing(false);
+    job.end();
     say(`Something went wrong making those: ${messageOf(e)}`);
-  } finally {
-    $('myra').classList.remove('thinking');
-    goo.think(false);
   }
 }
 
 async function drawFill(spots: Spot[]) {
   if (!chatOpen()) myraOpen(true);
   addMsg('myra', `Drawing ${spots.length} little illustration${spots.length > 1 ? 's' : ''}…`);
-  typing(true);
-  $('myra').classList.add('thinking');
-  goo.think(true);
+  const job = startJob({ kind: 'pictures', n: spots.length });
   try {
     const r = parse(
       await Fenmyr.drawFill({
@@ -188,14 +180,11 @@ async function drawFill(spots: Spot[]) {
       }),
     );
     const n = await placeImages(spots, r.images, 'svg');
-    typing(false);
+    job.end();
     say(n ? `Drew ${n} ✦ (want real photos later? that's Higgsfield)` : "I couldn't draw those this time.");
     if (n) showWhatMyraMade(spots.filter(c => c.src));
   } catch (e) {
-    typing(false);
+    job.end();
     say(`I couldn't draw those: ${messageOf(e)}`);
-  } finally {
-    $('myra').classList.remove('thinking');
-    goo.think(false);
   }
 }

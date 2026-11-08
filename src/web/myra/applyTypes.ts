@@ -2,6 +2,7 @@ import type { Card, Link } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
 import type { NoteProps, Template } from '../../shared/ops.ts';
 import type { VaultTasksUsed } from '../vault/ask.ts';
+import type { Sees } from './sees.ts';
 
 // the kinds of card she can add; anything else she names becomes a note
 export const MYRA_ADDS = ['todo', 'title', 'swatch', 'doc', 'font'] as const;
@@ -17,7 +18,8 @@ export type NoteUsed = {
   excerpt: string;
   text: string;
 };
-export type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null };
+// `sees`: what the question was sent with, so a button that asks it again sends the same
+export type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null; sees: Sees };
 
 // a picture she fetched, sized for its card
 export type Picture = {

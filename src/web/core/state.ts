@@ -42,7 +42,6 @@ type AppState = {
   lastActive: number;
   lastKey: number;
   animPose: Pose | null;
-  vaultChip: boolean;
   // the microphone answered once, so recording can start without asking again
   micOK: boolean;
   warm: MediaStream | null;
@@ -71,7 +70,6 @@ export const appState: AppState = {
   lastActive: 0,
   lastKey: 0,
   animPose: null,
-  vaultChip: false,
   micOK: false,
   warm: null,
   firstRunSetup: false,
