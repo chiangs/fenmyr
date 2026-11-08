@@ -1,13 +1,11 @@
-import { labelOf } from '../../shared/cardTypes.ts';
-import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { heightGrip } from '../settings/panelHeights.ts';
 import { settings } from '../settings/settings.ts';
-import { closestTo, esc, textField } from '../ui/dom.ts';
+import { textField } from '../ui/dom.ts';
 import { menuOpen, watchPresses } from '../ui/popover.ts';
 import { toolInHand } from '../ui/toolbar.ts';
-import { chatLog, renderChat } from './chatLog.ts';
+import { renderChat } from './chatLog.ts';
 import {
   askHint,
   closes,
@@ -20,13 +18,14 @@ import {
   type Rect,
 } from './chatRules.ts';
 import { keepPerch, perchGoo } from './perch.ts';
+import { initSees, renderSees, seenSelection } from './seesStrip.ts';
 
 // Myra's chat window: her box or M opens it; Esc inside it, the fold button or a click on empty board closes it
 export const chatOpen = () => $('myra').classList.contains('chat');
 
 const ruler = document.createElement('canvas').getContext('2d');
 
-// with cards selected, the hint says they go along with whatever you send
+// with cards going along, the hint says so
 export function renderHint() {
   const field = textField('mcInput'),
     css = getComputedStyle(field),
@@ -36,7 +35,7 @@ export function renderHint() {
       ruler.font = css.font;
       return ruler.measureText(hint).width <= room;
     };
-  field.placeholder = askHint(window.myraName || 'Myra', session.sel.size, session.board?.kind === 'prototype', fits);
+  field.placeholder = askHint(window.myraName || 'Myra', seenSelection(), session.board?.kind === 'prototype', fits);
 }
 
 // her box from layout values, as it wobbles
@@ -114,40 +113,6 @@ export function chatOverBoard(): Rect | null {
   return p?.kind === 'joined' || p?.kind === 'wide' ? p.chat : null;
 }
 
-// a little chip above the box says which cards are selected (they go along with what you send); it follows the selection while the chat is open
-let selChipKey: string | null = null;
-
-function renderSelChip() {
-  const el = $('mcSel');
-  if (!el || !session.board) return;
-  const cs = session.board.cards.filter(c => session.sel.has(c.id)),
-    one = cs.length === 1 ? cs[0] : null;
-  const words = one
-    ? String(one.name || one.text || one.title || one.label || '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 34)
-    : '';
-  const key = `${cs.map(c => c.id).join(',')}|${words}`;
-  if (key === selChipKey) return;
-  selChipKey = key;
-  renderHint();
-  // the empty chat's starters fit the selection
-  if (!chatLog().length) renderChat();
-  if (!cs.length) {
-    el.hidden = true;
-    el.innerHTML = '';
-    return;
-  }
-  const kind = one ? esc(labelOf(one.type)) : '',
-    quote = esc(words),
-    said = words ? ` · “${quote}”` : '',
-    count = cs.length,
-    what = one ? kind + said : `${count} cards selected`;
-  el.innerHTML = `<span class="mcs-t">${what}</span><button type="button" class="mcs-x" title="Deselect" aria-label="Deselect">×</button>`;
-  el.hidden = false;
-}
-
 /** Opens or closes the chat. `toBox`: a close from inside it hands the cursor to her box. */
 export function myraOpen(on: boolean, toBox = false) {
   // a prototype board keeps her chat docked open
@@ -171,8 +136,7 @@ export function myraOpen(on: boolean, toBox = false) {
   if (on) {
     $('mBubble').classList.remove('on');
     renderChat();
-    selChipKey = null;
-    renderSelChip();
+    renderSees();
     $('mcInput').focus();
   }
   if (on !== was) perchGoo(on);
@@ -266,18 +230,12 @@ export function init30() {
   barWatch.observe($('dock'));
   barWatch.observe($('tools'));
 
-  $('mcSel').onclick = e => {
-    if (closestTo(e.target, '.mcs-x')) {
-      selectOnly([]);
-      renderSelChip();
-    }
-  };
-
+  initSees();
   ['pointerup', 'keyup'].forEach(ev => {
     document.addEventListener(
       ev,
       () => {
-        if (chatOpen()) setTimeout(renderSelChip, 0);
+        if (chatOpen()) setTimeout(renderSees, 0);
       },
       true,
     );

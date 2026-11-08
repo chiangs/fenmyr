@@ -149,7 +149,7 @@ async function vaultAccessDialog({
           ? `<div class="tdlg-row"><span>Who decides</span><div class="seg" id="vaFollow"><button data-v="1">${followLabel}</button><button data-v="0">This board only</button></div></div>`
           : '';
     const d =
-      showDialog(`<div class="tdlg vdlg" role="dialog"><h3>Vault access</h3><p class="set-note">${shownTitle}. Notes are only read, and only from the folders you tick. Off-limits folders and #private notes are never read.</p><p class="set-note">To let Myra search these notes with AI, switch on “Let Myra read these with AI” below, then tick “Search my vault” in her chat for each question.</p>
+      showDialog(`<div class="tdlg vdlg" role="dialog"><h3>Vault access</h3><p class="set-note">${shownTitle}. Notes are only read, and only from the folders you tick. Off-limits folders and #private notes are never read.</p><p class="set-note">To let Myra search these notes with AI, switch on “Let Myra read these with AI” below, then add the vault under “Myra sees” in her chat for each message.</p>
         ${followRow}
         <div class="va-list" id="vaList"></div><div class="tdlg-btns"><button class="set-btn" id="vaNo">Cancel</button><button class="set-btn hot" id="vaOk">Save</button></div></div>`);
     const list = child(d, '#vaList');
@@ -199,7 +199,7 @@ async function vaultAccessDialog({
         const aiOn = g.ai ? 'checked' : '';
         body.insertAdjacentHTML(
           'beforeend',
-          `<label class="vg-sw"><span>Let Myra read these with AI<small>When you tick “Search my vault” in her chat, she finds notes in these folders that match your question and sends their text to Claude (a cloud service). Never #private notes or off-limits folders.</small></span><input type="checkbox" class="tgl" data-k="ai" ${aiOn}></label>`,
+          `<label class="vg-sw"><span>Let Myra read these with AI<small>When you add the vault under “Myra sees” in her chat, she finds notes in these folders that match your question and sends their text to Claude (a cloud service). Never #private notes or off-limits folders.</small></span><input type="checkbox" class="tgl" data-k="ai" ${aiOn}></label>`,
         );
         body.onchange = e => {
           if (e.target instanceof HTMLInputElement && e.target.dataset.k === 'ai') g.ai = e.target.checked;

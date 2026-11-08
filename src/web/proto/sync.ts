@@ -60,7 +60,7 @@ function clash(b: Prototype, root: string, files: string[], redo: string) {
         run: () =>
           Fenmyr.gitTakeTheirs({ root })
             .then(() => catchUp(b))
-            .then(() => (redo ? startBuild(redo, true) : say('This is GitHub’s version now ✦', 5000)))
+            .then(() => (redo ? startBuild(redo, null, true) : say('This is GitHub’s version now ✦', 5000)))
             .catch(failed),
       },
     ],

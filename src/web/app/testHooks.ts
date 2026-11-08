@@ -46,6 +46,7 @@ import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
 import { perched, perchGoo } from '../myra/perch.ts';
 import { replyRecord } from '../myra/replyMemory.ts';
+import { peekSees } from '../myra/seesStrip.ts';
 import { snapshot } from '../myra/snapshot.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
@@ -60,7 +61,8 @@ import { PIECES } from '../wireframe/pieces.ts';
 import { restack } from '../wireframe/stack.ts';
 import { openSetup, startTour } from './onboarding.ts';
 
-const NO_VAULT: Picked = { asked: false, used: [] };
+// a reply driven from a test goes with what the strip would send now
+const NO_VAULT: Omit<Picked, 'sees'> = { asked: false, used: [] };
 
 // what tests reach through window.__fenmyr
 const makeHooks = () => ({
@@ -160,9 +162,9 @@ const makeHooks = () => ({
   },
   // a reply as if Claude had just sent it: it waits its turn behind any other
   applyMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
-    Turn.take(async turn => applyHeld(turn, await holdReply(r, q, ctx)), session.board.id),
+    Turn.take(async turn => applyHeld(turn, await holdReply(r, q, { ...ctx, sees: peekSees() })), session.board.id),
   replyRecord,
-  previewMyra: async (r: MyraReply) => previewHeld(await holdReply(r, '', NO_VAULT)),
+  previewMyra: async (r: MyraReply) => previewHeld(await holdReply(r, '', { ...NO_VAULT, sees: peekSees() })),
   fit,
   lib: () => snapshot().library,
   docEditor: liveEditor,

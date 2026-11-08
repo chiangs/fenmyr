@@ -2,6 +2,7 @@ import { session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { dayKey } from './birthday.ts';
 import { ask } from './chat.ts';
+import { seenSelection } from './seesStrip.ts';
 import { starters } from './starters.ts';
 
 const PROTOTYPE_LEAD =
@@ -25,7 +26,7 @@ export function renderGreeting(list: HTMLElement) {
   const lines = starters({
     cards: board?.cards ?? [],
     unsorted: board?.tray.length ?? 0,
-    selected: session.sel.size,
+    selected: seenSelection(),
     prototype,
     mobbin: settings.mobbin,
     today: dayKey(new Date()),

@@ -10,8 +10,9 @@ import { birthdayFacts } from './birthday.ts';
 import { chatKeep, chatLog } from './chatLog.ts';
 import { SLASH } from './greet.ts';
 
-// what Myra sees: the cards (trimmed), where they are, what's selected, and what's in Unsorted
-export function snapshot() {
+// what Myra sees: the cards (trimmed), where they are, which are selected, and what's in Unsorted. `selected`: the
+// cards a question was sent with, which may differ from what is selected when her turn comes.
+export function snapshot(selected: ReadonlySet<string> = session.sel) {
   const words = (c: Card) =>
     c.type === 'note' && c.rich ? canonical(c.text ?? '') : c.text || c.title || c.label || '';
   const brief = (c: Card) =>
@@ -38,7 +39,7 @@ export function snapshot() {
           items: 'items' in c && c.items ? c.items.map(i => i.t) : undefined,
           hex: c.hex,
           url: 'url' in c ? c.url : undefined,
-          selected: session.sel.has(c.id) || undefined,
+          selected: selected.has(c.id) || undefined,
         };
   return {
     today: `${new Date().toDateString()}, ${new Date().toTimeString().slice(0, 5)}`,

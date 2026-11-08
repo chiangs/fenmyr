@@ -330,17 +330,14 @@ async function clears(t: Smoke) {
   });
 }
 
-// at the prototype chat's narrowest (280 px) the footer still fits: the hint gives way, the count and Send do not
+// at the prototype chat's narrowest (280 px) the footer still fits: the hint never runs under Send, the count and Send stay whole
 async function narrowFooter(t: Smoke) {
   const { page } = t;
   await page.fill('#mcInput', Array.from({ length: 12 }, (_, i) => `line ${i + 1}`).join('\n'));
   const fit = await page.evaluate(async () => {
     const T = window.__t,
-      chat = T.el('#mChat'),
-      vault = T.el('#mcVault'),
-      was = vault.hidden;
+      chat = T.el('#mChat');
     chat.style.width = '280px';
-    vault.hidden = false;
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const foot = T.el('.mc-foot'),
       lines = T.el('#mcLines'),
@@ -348,10 +345,9 @@ async function narrowFooter(t: Smoke) {
       seen = {
         inside: foot.scrollWidth <= foot.clientWidth && r('.mc-send').right <= r('#mcForm').right,
         countOnOneLine: !lines.hidden && lines.offsetHeight <= parseFloat(getComputedStyle(lines).lineHeight) + 1,
-        hintGivesWay: T.el('#mcHint').scrollWidth > T.el('#mcHint').clientWidth,
+        hintClearOfSend: r('#mcHint').right <= r('.mc-send').left,
       };
     chat.style.width = '';
-    vault.hidden = was;
     return seen;
   });
   await page.fill('#mcInput', '');

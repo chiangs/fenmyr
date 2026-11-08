@@ -100,9 +100,25 @@ await check('selecting cards with the chat open updates the starters', async () 
   assert.strictEqual((await ideas())[0], 'Compare these 2 cards', 'two cards');
 });
 
-await check('clearing the selection with the chat open brings back the board starters', async () => {
-  await page.click('#mcSel .mcs-x');
+await check('a selection left out of the next message offers the board starters', async () => {
+  await page.click('#mcSees [data-chip="sel"] .mcs-x');
   await page.waitForTimeout(200);
+  assert.strictEqual((await ideas())[0], 'Group my 6 notes by theme', 'left out');
+  await page.click('#mcSees [data-chip="sel"]');
+  await page.waitForTimeout(200);
+  assert.strictEqual((await ideas())[0], 'Compare these 2 cards', 'put back');
+});
+
+await check('clearing the selection with the chat open brings back the board starters', async () => {
+  for (const id of ['n1', 'n0']) {
+    const box = await page.locator(`.card[data-id="${id}"]`).boundingBox();
+    if (!box) throw new Error(`no ${id} on screen`);
+    await page.keyboard.down('Shift');
+    await page.mouse.click(box.x + 20, box.y + 10);
+    await page.keyboard.up('Shift');
+  }
+  await page.waitForTimeout(200);
+  assert.strictEqual(await page.evaluate(() => document.querySelectorAll('#mcSees [data-chip="sel"]').length), 0);
   assert.strictEqual((await ideas())[0], 'Group my 6 notes by theme');
 });
 

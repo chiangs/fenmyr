@@ -139,21 +139,20 @@ async function vaults(t: Smoke) {
   });
 }
 
-// Myra reads vault notes only with the grant's switch on and the chip ticked for that question; only allowed folders; and she says what she read
+// Myra reads vault notes only with the grant's switch on and the vault added under “Myra sees” for that question; only allowed folders; and she says what she read
 async function vaultAI(t: Smoke) {
   const { page, data } = t,
     promptNow = () => fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8');
   const chip = await page.evaluate(async () => {
-    const T = window.__t,
-      M = window.__fenmyr,
+    const M = window.__fenmyr,
       v = (await Fenmyr.vaults())[0];
     if (!v) throw new Error('no vault');
     M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: false, write: false, writeTo: 'Myra' }];
     M.applyToolbar();
-    const hiddenWhenOff = T.el('#mcVault').hidden;
+    const hiddenWhenOff = !document.querySelector('#mcSees [data-chip="vault"]');
     M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: true, write: false, writeTo: 'Myra' }];
     M.applyToolbar();
-    const shown = !T.el('#mcVault').hidden;
+    const shown = !!document.querySelector('#mcSees [data-chip="vault"]');
     await M.ask('what do I know about cloudberries?');
     return { hiddenWhenOff, shown };
   });
@@ -165,14 +164,14 @@ async function vaultAI(t: Smoke) {
   const ticked = await page.evaluate(async () => {
     const T = window.__t,
       M = window.__fenmyr;
-    T.click('#mcVault');
-    const on = T.el('#mcVault').classList.contains('on');
+    T.click('#mcSees [data-chip="vault"]');
+    const on = !T.el('#mcSees [data-chip="vault"]').classList.contains('out');
     await M.ask('what do I know about cloudberries?');
     await T.wait(300);
     return {
       on,
       said: (document.body.textContent ?? '').includes('I read 2 notes from your vault'),
-      reset: !T.el('#mcVault').classList.contains('on'),
+      reset: T.el('#mcSees [data-chip="vault"]').classList.contains('out'),
     };
   });
   const p = promptNow(),
@@ -249,7 +248,7 @@ async function vaultTasks(t: Smoke) {
       '- [ ] Unrelated chore',
     ].join('\n'),
   );
-  // Myra may read the Projects folder, and the chip is ticked for one question
+  // Myra may read the Projects folder, and the vault is added for one question
   const askTasks = (q: string) =>
     page.evaluate(async q => {
       const T = window.__t,
@@ -258,7 +257,7 @@ async function vaultTasks(t: Smoke) {
       if (!v) throw new Error('no vault');
       M.board.vaultAccess = [{ vault: v.id, folders: ['Projects'], ai: true, write: false, writeTo: 'Myra' }];
       M.applyToolbar();
-      T.click('#mcVault');
+      T.click('#mcSees [data-chip="vault"]');
       await M.ask(q);
       await T.wait(300);
       return document.body.textContent ?? '';

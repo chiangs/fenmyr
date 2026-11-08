@@ -7,6 +7,7 @@ import { appState, session } from '../core/state.ts';
 import { cardEl } from '../ui/dom.ts';
 import { GUIDE } from './chat.ts';
 import { say } from './say.ts';
+import { paintStatus } from './status.ts';
 
 // ---------- Myra's helpers: Claude Code, Mobbin, Higgsfield ----------
 let lastConn = 0;
@@ -26,7 +27,10 @@ export async function showConnections(force = false) {
   const c = await Fenmyr.connections().catch(() => null),
     // the browser version can't reach any of them, so it offers no buttons
     inBrowser = !Fenmyr.native;
-  if (!inBrowser) appState.haveClaude = !!c?.claude;
+  if (!inBrowser) {
+    appState.haveClaude = !!c?.claude;
+    paintStatus();
+  }
   const rows: [key: keyof Connections, name: string, url: string, verb: string][] = [
     ['claude', 'Claude Code', GUIDE, 'Set up'],
     ['mobbin', 'Mobbin', 'https://claude.ai/settings/connectors', 'Connect'],

@@ -116,6 +116,8 @@ jobs:
         run: node tests/chatStarters.ts
       - name: Chat greeting test (her hello by her given name, and starters from the board)
         run: node tests/chatGreeting.ts
+      - name: Chat sees test (the "Myra sees" chips, what each message is sent with, and the header's status line)
+        run: node tests/chatSees.ts
       - name: Mac font list test
         run: node tests/mac.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)

@@ -1,6 +1,7 @@
 // Myra writing a prototype's code through a stand-in Claude Code: the files change in the prototype's folder, the
 // preview shows the result, her explanation comes with an Undo that puts the folder back without touching what's
-// staged, and a change outside the folder is reported.
+// staged, the header says Building until the build ends, a selection left out of the request reaches the builder as
+// every card, and a change outside the folder is reported.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -33,8 +34,10 @@ case "$*" in
     seen=''; for a in "$@"; do [ "$seen" = 1 ] && ls "$a" > ${work}/pictures.txt && echo "$a" > ${work}/picture-dir.txt; seen=''; [ "$a" = --add-dir ] && seen=1; done
     echo 'export function App() { return <h1>Built by Myra</h1>; }' > src/App.tsx
     case "$2" in *OUTSIDE*) echo stray > ../../stray.txt ;; esac
+    case "$2" in *SLOW*) sleep 3 ;; esac
     echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'"$PWD"'/src/App.tsx"}}]}}'
     printf '%s\\n' '{"type":"result","is_error":false,"result":"I built the heading from your Checkout note.\\nCARDS: src/App.tsx=n1"}' ;;
+  *BUILD-ALL*) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"On it.\\", \\"build\\": {\\"request\\": \\"Build every card.\\"}}"}' ;;
   *) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"ok\\"}"}' ;;
 esac
 `,
@@ -249,6 +252,34 @@ try {
   await until(async () => (await lastMyra()).split('Commit 1 changed file').length === 3, 'Myra asks again');
   await tapMyra('Commit');
   await until(async () => /Git doesn’t know who is committing/.test(await lastMyra()), 'a commit git refuses says why');
+
+  const status = () => page.evaluate(() => document.getElementById('mcStatus')?.textContent ?? '');
+  await build('SLOW heading.');
+  await until(async () => (await status()).startsWith('Building'), 'the header says she is building');
+  await page.evaluate(() => window.__fenmyr.ask('Is it nearly done?'));
+  assert.match(await lastMyra(), /\| ok$/, 'a question answered while the build runs');
+  assert.match(await status(), /^Building/, 'leaves Building in the header');
+  assert.strictEqual(
+    await page.textContent('#mcStatus [role="status"]'),
+    'Building',
+    'screen readers hear Building, not each file it writes',
+  );
+  await until(async () => (await lastMyra()).split('I built the heading').length === 4, 'the slow build ends');
+  assert.strictEqual(await status(), 'Ready', 'and then the header is Ready');
+
+  await page.evaluate(() => {
+    window.__fenmyr.selectOnly(['n1']);
+    window.__fenmyr.applyToolbar();
+  });
+  await page.click('#mcSees [data-chip="sel"] .mcs-x');
+  await page.evaluate(() => window.__fenmyr.ask('BUILD-ALL'));
+  await until(async () => (await lastMyra()).split('I built the heading').length === 5, 'a build asked for in words');
+  assert.deepStrictEqual(await page.evaluate(() => window.__fenmyr.sel), ['n1'], 'the card stays selected');
+  assert.match(
+    fs.readFileSync(path.join(work, 'prompt.txt'), 'utf8'),
+    /"id":"k1"/,
+    'and with the selection left out the builder reads every card',
+  );
 
   await build('OUTSIDE this time.');
   await until(
