@@ -18,8 +18,9 @@ export type NoteUsed = {
   excerpt: string;
   text: string;
 };
-// `sees`: what the question was sent with, so a button that asks it again sends the same
-export type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null; sees: Sees };
+// `web`: the web was on for this request, so pages she says she read can be real. `sees`: what the question was sent
+// with, so a button that asks it again sends the same.
+export type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null; web?: boolean; sees: Sees };
 
 // a picture she fetched, sized for its card
 export type Picture = {

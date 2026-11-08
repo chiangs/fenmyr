@@ -12,6 +12,7 @@ import { elementById, textField } from '../ui/dom.ts';
 import { aiGrants, gatherVault, gatherVaultTasks, type VaultTasksUsed } from '../vault/ask.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
+import type { Picked } from './applyTypes.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
@@ -161,12 +162,13 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
     return offlineMyra(q, "You're offline, so I can't think with Claude right now. I'll be back when the internet is.");
   if (confirmed) addMsg('myra', 'Making it… this can take a minute ✦');
   const job = startJob({ kind: 'thinking' });
-  const ctx: {
-    asked: boolean;
-    used: Awaited<ReturnType<typeof gatherVault>>;
-    tasks: VaultTasksUsed | null;
-    sees: Sees;
-  } = { asked: false, used: [], tasks: null, sees };
+  const ctx: Picked & { tasks: VaultTasksUsed | null; web: boolean } = {
+    asked: false,
+    used: [],
+    tasks: null,
+    web: sees.web && !!settings.webAccess,
+    sees,
+  };
   // a vault whose access was taken away after the question was sent is not read
   const grants = aiGrants(session.board).filter(g => sees.vaults.includes(g.vault));
   if (grants.length) {
@@ -193,7 +195,7 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
       {
         mobbin: settings.mobbin,
         higgs: settings.higgs,
-        web: sees.web && !!settings.webAccess,
+        web: ctx.web,
         canVault,
         vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })),
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),

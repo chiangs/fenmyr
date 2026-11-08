@@ -345,6 +345,7 @@
     "tests/prototype.ts": "Tests prototyping folders and new prototypes, names and shared files.",
     "tests/replies.ts": "Pins what each kind of Myra reply does to the board, her chat, the library and templates.",
     "tests/replyActs.ts": "Checks what shows under a reply that changed the board in the real app: its summary, Show on board, and Undo with Ctrl+Z, a board reopened and her bubble.",
+    "tests/replySources.ts": "Checks what Myra read and her next steps under a reply in the real app: note and page links, their order, and that they last through reopen and restart.",
     "tests/reply.ts": "Checks a malformed reply from Myra loses only its bad fields.",
     "tests/replyUndo.ts": "Checks a Myra reply is one undo step even with slow pictures, waits its turn, and previews without changing anything.",
     "tests/richAccess.ts": "Checks rich notes with a keyboard and a screen reader: names, pressed states, F10 and the link box.",

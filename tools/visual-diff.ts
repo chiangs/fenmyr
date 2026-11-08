@@ -83,7 +83,20 @@ const CHANGED = {
   ],
   remove: ['myranote'],
   next: ['Name the columns', 'Add due dates', 'Sum up each phase'],
+  pages: [{ url: 'https://example.com/planning', title: 'Planning in phases' }],
 };
+// the notes she was given for it, with the web on, so what she read shows under her reply
+const note = (rel: string, title: string) => ({
+  vault: 'Notes',
+  vaultId: 'v1',
+  rel,
+  title,
+  tags: [],
+  props: undefined,
+  excerpt: title,
+  text: title,
+});
+const READ = { asked: true, used: [note('Roadmap.md', 'Roadmap'), note('Retro.md', 'Retro notes')], web: true };
 const GROUPS: Record<string, Group> = {
   light: { states: board },
   'proto-wide': { proto: true, width: 1440, states: screen },
@@ -136,7 +149,7 @@ const GROUPS: Record<string, Group> = {
           await page.evaluate(() =>
             document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
           );
-          await page.evaluate(r => window.__fenmyr.applyMyra(r, 'q'), CHANGED);
+          await page.evaluate(([r, ctx]) => window.__fenmyr.applyMyra(r, 'q', ctx), [CHANGED, READ] as const);
           await settle(page, 1000);
           await page.keyboard.press('Escape');
           await page.click('#mPill');

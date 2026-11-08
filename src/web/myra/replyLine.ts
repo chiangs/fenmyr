@@ -1,4 +1,5 @@
 import type { Card } from '../../shared/model.ts';
+import { webPagesOf } from '../../shared/myraReply.ts';
 import { session } from '../core/state.ts';
 import { repoActs } from '../repo/myra.ts';
 import { aiGrants, tasksLine } from '../vault/ask.ts';
@@ -8,15 +9,27 @@ import { ask } from './chat.ts';
 import { guessNext, noEmoji } from './replyText.ts';
 import type { SayAction } from './say.ts';
 
+// what next: up to three, each once, as a person would type them
+const nextOf = (list: readonly unknown[]) =>
+  list
+    .filter((t): t is string => typeof t === 'string')
+    .map(t => noEmoji(t).trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
 // What she says once a reply has landed, with its buttons and how long the bubble stays. `touched`: the cards the reply
 // made, moved or edited, each once. `more`: buttons its effects offer.
-export function replyLine({ reply: r, q, ctx }: HeldReply, touched: readonly Card[], more: readonly SayAction[]) {
-  const read = !ctx.asked
+export function replyLine(
+  { reply: r, q, ctx, notes }: HeldReply,
+  touched: readonly Card[],
+  more: readonly SayAction[],
+) {
+  const looked = !ctx.asked
     ? ''
     : ctx.tasks
       ? tasksLine(ctx.tasks)
       : ctx.used.length
-        ? ` I read ${ctx.used.length} note${ctx.used.length === 1 ? '' : 's'} from your vault: ${ctx.used.map(n => n.title).join(', ')}.`
+        ? ''
         : ' I looked in your vault, but found no notes matching that in the folders you allowed.';
   const acts: Act[] = r.confirm
     ? [
@@ -30,16 +43,16 @@ export function replyLine({ reply: r, q, ctx }: HeldReply, touched: readonly Car
       cls: 'next',
       run: () => ask(q, false, { ...ctx.sees, vaults: aiGrants(session.board).map(g => g.vault) }),
     });
-  // what next: Myra's own ideas, or a sensible guess from what she just made
   acts.push(...repoActs(r), ...more);
-  const next = acts.length
-    ? []
-    : (r.next?.length ? r.next : guessNext(r, touched))
-        .filter((t: unknown): t is string => typeof t === 'string')
-        .map(noEmoji)
-        .filter(Boolean)
-        .slice(0, 3);
-  for (const t of next) acts.push({ kind: 'next', text: t.trim() });
+  // her own next steps always show; a guess from what she just made gives way to any other button
+  const own = nextOf(r.next ?? []),
+    next = own.length ? own : acts.length ? [] : nextOf(guessNext(r, touched));
+  for (const t of next) acts.push({ kind: 'next', text: t });
+  // the notes she named, or else every note she was given; pages only when she could have opened them
+  const used = (notes.length ? notes : ctx.used).map(n => ({ vault: n.vaultId, rel: n.rel, title: n.title })),
+    pages = ctx.web ? webPagesOf(r) : [];
+  if (used.length || pages.length) acts.push({ kind: 'read', notes: used, pages });
   const said = (r.say && noEmoji(r.say)) || (touched.length ? `Done! I touched ${touched.length} cards.` : 'Done!');
-  return { text: said + read, ms: r.confirm ? 0 : next.length ? 16000 : 9000, acts };
+  const lasting = next.length || used.length || pages.length;
+  return { text: said + looked, ms: r.confirm ? 0 : lasting ? 16000 : 9000, acts };
 }
