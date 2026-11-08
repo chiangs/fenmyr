@@ -118,6 +118,8 @@ jobs:
         run: node tests/chatGreeting.ts
       - name: Chat sees test (the "Myra sees" chips, what each message is sent with, and the header's status line)
         run: node tests/chatSees.ts
+      - name: Chat add test (pictures, files and vault notes added to one message, and their limits)
+        run: node tests/chatAdd.ts
       - name: Mac font list test
         run: node tests/mac.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)

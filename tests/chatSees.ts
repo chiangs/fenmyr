@@ -18,6 +18,7 @@ const input = (more: Partial<SeesInput> = {}): SeesInput => ({
   one: null,
   vaults: [{ vault: 'v1', name: 'Garden' }],
   web: true,
+  added: [],
   ...more,
 });
 const kinds = (i: SeesInput, flips = NO_FLIPS) =>
@@ -29,7 +30,12 @@ assert.deepStrictEqual(
   ['board', 'selection:true', 'vault:false', 'web:true'],
   'the selection and the web go unless left out; a vault goes only once added',
 );
-assert.deepStrictEqual(capture(input({ sel: ['a', 'b'] }), NO_FLIPS), { sel: ['a', 'b'], vaults: [], web: true });
+assert.deepStrictEqual(capture(input({ sel: ['a', 'b'] }), NO_FLIPS), {
+  sel: ['a', 'b'],
+  vaults: [],
+  web: true,
+  added: [],
+});
 const two = chipsOf(input({ sel: ['a', 'b'] }), NO_FLIPS);
 const keyOf = (kind: string) => {
   const c = two.find(x => x.kind === kind);
@@ -37,7 +43,7 @@ const keyOf = (kind: string) => {
 };
 const left = toggle(toggle(NO_FLIPS, keyOf('selection')), keyOf('web')),
   added = toggle(left, keyOf('vault'));
-assert.deepStrictEqual(capture(input({ sel: ['a', 'b'] }), added), { sel: [], vaults: ['v1'], web: false });
+assert.deepStrictEqual(capture(input({ sel: ['a', 'b'] }), added), { sel: [], vaults: ['v1'], web: false, added: [] });
 assert.deepStrictEqual(
   kinds(input({ sel: ['a', 'b'] }), added),
   ['board', 'selection:false', 'vault:true', 'web:false'],

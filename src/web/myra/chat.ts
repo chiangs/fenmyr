@@ -1,3 +1,4 @@
+import { NOT_SENT } from '../../shared/askFiles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
@@ -9,7 +10,7 @@ import { timerRequest } from '../features/duration.ts';
 import { clearGlow, runTimerRequest } from '../features/timer.ts';
 import { settings } from '../settings/settings.ts';
 import { elementById, textField } from '../ui/dom.ts';
-import { aiGrants, gatherVault, gatherVaultTasks, type VaultTasksUsed } from '../vault/ask.ts';
+import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed } from '../vault/ask.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
 import type { Picked } from './applyTypes.ts';
@@ -22,6 +23,7 @@ import { parse } from './replyText.ts';
 import type { SayAction } from './say.ts';
 import { reply } from './say.ts';
 import type { Sees } from './sees.ts';
+import { initSeesAdd } from './seesAdd.ts';
 import { takeSees } from './seesStrip.ts';
 import { initSlashMenu, slash } from './slash.ts';
 import { snapshot } from './snapshot.ts';
@@ -112,6 +114,12 @@ function webMyra(q: string) {
   );
 }
 
+const leftOut = (titles: string[]) => {
+  const names = titles.map(t => `“${t}”`).join(', '),
+    them = titles.length === 1 ? 'it' : 'them';
+  return `I can’t read ${names} from your vault any more, so I left ${them} out.`;
+};
+
 export let animAskedAt = 0;
 export let timerAskedAt = 0;
 
@@ -169,17 +177,25 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
     web: sees.web && !!settings.webAccess,
     sees,
   };
-  // a vault whose access was taken away after the question was sent is not read
-  const grants = aiGrants(session.board).filter(g => sees.vaults.includes(g.vault));
+  // a vault whose access was taken away after the question was sent is not read, nor a note added from it
+  const grants = aiGrants(session.board).filter(g => sees.vaults.includes(g.vault)),
+    chosen = await readAdded(
+      sees.added.flatMap(a => (a.kind === 'note' ? [a] : [])),
+      aiGrants(session.board),
+    ),
+    files = sees.added.flatMap(a => (a.kind === 'file' ? [{ name: a.name, data: a.data }] : []));
+  if (chosen.refused.length) addMsg('myra', leftOut(chosen.refused));
   if (grants.length) {
     ctx.asked = true;
     try {
       ctx.tasks = await gatherVaultTasks(q, grants);
       ctx.used = ctx.tasks ? [] : await gatherVault(q, grants);
     } catch (_e) {}
-    const notes = ctx.tasks ? ctx.tasks.notes : ctx.used.length;
-    if (notes) job.show({ kind: 'reading', notes });
   }
+  // the notes they chose go first, so the cap on notes never drops one
+  ctx.used = [...chosen.used, ...ctx.used];
+  const notes = (ctx.tasks ? ctx.tasks.notes : 0) + ctx.used.length;
+  if (notes) job.show({ kind: 'reading', notes });
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
   try {
     const raw = await Fenmyr.ask(
@@ -199,12 +215,14 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
         canVault,
         vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })),
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),
+        ...(files.length ? { files } : {}),
       },
     );
     noteSignIn(false);
     await applyHeld(turn, await holdReply(parse(raw), q, ctx));
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
+    if (why.startsWith(NOT_SENT)) return reply(why);
     if (/Claude Code/.test(why)) {
       appState.haveClaude = false;
       return offlineMyra(
@@ -271,6 +289,7 @@ export function init31() {
 
   initChatInput();
   initSlashMenu();
+  initSeesAdd();
 
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());
 
