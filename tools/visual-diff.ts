@@ -70,6 +70,20 @@ const board: [string, Step][] = [
   ],
 ];
 const screen: [string, Step][] = [['screen', async () => {}]];
+// a reply that changed the board, under her words in the open chat
+const CHANGED = {
+  say: 'I’ve sorted these into phases.',
+  collections: [{ name: 'Phases', kanban: true, columns: ['To do', 'Doing', 'Done'] }],
+  edit: [
+    { id: 'todo', in: 'Phases' },
+    { id: 'doc', in: 'Phases' },
+    { id: 'note', in: 'Phases' },
+    { id: 't1', text: 'Reworded by Myra' },
+    { id: 't2', text: 'Also reworded' },
+  ],
+  remove: ['myranote'],
+  next: ['Name the columns', 'Add due dates', 'Sum up each phase'],
+};
 const GROUPS: Record<string, Group> = {
   light: { states: board },
   'proto-wide': { proto: true, width: 1440, states: screen },
@@ -109,6 +123,22 @@ const GROUPS: Record<string, Group> = {
       [
         'find-chat',
         async page => {
+          await page.click('#mPill');
+        },
+      ],
+    ],
+  },
+  reply: {
+    states: [
+      [
+        'chat',
+        async page => {
+          await page.evaluate(() =>
+            document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
+          );
+          await page.evaluate(r => window.__fenmyr.applyMyra(r, 'q'), CHANGED);
+          await settle(page, 1000);
+          await page.keyboard.press('Escape');
           await page.click('#mPill');
         },
       ],

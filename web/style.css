@@ -222,6 +222,11 @@ html.mac .win-drag { display: block; position: fixed; left: 76px; top: 0; width:
 /* buttons inside Myra's bubble */
 .m-acts { display: flex; gap: 8px; margin-top: 10px; }
 .m-acts:empty { display: none; }
+.m-parts:empty { display: none; }
+/* "Changed on the board" under a reply; currentColor so it reads on her bubble and in the chat alike */
+.m-summary { white-space: normal; margin-top: 8px; padding-top: 7px; border-top: 1px solid color-mix(in oklch, currentColor 18%, transparent); font: 500 12.5px/1.45 var(--font); }
+.m-summary b { display: block; font: 700 11px/1.3 var(--font); opacity: .7; }
+.m-summary ul { list-style: none; margin: 3px 0 0; padding: 0; }
 .m-acts button { padding: 8px 14px; border-radius: var(--pill-r); corner-shape: squircle; border: 1.5px solid #fff; background: #fff; color: #222; font: 600 12px/1 var(--font); cursor: pointer; }
 .m-acts button.ghost { background: none; color: #fff; }
 .card .tag.src { font: 600 11px/1.3 var(--font); padding: 4px 9px 5px; rotate: -2deg; }
@@ -834,7 +839,7 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-msg.myra { align-self: flex-start; background: #f7f4f1; border-bottom-left-radius: 6px; position: relative; left: auto; bottom: auto; transform: none; z-index: 2; }
 .mc-msg.me { align-self: flex-end; background: #fdecdb; border-bottom-right-radius: 6px; }
 .mc-msg .m-acts { margin-top: 8px; }
-.mc-msg .m-acts button { background: var(--ink); color: #fff; border-color: var(--ink); }
+.mc-msg .m-acts button { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .mc-msg .m-acts button.ghost { background: none; color: var(--ink); }
 .mc-msg.typing { display: flex; gap: 4px; padding: 13px 14px; }
 .mc-msg.typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-faint); animation: mc-dot 1s ease-in-out infinite; }

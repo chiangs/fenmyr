@@ -1,9 +1,10 @@
 import { $ } from '../core/dom.ts';
 import { settings } from '../settings/settings.ts';
 import type { Act } from './acts.ts';
-import { actsRow, addMsg } from './chatLog.ts';
+import { addMsg } from './chatLog.ts';
 import { chatOpen } from './chatWindow.ts';
 import { hopMyra } from './goos.ts';
+import { drawActs } from './replyView.ts';
 
 let sayT: ReturnType<typeof setTimeout> | undefined;
 
@@ -31,16 +32,8 @@ export function say(text: string, ms = 6000, acts: Act[] = [], keep = false) {
   }
   const kept = keep && text ? addMsg('myra', text, acts) : undefined;
   $('mSay').textContent = text;
-  $('mActs').innerHTML = '';
-  actsRow(kept, acts).forEach(a => {
-    const b = document.createElement('button');
-    b.textContent = a.label;
-    b.className = a.cls || (a.ghost ? 'ghost' : '');
-    b.onclick = () => {
-      $('mBubble').classList.remove('on');
-      a.run();
-    };
-    $('mActs').appendChild(b);
+  drawActs($('mActs'), kept, acts, after => {
+    if (after !== 'stay') $('mBubble').classList.remove('on');
   });
   $('mBubble').classList.add('on');
   hopMyra();

@@ -510,7 +510,18 @@
    {
     "who": "myra",
     "text": "Here you go.",
+    "summary": [
+     "+ 1 kanban, Sprint, with 2 columns and 1 card",
+     "+ 1 collection, Loose ends, with 1 card",
+     "+ 19 cards",
+     "+ 2 connectors",
+     "→ 1 note moved out",
+     "✎ 8 cards changed",
+     "− 2 notes removed"
+    ],
     "acts": [
+     "Show on board",
+     "Undo",
      "Make the mobile version",
      "Try a different colour style",
      "Write the real copy"
@@ -519,6 +530,7 @@
    {
     "who": "myra",
     "text": "There is 1 image spot waiting for pictures. Higgsfield makes real photos (that uses credits, and I check the price with you first), or I can draw simple illustrations for free.",
+    "summary": [],
     "acts": [
      "Fill 1 with Higgsfield ✦",
      "Draw simple illustrations (free)",
@@ -826,11 +838,18 @@
    {
     "who": "myra",
     "text": "From your vault. I read 2 notes from your vault: Alpha, Beta.",
-    "acts": []
+    "summary": [
+     "+ 2 vault notes"
+    ],
+    "acts": [
+     "Show on board",
+     "Undo"
+    ]
    },
    {
     "who": "myra",
     "text": "Nothing there. I looked in your vault, but found no notes matching that in the folders you allowed.",
+    "summary": [],
     "acts": []
    }
   ],
@@ -1137,12 +1156,19 @@
    {
     "who": "myra",
     "text": "Here’s “Starter” ✦ It’s all yours to change.",
+    "summary": [],
     "acts": []
    },
    {
     "who": "myra",
     "text": "Sorted.",
+    "summary": [
+     "+ 3 notes",
+     "+ 1 connector"
+    ],
     "acts": [
+     "Show on board",
+     "Undo",
      "Group these by theme",
      "What am I missing?",
      "Turn this into a plan"
@@ -1578,6 +1604,7 @@
    {
     "who": "myra",
     "text": "Shall I make it?",
+    "summary": [],
     "acts": [
      "Yes, build it ✦",
      "Not now"
@@ -1586,11 +1613,13 @@
    {
     "who": "myra",
     "text": "Maybe the vault?",
+    "summary": [],
     "acts": []
    },
    {
     "who": "myra",
     "text": "What next?",
+    "summary": [],
     "acts": [
      "Do this",
      "Then that",
@@ -1600,7 +1629,12 @@
    {
     "who": "myra",
     "text": "A swatch for you.",
+    "summary": [
+     "+ 1 colour"
+    ],
     "acts": [
+     "Show on board",
+     "Undo",
      "Pick fonts that match",
      "Build a page in these colours"
     ]
@@ -1608,6 +1642,7 @@
    {
     "who": "myra",
     "text": "Tea time",
+    "summary": [],
     "acts": []
    }
   ],
@@ -1875,21 +1910,35 @@
    {
     "who": "myra",
     "text": "Done! I touched 2 cards.",
-    "acts": []
+    "summary": [
+     "+ 1 note, “One”",
+     "✎ 1 note reworded"
+    ],
+    "acts": [
+     "Show on board",
+     "Undo"
+    ]
    },
    {
     "who": "myra",
     "text": "Done!",
+    "summary": [
+     "− 1 note removed"
+    ],
+    "acts": [
+     "Undo"
+    ]
+   },
+   {
+    "who": "myra",
+    "text": "Done! I touched 1 cards.",
+    "summary": [],
     "acts": []
    },
    {
     "who": "myra",
     "text": "Done! I touched 1 cards.",
-    "acts": []
-   },
-   {
-    "who": "myra",
-    "text": "Done! I touched 1 cards.",
+    "summary": [],
     "acts": []
    }
   ],
@@ -1939,7 +1988,13 @@
    {
     "who": "myra",
     "text": "A new board.",
-    "acts": []
+    "summary": [
+     "+ 1 note, “On the new board”"
+    ],
+    "acts": [
+     "Show on board",
+     "Undo"
+    ]
    }
   ],
   "timer": "Tea"

@@ -156,13 +156,22 @@ await check('a reply that changes the board keeps what it changed, and the cards
     [['added', 'edited']],
     'and leaves out the lists with nothing in them',
   );
-  assert.deepStrictEqual(await actsOf(page, 'Changed.'), ['next:Again'], 'which draws no button yet');
+  assert.deepStrictEqual(
+    await actsOf(page, 'Changed.'),
+    [':Show on board', 'ghost:Undo', 'next:Again'],
+    'which draws Show on board and Undo, before her next steps',
+  );
   await page.locator('#mcList .m-acts button', { hasText: 'Again' }).click();
   await settle(page, 300);
   assert.deepStrictEqual(
     (await storedActs('Changed.')).map(a => a.kind),
     ['changes'],
     'a click takes the row away and keeps what the reply changed',
+  );
+  assert.deepStrictEqual(
+    await actsOf(page, 'Changed.'),
+    [':Show on board', 'ghost:Undo'],
+    'and Show on board and Undo stay',
   );
   const said = await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Only words.' }, 'q'));
   assert.ok(said);

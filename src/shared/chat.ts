@@ -6,8 +6,9 @@ import type { ChangeSet } from './changes.ts';
 export type ChatAction =
   // sends `text` as the person's question
   | { kind: 'next'; text: string }
-  // what a reply changed and its id: Show on board, and Undo while its before-states are still in memory
-  | { kind: 'changes'; reply: string; set: StoredChangeSet }
+  // What a reply changed and its id: Show on board, and Undo while its before-states are still in memory. lines: the
+  // summary as worded when the reply landed, which replies from before it was kept don't have.
+  | { kind: 'changes'; reply: string; set: StoredChangeSet; lines?: string[] }
   // a card a build came from
   | { kind: 'source'; card: string }
   // A build's buttons, shown only while `board`, the prototype it built, is open. Undo puts the folder back as it was
@@ -93,7 +94,8 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
   next: x => (typeof x.text === 'string' ? { kind: 'next', text: x.text } : null),
   changes: x => {
     const set = readChangeSet(x.set);
-    return typeof x.reply === 'string' && set ? { kind: 'changes', reply: x.reply, set } : null;
+    if (typeof x.reply !== 'string' || !set) return null;
+    return { kind: 'changes', reply: x.reply, set, ...(strings(x.lines) ? { lines: x.lines } : {}) };
   },
   source: x => (typeof x.card === 'string' ? { kind: 'source', card: x.card } : null),
   buildUndo: x =>

@@ -1,3 +1,4 @@
+import { shareStrings } from '../../shared/changes.ts';
 import type { Card } from '../../shared/model.ts';
 import { fit, toWorld } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
@@ -55,6 +56,7 @@ export function travel(dir: -1 | 1) {
   if (moved === undefined) return;
   (dir < 0 ? future : past).push(moved);
   const st = JSON.parse(past[past.length - 1] ?? '{}');
+  shareStrings(st, session.board);
   restoring = true;
   Object.assign(session.board, st);
   if (!st.trayLinks) delete session.board.trayLinks;

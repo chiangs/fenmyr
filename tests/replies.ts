@@ -8,6 +8,9 @@
 //   saves "from new" keeps them, she glides to them, counts them and guesses next steps from them.
 // - Timers, animations and the library run after the board changes, not before.
 // - Pictures load three at a time, not one after another, and still land in the reply's order.
+// - 4a: a reply that changes the board shows Changed on the board with its lines, then Show on board and Undo; the
+//   buttons under a line follow a fixed order of rows, not the order they are kept in. A new collection's line counts
+//   the cards filed into it, which are then no move of their own, and a card taken out of a collection is a move.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -60,6 +63,7 @@ async function shot(page: Page) {
     const chat = [...document.querySelectorAll('#mcList .mc-msg:not(.typing)')].map(d => ({
       who: d.classList.contains('me') ? 'me' : 'myra',
       text: d.firstChild?.textContent ?? '',
+      summary: [...d.querySelectorAll('.m-summary li')].map(li => li.textContent ?? ''),
       acts: [...d.querySelectorAll('.m-acts button')].map(a => a.textContent ?? ''),
     }));
     return {

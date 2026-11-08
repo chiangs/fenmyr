@@ -23,6 +23,7 @@ const set = { added: ['a'], moved: ['b'], removed: ['c'], relaid: { kb: ['k1', '
 const everyKind = [
   { kind: 'next', text: 'Make it a list' },
   { kind: 'changes', reply: 'r1', set },
+  { kind: 'changes', reply: 'r2', set, lines: ['+ 1 kanban, Phases, with 3 columns', '− 1 card removed'] },
   { kind: 'source', card: 'n1' },
   { kind: 'buildUndo', board: 'pb', snapshot: 'abc123' },
   { kind: 'buildUndo', board: 'pb', snapshot: 'def456', build: 'k3x9q2' },
@@ -67,6 +68,11 @@ assert.deepStrictEqual(
   ])?.acts,
   [{ kind: 'changes', reply: 'r1', set: { added: ['a'], moved: ['b'], removed: ['c'] } }],
   'a change set keeps only the lists with something in them',
+);
+assert.deepStrictEqual(
+  kept([{ kind: 'changes', reply: 'r1', set, lines: ['+ 1 note', 2] }])?.acts,
+  [{ kind: 'changes', reply: 'r1', set }],
+  'summary lines that are not all words are dropped, and what the reply changed is kept',
 );
 assert.deepStrictEqual(
   json(kept([{ kind: 'toString' }, { kind: 'next', text: 3 }])),
