@@ -851,7 +851,7 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-empty { margin: auto; text-align: center; font: 400 13px/1.5 var(--font); color: var(--ink-soft); padding: 0 24px; }
 .mc-empty b { display: block; font: 700 14px/1.3 var(--font); color: var(--ink); margin-bottom: 4px; }
 .mc-ideas { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 12px; }
-.mc-ideas button { padding: 7px 11px; border-radius: var(--pill-r); corner-shape: squircle; border: 1.5px solid #efebe6; background: none; font: 500 12px/1.2 var(--font); color: var(--ink); cursor: pointer; }
+.mc-ideas button { padding: 7px 11px; border-radius: var(--pill-r); corner-shape: squircle; border: 1.5px solid rgb(from var(--ink) r g b / .1); background: none; font: 500 12px/1.2 var(--font); color: var(--ink); cursor: pointer; }
 .mc-ideas button:hover { border-color: var(--pink); background: var(--blush); }
 @keyframes mc-in { from { opacity: 0; transform: translateY(6px); } }
 @keyframes mc-dot { 50% { transform: translateY(-4px); opacity: .5; } }
@@ -873,7 +873,6 @@ body.dark .mc-head { border-color: #3c3731; }
 body.dark .mc-msg.myra, body.dark .mc-form { background: #38332d; }
 body.dark .mc-msg.me { background: #584a3c; color: #fff; }
 body.dark .mc-msg .m-acts button { background: #fff; color: #222; border-color: #fff; } body.dark .mc-msg .m-acts button.ghost { background: none; color: #fff; }
-body.dark .mc-ideas button { border-color: #464038; }
 .au-dot.wait { animation: none; background: var(--ink-faint); }
 .au-count.soft { font-size: 16px; font-weight: 700; color: var(--ink-soft); }
 .m-chat .mc-msg.typing { flex-direction: row; align-items: center; }

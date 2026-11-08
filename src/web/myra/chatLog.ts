@@ -6,7 +6,7 @@ import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
 import { type Act, storedOf } from './acts.ts';
-import { ask } from './chat.ts';
+import { renderGreeting } from './emptyChat.ts';
 import { drawActs } from './replyView.ts';
 
 // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
@@ -102,15 +102,6 @@ function renderHistory() {
   };
 }
 
-const IDEAS = [
-  'Group these by theme',
-  'What am I missing?',
-  'Make a checklist from this',
-  'Find onboarding screens on Mobbin',
-];
-// on a prototype board she starts from the wireframes and notes the person brings
-const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
-
 function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   const d = document.createElement('div'),
     parts = document.createElement('div');
@@ -131,23 +122,7 @@ export function renderChat() {
   list.onclick = null;
   list.innerHTML = '';
   const msgs = chatLog();
-  if (!msgs.length) {
-    const ideas = (session.board?.kind === 'prototype' ? PROTOTYPE_IDEAS : IDEAS)
-      .filter(i => settings.mobbin || !/Mobbin/.test(i))
-      .map(i => `<button>${i}</button>`)
-      .join('');
-    const lead =
-      session.board?.kind === 'prototype'
-        ? 'What are we building? Tell me what it’s for and who uses it. Put wireframes, sketches, screenshots and notes on the board, or drop pictures right here, and select the ones that matter. Then ask me to build it. The board on the left holds what you bring, the preview runs what I build, and the code pane shows its files. This chat is kept with the prototype.'
-        : 'Ask me to sort, write, plan or find things for this board.';
-    list.innerHTML = `<div class="mc-empty"><b>Hi! I'm Myra ✦</b>${lead}<div class="mc-ideas">${ideas}</div></div>`;
-    for (const b of list.querySelectorAll('.mc-ideas button'))
-      if (b instanceof HTMLElement)
-        b.onclick = () => {
-          ask(b.textContent ?? '');
-        };
-    return;
-  }
+  if (!msgs.length) return renderGreeting(list);
   msgs.forEach(m => {
     list.appendChild(msgEl(m));
   });
