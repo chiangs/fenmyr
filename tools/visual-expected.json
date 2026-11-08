@@ -13,6 +13,7 @@
   "proto-medium-screen": "The docked chat's list no longer keeps 40 px clear at the bottom for Myra's old perch on the input, so its welcome sits 17 px lower (2b).",
   "proto-narrow-screen": "The docked chat's list no longer keeps 40 px clear at the bottom for Myra's old perch on the input, so its welcome sits 17 px lower (2b).",
   "proto-wide-screen": "The docked chat's list no longer keeps 40 px clear at the bottom for Myra's old perch on the input, so its welcome sits 17 px lower (2b).",
+  "reply-chat": "New in 4a: under a reply that changed the board, “Changed on the board” lists “+ 1 kanban, Phases, with 3 columns”, “→ 3 cards moved in”, “✎ 2 notes reworded” and “− 1 note removed”, then Show on board and Undo on a row of their own, then her three next steps. The base shows only her words and the next steps.",
   "rich-notes": "Myra's box is 200 px wide, reads “Ask Myra…” beside her sprite and is one piece with the tools, so the bottom bar ends at 1276 px instead of 1198 (2b).",
   "rich-select": "Myra's box is 200 px wide, reads “Ask Myra…” beside her sprite and is one piece with the tools, so the bottom bar ends at 1276 px instead of 1198 (2b).",
   "select-note": "Myra's box is 200 px wide, reads “Ask Myra…” beside her sprite and is one piece with the tools, so the bottom bar ends at 1276 px instead of 1198 (2b).",

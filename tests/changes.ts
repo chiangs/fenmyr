@@ -1,7 +1,9 @@
 // The record of what a reply changed, and the change set read from it, over boards built by hand.
 import assert from 'node:assert';
+import { countLines, summaryLines, undoLine } from '../src/shared/changeSummary.ts';
 import { type BoardLists, changeSet, listsOf, recordOf } from '../src/shared/changes.ts';
 import type { Card } from '../src/shared/model.ts';
+import { planUndo, undoable } from '../src/shared/replyUndo.ts';
 
 const note = (id: string, x: number, y: number, text = id): Card => ({
   id,
@@ -53,7 +55,7 @@ live.links.push({ id: 'L2', a: 'a', b: 'new' });
 live.links = live.links.filter(l => l.id !== 'L1');
 
 const record = recordOf(before, live);
-const set = changeSet(record, live, { named: new Set(['a', 'b', 'u1', 'u2', 'c']), skipped: ['typed'] });
+const set = changeSet(record, { named: new Set(['a', 'b', 'u1', 'u2', 'c']), skipped: ['typed'] });
 assert.deepStrictEqual(set.added.sort(), ['new', 'u1'], 'new cards and cards out of Unsorted are added');
 assert.deepStrictEqual(set.moved, ['a'], 'a named card with only a new place is moved');
 assert.deepStrictEqual(set.edited, ['b'], 'a card moved and edited counts once, as edited');
@@ -74,8 +76,146 @@ const loose = board(),
   loose0 = listsOf(loose);
 find(loose, 'a').y = 40;
 assert.deepStrictEqual(
-  changeSet(recordOf(loose0, loose), loose, { named: new Set(), skipped: [] }).relaid,
+  changeSet(recordOf(loose0, loose), { named: new Set(), skipped: [] }).relaid,
   { '': ['a'] },
   'a shift nobody asked for outside a collection',
+);
+
+// A reply that makes a kanban, files three cards and a new note into it, rewords two notes and removes one.
+const asked = (): BoardLists => {
+  const l = board();
+  l.cards.push(
+    { id: 'td', type: 'todo', x: 0, y: 600, w: 240, h: 180, r: 0, color: 'white', text: 'Jobs', items: [] },
+    { id: 'dc', type: 'doc', x: 300, y: 600, w: 240, h: 52, r: 0, text: 'Plan', body: '' },
+  );
+  l.links.push({ id: 'L4', a: 'c', b: 'a' });
+  return l;
+};
+const replied = (from: BoardLists) => {
+  const l = listsOf(from),
+    filed = ['a', 'td', 'dc'];
+  for (const [i, id] of filed.entries()) Object.assign(find(l, id), { x: 1214, y: 66 + i * 160, w: 260 });
+  l.cards.push(
+    {
+      id: 'ph',
+      type: 'coll',
+      x: 1200,
+      y: 0,
+      w: 900,
+      h: 700,
+      r: 0,
+      color: 'pink',
+      text: 'Phases',
+      kanban: true,
+      colNames: ['To do', 'Doing', 'Done'],
+      kids: [...filed, 'nk'],
+    },
+    note('nk', 1500, 66, 'Kick-off'),
+  );
+  for (const [id, text] of [
+    ['b', 'Better words'],
+    ['k1', 'Clearer'],
+  ] as const) {
+    const c = find(l, id);
+    if (c.type === 'note') c.text = text;
+  }
+  l.cards = l.cards.filter(c => c.id !== 'c');
+  l.links = l.links.filter(x => x.id !== 'L4');
+  return l;
+};
+const before4 = asked(),
+  after4 = replied(before4),
+  record4 = recordOf(before4, after4),
+  set4 = changeSet(record4, { named: new Set(['a', 'td', 'dc', 'b', 'k1']), skipped: [] });
+assert.deepStrictEqual(
+  summaryLines(record4, set4),
+  ['+ 1 kanban, Phases, with 3 columns', '→ 3 cards moved in', '✎ 2 notes reworded', '− 1 note removed'],
+  'the summary folds a card filed into a new collection into its line, and names one kind or says cards',
+);
+const one = listsOf(before4);
+one.cards.push(note('sh', 0, 0, 'Ship it'));
+one.links.push({ id: 'L9', a: 'sh', b: 'a' });
+find(one, 'b').color = 'pink';
+assert.deepStrictEqual(
+  summaryLines(recordOf(before4, one), changeSet(recordOf(before4, one), { named: new Set(['b']), skipped: [] })),
+  ['+ 1 note, “Ship it”', '+ 1 connector', '✎ 1 note changed'],
+  'one new card is named, a connector is counted, and a new colour is a change, not a rewording',
+);
+assert.deepStrictEqual(
+  countLines({ added: ['x', 'y'], moved: ['m'], removed: ['r'] }),
+  ['+ 2 cards', '→ 1 card moved', '− 1 card removed'],
+  'a reply kept before the summary was gets counts only',
+);
+
+const whole = planUndo(record4, after4, new Set());
+assert.deepStrictEqual(whole.lists, before4, 'Undo puts the board back exactly, a removed card in its old place');
+assert.deepStrictEqual(whole.skipped, []);
+assert.strictEqual(undoLine(whole), 'I’ve put the board back as it was before that reply.');
+const again = planUndo(record4, whole.lists, new Set());
+assert.deepStrictEqual([again.undone, again.lists], [0, whole.lists], 'a second Undo puts back nothing more');
+assert.deepStrictEqual(
+  [undoable(record4, after4), undoable(record4, whole.lists)],
+  [true, false],
+  'Undo is offered until it has been done',
+);
+
+const relaid = listsOf(after4);
+Object.assign(find(relaid, 'a'), { x: 1300, h: 300 });
+find(relaid, 'ph').h = 900;
+assert.deepStrictEqual(
+  planUndo(record4, relaid, new Set()).lists,
+  before4,
+  'a collection re-laying its cards or measuring itself is not the person changing them',
+);
+
+const mine = listsOf(after4),
+  b4 = find(mine, 'b');
+if (b4.type === 'note') b4.text = 'Mine now';
+const partly = planUndo(record4, mine, new Set());
+assert.deepStrictEqual(
+  partly.lists,
+  { ...before4, cards: before4.cards.map(c => (c.id === 'b' ? b4 : c)) },
+  'a card the person changed since is left as they have it, and the rest goes back',
+);
+assert.strictEqual(
+  undoLine(partly),
+  'I’ve put back what that reply changed, apart from “Mine now”, which you’ve changed since. I’ve left it as you have it.',
+);
+assert.deepStrictEqual(
+  planUndo(record4, after4, new Set(['b'])).skipped.map(c => c.id),
+  ['b'],
+  'the card being typed in is left and named',
+);
+
+const renamed = listsOf(after4),
+  ph = find(renamed, 'ph');
+if (ph.type === 'coll') ph.text = 'Stages';
+const unit = planUndo(record4, renamed, new Set());
+assert.deepStrictEqual(
+  ['ph', 'a', 'td', 'dc', 'nk'].map(id => unit.lists.cards.find(c => c.id === id)),
+  ['ph', 'a', 'td', 'dc', 'nk'].map(id => find(renamed, id)),
+  'a collection changed since keeps the cards in it, so they never fall out of step',
+);
+assert.deepStrictEqual(
+  [unit.skipped.map(c => c.id), find(unit.lists, 'b'), unit.lists.cards.some(c => c.id === 'c')],
+  [['ph'], find(before4, 'b'), true],
+  'and only the collection is named, while the rest goes back',
+);
+
+const gone = listsOf(after4);
+gone.cards = gone.cards.filter(c => c.id !== 'a');
+const lone = planUndo(record4, gone, new Set());
+assert.deepStrictEqual(
+  [lone.lists.cards.some(c => c.id === 'c'), lone.lists.links.some(l => l.id === 'L4')],
+  [true, false],
+  'a connector goes back only when both its cards are there',
+);
+assert.strictEqual(
+  undoLine({ undone: 2, skipped: [note('x', 0, 0, 'One'), note('y', 0, 0, 'Two'), note('z', 0, 0, 'Three')] }),
+  'I’ve put back what that reply changed, apart from “One”, “Two” and 1 more card, which you’ve changed since. I’ve left those as you have them.',
+);
+assert.strictEqual(
+  undoLine({ undone: 0, skipped: [note('x', 0, 0)] }),
+  'You’ve changed everything from that reply since, so I’ve left the board as it is.',
 );
 console.log('CHANGES OK');

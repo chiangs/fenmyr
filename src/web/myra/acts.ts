@@ -2,6 +2,7 @@ import type { ChatAction } from '../../shared/chat.ts';
 import { buildUndoButton, commitButton } from '../proto/build.ts';
 import { sourceButton } from '../proto/sources.ts';
 import { ask } from './chat.ts';
+import { changesPieces } from './replyUndo.ts';
 import type { SayAction } from './say.ts';
 
 // A button under one of her lines: a stored kind, kept with the message, or a closure that lasts only as long as the
@@ -10,24 +11,28 @@ export type Act = SayAction | ChatAction;
 
 export const storedOf = (acts: readonly Act[]): ChatAction[] => acts.filter(a => 'kind' in a);
 
-// The one place a stored action becomes a button. Null when it has none now: its card is gone, its prototype isn't the
-// open board, a newer build's Undo is in the chat, or (until Phase 4 draws them) a reply's changes.
-export function actView(a: Act): SayAction | null {
-  if (!('kind' in a)) return a;
-  switch (a.kind) {
-    case 'next':
-      return { label: a.text, cls: 'next', run: () => ask(a.text) };
-    case 'changes':
-      return null;
-    case 'source':
-      return sourceButton(a.card);
-    case 'buildUndo':
-      return buildUndoButton(a);
-    case 'commit':
-      return commitButton(a);
-    default: {
-      const unhandled: never = a;
-      return unhandled;
-    }
-  }
-}
+// Under her words, always in this order, whatever order the acts are kept in. `sources` is for what she read.
+export const SLOTS = ['summary', 'reply', 'other', 'sources', 'next'] as const;
+type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
+
+// what a click takes away: nothing, this button, or every button in its row
+export type After = 'stay' | 'self' | 'row';
+type Button = SayAction & { title?: string; after: After };
+export type Piece = { slot: 'summary'; lines: readonly string[] } | { slot: Row; button: Button };
+
+const one = (slot: Row, after: After, b: SayAction | null): Piece[] => (b ? [{ slot, button: { ...b, after } }] : []);
+
+// One view per stored kind; a kind without one fails the type check. A view gives nothing when it has nothing to show
+// now: its card is gone, its prototype isn't the open board, or a newer build's Undo is in the chat.
+const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) => Piece[] } = {
+  next: a => one('next', 'row', { label: a.text, cls: 'next', run: () => ask(a.text) }),
+  changes: changesPieces,
+  source: a => one('other', 'stay', sourceButton(a.card)),
+  buildUndo: a => one('other', 'self', buildUndoButton(a)),
+  commit: a => one('other', 'self', commitButton(a)),
+};
+
+const viewOf = <K extends ChatAction['kind']>(k: K, a: Extract<ChatAction, { kind: K }>) => VIEW[k](a);
+
+// A closure is a one-off choice, such as Yes and Not now, so clicking one takes its row.
+export const piecesOf = (a: Act): Piece[] => ('kind' in a ? viewOf(a.kind, a) : one('other', 'row', a));

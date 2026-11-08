@@ -1,12 +1,13 @@
-import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
+import type { ChatMsg } from '../../shared/chat.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
-import { type Act, actView, storedOf } from './acts.ts';
+import { type Act, storedOf } from './acts.ts';
 import { ask } from './chat.ts';
+import { drawActs } from './replyView.ts';
 
 // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
 const CHATS_KEPT = 10;
@@ -110,53 +111,14 @@ const IDEAS = [
 // on a prototype board she starts from the wireframes and notes the person brings
 const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
 
-// A used button doesn't come back when the chat opens again: a click takes it off the message. Next steps are one
-// choice of what to ask next, so asking one takes the others with it.
-function spend(m: ChatMsg, used: ChatAction) {
-  if (!m.acts) return;
-  const left = m.acts.filter(a => a !== used && !(used.kind === 'next' && a.kind === 'next'));
-  if (left.length) m.acts = left;
-  else delete m.acts;
-  if (chatKeep() === 'board') save();
-}
-
-// The buttons a row shows now. An action that shows nothing now stays on the message.
-export function actsRow(m: ChatMsg | undefined, acts: readonly Act[]) {
-  return acts.flatMap(a => {
-    const view = actView(a);
-    if (!view) return [];
-    return [
-      {
-        ...view,
-        run: () => {
-          if (m && 'kind' in a) spend(m, a);
-          return view.run();
-        },
-      },
-    ];
-  });
-}
-
 function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
-  const d = document.createElement('div');
+  const d = document.createElement('div'),
+    parts = document.createElement('div');
   d.className = `mc-msg ${m.who}`;
   d.textContent = m.text;
-  const row = actsRow(m, acts);
-  if (row.length) {
-    const box = document.createElement('div');
-    box.className = 'm-acts';
-    row.forEach(a => {
-      const b = document.createElement('button');
-      b.textContent = a.label;
-      b.className = a.cls || (a.ghost ? 'ghost' : '');
-      b.onclick = () => {
-        box.remove();
-        a.run();
-      };
-      box.appendChild(b);
-    });
-    d.appendChild(box);
-  }
+  parts.className = 'm-parts';
+  d.appendChild(parts);
+  drawActs(parts, m, acts);
   return d;
 }
 
