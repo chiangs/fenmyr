@@ -72,9 +72,17 @@ svg.brand-mark.ico .ico-r { display: none; } svg.brand-mark.ico .ico-d { display
 .wires path.w-hit:hover + path, .wires path.w:hover { stroke: var(--ink); }
 .wires circle.w-end, .wires circle.w-bend { fill: var(--hilite); stroke: var(--select); stroke-width: 2.5; pointer-events: all; cursor: grab; }
 .wires circle.w-bend { fill: var(--select); stroke: var(--hilite); }
+/* the context bar's and the bottom bar's own colours; #251 turns these into per-theme tokens */
+:root {
+  --sb-bg: #f0ebe4; --sb-bg-10: #6bcb77; --sb-bg-11: #4d96ff; --sb-bg-12: #f8b572; --sb-bg-13: #3b342d; --sb-bg-14: #f6b45e;
+  --sb-bg-15: #f7e055; --sb-bg-16: #5fc795; --sb-bg-17: #4f9dff; --sb-bg-18: #9b7bff; --sb-bg-2: #806e5c; --sb-bg-3: #f6f2ee;
+  --sb-bg-4: #ff6b6b; --sb-bg-5: #efebe6; --sb-bg-6: #fdefe1; --sb-bg-7: #ffdcd8; --sb-bg-8: #302b25; --sb-bg-9: #ffd93d;
+  --sb-ink-2: #1d1a16; --sb-ink-3: #302c26; --sb-ink-4: #3f3a34; --sb-ink-5: #bfb9b0; --sb-shadow: #f8bd82; --sb-shadow-2: #4e3c2a;
+  --sb-shadow-3: #fad0a5; --sb-shadow-4: #27272a; --tl-bg: #faf8f6;
+}
 .selbar .sb-txt { height: 34px; padding: 0 11px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .selbar .sb-txt:hover { background: var(--blush); color: var(--ink); }
-.selbar .sb-txt.on { background: var(--ink); color: #fff; }
+.selbar .sb-txt.on { background: var(--ink); color: var(--hilite); }
 .wires path.live { stroke: var(--select); stroke-dasharray: none; }
 .wires circle { fill: var(--ink-faint); }
 
@@ -150,7 +158,7 @@ body.dark .card .chip:hover { background: color-mix(in srgb, var(--panel, var(--
 .top { position: absolute; left: calc(var(--side) + 34px); top: 22px; display: flex; align-items: baseline; gap: 10px; z-index: 10; }
 .board-name { border: 0; background: none; font: 800 22px/1 var(--font); letter-spacing: -.03em; color: var(--ink); outline: none; width: 420px; user-select: text; -webkit-user-select: text; }
 .saved { font: 600 10.5px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
-.tools { position: absolute; left: calc(50% + 8px); top: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: #fff; box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); z-index: 10; }
+.tools { position: absolute; left: calc(50% + 8px); top: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); z-index: 10; }
 .tools button { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font-size: 13px; font-weight: 500; cursor: pointer; }
 .tools button:hover { background: var(--blush); }
 .tools .ic { flex: none; color: var(--ink-soft); }
@@ -368,10 +376,10 @@ html.native .home-in { padding-top: 40px; }
 .selbar button:hover { background: var(--blush); }
 .sb-dots { display: flex; gap: 4px; padding: 0 4px 0 6px; }
 .sb-dots:empty, .sb-dots:empty + .sb-sep { display: none; }
-.sb-dots button { width: 18px; height: 18px; padding: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
-.sb-dots button.on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--select); }
+.sb-dots button { width: 18px; height: 18px; padding: 0; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(from var(--shade) r g b / .12); }
+.sb-dots button.on { box-shadow: 0 0 0 2px var(--hilite), 0 0 0 3.5px var(--select); }
 .sb-dots button:hover { transform: scale(1.15); background: revert-layer; }
-.sb-sep { width: 1px; height: 18px; background: #efebe6; margin: 0 3px; }
+.sb-sep { width: 1px; height: 18px; background: var(--sb-bg-5); margin: 0 3px; }
 .card .tag { cursor: text; outline: none; }
 
 /* home is one click away: the logo, or the "All projects" row */
@@ -406,7 +414,7 @@ html.native .home-in { padding-top: 40px; }
 .tools { gap: 2px; }
 .tools button { position: relative; width: 40px; height: 38px; padding: 0; justify-content: center; }
 .tools .ic { width: 19px; height: 19px; }
-.tools button::after { content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 10px); transform: translate(-50%, -3px); padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: #fff; font: 600 11px/1 var(--font); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; }
+.tools button::after { content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 10px); transform: translate(-50%, -3px); padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--hilite); font: 600 11px/1 var(--font); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; }
 .tools button:hover::after { opacity: 1; transform: translate(-50%, 0); }
 .tools .zoom { padding: 0 10px 0 6px; }
 
@@ -588,7 +596,7 @@ body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.a
 .card.stamp > .frame { display: none; }
 .card.stamp { rotate: var(--tilt); }   /* upright until you tilt it yourself (see renderCard) */
 .card.stamp .body { padding: 0; overflow: visible; display: grid; place-items: center; }
-.card.stamp .st { width: 100%; height: 100%; display: grid; place-items: center; filter: drop-shadow(0 0 0 #fff) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff) drop-shadow(0 4px 6px rgba(150, 95, 35, .2)); }
+.card.stamp .st { width: 100%; height: 100%; display: grid; place-items: center; filter: drop-shadow(0 0 0 var(--hilite)) drop-shadow(2px 0 0 var(--hilite)) drop-shadow(-2px 0 0 var(--hilite)) drop-shadow(0 2px 0 var(--hilite)) drop-shadow(0 -2px 0 var(--hilite)) drop-shadow(0 4px 6px rgb(from var(--pn-amber) r g b / .2)); }
 .card.stamp .st img { width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
 .card.stamp .st span { font-size: calc(var(--sz, 56px) * .82); line-height: 1; }
 .card.stamp .knob { display: none; }
@@ -626,7 +634,7 @@ body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.a
 .sb-sizes { display: flex; gap: 1px; padding: 0 2px; }
 .sb-sizes button { min-width: 30px; height: 34px; padding: 0 7px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 700 11.5px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .sb-sizes button:hover { background: var(--blush); color: var(--ink); }
-.sb-sizes button.on { background: var(--ink); color: #fff; }
+.sb-sizes button.on { background: var(--ink); color: var(--hilite); }
 
 /* bold / italic / underline / strikethrough, for the whole card's words */
 .card :is(.text, .nname, .head, li span) { text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
@@ -803,7 +811,7 @@ body.dark .m-pill, body.dark .m-bubble { background: rgba(46, 42, 37, .97); colo
 body.dark .m-bubble small { color: #7fd8ff; }
 body.dark .m-acts button { background: #fff; color: #222; border-color: #fff; } body.dark .m-acts button.ghost { background: none; color: #fff; }
 body { --pen-ink: #3b342d; } body.dark { --pen-ink: #f0ebe4; }
-body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: #3f3a34; } body.dark .tile.project .mf { color: var(--ink); }
+body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: var(--sb-ink-4); } body.dark .tile.project .mf { color: var(--ink); }
 
 /* images keep their crop inside a window; while cropping, the outside dims and the box has corner handles */
 .card.image .imgwrap { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: var(--img-r, 12px); }
@@ -954,9 +962,9 @@ body.following-caelestia .top.covered { background: color-mix(in srgb, var(--pan
 .au-count.soft i:nth-child(2) { animation-delay: .15s; } .au-count.soft i:nth-child(3) { animation-delay: .3s; }
 /* dark mode: anything filled with "ink" (which turns light in dark mode) gets dark text, so nothing is white on white */
 body.dark .sb-sizes button.on, body.dark .selbar .sb-txt.on, body.dark .cp-acts .solid, body.dark .home-close:hover, body.dark .set-btn:hover,
-body.dark .conn button:hover, body.dark .dv-back, body.dark .db-done, body.dark .au-play { background: #f0ebe4; color: #1d1a16; border-color: #f0ebe4; }
-body.dark .tools button::after { background: #f0ebe4; color: #1d1a16; }
-body.dark .sb-sizes button.on i { background: #1d1a16; }
+body.dark .conn button:hover, body.dark .dv-back, body.dark .db-done, body.dark .au-play { background: var(--sb-bg); color: var(--sb-ink-2); border-color: var(--sb-bg); }
+body.dark .tools button::after { background: var(--sb-bg); color: var(--sb-ink-2); }
+body.dark .sb-sizes button.on i { background: var(--sb-ink-2); }
 body.dark .home-back:hover { background: var(--pn-light-ink); color: var(--pn-dark-ink); }
 
 /* ---------- wireframes ---------- */
@@ -1503,7 +1511,7 @@ body.phone .sheet { display: block; position: fixed; inset: 0; z-index: 70; poin
 .sh-body .design.in-sheet .dz-head { display: none; } .sh-body .design.in-sheet .dz-body { display: block !important; }
 /* the toolbar as a grid of big buttons with their names */
 .sh-body .tools.in-sheet.shown { position: static; display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 8px; width: auto; padding: 4px 0 6px; background: none; box-shadow: none; transform: none; border-radius: 0; }
-.sh-body .tools.in-sheet button { display: grid; justify-items: center; align-content: center; gap: 7px; width: auto; height: 78px; border-radius: 24px; corner-shape: squircle; background: #faf8f6; }
+.sh-body .tools.in-sheet button { display: grid; justify-items: center; align-content: center; gap: 7px; width: auto; height: 78px; border-radius: 24px; corner-shape: squircle; background: var(--tl-bg); }
 .sh-body .tools.in-sheet button .ic { width: 24px; height: 24px; }
 .sh-body .tools.in-sheet button::after { content: attr(data-name); position: static; display: block; transform: none !important; opacity: 1; padding: 0; background: none; box-shadow: none; color: var(--ink-soft); font: 600 11.5px/1 var(--font); white-space: nowrap; }
 .sh-body .tools.in-sheet .zoom, .sh-body .tools.in-sheet .sep, .sh-body .tools.in-sheet .t-sep { display: none; }
@@ -1512,7 +1520,7 @@ body.phone .sheet { display: block; position: fixed; inset: 0; z-index: 70; poin
 body.dark.phone .top, body.dark .hub { background: rgb(from var(--pn-dark-top) r g b / .94); }
 body.dark .sh-panel { background: var(--sh-bg-6); } body.dark .sh-grab i { background: var(--sh-bg-2); }
 body.dark .sh-tabs, body.dark .sh-x { background: rgb(from var(--hilite) r g b / .07); color: var(--coll-ink); } body.dark .sh-tabs button.on { background: var(--sh-bg-3); color: var(--hilite); }
-body.dark .sh-body .tools.in-sheet button { background: rgba(255, 255, 255, .05); }
+body.dark .sh-body .tools.in-sheet button { background: rgb(from var(--hilite) r g b / .05); }
 body.phone .sheet.on { pointer-events: auto; }
 body.fancy-cursor.cur-edge, body.fancy-cursor.cur-edge * { cursor: auto !important; }   /* the window edge: the system's resize arrows */
 /* phone: the action bar for what's selected matches the hub — big, thumb-sized buttons and icons */
@@ -1530,13 +1538,13 @@ body.phone .dock .drawbar .db-colors button { width: 28px; height: 28px; } body.
 .selbar .sb-ic { width: 40px; height: 38px; border-radius: var(--pill-r); corner-shape: squircle; color: var(--ink-soft); }
 .selbar .sb-ic svg { width: 19px; height: 19px; }
 .selbar .sb-ic:hover, .selbar .sb-ic.on { color: var(--ink); background: var(--blush); }
-body.dark .selbar .sb-ic { color: #bfb9b0; } body.dark .selbar .sb-ic:hover, body.dark .selbar .sb-ic.on { color: #fff; }
+body.dark .selbar .sb-ic { color: var(--sb-ink-5); } body.dark .selbar .sb-ic:hover, body.dark .selbar .sb-ic.on { color: var(--hilite); }
 /* phone: hub, action bar and pen bar all use the same 22px icons */
 body.phone .selbar .sb-ic { width: 46px; height: 46px; border-radius: 20px; corner-shape: squircle; }
 body.phone .selbar .sb-ic svg, body.phone .dock .drawbar .db-tool svg { width: 22px; height: 22px; }
-.sb-style button { color: var(--ink-soft); } .sb-style button:hover { color: var(--ink); } .sb-style button.on { color: #fff; }
+.sb-style button { color: var(--ink-soft); } .sb-style button:hover { color: var(--ink); } .sb-style button.on { color: var(--hilite); }
 /* phone: the action bar scrolls sideways, so its far edge fades to say "there's more" */
-body.phone .dock .selbar { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent); }
+body.phone .dock .selbar { -webkit-mask-image: linear-gradient(90deg, var(--shade) calc(100% - 34px), transparent); mask-image: linear-gradient(90deg, var(--shade) calc(100% - 34px), transparent); }
 body.phone .dock .selbar.end { -webkit-mask-image: none; mask-image: none; }
 /* the left column scrolls, and scrolling clips shadows into hard edges: give it 20px of invisible room on every side
    (and pull it out by the same amount) so the panels sit exactly where they did and their shadows fade out softly */
@@ -1992,15 +2000,16 @@ body.dark .vd-bar .vd-txb:hover, body.dark .vd-bar .vd-mute:hover { background: 
 /* an open doc slides over the right side: the right widget column steps back behind it (the board area is its own layer, so the doc can't rise above the column on its own) */
 body:has(.stage.doc-open) #sideR { z-index: 0; }
 
+:root { --sec-tint: #fce1c6; }   /* the warm tint in a section's frosted glass */
 /* ---------- glass sections: a soft frosted bubble around a bunch of things ---------- */
 .card.section { z-index: 0 !important; border-radius: 54px; corner-shape: squircle; --tilt: 0deg !important; }
 .card.section .sec-glass { position: absolute; inset: 0; border-radius: 54px; corner-shape: squircle; pointer-events: auto;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 46%, transparent), color-mix(in srgb, var(--fill) 16%, rgba(252, 225, 198, .12)));
+  background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 46%, transparent), color-mix(in srgb, var(--fill) 16%, rgb(from var(--sec-tint) r g b / .12)));
   backdrop-filter: blur(3px) saturate(1.2); -webkit-backdrop-filter: blur(3px) saturate(1.2);
   box-shadow: inset 0 1.5px 0 var(--hilite), inset 0 0 0 2px rgb(from var(--hilite) r g b / .85), inset 0 -18px 40px rgb(from var(--hilite) r g b / .3), 0 0 0 1px rgb(from var(--sec-edge) r g b / .12), 0 18px 50px rgb(from var(--sec-shadow) r g b / .14); }
 /* a little shine across the top, like light on glass */
 .card.section .sec-glass::before { content: ""; position: absolute; left: 5%; right: 5%; top: 6px; height: 18%; border-radius: 40px 40px 60% 60% / 40px 40px 100% 100%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, 0)); pointer-events: none; }
+  background: linear-gradient(180deg, rgb(from var(--hilite) r g b / .45), rgb(from var(--hilite) r g b / 0)); pointer-events: none; }
 .card.section .sec-name { position: absolute; left: 22px; top: 16px; top: auto; bottom: calc(100% - 50px); transform-origin: 0 100%; scale: var(--secz, 1); transition: scale .15s ease; display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px 7px; border-radius: var(--pill-r); corner-shape: squircle;
   background: rgb(from var(--hilite) r g b / .78); box-shadow: 0 2px 8px rgb(from var(--sec-shadow) r g b / .1), inset 0 0 0 1px rgb(from var(--hilite) r g b / .9); font: 700 14px/1.1 var(--font); color: var(--ink); white-space: nowrap; }
 .card.section .sec-name::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--fill) 40%, var(--pink-deep)); }
@@ -2010,11 +2019,11 @@ body:has(.stage.doc-open) #sideR { z-index: 0; }
 .card.section.pop { animation: secIn .5s cubic-bezier(.3, 1.4, .5, 1); }
 @keyframes secIn { from { opacity: 0; transform: scale(.94); } }
 .card.section .rot-h { display: none !important; }
-body.dark .card.section .sec-glass { background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 16%, rgba(255, 255, 255, .1)), color-mix(in srgb, var(--fill) 8%, rgba(255, 255, 255, .03)));
+body.dark .card.section .sec-glass { background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 16%, rgb(from var(--hilite) r g b / .1)), color-mix(in srgb, var(--fill) 8%, rgb(from var(--hilite) r g b / .03)));
   box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .28), inset 0 0 0 1.5px rgb(from var(--hilite) r g b / .14), 0 18px 50px rgb(from var(--shade) r g b / .3); }
-body.dark .card.section .sec-glass::before { background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, 0)); height: 18%; }
+body.dark .card.section .sec-glass::before { background: linear-gradient(180deg, rgb(from var(--hilite) r g b / .05), rgb(from var(--hilite) r g b / 0)); height: 18%; }
 body.dark .card.section .sec-name { background: rgb(from var(--hilite) r g b / .1); color: var(--ink); box-shadow: inset 0 0 0 1px rgb(from var(--hilite) r g b / .16); }
-.sb-glass { background: linear-gradient(150deg, rgba(255, 255, 255, .9), rgba(253, 239, 225, .7)) !important; box-shadow: inset 0 0 0 1px rgba(248, 189, 130, .35); }
+.sb-glass { background: linear-gradient(150deg, rgb(from var(--hilite) r g b / .9), rgb(from var(--sb-bg-6) r g b / .7)) !important; box-shadow: inset 0 0 0 1px rgb(from var(--sb-shadow) r g b / .35); }
 .card.section > .frame { display: none; }   /* no paper behind the glass */
 .card.section .sec-name:hover { box-shadow: 0 2px 8px rgb(from var(--sec-shadow) r g b / .1), inset 0 0 0 1.5px var(--pink-deep); }   /* the name looks clickable: double-click to rename */
 .card.section .body { overflow: visible; padding: 0; }   /* the name rises above the bubble when zoomed out: never clip it */
@@ -2037,7 +2046,7 @@ body.exporting .card .rot-h { display: none !important; }
 .rot-badge.on { opacity: 1; }
 .sb-tilt { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; cursor: pointer; font: 700 12.5px/1 var(--font); color: var(--ink); font-variant-numeric: tabular-nums; }
 .sb-tilt svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.sb-tilt:hover { background: var(--blush, #ffdcd8); }
+.sb-tilt:hover { background: var(--blush, var(--sb-bg-7)); }
 /* the tilt popover: type an angle, or tap a quick pick */
 .tilt-pop { position: fixed; z-index: 9998; width: 262px; padding: 12px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--panel, var(--snow)); box-shadow: 0 16px 40px rgb(from var(--dbs-shadow) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05);
   opacity: 0; visibility: hidden; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.3, 1.4, .5, 1); }
@@ -2056,7 +2065,7 @@ body.dark .tilt-pop { background: var(--dbs-bg); box-shadow: 0 16px 40px rgb(fro
 body.dark .tp-in input { background: rgb(from var(--hilite) r g b / .08); color: var(--ink); }
 body.dark .tp-chips button { background: rgb(from var(--hilite) r g b / .07); color: var(--ink); }
 body.dark .tp-chips button:hover { background: rgb(from var(--hilite) r g b / .14); } body.dark .tp-chips button.on { background: var(--select); color: var(--hilite); }
-body.dark .sb-tilt:hover { background: rgba(255, 255, 255, .1); }
+body.dark .sb-tilt:hover { background: rgb(from var(--hilite) r g b / .1); }
 /* the angle keeps one width (so the bar doesn't change size as you turn things) */
 .sb-tilt .sb-deg { display: inline-block; min-width: 3.6ch; text-align: right; }
 .tp-in input::-webkit-outer-spin-button, .tp-in input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -2096,10 +2105,10 @@ body.dark .tp-reset { background: rgb(from var(--hilite) r g b / .08); color: va
 .selbar .sb-poptrig { display: inline-flex; align-items: center; gap: 5px; height: 38px; padding: 0 10px; border-radius: var(--pill-r); corner-shape: squircle; }
 .selbar .sb-poptrig b { font: 700 12.5px/1 var(--font); color: var(--ink); min-width: 1.6ch; text-align: center; }
 .sb-caret { width: 10px; height: 10px; fill: none; stroke: var(--ink-soft); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.sb-cur { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, .12); }
+.sb-cur { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .12); }
 .sb-popw.open > .sb-poptrig { background: var(--blush); }
-.sb-pop { position: absolute; left: 50%; bottom: calc(100% + 14px); translate: -50% 0; z-index: 30; display: none; padding: 8px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--panel, #fff);
-  box-shadow: 0 16px 40px rgba(78, 60, 42, .2), 0 0 0 1px rgba(0, 0, 0, .05); white-space: nowrap; }
+.sb-pop { position: absolute; left: 50%; bottom: calc(100% + 14px); translate: -50% 0; z-index: 30; display: none; padding: 8px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--panel, var(--snow));
+  box-shadow: 0 16px 40px rgb(from var(--sb-shadow-2) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05); white-space: nowrap; }
 .sb-popw.open > .sb-pop { display: flex; animation: sbPop .18s cubic-bezier(.3, 1.4, .5, 1); }
 .sb-popw.down > .sb-pop { bottom: auto; top: calc(100% + 14px); }   /* no room above: it drops below the bar */
 @keyframes sbPop { from { opacity: 0; transform: translateY(6px) scale(.97); } }
@@ -2112,8 +2121,8 @@ body.dark .tp-reset { background: rgb(from var(--hilite) r g b / .08); color: va
 .sb-morebody { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .sb-morebody .sb-sep { display: none; }
 .sb-morebody .sb-pop { bottom: auto; top: 50%; left: calc(100% + 12px); translate: 0 -50%; }   /* a dropdown inside the ··· menu opens to the side */
-body.dark .sb-pop { background: #302b25; box-shadow: 0 16px 40px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .1); }
-body.dark .sb-popw.open > .sb-poptrig, body.dark .sb-sizelist button.on { background: rgba(255, 255, 255, .12); }
+body.dark .sb-pop { background: var(--sb-bg-8); box-shadow: 0 16px 40px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .1); }
+body.dark .sb-popw.open > .sb-poptrig, body.dark .sb-sizelist button.on { background: rgb(from var(--hilite) r g b / .12); }
 /* no divider lines: each control (or tight group, like B I U S) is its own soft pill */
 .selbar .sb-sep { display: none !important; }
 .selbar { --pill: rgba(128, 110, 92, .07); }
@@ -2123,20 +2132,20 @@ body.dark .selbar { --pill: rgba(255, 255, 255, .08); }
 #selbar:not(.typing) .sb-typing { display: none; }
 .selbar .sb-sizes.sb-style { padding: 0 3px; gap: 0; }
 .selbar .sb-sizes.sb-style button { background: none; }
-.selbar .sb-sizes.sb-style button:hover { background: rgba(128, 110, 92, .1); }
-.selbar .sb-sizes.sb-style button.on { background: var(--ink); color: #fff; }
-body.dark .selbar .sb-sizes.sb-style button.on { background: #f6f2ee; color: #302c26; }
+.selbar .sb-sizes.sb-style button:hover { background: rgb(from var(--sb-bg-2) r g b / .1); }
+.selbar .sb-sizes.sb-style button.on { background: var(--ink); color: var(--hilite); }
+body.dark .selbar .sb-sizes.sb-style button.on { background: var(--sb-bg-3); color: var(--sb-ink-3); }
 .selbar > .sb-ic:hover, .selbar > .sb-g > .sb-ic:hover, .selbar .sb-poptrig:hover, .selbar .sb-tilt:hover, .selbar .sb-font:hover { background: var(--blush); }
 .selbar .sb-ic:disabled { opacity: .35; cursor: default; }   /* e.g. the count, while the header is hidden */
 .selbar > .sb-g > .sb-ic:disabled:hover { background: var(--pill); color: var(--ink-soft); }
 .selbar .sb-label { padding: 0 6px 0 10px; }
 .sb-morebody > .sb-g > * { background: var(--pill); border-radius: var(--pill-r); corner-shape: squircle; }
-body.dark .sb-glass { background: rgba(248, 189, 130, .2) !important; color: var(--ink) !important; box-shadow: inset 0 0 0 1px rgba(250, 208, 165, .35) !important; }
+body.dark .sb-glass { background: rgb(from var(--sb-shadow) r g b / .2) !important; color: var(--ink) !important; box-shadow: inset 0 0 0 1px rgb(from var(--sb-shadow-3) r g b / .35) !important; }
 /* the selection bar itself is frosted glass (the pills inside stay as they are) */
 .selbar { background: rgb(from var(--hilite) r g b / .55); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
   box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .95), inset 0 0 0 1px rgb(from var(--hilite) r g b / .6), 0 10px 30px rgb(from var(--sec-shadow) r g b / .16); }
 .selbar { --pill: rgba(255, 255, 255, .7); }
-.selbar .sb-sizes.sb-style button:hover { background: rgba(255, 255, 255, .9); }
+.selbar .sb-sizes.sb-style button:hover { background: rgb(from var(--hilite) r g b / .9); }
 body.dark .selbar { box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .16), inset 0 0 0 1px rgb(from var(--hilite) r g b / .08), 0 10px 30px rgb(from var(--shade) r g b / .35); }   /* its background is the dark surface (body.dark .selbar, above) */
 /* ---------- one look for every selection bar: same icon size, color and line weight; same text size and color ---------- */
 .selbar { --sb-icon: 19px; --sb-ink: var(--ink-soft); --sb-on: var(--ink); --sb-text: 600 12.5px/1 var(--font); }
@@ -2147,14 +2156,14 @@ body.dark .selbar { box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .16
 /* the words and numbers inside the pills */
 .selbar .sb-label, .selbar .sb-txt, .selbar .sb-font, .selbar .sb-font span, .selbar .sb-deg, .selbar .sb-poptrig b, .selbar button.sb-txt { font: var(--sb-text) !important; color: var(--sb-ink); }
 .selbar .sb-txt:hover, .selbar .sb-font:hover, .selbar .sb-poptrig:hover b, .selbar .sb-tilt:hover .sb-deg { color: var(--sb-on); }
-.selbar .sb-txt.on { color: #fff; }
+.selbar .sb-txt.on { color: var(--hilite); }
 /* the little dropdown arrows */
 .selbar .sb-caret { width: 10px !important; height: 10px !important; stroke: var(--sb-ink); stroke-width: 1.6; }
 .selbar .sb-tilt svg { stroke: currentColor; }
 /* B I U S are letters, so they get one shared size */
 .selbar .sb-style button { font-size: 14px; font-weight: 700; color: var(--sb-ink); }
-.selbar .sb-style button.on { color: #fff; }
-body.dark .selbar .sb-style button.on { color: #302c26; }
+.selbar .sb-style button.on { color: var(--hilite); }
+body.dark .selbar .sb-style button.on { color: var(--sb-ink-3); }
 .selbar .sb-font svg { width: 10px !important; height: 10px !important; }
 .selbar .sb-font svg path { stroke-width: 1.6; }
 .selbar { --pill: rgba(128, 110, 92, .075); }
@@ -2162,9 +2171,9 @@ body.dark .selbar { --pill: rgba(255, 255, 255, .09); }
 .selbar .sb-ic.on { color: var(--sb-on); }
 .selbar [data-sb="hidename"], .selbar [data-sb="hidehex"] { color: var(--sb-ink); }
 .selbar [data-sb="hidename"].on, .selbar [data-sb="hidehex"].on { background: var(--blush); color: var(--sb-on); }
-.sb-tipbub { position: fixed; z-index: 9997; padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: #fff; font: 600 11px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transform: translateY(3px); transition: opacity .12s, transform .12s; }
+.sb-tipbub { position: fixed; z-index: 9997; padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--hilite); font: 600 11px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transform: translateY(3px); transition: opacity .12s, transform .12s; }
 .sb-tipbub.on { opacity: 1; transform: none; }
-body.dark .sb-tipbub { background: #f6f2ee; color: #302c26; }
+body.dark .sb-tipbub { background: var(--sb-bg-3); color: var(--sb-ink-3); }
 /* Corners: a slider + number, and quick picks with a little corner preview */
 .sb-corners { display: grid; gap: 10px; width: 300px; padding: 4px; }
 .sbc-top { display: flex; align-items: center; gap: 10px; font: 700 12.5px/1 var(--font); color: var(--ink); }
@@ -2184,9 +2193,9 @@ body.dark .sbc-top input[type=range]::-webkit-slider-runnable-track { background
 body.dark .sbc-top input[type=number], body.dark .sbc-chips button { background: rgb(from var(--hilite) r g b / .08) !important; }
 .selbar [data-pop="corners"] svg { fill: none !important; stroke: currentColor; stroke-linecap: round; }
 .sb-fills { display: grid !important; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.sb-fills button { width: 24px; height: 24px; padding: 0 !important; border-radius: 50% !important; box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, .1); }
-.sb-fills button.on { box-shadow: 0 0 0 2px var(--panel, #fff), 0 0 0 4px var(--select); }
-.sb-anycolor { width: 24px; height: 24px; padding: 0 !important; border-radius: 50% !important; background: conic-gradient(#ff6b6b, #ffd93d, #6bcb77, #4d96ff, #f8b572, #ff6b6b) !important; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .7); }
+.sb-fills button { width: 24px; height: 24px; padding: 0 !important; border-radius: 50% !important; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .1); }
+.sb-fills button.on { box-shadow: 0 0 0 2px var(--panel, var(--hilite)), 0 0 0 4px var(--select); }
+.sb-anycolor { width: 24px; height: 24px; padding: 0 !important; border-radius: 50% !important; background: conic-gradient(var(--sb-bg-4), var(--sb-bg-9), var(--sb-bg-10), var(--sb-bg-11), var(--sb-bg-12), var(--sb-bg-4)) !important; box-shadow: inset 0 0 0 2px rgb(from var(--hilite) r g b / .7); }
 .card.dragging { opacity: 1; }   /* a card you move (or Option-drag a copy of) stays solid; the faded look is only for rows dragged in the sidebar */
 /* Lucide icons are drawn on a 24px grid: a stroke of 2 there matches the 1.7 on the old 20px grid */
 .selbar svg[viewBox="0 0 24 24"] :is(path, rect, circle, line, polyline, polygon, ellipse), .ly-ic svg[viewBox="0 0 24 24"] * { stroke-width: 2 !important; }
@@ -2221,16 +2230,16 @@ body.dark .sbc-top input[type=number], body.dark .sbc-chips button { background:
 .selbar .sb-align svg { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 .selbar .sb-arrange { gap: 0; } .selbar .sb-arrange button { display: grid; place-items: center; width: 32px; }
 .selbar .sb-arrange svg { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
-.selbar .sb-gap { width: 1px; height: 18px; margin: 0 3px; background: rgba(128, 110, 92, .18); }
+.selbar .sb-gap { width: 1px; height: 18px; margin: 0 3px; background: rgb(from var(--sb-bg-2) r g b / .18); }
 /* any text size: − [ 32 ] px + above the quick picks */
-.sb-fsrow { padding: 4px 4px 10px; margin-bottom: 6px; border-bottom: 1px solid rgba(0, 0, 0, .06); }
+.sb-fsrow { padding: 4px 4px 10px; margin-bottom: 6px; border-bottom: 1px solid rgb(from var(--shade) r g b / .06); }
 .sb-fsrow input[type=number] { width: 52px !important; text-align: center !important; }
 .sb-fsrow .sb-fspx { margin-left: -6px; font-weight: 600; color: var(--ink-soft); }
-.sb-fsrow .sb-fsstep { display: grid; place-items: center; width: 28px; height: 28px; padding: 0 !important; border-radius: 9px !important; background: rgba(0, 0, 0, .05) !important; font: 600 16px/1 var(--font); color: var(--ink); }
-.sb-fsrow .sb-fsstep:hover { background: rgba(0, 0, 0, .09) !important; }
+.sb-fsrow .sb-fsstep { display: grid; place-items: center; width: 28px; height: 28px; padding: 0 !important; border-radius: 9px !important; background: rgb(from var(--shade) r g b / .05) !important; font: 600 16px/1 var(--font); color: var(--ink); }
+.sb-fsrow .sb-fsstep:hover { background: rgb(from var(--shade) r g b / .09) !important; }
 .sb-fsrow > span:first-child { margin-right: auto; }
 .sb-sizelist button em { margin-left: auto; font: 600 11.5px/1 var(--font); font-style: normal; color: var(--ink-faint); }
-body.dark .sb-fsrow { border-color: rgba(255, 255, 255, .1); } body.dark .sb-fsrow .sb-fsstep { background: rgba(255, 255, 255, .08) !important; }
+body.dark .sb-fsrow { border-color: rgb(from var(--hilite) r g b / .1); } body.dark .sb-fsrow .sb-fsstep { background: rgb(from var(--hilite) r g b / .08) !important; }
 .sb-fsbox { display: grid; width: 230px; } .sb-fsbox .sb-sizelist { min-width: 0; }
 /* voice memos scale with their card: everything inside grows as the card gets wider (1 --u = 1px on a normal 290px card),
    the live waveform fills the free space, and the buttons sit at the bottom */
@@ -2270,7 +2279,7 @@ body.dark .sb-fsrow { border-color: rgba(255, 255, 255, .1); } body.dark .sb-fsr
 .sb-spacing .sb-unit { width: 14px; margin-left: -4px; font-weight: 600; color: var(--ink-soft); }
 .sb-spacing .sb-spchips { grid-template-columns: repeat(3, 1fr); }
 .sb-spacing .sb-spchips button { justify-content: center; }
-.sb-sprule { display: block; height: 1px; margin: 2px 0; background: rgba(0, 0, 0, .06); } body.dark .sb-sprule { background: rgba(255, 255, 255, .1); }
+.sb-sprule { display: block; height: 1px; margin: 2px 0; background: rgb(from var(--shade) r g b / .06); } body.dark .sb-sprule { background: rgb(from var(--hilite) r g b / .1); }
 .selbar .sb-poptrig .sb-l24 { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 .sb-spacing { box-sizing: border-box; width: 300px; } .sb-spacing .sbc-top input[type=range] { min-width: 0; } .sb-spacing .sb-spchips { width: 100%; box-sizing: border-box; }
 .sb-spacing .sb-spchips button { min-width: 0; }
@@ -2302,11 +2311,11 @@ body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .set-tblist { max-height: none; margin-top: 4px; }
 /* strokes: screens get a border on the screen itself; letters (titles, wireframe text, icons) get an outline drawn behind the fill, so the letters stay full weight */
 .card.title.has-stroke .text, .card.text.has-stroke .tx { -webkit-text-stroke: calc(var(--skw) * 2) var(--sk); paint-order: stroke fill; }
-.sb-skcur { background: none !important; box-shadow: inset 0 0 0 3px var(--c, #27272a) !important; }
-.sb-skcur.none { box-shadow: inset 0 0 0 1.5px var(--ink-faint) !important; background: linear-gradient(135deg, transparent 46%, #ff5a6e 46% 54%, transparent 54%) !important; }
+.sb-skcur { background: none !important; box-shadow: inset 0 0 0 3px var(--c, var(--sb-shadow-4)) !important; }
+.sb-skcur.none { box-shadow: inset 0 0 0 1.5px var(--ink-faint) !important; background: linear-gradient(135deg, transparent 46%, var(--rec) 46% 54%, transparent 54%) !important; }
 .sb-stroke { gap: 12px; } .sb-stroke .sb-fills { justify-content: flex-start; }
-.sb-stroke .sbc-chips button.on { background: var(--blush) !important; } body.dark .sb-stroke .sbc-chips button.on { background: rgba(255, 255, 255, .14) !important; }
-.sb-stroke .sbc-chips button.on { color: var(--ink) !important; } body.dark .sb-stroke .sbc-chips button.on { color: #fff !important; }
+.sb-stroke .sbc-chips button.on { background: var(--blush) !important; } body.dark .sb-stroke .sbc-chips button.on { background: rgb(from var(--hilite) r g b / .14) !important; }
+.sb-stroke .sbc-chips button.on { color: var(--ink) !important; } body.dark .sb-stroke .sbc-chips button.on { color: var(--hilite) !important; }
 /* the wheel's quick colors, in labeled rows: Board colors, then On this board */
 .cp-quick.rows { display: block; } .cp-quick.rows .cpq-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .cp-quick .cpq-l { margin: 2px 0 6px; font: 700 10px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
@@ -2330,9 +2339,9 @@ body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .sb-sqstyles button { flex-direction: column; gap: 4px !important; padding: 8px 4px !important; }
 .sb-sqstyles svg, .selbar [data-pop="squig"] svg { width: 26px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .sb-squig[data-st="straight"] .sb-sqmore { display: none; }
-.sb-sqmore { display: grid; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(0, 0, 0, .06); } body.dark .sb-sqmore { border-color: rgba(255, 255, 255, .1); }
+.sb-sqmore { display: grid; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid rgb(from var(--shade) r g b / .06); } body.dark .sb-sqmore { border-color: rgb(from var(--hilite) r g b / .1); }
 .sb-squig .sbc-top > span { width: 74px; flex: none; }
-.sb-squig .sbc-chips button.on { background: var(--blush) !important; color: var(--ink) !important; } body.dark .sb-squig .sbc-chips button.on { background: rgba(255, 255, 255, .14) !important; color: #fff !important; }
+.sb-squig .sbc-chips button.on { background: var(--blush) !important; color: var(--ink) !important; } body.dark .sb-squig .sbc-chips button.on { background: rgb(from var(--hilite) r g b / .14) !important; color: var(--hilite) !important; }
 .sb-squig { box-sizing: border-box; width: 330px; } .sb-squig .sbc-top input[type=range] { min-width: 0; } .sb-squig .sbc-top input[type=number] { flex: none; } .sb-squig .sb-unit { width: 18px; flex: none; }
 .sb-squig .sb-sqstyles { width: 100%; box-sizing: border-box; } .sb-squig .sb-sqstyles button { min-width: 0; }
 /* the Pen */
@@ -2346,8 +2355,8 @@ body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .card.path svg.pth { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 /* No fill: hollow letters (the stroke draws them), and a crossed-out swatch in the menus */
 .card.no-fill .text, .card.no-fill .tx { -webkit-text-fill-color: transparent; }
-.sb-nofill, .sb-cur.sb-none { background: #fff linear-gradient(135deg, transparent 45%, #ff5a6e 45% 55%, transparent 55%) !important; box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, .14) !important; }
-.sb-tcur { display: grid; place-items: center; background: none !important; box-shadow: none !important; font: 800 15px/1 var(--font); font-style: normal; color: var(--c); -webkit-text-stroke: .6px rgba(0, 0, 0, .15); }
+.sb-nofill, .sb-cur.sb-none { background: var(--snow) linear-gradient(135deg, transparent 45%, var(--rec) 45% 55%, transparent 55%) !important; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .14) !important; }
+.sb-tcur { display: grid; place-items: center; background: none !important; box-shadow: none !important; font: 800 15px/1 var(--font); font-style: normal; color: var(--c); -webkit-text-stroke: .6px rgb(from var(--shade) r g b / .15); }
 .sb-tcur.sb-none { color: transparent; -webkit-text-stroke: 1.2px var(--ink); background: none !important; box-shadow: none !important; }
 .card.frame.no-fill .fr-body { box-shadow: none; }
 .pen-live .pl-rdot { fill: var(--hilite); stroke: var(--au-bg); }
@@ -2387,8 +2396,8 @@ body.dark .rz-grip:hover > svg path, body.dark .rz-grip.on > svg path { fill: va
 .sb-cases { grid-template-columns: repeat(4, 1fr); }
 .sb-cases button { flex-direction: column; gap: 3px !important; padding: 7px 2px !important; }
 .sb-cases button b { font: 700 14px/1 var(--font); } .sb-cases button small { font: 600 9.5px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
-.sb-cases button.on { background: var(--blush) !important; } body.dark .sb-cases button.on { background: rgba(255, 255, 255, .14) !important; }
-.sb-cases button.on, .sb-cases button.on b { color: var(--ink) !important; } body.dark .sb-cases button.on, body.dark .sb-cases button.on b { color: #fff !important; }
+.sb-cases button.on { background: var(--blush) !important; } body.dark .sb-cases button.on { background: rgb(from var(--hilite) r g b / .14) !important; }
+.sb-cases button.on, .sb-cases button.on b { color: var(--ink) !important; } body.dark .sb-cases button.on, body.dark .sb-cases button.on b { color: var(--hilite) !important; }
 /* the selection bar (and anything that opens from it, like dropdowns inside ···) sits above Myra's pill */
 .dock .selbar, .dock .modebar { position: relative; z-index: 6; } .dock .myra { z-index: 2; } .dock .selbar .sb-popw.open { z-index: 10; }
 .set-feedback { background: var(--set-feedback); } .set-feedback .sf-ic { font-size: 24px; flex: none; } body.dark .set-feedback { background: rgb(from var(--set-feedback-dark) r g b / .14); }
@@ -2555,8 +2564,8 @@ body.dark .card.vnote.c-white :is(.vn-flip, .vn-btn, .vn-tags i, .vn-md code) { 
 body.dark .card.vnote.c-white :is(.vn-flip, .vn-btn):hover { background: rgb(from var(--hilite) r g b / .22); }
 body.dark .card.vnote.c-white .vn-md blockquote { border-left-color: rgb(from var(--hilite) r g b / .3); }
 body.dark .card.vnote.c-white .vn-md hr { border-top-color: rgb(from var(--hilite) r g b / .25); }
-body.dark .sb-dots button[data-c="white"] { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3); }
-body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px var(--select), inset 0 0 0 1px rgba(255, 255, 255, .3); }
+body.dark .sb-dots button[data-c="white"] { box-shadow: inset 0 0 0 1px rgb(from var(--hilite) r g b / .3); }
+body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px var(--hilite), 0 0 0 3.5px var(--select), inset 0 0 0 1px rgb(from var(--hilite) r g b / .3); }
 
 /* "Myra sees": what goes with the next message. A chip that goes is solid with ×; one that doesn't is dashed with +.
    It shows two rows and a glimpse of a third, so many vaults scroll instead of pushing the chat down */
@@ -2582,8 +2591,8 @@ body.dark :is(.mcs-x:hover, .mcs-chip.out:hover .mcs-x) { background: rgb(from v
 
 /* connector weight and colour in the selection bar */
 .sb-wl { display: block; flex: none; }
-.sb-wdef { background: linear-gradient(135deg, #fff 50%, #3b342d 50%) !important; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .18); }
-.sb-wcustom { background: conic-gradient(#ff5a6e, #f6b45e, #f7e055, #5fc795, #4f9dff, #9b7bff, #ff5a6e) !important; }
+.sb-wdef { background: linear-gradient(135deg, var(--snow) 50%, var(--sb-bg-13) 50%) !important; box-shadow: inset 0 0 0 1px rgb(from var(--shade) r g b / .18); }
+.sb-wcustom { background: conic-gradient(var(--rec), var(--sb-bg-14), var(--sb-bg-15), var(--sb-bg-16), var(--sb-bg-17), var(--sb-bg-18), var(--rec)) !important; }
 .sb-pop-wwt .sb-sizelist button { gap: 10px; align-items: center; }
 .sb-pop-wwt .sb-sizelist button.on { background: var(--blush); }
 /* wireframe panel: a little room between the buttons and the scrollbar */
@@ -2790,8 +2799,8 @@ body.dark .card.c-white .due { background: var(--dark-snow); color: var(--ink); 
 body.dark .card .due.soon { background: var(--due-soon); color: var(--due-soon-ink); } body.dark .card .due.over { background: var(--due-over); color: var(--due-over-ink); }
 .sb-due { display: grid; gap: 10px; width: 250px; padding: 2px; white-space: normal; }
 .sb-due .sd-row { display: flex; gap: 8px; } .sb-due label { display: grid; gap: 3px; flex: 1; font: 600 11px/1 var(--font); color: var(--ink-soft); }
-.sb-due input { font: 600 13px/1 var(--font); padding: 8px 9px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgba(0, 0, 0, .05); color: var(--ink); min-width: 0; } body.dark .sb-due input { background: rgba(255, 255, 255, .08); color-scheme: dark; }
-.sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgba(0, 0, 0, .05); color: var(--ink); } body.dark .sb-due .sd-chips button { background: rgba(255, 255, 255, .08); }
+.sb-due input { font: 600 13px/1 var(--font); padding: 8px 9px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgb(from var(--shade) r g b / .05); color: var(--ink); min-width: 0; } body.dark .sb-due input { background: rgb(from var(--hilite) r g b / .08); color-scheme: dark; }
+.sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgb(from var(--shade) r g b / .05); color: var(--ink); } body.dark .sb-due .sd-chips button { background: rgb(from var(--hilite) r g b / .08); }
 
 /* the clear (×) button on search and text fields: one floating button (see the top of app.js); the fields leave room for it */
 .clr-btn { position: fixed; z-index: 2147482000; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgb(from var(--shade) r g b / .08); color: var(--ink-soft, var(--clr-ink)); cursor: pointer; }
