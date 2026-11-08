@@ -7,7 +7,7 @@ import type { Page } from 'playwright';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['acts', 'away', 'bubble', 'back'];
+const BOARDS = ['acts', 'away', 'bubble', 'back', 'drawn', 'twice', 'out'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'acts', claude: true });
 const { page } = l;
 
@@ -23,7 +23,7 @@ const REPLY = {
   remove: ['n4'],
   next: ['Name the columns'],
 };
-const LINES = ['+ 1 kanban, Phases, with 3 columns', '→ 3 cards moved in', '✎ 2 notes reworded', '− 1 note removed'];
+const LINES = ['+ 1 kanban, Phases, with 3 columns and 3 cards', '✎ 2 notes reworded', '− 1 note removed'];
 
 const failed: string[] = [];
 async function check(name: string, run: () => Promise<void>) {
@@ -56,7 +56,8 @@ const chat = async (open: boolean) => {
   await page.evaluate(open => document.getElementById(open ? 'mPill' : 'mcClose')?.click(), open);
   await settle(page, 300);
 };
-const reply = (say: string) => page.evaluate(r => window.__fenmyr.applyMyra(r, 'q'), { ...REPLY, say });
+const replyWith = (r: Record<string, unknown>) => page.evaluate(r => window.__fenmyr.applyMyra(r, 'q'), r);
+const reply = (say: string) => replyWith({ ...REPLY, say });
 const changesAct = (text: string) =>
   page.evaluate(
     text =>
@@ -151,7 +152,7 @@ await check(
     assert.deepStrictEqual(JSON.parse(await boardJSON(page)), expected, 'everything else is as it was');
     assert.strictEqual(
       await lastSaid(),
-      'I’ve put back what that reply changed, apart from “Mine”, which you’ve changed since. I’ve left it as you have it.',
+      'I’ve put back what that reply changed, apart from “Mine”, which has changed since. I’ve left it as it is.',
     );
     assert.deepStrictEqual((await under('Sorted into phases.')).buttons, ['Show on board', 'Name the columns']);
     await ctrlZ();
@@ -219,6 +220,76 @@ await check('with the chat closed her bubble shows the same; Show keeps it open 
     buttons: [],
   });
   assert.strictEqual(await boardJSON(page), was, 'and the board is as it was');
+});
+
+await check(
+  'Undo leaves a card she added that the person has since drawn a connector to, with it, and names it',
+  async () => {
+    await open('drawn');
+    await chat(true);
+    await replyWith({
+      say: 'Added one.',
+      add: [{ type: 'note', text: 'Fresh idea' }],
+      edit: [{ id: 'n2', text: 'Two' }],
+    });
+    await settle(page, 600);
+    const was = JSON.parse(await boardJSON(page));
+    await page.evaluate(() => {
+      const b = window.__fenmyr.curBoard(),
+        fresh = b.cards.find(c => c.type === 'note' && c.text === 'Fresh idea');
+      if (!fresh) throw new Error('no new note');
+      b.links.push({ id: 'mine', a: fresh.id, b: 'n1' });
+      window.__fenmyr.renderAll();
+    });
+    await tap('Added one.', 'Undo');
+    await settle(page, 300);
+    const now = JSON.parse(await boardJSON(page));
+    assert.ok(
+      now.links.some((l: { id: string }) => l.id === 'mine'),
+      'the connector the person drew is still there',
+    );
+    assert.deepStrictEqual(
+      now.cards.map((c: { id: string }) => c.id),
+      was.cards.map((c: { id: string }) => c.id),
+      'and so is the card',
+    );
+    assert.strictEqual(now.cards.find((c: { id: string }) => c.id === 'n2')?.text, 'Second note', 'the rest goes back');
+    assert.strictEqual(
+      await lastSaid(),
+      'I’ve put back what that reply changed, apart from “Fresh idea”, which has changed since. I’ve left it as it is.',
+    );
+  },
+);
+
+await check('Undo of a reply whose card a later reply changed does not say the person changed it', async () => {
+  await open('twice');
+  await replyWith({
+    say: 'First go.',
+    edit: [
+      { id: 'n1', text: 'One' },
+      { id: 'n2', text: 'Two' },
+    ],
+  });
+  await settle(page, 600);
+  await replyWith({ say: 'Second go.', edit: [{ id: 'n1', text: 'One again' }] });
+  await settle(page, 600);
+  await tap('First go.', 'Undo');
+  await settle(page, 300);
+  assert.strictEqual(
+    await lastSaid(),
+    'I’ve put back what that reply changed, apart from “One again”, which has changed since. I’ve left it as it is.',
+  );
+});
+
+await check('a card taken out of a collection shows in the summary', async () => {
+  await open('out');
+  await replyWith({ say: 'Taken out.', edit: [{ id: 'k1', in: null }] });
+  await settle(page, 600);
+  assert.deepStrictEqual(await under('Taken out.'), {
+    heading: 'Changed on the board',
+    lines: ['→ 1 note moved out'],
+    buttons: ['Show on board', 'Undo'],
+  });
 });
 
 assert.deepStrictEqual(l.errors, []);

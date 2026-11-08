@@ -7,6 +7,7 @@ import { renderAll } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
+import { docCard } from '../docs/editor.ts';
 import { endEdit } from '../edit/editing.ts';
 import type { Piece } from './acts.ts';
 import { replyRecord } from './replyMemory.ts';
@@ -28,7 +29,9 @@ function undoReply(id: string) {
   const record = replyRecord(id),
     typing = session.editing;
   if (typing) endEdit();
-  const plan = record && planUndo(record, session.board, new Set(typing ? [typing] : []));
+  // the open doc's editor writes to its card, so that card stays as it is, like the one being typed in
+  const keep = new Set([typing, docCard?.id].filter(id => id != null)),
+    plan = record && planUndo(record, session.board, keep);
   if (plan?.undone) {
     remember();
     Object.assign(session.board, plan.lists);

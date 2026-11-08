@@ -30,8 +30,29 @@ export type ChangeSet = {
 // what a collection's layout and filing change; a card whose only differences are these was moved, not edited
 const SHAPE = new Set(['x', 'y', 'w', 'h', 'r', 'kids', 'colOf']);
 
+// A deep copy that shares the strings, which can't change, so a picture's data URL is never copied and comparing it
+// with the board's own is a pointer check.
+export function copy<T>(v: T): T {
+  if (typeof v !== 'object' || v === null) return v;
+  const out = Object.assign(Array.isArray(v) ? [] : {}, v);
+  for (const k of Object.keys(out)) Reflect.set(out, k, copy(Reflect.get(out, k)));
+  return out;
+}
+
+const defined = (o: object, drop?: ReadonlySet<string>) =>
+  Object.keys(o).filter(k => Reflect.get(o, k) !== undefined && !drop?.has(k));
+
+// Equal as JSON would be, without writing out a picture's data URL; `drop` leaves out keys at the top level only.
+export function same(a: unknown, b: unknown, drop?: ReadonlySet<string>): boolean {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || !a || !b || Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = defined(a, drop),
+    kb = defined(b, drop);
+  return ka.length === kb.length && ka.every(k => same(Reflect.get(a, k), Reflect.get(b, k)));
+}
+
 export const listsOf = (b: BoardLists): BoardLists =>
-  structuredClone({ cards: b.cards, tray: b.tray, links: b.links, trayLinks: b.trayLinks });
+  copy({ cards: b.cards, tray: b.tray, links: b.links, trayLinks: b.trayLinks });
 
 export function holdersOf(cards: readonly Card[]) {
   const holder = new Map<string, string>();
@@ -59,12 +80,8 @@ function deltas<T extends { id: string }>(was: Map<string, Placed<T>>, now: Map<
   for (const id of new Set([...was.keys(), ...now.keys()])) {
     const a = was.get(id) ?? null,
       b = now.get(id) ?? null;
-    if (a && b && a.at === b.at && JSON.stringify(a.item) === JSON.stringify(b.item)) continue;
-    out.push({
-      id,
-      was: a && { ...a, item: structuredClone(a.item) },
-      now: b && { ...b, item: structuredClone(b.item) },
-    });
+    if (a && b && a.at === b.at && a.in === b.in && same(a.item, b.item)) continue;
+    out.push({ id, was: a && { ...a, item: copy(a.item) }, now: b && { ...b, item: copy(b.item) } });
   }
   return out;
 }
@@ -82,7 +99,7 @@ export function recordOf(before: BoardLists, after: BoardLists): BoardPatch {
 
 const onlyShape = (a: Card, b: Card) =>
   [...new Set([...Object.keys(a), ...Object.keys(b)])].every(
-    k => SHAPE.has(k) || JSON.stringify(Reflect.get(a, k)) === JSON.stringify(Reflect.get(b, k)),
+    k => SHAPE.has(k) || same(Reflect.get(a, k), Reflect.get(b, k)),
   );
 
 // named: the ids the reply moved, edited, placed or removed by name, so a shift it asked for is a move, not a re-layout

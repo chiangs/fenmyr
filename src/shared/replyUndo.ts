@@ -1,6 +1,6 @@
 // Undo under one of Myra's replies: put back what it changed, from its record, except what the person changed since.
 import { isMeasured } from './cardTypes.ts';
-import { type BoardLists, type BoardPatch, holdersOf, listsOf, type Placed, placedById } from './changes.ts';
+import { type BoardLists, type BoardPatch, copy, holdersOf, type Placed, placedById, same } from './changes.ts';
 import type { Card, Link } from './model.ts';
 
 // A card in a collection is placed and sized by it, and a title or a collection sizes itself, so those numbers are not
@@ -8,34 +8,37 @@ import type { Card, Link } from './model.ts';
 const LAID = new Set(['x', 'y', 'w', 'h', 'r']);
 const MEASURED = new Set(['w', 'h']);
 
-function stateOf(p: Placed<Card | Link> | null | undefined) {
-  if (!p) return 'gone';
-  const drop = p.in ? LAID : 'type' in p.item && isMeasured(p.item.type) ? MEASURED : null,
-    kept = drop ? Object.fromEntries(Object.entries(p.item).filter(([k]) => !drop.has(k))) : p.item;
-  return JSON.stringify([p.at, p.in ?? '', kept]);
+type State = Placed<Card | Link> | null | undefined;
+
+function sameState(a: State, b: State) {
+  if (!a || !b) return !a && !b;
+  const drop = a.in ? LAID : 'type' in a.item && isMeasured(a.item.type) ? MEASURED : undefined;
+  return a.at === b.at && a.in === b.in && same(a.item, b.item, drop);
 }
 
 // same: only the layout moved; back: already as it was (Ctrl+Z, or an Undo before); undo: still as she left it;
 // skip: changed since
 type Fate = 'same' | 'back' | 'undo' | 'skip';
 
-function fateOf(d: { was: Placed<Card | Link> | null; now: Placed<Card | Link> | null }, cur?: Placed<Card | Link>) {
-  const was = stateOf(d.was),
-    now = stateOf(d.now),
-    here = stateOf(cur);
-  return was === now ? 'same' : here === was ? 'back' : here === now ? 'undo' : 'skip';
+function fateOf(d: { was: State; now: State }, cur: State): Fate {
+  return sameState(d.was, d.now) ? 'same' : sameState(cur, d.was) ? 'back' : sameState(cur, d.now) ? 'undo' : 'skip';
 }
 
 // keep: cards not to touch, such as the one being typed in
 function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
   const cur = placedById(now.cards, now.tray, holdersOf(now.cards)),
+    curLinks = placedById(now.links, now.trayLinks ?? []),
+    byId = new Map(record.cards.map(d => [d.id, d])),
     cards = new Map<string, Fate>(),
     skipped: string[] = [];
+  const skip = (id: string) => {
+    cards.set(id, 'skip');
+    skipped.push(id);
+  };
   for (const d of record.cards) {
     const f = fateOf(d, cur.get(d.id));
-    const held = f === 'undo' && keep.has(d.id);
-    if (f === 'skip' || held) skipped.push(d.id);
-    cards.set(d.id, held ? 'skip' : f);
+    if (f === 'skip' || (f === 'undo' && keep.has(d.id))) skip(d.id);
+    else cards.set(d.id, f);
   }
   // A collection and the cards in it go back together or not at all, so a card is never put back into a collection
   // left as the person has it, nor left in one that is put back.
@@ -47,6 +50,10 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
         tie(d.id, holder);
         tie(holder, d.id);
       }
+  const spotAfter = (id: string) => (cards.get(id) === 'undo' ? byId.get(id)?.was?.at : cur.get(id)?.at),
+    joins = (l: Placed<Link> | null) => !l || (spotAfter(l.item.a) === l.at && spotAfter(l.item.b) === l.at),
+    linkFates = record.links.map(d => ({ d, fate: fateOf(d, curLinks.get(d.id)) }));
+  let linksBack: typeof record.links = [];
   for (let spread = true; spread; ) {
     spread = false;
     for (const [id, fate] of cards)
@@ -54,16 +61,24 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
         cards.set(id, 'skip');
         spread = true;
       }
+    linksBack = linkFates.filter(({ d, fate }) => fate === 'undo' && joins(d.was)).map(({ d }) => d);
+    // Undo removes only connectors it puts back as they were, so a card it would take away from a connector the reply
+    // didn't make, such as one the person drew after it, counts as changed since and stays with it.
+    const own = new Set(linksBack.map(d => d.id));
+    for (const l of curLinks.values())
+      if (!own.has(l.item.id))
+        for (const end of [l.item.a, l.item.b])
+          if (cards.get(end) === 'undo' && spotAfter(end) !== l.at) {
+            skip(end);
+            spread = true;
+          }
   }
-  return { cards, skipped, cur };
+  return { cards, skipped, cur, byId, linksBack };
 }
 
 export function undoable(record: BoardPatch, now: BoardLists) {
-  const links = placedById(now.links, now.trayLinks ?? []);
-  return (
-    [...fates(record, now, new Set()).cards.values()].includes('undo') ||
-    record.links.some(d => fateOf(d, links.get(d.id)) === 'undo')
-  );
+  const { cards, linksBack } = fates(record, now, new Set());
+  return [...cards.values()].includes('undo') || linksBack.length > 0;
 }
 
 export type Undone = { lists: BoardLists; undone: number; skipped: Card[] };
@@ -78,26 +93,20 @@ function putBack<T extends { id: string }>(
     if (list && at >= 0) list.splice(at, 1);
   }
   for (const d of [...ds].sort((a, b) => (a.was?.i ?? 0) - (b.was?.i ?? 0)))
-    if (d.was) lists[d.was.at].splice(d.was.i, 0, structuredClone(d.was.item));
+    if (d.was) lists[d.was.at].splice(d.was.i, 0, copy(d.was.item));
 }
 
-// Never changes `now`. Running it again on what it returns puts back nothing more.
+// Never changes `now`, and keeps every card and connector it doesn't put back as the same object, so an editor holding
+// one stays on the board. Running it again on what it returns puts back nothing more. It takes away nothing but what
+// the reply made or changed, as she left it.
 export function planUndo(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>): Undone {
-  const { cards, skipped, cur } = fates(record, now, keep),
-    lists = listsOf(now),
-    goes = record.cards.filter(d => cards.get(d.id) === 'undo');
+  const { cards, skipped, cur, byId, linksBack } = fates(record, now, keep),
+    lists: BoardLists = { cards: [...now.cards], tray: [...now.tray], links: [...now.links] },
+    goes = record.cards.filter(d => cards.get(d.id) === 'undo'),
+    trayLinks = [...(now.trayLinks ?? [])];
   putBack({ board: lists.cards, tray: lists.tray }, goes);
-  const trayLinks = lists.trayLinks ?? [],
-    on = { board: new Set(lists.cards.map(c => c.id)), tray: new Set(lists.tray.map(c => c.id)) },
-    curLinks = placedById(now.links, now.trayLinks ?? []),
-    joins = (l: Placed<Link> | null) => !l || (on[l.at].has(l.item.a) && on[l.at].has(l.item.b)),
-    linksBack = record.links.filter(d => fateOf(d, curLinks.get(d.id)) === 'undo' && joins(d.was));
   putBack({ board: lists.links, tray: trayLinks }, linksBack);
-  lists.links = lists.links.filter(l => on.board.has(l.a) && on.board.has(l.b));
-  const tray = trayLinks.filter(l => on.tray.has(l.a) && on.tray.has(l.b));
-  if (now.trayLinks || tray.length) lists.trayLinks = tray;
-  else delete lists.trayLinks;
-  const byId = new Map(record.cards.map(d => [d.id, d]));
+  if (now.trayLinks || trayLinks.length) lists.trayLinks = trayLinks;
   return {
     lists,
     undone: goes.length + linksBack.length,

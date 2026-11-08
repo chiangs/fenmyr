@@ -1,6 +1,6 @@
 // What Myra says a reply did to the board ("Changed on the board"), and what she says after Undo puts it back.
 import { cardName, labelOf, nounOf } from './cardTypes.ts';
-import type { BoardPatch, ChangeSet } from './changes.ts';
+import type { BoardPatch, ChangeSet, Placed } from './changes.ts';
 import type { StoredChangeSet } from './chat.ts';
 import type { Card } from './model.ts';
 
@@ -21,16 +21,18 @@ function counted(cards: readonly Named[]) {
 }
 
 function collectionLine(c: Extract<Card, { type: 'coll' }>) {
-  const name = c.text?.trim() ? `, ${c.text.trim()},` : '',
-    inside = c.kanban ? plural(c.colNames?.length ?? 0, 'column') : plural(c.kids.length, 'card');
-  return `+ 1 ${nounOf(c, 1)}${name} with ${inside}`;
+  const name = c.text?.trim() ? `, ${c.text.trim()}` : '',
+    cards = c.kids.length ? plural(c.kids.length, 'card') : '',
+    columns = c.kanban ? plural(c.colNames?.length ?? 0, 'column') : '',
+    inside = [columns, cards].filter(Boolean).join(' and '),
+    holding = inside ? `${name ? ',' : ''} with ${inside}` : '';
+  return `+ 1 ${nounOf(c, 1)}${name}${holding}`;
 }
 
-function addedLines(cards: readonly Card[], holder: ReadonlyMap<string, string | undefined>) {
-  const ids = new Set(cards.map(c => c.id)),
-    colls = cards.filter(c => c.type === 'coll'),
-    // a card filed into a collection she also made is counted in that collection's line
-    rest = cards.filter(c => c.type !== 'coll' && !ids.has(holder.get(c.id) ?? '')),
+// made: the collections the reply made, whose lines count the cards filed into them
+function addedLines(added: readonly Placed<Card>[], made: ReadonlySet<string>) {
+  const colls = added.flatMap(p => (p.item.type === 'coll' ? [p.item] : [])),
+    rest = added.flatMap(p => (p.item.type !== 'coll' && !made.has(p.in ?? '') ? [p.item] : [])),
     [one] = rest,
     name = one && rest.length === 1 && cardName(one) !== labelOf(one.type) ? `, “${cardName(one)}”` : '';
   return [...colls.map(collectionLine), ...(rest.length ? [`+ ${counted(rest)}${name}`] : [])];
@@ -46,20 +48,18 @@ export function summaryLines(record: BoardPatch, set: ChangeSet): string[] {
   const deltas = new Map(record.cards.map(d => [d.id, d])),
     pick = (ids: readonly string[]) => ids.flatMap(id => deltas.get(id) ?? []),
     added = pick(set.added).flatMap(d => d.now ?? []),
-    moved = pick(set.moved),
     edited = pick(set.edited),
     removed = pick(set.removed).flatMap(d => d.was?.item ?? []),
-    holder = new Map(added.map(p => [p.item.id, p.in])),
-    movedIn = moved.every(d => d.now?.in && d.now.in !== d.was?.in),
+    made = new Set(added.flatMap(p => (p.item.type === 'coll' ? [p.item.id] : []))),
+    moved = pick(set.moved).filter(d => !made.has(d.now?.in ?? '')),
+    into = moved.every(d => d.now?.in && d.now.in !== d.was?.in) ? ' in' : '',
+    outOf = moved.every(d => d.was?.in && !d.now?.in) ? ' out' : '',
     nowOf = (ds: typeof moved) => ds.flatMap(d => d.now?.item ?? []),
     links = set.links.added.length;
   return [
-    ...addedLines(
-      added.map(p => p.item),
-      holder,
-    ),
+    ...addedLines(added, made),
     ...(links ? [`+ ${plural(links, 'connector')}`] : []),
-    ...(moved.length ? [`→ ${counted(nowOf(moved))} moved${movedIn ? ' in' : ''}`] : []),
+    ...(moved.length ? [`→ ${counted(nowOf(moved))} moved${into || outOf}`] : []),
     ...(edited.length
       ? [
           `✎ ${counted(nowOf(edited))} ${edited.every(d => d.was && d.now && reworded(d.was.item, d.now.item)) ? 'reworded' : 'changed'}`,
@@ -83,13 +83,14 @@ export function countLines(set: StoredChangeSet): string[] {
 
 const NAMED = 2;
 
-// skipped: the cards she left because the person changed them after the reply
+// skipped: the cards she left because they changed after the reply, whether the person or a later reply of hers
+// changed them
 export function undoLine({ undone, skipped }: { undone: number; skipped: readonly Named[] }) {
-  if (!undone) return 'You’ve changed everything from that reply since, so I’ve left the board as it is.';
+  if (!undone) return 'Everything from that reply has changed since, so I’ve left the board as it is.';
   if (!skipped.length) return 'I’ve put the board back as it was before that reply.';
   const names = skipped.slice(0, NAMED).map(c => `“${cardName(c)}”`),
     more = skipped.length - names.length,
     list = more ? `${names.join(', ')} and ${plural(more, 'more card', 'more cards')}` : names.join(' and '),
     one = skipped.length === 1;
-  return `I’ve put back what that reply changed, apart from ${list}, which you’ve changed since. I’ve left ${one ? 'it' : 'those'} as you have ${one ? 'it' : 'them'}.`;
+  return `I’ve put back what that reply changed, apart from ${list}, which ${one ? 'has' : 'have'} changed since. I’ve left ${one ? 'it as it is' : 'those as they are'}.`;
 }
