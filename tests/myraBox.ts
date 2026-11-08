@@ -129,7 +129,7 @@ await check('her box is 200 px wide and one piece with the tools', async () => {
 });
 
 await check('she has one box to ask her in', async () => {
-  const inputs = await page.evaluate(() => document.querySelectorAll('#myra input, #myra textarea').length);
+  const inputs = await page.evaluate(() => document.querySelectorAll('#myra input:not([type=file]), #myra textarea').length);
   assert.strictEqual(inputs, 1);
 });
 

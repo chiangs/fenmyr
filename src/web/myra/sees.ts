@@ -8,17 +8,25 @@ export type SeesInput = {
   /** Vaults Myra may read on this board. */
   vaults: readonly { vault: string; name: string }[];
   web: boolean;
+  /** What the person added to the next message. */
+  added: readonly Added[];
 };
+
+/** A picture or text file (as a data: URL), or a vault note, added to one message. */
+export type Added =
+  | { kind: 'file'; id: string; name: string; data: string }
+  | { kind: 'note'; id: string; vault: string; rel: string; title: string };
 
 /** One chip in the strip. `on`: it goes with the next message. The board always goes, so it has no `on`. */
 export type Chip =
   | { kind: 'board' }
   | { kind: 'selection'; key: string; label: string; on: boolean }
   | { kind: 'vault'; key: string; vault: string; name: string; on: boolean }
-  | { kind: 'web'; key: string; on: boolean };
+  | { kind: 'web'; key: string; on: boolean }
+  | { kind: 'added'; item: Added };
 
 /** What a message was sent with, captured when it was sent. */
-export type Sees = { sel: readonly string[]; vaults: readonly string[]; web: boolean };
+export type Sees = { sel: readonly string[]; vaults: readonly string[]; web: boolean; added: readonly Added[] };
 
 /** Keys of the chips the person turned away from their default for the next message. */
 export type Flips = ReadonlySet<string>;
@@ -26,7 +34,11 @@ export const NO_FLIPS: Flips = new Set();
 
 // The selection and the web go unless left out. A vault is read only when the person adds it, because searching every
 // vault adds up to 12,000 characters to each question.
-const ON_BY_DEFAULT: { [K in Exclude<Chip['kind'], 'board'>]: boolean } = { selection: true, vault: false, web: true };
+const ON_BY_DEFAULT: { [K in Exclude<Chip['kind'], 'board' | 'added'>]: boolean } = {
+  selection: true,
+  vault: false,
+  web: true,
+};
 
 // The key holds the ids, so a different selection goes along again by itself.
 const selKey = (ids: readonly string[]) => `sel:${[...ids].sort().join(',')}`;
@@ -43,12 +55,18 @@ export function chipsOf(i: SeesInput, flips: Flips): Chip[] {
     chips.push({ kind: 'vault', key, vault: v.vault, name: v.name, on: on('vault', key) });
   }
   if (i.web) chips.push({ kind: 'web', key: 'web', on: on('web', 'web') });
+  for (const item of i.added) chips.push({ kind: 'added', item });
   return chips;
 }
 
 /** What the next message goes with. It reads the same chips the strip shows, so the two can't disagree. */
 export function capture(i: SeesInput, flips: Flips): Sees {
-  const out: { sel: readonly string[]; vaults: string[]; web: boolean } = { sel: [], vaults: [], web: false };
+  const out: { sel: readonly string[]; vaults: string[]; web: boolean; added: Added[] } = {
+    sel: [],
+    vaults: [],
+    web: false,
+    added: [],
+  };
   for (const c of chipsOf(i, flips))
     switch (c.kind) {
       case 'board':
@@ -61,6 +79,9 @@ export function capture(i: SeesInput, flips: Flips): Sees {
         break;
       case 'web':
         out.web = c.on;
+        break;
+      case 'added':
+        out.added.push(c.item);
         break;
       default: {
         const never: never = c;
@@ -75,4 +96,12 @@ export function toggle(flips: Flips, key: string): Flips {
   const next = new Set(flips);
   if (!next.delete(key)) next.add(key);
   return next;
+}
+
+/** Adds to the next message, leaving out a note that is already there. */
+export function addTo(added: readonly Added[], items: readonly Added[]): Added[] {
+  const same = (a: Added, b: Added) => a.kind === 'note' && b.kind === 'note' && a.vault === b.vault && a.rel === b.rel;
+  const out = [...added];
+  for (const it of items) if (!out.some(a => same(a, it))) out.push(it);
+  return out;
 }

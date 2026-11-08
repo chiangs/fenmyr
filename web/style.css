@@ -2575,6 +2575,10 @@ body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px #fff, 0 0 0
 .mcs-x::after { content: ''; position: absolute; inset: -3px; }
 .mcs-x:hover, .mcs-chip.out:hover .mcs-x { opacity: 1; background: rgb(from var(--shade) r g b / .08); }
 body.dark :is(.mcs-x:hover, .mcs-chip.out:hover .mcs-x) { background: rgb(from var(--hilite) r g b / .12); }
+/* added for one message: a long file name ellipsises rather than taking a row */
+.mcs-chip.added { max-width: 14em; }
+.mcs-add { height: 24px; padding: 0 9px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; color: var(--ink-soft); font: inherit; cursor: pointer; }
+.mcs-add:hover, .mcs-add:focus-visible { color: var(--ink); background: rgb(from var(--ink) r g b / .06); }
 
 /* connector weight and colour in the selection bar */
 .sb-wl { display: block; flex: none; }

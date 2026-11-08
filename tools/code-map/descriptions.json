@@ -424,6 +424,11 @@
     "tools/metrics.ts": "Counts files and lines of code per area of the project.",
     "tools/notices.ts": "Writes the third-party notices and the licences list.",
     "tools/visual-diff.ts": "Screenshots 22 states here and on main, and fails on any changed pixel.",
-    "web/sw.js": "Keeps a copy of the app so the website version opens offline."
+    "web/sw.js": "Keeps a copy of the app so the website version opens offline.",
+    "src/shared/askFiles.ts": "The pictures and text files a person can add to one message to Myra: kinds, size limits and the words for a refusal.",
+    "src/host/askFiles.ts": "Checks the files added to a message to Myra by their bytes and writes them where only that request’s Claude Code reads them.",
+    "src/web/myra/seesAdd.ts": "Add in the “Myra sees” strip: a menu for a picture, file or vault note, and pictures or files pasted into the chat.",
+    "tests/chatAdd.ts": "Checks Add in Myra’s chat with a stand-in Claude Code: pictures, files and vault notes go with one message, limits and #private notes are refused.",
+    "tests/smoke/askFiles.ts": "Smoke checks for files on the ask bridge: they reach Claude Code in their own folder with Read, are refused past the limits, and are removed after."
   }
 }

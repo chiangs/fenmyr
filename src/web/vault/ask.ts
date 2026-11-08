@@ -3,6 +3,7 @@ import type { VaultHit, VaultListItem, VaultPatch, VaultTaskForMyra } from '../.
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { saveLib } from '../library/tree.ts';
+import type { NoteUsed } from '../myra/applyTypes.ts';
 import { say } from '../myra/say.ts';
 import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
@@ -82,9 +83,41 @@ export const tasksLine = (t: VaultTasksUsed) =>
     ? ` I used ${t.items.length} unfinished task${t.items.length === 1 ? '' : 's'} from ${t.notes} note${t.notes === 1 ? '' : 's'} in your vault${t.filtered ? ` (${t.open} open in all; I kept the ones that match your words)` : ''}.${t.stopped ? ' I ran out of time before reading every note, so some may be missing.' : ''}`
     : ` I looked in your vault for unfinished tasks, but found none${t.filtered ? ' that match your words' : ''}${t.stopped ? ' (I ran out of time before reading every note)' : ''}.`;
 
-export async function openVaultPicker() {
+/** Reads the notes the person added to a message, through the vaults Myra may read now. The host never gives out a
+ *  #private note or one outside the allowed folders; those come back in `refused`, by title. */
+export async function readAdded(notes: readonly { vault: string; rel: string; title: string }[], grants: VaultGrant[]) {
+  const used: NoteUsed[] = [],
+    refused: string[] = [];
+  for (const n of notes) {
+    const g = grants.find(x => x.vault === n.vault);
+    try {
+      if (!g) throw new Error('blocked');
+      const v = await Fenmyr.vaultNote(n.vault, n.rel, g.folders, true);
+      used.push({
+        vault: vaultById(n.vault)?.name ?? 'Vault',
+        vaultId: n.vault,
+        rel: v.rel,
+        title: v.title,
+        tags: v.tags,
+        props: v.props,
+        excerpt: v.excerpt,
+        text: v.body ?? v.excerpt,
+      });
+    } catch (_e) {
+      refused.push(n.title);
+    }
+  }
+  return { used, refused };
+}
+
+// What the picker offers and does with a note: put it on the board as a card (the default), or add it to Myra's next
+// message, where only the vaults she may read with AI count.
+type NotePick = { grants: (b: Board) => VaultGrant[]; pick: (g: VaultGrant, r: VaultListItem) => Promise<unknown> };
+const TO_BOARD: NotePick = { grants: activeGrants, pick: (g, r) => addVaultNote(g, r.rel) };
+
+export async function openVaultPicker(use: NotePick = TO_BOARD) {
   await loadVaults();
-  const gs = activeGrants(session.board);
+  const gs = use.grants(session.board);
   $('vaultPick')?.remove();
   if (!gs.length) {
     say(
@@ -143,7 +176,7 @@ export async function openVaultPicker() {
     close();
     if (!r) return;
     try {
-      await addVaultNote(r.g, r.rel);
+      await use.pick(r.g, r);
     } catch (err) {
       say(`Hmm: ${messageOf(err)}`, 3500);
     }
@@ -155,7 +188,7 @@ export async function openVaultPicker() {
       e.preventDefault();
       const r = rows[0];
       close();
-      addVaultNote(r.g, r.rel).catch(err => say(`Hmm: ${messageOf(err)}`, 3500));
+      use.pick(r.g, r).catch(err => say(`Hmm: ${messageOf(err)}`, 3500));
     }
   };
 }

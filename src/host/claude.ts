@@ -10,6 +10,7 @@ import type {
   VaultNoteForMyra,
   VaultTaskForMyra,
 } from '../shared/ops.ts';
+import { ASK_ROOT, parseFiles, writeFiles } from './askFiles.ts';
 import P from './paths.ts';
 import * as prompts from './prompts.ts';
 import { isRecord, jsonSafe, readJSON, run, strings, text, type Untrusted } from './util.ts';
@@ -145,7 +146,18 @@ export const hookArgs = (more: Record<string, unknown> = {}) => [
   JSON.stringify({ disableAllHooks: true, ...more }),
 ];
 
-async function runClaude(prompt: string, tools: string[], timeout: number, need = 'I need Claude Code to do that.') {
+// Its file tools refuse to read or write outside the folder it runs in and the folders added for it, whatever
+// permission mode it runs in. Claude Code enforces this.
+export const FOLDER_ONLY = { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true };
+
+// `cwd`: run there, with file tools kept inside it, so a request never reaches the folder that holds the boards
+async function runClaude(
+  prompt: string,
+  tools: string[],
+  timeout: number,
+  need = 'I need Claude Code to do that.',
+  cwd?: string,
+) {
   const claude = await claudePath();
   if (!claude) throw new Error(need);
   const r = await run(
@@ -155,10 +167,12 @@ async function runClaude(prompt: string, tools: string[], timeout: number, need 
       prompt,
       '--output-format',
       'json',
-      ...hookArgs(),
+      ...(cwd ? hookArgs({ permissions: FOLDER_ONLY }) : hookArgs()),
       ...(tools.length ? ['--allowedTools', tools.join(',')] : []),
     ],
     timeout,
+    {},
+    cwd,
   );
   const { text, isError } = claudeResult(r.out);
   // a failed answer (not signed in, no plan…) comes back as an error, not as words for Myra to read
@@ -215,7 +229,8 @@ function parseVaultTasks(v: unknown): { items: VaultTaskForMyra[]; summary: stri
   return { items, summary: text(v.summary).slice(0, 300) };
 }
 const NEED = 'I need Claude Code to think. Set it up (Settings → Helpers shows how), then try again.';
-export function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
+export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
+  const added = parseFiles(a.files);
   const confirmed = Boolean(a.confirmed),
     mobbin = a.mobbin === undefined || Boolean(a.mobbin),
     higgs = a.higgs === undefined || Boolean(a.higgs),
@@ -235,6 +250,8 @@ export function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
       'mcp__claude_ai_higgsfield__jobs_wait',
       'mcp__claude_ai_higgsfield__models_explore',
     );
+  if (added.length) tools.push('Read');
+  const written = added.length ? writeFiles(added) : null;
   // her tone settings and slash commands go in the prompt, not in the board data
   const snapshot: Record<string, unknown> = isRecord(a.board) ? a.board : {};
   const { myraStyle, commands, ...board } = snapshot;
@@ -250,8 +267,13 @@ export function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
     vaultNotes: parseVaultNotes(a.vaultNotes),
     vaultTasks: parseVaultTasks(a.vaultTasks),
     canVault: Boolean(a.canVault),
+    files: written?.files ?? [],
   });
-  return runClaude(prompt, tools, 300, NEED);
+  try {
+    return await runClaude(prompt, tools, 300, NEED, ASK_ROOT);
+  } finally {
+    if (written) fs.rmSync(written.dir, { recursive: true, force: true });
+  }
 }
 export async function rewrite(a: Untrusted<Ops['rewrite']['args']>): Promise<string> {
   const words = { text: text(a.text), how: text(a.how), title: text(a.title), around: text(a.around) };

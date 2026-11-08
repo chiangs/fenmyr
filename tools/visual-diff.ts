@@ -97,6 +97,8 @@ const note = (rel: string, title: string) => ({
   text: title,
 });
 const READ = { asked: true, used: [note('Roadmap.md', 'Roadmap'), note('Retro.md', 'Retro notes')], web: true };
+// a 1×1 picture for the files added to a message
+const DOT = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 const GROUPS: Record<string, Group> = {
   light: { states: board },
   'proto-wide': { proto: true, width: 1440, states: screen },
@@ -172,6 +174,20 @@ const GROUPS: Record<string, Group> = {
           const web = page.locator('#mcSees [data-chip="web"] .mcs-x');
           if (await web.count()) await web.click();
           // the resting look, not the hovered one
+          await page.mouse.move(1, 1);
+        },
+      ],
+      [
+        'added',
+        async page => {
+          const input = page.locator('#mcFile');
+          if (await input.count())
+            await input.setInputFiles([
+              { name: 'moodboard.png', mimeType: 'image/png', buffer: Buffer.from(DOT, 'base64') },
+              { name: 'brief.md', mimeType: 'text/markdown', buffer: Buffer.from('The brief') },
+            ]);
+          const add = page.locator('#mcSees .mcs-add');
+          if (await add.count()) await add.click();
           await page.mouse.move(1, 1);
         },
       ],

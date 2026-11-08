@@ -7,6 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron } from 'playwright';
 import { animations } from './smoke/animations.ts';
+import { askFiles } from './smoke/askFiles.ts';
 import { birthday } from './smoke/birthday.ts';
 import { board, noteTags } from './smoke/board.ts';
 import { bridge } from './smoke/bridge.ts';
@@ -36,7 +37,7 @@ import { HEADLESS, MOUSE } from './support/launch.ts';
     path.join(bin, 'claude'),
     `#!/bin/sh
 if [ "$1" = mcp ]; then echo "claude.ai Mobbin: https://mobbin - ✓ Connected"; echo "claude.ai higgsfield: https://h - ! Needs authentication"; exit 0; fi
-printf '%s' "$2" > "${data}/prompt.txt"; echo "$@" > "${data}/args.txt"
+printf '%s' "$2" > "${data}/prompt.txt"; echo "$@" > "${data}/args.txt"; pwd > "${data}/cwd.txt"; rm -rf "${data}/seen"; cp -r . "${data}/seen"
 echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"hi from fake claude\\"}","usage":{"input_tokens":10,"cache_read_input_tokens":5,"output_tokens":3},"total_cost_usd":0.01}'
 `,
     { mode: 0o755 },
@@ -87,6 +88,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await page.evaluate(installPageKit);
   const t = makeSmoke({ app, page, data, out, errors });
   await bridge(t);
+  await askFiles(t);
   await repoOps(t);
   await look(t);
   await collectionCount(t);
