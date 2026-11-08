@@ -44,4 +44,24 @@ assert.strictEqual(
   'at most six',
 );
 assert.deepStrictEqual(webPagesOf(parseReply({ pages: 'https://e.com' })), [], 'pages that are not a list are dropped');
+const [long] = webPagesOf(
+  parseReply({
+    pages: [
+      { url: `https://e.com/${'a'.repeat(2100)}`, title: 'Too long an address' },
+      { url: 'https://e.com/long', title: `\u202Eexe.jpg\u202C ${'word '.repeat(200)}` },
+      { url: 'https://e.com/ctl', title: 'Tab\tand\u0000null\u2066 ' },
+    ],
+  }),
+);
+assert.strictEqual(long?.url, 'https://e.com/long', 'an address over 2048 characters is dropped');
+assert.strictEqual(Array.from(long?.title ?? '').length, 300, 'a title is kept to 300 characters');
+assert.ok(
+  long?.title.startsWith('exe.jpg word') && long.title.endsWith('…'),
+  'with bidi controls gone and an ellipsis',
+);
+assert.deepStrictEqual(
+  webPagesOf(parseReply({ pages: [{ url: 'https://e.com/ctl', title: 'Tab\tand\u0000null\u2066 ' }] }))[0]?.title,
+  'Tab and null',
+  'control characters become spaces and runs of space close up',
+);
 console.log('REPLY OK');

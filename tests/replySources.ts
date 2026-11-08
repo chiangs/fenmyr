@@ -106,7 +106,7 @@ const REPLY = {
 };
 const SOURCES = [
   'sources: I read 2 notes from your vault | Cloudberries | 2026-10-20',
-  'sources: I read 1 web page | Planning in phases',
+  'sources: I read 1 web page | Planning in phases · example.com',
 ];
 const NEXT = 'row: Group by season | Find recipes | Add a map';
 
@@ -151,6 +151,31 @@ await check('pages she lists while the web was off are not shown', async () => {
     'sources: I read 1 note from your vault | Cloudberries',
   ]);
 });
+
+const LONG = 'Long '.repeat(40).trim();
+await check(
+  'a page shows its title cut to 80 characters and then its site, the tooltip holds the whole title and address, bidi controls go, and every link is at least 24 px',
+  async () => {
+    await l.page.evaluate(r => window.__fenmyr.applyMyra(r, 'q', { asked: false, used: [], web: true }), {
+      say: 'Long titles.',
+      pages: [
+        { url: 'https://example.com/long', title: LONG },
+        { url: 'https://example.org/rtl', title: 'abc\u202Egpj.exe' },
+        { url: 'https://пример.рф/', title: 'x' },
+        { url: 'https://example.net/' },
+      ],
+    });
+    await settle(l.page, 300);
+    assert.deepStrictEqual(await under(l.page, 'Long titles.'), [
+      `sources: I read 4 web pages | ${'Long '.repeat(16).slice(0, 79)}… · example.com | abc gpj.exe · example.org | x · xn--e1afmkfd.xn--p1ai | example.net`,
+    ]);
+    assert.strictEqual(await link(l.page, 'Long Long').getAttribute('title'), `${LONG}\nhttps://example.com/long`);
+    for (const label of ['Long Long', 'gpj.exe', 'xn--', 'example.net']) {
+      const box = await link(l.page, label).boundingBox();
+      assert.ok(box && box.width >= 24 && box.height >= 24, `${label} link is ${box?.width}×${box?.height}`);
+    }
+  },
+);
 
 const LASTING = ['summary', 'row: Show on board | Undo', ...SOURCES, NEXT];
 await check('closing and opening the chat keeps what she read and her next steps', async () => {
@@ -212,6 +237,20 @@ await check('a next step sends its words as hers to answer, and the steps go onc
     'the words are asked',
   );
   assert.deepStrictEqual(await under(l.page, 'Read up.'), ['summary', 'row: Show on board', ...SOURCES]);
+});
+
+await check('with the chat closed, a bubble with links stays up as long as one with next steps', async () => {
+  await l.page.evaluate(() => document.getElementById('mcClose')?.click());
+  await settle(l.page, 300);
+  await l.page.evaluate(r => window.__fenmyr.applyMyra(r, 'q', { asked: false, used: [], web: true }), {
+    say: 'Only pages.',
+    pages: [{ url: 'https://example.com/only', title: 'Only' }],
+  });
+  await l.page.waitForTimeout(10_500);
+  assert.ok(
+    await l.page.evaluate(() => document.getElementById('mBubble')?.classList.contains('on')),
+    'still up after 10 s',
+  );
 });
 
 assert.deepStrictEqual(l.errors, []);

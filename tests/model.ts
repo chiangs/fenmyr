@@ -98,6 +98,8 @@ assert.deepStrictEqual(
         { url: 'file:///etc/passwd', title: 'File' },
         { url: 'obsidian://open?vault=x', title: 'App' },
         { url: 'http://example.com/', title: 'Kept' },
+        { url: `https://example.com/${'a'.repeat(2100)}`, title: 'Too long' },
+        { url: 'https://example.com/rtl', title: 'abc\u202Egpj.exe' },
       ],
     },
     { kind: 'read', pages: [{ url: 'https://example.com/b', title: 'Only pages' }] },
@@ -107,11 +109,14 @@ assert.deepStrictEqual(
     {
       kind: 'read',
       notes: [{ vault: 'v1', rel: 'a.md', title: 'A' }],
-      pages: [{ url: 'http://example.com/', title: 'Kept' }],
+      pages: [
+        { url: 'http://example.com/', title: 'Kept' },
+        { url: 'https://example.com/rtl', title: 'abc gpj.exe' },
+      ],
     },
     { kind: 'read', notes: [], pages: [{ url: 'https://example.com/b', title: 'Only pages' }] },
   ],
-  'what she read keeps only sound notes and http or https pages, a missing list reads as empty, and an empty one goes',
+  'what she read keeps only sound notes and http or https pages under 2048 characters, without bidi controls in titles; a missing list reads as empty, and an empty one goes',
 );
 const earlier = {
   id: 'b1',

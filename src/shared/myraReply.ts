@@ -1,5 +1,5 @@
 import { z } from 'zod/mini';
-import { isWebAddress, type WebPage } from './chat.ts';
+import { type WebPage, webPage } from './chat.ts';
 
 // Myra's reply is model output. A field of the wrong kind is dropped, so the rest of her answer still applies.
 const opt = <T extends z.core.$ZodType>(schema: T) => z.catch(z.optional(schema), undefined);
@@ -108,8 +108,9 @@ const MAX_PAGES = 6;
 export function webPagesOf(r: MyraReply): WebPage[] {
   const out: WebPage[] = [];
   for (const p of r.pages ?? []) {
-    if (!p || !isWebAddress(p.url) || out.some(o => o.url === p.url)) continue;
-    out.push({ url: p.url, title: p.title?.trim() || new URL(p.url).hostname });
+    const page = p && webPage(p.url, p.title ?? '');
+    if (!page || out.some(o => o.url === page.url)) continue;
+    out.push(page);
     if (out.length === MAX_PAGES) break;
   }
   return out;

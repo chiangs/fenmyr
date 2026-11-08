@@ -1,4 +1,4 @@
-import type { ChatAction, ReadNote, WebPage } from '../../shared/chat.ts';
+import { type ChatAction, clip, type ReadNote, type WebPage } from '../../shared/chat.ts';
 import { buildUndoButton, commitButton } from '../proto/build.ts';
 import { sourceButton } from '../proto/sources.ts';
 import { openNote } from '../vault/notes.ts';
@@ -26,8 +26,15 @@ export type Piece =
 
 const one = (slot: Row, after: After, b: SayAction | null): Piece[] => (b ? [{ slot, button: { ...b, after } }] : []);
 
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const count = (n: number, single: string, plural: string) => `${n} ${n === 1 ? single : plural}`;
 const link = (label: string, title: string, run: () => unknown): Button => ({ label, title, after: 'stay', run });
+
+// The site follows her title so a lookalike address shows; the tooltip holds the whole title and address.
+function pageLink({ url, title }: WebPage) {
+  const host = new URL(url).hostname,
+    label = title === host ? host : `${clip(title, 80)} · ${host}`;
+  return link(label, title === host ? url : `${title}\n${url}`, () => Fenmyr.openURL(url));
+}
 
 // what she read: one line of links for her vault notes, and one for the pages she opened
 function readPieces({ notes, pages }: { notes: readonly ReadNote[]; pages: readonly WebPage[] }): Piece[] {
@@ -42,7 +49,7 @@ function readPieces({ notes, pages }: { notes: readonly ReadNote[]; pages: reado
     pieces.push({
       slot: 'sources',
       head: `I read ${count(pages.length, 'web page', 'web pages')}`,
-      links: pages.map(p => link(p.title, p.url, () => Fenmyr.openURL(p.url))),
+      links: pages.map(pageLink),
     });
   return pieces;
 }

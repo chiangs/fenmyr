@@ -12,6 +12,7 @@ import { elementById, textField } from '../ui/dom.ts';
 import { aiGrants, gatherVault, gatherVaultTasks, updateVaultChip, type VaultTasksUsed } from '../vault/ask.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
+import type { Picked } from './applyTypes.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat, typing } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
@@ -161,12 +162,7 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
   $('myra').classList.add('thinking');
   goo.think(true);
   typing(true);
-  const ctx: {
-    asked: boolean;
-    used: Awaited<ReturnType<typeof gatherVault>>;
-    tasks: VaultTasksUsed | null;
-    web: boolean;
-  } = {
+  const ctx: Picked & { tasks: VaultTasksUsed | null; web: boolean } = {
     asked: false,
     used: [],
     tasks: null,

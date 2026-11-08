@@ -57,5 +57,6 @@ export function replyLine(
     pages = ctx.web ? webPagesOf(r) : [];
   if (used.length || pages.length) acts.push({ kind: 'read', notes: used, pages });
   const said = (r.say && noEmoji(r.say)) || (touched.length ? `Done! I touched ${touched.length} cards.` : 'Done!');
-  return { text: said + looked, ms: r.confirm ? 0 : next.length ? 16000 : 9000, acts };
+  const lasting = next.length || used.length || pages.length;
+  return { text: said + looked, ms: r.confirm ? 0 : lasting ? 16000 : 9000, acts };
 }

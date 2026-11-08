@@ -23,14 +23,29 @@ export type ChatAction =
 export type ReadNote = { vault: string; rel: string; title: string };
 export type WebPage = { url: string; title: string };
 
-// Only these open in the browser; a page address comes from model output and from the board file, so both check it.
-export function isWebAddress(s: string) {
+// Only http and https open in the browser. A page comes from model output and from the board file, so both read it
+// here. Control and bidi characters go from the title, since an override can make "gpj.exe" read as "exe.jpg".
+const MAX_URL = 2048,
+  MAX_TITLE = 300,
+  UNSAFE = /[\p{Cc}\u200E\u200F\u202A-\u202E\u2066-\u2069]/gu;
+export function webPage(url: string, title: string): WebPage | null {
+  if (url.length > MAX_URL) return null;
   try {
-    const { protocol } = new URL(s);
-    return protocol === 'http:' || protocol === 'https:';
+    const { protocol, hostname } = new URL(url);
+    if (protocol !== 'http:' && protocol !== 'https:') return null;
+    const clean = clip(title.replace(UNSAFE, ' ').replace(/\s+/g, ' ').trim(), MAX_TITLE);
+    return { url, title: clean || hostname };
   } catch {
-    return false;
+    return null;
   }
+}
+
+// at most `n` characters, the last an ellipsis when it was cut
+export function clip(s: string, n: number) {
+  const chars = Array.from(s);
+  if (chars.length <= n) return s;
+  const kept = chars.slice(0, n - 1).join('');
+  return `${kept.trimEnd()}…`;
 }
 
 // A ChangeSet as her line keeps it: a list with nothing in it is left out.
@@ -110,9 +125,7 @@ const readNote = (x: unknown): ReadNote | null =>
     ? { vault: x.vault, rel: x.rel, title: x.title }
     : null;
 const readPage = (x: unknown): WebPage | null =>
-  isRecord(x) && typeof x.url === 'string' && isWebAddress(x.url) && typeof x.title === 'string'
-    ? { url: x.url, title: x.title }
-    : null;
+  isRecord(x) && typeof x.url === 'string' && typeof x.title === 'string' ? webPage(x.url, x.title) : null;
 // a bad entry drops alone; a list that is left out reads as empty
 const entries = <T>(x: unknown, read: (x: unknown) => T | null): T[] =>
   (Array.isArray(x) ? x : []).map(read).filter(e => e !== null);
