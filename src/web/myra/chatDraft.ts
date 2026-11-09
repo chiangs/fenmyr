@@ -44,14 +44,6 @@ function writeDraft(): Promise<void> {
   return saveNow();
 }
 
-// words typed since the last write go into the map at once, so nothing waits on a timer or the disk
-function stash() {
-  if (!dirty || !owner) return;
-  const text = box().value;
-  if (text) drafts.set(owner, { text });
-  else drafts.delete(owner);
-}
-
 function typed() {
   if (restoring) return;
   dirty = true;
@@ -86,9 +78,8 @@ export function initDraft() {
 /** Before the open board is replaced: the words in the input go to its draft, and to its file when chats are kept. */
 export const leaveDraft = writeDraft;
 
-/** After a board opens: its draft comes back, with the caret at the end. It writes nothing. */
+/** After a board opens: its draft comes back with the caret at the end, where setting a value puts it. It writes nothing. */
 export function restoreDraft() {
-  stash();
   stopTimers();
   const board = session.board,
     kept = chatKeep() === 'board' ? board.chatDraft : undefined,
@@ -96,7 +87,6 @@ export function restoreDraft() {
   owner = board.id;
   dirty = false;
   setText(draft?.text ?? '');
-  box().setSelectionRange(box().value.length, box().value.length);
 }
 
 /** Clear all chats: no draft is left in memory or in the input. */

@@ -20,12 +20,11 @@ import { miniCache } from './homeTiles.ts';
 import { refreshBoards } from './rowMenu.ts';
 
 export async function openBoard(id: string) {
-  // an edit still waiting to save belongs to the board you're leaving: save it first, with the draft it holds
-  await leaveDraft();
+  // an edit still waiting to save belongs to the board you're leaving: save it first
   if (appState.saveT && session.board) await saveNow();
   const b = await Fenmyr.load(id);
   if (!b) return;
-  // words typed while the board loaded still belong to the board you're leaving
+  // the draft goes with the board you're leaving, words typed while this one loaded included
   await leaveDraft();
   miniCache.clear();
   vnFull.clear();
