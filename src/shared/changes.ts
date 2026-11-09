@@ -16,7 +16,8 @@ type Delta<T> = { id: string; was: Placed<T> | null; now: Placed<T> | null };
 export type BoardPatch = { cards: Delta<Card>[]; links: Delta<Link>[] };
 
 // Each card id is in at most one list. `relaid` maps a collection to the cards its layout shifted (the collection
-// itself among them; '' for cards in none). `skipped` holds cards she left alone because the person was typing in them.
+// itself among them; '' for cards in none). `skipped` holds cards she left alone: the one the person was typing in, and
+// any they changed between the plan and its landing.
 export type ChangeSet = {
   added: string[];
   moved: string[];
