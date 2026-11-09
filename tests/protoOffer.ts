@@ -45,6 +45,10 @@ const REPLIES = {
     say: 'That needs code, so I’d make a diary prototype.',
     offerPrototype: { name: 'Diary', from: ['n9'], build: 'Build a diary' },
   },
+  NAMED: {
+    say: 'That needs code, so I’d make it in Shop.',
+    offerPrototype: { name: 'Basket', project: 'Shop', from: ['n1'], build: 'Build the basket' },
+  },
   BROKEN: {
     say: 'Here are two notes.',
     add: [{ text: 'Kept one' }, { text: 'Kept two' }],
@@ -293,6 +297,27 @@ try {
     assert.deepStrictEqual(await lineOf(SAID), { text: SAID, head: null, lines: [], buttons: [] });
     assert.strictEqual(await l.page.evaluate(() => window.__fenmyr.curBoard().id), 'two', 'the board stays open');
     assert.strictEqual(await l.page.evaluate(() => window.__fenmyr.lib().boards.length), before, 'no board is made');
+  });
+
+  await check('an offer naming another project shows its repo, and Start and build makes the board there', async () => {
+    await open('one');
+    await ask('Make the basket work NAMED');
+    assert.deepStrictEqual(await lineOf(REPLIES.NAMED.say), {
+      text: REPLIES.NAMED.say,
+      head: 'New prototype board: Basket',
+      lines: ['Made from 1 card: “First note”', 'Code goes in shop/prototypes/basket', 'React'],
+      buttons: [':Start and build', 'ghost:Not now'],
+    });
+    const n = lines(builds).length;
+    await tap('Start and build');
+    await until(() => lines(builds).length === n + 1, 'the build starts');
+    assert.strictEqual(lines(builds).at(-1)?.cwd, path.join(shop, 'prototypes/basket'), 'in Shop’s repo');
+    const lib = await l.page.evaluate(() => window.__fenmyr.lib());
+    const board = lib.boards.find(b => b.name === 'Basket' && b.prototype),
+      shopLib = lib.projects.find(p => p.name === 'Shop');
+    assert.ok(board?.folder && shopLib?.prototypingFolders.includes(board.folder), 'in a Shop prototyping folder');
+    await until(async () => !!(await lineOf('I built it.')), 'the build lands');
+    await open('two');
   });
 
   await check('a malformed offer drops alone, and the rest of her reply lands', async () => {
