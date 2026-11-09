@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { everyOfflineCard } from './fixtures/boards.ts';
 import { launch } from './support/launch.ts';
+import { pasteIntoChat } from './support/paste.ts';
 
 const RUNNING_ONLY = ['count', 'starting', 'saving', 'pct', 'camErr', 'camRest', 'loading', 'cropEdit'];
 const l = await launch({ boards: [everyOfflineCard()], open: 'every' });
@@ -155,3 +156,57 @@ try {
   await d.close();
 }
 console.log('STORED DRAFT OK');
+
+// A pasted-text chip is part of the draft: it survives closing the chat, switching boards and a restart, and the file
+// holds every character of it.
+const PASTED = `${Array.from({ length: 80 }, (_, i) => `line ${i + 1} é🙂 ${'x'.repeat(40)}`).join('\r\n')}\nTHE-END`;
+const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-paste-'));
+let pp = await launch({
+  boards: [
+    { id: 'pa', name: 'Pa', cards: [cartNote], links: [], tray: [] },
+    { id: 'pb', name: 'Pb', cards: [cartNote], links: [], tray: [] },
+  ],
+  open: 'pa',
+  settings: { chatKeep: 'board' },
+  data: dataDir,
+});
+try {
+  const stored = () => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(dataDir, 'fenmyr', 'boards', 'pa.json'), 'utf8')).chatDraft;
+    } catch {
+      return undefined;
+    }
+  };
+  const chips = (page: typeof pp.page) => page.locator('#mcSees .mcs-chip.paste .mcs-t').allTextContents();
+  await pp.page.click('#mPill');
+  await pasteIntoChat(pp.page, PASTED);
+  const until = Date.now() + 6000;
+  while (Date.now() < until && !stored()) await pp.page.waitForTimeout(100);
+  assert.deepStrictEqual(
+    stored()?.pasted?.map((x: { text: string }) => x.text),
+    [PASTED],
+    'the file holds the paste',
+  );
+  await pp.page.keyboard.press('Escape');
+  assert.strictEqual(
+    await pp.page.locator('#mDraft').textContent(),
+    'Draft · pasted text',
+    'her box says so when closed',
+  );
+  await pp.page.evaluate(() => window.__fenmyr.openBoard('pb'));
+  await pp.page.click('#mPill');
+  assert.deepStrictEqual(await chips(pp.page), [], 'the other board has no chip');
+  await pp.page.evaluate(() => window.__fenmyr.openBoard('pa'));
+  assert.deepStrictEqual(await chips(pp.page), ['Pasted text · 81 lines'], 'switching back brings it back');
+  await pp.close();
+  pp = await launch({ open: 'pa', settings: { chatKeep: 'board' }, data: dataDir });
+  await pp.page.click('#mPill');
+  assert.deepStrictEqual(await chips(pp.page), ['Pasted text · 81 lines'], 'and a restart does');
+  await pp.page.click('#mcSees .mcs-open');
+  assert.strictEqual(await pp.page.locator('.tdlg.pasted pre').textContent(), PASTED, 'with every character');
+} finally {
+  await pp.close();
+  fs.rmSync(dataDir, { recursive: true, force: true });
+}
+console.log('STORED PASTE OK');

@@ -43,7 +43,7 @@ export function init3() {
     ];
     const MACWORDS = /Mac|Finder|Terminal/;
     const theirs = (n: Node) =>
-      n.parentElement?.closest('#cards, .docview, .msg.me, [contenteditable="true"], input, textarea'); // never touch what people wrote
+      n.parentElement?.closest('#cards, .docview, .mc-msg.me, .pasted-text, [contenteditable="true"], input, textarea'); // never touch what people wrote
     const winWords = (t: string) => WORDS.reduce((x, [re, to]) => x.replace(re, to), t);
     const sayPC = (n: Text) => {
       if (!MACWORDS.test(n.data) || theirs(n)) return;

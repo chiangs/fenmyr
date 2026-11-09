@@ -20,11 +20,12 @@ import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { showConnections } from './helpers.ts';
+import { initPasted } from './pasted.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
 import { parse } from './replyText.ts';
 import type { SayAction } from './say.ts';
 import { reply } from './say.ts';
-import type { Sees } from './sees.ts';
+import { askFilesOf, type Sees } from './sees.ts';
 import { initSeesAdd } from './seesAdd.ts';
 import { takeSees } from './seesStrip.ts';
 import { initSlashMenu, slash } from './slash.ts';
@@ -185,7 +186,7 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
       sees.added.flatMap(a => (a.kind === 'note' ? [a] : [])),
       aiGrants(session.board),
     ),
-    files = sees.added.flatMap(a => (a.kind === 'file' ? [{ name: a.name, data: a.data }] : []));
+    files = askFilesOf(sees.added);
   if (chosen.refused.length) addMsg('myra', leftOut(chosen.refused));
   if (grants.length) {
     ctx.asked = true;
@@ -294,6 +295,7 @@ export function init31() {
 
   initChatInput();
   initDraft();
+  initPasted();
   initExpand();
   initSlashMenu();
   initSeesAdd();

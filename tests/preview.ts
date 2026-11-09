@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { launch } from './support/launch.ts';
+import { pasteIntoChat } from './support/paste.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-preview-')));
 const repo = path.join(work, 'acme');
@@ -115,6 +116,7 @@ try {
   );
 
   await page.fill('#mcInput', 'Fix this:');
+  await pasteIntoChat(page, 'a long log\n'.repeat(300));
   await page.click('[data-pv="point"]');
   await frame.locator('button.count').click();
   await until(
@@ -123,6 +125,11 @@ try {
     'pointing hands the element to Myra’s input',
   );
   assert.ok((await page.inputValue('#mcInput')).startsWith('Fix this: [this: '), 'it adds to the words already typed');
+  assert.strictEqual(
+    await page.locator('#mcSees .mcs-chip.paste').count(),
+    1,
+    'and leaves the pasted text where it is',
+  );
   assert.ok(
     await page.evaluate(() => {
       const box = document.getElementById('mcInput');

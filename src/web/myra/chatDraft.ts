@@ -4,10 +4,11 @@ import { session } from '../core/state.ts';
 import { elementById } from '../ui/dom.ts';
 import { setChatText } from './chatInput.ts';
 import { chatKeep } from './chatLog.ts';
-import { say } from './say.ts';
+import { clearPastes, pastedChars, pastesOf, seedAdded, watchAdded } from './seesStrip.ts';
 
-// The words the person has typed to Myra and not sent, one set per board. They live in memory under every Keep chats
-// setting, so a board switch never loses them; they reach the board file only when chats are kept with the board.
+// The words the person has typed to Myra and not sent, and the long pastes that became chips, one set per board. They
+// live in memory under every Keep chats setting, so a board switch never loses them; they reach the board file only
+// when chats are kept with the board.
 
 const IDLE_MS = 2000,
   CEILING_MS = 5000;
@@ -33,13 +34,20 @@ function writeDraft(): Promise<void> {
   stopTimers();
   if (!dirty || !owner) return Promise.resolve();
   dirty = false;
-  const text = box().value;
-  if (text) drafts.set(owner, { text });
+  const text = box().value,
+    pasted = pastesOf(owner).map(({ id, text }) => ({ id, text })),
+    draft: ChatDraft | undefined = pasted.length ? { text, pasted } : text ? { text } : undefined;
+  if (draft) drafts.set(owner, draft);
   else drafts.delete(owner);
   const board = session.board;
-  if (!board || owner !== board.id || chatKeep() !== 'board' || (board.chatDraft?.text ?? '') === text)
+  if (
+    !board ||
+    owner !== board.id ||
+    chatKeep() !== 'board' ||
+    JSON.stringify(board.chatDraft) === JSON.stringify(draft)
+  )
     return Promise.resolve();
-  if (text) board.chatDraft = { text };
+  if (draft) board.chatDraft = draft;
   else delete board.chatDraft;
   return saveNow();
 }
@@ -57,20 +65,19 @@ function typed() {
   ceilT ??= setTimeout(writeDraft, CEILING_MS);
 }
 
-// A paste past the limit would be cut short without a word, so it is refused whole.
-function pasted(e: ClipboardEvent) {
-  const el = box(),
-    text = e.clipboardData?.getData('text/plain') ?? '';
-  if (!text || el.value.length - (el.selectionEnd - el.selectionStart) + text.length <= DRAFT_MAX) return;
-  e.preventDefault();
-  say(`That’s too long to paste. A message can hold up to ${DRAFT_MAX.toLocaleString('en-GB')} characters.`, 5000);
-}
+// typing stops at the budget, like any textarea, once the pasted texts have taken their share
+const fitBox = () => {
+  box().maxLength = DRAFT_MAX - pastedChars(session.board?.id ?? '');
+};
 
 export function initDraft() {
   const el = box();
   el.maxLength = DRAFT_MAX;
   el.addEventListener('input', typed);
-  el.addEventListener('paste', pasted);
+  watchAdded(() => {
+    fitBox();
+    typed();
+  });
   el.addEventListener('blur', () => void writeDraft());
   addEventListener('pagehide', () => void writeDraft());
 }
@@ -86,14 +93,21 @@ export function restoreDraft() {
     draft = drafts.get(board.id) ?? kept;
   owner = board.id;
   dirty = false;
+  seedAdded(
+    board.id,
+    (draft?.pasted ?? []).map(p => ({ kind: 'paste', ...p })),
+  );
+  fitBox();
   setText(draft?.text ?? '');
 }
 
 /** Clear all chats: no draft is left in memory or in the input. */
 export function clearDrafts() {
+  clearPastes();
   drafts.clear();
   stopTimers();
   dirty = false;
+  fitBox();
   setText('');
 }
 
