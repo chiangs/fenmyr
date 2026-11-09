@@ -1,7 +1,8 @@
 // Myra's offer of a prototype board is kept until the board is made, and builds only where its card says, through a
 // stand-in Claude Code. Her bubble with an offer stays up until it is answered. Pressed in that bubble once another
 // board is open, it makes nothing. Cancel in the project picker, a Repo dialog closed with Escape, and a prototype that
-// can't be made each leave the offer with its buttons. A double click makes one board and one build.
+// can't be made each leave the offer with its buttons. A double click makes one board and one build. While another
+// build is being written, Start and build makes nothing and says so.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -232,7 +233,7 @@ try {
   });
 
   await check('a double click on Start and build makes one board and one build', async () => {
-    fs.writeFileSync(delay, '8000');
+    fs.writeFileSync(delay, '12000');
     const before = { protos: await protos(), builds: built() };
     await open('eight');
     await ask('Make the order work OFFER_EIGHT');
@@ -247,6 +248,26 @@ try {
         builds: before.builds + 1,
       },
     );
+  });
+
+  await check('while another build is being written, Start and build makes nothing and says so', async () => {
+    const before = { protos: await protos(), builds: built() };
+    await open('one');
+    await ask('Make the checkout work OFFER_ONE');
+    await tap('Start and build');
+    await settle(l.page, 1500);
+    assert.strictEqual(
+      await myraSaid(),
+      'I’m still writing the last change. Press Start and build once it’s done.',
+      'she says why',
+    );
+    assert.deepStrictEqual({ protos: await protos(), builds: built() }, before, 'no board is made');
+    await kept('one', REPLIES.OFFER_ONE.say);
+    fs.writeFileSync(delay, '0');
+    await until(async () => (await myraSaid()) === 'I built it.', 'the other build is done', 30000);
+    await tap('Start and build');
+    await until(() => built() === before.builds + 1, 'once it’s done, Start and build makes the board and builds');
+    assert.strictEqual(await protos(), before.protos + 1);
   });
 
   assert.deepStrictEqual(l.errors, [], 'no page errors');

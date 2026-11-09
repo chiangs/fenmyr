@@ -8,8 +8,8 @@ import type { Button, Piece } from '../myra/acts.ts';
 import { chatLog, renderChat } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { spend } from '../myra/replyView.ts';
-import { reply } from '../myra/say.ts';
-import { startBuild } from '../proto/build.ts';
+import { reply, say } from '../myra/say.ts';
+import { building, startBuild } from '../proto/build.ts';
 import { linkRepo } from './link.ts';
 import { projectFor, prototypingFolder } from './myra.ts';
 import { createPrototype, type Seed } from './prototypes.ts';
@@ -68,6 +68,7 @@ export function offerPieces(a: Offer): Piece[] {
 // The cards are copied when the button is pressed, so choosing a project or linking its repo on the way can't lose them.
 function startAndBuild(a: Offer) {
   if (making) return;
+  if (building()) return say('I’m still writing the last change. Press Start and build once it’s done.', 6000);
   const o = a.offer,
     seed = freshCopies(session.board.cards.filter(c => o.from.includes(c.id))),
     p = projectFor(o.project);

@@ -22,6 +22,9 @@ import { beforeBuild } from './sync.ts';
 type Prototype = Extract<Board, { kind: 'prototype' }>;
 let running: { id: string; build: string; proto: Prototype; root: string; request: string; job: Job } | null = null;
 
+// a build is being written, so one asked for now wouldn't start
+export const building = () => running !== null;
+
 // what the builder reads from the board: the selected cards, or all of them, without positions or styling
 const brief = (c: Card) =>
   Object.fromEntries(
