@@ -1,8 +1,8 @@
 // Landing a planned reply over boards built by hand: on a board unchanged since, exactly what was planned; a card the
-// person changed since stays theirs, with its collection; a card being typed in still takes a change to its place; and
-// landing it again changes nothing more.
+// person changed since stays theirs, with its collection, and she touched only what landed; a card being typed in still
+// takes a change to its place; and landing it again changes nothing more.
 import assert from 'node:assert';
-import { type BoardLists, listsOf, recordOf } from '../src/shared/changes.ts';
+import { type BoardLists, landedTouched, listsOf, recordOf } from '../src/shared/changes.ts';
 import type { Card } from '../src/shared/model.ts';
 import { planDo } from '../src/shared/replyUndo.ts';
 
@@ -112,6 +112,18 @@ for (const [changed, words] of [
     );
   assert.deepStrictEqual(find(whole.lists, 'b'), find(plan, 'b'), 'what is outside it still lands');
 }
+
+const renamed = board();
+Object.assign(find(renamed, 'kb'), { text: 'Their name' });
+assert.deepStrictEqual(
+  landedTouched(
+    ['new', 'a', 'k1', 'b', 'u5', 'u3'],
+    record,
+    recordOf(renamed, planDo(record, renamed, new Set()).lists),
+  ),
+  ['new', 'b', 'u5', 'u3'],
+  'the cards she touched are the ones that landed, less those left with the collection, and one she touched unplanned',
+);
 
 const drawn = board();
 drawn.links.push({ id: 'L9', a: 'a', b: 'c' });

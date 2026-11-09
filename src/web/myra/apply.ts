@@ -4,6 +4,7 @@ import {
   type BoardPatch,
   type ChangeSet,
   changeSet,
+  landedTouched,
   listsOf,
   recordOf,
 } from '../../shared/changes.ts';
@@ -179,7 +180,8 @@ function changeBoard(p: Planned) {
     before = listsOf(b),
     // planned in this same turn, where planBoard already left the card being typed in
     land = planDo(p.record, b, new Set()),
-    left = new Set([...p.changes.skipped, ...land.skipped.map(c => c.id)]);
+    left = new Set([...p.changes.skipped, ...land.skipped.map(c => c.id)]),
+    touched = landedTouched(p.touched, p.record, recordOf(before, land.lists));
   try {
     putOnBoard(b, land.lists);
     paint(p.held, before, left);
@@ -194,11 +196,7 @@ function changeBoard(p: Planned) {
     changes = changeSet(record, { named: namedIn(p.held.reply), skipped: [...left] });
   remember();
   const onBoard = new Map(b.cards.map(c => [c.id, c]));
-  return {
-    changes,
-    record,
-    touched: p.touched.flatMap(id => (left.has(id) ? [] : (onBoard.get(id) ?? []))),
-  };
+  return { changes, record, touched: touched.flatMap(id => onBoard.get(id) ?? []) };
 }
 
 // The board takes the lists, but a card that stays keeps its object, changed in place, since the doc editor holds the

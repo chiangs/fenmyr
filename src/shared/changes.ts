@@ -119,6 +119,15 @@ export const reversed = (p: BoardPatch): BoardPatch => ({
   links: p.links.map(({ id, was, now }) => ({ id, was: now, now: was })),
 });
 
+// The cards a reply touched, less any its plan changes that landing left as it was. `landed` is taken before drawing,
+// which puts a card she moved inside a kanban back in its column, and she still moved it. One she touched without
+// planning a change to it, such as to the same words, stays.
+export function landedTouched(touched: readonly string[], planned: BoardPatch, landed: BoardPatch) {
+  const plans = new Set(planned.cards.map(d => d.id)),
+    changed = new Set(landed.cards.map(d => d.id));
+  return touched.filter(id => !plans.has(id) || changed.has(id));
+}
+
 export const onlyShape = (a: Card, b: Card) =>
   [...new Set([...Object.keys(a), ...Object.keys(b)])].every(
     k => SHAPE.has(k) || same(Reflect.get(a, k), Reflect.get(b, k)),
