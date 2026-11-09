@@ -1,10 +1,10 @@
 import { type ChatDraft, DRAFT_MAX } from '../../shared/chat.ts';
 import { saveNow } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { appState, session } from '../core/state.ts';
 import { elementById } from '../ui/dom.ts';
 import { setChatText } from './chatInput.ts';
 import { chatKeep } from './chatLog.ts';
-import { clearPastes, pastedChars, pastesOf, seedAdded, watchAdded } from './seesStrip.ts';
+import { clearPastes, forgetNexts, pastedChars, pastesOf, seedAdded, watchAdded } from './seesStrip.ts';
 
 // The words the person has typed to Myra and not sent, and the long pastes that became chips, one set per board. They
 // live in memory under every Keep chats setting, so a board switch never loses them; they reach the board file only
@@ -29,7 +29,8 @@ function stopTimers() {
   idleT = ceilT = undefined;
 }
 
-// Takes the input's text into its board's draft. It reaches the file only for the open board, which owns the text.
+// Takes the input's text into its board's draft, and into the board's file when chats are kept with the board. The
+// open board always owns the input: openBoard swaps the board and calls restoreDraft with no await between.
 function writeDraft(): Promise<void> {
   stopTimers();
   if (!dirty || !owner) return Promise.resolve();
@@ -40,12 +41,7 @@ function writeDraft(): Promise<void> {
   if (draft) drafts.set(owner, draft);
   else drafts.delete(owner);
   const board = session.board;
-  if (
-    !board ||
-    owner !== board.id ||
-    chatKeep() !== 'board' ||
-    JSON.stringify(board.chatDraft) === JSON.stringify(draft)
-  )
+  if (!board || chatKeep() !== 'board' || JSON.stringify(board.chatDraft) === JSON.stringify(draft))
     return Promise.resolve();
   if (draft) board.chatDraft = draft;
   else delete board.chatDraft;
@@ -89,7 +85,11 @@ export const leaveDraft = writeDraft;
 export function restoreDraft() {
   stopTimers();
   const board = session.board,
-    kept = chatKeep() === 'board' ? board.chatDraft : undefined,
+    alive = new Set([board.id, ...appState.boardList.map(b => b.id)]);
+  // a deleted board's draft and pastes would otherwise stay in memory until the app quits
+  for (const id of drafts.keys()) if (!alive.has(id)) drafts.delete(id);
+  forgetNexts(alive);
+  const kept = chatKeep() === 'board' ? board.chatDraft : undefined,
     draft = drafts.get(board.id) ?? kept;
   owner = board.id;
   dirty = false;
@@ -100,6 +100,9 @@ export function restoreDraft() {
   fitBox();
   setText(draft?.text ?? '');
 }
+
+/** The boards whose unsent words are held in memory. */
+export const draftBoards = () => [...drafts.keys()];
 
 /** Clear all chats: no draft is left in memory or in the input. */
 export function clearDrafts() {

@@ -27,7 +27,7 @@ import type { SayAction } from './say.ts';
 import { reply } from './say.ts';
 import { askFilesOf, type Sees } from './sees.ts';
 import { initSeesAdd } from './seesAdd.ts';
-import { takeSees } from './seesStrip.ts';
+import { putBack, takeSees } from './seesStrip.ts';
 import { initSlashMenu, slash } from './slash.ts';
 import { snapshot } from './snapshot.ts';
 import { initStatus, noteSignIn, paintStatus, startJob } from './status.ts';
@@ -128,13 +128,19 @@ export let timerAskedAt = 0;
 
 // A question as it was asked. `did`: what the app already did for the sentence; `sees`: what the "Myra sees" strip sent
 // with it.
-type Asked = { q: string; confirmed: boolean; did: string[]; sees: Sees };
+type Asked = { q: string; confirmed: boolean; did: string[]; sees: Sees; board: string };
 
 // The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
 // animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the selection, the
 // vaults and the web the question was sent with. `sees`: a question asked again keeps what it was first sent with.
 export function ask(q: string, confirmed = false, sees?: Sees) {
-  const asked: Asked = { q, confirmed, did: confirmed ? [] : actOnSentence(q), sees: sees ?? takeSees() };
+  const asked: Asked = {
+    q,
+    confirmed,
+    did: confirmed ? [] : actOnSentence(q),
+    sees: sees ?? takeSees(),
+    board: session.board.id,
+  };
   if (!chatOpen()) myraOpen(true);
   if (!confirmed) addMsg('me', q);
   return Turn.take(turn => answer(turn, asked), session.board.id);
@@ -157,7 +163,7 @@ function actOnSentence(q: string) {
   return did;
 }
 
-async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
+async function answer(turn: Turn, { q, confirmed, did, sees, board }: Asked) {
   if (!turn.stillOpen()) return;
   if (Fenmyr.web) return webMyra(q);
   if (!settings.ai) return offlineMyra(q, 'My thinking is switched off in Settings, so I can only do simple tidying.');
@@ -225,7 +231,10 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
     await applyHeld(turn, await holdReply(parse(raw), q, ctx));
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
-    if (why.startsWith(NOT_SENT)) return reply(why);
+    if (why.startsWith(NOT_SENT)) {
+      putBack(board, sees.added);
+      return reply(why);
+    }
     if (/Claude Code/.test(why)) {
       appState.haveClaude = false;
       return offlineMyra(

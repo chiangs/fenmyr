@@ -64,6 +64,25 @@ assert.deepStrictEqual(readDraft({ text: '', pasted: [{ id: 'p', text: 'long' }]
   text: '',
   pasted: [{ id: 'p', text: 'long' }],
 });
+assert.deepStrictEqual(
+  readDraft({
+    text: '',
+    pasted: [
+      { id: 'p', text: 'first' },
+      { id: 'p', text: 'second' },
+      { id: 'q', text: 'a\0b' },
+      { id: 'r', text: '\0' },
+    ],
+  }),
+  {
+    text: '',
+    pasted: [
+      { id: 'p', text: 'first' },
+      { id: 'q', text: 'ab' },
+    ],
+  },
+  'a repeated id keeps its first text, a NUL is dropped, and a text of only NULs is empty',
+);
 console.log('PASTE (Node) OK');
 
 const MARK = 'TAIL-MARKER-7f3a91';
@@ -132,6 +151,59 @@ await check('a paste over 2,000 characters is a chip whose full text reaches Myr
   assert.deepStrictEqual(await chips(), [], 'the chip went with the message');
   await send('and again');
   assert.deepStrictEqual((await sentFor('and again')).files, [], 'a later message has no file');
+});
+
+await check('a paste with a NUL becomes a chip that can be sent', async () => {
+  assert.strictEqual(await paste(`${PASTED}\0nul-tail`), true);
+  assert.deepStrictEqual(await chips(), ['Pasted text · 121 lines']);
+  await send('with a NUL');
+  const s = await sentFor('with a NUL');
+  assert.strictEqual(
+    Buffer.from(s.files[0]?.b64 ?? '', 'base64').toString('utf8'),
+    `${PASTED}nul-tail`,
+    'the host took the text with its NULs left out',
+  );
+  assert.ok(!(await lastMyra())?.includes('Not sent'), 'and did not refuse it');
+});
+
+await check('a send the host refuses leaves the chip where it was', async () => {
+  await paste(PASTED);
+  await page.evaluate(() => {
+    const bridge = window.Fenmyr,
+      ask = bridge.ask;
+    bridge.ask = async () => {
+      bridge.ask = ask;
+      throw new Error('Not sent. A stand-in refusal.');
+    };
+  });
+  await page.fill('#mcInput', 'refused');
+  await page.click('.mc-send');
+  await page.waitForFunction(() =>
+    document.querySelector('#mcList .mc-msg.myra:last-child')?.textContent?.includes('Not sent'),
+  );
+  assert.deepStrictEqual(await chips(), ['Pasted text · 121 lines'], 'the chip is back for the next try');
+  await send('retried');
+  assert.deepStrictEqual(
+    (await sentFor('retried')).files.map(f => f.name),
+    ['Pasted text.txt'],
+  );
+});
+
+await check('two chips read differently to a screen reader, and Tab stays in the Open dialog', async () => {
+  await paste(PASTED);
+  await paste(`${PASTED}\nsecond`);
+  const names = (sel: string) => page.locator(sel).evaluateAll(els => els.map(e => e.getAttribute('aria-label')));
+  const all = [...(await names('#mcSees .mcs-open')), ...(await names('#mcSees .mcs-x'))];
+  assert.strictEqual(all.length, 4);
+  assert.strictEqual(new Set(all).size, 4, `four distinct names, got ${all.join(' | ')}`);
+  await page.locator('#mcSees .mcs-open').last().click();
+  const inside = () => page.evaluate(() => !!document.activeElement?.closest('.tdlg.pasted'));
+  for (const key of ['Tab', 'Tab', 'Tab', 'Tab', 'Shift+Tab', 'Shift+Tab', 'Shift+Tab', 'Shift+Tab']) {
+    await page.keyboard.press(key);
+    assert.ok(await inside(), `${key} stays in the dialog`);
+  }
+  await page.keyboard.press('Escape');
+  for (let i = 0; i < 2; i++) await page.click('#mcSees .mcs-chip.paste .mcs-x');
 });
 
 await check('removing a paste removes it, and two are numbered', async () => {

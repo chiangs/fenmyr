@@ -114,8 +114,9 @@ async function openLicenses() {
 
 const closeLicenses = () => $('licView').classList.remove('on');
 
-// Switching chats off (or to "until I quit") removes what's saved in the board files right away. Prototype boards always
-// keep their chat, so that switch leaves them alone. Clear all chats clears them too.
+// Switching chats off (or to "until I quit") removes what's saved in the board files right away, unsent drafts included.
+// Those drafts stay in memory until the app quits, and switching back writes nothing until the next edit. Prototype
+// boards always keep their chat and draft, so that switch leaves them alone. Clear all chats clears them too.
 async function clearSavedChats(keepPrototypes: boolean) {
   const list = await Fenmyr.list();
   for (const b of list) {

@@ -156,6 +156,8 @@ jobs:
         run: node tests/chatExpand.ts
       - name: Chat draft test (an unsent message survives closing the chat, switching boards and a restart, follows Keep chats, and goes with a deleted board)
         run: node tests/chatDraft.ts
+      - name: Chat draft leftovers test (a deleted board leaves no draft, Clear all chats reaches prototype boards, and Keep chats takes drafts out of files)
+        run: node tests/chatDraftKept.ts
       - name: Chat paste test (a paste over 2,000 characters is a chip whose full text reaches Myra, with Open, Ctrl+Shift+V and its limits)
         run: node tests/chatPaste.ts
       - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
