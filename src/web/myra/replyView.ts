@@ -9,7 +9,7 @@ import { chatKeep } from './chatLog.ts';
 const drawn = new WeakMap<HTMLElement, number>();
 
 // A used button doesn't come back when the chat opens again: a click takes what it takes off the message too.
-function spend(m: ChatMsg, used: readonly ChatAction[]) {
+export function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (!m.acts || !used.length) return;
   const left = m.acts.filter(a => !used.includes(a));
   if (left.length) m.acts = left;

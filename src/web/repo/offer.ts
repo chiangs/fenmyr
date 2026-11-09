@@ -7,6 +7,7 @@ import { appState, session } from '../core/state.ts';
 import type { Button, Piece } from '../myra/acts.ts';
 import { chatLog, renderChat } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
+import { spend } from '../myra/replyView.ts';
 import { reply } from '../myra/say.ts';
 import { startBuild } from '../proto/build.ts';
 import { linkRepo } from './link.ts';
@@ -32,6 +33,9 @@ type Offer = Extract<ChatAction, { kind: 'offer' }>;
 // the message in the open chat that holds the offer: none once it is spent, or while another board is open
 const holder = (a: Offer) => chatLog().find(m => m.acts?.includes(a));
 
+// set while a board is being made from an offer, so a second press makes nothing
+let making = false;
+
 // Once linked, the card offers Start and build, so the chat shows it: drawn again, or opened if it was closed.
 const redraw = () => (chatOpen() ? renderChat() : myraOpen(true));
 
@@ -53,7 +57,7 @@ export function offerPieces(a: Offer): Piece[] {
   const go: Button =
     p && !p.repo
       ? { label: 'Link a repo first', after: 'stay', live, run: () => linkRepo(p, redraw) }
-      : { label: 'Start and build', after: 'self', live, run: () => startAndBuild(o) };
+      : { label: 'Start and build', after: 'stay', live, run: () => startAndBuild(a) };
   return [
     card,
     { slot: 'reply', button: go },
@@ -62,24 +66,34 @@ export function offerPieces(a: Offer): Piece[] {
 }
 
 // The cards are copied when the button is pressed, so choosing a project or linking its repo on the way can't lose them.
-function startAndBuild(o: ProtoOffer) {
-  const seed = freshCopies(session.board.cards.filter(c => o.from.includes(c.id))),
+function startAndBuild(a: Offer) {
+  if (making) return;
+  const o = a.offer,
+    seed = freshCopies(session.board.cards.filter(c => o.from.includes(c.id))),
     p = projectFor(o.project);
-  if (p) buildIn(p, o, seed);
-  else pickProject(chosen => buildIn(chosen, o, seed));
+  if (p) buildIn(p, a, seed);
+  else pickProject(chosen => buildIn(chosen, a, seed));
 }
 
 // The board is made as any new prototype is, and its first build starts as any build does, from the cards it brought.
-async function buildIn(chosen: Project, o: ProtoOffer, seed: Seed): Promise<void> {
-  const p = appState.projects.find(x => x.id === chosen.id) ?? chosen,
+// The offer is spent once the board is saved, so a step cancelled or failed on the way leaves it to press again.
+async function buildIn(chosen: Project, a: Offer, seed: Seed): Promise<void> {
+  const o = a.offer,
+    p = appState.projects.find(x => x.id === chosen.id) ?? chosen,
     root = p.repo?.path;
-  if (!root) return linkRepo(p, () => buildIn(p, o, seed));
-  const f = await prototypingFolder(p, o.folder);
-  if (!f) return;
+  if (!root) return linkRepo(p, () => buildIn(p, a, seed));
+  making = true;
   try {
-    await createPrototype(f, root, o, seed);
+    const f = await prototypingFolder(p, o.folder);
+    if (!f) return;
+    await createPrototype(f, root, o, seed, () => {
+      const m = holder(a);
+      if (m) spend(m, [a]);
+    });
   } catch (e) {
     return reply(`I couldn’t make “${o.name}”: ${e instanceof Error ? e.message : String(e)}`, 8000);
+  } finally {
+    making = false;
   }
   await startBuild(o.build, { brought: seed.cards.map(c => c.id) });
 }

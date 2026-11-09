@@ -1,6 +1,7 @@
 // Myra's offer of a prototype board is kept until the board is made, and builds only where its card says, through a
 // stand-in Claude Code. Her bubble with an offer stays up until it is answered. Pressed in that bubble once another
-// board is open, it makes nothing.
+// board is open, it makes nothing. Cancel in the project picker, a Repo dialog closed with Escape, and a prototype that
+// can't be made each leave the offer with its buttons. A double click makes one board and one build.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -23,6 +24,7 @@ const repo = (name: string) => {
 };
 const acme = repo('acme'),
   beta = repo('beta'),
+  quiet = repo('quiet'),
   gone = repo('gone'),
   data = path.join(work, 'data'),
   builds = path.join(work, 'builds.jsonl'),
@@ -96,6 +98,7 @@ const l: Launched = await launch({ data, boards, open: 'one' });
 
 const built = () => (fs.existsSync(builds) ? fs.readFileSync(builds, 'utf8').trim().split('\n').length : 0);
 const protos = () => l.page.evaluate(() => window.__fenmyr.lib().boards.filter(b => b.prototype).length);
+const kind = () => l.page.evaluate(() => window.__fenmyr.curBoard().kind ?? 'board');
 // the offers kept in a board's file
 const stored = (id: string): number => {
   const file = path.join(data, 'fenmyr', 'boards', `${id}.json`);
@@ -109,12 +112,15 @@ const buttonsOf = (say: string) =>
     const m = [...document.querySelectorAll('#mcList .mc-msg.myra')].findLast(m => m.firstChild?.textContent === say);
     return m ? [...m.querySelectorAll('.m-acts button')].map(b => b.textContent) : null;
   }, say);
+const myraSaid = () =>
+  l.page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg.myra')].at(-1)?.firstChild?.textContent ?? '');
 const bubble = () =>
   l.page.evaluate(() => ({
     on: !!document.getElementById('mBubble')?.classList.contains('on'),
     head: document.querySelector('#mActs .m-summary.offer b')?.textContent ?? null,
     buttons: [...document.querySelectorAll('#mActs button')].map(b => b.textContent),
   }));
+const ask = (q: string) => l.page.evaluate(q => window.__fenmyr.ask(q), q);
 const open = async (id: string, chat = true) => {
   await l.page.evaluate(id => window.__fenmyr.openBoard(id), id);
   await settle(l.page, 400);
@@ -123,6 +129,25 @@ const open = async (id: string, chat = true) => {
       document.getElementById(chat ? 'mPill' : 'mcClose')?.click();
   }, chat);
   await settle(l.page, 300);
+};
+const tap = (label: string) => l.page.locator('#mcList .m-acts button', { hasText: label }).last().click();
+const until = async (check: () => boolean | Promise<boolean>, what: string, ms = 20000) => {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (await check()) return;
+    await l.page.waitForTimeout(200);
+  }
+  assert.fail(`${what}: not within ${ms} ms`);
+};
+const pickFolder = (dir: string) =>
+  l.app.evaluate(({ dialog }, dir) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [dir] });
+  }, dir);
+const press = async (action: string) => {
+  await l.page.click(`.rl-body [data-a="${action}"]`);
+  await l.page.waitForFunction(
+    () => !document.querySelector('.rl-body') || !!document.querySelector('.rl-body button:not([disabled])'),
+  );
 };
 // the offer is still there to press: its buttons under her line, and in the board's file
 const kept = async (id: string, say: string) => {
@@ -169,6 +194,59 @@ try {
     assert.deepStrictEqual((await bubble()).buttons, [], 'the buttons go away');
     await open('five');
     await kept('five', REPLIES.OFFER_FIVE.say);
+  });
+
+  await check('Cancel in the project picker keeps the offer', async () => {
+    await open('loose');
+    await ask('Make it work OFFER_LOOSE');
+    await tap('Start and build');
+    await l.page.click('.tdlg.sp [data-project=""]');
+    await kept('loose', REPLIES.OFFER_LOOSE.say);
+  });
+
+  await check('a Repo dialog closed with Escape keeps the offer, which is spent once the board is made', async () => {
+    const before = await protos();
+    await tap('Start and build');
+    await l.page.click('.tdlg.sp [data-project="pq"]');
+    await pickFolder(quiet);
+    await press('pick');
+    await l.page.keyboard.press('Escape');
+    assert.strictEqual(await protos(), before, 'no board is made');
+    await kept('loose', REPLIES.OFFER_LOOSE.say);
+    await tap('Start and build');
+    await l.page.click('.tdlg.sp [data-project="pq"]');
+    await until(async () => (await kind()) === 'prototype', 'the board opens');
+    await settle(l.page, 600);
+    assert.strictEqual(stored('loose'), 0, 'and then the offer is spent');
+  });
+
+  await check('a prototype that can’t be made keeps the offer', async () => {
+    const before = await protos();
+    await open('broken');
+    await ask('Make it work OFFER_BROKEN');
+    fs.rmSync(gone, { recursive: true, force: true });
+    await tap('Start and build');
+    await until(async () => (await myraSaid()).startsWith('I couldn’t make “Broken”'), 'she says why');
+    assert.strictEqual(await protos(), before, 'no board is made');
+    await kept('broken', REPLIES.OFFER_BROKEN.say);
+  });
+
+  await check('a double click on Start and build makes one board and one build', async () => {
+    fs.writeFileSync(delay, '8000');
+    const before = { protos: await protos(), builds: built() };
+    await open('eight');
+    await ask('Make the order work OFFER_EIGHT');
+    await l.page.locator('#mcList .m-acts button', { hasText: 'Start and build' }).last().dblclick();
+    await until(async () => (await kind()) === 'prototype', 'the board opens');
+    await until(() => built() > before.builds, 'the build starts');
+    await settle(l.page, 1500);
+    assert.deepStrictEqual(
+      { protos: await protos(), builds: built() },
+      {
+        protos: before.protos + 1,
+        builds: before.builds + 1,
+      },
+    );
   });
 
   assert.deepStrictEqual(l.errors, [], 'no page errors');
