@@ -29,7 +29,7 @@ import { refreshBoards } from '../library/rowMenu.ts';
 import { boardsIn, moveBoard, putFolder } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
 import { ANIMS, animIntent, animName, animRequest, lastAnim, playAnim, stopAnim } from '../myra/anim.ts';
-import { applyHeld, holdReply, previewHeld, Turn } from '../myra/apply.ts';
+import { applyHeld, asItWouldLand, holdReply, planHeld, Turn } from '../myra/apply.ts';
 import type { Picked } from '../myra/applyTypes.ts';
 import {
   bdState,
@@ -165,9 +165,15 @@ const makeHooks = () => ({
   },
   // a reply as if Claude had just sent it: it waits its turn behind any other
   applyMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
-    Turn.take(async turn => applyHeld(turn, await holdReply(r, q, { ...ctx, sees: peekSees() })), session.board.id),
+    Turn.take(
+      async turn => applyHeld(turn, planHeld(await holdReply(r, q, { ...ctx, sees: peekSees() }))),
+      session.board.id,
+    ),
   replyRecord,
-  previewMyra: async (r: MyraReply) => previewHeld(await holdReply(r, '', { ...NO_VAULT, sees: peekSees() })),
+  previewMyra: async (r: MyraReply) => {
+    const p = planHeld(await holdReply(r, '', { ...NO_VAULT, sees: peekSees() }));
+    return { lists: asItWouldLand(p).lists, changes: p.changes };
+  },
   fit,
   lib: () => snapshot().library,
   docEditor: liveEditor,

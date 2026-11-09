@@ -166,7 +166,7 @@
     "src/web/model/boards.ts": "Makes cards and new boards, and registers the bundled templates.",
     "src/web/myra/acts.ts": "The buttons under Myra's lines: stored kinds and one-off closures, and the table that turns each into pieces in fixed slots.",
     "src/web/myra/anim.ts": "The things Myra’s sprite can do when asked, such as /animate.",
-    "src/web/myra/apply.ts": "Applies Myra’s replies one at a time: gathers what each needs, changes the board in one undo step, then runs the rest.",
+    "src/web/myra/apply.ts": "Applies Myra’s replies one at a time: gathers what each needs, plans it on a copy of the board, lands the plan in one undo step, then runs the rest.",
     "src/web/myra/applyTypes.ts": "The card kinds Myra may add, and the shape of a reply held with everything it needs.",
     "src/web/myra/birthday.ts": "Myra’s birthday: when it is due, celebrated or belated, and her hat.",
     "src/web/myra/chat.ts": "Sends what you type to Myra and applies her answer, with offline and web-demo fallbacks.",

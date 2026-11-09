@@ -170,7 +170,7 @@ await check(
     assert(seen.drawn, 'nothing new is drawn');
     assert.strictEqual(seen.saves, 0, 'nothing is saved');
     const applied = await page.evaluate(r => window.__fenmyr.applyMyra(r, 'q'), reply);
-    const lists = (c: typeof seen.changes) => c && [c.added.length, c.moved, c.edited, c.removed];
+    const lists = (c?: typeof seen.changes) => c && [c.added.length, c.moved, c.edited, c.removed];
     assert.deepStrictEqual(lists(seen.changes), [1, ['n1'], ['t1'], ['n3']], 'the preview lists what the reply does');
     assert.deepStrictEqual(lists(applied?.changes), lists(seen.changes), 'and applying it does the same');
   },
