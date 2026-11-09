@@ -91,7 +91,8 @@ function end(w: Waiting, how: PlanEnd) {
 }
 
 // It stops waiting at once, so a second press finds nothing, and lands when its turn comes. It is done before it lands,
-// since a template opens its own board first. If the board part fails, the board is put back and the plan waits again.
+// since a template opens its own board first. If the board part fails, the board is put back and the plan waits again,
+// unless that template's board is open by then.
 function doIt(w: Waiting) {
   if (waiting !== w) return Promise.resolve();
   waiting = null;
@@ -105,7 +106,7 @@ function doIt(w: Waiting) {
       await applyHeld(turn, w.planned.held, w.planned);
     } catch {
       delete w.act.ended;
-      waiting ??= w;
+      if (session.board.id === w.board) waiting ??= w;
       redraw();
       reply(FAILED, 0);
     }
@@ -117,9 +118,9 @@ function justDoIt(w: Waiting) {
   if (waiting !== w) return Promise.resolve();
   setFlag('skipPlans', true);
   applySettings();
-  const landing = doIt(w);
+  const done = doIt(w);
   reply(JUST, 9000);
-  return landing;
+  return done;
 }
 
 // Nothing is sent: they write what to change, and it goes with the plan.

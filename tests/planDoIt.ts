@@ -1,12 +1,13 @@
 // Do it on a plan the person worked around while it waited: a collection they dragged still takes the cards she files
 // into it, words they just typed into the open doc stay theirs, a card they changed or connected since stays as they
 // have it and she says so, and her count and glow cover only what landed. A part of her reply that fails once the board
-// has changed costs only itself.
+// has changed costs only itself, and one that fails while the board takes it leaves the board as it was, with the
+// plan waiting again.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['dragged', 'doc', 'count', 'linked', 'effect'];
+const BOARDS = ['dragged', 'doc', 'count', 'linked', 'effect', 'throws'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'dragged', claude: true });
 const { page } = l;
 
@@ -181,6 +182,40 @@ await check(
     assert.strictEqual(await page.locator('#mcList .m-summary.plan.done').count(), 1, 'and the plan reads Done');
   },
 );
+
+await check('Do it that fails part way puts the board back, and the plan waits to be tried again', async () => {
+  await open('throws');
+  await chat();
+  await planned({ say: 'Removed the third note.', remove: ['n3'] });
+  const lists = () =>
+    page.evaluate(() => {
+      const b = window.__fenmyr.curBoard();
+      return JSON.stringify({ cards: b.cards, links: b.links, tray: b.tray, trayLinks: b.trayLinks });
+    });
+  const before = await lists();
+  // drawing fails once the board has taken the plan
+  await page.evaluate(() => {
+    const real = Element.prototype.remove;
+    Reflect.set(window, 'realRemove', real);
+    Element.prototype.remove = function () {
+      if (this instanceof HTMLElement && this.classList.contains('card')) throw new Error('drawing failed');
+      real.call(this);
+    };
+  });
+  await doIt();
+  await page.evaluate(() => {
+    const real = Reflect.get(window, 'realRemove');
+    if (typeof real === 'function') Element.prototype.remove = real;
+  });
+  assert.strictEqual(await lists(), before, 'the board is as it was');
+  assert.strictEqual(
+    await said(),
+    'Something went wrong part way, so I’ve put the board back as it was. The plan is still here if you want to try again.',
+  );
+  assert.strictEqual(await page.locator('#mcList .m-summary.plan.waiting').count(), 1, 'the plan waits again');
+  await doIt();
+  assert.strictEqual(await card('n3'), undefined, 'and Do it lands it');
+});
 
 await l.close();
 if (failed.length) {
