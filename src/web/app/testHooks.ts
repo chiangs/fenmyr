@@ -42,11 +42,12 @@ import {
   setBirthday,
 } from '../myra/birthday.ts';
 import { ask } from '../myra/chat.ts';
+import { draftBoards } from '../myra/chatDraft.ts';
 import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
 import { perched, perchGoo } from '../myra/perch.ts';
 import { replyRecord } from '../myra/replyMemory.ts';
-import { peekSees } from '../myra/seesStrip.ts';
+import { nextBoards, peekSees } from '../myra/seesStrip.ts';
 import { snapshot } from '../myra/snapshot.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
@@ -89,6 +90,8 @@ const makeHooks = () => ({
   pasteCards,
   openBoard,
   curBoard: () => session.board,
+  nextBoards,
+  draftBoards,
 
   refreshBoards: () => refreshBoards(),
   // what dropping a board or folder in the library calls

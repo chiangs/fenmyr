@@ -318,6 +318,7 @@
     "tests/changes.ts": "Checks the record of a reply's changes, the change set and summary read from it, and Undo's plan, over hand-built boards.",
     "tests/chatButtons.ts": "Checks the buttons under Myra's replies: next steps in the chat and her bubble, and what a click does.",
     "tests/chatClose.ts": "What opens and closes Myra's chat in the real app, focus returning to her box, the top-edge resize and the draft line.",
+    "tests/chatDraftKept.ts": "What an unsent message to Myra leaves behind: nothing for a deleted board, a cleared prototype board, and no file draft after Keep chats changes.",
     "tests/chatDraft.ts": "Myra’s unsent draft in the real app: it survives closing the chat, a board switch and a restart, follows Keep chats, and goes with a deleted board.",
     "tests/chatExpand.ts": "Expand and Shrink in Myra’s chat in the real app: the draft and caret stay, Esc shrinks before it closes, and a send, a close or a board switch shrinks it.",
     "tests/chatGreeting.ts": "An empty Myra chat in the real app: her hello by her given name and live rename, starters from the board, and a click asking one.",

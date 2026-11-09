@@ -1,3 +1,4 @@
+import { withoutNul } from '../../shared/chat.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
@@ -17,7 +18,7 @@ function onPaste(e: ClipboardEvent) {
   // a picture or file on the clipboard is the Add chips' to take
   if (e.defaultPrevented || e.clipboardData?.files.length) return;
   const el = box(),
-    text = e.clipboardData?.getData('text/plain') ?? '',
+    text = withoutNul(e.clipboardData?.getData('text/plain') ?? ''),
     action = pasteAction({
       text,
       plain: isPlainPaste(e),
@@ -55,8 +56,17 @@ function openPaste(id: string) {
     close(true);
     document.execCommand('insertText', false, text);
   };
-  // Esc is this dialog's alone, so neither the chat nor the board hears it
+  // Esc is this dialog's alone, so neither the chat nor the board hears it. Tab stays among the dialog's own controls,
+  // as aria-modal promises.
   function onKey(e: KeyboardEvent) {
+    if (e.key === 'Tab') {
+      const stops = [...d.querySelectorAll<HTMLElement>('.pasted-text, button')],
+        edge = stops[e.shiftKey ? 0 : stops.length - 1];
+      if (document.activeElement !== edge && d.contains(document.activeElement)) return;
+      e.preventDefault();
+      stops[e.shiftKey ? stops.length - 1 : 0]?.focus();
+      return;
+    }
     if (e.key !== 'Escape') return;
     e.preventDefault();
     e.stopPropagation();

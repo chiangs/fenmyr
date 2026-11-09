@@ -61,9 +61,18 @@ function seesInput(): SeesInput {
   };
 }
 
-type View = { kind: string; key: string; label: string; icon: string; tip: string; on: boolean; open: string };
+type View = {
+  kind: string;
+  key: string;
+  label: string;
+  icon: string;
+  tip: string;
+  on: boolean;
+  open: string;
+  read?: string;
+};
 
-function viewOf(c: Exclude<Chip, { kind: 'board' }>): View {
+function viewOf(c: Exclude<Chip, { kind: 'board' }>, order: readonly string[]): View {
   switch (c.kind) {
     case 'selection':
       return {
@@ -100,6 +109,8 @@ function viewOf(c: Exclude<Chip, { kind: 'board' }>): View {
     case 'added': {
       const it = c.item,
         label = it.kind === 'note' ? it.title : it.kind === 'paste' ? pastedLabel(it.text) : it.name,
+        // two pastes can share a label, so a screen reader hears which one Open and × act on
+        what = it.kind === 'paste' ? `pasted text ${order.indexOf(it.id) + 1} (${label})` : label,
         icon =
           it.kind === 'note' ? 'notebook' : it.kind === 'file' && kindOf(it.name) === 'picture' ? 'image' : 'file-text';
       return {
@@ -107,9 +118,10 @@ function viewOf(c: Exclude<Chip, { kind: 'board' }>): View {
         key: `added:${it.id}`,
         label,
         icon: Icon(icon, { size: 13 }),
-        tip: `Take ${it.kind === 'paste' ? 'the pasted text' : label} out of the next message`,
+        tip: `Take ${what} out of the next message`,
         on: true,
         open: it.kind === 'paste' ? it.id : '',
+        read: `Read ${what}`,
       };
     }
     default: {
@@ -121,27 +133,27 @@ function viewOf(c: Exclude<Chip, { kind: 'board' }>): View {
 
 const myraName = () => window.myraName || 'Myra';
 
-function chipHTML(c: Chip): string {
+function chipHTML(c: Chip, order: readonly string[]): string {
   if (c.kind === 'board')
     return '<span class="mcs-chip board" data-chip="board" title="The board always goes with your message">Board</span>';
-  const v = viewOf(c),
+  const v = viewOf(c, order),
     kind = v.kind,
     key = esc(v.key),
     label = esc(v.label),
     tip = esc(v.tip),
     icon = v.icon,
     openId = esc(v.open),
+    read = esc(v.read ?? ''),
     cls = v.open ? `${kind} paste` : kind,
     open = v.open
-      ? `<button type="button" class="mcs-open" data-open="${openId}" title="${OPEN_TIP}" aria-label="${OPEN_TIP}">Open</button>`
+      ? `<button type="button" class="mcs-open" data-open="${openId}" title="${read}" aria-label="${read}">Open</button>`
       : '';
   return v.on
     ? `<span class="mcs-chip ${cls}" data-chip="${kind}">${icon}<span class="mcs-t">${label}</span>${open}<button type="button" class="mcs-x" data-flip="${key}" title="${tip}" aria-label="${tip}">×</button></span>`
     : `<button type="button" class="mcs-chip ${kind} out" data-chip="${kind}" data-flip="${key}" title="${tip}" aria-label="${tip}">${icon}<span class="mcs-t">${label}</span><span class="mcs-x" aria-hidden="true">+</span></button>`;
 }
 
-const OPEN_TIP = 'Read everything that was pasted',
-  ADD_TIP = 'Add pictures, files or a vault note to the next message',
+const ADD_TIP = 'Add pictures, files or a vault note to the next message',
   ADD = `<button type="button" class="mcs-add" title="${ADD_TIP}" aria-label="${ADD_TIP}" aria-haspopup="menu">+ Add</button>`;
 
 let drawn = '';
@@ -151,7 +163,10 @@ export function renderSees() {
   const el = $('mcSees');
   if (!el) return;
   const lead = esc(`${myraName()} sees`),
-    chips = chipsOf(seesInput(), nextNow().flips).map(chipHTML).join(''),
+    order = pastesOf(session.board?.id ?? '').map(p => p.id),
+    chips = chipsOf(seesInput(), nextNow().flips)
+      .map(c => chipHTML(c, order))
+      .join(''),
     add = Fenmyr.native ? ADD : '',
     html = `<span class="mcs-lead" data-mname="{name} sees">${lead}</span>${chips}${add}`;
   if (html === drawn) return;
@@ -192,9 +207,27 @@ export function seedAdded(board: string, items: readonly Added[]) {
   renderSees();
 }
 
+/** Drops the next-message choices of boards that are gone, which only a board that was deleted leaves behind. */
+export function forgetNexts(alive: ReadonlySet<string>) {
+  for (const board of nexts.keys()) if (!alive.has(board)) nexts.delete(board);
+}
+
+/** The boards that hold choices or additions for their next message. */
+export const nextBoards = () => [...nexts.keys()];
+
 /** Clear all chats: no board's next message keeps a paste. */
 export function clearPastes() {
   for (const [board, now] of nexts) nexts.set(board, { ...now, added: now.added.filter(a => a.kind !== 'paste') });
+  renderSees();
+  tell();
+}
+
+/** Gives a refused message's pictures, files and pastes back to the board it was written on, ahead of anything added
+ *  since, so a send the host turned down loses nothing. */
+export function putBack(board: string, items: readonly Added[]) {
+  if (!items.length) return;
+  const now = nexts.get(board) ?? FRESH;
+  nexts.set(board, { ...now, added: addTo(items, now.added) });
   renderSees();
   tell();
 }

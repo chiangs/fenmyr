@@ -76,16 +76,21 @@ export type ChatDraft = { text: string; pasted?: PastedText[] };
  *  the file, so it is not unbounded. */
 export const DRAFT_MAX = 100_000;
 
+/** The host refuses a text file with a NUL in it, so a paste loses its NULs before it can become a chip. */
+export const withoutNul = (text: string) => text.replaceAll('\0', '');
+
 /** A stored draft, or undefined when it is missing, empty, too long or malformed. A bad pasted entry drops alone. */
 export function readDraft(x: unknown): ChatDraft | undefined {
   if (!isRecord(x) || typeof x.text !== 'string') return undefined;
-  const pasted = (Array.isArray(x.pasted) ? x.pasted : [])
-    .flatMap((p: unknown) =>
-      isRecord(p) && typeof p.id === 'string' && typeof p.text === 'string' && p.text
-        ? [{ id: p.id, text: p.text }]
-        : [],
-    )
-    .slice(0, MAX_FILES);
+  const ids = new Set<string>(),
+    pasted = (Array.isArray(x.pasted) ? x.pasted : [])
+      .flatMap((p: unknown) => {
+        const text = isRecord(p) && typeof p.text === 'string' ? withoutNul(p.text) : '';
+        if (!isRecord(p) || typeof p.id !== 'string' || !text || ids.has(p.id)) return [];
+        ids.add(p.id);
+        return [{ id: p.id, text }];
+      })
+      .slice(0, MAX_FILES);
   const size = pasted.reduce((n, p) => n + p.text.length, x.text.length);
   if ((!x.text && !pasted.length) || size > DRAFT_MAX) return undefined;
   return pasted.length ? { text: x.text, pasted } : { text: x.text };
