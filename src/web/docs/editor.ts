@@ -135,8 +135,11 @@ function placeBubble() {
   bubbleEl.style.top = `${Math.max(8, Math.min(innerHeight - h - 8, top < 8 ? rc.bottom + 10 : top))}px`;
 }
 
+// What was typed in the editor goes to its card. Nothing else does, so a doc only opened keeps its card as it was.
 export function syncDoc() {
+  if (dvT === undefined) return;
   clearTimeout(dvT);
+  dvT = undefined;
   if (!docCard || !ed) return;
   docCard.doc = ed.getJSON();
   docCard.body = ed
@@ -176,7 +179,7 @@ export function openDoc(c: DocCard) {
   selectOnly([]);
   const e = ensureEditor();
   if (e) {
-    e.commands.setContent(docHTML(c), false);
+    e.commands.setContent(docHTML(c), { emitUpdate: false });
     if (c.doc) fontsIn(c.doc).forEach(useFont);
     e.commands.setTextSelection(0);
     paintTools();

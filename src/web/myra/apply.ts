@@ -264,7 +264,7 @@ function paint(held: HeldReply, before: BoardLists, skipped: ReadonlySet<string>
   for (const c of b.cards) if (!had.has(c.id)) renderCard(c, true);
   for (const c of named(r.edit)) renderCard(c, true);
   if (docCard && ed && !skipped.has(docCard.id) && r.edit?.some(o => o.id === docCard?.id && o.body != null))
-    ed.commands.setContent(mdToHTML(docCard.body ?? ''), false);
+    ed.commands.setContent(mdToHTML(docCard.body ?? ''), { emitUpdate: false });
   renderTray();
   renderWires();
   if (held.template?.mode === 'add') {
