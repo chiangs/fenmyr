@@ -163,7 +163,7 @@ await check(
       };
     });
     await doIt();
-    assert.strictEqual(await said(), 'Here they are. I couldn’t save the template “Week”: the disk is full.');
+    assert.strictEqual(await said(), 'Here they are. I couldn’t save the template “Week”.', 'without the raw error');
     const under = await page.evaluate(() => {
       const m = [...document.querySelectorAll('#mcList .mc-msg.myra')].at(-1);
       return [

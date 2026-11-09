@@ -56,7 +56,7 @@ export function effectsOf({ reply: r, q, ctx }: HeldReply): Effect[] {
 }
 
 // Runs them in order, each on its own, so one that fails costs only itself. Returns the buttons they offer under her
-// line, and a sentence for each that failed. `touched`: the cards the reply made, moved or edited, in the order it did
+// line, and a sentence for each that failed, naming what she tried in plain words rather than the system's error. `touched`: the cards the reply made, moved or edited, in the order it did
 // so.
 export async function runEffects(effects: readonly Effect[], touched: readonly Card[]) {
   const acts: SayAction[] = [],
@@ -64,8 +64,8 @@ export async function runEffects(effects: readonly Effect[], touched: readonly C
   for (const e of effects)
     try {
       await runEffect(e, touched, acts);
-    } catch (err) {
-      failed.push(`I couldn’t ${tried(e)}: ${err instanceof Error ? err.message : String(err)}.`);
+    } catch {
+      failed.push(`I couldn’t ${tried(e)}.`);
     }
   return { acts, failed };
 }
