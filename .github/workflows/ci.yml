@@ -98,6 +98,8 @@ jobs:
         run: node tests/reply.ts
       - name: Change record test (what a reply changed, sorted into added, moved, edited, removed and re-laid)
         run: node tests/changes.ts
+      - name: Land plan test (a planned reply lands as planned, and what the person changed since stays theirs)
+        run: node tests/landPlan.ts
       - name: Myra replies test (what each kind of reply does to the board, her chat, the library and templates)
         run: node tests/replies.ts
       - name: Reply undo test (one undo step per reply, replies in turn, previews that change nothing)

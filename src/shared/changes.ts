@@ -113,6 +113,12 @@ export function recordOf(before: BoardLists, after: BoardLists): BoardPatch {
   };
 }
 
+// the same change the other way round: what it is now becomes what it was
+export const reversed = (p: BoardPatch): BoardPatch => ({
+  cards: p.cards.map(({ id, was, now }) => ({ id, was: now, now: was })),
+  links: p.links.map(({ id, was, now }) => ({ id, was: now, now: was })),
+});
+
 const onlyShape = (a: Card, b: Card) =>
   [...new Set([...Object.keys(a), ...Object.keys(b)])].every(
     k => SHAPE.has(k) || same(Reflect.get(a, k), Reflect.get(b, k)),
