@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import type { CDPSession, Page } from 'playwright';
 import { bigBoard, everyOfflineCard } from './fixtures/boards.ts';
 import { launch, ROOT } from './support/launch.ts';
-import { checkout } from './support/ref.ts';
+import { build, checkout } from './support/ref.ts';
 
 type Metrics = {
   openMs: number;
@@ -186,6 +186,7 @@ function summary(runs: Metrics[]): Record<keyof Metrics, Spread> {
 
 const ref = process.argv[2];
 const base = ref ? checkout(ref) : null;
+if (!base) build(ROOT);
 const headRuns: Metrics[] = [];
 const baseRuns: Metrics[] = [];
 try {
