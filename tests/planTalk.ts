@@ -146,6 +146,25 @@ await check('a typed yes is Do it, and a typed no is Cancel, with no request to 
   assert.strictEqual(JSON.parse(await sent()).length, 0, 'still nothing is asked');
 });
 
+await check(
+  'an old "Yes" button while a plan waits goes to her with the plan, and does nothing by itself',
+  async () => {
+    await page.evaluate(() => window.__fenmyr.answerMyra({ say: 'Shall I tag them?', next: ['Yes', 'No'] }, 'tags?'));
+    await settle(page, 400);
+    const before = await board();
+    await eleven();
+    await answer({ say: 'Tags or the ideas? Tell me which.' });
+    await page.locator('#mcList .m-acts button.next:text-is("Yes")').last().click();
+    await settle(page, 800);
+    const asked = JSON.parse(await sent());
+    assert.strictEqual(asked.length, 1, 'it is asked');
+    assert.deepStrictEqual(asked[0].plan?.steps, ['+ 13 cards'], 'with the plan');
+    assert.deepStrictEqual((await plans()).at(-1)?.acts, WAITING, 'which still waits');
+    assert.strictEqual(await board(), before, 'and nothing landed');
+    await page.locator('#mcList .m-acts button:text-is("Cancel")').click();
+  },
+);
+
 await check('Change the plan puts them in her input, which says what writing there does', async () => {
   const hint = () => page.evaluate(() => document.querySelector<HTMLTextAreaElement>('#mcInput')?.placeholder);
   await eleven();

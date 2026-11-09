@@ -147,9 +147,10 @@ type Asked = {
 // The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
 // animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the selection, the
 // vaults and the web the question was sent with. `sees`: a question asked again keeps what it was first sent with. A
-// plain yes or no to a waiting plan is answered here, with no request to Claude.
+// plain yes or no they typed to a waiting plan is answered here, with no request to Claude; a button such as an old
+// "Yes" may be about something else, so it goes to her with the plan.
 export function ask(q: string, confirmed = false, sees?: Sees, typed = false) {
-  const answered = confirmed ? null : answerPlan(q);
+  const answered = typed && !confirmed ? answerPlan(q) : null;
   if (answered) return answered;
   const asked: Asked = {
     q,

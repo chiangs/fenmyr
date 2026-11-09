@@ -79,8 +79,10 @@ await check(
         return JSON.stringify({ say: 'Yes to what?' });
       };
     });
-    await page.evaluate(() => window.__fenmyr.ask('yes'));
-    assert.strictEqual(await page.evaluate(() => Reflect.get(window, 'asked')), 1, 'a yes now goes to her');
+    await page.fill('#mcInput', 'yes');
+    await page.click('.mc-send');
+    await settle(page, 400);
+    assert.strictEqual(await page.evaluate(() => Reflect.get(window, 'asked')), 1, 'a typed yes now goes to her');
     assert.strictEqual(await lists(), before);
   },
 );
