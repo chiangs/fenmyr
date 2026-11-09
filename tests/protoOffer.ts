@@ -41,6 +41,10 @@ const REPLIES = {
       build: 'Build the checkout from the two notes',
     },
   },
+  GONE: {
+    say: 'That needs code, so I’d make a diary prototype.',
+    offerPrototype: { name: 'Diary', from: ['n9'], build: 'Build a diary' },
+  },
   BROKEN: {
     say: 'Here are two notes.',
     add: [{ text: 'Kept one' }, { text: 'Kept two' }],
@@ -235,6 +239,18 @@ try {
     const file = JSON.parse(fs.readFileSync(path.join(data, 'fenmyr', 'boards', 'one.json'), 'utf8'));
     const kept = file.chat.findLast((m: { text: string }) => m.text === SAID);
     assert.strictEqual(kept?.acts, undefined, 'and the board file keeps no offer');
+  });
+
+  await check('with none of the cards she named left, the build is sent with no cards', async () => {
+    await ask('Make a diary GONE');
+    assert.deepStrictEqual((await lineOf(REPLIES.GONE.say))?.lines[0], 'Made from your request');
+    const n = lines(builds).length;
+    await tap('Start and build');
+    await until(() => lines(builds).length === n + 1, 'the build starts');
+    const prompt = lines(builds).at(-1)?.prompt ?? '';
+    assert.match(prompt, /THE CARDS ON THE BOARD \(the ones selected, or all of them\):\n\[\]\n/, 'with no cards');
+    assert.ok(!prompt.includes('A new prototype? Exciting!'), 'not even her welcome notes');
+    await until(async () => !!(await lineOf('I built it.')), 'the build lands');
   });
 
   await check('a project with no repo offers Link a repo first, and once linked, Start and build', async () => {

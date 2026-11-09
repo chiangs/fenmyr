@@ -74,8 +74,5 @@ async function buildIn(chosen: Project, o: ProtoOffer, seed: Seed): Promise<void
   } catch (e) {
     return reply(`I couldn’t make “${o.name}”: ${e instanceof Error ? e.message : String(e)}`, 8000);
   }
-  await startBuild(
-    o.build,
-    seed.cards.map(c => c.id),
-  );
+  await startBuild(o.build, { brought: seed.cards.map(c => c.id) });
 }
