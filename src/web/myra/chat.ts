@@ -14,6 +14,7 @@ import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
 import type { Picked } from './applyTypes.ts';
+import { initDraft } from './chatDraft.ts';
 import { initExpand, setExpanded } from './chatExpand.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
@@ -292,6 +293,7 @@ export function init31() {
   };
 
   initChatInput();
+  initDraft();
   initExpand();
   initSlashMenu();
   initSeesAdd();

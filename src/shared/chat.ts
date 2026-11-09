@@ -64,6 +64,19 @@ export type ChatMsg = { who: string; text: string; t: number; acts?: ChatAction[
 // an earlier chat, put away by New chat
 export type SavedChat = { id: string; title: string; t: number; msgs: ChatMsg[] };
 
+/** What the person was writing to Myra on a board and hadn't sent. An object, so a later field (pasted text) is added
+ *  beside `text` with no migration: a file from before it simply lacks the key. */
+export type ChatDraft = { text: string };
+
+/** The most characters a board file keeps of one draft. Every card edit rewrites the file, so it is not unbounded. */
+export const DRAFT_MAX = 100_000;
+
+/** A stored draft, or undefined when it is missing, empty, too long or malformed. */
+export function readDraft(x: unknown): ChatDraft | undefined {
+  if (!isRecord(x) || typeof x.text !== 'string' || !x.text || x.text.length > DRAFT_MAX) return undefined;
+  return { text: x.text };
+}
+
 type Fields = Record<string, unknown>;
 const isRecord = (x: unknown): x is Fields => typeof x === 'object' && x !== null;
 const strings = (x: unknown): x is string[] => Array.isArray(x) && x.every(s => typeof s === 'string');
