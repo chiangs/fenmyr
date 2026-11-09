@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { launch } from './support/launch.ts';
+import { pasteIntoChat } from './support/paste.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-preview-')));
 const repo = path.join(work, 'acme');
@@ -114,12 +115,27 @@ try {
     'scripts are all the frame may run',
   );
 
+  await page.fill('#mcInput', 'Fix this:');
+  await pasteIntoChat(page, 'a long log\n'.repeat(300));
   await page.click('[data-pv="point"]');
   await frame.locator('button.count').click();
   await until(
     async () =>
       /\[this: .*main > button\.count[^“]* “Count 1” at src\/App\.tsx:10\]/.test(await page.inputValue('#mcInput')),
     'pointing hands the element to Myra’s input',
+  );
+  assert.ok((await page.inputValue('#mcInput')).startsWith('Fix this: [this: '), 'it adds to the words already typed');
+  assert.strictEqual(
+    await page.locator('#mcSees .mcs-chip.paste').count(),
+    1,
+    'and leaves the pasted text where it is',
+  );
+  assert.ok(
+    await page.evaluate(() => {
+      const box = document.getElementById('mcInput');
+      return box instanceof HTMLTextAreaElement && box.selectionStart === box.value.length;
+    }),
+    'and the caret is after it',
   );
   await until(
     async () =>

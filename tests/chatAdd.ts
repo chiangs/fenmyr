@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { addTo, capture, chipsOf, NO_FLIPS, type SeesInput } from '../src/web/myra/sees.ts';
 import { replyBoard } from './fixtures/boards.ts';
+import { askStandIn } from './support/askStandIn.ts';
 import { launch, settle } from './support/launch.ts';
 
 const pic = { kind: 'file' as const, id: 'f1', name: 'dot.png', data: 'data:image/png;base64,AA==' },
@@ -28,50 +29,7 @@ const PNG = Buffer.from(
 );
 const l = await launch({ boards: [replyBoard('add', 'Add')], open: 'add', claude: true });
 const { page } = l;
-const work = path.join(l.data, 'standin'),
-  log = path.join(work, 'sent.jsonl'),
-  hold = path.join(work, 'hold');
-fs.mkdirSync(work);
-// the stand-in keeps each request's question, prompt, arguments and the bytes of each file it lists
-fs.writeFileSync(
-  path.join(l.data, '.local/bin/claude'),
-  `#!${process.execPath}
-const fs = require('node:fs');
-if (process.argv[2] !== '-p') process.exit(0);
-const prompt = process.argv[3] ?? '';
-const q = (/The person asked you: (.*)/.exec(prompt) ?? [])[1] ?? '';
-const files = [...prompt.matchAll(/^\\d\\. (\\S+) \\(a (picture|text file) they called "([^"]*)"\\)$/gm)].map(m => ({
-  name: m[3], kind: m[2], b64: fs.readFileSync(m[1]).toString('base64'),
-}));
-(async () => {
-  while (q.includes('slow') && fs.existsSync(${JSON.stringify(hold)})) await new Promise(r => setTimeout(r, 50));
-  fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({ q, prompt, args: process.argv.slice(4), cwd: process.cwd(), files }) + '\\n');
-  console.log(JSON.stringify({ type: 'result', is_error: false, result: JSON.stringify({ say: 'ok' }) }));
-})();
-`,
-  { mode: 0o755 },
-);
-
-type Sent = {
-  q: string;
-  prompt: string;
-  args: string[];
-  cwd: string;
-  files: { name: string; kind: string; b64: string }[];
-};
-async function sentFor(q: string): Promise<Sent> {
-  for (let i = 0; i < 200; i++) {
-    const lines = fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n') : [];
-    const hit = lines.map((s): Sent => JSON.parse(s)).find(s => s.q.endsWith(q));
-    if (hit) return hit;
-    await page.waitForTimeout(100);
-  }
-  throw new Error(`not sent: ${q}`);
-}
-async function send(q: string) {
-  await page.fill('#mcInput', q);
-  await page.click('.mc-send');
-}
+const { sentFor, send, hold } = askStandIn(l);
 const added = () => page.locator('#mcSees [data-chip="added"] .mcs-t').allTextContents();
 const lastMyra = () => page.locator('#mcList .mc-msg.myra').last().textContent();
 const file = (name: string, buffer: Buffer, mimeType: string) => ({ name, mimeType, buffer });
@@ -141,7 +99,7 @@ await check('a wrong kind, a picture past 5 MB and a fifth file are refused with
   assert.match((await lastMyra()) ?? '', /“huge\.png” is too big\. A picture can be up to 5 MB\./);
   await pick(['1', '2', '3', '4', '5'].map(n => file(`${n}.png`, PNG, 'image/png')));
   assert.deepStrictEqual(await added(), ['1.png', '2.png', '3.png', '4.png'], 'four go');
-  assert.match((await lastMyra()) ?? '', /Up to 4 files can go with one message\./);
+  assert.match((await lastMyra()) ?? '', /Up to 4 files or pasted texts can go with one message\./);
   for (let i = 0; i < 4; i++) await page.click('#mcSees [data-chip="added"] .mcs-x');
 });
 

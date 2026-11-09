@@ -14,15 +14,19 @@ import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
 import type { Picked } from './applyTypes.ts';
+import { clearedCount, initDraft } from './chatDraft.ts';
+import { initExpand, setExpanded } from './chatExpand.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
+import { giveBack } from './giveBack.ts';
 import { showConnections } from './helpers.ts';
+import { initPasted } from './pasted.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
 import { parse } from './replyText.ts';
 import type { SayAction } from './say.ts';
 import { reply } from './say.ts';
-import type { Sees } from './sees.ts';
+import { askFilesOf, type Sees } from './sees.ts';
 import { initSeesAdd } from './seesAdd.ts';
 import { takeSees } from './seesStrip.ts';
 import { initSlashMenu, slash } from './slash.ts';
@@ -49,24 +53,25 @@ export function tidyNotes() {
 // set when Claude Code answered that it isn't signed in, so the next offline line offers the how-to
 let signinHint = false;
 
-function offlineMyra(q: string, why: string) {
+// true when the sentence was something she could do without thinking, and false when all she did was say she can't
+function offlineMyra(q: string, why: string): boolean {
   // she just learned she can't think, so the header stops saying Ready
   paintStatus();
   const tr = timerRequest(q);
   if (tr) {
     runTimerRequest(tr, true);
-    return;
+    return true;
   }
   const an = animIntent(q);
   if (an) {
     playAnim(an === '*' ? pickAnim() : an);
-    return;
+    return true;
   }
   if (/group|sort|organi[sz]e|tidy|line up/i.test(q)) {
     const n = tidyNotes();
     if (n) {
       reply(`I lined your ${n} notes up in tidy rows ✦ ${why}`, 9000);
-      return;
+      return true;
     }
   }
   reply(
@@ -77,6 +82,7 @@ function offlineMyra(q: string, why: string) {
       : [],
   );
   signinHint = false;
+  return false;
 }
 
 export const GUIDE = 'https://github.com/chiangs/fenmyr#connect-claude-code';
@@ -101,7 +107,7 @@ function webMyra(q: string) {
   }
   const notes = session.board.cards.filter(c => c.type === 'note' && !parentOf(c.id));
   if (/group|sort|organi[sz]e|tidy|line up/i.test(q) && notes.length)
-    return offlineMyra(q, 'In the desktop app I can sort them by theme too, with Claude.');
+    return void offlineMyra(q, 'In the desktop app I can sort them by theme too, with Claude.');
   const what = /mobbin/i.test(q)
     ? 'Mobbin lives in your Claude account, and I can only reach it from the desktop app.'
     : /higgsfield|photo|picture|image/i.test(q)
@@ -125,13 +131,31 @@ export let timerAskedAt = 0;
 
 // A question as it was asked. `did`: what the app already did for the sentence; `sees`: what the "Myra sees" strip sent
 // with it.
-type Asked = { q: string; confirmed: boolean; did: string[]; sees: Sees };
+// `words`: the sentence when the person typed it, which a refusal puts back in the input; `cleared`: the Clear all chats
+// count it was asked at.
+type Asked = {
+  q: string;
+  confirmed: boolean;
+  did: string[];
+  sees: Sees;
+  board: string;
+  words: string;
+  cleared: number;
+};
 
 // The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
 // animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the selection, the
 // vaults and the web the question was sent with. `sees`: a question asked again keeps what it was first sent with.
-export function ask(q: string, confirmed = false, sees?: Sees) {
-  const asked: Asked = { q, confirmed, did: confirmed ? [] : actOnSentence(q), sees: sees ?? takeSees() };
+export function ask(q: string, confirmed = false, sees?: Sees, typed = false) {
+  const asked: Asked = {
+    q,
+    confirmed,
+    did: confirmed ? [] : actOnSentence(q),
+    sees: sees ?? takeSees(),
+    board: session.board.id,
+    words: typed && !confirmed ? q : '',
+    cleared: clearedCount(),
+  };
   if (!chatOpen()) myraOpen(true);
   if (!confirmed) addMsg('me', q);
   return Turn.take(turn => answer(turn, asked), session.board.id);
@@ -154,20 +178,23 @@ function actOnSentence(q: string) {
   return did;
 }
 
-async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
-  if (!turn.stillOpen()) return;
+async function answer(turn: Turn, asked: Asked) {
+  const { q, confirmed, did, sees } = asked;
+  // every way out before her answer arrives gives the message back, so a long one is never lost
+  const unsent = () => giveBack({ board: asked.board, words: asked.words, added: sees.added, cleared: asked.cleared });
+  const cannot = (why: string) => {
+    if (!offlineMyra(q, why)) unsent();
+  };
+  if (!turn.stillOpen()) return unsent();
   if (Fenmyr.web) return webMyra(q);
-  if (!settings.ai) return offlineMyra(q, 'My thinking is switched off in Settings, so I can only do simple tidying.');
+  if (!settings.ai) return cannot('My thinking is switched off in Settings, so I can only do simple tidying.');
   if (appState.haveClaude === false) {
     await showConnections(true);
     if (appState.haveClaude === false)
-      return offlineMyra(
-        q,
-        "I need Claude Code on this computer to think. It's a one-time setup with your Claude account.",
-      );
+      return cannot("I need Claude Code on this computer to think. It's a one-time setup with your Claude account.");
   } // look again first: they may have just set it up
   if (!navigator.onLine)
-    return offlineMyra(q, "You're offline, so I can't think with Claude right now. I'll be back when the internet is.");
+    return cannot("You're offline, so I can't think with Claude right now. I'll be back when the internet is.");
   if (confirmed) addMsg('myra', 'Making it… this can take a minute ✦');
   const job = startJob({ kind: 'thinking' });
   const ctx: Picked & { tasks: VaultTasksUsed | null; web: boolean } = {
@@ -183,7 +210,7 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
       sees.added.flatMap(a => (a.kind === 'note' ? [a] : [])),
       aiGrants(session.board),
     ),
-    files = sees.added.flatMap(a => (a.kind === 'file' ? [{ name: a.name, data: a.data }] : []));
+    files = askFilesOf(sees.added);
   if (chosen.refused.length) addMsg('myra', leftOut(chosen.refused));
   if (grants.length) {
     ctx.asked = true;
@@ -197,6 +224,7 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
   const notes = (ctx.tasks ? ctx.tasks.notes : 0) + ctx.used.length;
   if (notes) job.show({ kind: 'reading', notes });
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
+  let reached = false;
   try {
     const raw = await Fenmyr.ask(
       (window.myraName && window.myraName !== 'Myra'
@@ -218,27 +246,30 @@ async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
         ...(files.length ? { files } : {}),
       },
     );
+    reached = true;
     noteSignIn(false);
     await applyHeld(turn, await holdReply(parse(raw), q, ctx));
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
-    if (why.startsWith(NOT_SENT)) return reply(why);
+    // once her answer is in, a failure is in applying it, and what the person sent has been read
+    const cant = (line: string) => (reached ? offlineMyra(q, line) : cannot(line));
+    if (why.startsWith(NOT_SENT)) {
+      reply(why);
+      return unsent();
+    }
     if (/Claude Code/.test(why)) {
       appState.haveClaude = false;
-      return offlineMyra(
-        q,
-        "I need Claude Code on this computer to think. It's a one-time setup with your Claude account.",
-      );
+      return cant("I need Claude Code on this computer to think. It's a one-time setup with your Claude account.");
     }
     if (SIGNIN.test(why)) {
       signinHint = true;
       noteSignIn(true);
-      return offlineMyra(
-        q,
+      return cant(
         "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account.",
       );
     }
     reply(`Hmm, I couldn't reach Claude: ${why}`);
+    if (!reached) unsent();
   } finally {
     job.end();
   }
@@ -259,6 +290,7 @@ export function init31() {
   appState.histOpen = false;
 
   $('mcNew').onclick = () => {
+    setExpanded(false);
     archiveChat();
     if (chatKeep() === 'board') {
       session.board.chat = [];
@@ -271,6 +303,7 @@ export function init31() {
   };
   // a fresh, empty chat: she tilts her head and wonders what you will ask
   $('mcHist').onclick = () => {
+    setExpanded(false);
     appState.histOpen = !appState.histOpen;
     renderChat();
   };
@@ -281,13 +314,17 @@ export function init31() {
     e.preventDefault();
     const q = chatIn.value.trim();
     setChatText('');
+    setExpanded(false);
     if (!q) return;
     if (q[0] === '/') return slash(q);
     renderHint();
-    ask(q);
+    ask(q, false, undefined, true);
   };
 
   initChatInput();
+  initDraft();
+  initPasted();
+  initExpand();
   initSlashMenu();
   initSeesAdd();
 

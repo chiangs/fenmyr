@@ -43,4 +43,14 @@ export function refusal(name: string, bytes: number): string | null {
   return bytes > FILE_KINDS[kind].maxBytes ? tooBig(name, kind) : null;
 }
 
-export const tooMany = `Up to ${MAX_FILES} files can go with one message.`;
+export const tooMany = `Up to ${MAX_FILES} files or pasted texts can go with one message.`;
+
+const CHUNK = 0x8000;
+
+/** Text as a file to add to a message: its UTF-8 bytes as a data: URL, which the host decodes back to the same bytes. */
+export function textFile(name: string, text: string): AskFile {
+  const bytes = new TextEncoder().encode(text);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  return { name, data: `data:text/plain;base64,${btoa(bin)}` };
+}

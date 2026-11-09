@@ -94,13 +94,24 @@ export function save() {
   if (!appState.drag) layersSoon();
   $('saved').textContent = 'saving…';
   clearTimeout(appState.saveT);
-  appState.saveT = setTimeout(async () => {
-    session.board.view = session.view;
-    await Fenmyr.save(session.board);
-    $('saved').textContent = 'saved';
-    dueIndex();
-    refreshBoardsAfterSave();
-  }, 400);
+  appState.saveT = setTimeout(writeBoard, 400);
+}
+
+async function writeBoard() {
+  appState.saveT = undefined;
+  session.board.view = session.view;
+  await Fenmyr.save(session.board);
+  $('saved').textContent = 'saved';
+  dueIndex();
+  refreshBoardsAfterSave();
+}
+
+/** Writes the board now, taking the place of a save still waiting. For a change that moves no card: no layout pass and
+ *  no undo step. */
+export async function saveNow() {
+  if (!session.board) return;
+  clearTimeout(appState.saveT);
+  await writeBoard();
 }
 
 // after Myra works: glide to what she made (unless it's already in view) and let it glow for a moment

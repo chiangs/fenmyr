@@ -7,25 +7,16 @@ import { nestBoard } from '../library/nesting.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { addAtCenter, centerWorld } from '../panels/zoomMenu.ts';
 import { closestTo, isTyping } from '../ui/dom.ts';
+import { initPlainPaste, isPlainPaste } from '../ui/plainPaste.ts';
 import { lastClip, pasteCards } from './clipboard.ts';
 import { placeInView, toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
 import { byId } from './wires.ts';
 export function init23() {
   // ---------- paste and drop ----------
-  // Ctrl+Shift+V pastes words exactly as they are, and its paste event can't be told apart from Ctrl+V's.
-  // The key's code as well as its letter, since Option changes the letter on a Mac.
-  let asPlain = false;
-  addEventListener(
-    'keydown',
-    e => {
-      asPlain = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key.toLowerCase() === 'v' || e.code === 'KeyV');
-    },
-    true,
-  );
+  initPlainPaste();
   addEventListener('paste', e => {
-    const plain = asPlain;
-    asPlain = false;
+    const plain = isPlainPaste(e);
     appState.pendingPaste = false; // a real paste arrived, so Ctrl+V's fallback (pasting the cards you last copied) must stand down, whichever way this paste goes
     // pictures never go inside a card's text: a note gets a connected picture card, anything else you were typing in gets one on the board
     const imgs = [...(e.clipboardData?.files || [])].filter(f => f.type.startsWith('image/')),

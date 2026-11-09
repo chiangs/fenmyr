@@ -1,3 +1,5 @@
+import { type AskFile, textFile } from '../../shared/askFiles.ts';
+
 // What goes with the person's next message to Myra, as chips, and what a message was sent with. No DOM, so Node tests it.
 
 /** What the app offers for the next message, read by the strip. */
@@ -12,10 +14,11 @@ export type SeesInput = {
   added: readonly Added[];
 };
 
-/** A picture or text file (as a data: URL), or a vault note, added to one message. */
+/** A picture or text file (as a data: URL), a vault note, or a long paste, added to one message. */
 export type Added =
   | { kind: 'file'; id: string; name: string; data: string }
-  | { kind: 'note'; id: string; vault: string; rel: string; title: string };
+  | { kind: 'note'; id: string; vault: string; rel: string; title: string }
+  | { kind: 'paste'; id: string; text: string };
 
 /** One chip in the strip. `on`: it goes with the next message. The board always goes, so it has no `on`. */
 export type Chip =
@@ -104,4 +107,24 @@ export function addTo(added: readonly Added[], items: readonly Added[]): Added[]
   const out = [...added];
   for (const it of items) if (!out.some(a => same(a, it))) out.push(it);
   return out;
+}
+
+/** The files a message goes with: each file as added, and each paste as `Pasted text.txt`, then `Pasted text 2.txt`. */
+export function askFilesOf(added: readonly Added[]): AskFile[] {
+  let pastes = 0;
+  return added.flatMap(a => {
+    switch (a.kind) {
+      case 'file':
+        return [{ name: a.name, data: a.data }];
+      case 'paste':
+        pastes++;
+        return [textFile(pastes === 1 ? 'Pasted text.txt' : `Pasted text ${pastes}.txt`, a.text)];
+      case 'note':
+        return [];
+      default: {
+        const never: never = a;
+        throw new Error(`unknown added ${String(never)}`);
+      }
+    }
+  });
 }

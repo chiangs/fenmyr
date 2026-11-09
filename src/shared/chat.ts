@@ -1,4 +1,5 @@
 // Myra's chat as a board stores it: each message, and the buttons of the kinds that outlast the window, as data.
+import { MAX_FILES } from './askFiles.ts';
 import type { ChangeSet } from './changes.ts';
 
 // A button that is saved with its message, so it comes back when the chat or the board opens again. Buttons that only
@@ -63,6 +64,37 @@ export type StoredChangeSet = {
 export type ChatMsg = { who: string; text: string; t: number; acts?: ChatAction[] };
 // an earlier chat, put away by New chat
 export type SavedChat = { id: string; title: string; t: number; msgs: ChatMsg[] };
+
+/** A long paste held as a chip until the message goes. */
+type PastedText = { id: string; text: string };
+
+/** What the person was writing to Myra on a board and hadn't sent: the words in her input and the long pastes that
+ *  became chips. `pasted` is left out when there are none, so a file from before it is read as it is. */
+export type ChatDraft = { text: string; pasted?: PastedText[] };
+
+/** The most characters a board file keeps of one draft, typed words and pasted texts together. Every card edit rewrites
+ *  the file, so it is not unbounded. */
+export const DRAFT_MAX = 100_000;
+
+/** The host refuses a text file with a NUL in it, so a paste loses its NULs before it can become a chip. */
+export const withoutNul = (text: string) => text.replaceAll('\0', '');
+
+/** A stored draft, or undefined when it is missing, empty, too long or malformed. A bad pasted entry drops alone. */
+export function readDraft(x: unknown): ChatDraft | undefined {
+  if (!isRecord(x) || typeof x.text !== 'string') return undefined;
+  const ids = new Set<string>(),
+    pasted = (Array.isArray(x.pasted) ? x.pasted : [])
+      .flatMap((p: unknown) => {
+        const text = isRecord(p) && typeof p.text === 'string' ? withoutNul(p.text) : '';
+        if (!isRecord(p) || typeof p.id !== 'string' || !text || ids.has(p.id)) return [];
+        ids.add(p.id);
+        return [{ id: p.id, text }];
+      })
+      .slice(0, MAX_FILES);
+  const size = pasted.reduce((n, p) => n + p.text.length, x.text.length);
+  if ((!x.text && !pasted.length) || size > DRAFT_MAX) return undefined;
+  return pasted.length ? { text: x.text, pasted } : { text: x.text };
+}
 
 type Fields = Record<string, unknown>;
 const isRecord = (x: unknown): x is Fields => typeof x === 'object' && x !== null;

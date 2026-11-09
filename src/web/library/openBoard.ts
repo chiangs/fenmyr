@@ -1,9 +1,11 @@
 import { renderAll } from '../canvas/render.ts';
 import { $ } from '../core/dom.ts';
-import { resetHistory } from '../core/history.ts';
+import { resetHistory, saveNow } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueIndex } from '../features/due.ts';
 import { findClose } from '../features/find.ts';
+import { leaveDraft, restoreDraft } from '../myra/chatDraft.ts';
+import { setExpanded } from '../myra/chatExpand.ts';
 import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { forgetReplies } from '../myra/replyMemory.ts';
@@ -19,19 +21,20 @@ import { refreshBoards } from './rowMenu.ts';
 
 export async function openBoard(id: string) {
   // an edit still waiting to save belongs to the board you're leaving: save it first
-  if (appState.saveT && session.board) {
-    clearTimeout(appState.saveT);
-    appState.saveT = undefined;
-    session.board.view = session.view;
-    await Fenmyr.save(session.board);
-  }
+  if (appState.saveT && session.board) await saveNow();
   const b = await Fenmyr.load(id);
   if (!b) return;
+  // the draft goes with the board you're leaving, words typed while this one loaded included
+  await leaveDraft();
+  // words typed while that saved still belong to this board. The call saves them before the board is swapped, with no await between.
+  void leaveDraft();
   miniCache.clear();
   vnFull.clear();
   appState.histOpen = false;
   findClose(undefined);
+  setExpanded(false);
   session.board = { name: '', cards: [], links: [], tray: [], ...b };
+  restoreDraft();
   checkCode(session.board);
   showProto(session.board);
   askAboutCopy(session.board);

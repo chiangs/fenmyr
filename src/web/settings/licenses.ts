@@ -5,6 +5,7 @@ import { COLOR_NAMES } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { openSettingsKey } from '../input/shortcuts.ts';
+import { clearDrafts } from '../myra/chatDraft.ts';
 import { renderChat, sessionChats } from '../myra/chatLog.ts';
 import { hopMyra } from '../myra/goos.ts';
 import { showConnections } from '../myra/helpers.ts';
@@ -113,16 +114,18 @@ async function openLicenses() {
 
 const closeLicenses = () => $('licView').classList.remove('on');
 
-// Switching chats off (or to "until I quit") removes what's saved in the board files right away. Prototype boards always
-// keep their chat, so that switch leaves them alone. Clear all chats clears them too.
+// Switching chats off (or to "until I quit") removes what's saved in the board files right away, unsent drafts included.
+// Those drafts stay in memory until the app quits, and switching back writes nothing until the next edit. Prototype
+// boards always keep their chat and draft, so that switch leaves them alone. Clear all chats clears them too.
 async function clearSavedChats(keepPrototypes: boolean) {
   const list = await Fenmyr.list();
   for (const b of list) {
     const bb = b.id === session.board?.id ? session.board : await Fenmyr.load(b.id);
     const has = (log: unknown) => Array.isArray(log) && log.length > 0;
-    if (bb && !(keepPrototypes && bb.kind === 'prototype') && (has(bb.chat) || has(bb.chats))) {
+    if (bb && !(keepPrototypes && bb.kind === 'prototype') && (has(bb.chat) || has(bb.chats) || bb.chatDraft)) {
       bb.chat = [];
       delete bb.chats;
+      delete bb.chatDraft;
       await Fenmyr.save(bb);
     }
   }
@@ -184,6 +187,7 @@ export function init29() {
   $('recheck').onclick = () => showConnections(true);
 
   $('clearChats').onclick = async () => {
+    clearDrafts();
     await clearSavedChats(false);
     Object.keys(sessionChats).forEach(k => {
       delete sessionChats[k];

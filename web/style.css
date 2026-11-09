@@ -876,8 +876,17 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-foot { display: flex; align-items: center; gap: 8px; }
 .mc-lines { font: 600 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
 .mc-hint { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 500 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
+.mc-expand { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--ink-soft); cursor: pointer; }
+.mc-expand:hover, .mc-expand:focus-visible { color: var(--ink); background: rgb(from var(--ink) r g b / .06); }
+.mc-expand .in-writing, .m-chat.writing .mc-expand .in-small { display: none; }
+.m-chat.writing .mc-expand .in-writing { display: block; }
+/* Expand: the messages step aside and the one textarea fills the frame, so its text, caret and undo carry over */
+.m-chat.writing .mc-list { display: none; }
+.m-chat.writing .mc-form { flex: 1; min-height: 0; }
+.m-chat.writing .mc-form textarea, .m-chat.writing .mc-form textarea:placeholder-shown, body.proto .m-chat.writing #mcInput { flex: 1; height: auto; max-height: none; field-sizing: fixed; overflow-y: auto; }
+body.proto .m-chat.writing .mc-grip { display: none; }
 /* a touch screen has no Ctrl key, so Send is the way */
-@media (pointer: coarse) { .mc-hint { display: none; } .mc-send { margin-left: auto; } }
+@media (pointer: coarse) { .mc-hint { display: none; } .mc-expand { margin-left: auto; } }
 body.dark .m-chat { background: rgba(43, 39, 34, .98); box-shadow: 0 20px 50px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06); }
 body.dark .mc-msg.myra, body.dark .mc-form { background: #38332d; }
 body.dark .mc-msg.me { background: #584a3c; color: #fff; }
@@ -2586,6 +2595,11 @@ body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px var(--hilit
 body.dark :is(.mcs-x:hover, .mcs-chip.out:hover .mcs-x) { background: rgb(from var(--hilite) r g b / .12); }
 /* added for one message: a long file name ellipsises rather than taking a row */
 .mcs-chip.added { max-width: 14em; }
+.mcs-chip.paste { max-width: 100%; }
+.mcs-open { flex: none; height: 18px; padding: 0 6px; border: 0; border-radius: var(--pill-r); background: none; color: var(--ink-soft); font: inherit; text-decoration: underline; cursor: pointer; }
+.mcs-open:hover, .mcs-open:focus-visible { color: var(--ink); background: rgb(from var(--ink) r g b / .06); }
+.tdlg.pasted { width: min(640px, calc(100vw - 32px)); }
+.pasted-text { margin: 0; max-height: min(60vh, 480px); padding: 10px 12px; overflow: auto; border-radius: 12px; corner-shape: squircle; background: rgb(from var(--ink) r g b / .05); font: 500 12.5px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
 .mcs-add { height: 24px; padding: 0 9px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; color: var(--ink-soft); font: inherit; cursor: pointer; }
 .mcs-add:hover, .mcs-add:focus-visible { color: var(--ink); background: rgb(from var(--ink) r g b / .06); }
 

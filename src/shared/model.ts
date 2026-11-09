@@ -1,5 +1,5 @@
 import { type CardType, isCardType, sizeOf } from './cardTypes.ts';
-import { type ChatMsg, readChats, readMsgs, type SavedChat } from './chat.ts';
+import { type ChatDraft, type ChatMsg, readChats, readDraft, readMsgs, type SavedChat } from './chat.ts';
 import { type Capture, type Proto, readProto, readRepoLink } from './repos.ts';
 
 // What each kind of card adds. Cards also hold per-type options these fields don't list yet; typing the renderer modules adds them.
@@ -200,6 +200,8 @@ type BoardBase = {
   bg?: unknown;
   chat?: ChatMsg[];
   chats?: SavedChat[];
+  // the unsent words in Myra's input, kept only while chats are kept with the board
+  chatDraft?: ChatDraft;
   // its own vault access; without it the board follows its project
   vaultAccess?: VaultGrant[];
 };
@@ -315,6 +317,9 @@ export function parseBoard(raw: unknown): StoredBoard | null {
   else delete board.chat;
   if (Array.isArray(raw.chats)) board.chats = readChats(raw.chats);
   else delete board.chats;
+  const draft = readDraft(raw.chatDraft);
+  if (draft) board.chatDraft = draft;
+  else delete board.chatDraft;
   return board;
 }
 

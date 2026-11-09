@@ -170,6 +170,8 @@
     "src/web/myra/applyTypes.ts": "The card kinds Myra may add, and the shape of a reply held with everything it needs.",
     "src/web/myra/birthday.ts": "Myra’s birthday: when it is due, celebrated or belated, and her hat.",
     "src/web/myra/chat.ts": "Sends what you type to Myra and applies her answer, with offline and web-demo fallbacks.",
+    "src/web/myra/chatDraft.ts": "The unsent words in Myra’s input, kept for each board in memory and in the board file when chats are kept, and brought back when the board opens.",
+    "src/web/myra/chatExpand.ts": "Expand and Shrink for Myra’s chat input: one class on the chat turns the same textarea into a writing area.",
     "src/web/myra/chatInput.ts": "Myra’s chat input: carries out what each key means, and is the one way code writes her draft.",
     "src/web/myra/chatKeys.ts": "What each key does in Myra’s chat input: sending, new lines and the slash menu, as one table.",
     "src/web/myra/chatLog.ts": "The chat history: saving, archiving and showing earlier chats.",
@@ -177,6 +179,7 @@
     "src/web/myra/chatWindow.ts": "Opens and closes Myra’s chat window by its rules, places and resizes it from her box, and writes her input’s hint and draft line.",
     "src/web/myra/effects.ts": "What a reply of Myra’s does away from the board (timers, the library, templates, builds), as a list it then runs.",
     "src/web/myra/emptyChat.ts": "The empty chat: Myra’s hello by her given name and the starters that fit the board.",
+    "src/web/myra/giveBack.ts": "Gives a message that never reached Myra back to the person: its words to the input and its files and pasted texts to the strip, on the board it was written on.",
     "src/web/myra/goos.ts": "Puts Myra on the board and runs her hop.",
     "src/web/myra/greet.ts": "Her greeting and the slash-command list with its groups; features add lines through a small registry.",
     "src/web/myra/helpers.ts": "Her helpers (Claude Code, Mobbin, Higgsfield) and removing selected cards.",
@@ -316,6 +319,9 @@
     "tests/changes.ts": "Checks the record of a reply's changes, the change set and summary read from it, and Undo's plan, over hand-built boards.",
     "tests/chatButtons.ts": "Checks the buttons under Myra's replies: next steps in the chat and her bubble, and what a click does.",
     "tests/chatClose.ts": "What opens and closes Myra's chat in the real app, focus returning to her box, the top-edge resize and the draft line.",
+    "tests/chatDraftKept.ts": "What an unsent message to Myra leaves behind: nothing for a deleted board, a cleared prototype board, and no file draft after Keep chats changes.",
+    "tests/chatDraft.ts": "Myra’s unsent draft in the real app: it survives closing the chat, a board switch and a restart, follows Keep chats, and goes with a deleted board.",
+    "tests/chatExpand.ts": "Expand and Shrink in Myra’s chat in the real app: the draft and caret stay, Esc shrinks before it closes, and a send, a close or a board switch shrinks it.",
     "tests/chatGreeting.ts": "An empty Myra chat in the real app: her hello by her given name and live rename, starters from the board, and a click asking one.",
     "tests/chatKeys.ts": "Checks every row of the chat input’s key table, IME composition included.",
     "tests/chatSees.ts": "Checks the “Myra sees” chips in Node and in the app: what each message is sent with, a queued question keeping its chips, and the header’s status line.",
@@ -429,6 +435,12 @@
     "src/host/askFiles.ts": "Checks the files added to a message to Myra by their bytes and writes them where only that request’s Claude Code reads them.",
     "src/web/myra/seesAdd.ts": "Add in the “Myra sees” strip: a menu for a picture, file or vault note, and pictures or files pasted into the chat.",
     "tests/chatAdd.ts": "Checks Add in Myra’s chat with a stand-in Claude Code: pictures, files and vault notes go with one message, limits and #private notes are refused.",
-    "tests/smoke/askFiles.ts": "Smoke checks for files on the ask bridge: they reach Claude Code in their own folder with Read, are refused past the limits, and are removed after."
+    "tests/smoke/askFiles.ts": "Smoke checks for files on the ask bridge: they reach Claude Code in their own folder with Read, are refused past the limits, and are removed after.",
+    "src/web/myra/pasted.ts": "A long paste in Myra’s input becomes a chip, and Open shows its text with Close and Put in message.",
+    "src/web/ui/plainPaste.ts": "Tells a Ctrl/Cmd+Shift+V paste, which pastes words as they are, from an ordinary one.",
+    "tests/chatGiveBack.ts": "A message that never reached Myra comes back with its words, files and pasted texts, within the limits, and not after Clear all chats.",
+    "tests/chatPaste.ts": "Paste chips in Myra’s input: a long paste is a chip whose full text reaches her as a file, with Open, Ctrl+Shift+V, its limits and Clear all chats.",
+    "tests/support/askStandIn.ts": "A stand-in Claude Code that records each question and the bytes of every file it was given, for tests.",
+    "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states."
   }
 }

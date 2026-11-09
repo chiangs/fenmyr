@@ -1,5 +1,7 @@
 // Where Myra's chat window sits, how much board it leaves free, and what her box and input say. No DOM, so
 // tests/chatRules.ts checks every case in Node.
+import { MAX_FILES, tooMany } from '../../shared/askFiles.ts';
+import { DRAFT_MAX } from '../../shared/chat.ts';
 
 /** Window pixels. */
 export type Rect = { l: number; t: number; r: number; b: number };
@@ -129,18 +131,69 @@ export function closes(e: CloseInput, where: Geometry['where']): boolean {
   }
 }
 
+export type EscStep = 'shrink' | 'close' | 'none';
+
+/** What Esc does with focus in the chat: the writing area shrinks first, then the close rules decide. A prototype
+ *  board's docked chat shrinks too, though it never closes. */
+export function escStep(e: { composing: boolean; expanded: boolean }, where: Geometry['where']): EscStep {
+  if (e.composing) return 'none';
+  if (e.expanded) return 'shrink';
+  return closes({ type: 'esc', composing: false }, where) ? 'close' : 'none';
+}
+
 /** How long a click on empty board waits before it closes the chat. A double-click there makes a note beside the
  *  chat, and the second press can only cancel a close that has not happened yet; closing at once and reopening would
  *  flash the chat and lose the caret. 500 ms is the usual longest double-click gap. With double-click notes off, it
  *  closes at once. */
 export const closeWait = (dblNote: boolean) => (dblNote ? 500 : 0);
 
-/** What her box shows while the closed chat holds text, and the name it has then, or null when it holds none. Lines
- *  are counted as written, without trailing new lines. */
-export function draftLabel(text: string, name: string): { shown: string; spoken: string } | null {
+const linesIn = (text: string) => text.trimEnd().split('\n').length;
+
+/** A paste longer than this many characters becomes a chip. */
+export const PASTE_AT = 2000;
+
+/** What a pasted-text chip says: lines as written, counting \r\n as one break. */
+export const pastedLabel = (text: string) => {
+  const n = linesIn(text);
+  return `Pasted text · ${n === 1 ? '1 line' : `${n.toLocaleString('en-GB')} lines`}`;
+};
+
+export const tooLong = `That’s too long to paste. A message can hold up to ${DRAFT_MAX.toLocaleString('en-GB')} characters.`;
+
+export type PasteIn = {
+  /** The clipboard's plain text. */
+  text: string;
+  /** Ctrl/Cmd+Shift+V: the person asked for the words as they are. */
+  plain: boolean;
+  /** Chips exist only in the desktop app. */
+  native: boolean;
+  /** Characters that stay: the input minus the selection, plus every pasted text already held. */
+  kept: number;
+  /** Files and pasted texts already on the next message. */
+  attachments: number;
+};
+export type PasteAction = { type: 'insert' } | { type: 'chip' } | { type: 'refuse'; why: string };
+
+/** What a text paste does, in order: nothing to do for no text; refused whole when the draft would outgrow its budget,
+ *  since the box would otherwise cut it short without a word; typed in for a short, plain or web paste; refused when
+ *  the message holds its most files; otherwise a chip. */
+export function pasteAction(i: PasteIn): PasteAction {
+  if (!i.text) return { type: 'insert' };
+  if (i.kept + i.text.length > DRAFT_MAX) return { type: 'refuse', why: tooLong };
+  if (!i.native || i.plain || i.text.length <= PASTE_AT) return { type: 'insert' };
+  if (i.attachments >= MAX_FILES) return { type: 'refuse', why: tooMany };
+  return { type: 'chip' };
+}
+
+/** What her box shows while the closed chat holds text or pasted texts, and the name it has then, or null when it
+ *  holds neither. Lines are counted as written, without trailing new lines. */
+export function draftLabel(text: string, name: string, pastes = 0): { shown: string; spoken: string } | null {
   const kept = text.trimEnd();
-  if (!kept) return null;
-  const n = kept.split('\n').length,
-    lines = n === 1 ? '1 line' : `${n} lines`;
-  return { shown: `Draft · ${lines}`, spoken: `Ask ${name}, draft, ${lines}` };
+  if (!kept && !pastes) return null;
+  const n = linesIn(kept),
+    parts = [
+      ...(kept ? [n === 1 ? '1 line' : `${n} lines`] : []),
+      ...(pastes ? [pastes === 1 ? 'pasted text' : `${pastes} pasted texts`] : []),
+    ];
+  return { shown: `Draft · ${parts.join(' + ')}`, spoken: `Ask ${name}, draft, ${parts.join(' and ')}` };
 }

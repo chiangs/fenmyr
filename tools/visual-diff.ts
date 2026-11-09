@@ -5,6 +5,7 @@ import path from 'node:path';
 import type { Page } from 'playwright';
 import { everyOfflineCard, richNotes } from '../tests/fixtures/boards.ts';
 import { type Board, launch, ROOT, settle } from '../tests/support/launch.ts';
+import { longText, pasteIntoChat } from '../tests/support/paste.ts';
 import { checkout } from '../tests/support/ref.ts';
 
 type Step = (page: Page) => Promise<void>;
@@ -223,6 +224,15 @@ const GROUPS: Record<string, Group> = {
         async page => {
           await page.fill('#mcInput', 'Group these by theme\nthen name each group\nand keep it short');
           await page.keyboard.press('Escape');
+        },
+      ],
+      [
+        'myra-expand',
+        async page => {
+          await page.click('#mPill');
+          const expand = page.locator('#mcExpand');
+          if (await expand.count()) await expand.click();
+          await pasteIntoChat(page, longText(100));
         },
       ],
     ],
