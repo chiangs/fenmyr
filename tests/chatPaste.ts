@@ -232,6 +232,10 @@ await check('Open reads the text, Esc closes only it, and Put in message makes i
   assert.strictEqual(await dialog().locator('h3').textContent(), 'Pasted text · 122 lines');
   await page.keyboard.press('Escape');
   assert.strictEqual(await dialog().count(), 0, 'Esc closes the dialog');
+  assert.ok(
+    await page.evaluate(() => document.activeElement?.matches('#mcSees .mcs-open')),
+    'and focus returns to the chip’s Open button',
+  );
   assert.ok(await page.evaluate(() => document.getElementById('myra')?.classList.contains('chat')), 'not the chat');
   assert.deepStrictEqual(await chips(), ['Pasted text · 122 lines'], 'Close leaves the chip');
   await page.click('#mcSees .mcs-open');

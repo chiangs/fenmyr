@@ -287,7 +287,11 @@ const four = [80, 81, 82, 83],
 }
 
 {
-  const l = await launch({ boards: [plain('a', 'Alpha'), plain('b', 'Bravo')], open: 'a' });
+  const l = await launch({
+    boards: [plain('a', 'Alpha'), plain('b', 'Bravo')],
+    open: 'a',
+    settings: { chatKeep: 'session' },
+  });
   const r = rig(l);
   const { page } = r;
 
