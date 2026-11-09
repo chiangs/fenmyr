@@ -152,6 +152,8 @@ jobs:
         run: node tests/myraBox.ts
       - name: Chat close test (what opens and closes Myra's chat, focus, its resize and the draft line)
         run: node tests/chatClose.ts
+      - name: Chat Expand test (the writing area keeps the draft and caret, Esc shrinks before it closes, and a send, a close or a board switch shrinks it)
+        run: node tests/chatExpand.ts
       - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
         run: node tests/capture.ts
       - name: Image actions test (download, copy and replace a picture, in the real app)

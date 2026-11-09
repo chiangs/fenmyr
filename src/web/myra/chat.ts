@@ -14,6 +14,7 @@ import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
 import type { Picked } from './applyTypes.ts';
+import { initExpand, setExpanded } from './chatExpand.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
@@ -259,6 +260,7 @@ export function init31() {
   appState.histOpen = false;
 
   $('mcNew').onclick = () => {
+    setExpanded(false);
     archiveChat();
     if (chatKeep() === 'board') {
       session.board.chat = [];
@@ -271,6 +273,7 @@ export function init31() {
   };
   // a fresh, empty chat: she tilts her head and wonders what you will ask
   $('mcHist').onclick = () => {
+    setExpanded(false);
     appState.histOpen = !appState.histOpen;
     renderChat();
   };
@@ -281,6 +284,7 @@ export function init31() {
     e.preventDefault();
     const q = chatIn.value.trim();
     setChatText('');
+    setExpanded(false);
     if (!q) return;
     if (q[0] === '/') return slash(q);
     renderHint();
@@ -288,6 +292,7 @@ export function init31() {
   };
 
   initChatInput();
+  initExpand();
   initSlashMenu();
   initSeesAdd();
 

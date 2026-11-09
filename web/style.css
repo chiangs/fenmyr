@@ -876,8 +876,17 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-foot { display: flex; align-items: center; gap: 8px; }
 .mc-lines { font: 600 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
 .mc-hint { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 500 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
+.mc-expand { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--ink-soft); cursor: pointer; }
+.mc-expand:hover, .mc-expand:focus-visible { color: var(--ink); background: rgb(from var(--ink) r g b / .06); }
+.mc-expand .in-writing, .m-chat.writing .mc-expand .in-small { display: none; }
+.m-chat.writing .mc-expand .in-writing { display: block; }
+/* Expand: the messages step aside and the one textarea fills the frame, so its text, caret and undo carry over */
+.m-chat.writing .mc-list { display: none; }
+.m-chat.writing .mc-form { flex: 1; min-height: 0; }
+.m-chat.writing .mc-form textarea, .m-chat.writing .mc-form textarea:placeholder-shown, body.proto .m-chat.writing #mcInput { flex: 1; height: auto; max-height: none; field-sizing: fixed; overflow-y: auto; }
+body.proto .m-chat.writing .mc-grip { display: none; }
 /* a touch screen has no Ctrl key, so Send is the way */
-@media (pointer: coarse) { .mc-hint { display: none; } .mc-send { margin-left: auto; } }
+@media (pointer: coarse) { .mc-hint { display: none; } .mc-expand { margin-left: auto; } }
 body.dark .m-chat { background: rgba(43, 39, 34, .98); box-shadow: 0 20px 50px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06); }
 body.dark .mc-msg.myra, body.dark .mc-form { background: #38332d; }
 body.dark .mc-msg.me { background: #584a3c; color: #fff; }
