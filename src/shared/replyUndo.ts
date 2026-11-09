@@ -148,17 +148,17 @@ export const planUndo = (record: BoardPatch, now: BoardLists, keep: ReadonlySet<
 
 const PLACE = ['x', 'y', 'w', 'h'] as const;
 
-// A card on the board the person only moved or resized since the plan still takes her change, keeping where they put
-// it and the size they gave it, so a collection they dragged still takes the cards she files into it. `forward` is a
-// reversed record: `now` is the card as planned from, `was` as planned to.
+// A card on the board, in no collection, that the person only moved or resized since the plan still takes her change,
+// keeping where they put it and the size they gave it, so a collection they dragged still takes the cards she files
+// into it. A card in a collection was placed by it, so it takes her change whole. `forward` is a reversed record: `now`
+// is the card as planned from, `was` as planned to.
 function rebased(forward: BoardPatch, now: BoardLists): BoardPatch {
   const cur = placedById(now.cards, now.tray, holdersOf(now.cards));
   const onto = (d: BoardPatch['cards'][number]) => {
     const c = cur.get(d.id),
       from = d.now,
       to = d.was;
-    if (!c || !from || !to || c.at !== 'board' || from.at !== 'board' || to.at !== 'board' || c.in !== from.in)
-      return d;
+    if (!c || !from || !to || c.at !== 'board' || from.at !== 'board' || to.at !== 'board' || c.in || from.in) return d;
     const theirs = PLACE.filter(k => c.item[k] !== from.item[k]);
     if (!theirs.length || !same(c.item, from.item, new Set(PLACE))) return d;
     const item = { ...to.item };

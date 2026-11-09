@@ -235,4 +235,24 @@ assert.deepStrictEqual(
   'one they moved and also changed is left as they have it',
 );
 
+// A card in a collection is placed by it, so dragging the collection is not moving the card.
+const out = listsOf(board()),
+  outOf = find(out, 'kb');
+if (outOf.type === 'coll') outOf.kids = ['k2'];
+Object.assign(outOf, { h: 220 });
+Object.assign(find(out, 'k1'), { x: 1500, y: 1100 });
+Object.assign(find(out, 'k2'), { y: 66 });
+const takenOut = planDo(recordOf(board(), out), dragged, new Set());
+assert.deepStrictEqual(ids(takenOut.skipped), [], 'nothing is left');
+assert.deepStrictEqual(
+  [find(takenOut.lists, 'k1').x, find(takenOut.lists, 'k1').y],
+  [1500, 1100],
+  'a card she takes out of a collection they dragged lands where she put it, not where the collection laid it',
+);
+assert.deepStrictEqual(
+  find(takenOut.lists, 'kb'),
+  { ...outOf, x: 400, y: 300, w: 360 },
+  'and the collection keeps the rest, where they put it',
+);
+
 console.log('LAND PLAN OK');
