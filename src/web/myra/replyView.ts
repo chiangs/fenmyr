@@ -5,8 +5,6 @@ import { save } from '../core/history.ts';
 import { type Act, type After, type Button, type Piece, piecesOf, SLOTS, storedOf } from './acts.ts';
 import { chatKeep } from './chatLog.ts';
 
-const HEADING = 'Changed on the board';
-
 // how many times each host has been drawn, so a click that drew something else there doesn't draw over it
 const drawn = new WeakMap<HTMLElement, number>();
 
@@ -19,12 +17,12 @@ function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (chatKeep() === 'board') save();
 }
 
-function summaryEl(lines: readonly string[]) {
+function summaryEl(heading: string, lines: readonly string[]) {
   const box = document.createElement('div'),
     head = document.createElement('b'),
     list = document.createElement('ul');
   box.className = 'm-summary';
-  head.textContent = HEADING;
+  head.textContent = heading;
   for (const line of lines) list.appendChild(document.createElement('li')).textContent = line;
   box.append(head, list);
   return box;
@@ -80,7 +78,7 @@ export function drawActs(
     row.className = 'm-acts';
     for (const [a, p] of here) {
       if (p.slot === 'summary') {
-        if (p.lines.length) host.appendChild(summaryEl(p.lines));
+        if (p.lines.length) host.appendChild(summaryEl(p.head, p.lines));
       } else if (p.slot === 'sources') {
         const box = host.appendChild(sourcesEl(p.head));
         for (const l of p.links) button(box, { ...l, cls: 'm-link' }, a, all);

@@ -20,7 +20,7 @@ type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
 export type After = 'stay' | 'self' | 'row';
 export type Button = SayAction & { title?: string; after: After };
 export type Piece =
-  | { slot: 'summary'; lines: readonly string[] }
+  | { slot: 'summary'; head: string; lines: readonly string[] }
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };
 

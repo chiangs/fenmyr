@@ -30,6 +30,11 @@ export function startPrototypeHere(seed?: Seed) {
     startPrototype(here, seed);
     return;
   }
+  pickProject(p => startPrototype(p, seed));
+}
+
+// Which project a prototype is for: one of theirs, or a new one, which then goes on to `then`. Cancel does nothing.
+function pickProject(then: (p: Project) => unknown) {
   const rows = appState.projects
     .map(p => {
       const id = esc(p.id),
@@ -50,12 +55,12 @@ export function startPrototypeHere(seed?: Seed) {
     if (!id) return;
     if (id !== 'new') {
       const p = appState.projects.find(x => x.id === id);
-      return p ? startPrototype(p, seed) : undefined;
+      return p ? then(p) : undefined;
     }
     const made = makeProject(uniqueName(appState.projects, 'New project'));
     await saveLib();
     await refreshBoards();
-    return startPrototype(made, seed);
+    return then(made);
   };
   d.onkeydown = e => {
     e.stopPropagation();
