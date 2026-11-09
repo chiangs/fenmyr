@@ -1,10 +1,11 @@
 // Do it on a plan the person worked around while it waited, and what she says about it: a card she meant to move that
-// they moved since stays where they put it and she names it.
+// they moved since stays where they put it and she names it, a card they only clicked into and left takes her change,
+// and a card they are in, though nothing is typed yet, stays as it is.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['moved'];
+const BOARDS = ['moved', 'clicked', 'editing'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'moved', claude: true });
 const { page } = l;
 
@@ -39,6 +40,11 @@ async function doIt() {
 }
 const said = () =>
   page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg.myra')].at(-1)?.firstChild?.textContent);
+async function open(id: string) {
+  await page.waitForTimeout(500);
+  await page.evaluate(id => window.__fenmyr.openBoard(id), id);
+  await settle(page, 300);
+}
 const place = (id: string) =>
   page.evaluate(id => {
     const c = window.__fenmyr.curBoard().cards.find(x => x.id === id);
@@ -72,6 +78,48 @@ await check('a card she meant to move that they moved since stays where they put
   assert.strictEqual(
     await said(),
     'Ten ideas, and I moved the first note. I left “First note” as you have it, since it changed after my plan.',
+  );
+});
+
+await check('a card they only clicked into and left, with nothing typed, takes her change', async () => {
+  await open('clicked');
+  await chat();
+  await planned({
+    say: 'Ten ideas, and a sharper third note.',
+    add: notes(10),
+    edit: [{ id: 'n3', text: 'Her third' }],
+  });
+  await page.keyboard.press('Escape');
+  await page.locator('#cards .card[data-id="n3"]').dblclick();
+  await page.keyboard.press('Escape');
+  await settle(page, 300);
+  assert.strictEqual(await page.evaluate(() => window.__fenmyr.editing), null, 'they left it');
+  await chat();
+  await doIt();
+  const n3 = await page.evaluate(() => window.__fenmyr.curBoard().cards.find(c => c.id === 'n3'));
+  assert(n3?.type === 'note' && n3.text === 'Her third', 'her words land');
+  assert.strictEqual(await said(), 'Ten ideas, and a sharper third note.', 'with nothing left out');
+});
+
+await check('a card they are in when Do it is pressed stays as it is, though nothing is typed yet', async () => {
+  await open('editing');
+  await chat();
+  await planned({
+    say: 'Ten ideas, and a sharper second note.',
+    add: notes(10),
+    edit: [{ id: 'n2', text: 'Her second' }],
+  });
+  await page.keyboard.press('Escape');
+  await page.locator('#cards .card[data-id="n2"]').dblclick();
+  assert.strictEqual(await page.evaluate(() => window.__fenmyr.editing), 'n2', 'they are in it');
+  // pressed without taking the caret out of the card
+  await page.evaluate(() => document.querySelector<HTMLElement>('#mcList .m-acts button:not(.ghost)')?.click());
+  await settle(page, 800);
+  const n2 = await page.evaluate(() => window.__fenmyr.curBoard().cards.find(c => c.id === 'n2'));
+  assert(n2?.type === 'note' && n2.text === 'Second note', 'her words are not put into it');
+  assert.strictEqual(
+    await said(),
+    'Ten ideas, and a sharper second note. I left “Second note” as you have it, since it changed after my plan.',
   );
 });
 
