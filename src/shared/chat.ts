@@ -179,7 +179,7 @@ const readPage = (x: unknown): WebPage | null =>
 const entries = <T>(x: unknown, read: (x: unknown) => T | null): T[] =>
   (Array.isArray(x) ? x : []).map(read).filter(e => e !== null);
 
-const MAX_BUILD = 4000,
+const MAX_BUILD = 8000,
   MAX_FROM = 80;
 const oneLine = (x: unknown, n: number) => (typeof x === 'string' ? clip(x.replace(/\s+/g, ' ').trim(), n) : '');
 

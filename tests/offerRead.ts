@@ -47,8 +47,8 @@ assert.deepStrictEqual(
   SEL,
   'a list of cards of the wrong kind drops alone',
 );
-const long = offer({ name: 'Diary', build: 'x'.repeat(5000) })?.build ?? '';
-assert.strictEqual(Array.from(long).length, 4000, 'a build request is clipped');
+const long = offer({ name: 'Diary', build: 'x'.repeat(9000) })?.build ?? '';
+assert.strictEqual(Array.from(long).length, 8000, 'a build request is clipped where any other build’s is');
 assert.ok(long.endsWith('…'), 'and says so');
 
 const kept = offer({ name: 'Checkout', device: 'tablet', folder: 'Prototypes', from: ['n1'], build: 'Build it' });
