@@ -432,7 +432,7 @@
     "tools/metrics.ts": "Counts files and lines of code per area of the project.",
     "tools/notices.ts": "Writes the third-party notices and the licences list.",
     "tools/visual-diff.ts": "Screenshots 22 states here and on main, and fails on any changed pixel.",
-    "tools/visual-myra.ts": "Myra’s states for the visual diff: a reply in the open chat, what she sees, and the chat and doc panels.",
+    "tools/visual-myra.ts": "Myra’s states for the visual diff: a reply in the open chat, what she sees, the chat and doc panels, and a plan before and after Do it.",
     "web/sw.js": "Keeps a copy of the app so the website version opens offline.",
     "src/shared/askFiles.ts": "The pictures and text files a person can add to one message to Myra: kinds, size limits and the words for a refusal.",
     "src/host/askFiles.ts": "Checks the files added to a message to Myra by their bytes and writes them where only that request’s Claude Code reads them.",
