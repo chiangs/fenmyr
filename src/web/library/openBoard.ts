@@ -26,6 +26,8 @@ export async function openBoard(id: string) {
   if (!b) return;
   // the draft goes with the board you're leaving, words typed while this one loaded included
   await leaveDraft();
+  // words typed while that saved still belong to this board. The call saves them before the board is swapped, with no await between.
+  void leaveDraft();
   miniCache.clear();
   vnFull.clear();
   appState.histOpen = false;

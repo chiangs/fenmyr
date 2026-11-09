@@ -160,6 +160,8 @@ jobs:
         run: node tests/chatDraftKept.ts
       - name: Chat paste test (a paste over 2,000 characters is a chip whose full text reaches Myra, with Open, Ctrl+Shift+V and its limits)
         run: node tests/chatPaste.ts
+      - name: Chat give-back test (a message that never reached Myra comes back with its words, files and pastes, within the limits)
+        run: node tests/chatGiveBack.ts
       - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
         run: node tests/capture.ts
       - name: Image actions test (download, copy and replace a picture, in the real app)
