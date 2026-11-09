@@ -1,7 +1,7 @@
 // One reply of Myra's is one undo step however slow its pictures are, edits the person makes while she works stay
 // their own, replies wait their turn instead of landing inside each other, a preview changes nothing, a reply for a
-// board that is no longer open is not applied, a queued question keeps the board it was asked on,
-// and a reply that fails part way leaves the board as it was.
+// board that is no longer open is not applied, a queued question keeps the board it was asked on, a reply that fails
+// part way leaves the board as it was, and a reply that rewrites the open doc shows in its editor.
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { replyBoard } from './fixtures/boards.ts';
@@ -20,6 +20,7 @@ const BOARDS = [
   'elsewhere',
   'throws',
   'order',
+  'doc',
 ];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'slow', claude: true });
 const { page } = l;
@@ -348,6 +349,30 @@ await check("a template she saves from the cards she just touched keeps them in 
   });
   assert.deepStrictEqual(texts, ['Added', 'First note', 'Edited second'], 'added, then moved, then edited');
 });
+
+await check(
+  'a reply that rewrites the open doc shows in its editor, which still writes to the card on the board',
+  async () => {
+    await open('doc');
+    await page.locator('#cards [data-id="d1"]').dblclick();
+    await page.waitForSelector('.dv-prose');
+    const seen = await page.evaluate(async () => {
+      await window.__fenmyr.applyMyra({ say: 'ok', edit: [{ id: 'd1', body: 'Her new draft' }] }, 'q');
+      const ed = window.__fenmyr.docEditor(),
+        shown = ed.getText();
+      ed.chain().insertContent(' and their line').run();
+      await new Promise(res => setTimeout(res, 600));
+      const c = window.__fenmyr.curBoard().cards.find(x => x.id === 'd1');
+      return { shown, body: c?.type === 'doc' ? c.body : null };
+    });
+    assert.match(seen.shown, /Her new draft/, 'the editor shows her words');
+    assert.match(
+      seen.body ?? '',
+      /Her new draft.*and their line/s,
+      'what they type next reaches the card on the board',
+    );
+  },
+);
 
 const errors = [...l.errors];
 await l.close();
