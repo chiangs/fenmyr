@@ -1,6 +1,7 @@
 // Landing a planned reply over boards built by hand: on a board unchanged since, exactly what was planned; a card the
 // person changed since stays theirs, with its collection and connectors, and she touched only what landed; a card being
-// typed in still takes a change to its place; and landing it again changes nothing more.
+// typed in still takes a change to its place; one they only moved or resized takes her change where they put it; and
+// landing it again changes nothing more.
 import assert from 'node:assert';
 import { type BoardLists, landedTouched, listsOf, recordOf } from '../src/shared/changes.ts';
 import type { Card } from '../src/shared/model.ts';
@@ -197,6 +198,41 @@ whole(
   },
   'k1',
   'a collection goes while a card in it is being typed in, and the card stays where it is',
+);
+
+// Moving or resizing a card is not changing what it is, so a card the person only moved or resized since the plan
+// still takes her change where they put it.
+const dragged = board();
+for (const id of ['kb', 'k1', 'k2']) {
+  const c = find(dragged, id);
+  Object.assign(c, { x: c.x + 400, y: c.y + 300 });
+}
+Object.assign(find(dragged, 'kb'), { w: 360 });
+Object.assign(find(dragged, 'b'), { x: 850, y: 40 });
+const moved = planDo(record, dragged, new Set());
+assert.deepStrictEqual(ids(moved.skipped), [], 'nothing they only moved or resized is left');
+assert.deepStrictEqual(
+  find(moved.lists, 'kb'),
+  { ...find(plan, 'kb'), x: 400, y: 300, w: 360 },
+  'a collection they dragged and widened takes the cards she files into it, where they put it, at their width',
+);
+assert.deepStrictEqual(
+  [find(moved.lists, 'k1').type === 'note' && find(moved.lists, 'k1').text, find(moved.lists, 'a').x],
+  ['Longer words', 14],
+  'her words for a card in it land, and the card she files lands in it',
+);
+assert.deepStrictEqual(
+  find(moved.lists, 'b'),
+  { ...find(plan, 'b'), x: 850, y: 40 },
+  'a note they moved takes her words where they put it',
+);
+assert.deepStrictEqual(planDo(record, moved.lists, new Set()).undone, 0, 'landing that again changes nothing more');
+const movedAndRetyped = board();
+Object.assign(find(movedAndRetyped, 'b'), { x: 850, text: 'Their words' });
+assert.deepStrictEqual(
+  ids(planDo(record, movedAndRetyped, new Set()).skipped),
+  ['b'],
+  'one they moved and also changed is left as they have it',
 );
 
 console.log('LAND PLAN OK');
