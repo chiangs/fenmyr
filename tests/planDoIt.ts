@@ -1,13 +1,13 @@
 // Do it on a plan the person worked around while it waited: a collection they dragged still takes the cards she files
 // into it, words they just typed into the open doc stay theirs, a card they changed or connected since stays as they
 // have it and she says so, and her count and glow cover only what landed. A part of her reply that fails once the board
-// has changed costs only itself, and one that fails while the board takes it leaves the board as it was, with the
-// plan waiting again.
+// has changed costs only itself, a failure after that keeps the board, Done and Undo, and one that fails while the
+// board takes it leaves the board as it was, with the plan waiting again.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['dragged', 'doc', 'count', 'linked', 'effect', 'throws'];
+const BOARDS = ['dragged', 'doc', 'count', 'linked', 'effect', 'after', 'throws'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'dragged', claude: true });
 const { page } = l;
 
@@ -182,6 +182,42 @@ await check(
     assert.strictEqual(await page.locator('#mcList .m-summary.plan.done').count(), 1, 'and the plan reads Done');
   },
 );
+
+await check('a failure after the board took the plan keeps it, with Done and Undo, and she says so', async () => {
+  await open('after');
+  await chat();
+  await planned({ say: 'Here are eleven.', add: notes(11) });
+  // her line's "Changed on the board" box fails to draw once, after the board has taken the plan
+  await page.evaluate(() => {
+    const real = Node.prototype.appendChild;
+    let armed = true;
+    Node.prototype.appendChild = function <T extends Node>(this: Node, child: T): T {
+      if (armed && child instanceof HTMLElement && child.matches('.m-summary:not(.plan)')) {
+        armed = false;
+        throw new Error('drawing failed');
+      }
+      return Reflect.apply(real, this, [child]);
+    };
+  });
+  await doIt();
+  assert.strictEqual(
+    await page.evaluate(
+      () => window.__fenmyr.curBoard().cards.filter(c => c.type === 'note' && /^Idea /.test(c.text ?? '')).length,
+    ),
+    11,
+    'the board keeps the plan',
+  );
+  assert.strictEqual(await page.locator('#mcList .m-summary.plan.done').count(), 1, 'which reads Done');
+  assert.strictEqual(
+    await page.locator('#mcList .m-acts button:text-is("Undo")').count(),
+    1,
+    'with Undo under her line',
+  );
+  assert.strictEqual(
+    await said(),
+    'I’ve made the changes on the board, and Undo puts them back, but something after that went wrong.',
+  );
+});
 
 await check('Do it that fails part way puts the board back, and the plan waits to be tried again', async () => {
   await open('throws');

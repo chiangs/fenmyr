@@ -28,6 +28,7 @@ import { centerWorld } from '../panels/zoomMenu.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { cardEl } from '../ui/dom.ts';
 import type { HeldReply, NoteUsed, Picked, Picture } from './applyTypes.ts';
+import { renderChat } from './chatLog.ts';
 import { effectsOf, runEffects } from './effects.ts';
 import { namedIn, planBoard, type ViewAt } from './plan.ts';
 import { replyLine } from './replyLine.ts';
@@ -35,6 +36,7 @@ import { keepReply } from './replyMemory.ts';
 import { reply, say } from './say.ts';
 
 const LEFT_ALONE = 'Another board is open now, so I’ve left the one you asked about as it was.';
+const AFTER = 'I’ve made the changes on the board, and Undo puts them back, but something after that went wrong.';
 
 // One reply at a time, in the order asked, so two never land in the middle of each other. Applying a reply needs a
 // Turn, and only Turn.take makes one. `board`: the board the question was asked on, read when it was asked rather than
@@ -177,22 +179,30 @@ export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned):
     changed = record.cards.length > 0 || record.links.length > 0,
     board = session.board.id;
   if (changed) keepReply(id, record);
-  if (tpl?.mode === 'add') say(`Here’s “${tpl.name}” ✦ It’s all yours to change.`, 4000);
-  if (touched.length) setTimeout(() => showWhatMyraMade(touched), 250);
-  const ran = await runEffects(effectsOf(held), touched),
-    line = replyLine(held, touched, ran.acts),
-    said = [line.text, ...ran.failed, leftLine(left)].filter(Boolean).join(' ');
-  // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one, and
-  // what this reply changed means nothing there.
-  const kept = changed && session.board.id === board;
-  if (!kept) reply(said, line.ms, line.acts);
-  // the bubble stays long enough to reach Show on board and Undo
-  else
-    reply(said, line.ms && Math.max(line.ms, 16000), [
-      ...line.acts,
-      { kind: 'changes', reply: id, set: storedSet(changes), lines: summaryLines(record, changes) },
-    ]);
-  return { said, changes, reply: id };
+  // From here the board has her changes, so a failure keeps them and Undo.
+  try {
+    if (tpl?.mode === 'add') say(`Here’s “${tpl.name}” ✦ It’s all yours to change.`, 4000);
+    if (touched.length) setTimeout(() => showWhatMyraMade(touched), 250);
+    const ran = await runEffects(effectsOf(held), touched),
+      line = replyLine(held, touched, ran.acts),
+      said = [line.text, ...ran.failed, leftLine(left)].filter(Boolean).join(' ');
+    // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one,
+    // and what this reply changed means nothing there.
+    const kept = changed && session.board.id === board;
+    if (!kept) reply(said, line.ms, line.acts);
+    // the bubble stays long enough to reach Show on board and Undo
+    else
+      reply(said, line.ms && Math.max(line.ms, 16000), [
+        ...line.acts,
+        { kind: 'changes', reply: id, set: storedSet(changes), lines: summaryLines(record, changes) },
+      ]);
+    return { said, changes, reply: id };
+  } catch {
+    // her line, with Undo under it, is kept before it is drawn, so drawing the chat again shows it
+    renderChat();
+    reply(AFTER, 0);
+    return { said: AFTER, changes, reply: id };
+  }
 }
 
 // Not async on purpose: an await in here would let the undo timer cut the reply into several steps. A reply that
