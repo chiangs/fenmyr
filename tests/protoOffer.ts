@@ -171,6 +171,13 @@ let made = '';
 
 try {
   await open('one');
+  await check('on an ordinary board she is told how to offer a prototype board', async () => {
+    await ask('What would you make here?');
+    const prompt = lines(asks).at(-1)?.prompt ?? '';
+    assert.match(prompt, /NEEDS CODE: when what they ask for only works as running code/);
+    assert.match(prompt, /"offerPrototype": \{"name"/);
+  });
+
   await check('a request that needs code gets her line and an offer card', async () => {
     await ask('Make the checkout work OFFER');
     assert.deepStrictEqual(await lineOf(SAID), ACME_CARD);
@@ -276,14 +283,20 @@ try {
     assert.ok(texts.includes('Kept one') && texts.includes('Kept two'), 'and her notes are on the board');
   });
 
-  await check('a prototype board never shows an offer', async () => {
-    assert.ok(made, 'the prototype board from Start and build');
-    await open(made);
-    await ask('Make the checkout work OFFER');
-    const line = await lineOf(SAID);
-    assert.ok(line, 'her line shows');
-    assert.strictEqual(line.head, null, 'with no offer card');
-  });
+  await check(
+    'on a prototype board she is never asked for an offer, and one she sends anyway shows no card',
+    async () => {
+      assert.ok(made, 'the prototype board from Start and build');
+      await open(made);
+      await ask('Make the checkout work OFFER');
+      const prompt = lines(asks).at(-1)?.prompt ?? '';
+      assert.match(prompt, /"prototype":\s*\{"stack"/, 'the question went from the prototype board');
+      assert.ok(!prompt.includes('NEEDS CODE') && !prompt.includes('offerPrototype'), 'with no word of offers');
+      const line = await lineOf(SAID);
+      assert.ok(line, 'her line shows');
+      assert.strictEqual(line.head, null, 'with no offer card');
+    },
+  );
 
   assert.deepStrictEqual(l.errors, [], 'no page errors');
   assert.deepStrictEqual(failed, [], 'checks that failed');
