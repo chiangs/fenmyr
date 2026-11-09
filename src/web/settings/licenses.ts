@@ -5,6 +5,7 @@ import { COLOR_NAMES } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { openSettingsKey } from '../input/shortcuts.ts';
+import { clearDrafts } from '../myra/chatDraft.ts';
 import { renderChat, sessionChats } from '../myra/chatLog.ts';
 import { hopMyra } from '../myra/goos.ts';
 import { showConnections } from '../myra/helpers.ts';
@@ -120,9 +121,10 @@ async function clearSavedChats(keepPrototypes: boolean) {
   for (const b of list) {
     const bb = b.id === session.board?.id ? session.board : await Fenmyr.load(b.id);
     const has = (log: unknown) => Array.isArray(log) && log.length > 0;
-    if (bb && !(keepPrototypes && bb.kind === 'prototype') && (has(bb.chat) || has(bb.chats))) {
+    if (bb && !(keepPrototypes && bb.kind === 'prototype') && (has(bb.chat) || has(bb.chats) || bb.chatDraft)) {
       bb.chat = [];
       delete bb.chats;
+      delete bb.chatDraft;
       await Fenmyr.save(bb);
     }
   }
@@ -184,6 +186,7 @@ export function init29() {
   $('recheck').onclick = () => showConnections(true);
 
   $('clearChats').onclick = async () => {
+    clearDrafts();
     await clearSavedChats(false);
     Object.keys(sessionChats).forEach(k => {
       delete sessionChats[k];

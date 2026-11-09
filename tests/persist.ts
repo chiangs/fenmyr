@@ -123,3 +123,35 @@ try {
   fs.rmSync(data, { recursive: true, force: true });
 }
 console.log('STORED BUTTONS OK');
+
+// A draft in the board file is back in Myra's input, a malformed one is not, and saving a board keeps the draft it has.
+const drafted = {
+  id: 'drafted',
+  name: 'Drafted',
+  cards: [cartNote],
+  links: [],
+  tray: [],
+  chatDraft: { text: 'Half a thought' },
+};
+const broken = { id: 'broken', name: 'Broken', cards: [cartNote], links: [], tray: [], chatDraft: { text: 5 } };
+const d = await launch({ boards: [drafted, broken], open: 'drafted', settings: { chatKeep: 'board' } });
+try {
+  const inputOf = (id: string) =>
+    d.page.evaluate(async id => {
+      await window.__fenmyr.openBoard(id);
+      const box = document.getElementById('mcInput');
+      return box instanceof HTMLTextAreaElement ? box.value : null;
+    }, id);
+  assert.strictEqual(await inputOf('drafted'), 'Half a thought', 'a stored draft fills the input');
+  await d.page.evaluate(() => window.Fenmyr?.save(window.__fenmyr.curBoard()));
+  const file = path.join(d.data, 'fenmyr', 'boards', 'drafted.json');
+  assert.deepStrictEqual(
+    JSON.parse(fs.readFileSync(file, 'utf8')).chatDraft,
+    { text: 'Half a thought' },
+    'saving keeps it',
+  );
+  assert.strictEqual(await inputOf('broken'), '', 'a draft with the wrong shape is left out');
+} finally {
+  await d.close();
+}
+console.log('STORED DRAFT OK');

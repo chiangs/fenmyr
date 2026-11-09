@@ -1,6 +1,7 @@
 // Library and board files keep what they had, keep the prototype fields when they're sound, and drop them when not.
 import assert from 'node:assert';
-import { parseBoard, parseLibrary } from '../src/shared/model.ts';
+import { DRAFT_MAX } from '../src/shared/chat.ts';
+import { parseBoard, parseLibrary, storedBoard } from '../src/shared/model.ts';
 import { githubOf, readRepoLink, repoClash, repoNameFor, splitCardsLine } from '../src/shared/repos.ts';
 
 const json = (x: unknown) => JSON.parse(JSON.stringify(x));
@@ -202,5 +203,30 @@ assert.deepStrictEqual(
 );
 assert.deepStrictEqual(splitCardsLine('I built it.\nCARDS: none'), { text: 'I built it.', sources: {} });
 assert.deepStrictEqual(splitCardsLine('No line at all.'), { text: 'No line at all.', sources: {} });
+
+const withDraft = (chatDraft: unknown) => ({ id: 'd1', name: 'Draft', cards: [], links: [], tray: [], chatDraft });
+assert.deepStrictEqual(
+  parseBoard(withDraft({ text: 'Plan the launch\nwith dates' }))?.chatDraft,
+  { text: 'Plan the launch\nwith dates' },
+  'a stored draft is kept',
+);
+for (const [bad, why] of [
+  [{ text: 5 }, 'a draft whose text is not a string'],
+  [{ text: '' }, 'an empty draft'],
+  [{ text: 'x'.repeat(DRAFT_MAX + 1) }, 'a draft past the limit'],
+  ['words', 'a draft that is not an object'],
+  [null, 'no draft'],
+] as const)
+  assert.ok(!('chatDraft' in (parseBoard(withDraft(bad)) ?? {})), `${why} is dropped`);
+assert.strictEqual(
+  parseBoard(withDraft({ text: 'x'.repeat(DRAFT_MAX) }))?.chatDraft?.text.length,
+  DRAFT_MAX,
+  'a draft of exactly the limit is kept',
+);
+assert.deepStrictEqual(
+  json(parseBoard(json(storedBoard(withDraft({ text: 'round trip' }))))),
+  withDraft({ text: 'round trip' }),
+  'a draft saves and reads back unchanged',
+);
 
 console.log('MODEL OK');

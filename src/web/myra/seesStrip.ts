@@ -24,11 +24,11 @@ import {
 // The "Myra sees" strip under the chat's header: what goes with the next message, and × or + to change it for that
 // message only.
 
-// what the person changed and added for the next message, on one board
-type Next = { board: string; flips: Flips; added: readonly Added[] };
-const FRESH: Next = { board: '', flips: NO_FLIPS, added: [] };
-let turned = FRESH;
-const nextNow = (): Next => (turned.board === session.board?.id ? turned : FRESH);
+// what the person changed and added for the next message, kept for each board until it is sent
+type Next = { flips: Flips; added: readonly Added[] };
+const FRESH: Next = { flips: NO_FLIPS, added: [] };
+const nexts = new Map<string, Next>();
+const nextNow = (): Next => nexts.get(session.board?.id ?? '') ?? FRESH;
 
 function oneLabel(): string | null {
   const one = session.sel.size === 1 ? session.board.cards.find(c => session.sel.has(c.id)) : undefined;
@@ -152,7 +152,7 @@ export const peekSees = (): Sees => capture(seesInput(), nextNow().flips);
 export function addToNext(items: readonly Added[]) {
   if (!session.board) return;
   const now = nextNow();
-  turned = { ...now, board: session.board.id, added: addTo(now.added, items) };
+  nexts.set(session.board.id, { ...now, added: addTo(now.added, items) });
   renderSees();
 }
 
@@ -162,7 +162,7 @@ export const filesInNext = () => nextNow().added.filter(a => a.kind === 'file').
 /** Captures what the message being sent goes with, and starts the next message from the defaults again. */
 export function takeSees(): Sees {
   const sees = peekSees();
-  turned = FRESH;
+  nexts.delete(session.board?.id ?? '');
   renderSees();
   return sees;
 }
@@ -173,9 +173,10 @@ export function initSees() {
     if (!key || !session.board) return;
     const now = nextNow(),
       id = key.startsWith('added:') ? key.slice(6) : null;
-    turned = id
-      ? { ...now, board: session.board.id, added: now.added.filter(a => a.id !== id) }
-      : { ...now, board: session.board.id, flips: toggle(now.flips, key) };
+    nexts.set(
+      session.board.id,
+      id ? { ...now, added: now.added.filter(a => a.id !== id) } : { ...now, flips: toggle(now.flips, key) },
+    );
     renderSees();
     const same = `[data-flip="${CSS.escape(key)}"]`;
     ($('mcSees').querySelector<HTMLElement>(same) ?? $('mcSees').querySelector<HTMLElement>('.mcs-add'))?.focus();
