@@ -1,11 +1,1 @@
-{
-  "modes-find-chat": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “⌘↩ to send” and Send.",
-  "panels-myra-chat": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “⌘↩ to send” and Send.",
-  "panels-myra-expand": "New in 5a: the chat open in Expand. The header and the “Myra sees” strip stay and the messages are hidden. The three-line draft left by panels-myra-draft fills the writing area, and the foot's button shows two arrows pointing in (Shrink). The base has no Expand, so it shows the open chat with that draft.",
-  "proto-medium-screen": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “⌘↩ to send” and Send.",
-  "proto-narrow-screen": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “⌘↩ to send” and Send.",
-  "proto-wide-screen": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “⌘↩ to send” and Send.",
-  "reply-chat": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “⌘↩ to send” and Send.",
-  "sees-added": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “⌘↩ to send” and Send.",
-  "sees-chat": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “⌘↩ to send” and Send."
-}
+{}
