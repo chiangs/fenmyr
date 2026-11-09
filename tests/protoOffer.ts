@@ -186,7 +186,7 @@ try {
     assert.match(prompt, /"offerPrototype": \{"name"/);
     assert.match(
       prompt,
-      /Nothing is made until they press Start and build, so don't say you've made or set it up\./,
+      /Nothing exists until they press Start and build, so in "say" offer it .* and never say you've made, set up or created a board or a card\./,
       'and not to say the board is made before it is',
     );
   });
