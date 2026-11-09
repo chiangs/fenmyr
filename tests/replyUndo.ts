@@ -1,7 +1,8 @@
 // One reply of Myra's is one undo step however slow its pictures are, edits the person makes while she works stay
 // their own, replies wait their turn instead of landing inside each other, a preview changes nothing, a reply for a
 // board that is no longer open is not applied, a queued question keeps the board it was asked on, a reply that fails
-// part way leaves the board as it was, and a reply that rewrites the open doc shows in its editor.
+// part way leaves the board, the saved file and the undo history as they were, and a reply that rewrites the open doc
+// shows in its editor.
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { replyBoard } from './fixtures/boards.ts';
@@ -56,9 +57,9 @@ const slowPictures = (ms: number) =>
     window.Fenmyr.fetchImage = () => new Promise<string>(res => setTimeout(() => res(png), ms));
   }, ms);
 // the board's undo: an earlier question leaves the cursor in the chat box, where Ctrl+Z would undo typing
-async function undo() {
+async function undo(redo = false) {
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
-  await page.keyboard.press('Control+z');
+  await page.keyboard.press(redo ? 'Control+Shift+z' : 'Control+z');
   await page.waitForTimeout(200);
 }
 
@@ -311,25 +312,38 @@ await check(
   },
 );
 
-await check('a reply that fails part way: the board stays as it was, and the next reply is one undo step', async () => {
-  await open('throws');
-  const before = await boardJSON(page);
-  const thrown = await page.evaluate(async () => {
-    try {
-      // @ts-expect-error a connection the reply check would never let through
-      await window.__fenmyr.applyMyra({ say: 'boom', add: [{ text: 'Ghost' }], connect: [null] }, 'q');
-      return '';
-    } catch (e) {
-      return String(e);
-    }
-  });
-  assert.match(thrown, /TypeError/, 'the error still reaches the caller');
-  assert.strictEqual(await boardJSON(page), before, 'nothing of the failed reply stays on the board');
-  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'ok', add: [{ text: 'After' }] }, 'q'));
-  await page.waitForTimeout(400);
-  await undo();
-  assert.strictEqual(await boardJSON(page), before, 'one Ctrl+Z takes back the next reply and leaves nothing behind');
-});
+await check(
+  'a reply that fails part way: the board, the saved file and the undo history stay as they were',
+  async () => {
+    await open('throws');
+    const start = await boardJSON(page),
+      saved = () => page.evaluate(async () => JSON.stringify(await window.Fenmyr.load('throws')));
+    await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'ok', add: [{ text: 'Before' }] }, 'q'));
+    await page.waitForTimeout(800);
+    const before = await boardJSON(page),
+      file = await saved();
+    // drawing fails once the board has taken the reply
+    const thrown = await page.evaluate(async () => {
+      const real = Element.prototype.remove;
+      Element.prototype.remove = function () {
+        if (this instanceof HTMLElement && this.classList.contains('card')) throw new Error('drawing failed');
+        real.call(this);
+      };
+      const r = { say: 'boom', remove: ['n3'], edit: [{ id: 'n1', text: 'Half' }], add: [{ text: 'Ghost' }] };
+      const failed = await window.__fenmyr.applyMyra(r, 'q').then(() => '', String);
+      Element.prototype.remove = real;
+      return failed;
+    });
+    assert.match(thrown, /drawing failed/, 'the error still reaches the caller');
+    assert.strictEqual(await boardJSON(page), before, 'nothing of the failed reply stays on the board');
+    await page.waitForTimeout(800);
+    assert.strictEqual(await saved(), file, 'nor in the saved file');
+    await undo();
+    assert.strictEqual(await boardJSON(page), start, 'nor in the undo history: Ctrl+Z takes back the reply before it');
+    await undo(true);
+    assert.strictEqual(await boardJSON(page), before, 'and Ctrl+Shift+Z brings that one back');
+  },
+);
 
 await check("a template she saves from the cards she just touched keeps them in her reply's order", async () => {
   await open('order');
