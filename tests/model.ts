@@ -229,4 +229,41 @@ assert.deepStrictEqual(
   'a draft saves and reads back unchanged',
 );
 
+const long = 'é🙂\r\nlong paste '.repeat(300);
+assert.deepStrictEqual(
+  parseBoard(withDraft({ text: '', pasted: [{ id: 'p1', text: long }] }))?.chatDraft,
+  { text: '', pasted: [{ id: 'p1', text: long }] },
+  'a draft of only a pasted text is kept, whole',
+);
+assert.deepStrictEqual(
+  parseBoard(
+    withDraft({
+      text: 'hi',
+      pasted: [{ id: 'p1', text: long }, { id: 2, text: 'no id' }, { id: 'p3', text: '' }, 'x'],
+    }),
+  )?.chatDraft,
+  { text: 'hi', pasted: [{ id: 'p1', text: long }] },
+  'a bad pasted entry drops alone',
+);
+assert.deepStrictEqual(
+  parseBoard(withDraft({ text: 'hi', pasted: 'words' }))?.chatDraft,
+  { text: 'hi' },
+  'pasted that is not a list reads as none, and a draft from before pastes reads as it was',
+);
+assert.deepStrictEqual(
+  parseBoard(withDraft({ text: '', pasted: [{ id: 'p1', text: '' }] }))?.chatDraft,
+  undefined,
+  'a draft with nothing in it is dropped',
+);
+assert.strictEqual(
+  parseBoard(withDraft({ text: 'x', pasted: [{ id: 'p1', text: 'y'.repeat(DRAFT_MAX) }] }))?.chatDraft,
+  undefined,
+  'typed words and pastes together stay within the budget',
+);
+assert.deepStrictEqual(
+  json(parseBoard(json(storedBoard(withDraft({ text: 't', pasted: [{ id: 'p1', text: long }] }))))),
+  withDraft({ text: 't', pasted: [{ id: 'p1', text: long }] }),
+  'a pasted text saves and reads back unchanged',
+);
+
 console.log('MODEL OK');

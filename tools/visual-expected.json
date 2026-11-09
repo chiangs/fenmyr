@@ -1,1 +1,3 @@
-{}
+{
+  "panels-myra-expand": "5c: the state now also pastes a 100-line text into the chat. It is a chip, “Pasted text · 100 lines” with Open and ×, on a second row of the “Myra sees” strip, and the writing area sits a row lower. The base has no paste chip, so its paste does nothing."
+}

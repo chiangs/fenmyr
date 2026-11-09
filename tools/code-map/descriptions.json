@@ -433,6 +433,11 @@
     "src/host/askFiles.ts": "Checks the files added to a message to Myra by their bytes and writes them where only that request’s Claude Code reads them.",
     "src/web/myra/seesAdd.ts": "Add in the “Myra sees” strip: a menu for a picture, file or vault note, and pictures or files pasted into the chat.",
     "tests/chatAdd.ts": "Checks Add in Myra’s chat with a stand-in Claude Code: pictures, files and vault notes go with one message, limits and #private notes are refused.",
-    "tests/smoke/askFiles.ts": "Smoke checks for files on the ask bridge: they reach Claude Code in their own folder with Read, are refused past the limits, and are removed after."
+    "tests/smoke/askFiles.ts": "Smoke checks for files on the ask bridge: they reach Claude Code in their own folder with Read, are refused past the limits, and are removed after.",
+    "src/web/myra/pasted.ts": "A long paste in Myra’s input becomes a chip, and Open shows its text with Close and Put in message.",
+    "src/web/ui/plainPaste.ts": "Tells a Ctrl/Cmd+Shift+V paste, which pastes words as they are, from an ordinary one.",
+    "tests/chatPaste.ts": "Paste chips in Myra’s input: a long paste is a chip whose full text reaches her as a file, with Open, Ctrl+Shift+V, its limits and Clear all chats.",
+    "tests/support/askStandIn.ts": "A stand-in Claude Code that records each question and the bytes of every file it was given, for tests.",
+    "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states."
   }
 }

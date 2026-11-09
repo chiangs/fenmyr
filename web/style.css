@@ -2595,6 +2595,11 @@ body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px var(--hilit
 body.dark :is(.mcs-x:hover, .mcs-chip.out:hover .mcs-x) { background: rgb(from var(--hilite) r g b / .12); }
 /* added for one message: a long file name ellipsises rather than taking a row */
 .mcs-chip.added { max-width: 14em; }
+.mcs-chip.paste { max-width: 100%; }
+.mcs-open { flex: none; height: 18px; padding: 0 6px; border: 0; border-radius: var(--pill-r); background: none; color: var(--ink-soft); font: inherit; text-decoration: underline; cursor: pointer; }
+.mcs-open:hover, .mcs-open:focus-visible { color: var(--ink); background: rgb(from var(--ink) r g b / .06); }
+.tdlg.pasted { width: min(640px, calc(100vw - 32px)); }
+.pasted-text { margin: 0; max-height: min(60vh, 480px); padding: 10px 12px; overflow: auto; border-radius: 12px; corner-shape: squircle; background: rgb(from var(--ink) r g b / .05); font: 500 12.5px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
 .mcs-add { height: 24px; padding: 0 9px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; color: var(--ink-soft); font: inherit; cursor: pointer; }
 .mcs-add:hover, .mcs-add:focus-visible { color: var(--ink); background: rgb(from var(--ink) r g b / .06); }
 

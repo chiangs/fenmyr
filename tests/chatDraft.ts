@@ -307,6 +307,8 @@ try {
     );
     const paste = (n: number) =>
       s.page.evaluate(n => {
+        // Ctrl+Shift+V, so a long paste is words and not a chip
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'V', code: 'KeyV', ctrlKey: true, shiftKey: true }));
         const data = new DataTransfer();
         data.setData('text/plain', 'x'.repeat(n));
         const e = new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true });

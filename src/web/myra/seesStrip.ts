@@ -7,6 +7,7 @@ import { closestTo, esc } from '../ui/dom.ts';
 import { aiGrants } from '../vault/ask.ts';
 import { vaultById } from '../vault/vaults.ts';
 import { chatLog, renderChat } from './chatLog.ts';
+import { pastedLabel } from './chatRules.ts';
 import { renderHint } from './chatWindow.ts';
 import {
   type Added,
@@ -30,6 +31,14 @@ const FRESH: Next = { flips: NO_FLIPS, added: [] };
 const nexts = new Map<string, Next>();
 const nextNow = (): Next => nexts.get(session.board?.id ?? '') ?? FRESH;
 
+// Long pastes are part of the unsent draft, which the draft store saves. It hears of every change to them here.
+const watchers: (() => void)[] = [];
+export const watchAdded = (fn: () => void) => void watchers.push(fn);
+const tell = () => {
+  for (const fn of watchers) fn();
+};
+const pastes = (added: readonly Added[]) => added.flatMap(a => (a.kind === 'paste' ? [a] : []));
+
 function oneLabel(): string | null {
   const one = session.sel.size === 1 ? session.board.cards.find(c => session.sel.has(c.id)) : undefined;
   if (!one) return null;
@@ -52,7 +61,7 @@ function seesInput(): SeesInput {
   };
 }
 
-type View = { kind: string; key: string; label: string; icon: string; tip: string; on: boolean };
+type View = { kind: string; key: string; label: string; icon: string; tip: string; on: boolean; open: string };
 
 function viewOf(c: Exclude<Chip, { kind: 'board' }>): View {
   switch (c.kind) {
@@ -64,6 +73,7 @@ function viewOf(c: Exclude<Chip, { kind: 'board' }>): View {
         icon: '',
         tip: c.on ? `Leave ${c.label} out of the next message` : `Put ${c.label} back`,
         on: c.on,
+        open: '',
       };
     case 'vault':
       return {
@@ -75,6 +85,7 @@ function viewOf(c: Exclude<Chip, { kind: 'board' }>): View {
           ? `Leave ${c.name} out of the next message`
           : `Let ${myraName()} search ${c.name} for the next message`,
         on: c.on,
+        open: '',
       };
     case 'web':
       return {
@@ -84,18 +95,21 @@ function viewOf(c: Exclude<Chip, { kind: 'board' }>): View {
         icon: Icon('globe', { size: 13 }),
         tip: c.on ? 'Leave the web out of the next message' : 'Put the web back',
         on: c.on,
+        open: '',
       };
     case 'added': {
       const it = c.item,
-        label = it.kind === 'note' ? it.title : it.name,
-        icon = it.kind === 'note' ? 'notebook' : kindOf(it.name) === 'picture' ? 'image' : 'file-text';
+        label = it.kind === 'note' ? it.title : it.kind === 'paste' ? pastedLabel(it.text) : it.name,
+        icon =
+          it.kind === 'note' ? 'notebook' : it.kind === 'file' && kindOf(it.name) === 'picture' ? 'image' : 'file-text';
       return {
         kind: 'added',
         key: `added:${it.id}`,
         label,
         icon: Icon(icon, { size: 13 }),
-        tip: `Take ${label} out of the next message`,
+        tip: `Take ${it.kind === 'paste' ? 'the pasted text' : label} out of the next message`,
         on: true,
+        open: it.kind === 'paste' ? it.id : '',
       };
     }
     default: {
@@ -115,13 +129,19 @@ function chipHTML(c: Chip): string {
     key = esc(v.key),
     label = esc(v.label),
     tip = esc(v.tip),
-    icon = v.icon;
+    icon = v.icon,
+    openId = esc(v.open),
+    cls = v.open ? `${kind} paste` : kind,
+    open = v.open
+      ? `<button type="button" class="mcs-open" data-open="${openId}" title="${OPEN_TIP}" aria-label="${OPEN_TIP}">Open</button>`
+      : '';
   return v.on
-    ? `<span class="mcs-chip ${kind}" data-chip="${kind}">${icon}<span class="mcs-t">${label}</span><button type="button" class="mcs-x" data-flip="${key}" title="${tip}" aria-label="${tip}">×</button></span>`
+    ? `<span class="mcs-chip ${cls}" data-chip="${kind}">${icon}<span class="mcs-t">${label}</span>${open}<button type="button" class="mcs-x" data-flip="${key}" title="${tip}" aria-label="${tip}">×</button></span>`
     : `<button type="button" class="mcs-chip ${kind} out" data-chip="${kind}" data-flip="${key}" title="${tip}" aria-label="${tip}">${icon}<span class="mcs-t">${label}</span><span class="mcs-x" aria-hidden="true">+</span></button>`;
 }
 
-const ADD_TIP = 'Add pictures, files or a vault note to the next message',
+const OPEN_TIP = 'Read everything that was pasted',
+  ADD_TIP = 'Add pictures, files or a vault note to the next message',
   ADD = `<button type="button" class="mcs-add" title="${ADD_TIP}" aria-label="${ADD_TIP}" aria-haspopup="menu">+ Add</button>`;
 
 let drawn = '';
@@ -154,16 +174,46 @@ export function addToNext(items: readonly Added[]) {
   const now = nextNow();
   nexts.set(session.board.id, { ...now, added: addTo(now.added, items) });
   renderSees();
+  tell();
 }
 
-/** How many files the next message holds already. */
-export const filesInNext = () => nextNow().added.filter(a => a.kind === 'file').length;
+/** How many files and pasted texts the next message holds already. */
+export const filesInNext = () => nextNow().added.filter(a => a.kind !== 'note').length;
+
+/** The long pastes a board's next message holds, in the order they were pasted. */
+export const pastesOf = (board: string) => pastes(nexts.get(board)?.added ?? []);
+
+/** How many characters a board's pasted texts hold, which count against the draft's budget. */
+export const pastedChars = (board: string) => pastesOf(board).reduce((n, p) => n + p.text.length, 0);
+
+/** Brings a board's saved pastes back as chips, unless the board's next message is already in hand. */
+export function seedAdded(board: string, items: readonly Added[]) {
+  if (items.length && !nexts.has(board)) nexts.set(board, { flips: NO_FLIPS, added: items });
+  renderSees();
+}
+
+/** Clear all chats: no board's next message keeps a paste. */
+export function clearPastes() {
+  for (const [board, now] of nexts) nexts.set(board, { ...now, added: now.added.filter(a => a.kind !== 'paste') });
+  renderSees();
+  tell();
+}
+
+/** Takes one picture, file, note or pasted text out of the next message. */
+export function removeAdded(id: string) {
+  if (!session.board) return;
+  const now = nextNow();
+  nexts.set(session.board.id, { ...now, added: now.added.filter(a => a.id !== id) });
+  renderSees();
+  tell();
+}
 
 /** Captures what the message being sent goes with, and starts the next message from the defaults again. */
 export function takeSees(): Sees {
   const sees = peekSees();
   nexts.delete(session.board?.id ?? '');
   renderSees();
+  if (sees.added.some(a => a.kind === 'paste')) tell();
   return sees;
 }
 
@@ -171,13 +221,12 @@ export function initSees() {
   $('mcSees').addEventListener('click', e => {
     const key = closestTo(e.target, '[data-flip]')?.dataset.flip;
     if (!key || !session.board) return;
-    const now = nextNow(),
-      id = key.startsWith('added:') ? key.slice(6) : null;
-    nexts.set(
-      session.board.id,
-      id ? { ...now, added: now.added.filter(a => a.id !== id) } : { ...now, flips: toggle(now.flips, key) },
-    );
-    renderSees();
+    if (key.startsWith('added:')) removeAdded(key.slice(6));
+    else {
+      const now = nextNow();
+      nexts.set(session.board.id, { ...now, flips: toggle(now.flips, key) });
+      renderSees();
+    }
     const same = `[data-flip="${CSS.escape(key)}"]`;
     ($('mcSees').querySelector<HTMLElement>(same) ?? $('mcSees').querySelector<HTMLElement>('.mcs-add'))?.focus();
   });

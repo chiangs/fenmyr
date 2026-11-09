@@ -20,7 +20,7 @@ import {
   type Rect,
 } from './chatRules.ts';
 import { keepPerch, perchGoo } from './perch.ts';
-import { initSees, renderSees, seenSelection } from './seesStrip.ts';
+import { initSees, pastesOf, renderSees, seenSelection } from './seesStrip.ts';
 
 // Myra's chat window: her box or M opens it; Esc inside it, the fold button or a click on empty board closes it
 export const chatOpen = () => $('myra').classList.contains('chat');
@@ -147,7 +147,9 @@ export function myraOpen(on: boolean, toBox = false) {
 
 // a closed chat that holds text says so in her box, in place of "Ask Myra…"
 function renderDraft() {
-  const label = chatOpen() ? null : draftLabel(textField('mcInput').value, window.myraName || 'Myra'),
+  const label = chatOpen()
+      ? null
+      : draftLabel(textField('mcInput').value, window.myraName || 'Myra', pastesOf(session.board?.id ?? '').length),
     draft = $('mDraft'),
     pill = $('mPill');
   draft.hidden = !label;
