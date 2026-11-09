@@ -1,6 +1,7 @@
 // Landing a planned reply over boards built by hand: on a board unchanged since, exactly what was planned; a card the
 // person changed since stays theirs, with its collection and connectors, and she touched only what landed; a card being
-// typed in still takes a change to its place; one they only moved or resized takes her change where they put it; and
+// typed in still takes a change to its place; one in no collection they only moved or resized takes her change where
+// they put it, and is named when she meant to move it; one a dragged collection re-laid takes her change whole; and
 // landing it again changes nothing more.
 import assert from 'node:assert';
 import { type BoardLists, landedTouched, listsOf, recordOf } from '../src/shared/changes.ts';
@@ -227,6 +228,20 @@ assert.deepStrictEqual(
   'a note they moved takes her words where they put it',
 );
 assert.deepStrictEqual(planDo(record, moved.lists, new Set()).undone, 0, 'landing that again changes nothing more');
+assert.deepStrictEqual(ids(moved.theirPlace), [], 'none of them was a card she meant to move');
+const herMove = listsOf(board());
+Object.assign(find(herMove, 'b'), { x: 1500, y: 900, text: 'Reworded' });
+const overruled = planDo(recordOf(board(), herMove), dragged, new Set());
+assert.deepStrictEqual(
+  [ids(overruled.skipped), ids(overruled.theirPlace)],
+  [[], ['b']],
+  'a card she meant to move that they moved since is named as left where they put it',
+);
+assert.deepStrictEqual(
+  find(overruled.lists, 'b'),
+  { ...find(herMove, 'b'), x: 850, y: 40 },
+  'and still takes her words there',
+);
 const movedAndRetyped = board();
 Object.assign(find(movedAndRetyped, 'b'), { x: 850, text: 'Their words' });
 assert.deepStrictEqual(

@@ -151,9 +151,10 @@ const PLACE = ['x', 'y', 'w', 'h'] as const;
 // A card on the board, in no collection, that the person only moved or resized since the plan still takes her change,
 // keeping where they put it and the size they gave it, so a collection they dragged still takes the cards she files
 // into it. A card in a collection was placed by it, so it takes her change whole. `forward` is a reversed record: `now`
-// is the card as planned from, `was` as planned to.
-function rebased(forward: BoardPatch, now: BoardLists): BoardPatch {
-  const cur = placedById(now.cards, now.tray, holdersOf(now.cards));
+// is the card as planned from, `was` as planned to. `theirPlace`: the cards she meant to move that stay where they are.
+function rebased(forward: BoardPatch, now: BoardLists) {
+  const cur = placedById(now.cards, now.tray, holdersOf(now.cards)),
+    theirPlace: string[] = [];
   const onto = (d: BoardPatch['cards'][number]) => {
     const c = cur.get(d.id),
       from = d.now,
@@ -163,13 +164,20 @@ function rebased(forward: BoardPatch, now: BoardLists): BoardPatch {
     if (!theirs.length || !same(c.item, from.item, new Set(PLACE))) return d;
     const item = { ...to.item };
     for (const k of theirs) item[k] = c.item[k];
+    if (theirs.some(k => (k === 'x' || k === 'y') && to.item[k] !== from.item[k])) theirPlace.push(d.id);
     return { id: d.id, was: { ...to, item }, now: { ...from, item: c.item } };
   };
-  return { cards: forward.cards.map(onto), links: forward.links };
+  return { forward: { cards: forward.cards.map(onto), links: forward.links }, theirPlace };
 }
 
 // A planned reply put on the board as it is now: every card and connector it changes that is still as it was when
-// planned lands as planned, and what the person changed since is `skipped`. On a board unchanged since, that is the
-// planned lists themselves. Never changes `now`; run again on its own result it lands nothing more.
-export const planDo = (record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) =>
-  merge(rebased(reversed(record), now), now, keep, true);
+// planned lands as planned, and what the person changed since is `skipped`. A card she meant to move that they moved
+// since stays where they put it, and is in `theirPlace`. On a board unchanged since, that is the planned lists
+// themselves. Never changes `now`; run again on its own result it lands nothing more.
+export function planDo(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
+  const { forward, theirPlace } = rebased(reversed(record), now),
+    landed = merge(forward, now, keep, true),
+    left = new Set(landed.skipped.map(c => c.id)),
+    onBoard = new Map(landed.lists.cards.map(c => [c.id, c]));
+  return { ...landed, theirPlace: theirPlace.flatMap(id => (left.has(id) ? [] : (onBoard.get(id) ?? []))) };
+}

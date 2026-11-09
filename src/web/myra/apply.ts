@@ -219,7 +219,12 @@ function changeBoard(p: Planned, keep: ReadonlySet<string>) {
     changes = changeSet(record, { named: namedIn(p.held.reply), skipped: [...left] });
   remember();
   const onBoard = new Map(b.cards.map(c => [c.id, c]));
-  return { changes, record, touched: touched.flatMap(id => onBoard.get(id) ?? []), left: land.skipped };
+  return {
+    changes,
+    record,
+    touched: touched.flatMap(id => onBoard.get(id) ?? []),
+    left: [...land.skipped, ...land.theirPlace],
+  };
 }
 
 // The board takes the lists, but a card that stays keeps its object, changed in place, since the doc editor holds the

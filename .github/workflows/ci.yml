@@ -112,6 +112,8 @@ jobs:
         run: node tests/replyPlan.ts
       - name: Plan do it test (Do it on a plan the person worked around while it waited)
         run: node tests/planDoIt.ts
+      - name: Plan since test (Do it on cards changed since the plan, and what she says about them)
+        run: node tests/planSince.ts
       - name: Plan talk test (messages, a typed yes or no, and Change the plan while a plan waits)
         run: node tests/planTalk.ts
       - name: Plan drop test (a waiting plan ends with its board, New chat, Clear all chats and a restart)
