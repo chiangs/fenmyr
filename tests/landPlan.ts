@@ -1,5 +1,6 @@
 // Landing a planned reply over boards built by hand: on a board unchanged since, exactly what was planned; a card the
-// person changed since stays theirs, with its collection; and landing it again changes nothing more.
+// person changed since stays theirs, with its collection; a card being typed in still takes a change to its place; and
+// landing it again changes nothing more.
 import assert from 'node:assert';
 import { type BoardLists, listsOf, recordOf } from '../src/shared/changes.ts';
 import type { Card } from '../src/shared/model.ts';
@@ -129,6 +130,54 @@ assert.deepStrictEqual(
   typingKid.lists,
   plan,
   'a card being typed in that the plan only re-lays moves with its collection',
+);
+
+// Typing changes what a card says, never what a collection holds or which one holds a card, so the plans below land
+// whole while the collection's name, a column's name or a card in it is being typed.
+const kanban = () => {
+  const l = board();
+  Object.assign(find(l, 'kb'), {
+    kanban: true,
+    cols: 3,
+    colNames: ['To do', 'Doing', 'Done'],
+    colOf: { k1: 0, k2: 0 },
+  });
+  return l;
+};
+const whole = (from: () => BoardLists, change: (l: BoardLists, kb: Card) => void, keep: string, what: string) => {
+  const l = listsOf(from());
+  change(l, find(l, 'kb'));
+  const landed = planDo(recordOf(from(), l), from(), new Set([keep]));
+  assert.deepStrictEqual([landed.lists, ids(landed.skipped)], [l, []], what);
+};
+whole(
+  board,
+  (l, kb) => {
+    if (kb.type === 'coll') kb.kids.push('new', 'a');
+    Object.assign(kb, { h: 700 });
+    Object.assign(find(l, 'a'), { x: 14, y: 530 });
+    l.cards.push(note('new', 14, 370));
+  },
+  'kb',
+  'a new card and one moved in are filed into a collection whose name is being typed, which grows to hold them',
+);
+whole(
+  kanban,
+  (l, kb) => {
+    if (kb.type === 'coll') kb.kids.push('new');
+    if (kb.type === 'coll' && kb.colOf) kb.colOf.new = 1;
+    l.cards.push(note('new', 300, 66));
+  },
+  'kb',
+  "a new card lands in a kanban's column whose name is being typed",
+);
+whole(
+  board,
+  l => {
+    l.cards = l.cards.filter(c => c.id !== 'kb');
+  },
+  'k1',
+  'a collection goes while a card in it is being typed in, and the card stays where it is',
 );
 
 console.log('LAND PLAN OK');

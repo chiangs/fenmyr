@@ -119,7 +119,7 @@ export const reversed = (p: BoardPatch): BoardPatch => ({
   links: p.links.map(({ id, was, now }) => ({ id, was: now, now: was })),
 });
 
-const onlyShape = (a: Card, b: Card) =>
+export const onlyShape = (a: Card, b: Card) =>
   [...new Set([...Object.keys(a), ...Object.keys(b)])].every(
     k => SHAPE.has(k) || same(Reflect.get(a, k), Reflect.get(b, k)),
   );

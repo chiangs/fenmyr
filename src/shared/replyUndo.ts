@@ -6,6 +6,7 @@ import {
   type BoardPatch,
   copy,
   holdersOf,
+  onlyShape,
   type Placed,
   placedById,
   reversed,
@@ -39,8 +40,13 @@ function fateOf(d: { was: State; now: State }, cur: State, forward: boolean): Fa
   return sameState(cur, d.now) ? 'undo' : sameState(cur, d.was) ? 'back' : 'skip';
 }
 
-// keep: cards not to touch, such as the one being typed in, though one the change only re-lays still moves with its
-// collection
+// A change typing never makes: where a card sits and its size, what a collection holds and in which column, and which
+// collection holds it.
+const onlyPlace = ({ was, now }: BoardPatch['cards'][number]) =>
+  !!was && !!now && was.at === now.at && onlyShape(was.item, now.item);
+
+// keep: cards not to touch, such as the one being typed in. Going forward a kept card still takes a change only to its
+// place, so a collection whose name is being typed still takes the cards filed into it.
 function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>, forward: boolean) {
   const cur = placedById(now.cards, now.tray, holdersOf(now.cards)),
     curLinks = placedById(now.links, now.trayLinks ?? []),
@@ -53,7 +59,7 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>, f
   };
   for (const d of record.cards) {
     const f = fateOf(d, cur.get(d.id), forward);
-    if (f === 'skip' || (f === 'undo' && keep.has(d.id) && !sameState(d.was, d.now))) skip(d.id);
+    if (f === 'skip' || (f === 'undo' && keep.has(d.id) && !(forward && onlyPlace(d)))) skip(d.id);
     else cards.set(d.id, f);
   }
   // A collection and the cards in it go back together or not at all, so a card is never put back into a collection
