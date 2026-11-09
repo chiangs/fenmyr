@@ -1,11 +1,1 @@
-{
-  "modes-find-chat": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “Ctrl+Enter to send” and Send, and the hint moves left to make room.",
-  "panels-myra-chat": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “Ctrl+Enter to send” and Send, and the hint moves left to make room.",
-  "panels-myra-expand": "New in 5a and 5c: the chat open in Expand, after a 100-line paste. The messages are hidden. The header and the “Myra sees” strip stay. The strip gains a second row with a “Pasted text · 100 lines” chip (Open and ×) and “+ Add” after it. The three-line draft left by panels-myra-draft fills the tall writing area, its clear × sits at the area's lower right, and the foot's button shows two arrows pointing in (Shrink). The base has no Expand and no paste chip, so it shows the open chat with that draft, and its paste does nothing.",
-  "proto-medium-screen": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “Ctrl+Enter to send” and Send, and the hint moves left to make room.",
-  "proto-narrow-screen": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “Ctrl+Enter to send” and Send, and the hint moves left to make room.",
-  "proto-wide-screen": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “Ctrl+Enter to send” and Send, and the hint moves left to make room.",
-  "reply-chat": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “Ctrl+Enter to send” and Send, and the hint moves left to make room.",
-  "sees-added": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “Ctrl+Enter to send” and Send, and the hint moves left to make room.",
-  "sees-chat": "5a: an Expand button (two arrows pointing out, in ink-soft) sits in the input's foot between “Ctrl+Enter to send” and Send, and the hint moves left to make room."
-}
+{}
