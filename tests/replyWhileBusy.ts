@@ -36,8 +36,7 @@ const answered = (reply: object, ms: number) =>
     },
     [reply, ms] as const,
   );
-// grabs the element near its left end, moves it a little, holds it while her answer arrives, then moves it on and drops
-// it
+// grabs it near its left end, holds it mid-move while her answer arrives, then moves it on and drops it
 async function dragThrough(selector: string) {
   await page.waitForTimeout(200);
   const box = await page.locator(selector).boundingBox();
@@ -176,3 +175,4 @@ const errors = [...l.errors];
 await l.close();
 assert.deepStrictEqual(errors, [], 'no page errors');
 assert.deepStrictEqual(failed, [], 'checks that failed');
+console.log('REPLY WHILE BUSY OK');
