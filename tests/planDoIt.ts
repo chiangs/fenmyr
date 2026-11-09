@@ -1,11 +1,12 @@
 // Do it on a plan the person worked around while it waited: a collection they dragged still takes the cards she files
 // into it, words they just typed into the open doc stay theirs, a card they changed or connected since stays as they
-// have it and she says so, and her count and glow cover only what landed.
+// have it and she says so, and her count and glow cover only what landed. A part of her reply that fails once the board
+// has changed costs only itself.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['dragged', 'doc', 'count', 'linked'];
+const BOARDS = ['dragged', 'doc', 'count', 'linked', 'effect'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'dragged', claude: true });
 const { page } = l;
 
@@ -146,6 +147,38 @@ await check(
       await said(),
       'Removed the third note. I left “Third note” as you have it, since it changed after my plan.',
     );
+  },
+);
+
+await check(
+  'a template save that fails after Do it keeps the board changes and Undo, and she says what failed',
+  async () => {
+    await open('effect');
+    await chat();
+    await planned({ say: 'Here they are.', add: notes(11), saveTemplate: { name: 'Week', fromNew: true } });
+    await page.evaluate(() => {
+      window.Fenmyr.saveTemplate = async () => {
+        throw new Error('the disk is full');
+      };
+    });
+    await doIt();
+    assert.strictEqual(await said(), 'Here they are. I couldn’t save the template “Week”: the disk is full.');
+    const under = await page.evaluate(() => {
+      const m = [...document.querySelectorAll('#mcList .mc-msg.myra')].at(-1);
+      return [
+        m?.querySelector('.m-summary b')?.textContent,
+        [...(m?.querySelectorAll('.m-acts button:not(.next)') ?? [])].map(b => b.textContent),
+      ];
+    });
+    assert.deepStrictEqual(under, ['Changed on the board', ['Show on board', 'Undo']], 'with what changed and Undo');
+    assert.strictEqual(
+      await page.evaluate(
+        () => window.__fenmyr.curBoard().cards.filter(c => c.type === 'note' && /^Idea /.test(c.text ?? '')).length,
+      ),
+      11,
+      'the cards stay',
+    );
+    assert.strictEqual(await page.locator('#mcList .m-summary.plan.done').count(), 1, 'and the plan reads Done');
   },
 );
 

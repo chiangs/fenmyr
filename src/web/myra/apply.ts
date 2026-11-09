@@ -179,8 +179,9 @@ export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned):
   if (changed) keepReply(id, record);
   if (tpl?.mode === 'add') say(`Here’s “${tpl.name}” ✦ It’s all yours to change.`, 4000);
   if (touched.length) setTimeout(() => showWhatMyraMade(touched), 250);
-  const line = replyLine(held, touched, await runEffects(effectsOf(held), touched)),
-    said = [line.text, leftLine(left)].filter(Boolean).join(' ');
+  const ran = await runEffects(effectsOf(held), touched),
+    line = replyLine(held, touched, ran.acts),
+    said = [line.text, ...ran.failed, leftLine(left)].filter(Boolean).join(' ');
   // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one, and
   // what this reply changed means nothing there.
   const kept = changed && session.board.id === board;

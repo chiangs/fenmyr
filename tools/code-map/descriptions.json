@@ -177,7 +177,7 @@
     "src/web/myra/chatLog.ts": "The chat history: saving, archiving and showing earlier chats.",
     "src/web/myra/chatRules.ts": "Where Myra’s chat window sits, how much board it leaves free, what opens and closes it, and what her box and input say, as pure functions.",
     "src/web/myra/chatWindow.ts": "Opens and closes Myra’s chat window by its rules, places and resizes it from her box, and writes her input’s hint and draft line.",
-    "src/web/myra/effects.ts": "What a reply of Myra’s does away from the board (timers, the library, templates, builds), as a list it then runs.",
+    "src/web/myra/effects.ts": "What a reply of Myra’s does away from the board (timers, the library, templates, builds), as a list it then runs, each part on its own.",
     "src/web/myra/emptyChat.ts": "The empty chat: Myra’s hello by her given name and the starters that fit the board.",
     "src/web/myra/giveBack.ts": "Gives a message that never reached Myra back to the person: its words to the input and its files and pasted texts to the strip, on the board it was written on.",
     "src/web/myra/goos.ts": "Puts Myra on the board and runs her hop.",
@@ -449,6 +449,6 @@
     "src/web/myra/heldPlan.ts": "Holds a big Myra reply in the chat as a plan, with Do it, which lands that same reply, and Cancel. One waits at a time, in memory.",
     "tests/askFirst.ts": "Checks when a Myra reply waits as a plan, counted per card on boards built by hand, what she says about cards a plan left, and a plan kept with its message.",
     "tests/replyPlan.ts": "Checks a big Myra reply waits as a plan with nothing saved, Do it lands it with no second request, Cancel leaves the board, and reading never plans.",
-    "tests/planDoIt.ts": "Checks Do it on a plan the person worked around: a collection they dragged, the open doc, cards changed or connected since, and her count and glow."
+    "tests/planDoIt.ts": "Checks Do it on a plan the person worked around: a collection they dragged, the open doc, cards changed or connected since, her count and glow, and a part of her reply that fails."
   }
 }
