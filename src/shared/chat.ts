@@ -1,6 +1,7 @@
 // Myra's chat as a board stores it: each message, and the buttons of the kinds that outlast the window, as data.
 import { MAX_FILES } from './askFiles.ts';
 import type { ChangeSet } from './changes.ts';
+import { DEVICES, type Proto } from './repos.ts';
 
 // A button that is saved with its message, so it comes back when the chat or the board opens again. Buttons that only
 // make sense once (Install, Link a repo) stay closures and are not stored.
@@ -18,7 +19,23 @@ export type ChatAction =
   | { kind: 'buildUndo'; board: string; snapshot: string; build?: string }
   | { kind: 'commit'; board: string; message: string }
   // what she read for this reply: notes from a vault, and pages on the web
-  | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] };
+  | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] }
+  // Her offer of a prototype board for a request that needs code, kept so it still works when the chat or the app opens
+  // again. Its buttons show while `board`, where the cards it is made from are, is open.
+  | { kind: 'offer'; board: string; offer: ProtoOffer };
+
+/** What she offers to make. project and folder: by name, else the open board's project and its first prototyping
+ *  folder. from: ids of the cards on her offer's board it is made from, maybe none. build: the first build request. */
+export type ProtoOffer = {
+  name: string;
+  stack: Proto['stack'];
+  device?: NonNullable<Proto['device']>;
+  purpose?: string;
+  project?: string;
+  folder?: string;
+  from: string[];
+  build: string;
+};
 
 // vault: the vault's id; rel: the note's path in it
 export type ReadNote = { vault: string; rel: string; title: string };
@@ -162,6 +179,32 @@ const readPage = (x: unknown): WebPage | null =>
 const entries = <T>(x: unknown, read: (x: unknown) => T | null): T[] =>
   (Array.isArray(x) ? x : []).map(read).filter(e => e !== null);
 
+const MAX_BUILD = 4000,
+  MAX_FROM = 80;
+const oneLine = (x: unknown, n: number) => (typeof x === 'string' ? clip(x.replace(/\s+/g, ' ').trim(), n) : '');
+
+/** An offer as the app keeps it, from her reply or from the board file: null without a name or a build request. */
+export function readOffer(x: unknown): ProtoOffer | null {
+  if (!isRecord(x)) return null;
+  const name = oneLine(x.name, 60),
+    build = typeof x.build === 'string' ? clip(x.build.trim(), MAX_BUILD) : '';
+  if (!name || !build) return null;
+  const device = DEVICES.find(d => d === x.device),
+    purpose = oneLine(x.purpose, 300),
+    project = oneLine(x.project, 200),
+    folder = oneLine(x.folder, 200);
+  return {
+    name,
+    stack: x.stack === 'html' ? 'html' : 'react',
+    ...(device ? { device } : {}),
+    ...(purpose ? { purpose } : {}),
+    ...(project ? { project } : {}),
+    ...(folder ? { folder } : {}),
+    from: strings(x.from) ? [...new Set(x.from)].slice(0, MAX_FROM) : [],
+    build,
+  };
+}
+
 // One reader per kind. The mapped type makes a kind without a reader fail the type check.
 const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { kind: K }> | null } = {
   next: x => (typeof x.text === 'string' ? { kind: 'next', text: x.text } : null),
@@ -188,6 +231,10 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
     const notes = entries(x.notes, readNote),
       pages = entries(x.pages, readPage);
     return notes.length || pages.length ? { kind: 'read', notes, pages } : null;
+  },
+  offer: x => {
+    const offer = readOffer(x.offer);
+    return typeof x.board === 'string' && offer ? { kind: 'offer', board: x.board, offer } : null;
   },
 };
 

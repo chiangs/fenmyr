@@ -17,11 +17,12 @@ function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (chatKeep() === 'board') save();
 }
 
-function summaryEl(heading: string, lines: readonly string[]) {
+function summaryEl(heading: string, lines: readonly string[], cls = '') {
   const box = document.createElement('div'),
     head = document.createElement('b'),
     list = document.createElement('ul');
   box.className = 'm-summary';
+  if (cls) box.classList.add(cls);
   head.textContent = heading;
   for (const line of lines) list.appendChild(document.createElement('li')).textContent = line;
   box.append(head, list);
@@ -78,7 +79,7 @@ export function drawActs(
     row.className = 'm-acts';
     for (const [a, p] of here) {
       if (p.slot === 'summary') {
-        if (p.lines.length) host.appendChild(summaryEl(p.head, p.lines));
+        if (p.lines.length) host.appendChild(summaryEl(p.head, p.lines, p.cls));
       } else if (p.slot === 'sources') {
         const box = host.appendChild(sourcesEl(p.head));
         for (const l of p.links) button(box, { ...l, cls: 'm-link' }, a, all);

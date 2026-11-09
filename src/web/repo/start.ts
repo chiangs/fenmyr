@@ -34,7 +34,7 @@ export function startPrototypeHere(seed?: Seed) {
 }
 
 // Which project a prototype is for: one of theirs, or a new one, which then goes on to `then`. Cancel does nothing.
-function pickProject(then: (p: Project) => unknown) {
+export function pickProject(then: (p: Project) => unknown) {
   const rows = appState.projects
     .map(p => {
       const id = esc(p.id),

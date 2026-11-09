@@ -86,6 +86,8 @@ jobs:
         run: node tests/build.ts
       - name: Build buttons test (Myra's stored Commit and Undo across builds and boards)
         run: node tests/buildButtons.ts
+      - name: Prototype offer test (Myra offers a prototype board for a request that needs code, and Start and build makes it and builds)
+        run: node tests/protoOffer.ts
       - name: Packages test (installed packages in a prototype, with a stand-in npm)
         run: node tests/packages.ts
       - name: Sync test (fetch, pull and clashes with a stand-in GitHub)
@@ -96,6 +98,8 @@ jobs:
         run: node tests/done.ts
       - name: Myra reply test
         run: node tests/reply.ts
+      - name: Offer read test (Myra's prototype offer read from her reply and from the board file, a bad one dropping alone)
+        run: node tests/offerRead.ts
       - name: Change record test (what a reply changed, sorted into added, moved, edited, removed and re-laid)
         run: node tests/changes.ts
       - name: Land plan test (a planned reply lands as planned, and what the person changed since stays theirs)

@@ -35,13 +35,13 @@ const same = (a: string | undefined, b: string | undefined) =>
   !!a && a.trim().toLowerCase() === b?.trim().toLowerCase();
 
 // the project she names, else the open board's
-function projectFor(name: string | undefined) {
+export function projectFor(name: string | undefined) {
   const here = appState.folders.find(f => f.id === session.board?.folder);
   return appState.projects.find(x => same(x.name, name)) ?? appState.projects.find(x => x.id === here?.project);
 }
 
 // the prototyping folder she names, else the project's first, else a new one
-async function prototypingFolder(p: Project, name: string | undefined) {
+export async function prototypingFolder(p: Project, name: string | undefined) {
   const folders = appState.folders.filter(f => f.project === p.id && f.kind === 'prototyping');
   return folders.find(x => same(x.name, name)) ?? folders[0] ?? (await newPrototypingFolder(p));
 }
