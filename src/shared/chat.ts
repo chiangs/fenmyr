@@ -18,7 +18,13 @@ export type ChatAction =
   | { kind: 'buildUndo'; board: string; snapshot: string; build?: string }
   | { kind: 'commit'; board: string; message: string }
   // what she read for this reply: notes from a vault, and pages on the web
-  | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] };
+  | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] }
+  // A plan she showed before changing the board, with its steps as worded then. Its buttons show only while it waits,
+  // in memory. ended: how it stopped waiting; one with none that no longer waits was dropped unanswered.
+  | { kind: 'plan'; plan: string; steps: string[]; ended?: PlanEnd };
+
+export type PlanEnd = 'done' | 'cancelled' | 'replaced';
+const ENDS: readonly PlanEnd[] = ['done', 'cancelled', 'replaced'];
 
 // vault: the vault's id; rel: the note's path in it
 export type ReadNote = { vault: string; rel: string; title: string };
@@ -188,6 +194,11 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
     const notes = entries(x.notes, readNote),
       pages = entries(x.pages, readPage);
     return notes.length || pages.length ? { kind: 'read', notes, pages } : null;
+  },
+  plan: x => {
+    const ended = ENDS.find(e => e === x.ended);
+    if (typeof x.plan !== 'string' || !strings(x.steps)) return null;
+    return { kind: 'plan', plan: x.plan, steps: x.steps, ...(ended ? { ended } : {}) };
   },
 };
 

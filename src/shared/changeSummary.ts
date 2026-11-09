@@ -1,4 +1,5 @@
-// What Myra says a reply did to the board ("Changed on the board"), and what she says after Undo puts it back.
+// What Myra says a reply did to the board ("Changed on the board"), what a plan left alone, and what she says after
+// Undo puts it back.
 import { cardName, labelOf, nounOf } from './cardTypes.ts';
 import type { BoardPatch, ChangeSet, Placed } from './changes.ts';
 import type { StoredChangeSet } from './chat.ts';
@@ -87,6 +88,13 @@ function namedList(cards: readonly Named[]) {
   const names = cards.slice(0, NAMED).map(c => `“${cardName(c)}”`),
     more = cards.length - names.length;
   return more ? `${names.join(', ')} and ${plural(more, 'more card', 'more cards')}` : names.join(' and ');
+}
+
+// After a plan lands: the cards she left because the person changed them after the plan, or nothing to say.
+export function leftLine(left: readonly Named[]) {
+  if (!left.length) return '';
+  const one = left.length === 1;
+  return `I left ${namedList(left)} as you have ${one ? 'it' : 'them'}, since ${one ? 'it' : 'they'} changed after my plan.`;
 }
 
 // skipped: the cards she left because they changed after the reply, whether the person or a later reply of hers

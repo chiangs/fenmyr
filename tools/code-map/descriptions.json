@@ -60,7 +60,7 @@
     "src/host/vault.ts": "Reads Obsidian vaults, only inside the folders a grant allows and never notes tagged #private.",
     "src/host/vaultTasks.ts": "Finds unfinished checkbox tasks in vault notes, with sub-tasks and due dates, under the same read rules.",
     "src/shared/cardTypes.ts": "The one table of facts about each kind of card: size, label and which kinds share a trait.",
-    "src/shared/changeSummary.ts": "The words for what a Myra reply changed (“Changed on the board”) and for what her Undo put back.",
+    "src/shared/changeSummary.ts": "The words for what a Myra reply changed (“Changed on the board”), what a plan she landed left alone, and what her Undo put back.",
     "src/shared/changes.ts": "The record of what one Myra reply changed, card by card, and the change set read from it.",
     "src/shared/chat.ts": "Myra's chat messages as a board stores them, with the buttons that are kept as data, and their reader.",
     "src/shared/model.ts": "The types for boards, cards, links, views and vault grants that the whole app shares.",
@@ -169,7 +169,7 @@
     "src/web/myra/apply.ts": "Applies Myra’s replies one at a time: gathers what each needs, plans it on a copy of the board, lands the plan in one undo step, then runs the rest.",
     "src/web/myra/applyTypes.ts": "The card kinds Myra may add, and the shape of a reply held with everything it needs.",
     "src/web/myra/birthday.ts": "Myra’s birthday: when it is due, celebrated or belated, and her hat.",
-    "src/web/myra/chat.ts": "Sends what you type to Myra and applies her answer, with offline and web-demo fallbacks.",
+    "src/web/myra/chat.ts": "Sends what you type to Myra and lands her answer, or holds a big one as a plan, with offline and web-demo fallbacks.",
     "src/web/myra/chatDraft.ts": "The unsent words in Myra’s input, kept for each board in memory and in the board file when chats are kept, and brought back when the board opens.",
     "src/web/myra/chatExpand.ts": "Expand and Shrink for Myra’s chat input: one class on the chat turns the same textarea into a writing area.",
     "src/web/myra/chatInput.ts": "Myra’s chat input: carries out what each key means, and is the one way code writes her draft.",
@@ -444,6 +444,11 @@
     "tests/chatGiveBack.ts": "A message that never reached Myra comes back with its words, files and pasted texts, within the limits, and not after Clear all chats.",
     "tests/chatPaste.ts": "Paste chips in Myra’s input: a long paste is a chip whose full text reaches her as a file, with Open, Ctrl+Shift+V, its limits and Clear all chats.",
     "tests/support/askStandIn.ts": "A stand-in Claude Code that records each question and the bytes of every file it was given, for tests.",
-    "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states."
+    "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states.",
+    "src/shared/askFirst.ts": "When one of Myra's replies waits as a plan: what it would add, move, edit or remove, counted per card.",
+    "src/web/myra/heldPlan.ts": "Holds a big Myra reply in the chat as a plan, with Do it, which lands that same reply, and Cancel. One waits at a time, in memory.",
+    "tests/askFirst.ts": "Checks when a Myra reply waits as a plan, counted per card on boards built by hand, what she says about cards a plan left, and a plan kept with its message.",
+    "tests/replyPlan.ts": "Checks a big Myra reply waits as a plan with nothing saved, Do it lands it with no second request, Cancel leaves the board, and reading never plans.",
+    "tests/planDoIt.ts": "Checks Do it on a plan the person worked around: a collection they dragged, the open doc, cards changed or connected since, and her count and glow."
   }
 }

@@ -1,4 +1,4 @@
-import { summaryLines } from '../../shared/changeSummary.ts';
+import { leftLine, summaryLines } from '../../shared/changeSummary.ts';
 import {
   type BoardLists,
   type BoardPatch,
@@ -11,6 +11,7 @@ import {
 import { storedSet } from '../../shared/chat.ts';
 import type { Card } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
+import type { Template } from '../../shared/ops.ts';
 import { planDo, type Undone } from '../../shared/replyUndo.ts';
 import { boxOf } from '../canvas/emptySpot.ts';
 import { openCentre, showPlaced, viewShowing } from '../canvas/handles.ts';
@@ -20,7 +21,7 @@ import { uid } from '../core/base.ts';
 import { remember, save, showWhatMyraMade } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { mdToHTML } from '../docs/docText.ts';
-import { docCard, ed } from '../docs/editor.ts';
+import { docCard, ed, syncDoc } from '../docs/editor.ts';
 import { instantiate } from '../features/templateCards.ts';
 import { myTpls, useTemplate } from '../features/templates.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
@@ -137,12 +138,29 @@ export function planHeld(held: HeldReply, opened = false): Planned {
   return { held, record, touched, changes: changeSet(record, { named: namedIn(held.reply), skipped }) };
 }
 
-// The board's lists if it landed now, and the cards the person changed since that it would leave. Changes nothing.
-export const asItWouldLand = (p: Planned): Undone =>
-  planDo(p.record, session.board, new Set(session.editing ? [session.editing] : []));
+// What a template that opens its own board would make there, with the rest of the reply, planned on an empty board.
+export function planNewBoard(held: HeldReply, t: Template): Pick<Planned, 'record' | 'changes'> {
+  const none = { cards: [], tray: [], links: [] },
+    lists = listsOf(none),
+    { skipped } = planBoard(
+      lists,
+      { ...held, template: { mode: 'add', name: t.name, ...instantiate(t, 0, 0) } },
+      viewAt(),
+    ),
+    record = recordOf(none, lists);
+  return { record, changes: changeSet(record, { named: namedIn(held.reply), skipped }) };
+}
 
-// Null when another board is open than the one the turn was asked on: then nothing is applied.
-export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | null> {
+// a plan made earlier leaves the card being typed in as it is
+const typingNow = () => new Set(session.editing ? [session.editing] : []);
+
+// The board's lists if it landed now, and the cards the person changed since that it would leave. Changes nothing.
+export const asItWouldLand = (p: Planned): Undone => planDo(p.record, session.board, typingNow());
+
+// Null when another board is open than the one the turn was asked on: then nothing is applied. `planned`: a plan made
+// earlier, which lands as planned less what the person changed since; without one, the reply is planned once any drag
+// is over. A template that opens its own board is planned there.
+export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned): Promise<Applied | null> {
   if (!turn.stillOpen()) return null;
   const tpl = held.template;
   if (tpl?.mode === 'new') {
@@ -151,35 +169,39 @@ export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | 
     await new Promise(res => setTimeout(res, 0));
   }
   while (appState.drag) await new Promise(requestAnimationFrame);
-  const { changes, record, touched } = changeBoard(planHeld(held, true)),
+  // the doc editor writes to its card a moment after each key, and what they typed there is theirs
+  if (planned) syncDoc();
+  const { changes, record, touched, left } =
+      planned && tpl?.mode !== 'new' ? changeBoard(planned, typingNow()) : changeBoard(planHeld(held, true), new Set()),
     id = uid(),
     changed = record.cards.length > 0 || record.links.length > 0,
     board = session.board.id;
   if (changed) keepReply(id, record);
   if (tpl?.mode === 'add') say(`Here’s “${tpl.name}” ✦ It’s all yours to change.`, 4000);
   if (touched.length) setTimeout(() => showWhatMyraMade(touched), 250);
-  const line = replyLine(held, touched, await runEffects(effectsOf(held), touched));
+  const line = replyLine(held, touched, await runEffects(effectsOf(held), touched)),
+    said = [line.text, leftLine(left)].filter(Boolean).join(' ');
   // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one, and
   // what this reply changed means nothing there.
   const kept = changed && session.board.id === board;
-  if (!kept) reply(line.text, line.ms, line.acts);
+  if (!kept) reply(said, line.ms, line.acts);
   // the bubble stays long enough to reach Show on board and Undo
   else
-    reply(line.text, line.ms && Math.max(line.ms, 16000), [
+    reply(said, line.ms && Math.max(line.ms, 16000), [
       ...line.acts,
       { kind: 'changes', reply: id, set: storedSet(changes), lines: summaryLines(record, changes) },
     ]);
-  return { said: line.text, changes, reply: id };
+  return { said, changes, reply: id };
 }
 
 // Not async on purpose: an await in here would let the undo timer cut the reply into several steps. A reply that
-// fails part way puts the board back as it was, so no half of it stays in the board or in the undo history.
-function changeBoard(p: Planned) {
+// fails part way puts the board back as it was, so no half of it stays in the board or in the undo history. keep: the
+// cards to leave as they are; a plan made in this same turn already left the card being typed in.
+function changeBoard(p: Planned, keep: ReadonlySet<string>) {
   remember();
   const b = session.board,
     before = listsOf(b),
-    // planned in this same turn, where planBoard already left the card being typed in
-    land = planDo(p.record, b, new Set()),
+    land = planDo(p.record, b, keep),
     left = new Set([...p.changes.skipped, ...land.skipped.map(c => c.id)]),
     touched = landedTouched(p.touched, p.record, recordOf(before, land.lists));
   try {
@@ -196,7 +218,7 @@ function changeBoard(p: Planned) {
     changes = changeSet(record, { named: namedIn(p.held.reply), skipped: [...left] });
   remember();
   const onBoard = new Map(b.cards.map(c => [c.id, c]));
-  return { changes, record, touched: touched.flatMap(id => onBoard.get(id) ?? []) };
+  return { changes, record, touched: touched.flatMap(id => onBoard.get(id) ?? []), left: land.skipped };
 }
 
 // The board takes the lists, but a card that stays keeps its object, changed in place, since the doc editor holds the
