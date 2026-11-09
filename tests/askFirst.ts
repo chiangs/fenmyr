@@ -120,8 +120,16 @@ assert.deepStrictEqual(
 
 for (const yes of ['Yes', 'yes!', 'Do it ✦', 'go ahead.', 'OK', 'sure'])
   assert.strictEqual(answerOf(yes), 'do', `"${yes}" is Do it`);
+assert.strictEqual(answerOf('Just do it!'), 'just', '"just do it" is Just do it');
 for (const no of ['no', 'Never mind', 'cancel.']) assert.strictEqual(answerOf(no), 'cancel', `"${no}" is Cancel`);
-for (const more of ['no, make it three groups', 'yes please, but pink', 'do it?', 'don’t do it', 'so do it later'])
+for (const more of [
+  'no, make it three groups',
+  'yes please, but pink',
+  'do it?',
+  'don’t do it',
+  'don’t just do it',
+  'so do it later',
+])
   assert.strictEqual(answerOf(more), null, `"${more}" goes to her`);
 
 console.log('ASK FIRST OK');

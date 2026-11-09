@@ -9,7 +9,8 @@ import type { PlanAsk } from '../../shared/ops.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
-import { settings } from '../settings/settings.ts';
+import { setFlag, settings } from '../settings/settings.ts';
+import { applySettings } from '../settings/widgets.ts';
 import { textField } from '../ui/dom.ts';
 import type { Piece } from './acts.ts';
 import { applyHeld, asItWouldLand, type Planned, planHeld, planNewBoard, Turn } from './apply.ts';
@@ -26,6 +27,8 @@ let waiting: Waiting | null = null;
 const landing = new Set<string>();
 
 const LEAD = 'Here’s my plan. Nothing changes until you say so.';
+const JUST = 'From now on I’ll make big changes straight away. Settings → Myra brings plans back.';
+const JUST_TIP = 'Do this, and make big changes straight away from now on';
 const FAILED =
   'Something went wrong part way, so I’ve put the board back as it was. The plan is still here if you want to try again.';
 
@@ -109,6 +112,16 @@ function doIt(w: Waiting) {
   }, w.board);
 }
 
+// Do it, and from now on big changes land straight away, as the Skip plans setting says.
+function justDoIt(w: Waiting) {
+  if (waiting !== w) return Promise.resolve();
+  setFlag('skipPlans', true);
+  applySettings();
+  const landing = doIt(w);
+  reply(JUST, 9000);
+  return landing;
+}
+
 // Nothing is sent: they write what to change, and it goes with the plan.
 function changePlan() {
   if (!chatOpen()) myraOpen(true);
@@ -125,11 +138,15 @@ export function planPieces(a: PlanAct): Piece[] {
       { slot: 'reply', button: { label: 'Do it', after: 'stay', run: () => doIt(w) } },
       { slot: 'reply', button: { label: 'Change the plan', ghost: true, after: 'stay', run: changePlan } },
       { slot: 'reply', button: { label: 'Cancel', ghost: true, after: 'stay', run: () => end(w, 'cancelled') } },
+      {
+        slot: 'reply',
+        button: { label: 'Just do it', ghost: true, title: JUST_TIP, after: 'stay', run: () => justDoIt(w) },
+      },
     );
   return pieces;
 }
 
-// A typed yes or no while a plan waits answers it here, with no request to Claude. Null when it isn't one.
+// A typed yes, no or "just do it" while a plan waits answers it here, with no request to Claude. Null when it isn't one.
 export function answerPlan(q: string): Promise<void> | null {
   const w = waiting,
     said = w && answerOf(q);
@@ -137,6 +154,7 @@ export function answerPlan(q: string): Promise<void> | null {
   if (!chatOpen()) myraOpen(true);
   addMsg('me', q);
   if (said === 'do') return doIt(w);
+  if (said === 'just') return justDoIt(w);
   end(w, 'cancelled');
   return Promise.resolve();
 }

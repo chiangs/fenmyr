@@ -28,8 +28,9 @@ export const asksFirst = (w: Weight) => w.removed > 0 || w.cards > PLAN_OVER;
 
 // What a whole message says to a waiting plan, when that is all it says. Only these exact words, so "no, make it
 // three groups" or "don't just do it" still goes to her.
-type Answer = 'do' | 'cancel';
+type Answer = 'do' | 'just' | 'cancel';
 const ANSWERS = new Map<string, Answer>([
+  ['just do it', 'just'],
   ['yes', 'do'],
   ['ok', 'do'],
   ['do it', 'do'],
