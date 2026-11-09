@@ -20,11 +20,12 @@ export type ChatAction =
   // what she read for this reply: notes from a vault, and pages on the web
   | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] }
   // A plan she showed before changing the board, with its steps as worded then. Its buttons show only while it waits,
-  // in memory. ended: how it stopped waiting; one with none that no longer waits was dropped unanswered.
+  // in memory. ended: how it stopped waiting; one with none that no longer waits was dropped unanswered. left: Do it
+  // found every card it would change changed since, so nothing landed.
   | { kind: 'plan'; plan: string; steps: string[]; ended?: PlanEnd };
 
-export type PlanEnd = 'done' | 'cancelled' | 'replaced';
-const ENDS: readonly PlanEnd[] = ['done', 'cancelled', 'replaced'];
+export type PlanEnd = 'done' | 'left' | 'cancelled' | 'replaced';
+const ENDS: readonly PlanEnd[] = ['done', 'left', 'cancelled', 'replaced'];
 
 // vault: the vault's id; rel: the note's path in it
 export type ReadNote = { vault: string; rel: string; title: string };

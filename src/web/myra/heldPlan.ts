@@ -37,6 +37,7 @@ const HEAD: Record<State, string> = {
   waiting: 'If you say yes',
   landing: 'Doing it…',
   done: 'Done',
+  left: 'Not done · changed since the plan',
   cancelled: 'Cancelled · nothing changed',
   replaced: 'Replaced by the plan below',
   dropped: 'Not done',
@@ -103,7 +104,7 @@ function doIt(w: Waiting) {
     if (!turn.stillOpen()) return;
     end(w, 'done');
     try {
-      await applyHeld(turn, w.planned.held, w.planned);
+      if ((await applyHeld(turn, w.planned.held, w.planned))?.leftAll) end(w, 'left');
     } catch {
       delete w.act.ended;
       if (session.board.id === w.board) waiting ??= w;

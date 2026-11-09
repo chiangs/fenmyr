@@ -60,8 +60,9 @@ export class Turn {
   }
 }
 
-// reply: its id, under which its before-states are kept while the board stays open
-export type Applied = { said: string; changes: ChangeSet; reply: string };
+// reply: its id, under which its before-states are kept while the board stays open. leftAll: a plan that landed nothing,
+// since the person changed everything it would change.
+export type Applied = { said: string; changes: ChangeSet; reply: string; leftAll: boolean };
 
 const PARALLEL = 3;
 
@@ -183,25 +184,27 @@ export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned):
   try {
     if (tpl?.mode === 'add') say(`Here’s “${tpl.name}” ✦ It’s all yours to change.`, 4000);
     if (touched.length) setTimeout(() => showWhatMyraMade(touched), 250);
-    const ran = await runEffects(effectsOf(held), touched),
+    // a plan that landed nothing: her words about what it changes are not true, and her buttons follow them
+    const leftAll = !!planned && !changed && left.length > 0,
+      ran = await runEffects(effectsOf(held), touched),
       line = replyLine(held, touched, ran.acts),
-      said = [line.text, ...ran.failed, leftLine(left)].filter(Boolean).join(' ');
+      said = [leftAll ? '' : line.text, ...ran.failed, leftLine(left)].filter(Boolean).join(' ');
     // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one,
     // and what this reply changed means nothing there.
     const kept = changed && session.board.id === board;
-    if (!kept) reply(said, line.ms, line.acts);
+    if (!kept) reply(said, line.ms, leftAll ? [] : line.acts);
     // the bubble stays long enough to reach Show on board and Undo
     else
       reply(said, line.ms && Math.max(line.ms, 16000), [
         ...line.acts,
         { kind: 'changes', reply: id, set: storedSet(changes), lines: summaryLines(record, changes) },
       ]);
-    return { said, changes, reply: id };
+    return { said, changes, reply: id, leftAll };
   } catch {
     // her line, with Undo under it, is kept before it is drawn, so drawing the chat again shows it
     renderChat();
     reply(AFTER, 0);
-    return { said: AFTER, changes, reply: id };
+    return { said: AFTER, changes, reply: id, leftAll: false };
   }
 }
 

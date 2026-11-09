@@ -159,6 +159,7 @@ await check(
     assert.strictEqual(await body(id), 'Her new brief', 'her rewrite lands');
     assert.strictEqual(await page.evaluate(() => window.__fenmyr.docEditor().getText()), 'Her new brief', 'and shows');
     assert.strictEqual(await said(), 'Rewrote the brief.', 'with nothing left out');
+    await page.keyboard.press('Escape');
   },
 );
 
@@ -181,6 +182,7 @@ await check('a card they are in when Do it is pressed stays as it is, though not
     await said(),
     'Ten ideas, and a sharper second note. I left “Second note” as you have it, since it changed after my plan.',
   );
+  await page.keyboard.press('Escape');
 });
 
 await l.close();

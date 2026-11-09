@@ -1,8 +1,8 @@
 // Do it on a plan the person worked around while it waited: a collection they dragged still takes the cards she files
 // into it, words they just typed into the open doc stay theirs, a card they changed or connected since stays as they
-// have it and she says so, and her count and glow cover only what landed. A part of her reply that fails once the board
-// has changed costs only itself, a failure after that keeps the board, Done and Undo, and one that fails while the
-// board takes it leaves the board as it was, with the plan waiting again.
+// have it and she says so, a plan that lands nothing reads so, and her count and glow cover only what landed. A part of
+// her reply that fails once the board has changed costs only itself, a failure after that keeps the board, Done and
+// Undo, and one that fails while the board takes it leaves the board as it was, with the plan waiting again.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -131,7 +131,7 @@ await check('after Do it her count and glow cover only the cards that landed', a
 });
 
 await check(
-  'a card the plan removes but they connected since stays with both connectors, and she says so',
+  'a card the plan removes but they connected since stays with both connectors, and with nothing landed she says only that',
   async () => {
     await open('linked');
     await chat();
@@ -144,10 +144,13 @@ await check(
     assert.deepStrictEqual(await card('n3'), { x: 520, y: 500, text: 'Third note', kids: [] }, 'the card stays');
     const links = await page.evaluate(() => window.__fenmyr.curBoard().links.map(x => x.id));
     assert.deepStrictEqual(links.filter(id => id === 'L2' || id === 'L9').sort(), ['L2', 'L9'], 'with both connectors');
-    assert.strictEqual(
-      await said(),
-      'Removed the third note. I left “Third note” as you have it, since it changed after my plan.',
-    );
+    assert.strictEqual(await said(), 'I left “Third note” as you have it, since it changed after my plan.');
+    const plan = await page.evaluate(() => {
+      const box = [...document.querySelectorAll('#mcList .m-summary.plan')].at(-1);
+      return [box?.querySelector('b')?.textContent, box?.classList.contains('left')];
+    });
+    assert.deepStrictEqual(plan, ['Not done · changed since the plan', true], 'and the plan does not read Done');
+    assert.strictEqual(await page.locator('#mcList .m-acts button:text-is("Undo")').count(), 0, 'nothing to undo');
   },
 );
 
