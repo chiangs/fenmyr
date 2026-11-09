@@ -25,3 +25,25 @@ export function weigh(record: BoardPatch, set: ChangeSet): Weight {
 }
 
 export const asksFirst = (w: Weight) => w.removed > 0 || w.cards > PLAN_OVER;
+
+// What a whole message says to a waiting plan, when that is all it says. Only these exact words, so "no, make it
+// three groups" or "don't just do it" still goes to her.
+type Answer = 'do' | 'cancel';
+const ANSWERS = new Map<string, Answer>([
+  ['yes', 'do'],
+  ['ok', 'do'],
+  ['do it', 'do'],
+  ['go ahead', 'do'],
+  ['sure', 'do'],
+  ['no', 'cancel'],
+  ['cancel', 'cancel'],
+  ['never mind', 'cancel'],
+]);
+export const answerOf = (q: string): Answer | null =>
+  ANSWERS.get(
+    q
+      .toLowerCase()
+      .replace(/[✦.!,…]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim(),
+  ) ?? null;

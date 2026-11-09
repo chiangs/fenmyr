@@ -19,6 +19,7 @@ import {
   placeChat,
   type Rect,
 } from './chatRules.ts';
+import { planWaits } from './heldPlan.ts';
 import { keepPerch, perchGoo } from './perch.ts';
 import { initSees, pastesOf, renderSees, seenSelection } from './seesStrip.ts';
 
@@ -37,7 +38,13 @@ export function renderHint() {
       ruler.font = css.font;
       return ruler.measureText(hint).width <= room;
     };
-  field.placeholder = askHint(window.myraName || 'Myra', seenSelection(), session.board?.kind === 'prototype', fits);
+  field.placeholder = askHint(
+    window.myraName || 'Myra',
+    seenSelection(),
+    session.board?.kind === 'prototype',
+    fits,
+    planWaits(),
+  );
 }
 
 // her box from layout values, as it wobbles

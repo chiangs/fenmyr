@@ -446,9 +446,10 @@
     "tests/support/askStandIn.ts": "A stand-in Claude Code that records each question and the bytes of every file it was given, for tests.",
     "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states.",
     "src/shared/askFirst.ts": "When one of Myra's replies waits as a plan: what it would add, move, edit or remove, counted per card.",
-    "src/web/myra/heldPlan.ts": "Holds a big Myra reply in the chat as a plan, with Do it, which lands that same reply, and Cancel. One waits at a time, in memory.",
+    "src/web/myra/heldPlan.ts": "Holds a big Myra reply in the chat as a plan: Do it lands that same reply, Cancel and a typed no drop it, and a message goes to her with it. One waits at a time, in memory.",
     "tests/askFirst.ts": "Checks when a Myra reply waits as a plan, counted per card on boards built by hand, what she says about cards a plan left, and a plan kept with its message.",
     "tests/replyPlan.ts": "Checks a big Myra reply waits as a plan with nothing saved, Do it lands it with no second request, Cancel leaves the board, and reading never plans.",
-    "tests/planDoIt.ts": "Checks Do it on a plan the person worked around: a collection they dragged, the open doc, cards changed or connected since, her count and glow, and a part of her reply that fails."
+    "tests/planDoIt.ts": "Checks Do it on a plan the person worked around: a collection they dragged, the open doc, cards changed or connected since, her count and glow, and a part of her reply that fails.",
+    "tests/planTalk.ts": "Checks talking to Myra while a plan waits: a message goes with the plan, her answer replaces it, keeps it or drops it, and a typed yes or no answers it with no request."
   }
 }

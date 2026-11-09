@@ -87,8 +87,13 @@ await check(
     await settle(page, 800);
     assert.deepStrictEqual(
       await plan(),
-      { text: LEAD, head: 'If you say yes', lines: ['+ 11 notes'], acts: [':Do it', 'ghost:Cancel'] },
-      'her plan, numbered, with Do it and Cancel',
+      {
+        text: LEAD,
+        head: 'If you say yes',
+        lines: ['+ 11 notes'],
+        acts: [':Do it', 'ghost:Change the plan', 'ghost:Cancel'],
+      },
+      'her plan, numbered, with Do it, Change the plan and Cancel',
     );
     assert.strictEqual(await lists(), before, 'the board is as it was');
     assert.strictEqual(await page.locator('#cards .card').count(), drawn, 'nothing new is drawn');

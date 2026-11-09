@@ -1,8 +1,8 @@
 // When Myra's reply waits as a plan, counted on boards built by hand: per card, with a screen's pieces and a
 // collection's re-laid cards riding free and cards made from reading never counting; any removal plans. Also what she
-// says about cards a plan left, and a plan kept with its message.
+// says about cards a plan left, a plan kept with its message, and the whole messages that answer a waiting plan.
 import assert from 'node:assert';
-import { asksFirst, weigh } from '../src/shared/askFirst.ts';
+import { answerOf, asksFirst, weigh } from '../src/shared/askFirst.ts';
 import { leftLine } from '../src/shared/changeSummary.ts';
 import { type BoardLists, changeSet, listsOf, recordOf } from '../src/shared/changes.ts';
 import { readMsgs } from '../src/shared/chat.ts';
@@ -117,5 +117,11 @@ assert.deepStrictEqual(
   ],
   'a plan comes back with its message; an ending this version doesn’t know reads as none, and a bad plan drops alone',
 );
+
+for (const yes of ['Yes', 'yes!', 'Do it ✦', 'go ahead.', 'OK', 'sure'])
+  assert.strictEqual(answerOf(yes), 'do', `"${yes}" is Do it`);
+for (const no of ['no', 'Never mind', 'cancel.']) assert.strictEqual(answerOf(no), 'cancel', `"${no}" is Cancel`);
+for (const more of ['no, make it three groups', 'yes please, but pink', 'do it?', 'don’t do it', 'so do it later'])
+  assert.strictEqual(answerOf(more), null, `"${more}" goes to her`);
 
 console.log('ASK FIRST OK');

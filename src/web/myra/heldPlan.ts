@@ -1,17 +1,21 @@
 // A reply that would add, move or edit more than 10 cards, or remove any, waits in the chat as a plan. Do it lands that
-// same reply, with no second request to Claude, and Cancel leaves the board as it was. One plan waits at a time, in
-// memory; its message keeps the steps, so the chat still shows what she proposed once it stops waiting.
-import { asksFirst, weigh } from '../../shared/askFirst.ts';
+// same reply, with no second request to Claude, and Cancel leaves the board as it was. Anything else they write goes
+// to her with the plan. One plan waits at a time, in memory; its message keeps the steps, so the chat still shows what
+// she proposed once it stops waiting.
+import { answerOf, asksFirst, weigh } from '../../shared/askFirst.ts';
 import { summaryLines } from '../../shared/changeSummary.ts';
 import type { ChatAction, PlanEnd } from '../../shared/chat.ts';
+import type { PlanAsk } from '../../shared/ops.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
+import { textField } from '../ui/dom.ts';
 import type { Piece } from './acts.ts';
 import { applyHeld, asItWouldLand, type Planned, planHeld, planNewBoard, Turn } from './apply.ts';
-import type { HeldReply } from './applyTypes.ts';
-import { chatKeep, renderChat } from './chatLog.ts';
+import type { HeldReply, NoteUsed } from './applyTypes.ts';
+import { addMsg, chatKeep, renderChat } from './chatLog.ts';
+import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { reply } from './say.ts';
 
 type PlanAct = Extract<ChatAction, { kind: 'plan' }>;
@@ -48,13 +52,17 @@ function outline({ held, record, changes }: Planned) {
   };
 }
 
-// Her answer as it arrives: it lands at once, or it waits as a plan.
-export async function settle(turn: Turn, held: HeldReply) {
+// Her answer as it arrives: it lands at once, or it waits as a plan. `about`: the plan that was waiting when the
+// message was sent. An answer that changes the board replaces it and waits as a plan however small, since they are
+// looking at one; words alone leave it waiting, and `dropPlan` cancels it.
+export async function settle(turn: Turn, held: HeldReply, about: string | null) {
   if (!turn.stillOpen()) return;
-  const planned = planHeld(held),
+  const w = waiting?.act.plan === about ? waiting : null,
+    planned = planHeld(held),
     { weight, steps } = outline(planned),
     changes = planned.record.cards.length + planned.record.links.length > 0 || held.template?.mode === 'new';
-  if (changes && !settings.skipPlans && asksFirst(weight)) return hold(planned, steps);
+  if (w && (changes || held.reply.dropPlan)) end(w, changes ? 'replaced' : 'cancelled');
+  if (changes && !settings.skipPlans && (w !== null || asksFirst(weight))) return hold(planned, steps);
   await applyHeld(turn, held);
 }
 
@@ -63,12 +71,14 @@ function hold(planned: Planned, steps: string[]) {
   const act: PlanAct = { kind: 'plan', plan: uid(), steps };
   waiting = { act, board: session.board.id, planned };
   reply(LEAD, 0, [act]);
+  renderHint();
 }
 
 // The plan's message is drawn again, and saved with the board when chats are.
 function redraw() {
   if (chatKeep() === 'board') save();
   renderChat();
+  renderHint();
 }
 
 function end(w: Waiting, how: PlanEnd) {
@@ -99,6 +109,12 @@ function doIt(w: Waiting) {
   }, w.board);
 }
 
+// Nothing is sent: they write what to change, and it goes with the plan.
+function changePlan() {
+  if (!chatOpen()) myraOpen(true);
+  textField('mcInput').focus();
+}
+
 // A function declaration: VIEW reads it while the modules load, inside an import cycle.
 export function planPieces(a: PlanAct): Piece[] {
   const state = stateOf(a),
@@ -107,9 +123,37 @@ export function planPieces(a: PlanAct): Piece[] {
   if (w)
     pieces.push(
       { slot: 'reply', button: { label: 'Do it', after: 'stay', run: () => doIt(w) } },
+      { slot: 'reply', button: { label: 'Change the plan', ghost: true, after: 'stay', run: changePlan } },
       { slot: 'reply', button: { label: 'Cancel', ghost: true, after: 'stay', run: () => end(w, 'cancelled') } },
     );
   return pieces;
+}
+
+// A typed yes or no while a plan waits answers it here, with no request to Claude. Null when it isn't one.
+export function answerPlan(q: string): Promise<void> | null {
+  const w = waiting,
+    said = w && answerOf(q);
+  if (!w || !said) return null;
+  if (!chatOpen()) myraOpen(true);
+  addMsg('me', q);
+  if (said === 'do') return doIt(w);
+  end(w, 'cancelled');
+  return Promise.resolve();
+}
+
+export const planWaits = () => waiting !== null;
+
+// The waiting plan as it goes with the next message: what it answered, her reply without her words, its steps, and
+// the notes she read for it, so a changed plan can still place them.
+export function planAsk(): { id: string; ask: PlanAsk; used: NoteUsed[] } | null {
+  if (!waiting) return null;
+  const { act, planned } = waiting,
+    { say: _say, next: _next, pages: _pages, ...board } = planned.held.reply;
+  return {
+    id: act.plan,
+    ask: { request: planned.held.q, reply: JSON.stringify(board), steps: act.steps },
+    used: planned.held.ctx.used,
+  };
 }
 
 // The board's lists if the waiting plan landed now, which Do it then lands: for tests.

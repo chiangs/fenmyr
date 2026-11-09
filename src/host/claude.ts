@@ -5,6 +5,7 @@ import type {
   Connections,
   MyraStyle,
   Ops,
+  PlanAsk,
   SlashCommand,
   UsageSummary,
   VaultNoteForMyra,
@@ -228,6 +229,17 @@ function parseVaultTasks(v: unknown): { items: VaultTaskForMyra[]; summary: stri
     }));
   return { items, summary: text(v.summary).slice(0, 300) };
 }
+// The plan waiting when the message was sent, cut to a size a prompt can carry.
+function parsePlan(x: unknown): PlanAsk | undefined {
+  if (!isRecord(x) || !text(x.reply)) return undefined;
+  return {
+    request: text(x.request).slice(0, 2000),
+    reply: text(x.reply).slice(0, 20000),
+    steps: strings(x.steps)
+      .slice(0, 12)
+      .map(s => s.slice(0, 200)),
+  };
+}
 const NEED = 'I need Claude Code to think. Set it up (Settings → Helpers shows how), then try again.';
 export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
   const added = parseFiles(a.files);
@@ -268,6 +280,7 @@ export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
     vaultTasks: parseVaultTasks(a.vaultTasks),
     canVault: Boolean(a.canVault),
     files: written?.files ?? [],
+    plan: parsePlan(a.plan),
   });
   try {
     return await runClaude(prompt, tools, 300, NEED, ASK_ROOT);

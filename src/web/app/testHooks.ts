@@ -44,7 +44,7 @@ import {
 import { ask } from '../myra/chat.ts';
 import { draftBoards } from '../myra/chatDraft.ts';
 import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
-import { heldLists, settle } from '../myra/heldPlan.ts';
+import { heldLists, planAsk, settle } from '../myra/heldPlan.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
 import { perched, perchGoo } from '../myra/perch.ts';
 import { replyRecord } from '../myra/replyMemory.ts';
@@ -167,9 +167,12 @@ const makeHooks = () => ({
   // a reply as if Claude had just sent it: it waits its turn behind any other
   applyMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
     Turn.take(async turn => applyHeld(turn, await holdReply(r, q, { ...ctx, sees: peekSees() })), session.board.id),
-  // a reply as if Claude had just sent it, through the check that holds a big one as a plan
+  // a reply as if Claude had just sent it, through the check that holds a big one as a plan, and about any plan waiting
   answerMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
-    Turn.take(async turn => settle(turn, await holdReply(r, q, { ...ctx, sees: peekSees() })), session.board.id),
+    Turn.take(
+      async turn => settle(turn, await holdReply(r, q, { ...ctx, sees: peekSees() }), planAsk()?.id ?? null),
+      session.board.id,
+    ),
   heldLists,
   replyRecord,
   previewMyra: async (r: MyraReply) => {

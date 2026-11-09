@@ -20,7 +20,7 @@ import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { giveBack } from './giveBack.ts';
-import { settle } from './heldPlan.ts';
+import { answerPlan, planAsk, settle } from './heldPlan.ts';
 import { showConnections } from './helpers.ts';
 import { initPasted } from './pasted.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
@@ -146,8 +146,11 @@ type Asked = {
 
 // The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
 // animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the selection, the
-// vaults and the web the question was sent with. `sees`: a question asked again keeps what it was first sent with.
+// vaults and the web the question was sent with. `sees`: a question asked again keeps what it was first sent with. A
+// plain yes or no to a waiting plan is answered here, with no request to Claude.
 export function ask(q: string, confirmed = false, sees?: Sees, typed = false) {
+  const answered = confirmed ? null : answerPlan(q);
+  if (answered) return answered;
   const asked: Asked = {
     q,
     confirmed,
@@ -224,6 +227,11 @@ async function answer(turn: Turn, asked: Asked) {
   ctx.used = [...chosen.used, ...ctx.used];
   const notes = (ctx.tasks ? ctx.tasks.notes : 0) + ctx.used.length;
   if (notes) job.show({ kind: 'reading', notes });
+  // a plan waiting now goes with the message, and so do the notes she read for it
+  const plan = confirmed ? null : planAsk();
+  ctx.used = [...ctx.used, ...(plan?.used ?? [])].filter(
+    (n, i, all) => all.findIndex(m => m.vault === n.vault && m.rel === n.rel) === i,
+  );
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
   let reached = false;
   try {
@@ -245,11 +253,12 @@ async function answer(turn: Turn, asked: Asked) {
         vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })),
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),
         ...(files.length ? { files } : {}),
+        ...(plan ? { plan: plan.ask } : {}),
       },
     );
     reached = true;
     noteSignIn(false);
-    await settle(turn, await holdReply(parse(raw), q, ctx));
+    await settle(turn, await holdReply(parse(raw), q, ctx), plan?.id ?? null);
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
     // once her answer is in, a failure is in applying it, and what the person sent has been read
