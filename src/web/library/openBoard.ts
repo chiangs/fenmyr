@@ -8,6 +8,7 @@ import { leaveDraft, restoreDraft } from '../myra/chatDraft.ts';
 import { setExpanded } from '../myra/chatExpand.ts';
 import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
+import { dropPlan } from '../myra/heldPlan.ts';
 import { forgetReplies } from '../myra/replyMemory.ts';
 import { showProto } from '../proto/layout.ts';
 import { checkCode } from '../repo/codeFolder.ts';
@@ -42,6 +43,7 @@ export async function openBoard(id: string) {
   session.board.palette = session.board.palette || [];
   setTimeout(resetHistory, 0);
   forgetReplies();
+  dropPlan();
   session.view = { x: 160, y: 140, z: 1, ...b.view };
   session.sel.clear();
   session.editing = null;

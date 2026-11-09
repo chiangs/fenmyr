@@ -161,6 +161,13 @@ export function answerPlan(q: string): Promise<void> | null {
 
 export const planWaits = () => waiting !== null;
 
+// The plan stops waiting, in memory only, so its message reads Not done: another board opened, or the chat that held
+// its buttons was put away or cleared.
+export function dropPlan() {
+  waiting = null;
+  renderHint();
+}
+
 // The waiting plan as it goes with the next message: what it answered, her reply without her words, its steps, and
 // the notes she read for it, so a changed plan can still place them.
 export function planAsk(): { id: string; ask: PlanAsk; used: NoteUsed[] } | null {

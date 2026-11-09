@@ -20,7 +20,7 @@ import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { giveBack } from './giveBack.ts';
-import { answerPlan, planAsk, settle } from './heldPlan.ts';
+import { answerPlan, dropPlan, planAsk, settle } from './heldPlan.ts';
 import { showConnections } from './helpers.ts';
 import { initPasted } from './pasted.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
@@ -301,6 +301,7 @@ export function init31() {
 
   $('mcNew').onclick = () => {
     setExpanded(false);
+    dropPlan();
     archiveChat();
     if (chatKeep() === 'board') {
       session.board.chat = [];

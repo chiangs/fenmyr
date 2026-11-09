@@ -8,6 +8,7 @@ import { openSettingsKey } from '../input/shortcuts.ts';
 import { clearDrafts } from '../myra/chatDraft.ts';
 import { renderChat, sessionChats } from '../myra/chatLog.ts';
 import { hopMyra } from '../myra/goos.ts';
+import { dropPlan } from '../myra/heldPlan.ts';
 import { showConnections } from '../myra/helpers.ts';
 import { chirp, say } from '../myra/say.ts';
 import { buildEvent } from '../proto/build.ts';
@@ -188,6 +189,7 @@ export function init29() {
 
   $('clearChats').onclick = async () => {
     clearDrafts();
+    dropPlan();
     await clearSavedChats(false);
     Object.keys(sessionChats).forEach(k => {
       delete sessionChats[k];
