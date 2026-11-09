@@ -323,5 +323,7 @@ export const icons: IconEntry[] = [
   ['unlock', 'lock-simple-open', 'unlocked'],
   ['eye', 'eye', 'show visible'],
   ['eye-off', 'eye-slash', 'hide hidden'],
+  ['expand', 'arrows-out-simple', 'bigger writing area'],
+  ['shrink', 'arrows-in-simple', 'smaller writing area'],
   ['missing', 'rectangle-dashed', 'placeholder unknown'],
 ];

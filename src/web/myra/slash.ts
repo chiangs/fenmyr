@@ -132,6 +132,11 @@ function show() {
   menu.style.bottom = `${innerHeight - f.top + 6}px`;
 }
 
+// the form changed size under an open menu
+export function replaceMenu() {
+  if (!menu.hidden) show();
+}
+
 // Enter and a click run a row, Tab fills it in. A command that takes words is filled in either way, to wait for them,
 // and setChatText's input event reopens the menu on what comes next, such as /timer's presets.
 function pick(how: 'run' | 'fill', r: SlashRow | undefined) {

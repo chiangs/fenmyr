@@ -8,6 +8,8 @@ import {
   closeWait,
   cutName,
   draftLabel,
+  type EscStep,
+  escStep,
   freeOf,
   type Geometry,
   placeChat,
@@ -168,6 +170,24 @@ for (const [e, where, want, why] of rows) assert.strictEqual(closes(e, where), w
 
 assert.ok(closeWait(true) >= 500, 'with double-click notes on, a click waits out a double-click before closing');
 assert.strictEqual(closeWait(false), 0, 'with them off, it closes at once');
+
+const escRows: [boolean, boolean, Geometry['where'], EscStep][] = [
+  [false, true, 'desk', 'shrink'],
+  [false, true, 'phone', 'shrink'],
+  [false, true, 'proto', 'shrink'],
+  [false, false, 'desk', 'close'],
+  [false, false, 'phone', 'close'],
+  [false, false, 'proto', 'none'],
+  [true, true, 'desk', 'none'],
+  [true, false, 'desk', 'none'],
+  [true, true, 'proto', 'none'],
+];
+for (const [composing, expanded, where, want] of escRows)
+  assert.strictEqual(
+    escStep({ composing, expanded }, where),
+    want,
+    `Esc: composing ${composing}, expanded ${expanded}, ${where}`,
+  );
 
 const shown = (text: string) => draftLabel(text, 'Myra')?.shown ?? null;
 assert.strictEqual(shown(''), null, 'no text, no draft');

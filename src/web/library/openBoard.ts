@@ -4,6 +4,7 @@ import { resetHistory } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueIndex } from '../features/due.ts';
 import { findClose } from '../features/find.ts';
+import { setExpanded } from '../myra/chatExpand.ts';
 import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { forgetReplies } from '../myra/replyMemory.ts';
@@ -31,6 +32,7 @@ export async function openBoard(id: string) {
   vnFull.clear();
   appState.histOpen = false;
   findClose(undefined);
+  setExpanded(false);
   session.board = { name: '', cards: [], links: [], tray: [], ...b };
   checkCode(session.board);
   showProto(session.board);

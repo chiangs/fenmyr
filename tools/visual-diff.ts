@@ -225,6 +225,14 @@ const GROUPS: Record<string, Group> = {
           await page.keyboard.press('Escape');
         },
       ],
+      [
+        'myra-expand',
+        async page => {
+          await page.click('#mPill');
+          const expand = page.locator('#mcExpand');
+          if (await expand.count()) await expand.click();
+        },
+      ],
     ],
   },
 };

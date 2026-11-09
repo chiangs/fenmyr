@@ -129,6 +129,16 @@ export function closes(e: CloseInput, where: Geometry['where']): boolean {
   }
 }
 
+export type EscStep = 'shrink' | 'close' | 'none';
+
+/** What Esc does with focus in the chat: the writing area shrinks first, then the close rules decide. A prototype
+ *  board's docked chat shrinks too, though it never closes. */
+export function escStep(e: { composing: boolean; expanded: boolean }, where: Geometry['where']): EscStep {
+  if (e.composing) return 'none';
+  if (e.expanded) return 'shrink';
+  return closes({ type: 'esc', composing: false }, where) ? 'close' : 'none';
+}
+
 /** How long a click on empty board waits before it closes the chat. A double-click there makes a note beside the
  *  chat, and the second press can only cancel a close that has not happened yet; closing at once and reopening would
  *  flash the chat and lose the caret. 500 ms is the usual longest double-click gap. With double-click notes off, it

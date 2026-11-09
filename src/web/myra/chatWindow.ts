@@ -5,12 +5,14 @@ import { settings } from '../settings/settings.ts';
 import { textField } from '../ui/dom.ts';
 import { menuOpen, watchPresses } from '../ui/popover.ts';
 import { toolInHand } from '../ui/toolbar.ts';
+import { expanded, setExpanded } from './chatExpand.ts';
 import { renderChat } from './chatLog.ts';
 import {
   askHint,
   closes,
   closeWait,
   draftLabel,
+  escStep,
   type Geometry,
   type ModeBar,
   type Placement,
@@ -124,6 +126,7 @@ export function myraOpen(on: boolean, toBox = false) {
     relayout();
     cancelClose();
   }
+  if (!on) setExpanded(false);
   $('myra').classList.toggle('chat', on);
   $('mPill').setAttribute('aria-expanded', String(on));
   // a closed chat is inert, so nothing in it can keep the cursor. Her box can take it only once the joined chat stops
@@ -199,7 +202,9 @@ function closeRules() {
     if (e.key !== 'Escape') return;
     // the board's Esc would deselect, and a prototype board's docked chat stays open
     e.stopPropagation();
-    if (closes({ type: 'esc', composing: e.isComposing }, whereNow())) myraOpen(false, true);
+    const step = escStep({ composing: e.isComposing, expanded: expanded() }, whereNow());
+    if (step === 'shrink') setExpanded(false);
+    else if (step === 'close') myraOpen(false, true);
   });
   watchPresses(e => {
     if (!chatOpen()) return null;
