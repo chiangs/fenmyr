@@ -176,6 +176,11 @@ try {
     const prompt = lines(asks).at(-1)?.prompt ?? '';
     assert.match(prompt, /NEEDS CODE: when what they ask for only works as running code/);
     assert.match(prompt, /"offerPrototype": \{"name"/);
+    assert.match(
+      prompt,
+      /Nothing is made until they press Start and build, so don't say you've made or set it up\./,
+      'and not to say the board is made before it is',
+    );
   });
 
   await check('a request that needs code gets her line and an offer card', async () => {
