@@ -23,14 +23,16 @@ const obsLink = (v: Vault, rel: string) =>
   '&file=' +
   encodeURIComponent(String(rel).replace(/\.md$/i, ''));
 
-export function openVNote(c: VaultNote) {
-  const v = vaultById(c.vault ?? '');
+export function openNote(vaultId: string, rel: string) {
+  const v = vaultById(vaultId);
   if (!v) {
     say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000);
     return;
   }
-  Fenmyr.openURL(obsLink(v, c.path ?? ''));
+  Fenmyr.openURL(obsLink(v, rel));
 }
+
+export const openVNote = (c: VaultNote) => openNote(c.vault ?? '', c.path ?? '');
 
 // each card remembers its own side; the back holds the stored excerpt, and the full text only while you ask for it (never saved)
 export const vnFull = new Map<string, { body: string; truncated: boolean }>();

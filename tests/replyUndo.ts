@@ -1,10 +1,8 @@
 // One reply of Myra's is one undo step however slow its pictures are, edits the person makes while she works stay
 // their own, replies wait their turn instead of landing inside each other, a preview changes nothing, a reply for a
-// board that is no longer open is not applied, a queued question keeps the board and vault chip it was asked with,
+// board that is no longer open is not applied, a queued question keeps the board it was asked on,
 // and a reply that fails part way leaves the board as it was.
 import assert from 'node:assert';
-import fs from 'node:fs';
-import path from 'node:path';
 import type { Page } from 'playwright';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -20,7 +18,6 @@ const BOARDS = [
   'asks',
   'asked',
   'elsewhere',
-  'chip',
   'throws',
   'order',
 ];
@@ -57,7 +54,9 @@ const slowPictures = (ms: number) =>
     const png = c.toDataURL('image/png');
     window.Fenmyr.fetchImage = () => new Promise<string>(res => setTimeout(() => res(png), ms));
   }, ms);
+// the board's undo: an earlier question leaves the cursor in the chat box, where Ctrl+Z would undo typing
 async function undo() {
+  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.keyboard.press('Control+z');
   await page.waitForTimeout(200);
 }
@@ -308,48 +307,6 @@ await check(
     );
     assert.deepStrictEqual(there, [], 'nor on the board they were asked on');
     assert.deepStrictEqual(sent, ['first'], 'the second question is not sent with the other board');
-  },
-);
-
-await check(
-  'the vault chip goes with the question it was ticked for, even while an earlier one is thinking',
-  async () => {
-    await open('chip');
-    const vault = path.join(l.data, 'vault');
-    fs.cpSync(path.join(import.meta.dirname, 'sample-vault'), vault, { recursive: true });
-    const used = await page.evaluate(async vault => {
-      const M = window.__fenmyr,
-        v = await Fenmyr.vaultAdd(vault);
-      M.board.vaultAccess = [{ vault: v.id, folders: [''], ai: true, write: false, writeTo: 'Myra' }];
-      await M.openVaultPicker();
-      document.getElementById('vaultPick')?.remove();
-      M.applyToolbar();
-      const read: Record<string, boolean> = {};
-      window.Fenmyr.ask = async (
-        prompt: string,
-        _snap: unknown,
-        _confirmed?: boolean,
-        opts?: { canVault?: boolean },
-      ) => {
-        const q = ['zero', 'one', 'two'].find(w => prompt.includes(`question ${w}`)) ?? prompt;
-        read[q] = !opts?.canVault;
-        await new Promise(res => setTimeout(res, q === 'zero' ? 800 : 10));
-        return JSON.stringify({ say: 'ok' });
-      };
-      const zero = M.ask('question zero'),
-        one = M.ask('question one');
-      document.getElementById('mcVault')?.click();
-      const two = M.ask('question two');
-      await Promise.all([zero, one, two]);
-      // the chip hands focus to the chat box, where Ctrl+Z would undo typing rather than the board
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      return read;
-    }, vault);
-    assert.deepStrictEqual(
-      used,
-      { zero: false, one: false, two: true },
-      'only the question asked with the chip on reads the vault',
-    );
   },
 );
 

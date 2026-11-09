@@ -1,14 +1,16 @@
-import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
+import type { ChatMsg } from '../../shared/chat.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo, esc, textField } from '../ui/dom.ts';
-import { type Act, actView, storedOf } from './acts.ts';
-import { ask } from './chat.ts';
+import { type Act, storedOf } from './acts.ts';
+import { renderGreeting } from './emptyChat.ts';
+import { drawActs } from './replyView.ts';
+import { paintStatus } from './status.ts';
 
-// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and History brings one back
+// earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and Earlier chats brings one back
 const CHATS_KEPT = 10;
 
 // A prototype board always keeps its chat, whatever Settings says. It's the record of how the prototype was built.
@@ -101,62 +103,14 @@ function renderHistory() {
   };
 }
 
-const IDEAS = [
-  'Group these by theme',
-  'What am I missing?',
-  'Make a checklist from this',
-  'Find onboarding screens on Mobbin',
-];
-// on a prototype board she starts from the wireframes and notes the person brings
-const PROTOTYPE_IDEAS = ['Sum up what these cards say', 'What should the first screen show?', 'What am I missing?'];
-
-// A used button doesn't come back when the chat opens again: a click takes it off the message. Next steps are one
-// choice of what to ask next, so asking one takes the others with it.
-function spend(m: ChatMsg, used: ChatAction) {
-  if (!m.acts) return;
-  const left = m.acts.filter(a => a !== used && !(used.kind === 'next' && a.kind === 'next'));
-  if (left.length) m.acts = left;
-  else delete m.acts;
-  if (chatKeep() === 'board') save();
-}
-
-// The buttons a row shows now. An action that shows nothing now stays on the message.
-export function actsRow(m: ChatMsg | undefined, acts: readonly Act[]) {
-  return acts.flatMap(a => {
-    const view = actView(a);
-    if (!view) return [];
-    return [
-      {
-        ...view,
-        run: () => {
-          if (m && 'kind' in a) spend(m, a);
-          return view.run();
-        },
-      },
-    ];
-  });
-}
-
 function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
-  const d = document.createElement('div');
+  const d = document.createElement('div'),
+    parts = document.createElement('div');
   d.className = `mc-msg ${m.who}`;
   d.textContent = m.text;
-  const row = actsRow(m, acts);
-  if (row.length) {
-    const box = document.createElement('div');
-    box.className = 'm-acts';
-    row.forEach(a => {
-      const b = document.createElement('button');
-      b.textContent = a.label;
-      b.className = a.cls || (a.ghost ? 'ghost' : '');
-      b.onclick = () => {
-        box.remove();
-        a.run();
-      };
-      box.appendChild(b);
-    });
-    d.appendChild(box);
-  }
+  parts.className = 'm-parts';
+  d.appendChild(parts);
+  drawActs(parts, m, acts);
   return d;
 }
 
@@ -169,26 +123,12 @@ export function renderChat() {
   list.onclick = null;
   list.innerHTML = '';
   const msgs = chatLog();
-  if (!msgs.length) {
-    const ideas = (session.board?.kind === 'prototype' ? PROTOTYPE_IDEAS : IDEAS)
-      .filter(i => settings.mobbin || !/Mobbin/.test(i))
-      .map(i => `<button>${i}</button>`)
-      .join('');
-    const lead =
-      session.board?.kind === 'prototype'
-        ? 'What are we building? Tell me what it’s for and who uses it. Put wireframes, sketches, screenshots and notes on the board, or drop pictures right here, and select the ones that matter. Then ask me to build it. The board on the left holds what you bring, the preview runs what I build, and the code pane shows its files. This chat is kept with the prototype.'
-        : 'Ask me to sort, write, plan or find things for this board.';
-    list.innerHTML = `<div class="mc-empty"><b>Hi! I'm Myra ✦</b>${lead}<div class="mc-ideas">${ideas}</div></div>`;
-    for (const b of list.querySelectorAll('.mc-ideas button'))
-      if (b instanceof HTMLElement)
-        b.onclick = () => {
-          ask(b.textContent ?? '');
-        };
-    return;
-  }
+  if (!msgs.length) return renderGreeting(list);
   msgs.forEach(m => {
     list.appendChild(msgEl(m));
   });
+  // a chat reopened while she is still answering gets her dots back
+  paintStatus();
   list.scrollTop = list.scrollHeight;
 }
 
@@ -222,16 +162,4 @@ export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
   list.appendChild(msgEl(m, acts));
   list.scrollTop = list.scrollHeight;
   return m;
-}
-
-export function typing(on: boolean) {
-  $('mcList').querySelector('.typing')?.remove();
-  $('mcStatus').textContent = on ? 'thinking…' : '';
-  if (on) {
-    const d = document.createElement('div');
-    d.className = 'mc-msg myra typing';
-    d.innerHTML = '<i></i><i></i><i></i>';
-    $('mcList').appendChild(d);
-    $('mcList').scrollTop = 1e9;
-  }
 }

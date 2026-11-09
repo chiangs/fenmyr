@@ -2,10 +2,11 @@ import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { boardMenu } from '../features/export.ts';
 import { JOIN_RESERVE } from '../myra/chatRules.ts';
+import { renderSees } from '../myra/seesStrip.ts';
+import { paintStatus } from '../myra/status.ts';
 import { setTab } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { updateVaultChip } from '../vault/ask.ts';
 import { activeGrants, vaults } from '../vault/vaults.ts';
 import { closestTo, esc, htmlIn } from './dom.ts';
 
@@ -47,7 +48,8 @@ export function applyToolbar() {
   document.body.dataset.tb = settings.tbSize || 'm';
   requestAnimationFrame(fitToolbar);
   try {
-    updateVaultChip();
+    renderSees();
+    paintStatus();
   } catch (_e) {}
   return order;
 }

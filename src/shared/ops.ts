@@ -1,3 +1,5 @@
+import type { AskFile } from './askFiles.ts';
+
 type None = Record<string, never>;
 
 export type Board = { id: string; [key: string]: unknown };
@@ -174,6 +176,8 @@ export type Ops = {
       canVault?: boolean;
       vaultNotes?: VaultNoteForMyra[];
       vaultTasks?: { items: VaultTaskForMyra[]; summary: string };
+      /** Pictures and text files added to this message; the host checks them against src/shared/askFiles.ts. */
+      files?: AskFile[];
     };
     result: string;
   };

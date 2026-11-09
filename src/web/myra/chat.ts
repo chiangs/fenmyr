@@ -1,3 +1,4 @@
+import { NOT_SENT } from '../../shared/askFiles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
@@ -9,20 +10,24 @@ import { timerRequest } from '../features/duration.ts';
 import { clearGlow, runTimerRequest } from '../features/timer.ts';
 import { settings } from '../settings/settings.ts';
 import { elementById, textField } from '../ui/dom.ts';
-import { aiGrants, gatherVault, gatherVaultTasks, updateVaultChip, type VaultTasksUsed } from '../vault/ask.ts';
+import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed } from '../vault/ask.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { applyHeld, holdReply, Turn } from './apply.ts';
+import type { Picked } from './applyTypes.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
-import { addMsg, archiveChat, chatKeep, chatLog, renderChat, typing } from './chatLog.ts';
+import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
-import { goo } from './goos.ts';
 import { showConnections } from './helpers.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
 import { parse } from './replyText.ts';
 import type { SayAction } from './say.ts';
 import { reply } from './say.ts';
+import type { Sees } from './sees.ts';
+import { initSeesAdd } from './seesAdd.ts';
+import { takeSees } from './seesStrip.ts';
 import { initSlashMenu, slash } from './slash.ts';
 import { snapshot } from './snapshot.ts';
+import { initStatus, noteSignIn, paintStatus, startJob } from './status.ts';
 
 // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
 export function tidyNotes() {
@@ -45,6 +50,8 @@ export function tidyNotes() {
 let signinHint = false;
 
 function offlineMyra(q: string, why: string) {
+  // she just learned she can't think, so the header stops saying Ready
+  paintStatus();
   const tr = timerRequest(q);
   if (tr) {
     runTimerRequest(tr, true);
@@ -107,20 +114,24 @@ function webMyra(q: string) {
   );
 }
 
+const leftOut = (titles: string[]) => {
+  const names = titles.map(t => `“${t}”`).join(', '),
+    them = titles.length === 1 ? 'it' : 'them';
+  return `I can’t read ${names} from your vault any more, so I left ${them} out.`;
+};
+
 export let animAskedAt = 0;
 export let timerAskedAt = 0;
 
-// A question as it was asked. `did`: what the app already did for the sentence; `vault`: the vault chip was ticked
-// for it.
-type Asked = { q: string; confirmed: boolean; did: string[]; vault: boolean };
+// A question as it was asked. `did`: what the app already did for the sentence; `sees`: what the "Myra sees" strip sent
+// with it.
+type Asked = { q: string; confirmed: boolean; did: string[]; sees: Sees };
 
 // The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
-// animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the board and the
-// vault chip the question was asked with.
-export function ask(q: string, confirmed = false) {
-  const asked: Asked = { q, confirmed, did: confirmed ? [] : actOnSentence(q), vault: appState.vaultChip };
-  appState.vaultChip = false;
-  updateVaultChip();
+// animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the selection, the
+// vaults and the web the question was sent with. `sees`: a question asked again keeps what it was first sent with.
+export function ask(q: string, confirmed = false, sees?: Sees) {
+  const asked: Asked = { q, confirmed, did: confirmed ? [] : actOnSentence(q), sees: sees ?? takeSees() };
   if (!chatOpen()) myraOpen(true);
   if (!confirmed) addMsg('me', q);
   return Turn.take(turn => answer(turn, asked), session.board.id);
@@ -143,7 +154,7 @@ function actOnSentence(q: string) {
   return did;
 }
 
-async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
+async function answer(turn: Turn, { q, confirmed, did, sees }: Asked) {
   if (!turn.stillOpen()) return;
   if (Fenmyr.web) return webMyra(q);
   if (!settings.ai) return offlineMyra(q, 'My thinking is switched off in Settings, so I can only do simple tidying.');
@@ -158,21 +169,33 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
   if (!navigator.onLine)
     return offlineMyra(q, "You're offline, so I can't think with Claude right now. I'll be back when the internet is.");
   if (confirmed) addMsg('myra', 'Making it… this can take a minute ✦');
-  $('myra').classList.add('thinking');
-  goo.think(true);
-  typing(true);
-  const ctx: { asked: boolean; used: Awaited<ReturnType<typeof gatherVault>>; tasks: VaultTasksUsed | null } = {
+  const job = startJob({ kind: 'thinking' });
+  const ctx: Picked & { tasks: VaultTasksUsed | null; web: boolean } = {
     asked: false,
     used: [],
     tasks: null,
+    web: sees.web && !!settings.webAccess,
+    sees,
   };
-  if (vault && aiGrants(session.board).length) {
+  // a vault whose access was taken away after the question was sent is not read, nor a note added from it
+  const grants = aiGrants(session.board).filter(g => sees.vaults.includes(g.vault)),
+    chosen = await readAdded(
+      sees.added.flatMap(a => (a.kind === 'note' ? [a] : [])),
+      aiGrants(session.board),
+    ),
+    files = sees.added.flatMap(a => (a.kind === 'file' ? [{ name: a.name, data: a.data }] : []));
+  if (chosen.refused.length) addMsg('myra', leftOut(chosen.refused));
+  if (grants.length) {
     ctx.asked = true;
     try {
-      ctx.tasks = await gatherVaultTasks(q);
-      ctx.used = ctx.tasks ? [] : await gatherVault(q);
+      ctx.tasks = await gatherVaultTasks(q, grants);
+      ctx.used = ctx.tasks ? [] : await gatherVault(q, grants);
     } catch (_e) {}
   }
+  // the notes they chose go first, so the cap on notes never drops one
+  ctx.used = [...chosen.used, ...ctx.used];
+  const notes = (ctx.tasks ? ctx.tasks.notes : 0) + ctx.used.length;
+  if (notes) job.show({ kind: 'reading', notes });
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
   try {
     const raw = await Fenmyr.ask(
@@ -183,20 +206,23 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
         (did.filter(Boolean).length
           ? ` (The app has already done this for them: ${did.filter(Boolean).join('; ')}. Do not claim you cannot. Answer in a short line.)`
           : ''),
-      snapshot(),
+      snapshot(new Set(sees.sel)),
       confirmed,
       {
         mobbin: settings.mobbin,
         higgs: settings.higgs,
-        web: !!settings.webAccess,
+        web: ctx.web,
         canVault,
         vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })),
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),
+        ...(files.length ? { files } : {}),
       },
     );
+    noteSignIn(false);
     await applyHeld(turn, await holdReply(parse(raw), q, ctx));
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
+    if (why.startsWith(NOT_SENT)) return reply(why);
     if (/Claude Code/.test(why)) {
       appState.haveClaude = false;
       return offlineMyra(
@@ -206,6 +232,7 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
     }
     if (SIGNIN.test(why)) {
       signinHint = true;
+      noteSignIn(true);
       return offlineMyra(
         q,
         "Claude Code is here, but it isn't signed in yet. Open a terminal, type claude, and sign in with a Claude Pro or Max account.",
@@ -213,12 +240,11 @@ async function answer(turn: Turn, { q, confirmed, did, vault }: Asked) {
     }
     reply(`Hmm, I couldn't reach Claude: ${why}`);
   } finally {
-    $('myra').classList.remove('thinking');
-    goo.think(false);
-    typing(false);
+    job.end();
   }
 }
 export function init31() {
+  initStatus();
   // with the chat open she perches at the start of its header, and hops back to her box when it closes
   initPerch();
 
@@ -263,6 +289,7 @@ export function init31() {
 
   initChatInput();
   initSlashMenu();
+  initSeesAdd();
 
   $('mChat').addEventListener('pointerdown', e => e.stopPropagation());
 

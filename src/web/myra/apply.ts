@@ -1,3 +1,4 @@
+import { summaryLines } from '../../shared/changeSummary.ts';
 import { type BoardLists, type ChangeSet, changeSet, listsOf, recordOf } from '../../shared/changes.ts';
 import { storedSet } from '../../shared/chat.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
@@ -118,7 +119,7 @@ export function previewHeld(held: HeldReply): { lists: BoardLists; changes: Chan
   if (held.template?.mode === 'new') return null;
   const lists = listsOf(session.board),
     { skipped } = planBoard(lists, held, viewAt());
-  return { lists, changes: changeSet(recordOf(session.board, lists), lists, { named: namedIn(held.reply), skipped }) };
+  return { lists, changes: changeSet(recordOf(session.board, lists), { named: namedIn(held.reply), skipped }) };
 }
 
 // Null when another board is open than the one the turn was asked on: then nothing is applied.
@@ -142,7 +143,13 @@ export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | 
   // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one, and
   // what this reply changed means nothing there.
   const kept = changed && session.board.id === board;
-  reply(line.text, line.ms, kept ? [...line.acts, { kind: 'changes', reply: id, set: storedSet(changes) }] : line.acts);
+  if (!kept) reply(line.text, line.ms, line.acts);
+  // the bubble stays long enough to reach Show on board and Undo
+  else
+    reply(line.text, line.ms && Math.max(line.ms, 16000), [
+      ...line.acts,
+      { kind: 'changes', reply: id, set: storedSet(changes), lines: summaryLines(record, changes) },
+    ]);
   return { said: line.text, changes, reply: id };
 }
 
@@ -164,7 +171,7 @@ function changeBoard(held: HeldReply) {
   }
   save();
   const record = recordOf(before, b),
-    changes = changeSet(record, b, { named: namedIn(held.reply), skipped: plan.skipped });
+    changes = changeSet(record, { named: namedIn(held.reply), skipped: plan.skipped });
   remember();
   const onBoard = new Map(b.cards.map(c => [c.id, c]));
   return { changes, record, touched: plan.touched.map(id => onBoard.get(id)).filter(c => c !== undefined) };

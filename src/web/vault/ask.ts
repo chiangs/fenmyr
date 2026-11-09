@@ -3,8 +3,9 @@ import type { VaultHit, VaultListItem, VaultPatch, VaultTaskForMyra } from '../.
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { saveLib } from '../library/tree.ts';
+import type { NoteUsed } from '../myra/applyTypes.ts';
 import { say } from '../myra/say.ts';
-import { child, closestTo, elementById, esc } from '../ui/dom.ts';
+import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { initVaultAccess, vaultUseClick } from './access.ts';
 import { addVaultNote } from './notes.ts';
@@ -16,20 +17,10 @@ const messageOf = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export const aiGrants = (b: Board | StoredBoard) => activeGrants(b).filter(g => g.ai);
 
-export function updateVaultChip() {
-  const b = $('mcVault');
-  if (!b) return;
-  const can = !!(Fenmyr.native && session.board && aiGrants(session.board).length);
-  b.hidden = !can;
-  if (!can) appState.vaultChip = false;
-  b.classList.toggle('on', appState.vaultChip);
-  b.setAttribute('aria-pressed', appState.vaultChip ? 'true' : 'false');
-}
-
-// the app (never Claude) finds the notes: the best few across the allowed folders, cut short
-export async function gatherVault(q: string) {
+// the app (never Claude) finds the notes: the best few across the allowed folders of `grants`, cut short
+export async function gatherVault(q: string, grants: readonly VaultGrant[]) {
   const all: Found[] = [];
-  for (const g of aiGrants(session.board)) {
+  for (const g of grants) {
     const v = vaultById(g.vault);
     if (!v) continue;
     try {
@@ -61,13 +52,13 @@ export type VaultTasksUsed = {
   stopped: boolean;
   filtered: boolean;
 };
-export async function gatherVaultTasks(q: string): Promise<VaultTasksUsed | null> {
+export async function gatherVaultTasks(q: string, grants: readonly VaultGrant[]): Promise<VaultTasksUsed | null> {
   if (!ABOUT_TASKS.test(q)) return null;
   const items: VaultTaskForMyra[] = [];
   let open = 0,
     stopped = false,
     filtered = false;
-  for (const g of aiGrants(session.board)) {
+  for (const g of grants) {
     const v = vaultById(g.vault);
     if (!v) continue;
     try {
@@ -92,9 +83,41 @@ export const tasksLine = (t: VaultTasksUsed) =>
     ? ` I used ${t.items.length} unfinished task${t.items.length === 1 ? '' : 's'} from ${t.notes} note${t.notes === 1 ? '' : 's'} in your vault${t.filtered ? ` (${t.open} open in all; I kept the ones that match your words)` : ''}.${t.stopped ? ' I ran out of time before reading every note, so some may be missing.' : ''}`
     : ` I looked in your vault for unfinished tasks, but found none${t.filtered ? ' that match your words' : ''}${t.stopped ? ' (I ran out of time before reading every note)' : ''}.`;
 
-export async function openVaultPicker() {
+/** Reads the notes the person added to a message, through the vaults Myra may read now. The host never gives out a
+ *  #private note or one outside the allowed folders; those come back in `refused`, by title. */
+export async function readAdded(notes: readonly { vault: string; rel: string; title: string }[], grants: VaultGrant[]) {
+  const used: NoteUsed[] = [],
+    refused: string[] = [];
+  for (const n of notes) {
+    const g = grants.find(x => x.vault === n.vault);
+    try {
+      if (!g) throw new Error('blocked');
+      const v = await Fenmyr.vaultNote(n.vault, n.rel, g.folders, true);
+      used.push({
+        vault: vaultById(n.vault)?.name ?? 'Vault',
+        vaultId: n.vault,
+        rel: v.rel,
+        title: v.title,
+        tags: v.tags,
+        props: v.props,
+        excerpt: v.excerpt,
+        text: v.body ?? v.excerpt,
+      });
+    } catch (_e) {
+      refused.push(n.title);
+    }
+  }
+  return { used, refused };
+}
+
+// What the picker offers and does with a note: put it on the board as a card (the default), or add it to Myra's next
+// message, where only the vaults she may read with AI count.
+type NotePick = { grants: (b: Board) => VaultGrant[]; pick: (g: VaultGrant, r: VaultListItem) => Promise<unknown> };
+const TO_BOARD: NotePick = { grants: activeGrants, pick: (g, r) => addVaultNote(g, r.rel) };
+
+export async function openVaultPicker(use: NotePick = TO_BOARD) {
   await loadVaults();
-  const gs = activeGrants(session.board);
+  const gs = use.grants(session.board);
   $('vaultPick')?.remove();
   if (!gs.length) {
     say(
@@ -153,7 +176,7 @@ export async function openVaultPicker() {
     close();
     if (!r) return;
     try {
-      await addVaultNote(r.g, r.rel);
+      await use.pick(r.g, r);
     } catch (err) {
       say(`Hmm: ${messageOf(err)}`, 3500);
     }
@@ -165,21 +188,12 @@ export async function openVaultPicker() {
       e.preventDefault();
       const r = rows[0];
       close();
-      addVaultNote(r.g, r.rel).catch(err => say(`Hmm: ${messageOf(err)}`, 3500));
+      use.pick(r.g, r).catch(err => say(`Hmm: ${messageOf(err)}`, 3500));
     }
   };
 }
 export function init39() {
   initVaultAccess();
-  // ---------- Myra reads notes with AI: only from grants with the switch on, only when you tick "Search my vault" for that question ----------
-  appState.vaultChip = false;
-
-  $('mcVault').onclick = () => {
-    appState.vaultChip = !appState.vaultChip;
-    updateVaultChip();
-    elementById('mcInput', HTMLTextAreaElement).focus();
-  };
-
   $('vaultAdd').onclick = async () => {
     try {
       const dir = await Fenmyr.vaultPick();

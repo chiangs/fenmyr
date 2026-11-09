@@ -104,10 +104,22 @@ jobs:
         run: node tests/replyUndo.ts
       - name: Chat buttons test (Myra's next steps, sources and build buttons, kept with her replies)
         run: node tests/chatButtons.ts
+      - name: Reply acts test (Changed on the board, Show on board and Undo under a reply, in the chat and her bubble)
+        run: node tests/replyActs.ts
+      - name: Reply sources test (what Myra read as links and her next steps under a reply, kept across reopen and restart)
+        run: node tests/replySources.ts
       - name: Chat keys test (what each key does in Myra's chat input)
         run: node tests/chatKeys.ts
       - name: Chat rules test (her input's hint and her name cut short)
         run: node tests/chatRules.ts
+      - name: Chat starters test (what an empty chat offers to ask, for each kind of board)
+        run: node tests/chatStarters.ts
+      - name: Chat greeting test (her hello by her given name, and starters from the board)
+        run: node tests/chatGreeting.ts
+      - name: Chat sees test (the "Myra sees" chips, what each message is sent with, and the header's status line)
+        run: node tests/chatSees.ts
+      - name: Chat add test (pictures, files and vault notes added to one message, and their limits)
+        run: node tests/chatAdd.ts
       - name: Mac font list test
         run: node tests/mac.ts
       - name: Smoke test (the real app, with stand-in claude and whisper)

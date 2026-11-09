@@ -62,16 +62,17 @@ export function run(
   args: string[],
   timeout: number,
   extraEnv: Record<string, string> = {},
+  cwd = P.support,
 ): Promise<RunResult> {
   return new Promise(resolve => {
     const out: Buffer[] = [],
       err: Buffer[] = [];
     let p: ChildProcessByStdio<null, Readable, Readable>;
     try {
-      fs.mkdirSync(P.support, { recursive: true }); // the folder we run in has to exist (a fresh install, or a test)
+      fs.mkdirSync(cwd, { recursive: true }); // the folder we run in has to exist (a fresh install, or a test)
     } catch {}
     try {
-      p = spawn(cmd, args, { cwd: P.support, env: { ...env(), ...extraEnv }, stdio: ['ignore', 'pipe', 'pipe'] });
+      p = spawn(cmd, args, { cwd, env: { ...env(), ...extraEnv }, stdio: ['ignore', 'pipe', 'pipe'] });
     } catch (e) {
       return resolve({ code: -1, out: Buffer.alloc(0), err: Buffer.from(e instanceof Error ? e.message : String(e)) });
     }

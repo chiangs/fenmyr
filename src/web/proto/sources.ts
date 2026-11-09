@@ -1,6 +1,5 @@
-import { labelOf } from '../../shared/cardTypes.ts';
+import { cardName } from '../../shared/cardTypes.ts';
 import type { ChatAction } from '../../shared/chat.ts';
-import type { Card } from '../../shared/model.ts';
 import type { Sources } from '../../shared/repos.ts';
 import { fit } from '../canvas/handles.ts';
 import { selectOnly } from '../canvas/wires.ts';
@@ -14,14 +13,6 @@ import { esc } from '../ui/dom.ts';
 const MAX_BUTTONS = 4;
 
 const cardById = (id: string) => session.board.cards.find(c => c.id === id);
-
-// what a person calls a card: its own words, else its kind
-function nameOf(c: Card) {
-  const words = ['name', 'title', 'text', 'label']
-    .map(k => Reflect.get(c, k))
-    .find((v): v is string => typeof v === 'string' && v.trim() !== '');
-  return (words?.trim().split('\n')[0] ?? labelOf(c.type)).slice(0, 40);
-}
 
 export function showCard(id: string) {
   const c = cardById(id);
@@ -53,7 +44,7 @@ export function keepSources(sources: Sources) {
 export function cardsLine(ids: string[]) {
   const names = ids.flatMap(id => {
     const c = cardById(id);
-    return c ? [`“${nameOf(c)}”`] : [];
+    return c ? [`“${cardName(c)}”`] : [];
   });
   return `I built it from these cards on the board: ${names.join(', ')}.`;
 }
@@ -68,7 +59,7 @@ export const cardButtons = (ids: string[]): ChatAction[] =>
 // a stored card button, while its card is still on the board
 export function sourceButton(id: string): SayAction | null {
   const c = cardById(id);
-  return c ? { label: `↗ ${nameOf(c)}`, ghost: true, run: () => showCard(id) } : null;
+  return c ? { label: `↗ ${cardName(c)}`, ghost: true, run: () => showCard(id) } : null;
 }
 
 // the code pane's row of the cards a file came from
@@ -80,7 +71,7 @@ export function fromCards(file: string) {
       const c = cardById(id);
       if (!c) return [];
       const card = esc(c.id),
-        name = esc(nameOf(c));
+        name = esc(cardName(c));
       return [`<button class="pc-card" data-card="${card}" title="Show this card on the board">${name}</button>`];
     })
     .join('');
