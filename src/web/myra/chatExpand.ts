@@ -7,21 +7,18 @@ const frame = () => $('mChat');
 export const expanded = () => frame().classList.contains('writing');
 
 // CSS does the whole change on the one textarea, so its text, scroll, undo and selection stay. Only focus can lose the
-// selection (a keyboard toggle comes from the button), so it is put back.
-export function setExpanded(on: boolean) {
+// selection, so it is put back. Focus stays where it was, so a keyboard toggle stays on the button, unless `toBox` asks
+// for the textarea (Esc, which shrinks from wherever focus is).
+export function setExpanded(on: boolean, toBox = false) {
   if (on === expanded()) return;
   const box = elementById('mcInput', HTMLTextAreaElement),
     btn = $('mcExpand'),
-    { selectionStart: start, selectionEnd: end, selectionDirection: dir } = box,
-    hadFocus = document.activeElement === box || document.activeElement === btn;
+    { selectionStart: start, selectionEnd: end, selectionDirection: dir } = box;
   frame().classList.toggle('writing', on);
   btn.setAttribute('aria-pressed', String(on));
-  btn.setAttribute('aria-label', on ? 'Shrink' : 'Expand');
   btn.title = on ? 'Shrink (Esc)' : 'Expand to write';
-  if (hadFocus) {
-    box.focus({ preventScroll: true });
-    box.setSelectionRange(start, end, dir);
-  }
+  if (toBox) box.focus({ preventScroll: true });
+  box.setSelectionRange(start, end, dir);
   replaceMenu();
 }
 

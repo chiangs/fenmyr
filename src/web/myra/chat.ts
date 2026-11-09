@@ -260,6 +260,7 @@ export function init31() {
   appState.histOpen = false;
 
   $('mcNew').onclick = () => {
+    setExpanded(false);
     archiveChat();
     if (chatKeep() === 'board') {
       session.board.chat = [];
@@ -272,6 +273,7 @@ export function init31() {
   };
   // a fresh, empty chat: she tilts her head and wonders what you will ask
   $('mcHist').onclick = () => {
+    setExpanded(false);
     appState.histOpen = !appState.histOpen;
     renderChat();
   };

@@ -11,9 +11,10 @@ const boards = ['one', 'two'].map(id => ({
   cards: [card(id)],
   links: [],
   tray: [],
+  chats: [{ id: 'old', title: 'hi', t: 1, msgs: [{ who: 'me', text: 'hi', t: 1 }] }],
   view: { x: 0, y: 0, z: 1 },
 }));
-const l = await launch({ boards, open: 'one' });
+const l = await launch({ boards, open: 'one', settings: { chatKeep: 'board' } });
 const { page } = l;
 const frames = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
@@ -48,6 +49,8 @@ const select = (start: number, end: number, dir: 'forward' | 'backward' | 'none'
     },
     { start, end, dir },
   );
+const active = () => page.evaluate(() => document.activeElement?.id ?? '');
+const curBoard = () => page.evaluate(() => window.__fenmyr.curBoard()?.id ?? '');
 const lastSent = () => page.evaluate(() => [...document.querySelectorAll('.mc-msg.me')].pop()?.textContent ?? null);
 
 const failed: string[] = [];
@@ -57,6 +60,7 @@ const check = async (name: string, run: () => Promise<void>) => {
   } catch (e) {
     failed.push(`${name}: ${e instanceof Error ? e.message : String(e)}`);
   }
+  await open();
   if (await writing()) await page.click('#mcExpand').catch(() => undefined);
   await page.fill('#mcInput', '');
 };
@@ -78,6 +82,12 @@ await check('Expand and Shrink keep the draft and caret', async () => {
   await frames();
   assert.ok(await writing(), 'the chat is in Expand');
   assert.strictEqual(await page.getAttribute('#mcExpand', 'aria-pressed'), 'true');
+  assert.strictEqual(
+    await page.getAttribute('#mcExpand', 'aria-label'),
+    'Expand to write',
+    'the label does not change',
+  );
+  assert.strictEqual(await page.getAttribute('#mcExpand', 'title'), 'Shrink (Esc)', 'the tip says what a press does');
   assert.deepStrictEqual(await caret(), before, 'draft, selection and focus are the same in Expand');
   const big = await sizes();
   assert.ok(big.input > small.input * 2, `the input grew from ${small.input} to ${big.input}`);
@@ -89,22 +99,31 @@ await check('Expand and Shrink keep the draft and caret', async () => {
   await frames();
   assert.ok(!(await writing()), 'Shrink returns');
   assert.strictEqual(await page.getAttribute('#mcExpand', 'aria-pressed'), 'false');
+  assert.strictEqual(await page.getAttribute('#mcExpand', 'aria-label'), 'Expand to write');
+  assert.strictEqual(await page.getAttribute('#mcExpand', 'title'), 'Expand to write');
   assert.deepStrictEqual(await caret(), before, 'draft, selection and focus are the same after Shrink');
   assert.ok(await visible('#mcList'), 'the messages are back');
   await page.keyboard.press('Control+z');
   assert.notStrictEqual((await caret())?.value, draft, 'native undo outlived the toggles');
 });
 
-await check('a keyboard toggle keeps the caret too', async () => {
+await check('a keyboard toggle keeps focus on the button and the caret in the text', async () => {
   await open();
   await page.fill('#mcInput', draft);
-  await select(3, 3, 'none');
+  await select(3, 7, 'forward');
   await page.focus('#mcExpand');
   await page.keyboard.press('Enter');
   await frames();
   assert.ok(await writing());
-  const c = await caret();
-  assert.deepStrictEqual([c?.value, c?.start, c?.end, c?.focus], [draft, 3, 3, true]);
+  assert.strictEqual(await active(), 'mcExpand', 'focus stays on the button');
+  let c = await caret();
+  assert.deepStrictEqual([c?.value, c?.start, c?.end, c?.dir], [draft, 3, 7, 'forward']);
+  await page.keyboard.press('Space');
+  await frames();
+  assert.ok(!(await writing()));
+  assert.strictEqual(await active(), 'mcExpand', 'focus stays on the button after Shrink');
+  c = await caret();
+  assert.deepStrictEqual([c?.value, c?.start, c?.end], [draft, 3, 7]);
 });
 
 await check('Esc shrinks first, then closes, and keeps the draft', async () => {
@@ -116,12 +135,29 @@ await check('Esc shrinks first, then closes, and keeps the draft', async () => {
   assert.ok(!(await writing()), 'the first Esc shrinks');
   assert.ok(await isOpen(), 'the chat is still open');
   assert.strictEqual((await caret())?.value, draft);
+  assert.strictEqual(await active(), 'mcInput', 'focus is in the text');
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
   assert.ok(!(await isOpen()), 'the second Esc closes');
   assert.strictEqual(await page.textContent('#mDraft'), 'Draft · 3 lines');
   await open();
   assert.strictEqual((await caret())?.value, draft, 'the draft is still there');
+});
+
+await check('Esc from the button shrinks and puts focus in the text', async () => {
+  await open();
+  await page.fill('#mcInput', draft);
+  await select(5, 5, 'none');
+  await page.focus('#mcExpand');
+  await page.keyboard.press('Enter');
+  await frames();
+  assert.ok(await writing());
+  await page.keyboard.press('Escape');
+  await frames();
+  assert.ok(!(await writing()), 'Esc shrinks');
+  assert.ok(await isOpen(), 'and the chat stays');
+  const c = await caret();
+  assert.deepStrictEqual([c?.focus, c?.start, c?.end], [true, 5, 5]);
 });
 
 await check('the slash menu takes the first Esc', async () => {
@@ -165,12 +201,48 @@ await check('closing the chat ends Expand', async () => {
   assert.strictEqual((await caret())?.value, draft, 'with the draft');
 });
 
-await check('switching boards ends Expand', async () => {
+await check('New chat shows the fresh chat instead of staying in Expand', async () => {
   await open();
   await page.click('#mcExpand');
-  await page.evaluate(() => window.__fenmyr.openBoard('two'));
+  assert.ok(!(await visible('#mcList')), 'the list is hidden in Expand');
+  await page.click('#mcNew');
   await frames();
+  assert.ok(!(await writing()), 'New chat shrinks');
+  assert.ok(await visible('#mcList'), 'so the fresh chat can be seen');
+});
+
+await check('Earlier chats shows the list instead of staying in Expand', async () => {
+  await open();
+  assert.ok(await visible('#mcHist'), 'the board has earlier chats');
+  await page.click('#mcExpand');
+  await page.click('#mcHist');
+  await frames();
+  assert.ok(!(await writing()), 'Earlier chats shrinks');
+  assert.ok(await visible('#mcList'), 'so the list of chats can be seen');
+  assert.ok(await page.evaluate(() => document.getElementById('mcHist')?.classList.contains('on')), 'and it is open');
+  await page.click('#mcHist');
+});
+
+await check('switching boards ends Expand', async () => {
+  await open();
+  const here = await curBoard();
+  const other = here === 'one' ? 'two' : 'one';
+  await page.click('#mcExpand');
+  assert.ok(await writing());
+  await page.evaluate(id => window.__fenmyr.openBoard(id), other);
+  await frames();
+  assert.strictEqual(await curBoard(), other, 'the board changed');
   assert.ok(!(await writing()), 'not in Expand on the next board');
+});
+
+await check('the Send button ends Expand', async () => {
+  await open();
+  await page.fill('#mcInput', draft);
+  await page.click('#mcExpand');
+  await page.click('.mc-send');
+  await frames();
+  assert.ok(!(await writing()));
+  assert.strictEqual(await lastSent(), draft);
 });
 
 const errors = [...l.errors];

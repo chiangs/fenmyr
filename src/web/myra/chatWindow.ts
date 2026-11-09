@@ -203,7 +203,7 @@ function closeRules() {
     // the board's Esc would deselect, and a prototype board's docked chat stays open
     e.stopPropagation();
     const step = escStep({ composing: e.isComposing, expanded: expanded() }, whereNow());
-    if (step === 'shrink') setExpanded(false);
+    if (step === 'shrink') setExpanded(false, true);
     else if (step === 'close') myraOpen(false, true);
   });
   watchPresses(e => {
