@@ -73,7 +73,12 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>, f
         tie(holder, d.id);
       }
   const spotAfter = (id: string) => (cards.get(id) === 'undo' ? byId.get(id)?.was?.at : cur.get(id)?.at),
-    joins = (l: Placed<Link> | null) => !l || (spotAfter(l.item.a) === l.at && spotAfter(l.item.b) === l.at),
+    // A connector's change fits when it joins its cards where they end up. Going forward, one the plan removes goes only
+    // with a card it joins, so it stays while both its cards do.
+    fits = ({ was, now }: BoardPatch['links'][number]) =>
+      was
+        ? spotAfter(was.item.a) === was.at && spotAfter(was.item.b) === was.at
+        : !forward || !now || !spotAfter(now.item.a) || !spotAfter(now.item.b),
     linkFates = record.links.map(d => ({ d, fate: fateOf(d, curLinks.get(d.id), forward) }));
   let linksBack: typeof record.links = [];
   for (let spread = true; spread; ) {
@@ -83,7 +88,7 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>, f
         cards.set(id, 'skip');
         spread = true;
       }
-    linksBack = linkFates.filter(({ d, fate }) => fate === 'undo' && joins(d.was)).map(({ d }) => d);
+    linksBack = linkFates.filter(({ d, fate }) => fate === 'undo' && fits(d)).map(({ d }) => d);
     // Undo removes only connectors it puts back as they were, so a card it would take away from a connector the reply
     // didn't make, such as one the person drew after it, counts as changed since and stays with it.
     const own = new Set(linksBack.map(d => d.id));

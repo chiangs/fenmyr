@@ -1,6 +1,6 @@
 // Landing a planned reply over boards built by hand: on a board unchanged since, exactly what was planned; a card the
-// person changed since stays theirs, with its collection, and she touched only what landed; a card being typed in still
-// takes a change to its place; and landing it again changes nothing more.
+// person changed since stays theirs, with its collection and connectors, and she touched only what landed; a card being
+// typed in still takes a change to its place; and landing it again changes nothing more.
 import assert from 'node:assert';
 import { type BoardLists, landedTouched, listsOf, recordOf } from '../src/shared/changes.ts';
 import type { Card } from '../src/shared/model.ts';
@@ -129,9 +129,16 @@ const drawn = board();
 drawn.links.push({ id: 'L9', a: 'a', b: 'c' });
 const connected = planDo(record, drawn, new Set());
 assert.deepStrictEqual(ids(connected.skipped), ['c'], 'a card the plan removes but they connected since is named');
-assert(
-  connected.lists.cards.some(c => c.id === 'c') && connected.lists.links.some(x => x.id === 'L9'),
-  'and stays with their connector',
+const has = (l: BoardLists, ...want: string[]) => want.filter(id => ![...l.cards, ...l.links].some(x => x.id === id));
+assert.deepStrictEqual(
+  has(connected.lists, 'c', 'L9', 'L2'),
+  [],
+  'and stays with their connector and with the one the plan removes along with it',
+);
+assert.deepStrictEqual(
+  has(planDo(record, board(), new Set(['c'])).lists, 'c', 'L2'),
+  [],
+  'a card the plan removes that is being typed in stays with its connector too',
 );
 
 const typing = planDo(record, board(), new Set(['b']));
