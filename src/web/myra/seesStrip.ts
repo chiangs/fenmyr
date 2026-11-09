@@ -1,5 +1,6 @@
-import { kindOf } from '../../shared/askFiles.ts';
+import { kindOf, MAX_FILES } from '../../shared/askFiles.ts';
 import { labelOf } from '../../shared/cardTypes.ts';
+import { DRAFT_MAX } from '../../shared/chat.ts';
 import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
@@ -207,9 +208,9 @@ export function seedAdded(board: string, items: readonly Added[]) {
   renderSees();
 }
 
-/** Drops the next-message choices of boards that are gone, which only a board that was deleted leaves behind. */
-export function forgetNexts(alive: ReadonlySet<string>) {
-  for (const board of nexts.keys()) if (!alive.has(board)) nexts.delete(board);
+/** Drops the next-message choices of boards that are known to be gone. */
+export function forgetNexts(gone: Iterable<string>) {
+  for (const board of gone) nexts.delete(board);
 }
 
 /** The boards that hold choices or additions for their next message. */
@@ -222,14 +223,29 @@ export function clearPastes() {
   tell();
 }
 
-/** Gives a refused message's pictures, files and pastes back to the board it was written on, ahead of anything added
- *  since, so a send the host turned down loses nothing. */
-export function putBack(board: string, items: readonly Added[]) {
-  if (!items.length) return;
-  const now = nexts.get(board) ?? FRESH;
-  nexts.set(board, { ...now, added: addTo(items, now.added) });
+/** Gives a message that never reached Myra its pictures, files and pastes back on the board it was written on, ahead of
+ *  anything added since. A message holds at most MAX_FILES files and pastes, and the pastes with `words` (the characters
+ *  the draft will hold) fit the draft's budget, so what was added since gives way. Returns how many it left out. */
+export function putBack(board: string, items: readonly Added[], words: number): number {
+  if (!items.length) return 0;
+  const now = nexts.get(board) ?? FRESH,
+    late = now.added.filter(a => !items.some(i => i.id === a.id));
+  let files = 0,
+    chars = words,
+    left = 0;
+  const fits = (a: Added) => {
+    if (a.kind === 'note') return true;
+    const room = files < MAX_FILES && (a.kind !== 'paste' || chars + a.text.length <= DRAFT_MAX);
+    if (room) {
+      files++;
+      if (a.kind === 'paste') chars += a.text.length;
+    } else left++;
+    return room;
+  };
+  nexts.set(board, { ...now, added: addTo(items.filter(fits), late.filter(fits)) });
   renderSees();
   tell();
+  return left;
 }
 
 /** Takes one picture, file, note or pasted text out of the next message. */

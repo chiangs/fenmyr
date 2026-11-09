@@ -2,6 +2,7 @@
 // puts it back, both keeping the draft, the caret and native undo; Esc shrinks before it closes, with the slash menu
 // taking the first Esc; Ctrl+Enter sends from either size; a send, a close and a board switch end Expand.
 import assert from 'node:assert';
+import { askStandIn } from './support/askStandIn.ts';
 import { launch } from './support/launch.ts';
 
 const card = (id: string) => ({ id, type: 'note', x: 0, y: 0, w: 220, h: 140, r: 0, color: 'butter', text: id });
@@ -14,7 +15,8 @@ const boards = ['one', 'two'].map(id => ({
   chats: [{ id: 'old', title: 'hi', t: 1, msgs: [{ who: 'me', text: 'hi', t: 1 }] }],
   view: { x: 0, y: 0, z: 1 },
 }));
-const l = await launch({ boards, open: 'one', settings: { chatKeep: 'board' } });
+const l = await launch({ boards, open: 'one', settings: { chatKeep: 'board' }, claude: true });
+askStandIn(l);
 const { page } = l;
 const frames = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
