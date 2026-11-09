@@ -360,6 +360,7 @@
     "tests/replyActs.ts": "Checks what shows under a reply that changed the board in the real app: its summary, Show on board, and Undo with Ctrl+Z, a board reopened and her bubble.",
     "tests/replySources.ts": "Checks what Myra read and her next steps under a reply in the real app: note and page links, their order, and that they last through reopen and restart.",
     "tests/offerRead.ts": "Checks Myra’s prototype offer as read from her reply and from the board file, a bad one dropping alone.",
+    "tests/offerKept.ts": "Checks Myra’s prototype offer is kept until its board is made, and that her bubble’s buttons never build on another board.",
     "tests/reply.ts": "Checks a malformed reply from Myra loses only its bad fields.",
     "tests/replyUndo.ts": "Checks a Myra reply is one undo step even with slow pictures, waits its turn, previews without changing anything, and shows in the open doc's editor.",
     "tests/replyWhileBusy.ts": "Checks a Myra reply that arrives while the person drags a card or types a collection's name lands as it would once they let go, and one for a board no longer open is left.",

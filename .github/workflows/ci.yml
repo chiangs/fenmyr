@@ -88,6 +88,8 @@ jobs:
         run: node tests/buildButtons.ts
       - name: Prototype offer test (Myra offers a prototype board for a request that needs code, and Start and build makes it and builds)
         run: node tests/protoOffer.ts
+      - name: Offer kept test (Myra's prototype offer kept until its board is made, and never built on another board)
+        run: node tests/offerKept.ts
       - name: Packages test (installed packages in a prototype, with a stand-in npm)
         run: node tests/packages.ts
       - name: Sync test (fetch, pull and clashes with a stand-in GitHub)

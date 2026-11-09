@@ -50,7 +50,7 @@ export function drawActs(
   const pieces = acts.flatMap(a => piecesOf(a).map((p): [Act, Piece] => [a, p]));
   const button = (
     into: HTMLElement,
-    { label, cls, ghost, title, after, run }: Button,
+    { label, cls, ghost, title, after, live, run }: Button,
     a: Act,
     slotActs: readonly Act[],
   ) => {
@@ -59,6 +59,9 @@ export function drawActs(
     b.className = cls || (ghost ? 'ghost' : '');
     if (title) b.title = title;
     b.onclick = () => {
+      // one that stopped applying after it was drawn, such as an offer in her bubble once another board is open, takes
+      // and runs nothing: it only draws again, and its view leaves it out
+      if (live && !live()) return drawActs(host, m, acts, onClick);
       const gone = after === 'stay' ? [] : after === 'self' ? [a] : slotActs;
       if (m) spend(m, storedOf(gone));
       onClick?.(after);

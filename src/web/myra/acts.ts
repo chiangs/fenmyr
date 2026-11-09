@@ -19,7 +19,8 @@ type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
 
 // what a click takes away: nothing, this button, or every button in its row
 export type After = 'stay' | 'self' | 'row';
-export type Button = SayAction & { title?: string; after: After };
+// live: whether it still applies when pressed, as it did when drawn
+export type Button = SayAction & { title?: string; after: After; live?: () => boolean };
 export type Piece =
   | { slot: 'summary'; head: string; lines: readonly string[]; cls?: string }
   | { slot: 'sources'; head: string; links: readonly Button[] }

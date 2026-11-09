@@ -5,7 +5,7 @@ import { protoSlug } from '../../shared/repos.ts';
 import { freshCopies } from '../canvas/clipboard.ts';
 import { appState, session } from '../core/state.ts';
 import type { Button, Piece } from '../myra/acts.ts';
-import { renderChat } from '../myra/chatLog.ts';
+import { chatLog, renderChat } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
 import { reply } from '../myra/say.ts';
 import { startBuild } from '../proto/build.ts';
@@ -27,14 +27,21 @@ function codeLine(o: ProtoOffer, p: Project | undefined) {
   return `Code goes in ${repo}/prototypes/${protoSlug(o.name)}`;
 }
 
+type Offer = Extract<ChatAction, { kind: 'offer' }>;
+
+// the message in the open chat that holds the offer: none once it is spent, or while another board is open
+const holder = (a: Offer) => chatLog().find(m => m.acts?.includes(a));
+
 // Once linked, the card offers Start and build, so the chat shows it: drawn again, or opened if it was closed.
 const redraw = () => (chatOpen() ? renderChat() : myraOpen(true));
 
 // The card under her line, drawn from the library as it is now, so linking a repo changes what it offers. Its buttons
-// show while its board is open, since the cards it copies are there. A function declaration, since VIEW reads it inside
-// an import cycle.
-export function offerPieces({ board, offer: o }: Extract<ChatAction, { kind: 'offer' }>): Piece[] {
-  const open = session.board.id === board,
+// work only while the open chat holds it, so on its own board, where the cards it copies are. A function declaration,
+// since VIEW reads it inside an import cycle.
+export function offerPieces(a: Offer): Piece[] {
+  const o = a.offer,
+    live = () => !!holder(a),
+    open = live(),
     p = projectFor(o.project),
     from = open ? session.board.cards.filter(c => o.from.includes(c.id)) : [],
     count = from.length === 1 ? '1 card' : `${from.length} cards`,
@@ -45,12 +52,12 @@ export function offerPieces({ board, offer: o }: Extract<ChatAction, { kind: 'of
   if (!open) return [card];
   const go: Button =
     p && !p.repo
-      ? { label: 'Link a repo first', after: 'stay', run: () => linkRepo(p, redraw) }
-      : { label: 'Start and build', after: 'self', run: () => startAndBuild(o) };
+      ? { label: 'Link a repo first', after: 'stay', live, run: () => linkRepo(p, redraw) }
+      : { label: 'Start and build', after: 'self', live, run: () => startAndBuild(o) };
   return [
     card,
     { slot: 'reply', button: go },
-    { slot: 'reply', button: { label: 'Not now', ghost: true, after: 'self', run: () => {} } },
+    { slot: 'reply', button: { label: 'Not now', ghost: true, after: 'self', live, run: () => {} } },
   ];
 }
 
