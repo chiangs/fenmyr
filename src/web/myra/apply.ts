@@ -126,8 +126,8 @@ const viewAt = (): ViewAt => ({
 // it is and as it will be. touched: every card it makes, moves or edits, in that order.
 export type Planned = { held: HeldReply; record: BoardPatch; changes: ChangeSet; touched: string[] };
 
-// The board, the screen and the disk stay as they are. A template that opens its own board plans nothing here, since
-// applyHeld plans it there once it is open.
+// The board, the screen and the disk stay as they are. A template that opens its own board plans nothing until that
+// board is open: `opened`.
 export function planHeld(held: HeldReply, opened = false): Planned {
   const lists = listsOf(session.board),
     { skipped, touched } =
@@ -141,17 +141,16 @@ export const asItWouldLand = (p: Planned): Undone =>
   planDo(p.record, session.board, new Set(session.editing ? [session.editing] : []));
 
 // Null when another board is open than the one the turn was asked on: then nothing is applied.
-export async function applyHeld(turn: Turn, planned: Planned): Promise<Applied | null> {
+export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | null> {
   if (!turn.stillOpen()) return null;
-  const { held } = planned,
-    tpl = held.template;
+  const tpl = held.template;
   if (tpl?.mode === 'new') {
     await useTemplate(tpl.template, 'new');
     // opening a board resets undo on a timer; after it, the reply is an undo step of its own on the new board
     await new Promise(res => setTimeout(res, 0));
   }
   while (appState.drag) await new Promise(requestAnimationFrame);
-  const { changes, record, touched } = changeBoard(tpl?.mode === 'new' ? planHeld(held, true) : planned),
+  const { changes, record, touched } = changeBoard(planHeld(held, true)),
     id = uid(),
     changed = record.cards.length > 0 || record.links.length > 0,
     board = session.board.id;
@@ -178,7 +177,8 @@ function changeBoard(p: Planned) {
   remember();
   const b = session.board,
     before = listsOf(b),
-    land = asItWouldLand(p),
+    // planned in this same turn, where planBoard already left the card being typed in
+    land = planDo(p.record, b, new Set()),
     left = new Set([...p.changes.skipped, ...land.skipped.map(c => c.id)]);
   try {
     putOnBoard(b, land.lists);

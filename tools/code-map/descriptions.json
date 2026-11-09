@@ -359,6 +359,7 @@
     "tests/replySources.ts": "Checks what Myra read and her next steps under a reply in the real app: note and page links, their order, and that they last through reopen and restart.",
     "tests/reply.ts": "Checks a malformed reply from Myra loses only its bad fields.",
     "tests/replyUndo.ts": "Checks a Myra reply is one undo step even with slow pictures, waits its turn, previews without changing anything, and shows in the open doc's editor.",
+    "tests/replyWhileBusy.ts": "Checks a Myra reply that arrives while the person drags a card or types a collection's name lands as it would once they let go, and one for a board no longer open is left.",
     "tests/richAccess.ts": "Checks rich notes with a keyboard and a screen reader: names, pressed states, F10 and the link box.",
     "tests/richDocs.ts": "Checks a rich note dropped into a Doc keeps its formatting, and a plain note drops as before.",
     "tests/richIntegration.ts": "Checks Myra, copying, tags, collection heights and the Workshop starter with rich notes.",

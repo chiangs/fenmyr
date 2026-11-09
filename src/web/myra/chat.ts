@@ -12,7 +12,7 @@ import { settings } from '../settings/settings.ts';
 import { elementById, textField } from '../ui/dom.ts';
 import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed } from '../vault/ask.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
-import { applyHeld, holdReply, planHeld, Turn } from './apply.ts';
+import { applyHeld, holdReply, Turn } from './apply.ts';
 import type { Picked } from './applyTypes.ts';
 import { clearedCount, initDraft } from './chatDraft.ts';
 import { initExpand, setExpanded } from './chatExpand.ts';
@@ -248,7 +248,7 @@ async function answer(turn: Turn, asked: Asked) {
     );
     reached = true;
     noteSignIn(false);
-    await applyHeld(turn, planHeld(await holdReply(parse(raw), q, ctx)));
+    await applyHeld(turn, await holdReply(parse(raw), q, ctx));
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
     // once her answer is in, a failure is in applying it, and what the person sent has been read

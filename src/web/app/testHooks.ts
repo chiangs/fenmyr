@@ -165,10 +165,7 @@ const makeHooks = () => ({
   },
   // a reply as if Claude had just sent it: it waits its turn behind any other
   applyMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
-    Turn.take(
-      async turn => applyHeld(turn, planHeld(await holdReply(r, q, { ...ctx, sees: peekSees() }))),
-      session.board.id,
-    ),
+    Turn.take(async turn => applyHeld(turn, await holdReply(r, q, { ...ctx, sees: peekSees() })), session.board.id),
   replyRecord,
   previewMyra: async (r: MyraReply) => {
     const p = planHeld(await holdReply(r, '', { ...NO_VAULT, sees: peekSees() }));
