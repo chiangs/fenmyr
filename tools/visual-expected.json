@@ -1,1 +1,4 @@
-{}
+{
+  "offer-chat": "New in 6d: under her line “That needs code, so I’d make it a prototype board.” the offer card, a box with a pink-deep border and a faint pink-deep fill, headed “New prototype board: Checkout” and reading “Made from 2 cards: “A note” and “Checklist””, “Code goes in the repo of a project you choose” and “React, for phones”, with Start and build and a ghost Not now under it. The base has no offer, so it shows her line alone.",
+  "offer-norepo": "New in 6d: the same card once the board is in “Shop”, a project with no repo: its code line reads “Code goes in a repo linked to “Shop”” and its first button is Link a repo first. The base shows her line alone."
+}
