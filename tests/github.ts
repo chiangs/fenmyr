@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { launch } from './support/launch.ts';
+import { fromGitMenu } from './support/prototype.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-github-')));
 const bin = path.join(work, 'bin'),
@@ -197,8 +198,8 @@ try {
     },
     [acme, 'pf'],
   );
-  await page.waitForSelector('#prGit [data-git="github"]');
-  await page.click('#prGit [data-git="github"]');
+  await page.waitForSelector('#prGit [data-git="more"]');
+  await fromGitMenu(page, /^Open .+ on GitHub$/);
   await page.waitForTimeout(300);
   assert.strictEqual(
     await l.app.evaluate(() => Reflect.get(globalThis, '__opened')),

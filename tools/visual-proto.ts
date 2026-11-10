@@ -7,21 +7,27 @@ import { settle } from '../tests/support/launch.ts';
 import type { Group, Step } from './visual-myra.ts';
 
 const screen: [string, Step][] = [['screen', async () => {}]];
-// the chat dragged to its narrowest, 280 px
+// the chat dragged to its narrowest, 280 px, along its top so the pointer ends over no button in the chat
 const narrowestChat: Step = async page => {
   const d = await page.locator('.pr-div[data-d="chat"]').boundingBox();
   if (!d) return;
-  await page.mouse.move(d.x + d.width / 2, d.y + d.height / 2);
+  await page.mouse.move(d.x + d.width / 2, d.y + 10);
   await page.mouse.down();
-  await page.mouse.move(d.x + 100, d.y + d.height / 2, { steps: 4 });
+  await page.mouse.move(d.x + 100, d.y + 10, { steps: 4 });
   await page.mouse.up();
+};
+
+// the git bar's More menu open; a checkout whose bar has no More shows its screen as it is
+const gitMore: Step = async page => {
+  const more = page.locator('#prGit [data-git="more"]');
+  if (await more.count()) await more.click();
 };
 
 export const PROTO_GROUPS: Record<string, Group> = {
   'proto-wide': { proto: true, width: 1440, states: screen },
-  'proto-medium': { proto: true, width: 1200, states: screen },
+  'proto-medium': { proto: true, width: 1200, states: [...screen, ['git-more', gitMore]] },
   'proto-narrow': { proto: true, width: 900, states: [...screen, ['chat-280', narrowestChat]] },
-  'proto-dark': { proto: true, width: 1200, settings: { theme: 'dark' }, states: screen },
+  'proto-dark': { proto: true, width: 1200, settings: { theme: 'dark' }, states: [...screen, ['git-more', gitMore]] },
 };
 
 // A prototype board in a fresh repo, its starter running in the preview. A checkout without prototypes (main, until

@@ -82,6 +82,8 @@ jobs:
         run: node tests/protoChat.ts
       - name: Dock header test (the board's name and stack in the docked chat's header)
         run: node tests/dockHead.ts
+      - name: Dock git bar test (the git bar above Myra's input on a prototype board, and its More menu)
+        run: node tests/dockGit.ts
       - name: Preview test (a prototype running in its sandbox)
         run: node tests/preview.ts
       - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)

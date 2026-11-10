@@ -84,8 +84,13 @@ function build() {
   const el = document.createElement('div');
   el.className = 'pr-root';
   el.id = 'proto';
-  el.innerHTML = `<div class="pr-main"><div class="pr-git" id="prGit"></div><div class="pr-row">${panes}</div></div><div class="pr-div" data-d="chat"></div><div class="pr-chat" id="prChat"></div>`;
+  el.innerHTML = `<div class="pr-row">${panes}</div><div class="pr-div" data-d="chat"></div><div class="pr-chat" id="prChat"></div>`;
   document.body.appendChild(el);
+  // the git bar lives in Myra's chat, between the thread and the input's height grip; off a prototype board it's hidden
+  const git = document.createElement('div');
+  git.className = 'pr-git';
+  git.id = 'prGit';
+  $('mcList').after(git);
   el.addEventListener('click', e => {
     const t = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-fold], [data-open]') : null;
     const p = FOLD_ORDER.find(x => x === (t?.dataset.fold ?? t?.dataset.open));

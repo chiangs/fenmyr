@@ -109,8 +109,8 @@ try {
   assert.strictEqual(dock.b, pane.b - 18, '18 px over its bottom');
   assert.match(
     s.git,
-    /acme\s*main\s*\d+ changes? not committed\s*No commits yet/,
-    'the git bar names the repo, branch, changes and sync',
+    /main\s*\d+ files? not committed · No commits yet/,
+    'the git bar names the branch, changes and sync',
   );
   const gitBar = await page.evaluate(() => {
     return {
@@ -120,8 +120,8 @@ try {
   });
   assert.deepStrictEqual(
     gitBar,
-    { icons: ['git-branch', 'git-commit', 'cloud-up'], commit: 'Commit' },
-    'the branch and buttons carry icons, and Commit has no ellipsis',
+    { icons: ['git-branch', 'git-commit', 'more'], commit: 'Commit' },
+    'the branch, Commit and More carry icons, and Commit has no ellipsis',
   );
   assert.match(s.code, /export function App/, 'the code pane opens on App.tsx');
   assert.deepStrictEqual(s.stage, s.slot, 'the canvas sits exactly in its column');
@@ -224,14 +224,14 @@ try {
     document.body.classList.add('dark', 'following-caelestia');
     document.body.style.setProperty('--panel', 'rgb(16, 20, 30)');
     const bg = (sel: string) => getComputedStyle(document.querySelector(sel) ?? document.body).backgroundColor;
-    const out = [bg('[data-p="code"]'), bg('#prGit'), bg('#prChat')];
+    const out = [bg('[data-p="code"]'), bg('#prChat')];
     document.body.classList.remove('dark', 'following-caelestia');
     document.body.style.removeProperty('--panel');
     return out;
   });
   assert.deepStrictEqual(
     panes,
-    ['rgb(16, 20, 30)', 'rgb(16, 20, 30)', 'rgb(16, 20, 30)'],
+    ['rgb(16, 20, 30)', 'rgb(16, 20, 30)'],
     'with Caelestia’s dark panels, the prototype screen takes its panel colour',
   );
 
