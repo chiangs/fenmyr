@@ -1,4 +1,5 @@
 import type { ChatMsg, SavedChat } from '../../shared/chat.ts';
+import type { Board } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
@@ -17,6 +18,10 @@ const CHATS_KEPT = 10;
 export const chatKeep = (): string => (session.board?.kind === 'prototype' ? 'board' : settings.chatKeep);
 
 const keepsHistory = () => chatKeep() === 'board' && !!session.board;
+
+// A prototype's one chat is the record of every build, so it keeps its last 500 whatever the setting says
+const PROTO_KEPT = 500;
+const keptOf = (b: Board) => (b.kind === 'prototype' ? PROTO_KEPT : Number(settings.chatMax) || 60);
 
 // The earlier chat a prototype has open to read. It can outlive its board, so it counts only while the board has it.
 let reading: SavedChat | undefined;
@@ -174,7 +179,7 @@ export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
   const log = chatLog(),
     m: ChatMsg = { who, text, t: Date.now() },
     stored = storedOf(acts),
-    max = Number(settings.chatMax) || 60;
+    max = keptOf(session.board);
   if (stored.length) m.acts = stored;
   log.push(m);
   if (log.length > max) log.splice(0, log.length - max);

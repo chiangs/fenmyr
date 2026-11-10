@@ -1,5 +1,6 @@
 // A prototype board keeps one chat: New chat is gone, /clear answers instead of clearing, chats put away before this
-// open read-only without changing the board, and Clear all chats still clears it.
+// open read-only without changing the board, the thread keeps its last 500 messages whatever Settings says, and Clear
+// all chats still clears it.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import type { ChatMsg, SavedChat } from '../src/shared/chat.ts';
@@ -44,6 +45,7 @@ const { work, repo } = freshRepo('fenmyr-proto-thread-');
 const note = { id: 'n1', type: 'note', x: 40, y: 40, w: 220, h: 120, text: 'People miss the promo field' };
 const l = await launch({
   boards: [{ id: 'plain', name: 'Plain', cards: [note], links: [], tray: [] }],
+  settings: { chatMax: '20' },
   open: 'plain',
 });
 const { page } = l;
@@ -146,6 +148,39 @@ try {
   assert.strictEqual(await page.locator('#mcList .mh-row').count(), 2, 'Earlier chats opens on the list again');
   await page.click('#mcHist');
 
+  const hint = await page.evaluate(
+    () => document.querySelector('[data-seg="chatMax"]')?.closest('.set-row')?.querySelector('small')?.textContent,
+  );
+  assert.strictEqual(hint, 'Older messages fall off the top. A prototype keeps its last 500.', 'the setting says so');
+
+  const say30 = () =>
+    page.evaluate(async () => {
+      for (let i = 0; i < 30; i++) await window.__fenmyr.applyMyra({ say: `Line ${i}.` }, 'q');
+      return window.__fenmyr.curBoard().chat?.length ?? 0;
+    });
+  const had = (await board()).chat.length;
+  assert.strictEqual(await say30(), had + 30, 'with 20 to keep in Settings, a prototype keeps all 30 new messages');
+  const capped = await page.evaluate(async () => {
+    const log = window.__fenmyr.curBoard().chat ?? [];
+    while (log.length < 500) log.push({ who: 'myra', text: `Filler ${log.length}.`, t: Date.now() });
+    const second = log[1];
+    await window.__fenmyr.applyMyra({ say: 'The newest line.' }, 'q');
+    return { n: log.length, oldestGone: log[0] === second, last: log.at(-1)?.text };
+  });
+  assert.deepStrictEqual(
+    capped,
+    { n: 500, oldestGone: true, last: 'The newest line.' },
+    'and its last 500, letting the oldest go',
+  );
+
+  await page.evaluate(() => window.__fenmyr.openBoard('plain'));
+  await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'plain');
+  await settle(page, 300);
+  assert.strictEqual(await say30(), 20, 'an ordinary board keeps the 20 Settings asks for');
+
+  await page.evaluate(() => window.__fenmyr.openBoard('pb'));
+  await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'pb');
+  await settle(page, 300);
   await page.click('#mcHist');
   await page.click('#mcList .mh-row[data-i="1"] .mh-del');
   await page.click('#mcList .mh-row[data-i="1"] .mh-del');
