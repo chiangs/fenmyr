@@ -1,8 +1,9 @@
 // While one of Myra's plans waits, the board shows what Do it would land: a dashed box where each card it adds, moves
-// or changes would end up, and a "Removed" box over each card it takes away. The boxes come from the landing Do it
-// makes, laid out as the board lays out cards once they land, so after Do it each card sits where its box was. The layer
-// is in #world, outside #cards, with no .card or data-id and no pointer, so nothing takes a box for a card. It is never
-// saved, and an export hides it.
+// or changes would end up, a "Removed" box over each card it takes away, and a quieter box where each card no step
+// names would go when its collection is laid out again, the collection's own frame included. The boxes come from the
+// landing Do it makes, laid out as the board lays out cards once they land, so after Do it every card whose place or
+// size changed sits where its box was. The layer is in #world, outside #cards, with no .card or data-id and no
+// pointer, so nothing takes a box for a card. It is never saved, and an export hides it.
 import { cardName } from '../../shared/cardTypes.ts';
 import { type BoardLists, copy, holdersOf } from '../../shared/changes.ts';
 import type { Card } from '../../shared/model.ts';
@@ -17,9 +18,10 @@ import { cardEl, isTyping, textField } from '../ui/dom.ts';
 import { waitingNow } from './heldPlan.ts';
 
 type Now = NonNullable<ReturnType<typeof waitingNow>>;
-type Kind = 'add' | 'move' | 'edit' | 'remove';
-// step: the plan's step it belongs to, lit while the pointer is on that step
-type Box = Bounds & { id: string; kind: Kind; step: number; label: string };
+// laid: a card no step names, which Do it moves or resizes only by laying out its collection again
+type Kind = 'add' | 'move' | 'edit' | 'remove' | 'laid';
+// steps: the plan's steps whose change puts it there, any of which lights it while the pointer is on that step
+type Box = Bounds & { id: string; kind: Kind; steps: number[]; label: string };
 
 const HEAD = 'Preview · not on the board yet';
 
@@ -72,47 +74,74 @@ function busy() {
   return !!appState.drag || !!session.editing || input.value.trim() !== '' || (active !== input && isTyping(active));
 }
 
+const sameRect = (a: Bounds, b: Bounds) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+const rectOf = ({ x, y, w, h }: Bounds) => ({ x, y, w, h });
+
 // One box for each card a step covers, except a card they changed since, which she leaves, and a screen's pieces,
-// which go with their screen.
+// which go with their screen; then a quieter one for each other card Do it would move or resize.
 function boxesOf({ planned: { record, changes }, parts, land, left }: Now) {
   const touched = new Set(record.cards.map(d => d.id)),
     removed = new Set(changes.removed),
     added = new Set(changes.added),
     moved = new Set(changes.moved),
-    laid = laidOut(land.lists),
+    { cards: laid, again } = laidOut(land.lists),
     before = new Map(session.board.cards.map(c => [c.id, c])),
-    list = parts.flatMap((cards, step) =>
+    lit = lightsOf(parts, land.lists),
+    own = (c: Card) => !(c.onFrame && touched.has(c.onFrame)),
+    named = parts.flatMap(cards =>
       cards.flatMap((id): Box[] => {
         const gone = removed.has(id),
           c = (gone ? before : laid).get(id);
-        if (!c || left.has(id) || (c.onFrame && touched.has(c.onFrame))) return [];
+        if (!c || left.has(id) || !own(c)) return [];
         const kind = gone ? 'remove' : added.has(id) ? 'add' : moved.has(id) ? 'move' : 'edit';
-        return [{ id, kind, step, x: c.x, y: c.y, w: c.w, h: c.h, label: gone ? 'Removed' : cardName(c) }];
+        return [{ id, kind, steps: lit(id), ...rectOf(c), label: gone ? 'Removed' : cardName(c) }];
       }),
     ),
+    boxed = new Set(named.map(b => b.id)),
+    shifted = again.flatMap((c): Box[] => {
+      const was = before.get(c.id);
+      if (!was || boxed.has(c.id) || !own(c) || sameRect(was, c)) return [];
+      return [{ id: c.id, kind: 'laid', steps: lit(c.id), ...rectOf(c), label: '' }];
+    }),
+    list = [...named, ...shifted],
     holders = holdersOf(land.lists.cards),
     corners = list.map(b => laid.get(holders.get(b.id) ?? '') ?? b);
   return { list, head: corners.length ? boxOf(corners) : null };
 }
 
-// The board's cards once the plan lands, each where it ends up. Landing lays out every collection again, measuring the
-// cards drawn anew, so a collection holding a card the plan changes is laid out here the same way, on copies, since
-// the landing shares the board's own card objects.
+// The steps that light each card: its own, and every step whose cards go into, come out of or change inside the
+// collection it lands in, or inside it when it is a collection, since that step's change lays it out again.
+function lightsOf(parts: readonly string[][], lists: BoardLists) {
+  const after = holdersOf(lists.cards),
+    now = holdersOf(session.board.cards),
+    lays = new Map<string, Set<number>>();
+  parts.forEach((cards, step) => {
+    for (const id of cards)
+      for (const at of [id, after.get(id), now.get(id)]) if (at) lays.set(at, (lays.get(at) ?? new Set()).add(step));
+  });
+  return (id: string) => [...new Set([...(lays.get(id) ?? []), ...(lays.get(after.get(id) ?? '') ?? [])])];
+}
+
+// The board's cards once the plan lands, each where it ends up, and the cards laid out again on the way. Landing lays
+// out every collection again, measuring the cards drawn anew, so a collection holding a card the plan changes is laid
+// out here the same way, on copies, since the landing shares the board's own card objects.
 function laidOut(lists: BoardLists) {
   const board = new Map(session.board.cards.map(c => [c.id, c])),
-    out = new Map(lists.cards.map(c => [c.id, c])),
+    cards = new Map(lists.cards.map(c => [c.id, c])),
+    again: Card[] = [],
     fresh = (c: Card | undefined) => !!c && board.get(c.id) !== c,
     restyled = (c: Card) => laidMarked(c.id) !== marked(c.id);
   for (const s of lists.cards) {
-    if (s.type !== 'coll' || !(fresh(s) || s.kids.some(id => fresh(out.get(id))))) continue;
-    const kids = s.kids.flatMap(id => out.get(id) ?? []),
+    if (s.type !== 'coll' || !(fresh(s) || s.kids.some(id => fresh(cards.get(id))))) continue;
+    const kids = s.kids.flatMap(id => cards.get(id) ?? []),
       heights = new Map(kids.map(k => [k.id, fresh(k) ? heightOf(k) : restyled(k) ? drawnHeight(k) : k.h])),
       coll = copy(s),
       copies = kids.map(copy);
     arrange(coll, copies, k => heights.get(k.id) ?? k.h);
-    for (const c of [coll, ...copies]) out.set(c.id, c);
+    for (const c of [coll, ...copies]) cards.set(c.id, c);
+    again.push(coll, ...copies);
   }
-  return out;
+  return { cards, again };
 }
 
 // A card the plan doesn't change, measured as it is drawn now, since its look changed after the board last laid it out.
@@ -146,7 +175,7 @@ function paint(list: readonly Box[], at: Bounds | null, hot: number | null) {
     els = list.map(b => {
       const el = document.createElement('div');
       el.className = `pp-box ${b.kind}`;
-      el.classList.toggle('hot', b.step === hot);
+      el.classList.toggle('hot', hot !== null && b.steps.includes(hot));
       el.dataset.pp = b.id;
       Object.assign(el.style, { left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, height: `${b.h}px` });
       el.appendChild(document.createElement('span')).textContent = b.label;

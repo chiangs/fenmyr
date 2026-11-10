@@ -1238,14 +1238,16 @@ body.dark .set-maker { background: var(--set-dark-warm); } body.dark .sm-sig { c
 .group-box { position: absolute; border: 2px dashed rgb(from var(--ob-bg) r g b / .85); border-radius: 30px; corner-shape: squircle; }
 .group-box span { position: absolute; left: 14px; top: -11px; padding: 3px 9px; border-radius: 134px; corner-shape: squircle; background: var(--ob-bg); color: var(--hilite); font: 700 10px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; }
 
-/* a waiting plan's preview: a dashed box where each card would land, "Removed" over each card it takes away; never a card, so the pointer goes through */
+/* a waiting plan's preview: a dashed box where each card would land, "Removed" over each card it takes away, and a quieter box where a card it only lays out again goes; never a card, so the pointer goes through */
 .plan-preview { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 3; }
 .pp-box { position: absolute; border: 2px dashed var(--ink-soft); border-radius: 24px; corner-shape: squircle; background: color-mix(in oklch, var(--paper) 70%, transparent); transition: opacity .15s, border-color .15s; }
 .pp-box span { position: absolute; left: 12px; right: 12px; top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 calc(12px * var(--secz, 1))/1.2 var(--font); color: var(--ink-soft); }
 .pp-box.remove { border-color: var(--pink-deep); }
 .pp-box.remove span { color: var(--ink); font-weight: 700; }
+.pp-box.laid { border: 1.5px dashed color-mix(in oklch, var(--ink-soft) 60%, transparent); background: none; }
 body.dark .pp-box { background: rgba(var(--sh), .45); }
 body.dark .pp-box.remove { background: rgba(var(--sh), .6); }
+body.dark .pp-box.laid { background: none; }
 .plan-preview.lit .pp-box { opacity: .3; }
 .plan-preview.lit .pp-box.hot { opacity: 1; border-color: var(--select); box-shadow: 0 0 0 4px color-mix(in oklch, var(--select) 22%, transparent); }
 .pp-box.hot span { color: var(--select); }

@@ -1,7 +1,8 @@
-// A plan's preview shows exactly what Do it lands: after Do it each card sits where its box was, cards filed into a
-// collection or a kanban included, laid out as the board lays them. While the plan waits the preview follows the board:
-// a card the person changes loses its box, and the plan's step says she will leave it. The preview goes whenever the
-// plan stops waiting.
+// A plan's preview shows exactly what Do it lands: after Do it every card whose place or size changed had a box where
+// it now sits, cards filed into a collection or a kanban included, laid out as the board lays them, and so did each card
+// and collection frame that only moves or grows because of them. While the plan waits the preview follows the board: a
+// card the person changes loses its box, and the plan's step says she will leave it. The preview goes whenever the plan
+// stops waiting.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -10,7 +11,7 @@ import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
 import { type Launched, launch, settle } from './support/launch.ts';
 
-const BOARDS = ['laid', 'follow', 'relaid', 'gone', 'other'];
+const BOARDS = ['laid', 'pushed', 'follow', 'relaid', 'gone', 'other'];
 const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-preview-'));
 let l: Launched = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'laid', claude: true, data });
 let page = l.page;
@@ -70,16 +71,37 @@ async function press(label: string) {
     .click();
   await settle(page, 1200);
 }
+const within = (a: Rect, b: Rect, px: number) =>
+  [a.x - b.x, a.y - b.y, a.w - b.w, a.h - b.h].every(d => Math.abs(d) <= px);
 // within a pixel, every box against the card Do it put there
 function sameRects(want: Record<string, Rect>, got: Record<string, Rect>) {
   const off = Object.entries(want).flatMap(([id, b]) => {
     const c = got[id];
-    return c && [c.x - b.x, c.y - b.y, c.w - b.w, c.h - b.h].every(d => Math.abs(d) <= 1)
-      ? []
-      : [`${id}: box ${JSON.stringify(b)}, card ${JSON.stringify(c)}`];
+    return c && within(c, b, 1) ? [] : [`${id}: box ${JSON.stringify(b)}, card ${JSON.stringify(c)}`];
   });
   assert.deepStrictEqual(off, [], 'every card sits where its box was');
 }
+// Every card Do it added, moved or resized had a box, and every box has its card.
+function allBoxed(before: Record<string, Rect>, want: Record<string, Rect>, got: Record<string, Rect>) {
+  const changed = Object.entries(got).flatMap(([id, c]) => {
+    const b = before[id];
+    return b && within(b, c, 1) ? [] : [id];
+  });
+  assert.deepStrictEqual(
+    changed.filter(id => !want[id]),
+    [],
+    'every card whose place or size changed had a box',
+  );
+  assert.deepStrictEqual(
+    Object.keys(want).filter(id => !got[id]),
+    [],
+    'no box was left without a card',
+  );
+}
+const quiet = () =>
+  page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('#planPreview .pp-box.laid')].map(b => b.dataset.pp ?? '').sort(),
+  );
 // typed into the card as a person would, double-clicking a part of it no panel covers
 async function retype(id: string, words: string) {
   await page.keyboard.press('Escape');
@@ -110,7 +132,8 @@ const notes = (n: number, more: (i: number) => object = () => ({})) =>
 await chat();
 
 await check('after Do it each card sits where its box was, collections and kanbans laid out', async () => {
-  const before = Object.keys(await rects());
+  const was = await rects(),
+    before = Object.keys(was);
   await planned({
     say: 'Filed.',
     add: [
@@ -135,8 +158,38 @@ await check('after Do it each card sits where its box was, collections and kanba
     [],
     'each had a box',
   );
+  allBoxed(was, want, got);
   sameRects(want, got);
   assert.strictEqual(await shown(), 0, 'and the preview is gone');
+});
+
+await check('a card a reworded card pushes down, and a collection that grows, get quieter boxes', async () => {
+  await open('pushed');
+  await chat();
+  const was = await rects();
+  await planned({
+    say: 'Longer words for two cards, and ten more notes.',
+    add: notes(10),
+    edit: [
+      { id: 'k1', text: `${LONG}. ${LONG}.` },
+      { id: 'i1', text: `${LONG}. ${LONG}.` },
+    ],
+  });
+  const want = await boxes();
+  assert.deepStrictEqual(await quiet(), ['ideas', 'k2'], 'the card below k1, and the collection i1 grows');
+  const step = page.locator('#mcList .m-summary.plan.waiting li').nth(1),
+    lit = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>('#planPreview .pp-box.hot')].map(b => b.dataset.pp ?? '').sort(),
+      );
+  await step.hover();
+  await settle(page, 100);
+  assert.deepStrictEqual(await lit(), ['i1', 'ideas', 'k1', 'k2'], 'the reworded step lights what it moves');
+  await page.mouse.move(1, 1);
+  await press('Do it');
+  const got = await rects();
+  allBoxed(was, want, got);
+  sameRects(want, got);
 });
 
 await check('a card changed since loses its box, and her step says she will leave it', async () => {
