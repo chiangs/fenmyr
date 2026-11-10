@@ -41,6 +41,7 @@ const HEAD: Record<State, string> = {
   left: 'Not done · changed since the plan',
   cancelled: 'Cancelled · nothing changed',
   replaced: 'Replaced by the plan below',
+  superseded: 'Replaced by the change below',
   dropped: 'Not done',
 };
 const stateOf = (a: PlanAct): State =>
@@ -71,9 +72,10 @@ export async function settle(turn: Turn, held: HeldReply, about: string | null) 
   }
   const planned = planHeld(held),
     { weight, steps } = outline(planned),
-    changes = planned.record.cards.length + planned.record.links.length > 0 || held.template?.mode === 'new';
-  if (w && (changes || held.reply.dropPlan)) end(w, changes ? 'replaced' : 'cancelled');
-  if (changes && !settings.skipPlans && (w !== null || asksFirst(weight))) return hold(planned, steps);
+    changes = planned.record.cards.length + planned.record.links.length > 0 || held.template?.mode === 'new',
+    holds = changes && !settings.skipPlans && (w !== null || asksFirst(weight));
+  if (w && (changes || held.reply.dropPlan)) end(w, !changes ? 'cancelled' : holds ? 'replaced' : 'superseded');
+  if (holds) return hold(planned, steps);
   await applyHeld(turn, held);
 }
 

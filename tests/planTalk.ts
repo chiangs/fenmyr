@@ -248,6 +248,24 @@ await check('turning Skip plans off brings plans back, and a typed "just do it" 
   assert.strictEqual(JSON.parse(await sent()).length, 0, 'with no request to Claude');
 });
 
+await check(
+  'under Skip plans an answer that changes the board replaces a waiting plan by landing, and says so',
+  async () => {
+    await page.evaluate(sel => document.querySelector<HTMLInputElement>(sel)?.click(), skipBox);
+    assert.strictEqual(await skipping(), false);
+    const had = await ideas();
+    await eleven();
+    await page.evaluate(sel => document.querySelector<HTMLInputElement>(sel)?.click(), skipBox);
+    assert.strictEqual(await skipping(), true, 'Skip plans is turned on while it waits');
+    await answer({ say: 'Two then.', add: notes(2) });
+    await send('just two please');
+    await settle(page, 800);
+    assert.strictEqual(await ideas(), had + 2, 'her answer lands at once');
+    const [old] = (await plans()).slice(-1);
+    assert.deepStrictEqual([old?.head, old?.acts], ['Replaced by the change below', []]);
+  },
+);
+
 await l.close();
 if (failed.length) {
   console.log(`\n${failed.length} failed`);
