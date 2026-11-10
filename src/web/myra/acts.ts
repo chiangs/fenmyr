@@ -1,6 +1,7 @@
 import { type ChatAction, clip, type ReadNote, type WebPage } from '../../shared/chat.ts';
 import { buildUndoButton, commitButton } from '../proto/build.ts';
 import { sourceButton } from '../proto/sources.ts';
+import { offerPieces } from '../repo/offer.ts';
 import { openNote } from '../vault/notes.ts';
 import { ask } from './chat.ts';
 import { changesPieces } from './replyUndo.ts';
@@ -18,9 +19,10 @@ type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
 
 // what a click takes away: nothing, this button, or every button in its row
 export type After = 'stay' | 'self' | 'row';
-export type Button = SayAction & { title?: string; after: After };
+// live: whether it still applies when pressed, as it did when drawn
+export type Button = SayAction & { title?: string; after: After; live?: () => boolean };
 export type Piece =
-  | { slot: 'summary'; lines: readonly string[] }
+  | { slot: 'summary'; head: string; lines: readonly string[]; cls?: string }
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };
 
@@ -63,6 +65,7 @@ const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) =
   buildUndo: a => one('other', 'self', buildUndoButton(a)),
   commit: a => one('other', 'self', commitButton(a)),
   read: readPieces,
+  offer: offerPieces,
 };
 
 const viewOf = <K extends ChatAction['kind']>(k: K, a: Extract<ChatAction, { kind: K }>) => VIEW[k](a);

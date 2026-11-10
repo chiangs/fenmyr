@@ -83,7 +83,7 @@ export function countLines(set: StoredChangeSet): string[] {
 
 const NAMED = 2;
 
-function namedList(cards: readonly Named[]) {
+export function namedList(cards: readonly Named[]) {
   const names = cards.slice(0, NAMED).map(c => `“${cardName(c)}”`),
     more = cards.length - names.length;
   return more ? `${names.join(', ')} and ${plural(more, 'more card', 'more cards')}` : names.join(' and ');

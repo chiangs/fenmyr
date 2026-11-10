@@ -5,13 +5,11 @@ import { save } from '../core/history.ts';
 import { type Act, type After, type Button, type Piece, piecesOf, SLOTS, storedOf } from './acts.ts';
 import { chatKeep } from './chatLog.ts';
 
-const HEADING = 'Changed on the board';
-
 // how many times each host has been drawn, so a click that drew something else there doesn't draw over it
 const drawn = new WeakMap<HTMLElement, number>();
 
 // A used button doesn't come back when the chat opens again: a click takes what it takes off the message too.
-function spend(m: ChatMsg, used: readonly ChatAction[]) {
+export function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (!m.acts || !used.length) return;
   const left = m.acts.filter(a => !used.includes(a));
   if (left.length) m.acts = left;
@@ -19,12 +17,13 @@ function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (chatKeep() === 'board') save();
 }
 
-function summaryEl(lines: readonly string[]) {
+function summaryEl(heading: string, lines: readonly string[], cls = '') {
   const box = document.createElement('div'),
     head = document.createElement('b'),
     list = document.createElement('ul');
   box.className = 'm-summary';
-  head.textContent = HEADING;
+  if (cls) box.classList.add(cls);
+  head.textContent = heading;
   for (const line of lines) list.appendChild(document.createElement('li')).textContent = line;
   box.append(head, list);
   return box;
@@ -51,7 +50,7 @@ export function drawActs(
   const pieces = acts.flatMap(a => piecesOf(a).map((p): [Act, Piece] => [a, p]));
   const button = (
     into: HTMLElement,
-    { label, cls, ghost, title, after, run }: Button,
+    { label, cls, ghost, title, after, live, run }: Button,
     a: Act,
     slotActs: readonly Act[],
   ) => {
@@ -60,6 +59,9 @@ export function drawActs(
     b.className = cls || (ghost ? 'ghost' : '');
     if (title) b.title = title;
     b.onclick = () => {
+      // one that stopped applying after it was drawn, such as an offer in her bubble once another board is open, takes
+      // and runs nothing: it only draws again, and its view leaves it out
+      if (live && !live()) return drawActs(host, m, acts, onClick);
       const gone = after === 'stay' ? [] : after === 'self' ? [a] : slotActs;
       if (m) spend(m, storedOf(gone));
       onClick?.(after);
@@ -80,7 +82,7 @@ export function drawActs(
     row.className = 'm-acts';
     for (const [a, p] of here) {
       if (p.slot === 'summary') {
-        if (p.lines.length) host.appendChild(summaryEl(p.lines));
+        if (p.lines.length) host.appendChild(summaryEl(p.head, p.lines, p.cls));
       } else if (p.slot === 'sources') {
         const box = host.appendChild(sourcesEl(p.head));
         for (const l of p.links) button(box, { ...l, cls: 'm-link' }, a, all);

@@ -1,5 +1,5 @@
 import type { Card } from '../../shared/model.ts';
-import { webPagesOf } from '../../shared/myraReply.ts';
+import { offerOf, webPagesOf } from '../../shared/myraReply.ts';
 import { session } from '../core/state.ts';
 import { repoActs } from '../repo/myra.ts';
 import { aiGrants, tasksLine } from '../vault/ask.ts';
@@ -44,6 +44,9 @@ export function replyLine(
       run: () => ask(q, false, { ...ctx.sees, vaults: aiGrants(session.board).map(g => g.vault) }),
     });
   acts.push(...repoActs(r), ...more);
+  // a request that needs code, on a board that isn't a prototype: her offer of one, which waits for an answer
+  const offer = session.board.kind === 'prototype' ? null : offerOf(r, ctx.sees.sel);
+  if (offer) acts.push({ kind: 'offer', board: session.board.id, offer });
   // her own next steps always show; a guess from what she just made gives way to any other button
   const own = nextOf(r.next ?? []),
     next = own.length ? own : acts.length ? [] : nextOf(guessNext(r, touched));
@@ -54,5 +57,5 @@ export function replyLine(
   if (used.length || pages.length) acts.push({ kind: 'read', notes: used, pages });
   const said = (r.say && noEmoji(r.say)) || (touched.length ? `Done! I touched ${touched.length} cards.` : 'Done!');
   const lasting = next.length || used.length || pages.length;
-  return { text: said + looked, ms: r.confirm ? 0 : lasting ? 16000 : 9000, acts };
+  return { text: said + looked, ms: r.confirm || offer ? 0 : lasting ? 16000 : 9000, acts };
 }
