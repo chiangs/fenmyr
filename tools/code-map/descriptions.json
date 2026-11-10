@@ -392,6 +392,7 @@
     "tests/smoke/slash.ts": "Smoke checks for slash commands and the find bar.",
     "tests/smoke/timers.ts": "Smoke checks for /timer: parsing, chip, warning, finish and restart.",
     "tests/support/bar.ts": "A board for the selection bar tests, with what they read and do in the page.",
+    "tests/support/flight.ts": "Samples where Myra’s slot is every frame while she hops into a chat’s header, for the hop tests.",
     "tests/support/launch.ts": "Starts the app headless with a throwaway data folder for tests.",
     "tests/support/prototype.ts": "Makes a fresh repo and opens a prototype board in it, for tests.",
     "tests/support/ref.ts": "Checks out another branch to compare against.",
