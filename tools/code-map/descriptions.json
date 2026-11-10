@@ -318,6 +318,7 @@
     "tests/build.ts": "Tests Myra building a prototype through a stand-in Claude Code, with Undo.",
     "tests/buildQuit.ts": "Tests that quitting Fenmyr during a build stops Claude Code, so nothing is written after.",
     "tests/buildRace.ts": "Tests that a build asked for while another starts or runs is turned away in Myra's words, and the one that ran keeps its Undo.",
+    "tests/buildUndo.ts": "Tests that Undo after a build puts back every file git sees and never touches a file git ignores.",
     "tests/buildHost.ts": "Tests the host's build events with a fake code agent: the snapshot, lines added and removed, next steps and one build per repo.",
     "tests/protoOffer.ts": "Checks Myra’s prototype offer card: it outlasts a restart, Start and build makes the board and builds, Link a repo first, Not now.",
     "tests/buildButtons.ts": "Checks the buttons under Myra's build lines once stored: only the newest Undo, Commit and Undo only on their prototype, and a build that lands on another board.",

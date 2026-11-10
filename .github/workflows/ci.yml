@@ -92,6 +92,8 @@ jobs:
         run: node tests/buildQuit.ts
       - name: Build race test (two builds asked for at once, and the one that ran keeps its Undo)
         run: node tests/buildRace.ts
+      - name: Build undo test (Undo puts back the files git sees and never touches an ignored file)
+        run: node tests/buildUndo.ts
       - name: Prototype offer test (Myra offers a prototype board for a request that needs code, and Start and build makes it and builds)
         run: node tests/protoOffer.ts
       - name: Offer kept test (Myra's prototype offer kept until its board is made, and never built on another board)
