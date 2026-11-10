@@ -244,7 +244,8 @@ export type Ops = {
   protoRead: { args: { root: string; dir: string; file: string }; result: string };
   // a built preview, saved as a page and opened in the person's browser
   previewOpen: { args: { html: string; name: string }; result: true };
-  // Myra writing a prototype's code: answers with the build's id at once; protoBuild events follow
+  // Myra writing a prototype's code: answers with the build's id at once, and protoBuild events follow; busy when a
+  // build is already running in the repo
   protoBuild: {
     args: {
       root: string;
@@ -258,7 +259,7 @@ export type Ops = {
       // what the sketches, screenshots and wireframes look like, as data: URLs
       pictures: { name: string; data: string }[];
     };
-    result: { id: string };
+    result: { kind: 'started'; id: string } | { kind: 'busy' };
   };
   // part of the window as a PNG data: URL, for a wireframe's picture
   captureArea: { args: { x: number; y: number; w: number; h: number }; result: string };

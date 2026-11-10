@@ -35,7 +35,8 @@ function build(agent: CodeAgent, root = repo) {
     events.push(e);
     if (e.type === 'done' || e.type === 'error') all.resolve(events);
   };
-  startBuild({ root, dir, stack: 'react', request: 'Add a total' }, send, agent);
+  if (startBuild({ root, dir, stack: 'react', request: 'Add a total' }, send, agent).kind === 'busy')
+    all.reject(new Error('The repo was busy.'));
   return all.promise;
 }
 const byPath = (files: FileDiff[]) => files.toSorted((a, b) => a.path.localeCompare(b.path));
@@ -129,9 +130,9 @@ const askNext = (e: BuildEvent) => {
   }
 };
 startBuild({ root: repo, dir, stack: 'react', request: 'Wait' }, askNext, waits);
-assert.throws(
-  () => startBuild({ root: repo, dir, stack: 'react', request: 'Again' }, () => {}, waits),
-  /A build is already running in this repo\./,
+assert.deepStrictEqual(
+  startBuild({ root: repo, dir, stack: 'react', request: 'Again' }, () => {}, waits),
+  { kind: 'busy' },
   'a second build in the same repo is refused before it gets an id',
 );
 gate.resolve();

@@ -30,7 +30,7 @@ const outside = async (repo: string, dir: string) => {
 const busy = new Set<string>();
 
 // Starts a build and answers at once with its id; its start, each file edited, and how it ended arrive as protoBuild
-// events.
+// events. Busy, with no events, while another build runs in the repo.
 export function startBuild(
   a: Untrusted<Ops['protoBuild']['args']>,
   send: (e: BuildEvent) => void,
@@ -41,7 +41,7 @@ export function startBuild(
     dir = text(a.dir);
   if (!PROTO_DIR.test(dir) || !path.isAbsolute(root)) throw new Error("That isn't a prototype's folder.");
   const key = path.resolve(root);
-  if (busy.has(key)) throw new Error('A build is already running in this repo.');
+  if (busy.has(key)) return { kind: 'busy' } as const;
   busy.add(key);
   // the repo is free before the last event goes, so a build asked for as this one ends can start
   const end = (e: Extract<BuildEvent, { type: 'done' | 'error' }>) => {
@@ -92,5 +92,5 @@ export function startBuild(
     const snapshot = saved?.snapshot ?? null;
     end({ id, type: 'error', text: e instanceof Error ? e.message : String(e), snapshot, files: await changed() });
   });
-  return { id };
+  return { kind: 'started', id } as const;
 }

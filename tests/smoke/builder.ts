@@ -24,8 +24,9 @@ export async function builder(t: Smoke) {
       const type = typeof data === 'object' && data !== null && 'type' in data ? data.type : null;
       if (type === 'done' || type === 'error') ended.resolve();
     };
+    let answer: unknown = null;
     try {
-      await F.protoBuild({
+      answer = await F.protoBuild({
         root: repo,
         dir,
         stack: 'react',
@@ -40,12 +41,14 @@ export async function builder(t: Smoke) {
     } finally {
       window.__fenmyrEvent = was;
     }
-    return { starter, events };
+    return { starter, events, answer };
   }, repo);
   const lines = r.starter.split('\n').length - (r.starter.endsWith('\n') ? 1 : 0);
   const [start, edit, done, ...more] = r.events.map(readBuildEvent);
   const counted = [{ kind: 'text', path: 'src/App.tsx', added: 1, removed: lines }];
+  const id = typeof r.answer === 'object' && r.answer !== null && 'id' in r.answer ? r.answer.id : null;
   t.checkAll('builder', {
+    started: JSON.stringify(r.answer) === JSON.stringify({ kind: 'started', id }) && start?.id === id,
     startSnapshot: start?.type === 'start' && /^[0-9a-f]{40}$/.test(start.snapshot),
     edit: edit?.type === 'edit' && edit.file === 'src/App.tsx',
     done: done?.type === 'done' && !more.length,
