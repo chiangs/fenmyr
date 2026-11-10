@@ -150,21 +150,53 @@ function changePlan() {
   textField('mcInput').focus();
 }
 
-// What Do it would land now, worked out again only when the board saves or they start or stop typing in a card.
-let lands: { key: string; land: ReturnType<typeof asItWouldLand> } | null = null;
+// What Do it would land now, and the cards it would leave since they changed after the plan, worked out again only
+// when the board saves or they start or stop typing in a card. A card she would only move, which they moved since,
+// stays where they put it, so she leaves it too.
+let lands: { key: string; land: ReturnType<typeof asItWouldLand>; left: ReadonlySet<string> } | null = null;
 function landsNow(w: Waiting) {
   const key = `${w.act.plan}|${boardRevision()}|${session.editing}`;
   if (lands?.key === key) return lands;
-  lands = { key, land: asItWouldLand(w.planned) };
+  const land = asItWouldLand(w.planned),
+    moved = new Set(w.planned.changes.moved),
+    left = [...land.skipped, ...land.theirPlace.filter(c => moved.has(c.id))];
+  lands = { key, land, left: new Set(left.map(c => c.id)) };
   return lands;
 }
 
-/** The waiting plan as the board preview draws it, asked every frame. key: changes when what Do it would land does. */
+// the cards Do it would leave, as the plan's message last showed them
+let drawnLeft = '';
+const leftKey = (w: Waiting, left: ReadonlySet<string>) => `${w.act.plan}|${[...left].join()}`;
+
+// A step that covers cards they changed since says she will leave them, and dims when she would leave all of them.
+function stepsNow(w: Waiting) {
+  const { left } = landsNow(w),
+    dim = new Set<number>();
+  drawnLeft = leftKey(w, left);
+  const lines = w.act.steps.map((line, i) => {
+    const cards = w.parts[i] ?? [],
+      n = cards.filter(id => left.has(id)).length,
+      all = n === cards.length;
+    if (!n) return line;
+    if (all) dim.add(i);
+    return `${line} · ${all ? '' : `${n} `}changed since, so I’ll leave ${n === 1 ? 'it' : 'them'}`;
+  });
+  return { lines, dim };
+}
+
+/** The waiting plan as the board preview draws it, asked every frame. key: changes when what Do it would land does.
+ *  When the cards it would leave change, the plan's message is drawn again, so its steps say so. */
 export function waitingNow() {
   const w = waiting;
   if (!w) return null;
-  const { key, land } = landsNow(w);
-  return { id: w.act.plan, key, planned: w.planned, parts: w.parts, hot, land };
+  const { key, land, left } = landsNow(w);
+  if (leftKey(w, left) !== drawnLeft) {
+    drawnLeft = leftKey(w, left);
+    // the step under the pointer is drawn anew, and the pointer lights it again when it moves
+    hot = null;
+    renderChat();
+  }
+  return { id: w.act.plan, key, planned: w.planned, parts: w.parts, hot, land, left };
 }
 
 function hotStep(i: number | null) {
@@ -175,8 +207,9 @@ function hotStep(i: number | null) {
 export function planPieces(a: PlanAct): Piece[] {
   const state = stateOf(a),
     w = waiting?.act.plan === a.plan ? waiting : null,
+    now = w && stepsNow(w),
     steps: Piece = { slot: 'summary', head: HEAD[state], lines: a.steps, numbered: true, cls: `plan ${state}` },
-    pieces: Piece[] = [w ? { ...steps, hover: hotStep } : steps];
+    pieces: Piece[] = [now ? { ...steps, lines: now.lines, dim: now.dim, hover: hotStep } : steps];
   if (w)
     pieces.push(
       { slot: 'reply', button: { label: 'Do it', after: 'stay', run: () => doIt(w) } },

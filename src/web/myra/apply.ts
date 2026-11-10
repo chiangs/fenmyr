@@ -12,7 +12,7 @@ import { storedSet } from '../../shared/chat.ts';
 import type { Card } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
 import type { Template } from '../../shared/ops.ts';
-import { planDo, type Undone } from '../../shared/replyUndo.ts';
+import { planDo } from '../../shared/replyUndo.ts';
 import { boxOf } from '../canvas/emptySpot.ts';
 import { openCentre, showPlaced, viewShowing } from '../canvas/handles.ts';
 import { renderAll, renderCard } from '../canvas/render.ts';
@@ -158,7 +158,7 @@ export function planNewBoard(held: HeldReply, t: Template): Pick<Planned, 'recor
 const typingNow = () => new Set(session.editing ? [session.editing] : []);
 
 // The board's lists if it landed now, and the cards the person changed since that it would leave. Changes nothing.
-export const asItWouldLand = (p: Planned): Undone => planDo(p.record, session.board, typingNow());
+export const asItWouldLand = (p: Planned) => planDo(p.record, session.board, typingNow());
 
 // Null when another board is open than the one the turn was asked on: then nothing is applied. `planned`: a plan made
 // earlier, which lands as planned less what the person changed since; without one, the reply is planned once any drag

@@ -54,8 +54,9 @@ function clear() {
   painted = '';
 }
 
-// One box for each card a step covers, except a screen's pieces, which go with their screen.
-function boxesOf({ planned: { record, changes }, parts, land }: Now) {
+// One box for each card a step covers, except a card they changed since, which she leaves, and a screen's pieces,
+// which go with their screen.
+function boxesOf({ planned: { record, changes }, parts, land, left }: Now) {
   const touched = new Set(record.cards.map(d => d.id)),
     removed = new Set(changes.removed),
     added = new Set(changes.added),
@@ -66,7 +67,7 @@ function boxesOf({ planned: { record, changes }, parts, land }: Now) {
       cards.flatMap((id): Box[] => {
         const gone = removed.has(id),
           c = (gone ? before : laid).get(id);
-        if (!c || (c.onFrame && touched.has(c.onFrame))) return [];
+        if (!c || left.has(id) || (c.onFrame && touched.has(c.onFrame))) return [];
         const kind = gone ? 'remove' : added.has(id) ? 'add' : moved.has(id) ? 'move' : 'edit';
         return [{ id, kind, step, x: c.x, y: c.y, w: c.w, h: c.h, label: gone ? 'Removed' : cardName(c) }];
       }),

@@ -1,6 +1,7 @@
 // A plan's preview shows exactly what Do it lands: after Do it each card sits where its box was, cards filed into a
-// collection or a kanban included, laid out as the board lays them, and the boxes follow the board while the plan
-// waits. The preview goes whenever the plan stops waiting.
+// collection or a kanban included, laid out as the board lays them. While the plan waits the preview follows the board:
+// a card the person changes loses its box, and the plan's step says she will leave it. The preview goes whenever the
+// plan stops waiting.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -9,7 +10,7 @@ import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
 import { type Launched, launch, settle } from './support/launch.ts';
 
-const BOARDS = ['laid', 'relaid', 'gone', 'other'];
+const BOARDS = ['laid', 'follow', 'relaid', 'gone', 'other'];
 const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-preview-'));
 let l: Launched = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'laid', claude: true, data });
 let page = l.page;
@@ -55,6 +56,11 @@ const rects = (): Promise<Record<string, Rect>> =>
     Object.fromEntries(window.__fenmyr.curBoard().cards.map(c => [c.id, { x: c.x, y: c.y, w: c.w, h: c.h }])),
   );
 const shown = () => page.locator('#planPreview > *').count();
+const steps = () => page.locator('#mcList .m-summary.plan.waiting li').allTextContents();
+const dimmed = () =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('#mcList .m-summary.plan.waiting li')].map(li => li.classList.contains('dim')),
+  );
 async function press(label: string) {
   if (!(await page.locator('#mcInput').isVisible())) await chat();
   await page
@@ -74,13 +80,27 @@ function sameRects(want: Record<string, Rect>, got: Record<string, Rect>) {
   });
   assert.deepStrictEqual(off, [], 'every card sits where its box was');
 }
+// typed into the card as a person would, double-clicking a part of it no panel covers
 async function retype(id: string, words: string) {
   await page.keyboard.press('Escape');
-  await page.locator(`#cards .card[data-id="${id}"]`).dblclick({ position: { x: 40, y: 40 } });
+  const box = await page.locator(`#cards .card[data-id="${id}"]`).boundingBox();
+  assert(box, `${id} is on screen`);
+  await page.mouse.dblclick((Math.max(box.x, 260) + Math.min(box.x + box.width, 1160)) / 2, box.y + 40);
   await page.keyboard.press('Control+A');
   await page.keyboard.type(words);
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
+  await settle(page, 400);
+}
+// dragged by the pointer, which changes the board without anyone typing
+async function drag(id: string, dx: number, dy: number) {
+  await page.keyboard.press('Escape');
+  const box = await page.locator(`#cards .card[data-id="${id}"]`).boundingBox();
+  assert(box, `${id} is on screen`);
+  await page.mouse.move(box.x + 40, box.y + 40);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 40 + dx, box.y + 40 + dy, { steps: 6 });
+  await page.mouse.up();
   await settle(page, 400);
 }
 const LONG = 'A longer task whose words wrap over several lines, so its card is taller than one that was planned';
@@ -117,6 +137,51 @@ await check('after Do it each card sits where its box was, collections and kanba
   );
   sameRects(want, got);
   assert.strictEqual(await shown(), 0, 'and the preview is gone');
+});
+
+await check('a card changed since loses its box, and her step says she will leave it', async () => {
+  await open('follow');
+  await chat();
+  await planned({
+    say: 'Ten more, the fourth note moved, and the first three reworded.',
+    add: notes(10),
+    move: [{ id: 'n4', x: 1300, y: 900 }],
+    edit: ['n1', 'n2', 'n3'].map(id => ({ id, text: `Hers for ${id}` })),
+  });
+  assert.deepStrictEqual(await steps(), ['+ 10 notes', '→ 1 note moved', '✎ 3 notes reworded']);
+  assert((await boxes()).n4, 'n4 has a box where she would move it');
+  await drag('n4', 60, 40);
+  assert.strictEqual((await boxes()).n4, undefined, 'n4, which they moved, has none');
+  assert.deepStrictEqual(await steps(), [
+    '+ 10 notes',
+    '→ 1 note moved · changed since, so I’ll leave it',
+    '✎ 3 notes reworded',
+  ]);
+  await retype('n1', 'Mine now');
+  assert.strictEqual((await boxes()).n1, undefined, 'n1 has no box');
+  assert.deepStrictEqual(await steps(), [
+    '+ 10 notes',
+    '→ 1 note moved · changed since, so I’ll leave it',
+    '✎ 3 notes reworded · 1 changed since, so I’ll leave it',
+  ]);
+  assert.deepStrictEqual(await dimmed(), [false, true, false]);
+  await retype('n2', 'Mine too');
+  await retype('n3', 'And mine');
+  const left = await boxes();
+  assert.deepStrictEqual(
+    ['n1', 'n2', 'n3'].filter(id => left[id]),
+    [],
+    'none of the three has a box',
+  );
+  assert.deepStrictEqual(await steps(), [
+    '+ 10 notes',
+    '→ 1 note moved · changed since, so I’ll leave it',
+    '✎ 3 notes reworded · changed since, so I’ll leave them',
+  ]);
+  assert.deepStrictEqual(await dimmed(), [false, true, true], 'a step she would leave whole dims');
+  const ten = await boxes();
+  await press('Do it');
+  sameRects(ten, await rects());
 });
 
 await check('the boxes follow the board: a card that grows in a collection pushes the planned ones down', async () => {

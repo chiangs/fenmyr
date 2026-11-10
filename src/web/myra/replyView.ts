@@ -27,6 +27,7 @@ function summaryEl(p: Extract<Piece, { slot: 'summary' }>) {
   p.lines.forEach((line, i) => {
     const li = list.appendChild(document.createElement('li'));
     li.textContent = line;
+    li.classList.toggle('dim', !!p.dim?.has(i));
     if (!hover) return;
     li.onmouseenter = () => hover(i);
     li.onmouseleave = () => hover(null);
