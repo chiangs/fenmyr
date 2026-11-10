@@ -6,6 +6,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, ty
 import type { HostEvents, Ops } from '../shared/ops.ts';
 import { startBuild } from './build.ts';
 import * as claude from './claude.ts';
+import { stopCodeAgents } from './claudeCode.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
 import { packageManager } from './install.ts';
@@ -371,4 +372,5 @@ app.on('window-all-closed', () => app.quit());
 app.on('before-quit', () => {
   saveBounds();
   update.onQuit();
+  stopCodeAgents();
 });
