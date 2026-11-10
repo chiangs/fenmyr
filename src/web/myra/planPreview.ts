@@ -9,7 +9,7 @@ import type { Card } from '../../shared/model.ts';
 import { boxOf } from '../canvas/emptySpot.ts';
 import type { Bounds } from '../canvas/handles.ts';
 import { paintCard } from '../canvas/render.ts';
-import { arrange, CW, naturalHeight } from '../cards/collection.ts';
+import { arrange, CW, laidMarked, layoutCount, naturalHeight } from '../cards/collection.ts';
 import { $ } from '../core/dom.ts';
 import { bringIntoView } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
@@ -33,6 +33,10 @@ let glided = '';
 let painted = '';
 // the heights of the cards the plan changes, measured once each, since the plan's copies don't change while it waits
 let measured: { plan: string; h: Map<string, number> } = { plan: '', h: new Map() };
+// The cards selected or typed in, which a note shows its empty name in, so it is drawn taller. Do it lays the board out
+// as it looks then, so a card whose look changed since its collection was last laid out is measured again.
+const marks = () => `${session.editing}|${[...session.sel].join()}`;
+const marked = (id: string) => session.sel.has(id) || session.editing === id;
 
 // Every frame. Without a plan waiting, it returns at once.
 export function drawPlanPreview() {
@@ -41,11 +45,12 @@ export function drawPlanPreview() {
     if (drawn) clear();
     return;
   }
-  const key = `${now.key}|${now.hot}`;
+  const boxKey = `${now.key}|${layoutCount()}|${marks()}`,
+    key = `${boxKey}|${now.hot}`;
   if (key === drawn) return;
   drawn = key;
   if (measured.plan !== now.id) measured = { plan: now.id, h: new Map() };
-  if (boxes.key !== now.key) boxes = { key: now.key, ...boxesOf(now) };
+  if (boxes.key !== boxKey) boxes = { key: boxKey, ...boxesOf(now) };
   paint(boxes.list, boxes.head, now.hot);
   if (glided === now.id || !boxes.list.length) return;
   glided = now.id;
@@ -96,11 +101,12 @@ function boxesOf({ planned: { record, changes }, parts, land, left }: Now) {
 function laidOut(lists: BoardLists) {
   const board = new Map(session.board.cards.map(c => [c.id, c])),
     out = new Map(lists.cards.map(c => [c.id, c])),
-    fresh = (c: Card | undefined) => !!c && board.get(c.id) !== c;
+    fresh = (c: Card | undefined) => !!c && board.get(c.id) !== c,
+    restyled = (c: Card) => laidMarked(c.id) !== marked(c.id);
   for (const s of lists.cards) {
     if (s.type !== 'coll' || !(fresh(s) || s.kids.some(id => fresh(out.get(id))))) continue;
     const kids = s.kids.flatMap(id => out.get(id) ?? []),
-      heights = new Map(kids.map(k => [k.id, heightOf(k, fresh(k))])),
+      heights = new Map(kids.map(k => [k.id, fresh(k) ? heightOf(k) : restyled(k) ? drawnHeight(k) : k.h])),
       coll = copy(s),
       copies = kids.map(copy);
     arrange(coll, copies, k => heights.get(k.id) ?? k.h);
@@ -109,14 +115,18 @@ function laidOut(lists: BoardLists) {
   return out;
 }
 
-// Each card as tall as landing will measure it: a card the plan doesn't change, from how it is drawn now; a note or a
-// to-do list it changes, by drawing the plan's copy aside, once, since that copy doesn't change while the plan waits.
-function heightOf(c: Card, fresh: boolean) {
-  const el = fresh ? null : cardEl(c.id);
-  if (el) return naturalHeight(c, el);
+// A card the plan doesn't change, measured as it is drawn now, since its look changed after the board last laid it out.
+function drawnHeight(c: Card) {
+  const el = cardEl(c.id);
+  return el ? naturalHeight(c, el) : c.h;
+}
+
+// A card the plan changes, as tall as landing will measure it: a note or a to-do list by drawing the plan's copy aside,
+// once for each look, since that copy doesn't change while the plan waits.
+function heightOf(c: Card) {
   if (c.type === 'image') return Math.round(CW * (c.h / c.w));
   if (c.type !== 'note' && c.type !== 'todo') return c.h;
-  const key = `${c.id}|${c.w}`,
+  const key = `${c.id}|${c.w}|${session.sel.has(c.id)}`,
     known = measured.h.get(key);
   if (known !== undefined) return known;
   const aside = $('planPreview').appendChild(document.createElement('div'));
