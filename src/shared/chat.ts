@@ -20,9 +20,17 @@ export type ChatAction =
   | { kind: 'commit'; board: string; message: string }
   // what she read for this reply: notes from a vault, and pages on the web
   | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] }
+  // A plan she showed before changing the board, with its steps as worded then. Its buttons show only while it waits,
+  // in memory. ended: how it stopped waiting; one with none that no longer waits was dropped unanswered. left: Do it
+  // found every card it would change changed since, so nothing landed. superseded: replaced by an answer that landed at
+  // once, under Skip plans.
+  | { kind: 'plan'; plan: string; steps: string[]; ended?: PlanEnd }
   // Her offer of a prototype board for a request that needs code, kept so it still works when the chat or the app opens
   // again. Its buttons show while `board`, where the cards it is made from are, is open.
   | { kind: 'offer'; board: string; offer: ProtoOffer };
+
+export type PlanEnd = 'done' | 'left' | 'cancelled' | 'replaced' | 'superseded';
+const ENDS: readonly PlanEnd[] = ['done', 'left', 'cancelled', 'replaced', 'superseded'];
 
 /** What she offers to make. project and folder: by name, else the open board's project and its first prototyping
  *  folder. from: ids of the cards on her offer's board it is made from, maybe none. build: the first build request. */
@@ -231,6 +239,11 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
     const notes = entries(x.notes, readNote),
       pages = entries(x.pages, readPage);
     return notes.length || pages.length ? { kind: 'read', notes, pages } : null;
+  },
+  plan: x => {
+    const ended = ENDS.find(e => e === x.ended);
+    if (typeof x.plan !== 'string' || !strings(x.steps)) return null;
+    return { kind: 'plan', plan: x.plan, steps: x.steps, ...(ended ? { ended } : {}) };
   },
   offer: x => {
     const offer = readOffer(x.offer);

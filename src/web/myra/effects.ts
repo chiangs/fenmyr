@@ -55,67 +55,108 @@ export function effectsOf({ reply: r, q, ctx }: HeldReply): Effect[] {
   return out;
 }
 
-// Runs them in order. Returns the buttons they offer under her line. `touched`: the cards the reply made, moved or
-// edited, in the order it did so.
-export async function runEffects(effects: readonly Effect[], touched: readonly Card[]): Promise<SayAction[]> {
-  const acts: SayAction[] = [];
+// Runs them in order, each on its own, so one that fails costs only itself. Returns the buttons they offer under her
+// line, and a sentence for each that failed, naming what she tried in plain words rather than the system's error.
+// `touched`: the cards the reply made, moved or edited, in the order it did so.
+export async function runEffects(effects: readonly Effect[], touched: readonly Card[]) {
+  const acts: SayAction[] = [],
+    failed: string[] = [];
   for (const e of effects)
-    switch (e.kind) {
-      case 'stopTimer':
-        if (timer && !askedLately(timerAskedAt)) stopTimer(false);
-        break;
-      case 'timer':
-        if (!askedLately(timerAskedAt)) startTimer({ secs: e.secs, purpose: e.purpose }, false, true);
-        break;
-      case 'animate':
-        // her own pick about once per ten minutes, or the one the sentence asked for
-        if (!askedLately(animAskedAt) && (Date.now() - appState.aiAnimAt > 600000 || e.asked))
-          if (playAnim(e.name, false)) appState.aiAnimAt = Date.now();
-        break;
-      case 'library':
-        await sortLibrary(e.projects, e.folders);
-        break;
-      case 'saveTemplate': {
-        const o = e.spec,
-          ids = o.ids?.length ? o.ids : o.fromNew ? touched.map(c => c.id) : null;
-        await saveAsTemplate(o.name, ids, { desc: o.description, mode: o.mode });
-        break;
-      }
-      case 'editTemplate': {
-        const o = e.spec,
-          t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase());
-        if (!t) break;
-        if (o.newName) t.name = freeName(o.newName, t.id);
-        if (o.description != null) t.desc = String(o.description).slice(0, 140);
-        if (o.mode === 'new' || o.mode === 'add') t.mode = o.mode;
-        await Fenmyr.saveTemplate(t);
-        buildTplPick();
-        break;
-      }
-      case 'offerFill':
-        setTimeout(
-          () => offerFill(spotsIn(session.board.cards.filter(c => c.type === 'frame').slice(-e.screens))),
-          1500,
-        );
-        break;
-      case 'newPrototype':
-        acts.push(...(await applyNewPrototype(e.want)));
-        break;
-      case 'build':
-        startBuild(e.request, e.cards);
-        break;
-      case 'git':
-        gitAction(e.action, e.message);
-        break;
-      case 'install':
-        askInstall(e.packages);
-        break;
-      default: {
-        const unhandled: never = e;
-        return unhandled;
-      }
+    try {
+      await runEffect(e, touched, acts);
+    } catch {
+      failed.push(`I couldn’t ${tried(e)}.`);
     }
-  return acts;
+  return { acts, failed };
+}
+
+async function runEffect(e: Effect, touched: readonly Card[], acts: SayAction[]) {
+  switch (e.kind) {
+    case 'stopTimer':
+      if (timer && !askedLately(timerAskedAt)) stopTimer(false);
+      break;
+    case 'timer':
+      if (!askedLately(timerAskedAt)) startTimer({ secs: e.secs, purpose: e.purpose }, false, true);
+      break;
+    case 'animate':
+      // her own pick about once per ten minutes, or the one the sentence asked for
+      if (!askedLately(animAskedAt) && (Date.now() - appState.aiAnimAt > 600000 || e.asked))
+        if (playAnim(e.name, false)) appState.aiAnimAt = Date.now();
+      break;
+    case 'library':
+      await sortLibrary(e.projects, e.folders);
+      break;
+    case 'saveTemplate': {
+      const o = e.spec,
+        ids = o.ids?.length ? o.ids : o.fromNew ? touched.map(c => c.id) : null;
+      await saveAsTemplate(o.name, ids, { desc: o.description, mode: o.mode });
+      break;
+    }
+    case 'editTemplate': {
+      const o = e.spec,
+        t = myTpls.find(x => x.name.toLowerCase() === String(o.name || '').toLowerCase());
+      if (!t) break;
+      if (o.newName) t.name = freeName(o.newName, t.id);
+      if (o.description != null) t.desc = String(o.description).slice(0, 140);
+      if (o.mode === 'new' || o.mode === 'add') t.mode = o.mode;
+      await Fenmyr.saveTemplate(t);
+      buildTplPick();
+      break;
+    }
+    case 'offerFill':
+      setTimeout(() => offerFill(spotsIn(session.board.cards.filter(c => c.type === 'frame').slice(-e.screens))), 1500);
+      break;
+    case 'newPrototype':
+      acts.push(...(await applyNewPrototype(e.want)));
+      break;
+    case 'build':
+      startBuild(e.request, e.cards);
+      break;
+    case 'git':
+      gitAction(e.action, e.message);
+      break;
+    case 'install':
+      askInstall(e.packages);
+      break;
+    default: {
+      const unhandled: never = e;
+      return unhandled;
+    }
+  }
+}
+
+const named = (name: string | undefined) => (name ? ` “${name}”` : '');
+
+// what she set out to do, for her line when it failed
+function tried(e: Effect): string {
+  switch (e.kind) {
+    case 'stopTimer':
+      return 'stop the timer';
+    case 'timer':
+      return 'start the timer';
+    case 'animate':
+      return 'do my animation';
+    case 'library':
+      return 'sort your projects and folders';
+    case 'saveTemplate':
+      return `save the template${named(e.spec.name)}`;
+    case 'editTemplate':
+      return `change the template${named(e.spec.name)}`;
+    case 'offerFill':
+      return 'offer to fill the screens';
+    case 'newPrototype':
+      return `make the prototype${named(e.want.name)}`;
+    case 'build':
+      return 'start the build';
+    case 'git':
+      return 'ask about saving to the repo';
+    case 'install':
+      return 'ask about installing packages';
+    default: {
+      const unhandled: never = e;
+      return unhandled;
+    }
+  }
 }
 
 async function sortLibrary(pr: MyraReply['projects'], fo: MyraReply['folders']) {

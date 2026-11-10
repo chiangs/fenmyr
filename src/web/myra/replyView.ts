@@ -17,14 +17,13 @@ export function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (chatKeep() === 'board') save();
 }
 
-function summaryEl(heading: string, lines: readonly string[], cls = '') {
+function summaryEl(p: Extract<Piece, { slot: 'summary' }>) {
   const box = document.createElement('div'),
     head = document.createElement('b'),
-    list = document.createElement('ul');
-  box.className = 'm-summary';
-  if (cls) box.classList.add(cls);
-  head.textContent = heading;
-  for (const line of lines) list.appendChild(document.createElement('li')).textContent = line;
+    list = document.createElement(p.numbered ? 'ol' : 'ul');
+  box.className = p.cls ? `m-summary ${p.cls}` : 'm-summary';
+  head.textContent = p.head;
+  for (const line of p.lines) list.appendChild(document.createElement('li')).textContent = line;
   box.append(head, list);
   return box;
 }
@@ -82,7 +81,7 @@ export function drawActs(
     row.className = 'm-acts';
     for (const [a, p] of here) {
       if (p.slot === 'summary') {
-        if (p.lines.length) host.appendChild(summaryEl(p.head, p.lines, p.cls));
+        if (p.lines.length) host.appendChild(summaryEl(p));
       } else if (p.slot === 'sources') {
         const box = host.appendChild(sourcesEl(p.head));
         for (const l of p.links) button(box, { ...l, cls: 'm-link' }, a, all);

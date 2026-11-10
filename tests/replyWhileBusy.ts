@@ -6,7 +6,13 @@ import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
 const BOARDS = ['drag', 'dragColl', 'name', 'column', 'gone', 'asked', 'other'];
-const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'drag', claude: true });
+// with plans skipped her removals land at once too, as these checks time
+const l = await launch({
+  boards: BOARDS.map(id => replyBoard(id, id)),
+  open: 'drag',
+  claude: true,
+  settings: { skipPlans: true },
+});
 const { page } = l;
 
 const failed: string[] = [];

@@ -128,6 +128,45 @@ const panels: Group = {
   ],
 };
 
+// a reply big enough to wait as a plan: a kanban of twelve cards, and a note removed
+const BIG = {
+  say: 'I’ve sorted these into phases.',
+  collections: [{ name: 'Phases', kanban: true, columns: ['To do', 'Doing', 'Done'] }],
+  add: Array.from({ length: 12 }, (_, i) => ({ type: 'note', text: `Task ${i + 1}`, in: 'Phases', column: i % 3 })),
+  remove: ['myranote'],
+  next: ['Name the columns', 'Add due dates'],
+};
+// It waits as a plan in the open chat, then lands with Do it. A checkout without plans has no answerMyra, so it shows
+// the open chat and the state is listed as meant.
+const plan: Group = {
+  states: [
+    [
+      'chat',
+      async page => {
+        await page.evaluate(() =>
+          document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
+        );
+        await page.click('#mPill');
+        await page.evaluate(async r => {
+          const hooks: Record<string, unknown> = { ...window.__fenmyr };
+          if (typeof hooks.answerMyra === 'function') await window.__fenmyr.answerMyra(r, 'q');
+        }, BIG);
+        await page.mouse.move(1, 1);
+      },
+    ],
+    [
+      'done',
+      async page => {
+        const doIt = page.locator('#mcList .m-acts button:text-is("Do it")');
+        if (await doIt.count()) await doIt.click();
+        // past her glow on what she made
+        await settle(page, 2500);
+        await page.mouse.move(1, 1);
+      },
+    ],
+  ],
+};
+
 // her offer of a prototype board for a request that needs code, on a board in no project, then in one with no repo
 const OFFER = {
   say: 'That needs code, so I’d make it a prototype board.',
@@ -167,4 +206,4 @@ const offer: Group = {
   ],
 };
 
-export const MYRA_GROUPS = { reply, sees, panels, offer };
+export const MYRA_GROUPS = { reply, sees, panels, offer, plan };

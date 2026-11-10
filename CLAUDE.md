@@ -11,7 +11,7 @@ Fenmyr is an Electron canvas app for Linux. The renderer in `src/web/` draws boa
 | `npm run build` | Bundles `src/host` into `dist/` and `src/web` into `web/dist/app.js` with esbuild. |
 | `npm run check:fast` | Type check, lint, unused code (knip) and the budget. Run it before every commit. |
 | `npm test` | Builds, then runs the vault, save, reply, smoke, zoom, theme and docs tests. They run Electron headless, so no display is needed. |
-| `npm run visual` | Screenshots 35 states here and on `origin/main`, or on the ref after `--`. CI uses the PR's base branch. Any changed pixel fails, except in states listed with a reason in `tools/visual-expected.json`, which the PR's reviewer checks. |
+| `npm run visual` | Screenshots 39 states here and on `origin/main`, or on the ref after `--`. CI uses the PR's base branch. Any changed pixel fails, except in states listed with a reason in `tools/visual-expected.json`, which the PR's reviewer checks. |
 | `node tests/perf.ts origin/main` | Times opening, dragging, zooming and editing a 500-card board on both sides, and measures the app's memory across all its processes. Fails when this side is clearly slower or uses clearly more memory. |
 | Mac build | Start it from the Actions tab, or run `npm run dist:mac` on a Mac. The result is unsigned. |
 | `node tools/budget.ts --write` | Lowers the budget after you pay part of it down. It never raises it. |

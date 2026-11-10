@@ -52,6 +52,7 @@ const DEFAULTS = {
   ai: true,
   mobbin: true,
   higgs: true,
+  skipPlans: false,
   chatKeep: 'board',
   chatMax: '60',
   cursor: '#f6b45e',

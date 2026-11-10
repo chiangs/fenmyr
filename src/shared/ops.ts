@@ -98,6 +98,10 @@ export type UpdateInfo =
 export type Chattiness = 'quiet' | 'normal' | 'chatty';
 export type MyraStyle = { name: string; chat: Chattiness; emoji: boolean };
 export type SlashCommand = { cmd: string; arg?: string; desc: string; ex?: string | string[]; opts?: string[] };
+/** A plan of Myra's waiting when a message was sent: the question it answered, her held reply as JSON without her
+ *  words, and its steps as the chat shows them. */
+export type PlanAsk = { request: string; reply: string; steps: string[] };
+
 export type VaultNoteForMyra = { vault: string; path: string; title: string; tags: string[]; text: string };
 
 type ImageJob = { id: string; label: string };
@@ -178,6 +182,7 @@ export type Ops = {
       vaultTasks?: { items: VaultTaskForMyra[]; summary: string };
       /** Pictures and text files added to this message; the host checks them against src/shared/askFiles.ts. */
       files?: AskFile[];
+      plan?: PlanAsk;
     };
     result: string;
   };

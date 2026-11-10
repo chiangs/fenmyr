@@ -89,8 +89,16 @@ export function cutName(name: string): string {
 
 /** The chat input's placeholder: with cards selected it says they go along with what you ask. With none it gives an
  *  example, unless the example would not fit on one line. */
-export function askHint(name: string, selected: number, proto: boolean, fits: (hint: string) => boolean): string {
+export function askHint(
+  name: string,
+  selected: number,
+  proto: boolean,
+  fits: (hint: string) => boolean,
+  plan = false,
+): string {
   const n = cutName(name);
+  // whatever they write goes with the plan, to change it
+  if (plan) return `Tell ${n} what to change…`;
   if (selected === 1) return `Ask ${n} to change this…`;
   if (selected > 1) return `Ask ${n} to change these ${selected}…`;
   if (proto) return `Ask ${n} about this prototype…`;

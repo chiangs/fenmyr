@@ -12,7 +12,7 @@ import { settings } from '../settings/settings.ts';
 import { elementById, textField } from '../ui/dom.ts';
 import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed } from '../vault/ask.ts';
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
-import { applyHeld, holdReply, Turn } from './apply.ts';
+import { holdReply, Turn } from './apply.ts';
 import type { Picked } from './applyTypes.ts';
 import { clearedCount, initDraft } from './chatDraft.ts';
 import { initExpand, setExpanded } from './chatExpand.ts';
@@ -20,6 +20,7 @@ import { initChatInput, setChatText } from './chatInput.ts';
 import { addMsg, archiveChat, chatKeep, chatLog, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { giveBack } from './giveBack.ts';
+import { answerPlan, dropPlan, planAsk, settle } from './heldPlan.ts';
 import { showConnections } from './helpers.ts';
 import { initPasted } from './pasted.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
@@ -145,8 +146,12 @@ type Asked = {
 
 // The person's line shows at once, and so does what the app can do for the sentence by itself (a timer, an
 // animation). Her answer waits its turn, so it sees the board the previous reply left, but it keeps the selection, the
-// vaults and the web the question was sent with. `sees`: a question asked again keeps what it was first sent with.
+// vaults and the web the question was sent with. `sees`: a question asked again keeps what it was first sent with. A
+// plain yes or no they typed to a waiting plan is answered here, with no request to Claude; a button such as an old
+// "Yes" may be about something else, so it goes to her with the plan.
 export function ask(q: string, confirmed = false, sees?: Sees, typed = false) {
+  const answered = typed && !confirmed ? answerPlan(q) : null;
+  if (answered) return answered;
   const asked: Asked = {
     q,
     confirmed,
@@ -223,6 +228,11 @@ async function answer(turn: Turn, asked: Asked) {
   ctx.used = [...chosen.used, ...ctx.used];
   const notes = (ctx.tasks ? ctx.tasks.notes : 0) + ctx.used.length;
   if (notes) job.show({ kind: 'reading', notes });
+  // a plan waiting now goes with the message, and so do the notes she read for it
+  const plan = confirmed ? null : planAsk();
+  ctx.used = [...ctx.used, ...(plan?.used ?? [])].filter(
+    (n, i, all) => all.findIndex(m => m.vault === n.vault && m.rel === n.rel) === i,
+  );
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
   let reached = false;
   try {
@@ -244,11 +254,12 @@ async function answer(turn: Turn, asked: Asked) {
         vaultNotes: ctx.used.map(n => ({ vault: n.vault, path: n.rel, title: n.title, tags: n.tags, text: n.text })),
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),
         ...(files.length ? { files } : {}),
+        ...(plan ? { plan: plan.ask } : {}),
       },
     );
     reached = true;
     noteSignIn(false);
-    await applyHeld(turn, await holdReply(parse(raw), q, ctx));
+    await settle(turn, await holdReply(parse(raw), q, ctx), plan?.id ?? null);
   } catch (err) {
     const why = err instanceof Error ? err.message : String(err);
     // once her answer is in, a failure is in applying it, and what the person sent has been read
@@ -291,6 +302,7 @@ export function init31() {
 
   $('mcNew').onclick = () => {
     setExpanded(false);
+    dropPlan();
     archiveChat();
     if (chatKeep() === 'board') {
       session.board.chat = [];

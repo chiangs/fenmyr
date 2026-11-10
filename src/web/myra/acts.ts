@@ -4,6 +4,7 @@ import { sourceButton } from '../proto/sources.ts';
 import { offerPieces } from '../repo/offer.ts';
 import { openNote } from '../vault/notes.ts';
 import { ask } from './chat.ts';
+import { planPieces } from './heldPlan.ts';
 import { changesPieces } from './replyUndo.ts';
 import type { SayAction } from './say.ts';
 
@@ -21,8 +22,9 @@ type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
 export type After = 'stay' | 'self' | 'row';
 // live: whether it still applies when pressed, as it did when drawn
 export type Button = SayAction & { title?: string; after: After; live?: () => boolean };
+// A box of lines under her words: what a reply changed, or a plan's numbered steps. cls: its kind, for the look.
 export type Piece =
-  | { slot: 'summary'; head: string; lines: readonly string[]; cls?: string }
+  | { slot: 'summary'; head: string; lines: readonly string[]; numbered?: boolean; cls?: string }
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };
 
@@ -65,6 +67,7 @@ const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) =
   buildUndo: a => one('other', 'self', buildUndoButton(a)),
   commit: a => one('other', 'self', commitButton(a)),
   read: readPieces,
+  plan: planPieces,
   offer: offerPieces,
 };
 

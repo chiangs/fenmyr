@@ -16,6 +16,7 @@ type Traits = {
   notInTemplates?: boolean; // holds media or a link to something outside the board
   measured?: boolean; // sizes itself to what it holds, so a new width or height is not someone's change
   noun?: readonly [one: string, many: string]; // what a sentence calls it, when that isn't its label in lower case
+  fromReading?: boolean; // made from what Myra read, so adding it never makes her reply wait as a plan
 };
 
 const CARD_TYPES = {
@@ -74,7 +75,14 @@ const CARD_TYPES = {
   text: { label: 'Text', size: [220, 24], strokable: true, textColour: true, wireframe: true, noTilt: true },
   icon: { label: 'Icon', size: [28, 28], strokable: true, wireframe: true, noTilt: true },
   font: { label: 'Font', size: [300, 210] },
-  vnote: { label: 'Vault note', size: [300, 270], fillable: true, sized: true, notInTemplates: true },
+  vnote: {
+    label: 'Vault note',
+    size: [300, 270],
+    fillable: true,
+    sized: true,
+    notInTemplates: true,
+    fromReading: true,
+  },
   path: { label: 'Pen shape', anyFill: true, strokable: true, roundable: true },
 } as const satisfies Record<string, Traits>;
 
@@ -90,6 +98,7 @@ export const labelOf = (type: string) => traits(type).label ?? type;
 export const typesWith = (trait: Exclude<keyof Traits, 'label' | 'size' | 'noun'>) =>
   Object.keys(CARD_TYPES).filter(type => traits(type)[trait]);
 export const isMeasured = (type: string) => !!traits(type).measured;
+export const isFromReading = (type: string) => !!traits(type).fromReading;
 
 type Named = { type: string };
 const words = (c: Named, k: string) => {

@@ -1,6 +1,8 @@
 // Landing a planned reply over boards built by hand: on a board unchanged since, exactly what was planned; a card the
 // person changed since stays theirs, with its collection and connectors, and she touched only what landed; a card being
-// typed in still takes a change to its place; and landing it again changes nothing more.
+// typed in still takes a change to its place; one in no collection they only moved or resized takes her change where
+// they put it, and is named when she meant to move it; one a dragged collection re-laid takes her change whole; and
+// landing it again changes nothing more.
 import assert from 'node:assert';
 import { type BoardLists, landedTouched, listsOf, recordOf } from '../src/shared/changes.ts';
 import type { Card } from '../src/shared/model.ts';
@@ -197,6 +199,82 @@ whole(
   },
   'k1',
   'a collection goes while a card in it is being typed in, and the card stays where it is',
+);
+
+// Moving or resizing a card is not changing what it is, so a card the person only moved or resized since the plan
+// still takes her change where they put it.
+const dragged = board();
+for (const id of ['kb', 'k1', 'k2']) {
+  const c = find(dragged, id);
+  Object.assign(c, { x: c.x + 400, y: c.y + 300 });
+}
+Object.assign(find(dragged, 'kb'), { w: 360 });
+Object.assign(find(dragged, 'b'), { x: 850, y: 40 });
+const moved = planDo(record, dragged, new Set());
+assert.deepStrictEqual(ids(moved.skipped), [], 'nothing they only moved or resized is left');
+assert.deepStrictEqual(
+  find(moved.lists, 'kb'),
+  { ...find(plan, 'kb'), x: 400, y: 300, w: 360 },
+  'a collection they dragged and widened takes the cards she files into it, where they put it, at their width',
+);
+assert.deepStrictEqual(
+  [find(moved.lists, 'k1').type === 'note' && find(moved.lists, 'k1').text, find(moved.lists, 'a').x],
+  ['Longer words', 14],
+  'her words for a card in it land, and the card she files lands in it',
+);
+assert.deepStrictEqual(
+  find(moved.lists, 'b'),
+  { ...find(plan, 'b'), x: 850, y: 40 },
+  'a note they moved takes her words where they put it',
+);
+assert.deepStrictEqual(planDo(record, moved.lists, new Set()).undone, 0, 'landing that again changes nothing more');
+assert.deepStrictEqual(ids(moved.theirPlace), [], 'none of them was a card she meant to move');
+const herMove = listsOf(board());
+Object.assign(find(herMove, 'b'), { x: 1500, y: 900, text: 'Reworded' });
+const overruled = planDo(recordOf(board(), herMove), dragged, new Set());
+assert.deepStrictEqual(
+  [ids(overruled.skipped), ids(overruled.theirPlace)],
+  [[], ['b']],
+  'a card she meant to move that they moved since is named as left where they put it',
+);
+assert.deepStrictEqual(
+  find(overruled.lists, 'b'),
+  { ...find(herMove, 'b'), x: 850, y: 40 },
+  'and still takes her words there',
+);
+const resized = board();
+Object.assign(find(resized, 'b'), { w: 300, h: 200, userH: 200 });
+assert.deepStrictEqual(
+  find(planDo(record, resized, new Set()).lists, 'b'),
+  { ...find(plan, 'b'), w: 300, h: 200, userH: 200 },
+  'a note they resized takes her words at the size they gave it',
+);
+const movedAndRetyped = board();
+Object.assign(find(movedAndRetyped, 'b'), { x: 850, text: 'Their words' });
+assert.deepStrictEqual(
+  ids(planDo(record, movedAndRetyped, new Set()).skipped),
+  ['b'],
+  'one they moved and also changed is left as they have it',
+);
+
+// A card in a collection is placed by it, so dragging the collection is not moving the card.
+const out = listsOf(board()),
+  outOf = find(out, 'kb');
+if (outOf.type === 'coll') outOf.kids = ['k2'];
+Object.assign(outOf, { h: 220 });
+Object.assign(find(out, 'k1'), { x: 1500, y: 1100 });
+Object.assign(find(out, 'k2'), { y: 66 });
+const takenOut = planDo(recordOf(board(), out), dragged, new Set());
+assert.deepStrictEqual(ids(takenOut.skipped), [], 'nothing is left');
+assert.deepStrictEqual(
+  [find(takenOut.lists, 'k1').x, find(takenOut.lists, 'k1').y],
+  [1500, 1100],
+  'a card she takes out of a collection they dragged lands where she put it, not where the collection laid it',
+);
+assert.deepStrictEqual(
+  find(takenOut.lists, 'kb'),
+  { ...outOf, x: 400, y: 300, w: 360 },
+  'and the collection keeps the rest, where they put it',
 );
 
 console.log('LAND PLAN OK');
