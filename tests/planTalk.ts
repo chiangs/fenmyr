@@ -94,6 +94,11 @@ await check(
     assert.strictEqual(held.say, undefined, 'without her words');
     assert.match(prompt, /Roadmap[\s\S]*Retro notes/, 'and the notes she read for it go again');
     assert.match(section, /only agrees to the plan as it stands, set "doPlan": true/, 'and how she agrees to it');
+    assert.match(
+      section,
+      /To change the plan, .* with "say" written as if it is done/,
+      'and words a changed plan as done',
+    );
     await settle(page, 800);
     assert.deepStrictEqual((await rows()).at(-1)?.text, 'ok', 'her words show');
     assert.deepStrictEqual((await plans()).at(-1)?.acts, WAITING, 'and the plan still waits');
