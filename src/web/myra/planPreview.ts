@@ -11,8 +11,9 @@ import type { Bounds } from '../canvas/handles.ts';
 import { paintCard } from '../canvas/render.ts';
 import { arrange, CW, naturalHeight } from '../cards/collection.ts';
 import { $ } from '../core/dom.ts';
-import { session } from '../core/state.ts';
-import { cardEl } from '../ui/dom.ts';
+import { bringIntoView } from '../core/history.ts';
+import { appState, session } from '../core/state.ts';
+import { cardEl, isTyping, textField } from '../ui/dom.ts';
 import { waitingNow } from './heldPlan.ts';
 
 type Now = NonNullable<ReturnType<typeof waitingNow>>;
@@ -26,6 +27,8 @@ const HEAD = 'Preview · not on the board yet';
 let drawn = '';
 // head: where the preview's name goes, above its top left corner and any collection its boxes are in
 let boxes: { key: string; list: Box[]; head: Bounds | null } = { key: '', list: [], head: null };
+// the last plan the view glided to, so each plan glides once at most
+let glided = '';
 // what the layer last drew, so a save that leaves every box as it was redraws nothing on the board
 let painted = '';
 // the heights of the cards the plan changes, measured once each, since the plan's copies don't change while it waits
@@ -44,6 +47,9 @@ export function drawPlanPreview() {
   if (measured.plan !== now.id) measured = { plan: now.id, h: new Map() };
   if (boxes.key !== now.key) boxes = { key: now.key, ...boxesOf(now) };
   paint(boxes.list, boxes.head, now.hot);
+  if (glided === now.id || !boxes.list.length) return;
+  glided = now.id;
+  if (!busy()) bringIntoView(boxes.list);
 }
 
 function clear() {
@@ -52,6 +58,13 @@ function clear() {
   layer.classList.remove('lit');
   drawn = '';
   painted = '';
+}
+
+// They are dragging, typing in a card or a doc, or writing their next message, so the view stays where they have it.
+function busy() {
+  const active = document.activeElement,
+    input = textField('mcInput');
+  return !!appState.drag || !!session.editing || input.value.trim() !== '' || (active !== input && isTyping(active));
 }
 
 // One box for each card a step covers, except a card they changed since, which she leaves, and a screen's pieces,

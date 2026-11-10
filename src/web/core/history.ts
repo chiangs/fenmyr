@@ -1,6 +1,6 @@
 import { shareStrings } from '../../shared/changes.ts';
 import type { Card } from '../../shared/model.ts';
-import { fit, toWorld } from '../canvas/handles.ts';
+import { type Bounds, fit, toWorld } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { endEdit } from '../edit/editing.ts';
@@ -120,17 +120,23 @@ export async function saveNow() {
   await writeBoard();
 }
 
-// after Myra works: glide to what she made (unless it's already in view) and let it glow for a moment
-export function showWhatMyraMade(made: Card[]) {
-  const cs = [...new Set(made)].filter(c => session.board.cards.includes(c));
-  if (!cs.length) return;
+/** Glides to show these beside the open chat, unless they're in view already. True when it glides. */
+export function bringIntoView(bs: readonly Bounds[]) {
   const r = stage.getBoundingClientRect(),
     free = freeOf({ l: r.left + 270, t: r.top + 60, r: r.right - 260, b: r.bottom - 110 }, chatOverBoard()),
     a = toWorld(free.l, free.t),
     b = toWorld(free.r, free.b);
   const inView =
-    cs.every(c => c.x >= a.x && c.y >= a.y && c.x + c.w <= b.x && c.y + c.h <= b.y) && session.view.z > 0.45;
-  if (!inView) fit(cs, 140, 1);
+    bs.every(c => c.x >= a.x && c.y >= a.y && c.x + c.w <= b.x && c.y + c.h <= b.y) && session.view.z > 0.45;
+  if (!inView) fit(bs, 140, 1);
+  return !inView;
+}
+
+// after Myra works: glide to what she made (unless it's already in view) and let it glow for a moment
+export function showWhatMyraMade(made: Card[]) {
+  const cs = [...new Set(made)].filter(c => session.board.cards.includes(c));
+  if (!cs.length) return;
+  const inView = !bringIntoView(cs);
   const glow = cs.filter(c => !WF.includes(c.type) || c.type === 'frame' || !c.onFrame); // whole screens glow, not every word on them
   setTimeout(
     () =>

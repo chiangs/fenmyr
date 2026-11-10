@@ -1,12 +1,13 @@
 // A plan waiting in the chat shows on the board as a dashed preview: a box where each card it adds, moves or changes
 // would land, and a "Removed" box over each card it takes away. Nothing in it is a card: the pointer goes through it to
-// the board and the cards under it, and an export leaves it out. Hovering a step of the plan lights that step's boxes.
+// the board and the cards under it, and an export leaves it out. Hovering a step of the plan lights that step's boxes,
+// and the view glides to the preview when it arrives, unless the person is dragging or typing.
 import assert from 'node:assert';
 import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['layer', 'pointer', 'hover', 'export'];
+const BOARDS = ['layer', 'pointer', 'hover', 'glide', 'busy', 'export'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'layer', claude: true });
 const { page } = l;
 
@@ -61,6 +62,7 @@ const card = (id: string) =>
     const c = window.__fenmyr.curBoard().cards.find(x => x.id === id);
     return c && { x: c.x, y: c.y, w: c.w, h: c.h };
   }, id);
+const view = () => page.evaluate(() => ({ ...window.__fenmyr.view }));
 const notes = (n: number, more: (i: number) => object = () => ({})) =>
   Array.from({ length: n }, (_, i) => ({ type: 'note', text: `Task ${i + 1}`, ...more(i) }));
 // a new kanban of twelve, a note reworded and a note removed
@@ -71,6 +73,12 @@ const BIG = {
   edit: [{ id: 'n1', text: 'First, reworded' }],
   remove: ['n4'],
 };
+// eleven notes far from where the board is shown
+const FAR = {
+  say: 'Over there.',
+  add: notes(11, i => ({ x: 4000 + (i % 4) * 260, y: 3000 + Math.floor(i / 4) * 180 })),
+};
+
 await chat();
 
 await check('a waiting plan shows on the board as dashed boxes, and none of them is a card', async () => {
@@ -170,6 +178,47 @@ await check('hovering a step lights its boxes and dims the rest', async () => {
   await settle(page, 100);
   assert.deepStrictEqual(await lit(), [], 'leaving the steps lights none');
   assert.strictEqual(await dimmed(), false);
+});
+
+await check('the view glides to show the preview beside the open chat', async () => {
+  await open('glide');
+  await chat();
+  await planned(FAR);
+  await page.waitForTimeout(700);
+  const shown = await page.evaluate(() => {
+    const c = document.getElementById('mChat')?.getBoundingClientRect(),
+      bs = [...document.querySelectorAll('#planPreview .pp-box')].map(b => b.getBoundingClientRect());
+    return {
+      inWindow: bs.every(r => r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight),
+      clearOfChat: !!c && bs.every(r => r.right <= c.left || r.bottom <= c.top),
+    };
+  });
+  assert.deepStrictEqual(shown, { inWindow: true, clearOfChat: true });
+});
+
+await check('it never glides while they type in a card or drag one', async () => {
+  await open('busy');
+  const before = await view(),
+    n2 = await page.locator('#cards .card[data-id="n2"]').boundingBox();
+  assert(n2, 'n2 is on screen');
+  await page.mouse.dblclick(n2.x + 40, n2.y + 40);
+  assert.strictEqual(await page.evaluate(() => window.__fenmyr.editing), 'n2', 'they are typing in it');
+  await planned(FAR);
+  await page.waitForTimeout(700);
+  assert.deepStrictEqual(await view(), before, 'not while typing');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  const n3 = await page.locator('#cards .card[data-id="n3"]').boundingBox();
+  assert(n3, 'n3 is on screen');
+  await page.mouse.move(n3.x + 40, n3.y + 40);
+  await page.mouse.down();
+  await page.mouse.move(n3.x + 70, n3.y + 60, { steps: 4 });
+  await planned({ ...FAR, say: 'Over there again.' });
+  await page.waitForTimeout(700);
+  assert.deepStrictEqual(await view(), before, 'nor while dragging');
+  await page.mouse.up();
+  await page.waitForTimeout(700);
+  assert.deepStrictEqual(await view(), before, 'nor once the drag ends');
 });
 
 await check('an export leaves the preview out, as an image or a PDF, of the board or a card', async () => {
