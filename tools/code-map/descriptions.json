@@ -463,6 +463,6 @@
     "tests/planGlide.ts": "Checks the view glides to a waiting plan's preview once, never while the person drags, pans, zooms or types in a card, later once they stop, and never after they move the view.",
     "tests/planPictures.ts": "Checks no picture of the window shows a waiting plan's preview: a build's picture of a screen matches one with no plan, and every export is taken with it hidden.",
     "tests/planSteps.ts": "Checks a waiting plan's steps say what Do it would do: a card only clicked into takes her change, and a card typed into is reworded in place, in the chat and her bubble.",
-    "tests/planPreviewLook.ts": "Checks how a plan's preview reads: its name on its first box's edge, and box names on their own fill clear of the card's words in light and dark."
+    "tests/planPreviewLook.ts": "Checks how a plan's preview reads: its name on its first box's edge, box names on their own fill clear of the card's words in light and dark, hidden from screen readers."
   }
 }

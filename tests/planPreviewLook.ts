@@ -1,6 +1,7 @@
 // How a waiting plan's preview reads. Its name sits on the top edge of its first box, the way a group's name sits on
 // its outline, so it is plainly part of the preview and never over a card it leaves alone. Each box's name sits on the
-// box's top edge on its own fill, clear of the card's words and readable in light and dark.
+// box's top edge on its own fill, clear of the card's words and readable in light and dark. Screen readers skip the
+// layer.
 import assert from 'node:assert';
 import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
@@ -115,6 +116,11 @@ await check('each box’s name has its own fill, clear of its card’s words, at
         'and none covers its card’s words',
       );
   }
+});
+
+await check('screen readers skip the preview', async () => {
+  assert.strictEqual(await page().getAttribute('#planPreview', 'aria-hidden'), 'true');
+  assert(!(await page().locator('#world').ariaSnapshot()).includes('Preview'), 'the board reads without it');
 });
 
 const errors = [...l.errors];
