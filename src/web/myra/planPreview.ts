@@ -3,7 +3,7 @@
 // names would go when its collection is laid out again, the collection's own frame included. The boxes come from the
 // landing Do it makes, laid out as the board lays out cards once they land, so after Do it every card whose place or
 // size changed sits where its box was. The layer is in #world, outside #cards, with no .card or data-id and no
-// pointer, so nothing takes a box for a card. It is never saved, and an export hides it.
+// pointer, so nothing takes a box for a card. It is never saved, and no picture of the window shows it (hostCall.ts).
 import { cardName } from '../../shared/cardTypes.ts';
 import { type BoardLists, copy, holdersOf } from '../../shared/changes.ts';
 import type { Card } from '../../shared/model.ts';

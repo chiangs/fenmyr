@@ -1,13 +1,13 @@
 // A plan waiting in the chat shows on the board as a dashed preview: a box where each card it adds, moves or changes
 // would land, and a "Removed" box over each card it takes away. Nothing in it is a card: the pointer goes through it to
-// the board and the cards under it, and an export leaves it out. Hovering a step of the plan lights that step's boxes,
-// and the view glides to the preview when it arrives (planGlide.ts says when it waits).
+// the board and the cards under it. Hovering a step of the plan lights that step's boxes, and the view glides to the
+// preview when it arrives (planGlide.ts says when it waits). No picture of the window shows it (planPictures.ts).
 import assert from 'node:assert';
 import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['layer', 'pointer', 'hover', 'glide', 'export'];
+const BOARDS = ['layer', 'pointer', 'hover', 'glide'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'layer', claude: true });
 const { page } = l;
 
@@ -193,51 +193,6 @@ await check('the view glides to show the preview beside the open chat', async ()
     };
   });
   assert.deepStrictEqual(shown, { inWindow: true, clearOfChat: true });
-});
-
-await check('an export leaves the preview out, as an image or a PDF, of the board or a card', async () => {
-  await open('export');
-  await chat();
-  await planned(BIG);
-  await page.keyboard.press('Escape');
-  await settle(page, 300);
-  await page.evaluate(() => {
-    const seen: string[] = [];
-    Reflect.set(window, 'seen', seen);
-    window.Fenmyr.exportRect = async o => {
-      const el = document.getElementById('planPreview');
-      seen.push(`${o.pdf ? 'pdf' : 'image'}:${el ? getComputedStyle(el).visibility : 'none'}`);
-      return '';
-    };
-  });
-  const empty = await page.evaluate(() => {
-    for (let y = 120; y < 800; y += 20)
-      for (let x = 300; x < 1100; x += 20) if (document.elementFromPoint(x, y)?.id === 'stage') return { x, y };
-    return null;
-  });
-  const n2 = await page.locator('#cards .card[data-id="n2"]').boundingBox();
-  assert(empty && n2, 'an empty spot and a card to right-click');
-  const exportFrom = async (x: number, y: number, label: string) => {
-    await page.mouse.click(x, y, { button: 'right' });
-    await page.locator('#rowMenu button', { hasText: label }).click();
-    await settle(page, 600);
-  };
-  await exportFrom(empty.x, empty.y, 'Export board as image');
-  await exportFrom(empty.x, empty.y, 'Export board as PDF');
-  await exportFrom(n2.x + 40, n2.y + 40, 'Export as image');
-  await exportFrom(n2.x + 40, n2.y + 40, 'Export as PDF');
-  assert.deepStrictEqual(await page.evaluate(() => Reflect.get(window, 'seen')), [
-    'image:hidden',
-    'pdf:hidden',
-    'image:hidden',
-    'pdf:hidden',
-  ]);
-  assert.strictEqual(
-    await page.evaluate(() => getComputedStyle(document.getElementById('planPreview') ?? document.body).visibility),
-    'visible',
-    'and it shows again after',
-  );
-  assert.strictEqual((await boxes()).length, 15, 'with every box');
 });
 
 const errors = [...l.errors];
