@@ -86,6 +86,8 @@ jobs:
         run: node tests/build.ts
       - name: Build buttons test (Myra's stored Commit and Undo across builds and boards)
         run: node tests/buildButtons.ts
+      - name: Build host test (a build's snapshot, lines added and removed, next steps and one build per repo, with a fake code agent)
+        run: node tests/buildHost.ts
       - name: Prototype offer test (Myra offers a prototype board for a request that needs code, and Start and build makes it and builds)
         run: node tests/protoOffer.ts
       - name: Offer kept test (Myra's prototype offer kept until its board is made, and never built on another board)

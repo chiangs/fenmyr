@@ -1,6 +1,6 @@
+import { readBuildEvent } from '../../shared/build.ts';
 import type { ChatAction } from '../../shared/chat.ts';
 import type { Board, Card } from '../../shared/model.ts';
-import { readSources } from '../../shared/repos.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
@@ -125,18 +125,17 @@ export function commitButton(a: Extract<ChatAction, { kind: 'commit' }>): SayAct
   return b && commitView(b, a.message);
 }
 
-// the host's protoBuild events, for the build that's running
+// the host's protoBuild events, for the build that's running; its end repeats the snapshot its start carries, so the
+// start changes nothing here
 export function buildEvent(data: unknown) {
-  if (!running || typeof data !== 'object' || data === null) return;
-  const e: Record<string, unknown> = { ...data };
-  if (e.id !== running.id) return;
-  if (e.type === 'edit') return running.job.show({ kind: 'building', file: String(e.file).split('/').at(-1) ?? null });
+  const e = readBuildEvent(data);
+  if (!running || e?.id !== running.id || e.type === 'start') return;
+  if (e.type === 'edit') return running.job.show({ kind: 'building', file: e.file.split('/').at(-1) ?? null });
   const { root, build, proto, request, job } = running;
   running = null;
   job.end();
-  if (e.type === 'error') return say(`I couldn’t finish that. ${String(e.text)}`, 10000);
-  const snapshot = String(e.snapshot),
-    strays = Array.isArray(e.outside) ? e.outside.map(String) : [],
+  if (e.type === 'error') return say(`I couldn’t finish that. ${e.text}`, 10000);
+  const { snapshot, outside: strays } = e,
     board = proto.id,
     here = session.board?.id === board,
     // the commit message she suggests: the first line of what she was asked to do
@@ -150,8 +149,8 @@ export function buildEvent(data: unknown) {
       ]
     : [commitView(proto, message), undoView(root, proto.proto.dir, snapshot)];
   if (here) refresh();
-  addMsg('myra', String(e.text), acts);
-  const used = here ? keepSources(readSources(e.sources)) : [];
+  addMsg('myra', e.text, acts);
+  const used = here ? keepSources(e.sources) : [];
   if (used.length) addMsg('myra', cardsLine(used), cardButtons(used));
   if (strays.length)
     say(
