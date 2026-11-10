@@ -22,6 +22,7 @@ function summaryEl(p: Extract<Piece, { slot: 'summary' }>) {
     head = document.createElement('b'),
     list = document.createElement(p.numbered ? 'ol' : 'ul');
   box.className = p.cls ? `m-summary ${p.cls}` : 'm-summary';
+  if (p.plan) box.dataset.plan = p.plan;
   head.textContent = p.head;
   const { hover } = p;
   p.lines.forEach((line, i) => {

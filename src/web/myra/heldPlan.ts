@@ -184,18 +184,24 @@ function stepsNow(w: Waiting) {
   return { lines, dim };
 }
 
+// The steps say again what she will leave, in place wherever they show, in the chat and in her bubble, open or not, so
+// nothing scrolls or plays its entrance again.
+function restep(w: Waiting) {
+  const { lines, dim } = stepsNow(w);
+  for (const box of document.querySelectorAll(`.m-summary[data-plan="${w.act.plan}"]`))
+    box.querySelectorAll('li').forEach((li, i) => {
+      li.textContent = lines[i] ?? '';
+      li.classList.toggle('dim', dim.has(i));
+    });
+}
+
 /** The waiting plan as the board preview draws it, asked every frame. key: changes when what Do it would land does.
- *  When the cards it would leave change, the plan's message is drawn again, so its steps say so. */
+ *  When the cards it would leave change, its steps say so. */
 export function waitingNow() {
   const w = waiting;
   if (!w) return null;
   const { key, land, left } = landsNow(w);
-  if (leftKey(w, left) !== drawnLeft) {
-    drawnLeft = leftKey(w, left);
-    // the step under the pointer is drawn anew, and the pointer lights it again when it moves
-    hot = null;
-    renderChat();
-  }
+  if (leftKey(w, left) !== drawnLeft) restep(w);
   return { id: w.act.plan, key, planned: w.planned, parts: w.parts, hot, land, left };
 }
 
@@ -209,7 +215,7 @@ export function planPieces(a: PlanAct): Piece[] {
     w = waiting?.act.plan === a.plan ? waiting : null,
     now = w && stepsNow(w),
     steps: Piece = { slot: 'summary', head: HEAD[state], lines: a.steps, numbered: true, cls: `plan ${state}` },
-    pieces: Piece[] = [now ? { ...steps, lines: now.lines, dim: now.dim, hover: hotStep } : steps];
+    pieces: Piece[] = [now ? { ...steps, lines: now.lines, dim: now.dim, hover: hotStep, plan: a.plan } : steps];
   if (w)
     pieces.push(
       { slot: 'reply', button: { label: 'Do it', after: 'stay', run: () => doIt(w) } },
