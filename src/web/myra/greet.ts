@@ -113,6 +113,11 @@ export function glideTo(cs: Card[]) {
   applyView();
   glideView(to);
 }
+const slashClear = () =>
+  session.board?.kind === 'prototype'
+    ? reply('I keep one chat for each prototype, so how it was built stays in one place.')
+    : $('mcNew').click();
+
 export function init33() {
   addEventListener('focus', () => {
     if (greetDay && dayKey(bdNow()) !== greetDay) greet('newday');
@@ -209,7 +214,7 @@ export function init33() {
       },
       run: slashAnimate,
     },
-    { cmd: 'clear', group: 'chat', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
+    { cmd: 'clear', group: 'chat', desc: 'Start a fresh chat', run: slashClear, quiet: true },
     { cmd: 'help', group: 'chat', desc: 'What I can do without thinking', run: () => reply(helpText()) },
   ];
 }

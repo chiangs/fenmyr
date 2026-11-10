@@ -80,6 +80,8 @@ jobs:
         run: node tests/layout.ts
       - name: Prototype chat test (Myra's chat docked on a prototype board)
         run: node tests/protoChat.ts
+      - name: Prototype thread test (one chat on each prototype board)
+        run: node tests/protoThread.ts
       - name: Preview test (a prototype running in its sandbox)
         run: node tests/preview.ts
       - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)

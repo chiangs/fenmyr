@@ -3017,6 +3017,8 @@ body.following-caelestia .git-setup .set-btn.hot, body.following-caelestia .rl-b
    sits in the chat's header where the chat icon was */
 body.proto #mPill, body.proto #mBubble { display: none !important; }
 body.proto .mc-head .mc-ic { display: none; }
+/* a prototype keeps one chat */
+body.proto #mcNew { display: none; }
 .mc-head .goo-slot { width: 40px; height: 35px; flex: none; display: grid; place-items: center; }
 .mc-head .goo-slot canvas { width: 40px; height: 35px; }
 .mc-grip { display: none; }

@@ -301,6 +301,7 @@ export function init31() {
   appState.histOpen = false;
 
   $('mcNew').onclick = () => {
+    if (session.board?.kind === 'prototype') return;
     setExpanded(false);
     dropPlan();
     archiveChat();
