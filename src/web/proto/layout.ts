@@ -1,8 +1,7 @@
 import type { Board } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
-import { playAnim } from '../myra/anim.ts';
-import { chatLog } from '../myra/chatLog.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
+import { dockReset, gooFrom, hopFrom, wonderIfEmpty } from '../myra/perch.ts';
 import { heightGrip } from '../settings/panelHeights.ts';
 import { applyLayout } from '../settings/widgets.ts';
 import { applyBoxes } from '../ui/boxes.ts';
@@ -23,6 +22,8 @@ const LABEL: Record<Pane, string> = { preview: 'Preview', code: 'Code', canvas: 
 let layouts: Record<string, Layout> = {};
 let boardId = '';
 let root: HTMLElement | null = null;
+// the board Fenmyr opens as it starts has no board before it for Myra to hop from
+let shown = false;
 
 const readLayouts = (): Record<string, Layout> => {
   try {
@@ -195,11 +196,8 @@ function dockChat(on: boolean) {
   if (chat.parentElement !== home) home.prepend(chat);
   const slot = $('gooSlot'),
     spot = on ? $('mcPerch') : $('mPill');
-  if (spot && slot.parentElement !== spot) {
-    slot.classList.remove('perched');
-    slot.style.transform = '';
-    spot.prepend(slot);
-  }
+  if (slot.parentElement !== spot) spot.prepend(slot);
+  dockReset();
 }
 
 const INPUT_KEY = 'fenmyr:protoInputH',
@@ -239,8 +237,13 @@ export function openColumn(p: Foldable) {
 }
 
 export function showProto(b: Board) {
-  const on = b.kind === 'prototype';
-  if (!on && !document.body.classList.contains('proto')) return;
+  const on = b.kind === 'prototype',
+    was = document.body.classList.contains('proto'),
+    first = !shown;
+  shown = true;
+  if (!on && !was) return;
+  // read while the board you're leaving is still drawn, before the prototype's screen moves her
+  const from = on && !was && !first ? gooFrom() : null;
   root ??= build();
   if (!Object.keys(layouts).length) layouts = readLayouts();
   boardId = b.id;
@@ -250,11 +253,13 @@ export function showProto(b: Board) {
   dockChat(on);
   myraOpen(on);
   if (!on) return startSync(b);
-  // an empty chat: she tilts her head, wondering what you'll build
-  if (!chatLog().length) playAnim('curious', false);
   place();
   renderGitBar(b);
   renderCode(b);
   renderPreview(b);
   startSync(b);
+  // last, so the panes' first render doesn't eat her wind-up
+  hopFrom(from);
+  // an empty chat: once she has landed she tilts her head, wondering what you'll build
+  wonderIfEmpty();
 }

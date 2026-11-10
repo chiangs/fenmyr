@@ -355,6 +355,7 @@
     "tests/popups.ts": "Checks popups close when you press outside them.",
     "tests/preview.ts": "Tests the preview: a React prototype running in a frame that can run scripts and nothing else.",
     "tests/protoChat.ts": "Tests Myra’s chat docked on a prototype board: her replies, the input’s grip and height, and pasted pictures.",
+    "tests/protoHop.ts": "Checks Myra hops into a prototype board’s docked chat as it opens, drawn above the preview, fades when she is calm, and never hops between prototypes, back down, on a phone or at start-up.",
     "tests/prototype.ts": "Tests prototyping folders and new prototypes, names and shared files.",
     "tests/replies.ts": "Pins what each kind of Myra reply does to the board, her chat, the library and templates.",
     "tests/replyActs.ts": "Checks what shows under a reply that changed the board in the real app: its summary, Show on board, and Undo with Ctrl+Z, a board reopened and her bubble.",

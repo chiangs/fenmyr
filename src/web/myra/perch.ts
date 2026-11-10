@@ -46,6 +46,15 @@ const gooRest = () => {
   gooSlot.style.transformOrigin = '';
 };
 
+const landed = () => {
+  if (!appState.flightLive) return;
+  appState.flightLive = false;
+  liveOff();
+};
+
+const fades = () => !!window.myraCalm || matchMedia('(prefers-reduced-motion: reduce)').matches;
+const boxHidden = () => document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none';
+
 // Calm, calmest and reduced motion: she fades out of one place and into the other, with no hop
 function fadeGoo() {
   const out = gooSlot.animate({ opacity: [1, 0] }, { duration: 120, fill: 'forwards' });
@@ -72,20 +81,14 @@ function flyGoo(to: Point, fade: boolean) {
     gooAnim.stop();
     gooAnim = null;
   }
-  const done = () => {
-    if (appState.flightLive) {
-      appState.flightLive = false;
-      liveOff();
-    }
-  };
   if (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1) {
     gooRest();
     gooMove(to);
-    done();
+    landed();
     return;
   }
   if (fade) {
-    done();
+    landed();
     fadeGoo();
     return;
   }
@@ -141,7 +144,7 @@ function flyGoo(to: Point, fade: boolean) {
         gooRest();
         gooMove(target);
         gooAnim = null;
-        done();
+        landed();
         return;
       }
       const sq = Math.exp(-l / 85) * Math.cos(l / 40),
@@ -163,8 +166,7 @@ function flyGoo(to: Point, fade: boolean) {
 }
 
 export function perchGoo(on: boolean) {
-  const hidden = document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none';
-  if (hidden) return;
+  if (boxHidden()) return;
   const now = Date.now();
   appState.toggleLog = appState.toggleLog.filter(t => now - t < 3000);
   appState.toggleLog.push(now);
@@ -175,15 +177,37 @@ export function perchGoo(on: boolean) {
   } // toggled over and over: she gets dizzy
   perched = on;
   gooSlot.classList.toggle('perched', on);
-  flyGoo(
-    on ? perchTarget() : { x: 0, y: 0 },
-    !!window.myraCalm || matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
+  flyGoo(on ? perchTarget() : { x: 0, y: 0 }, fades());
 }
 
 export const keepPerch = () => {
   if (perched && !gooAnim) gooMove(perchTarget());
 };
+
+// Her slot moved between her box and a prototype board's docked chat. Her offset, perch and any flight belonged to the
+// old home, so she rests at the new one.
+export function dockReset() {
+  gooAnim?.stop();
+  gooAnim = null;
+  landed();
+  perched = false;
+  gooSlot.classList.remove('perched');
+  gooRest();
+  gooMove({ x: 0, y: 0 });
+}
+
+// none on a phone, or on a prototype board, where she already sits in the docked chat's header
+export const gooFrom = () => (boxHidden() ? null : gooSlot.getBoundingClientRect());
+
+// Her slot has just moved to a new home. She is drawn back where she was, then hops or fades into it. The caller moves
+// her and calls this in one task, so no frame shows her at the new home first.
+export function hopFrom(from: DOMRect | null) {
+  if (!from) return;
+  const to = gooSlot.getBoundingClientRect();
+  gooMove({ x: from.left - to.left, y: from.top - to.top });
+  flyGoo({ x: 0, y: 0 }, fades());
+}
+
 // click her in the chat and she does something
 // you opened an empty chat (the button or M): once she has landed in the chat's header she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
 export const wonderIfEmpty = () =>
