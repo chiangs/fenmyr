@@ -1,6 +1,6 @@
-// A prototype board keeps one chat: New chat is gone, /clear answers instead of clearing, chats put away before this
-// open read-only without changing the board, the thread keeps its last 500 messages whatever Settings says, and Clear
-// all chats still clears it.
+// A prototype board keeps one chat: New chat is gone, /clear says so and answers under the person's /clear instead of
+// clearing, chats put away before this open read-only without changing the board, the thread keeps its last 500
+// messages whatever Settings says, and Clear all chats still clears it. An ordinary board's /clear is unchanged.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import type { ChatMsg, SavedChat } from '../src/shared/chat.ts';
@@ -66,12 +66,30 @@ const send = async (text: string) => {
   await page.keyboard.press('Control+Enter');
   await settle(page, 300);
 };
+const clearRow = async () => {
+  await page.fill('#mcInput', '/cle');
+  await settle(page, 100);
+  const row = await page.locator('.slash-menu button[data-key="clear"] span').textContent();
+  await page.fill('#mcInput', '');
+  return row;
+};
+const helpLine = async () => {
+  const help = await page.evaluate(() => window.__fenmyr.curBoard().chat?.at(-1)?.text ?? '');
+  return help.split('\n').find(line => line.startsWith('/clear'));
+};
 
 try {
   const newChatOnPlain = await page.evaluate(
     () => getComputedStyle(document.getElementById('mcNew') ?? document.body).display,
   );
   assert.notStrictEqual(newChatOnPlain, 'none', 'an ordinary board has New chat');
+  await page.evaluate(() => document.getElementById('mPill')?.click());
+  await settle(page, 300);
+  assert.strictEqual(await clearRow(), 'Start a fresh chat', 'and its /clear starts a fresh chat');
+  await send('/help');
+  assert.strictEqual(await helpLine(), '/clear  Start a fresh chat', 'as /help says');
+  await send('/clear');
+  assert.deepStrictEqual((await board()).chat, [], 'which /clear does, quietly');
 
   // a prototype from before this phase: its chat and the chats New chat put away then
   await openPrototype(page, repo);
@@ -103,13 +121,18 @@ try {
     'and clicking it from a script changes nothing',
   );
 
+  const prototypeClear = 'Clears nothing, since a prototype keeps one chat';
+  assert.strictEqual(await clearRow(), prototypeClear, 'the slash menu says what /clear does on a prototype');
   await send('/clear');
   const cleared = await board();
-  assert.deepStrictEqual(cleared.chat.slice(0, -1), thread, '/clear keeps every message');
+  assert.deepStrictEqual(cleared.chat.slice(0, -2), thread, '/clear keeps every message');
   assert.deepStrictEqual(
-    cleared.chat.at(-1)?.text,
-    'I keep one chat for each prototype, so how it was built stays in one place.',
-    'and she says why',
+    cleared.chat.slice(-2).map(m => [m.who, m.text]),
+    [
+      ['me', '/clear'],
+      ['myra', 'I keep one chat for each prototype, so how it was built stays in one place.'],
+    ],
+    'and she says why, under the /clear it answers',
   );
   assert.deepStrictEqual(cleared.chats, earlier, 'and puts nothing away');
 
@@ -147,6 +170,7 @@ try {
   const back = await shown();
   assert.ok(!back.includes('An earlier chat'), 'sending a message goes back to the thread');
   assert.match(back, /I added the coupon field under the total\.[\s\S]*\/help[\s\S]*Here is what I can do/, 'with it');
+  assert.strictEqual(await helpLine(), `/clear  ${prototypeClear}`, 'and /help says what /clear does there');
   await page.click('#mcHist');
   await settle(page, 200);
   assert.strictEqual(await page.locator('#mcList .mh-row').count(), 2, 'Earlier chats opens on the list again');
