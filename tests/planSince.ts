@@ -1,8 +1,7 @@
 // Do it on a plan the person worked around while it waited, and what she says about it: a card she meant to move that
 // they moved since stays where they put it and she names it, a note they resized takes her words at their size, a card
-// they only clicked into and left takes her change,
-// a doc they only opened, whether closed again or still open, takes her rewrite, and a card they are in, though nothing
-// is typed yet, stays as it is.
+// they only clicked into and left, in a collection or not, takes her change, a doc they only opened, whether closed
+// again or still open, takes her rewrite, and a card they are in, though nothing is typed yet, stays as it is.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -119,25 +118,39 @@ await check('a note they resized since takes her words at the size they gave it'
   assert.strictEqual(await said(), 'Ten ideas, and a sharper first note.', 'with nothing left out');
 });
 
-await check('a card they only clicked into and left, with nothing typed, takes her change', async () => {
-  await open('clicked');
-  await chat();
-  await planned({
-    say: 'Ten ideas, and a sharper third note.',
-    add: notes(10),
-    edit: [{ id: 'n3', text: 'Her third' }],
-  });
-  await page.keyboard.press('Escape');
-  await page.locator('#cards .card[data-id="n3"]').dblclick();
-  await page.keyboard.press('Escape');
-  await settle(page, 300);
-  assert.strictEqual(await page.evaluate(() => window.__fenmyr.editing), null, 'they left it');
-  await chat();
-  await doIt();
-  const n3 = await page.evaluate(() => window.__fenmyr.curBoard().cards.find(c => c.id === 'n3'));
-  assert(n3?.type === 'note' && n3.text === 'Her third', 'her words land');
-  assert.strictEqual(await said(), 'Ten ideas, and a sharper third note.', 'with nothing left out');
-});
+await check(
+  'cards they only clicked into and left, with nothing typed, take her change, in a collection too',
+  async () => {
+    await open('clicked');
+    await chat();
+    await planned({
+      say: 'Ten ideas, and sharper words for two cards.',
+      add: notes(10),
+      edit: [
+        { id: 'n3', text: 'Her third' },
+        { id: 'k1', text: 'Her brief' },
+      ],
+    });
+    for (const id of ['n3', 'k1']) {
+      await page.keyboard.press('Escape');
+      await page.locator(`#cards .card[data-id="${id}"] .text`).dblclick();
+      assert.strictEqual(await page.evaluate(() => window.__fenmyr.editing), id, `they are in ${id}`);
+      await page.keyboard.press('Escape');
+      await settle(page, 300);
+    }
+    assert.strictEqual(await page.evaluate(() => window.__fenmyr.editing), null, 'and left them');
+    await chat();
+    await doIt();
+    const words = await page.evaluate(() =>
+      ['n3', 'k1'].map(id => {
+        const c = window.__fenmyr.curBoard().cards.find(x => x.id === id);
+        return c?.type === 'note' ? c.text : undefined;
+      }),
+    );
+    assert.deepStrictEqual(words, ['Her third', 'Her brief'], 'her words land on both');
+    assert.strictEqual(await said(), 'Ten ideas, and sharper words for two cards.', 'with nothing left out');
+  },
+);
 
 // a doc she writes in markdown, and her plan to rewrite it, with ten new notes so it waits
 async function herDoc(title: string) {
