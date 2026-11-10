@@ -7,6 +7,7 @@ import { everyOfflineCard, richNotes } from '../tests/fixtures/boards.ts';
 import { launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
 import { type Group, MYRA_GROUPS, type Step } from './visual-myra.ts';
+import { openPrototype, PROTO_GROUPS } from './visual-proto.ts';
 
 const FROZEN_MOTION =
   '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
@@ -59,12 +60,9 @@ const board: [string, Step][] = [
     },
   ],
 ];
-const screen: [string, Step][] = [['screen', async () => {}]];
 const GROUPS: Record<string, Group> = {
   light: { states: board },
-  'proto-wide': { proto: true, width: 1440, states: screen },
-  'proto-medium': { proto: true, width: 1200, states: screen },
-  'proto-narrow': { proto: true, width: 900, states: screen },
+  ...PROTO_GROUPS,
   dark: { settings: { theme: 'dark' }, states: board.slice(0, 3) },
   phone: { phone: true, states: [['board', async () => {}]] },
   rich: {
@@ -115,40 +113,6 @@ const GROUPS: Record<string, Group> = {
   },
   ...MYRA_GROUPS,
 };
-
-// A prototype board in a fresh repo, its starter running in the preview. A checkout without prototypes (main, until
-// the feature lands) has no protoCreate, so it shows its ordinary board and the state is listed as meant.
-async function openPrototype(page: Page) {
-  // a fixed name, since the git bar shows it
-  const repo = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-repo-')), 'acme');
-  fs.mkdirSync(repo);
-  execFileSync('git', ['-C', repo, 'init', '-q', '-b', 'main']);
-  const made = await page.evaluate(async repo => {
-    const api: Record<string, unknown> = { ...window.Fenmyr };
-    if (typeof api.protoCreate !== 'function') return false;
-    await window.Fenmyr.saveFolders({
-      projects: [{ id: 'vp', name: 'Acme', open: true, repo: { path: repo } }],
-      folders: [{ id: 'vf', name: 'Prototypes', project: 'vp', kind: 'prototyping', open: true }],
-      order: {},
-    });
-    const proto = await window.Fenmyr.protoCreate({ root: repo, name: 'Checkout', stack: 'react' });
-    await window.Fenmyr.save({
-      id: 'vb',
-      name: 'Checkout',
-      folder: 'vf',
-      kind: 'prototype',
-      proto,
-      cards: [],
-      links: [],
-      tray: [],
-    });
-    await window.__fenmyr.refreshBoards();
-    await window.__fenmyr.openBoard('vb');
-    return true;
-  }, repo);
-  if (made) await page.frameLocator('#pr-preview iframe').locator('h1').waitFor({ timeout: 30000 });
-  await settle(page, 800);
-}
 
 async function shoot(dir: string, out: string) {
   fs.mkdirSync(out, { recursive: true });
