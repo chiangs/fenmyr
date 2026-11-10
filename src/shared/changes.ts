@@ -16,7 +16,8 @@ type Delta<T> = { id: string; was: Placed<T> | null; now: Placed<T> | null };
 export type BoardPatch = { cards: Delta<Card>[]; links: Delta<Link>[] };
 
 // Each card id is in at most one list. `relaid` maps a collection to the cards its layout shifted (the collection
-// itself among them; '' for cards in none). `skipped` holds cards she left alone because the person was typing in them.
+// itself among them; '' for cards in none). `skipped` holds cards she left alone: the one the person was typing in, and
+// any they changed between the plan and its landing.
 export type ChangeSet = {
   added: string[];
   moved: string[];
@@ -113,7 +114,22 @@ export function recordOf(before: BoardLists, after: BoardLists): BoardPatch {
   };
 }
 
-const onlyShape = (a: Card, b: Card) =>
+// the same change the other way round: what it is now becomes what it was
+export const reversed = (p: BoardPatch): BoardPatch => ({
+  cards: p.cards.map(({ id, was, now }) => ({ id, was: now, now: was })),
+  links: p.links.map(({ id, was, now }) => ({ id, was: now, now: was })),
+});
+
+// The cards a reply touched, less any its plan changes that landing left as it was. `landed` is taken before drawing,
+// which puts a card she moved inside a kanban back in its column, and she still moved it. One she touched without
+// planning a change to it, such as to the same words, stays.
+export function landedTouched(touched: readonly string[], planned: BoardPatch, landed: BoardPatch) {
+  const plans = new Set(planned.cards.map(d => d.id)),
+    changed = new Set(landed.cards.map(d => d.id));
+  return touched.filter(id => !plans.has(id) || changed.has(id));
+}
+
+export const onlyShape = (a: Card, b: Card) =>
   [...new Set([...Object.keys(a), ...Object.keys(b)])].every(
     k => SHAPE.has(k) || same(Reflect.get(a, k), Reflect.get(b, k)),
   );

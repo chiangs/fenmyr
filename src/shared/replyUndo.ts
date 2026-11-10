@@ -1,6 +1,17 @@
 // Undo under one of Myra's replies: put back what it changed, from its record, except what the person changed since.
+// Run forward on a planned reply's record, the same merge lands it.
 import { isMeasured } from './cardTypes.ts';
-import { type BoardLists, type BoardPatch, copy, holdersOf, type Placed, placedById, same } from './changes.ts';
+import {
+  type BoardLists,
+  type BoardPatch,
+  copy,
+  holdersOf,
+  onlyShape,
+  type Placed,
+  placedById,
+  reversed,
+  same,
+} from './changes.ts';
 import type { Card, Link } from './model.ts';
 
 // A card in a collection is placed and sized by it, and a title or a collection sizes itself, so those numbers are not
@@ -10,9 +21,9 @@ const MEASURED = new Set(['w', 'h']);
 
 type State = Placed<Card | Link> | null | undefined;
 
-function sameState(a: State, b: State) {
+function sameState(a: State, b: State, exact = false) {
   if (!a || !b) return !a && !b;
-  const drop = a.in ? LAID : 'type' in a.item && isMeasured(a.item.type) ? MEASURED : undefined;
+  const drop = exact ? undefined : a.in ? LAID : 'type' in a.item && isMeasured(a.item.type) ? MEASURED : undefined;
   return a.at === b.at && a.in === b.in && same(a.item, b.item, drop);
 }
 
@@ -20,12 +31,23 @@ function sameState(a: State, b: State) {
 // skip: changed since
 type Fate = 'same' | 'back' | 'undo' | 'skip';
 
-function fateOf(d: { was: State; now: State }, cur: State): Fate {
-  return sameState(d.was, d.now) ? 'same' : sameState(cur, d.was) ? 'back' : sameState(cur, d.now) ? 'undo' : 'skip';
+// forward: the record is a planned reply's, reversed. A change that is only layout lands too, so the board ends exactly
+// as planned, and a card already exactly as planned is back.
+function fateOf(d: { was: State; now: State }, cur: State, forward: boolean): Fate {
+  if (!forward)
+    return sameState(d.was, d.now) ? 'same' : sameState(cur, d.was) ? 'back' : sameState(cur, d.now) ? 'undo' : 'skip';
+  if (sameState(cur, d.was, true)) return 'back';
+  return sameState(cur, d.now) ? 'undo' : sameState(cur, d.was) ? 'back' : 'skip';
 }
 
-// keep: cards not to touch, such as the one being typed in
-function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
+// A change typing never makes: where a card sits and its size, what a collection holds and in which column, and which
+// collection holds it.
+const onlyPlace = ({ was, now }: BoardPatch['cards'][number]) =>
+  !!was && !!now && was.at === now.at && onlyShape(was.item, now.item);
+
+// keep: cards not to touch, such as the one being typed in. Going forward a kept card still takes a change only to its
+// place, so a collection whose name is being typed still takes the cards filed into it.
+function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>, forward: boolean) {
   const cur = placedById(now.cards, now.tray, holdersOf(now.cards)),
     curLinks = placedById(now.links, now.trayLinks ?? []),
     byId = new Map(record.cards.map(d => [d.id, d])),
@@ -36,8 +58,8 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
     skipped.push(id);
   };
   for (const d of record.cards) {
-    const f = fateOf(d, cur.get(d.id));
-    if (f === 'skip' || (f === 'undo' && keep.has(d.id))) skip(d.id);
+    const f = fateOf(d, cur.get(d.id), forward);
+    if (f === 'skip' || (f === 'undo' && keep.has(d.id) && !(forward && onlyPlace(d)))) skip(d.id);
     else cards.set(d.id, f);
   }
   // A collection and the cards in it go back together or not at all, so a card is never put back into a collection
@@ -51,8 +73,13 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
         tie(holder, d.id);
       }
   const spotAfter = (id: string) => (cards.get(id) === 'undo' ? byId.get(id)?.was?.at : cur.get(id)?.at),
-    joins = (l: Placed<Link> | null) => !l || (spotAfter(l.item.a) === l.at && spotAfter(l.item.b) === l.at),
-    linkFates = record.links.map(d => ({ d, fate: fateOf(d, curLinks.get(d.id)) }));
+    // A connector's change fits when it joins its cards where they end up. Going forward, one the plan removes goes only
+    // with a card it joins, so it stays while both its cards do.
+    fits = ({ was, now }: BoardPatch['links'][number]) =>
+      was
+        ? spotAfter(was.item.a) === was.at && spotAfter(was.item.b) === was.at
+        : !forward || !now || !spotAfter(now.item.a) || !spotAfter(now.item.b),
+    linkFates = record.links.map(d => ({ d, fate: fateOf(d, curLinks.get(d.id), forward) }));
   let linksBack: typeof record.links = [];
   for (let spread = true; spread; ) {
     spread = false;
@@ -61,7 +88,7 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
         cards.set(id, 'skip');
         spread = true;
       }
-    linksBack = linkFates.filter(({ d, fate }) => fate === 'undo' && joins(d.was)).map(({ d }) => d);
+    linksBack = linkFates.filter(({ d, fate }) => fate === 'undo' && fits(d)).map(({ d }) => d);
     // Undo removes only connectors it puts back as they were, so a card it would take away from a connector the reply
     // didn't make, such as one the person drew after it, counts as changed since and stays with it.
     const own = new Set(linksBack.map(d => d.id));
@@ -77,7 +104,7 @@ function fates(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) {
 }
 
 export function undoable(record: BoardPatch, now: BoardLists) {
-  const { cards, linksBack } = fates(record, now, new Set());
+  const { cards, linksBack } = fates(record, now, new Set(), false);
   return [...cards.values()].includes('undo') || linksBack.length > 0;
 }
 
@@ -97,11 +124,8 @@ function putBack<T extends { id: string }>(
     if (d.was) lists[d.was.at].splice(d.was.i, 0, copy(d.was.item));
 }
 
-// Never changes `now`, and keeps every card and connector it doesn't put back as the same object, so an editor holding
-// one stays on the board. Running it again on what it returns puts back nothing more. It takes away nothing but what
-// the reply made or changed, as she left it.
-export function planUndo(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>): Undone {
-  const { cards, skipped, cur, byId, linksBack, linkFates } = fates(record, now, keep),
+function merge(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>, forward: boolean): Undone {
+  const { cards, skipped, cur, byId, linksBack, linkFates } = fates(record, now, keep, forward),
     lists: BoardLists = { cards: [...now.cards], tray: [...now.tray], links: [...now.links] },
     goes = record.cards.filter(d => cards.get(d.id) === 'undo'),
     trayLinks = [...(now.trayLinks ?? [])];
@@ -115,3 +139,15 @@ export function planUndo(record: BoardPatch, now: BoardLists, keep: ReadonlySet<
     skipped: skipped.flatMap(id => cur.get(id)?.item ?? byId.get(id)?.now?.item ?? []),
   };
 }
+
+// Never changes `now`, and keeps every card and connector it doesn't put back as the same object, so an editor holding
+// one stays on the board. Running it again on what it returns puts back nothing more. It takes away nothing but what
+// the reply made or changed, as she left it.
+export const planUndo = (record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) =>
+  merge(record, now, keep, false);
+
+// A planned reply put on the board as it is now: every card and connector it changes that is still as it was when
+// planned lands as planned, and what the person changed since is `skipped`. On a board unchanged since, that is the
+// planned lists themselves. Never changes `now`; run again on its own result it lands nothing more.
+export const planDo = (record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) =>
+  merge(reversed(record), now, keep, true);

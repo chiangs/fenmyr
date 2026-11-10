@@ -1,7 +1,8 @@
 // One reply of Myra's is one undo step however slow its pictures are, edits the person makes while she works stay
 // their own, replies wait their turn instead of landing inside each other, a preview changes nothing, a reply for a
-// board that is no longer open is not applied, a queued question keeps the board it was asked on,
-// and a reply that fails part way leaves the board as it was.
+// board that is no longer open is not applied, a queued question keeps the board it was asked on, a reply that fails
+// part way leaves the board, the saved file and the undo history as they were, and a reply that rewrites the open doc
+// shows in its editor.
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { replyBoard } from './fixtures/boards.ts';
@@ -20,6 +21,7 @@ const BOARDS = [
   'elsewhere',
   'throws',
   'order',
+  'doc',
 ];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'slow', claude: true });
 const { page } = l;
@@ -55,9 +57,9 @@ const slowPictures = (ms: number) =>
     window.Fenmyr.fetchImage = () => new Promise<string>(res => setTimeout(() => res(png), ms));
   }, ms);
 // the board's undo: an earlier question leaves the cursor in the chat box, where Ctrl+Z would undo typing
-async function undo() {
+async function undo(redo = false) {
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
-  await page.keyboard.press('Control+z');
+  await page.keyboard.press(redo ? 'Control+Shift+z' : 'Control+z');
   await page.waitForTimeout(200);
 }
 
@@ -169,7 +171,7 @@ await check(
     assert(seen.drawn, 'nothing new is drawn');
     assert.strictEqual(seen.saves, 0, 'nothing is saved');
     const applied = await page.evaluate(r => window.__fenmyr.applyMyra(r, 'q'), reply);
-    const lists = (c: typeof seen.changes) => c && [c.added.length, c.moved, c.edited, c.removed];
+    const lists = (c?: typeof seen.changes) => c && [c.added.length, c.moved, c.edited, c.removed];
     assert.deepStrictEqual(lists(seen.changes), [1, ['n1'], ['t1'], ['n3']], 'the preview lists what the reply does');
     assert.deepStrictEqual(lists(applied?.changes), lists(seen.changes), 'and applying it does the same');
   },
@@ -310,25 +312,38 @@ await check(
   },
 );
 
-await check('a reply that fails part way: the board stays as it was, and the next reply is one undo step', async () => {
-  await open('throws');
-  const before = await boardJSON(page);
-  const thrown = await page.evaluate(async () => {
-    try {
-      // @ts-expect-error a connection the reply check would never let through
-      await window.__fenmyr.applyMyra({ say: 'boom', add: [{ text: 'Ghost' }], connect: [null] }, 'q');
-      return '';
-    } catch (e) {
-      return String(e);
-    }
-  });
-  assert.match(thrown, /TypeError/, 'the error still reaches the caller');
-  assert.strictEqual(await boardJSON(page), before, 'nothing of the failed reply stays on the board');
-  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'ok', add: [{ text: 'After' }] }, 'q'));
-  await page.waitForTimeout(400);
-  await undo();
-  assert.strictEqual(await boardJSON(page), before, 'one Ctrl+Z takes back the next reply and leaves nothing behind');
-});
+await check(
+  'a reply that fails part way: the board, the saved file and the undo history stay as they were',
+  async () => {
+    await open('throws');
+    const start = await boardJSON(page),
+      saved = () => page.evaluate(async () => JSON.stringify(await window.Fenmyr.load('throws')));
+    await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'ok', add: [{ text: 'Before' }] }, 'q'));
+    await page.waitForTimeout(800);
+    const before = await boardJSON(page),
+      file = await saved();
+    // drawing fails once the board has taken the reply
+    const thrown = await page.evaluate(async () => {
+      const real = Element.prototype.remove;
+      Element.prototype.remove = function () {
+        if (this instanceof HTMLElement && this.classList.contains('card')) throw new Error('drawing failed');
+        real.call(this);
+      };
+      const r = { say: 'boom', remove: ['n3'], edit: [{ id: 'n1', text: 'Half' }], add: [{ text: 'Ghost' }] };
+      const failed = await window.__fenmyr.applyMyra(r, 'q').then(() => '', String);
+      Element.prototype.remove = real;
+      return failed;
+    });
+    assert.match(thrown, /drawing failed/, 'the error still reaches the caller');
+    assert.strictEqual(await boardJSON(page), before, 'nothing of the failed reply stays on the board');
+    await page.waitForTimeout(800);
+    assert.strictEqual(await saved(), file, 'nor in the saved file');
+    await undo();
+    assert.strictEqual(await boardJSON(page), start, 'nor in the undo history: Ctrl+Z takes back the reply before it');
+    await undo(true);
+    assert.strictEqual(await boardJSON(page), before, 'and Ctrl+Shift+Z brings that one back');
+  },
+);
 
 await check("a template she saves from the cards she just touched keeps them in her reply's order", async () => {
   await open('order');
@@ -348,6 +363,30 @@ await check("a template she saves from the cards she just touched keeps them in 
   });
   assert.deepStrictEqual(texts, ['Added', 'First note', 'Edited second'], 'added, then moved, then edited');
 });
+
+await check(
+  'a reply that rewrites the open doc shows in its editor, which still writes to the card on the board',
+  async () => {
+    await open('doc');
+    await page.locator('#cards [data-id="d1"]').dblclick();
+    await page.waitForSelector('.dv-prose');
+    const seen = await page.evaluate(async () => {
+      await window.__fenmyr.applyMyra({ say: 'ok', edit: [{ id: 'd1', body: 'Her new draft' }] }, 'q');
+      const ed = window.__fenmyr.docEditor(),
+        shown = ed.getText();
+      ed.chain().insertContent(' and their line').run();
+      await new Promise(res => setTimeout(res, 600));
+      const c = window.__fenmyr.curBoard().cards.find(x => x.id === 'd1');
+      return { shown, body: c?.type === 'doc' ? c.body : null };
+    });
+    assert.match(seen.shown, /Her new draft/, 'the editor shows her words');
+    assert.match(
+      seen.body ?? '',
+      /Her new draft.*and their line/s,
+      'what they type next reaches the card on the board',
+    );
+  },
+);
 
 const errors = [...l.errors];
 await l.close();

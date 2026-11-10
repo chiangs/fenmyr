@@ -1,7 +1,17 @@
 import { summaryLines } from '../../shared/changeSummary.ts';
-import { type BoardLists, type ChangeSet, changeSet, listsOf, recordOf } from '../../shared/changes.ts';
+import {
+  type BoardLists,
+  type BoardPatch,
+  type ChangeSet,
+  changeSet,
+  landedTouched,
+  listsOf,
+  recordOf,
+} from '../../shared/changes.ts';
 import { storedSet } from '../../shared/chat.ts';
+import type { Card } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
+import { planDo, type Undone } from '../../shared/replyUndo.ts';
 import { boxOf } from '../canvas/emptySpot.ts';
 import { openCentre, showPlaced, viewShowing } from '../canvas/handles.ts';
 import { renderAll, renderCard } from '../canvas/render.ts';
@@ -113,14 +123,23 @@ const viewAt = (): ViewAt => ({
   centreShowing: (made, box) => centerWorld(viewShowing(made, box)),
 });
 
-// The board part of a held reply, planned on a copy: the board, the screen and the disk stay as they are. Null when
-// the reply opens a new board, since there is nothing here to preview.
-export function previewHeld(held: HeldReply): { lists: BoardLists; changes: ChangeSet } | null {
-  if (held.template?.mode === 'new') return null;
+// The board part of a held reply, planned on a copy of the open board. record: every card and connector it changes, as
+// it is and as it will be. touched: every card it makes, moves or edits, in that order.
+export type Planned = { held: HeldReply; record: BoardPatch; changes: ChangeSet; touched: string[] };
+
+// The board, the screen and the disk stay as they are. A template that opens its own board plans nothing until that
+// board is open: `opened`.
+export function planHeld(held: HeldReply, opened = false): Planned {
   const lists = listsOf(session.board),
-    { skipped } = planBoard(lists, held, viewAt());
-  return { lists, changes: changeSet(recordOf(session.board, lists), { named: namedIn(held.reply), skipped }) };
+    { skipped, touched } =
+      held.template?.mode === 'new' && !opened ? { skipped: [], touched: [] } : planBoard(lists, held, viewAt()),
+    record = recordOf(session.board, lists);
+  return { held, record, touched, changes: changeSet(record, { named: namedIn(held.reply), skipped }) };
 }
+
+// The board's lists if it landed now, and the cards the person changed since that it would leave. Changes nothing.
+export const asItWouldLand = (p: Planned): Undone =>
+  planDo(p.record, session.board, new Set(session.editing ? [session.editing] : []));
 
 // Null when another board is open than the one the turn was asked on: then nothing is applied.
 export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | null> {
@@ -132,7 +151,7 @@ export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | 
     await new Promise(res => setTimeout(res, 0));
   }
   while (appState.drag) await new Promise(requestAnimationFrame);
-  const { changes, record, touched } = changeBoard(held),
+  const { changes, record, touched } = changeBoard(planHeld(held, true)),
     id = uid(),
     changed = record.cards.length > 0 || record.links.length > 0,
     board = session.board.id;
@@ -155,14 +174,17 @@ export async function applyHeld(turn: Turn, held: HeldReply): Promise<Applied | 
 
 // Not async on purpose: an await in here would let the undo timer cut the reply into several steps. A reply that
 // fails part way puts the board back as it was, so no half of it stays in the board or in the undo history.
-function changeBoard(held: HeldReply) {
+function changeBoard(p: Planned) {
   remember();
   const b = session.board,
-    before = listsOf(b);
-  let plan: ReturnType<typeof planBoard>;
+    before = listsOf(b),
+    // planned in this same turn, where planBoard already left the card being typed in
+    land = planDo(p.record, b, new Set()),
+    left = new Set([...p.changes.skipped, ...land.skipped.map(c => c.id)]),
+    touched = landedTouched(p.touched, p.record, recordOf(before, land.lists));
   try {
-    plan = planBoard(b, held, viewAt());
-    paint(held, before, new Set(plan.skipped));
+    putOnBoard(b, land.lists);
+    paint(p.held, before, left);
   } catch (e) {
     Object.assign(b, before);
     if (!before.trayLinks) delete b.trayLinks;
@@ -171,10 +193,27 @@ function changeBoard(held: HeldReply) {
   }
   save();
   const record = recordOf(before, b),
-    changes = changeSet(record, { named: namedIn(held.reply), skipped: plan.skipped });
+    changes = changeSet(record, { named: namedIn(p.held.reply), skipped: [...left] });
   remember();
   const onBoard = new Map(b.cards.map(c => [c.id, c]));
-  return { changes, record, touched: plan.touched.map(id => onBoard.get(id)).filter(c => c !== undefined) };
+  return { changes, record, touched: touched.flatMap(id => onBoard.get(id) ?? []) };
+}
+
+// The board takes the lists, but a card that stays keeps its object, changed in place, since the doc editor holds the
+// open doc's.
+function putOnBoard(b: BoardLists, lists: BoardLists) {
+  const had = new Map([...b.cards, ...b.tray].map(c => [c.id, c])),
+    kept = (c: Card) => {
+      const o = had.get(c.id);
+      if (!o || o === c) return c;
+      for (const k of Object.keys(o)) if (!(k in c)) Reflect.deleteProperty(o, k);
+      return Object.assign(o, c);
+    };
+  b.cards = lists.cards.map(kept);
+  b.tray = lists.tray.map(kept);
+  b.links = lists.links;
+  if (lists.trayLinks) b.trayLinks = lists.trayLinks;
+  else delete b.trayLinks;
 }
 
 function paint(held: HeldReply, before: BoardLists, skipped: ReadonlySet<string>) {
@@ -196,7 +235,7 @@ function paint(held: HeldReply, before: BoardLists, skipped: ReadonlySet<string>
   }
   for (const c of b.cards) if (!had.has(c.id)) renderCard(c, true);
   for (const c of named(r.edit)) renderCard(c, true);
-  if (docCard && ed && r.edit?.some(o => o.id === docCard?.id && o.body != null))
+  if (docCard && ed && !skipped.has(docCard.id) && r.edit?.some(o => o.id === docCard?.id && o.body != null))
     ed.commands.setContent(mdToHTML(docCard.body ?? ''), false);
   renderTray();
   renderWires();
