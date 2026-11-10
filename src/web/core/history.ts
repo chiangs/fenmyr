@@ -21,6 +21,7 @@ import { appState, session } from './state.ts';
 let past: string[] = [];
 let future: string[] = [];
 let restoring = false;
+let revision = 0;
 export let snapT: ReturnType<typeof setTimeout> | undefined;
 
 const stateOf = () =>
@@ -81,7 +82,11 @@ function cleanNumbers() {
   });
 }
 
+/** Goes up by one on every save, so something drawn from the board can tell it changed. */
+export const boardRevision = () => revision;
+
 export function save() {
+  revision++;
   if (!appState.drag && session.board) {
     layoutAll();
     cleanNumbers();
@@ -110,6 +115,7 @@ async function writeBoard() {
  *  no undo step. */
 export async function saveNow() {
   if (!session.board) return;
+  revision++;
   clearTimeout(appState.saveT);
   await writeBoard();
 }

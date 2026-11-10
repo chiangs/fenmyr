@@ -26,7 +26,7 @@ export const colls = () => session.board.cards.filter(c => c.type === 'coll');
 export const parentOf = (id: string) =>
   session.board.cards.find((s): s is CardOf<'coll'> => s.type === 'coll' && s.kids.includes(id));
 
-function naturalHeight(c: Card, el: HTMLElement) {
+export function naturalHeight(c: Card, el: HTMLElement) {
   if (c.type === 'image') return Math.round(CW * (c.h / c.w));
   if (!['note', 'todo'].includes(c.type)) return c.h;
   const was = el.style.height;

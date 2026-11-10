@@ -30,13 +30,24 @@ function collectionLine(c: Extract<Card, { type: 'coll' }>) {
   return `+ 1 ${nounOf(c, 1)}${name}${holding}`;
 }
 
-// made: the collections the reply made, whose lines count the cards filed into them
-function addedLines(added: readonly Placed<Card>[], made: ReadonlySet<string>) {
+// One line of the summary and the cards it covers, so a plan's preview can light that line's part.
+export type Step = { line: string; cards: string[] };
+
+// made: the collections the reply made, whose lines count the cards filed or moved into them
+function addedSteps(
+  added: readonly Placed<Card>[],
+  made: ReadonlySet<string>,
+  movedIn: readonly Placed<Card>[],
+): Step[] {
   const colls = added.flatMap(p => (p.item.type === 'coll' ? [p.item] : [])),
     rest = added.flatMap(p => (p.item.type !== 'coll' && !made.has(p.in ?? '') ? [p.item] : [])),
     [one] = rest,
-    name = one && rest.length === 1 && cardName(one) !== labelOf(one.type) ? `, “${cardName(one)}”` : '';
-  return [...colls.map(collectionLine), ...(rest.length ? [`+ ${counted(rest)}${name}`] : [])];
+    name = one && rest.length === 1 && cardName(one) !== labelOf(one.type) ? `, “${cardName(one)}”` : '',
+    filed = (coll: string) => [...added, ...movedIn].flatMap(p => (p.in === coll ? [p.item.id] : []));
+  return [
+    ...colls.map(c => ({ line: collectionLine(c), cards: [c.id, ...filed(c.id)] })),
+    ...(rest.length ? [{ line: `+ ${counted(rest)}${name}`, cards: rest.map(c => c.id) }] : []),
+  ];
 }
 
 const reworded = (a: Card, b: Card) =>
@@ -45,29 +56,43 @@ const reworded = (a: Card, b: Card) =>
     .every(k => WORDS.has(k));
 
 // Worded when the reply lands, from the cards as they were then, so a card deleted later still reads as added.
-export function summaryLines(record: BoardPatch, set: ChangeSet): string[] {
+export function summarySteps(record: BoardPatch, set: ChangeSet): Step[] {
   const deltas = new Map(record.cards.map(d => [d.id, d])),
     pick = (ids: readonly string[]) => ids.flatMap(id => deltas.get(id) ?? []),
     added = pick(set.added).flatMap(d => d.now ?? []),
     edited = pick(set.edited),
     removed = pick(set.removed).flatMap(d => d.was?.item ?? []),
     made = new Set(added.flatMap(p => (p.item.type === 'coll' ? [p.item.id] : []))),
-    moved = pick(set.moved).filter(d => !made.has(d.now?.in ?? '')),
+    [moved, movedIn] = partition(pick(set.moved), d => !made.has(d.now?.in ?? '')),
     into = moved.every(d => d.now?.in && d.now.in !== d.was?.in) ? ' in' : '',
     outOf = moved.every(d => d.was?.in && !d.now?.in) ? ' out' : '',
     nowOf = (ds: typeof moved) => ds.flatMap(d => d.now?.item ?? []),
+    ids = (ds: readonly { id: string }[]) => ds.map(d => d.id),
     links = set.links.added.length;
   return [
-    ...addedLines(added, made),
-    ...(links ? [`+ ${plural(links, 'connector')}`] : []),
-    ...(moved.length ? [`→ ${counted(nowOf(moved))} moved${into || outOf}`] : []),
+    ...addedSteps(
+      added,
+      made,
+      movedIn.flatMap(d => d.now ?? []),
+    ),
+    ...(links ? [{ line: `+ ${plural(links, 'connector')}`, cards: [] }] : []),
+    ...(moved.length ? [{ line: `→ ${counted(nowOf(moved))} moved${into || outOf}`, cards: ids(moved) }] : []),
     ...(edited.length
       ? [
-          `✎ ${counted(nowOf(edited))} ${edited.every(d => d.was && d.now && reworded(d.was.item, d.now.item)) ? 'reworded' : 'changed'}`,
+          {
+            line: `✎ ${counted(nowOf(edited))} ${edited.every(d => d.was && d.now && reworded(d.was.item, d.now.item)) ? 'reworded' : 'changed'}`,
+            cards: ids(edited),
+          },
         ]
       : []),
-    ...(removed.length ? [`− ${counted(removed)} removed`] : []),
+    ...(removed.length ? [{ line: `− ${counted(removed)} removed`, cards: ids(removed) }] : []),
   ];
+}
+
+export const summaryLines = (record: BoardPatch, set: ChangeSet) => summarySteps(record, set).map(s => s.line);
+
+function partition<T>(xs: readonly T[], keep: (x: T) => boolean): [T[], T[]] {
+  return [xs.filter(keep), xs.filter(x => !keep(x))];
 }
 
 // for a reply kept before the summary was: counts only, since its cards may be long gone

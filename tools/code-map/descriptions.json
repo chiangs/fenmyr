@@ -456,6 +456,9 @@
     "tests/planDoIt.ts": "Checks Do it on a plan the person worked around: a collection they dragged, the open doc, cards changed or connected since, her count and glow, and parts that fail.",
     "tests/planSince.ts": "Checks Do it on cards the person changed since the plan, and that her line names what she left.",
     "tests/planTalk.ts": "Checks talking to Myra while a plan waits: a message goes with the plan, her answer replaces, keeps or drops it, a typed yes or no answers it, and Just do it turns on Skip plans.",
-    "tests/planDrop.ts": "Checks a waiting Myra plan is dropped when another board opens, on New chat, Clear all chats and a restart, with nothing landed and its message reading Not done."
+    "tests/planDrop.ts": "Checks a waiting Myra plan is dropped when another board opens, on New chat, Clear all chats and a restart, with nothing landed and its message reading Not done.",
+    "src/web/myra/planPreview.ts": "Draws a waiting Myra plan on the board as dashed boxes where its cards would land, laid out as landing lays them, and a Removed box over each card it takes away. Never a card, never saved.",
+    "tests/planPreview.ts": "Checks a waiting plan’s preview on the board: its boxes are no cards, the pointer goes through them, and exports leave it out.",
+    "tests/planPreviewLand.ts": "Checks cards land where a plan’s preview drew them, in collections and kanbans too, that the preview follows the board, and that it goes when the plan stops waiting."
   }
 }

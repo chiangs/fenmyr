@@ -731,7 +731,7 @@ body.calm .card.stamp .st img, body.calm .sp-grid img, body.calm .ws-ring img { 
 .row-menu .rm-sep { height: 1px; margin: 4px 6px; background: var(--pn-menu-sep); }
 /* while exporting: just the cards, no app around them */
 body.exporting .side, body.exporting .dock, body.exporting .selbar, body.exporting .modebar, body.exporting .tray, body.exporting .top, body.exporting .keys, body.exporting .ghost, body.exporting .grid,
-body.exporting .marquee, body.exporting .shapepick, body.exporting .wheel-stamps, body.exporting .stamp-pick { visibility: hidden !important; }
+body.exporting .marquee, body.exporting .shapepick, body.exporting .wheel-stamps, body.exporting .stamp-pick, body.exporting .plan-preview { visibility: hidden !important; }
 body.exporting .card .handle, body.exporting .card .knob, body.exporting .card .chip { display: none !important; }
 body.exporting .card.sel::after { display: none; }
 
@@ -1235,6 +1235,17 @@ body.dark .set-maker { background: var(--set-dark-warm); } body.dark .sm-sig { c
 .group-boxes { position: absolute; left: 0; top: 0; pointer-events: none; }
 .group-box { position: absolute; border: 2px dashed rgb(from var(--ob-bg) r g b / .85); border-radius: 30px; corner-shape: squircle; }
 .group-box span { position: absolute; left: 14px; top: -11px; padding: 3px 9px; border-radius: 134px; corner-shape: squircle; background: var(--ob-bg); color: var(--hilite); font: 700 10px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; }
+
+/* a waiting plan's preview: a dashed box where each card would land, "Removed" over each card it takes away; never a card, so the pointer goes through */
+.plan-preview { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 3; }
+.pp-box { position: absolute; border: 2px dashed var(--ink-soft); border-radius: 24px; corner-shape: squircle; background: color-mix(in oklch, var(--paper) 70%, transparent); transition: opacity .15s, border-color .15s; }
+.pp-box span { position: absolute; left: 12px; right: 12px; top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 calc(12px * var(--secz, 1))/1.2 var(--font); color: var(--ink-soft); }
+.pp-box.remove { border-color: var(--pink-deep); }
+.pp-box.remove span { color: var(--ink); font-weight: 700; }
+body.dark .pp-box { background: rgba(var(--sh), .45); }
+body.dark .pp-box.remove { background: rgba(var(--sh), .6); }
+.pp-head { position: absolute; transform-origin: 0 100%; scale: var(--secz, 1); translate: 0 calc(-100% - 10px); white-space: nowrap; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: var(--paper); font: 700 12px/1 var(--font); box-shadow: 0 4px 14px rgba(var(--sh), calc(.16 * var(--sh-k))); }
+body.dark .pp-head { color: rgb(var(--sh)); }
 
 /* design thinking templates: a little menu above the toolbar */
 .tplpick { position: fixed; left: 50%; bottom: calc(var(--bar-b) + 66px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 22; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
