@@ -242,6 +242,13 @@ assert.deepStrictEqual(
   { ...find(herMove, 'b'), x: 850, y: 40 },
   'and still takes her words there',
 );
+const resized = board();
+Object.assign(find(resized, 'b'), { w: 300, h: 200, userH: 200 });
+assert.deepStrictEqual(
+  find(planDo(record, resized, new Set()).lists, 'b'),
+  { ...find(plan, 'b'), w: 300, h: 200, userH: 200 },
+  'a note they resized takes her words at the size they gave it',
+);
 const movedAndRetyped = board();
 Object.assign(find(movedAndRetyped, 'b'), { x: 850, text: 'Their words' });
 assert.deepStrictEqual(

@@ -146,7 +146,8 @@ function merge(record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>, f
 export const planUndo = (record: BoardPatch, now: BoardLists, keep: ReadonlySet<string>) =>
   merge(record, now, keep, false);
 
-const PLACE = ['x', 'y', 'w', 'h'] as const;
+// where a card sits and its size; resizing a note also keeps the height they gave it in userH
+const PLACE = ['x', 'y', 'w', 'h', 'userH'] as const;
 
 // A card on the board, in no collection, that the person only moved or resized since the plan still takes her change,
 // keeping where they put it and the size they gave it, so a collection they dragged still takes the cards she files
@@ -163,7 +164,7 @@ function rebased(forward: BoardPatch, now: BoardLists) {
     const theirs = PLACE.filter(k => c.item[k] !== from.item[k]);
     if (!theirs.length || !same(c.item, from.item, new Set(PLACE))) return d;
     const item = { ...to.item };
-    for (const k of theirs) item[k] = c.item[k];
+    for (const k of theirs) Reflect.set(item, k, c.item[k]);
     if (theirs.some(k => (k === 'x' || k === 'y') && to.item[k] !== from.item[k])) theirPlace.push(d.id);
     return { id: d.id, was: { ...to, item }, now: { ...from, item: c.item } };
   };

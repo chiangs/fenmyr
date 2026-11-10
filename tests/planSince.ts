@@ -1,12 +1,13 @@
 // Do it on a plan the person worked around while it waited, and what she says about it: a card she meant to move that
-// they moved since stays where they put it and she names it, a card they only clicked into and left takes her change,
+// they moved since stays where they put it and she names it, a note they resized takes her words at their size, a card
+// they only clicked into and left takes her change,
 // a doc they only opened, whether closed again or still open, takes her rewrite, and a card they are in, though nothing
 // is typed yet, stays as it is.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['moved', 'clicked', 'docClosed', 'docOpen', 'editing'];
+const BOARDS = ['moved', 'resized', 'clicked', 'docClosed', 'docOpen', 'editing'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'moved', claude: true });
 const { page } = l;
 
@@ -85,6 +86,37 @@ await check('a card she meant to move that they moved since stays where they put
     await said(),
     'Ten ideas, and I moved the first note. I left “First note” as you have it, since it changed after my plan.',
   );
+});
+
+await check('a note they resized since takes her words at the size they gave it', async () => {
+  await open('resized');
+  await chat();
+  await planned({
+    say: 'Ten ideas, and a sharper first note.',
+    add: notes(10),
+    edit: [{ id: 'n1', text: 'Her first' }],
+  });
+  await page.keyboard.press('Escape');
+  await page.locator('#cards .card[data-id="n1"]').click();
+  await page.locator('#rh').waitFor();
+  const box = await page.locator('#rh').boundingBox();
+  assert(box, 'its resize handle shows');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 80, box.y + 60, { steps: 6 });
+  await page.mouse.up();
+  await settle(page, 300);
+  const size = () =>
+    page.evaluate(() => {
+      const c = window.__fenmyr.curBoard().cards.find(x => x.id === 'n1');
+      return c && [c.w, c.h, c.type === 'note' ? c.text : ''];
+    });
+  const [w, h] = (await size()) ?? [];
+  assert.notDeepStrictEqual([w, h], [220, 140], 'they resized it');
+  await chat();
+  await doIt();
+  assert.deepStrictEqual(await size(), [w, h, 'Her first'], 'her words land at their size');
+  assert.strictEqual(await said(), 'Ten ideas, and a sharper first note.', 'with nothing left out');
 });
 
 await check('a card they only clicked into and left, with nothing typed, takes her change', async () => {
