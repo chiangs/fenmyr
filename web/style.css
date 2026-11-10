@@ -1238,21 +1238,23 @@ body.dark .set-maker { background: var(--set-dark-warm); } body.dark .sm-sig { c
 .group-box { position: absolute; border: 2px dashed rgb(from var(--ob-bg) r g b / .85); border-radius: 30px; corner-shape: squircle; }
 .group-box span { position: absolute; left: 14px; top: -11px; padding: 3px 9px; border-radius: 134px; corner-shape: squircle; background: var(--ob-bg); color: var(--hilite); font: 700 10px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; }
 
-/* a waiting plan's preview: a dashed box where each card would land, "Removed" over each card it takes away, and a quieter box where a card it only lays out again goes; never a card, so the pointer goes through */
+/* a waiting plan's preview: a dashed box where each card would land, "Removed" over each card it takes away, and a quieter box where a card it only lays out again goes; never a card, so the pointer goes through. Names sit on the top edge on their own fill, as a group's name sits on its outline, so they never print over a card's words */
 .plan-preview { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 3; }
-.pp-box { position: absolute; border: 2px dashed var(--ink-soft); border-radius: 24px; corner-shape: squircle; background: color-mix(in oklch, var(--paper) 70%, transparent); transition: opacity .15s, border-color .15s; }
-.pp-box span { position: absolute; left: 12px; right: 12px; top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 calc(12px * var(--secz, 1))/1.2 var(--font); color: var(--ink-soft); }
-.pp-box.remove { border-color: var(--pink-deep); }
-.pp-box.remove span { color: var(--ink); font-weight: 700; }
-.pp-box.laid { border: 1.5px dashed color-mix(in oklch, var(--ink-soft) 60%, transparent); background: none; }
+.pp-box { --pp-line: var(--ink-soft); position: absolute; border: 2px dashed var(--pp-line); border-radius: 24px; corner-shape: squircle; background: color-mix(in oklch, var(--paper) 70%, transparent); transition: border-color .15s, background-color .15s; }
+.pp-box.remove { --pp-line: var(--pink-deep); }
+.pp-box.laid { --pp-line: color-mix(in oklch, var(--ink-soft) 60%, transparent); border-width: 1.5px; background: none; }
 body.dark .pp-box { background: rgba(var(--sh), .45); }
 body.dark .pp-box.remove { background: rgba(var(--sh), .6); }
 body.dark .pp-box.laid { background: none; }
-.plan-preview.lit .pp-box { opacity: .3; }
-.plan-preview.lit .pp-box.hot { opacity: 1; border-color: var(--select); box-shadow: 0 0 0 4px color-mix(in oklch, var(--select) 22%, transparent); }
-.pp-box.hot span { color: var(--select); }
-.pp-head { position: absolute; transform-origin: 0 100%; scale: var(--secz, 1); translate: 0 calc(-100% - 10px); white-space: nowrap; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: var(--paper); font: 700 12px/1 var(--font); box-shadow: 0 4px 14px rgba(var(--sh), calc(.16 * var(--sh-k))); }
+.pp-tags { position: absolute; left: 12px; top: -1px; display: flex; align-items: center; gap: 6px; max-width: calc((100% - 24px) / var(--secz, 1)); white-space: nowrap; transform-origin: 0 50%; scale: var(--secz, 1); translate: 0 -50%; }
+.pp-tags:has(.pp-head) { max-width: none; }
+.pp-label { min-width: 0; max-width: 18em; overflow: hidden; text-overflow: ellipsis; padding: 3px 8px; border-radius: 999px; background: var(--card-white); color: var(--ink); box-shadow: 0 0 0 1.5px var(--pp-line); font: 600 11px/1.2 var(--font); transition: opacity .15s; }
+.pp-box.remove .pp-label { background: var(--pink-deep); color: var(--on-accent); font-weight: 700; }
+.pp-head { flex: none; padding: 3px 10px; border-radius: 999px; background: var(--ink); color: var(--paper); font: 700 11px/1.2 var(--font); box-shadow: 0 4px 14px rgba(var(--sh), calc(.16 * var(--sh-k))); }
 body.dark .pp-head { color: rgb(var(--sh)); }
+.plan-preview.lit .pp-box:not(.hot) { border-color: color-mix(in oklch, var(--pp-line) 30%, transparent); background: none; }
+.plan-preview.lit .pp-box:not(.hot) .pp-label { opacity: .35; }
+.plan-preview.lit .pp-box.hot { --pp-line: var(--select); box-shadow: 0 0 0 4px color-mix(in oklch, var(--select) 22%, transparent); }
 /* no picture of the window shows it: an export, or a build's picture of a screen */
 body.picturing .plan-preview { visibility: hidden !important; }
 

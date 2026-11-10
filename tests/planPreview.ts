@@ -43,7 +43,7 @@ const boxes = () =>
     [...document.querySelectorAll<HTMLElement>('#planPreview .pp-box')].map(b => ({
       id: b.dataset.pp ?? '',
       kind: ['add', 'move', 'edit', 'remove'].find(k => b.classList.contains(k)),
-      label: b.textContent,
+      label: b.querySelector('.pp-label')?.textContent,
       hot: b.classList.contains('hot'),
       x: parseFloat(b.style.left),
       y: parseFloat(b.style.top),

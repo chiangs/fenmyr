@@ -7,7 +7,6 @@
 import { cardName } from '../../shared/cardTypes.ts';
 import { type BoardLists, copy, holdersOf } from '../../shared/changes.ts';
 import type { Card } from '../../shared/model.ts';
-import { boxOf } from '../canvas/emptySpot.ts';
 import type { Bounds } from '../canvas/handles.ts';
 import { paintCard } from '../canvas/render.ts';
 import { arrange, CW, laidMarked, layoutCount, naturalHeight } from '../cards/collection.ts';
@@ -27,8 +26,8 @@ const HEAD = 'Preview · not on the board yet';
 
 // what the layer shows: the landing its boxes come from, and the lit step; '' when it is empty
 let drawn = '';
-// head: where the preview's name goes, above its top left corner and any collection its boxes are in
-let boxes: { key: string; list: Box[]; head: Bounds | null } = { key: '', list: [], head: null };
+// head: the box whose top edge the preview's name sits on, by its place in the list
+let boxes: { key: string; list: Box[]; head: number } = { key: '', list: [], head: -1 };
 // The plan the view glides to once they aren't busy, and the view as it was when the plan arrived. from is null once
 // it has glided, or once they moved the view themselves, since they chose where to look.
 let glide: { plan: string; from: string | null } = { plan: '', from: null };
@@ -122,10 +121,13 @@ function boxesOf({ planned: { record, changes }, parts, land, left }: Now) {
       return [{ id: c.id, kind: 'laid', steps: lit(c.id), ...rectOf(c), label: '' }];
     }),
     list = [...named, ...shifted],
-    holders = holdersOf(land.lists.cards),
-    corners = list.map(b => laid.get(holders.get(b.id) ?? '') ?? b);
-  return { list, head: corners.length ? boxOf(corners) : null };
+    first = firstOf(named) ?? firstOf(shifted);
+  return { list, head: first ? list.indexOf(first) : -1 };
 }
+
+// the box nearest the top, then the left, which reads first
+const firstOf = (bs: readonly Box[]) =>
+  bs.reduce<Box | null>((a, b) => (!a || b.y < a.y || (b.y === a.y && b.x < a.x) ? b : a), null);
 
 // The steps that light each card: its own, and every step whose cards go into, come out of or change inside the
 // collection it lands in, or inside it when it is a collection, since that step's change lays it out again.
@@ -185,26 +187,35 @@ function heightOf(c: Card) {
   return h;
 }
 
-function paint(list: readonly Box[], at: Bounds | null, hot: number | null) {
-  const sig = JSON.stringify([list, at, hot]);
+function paint(list: readonly Box[], head: number, hot: number | null) {
+  const sig = JSON.stringify([list, head, hot]);
   if (sig === painted) return;
   painted = sig;
   const layer = $('planPreview'),
-    els = list.map(b => {
-      const el = document.createElement('div');
-      el.className = `pp-box ${b.kind}`;
-      el.classList.toggle('hot', hot !== null && b.steps.includes(hot));
-      el.dataset.pp = b.id;
-      Object.assign(el.style, { left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, height: `${b.h}px` });
-      el.appendChild(document.createElement('span')).textContent = b.label;
-      return el;
-    });
+    lit = (b: Box) => hot !== null && b.steps.includes(hot);
   layer.classList.toggle('lit', hot !== null);
-  if (!at) return layer.replaceChildren(...els);
-  const head = document.createElement('div');
-  head.className = 'pp-head';
-  head.textContent = HEAD;
-  head.style.left = `${at.x}px`;
-  head.style.top = `${at.y}px`;
-  layer.replaceChildren(...els, head);
+  layer.replaceChildren(...list.map((b, i) => boxEl(b, i === head, lit(b))));
+}
+
+// The box, with its name and, on one box, the preview's own name on its top edge, the way a group's name sits on its
+// outline, so neither prints over the card's words.
+function boxEl(b: Box, headed: boolean, hot: boolean) {
+  const el = document.createElement('div'),
+    tag = (cls: string, text: string) => {
+      const t = document.createElement('span');
+      t.className = cls;
+      t.textContent = text;
+      return t;
+    },
+    tags = [...(headed ? [tag('pp-head', HEAD)] : []), ...(b.label ? [tag('pp-label', b.label)] : [])];
+  el.className = `pp-box ${b.kind}`;
+  el.classList.toggle('hot', hot);
+  el.dataset.pp = b.id;
+  Object.assign(el.style, { left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, height: `${b.h}px` });
+  if (tags.length) {
+    const row = el.appendChild(document.createElement('div'));
+    row.className = 'pp-tags';
+    row.append(...tags);
+  }
+  return el;
 }
