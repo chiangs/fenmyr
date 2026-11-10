@@ -80,6 +80,8 @@ jobs:
         run: node tests/layout.ts
       - name: Prototype chat test (Myra's chat docked on a prototype board)
         run: node tests/protoChat.ts
+      - name: Dock header test (the board's name and stack in the docked chat's header)
+        run: node tests/dockHead.ts
       - name: Preview test (a prototype running in its sandbox)
         run: node tests/preview.ts
       - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)

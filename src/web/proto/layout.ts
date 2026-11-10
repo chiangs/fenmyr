@@ -9,6 +9,7 @@ import { applyBoxes } from '../ui/boxes.ts';
 import { watchCaptures } from './capture.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
+import { renderDockHead } from './dockHead.ts';
 import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, type Foldable, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
 import { dragOverFrame, renderPreview } from './preview.ts';
@@ -253,6 +254,7 @@ export function showProto(b: Board) {
   // an empty chat: she tilts her head, wondering what you'll build
   if (!chatLog().length) playAnim('curious', false);
   place();
+  renderDockHead(b);
   renderGitBar(b);
   renderCode(b);
   renderPreview(b);
