@@ -1,12 +1,12 @@
 // A plan waiting in the chat shows on the board as a dashed preview: a box where each card it adds, moves or changes
 // would land, and a "Removed" box over each card it takes away. Nothing in it is a card: the pointer goes through it to
-// the board and the cards under it, and an export leaves it out.
+// the board and the cards under it, and an export leaves it out. Hovering a step of the plan lights that step's boxes.
 import assert from 'node:assert';
 import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const BOARDS = ['layer', 'pointer', 'export'];
+const BOARDS = ['layer', 'pointer', 'hover', 'export'];
 const l = await launch({ boards: BOARDS.map(id => replyBoard(id, id)), open: 'layer', claude: true });
 const { page } = l;
 
@@ -43,6 +43,7 @@ const boxes = () =>
       id: b.dataset.pp ?? '',
       kind: ['add', 'move', 'edit', 'remove'].find(k => b.classList.contains(k)),
       label: b.textContent,
+      hot: b.classList.contains('hot'),
       x: parseFloat(b.style.left),
       y: parseFloat(b.style.top),
       w: parseFloat(b.style.width),
@@ -146,6 +147,29 @@ await check('a click and a marquee through the preview reach the card and the bo
   await page.mouse.up();
   await settle(page, 200);
   assert.deepStrictEqual(await page.evaluate(() => window.__fenmyr.sel), ['n2'], 'a marquee from inside a box selects');
+});
+
+await check('hovering a step lights its boxes and dims the rest', async () => {
+  await open('hover');
+  await chat();
+  await planned(BIG);
+  const step = (i: number) => page.locator('#mcList .m-summary.plan.waiting li').nth(i),
+    lit = async () => (await boxes()).filter(b => b.hot).map(b => b.id),
+    dimmed = () => page.evaluate(() => document.getElementById('planPreview')?.classList.contains('lit'));
+  await step(1).hover();
+  await settle(page, 100);
+  assert.deepStrictEqual(await lit(), ['n1'], 'step 2 lights the reworded note');
+  assert.strictEqual(await dimmed(), true, 'and the others dim');
+  await step(0).hover();
+  await settle(page, 100);
+  assert.strictEqual((await lit()).length, 13, 'step 1 lights the kanban and its cards');
+  await step(2).hover();
+  await settle(page, 100);
+  assert.deepStrictEqual(await lit(), ['n4']);
+  await page.mouse.move(1, 1);
+  await settle(page, 100);
+  assert.deepStrictEqual(await lit(), [], 'leaving the steps lights none');
+  assert.strictEqual(await dimmed(), false);
 });
 
 await check('an export leaves the preview out, as an image or a PDF, of the board or a card', async () => {

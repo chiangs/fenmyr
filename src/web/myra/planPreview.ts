@@ -17,12 +17,15 @@ import { waitingNow } from './heldPlan.ts';
 
 type Now = NonNullable<ReturnType<typeof waitingNow>>;
 type Kind = 'add' | 'move' | 'edit' | 'remove';
-type Box = Bounds & { id: string; kind: Kind; label: string };
+// step: the plan's step it belongs to, lit while the pointer is on that step
+type Box = Bounds & { id: string; kind: Kind; step: number; label: string };
 
 const HEAD = 'Preview · not on the board yet';
 
-// what the layer shows: the landing its boxes come from; '' when it is empty
+// what the layer shows: the landing its boxes come from, and the lit step; '' when it is empty
 let drawn = '';
+// head: where the preview's name goes, above its top left corner and any collection its boxes are in
+let boxes: { key: string; list: Box[]; head: Bounds | null } = { key: '', list: [], head: null };
 // what the layer last drew, so a save that leaves every box as it was redraws nothing on the board
 let painted = '';
 // the heights of the cards the plan changes, measured once each, since the plan's copies don't change while it waits
@@ -35,16 +38,18 @@ export function drawPlanPreview() {
     if (drawn) clear();
     return;
   }
-  if (now.key === drawn) return;
-  drawn = now.key;
+  const key = `${now.key}|${now.hot}`;
+  if (key === drawn) return;
+  drawn = key;
   if (measured.plan !== now.id) measured = { plan: now.id, h: new Map() };
-  const { list, head } = boxesOf(now);
-  paint(list, head);
+  if (boxes.key !== now.key) boxes = { key: now.key, ...boxesOf(now) };
+  paint(boxes.list, boxes.head, now.hot);
 }
 
 function clear() {
   const layer = $('planPreview');
   layer.replaceChildren();
+  layer.classList.remove('lit');
   drawn = '';
   painted = '';
 }
@@ -57,13 +62,13 @@ function boxesOf({ planned: { record, changes }, parts, land }: Now) {
     moved = new Set(changes.moved),
     laid = laidOut(land.lists),
     before = new Map(session.board.cards.map(c => [c.id, c])),
-    list = parts.flatMap(cards =>
+    list = parts.flatMap((cards, step) =>
       cards.flatMap((id): Box[] => {
         const gone = removed.has(id),
           c = (gone ? before : laid).get(id);
         if (!c || (c.onFrame && touched.has(c.onFrame))) return [];
         const kind = gone ? 'remove' : added.has(id) ? 'add' : moved.has(id) ? 'move' : 'edit';
-        return [{ id, kind, x: c.x, y: c.y, w: c.w, h: c.h, label: gone ? 'Removed' : cardName(c) }];
+        return [{ id, kind, step, x: c.x, y: c.y, w: c.w, h: c.h, label: gone ? 'Removed' : cardName(c) }];
       }),
     ),
     holders = holdersOf(land.lists.cards),
@@ -109,19 +114,21 @@ function heightOf(c: Card, fresh: boolean) {
   return h;
 }
 
-function paint(list: readonly Box[], at: Bounds | null) {
-  const sig = JSON.stringify([list, at]);
+function paint(list: readonly Box[], at: Bounds | null, hot: number | null) {
+  const sig = JSON.stringify([list, at, hot]);
   if (sig === painted) return;
   painted = sig;
   const layer = $('planPreview'),
     els = list.map(b => {
       const el = document.createElement('div');
       el.className = `pp-box ${b.kind}`;
+      el.classList.toggle('hot', b.step === hot);
       el.dataset.pp = b.id;
       Object.assign(el.style, { left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, height: `${b.h}px` });
       el.appendChild(document.createElement('span')).textContent = b.label;
       return el;
     });
+  layer.classList.toggle('lit', hot !== null);
   if (!at) return layer.replaceChildren(...els);
   const head = document.createElement('div');
   head.className = 'pp-head';

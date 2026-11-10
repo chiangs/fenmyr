@@ -23,7 +23,14 @@ function summaryEl(p: Extract<Piece, { slot: 'summary' }>) {
     list = document.createElement(p.numbered ? 'ol' : 'ul');
   box.className = p.cls ? `m-summary ${p.cls}` : 'm-summary';
   head.textContent = p.head;
-  for (const line of p.lines) list.appendChild(document.createElement('li')).textContent = line;
+  const { hover } = p;
+  p.lines.forEach((line, i) => {
+    const li = list.appendChild(document.createElement('li'));
+    li.textContent = line;
+    if (!hover) return;
+    li.onmouseenter = () => hover(i);
+    li.onmouseleave = () => hover(null);
+  });
   box.append(head, list);
   return box;
 }

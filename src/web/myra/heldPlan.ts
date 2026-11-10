@@ -25,6 +25,8 @@ type PlanAct = Extract<ChatAction, { kind: 'plan' }>;
 type Waiting = { act: PlanAct; board: string; planned: Planned; parts: string[][] };
 
 let waiting: Waiting | null = null;
+// the step the pointer is on, whose part of the preview is lit
+let hot: number | null = null;
 // plans whose Do it is waiting its turn behind a reply still to come
 const landing = new Set<string>();
 
@@ -88,6 +90,7 @@ function hold(planned: Planned, steps: Step[]) {
   if (waiting) end(waiting, 'replaced');
   const act: PlanAct = { kind: 'plan', plan: uid(), steps: steps.map(s => s.line) };
   waiting = { act, board: session.board.id, planned, parts: steps.map(s => s.cards) };
+  hot = null;
   reply(LEAD, 0, [act]);
   renderHint();
 }
@@ -161,14 +164,19 @@ export function waitingNow() {
   const w = waiting;
   if (!w) return null;
   const { key, land } = landsNow(w);
-  return { id: w.act.plan, key, planned: w.planned, parts: w.parts, land };
+  return { id: w.act.plan, key, planned: w.planned, parts: w.parts, hot, land };
+}
+
+function hotStep(i: number | null) {
+  hot = i;
 }
 
 // A function declaration: VIEW reads it while the modules load, inside an import cycle.
 export function planPieces(a: PlanAct): Piece[] {
   const state = stateOf(a),
     w = waiting?.act.plan === a.plan ? waiting : null,
-    pieces: Piece[] = [{ slot: 'summary', head: HEAD[state], lines: a.steps, numbered: true, cls: `plan ${state}` }];
+    steps: Piece = { slot: 'summary', head: HEAD[state], lines: a.steps, numbered: true, cls: `plan ${state}` },
+    pieces: Piece[] = [w ? { ...steps, hover: hotStep } : steps];
   if (w)
     pieces.push(
       { slot: 'reply', button: { label: 'Do it', after: 'stay', run: () => doIt(w) } },

@@ -23,8 +23,16 @@ export type After = 'stay' | 'self' | 'row';
 // live: whether it still applies when pressed, as it did when drawn
 export type Button = SayAction & { title?: string; after: After; live?: () => boolean };
 // A box of lines under her words: what a reply changed, or a plan's numbered steps. cls: its kind, for the look.
+// hover: told which line the pointer is on, or null when it leaves them.
 export type Piece =
-  | { slot: 'summary'; head: string; lines: readonly string[]; numbered?: boolean; cls?: string }
+  | {
+      slot: 'summary';
+      head: string;
+      lines: readonly string[];
+      numbered?: boolean;
+      cls?: string;
+      hover?: (line: number | null) => void;
+    }
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };
 
