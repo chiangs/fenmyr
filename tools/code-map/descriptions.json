@@ -460,6 +460,7 @@
     "src/web/myra/planPreview.ts": "Draws a waiting Myra plan on the board as dashed boxes where its cards would land, as landing lays them out, quieter ones for cards it only re-lays, and Removed over each card it takes away.",
     "tests/planPreview.ts": "Checks a waiting plan’s preview on the board: its boxes are no cards, the pointer goes through them, hovering a step lights its part, the view glides to it, and exports leave it out.",
     "tests/planPreviewLand.ts": "Checks every card Do it moves or resizes had a box where it lands, re-laid ones included, that the preview follows edits and says what she will leave, and goes when the plan stops waiting.",
+    "tests/planGlide.ts": "Checks the view glides to a waiting plan's preview once, never while the person drags, pans, zooms or types in a card, later once they stop, and never after they move the view.",
     "tests/planSteps.ts": "Checks a waiting plan's steps say what Do it would do: a card only clicked into takes her change, and a card typed into is reworded in place, in the chat and her bubble."
   }
 }

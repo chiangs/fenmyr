@@ -11,7 +11,7 @@ import { boxOf } from '../canvas/emptySpot.ts';
 import type { Bounds } from '../canvas/handles.ts';
 import { paintCard } from '../canvas/render.ts';
 import { arrange, CW, laidMarked, layoutCount, naturalHeight } from '../cards/collection.ts';
-import { $ } from '../core/dom.ts';
+import { $, stage } from '../core/dom.ts';
 import { bringIntoView } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { cardEl, isTyping, textField } from '../ui/dom.ts';
@@ -29,8 +29,9 @@ const HEAD = 'Preview · not on the board yet';
 let drawn = '';
 // head: where the preview's name goes, above its top left corner and any collection its boxes are in
 let boxes: { key: string; list: Box[]; head: Bounds | null } = { key: '', list: [], head: null };
-// the last plan the view glided to, so each plan glides once at most
-let glided = '';
+// The plan the view glides to once they aren't busy, and the view as it was when the plan arrived. from is null once
+// it has glided, or once they moved the view themselves, since they chose where to look.
+let glide: { plan: string; from: string | null } = { plan: '', from: null };
 // what the layer last drew, so a save that leaves every box as it was redraws nothing on the board
 let painted = '';
 // the heights of the cards the plan changes, measured once each, since the plan's copies don't change while it waits
@@ -49,14 +50,13 @@ export function drawPlanPreview() {
   }
   const boxKey = `${now.key}|${layoutCount()}|${marks()}`,
     key = `${boxKey}|${now.hot}`;
-  if (key === drawn) return;
-  drawn = key;
-  if (measured.plan !== now.id) measured = { plan: now.id, h: new Map() };
-  if (boxes.key !== boxKey) boxes = { key: boxKey, ...boxesOf(now) };
-  paint(boxes.list, boxes.head, now.hot);
-  if (glided === now.id || !boxes.list.length) return;
-  glided = now.id;
-  if (!busy()) bringIntoView(boxes.list);
+  if (key !== drawn) {
+    drawn = key;
+    if (measured.plan !== now.id) measured = { plan: now.id, h: new Map() };
+    if (boxes.key !== boxKey) boxes = { key: boxKey, ...boxesOf(now) };
+    paint(boxes.list, boxes.head, now.hot);
+  }
+  glideTo(now.id, boxes.list);
 }
 
 function clear() {
@@ -67,11 +67,29 @@ function clear() {
   painted = '';
 }
 
-// They are dragging, typing in a card or a doc, or writing their next message, so the view stays where they have it.
+const viewNow = () => `${session.view.x}|${session.view.y}|${session.view.z}`;
+
+// Once for each plan, on the first frame they aren't busy, unless they moved the view after it arrived.
+function glideTo(plan: string, list: readonly Box[]) {
+  if (glide.plan !== plan) glide = { plan, from: viewNow() };
+  if (glide.from === null || !list.length) return;
+  if (glide.from !== viewNow()) glide.from = null;
+  else if (!busy()) {
+    glide.from = null;
+    bringIntoView(list);
+  }
+}
+
+// They are dragging, moving the view with the wheel or a pinch, or typing in a card or a doc. Words in Myra's input
+// don't count: a glide moves only the board, and people often write their next message while she thinks.
 function busy() {
-  const active = document.activeElement,
-    input = textField('mcInput');
-  return !!appState.drag || !!session.editing || input.value.trim() !== '' || (active !== input && isTyping(active));
+  const active = document.activeElement;
+  return (
+    !!appState.drag ||
+    stage.classList.contains('moving') ||
+    !!session.editing ||
+    (active !== textField('mcInput') && isTyping(active))
+  );
 }
 
 const sameRect = (a: Bounds, b: Bounds) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
