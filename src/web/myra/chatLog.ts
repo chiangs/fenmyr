@@ -56,8 +56,8 @@ const whenText = (t: number) => {
 
 // Her buttons there were for the board as it was then, so none show
 function renderReading(list: HTMLElement, c: SavedChat) {
-  list.innerHTML =
-    '<div class="mc-hist"><div class="mh-top"><button class="mc-btn" data-h="back">← Back to this chat</button><span>From before this prototype kept one chat.</span></div></div>';
+  const when = esc(whenText(c.t));
+  list.innerHTML = `<div class="mc-hist"><div class="mh-top"><button class="mc-btn" data-h="back">← Back to the chat</button><span>An earlier chat, from ${when}. Read only.</span></div></div>`;
   for (const m of c.msgs) list.appendChild(msgEl(m, []));
   list.scrollTop = 0;
 }

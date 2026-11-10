@@ -118,6 +118,7 @@ try {
   await page.click('#mcHist');
   await settle(page, 200);
   assert.match(await shown(), /Make the pay button bigger/, 'it lists that chat');
+  const listed = (await page.locator('#mcList .mh-open small').first().textContent())?.split(' · ')[0];
   await page.click('#mcList .mh-open');
   await settle(page, 200);
   const reading = await page.evaluate(() => ({
@@ -125,7 +126,10 @@ try {
     buttons: document.querySelectorAll('#mcList .m-acts button').length,
     focus: document.activeElement?.textContent,
   }));
-  assert.match(reading.text, /From before this prototype kept one chat\./, 'opening it says where it is from');
+  assert.ok(
+    reading.text.includes(`An earlier chat, from ${listed}. Read only.`),
+    `opening it says what it is, when the list says it was from (${listed}), and that it is read only`,
+  );
   assert.match(
     reading.text,
     /Make the pay button bigger[\s\S]*The pay button is bigger now\./,
@@ -133,7 +137,7 @@ try {
   );
   assert.ok(!reading.text.includes('I added the coupon field'), 'in place of the thread');
   assert.strictEqual(reading.buttons, 0, 'with none of her buttons');
-  assert.strictEqual(reading.focus, '← Back to this chat', 'and the cursor on the way back');
+  assert.strictEqual(reading.focus, '← Back to the chat', 'and the cursor on the way back to the chat');
   assert.deepStrictEqual(await board(), before, 'the board keeps its chat and its earlier chats');
   // past the 400 ms save timer, so a write the open started would have landed
   await page.waitForTimeout(800);
@@ -141,7 +145,7 @@ try {
 
   await send('/help');
   const back = await shown();
-  assert.ok(!back.includes('From before this prototype'), 'sending a message goes back to the thread');
+  assert.ok(!back.includes('An earlier chat'), 'sending a message goes back to the thread');
   assert.match(back, /I added the coupon field under the total\.[\s\S]*\/help[\s\S]*Here is what I can do/, 'with it');
   await page.click('#mcHist');
   await settle(page, 200);
