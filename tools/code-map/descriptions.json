@@ -379,6 +379,7 @@
     "tests/smoke/animations.ts": "Smoke checks for /animate and Myra’s animations.",
     "tests/smoke/birthday.ts": "Smoke checks for Myra’s birthday behaviour.",
     "tests/smoke/board.ts": "Smoke checks for connectors, sidebar rows, tags as you type and earlier chats.",
+    "tests/smoke/builder.ts": "Smoke checks for a build through the bridge: its snapshot as it starts, and each file's lines added and removed and the next steps as it ends.",
     "tests/smoke/bridge.ts": "Smoke checks for the bridge: saving, loading, fonts, media, exports and Claude Code.",
     "tests/smoke/chatInput.ts": "Smoke checks for Myra’s input: its keys, the slash menu’s keys, IME typing and how the box grows.",
     "tests/smoke/chrome.ts": "Smoke checks for shortcuts, board order, popups, cursor, clear buttons and height grips.",
