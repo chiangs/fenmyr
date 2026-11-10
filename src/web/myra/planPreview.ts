@@ -193,7 +193,8 @@ function paint(list: readonly Box[], head: number, hot: number | null) {
   painted = sig;
   const layer = $('planPreview'),
     lit = (b: Box) => hot !== null && b.steps.includes(hot);
-  layer.classList.toggle('lit', hot !== null);
+  // a step whose cards have no box, such as a connector, dims none of the others
+  layer.classList.toggle('lit', list.some(lit));
   layer.replaceChildren(...list.map((b, i) => boxEl(b, i === head, lit(b))));
 }
 

@@ -1,7 +1,7 @@
 // How a waiting plan's preview reads. Its name sits on the top edge of its first box, the way a group's name sits on
 // its outline, so it is plainly part of the preview and never over a card it leaves alone. Each box's name sits on the
 // box's top edge on its own fill, clear of the card's words and readable in light and dark. Screen readers skip the
-// layer.
+// layer, and hovering a step with no boxes, such as a connector, dims none of the others.
 import assert from 'node:assert';
 import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
@@ -121,6 +121,22 @@ await check('each box’s name has its own fill, clear of its card’s words, at
 await check('screen readers skip the preview', async () => {
   assert.strictEqual(await page().getAttribute('#planPreview', 'aria-hidden'), 'true');
   assert(!(await page().locator('#world').ariaSnapshot()).includes('Preview'), 'the board reads without it');
+});
+
+await check('hovering a step with no boxes dims none of the others', async () => {
+  await page().evaluate(() => document.getElementById('mPill')?.click());
+  await settle(page(), 300);
+  const step = page().locator('#mcList .m-summary.plan.waiting li', { hasText: 'connector' });
+  await step.hover();
+  await settle(page(), 150);
+  assert.deepStrictEqual(
+    await page().evaluate(() => ({
+      lit: document.getElementById('planPreview')?.classList.contains('lit'),
+      hot: document.querySelectorAll('#planPreview .hot').length,
+    })),
+    { lit: false, hot: 0 },
+  );
+  await page().mouse.move(1, 1);
 });
 
 const errors = [...l.errors];
