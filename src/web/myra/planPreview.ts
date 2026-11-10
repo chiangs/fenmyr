@@ -198,25 +198,22 @@ function paint(list: readonly Box[], head: number, hot: number | null) {
   layer.replaceChildren(...list.map((b, i) => boxEl(b, i === head, lit(b))));
 }
 
-// The box, with its name and, on one box, the preview's own name on its top edge, the way a group's name sits on its
-// outline, so neither prints over the card's words.
+// The box, with its name on its top edge, the way a group's name sits on its outline, so it never prints over the
+// card's words. One box carries the preview's own name there instead: both together spill past a narrow box onto the
+// cards beside it.
 function boxEl(b: Box, headed: boolean, hot: boolean) {
   const el = document.createElement('div'),
-    tag = (cls: string, text: string) => {
-      const t = document.createElement('span');
-      t.className = cls;
-      t.textContent = text;
-      return t;
-    },
-    tags = [...(headed ? [tag('pp-head', HEAD)] : []), ...(b.label ? [tag('pp-label', b.label)] : [])];
+    name = headed ? HEAD : b.label;
   el.className = `pp-box ${b.kind}`;
   el.classList.toggle('hot', hot);
   el.dataset.pp = b.id;
   Object.assign(el.style, { left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, height: `${b.h}px` });
-  if (tags.length) {
-    const row = el.appendChild(document.createElement('div'));
+  if (name) {
+    const row = el.appendChild(document.createElement('div')),
+      tag = row.appendChild(document.createElement('span'));
     row.className = 'pp-tags';
-    row.append(...tags);
+    tag.className = headed ? 'pp-head' : 'pp-label';
+    tag.textContent = name;
   }
   return el;
 }

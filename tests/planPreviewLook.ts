@@ -1,7 +1,7 @@
-// How a waiting plan's preview reads. Its name sits on the top edge of its first box, the way a group's name sits on
-// its outline, so it is plainly part of the preview and never over a card it leaves alone. Each box's name sits on the
-// box's top edge on its own fill, clear of the card's words and readable in light and dark. Screen readers skip the
-// layer, and hovering a step with no boxes, such as a connector, dims none of the others.
+// How a waiting plan's preview reads. Its name sits on the top edge of its first box, in place of that box's own, the
+// way a group's name sits on its outline, so it is plainly part of the preview and never over a card it leaves alone.
+// Each other box's name sits on the box's top edge on its own fill, clear of the card's words and readable in light and
+// dark. Screen readers skip the layer, and hovering a step with no boxes, such as a connector, dims none of the others.
 import assert from 'node:assert';
 import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
@@ -90,20 +90,24 @@ await check('the preview’s name sits on the top edge of its first box, over no
       });
     return {
       on: box?.dataset.pp,
+      alone: box?.querySelectorAll('span').length,
       first: first?.dataset.pp,
       onEdge: !!h && !!b && Math.abs((h.top + h.bottom) / 2 - b.top) <= 2 && h.left > b.left && h.left < b.right,
       under: under.map(c => c.dataset.id),
     };
   });
   assert.strictEqual(seen.on, seen.first, 'on the box nearest the top, then the left');
-  assert.deepStrictEqual({ onEdge: seen.onEdge, under: seen.under }, { onEdge: true, under: [] });
+  assert.deepStrictEqual(
+    { onEdge: seen.onEdge, alone: seen.alone, under: seen.under },
+    { onEdge: true, alone: 1, under: [] },
+  );
 });
 
 await check('each box’s name has its own fill, clear of its card’s words, at 100% and 25%', async () => {
   for (const z of [1, 0.25]) {
     await at(l, z);
     const ns = await names(l);
-    assert.strictEqual(ns.length, 13, 'each box a step names has its name');
+    assert.strictEqual(ns.length, 12, 'each box a step names has its name, but the one carrying the preview’s');
     assert.deepStrictEqual(
       ns.filter(n => !n.opaque || n.contrast < 4.5),
       [],
@@ -148,7 +152,7 @@ await check('in dark, each box’s name reads clearly at 100% and 25%', async ()
   for (const z of [1, 0.25]) {
     await at(l, z);
     const ns = await names(l);
-    assert.strictEqual(ns.length, 13, 'each box a step names has its name');
+    assert.strictEqual(ns.length, 12, 'each box a step names has its name, but the one carrying the preview’s');
     assert.deepStrictEqual(
       ns.filter(n => !n.opaque || n.contrast < 4.5),
       [],
