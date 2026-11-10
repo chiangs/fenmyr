@@ -136,8 +136,9 @@ const BIG = {
   remove: ['myranote'],
   next: ['Name the columns', 'Add due dates'],
 };
-// It waits as a plan in the open chat, then lands with Do it. A checkout without plans has no answerMyra, so it shows
-// the open chat and the state is listed as meant.
+// It waits as a plan in the open chat, with its preview on the board, which shows alone once the chat closes, then
+// lands with Do it. A checkout without plans has no answerMyra, so it shows the open chat and the state is listed as
+// meant; one without the preview shows the board as it is.
 const plan: Group = {
   states: [
     [
@@ -155,8 +156,17 @@ const plan: Group = {
       },
     ],
     [
+      'board',
+      async page => {
+        await page.keyboard.press('Escape');
+        await settle(page, 600);
+        await page.mouse.move(1, 1);
+      },
+    ],
+    [
       'done',
       async page => {
+        if (!(await page.locator('#mcInput').isVisible())) await page.click('#mPill');
         const doIt = page.locator('#mcList .m-acts button:text-is("Do it")');
         if (await doIt.count()) await doIt.click();
         // past her glow on what she made
