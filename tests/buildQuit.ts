@@ -1,5 +1,6 @@
 // Quitting Fenmyr during a build stops Claude Code: a stand-in that writes App.tsx, then waits before writing again, is
-// gone once the app has closed, and its second write never happens.
+// gone once the app has closed, and its second write never happens. The stopped build isn't counted, so no temporary
+// index is left behind.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -12,10 +13,12 @@ const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-build
 const repo = path.join(work, 'acme'),
   bin = path.join(work, 'bin'),
   pidFile = path.join(work, 'pid'),
-  late = path.join(work, 'late.txt');
+  late = path.join(work, 'late.txt'),
+  tmp = path.join(work, 'tmp');
 const [pidAt, lateAt] = [pidFile, late].map(f => JSON.stringify(f));
 fs.mkdirSync(repo);
 fs.mkdirSync(bin);
+fs.mkdirSync(tmp);
 execFileSync('git', ['-C', repo, 'init', '-q', '-b', 'main']);
 // One process with no children of its own. What Fenmyr spawns inherits the app's descriptors, and closing the app
 // waits until every process holding them has ended: a child left behind by a shell stand-in would hold it open.
@@ -47,7 +50,7 @@ const alive = (pid: number) => {
   }
 };
 
-const l = await launch({ env: { PATH: `${bin}:${process.env.PATH ?? ''}` } });
+const l = await launch({ env: { PATH: `${bin}:${process.env.PATH ?? ''}`, TMPDIR: tmp } });
 let pid = 0;
 try {
   const dir = await l.page.evaluate(async repo => {
@@ -78,5 +81,10 @@ const left = alive(pid);
 if (left) process.kill(pid);
 assert(!left, 'quitting Fenmyr stopped Claude Code');
 assert(!fs.existsSync(late), 'and it wrote nothing after Fenmyr quit');
+assert.deepStrictEqual(
+  fs.readdirSync(tmp).filter(f => f.startsWith('fenmyr-index-')),
+  [],
+  'and no temporary index was left behind',
+);
 fs.rmSync(work, { recursive: true, force: true });
 console.log('BUILD QUIT OK');

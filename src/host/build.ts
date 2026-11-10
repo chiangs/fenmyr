@@ -5,7 +5,7 @@ import path from 'node:path';
 import type { BuildEvent } from '../shared/build.ts';
 import type { Ops } from '../shared/ops.ts';
 import { PROTO_DIR, splitBuildReply } from '../shared/repos.ts';
-import { claudeCode } from './claudeCode.ts';
+import { claudeCode, stopCodeAgents } from './claudeCode.ts';
 import type { CodeAgent } from './codeAgent.ts';
 import { status } from './git.ts';
 import * as prompts from './prompts.ts';
@@ -29,6 +29,14 @@ const outside = async (repo: string, dir: string) => {
 // the repos with a build running: two builds in one folder would write over each other
 const busy = new Set<string>();
 
+// Set as Fenmyr quits. A build stopped then isn't counted: counting stages through a temporary index, and the app
+// would exit before the index is removed.
+let quitting = false;
+export function stopBuilds() {
+  quitting = true;
+  stopCodeAgents();
+}
+
 // Starts a build and answers at once with its id; its start, each file edited, and how it ended arrive as protoBuild
 // events. Busy, with no events, while another build runs in the repo.
 export function startBuild(
@@ -50,7 +58,8 @@ export function startBuild(
   };
   // set once the folder is saved, so the end can count what changed since
   let saved: { repo: string; snapshot: string } | null = null;
-  const changed = () => (saved ? filesSince(saved.repo, dir, saved.snapshot).catch(() => []) : Promise.resolve([]));
+  const changed = () =>
+    saved && !quitting ? filesSince(saved.repo, dir, saved.snapshot).catch(() => []) : Promise.resolve([]);
   const run = async () => {
     const s = await status(root);
     if (s.kind !== 'repo') throw new Error("This prototype's repo isn't there any more.");
