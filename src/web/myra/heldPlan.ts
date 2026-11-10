@@ -17,6 +17,7 @@ import { applyHeld, asItWouldLand, type Planned, planHeld, planNewBoard, Turn } 
 import type { HeldReply, NoteUsed } from './applyTypes.ts';
 import { addMsg, chatKeep, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
+import { noEmoji } from './replyText.ts';
 import { reply } from './say.ts';
 
 type PlanAct = Extract<ChatAction, { kind: 'plan' }>;
@@ -58,11 +59,17 @@ function outline({ held, record, changes }: Planned) {
 
 // Her answer as it arrives: it lands at once, or it waits as a plan. `about`: the plan that was waiting when the
 // message was sent. An answer that changes the board replaces it and waits as a plan however small, since they are
-// looking at one; words alone leave it waiting, and `dropPlan` cancels it.
+// looking at one; words alone leave it waiting, `dropPlan` cancels it, and `doPlan`, their yes to it as it stands, lands
+// the plan as held after her words.
 export async function settle(turn: Turn, held: HeldReply, about: string | null) {
   if (!turn.stillOpen()) return;
-  const w = waiting?.act.plan === about ? waiting : null,
-    planned = planHeld(held),
+  const w = waiting?.act.plan === about ? waiting : null;
+  if (w && held.reply.doPlan) {
+    waiting = null;
+    if (held.reply.say) reply(noEmoji(held.reply.say), 9000);
+    return land(turn, w);
+  }
+  const planned = planHeld(held),
     { weight, steps } = outline(planned),
     changes = planned.record.cards.length + planned.record.links.length > 0 || held.template?.mode === 'new';
   if (w && (changes || held.reply.dropPlan)) end(w, changes ? 'replaced' : 'cancelled');
@@ -91,27 +98,30 @@ function end(w: Waiting, how: PlanEnd) {
   redraw();
 }
 
-// It stops waiting at once, so a second press finds nothing, and lands when its turn comes. It is done before it lands,
-// since a template opens its own board first. If the board part fails, the board is put back and the plan waits again,
-// unless that template's board is open by then.
+// It stops waiting at once, so a second press finds nothing, and lands when its turn comes.
 function doIt(w: Waiting) {
   if (waiting !== w) return Promise.resolve();
   waiting = null;
   landing.add(w.act.plan);
   redraw();
-  return Turn.take(async turn => {
-    landing.delete(w.act.plan);
-    if (!turn.stillOpen()) return;
-    end(w, 'done');
-    try {
-      if ((await applyHeld(turn, w.planned.held, w.planned))?.leftAll) end(w, 'left');
-    } catch {
-      delete w.act.ended;
-      if (session.board.id === w.board) waiting ??= w;
-      redraw();
-      reply(FAILED, 0);
-    }
-  }, w.board);
+  return Turn.take(turn => land(turn, w), w.board);
+}
+
+// The held reply lands as planned, less what the person changed since. It is done before it lands, since a template
+// opens its own board first. If the board part fails, the board is put back and the plan waits again, unless that
+// template's board is open by then.
+async function land(turn: Turn, w: Waiting) {
+  landing.delete(w.act.plan);
+  if (!turn.stillOpen()) return;
+  end(w, 'done');
+  try {
+    if ((await applyHeld(turn, w.planned.held, w.planned))?.leftAll) end(w, 'left');
+  } catch {
+    delete w.act.ended;
+    if (session.board.id === w.board) waiting ??= w;
+    redraw();
+    reply(FAILED, 0);
+  }
 }
 
 // Do it, and from now on big changes land straight away, as the Skip plans setting says.

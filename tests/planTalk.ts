@@ -1,7 +1,8 @@
 // Talking to Myra while a plan waits. A message goes to her with the plan and the notes she read for it; an answer
 // that changes the board replaces the plan, as a plan however small, words alone leave it waiting, and she can drop
-// it. A plain yes or no answers it with no request to Claude. Change the plan only puts them in her input. Just do it,
-// clicked or typed, does Do it and turns on Skip plans, which lands big changes at once until it is turned off.
+// it, or read it as a yes and have it land as held. A plain yes or no typed answers it with no request to Claude, and
+// an old button goes to her. Change the plan only puts them in her input. Just do it, clicked or typed, does Do it and
+// turns on Skip plans, which lands big changes at once until it is turned off.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { askStandIn } from './support/askStandIn.ts';
@@ -69,6 +70,10 @@ const answer = (reply: object) =>
   }, reply);
 const sent = () => page.evaluate(() => JSON.stringify(Reflect.get(window, 'sent') ?? []));
 const board = () => page.evaluate(() => JSON.stringify(window.__fenmyr.curBoard().cards));
+const ideas = () =>
+  page.evaluate(
+    () => window.__fenmyr.curBoard().cards.filter(c => c.type === 'note' && /^Idea /.test(c.text ?? '')).length,
+  );
 
 await page.evaluate(() => document.getElementById('mPill')?.click());
 await settle(page, 300);
@@ -88,6 +93,7 @@ await check(
     assert.strictEqual(held.add?.length, 11, 'with her reply');
     assert.strictEqual(held.say, undefined, 'without her words');
     assert.match(prompt, /Roadmap[\s\S]*Retro notes/, 'and the notes she read for it go again');
+    assert.match(section, /only agrees to the plan as it stands, set "doPlan": true/, 'and how she agrees to it');
     await settle(page, 800);
     assert.deepStrictEqual((await rows()).at(-1)?.text, 'ok', 'her words show');
     assert.deepStrictEqual((await plans()).at(-1)?.acts, WAITING, 'and the plan still waits');
@@ -146,6 +152,26 @@ await check('a typed yes is Do it, and a typed no is Cancel, with no request to 
   assert.strictEqual(JSON.parse(await sent()).length, 0, 'still nothing is asked');
 });
 
+await check('her reading of their message as a yes lands the plan as held, after her words', async () => {
+  const had = await ideas();
+  await eleven();
+  await answer({ say: 'Lovely, doing it now.', doPlan: true, add: notes(2) });
+  await send('Looks good, go ahead');
+  await settle(page, 800);
+  assert.strictEqual(JSON.parse(await sent()).length, 1, 'only their message is asked');
+  assert.deepStrictEqual(
+    (await rows()).slice(-3).map(r => [r.who, r.text]),
+    [
+      ['me', 'Looks good, go ahead'],
+      ['myra', 'Lovely, doing it now.'],
+      ['myra', 'Here are eleven.'],
+    ],
+    'their words, hers, then the plan’s line',
+  );
+  assert.strictEqual((await plans()).at(-1)?.head, 'Done');
+  assert.strictEqual(await ideas(), had + 11, 'the held plan landed, not anything she sent again');
+});
+
 await check(
   'an old "Yes" button while a plan waits goes to her with the plan, and does nothing by itself',
   async () => {
@@ -177,10 +203,6 @@ await check('Change the plan puts them in her input, which says what writing the
   assert.notStrictEqual(await hint(), 'Tell Myra what to change…', 'and the input reads as before once it ends');
 });
 
-const ideas = () =>
-  page.evaluate(
-    () => window.__fenmyr.curBoard().cards.filter(c => c.type === 'note' && /^Idea /.test(c.text ?? '')).length,
-  );
 const skipping = () => page.evaluate(() => JSON.parse(localStorage.getItem('fenmyr:settings') ?? '{}').skipPlans);
 const skipBox = 'input[data-set="skipPlans"]';
 

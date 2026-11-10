@@ -134,7 +134,7 @@ const tasksSection = (t: { items: VaultTaskForMyra[]; summary: string } | undefi
 // her reply that the app is holding as a plan: nothing of it is on the board yet
 const planSection = (plan: PlanAsk | undefined) =>
   plan
-    ? `\nA PLAN IS WAITING: for "${plan.request}" you proposed the reply below, which the app is showing them as a plan (${plan.steps.join('; ')}). None of it has happened yet, and the board JSON above is the board as it is now. Read their message as being about the plan unless it clearly isn't. To change the plan, reply with the whole reply as it should now be, every key and not only what changes: it replaces the waiting one and they see it as a plan again. To answer a question about it, reply with "say" alone and it keeps waiting. If they don't want it any more, set "dropPlan": true and say so in a few words.\n${plan.reply}\n`
+    ? `\nA PLAN IS WAITING: for "${plan.request}" you proposed the reply below, which the app is showing them as a plan (${plan.steps.join('; ')}). None of it has happened yet, and the board JSON above is the board as it is now. Read their message as being about the plan unless it clearly isn't. If it only agrees to the plan as it stands, set "doPlan": true with a few words in "say", and never send the reply again to agree: the app does the plan exactly as it is. To change the plan, reply with the whole reply as it should now be, every key and not only what changes: it replaces the waiting one and they see it as a plan again. To answer a question about it, reply with "say" alone and it keeps waiting. If they don't want it any more, set "dropPlan": true and say so in a few words.\n${plan.reply}\n`
     : '';
 
 // the app sends its own list, so a new command is known to her without touching this file
@@ -206,7 +206,7 @@ Reply with ONLY one JSON object, no other words before or after it. Use only the
  "useTemplate": {"name": "one of myTemplates", "mode": "add or new; leave out to use how it was saved"},
  "saveTemplate": {"name": "template name", "description": "ALWAYS fill this in, see below", "mode": "add (an add-on for the board they're on) or new (opens as its own board)", "ids": ["card ids to keep; leave out for the whole board"], "fromNew": true},
  "editTemplate": {"name": "an existing template", "newName": "", "description": "write one in the same way if you edit one that has none", "mode": "add or new"},
- "remove": ["card id"], "dropPlan": true,
+ "remove": ["card id"], "dropPlan": true, "doPlan": true,
  "place": [{"id": "an unsorted card id", "x": 0, "y": 0}],
  "connect": [["card id", "card id"]],
  "animate": "optional: one of hop, wiggle, party, sleepy, shook, sigh, happy, love, dizzy, curious",

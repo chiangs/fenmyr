@@ -118,13 +118,29 @@ assert.deepStrictEqual(
   'a plan comes back with its message; an ending this version doesn’t know reads as none, and a bad plan drops alone',
 );
 
-for (const yes of ['Yes', 'yes!', 'Do it ✦', 'go ahead.', 'OK', 'sure'])
+for (const yes of [
+  'Yes',
+  'yes!',
+  'Do it ✦',
+  'go ahead.',
+  'OK',
+  'sure',
+  'Yes please',
+  'go for it!',
+  'Sounds good.',
+  'looks good',
+  'yep',
+  'please do',
+  'Do that',
+])
   assert.strictEqual(answerOf(yes), 'do', `"${yes}" is Do it`);
 assert.strictEqual(answerOf('Just do it!'), 'just', '"just do it" is Just do it');
 for (const no of ['no', 'Never mind', 'cancel.']) assert.strictEqual(answerOf(no), 'cancel', `"${no}" is Cancel`);
 for (const more of [
   'no, make it three groups',
   'yes please, but pink',
+  'looks good, go ahead',
+  'perfect, do that',
   'do it?',
   'don’t do it',
   'don’t just do it',
