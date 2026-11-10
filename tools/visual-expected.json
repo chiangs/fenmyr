@@ -1,5 +1,8 @@
 {
   "plan-chat": "6c: the plan waiting in the open chat now shows on the board as a dashed preview, left of the chat: a box for the new Phases kanban and one for each of its 12 cards, each with its name on its top edge, and an orange dashed box over the “Myra says” note, which it removes. That box is nearest the top, so its top edge carries the pill “Preview · not on the board yet” in place of its own “Removed”. The chat itself is unchanged.",
   "plan-board": "New in 6c: Esc closes the chat while the plan waits, so the board shows its preview alone: the dashed Phases kanban with Task 1 to Task 12, each named on its top edge, and the orange dashed box over the “Myra says” note, with the pill “Preview · not on the board yet” on its top edge in place of its own “Removed”. The base has no preview, so it shows the board with nothing drawn on it.",
-  "plan-done": "6c: after Do it the view stays where the preview was shown, since the new kanban is already in view there, so the board behind is at 47% where the base glides in to 76%. The Phases kanban sits where its preview boxes were. The chat is unchanged."
+  "plan-done": "6c: after Do it the view stays where the preview was shown, since the new kanban is already in view there, so the board behind is at 47% where the base glides in to 76%. The Phases kanban sits where its preview boxes were. The chat is unchanged.",
+  "proto-wide-screen": "7c: a prototype board keeps one chat, so New chat is gone from the right end of the docked chat’s header. Nothing else moves.",
+  "proto-medium-screen": "7c: a prototype board keeps one chat, so New chat is gone from the right end of the docked chat’s header. Nothing else moves.",
+  "proto-narrow-screen": "7c: a prototype board keeps one chat, so New chat is gone from the right end of the docked chat’s header. Nothing else moves."
 }
