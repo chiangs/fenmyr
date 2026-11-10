@@ -445,7 +445,7 @@
     "tests/chatPaste.ts": "Paste chips in Myra’s input: a long paste is a chip whose full text reaches her as a file, with Open, Ctrl+Shift+V, its limits and Clear all chats.",
     "tests/support/askStandIn.ts": "A stand-in Claude Code that records each question and the bytes of every file it was given, for tests.",
     "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states.",
-    "src/shared/askFirst.ts": "When one of Myra's replies waits as a plan: what it would add, move, edit or remove, counted per card.",
+    "src/shared/askFirst.ts": "When one of Myra’s replies waits as a plan: what it would add, move, edit or remove, counted per card.",
     "src/web/myra/heldPlan.ts": "Holds a big Myra reply in the chat as a plan: Do it lands that same reply, Cancel and a typed no drop it, and a message goes to her with it. One waits at a time, in memory.",
     "tests/askFirst.ts": "Checks when a Myra reply waits as a plan, counted per card on boards built by hand, what she says about cards a plan left, and a plan kept with its message.",
     "tests/replyPlan.ts": "Checks a big Myra reply waits as a plan with nothing saved, Do it lands it with no second request, Cancel leaves the board, and reading never plans.",
