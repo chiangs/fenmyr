@@ -92,6 +92,11 @@ export function renderCard(c: Card, pop?: boolean) {
     cardsEl.appendChild(el);
     if (pop) el.classList.add('pop');
   }
+  return paintCard(el, c, pop);
+}
+
+/** Draws `c` into `el`, which needn't be on the board: a plan's preview measures a card this way before it lands. */
+export function paintCard(el: HTMLElement, c: Card, pop?: boolean) {
   el.className =
     `card ${c.type}` +
     (session.sel.has(c.id) ? ' sel' : '') +

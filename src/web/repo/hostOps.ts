@@ -1,5 +1,5 @@
 import type { Ops } from '../../shared/ops.ts';
-import { call, desktopOnly } from '../hostCall.ts';
+import { call, desktopOnly, picture } from '../hostCall.ts';
 
 // Git and GitHub, for linking projects to repos. Only the desktop app can reach them.
 export const repoOps = {
@@ -26,7 +26,7 @@ export const repoOps = {
   protoRead: (o: Ops['protoRead']['args']) => call('protoRead', o),
   previewOpen: (o: Ops['previewOpen']['args']) => call('previewOpen', o),
   protoBuild: (o: Ops['protoBuild']['args']) => call('protoBuild', o),
-  captureArea: (o: Ops['captureArea']['args']) => call('captureArea', o),
+  captureArea: (o: Ops['captureArea']['args']) => picture('captureArea', o),
   protoLastChange: (o: Ops['protoLastChange']['args']) => call('protoLastChange', o),
   protoUndo: (o: Ops['protoUndo']['args']) => call('protoUndo', o),
   protoModule: (o: Ops['protoModule']['args']) => call('protoModule', o),

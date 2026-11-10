@@ -1,7 +1,7 @@
 import type { Board, StoredBoard } from '../shared/model.ts';
 import { isRecord, parseBoard, storedBoard } from '../shared/model.ts';
 import type { Ops } from '../shared/ops.ts';
-import { call, desktopOnly, native, platform } from './hostCall.ts';
+import { call, desktopOnly, native, picture, platform } from './hostCall.ts';
 import { repoFallbacks, repoOps } from './repo/hostOps.ts';
 
 type Progress = (share: number) => void;
@@ -349,7 +349,7 @@ const nativeApi = {
   reveal: () => call('reveal'),
   transcribe: (audio: string) => call('transcribe', { audio }),
   speechAuth: () => call('speechAuth'),
-  exportRect: (o: Ops['export']['args']) => call('export', o),
+  exportRect: (o: Ops['export']['args']) => picture('export', o),
   fonts: () => call('fonts'),
   higgsQuote: (o?: Ops['higgsQuote']['args']) => call('higgsQuote', o ?? {}),
   updateCheck: () => call('updateCheck'),

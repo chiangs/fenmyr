@@ -208,8 +208,11 @@ function freeArea(r: DOMRect): Rect {
   );
 }
 
+// where something sits on the board: a card, or a box drawn where one would go
+export type Bounds = { x: number; y: number; w: number; h: number };
+
 // the view that fits these cards, without moving to it; a small free area gets a smaller margin
-function fitted(cards: Card[], pad: number, maxZ: number): View {
+function fitted(cards: readonly Bounds[], pad: number, maxZ: number): View {
   const r = stage.getBoundingClientRect();
   const x0 = Math.min(...cards.map(c => c.x)),
     y0 = Math.min(...cards.map(c => c.y)),
@@ -238,7 +241,7 @@ function glideTo(v: View) {
   setTimeout(() => (world.style.transition = ''), 520);
 }
 
-export function fit(cards: Card[], pad = 120, maxZ = 1.4) {
+export function fit(cards: readonly Bounds[], pad = 120, maxZ = 1.4) {
   if (cards.length) glideTo(fitted(cards, pad, maxZ));
 }
 // the middle of the part of the view that panels don't cover, in board coordinates
@@ -251,7 +254,7 @@ export function openCentre() {
 
 // The view that shows cards just placed in `box`: the view as it is when they're on screen, else one that moves to
 // them without zooming in, so placing something never changes how close you were looking.
-export function viewShowing(made: Card[], box: { x: number; y: number; w: number; h: number }) {
+export function viewShowing(made: Card[], box: Bounds) {
   const f = freeArea(stage.getBoundingClientRect()),
     { x: vx, y: vy, z } = session.view,
     left = box.x * z + vx,
@@ -260,7 +263,7 @@ export function viewShowing(made: Card[], box: { x: number; y: number; w: number
   return onScreen ? session.view : fitted(made, 120, z);
 }
 
-export function showPlaced(made: Card[], box: { x: number; y: number; w: number; h: number }) {
+export function showPlaced(made: Card[], box: Bounds) {
   const v = viewShowing(made, box);
   if (v !== session.view) glideTo(v);
 }

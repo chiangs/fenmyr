@@ -22,9 +22,20 @@ type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
 export type After = 'stay' | 'self' | 'row';
 // live: whether it still applies when pressed, as it did when drawn
 export type Button = SayAction & { title?: string; after: After; live?: () => boolean };
-// A box of lines under her words: what a reply changed, or a plan's numbered steps. cls: its kind, for the look.
+// A box of lines under her words: what a reply changed, or a plan's numbered steps. cls: its kind, for the look. dim:
+// the lines that no longer apply. hover: told which line the pointer is on, or null when it leaves them. plan: the
+// waiting plan whose steps these are, so they can be reworded where they show.
 export type Piece =
-  | { slot: 'summary'; head: string; lines: readonly string[]; numbered?: boolean; cls?: string }
+  | {
+      slot: 'summary';
+      head: string;
+      lines: readonly string[];
+      numbered?: boolean;
+      cls?: string;
+      dim?: ReadonlySet<number>;
+      hover?: (line: number | null) => void;
+      plan?: string;
+    }
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };
 

@@ -436,7 +436,7 @@
     "tools/metrics.ts": "Counts files and lines of code per area of the project.",
     "tools/notices.ts": "Writes the third-party notices and the licences list.",
     "tools/visual-diff.ts": "Screenshots 22 states here and on main, and fails on any changed pixel.",
-    "tools/visual-myra.ts": "Myra’s states for the visual diff: a reply in the open chat, what she sees, the chat and doc panels, and a plan before and after Do it.",
+    "tools/visual-myra.ts": "Myra’s states for the visual diff: a reply in the open chat, what she sees, the chat and doc panels, and a plan with its board preview, before and after Do it.",
     "web/sw.js": "Keeps a copy of the app so the website version opens offline.",
     "src/shared/askFiles.ts": "The pictures and text files a person can add to one message to Myra: kinds, size limits and the words for a refusal.",
     "src/host/askFiles.ts": "Checks the files added to a message to Myra by their bytes and writes them where only that request’s Claude Code reads them.",
@@ -450,12 +450,19 @@
     "tests/support/askStandIn.ts": "A stand-in Claude Code that records each question and the bytes of every file it was given, for tests.",
     "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states.",
     "src/shared/askFirst.ts": "When one of Myra’s replies waits as a plan: what it would add, move, edit or remove, counted per card.",
-    "src/web/myra/heldPlan.ts": "Holds a big Myra reply in the chat as a plan: Do it lands that same reply, Cancel and a typed no drop it, and a message goes to her with it. One waits at a time, in memory.",
+    "src/web/myra/heldPlan.ts": "Holds a big Myra reply in the chat as a plan: Do it lands that same reply, Cancel drops it, a message goes to her with it, and its steps say which cards she will leave. One waits at a time.",
     "tests/askFirst.ts": "Checks when a Myra reply waits as a plan, counted per card on boards built by hand, what she says about cards a plan left, and a plan kept with its message.",
     "tests/replyPlan.ts": "Checks a big Myra reply waits as a plan with nothing saved, Do it lands it with no second request, Cancel leaves the board, and reading never plans.",
     "tests/planDoIt.ts": "Checks Do it on a plan the person worked around: a collection they dragged, the open doc, cards changed or connected since, her count and glow, and parts that fail.",
     "tests/planSince.ts": "Checks Do it on cards the person changed since the plan, and that her line names what she left.",
     "tests/planTalk.ts": "Checks talking to Myra while a plan waits: a message goes with the plan, her answer replaces, keeps or drops it, a typed yes or no answers it, and Just do it turns on Skip plans.",
-    "tests/planDrop.ts": "Checks a waiting Myra plan is dropped when another board opens, on New chat, Clear all chats and a restart, with nothing landed and its message reading Not done."
+    "tests/planDrop.ts": "Checks a waiting Myra plan is dropped when another board opens, on New chat, Clear all chats and a restart, with nothing landed and its message reading Not done.",
+    "src/web/myra/planPreview.ts": "Draws a waiting Myra plan on the board as dashed boxes where its cards would land, as landing lays them out, quieter ones for cards it only re-lays, and Removed over each card it takes away.",
+    "tests/planPreview.ts": "Checks a waiting plan’s preview on the board: its boxes are no cards, the pointer goes through them, hovering a step lights its part, and the view glides to it.",
+    "tests/planPreviewLand.ts": "Checks every card Do it moves or resizes had a box where it lands, re-laid ones included, that the preview follows edits and says what she will leave, and goes when the plan stops waiting.",
+    "tests/planGlide.ts": "Checks the view glides to a waiting plan's preview once, never while the person drags, pans, zooms or types in a card, later once they stop, and never after they move the view.",
+    "tests/planPictures.ts": "Checks no picture of the window shows a waiting plan's preview: a build's picture of a screen matches one with no plan, and every export is taken with it hidden.",
+    "tests/planSteps.ts": "Checks a waiting plan's steps say what Do it would do: a card only clicked into takes her change, and a card typed into is reworded in place, in the chat and her bubble.",
+    "tests/planPreviewLook.ts": "Checks how a plan's preview reads: its name on its first box's edge, box names on their own fill clear of the card's words in light and dark, hidden from screen readers."
   }
 }

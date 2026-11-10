@@ -1,13 +1,13 @@
 // A reply that would add, move or edit more than 10 cards, or remove any, waits in the chat as a plan. Do it lands that
 // same reply, with no second request to Claude, and Cancel leaves the board as it was. Anything else they write goes
 // to her with the plan. One plan waits at a time, in memory; its message keeps the steps, so the chat still shows what
-// she proposed once it stops waiting.
+// she proposed once it stops waiting. While it waits, the board shows it as a preview (planPreview.ts).
 import { answerOf, asksFirst, weigh } from '../../shared/askFirst.ts';
-import { summaryLines } from '../../shared/changeSummary.ts';
+import { type Step, summarySteps } from '../../shared/changeSummary.ts';
 import type { ChatAction, PlanEnd } from '../../shared/chat.ts';
 import type { PlanAsk } from '../../shared/ops.ts';
 import { uid } from '../core/base.ts';
-import { save } from '../core/history.ts';
+import { boardRevision, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { setFlag, settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
@@ -21,9 +21,12 @@ import { noEmoji } from './replyText.ts';
 import { reply } from './say.ts';
 
 type PlanAct = Extract<ChatAction, { kind: 'plan' }>;
-type Waiting = { act: PlanAct; board: string; planned: Planned };
+// parts: the cards each step covers, in the order of act.steps
+type Waiting = { act: PlanAct; board: string; planned: Planned; parts: string[][] };
 
 let waiting: Waiting | null = null;
+// the step the pointer is on, whose part of the preview is lit
+let hot: number | null = null;
 // plans whose Do it is waiting its turn behind a reply still to come
 const landing = new Set<string>();
 
@@ -48,13 +51,17 @@ const stateOf = (a: PlanAct): State =>
   waiting?.act.plan === a.plan ? 'waiting' : landing.has(a.plan) ? 'landing' : (a.ended ?? 'dropped');
 
 // What a reply would do, counted and worded: on this board, or on the board a template opens for it.
-function outline({ held, record, changes }: Planned) {
+// A template's own board isn't open, so none of its steps has a part on this one.
+function outline({ held, record, changes }: Planned): { weight: ReturnType<typeof weigh>; steps: Step[] } {
   const tpl = held.template;
-  if (tpl?.mode !== 'new') return { weight: weigh(record, changes), steps: summaryLines(record, changes) };
+  if (tpl?.mode !== 'new') return { weight: weigh(record, changes), steps: summarySteps(record, changes) };
   const own = planNewBoard(held, tpl.template);
   return {
     weight: weigh(own.record, own.changes),
-    steps: [`+ 1 board from the template “${tpl.template.name}”`, ...summaryLines(own.record, own.changes)],
+    steps: [
+      `+ 1 board from the template “${tpl.template.name}”`,
+      ...summarySteps(own.record, own.changes).map(s => s.line),
+    ].map(line => ({ line, cards: [] })),
   };
 }
 
@@ -79,10 +86,11 @@ export async function settle(turn: Turn, held: HeldReply, about: string | null) 
   await applyHeld(turn, held);
 }
 
-function hold(planned: Planned, steps: string[]) {
+function hold(planned: Planned, steps: Step[]) {
   if (waiting) end(waiting, 'replaced');
-  const act: PlanAct = { kind: 'plan', plan: uid(), steps };
-  waiting = { act, board: session.board.id, planned };
+  const act: PlanAct = { kind: 'plan', plan: uid(), steps: steps.map(s => s.line) };
+  waiting = { act, board: session.board.id, planned, parts: steps.map(s => s.cards) };
+  hot = null;
   reply(LEAD, 0, [act]);
   renderHint();
 }
@@ -142,11 +150,72 @@ function changePlan() {
   textField('mcInput').focus();
 }
 
+// What Do it would land now, and the cards it would leave since they changed after the plan, worked out again only
+// when the board saves. A card she would only move, which they moved since, stays where they put it, so she leaves it
+// too.
+let lands: { key: string; land: ReturnType<typeof asItWouldLand>; left: ReadonlySet<string> } | null = null;
+function landsNow(w: Waiting) {
+  const key = `${w.act.plan}|${boardRevision()}`;
+  if (lands?.key === key) return lands;
+  const land = asItWouldLand(w.planned),
+    moved = new Set(w.planned.changes.moved),
+    left = [...land.skipped, ...land.theirPlace.filter(c => moved.has(c.id))];
+  lands = { key, land, left: new Set(left.map(c => c.id)) };
+  return lands;
+}
+
+// the cards Do it would leave, as the plan's message last showed them
+let drawnLeft = '';
+const leftKey = (w: Waiting, left: ReadonlySet<string>) => `${w.act.plan}|${[...left].join()}`;
+
+// A step that covers cards they changed since says she will leave them, and dims when she would leave all of them.
+function stepsNow(w: Waiting) {
+  const { left } = landsNow(w),
+    dim = new Set<number>();
+  drawnLeft = leftKey(w, left);
+  const lines = w.act.steps.map((line, i) => {
+    const cards = w.parts[i] ?? [],
+      n = cards.filter(id => left.has(id)).length,
+      all = n === cards.length;
+    if (!n) return line;
+    if (all) dim.add(i);
+    return `${line} · ${all ? '' : `${n} `}changed since, so I’ll leave ${n === 1 ? 'it' : 'them'}`;
+  });
+  return { lines, dim };
+}
+
+// The steps say again what she will leave, in place wherever they show, in the chat and in her bubble, open or not, so
+// nothing scrolls or plays its entrance again.
+function restep(w: Waiting) {
+  const { lines, dim } = stepsNow(w);
+  for (const box of document.querySelectorAll(`.m-summary[data-plan="${w.act.plan}"]`))
+    box.querySelectorAll('li').forEach((li, i) => {
+      li.textContent = lines[i] ?? '';
+      li.classList.toggle('dim', dim.has(i));
+    });
+}
+
+/** The waiting plan as the board preview draws it, asked every frame. key: changes when what Do it would land does.
+ *  When the cards it would leave change, its steps say so. */
+export function waitingNow() {
+  const w = waiting;
+  if (!w) return null;
+  const { key, land, left } = landsNow(w);
+  if (leftKey(w, left) !== drawnLeft) restep(w);
+  return { id: w.act.plan, key, planned: w.planned, parts: w.parts, hot, land, left };
+}
+
+function hotStep(i: number | null) {
+  hot = i;
+}
+
 // A function declaration: VIEW reads it while the modules load, inside an import cycle.
 export function planPieces(a: PlanAct): Piece[] {
   const state = stateOf(a),
     w = waiting?.act.plan === a.plan ? waiting : null,
-    pieces: Piece[] = [{ slot: 'summary', head: HEAD[state], lines: a.steps, numbered: true, cls: `plan ${state}` }];
+    now = w && stepsNow(w),
+    steps: Piece = { slot: 'summary', head: HEAD[state], lines: a.steps, numbered: true, cls: `plan ${state}` },
+    pieces: Piece[] = [now ? { ...steps, lines: now.lines, dim: now.dim, hover: hotStep, plan: a.plan } : steps];
   if (w)
     pieces.push(
       { slot: 'reply', button: { label: 'Do it', after: 'stay', run: () => doIt(w) } },
