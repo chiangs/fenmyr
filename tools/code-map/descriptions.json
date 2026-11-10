@@ -459,6 +459,7 @@
     "tests/planDrop.ts": "Checks a waiting Myra plan is dropped when another board opens, on New chat, Clear all chats and a restart, with nothing landed and its message reading Not done.",
     "src/web/myra/planPreview.ts": "Draws a waiting Myra plan on the board as dashed boxes where its cards would land, laid out as landing lays them, and a Removed box over each card it takes away. Never a card, never saved.",
     "tests/planPreview.ts": "Checks a waiting plan’s preview on the board: its boxes are no cards, the pointer goes through them, hovering a step lights its part, the view glides to it, and exports leave it out.",
-    "tests/planPreviewLand.ts": "Checks cards land where a plan’s preview drew them, in collections and kanbans too, that the preview follows edits and says what she will leave, and that it goes when the plan stops waiting."
+    "tests/planPreviewLand.ts": "Checks cards land where a plan’s preview drew them, in collections and kanbans too, that the preview follows edits and says what she will leave, and that it goes when the plan stops waiting.",
+    "tests/planSteps.ts": "Checks a waiting plan's steps say what Do it would do: a card only clicked into, with nothing typed, takes her change, as pressing Do it ends the edit first."
   }
 }

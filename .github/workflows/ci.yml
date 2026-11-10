@@ -128,6 +128,8 @@ jobs:
         run: node tests/planPreview.ts
       - name: Plan preview landing test (cards land where their boxes were, and the preview goes with the plan)
         run: node tests/planPreviewLand.ts
+      - name: Plan steps test (a plan's steps say what Do it would do, reworded in place in the chat and her bubble)
+        run: node tests/planSteps.ts
       - name: Chat buttons test (Myra's next steps, sources and build buttons, kept with her replies)
         run: node tests/chatButtons.ts
       - name: Reply acts test (Changed on the board, Show on board and Undo under a reply, in the chat and her bubble)

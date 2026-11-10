@@ -151,11 +151,11 @@ function changePlan() {
 }
 
 // What Do it would land now, and the cards it would leave since they changed after the plan, worked out again only
-// when the board saves or they start or stop typing in a card. A card she would only move, which they moved since,
-// stays where they put it, so she leaves it too.
+// when the board saves. A card she would only move, which they moved since, stays where they put it, so she leaves it
+// too.
 let lands: { key: string; land: ReturnType<typeof asItWouldLand>; left: ReadonlySet<string> } | null = null;
 function landsNow(w: Waiting) {
-  const key = `${w.act.plan}|${boardRevision()}|${session.editing}`;
+  const key = `${w.act.plan}|${boardRevision()}`;
   if (lands?.key === key) return lands;
   const land = asItWouldLand(w.planned),
     moved = new Set(w.planned.changes.moved),

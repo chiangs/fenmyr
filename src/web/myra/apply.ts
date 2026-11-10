@@ -157,8 +157,9 @@ export function planNewBoard(held: HeldReply, t: Template): Pick<Planned, 'recor
 // a plan made earlier leaves the card being typed in as it is
 const typingNow = () => new Set(session.editing ? [session.editing] : []);
 
-// The board's lists if it landed now, and the cards the person changed since that it would leave. Changes nothing.
-export const asItWouldLand = (p: Planned) => planDo(p.record, session.board, typingNow());
+// The board's lists if Do it were pressed now, and the cards the person changed since that it would leave. Pressing Do
+// it ends any edit first, so a card they are only in, with nothing typed, takes her change. Changes nothing.
+export const asItWouldLand = (p: Planned) => planDo(p.record, session.board, new Set());
 
 // Null when another board is open than the one the turn was asked on: then nothing is applied. `planned`: a plan made
 // earlier, which lands as planned less what the person changed since; without one, the reply is planned once any drag
