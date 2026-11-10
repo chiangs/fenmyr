@@ -99,14 +99,20 @@ function cardsOf(line: string): Sources {
 }
 
 const nextOf = (line: string) =>
-  /^none$/i.test(line.trim())
+  /^none\.?$/i.test(line.trim())
     ? []
     : line
         .split('|')
-        .map(s => s.trim())
+        .map(s =>
+          s
+            .trim()
+            .replace(/^`(.*)`$/, '$1')
+            .trim(),
+        )
         .filter(Boolean);
 
-const LAST_LINE = /(?:^|\n)[ \t]*(CARDS|NEXT):[ \t]*(.*)\s*$/i;
+// The key may come in bold or in backticks: **NEXT:**, **NEXT**: or `NEXT:`.
+const LAST_LINE = /(?:^|\n)[ \t]*[*`]*(CARDS|NEXT)[*`]*:[*`]*[ \t]*(.*)\s*$/i;
 
 // The builder ends its reply with two lines, in either order: "CARDS: src/App.tsx=a1,b2; src/Field.tsx=c3" (or
 // "CARDS: none") and "NEXT: Add a total | Show a receipt" (or "NEXT: none"). Both are taken off what the person reads.

@@ -217,6 +217,21 @@ assert.deepStrictEqual(
   { text: 'NEXT: Mentioned first.\nI built it.\nNEXT: Add a total', sources: {}, next: ['Show a receipt'] },
   'only the last line of each kind comes off, and nothing above her words',
 );
+assert.deepStrictEqual(
+  splitBuildReply('I built it.\n**CARDS:** src/App.tsx=a1\n**NEXT:** Add a total | Show a receipt'),
+  { text: 'I built it.', sources: { 'src/App.tsx': ['a1'] }, next: ['Add a total', 'Show a receipt'] },
+  'keys written in bold come off',
+);
+assert.deepStrictEqual(
+  splitBuildReply('I built it.\n`CARDS:` none\n**NEXT**: `Add a total` | `Show a receipt`'),
+  { text: 'I built it.', sources: {}, next: ['Add a total', 'Show a receipt'] },
+  'keys in backticks come off, and so do the backticks around each step',
+);
+assert.deepStrictEqual(
+  splitBuildReply('I built it.\nNEXT: None.'),
+  { text: 'I built it.', sources: {}, next: [] },
+  'None. with a capital and a full stop means no steps',
+);
 
 const withDraft = (chatDraft: unknown) => ({ id: 'd1', name: 'Draft', cards: [], links: [], tray: [], chatDraft });
 assert.deepStrictEqual(
