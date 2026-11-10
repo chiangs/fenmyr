@@ -1,5 +1,5 @@
 import { z } from 'zod/mini';
-import { type WebPage, webPage } from './chat.ts';
+import { type ProtoOffer, readOffer, type WebPage, webPage } from './chat.ts';
 
 // Myra's reply is model output. A field of the wrong kind is dropped, so the rest of her answer still applies.
 const opt = <T extends z.core.$ZodType>(schema: T) => z.catch(z.optional(schema), undefined);
@@ -41,6 +41,18 @@ const reply = z.looseObject({
   git: opt(z.looseObject({ action: txt, message: txt })),
   install: opt(z.looseObject({ packages: opt(z.array(z.string())) })),
   newPrototype: opt(z.looseObject({ name: txt, stack: txt, purpose: txt, device: txt, project: txt, folder: txt })),
+  offerPrototype: opt(
+    z.looseObject({
+      name: txt,
+      stack: txt,
+      device: txt,
+      purpose: txt,
+      project: txt,
+      folder: txt,
+      from: opt(z.array(z.string())),
+      build: txt,
+    }),
+  ),
   stopTimer: opt(z.boolean()),
   dropPlan: opt(z.boolean()),
   doPlan: opt(z.boolean()),
@@ -102,6 +114,13 @@ export type MyraReply = z.infer<typeof reply>;
 export function parseReply(json: unknown): MyraReply {
   const parsed = z.safeParse(reply, json);
   return parsed.success ? parsed.data : {};
+}
+
+/** Her offer of a prototype board, or null without a name or a build request. sel: the cards the question was sent
+ *  with, which it is made from when she names none. */
+export function offerOf(r: MyraReply, sel: readonly string[]): ProtoOffer | null {
+  const o = r.offerPrototype;
+  return o ? readOffer({ ...o, from: o.from ?? sel }) : null;
 }
 
 const MAX_PAGES = 6;

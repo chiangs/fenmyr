@@ -22,6 +22,9 @@ import { beforeBuild } from './sync.ts';
 type Prototype = Extract<Board, { kind: 'prototype' }>;
 let running: { id: string; build: string; proto: Prototype; root: string; request: string; job: Job } | null = null;
 
+// a build is being written, so one asked for now wouldn't start
+export const building = () => running !== null;
+
 // what the builder reads from the board: the selected cards, or all of them, without positions or styling
 const brief = (c: Card) =>
   Object.fromEntries(
@@ -30,9 +33,14 @@ const brief = (c: Card) =>
     ),
   );
 
-// `cards`: the selection the request was sent with; null reads the selection now. `synced`: the repo was checked
-// against GitHub just now (beforeBuild), so this is the go-ahead.
-export async function startBuild(request: string, cards: readonly string[] | null, synced = false) {
+// `cards`: the selection the request was sent with, or all of them when it was empty; null reads the selection now;
+// `brought`: the cards a new prototype brought, and none when it brought none. `synced`: the repo was checked against
+// GitHub just now (beforeBuild), so this is the go-ahead.
+export async function startBuild(
+  request: string,
+  cards: readonly string[] | { brought: readonly string[] } | null,
+  synced = false,
+) {
   const b = session.board;
   const root = b ? rootOf(b) : null;
   if (b?.kind !== 'prototype' || !root) return;
@@ -42,9 +50,9 @@ export async function startBuild(request: string, cards: readonly string[] | nul
   const build = uid();
   b.proto = { ...b.proto, build };
   save();
-  const sel = new Set(cards ?? session.sel),
+  const sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
     picked = b.cards.filter(c => sel.has(c.id));
-  const chosen = (picked.length ? picked : b.cards).slice(0, 80),
+  const chosen = (picked.length || (cards && 'brought' in cards) ? picked : b.cards).slice(0, 80),
     briefs = JSON.stringify(chosen.map(brief)),
     pictures = await picturesOf(chosen);
   const { dir, stack, purpose = '', device = '' } = b.proto;

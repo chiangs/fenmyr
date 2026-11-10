@@ -167,4 +167,43 @@ const plan: Group = {
   ],
 };
 
-export const MYRA_GROUPS = { reply, sees, panels, plan };
+// her offer of a prototype board for a request that needs code, on a board in no project, then in one with no repo
+const OFFER = {
+  say: 'That needs code, so I’d make it a prototype board.',
+  offerPrototype: { name: 'Checkout', device: 'phone', from: ['note', 'todo'], build: 'Build the checkout' },
+};
+const offer: Group = {
+  states: [
+    [
+      'chat',
+      async page => {
+        await page.evaluate(() =>
+          document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
+        );
+        await page.evaluate(r => window.__fenmyr.applyMyra(r, 'q'), OFFER);
+        await settle(page, 1000);
+        await page.keyboard.press('Escape');
+        await page.click('#mPill');
+      },
+    ],
+    [
+      'norepo',
+      async page => {
+        await page.evaluate(async () => {
+          await window.Fenmyr.saveFolders({
+            projects: [{ id: 'vs', name: 'Shop', open: true }],
+            folders: [{ id: 'vsf', name: 'Ideas', project: 'vs', open: true }],
+            order: {},
+          });
+          await window.__fenmyr.refreshBoards();
+          await window.__fenmyr.moveBoard('every', 'vsf');
+        });
+        await settle(page, 500);
+        await page.keyboard.press('Escape');
+        await page.click('#mPill');
+      },
+    ],
+  ],
+};
+
+export const MYRA_GROUPS = { reply, sees, panels, offer, plan };

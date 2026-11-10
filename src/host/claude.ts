@@ -279,6 +279,7 @@ export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
     vaultNotes: parseVaultNotes(a.vaultNotes),
     vaultTasks: parseVaultTasks(a.vaultTasks),
     canVault: Boolean(a.canVault),
+    prototype: isRecord(board.prototype),
     files: written?.files ?? [],
     plan: parsePlan(a.plan),
   });

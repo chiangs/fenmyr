@@ -105,7 +105,7 @@ export function splitCardsLine(said: string): { text: string; sources: Sources }
 // flat under prototypes/, so where the board sits in the library never decides where its code is
 export const PROTO_DIR = /^prototypes\/[a-z0-9]+(-[a-z0-9]+)*$/;
 const STACKS: readonly Proto['stack'][] = ['react', 'html'];
-const DEVICES: readonly NonNullable<Proto['device']>[] = ['phone', 'tablet', 'desktop'];
+export const DEVICES: readonly NonNullable<Proto['device']>[] = ['phone', 'tablet', 'desktop'];
 
 // What a prototype's commit takes: its own folder, and the files every prototype shares at the top of prototypes/
 export const inCommit = (dir: string, file: string) => file.startsWith(`${dir}/`) || /^prototypes\/[^/]+$/.test(file);
