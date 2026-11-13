@@ -163,7 +163,11 @@ try {
     await window.__fenmyr.openBoard('pb');
   }, repo);
   await page.waitForTimeout(600);
-  assert.deepStrictEqual((await more()).at(-1), 'Open acme on GitHub', 'a repo on GitHub gets a way to its page');
+  assert.deepStrictEqual(
+    (await more()).at(-1),
+    'Open ann/acme on GitHub',
+    'a repo on GitHub gets a way to its page, named as GitHub names it',
+  );
   await page.click('#mcInput');
   await page.fill('#mcInput', 'a long request');
   await page.click('#mcExpand');

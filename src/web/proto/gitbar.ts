@@ -35,12 +35,11 @@ function syncOf(s: Repo) {
       };
 }
 
-// the repo's page on GitHub: the project's own link, else where origin points; '' when it isn't on GitHub
-function githubUrl(s: Repo) {
+// the repo on GitHub: the project's own link, else where origin points; null when it isn't on GitHub
+function onGitHub(s: Repo) {
   const linked = appState.projects.find(p => p.repo?.path === s.root)?.repo?.github,
-    origin = s.remotes.find(r => r.name === 'origin')?.url ?? '',
-    gh = linked ?? githubOf(origin);
-  return gh ? `https://github.com/${gh.owner}/${gh.name}` : '';
+    origin = s.remotes.find(r => r.name === 'origin')?.url ?? '';
+  return linked ?? githubOf(origin);
 }
 
 // More opens over the thread, ending just above its button, so the input stays in view. It's laid out at the corner
@@ -95,7 +94,9 @@ export async function renderGitBar(b: Board) {
     syncIcon = sync.icon ? Icon(sync.icon, { size: 13 }) : '',
     commitIcon = Icon('git-commit', { size: 14 }),
     moreIcon = Icon('more', { size: 15 }),
-    hub = githubUrl(s),
+    gh = onGitHub(s),
+    hub = gh ? `https://github.com/${gh.owner}/${gh.name}` : '',
+    ghName = gh ? esc(`${gh.owner}/${gh.name}`) : '',
     behind = s.behind,
     push = s.branch ? `Push ${branch} to GitHub` : 'Push to GitHub';
   el.innerHTML = `<span class="pg-ic">${branchIcon}</span><b class="pg-branch" title="${repoTip}">${branch}</b><span class="pg-state"><span title="${changesTip}">${changes}</span> · <span title="${syncTip}">${syncIcon}${syncText}</span></span><button class="pv-btn pg-commit" data-git="commit">${commitIcon}Commit</button><button class="pv-btn pg-more" data-git="more" title="More git actions" aria-label="More git actions" aria-haspopup="menu">${moreIcon}</button>`;
@@ -104,7 +105,7 @@ export async function renderGitBar(b: Board) {
     '-',
     { label: push, run: () => gitAction('push') },
     ...when(behind > 0, [{ label: `Pull ${behind} from GitHub`, run: () => gitAction('pull') }]),
-    ...when(!!hub, [{ label: `Open ${repo} on GitHub`, run: () => Fenmyr.openURL(hub) }]),
+    ...when(!!hub, [{ label: `Open ${ghName} on GitHub`, run: () => Fenmyr.openURL(hub) }]),
   ];
   el.onclick = e => {
     const at = closestTo(e.target, '[data-git]'),
