@@ -206,6 +206,8 @@ export function dockReset() {
 // none on a phone, or on a prototype board, where she already sits in the docked chat's header
 export const gooFrom = () => (boxHidden() ? null : gooSlot.getBoundingClientRect());
 
+const docked = () => gooSlot.parentElement?.id === 'mcPerch';
+
 // Her slot has just moved to a new home. She is drawn back where she was, then hops or fades into it. The caller moves
 // her and calls this in one task, so no frame shows her at the new home first.
 export function hopFrom(from: DOMRect | null) {
@@ -215,7 +217,6 @@ export function hopFrom(from: DOMRect | null) {
   flyGoo({ x: 0, y: 0 }, fades(), true);
 }
 
-// click her in the chat and she does something
 // you opened an empty chat (the button or M): once she has landed in the chat's header she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
 export const wonderIfEmpty = () =>
   setTimeout(
@@ -231,8 +232,10 @@ export function initPerch() {
   appState.toggleLog = [];
   appState.dizzyAuto = true;
 
+  // click her in the chat and she does something: on her perch, or in a prototype board's docked header, where she
+  // always sits. In her box a click opens the chat.
   gooSlot.addEventListener('click', e => {
-    if (!perched) return;
+    if (!perched && !docked()) return;
     e.stopPropagation();
     playAnim(pickAnim(), false);
   });

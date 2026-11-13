@@ -2775,7 +2775,7 @@ body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-
 .dock .myra.chat:has(> .m-chat:is([data-place="joined"], [data-place="wide"])) .timer-chip { position: fixed; left: calc(var(--chat-l) + var(--chat-w) / 2); bottom: calc(100vh - var(--chat-t) + 8px); }
 .m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
 .myra.partying:not(.chat) .m-pill { animation: m-party .55s ease-in-out 6; }
-.myra.partying.chat .goo-slot.perched #goo { transform-origin: 50% 100%; animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she wiggles herself; on the sprite, because rotate/scale on the slot would scale and swing her whole offset from the button */
+.myra.partying.chat .goo-slot.perched #goo, body.proto:has(.myra.partying) .mc-perch #goo { transform-origin: 50% 100%; animation: m-party-slot .55s ease-in-out 6; }   /* perched in the chat she wiggles herself; on the sprite, because rotate/scale on the slot would scale and swing her whole offset from the button */
 @keyframes m-party-slot { 0%, 100% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(-6deg) scale(1.12); } 75% { transform: rotate(6deg) scale(1.12); } }
 @keyframes m-party { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-4deg) scale(1.06); } 75% { transform: rotate(4deg) scale(1.06); } }
 .confetti { position: absolute; left: 50%; bottom: 40px; width: 9px; height: 9px; border-radius: 3px; background: var(--c); pointer-events: none; opacity: 0; z-index: 20; animation: confetti 1.7s cubic-bezier(.2, .7, .3, 1) forwards; }
@@ -2796,7 +2796,7 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 
 /* Myra's sprite lives in a slot so she can hop out of her box and perch in the chat's header */
 .goo-slot { position: relative; z-index: 6; display: inline-block; line-height: 0; will-change: transform; transform-origin: 50% 100%; }   /* her feet are the pivot for squash and stretch */
-.goo-slot.perched { cursor: pointer; }
+.goo-slot.perched, .mc-perch > .goo-slot { cursor: pointer; }
 
 /* a closed chat can't be focused or tabbed into (its fade still plays), so M and typing work after Esc */
 .m-chat { visibility: hidden; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2), visibility 0s .3s; }
