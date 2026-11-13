@@ -1,10 +1,11 @@
-import type { ChatMsg } from '../../shared/chat.ts';
+import type { ChatMsg, SavedChat } from '../../shared/chat.ts';
+import type { Board } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
-import { closestTo, esc, textField } from '../ui/dom.ts';
+import { child, closestTo, esc, textField } from '../ui/dom.ts';
 import { type Act, storedOf } from './acts.ts';
 import { renderGreeting } from './emptyChat.ts';
 import { drawActs } from './replyView.ts';
@@ -17,6 +18,13 @@ const CHATS_KEPT = 10;
 export const chatKeep = (): string => (session.board?.kind === 'prototype' ? 'board' : settings.chatKeep);
 
 const keepsHistory = () => chatKeep() === 'board' && !!session.board;
+
+// A prototype's one chat is the record of every build, so it keeps its last 500 whatever the setting says
+const PROTO_KEPT = 500;
+const keptOf = (b: Board) => (b.kind === 'prototype' ? PROTO_KEPT : Number(settings.chatMax) || 60);
+
+// The earlier chat a prototype has open to read. It can outlive its board, so it counts only while the board has it.
+let reading: SavedChat | undefined;
 
 export function archiveChat() {
   const msgs = session.board?.chat ?? [],
@@ -46,27 +54,17 @@ const whenText = (t: number) => {
       : d.toLocaleDateString([], { day: 'numeric', month: 'short' });
 };
 
+// Her buttons there were for the board as it was then, so none show
+function renderReading(list: HTMLElement, c: SavedChat) {
+  const when = esc(whenText(c.t));
+  list.innerHTML = `<div class="mc-hist"><div class="mh-top"><button class="mc-btn" data-h="back">← Back to the chat</button><span>An earlier chat, from ${when}. Read only.</span></div></div>`;
+  for (const m of c.msgs) list.appendChild(msgEl(m, []));
+  list.scrollTop = 0;
+}
+
 function renderHistory() {
   const list = $('mcList'),
     chats = session.board.chats || [];
-  list.innerHTML =
-    `<div class="mc-hist"><div class="mh-top"><button class="mc-btn" data-h="back">← Back to this chat</button><span>Earlier chats on this board</span></div>` +
-    (chats.length
-      ? chats
-          .map((c, i) => {
-            const when = esc(whenText(c.t)),
-              n = c.msgs.length,
-              count = `${n} message${n === 1 ? '' : 's'}`;
-            return `<div class="mh-row" data-i="${i}"><button class="mh-open" data-h="open"><b></b><small>${when} · ${count}</small></button><button class="mh-del" data-h="del" title="Delete this chat">×</button></div>`;
-          })
-          .join('')
-      : '<div class="mc-empty">No earlier chats yet. New chat puts the current one here.</div>') +
-    '</div>';
-  for (const r of list.querySelectorAll('.mh-row')) {
-    const title = r.querySelector('b'),
-      i = r instanceof HTMLElement ? Number(r.dataset.i) : -1;
-    if (title) title.textContent = chats[i]?.title ?? '';
-  }
   list.onclick = e => {
     const a = closestTo(e.target, '[data-h]')?.dataset.h;
     if (!a) return;
@@ -88,6 +86,11 @@ function renderHistory() {
       save();
       return renderChat();
     }
+    if (a === 'open' && session.board.kind === 'prototype') {
+      reading = chats[i];
+      renderChat();
+      return child(list, '[data-h="back"]').focus();
+    }
     if (a === 'open') {
       const c = chats.splice(i, 1)[0];
       if (!c) return;
@@ -101,6 +104,29 @@ function renderHistory() {
       textField('mcInput').focus();
     }
   };
+  if (reading && chats.includes(reading)) return renderReading(list, reading);
+  const none =
+    session.board.kind === 'prototype'
+      ? 'No earlier chats.'
+      : 'No earlier chats yet. New chat puts the current one here.';
+  list.innerHTML =
+    `<div class="mc-hist"><div class="mh-top"><button class="mc-btn" data-h="back">← Back to this chat</button><span>Earlier chats on this board</span></div>` +
+    (chats.length
+      ? chats
+          .map((c, i) => {
+            const when = esc(whenText(c.t)),
+              n = c.msgs.length,
+              count = `${n} message${n === 1 ? '' : 's'}`;
+            return `<div class="mh-row" data-i="${i}"><button class="mh-open" data-h="open"><b></b><small>${when} · ${count}</small></button><button class="mh-del" data-h="del" title="Delete this chat">×</button></div>`;
+          })
+          .join('')
+      : `<div class="mc-empty">${none}</div>`) +
+    '</div>';
+  for (const r of list.querySelectorAll('.mh-row')) {
+    const title = r.querySelector('b'),
+      i = r instanceof HTMLElement ? Number(r.dataset.i) : -1;
+    if (title) title.textContent = chats[i]?.title ?? '';
+  }
 }
 
 function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
@@ -119,6 +145,7 @@ export function renderChat() {
   $('mcHist').classList.toggle('on', appState.histOpen);
   if (appState.histOpen && keepsHistory()) return renderHistory();
   appState.histOpen = false;
+  reading = undefined;
   const list = $('mcList');
   list.onclick = null;
   list.innerHTML = '';
@@ -152,7 +179,7 @@ export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
   const log = chatLog(),
     m: ChatMsg = { who, text, t: Date.now() },
     stored = storedOf(acts),
-    max = Number(settings.chatMax) || 60;
+    max = keptOf(session.board);
   if (stored.length) m.acts = stored;
   log.push(m);
   if (log.length > max) log.splice(0, log.length - max);
