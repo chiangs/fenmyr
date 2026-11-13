@@ -2682,7 +2682,7 @@ body.following-caelestia .set-head .dv-btn { background: color-mix(in srgb, var(
 #mcHist.on { background: var(--blush); color: var(--ink); }
 .mc-hist { display: grid; gap: 4px; align-content: start; }
 .mh-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font: 600 11px/1.2 var(--font); color: var(--ink-soft); }
-.mh-top .mc-btn { white-space: nowrap; } .mh-top span { text-align: right; }
+.mh-top .mc-btn { white-space: nowrap; } .mh-top span { text-align: right; text-wrap: pretty; }
 .mh-row { display: flex; align-items: center; gap: 4px; border-radius: 14px; corner-shape: squircle; }
 .mh-row:hover { background: var(--blush); }
 .mh-open { flex: 1; min-width: 0; display: grid; gap: 3px; text-align: left; padding: 9px 10px; border: 0; background: none; color: var(--ink); cursor: pointer; }
