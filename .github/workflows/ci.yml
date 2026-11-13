@@ -82,6 +82,8 @@ jobs:
         run: node tests/protoChat.ts
       - name: Prototype hop test (Myra hops into the docked chat's header as a prototype board opens)
         run: node tests/protoHop.ts
+      - name: Prototype hop path test (Myra's hop under the window's top, slower when far, from Home, and a click on her)
+        run: node tests/protoHopPath.ts
       - name: Preview test (a prototype running in its sandbox)
         run: node tests/preview.ts
       - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)

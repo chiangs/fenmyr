@@ -3,8 +3,21 @@ import assert from 'node:assert';
 import type { Page } from 'playwright';
 import type { Edges } from './bar.ts';
 
-// onTop: she is what shows at her centre. home: the id of the element her slot sits in.
-export type Frame = { l: number; t: number; w: number; h: number; opacity: number; onTop: boolean; home: string };
+// ms: since sampling began. onTop: she is what shows at her centre. home: the id of the element her slot sits in.
+// air: she is in the air, stretched along her path. anim: the last of her animations to play.
+export type Frame = {
+  ms: number;
+  l: number;
+  t: number;
+  w: number;
+  h: number;
+  opacity: number;
+  onTop: boolean;
+  home: string;
+  air: boolean;
+  board: string;
+  anim: string;
+};
 
 export const edges = (page: Page, ids: string[]) =>
   page.evaluate(ids => {
@@ -32,6 +45,7 @@ export async function flight(page: Page, trigger: () => Promise<unknown>) {
           if (slot && r) {
             const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
             seen.push({
+              ms: performance.now() - t0,
               l: r.left,
               t: r.top,
               w: r.width,
@@ -39,6 +53,9 @@ export async function flight(page: Page, trigger: () => Promise<unknown>) {
               opacity: Number(getComputedStyle(slot).opacity),
               onTop: !!at && slot.contains(at),
               home: slot.parentElement?.id ?? '',
+              air: slot.style.transform.includes('rotate'),
+              board: window.__fenmyr.curBoard()?.id ?? '',
+              anim: window.__fenmyr.lastAnimName(),
             });
           }
           if (performance.now() - t0 < 1600) requestAnimationFrame(tick);

@@ -85,11 +85,11 @@ const lively = (v: 'lively' | 'calm' | 'calmest') =>
   inSettings(() => page.click(`[data-seg="myraCalm"] [data-v="${v}"]`));
 // opening the chat, the frames she spends between her box and its header
 const flight = async () => {
-  const { after, between } = await hop.flight(page, () => page.click('#mPill')),
+  const { before, after, between } = await hop.flight(page, () => page.click('#mPill')),
     { mcPerch } = await edges(['mcPerch']);
   await setChat(false);
   await page.waitForTimeout(900);
-  assert.ok(mcPerch, 'the header’s spot is up');
+  assert.ok(before && mcPerch, 'her slot and the header’s spot are up');
   near(after.l, mcPerch.l, 'where she lands, left');
   near(after.t, mcPerch.t, 'where she lands, top');
   return between;
