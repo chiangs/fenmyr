@@ -43,14 +43,31 @@ function onGitHub(s: Repo) {
 }
 
 // More opens over the thread, ending just above its button, so the input stays in view. It's laid out at the corner
-// first, where nothing squeezes it, so its width is its own. A heading names the repo.
+// first, where nothing squeezes it, so its width is its own. Its heading names the repo, and names the menu for a
+// screen reader.
 function openMore(at: Element, heading: string, items: MenuItem[]) {
   const r = at.getBoundingClientRect();
   boardMenu({ clientX: 0, clientY: 0 }, items);
   const m = $('rowMenu');
   m.insertAdjacentHTML('afterbegin', heading);
+  m.setAttribute('aria-labelledby', 'pgWhere');
   m.style.left = `${Math.max(8, r.right - m.offsetWidth)}px`;
   m.style.top = `${Math.max(8, r.top - m.offsetHeight - 6)}px`;
+}
+
+// The bar is read again often (the preview starting, the window coming back), mostly to the same result, so it's only
+// redrawn when it changes. A redraw closes More, whose items are out of date, and keeps a keyboard user on the button
+// they were on, or on More when they were in its menu.
+const drawn = new WeakMap<Element, string>();
+function draw(el: HTMLElement, html: string) {
+  if (drawn.get(el) === html) return;
+  drawn.set(el, html);
+  const menu = document.querySelector('#rowMenu[aria-labelledby="pgWhere"]'),
+    on = document.activeElement,
+    focused = menu?.contains(on) ? 'more' : el.contains(on) ? closestTo(on, '[data-git]')?.dataset.git : '';
+  menu?.remove();
+  el.innerHTML = html;
+  if (focused) el.querySelector<HTMLElement>(`[data-git="${focused}"]`)?.focus();
 }
 
 // files change outside Fenmyr too (an editor, a terminal commit), so coming back to the window reads the repo again
@@ -66,13 +83,13 @@ export async function renderGitBar(b: Board) {
   const el = $('prGit'),
     root = rootOf(b);
   if (!root) {
-    el.innerHTML = '<span class="pg-warn">This prototype’s project isn’t linked to a repo.</span>';
+    draw(el, '<span class="pg-warn">This prototype’s project isn’t linked to a repo.</span>');
     return;
   }
   const s = await Fenmyr.gitStatus(root).catch(() => null);
   if (s?.kind !== 'repo') {
     const where = esc(root);
-    el.innerHTML = `<span class="pg-warn">Git can’t read the repo at ${where}.</span>`;
+    draw(el, `<span class="pg-warn">Git can’t read the repo at ${where}.</span>`);
     return;
   }
   const own = b.kind === 'prototype' ? s.changed.filter(c => inCommit(b.proto.dir, c.path)).length : 0,
@@ -100,8 +117,11 @@ export async function renderGitBar(b: Board) {
     ghName = gh ? esc(`${gh.owner}/${gh.name}`) : '',
     behind = s.behind,
     push = s.branch ? `Push ${branch} to GitHub` : 'Push to GitHub',
-    heading = `<span class="pg-where"><b>${repo}</b><small>${where}</small></span>`;
-  el.innerHTML = `<span class="pg-ic">${branchIcon}</span><b class="pg-branch" title="${repoTip}">${branch}</b><span class="pg-state"><span title="${changesTip}">${changes}</span> · <span title="${syncTip}">${syncIcon}${syncText}</span></span><button class="pv-btn pg-commit" data-git="commit">${commitIcon}Commit</button><button class="pv-btn pg-more" data-git="more" title="More git actions" aria-label="More git actions" aria-haspopup="menu">${moreIcon}</button>`;
+    heading = `<span class="pg-where" id="pgWhere" aria-hidden="true"><b>${repo}</b><small>${where}</small></span>`;
+  draw(
+    el,
+    `<span class="pg-ic">${branchIcon}</span><b class="pg-branch" title="${repoTip}">${branch}</b><span class="pg-state"><span title="${changesTip}">${changes}</span> · <span title="${syncTip}">${syncIcon}${syncText}</span></span><button class="pv-btn pg-commit" data-git="commit">${commitIcon}Commit</button><button class="pv-btn pg-more" data-git="more" title="More git actions" aria-label="More git actions" aria-haspopup="menu" aria-expanded="false">${moreIcon}</button>`,
+  );
   // with no remote, line two already says it isn't on GitHub, so there's nowhere to push
   const actions: MenuItem[] = [
     ...when(s.remotes.length > 0, [{ label: push, run: () => gitAction('push') }]),

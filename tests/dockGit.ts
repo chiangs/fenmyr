@@ -109,6 +109,11 @@ try {
 
   assert.deepStrictEqual(await more(), ['[acme]'], 'More names the repo, with no Push while it isn’t on GitHub');
   assert.match(
+    await page.locator('#rowMenu').ariaSnapshot(),
+    /^- menu "acme \/.+\/acme"$/,
+    'a screen reader hears a menu named for the repo',
+  );
+  assert.match(
     await page.evaluate(() => document.querySelector('#rowMenu .pg-where small')?.textContent ?? ''),
     /\/acme$/,
     'with its path under its name',
