@@ -14,6 +14,8 @@ const FROZEN_MOTION =
 const HIDDEN_RANDOM_CANVASES = 'canvas { visibility: hidden !important; }';
 const HIDDEN_UPDATE_STATE = '#suSub, #upBar { visibility: hidden !important; }';
 const HIDDEN_TIMED_BUBBLE = '#mBubble { visibility: hidden !important; }';
+// the pointer stays where a state left it, and zooming can slide a button with a tooltip under it
+const HIDDEN_HOVER_TIP = '.sb-tipbub { visibility: hidden !important; }';
 const STRAY_PIXELS = 60;
 // scaled card edges land a pixel apart from run to run at this zoom; same code measured 900 to 1,600, a layout change 268,000
 const STRAY_PIXELS_SCALED: Record<string, number> = { 'zoom-out.png': 3000 };
@@ -130,7 +132,7 @@ async function shoot(dir: string, out: string) {
     }
     if (group.proto) await openPrototype(l.page);
     await l.page.addStyleTag({
-      content: FROZEN_MOTION + HIDDEN_RANDOM_CANVASES + HIDDEN_UPDATE_STATE + HIDDEN_TIMED_BUBBLE,
+      content: FROZEN_MOTION + HIDDEN_RANDOM_CANVASES + HIDDEN_UPDATE_STATE + HIDDEN_TIMED_BUBBLE + HIDDEN_HOVER_TIP,
     });
     for (const [state, step] of group.states) {
       await step(l.page);
