@@ -27,7 +27,9 @@ git('init', '-q', '-b', 'main');
 fs.writeFileSync(path.join(repo, '.gitignore'), '*.log\n.env\nnode_modules/\ndist/\n');
 write('src/App.tsx', 'a\nb\n');
 write('src/old.ts', 'x\n');
+write('vendor/forced.log', 'committed anyway\n');
 git('add', '-A');
+git('add', '-f', `${dir}/vendor/forced.log`);
 git('commit', '-qm', 'Start');
 write('src/draft.ts', 'not committed yet\n');
 write('.env', 'SECRET=1\n');
@@ -50,6 +52,7 @@ assert(!has('src/New.tsx'), 'a file the build added is removed');
 assert.equal(read('notes.log'), 'kept\n', 'an ignored file from before the build is kept');
 assert.equal(read('.env'), 'SECRET=2\n', 'an ignored file is left as it is, even one the build changed');
 assert(has('src/debug.log') && has('dist/out.js'), 'and ignored files the build wrote stay');
+assert.equal(read('vendor/forced.log'), 'committed anyway\n', 'an ignored file committed anyway is kept too');
 
 fs.rmSync(work, { recursive: true, force: true });
 console.log('BUILD UNDO OK');

@@ -225,23 +225,18 @@ export async function filesSince(root: string, dir: string, commit: string): Pro
   });
 }
 
-// The folder as a snapshot had it: files added since are removed, and the index is left alone. Only files git sees go
-// back, the same ones the snapshot saved, so a file git ignores, such as a .env, is never touched.
+// The folder as a snapshot had it: files added since are removed, and the index is left alone. Only the files a
+// snapshot would save now go back, so a file git ignores, such as a .env, is never touched, even one committed anyway.
 export async function undo(root: string, dir: string, commit: string) {
   if (!/^[0-9a-f]{40,64}$/.test(commit)) throw new Error("That isn't a snapshot.");
   const repo = await inRepo(root, dir);
   const listed = await run('git', ['-C', repo, 'ls-tree', '-r', '-z', '--name-only', commit, '--', dir], 30);
   const kept = new Set(listed.out.toString('utf8').split('\0').filter(Boolean));
-  const seen = await run(
-    'git',
-    ['-C', repo, 'ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', dir],
-    30,
-  );
-  if (seen.code !== 0) throw new Error(seen.err.toString('utf8').trim() || 'Git couldn’t list the prototype’s files.');
-  for (const f of seen.out.toString('utf8').split('\0').filter(Boolean))
-    if (!kept.has(f)) fs.rmSync(path.join(repo, f), { force: true });
+  const seen = await git(repo, ['ls-tree', '-r', '-z', '--name-only', await stage(repo, dir), '--', dir]);
+  for (const f of seen.split('\0').filter(Boolean)) if (!kept.has(f)) fs.rmSync(path.join(repo, f), { force: true });
   if (kept.size) {
-    const r = await run('git', ['-C', repo, 'restore', `--source=${commit}`, '--worktree', '--', dir], 30);
+    // overlay, because without it restore removes a file the index tracks and the snapshot lacks
+    const r = await run('git', ['-C', repo, 'restore', `--source=${commit}`, '--worktree', '--overlay', '--', dir], 30);
     if (r.code !== 0) throw new Error(r.err.toString('utf8').trim() || 'Git couldn’t put the snapshot back.');
   }
   return true as const;
