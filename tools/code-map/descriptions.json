@@ -360,6 +360,8 @@
     "tests/dockGit.ts": "Tests the git bar in the docked chat: its place above the input, its two lines at 280 px, Commit, and Push, Pull and GitHub in its More menu.",
     "tests/menuKeys.ts": "Tests menus by keyboard and screen reader: the git bar’s More and the zoom menu, their keys, roles and where focus goes.",
     "tests/dockHead.ts": "Tests the docked chat’s header on a prototype board: the board’s name, its stack and the status line, after both kinds of rename.",
+    "tests/protoReading.ts": "Tests that an earlier chat read on a prototype keeps its place and focus while what Myra sees changes.",
+    "tests/protoThread.ts": "Tests that a prototype board keeps one chat: no New chat, /clear answers, earlier chats open read-only, and 500 messages kept.",
     "tests/prototype.ts": "Tests prototyping folders and new prototypes, names and shared files.",
     "tests/replies.ts": "Pins what each kind of Myra reply does to the board, her chat, the library and templates.",
     "tests/replyActs.ts": "Checks what shows under a reply that changed the board in the real app: its summary, Show on board, and Undo with Ctrl+Z, a board reopened and her bubble.",
