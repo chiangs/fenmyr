@@ -51,6 +51,11 @@ try {
     /^- region "Myra"/,
     'the chat is still announced by Myra’s name',
   );
+  assert.match(
+    await page.locator('#mChat .mc-head').ariaSnapshot(),
+    /^- text: Myra Checkout flow Prototype · React\n- status:/,
+    'a screen reader hears the stack without the dot drawn after it',
+  );
 
   await page.fill('#boardName', 'Basket');
   assert.strictEqual((await head()).name, 'Basket', 'renaming the board in its name field renames the header');
