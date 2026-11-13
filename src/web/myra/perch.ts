@@ -75,7 +75,9 @@ function fadeGoo() {
   };
 }
 
-function flyGoo(to: Point, fade: boolean) {
+// `far`: a hop into a prototype board's docked header can cross the window, so the further she goes the longer she is
+// in the air and the higher she arcs. The hop onto the chat keeps the timing it was tuned for.
+function flyGoo(to: Point, fade: boolean, far = false) {
   const from = gooAt;
   if (gooAnim) {
     gooAnim.stop();
@@ -97,14 +99,19 @@ function flyGoo(to: Point, fade: boolean) {
     liveOn();
   }
   gooRest();
-  const up = to.y < from.y,
-    WIND = up ? HOP.wind : HOP.wind * 0.6,
-    AIR = up ? HOP.up : HOP.home,
-    h = HOP.arc * (up ? 1 : 0.7),
-    LAND = HOP.land;
   const dx = to.x - from.x,
     dy = to.y - from.y,
-    vref = Math.hypot(Math.abs(dx), Math.abs(dy) + 4 * h) / AIR;
+    up = to.y < from.y,
+    grow = far ? Math.min(1.5, Math.max(1, Math.sqrt(Math.hypot(dx, dy) / 500))) : 1,
+    WIND = up ? HOP.wind : HOP.wind * 0.6,
+    AIR = (up ? HOP.up : HOP.home) * grow,
+    LAND = HOP.land;
+  // When 4h > |dy| her arc peaks (4h - |dy|)² / 16h above the higher end of the hop. h is capped so the peak stays 8 px
+  // below the window's top edge, room for her stretch.
+  const top = gooSlot.getBoundingClientRect().bottom - gooSlot.offsetHeight - from.y,
+    room = Math.max(0, top + Math.min(from.y, to.y) - 8),
+    h = Math.min(HOP.arc * (up ? 1 : 0.7) * grow, (Math.sqrt(Math.abs(dy) + room) + Math.sqrt(room)) ** 2 / 4);
+  const vref = Math.hypot(Math.abs(dx), Math.abs(dy) + 4 * h) / AIR;
   const t0 = performance.now(),
     sm = (k: number) => k * k * (3 - 2 * k),
     lerp = (a: number, b: number, k: number) => a + (b - a) * k;
@@ -205,7 +212,7 @@ export function hopFrom(from: DOMRect | null) {
   if (!from) return;
   const to = gooSlot.getBoundingClientRect();
   gooMove({ x: from.left - to.left, y: from.top - to.top });
-  flyGoo({ x: 0, y: 0 }, fades());
+  flyGoo({ x: 0, y: 0 }, fades(), true);
 }
 
 // click her in the chat and she does something
