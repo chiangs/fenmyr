@@ -43,11 +43,12 @@ function onGitHub(s: Repo) {
 }
 
 // More opens over the thread, ending just above its button, so the input stays in view. It's laid out at the corner
-// first, where nothing squeezes it, so its width is its own.
-function openMore(at: Element, items: MenuItem[]) {
+// first, where nothing squeezes it, so its width is its own. A heading names the repo.
+function openMore(at: Element, heading: string, items: MenuItem[]) {
   const r = at.getBoundingClientRect();
   boardMenu({ clientX: 0, clientY: 0 }, items);
   const m = $('rowMenu');
+  m.insertAdjacentHTML('afterbegin', heading);
   m.style.left = `${Math.max(8, r.right - m.offsetWidth)}px`;
   m.style.top = `${Math.max(8, r.top - m.offsetHeight - 6)}px`;
 }
@@ -98,7 +99,8 @@ export async function renderGitBar(b: Board) {
     hub = gh ? `https://github.com/${gh.owner}/${gh.name}` : '',
     ghName = gh ? esc(`${gh.owner}/${gh.name}`) : '',
     behind = s.behind,
-    push = s.branch ? `Push ${branch} to GitHub` : 'Push to GitHub';
+    push = s.branch ? `Push ${branch} to GitHub` : 'Push to GitHub',
+    heading = `<span class="pg-where"><b>${repo}</b><small>${where}</small></span>`;
   el.innerHTML = `<span class="pg-ic">${branchIcon}</span><b class="pg-branch" title="${repoTip}">${branch}</b><span class="pg-state"><span title="${changesTip}">${changes}</span> · <span title="${syncTip}">${syncIcon}${syncText}</span></span><button class="pv-btn pg-commit" data-git="commit">${commitIcon}Commit</button><button class="pv-btn pg-more" data-git="more" title="More git actions" aria-label="More git actions" aria-haspopup="menu">${moreIcon}</button>`;
   // with no remote, line two already says it isn't on GitHub, so there's nowhere to push
   const actions: MenuItem[] = [
@@ -106,14 +108,11 @@ export async function renderGitBar(b: Board) {
     ...when(behind > 0, [{ label: `Pull ${behind} from GitHub`, run: () => gitAction('pull') }]),
     ...when(!!hub, [{ label: `Open ${ghName} on GitHub`, run: () => Fenmyr.openURL(hub) }]),
   ];
-  const more: MenuItem[] = [
-    { label: `<span class="pg-where"><b>${repo}</b><small>${where}</small></span>`, run: () => {}, disabled: true },
-    ...when(actions.length > 0, ['-', ...actions]),
-  ];
+  const more = when(actions.length > 0, ['-', ...actions]);
   el.onclick = e => {
     const at = closestTo(e.target, '[data-git]'),
       a = at?.dataset.git;
-    if (at && a === 'more') openMore(at, more);
+    if (at && a === 'more') openMore(at, heading, more);
     else if (a) gitAction(a);
   };
 }

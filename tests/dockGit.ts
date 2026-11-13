@@ -47,12 +47,13 @@ const bar = () =>
       colour: g ? getComputedStyle(g).backgroundColor : '',
     };
   });
+// More's heading in brackets, then its buttons
 const more = async () => {
   await page.click('#prGit [data-git="more"]');
   await page.waitForSelector('#rowMenu');
   return page.evaluate(() =>
-    [...document.querySelectorAll<HTMLButtonElement>('#rowMenu button')].map(b =>
-      b.disabled ? `[${b.querySelector('b')?.textContent}]` : (b.textContent ?? ''),
+    [...document.querySelectorAll('#rowMenu .pg-where b, #rowMenu button')].map(b =>
+      b.matches('b') ? `[${b.textContent}]` : (b.textContent ?? ''),
     ),
   );
 };
