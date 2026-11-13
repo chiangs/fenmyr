@@ -11,6 +11,8 @@ export let gooSlot: HTMLElement;
 export let perched = false;
 let gooAt = { x: 0, y: 0 };
 let gooAnim: { stop(): void } | null = null;
+// when her latest hop touches down, on performance.now()'s clock
+let landsAt = 0;
 let dizzyAt = 0;
 
 const gooMove = (t: Point) => {
@@ -112,8 +114,9 @@ function flyGoo(to: Point, fade: boolean, far = false) {
     room = Math.max(0, top + Math.min(from.y, to.y) - 8),
     h = Math.min(HOP.arc * (up ? 1 : 0.7) * grow, (Math.sqrt(Math.abs(dy) + room) + Math.sqrt(room)) ** 2 / 4);
   const vref = Math.hypot(Math.abs(dx), Math.abs(dy) + 4 * h) / AIR;
-  const t0 = performance.now(),
-    sm = (k: number) => k * k * (3 - 2 * k),
+  const t0 = performance.now();
+  landsAt = t0 + WIND + AIR;
+  const sm = (k: number) => k * k * (3 - 2 * k),
     lerp = (a: number, b: number, k: number) => a + (b - a) * k;
   let target = to,
     landFrom: Point | null = null,
@@ -218,14 +221,21 @@ export function hopFrom(from: DOMRect | null) {
 }
 
 // you opened an empty chat (the button or M): once she has landed in the chat's header she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
-export const wonderIfEmpty = () =>
-  setTimeout(
-    () => {
-      if (chatOpen() && !chatLog().length && Date.now() - dizzyAt > 2500 && !$('myra').classList.contains('thinking'))
-        playAnim('curious', false);
-    },
-    window.myraMuted ? 150 : 700,
-  );
+// She tilts 80 ms after a long hop into a prototype's header touches down, as she does after the hop onto the chat, and
+// once a fade has ended. A second open before she tilts replaces the first, so she tilts once.
+let wonderT: ReturnType<typeof setTimeout> | undefined;
+export const wonderIfEmpty = () => {
+  const tilt = () => {
+    if (gooSlot.getAnimations().length) {
+      wonderT = setTimeout(tilt, 40);
+      return;
+    }
+    if (chatOpen() && !chatLog().length && Date.now() - dizzyAt > 2500 && !$('myra').classList.contains('thinking'))
+      playAnim('curious', false);
+  };
+  clearTimeout(wonderT);
+  wonderT = setTimeout(tilt, Math.max(window.myraMuted ? 150 : 700, landsAt + 80 - performance.now()));
+};
 
 export function initPerch() {
   gooSlot = $('gooSlot');
