@@ -100,12 +100,15 @@ export async function renderGitBar(b: Board) {
     behind = s.behind,
     push = s.branch ? `Push ${branch} to GitHub` : 'Push to GitHub';
   el.innerHTML = `<span class="pg-ic">${branchIcon}</span><b class="pg-branch" title="${repoTip}">${branch}</b><span class="pg-state"><span title="${changesTip}">${changes}</span> · <span title="${syncTip}">${syncIcon}${syncText}</span></span><button class="pv-btn pg-commit" data-git="commit">${commitIcon}Commit</button><button class="pv-btn pg-more" data-git="more" title="More git actions" aria-label="More git actions" aria-haspopup="menu">${moreIcon}</button>`;
-  const more: MenuItem[] = [
-    { label: `<span class="pg-where"><b>${repo}</b><small>${where}</small></span>`, run: () => {}, disabled: true },
-    '-',
-    { label: push, run: () => gitAction('push') },
+  // with no remote, line two already says it isn't on GitHub, so there's nowhere to push
+  const actions: MenuItem[] = [
+    ...when(s.remotes.length > 0, [{ label: push, run: () => gitAction('push') }]),
     ...when(behind > 0, [{ label: `Pull ${behind} from GitHub`, run: () => gitAction('pull') }]),
     ...when(!!hub, [{ label: `Open ${ghName} on GitHub`, run: () => Fenmyr.openURL(hub) }]),
+  ];
+  const more: MenuItem[] = [
+    { label: `<span class="pg-where"><b>${repo}</b><small>${where}</small></span>`, run: () => {}, disabled: true },
+    ...when(actions.length > 0, ['-', ...actions]),
   ];
   el.onclick = e => {
     const at = closestTo(e.target, '[data-git]'),

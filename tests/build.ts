@@ -236,6 +236,9 @@ try {
   const bare = path.join(work, 'github.git');
   execFileSync('git', ['init', '-q', '--bare', bare]);
   git('remote', 'add', 'origin', bare);
+  // coming back to the window, as from the terminal that added the remote, reads the repo again
+  await page.evaluate(() => dispatchEvent(new Event('focus')));
+  await page.waitForFunction(() => document.querySelector('#prGit .pg-state')?.textContent?.endsWith('Not pushed yet'));
   await fromGitMenu(page, 'Push main to GitHub');
   await until(async () => /Push main of acme to /.test(await lastMyra()), 'Myra asks before pushing');
   await page.locator('#mcList .m-acts button.danger', { hasText: 'Push main to' }).last().click();

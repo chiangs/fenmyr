@@ -56,6 +56,10 @@ const more = async () => {
     ),
   );
 };
+const reread = async (state: string) => {
+  await page.evaluate(() => dispatchEvent(new Event('focus')));
+  await until(async () => (await bar()).state.endsWith(state), `the bar reads the repo again: ${state}`);
+};
 const pick = (label: string) => page.locator('#rowMenu button', { hasText: label }).click();
 
 try {
@@ -102,7 +106,7 @@ try {
   await until(async () => /Committed\./.test(await lastMyra()), 'and commits');
   await until(async () => (await bar()).state.startsWith('Everything committed'), 'then the bar says so');
 
-  assert.deepStrictEqual(await more(), ['[acme]', 'Push main to GitHub'], 'More names the repo and offers Push');
+  assert.deepStrictEqual(await more(), ['[acme]'], 'More names the repo, with no Push while it isn’t on GitHub');
   assert.match(
     await page.evaluate(() => document.querySelector('#rowMenu .pg-where small')?.textContent ?? ''),
     /\/acme$/,
@@ -124,6 +128,8 @@ try {
   execFileSync('git', ['init', '-q', '--bare', '-b', 'main', github]);
   git(repo, 'remote', 'add', 'origin', github);
   git(repo, 'push', '-q', '-u', 'origin', 'main');
+  await reread('GitHub has every commit');
+  assert.deepStrictEqual(await more(), ['[acme]', 'Push main to GitHub'], 'with a remote, Push is back');
   await pick('Push main to GitHub');
   await until(
     async () => /Push main of acme to .*github\.git\?/.test(await lastMyra()),
