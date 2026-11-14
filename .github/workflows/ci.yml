@@ -80,6 +80,10 @@ jobs:
         run: node tests/layout.ts
       - name: Prototype chat test (Myra's chat docked on a prototype board)
         run: node tests/protoChat.ts
+      - name: Prototype hop test (Myra hops into the docked chat's header as a prototype board opens)
+        run: node tests/protoHop.ts
+      - name: Prototype hop path test (Myra's hop under the window's top, slower when far, from Home, and a click on her)
+        run: node tests/protoHopPath.ts
       - name: Prototype thread test (one chat on each prototype board)
         run: node tests/protoThread.ts
       - name: Prototype reading test (an earlier chat keeps its place while what Myra sees changes)

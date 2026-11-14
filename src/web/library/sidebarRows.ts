@@ -36,8 +36,7 @@ export function boardRow(b: BoardSummary): Node {
     if (name.isContentEditable) return;
     clearTimeout(tap);
     tap = setTimeout(() => {
-      closeHome();
-      openBoard(b.id);
+      void openBoard(b.id).then(closeHome);
     }, 230);
   };
   r.ondblclick = e => {
