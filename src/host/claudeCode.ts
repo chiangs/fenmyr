@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import path from 'node:path';
 import { claudePath, FOLDER_ONLY, hookArgs, noteUsage } from './claude.ts';
 import type { CodeAgent } from './codeAgent.ts';
@@ -8,6 +8,12 @@ import { env, isRecord, text } from './util.ts';
 // writes inside its working folder, and Fenmyr checks afterwards that nothing outside changed.
 const TOOLS = ['Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep'];
 const EDITS = new Set(['Write', 'Edit', 'MultiEdit']);
+
+// Every Claude Code still writing. It outlives Fenmyr unless it's stopped, and would keep changing files no one sees.
+const running = new Set<ChildProcess>();
+export function stopCodeAgents() {
+  for (const p of running) p.kill();
+}
 
 export const claudeCode: CodeAgent = async ({ cwd, prompt, readable }, edited) => {
   const claude = await claudePath();
@@ -26,6 +32,7 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable }, edited) =
   for (const d of readable) args.push('--add-dir', d);
   return new Promise((res, rej) => {
     const p = spawn(claude, args, { cwd, env: env(), stdio: ['ignore', 'pipe', 'pipe'] });
+    running.add(p);
     let buf = '',
       said = '',
       failed = '',
@@ -61,10 +68,12 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable }, edited) =
     });
     p.on('error', e => {
       clearTimeout(late);
+      running.delete(p);
       rej(e);
     });
     p.on('close', () => {
       clearTimeout(late);
+      running.delete(p);
       hear(buf);
       if (failed) rej(new Error(failed.slice(0, 300)));
       else if (said) res(said);

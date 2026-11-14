@@ -1,7 +1,9 @@
 // A prototype's own folder of code, under prototypes/ in its project's repo.
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import type { FileDiff } from '../shared/build.ts';
 import { COMMIT, PROTO_DIR, type Proto, protoSlug } from '../shared/repos.ts';
 import { topLevel } from './git.ts';
 import { SHARED_FILES, STARTERS } from './protoStarter.ts';
@@ -172,45 +174,69 @@ export function previewFile(html: string, name: string) {
   return f;
 }
 
-// Before every change Myra makes, the prototype's folder is saved on a hidden git ref, so the change can be undone.
-// It goes through an index of its own, so nothing the person has staged is touched.
-export async function snapshot(root: string, dir: string) {
-  const repo = await inRepo(root, dir),
-    index = path.join(os.tmpdir(), `fenmyr-index-${process.pid}-${Date.now()}`),
-    own = { GIT_INDEX_FILE: index };
-  const git = async (args: string[]) => {
-    const r = await run(
-      'git',
-      ['-C', repo, '-c', 'user.name=Fenmyr', '-c', 'user.email=fenmyr@localhost', ...args],
-      30,
-      own,
-    );
-    if (r.code !== 0) throw new Error(r.err.toString('utf8').trim() || 'Git couldn’t save a snapshot.');
-    return r.out.toString('utf8').trim();
-  };
+async function git(repo: string, args: string[], extraEnv: Record<string, string> = {}) {
+  const r = await run(
+    'git',
+    ['-C', repo, '-c', 'user.name=Fenmyr', '-c', 'user.email=fenmyr@localhost', ...args],
+    30,
+    extraEnv,
+  );
+  if (r.code !== 0) throw new Error(r.err.toString('utf8').trim() || 'Git couldn’t save a snapshot.');
+  return r.out.toString('utf8');
+}
+
+// The folder as it is now, as a git tree. It goes through an index of its own, so nothing the person has staged is
+// touched.
+async function stage(repo: string, dir: string) {
+  const own = { GIT_INDEX_FILE: path.join(os.tmpdir(), `fenmyr-index-${randomUUID()}`) };
   try {
-    await git(['add', '-A', '--', dir]);
-    const tree = await git(['write-tree']);
-    const head = await run('git', ['-C', repo, 'rev-parse', '--verify', '-q', 'HEAD'], 30);
-    const parent = head.code === 0 ? ['-p', head.out.toString('utf8').trim()] : [];
-    const commit = await git(['commit-tree', tree, ...parent, '-m', `Before Myra's change to ${dir}`]);
-    await git(['update-ref', `refs/fenmyr/snapshots/${path.basename(dir)}/${Date.now()}`, commit]);
-    return commit;
+    await git(repo, ['add', '-A', '--', dir], own);
+    return (await git(repo, ['write-tree'], own)).trim();
   } finally {
-    fs.rmSync(index, { force: true });
+    fs.rmSync(own.GIT_INDEX_FILE, { force: true });
   }
 }
 
-// The folder exactly as a snapshot had it: files added since are removed, and the index is left alone.
+// Before every change Myra makes, the prototype's folder is saved on a hidden git ref, so the change can be undone.
+export async function snapshot(root: string, dir: string) {
+  const repo = await inRepo(root, dir),
+    tree = await stage(repo, dir);
+  const head = await run('git', ['-C', repo, 'rev-parse', '--verify', '-q', 'HEAD'], 30);
+  const parent = head.code === 0 ? ['-p', head.out.toString('utf8').trim()] : [];
+  const commit = (await git(repo, ['commit-tree', tree, ...parent, '-m', `Before Myra's change to ${dir}`])).trim();
+  await git(repo, ['update-ref', `refs/fenmyr/snapshots/${path.basename(dir)}/${Date.now()}`, commit]);
+  return commit;
+}
+
+// Every file in the folder that differs from a snapshot, with the lines it gained and lost. Without rename detection a
+// renamed file is one removed and one added.
+export async function filesSince(root: string, dir: string, commit: string): Promise<FileDiff[]> {
+  const repo = await inRepo(root, dir),
+    tree = await stage(repo, dir);
+  const out = await git(repo, ['diff-tree', '-r', '--numstat', '--no-renames', '-z', commit, tree, '--', dir]);
+  return out.split('\0').flatMap((entry): FileDiff[] => {
+    const m = entry.match(/^(\d+|-)\t(\d+|-)\t([\s\S]+)$/);
+    if (!m?.[1] || !m[2] || !m[3]?.startsWith(`${dir}/`)) return [];
+    const file = m[3].slice(dir.length + 1);
+    // git prints - for the counts of a file it takes for binary
+    return m[1] === '-'
+      ? [{ kind: 'binary', path: file }]
+      : [{ kind: 'text', path: file, added: +m[1], removed: +m[2] }];
+  });
+}
+
+// The folder as a snapshot had it: files added since are removed, and the index is left alone. Only the files a
+// snapshot would save now go back, so a file git ignores, such as a .env, is never touched, even one committed anyway.
 export async function undo(root: string, dir: string, commit: string) {
   if (!/^[0-9a-f]{40,64}$/.test(commit)) throw new Error("That isn't a snapshot.");
   const repo = await inRepo(root, dir);
-  const listed = await run('git', ['-C', repo, 'ls-tree', '-r', '--name-only', commit, '--', dir], 30);
-  const kept = new Set(listed.out.toString('utf8').split('\n').filter(Boolean));
-  for (const f of await files(root, dir))
-    if (!kept.has(`${dir}/${f}`)) fs.rmSync(path.join(repo, dir, f), { force: true });
+  const listed = await run('git', ['-C', repo, 'ls-tree', '-r', '-z', '--name-only', commit, '--', dir], 30);
+  const kept = new Set(listed.out.toString('utf8').split('\0').filter(Boolean));
+  const seen = await git(repo, ['ls-tree', '-r', '-z', '--name-only', await stage(repo, dir), '--', dir]);
+  for (const f of seen.split('\0').filter(Boolean)) if (!kept.has(f)) fs.rmSync(path.join(repo, f), { force: true });
   if (kept.size) {
-    const r = await run('git', ['-C', repo, 'restore', `--source=${commit}`, '--worktree', '--', dir], 30);
+    // overlay, because without it restore removes a file the index tracks and the snapshot lacks
+    const r = await run('git', ['-C', repo, 'restore', `--source=${commit}`, '--worktree', '--overlay', '--', dir], 30);
     if (r.code !== 0) throw new Error(r.err.toString('utf8').trim() || 'Git couldn’t put the snapshot back.');
   }
   return true as const;
