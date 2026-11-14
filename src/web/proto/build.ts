@@ -1,6 +1,6 @@
+import { readBuildEvent } from '../../shared/build.ts';
 import type { ChatAction } from '../../shared/chat.ts';
 import type { Board, Card } from '../../shared/model.ts';
-import { readSources } from '../../shared/repos.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
@@ -20,7 +20,11 @@ import { beforeBuild } from './sync.ts';
 // Myra's "build": the host writes the code with Claude Code while the chat shows what's being written, then the code,
 // the preview and the git bar catch up and her explanation arrives with an Undo.
 type Prototype = Extract<Board, { kind: 'prototype' }>;
-let running: { id: string; build: string; proto: Prototype; root: string; request: string; job: Job } | null = null;
+type Running = { id: string; build: string; proto: Prototype; root: string; request: string; job: Job };
+// 'starting' from the moment a build is asked for until the host answers, so one asked for meanwhile waits
+let running: Running | 'starting' | null = null;
+
+const WAIT = 'I’m still writing the last change. I’ll start on this once it’s done.';
 
 // a build is being written, so one asked for now wouldn't start
 export const building = () => running !== null;
@@ -44,10 +48,12 @@ export async function startBuild(
   const b = session.board;
   const root = b ? rootOf(b) : null;
   if (b?.kind !== 'prototype' || !root) return;
-  if (running) return say('I’m still writing the last change. I’ll start on this once it’s done.', 6000);
+  if (running) return say(WAIT, 6000);
   if (!synced) return beforeBuild(b, request, () => startBuild(request, cards, true));
+  running = 'starting';
   // kept before anything is awaited, while this prototype is surely the open board
-  const build = uid();
+  const build = uid(),
+    was = b.proto.build;
   b.proto = { ...b.proto, build };
   save();
   const sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
@@ -57,8 +63,15 @@ export async function startBuild(
     pictures = await picturesOf(chosen);
   const { dir, stack, purpose = '', device = '' } = b.proto;
   const job = startJob({ kind: 'building', file: null });
+  const back = () => {
+    running = null;
+    job.end();
+    // a build that never started isn't the board's newest, so the last one keeps its Undo
+    b.proto = { ...b.proto, build: was };
+    save();
+  };
   try {
-    const { id } = await Fenmyr.protoBuild({
+    const r = await Fenmyr.protoBuild({
       root,
       dir,
       stack,
@@ -69,9 +82,13 @@ export async function startBuild(
       errors: previewErrors(),
       pictures,
     });
-    running = { id, build, proto: b, root, request, job };
+    if (r.kind === 'busy') {
+      back();
+      return say(WAIT, 6000);
+    }
+    running = { id: r.id, build, proto: b, root, request, job };
   } catch (e) {
-    job.end();
+    back();
     say(e instanceof Error ? e.message : String(e), 8000);
   }
 }
@@ -125,18 +142,17 @@ export function commitButton(a: Extract<ChatAction, { kind: 'commit' }>): SayAct
   return b && commitView(b, a.message);
 }
 
-// the host's protoBuild events, for the build that's running
+// the host's protoBuild events, for the build that's running; its end repeats the snapshot its start carries, so the
+// start changes nothing here
 export function buildEvent(data: unknown) {
-  if (!running || typeof data !== 'object' || data === null) return;
-  const e: Record<string, unknown> = { ...data };
-  if (e.id !== running.id) return;
-  if (e.type === 'edit') return running.job.show({ kind: 'building', file: String(e.file).split('/').at(-1) ?? null });
+  const e = readBuildEvent(data);
+  if (!running || running === 'starting' || e?.id !== running.id || e.type === 'start') return;
+  if (e.type === 'edit') return running.job.show({ kind: 'building', file: e.file.split('/').at(-1) ?? null });
   const { root, build, proto, request, job } = running;
   running = null;
   job.end();
-  if (e.type === 'error') return say(`I couldn’t finish that. ${String(e.text)}`, 10000);
-  const snapshot = String(e.snapshot),
-    strays = Array.isArray(e.outside) ? e.outside.map(String) : [],
+  if (e.type === 'error') return say(`I couldn’t finish that. ${e.text}`, 10000);
+  const { snapshot, outside: strays } = e,
     board = proto.id,
     here = session.board?.id === board,
     // the commit message she suggests: the first line of what she was asked to do
@@ -150,8 +166,8 @@ export function buildEvent(data: unknown) {
       ]
     : [commitView(proto, message), undoView(root, proto.proto.dir, snapshot)];
   if (here) refresh();
-  addMsg('myra', String(e.text), acts);
-  const used = here ? keepSources(readSources(e.sources)) : [];
+  addMsg('myra', e.text, acts);
+  const used = here ? keepSources(e.sources) : [];
   if (used.length) addMsg('myra', cardsLine(used), cardButtons(used));
   if (strays.length)
     say(

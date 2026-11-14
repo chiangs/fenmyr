@@ -90,6 +90,14 @@ jobs:
         run: node tests/build.ts
       - name: Build buttons test (Myra's stored Commit and Undo across builds and boards)
         run: node tests/buildButtons.ts
+      - name: Build host test (a build's snapshot, lines added and removed, next steps and one build per repo, with a fake code agent)
+        run: node tests/buildHost.ts
+      - name: Build quit test (quitting Fenmyr during a build stops Claude Code)
+        run: node tests/buildQuit.ts
+      - name: Build race test (two builds asked for at once, and the one that ran keeps its Undo)
+        run: node tests/buildRace.ts
+      - name: Build undo test (Undo puts back the files git sees and never touches an ignored file)
+        run: node tests/buildUndo.ts
       - name: Prototype offer test (Myra offers a prototype board for a request that needs code, and Start and build makes it and builds)
         run: node tests/protoOffer.ts
       - name: Offer kept test (Myra's prototype offer kept until its board is made, and never built on another board)
