@@ -84,13 +84,9 @@ export function readSources(x: unknown): Sources {
   );
 }
 
-// The builder ends its reply with "CARDS: src/App.tsx=a1,b2; src/Field.tsx=c3", or "CARDS: none". The line is taken
-// off what the person reads.
-export function splitCardsLine(said: string): { text: string; sources: Sources } {
-  const m = said.match(/(^|\n)[ \t]*CARDS:[ \t]*(.*)\s*$/i);
-  if (!m) return { text: said.trim(), sources: {} };
+function cardsOf(line: string): Sources {
   const found: Sources = {};
-  for (const part of (m[2] ?? '').split(';')) {
+  for (const part of line.split(';')) {
     const [file, ids] = part.split('=');
     const f = file?.trim().replace(/^\.\//, '');
     if (f && ids)
@@ -99,7 +95,39 @@ export function splitCardsLine(said: string): { text: string; sources: Sources }
         .map(s => s.trim())
         .filter(Boolean);
   }
-  return { text: said.slice(0, m.index).trim(), sources: readSources(found) };
+  return readSources(found);
+}
+
+const nextOf = (line: string) =>
+  /^none\.?$/i.test(line.trim())
+    ? []
+    : line
+        .split('|')
+        .map(s =>
+          s
+            .trim()
+            .replace(/^`(.*)`$/, '$1')
+            .trim(),
+        )
+        .filter(Boolean);
+
+// The key may come in bold or in backticks: **NEXT:**, **NEXT**: or `NEXT:`.
+const LAST_LINE = /(?:^|\n)[ \t]*[*`]*(CARDS|NEXT)[*`]*:[*`]*[ \t]*(.*)\s*$/i;
+
+// The builder ends its reply with two lines, in either order: "CARDS: src/App.tsx=a1,b2; src/Field.tsx=c3" (or
+// "CARDS: none") and "NEXT: Add a total | Show a receipt" (or "NEXT: none"). Both are taken off what the person reads.
+export function splitBuildReply(said: string): { text: string; sources: Sources; next: string[] } {
+  let text = said.trim(),
+    cards: string | null = null,
+    next: string | null = null;
+  for (let m = text.match(LAST_LINE); m; m = text.match(LAST_LINE)) {
+    const key = m[1]?.toUpperCase();
+    if (key === 'CARDS' && cards === null) cards = m[2] ?? '';
+    else if (key === 'NEXT' && next === null) next = m[2] ?? '';
+    else break;
+    text = text.slice(0, m.index).trim();
+  }
+  return { text, sources: cardsOf(cards ?? ''), next: nextOf(next ?? '') };
 }
 
 // flat under prototypes/, so where the board sits in the library never decides where its code is

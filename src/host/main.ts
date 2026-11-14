@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
-import { startBuild } from './build.ts';
+import { startBuild, stopBuilds } from './build.ts';
 import * as claude from './claude.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
@@ -371,4 +371,5 @@ app.on('window-all-closed', () => app.quit());
 app.on('before-quit', () => {
   saveBounds();
   update.onQuit();
+  stopBuilds();
 });
