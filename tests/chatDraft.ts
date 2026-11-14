@@ -196,6 +196,8 @@ try {
     assert.strictEqual(s.stored('b'), undefined, 'B’s file never got them');
   });
 
+  // A save writes <id>.json.tmp and renames it, so only a finished .json file counts as the copy.
+  const newBoard = (f: string) => f.endsWith('.json') && !['a.json', 'b.json', 'c.json'].includes(f);
   await check('Duplicate copies the draft', async () => {
     await s.page.evaluate(() => {
       const row = [...document.querySelectorAll('.board-row')].find(
@@ -206,11 +208,8 @@ try {
       );
       document.querySelector<HTMLElement>('#rowMenu [data-m="dup"]')?.click();
     });
-    await s.until(
-      () => fs.readdirSync(path.dirname(s.file('a'))).some(f => !['a.json', 'b.json', 'c.json'].includes(f)),
-      'a copy was made',
-    );
-    const copy = fs.readdirSync(path.dirname(s.file('a'))).find(f => !['a.json', 'b.json', 'c.json'].includes(f));
+    await s.until(() => fs.readdirSync(path.dirname(s.file('a'))).some(newBoard), 'a copy was made');
+    const copy = fs.readdirSync(path.dirname(s.file('a'))).find(newBoard);
     assert.strictEqual(copy && s.stored(copy.replace('.json', '')), 'first and late');
   });
 
