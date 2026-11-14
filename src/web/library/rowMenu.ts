@@ -18,6 +18,7 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
 import { chirp, say } from '../myra/say.ts';
+import { renderDockHead } from '../proto/dockHead.ts';
 import { offerRename } from '../repo/codeFolder.ts';
 import { linkRepo } from '../repo/link.ts';
 import { newPrototypingFolder } from '../repo/prototypes.ts';
@@ -200,6 +201,7 @@ export async function renameBoard(b: { id: string }, v: string) {
   if (!v) return;
   if (session.board && session.board.id === b.id) {
     session.board.name = v;
+    renderDockHead(session.board);
     const field = $('boardName');
     if (field instanceof HTMLInputElement) field.value = v;
     save();

@@ -80,6 +80,12 @@ jobs:
         run: node tests/layout.ts
       - name: Prototype chat test (Myra's chat docked on a prototype board)
         run: node tests/protoChat.ts
+      - name: Dock header test (the board's name and stack in the docked chat's header)
+        run: node tests/dockHead.ts
+      - name: Dock git bar test (the git bar above Myra's input on a prototype board, and its More menu)
+        run: node tests/dockGit.ts
+      - name: Menu keys test (the git bar's More and the zoom menu by keyboard and screen reader)
+        run: node tests/menuKeys.ts
       - name: Prototype thread test (one chat on each prototype board)
         run: node tests/protoThread.ts
       - name: Prototype reading test (an earlier chat keeps its place while what Myra sees changes)
