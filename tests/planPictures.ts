@@ -133,7 +133,10 @@ await check('every export is taken while the preview is hidden', async () => {
   ] as const) {
     await page.mouse.click(x, y, { button: 'right' });
     await page.locator('#rowMenu button', { hasText: label }).click();
-    await settle(page, 800);
+    // An export zooms the board to fit until its picture is taken, over a second on a slow machine, and the next
+    // right-click must land on the board as it was.
+    await page.waitForFunction(() => !document.body.classList.contains('exporting'));
+    await settle(page, 300);
   }
   assert.deepStrictEqual(await app.evaluate(() => Reflect.get(globalThis, 'seenAtCapture')), [
     'hidden',
