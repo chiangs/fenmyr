@@ -2,7 +2,7 @@
 import assert from 'node:assert';
 import { DRAFT_MAX } from '../src/shared/chat.ts';
 import { parseBoard, parseLibrary, storedBoard } from '../src/shared/model.ts';
-import { githubOf, readRepoLink, repoClash, repoNameFor, splitCardsLine } from '../src/shared/repos.ts';
+import { githubOf, readRepoLink, repoClash, repoNameFor, splitBuildReply } from '../src/shared/repos.ts';
 
 const json = (x: unknown) => JSON.parse(JSON.stringify(x));
 
@@ -197,12 +197,41 @@ assert.deepStrictEqual(
 );
 
 assert.deepStrictEqual(
-  splitCardsLine('I built it.\nCARDS: src/App.tsx=a1, b2; ./src/Field.tsx=c3; ../outside.txt=z9'),
-  { text: 'I built it.', sources: { 'src/App.tsx': ['a1', 'b2'], 'src/Field.tsx': ['c3'] } },
+  splitBuildReply('I built it.\nCARDS: src/App.tsx=a1, b2; ./src/Field.tsx=c3; ../outside.txt=z9'),
+  { text: 'I built it.', sources: { 'src/App.tsx': ['a1', 'b2'], 'src/Field.tsx': ['c3'] }, next: [] },
   'the builder’s card line comes off its reply, and a path outside the folder is dropped',
 );
-assert.deepStrictEqual(splitCardsLine('I built it.\nCARDS: none'), { text: 'I built it.', sources: {} });
-assert.deepStrictEqual(splitCardsLine('No line at all.'), { text: 'No line at all.', sources: {} });
+assert.deepStrictEqual(splitBuildReply('I built it.\nCARDS: none\nNEXT: none'), {
+  text: 'I built it.',
+  sources: {},
+  next: [],
+});
+assert.deepStrictEqual(splitBuildReply('No line at all.'), { text: 'No line at all.', sources: {}, next: [] });
+assert.deepStrictEqual(
+  splitBuildReply('I built it.\nNEXT: Add a total |  | Show a receipt \nCARDS: src/App.tsx=a1'),
+  { text: 'I built it.', sources: { 'src/App.tsx': ['a1'] }, next: ['Add a total', 'Show a receipt'] },
+  'the next steps come off before the card line as well as after it',
+);
+assert.deepStrictEqual(
+  splitBuildReply('NEXT: Mentioned first.\nI built it.\nNEXT: Add a total\nNEXT: Show a receipt'),
+  { text: 'NEXT: Mentioned first.\nI built it.\nNEXT: Add a total', sources: {}, next: ['Show a receipt'] },
+  'only the last line of each kind comes off, and nothing above her words',
+);
+assert.deepStrictEqual(
+  splitBuildReply('I built it.\n**CARDS:** src/App.tsx=a1\n**NEXT:** Add a total | Show a receipt'),
+  { text: 'I built it.', sources: { 'src/App.tsx': ['a1'] }, next: ['Add a total', 'Show a receipt'] },
+  'keys written in bold come off',
+);
+assert.deepStrictEqual(
+  splitBuildReply('I built it.\n`CARDS:` none\n**NEXT**: `Add a total` | `Show a receipt`'),
+  { text: 'I built it.', sources: {}, next: ['Add a total', 'Show a receipt'] },
+  'keys in backticks come off, and so do the backticks around each step',
+);
+assert.deepStrictEqual(
+  splitBuildReply('I built it.\nNEXT: None.'),
+  { text: 'I built it.', sources: {}, next: [] },
+  'None. with a capital and a full stop means no steps',
+);
 
 const withDraft = (chatDraft: unknown) => ({ id: 'd1', name: 'Draft', cards: [], links: [], tray: [], chatDraft });
 assert.deepStrictEqual(

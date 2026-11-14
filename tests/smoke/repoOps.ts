@@ -3,8 +3,8 @@ import path from 'node:path';
 import type { Smoke } from './kit.ts';
 
 // The bridge operations for repos and prototypes, each called once against a throwaway repo: what they answer, and
-// that a wrong request is refused in words. Sign-in, GitHub, npm and the builder need the network or a person, and
-// have tests of their own.
+// that a wrong request is refused in words. Sign-in, GitHub and npm need the network or a person, and have tests of
+// their own. The builder has its own group, in builder.ts.
 export async function repoOps(t: Smoke) {
   const { page, data } = t;
   const repo = path.join(data, 'smoke-repo'),
