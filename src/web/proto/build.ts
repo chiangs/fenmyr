@@ -18,7 +18,8 @@ import { beforeBuild } from './sync.ts';
 // catch up.
 type End = Extract<BuildEvent, { type: 'done' | 'error' }>;
 
-const WAIT = 'I’m still writing the last change. I’ll start on this once it’s done.';
+// nothing starts it later, so she promises nothing
+export const WAIT = 'I’m still writing the last change. Ask me again once it’s done.';
 
 // what the builder reads from the board: the selected cards, or all of them, without positions or styling
 const brief = (c: Card) =>
