@@ -10,6 +10,7 @@ import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
 import { dropPlan } from '../myra/heldPlan.ts';
 import { forgetReplies } from '../myra/replyMemory.ts';
+import { paintStatus } from '../myra/status.ts';
 import { showProto } from '../proto/layout.ts';
 import { checkCode } from '../repo/codeFolder.ts';
 import { askAboutCopy } from '../repo/copy.ts';
@@ -49,6 +50,8 @@ async function swapIn(id: string) {
   restoreDraft();
   checkCode(session.board);
   showProto(session.board);
+  // a build names its board on the status line only while another board is open
+  paintStatus();
   askAboutCopy(session.board);
   if (chatOpen()) setTimeout(renderChat, 0);
   session.board.palette = session.board.palette || [];

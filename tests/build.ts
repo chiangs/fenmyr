@@ -135,7 +135,7 @@ try {
         .map(m => [...m.querySelectorAll('.m-acts button')].map(b => b.textContent)),
     );
   const built = await buttons();
-  assert.deepStrictEqual(built, [['Commit', 'Undo'], ['↗ Checkout: show the total first']]);
+  assert.deepStrictEqual(built, [['Commit', 'Undo this build'], ['↗ Checkout: show the total first']]);
   await page.waitForTimeout(500);
   await page.evaluate(id => window.__fenmyr.openBoard(id), home);
   await page.waitForTimeout(300);
@@ -199,7 +199,7 @@ try {
     /Built by Myra|<!doctype/i,
   );
 
-  await page.locator('#mcList .m-acts button', { hasText: 'Undo' }).last().click();
+  await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
   await until(async () => fs.readFileSync(app, 'utf8') === starter, 'Undo puts the folder back');
   assert.strictEqual(
     git('diff', '--cached', '--name-only').trim(),

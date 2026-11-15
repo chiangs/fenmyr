@@ -1,20 +1,47 @@
-// A change to a board as it opens is never lost: started in the same tick as the open, in either order, it is on the
-// open board and in its file exactly once, and stays there through the next save.
+// A build lands in its own prototype's chat wherever the person is: an ordinary board open meanwhile gains nothing and
+// hears of it on the status line, the prototype keeps her explanation with buttons that work when it opens, a failed
+// build that changed files can be undone, and a change to a board as it opens is never lost.
 import assert from 'node:assert';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { ChatMsg } from '../src/shared/chat.ts';
 import { replyBoard } from './fixtures/boards.ts';
+import { buildStandIn } from './support/buildStandIn.ts';
 import { launch, settle } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
 
 const { work, repo } = freshRepo('fenmyr-build-elsewhere-');
+const git = (...args: string[]) =>
+  execFileSync('git', ['-C', repo, '-c', 'user.name=T', '-c', 'user.email=t@e.st', ...args]).toString();
 fs.mkdirSync(path.join(repo, 'prototypes'));
+fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), 'x\n');
 
 const l = await launch({ boards: [replyBoard('one', 'One')], open: 'one', claude: true });
 const { page } = l;
+const standIn = buildStandIn(l);
+const status = () => page.evaluate(() => document.getElementById('mcStatusSay')?.textContent ?? '');
+const texts = () => page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg')].map(m => m.textContent));
+const until = async (check: () => Promise<boolean>, what: string, ms = 20000) => {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (await check()) return;
+    await page.waitForTimeout(100);
+  }
+  assert.fail(`${what}: ${await status()} | ${JSON.stringify(await texts())}`);
+};
 const chatOf = (id: string): ChatMsg[] =>
   JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', `${id}.json`), 'utf8')).chat ?? [];
+const buttonsUnder = (text: string) =>
+  page.evaluate(
+    text =>
+      [...document.querySelectorAll('#mcList .mc-msg.myra')]
+        .filter(m => m.firstChild?.textContent === text)
+        .map(m => [...m.querySelectorAll('.m-acts button')].map(b => b.textContent ?? '')),
+    text,
+  );
+const build = (request: string) =>
+  page.evaluate(r => window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: r } }, 'build it'), request);
 const open = async (id: string) => {
   await page.evaluate(id => window.__fenmyr.openBoard(id), id);
   await settle(page, 300);
@@ -25,7 +52,7 @@ const open = async (id: string) => {
 };
 
 try {
-  await page.evaluate(async repo => {
+  const dir = await page.evaluate(async repo => {
     await window.Fenmyr.saveFolders({
       projects: [{ id: 'p1', name: 'Acme', open: true, repo: { path: repo } }],
       folders: [{ id: 'pf', name: 'Prototypes', project: 'p1', kind: 'prototyping', open: true }],
@@ -43,7 +70,74 @@ try {
       tray: [],
     });
     await window.__fenmyr.refreshBoards();
+    return proto.dir;
   }, repo);
+  const app = path.join(repo, dir, 'src/App.tsx'),
+    starter = fs.readFileSync(app);
+  git('add', '-A');
+  git('commit', '-qm', 'start');
+
+  await open('pb');
+  standIn.next({
+    files: { 'src/App.tsx': 'export function App() { return <h1>Total first</h1>; }\n' },
+    hold: true,
+    reply: 'I put the total first.\nCARDS: src/App.tsx=n1',
+  });
+  await build('Put the total first.');
+  await until(async () => fs.readFileSync(app, 'utf8').includes('Total first'), 'the build writes App.tsx');
+  await open('one');
+  const before = { file: chatOf('one').length, shown: (await texts()).length };
+  assert.strictEqual(await status(), 'Building Checkout', 'another board’s status line names the build');
+  standIn.release();
+  await until(async () => (await status()) === 'Checkout is built', 'and says when it is built');
+  const noted = Date.now();
+  await until(async () => (await status()) === 'Ready', 'then rests again', 9000);
+  const shown = Date.now() - noted;
+  assert.ok(shown > 7000 && shown < 9000, `for 8 seconds, not ${shown} ms`);
+  assert.strictEqual((await texts()).length, before.shown, 'the open chat gains no message');
+  assert.strictEqual(chatOf('one').length, before.file, 'nor does its file');
+  const landed = chatOf('pb').filter(m => m.text === 'I put the total first.');
+  assert.strictEqual(landed.length, 1, 'her explanation lands once in the prototype’s file');
+  assert.deepStrictEqual(
+    landed[0]?.acts?.map(a => [a.kind, 'board' in a && a.board]),
+    [
+      ['commit', 'pb'],
+      ['buildUndo', 'pb'],
+    ],
+    'with Commit and Undo this build kept',
+  );
+  assert.ok(
+    chatOf('pb').some(m => m.acts?.some(a => a.kind === 'source' && a.card === 'n1')),
+    'and the card it came from',
+  );
+
+  await open('pb');
+  assert.deepStrictEqual(
+    await buttonsUnder('I put the total first.'),
+    [['Commit', 'Undo this build']],
+    'opening the prototype shows its buttons',
+  );
+  await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
+  await until(async () => fs.readFileSync(app).equals(starter), 'Undo this build puts App.tsx back');
+
+  standIn.next({ files: { 'src/App.tsx': 'half written\n' }, hold: true, fail: 'I ran out of room.' });
+  await build('Add a coupon field.');
+  await until(async () => fs.readFileSync(app, 'utf8') === 'half written\n', 'the failing build writes App.tsx');
+  await open('one');
+  standIn.release();
+  await until(async () => (await status()) === 'Checkout’s build stopped', 'a stopped build is noted elsewhere');
+  await open('pb');
+  const failed = 'I couldn’t finish that. I ran out of room.';
+  assert.deepStrictEqual(await buttonsUnder(failed), [['Undo this build']], 'a failed build that changed files');
+  await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
+  await until(async () => fs.readFileSync(app).equals(starter), 'can be undone, byte for byte');
+
+  standIn.next({ files: {}, fail: 'I couldn’t read the cards.' });
+  await build('Try again.');
+  const empty = 'I couldn’t finish that. I couldn’t read the cards.';
+  await until(async () => (await buttonsUnder(empty)).length === 1, 'a failure that changed nothing lands');
+  assert.deepStrictEqual(await buttonsUnder(empty), [[]], 'with nothing to undo');
+
   // both start in the same tick, in the order given
   const race = (text: string, first: 'change' | 'open') =>
     page.evaluate(

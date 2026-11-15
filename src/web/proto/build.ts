@@ -1,13 +1,13 @@
-import { readBuildEvent } from '../../shared/build.ts';
-import type { ChatAction } from '../../shared/chat.ts';
+import { type BuildEvent, readBuildEvent } from '../../shared/build.ts';
+import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import type { Board, Card } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
-import { session } from '../core/state.ts';
-import type { Act } from '../myra/acts.ts';
-import { addMsg, chatLog } from '../myra/chatLog.ts';
+import { appState, session } from '../core/state.ts';
+import { changeBoard } from '../library/boardWrites.ts';
+import { chatLog, pushMsg, renderChat } from '../myra/chatLog.ts';
 import { type SayAction, say } from '../myra/say.ts';
-import { type Job, startJob } from '../myra/status.ts';
+import { type Job, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { renderCode } from './code.ts';
 import { askCommit } from './gitActions.ts';
@@ -17,10 +17,11 @@ import { previewErrors, renderPreview } from './preview.ts';
 import { cardButtons, cardsLine, keepSources } from './sources.ts';
 import { beforeBuild } from './sync.ts';
 
-// Myra's "build": the host writes the code with Claude Code while the chat shows what's being written, then the code,
-// the preview and the git bar catch up and her explanation arrives with an Undo.
+// Myra's "build": the host writes the code with Claude Code while the status line shows what's being written, then her
+// explanation lands in the prototype's own chat with Undo this build, and the code, the preview and the git bar catch up.
 type Prototype = Extract<Board, { kind: 'prototype' }>;
-type Running = { id: string; build: string; proto: Prototype; root: string; request: string; job: Job };
+// board and name: the prototype it builds, which may not be the open board by the time it ends
+type Running = { id: string; build: string; board: string; name: string; request: string; job: Job };
 // 'starting' from the moment a build is asked for until the host answers, so one asked for meanwhile waits
 let running: Running | 'starting' | null = null;
 
@@ -62,7 +63,7 @@ export async function startBuild(
     briefs = JSON.stringify(chosen.map(brief)),
     pictures = await picturesOf(chosen);
   const { dir, stack, purpose = '', device = '' } = b.proto;
-  const job = startJob({ kind: 'building', file: null });
+  const job = startJob({ kind: 'building', board: b.id, name: b.name, file: null });
   const back = () => {
     running = null;
     job.end();
@@ -86,7 +87,7 @@ export async function startBuild(
       back();
       return say(WAIT, 6000);
     }
-    running = { id: r.id, build, proto: b, root, request, job };
+    running = { id: r.id, build, board: b.id, name: b.name, request, job };
   } catch (e) {
     back();
     say(e instanceof Error ? e.message : String(e), 8000);
@@ -101,19 +102,8 @@ async function refresh() {
 async function undo(root: string, dir: string, snapshot: string) {
   await Fenmyr.protoUndo({ root, dir, snapshot });
   await refresh();
-  say('It’s back to how it was before that change ✦', 5000);
+  say('It’s back to how it was before that build ✦', 5000);
 }
-
-const undoView = (root: string, dir: string, snapshot: string): SayAction => ({
-  label: 'Undo',
-  ghost: true,
-  run: () => undo(root, dir, snapshot),
-});
-const commitView = (b: Prototype, message: string): SayAction => ({
-  label: 'Commit',
-  cls: 'next',
-  run: () => askCommit(b, message),
-});
 
 const openProto = (board: string) => {
   const b = session.board;
@@ -134,46 +124,65 @@ export function buildUndoButton(a: BuildUndo): SayAction | null {
   const b = openProto(a.board),
     root = b && rootOf(b);
   if (!b || !root || !isLatest(b, a)) return null;
-  return undoView(root, b.proto.dir, a.snapshot);
+  return { label: 'Undo this build', ghost: true, run: () => undo(root, b.proto.dir, a.snapshot) };
 }
 
 export function commitButton(a: Extract<ChatAction, { kind: 'commit' }>): SayAction | null {
   const b = openProto(a.board);
-  return b && commitView(b, a.message);
+  return b && { label: 'Commit', cls: 'next', run: () => askCommit(b, a.message) };
 }
 
-// the host's protoBuild events, for the build that's running; its end repeats the snapshot its start carries, so the
-// start changes nothing here
+const line = (text: string, acts: ChatAction[] = []): ChatMsg =>
+  acts.length ? { who: 'myra', text, t: Date.now(), acts } : { who: 'myra', text, t: Date.now() };
+
+// Her lines for how a build ended, added to its prototype's chat with buttons that are kept, so they work whenever
+// that prototype is open. A failed build that changed files can be undone too.
+function landEnd(b: Prototype, e: Extract<BuildEvent, { type: 'done' | 'error' }>, build: string, request: string) {
+  const board = b.id;
+  if (e.type === 'error') {
+    const undo: ChatAction[] =
+      e.snapshot && e.files.length ? [{ kind: 'buildUndo', board, snapshot: e.snapshot, build }] : [];
+    return pushMsg(b, line(`I couldn’t finish that. ${e.text}`, undo));
+  }
+  // the commit message she suggests: the first line of what she was asked to do
+  const message = request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
+  pushMsg(
+    b,
+    line(e.text, [
+      { kind: 'commit', board, message },
+      { kind: 'buildUndo', board, snapshot: e.snapshot, build },
+    ]),
+  );
+  const used = keepSources(b, e.sources);
+  if (used.length) pushMsg(b, line(cardsLine(b, used), cardButtons(b, used)));
+  if (e.outside.length)
+    pushMsg(
+      b,
+      line(
+        `I also changed files outside this prototype: ${e.outside.join(', ')}. Undo this build only puts this prototype back, so check those in the git bar.`,
+      ),
+    );
+}
+
+// The host's protoBuild events, for the build that's running; its end repeats the snapshot its start carries, so the
+// start changes nothing here. The end lands in the build's own prototype whichever board is open, and another board
+// only hears of it on the status line.
 export function buildEvent(data: unknown) {
   const e = readBuildEvent(data);
   if (!running || running === 'starting' || e?.id !== running.id || e.type === 'start') return;
-  if (e.type === 'edit') return running.job.show({ kind: 'building', file: e.file.split('/').at(-1) ?? null });
-  const { root, build, proto, request, job } = running;
+  const { build, board, name, request, job } = running;
+  if (e.type === 'edit') return job.show({ kind: 'building', board, name, file: e.file.split('/').at(-1) ?? null });
   running = null;
   job.end();
-  if (e.type === 'error') return say(`I couldn’t finish that. ${e.text}`, 10000);
-  const { snapshot, outside: strays } = e,
-    board = proto.id,
-    here = session.board?.id === board,
-    // the commit message she suggests: the first line of what she was asked to do
-    message = request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
-  // Kept with her line when it lands in the prototype's own chat. Her line lands in whichever board is open, and its
-  // buttons there must still act on this prototype, so those stay closures.
-  const acts: Act[] = here
-    ? [
-        { kind: 'commit', board, message },
-        { kind: 'buildUndo', board, snapshot, build },
-      ]
-    : [commitView(proto, message), undoView(root, proto.proto.dir, snapshot)];
-  if (here) refresh();
-  addMsg('myra', e.text, acts);
-  const used = here ? keepSources(e.sources) : [];
-  if (used.length) addMsg('myra', cardsLine(used), cardButtons(used));
-  if (strays.length)
-    say(
-      `I also changed files outside this prototype: ${strays.join(', ')}. Undo only puts this prototype back, so check those in the git bar.`,
-      0,
-      [],
-      true,
-    );
+  if (session.board?.id !== board) noteStatus(e.type === 'done' ? `${name} is built` : `${name}’s build stopped`);
+  void changeBoard(board, b => {
+    if (b.kind !== 'prototype') return false;
+    landEnd(b, e, build, request);
+    return true;
+  }).then(() => {
+    if (session.board?.id !== board) return;
+    appState.histOpen = false;
+    renderChat();
+    void refresh();
+  });
 }

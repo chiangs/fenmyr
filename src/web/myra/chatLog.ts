@@ -169,6 +169,14 @@ export function chatLog(): ChatMsg[] {
   return (sessionChats[session.board.id] ??= []);
 }
 
+const append = (log: ChatMsg[], b: Board, m: ChatMsg) => {
+  log.push(m);
+  if (log.length > keptOf(b)) log.splice(0, log.length - keptOf(b));
+};
+
+/** Appends to the chat a board keeps, open or not, trimmed as its own chat is. The caller writes the board. */
+export const pushMsg = (b: Board, m: ChatMsg) => append((b.chat ??= []), b, m);
+
 // Shows the line with all of `acts` and keeps the stored kinds on the message, which it returns.
 export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
   if (!session.board) return;
@@ -176,13 +184,10 @@ export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
     appState.histOpen = false;
     renderChat();
   }
-  const log = chatLog(),
-    m: ChatMsg = { who, text, t: Date.now() },
-    stored = storedOf(acts),
-    max = keptOf(session.board);
+  const m: ChatMsg = { who, text, t: Date.now() },
+    stored = storedOf(acts);
   if (stored.length) m.acts = stored;
-  log.push(m);
-  if (log.length > max) log.splice(0, log.length - max);
+  append(chatLog(), session.board, m);
   if (chatKeep() === 'board') save();
   const list = $('mcList');
   list.querySelector('.mc-empty')?.remove();

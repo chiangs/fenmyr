@@ -116,7 +116,7 @@ try {
     [WAIT],
     'Myra turns the other away once, in her own words',
   );
-  assert.deepStrictEqual(await builtRows(), [['Commit', 'Undo']], 'and the build that ran keeps its Undo');
+  assert.deepStrictEqual(await builtRows(), [['Commit', 'Undo this build']], 'and the build that ran keeps its Undo');
 
   const kept = await newest();
   assert.ok(kept, 'the board names its newest build');
@@ -144,7 +144,11 @@ try {
   await settle(page, 800);
   await open('one');
   await open('pb');
-  assert.deepStrictEqual(await builtRows(), [['Commit', 'Undo']], 'so the build that ran still has its Undo');
+  assert.deepStrictEqual(
+    await builtRows(),
+    [['Commit', 'Undo this build']],
+    'so the build that ran still has its Undo',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('BUILD RACE OK');
 } finally {
