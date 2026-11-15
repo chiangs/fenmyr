@@ -127,7 +127,7 @@ async function shoot(dir: string, out: string) {
   fs.mkdirSync(out, { recursive: true });
   for (const [name, group] of Object.entries(GROUPS)) {
     const shown = (group.board ?? everyOfflineCard)();
-    const l = await launch({ dir, boards: [shown], open: shown.id, settings: group.settings });
+    const l = await launch({ dir, boards: [shown], open: shown.id, settings: group.settings, env: group.env });
     const width = group.phone ? 600 : group.width;
     if (width) {
       await l.app.evaluate(({ BrowserWindow }, w) => {

@@ -15,7 +15,7 @@ type BuildScript = {
 };
 
 /** Writes the stand-in to `file`, working in `work`. */
-function writeBuildStandIn(file: string, work: string) {
+export function writeBuildStandIn(file: string, work: string) {
   const script = path.join(work, 'next.json'),
     wrote = path.join(work, 'wrote'),
     asks = path.join(work, 'asks.log');

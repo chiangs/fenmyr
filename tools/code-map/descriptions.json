@@ -365,6 +365,7 @@
     "tests/done.ts": "The end-to-end test of the Rapid Prototyping plan, from linking a repo to a pushed commit.",
     "tests/fit.ts": "Tests how the prototype board’s columns fold as the window narrows.",
     "tests/fixtures/boards.ts": "Sample boards for tests, including one with every card kind, a big one and one for Myra’s replies.",
+    "tests/fixtures/protoBuild.ts": "Seeded chats of a prototype after one build, built, failed or cut off by quitting, for the visual check.",
     "tests/git.ts": "Tests the git and gh bridge against a real throwaway repo.",
     "tests/github.ts": "Tests giving a linked project a GitHub repo, new or taken from its origin.",
     "tests/imageActions.ts": "An image card's right-click actions in the real app: download, copy, and replace from a file or the clipboard.",

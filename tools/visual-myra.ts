@@ -3,9 +3,11 @@ import { type Board, settle } from '../tests/support/launch.ts';
 import { longText, pasteIntoChat } from '../tests/support/paste.ts';
 
 export type Step = (page: Page) => Promise<void>;
-// width: the window's, for the prototype screen at each of its layouts; proto: open a prototype board first
+// width: the window's, for the prototype screen at each of its layouts; proto: open a prototype board first; env: for
+// the app, such as a stand-in Claude Code first on PATH
 export type Group = {
   settings?: Record<string, unknown>;
+  env?: Record<string, string>;
   board?: () => Board;
   phone?: boolean;
   width?: number;

@@ -3,6 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
+import type { ChatMsg } from '../src/shared/chat.ts';
+import { BUILD, builtChat, failedChat, protoBuildCards, stoppedChat } from '../tests/fixtures/protoBuild.ts';
+import { writeBuildStandIn } from '../tests/support/buildStandIn.ts';
 import { settle } from '../tests/support/launch.ts';
 import type { Group, Step } from './visual-myra.ts';
 
@@ -23,11 +26,69 @@ const gitMore: Step = async page => {
   if (await more.count()) await more.click();
 };
 
+// A stand-in Claude Code first on PATH for the build groups, there before Fenmyr starts, since Fenmyr remembers where
+// it found Claude Code. The same one serves both checkouts.
+const standInAt = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-claude-'));
+const standIn = writeBuildStandIn(path.join(standInAt, 'bin', 'claude'), path.join(standInAt, 'work'));
+const withStandIn = { PATH: `${path.join(standInAt, 'bin')}:${process.env.PATH ?? ''}` };
+
+const reopen = async (page: Page) => {
+  await page.evaluate(() => window.__fenmyr.openBoard('vb'));
+  await page.frameLocator('#pr-preview iframe').locator('h1').waitFor({ timeout: 30000 });
+};
+
+// The prototype as it is after one build, its chat and cards saved with it and that build named as its newest. A
+// checkout without prototypes has no board to seed.
+const seeded =
+  (chat: (board: string) => ChatMsg[]): Step =>
+  async page => {
+    const made = await page.evaluate(
+      async ({ chat, cards, build }) => {
+        const b = window.__fenmyr.curBoard();
+        if (b?.kind !== 'prototype') return false;
+        await window.Fenmyr.save({ ...b, cards, chat, proto: { ...b.proto, build } });
+        return true;
+      },
+      { chat: chat('vb'), cards: protoBuildCards, build: BUILD },
+    );
+    if (made) await reopen(page);
+  };
+
+// A build partway through: the stand-in has reported writing App.tsx and waits. It writes back what was there, so the
+// code and the preview stay as they were. Waiting on its count works on a checkout that draws no block.
+const building: Step = async page => {
+  await seeded(() => [])(page);
+  const dir = await page.evaluate(() => {
+    const b = window.__fenmyr.curBoard();
+    return b?.kind === 'prototype' ? b.proto.dir : null;
+  });
+  if (!dir) return;
+  const app = path.join(parent, 'acme', dir, 'src/App.tsx');
+  standIn.next({ files: { 'src/App.tsx': fs.readFileSync(app, 'utf8') }, hold: true });
+  await page.evaluate(() =>
+    window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: 'Put the total first.' } }, 'Put it first'),
+  );
+  for (const end = Date.now() + 20000; standIn.wrote() < 1; await page.waitForTimeout(100))
+    if (Date.now() > end) throw new Error('the stand-in never wrote App.tsx');
+};
+
 export const PROTO_GROUPS: Record<string, Group> = {
   'proto-wide': { proto: true, width: 1440, states: screen },
   'proto-medium': { proto: true, width: 1200, states: [...screen, ['git-more', gitMore]] },
   'proto-narrow': { proto: true, width: 900, states: [...screen, ['chat-280', narrowestChat]] },
   'proto-dark': { proto: true, width: 1200, settings: { theme: 'dark' }, states: [...screen, ['git-more', gitMore]] },
+  'proto-build': {
+    proto: true,
+    width: 1200,
+    env: withStandIn,
+    states: [
+      ['built', seeded(builtChat)],
+      ['failed', seeded(failedChat)],
+      ['stopped', seeded(stoppedChat)],
+      ['building', building],
+    ],
+  },
+  'proto-build-dark': { proto: true, width: 1200, settings: { theme: 'dark' }, states: [['built', seeded(builtChat)]] },
 };
 
 // A prototype board in a fresh repo, its starter running in the preview. A checkout without prototypes (main, until

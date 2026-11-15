@@ -1,1 +1,7 @@
-{}
+{
+  "proto-build-building": "New in 7h: a build partway through, its block reading Building… with the bar standing still and src/App.tsx marked as being written. The base shows nothing in the thread, only Building App.tsx in the header.",
+  "proto-build-built": "New in 7h: a finished build as one block, Built in 48 s, Read 3 cards, two files with lines added and removed and Made from with its card, then her explanation with Undo this build, Commit and two chips. The base drops the record's unknown kind and shows an empty bubble there.",
+  "proto-build-dark-built": "New in 7h: the finished build's block in the dark theme, its border, ticks and text drawn from the theme's tokens. The base shows an empty bubble there.",
+  "proto-build-failed": "New in 7h: a failed build's block, Stopped after 12 s with its one file and counts, above her line with Undo this build. The base shows an empty bubble in place of the block.",
+  "proto-build-stopped": "New in 7h: a build cut off by Fenmyr closing reads Stopped · Fenmyr closed before it finished, with Undo this build on its block. The base shows only an empty bubble."
+}
