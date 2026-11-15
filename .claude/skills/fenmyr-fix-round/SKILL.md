@@ -33,7 +33,7 @@ Fix blockers first, then should-fix. Do nits only if cheap, and say which you sk
   host event parses it once, at the boundary.
 - User-visible refusals are in Myra's words when she is the speaker. Never show a raw host error string to the person.
 - Fix stale entries in `tools/visual-expected.json` if the base now contains the change they describe.
-- A new test is wired into `package.json`, `.github/workflows/ci.yml` and `tools/code-map/descriptions.json`.
+- A new test is a new file in `tests/` with its line in `tools/code-map/descriptions.json`. Nothing else lists tests.
 
 ## Finish
 
