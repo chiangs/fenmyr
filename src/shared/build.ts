@@ -236,11 +236,16 @@ export function fileLines(s: BuildState): string[] {
   return s.phase === 'failed' ? s.files.map(fileLine) : [];
 }
 
+// the files a block's line names before it says how many more, since it goes into every prompt the chat is in
+const LINE_FILES = 10;
+
 /** A block in one line, for Myra's snapshot of the chat, whose block has no words of its own: "Built in 48 s:
- *  src/App.tsx +3 −1, src/Form.tsx +24 −0". */
+ *  src/App.tsx +3 −1, src/Form.tsx +24 −0", and after ten files "and 40 more". */
 export function buildLine(a: BuildRecord, live: BuildLive | null) {
   const s = buildState(a, live),
     head = buildHead(s, !!a.undone),
-    files = fileLines(s);
-  return files.length ? `${head}: ${files.join(', ')}` : head;
+    files = fileLines(s),
+    more = files.length - LINE_FILES,
+    named = more > 0 ? [...files.slice(0, LINE_FILES), `and ${more} more`] : files;
+  return named.length ? `${head}: ${named.join(', ')}` : head;
 }

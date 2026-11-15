@@ -336,6 +336,7 @@
     "tests/buildButtons.ts": "Checks the buttons under Myra's build lines once stored: only the newest Undo this build, and Commit and Undo this build only on their prototype.",
     "tests/buildElsewhere.ts": "Checks that a build lands in its own prototype's chat while another board is open, a failed build can be undone, and a change to a board as it opens is kept.",
     "tests/buildHost.ts": "Tests the host's build events with a fake code agent: the snapshot, lines added and removed, next steps and one build per repo.",
+    "tests/buildLine.ts": "Tests that Myra's one line for a build's block names at most ten files, then how many more.",
     "tests/buildLongThread.ts": "Checks that a build on a 125-build thread restyles about as much as on a short one, and that the thread stays at the bottom, or where the person scrolled to, as a block grows.",
     "tests/buildQuit.ts": "Tests that quitting Fenmyr during a build stops Claude Code, so nothing is written after.",
     "tests/buildRace.ts": "Tests that a build asked for while another starts or runs is turned away in Myra's words, and the one that ran keeps its Undo.",
