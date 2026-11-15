@@ -145,6 +145,14 @@ function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   return d;
 }
 
+/** Moves keyboard focus onto a line of the open chat, as when the button that had it has gone. */
+export function focusMsg(m: ChatMsg) {
+  const d = partsOf.get(m)?.parentElement;
+  if (!d?.isConnected) return;
+  d.tabIndex = -1;
+  d.focus();
+}
+
 /** Draws messages of the open chat again from the buttons they keep, leaving every other line and its buttons as they
  *  are, and the list at the bottom when it was. For lines whose buttons are all kept, such as a build's. The scroll is
  *  read once and set once, since reading it after each draw would lay the whole list out again per line. */

@@ -3053,6 +3053,8 @@ body.proto #mcInput { height: var(--input-h, 140px); max-height: none; field-siz
    on each step and the cards its code came from. The bar stands still when moving stamps and wiggles are off, when she
    is calm, and under reduced motion. */
 #mcList .mc-msg.bare { display: block; align-self: stretch; max-width: none; padding: 10px 13px 11px; border: 1px solid color-mix(in oklch, var(--ink) 12%, transparent); border-radius: 16px; corner-shape: squircle; background: color-mix(in oklch, var(--ink) 3%, transparent); }
+/* focus lands on a block once Cancel has gone from it */
+#mcList .mc-msg.bare:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
 .mc-msg.bare .m-summary { margin-top: 0; padding-top: 0; border-top: 0; }
 .m-summary.build b { font: 700 12.5px/1.35 var(--font); opacity: 1; }
 .m-bar { position: relative; height: 3px; margin: 7px 0 3px; overflow: hidden; border-radius: 2px; background: color-mix(in oklch, var(--ink) 10%, transparent); }

@@ -64,11 +64,16 @@ export async function startBuild(
     cards: chosen.length,
     args: { root, dir, stack, request, purpose, device, cards: briefs, build, board: b.id },
     pictures: picturesOf(chosen),
+    waited: building(),
   };
+  if (w.waited) noteHeard(waitsWords(b.name));
   enqueue(w);
   void changeBoard(b.id, asked(w));
   void pump();
 }
+
+// what a screen reader hears as a request waits its turn, the block showing it as waiting
+const waitsWords = (name: string) => `${name}’s build waits its turn`;
 
 // the board as it is now, or null once it has been deleted
 const boardNow = (id: string) =>
@@ -108,6 +113,7 @@ async function pump() {
     files: [],
     job: startJob({ kind: 'building', board: w.board, name, file: null }),
   });
+  if (w.waited) noteHeard(`${name}’s build has started`);
   try {
     redrawNewest(r);
     // the preview belongs to the open board
@@ -121,7 +127,8 @@ async function pump() {
     // waits again, first in line, until that build's end is heard.
     freeSlot(r);
     r.job.end();
-    enqueue(w, true);
+    enqueue({ ...w, waited: true }, true);
+    noteHeard(waitsWords(name));
     redrawNewest(r);
   } catch (e) {
     turnedAway(r, e instanceof Error ? e.message : String(e));

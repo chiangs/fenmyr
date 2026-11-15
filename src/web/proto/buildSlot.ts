@@ -35,6 +35,8 @@ type Args = Ops['protoBuild']['args'];
 export type Waiting = Pick<Running, 'build' | 'board' | 'root' | 'request' | 'cards'> & {
   args: Omit<Args, 'errors' | 'pictures'>;
   pictures: Promise<Args['pictures']>;
+  // it waited behind another build, so a screen reader hears when it starts
+  waited: boolean;
 };
 
 let running: Running | null = null;

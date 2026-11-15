@@ -2,7 +2,7 @@ import type { BuildEvent, BuildRecord, FileDiff } from '../../shared/build.ts';
 import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
-import { chatLog, pushMsg, redrawMsgs, showAdded } from '../myra/chatLog.ts';
+import { chatLog, focusMsg, pushMsg, redrawMsgs, showAdded } from '../myra/chatLog.ts';
 import type { Running } from './buildSlot.ts';
 import { keepSources } from './sources.ts';
 
@@ -46,6 +46,12 @@ const line = (text: string, acts: ChatAction[]): ChatMsg =>
 export function redrawBlock(build: string) {
   const found = find(chatLog(), build);
   if (found) redrawMsgs([found.m]);
+}
+
+/** Moves keyboard focus onto a build's block, where its board is open. */
+export function focusBlock(build: string) {
+  const found = find(chatLog(), build);
+  if (found) focusMsg(found.m);
 }
 
 /** A build's record in the open board's chat, if it still has one. */

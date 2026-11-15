@@ -1,5 +1,6 @@
-// What the status line shows as builds wait their turn: a board renamed while its request waits is named as it is
-// called when its build starts and when it lands.
+// What the status line shows and a screen reader hears as builds wait their turn: a board renamed while its request
+// waits is named as it is called when its build starts and when it lands; the live region says a request waits, that
+// it started and that it was cancelled; and after Cancel, keyboard focus stays on the block it left.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -42,6 +43,9 @@ const open = async (id: string) => {
   await page.evaluate(id => window.__fenmyr.openBoard(id), id);
   await settle(page, 400);
 };
+// every change to what only a screen reader hears from the status line, oldest first
+const heard = async (): Promise<string[]> =>
+  JSON.parse(await page.evaluate(() => document.documentElement.dataset.heard ?? '[]'));
 const waits = async () => (await heads()).at(-1) === 'Waiting for the build before it';
 
 try {
@@ -91,6 +95,49 @@ try {
     'while its build runs, the status line names the board as it is called now',
   );
   await until(async () => (await status()) === 'Checkout Two is built', 'and so it does once it lands');
+
+  await page.evaluate(() => {
+    const say = document.getElementById('mcStatusSay'),
+      log: string[] = [];
+    if (!say) return;
+    new MutationObserver(() => {
+      const h = say.querySelector('.mc-heard')?.textContent ?? '';
+      if (h && h !== log.at(-1)) log.push(h);
+      document.documentElement.dataset.heard = JSON.stringify(log);
+    }).observe(say, { childList: true, subtree: true, characterData: true });
+  });
+  await open('pb');
+  standIn.next({ files: { 'src/App.tsx': 'export const App = () => <h1>First</h1>;\n' }, hold: true });
+  await build('First build.');
+  await until(() => standIn.wrote() === 1, 'a build runs on Checkout Two');
+  await build('Second build.');
+  await until(waits, 'a second request waits');
+  await until(
+    async () => (await heard()).includes('Checkout Two’s build waits its turn'),
+    'a screen reader hears that it waits',
+  );
+  await build('Third build.');
+  await until(async () => (await heads()).filter(h => h.startsWith('Waiting')).length === 2, 'a third waits');
+  await page.locator('#mcList .mc-msg.bare').last().getByRole('button', { name: 'Cancel' }).focus();
+  await page.keyboard.press('Enter');
+  await until(async () => (await heads()).at(-1) === 'Not started', 'Cancel from the keyboard cancels it');
+  assert(
+    await page.evaluate(() => {
+      const a = document.activeElement;
+      return a === [...document.querySelectorAll('#mcList .mc-msg.bare')].at(-1);
+    }),
+    'and focus stays on the block it left',
+  );
+  await until(
+    async () => (await heard()).includes('Checkout Two’s build is cancelled'),
+    'a screen reader hears that it was cancelled',
+  );
+  standIn.next({ files: { 'src/Second.tsx': 'export const second = 2;\n' }, ms: 1500 });
+  standIn.release();
+  await until(
+    async () => (await heard()).includes('Checkout Two’s build has started'),
+    'and hears the waiting build start by itself',
+  );
   assert.deepStrictEqual(l.errors, [], 'no errors');
   console.log('BUILD QUEUE STATUS OK');
 } finally {

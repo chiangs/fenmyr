@@ -1,6 +1,9 @@
 import { type BuildRecord, buildHead, buildState, fileLines } from '../../shared/build.ts';
+import { session } from '../core/state.ts';
 import type { Button, Mark, Piece } from '../myra/acts.ts';
+import { noteHeard } from '../myra/status.ts';
 import { stoppedUndo } from './buildButtons.ts';
+import { focusBlock } from './buildRecord.ts';
 import { cancel, liveOf } from './buildSlot.ts';
 import { sourceButton } from './sources.ts';
 
@@ -30,8 +33,13 @@ export function buildPieces(a: BuildRecord): Piece[] {
         label: 'Cancel',
         ghost: true,
         after: 'stay',
-        // the chat draws the block again after the press, now reading not started
-        run: () => cancel(a.build),
+        // The chat draws the block again after the press, reading not started with no button, so focus stays on the
+        // block, where Tab goes on to the next Cancel.
+        run: () => {
+          if (!cancel(a.build)) return;
+          noteHeard(`${session.board?.name ?? 'This prototype'}’s build is cancelled`);
+          focusBlock(a.build);
+        },
       };
       return [box([a.request.split('\n')[0] ?? ''], ['wait']), { slot: 'other', button: stop }];
     }
