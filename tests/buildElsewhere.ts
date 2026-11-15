@@ -21,7 +21,12 @@ fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), 'x\n');
 const l = await launch({ boards: [replyBoard('one', 'One')], open: 'one', claude: true });
 const { page } = l;
 const standIn = buildStandIn(l);
-const status = () => page.evaluate(() => document.getElementById('mcStatusSay')?.textContent ?? '');
+// what the status line shows, without what only a screen reader hears
+const status = () =>
+  page.evaluate(() => {
+    const s = document.getElementById('mcStatusSay');
+    return (s?.textContent ?? '').replace(s?.querySelector('.mc-heard')?.textContent ?? '', '');
+  });
 const texts = () => page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg')].map(m => m.textContent));
 const until = async (check: () => Promise<boolean>, what: string, ms = 20000) => {
   const end = Date.now() + ms;

@@ -255,7 +255,12 @@ try {
   await tapMyra('Commit');
   await until(async () => /Git doesn’t know who is committing/.test(await lastMyra()), 'a commit git refuses says why');
 
-  const status = () => page.evaluate(() => document.getElementById('mcStatus')?.textContent ?? '');
+  // what the header's status line shows, without what only a screen reader hears
+  const status = () =>
+    page.evaluate(() => {
+      const s = document.getElementById('mcStatus');
+      return (s?.textContent ?? '').replace(s?.querySelector('.mc-heard')?.textContent ?? '', '');
+    });
   await build('SLOW heading.');
   await until(async () => (await status()).startsWith('Building'), 'the header says she is building');
   await page.evaluate(() => window.__fenmyr.ask('Is it nearly done?'));

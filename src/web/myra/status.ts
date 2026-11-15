@@ -83,6 +83,22 @@ export function noteStatus(text: string) {
   paintStatus();
 }
 
+// words only a screen reader hears, from the status line's live region, such as a build that ended on the open board,
+// which shows no note
+let heard = '';
+let heardT: ReturnType<typeof setTimeout> | undefined;
+
+/** Has a screen reader hear `text` from the status line, which looks as it did. */
+export function noteHeard(text: string) {
+  heard = text;
+  clearTimeout(heardT);
+  heardT = setTimeout(() => {
+    heard = '';
+    paintStatus();
+  }, NOTE_MS);
+  paintStatus();
+}
+
 /** The only writer of the header's status line, the typing dots and her thinking pose. */
 export function paintStatus() {
   const all = [...jobs.values()],
@@ -95,7 +111,14 @@ export function paintStatus() {
     dots = list.querySelector(':scope > .typing'),
     say = $('mcStatusSay'),
     more = $('mcStatusMore');
-  if (say.textContent !== line.say) say.textContent = line.say;
+  if (say.textContent !== line.say + heard) {
+    say.textContent = line.say;
+    if (heard) {
+      const h = say.appendChild(document.createElement('span'));
+      h.className = 'mc-heard';
+      h.textContent = heard;
+    }
+  }
   if (more.textContent !== line.more) more.textContent = line.more;
   $('mcStatus').classList.toggle('busy', !!top);
   // a narrow docked chat cuts the line short, as with a build named from another board
@@ -117,6 +140,8 @@ export function paintStatus() {
 export function startJob(b: Busy): Job {
   const id = Symbol('job');
   jobs.set(id, b);
+  // what a screen reader heard of the last job isn't news once another starts
+  heard = '';
   paintStatus();
   return {
     // keeps its place in the order; once ended it stays ended

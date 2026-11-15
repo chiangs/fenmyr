@@ -4,7 +4,7 @@ import { uid } from '../core/base.ts';
 import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import { say } from '../myra/say.ts';
-import { noteStatus, startJob } from '../myra/status.ts';
+import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { refreshPanes } from './buildButtons.ts';
 import { asked, ended, endedLost, redrawBlock, started } from './buildRecord.ts';
@@ -117,8 +117,11 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
   }).then(
     () => {
       done();
-      if (session.board?.id === board) void refreshPanes();
-      else if (landed !== null) noteStatus(e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`);
+      const open = session.board?.id === board,
+        words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
+      if (open) void refreshPanes();
+      // the open board shows no note, since its block says how it went, but a screen reader hears it
+      if (landed !== null) (open ? noteHeard : noteStatus)(words);
     },
     (err: unknown) => {
       done();
