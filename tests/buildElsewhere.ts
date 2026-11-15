@@ -96,6 +96,11 @@ try {
   await open('one');
   const before = { file: chatOf('one').length, shown: (await texts()).length };
   assert.strictEqual(await status(), 'Building Checkout', 'another board’s status line names the build');
+  assert.strictEqual(
+    await page.getAttribute('#mcStatus', 'title'),
+    'Building Checkout',
+    'in full on hover, where a narrow chat cuts it short',
+  );
   standIn.release();
   await until(async () => (await status()) === 'Checkout is built', 'and says when it is built');
   const noted = Date.now();

@@ -98,6 +98,8 @@ export function paintStatus() {
   if (say.textContent !== line.say) say.textContent = line.say;
   if (more.textContent !== line.more) more.textContent = line.more;
   $('mcStatus').classList.toggle('busy', !!top);
+  // a narrow docked chat cuts the line short, as with a build named from another board
+  $('mcStatus').title = line.say + line.more;
   if (thinking !== posed) {
     posed = thinking;
     $('myra').classList.toggle('thinking', thinking);
