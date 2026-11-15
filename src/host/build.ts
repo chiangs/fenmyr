@@ -9,7 +9,7 @@ import { claudeCode, stopCodeAgents } from './claudeCode.ts';
 import type { CodeAgent } from './codeAgent.ts';
 import { status } from './git.ts';
 import * as prompts from './prompts.ts';
-import { filesSince, installed, snapshot } from './prototypes.ts';
+import { filesSince, installed, snapshot, undo } from './prototypes.ts';
 import { isRecord, text, type Untrusted } from './util.ts';
 
 const shared = (repo: string, name: string) => {
@@ -29,6 +29,14 @@ const outside = async (repo: string, dir: string) => {
 // the repos with a build running: two builds in one folder would write over each other
 const busy = new Set<string>();
 
+// Undo this build waits for the repo's build to end, since it would go on writing into the folder put back. A window
+// reloaded mid-build can offer it.
+export async function undoBuild(root: string, dir: string, commit: string) {
+  if (busy.has(path.resolve(root))) return { kind: 'busy' } as const;
+  await undo(root, dir, commit);
+  return { kind: 'undone' } as const;
+}
+
 // Set as Fenmyr quits. A build stopped then isn't counted: counting stages through a temporary index, and the app
 // would exit before the index is removed. Nor does it send an end, which would say it changed nothing, so its record
 // reads stopped next time, with Undo this build.
@@ -47,7 +55,8 @@ export function startBuild(
 ) {
   const id = randomUUID(),
     root = text(a.root),
-    dir = text(a.dir);
+    dir = text(a.dir),
+    named = { build: text(a.build), board: text(a.board) };
   if (!PROTO_DIR.test(dir) || !path.isAbsolute(root)) throw new Error("That isn't a prototype's folder.");
   const key = path.resolve(root);
   if (busy.has(key)) return { kind: 'busy' } as const;
@@ -96,11 +105,12 @@ export function startBuild(
     const files = await changed(),
       strays = (await outside(s.root, dir)).filter(p => !before.has(p));
     const { text: reply, sources, next } = splitBuildReply(said);
-    end({ id, type: 'done', text: reply, snapshot: snap, files, outside: strays, sources, next });
+    end({ id, ...named, type: 'done', text: reply, snapshot: snap, files, outside: strays, sources, next });
   };
   run().catch(async e => {
     const snapshot = saved?.snapshot ?? null;
-    end({ id, type: 'error', text: e instanceof Error ? e.message : String(e), snapshot, files: await changed() });
+    const why = e instanceof Error ? e.message : String(e);
+    end({ id, ...named, type: 'error', text: why, snapshot, files: await changed() });
   });
   return { kind: 'started', id } as const;
 }

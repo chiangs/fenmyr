@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
-import { startBuild, stopBuilds } from './build.ts';
+import { startBuild, stopBuilds, undoBuild } from './build.ts';
 import * as claude from './claude.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
@@ -305,7 +305,7 @@ const OPS = {
     return img.toDataURL();
   },
   protoLastChange: a => prototypes.lastChange(text(a.root), text(a.dir)),
-  protoUndo: a => prototypes.undo(text(a.root), text(a.dir), text(a.snapshot)),
+  protoUndo: a => undoBuild(text(a.root), text(a.dir), text(a.snapshot)),
   protoModule: a => prototypes.moduleFile(text(a.root), text(a.file)),
   protoInstall: a => prototypes.install(text(a.root), strings(a.packages)),
   gitFetch: async a => git.fetchOrigin(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),

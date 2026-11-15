@@ -66,6 +66,8 @@ try {
       cards: '[]',
       errors: '',
       pictures: [],
+      build: '',
+      board: '',
     });
     return dir;
   }, repo);

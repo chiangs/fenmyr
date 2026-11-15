@@ -258,6 +258,9 @@ export type Ops = {
       errors: string;
       // what the sketches, screenshots and wireframes look like, as data: URLs
       pictures: { name: string; data: string }[];
+      // the renderer's names for the build and its board, which its end repeats
+      build: string;
+      board: string;
     };
     result: { kind: 'started'; id: string } | { kind: 'busy' };
   };
@@ -265,7 +268,8 @@ export type Ops = {
   captureArea: { args: { x: number; y: number; w: number; h: number }; result: string };
   // when: seconds since 1970 of the last commit touching it, 0 when it has none
   protoLastChange: { args: { root: string; dir: string }; result: { branch: string; when: number; subject: string } };
-  protoUndo: { args: { root: string; dir: string; snapshot: string }; result: true };
+  // busy, with nothing put back, while a build runs in the repo
+  protoUndo: { args: { root: string; dir: string; snapshot: string }; result: { kind: 'undone' } | { kind: 'busy' } };
   // a file of an installed package, or null when there's none by that name
   protoModule: { args: { root: string; file: string }; result: string | null };
   protoInstall: { args: { root: string; packages: string[] }; result: string[] };

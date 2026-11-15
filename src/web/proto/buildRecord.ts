@@ -13,6 +13,8 @@ import { keepSources } from './sources.ts';
 type Change = (b: Board) => boolean;
 type Prototype = Extract<Board, { kind: 'prototype' }>;
 type Found = { m: ChatMsg; a: BuildRecord };
+// what landing a build needs to know of it
+type Landing = Pick<Running, 'board' | 'build' | 'request' | 'cards' | 'asked' | 'start' | 'was' | 'files'>;
 
 function find(msgs: readonly ChatMsg[], build: string): Found | null {
   for (let i = msgs.length - 1; i >= 0; i--) {
@@ -23,7 +25,7 @@ function find(msgs: readonly ChatMsg[], build: string): Found | null {
   return null;
 }
 
-function newBlock(r: Running): Found {
+function newBlock(r: Landing): Found {
   const a: BuildRecord = {
     kind: 'build',
     board: r.board,
@@ -74,7 +76,7 @@ export const asked =
 
 // The host has saved the folder: its snapshot and time go on the record together, and only now does it become the
 // board's newest build, so a build that fails before that leaves the one before it with Undo this build.
-function startIn(b: Prototype, r: Running) {
+function startIn(b: Prototype, r: Landing) {
   const found = find(b.chat ?? [], r.build);
   let changed = false;
   if (r.start && found && !found.a.start) {
@@ -110,7 +112,7 @@ const inWriteOrder = (files: FileDiff[], named: readonly string[]) => [
  *  place of "I couldn't finish that" and the reason. A block the chat no longer has, trimmed or cleared away, comes back
  *  first. Once the record has an end, nothing happens. */
 export const ended =
-  (r: Running, e: Extract<BuildEvent, { type: 'done' | 'error' }>, at: number, said?: string): Change =>
+  (r: Landing, e: Extract<BuildEvent, { type: 'done' | 'error' }>, at: number, said?: string): Change =>
   b => {
     if (b.kind !== 'prototype' || find(b.chat ?? [], r.build)?.a.end) return false;
     // its end repeats the snapshot, so a start event that never landed is made good here
@@ -147,6 +149,21 @@ export const ended =
       showAdded(added);
     }
     return true;
+  };
+
+/** Ended, for a build this window didn't start, such as one it was reloaded in the middle of: its record stands in for
+ *  what the window would have known, and with no record left there is nothing to land it on. */
+export const endedLost =
+  (e: Extract<BuildEvent, { type: 'done' | 'error' }>): Change =>
+  b => {
+    const a = find(b.chat ?? [], e.build)?.a;
+    if (!a || a.end) return false;
+    const { board, build, request, cards, start = null } = a;
+    return ended(
+      { board, build, request, cards, asked: start?.at ?? Date.now(), start, was: undefined, files: [] },
+      e,
+      Date.now(),
+    )(b);
   };
 
 /** Undone: Undo this build put the folder back as it was before the build. */

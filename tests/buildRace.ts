@@ -133,6 +133,8 @@ try {
         cards: '[]',
         errors: '',
         pictures: [],
+        build: '',
+        board: '',
       }),
     { repo, dir },
   );

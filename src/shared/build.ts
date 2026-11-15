@@ -7,12 +7,15 @@ export type FileDiff =
   | { kind: 'binary'; path: string };
 
 /** The host's protoBuild events, in order: start once the folder is saved, one edit per file tool call (a file can
- *  repeat), then done or error. */
+ *  repeat), then done or error. The end repeats the renderer's names for the build and its board, so it lands in a
+ *  window that didn't start it, such as one reloaded while it ran. */
 export type BuildEvent =
   | { id: string; type: 'start'; snapshot: string }
   | { id: string; type: 'edit'; file: string }
   | {
       id: string;
+      build: string;
+      board: string;
       type: 'done';
       text: string;
       snapshot: string;
@@ -24,13 +27,22 @@ export type BuildEvent =
       next: string[];
     }
   // snapshot: null when the build failed before the folder was saved, and then files is empty
-  | { id: string; type: 'error'; text: string; snapshot: string | null; files: FileDiff[] };
+  | {
+      id: string;
+      build: string;
+      board: string;
+      type: 'error';
+      text: string;
+      snapshot: string | null;
+      files: FileDiff[];
+    };
 
 const MAX_FILES = 200;
 const MAX_NEXT = 3;
 const NEXT_LENGTH = 80;
 
 type Fields = Record<string, unknown>;
+const textOf = (x: unknown) => (typeof x === 'string' ? x : '');
 const snapshotOf = (x: unknown) => (typeof x === 'string' && /^[0-9a-f]{40,64}$/.test(x) ? x : null);
 const isCount = (x: unknown): x is number => typeof x === 'number' && Number.isInteger(x) && x >= 0;
 const isInside = (p: unknown): p is string =>
@@ -65,6 +77,8 @@ const READ: { [K in BuildEvent['type']]: (x: Fields, id: string) => Extract<Buil
     if (typeof x.text !== 'string' || !snapshot) return null;
     return {
       id,
+      build: textOf(x.build),
+      board: textOf(x.board),
       type: 'done',
       text: x.text,
       snapshot,
@@ -77,7 +91,15 @@ const READ: { [K in BuildEvent['type']]: (x: Fields, id: string) => Extract<Buil
   // a failure always lands, so a bad snapshot or file list only loses Undo
   error: (x, id) =>
     typeof x.text === 'string'
-      ? { id, type: 'error', text: x.text, snapshot: snapshotOf(x.snapshot), files: filesOf(x.files) }
+      ? {
+          id,
+          build: textOf(x.build),
+          board: textOf(x.board),
+          type: 'error',
+          text: x.text,
+          snapshot: snapshotOf(x.snapshot),
+          files: filesOf(x.files),
+        }
       : null,
 };
 

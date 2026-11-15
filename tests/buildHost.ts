@@ -146,6 +146,8 @@ assert.equal(readBuildEvent({ type: 'edit', file: 'src/App.tsx' }), null, 'an ev
 assert.deepStrictEqual(
   readBuildEvent({
     id: 'b1',
+    build: 'k1',
+    board: 'pb',
     type: 'done',
     text: 'Built.',
     snapshot: snap,
@@ -163,6 +165,8 @@ assert.deepStrictEqual(
   }),
   {
     id: 'b1',
+    build: 'k1',
+    board: 'pb',
     type: 'done',
     text: 'Built.',
     snapshot: snap,

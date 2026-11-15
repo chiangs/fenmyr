@@ -1,5 +1,5 @@
 import { type BuildEvent, readBuildEvent } from '../../shared/build.ts';
-import type { Card } from '../../shared/model.ts';
+import type { Board, Card } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
@@ -7,7 +7,7 @@ import { say } from '../myra/say.ts';
 import { noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { refreshPanes } from './buildButtons.ts';
-import { asked, ended, redrawBlock, started } from './buildRecord.ts';
+import { asked, ended, endedLost, redrawBlock, started } from './buildRecord.ts';
 import { building, claimSlot, freeSlot, type Running, runningBuild } from './buildSlot.ts';
 import { picturesOf } from './pictures.ts';
 import { previewErrors } from './preview.ts';
@@ -74,6 +74,8 @@ export async function startBuild(
       cards: briefs,
       errors: previewErrors(),
       pictures,
+      build: r.build,
+      board: r.board,
     });
     // the host is still writing a build this window didn't start, as one left by an earlier window would be
     if (started.kind === 'busy') return turnedAway(r, WAIT);
@@ -86,22 +88,29 @@ export async function startBuild(
 // A request the host turned away or failed on before it answered: its block reads "Couldn't start", and her line is
 // `said` as it stands.
 const turnedAway = (r: Running, said: string) =>
-  land(r, { id: '', type: 'error', text: said, snapshot: null, files: [] }, said);
+  land(r, { id: '', build: r.build, board: r.board, type: 'error', text: said, snapshot: null, files: [] }, said);
 
 // How it ended lands in the build's own prototype whichever board is open, and the status line says it's building
-// until then. Another board only hears how it ended, on the status line, by the board's name as it is then.
+// until then.
 function land(r: Running, e: End, said?: string) {
-  const { board, name, job } = r;
-  // the board's name as it lands, which stays null when the board was deleted
-  let landed: string | null = null;
   const done = () => {
     freeSlot(r);
-    job.end();
+    r.job.end();
   };
-  void changeBoard(board, b => {
+  landOn(r.board, r.name, e, done, b => {
     // the block is drawn from its record from here on
     freeSlot(r);
-    if (!ended(r, e, Date.now(), said)(b)) return false;
+    return ended(r, e, Date.now(), said)(b);
+  });
+}
+
+// Another board only hears how it ended, on the status line, by the board's name as it is then. name: the board's
+// name for a failure to write it.
+function landOn(board: string, name: string, e: End, done: () => void, change: (b: Board) => boolean) {
+  // the board's name as it lands, which stays null when the board was deleted
+  let landed: string | null = null;
+  void changeBoard(board, b => {
+    if (!change(b)) return false;
     landed = b.name;
     return true;
   }).then(
@@ -119,11 +128,17 @@ function land(r: Running, e: End, said?: string) {
 }
 
 // The host's protoBuild events, for the build that's running: its start, each file as Claude Code writes it, which
-// grows its block where its board is open without writing the board, and how it ended.
+// grows its block where its board is open without writing the board, and how it ended. Of a build this window didn't
+// start only the end is heard, on the record its board keeps.
 export function buildEvent(data: unknown) {
   const e = readBuildEvent(data),
     r = runningBuild();
-  if (!r || !e || e.id !== r.id) return;
+  if (!e) return;
+  if (e.id !== r?.id) {
+    if ((e.type === 'done' || e.type === 'error') && e.build && e.build !== r?.build)
+      landOn(e.board, 'a prototype', e, () => {}, endedLost(e));
+    return;
+  }
   if (e.type === 'start') {
     r.start = { at: Date.now(), snapshot: e.snapshot };
     return void changeBoard(r.board, started(r));

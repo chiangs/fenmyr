@@ -34,7 +34,9 @@ export async function refreshPanes() {
 }
 
 async function undo(b: Prototype, root: string, snapshot: string, build: string | undefined) {
-  await Fenmyr.protoUndo({ root, dir: b.proto.dir, snapshot });
+  const done = await Fenmyr.protoUndo({ root, dir: b.proto.dir, snapshot });
+  // a window reloaded while the build ran thinks it stopped
+  if (done.kind === 'busy') return say('I’m still writing that build. Undo it once it’s done.', 6000);
   if (build) await changeBoard(b.id, undone(build));
   await refreshPanes();
   say('It’s back to how it was before that build ✦', 5000);
