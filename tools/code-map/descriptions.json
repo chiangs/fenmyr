@@ -436,7 +436,7 @@
     "tests/smoke/timers.ts": "Smoke checks for /timer: parsing, chip, warning, finish and restart.",
     "tests/support/askStandIn.ts": "A stand-in Claude Code that records each question and the bytes of every file it was given, for tests.",
     "tests/support/bar.ts": "A board for the selection bar tests, with what they read and do in the page.",
-    "tests/support/buildStandIn.ts": "A stand-in Claude Code for builds, told before each one which files to write, whether to wait and whether to fail.",
+    "tests/support/buildStandIn.ts": "A stand-in Claude Code for builds, told before each one which files to write, where to wait and whether to fail, which counts what it wrote and logs Myra’s prompts.",
     "tests/support/flight.ts": "Samples where Myra’s slot is every frame while she hops into a chat’s header, for the hop tests.",
     "tests/support/launch.ts": "Starts the app headless with a throwaway data folder for tests.",
     "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states.",
