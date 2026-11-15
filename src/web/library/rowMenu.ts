@@ -1,4 +1,4 @@
-import type { Folder, Project } from '../../shared/model.ts';
+import type { Board, Folder, Project } from '../../shared/model.ts';
 
 export type Kind = 'board' | 'folder' | 'project';
 // a row in the left box: a board, folder or project, each using the fields it has
@@ -25,6 +25,7 @@ import { newPrototypingFolder } from '../repo/prototypes.ts';
 import { child, esc } from '../ui/dom.ts';
 import { keepOnScreen, removeOnOutsidePress } from '../ui/popover.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
+import { changeBoard } from './boardWrites.ts';
 import { confirmDelete } from './confirmDelete.ts';
 import { renderCrumbs, where } from './crumbs.ts';
 import { homeAt, renderHome } from './home.ts';
@@ -207,11 +208,13 @@ export async function renameBoard(b: { id: string }, v: string) {
     save();
     return offerRename(session.board);
   }
-  const bb = await Fenmyr.load(b.id);
-  if (!bb) return;
-  bb.name = v;
-  await Fenmyr.save(bb);
-  offerRename(bb);
+  let renamed: Board | undefined;
+  await changeBoard(b.id, bb => {
+    bb.name = v;
+    renamed = bb;
+    return true;
+  });
+  if (renamed) offerRename(renamed);
 }
 
 export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElement) {

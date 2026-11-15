@@ -148,7 +148,7 @@
     "src/web/input/keyed.ts": "Remembers the button the keyboard moved focus to, until the next pointer press.",
     "src/web/input/shortcuts.ts": "The keyboard shortcuts for the whole board.",
     "src/web/input/touch.ts": "Touch: one finger pans, two fingers pinch to zoom, press and hold for the menu.",
-    "src/web/library/boardWrites.ts": "Changes a board whether or not it is open, one change at a time, and holds a board while it opens.",
+    "src/web/library/boardWrites.ts": "Changes a board whether or not it is open, one change at a time, and holds the boards an open leaves and opens.",
     "src/web/library/confirmDelete.ts": "The “delete?” question, shared by boards, folders and projects.",
     "src/web/library/crumbs.ts": "Breadcrumbs inside a canvas, to climb back out.",
     "src/web/library/home.ts": "Home: zoom out to see projects, then a project’s folders, then a folder’s boards.",

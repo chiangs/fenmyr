@@ -1,6 +1,7 @@
 // A build lands in its own prototype's chat wherever the person is: an ordinary board open meanwhile gains nothing and
-// hears of it on the status line, the prototype keeps her explanation with buttons that work when it opens, a failed
-// build that changed files can be undone, and a change to a board as it opens is never lost.
+// hears of it on the status line, by the board's name as it is then, the prototype keeps her explanation with buttons
+// that work when it opens, a failed build that changed files can be undone, a question asked meanwhile keeps its
+// buttons, and a change to a board as it opens, is renamed or is moved is never lost.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -55,7 +56,10 @@ try {
   const dir = await page.evaluate(async repo => {
     await window.Fenmyr.saveFolders({
       projects: [{ id: 'p1', name: 'Acme', open: true, repo: { path: repo } }],
-      folders: [{ id: 'pf', name: 'Prototypes', project: 'p1', kind: 'prototyping', open: true }],
+      folders: [
+        { id: 'pf', name: 'Prototypes', project: 'p1', kind: 'prototyping', open: true },
+        { id: 'f2', name: 'Notes', project: 'p1', open: true },
+      ],
       order: {},
     });
     const proto = await window.Fenmyr.protoCreate({ root: repo, name: 'Checkout', stack: 'react' });
@@ -69,6 +73,7 @@ try {
       links: [],
       tray: [],
     });
+    await window.Fenmyr.save({ id: 'two', name: 'Two', cards: [], links: [], tray: [] });
     await window.__fenmyr.refreshBoards();
     return proto.dir;
   }, repo);
@@ -287,6 +292,27 @@ try {
     await settle(page, 600);
     assert.strictEqual(chatOf('pb').filter(m => m.text === text).length, 1, `${text}: and so does its file`);
   }
+
+  // a rename or a move of a closed board, in the same tick as a build's change to it: both land
+  const beside = (writer: 'rename' | 'move') =>
+    page.evaluate(async w => {
+      const change = window.__fenmyr.changeBoard('two', b => {
+        b.chat = [...(b.chat ?? []), { who: 'myra', text: `beside a ${w}`, t: Date.now() }];
+        return true;
+      });
+      const other =
+        w === 'rename'
+          ? window.__fenmyr.renameBoard({ id: 'two' }, 'Two renamed')
+          : window.__fenmyr.moveBoard('two', 'f2');
+      await Promise.all([change, other]);
+    }, writer);
+  const two = () => JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', 'two.json'), 'utf8'));
+  await beside('rename');
+  assert.strictEqual(two().name, 'Two renamed', 'a rename beside a change keeps the new name');
+  assert.strictEqual(chatOf('two').filter(m => m.text === 'beside a rename').length, 1, 'and the change');
+  await beside('move');
+  assert.strictEqual(two().folder, 'f2', 'a move beside a change keeps the move');
+  assert.strictEqual(chatOf('two').filter(m => m.text === 'beside a move').length, 1, 'and the change');
 
   await buildThenLeave('export const App = () => <h1>Deleted</h1>;\n');
   await page.evaluate(async () => {
