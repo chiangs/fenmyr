@@ -1,5 +1,5 @@
-// The buttons under Myra's build lines once they are stored: after two builds only the newest Undo this build shows,
-// and it puts back only that build; Commit and Undo this build show only on the prototype they built; and a reply that
+// The buttons under Myra's build lines once they are stored: after two builds only the newest build's Undo this build
+// and Commit show, and Undo puts back only that build; Commit and Undo this build show only on the prototype they built; and a reply that
 // opens a new prototype doesn't take what it changed on the old board with it.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
@@ -98,12 +98,15 @@ try {
       cards: [{ id: 'n1', type: 'note', x: 0, y: 0, w: 220, h: 120, text: 'Checkout: show the total first' }],
       links: [],
       tray: [],
-      // builds from before they were named
+      // builds from before they were named, with a Commit that doesn't name its build either
       chat: ['aaa', 'bbb'].map((snapshot, t) => ({
         who: 'myra',
         text: 'An older build.',
         t,
-        acts: [{ kind: 'buildUndo', board: 'pb', snapshot }],
+        acts: [
+          { kind: 'commit', board: 'pb', message: 'Older' },
+          { kind: 'buildUndo', board: 'pb', snapshot },
+        ],
       })),
     });
     await window.__fenmyr.refreshBoards();
@@ -117,8 +120,8 @@ try {
   await open('pb');
   assert.deepStrictEqual(
     await rowsOf('An older build.'),
-    [[], ['Undo this build']],
-    'a prototype from before builds were named shows only the newest Undo in its chat',
+    [[], ['Commit', 'Undo this build']],
+    'a prototype from before builds were named shows only the newest Commit and Undo in its chat',
   );
   await build('First build.');
   await built(1);
@@ -130,8 +133,8 @@ try {
   await built(2);
   assert.deepStrictEqual(
     await builtRows(),
-    [['Commit'], ['Commit', 'Undo this build']],
-    'after two builds only the newest one’s Undo shows',
+    [[], ['Undo this build', 'Commit']],
+    'after two builds only the newest one’s Undo and Commit show',
   );
 
   await tap('Commit');
@@ -140,7 +143,7 @@ try {
   await reopen('pb');
   assert.deepStrictEqual(
     await builtRows(),
-    [['Commit'], ['Undo this build']],
+    [[], ['Undo this build']],
     'Commit then Not now keeps that build’s Undo, and only the Commit goes',
   );
   await tap('Undo this build');

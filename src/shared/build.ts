@@ -88,3 +88,128 @@ export function readBuildEvent(x: unknown): BuildEvent | null {
   if (!isRecord(x) || typeof x.id !== 'string' || !isType(x.type)) return null;
   return READ[x.type](x, x.id);
 }
+
+/** How a build ended. from: the cards its code came from that were still on the board when it landed. */
+type BuildEnd =
+  | { kind: 'built'; at: number; files: FileDiff[]; outside: string[]; from: string[] }
+  | { kind: 'failed'; at: number; files: FileDiff[] };
+
+/** One build, as its prototype's chat keeps it, on the message that shows its block. It is written when the build is
+ *  asked for. start: when the host had saved the folder (renderer clock) and the snapshot it took, written together.
+ *  end: how it ended. Neither says "running": that lives only in memory, so a start with no end that isn't running
+ *  here was cut off by Fenmyr closing. */
+export type BuildRecord = {
+  kind: 'build';
+  board: string;
+  build: string;
+  // its first 200 characters
+  request: string;
+  // how many cards the builder read
+  cards: number;
+  start?: { at: number; snapshot: string };
+  end?: BuildEnd;
+  undone?: true;
+};
+
+const MAX_REQUEST = 200;
+const MAX_FROM = 80;
+const isTime = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x) && x >= 0;
+
+function readEnd(x: unknown): BuildEnd | null {
+  if (!isRecord(x) || !isTime(x.at)) return null;
+  const files = filesOf(x.files);
+  if (x.kind === 'failed') return { kind: 'failed', at: x.at, files };
+  if (x.kind !== 'built') return null;
+  return {
+    kind: 'built',
+    at: x.at,
+    files,
+    outside: textsOf(x.outside).slice(0, MAX_FILES),
+    from: textsOf(x.from).slice(0, MAX_FROM),
+  };
+}
+
+/** A build record from a board file: null without its board or build. A bad start or end drops alone. */
+export function readBuildRecord(x: Fields): BuildRecord | null {
+  if (typeof x.board !== 'string' || typeof x.build !== 'string') return null;
+  const start = isRecord(x.start) ? x.start : {},
+    snapshot = snapshotOf(start.snapshot),
+    end = readEnd(x.end);
+  return {
+    kind: 'build',
+    board: x.board,
+    build: x.build,
+    request: typeof x.request === 'string' ? x.request.slice(0, MAX_REQUEST) : '',
+    cards: isCount(x.cards) ? x.cards : 0,
+    ...(snapshot && isTime(start.at) ? { start: { at: start.at, snapshot } } : {}),
+    ...(end ? { end } : {}),
+    ...(x.undone === true ? { undone: true } : {}),
+  };
+}
+
+/** A build running in this session: starting until the host has saved the folder, then writing, with the files its
+ *  edits have named so far, first seen first. */
+export type BuildLive = { phase: 'starting' } | { phase: 'writing'; files: readonly string[] };
+
+/** How a build reads now, from its record and, while it runs in this session, how far it has got. ms: how long it ran,
+ *  by the renderer's clock. */
+export type BuildState =
+  | BuildLive
+  | { phase: 'built'; ms: number; end: Extract<BuildEnd, { kind: 'built' }> }
+  | { phase: 'failed'; ms: number; files: FileDiff[] }
+  // it failed before the folder was saved, so it changed nothing
+  | { phase: 'early' }
+  // it started, never ended and doesn't run here: Fenmyr closed before it finished
+  | { phase: 'stopped' }
+  // it never got as far as the folder being saved
+  | { phase: 'unstarted' };
+
+export function buildState(a: BuildRecord, live: BuildLive | null): BuildState {
+  const { start, end } = a;
+  if (live && !end) return live;
+  if (end?.kind === 'built') return { phase: 'built', ms: end.at - (start?.at ?? end.at), end };
+  if (end) return start ? { phase: 'failed', ms: end.at - start.at, files: end.files } : { phase: 'early' };
+  return start ? { phase: 'stopped' } : { phase: 'unstarted' };
+}
+
+/** "48 s" under a minute, "2 min 5 s" after, and never less than a second. */
+function took(ms: number) {
+  const s = Math.max(1, Math.round(ms / 1000)),
+    rest = s % 60;
+  return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min${rest ? ` ${rest} s` : ''}`;
+}
+
+/** The block's head. undone: Undo this build put the folder back, which a build that changed files can have had. */
+export function buildHead(s: BuildState, undone: boolean): string {
+  const mark = undone ? ' · undone' : '';
+  switch (s.phase) {
+    case 'starting':
+      return 'Starting…';
+    case 'writing':
+      return 'Building…';
+    case 'built':
+      return `Built in ${took(s.ms)}${mark}`;
+    case 'failed':
+      return `Stopped after ${took(s.ms)}${mark}`;
+    case 'early':
+      return 'Couldn’t start';
+    case 'stopped':
+      return `Stopped · Fenmyr closed before it finished${mark}`;
+    case 'unstarted':
+      return 'Not started';
+    default: {
+      const never: never = s;
+      throw new Error(`unknown build state ${String(never)}`);
+    }
+  }
+}
+
+/** "src/App.tsx +3 −1", or the path alone for a binary file. */
+const fileLine = (f: FileDiff) => (f.kind === 'text' ? `${f.path} +${f.added} −${f.removed}` : f.path);
+
+/** The files a state names: as edits named them while it writes, with their counts once it has ended. */
+export function fileLines(s: BuildState): string[] {
+  if (s.phase === 'writing') return [...s.files];
+  if (s.phase === 'built') return s.end.files.map(fileLine);
+  return s.phase === 'failed' ? s.files.map(fileLine) : [];
+}

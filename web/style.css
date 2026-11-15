@@ -3049,6 +3049,20 @@ body.proto #mcInput { height: var(--input-h, 140px); max-height: none; field-siz
 .sp-list .set-btn { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; }
 .sp-list .set-btn small { font-weight: 500; color: var(--ink-soft); }
 
+/* a build's block in a prototype's chat: a card, not a speech bubble, with its head, a moving bar while it runs, a mark
+   on each step and the cards its code came from. The bar stands still under Calm and reduced motion. */
+#mcList .mc-msg.bare { display: block; align-self: stretch; max-width: none; padding: 10px 13px 11px; border: 1px solid color-mix(in oklch, var(--ink) 12%, transparent); border-radius: 16px; corner-shape: squircle; background: color-mix(in oklch, var(--ink) 3%, transparent); }
+.mc-msg.bare .m-summary { margin-top: 0; padding-top: 0; border-top: 0; }
+.m-summary.build b { font: 700 12.5px/1.35 var(--font); opacity: 1; }
+.m-bar { position: relative; height: 3px; margin: 7px 0 3px; overflow: hidden; border-radius: 2px; background: color-mix(in oklch, var(--ink) 10%, transparent); }
+.m-bar::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 40%; border-radius: inherit; background: var(--pink-deep); animation: m-bar 1.3s ease-in-out infinite; }
+@keyframes m-bar { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+body.calm .m-bar::after { animation: none; transform: translateX(75%); }
+@media (prefers-reduced-motion: reduce) { .m-bar::after { animation: none; transform: translateX(75%); } }
+.m-summary li[data-mark] { position: relative; padding-left: 17px; }
+.m-summary li[data-mark]::before { content: ""; position: absolute; left: 3px; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--pink-deep); }
+.m-summary li[data-mark="done"]::before { top: .3em; left: 4px; width: 3.5px; height: 7.5px; border: solid var(--ink-soft); border-width: 0 1.6px 1.6px 0; border-radius: 0; background: none; transform: rotate(45deg); }
+.m-summary li[data-mark="bad"]::before { border-radius: 1px; }
 /* colours used in one or two places around the app, named by where they're used and what for; #251 turns these into per-theme tokens */
 :root {
   --anim-shadow: #facea3; --anim-shadow-2: #dca36a; --au-bg: #ff5a6e; --au-bg-2: #fbf8f5; --au-bg-3: #1d1a16; --bd-bg: #2b2722;

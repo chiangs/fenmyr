@@ -26,14 +26,23 @@ function summaryEl(p: Extract<Piece, { slot: 'summary' }>) {
   head.textContent = p.head;
   const { hover } = p;
   p.lines.forEach((line, i) => {
-    const li = list.appendChild(document.createElement('li'));
+    const li = list.appendChild(document.createElement('li')),
+      mark = p.marks?.[i];
     li.textContent = line;
     li.classList.toggle('dim', !!p.dim?.has(i));
+    if (mark) li.dataset.mark = mark;
     if (!hover) return;
     li.onmouseenter = () => hover(i);
     li.onmouseleave = () => hover(null);
   });
-  box.append(head, list);
+  box.append(head);
+  if (p.busy) {
+    const bar = box.appendChild(document.createElement('div'));
+    bar.className = 'm-bar';
+    bar.setAttribute('role', 'progressbar');
+    bar.setAttribute('aria-label', 'Building');
+  }
+  box.append(list);
   return box;
 }
 

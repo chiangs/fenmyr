@@ -121,20 +121,22 @@ try {
   assert.deepStrictEqual(
     landed[0]?.acts?.map(a => [a.kind, 'board' in a && a.board]),
     [
-      ['commit', 'pb'],
       ['buildUndo', 'pb'],
+      ['commit', 'pb'],
     ],
-    'with Commit and Undo this build kept',
+    'with Undo this build and Commit kept',
   );
   assert.ok(
-    chatOf('pb').some(m => m.acts?.some(a => a.kind === 'source' && a.card === 'n1')),
-    'and the card it came from',
+    chatOf('pb').some(m =>
+      m.acts?.some(a => a.kind === 'build' && a.end?.kind === 'built' && a.end.from.includes('n1')),
+    ),
+    'and its block, with the card it came from',
   );
 
   await open('pb');
   assert.deepStrictEqual(
     await buttonsUnder('I put the total first.'),
-    [['Commit', 'Undo this build']],
+    [['Undo this build', 'Commit']],
     'opening the prototype shows its buttons',
   );
   await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
@@ -174,19 +176,13 @@ try {
   standIn.next({ files: { 'src/Other.tsx': 'export const other = 2;\n' }, hold: true, reply: 'Second.' });
   await build('Second.');
   await until(async () => fs.existsSync(other), 'the second build writes Other.tsx');
+  await until(async () => (await buttonsUnder('First.'))[0]?.length === 0, 'the first build’s buttons go as it starts');
   await page.click('#prGit [data-git="commit"]');
   await until(async () => (await question()).length === 1, 'Commit asks first');
   standIn.release();
   await until(async () => (await buttonsUnder('Second.')).length === 1, 'the second build lands on its open board');
   assert.deepStrictEqual(await question(), [['Commit', 'Not now']], 'the question keeps its buttons');
-  await page
-    .locator('#mcList .mc-msg.myra')
-    .filter({ hasText: /^First\./ })
-    .getByRole('button', { name: 'Undo this build' })
-    .click();
-  await settle(page, 600);
-  assert.ok(fs.existsSync(other), 'the first build’s Undo this build, pressed after the second, changes nothing');
-  assert.deepStrictEqual(await buttonsUnder('First.'), [['Commit']], 'and goes');
+  assert.deepStrictEqual(await buttonsUnder('First.'), [[]], 'and the first build’s buttons stay gone');
   await page
     .locator('#mcList .mc-msg.myra')
     .filter({ hasText: /^Commit / })
@@ -200,7 +196,7 @@ try {
     async () => (await buttonsUnder('I couldn’t finish that. Claude Code stopped.')).length === 1,
     'it fails',
   );
-  const kept = [['Commit', 'Undo this build']];
+  const kept = [['Undo this build', 'Commit']];
   assert.deepStrictEqual(await buttonsUnder('Second.'), kept, 'a failure that changed nothing keeps the last Undo');
   await open('one');
   await open('pb');

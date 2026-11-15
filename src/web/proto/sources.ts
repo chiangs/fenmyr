@@ -1,5 +1,4 @@
 import { cardName } from '../../shared/cardTypes.ts';
-import type { ChatAction } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
 import type { Sources } from '../../shared/repos.ts';
 import { fit } from '../canvas/handles.ts';
@@ -9,9 +8,7 @@ import type { SayAction } from '../myra/say.ts';
 import { esc } from '../ui/dom.ts';
 
 // Code linked back to the cards it came from: the builder names them for each file it writes, the board keeps that,
-// and Myra's reply and the code pane offer each card, which a click selects and brings into view.
-const MAX_BUTTONS = 4;
-
+// and the build's block and the code pane offer each card, which a click selects and brings into view.
 const cardOn = (b: Board, id: string) => b.cards.find(c => c.id === id);
 const cardById = (id: string) => cardOn(session.board, id);
 
@@ -38,22 +35,6 @@ export function keepSources(b: Board, sources: Sources) {
   b.proto = { ...b.proto, sources: next };
   return [...used];
 }
-
-// Myra's line naming the cards a build came from: their buttons don't outlast the window, so the words name them too
-export function cardsLine(b: Board, ids: string[]) {
-  const names = ids.flatMap(id => {
-    const c = cardOn(b, id);
-    return c ? [`“${cardName(c)}”`] : [];
-  });
-  return `I built it from these cards on the board: ${names.join(', ')}.`;
-}
-
-// buttons under Myra's reply, one per card the build came from
-export const cardButtons = (b: Board, ids: string[]): ChatAction[] =>
-  ids
-    .slice(0, MAX_BUTTONS)
-    .filter(id => cardOn(b, id))
-    .map(card => ({ kind: 'source', card }));
 
 // a stored card button, while its card is still on the board
 export function sourceButton(id: string): SayAction | null {

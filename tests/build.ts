@@ -1,7 +1,7 @@
 // Myra writing a prototype's code through a stand-in Claude Code: the files change in the prototype's folder, the
-// preview shows the result, her explanation comes with an Undo that puts the folder back without touching what's
-// staged, the header says Building until the build ends, a selection left out of the request reaches the builder as
-// every card, and a change outside the folder is reported.
+// preview shows the result, the build's block links the card it came from, her explanation comes with an Undo that
+// puts the folder back without touching what's staged, the header says Building until the build ends, a selection left
+// out of the request reaches the builder as every card, and a change outside the folder is reported on the block.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -121,30 +121,28 @@ try {
     'her explanation arrives',
   );
   assert.doesNotMatch(await lastMyra(), /CARDS:/, 'the builder’s card line stays out of the chat');
-  await until(
-    async () =>
-      /I built it from these cards on the board: “Checkout: show the total first”\.↗ Checkout: show the total first/.test(
-        await lastMyra(),
-      ),
-    'Myra links the code back to the card it came from',
-  );
+  // the build's block, with the card its code came from, then her explanation with its buttons
   const buttons = () =>
     page.evaluate(() =>
       [...document.querySelectorAll('#mcList .mc-msg.myra')]
         .slice(-2)
-        .map(m => [...m.querySelectorAll('.m-acts button')].map(b => b.textContent)),
+        .map(m => [...m.querySelectorAll('button')].map(b => b.textContent)),
     );
   const built = await buttons();
-  assert.deepStrictEqual(built, [['Commit', 'Undo this build'], ['↗ Checkout: show the total first']]);
+  assert.deepStrictEqual(
+    built,
+    [['↗ Checkout: show the total first'], ['Undo this build', 'Commit']],
+    'Myra links the code back to the card it came from',
+  );
   await page.waitForTimeout(500);
   await page.evaluate(id => window.__fenmyr.openBoard(id), home);
   await page.waitForTimeout(300);
   await page.evaluate(() => window.__fenmyr.openBoard('pb'));
-  await until(async () => (await lastMyra()).includes('I built it from these cards'), 'the prototype opens again');
+  await until(async () => (await lastMyra()).includes('I built the heading'), 'the prototype opens again');
   await page.waitForTimeout(300);
   assert.deepStrictEqual(await buttons(), built, 'Commit, Undo and the card button are back after opening it again');
   await page.evaluate(() => window.__fenmyr.selectOnly([]));
-  await page.locator('#mcList .m-acts button', { hasText: '↗ Checkout' }).last().click();
+  await page.locator('#mcList button', { hasText: '↗ Checkout' }).last().click();
   assert.deepStrictEqual(await page.evaluate(() => window.__fenmyr.sel), ['n1'], 'her card button selects it');
   const sources = () =>
     JSON.stringify(JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', 'pb.json'), 'utf8')).proto.sources);
@@ -287,7 +285,8 @@ try {
 
   await build('OUTSIDE this time.');
   await until(
-    async () => /I also changed files outside this prototype: stray\.txt/.test(await lastMyra()),
+    async () =>
+      /Also changed outside this prototype: stray\.txt\. Undo this build won’t put that back\./.test(await lastMyra()),
     'a change outside the folder is reported',
   );
   const shot = await page.evaluate(() => window.Fenmyr.captureArea({ x: 0, y: 0, w: 40, h: 30 }));
