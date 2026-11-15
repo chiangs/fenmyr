@@ -44,6 +44,9 @@ export function redrawBlock(build: string) {
   if (found) redrawMsg(found.m);
 }
 
+/** A build's record in the open board's chat, if it still has one. */
+export const recordOf = (build: string) => find(chatLog(), build)?.a ?? null;
+
 // Every block, and every line with Undo this build or Commit: which of their buttons show follows the newest build.
 const NEWEST_ONLY = new Set<ChatAction['kind']>(['build', 'buildUndo', 'commit']);
 function redrawBuilds() {
@@ -57,7 +60,10 @@ export const asked =
     if (b.kind !== 'prototype' || find(b.chat ?? [], r.build)) return false;
     const { m } = newBlock(r);
     pushMsg(b, m);
-    if (b === session.board) showAdded([m]);
+    if (b !== session.board) return true;
+    // the build before it stops being the newest
+    redrawBuilds();
+    showAdded([m]);
     return true;
   };
 
@@ -78,12 +84,13 @@ function startIn(b: Prototype, r: Running) {
   return changed;
 }
 
-/** Started: the host's start event. */
+/** Started: the host's start event. It was already the newest build since it was asked for, so only its block, now
+ *  building, is drawn again. */
 export const started =
   (r: Running): Change =>
   b => {
     if (b.kind !== 'prototype' || !startIn(b, r)) return false;
-    if (b === session.board) redrawBuilds();
+    if (b === session.board) redrawBlock(r.build);
     return true;
   };
 

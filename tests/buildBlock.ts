@@ -1,9 +1,9 @@
 // A build is one block in its prototype's chat. It grows a line per file while Claude Code writes, with the chat left
-// as it is, then reads "Built in N s" with the lines each file gained and lost and the card it was made from. Her
-// explanation follows with Undo this build, Commit and her next steps, which her reply that started it doesn't have.
-// Myra reads the block, it and her buttons come back after a restart, Undo this build says so on it, only the newest
-// build shows Undo this build and Commit, a build cut off by quitting reads stopped and can be undone, and a block the
-// chat lost while the build ran comes back.
+// as it is and the board file unwritten, then reads "Built in N s" with the lines each file gained and lost and the card
+// it was made from. Her explanation follows with Undo this build, Commit and her next steps, which her reply that
+// started it doesn't have. Myra reads the block, it and her buttons come back after a restart, and Undo this build says
+// so on it. Only the newest build shows Undo this build and Commit, from the moment it is asked for. A build cut off by
+// quitting reads stopped and can be undone, and a block the chat lost while the build ran comes back.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -92,14 +92,26 @@ try {
       name: 'Checkout',
       folder: 'pf',
       kind: 'prototype',
-      proto,
+      // its newest build is from before Commit named its build
+      proto: { ...proto, build: 'old' },
       cards: [
         { id: 'n1', type: 'note', x: 0, y: 0, w: 220, h: 120, text: 'Checkout: show the total first' },
         { id: 'n2', type: 'note', x: 260, y: 0, w: 220, h: 120, text: 'Card fields' },
       ],
       links: [],
       tray: [],
-      chat: [{ who: 'me', text: 'Hello', t: 1 }],
+      chat: [
+        { who: 'me', text: 'Hello', t: 1 },
+        {
+          who: 'myra',
+          text: 'An older build.',
+          t: 2,
+          acts: [
+            { kind: 'commit', board: 'pb', message: 'Older' },
+            { kind: 'buildUndo', board: 'pb', snapshot: 'a'.repeat(40), build: 'old' },
+          ],
+        },
+      ],
     });
     await window.__fenmyr.refreshBoards();
     return proto.dir;
@@ -113,6 +125,21 @@ try {
   fs.writeFileSync(path.join(repo, 'staged.txt'), 'mine');
   git('add', 'staged.txt');
   await open('pb');
+  const boardFile = path.join(data, 'fenmyr', 'boards', 'pb.json'),
+    written = () => fs.statSync(boardFile).mtimeMs;
+
+  assert.deepStrictEqual(
+    await buttonsUnder('An older build.'),
+    [['Commit', 'Undo this build']],
+    'an older build’s line',
+  );
+  standIn.next({ files: { 'src/Half.tsx': 'half\n' }, fail: 'I ran out of room.' });
+  await build('Start the form.');
+  const half = 'I couldn’t finish that. I ran out of room.';
+  await until(async () => (await buttonsUnder(half)).length === 1, 'a build that fails after writing a file');
+  assert.deepStrictEqual(await buttonsUnder('An older build.'), [[]], 'takes the older build’s Commit and Undo away');
+  await tap('Undo this build');
+  await until(async () => !fs.existsSync(file('src/Half.tsx')), 'and its own Undo this build takes Half.tsx away');
 
   await page().evaluate(() => Object.assign(document.querySelector('#mcList .mc-msg.me') ?? {}, { kept: 'yes' }));
   const explained = 'I made the form and put the total first.';
@@ -134,12 +161,17 @@ try {
   assert.strictEqual(b?.head, 'Building…', 'while Claude Code writes');
   assert.ok(b?.bar, 'with a moving bar');
   assert.deepStrictEqual(b?.marks, ['done', 'now'], 'the file being written marked as such');
+  // her reply's save has landed by now
+  await settle(page(), 1000);
+  const before = written();
   standIn.release();
   await until(
     async () => (await last())?.lines.join('|') === 'Read 2 cards|src/App.tsx|src/Form.tsx',
     'then a line for Form.tsx',
   );
   assert.deepStrictEqual((await last())?.marks, ['done', 'done', 'now'], 'the newest marked, the others done');
+  await page().waitForTimeout(800);
+  assert.strictEqual(written(), before, 'and the board file isn’t written for each file');
   standIn.release();
 
   await until(async () => /^Built in \d+ s$/.test((await last())?.head ?? ''), 'it ends built');
@@ -154,9 +186,13 @@ try {
   await until(async () => (await buttonsUnder(explained)).length === 1, 'her explanation follows');
   const hers = [['Undo this build', 'Commit', 'Add a coupon field', 'Show the total in bold']];
   assert.deepStrictEqual(await buttonsUnder(explained), hers, 'with Undo this build, Commit and her next steps');
-  assert.deepStrictEqual(await buttonsUnder('Writing it now.'), [[]], 'her reply that started it has no next steps');
   assert.deepStrictEqual(
-    (await texts()).slice(1).map(t => (t?.startsWith('Built in') ? 'block' : t)),
+    (await buttonsUnder('Writing it now.')).at(-1),
+    [],
+    'her reply that started it has no next steps',
+  );
+  assert.deepStrictEqual(
+    (await texts()).slice(-3).map(t => (t?.startsWith('Built in') ? 'block' : t)),
     ['Writing it now.', 'block', `${explained}Undo this buildCommitAdd a coupon fieldShow the total in bold`],
     'three messages: her reply, the block and her explanation',
   );
@@ -197,6 +233,30 @@ try {
   await open('one');
   await open('pb');
   assert.deepStrictEqual(await rows(), newest, 'after opening it again too');
+
+  // the host takes a while to answer, so the next build is still starting
+  await page().evaluate(() => {
+    const real = window.Fenmyr.protoBuild;
+    window.Fenmyr.protoBuild = async a => {
+      window.Fenmyr.protoBuild = real;
+      await new Promise(go => Object.assign(window, { go }));
+      return real(a);
+    };
+  });
+  standIn.next({ files: {}, reply: 'Nothing needed changing.' });
+  await build('Check the total.');
+  await until(async () => (await last())?.head === 'Starting…', 'the next build starts');
+  assert.ok((await last())?.bar, 'with its bar');
+  assert.deepStrictEqual(
+    await buttonsUnder('I added the total.'),
+    [[]],
+    'and the build before can’t be undone or committed meanwhile',
+  );
+  await page().evaluate(() => {
+    const go = Reflect.get(window, 'go');
+    if (typeof go === 'function') go();
+  });
+  await until(async () => (await buttonsUnder('Nothing needed changing.')).length === 1, 'it ends');
 
   const total = fs.readFileSync(file('src/App.tsx'), 'utf8');
   standIn.next({ files: { 'src/App.tsx': 'export const App = () => <h1>Cut off</h1>;\n' }, hold: true });
