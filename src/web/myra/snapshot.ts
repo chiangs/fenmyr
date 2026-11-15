@@ -5,7 +5,7 @@ import { appState, session } from '../core/state.ts';
 import { hasDue } from '../features/due.ts';
 import { myTpls } from '../features/templates.ts';
 import { foldersIn, looseFolders } from '../library/tree.ts';
-import { liveOf } from '../proto/buildSlot.ts';
+import { building, liveOf } from '../proto/buildSlot.ts';
 import { canonical } from '../richtext/dialect.ts';
 import { settings } from '../settings/settings.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
@@ -68,9 +68,15 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
     ),
     myraStyle: { name: settings.name || '', chat: settings.chat, emoji: !!settings.emoji }, // the host turns these into words (TONES in linux/prompts.js)
     commands: SLASH.filter(c => !c.dev).map(c => ({ cmd: c.cmd, arg: c.arg, desc: c.desc, ex: c.ex, opts: c.opts })),
+    // building: a build runs or waits, so one she asks for now waits its turn
     prototype:
       session.board.kind === 'prototype'
-        ? { stack: session.board.proto.stack, purpose: session.board.proto.purpose, device: session.board.proto.device }
+        ? {
+            stack: session.board.proto.stack,
+            purpose: session.board.proto.purpose,
+            device: session.board.proto.device,
+            building: building() || undefined,
+          }
         : undefined,
     person: birthdayFacts(), // the slash commands, so she knows every one (the host puts them in her instructions)
     library: {
