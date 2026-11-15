@@ -17,12 +17,23 @@ import { closeColor } from '../ui/colorPicker.ts';
 import { renderPalette } from '../ui/palette.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { refreshVNotes, vnFull } from '../vault/notes.ts';
+import { holdBoard } from './boardWrites.ts';
 import { miniCache } from './homeTiles.ts';
 import { refreshBoards } from './rowMenu.ts';
 
 export async function openBoard(id: string) {
   // an edit still waiting to save belongs to the board you're leaving: save it first
   if (appState.saveT && session.board) await saveNow();
+  // held until this is the open board, so a build's change to it lands in the file this loads or in the open board
+  const release = await holdBoard(id);
+  try {
+    await swapIn(id);
+  } finally {
+    release();
+  }
+}
+
+async function swapIn(id: string) {
   const b = await Fenmyr.load(id);
   if (!b) return;
   // the draft goes with the board you're leaving, words typed while this one loaded included

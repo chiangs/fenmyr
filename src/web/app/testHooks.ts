@@ -23,6 +23,7 @@ import {
 import { durText, parseTimer, timerRequest } from '../features/duration.ts';
 import { saveAsTemplate, saveWithDialog, useTemplate } from '../features/templates.ts';
 import { currentPose, timer, timerCheck } from '../features/timer.ts';
+import { changeBoard } from '../library/boardWrites.ts';
 import { openHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
@@ -90,6 +91,8 @@ const makeHooks = () => ({
   copyCards,
   pasteCards,
   openBoard,
+  // a build's write to a board, open or not
+  changeBoard,
   curBoard: () => session.board,
   nextBoards,
   draftBoards,
