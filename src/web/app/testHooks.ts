@@ -23,9 +23,10 @@ import {
 import { durText, parseTimer, timerRequest } from '../features/duration.ts';
 import { saveAsTemplate, saveWithDialog, useTemplate } from '../features/templates.ts';
 import { currentPose, timer, timerCheck } from '../features/timer.ts';
+import { changeBoard } from '../library/boardWrites.ts';
 import { openHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
-import { refreshBoards } from '../library/rowMenu.ts';
+import { refreshBoards, renameBoard } from '../library/rowMenu.ts';
 import { boardsIn, moveBoard, putFolder } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
 import { ANIMS, animIntent, animName, animRequest, lastAnim, playAnim, stopAnim } from '../myra/anim.ts';
@@ -90,6 +91,8 @@ const makeHooks = () => ({
   copyCards,
   pasteCards,
   openBoard,
+  // a build's write to a board, open or not
+  changeBoard,
   curBoard: () => session.board,
   nextBoards,
   draftBoards,
@@ -97,6 +100,8 @@ const makeHooks = () => ({
   refreshBoards: () => refreshBoards(),
   // what dropping a board or folder in the library calls
   moveBoard,
+  // what renaming a board in the library calls
+  renameBoard,
   putFolder,
   boardOrder: () => appState.boardOrder,
   boardsOf: (fid: string) => boardsIn(fid).map(b => b.name),

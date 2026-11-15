@@ -1,5 +1,5 @@
 import { $ } from '../core/dom.ts';
-import { appState } from '../core/state.ts';
+import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { goo } from './goos.ts';
 
@@ -7,7 +7,8 @@ import { goo } from './goos.ts';
 export type Busy =
   | { kind: 'thinking' }
   | { kind: 'reading'; notes: number }
-  | { kind: 'building'; file: string | null }
+  // board and name: the prototype it builds, named on the status line while another board is open
+  | { kind: 'building'; board: string; name: string; file: string | null }
   | { kind: 'pictures'; n: number }
   | { kind: 'rewriting' };
 
@@ -25,6 +26,7 @@ function busyLine(b: Busy): Line {
     case 'reading':
       return { say: `Reading ${plural(b.notes, 'note', 'notes')}`, more: '' };
     case 'building':
+      if (session.board?.id !== b.board) return { say: `Building ${b.name}`, more: '' };
       return { say: 'Building', more: b.file ? ` ${b.file}` : '' };
     case 'pictures':
       return { say: `Making ${plural(b.n, 'picture', 'pictures')}`, more: '' };
@@ -65,11 +67,27 @@ const restText = () =>
 const jobs = new Map<symbol, Busy>();
 let posed = false;
 
+// a passing note, such as a build that ended on another board, said in place of the resting text
+const NOTE_MS = 8000;
+let note = '';
+let noteT: ReturnType<typeof setTimeout> | undefined;
+
+/** Says `text` on the status line for 8 seconds, in place of the resting text. An empty text takes the note away. */
+export function noteStatus(text: string) {
+  note = text;
+  clearTimeout(noteT);
+  noteT = setTimeout(() => {
+    note = '';
+    paintStatus();
+  }, NOTE_MS);
+  paintStatus();
+}
+
 /** The only writer of the header's status line, the typing dots and her thinking pose. */
 export function paintStatus() {
   const all = [...jobs.values()],
     top = all.at(-1),
-    line = top ? busyLine(top) : { say: restText(), more: '' },
+    line = top ? busyLine(top) : { say: note || restText(), more: '' },
     // a build runs in the background, so it shows in the header without dots or the thinking pose
     thinking = all.some(b => b.kind !== 'building'),
     typing = all.some(answersInChat),
@@ -80,6 +98,8 @@ export function paintStatus() {
   if (say.textContent !== line.say) say.textContent = line.say;
   if (more.textContent !== line.more) more.textContent = line.more;
   $('mcStatus').classList.toggle('busy', !!top);
+  // a narrow docked chat cuts the line short, as with a build named from another board
+  $('mcStatus').title = line.say + line.more;
   if (thinking !== posed) {
     posed = thinking;
     $('myra').classList.toggle('thinking', thinking);

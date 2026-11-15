@@ -39,7 +39,8 @@ export type Piece =
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };
 
-const one = (slot: Row, after: After, b: SayAction | null): Piece[] => (b ? [{ slot, button: { ...b, after } }] : []);
+const one = (slot: Row, after: After, b: Omit<Button, 'after'> | null): Piece[] =>
+  b ? [{ slot, button: { ...b, after } }] : [];
 
 const count = (n: number, single: string, plural: string) => `${n} ${n === 1 ? single : plural}`;
 const link = (label: string, title: string, run: () => unknown): Button => ({ label, title, after: 'stay', run });

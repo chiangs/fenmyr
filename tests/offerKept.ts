@@ -264,7 +264,12 @@ try {
     assert.deepStrictEqual({ protos: await protos(), builds: built() }, before, 'no board is made');
     await kept('one', REPLIES.OFFER_ONE.say);
     fs.writeFileSync(delay, '0');
-    await until(async () => (await myraSaid()) === 'I built it.', 'the other build is done', 30000);
+    // it lands in its own prototype, so this board hears of it only on the status line
+    await until(
+      async () => / is built$/.test((await l.page.textContent('#mcStatusSay')) ?? ''),
+      'the other build is done',
+      30000,
+    );
     await tap('Start and build');
     await until(() => built() === before.builds + 1, 'once it’s done, Start and build makes the board and builds');
     assert.strictEqual(await protos(), before.protos + 1);

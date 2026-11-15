@@ -2,6 +2,7 @@ import type { StoredBoard } from '../../shared/model.ts';
 import { PROTO_DIR, protoSlug } from '../../shared/repos.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
+import { changeBoard } from '../library/boardWrites.ts';
 import { say } from '../myra/say.ts';
 import { askGit } from './askGit.ts';
 
@@ -20,9 +21,11 @@ async function setDir(id: string, dir: string) {
     session.board.proto = { ...session.board.proto, dir };
     return save();
   }
-  const b = await Fenmyr.load(id);
-  if (b?.kind !== 'prototype') return;
-  await Fenmyr.save({ ...b, proto: { ...b.proto, dir } });
+  await changeBoard(id, b => {
+    if (b.kind !== 'prototype') return false;
+    b.proto = { ...b.proto, dir };
+    return true;
+  });
 }
 
 // After a prototype board is renamed: offer to rename its code folder to match. Saying no changes nothing.
