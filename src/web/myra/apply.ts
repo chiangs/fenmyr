@@ -181,6 +181,8 @@ export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned):
     changed = record.cards.length > 0 || record.links.length > 0,
     board = session.board.id;
   if (changed) keepReply(id, record);
+  // a build starts once her line is in, even when drawing it failed
+  let later: (() => void)[] = [];
   // From here the board has her changes, so a failure keeps them and Undo.
   try {
     if (tpl?.mode === 'add') say(`Here’s “${tpl.name}” ✦ It’s all yours to change.`, 4000);
@@ -190,6 +192,7 @@ export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned):
       ran = await runEffects(effectsOf(held), touched),
       line = replyLine(held, touched, ran.acts),
       said = [leftAll ? '' : line.text, ...ran.failed, leftLine(left)].filter(Boolean).join(' ');
+    later = ran.later;
     // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one,
     // and what this reply changed means nothing there.
     const kept = changed && session.board.id === board;
@@ -200,13 +203,14 @@ export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned):
         ...line.acts,
         { kind: 'changes', reply: id, set: storedSet(changes), lines: summaryLines(record, changes) },
       ]);
-    for (const go of ran.later) go();
     return { said, changes, reply: id, leftAll };
   } catch {
     // her line, with Undo under it, is kept before it is drawn, so drawing the chat again shows it
     renderChat();
     reply(AFTER, 0);
     return { said: AFTER, changes, reply: id, leftAll: false };
+  } finally {
+    for (const go of later) go();
   }
 }
 
