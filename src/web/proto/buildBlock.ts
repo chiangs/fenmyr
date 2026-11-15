@@ -1,7 +1,6 @@
 import { type BuildRecord, buildHead, buildState, fileLines } from '../../shared/build.ts';
 import type { Button, Mark, Piece } from '../myra/acts.ts';
 import { stoppedUndo } from './buildButtons.ts';
-import { redrawBlock } from './buildRecord.ts';
 import { cancel, liveOf } from './buildSlot.ts';
 import { sourceButton } from './sources.ts';
 
@@ -31,9 +30,8 @@ export function buildPieces(a: BuildRecord): Piece[] {
         label: 'Cancel',
         ghost: true,
         after: 'stay',
-        run: () => {
-          if (cancel(a.build)) redrawBlock(a.build);
-        },
+        // the chat draws the block again after the press, now reading not started
+        run: () => cancel(a.build),
       };
       return [box([a.request.split('\n')[0] ?? ''], ['wait']), { slot: 'other', button: stop }];
     }
