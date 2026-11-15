@@ -9,6 +9,7 @@ import { applyBoxes } from '../ui/boxes.ts';
 import { watchCaptures } from './capture.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
+import { renderDockHead } from './dockHead.ts';
 import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, type Foldable, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
 import { dragOverFrame, renderPreview } from './preview.ts';
@@ -83,8 +84,13 @@ function build() {
   const el = document.createElement('div');
   el.className = 'pr-root';
   el.id = 'proto';
-  el.innerHTML = `<div class="pr-main"><div class="pr-git" id="prGit"></div><div class="pr-row">${panes}</div></div><div class="pr-div" data-d="chat"></div><div class="pr-chat" id="prChat"></div>`;
+  el.innerHTML = `<div class="pr-row">${panes}</div><div class="pr-div" data-d="chat"></div><div class="pr-chat" id="prChat"></div>`;
   document.body.appendChild(el);
+  // the git bar lives in Myra's chat, between the thread and the input's height grip; off a prototype board it's hidden
+  const git = document.createElement('div');
+  git.className = 'pr-git';
+  git.id = 'prGit';
+  $('mcList').after(git);
   el.addEventListener('click', e => {
     const t = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-fold], [data-open]') : null;
     const p = FOLD_ORDER.find(x => x === (t?.dataset.fold ?? t?.dataset.open));
@@ -253,6 +259,7 @@ export function showProto(b: Board) {
   // an empty chat: she tilts her head, wondering what you'll build
   if (!chatLog().length) playAnim('curious', false);
   place();
+  renderDockHead(b);
   renderGitBar(b);
   renderCode(b);
   renderPreview(b);

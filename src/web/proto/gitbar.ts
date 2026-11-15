@@ -3,12 +3,14 @@ import type { GitStatus } from '../../shared/ops.ts';
 import { githubOf, inCommit } from '../../shared/repos.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
+import { boardMenu, type MenuItem, when } from '../features/export.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { closestTo, esc } from '../ui/dom.ts';
 import { gitAction } from './gitActions.ts';
 
-// The git bar always says which repo this prototype uses, its branch, what this computer hasn't committed yet, and
-// whether GitHub has every commit. The two are separate questions, so each says plainly which one it answers.
+// The git bar sits in Myra's chat, above her input. Line one is the branch; line two is what this computer hasn't
+// committed yet, then whether GitHub has every commit. The two are separate questions, so each says plainly which one it
+// answers. Commit stays on the bar; the repo's name, Push, Pull and GitHub wait in its More menu.
 type Repo = Extract<GitStatus, { kind: 'repo' }>;
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -33,12 +35,39 @@ function syncOf(s: Repo) {
       };
 }
 
-// the repo's page on GitHub: the project's own link, else where origin points; '' when it isn't on GitHub
-function githubUrl(s: Repo) {
+// the repo on GitHub: the project's own link, else where origin points; null when it isn't on GitHub
+function onGitHub(s: Repo) {
   const linked = appState.projects.find(p => p.repo?.path === s.root)?.repo?.github,
-    origin = s.remotes.find(r => r.name === 'origin')?.url ?? '',
-    gh = linked ?? githubOf(origin);
-  return gh ? `https://github.com/${gh.owner}/${gh.name}` : '';
+    origin = s.remotes.find(r => r.name === 'origin')?.url ?? '';
+  return linked ?? githubOf(origin);
+}
+
+// More opens over the thread, ending just above its button, so the input stays in view. It's laid out at the corner
+// first, where nothing squeezes it, so its width is its own. Its heading names the repo, and names the menu for a
+// screen reader.
+function openMore(at: Element, heading: string, items: MenuItem[]) {
+  const r = at.getBoundingClientRect();
+  boardMenu({ clientX: 0, clientY: 0 }, items);
+  const m = $('rowMenu');
+  m.insertAdjacentHTML('afterbegin', heading);
+  m.setAttribute('aria-labelledby', 'pgWhere');
+  m.style.left = `${Math.max(8, r.right - m.offsetWidth)}px`;
+  m.style.top = `${Math.max(8, r.top - m.offsetHeight - 6)}px`;
+}
+
+// The bar is read again often (the preview starting, the window coming back), mostly to the same result, so it's only
+// redrawn when it changes. A redraw closes More, whose items are out of date, and keeps a keyboard user on the button
+// they were on, or on More when they were in its menu.
+const drawn = new WeakMap<Element, string>();
+function draw(el: HTMLElement, html: string) {
+  if (drawn.get(el) === html) return;
+  drawn.set(el, html);
+  const menu = document.querySelector('#rowMenu[aria-labelledby="pgWhere"]'),
+    on = document.activeElement,
+    focused = menu?.contains(on) ? 'more' : el.contains(on) ? closestTo(on, '[data-git]')?.dataset.git : '';
+  menu?.remove();
+  el.innerHTML = html;
+  if (focused) el.querySelector<HTMLElement>(`[data-git="${focused}"]`)?.focus();
 }
 
 // files change outside Fenmyr too (an editor, a terminal commit), so coming back to the window reads the repo again
@@ -54,23 +83,25 @@ export async function renderGitBar(b: Board) {
   const el = $('prGit'),
     root = rootOf(b);
   if (!root) {
-    el.innerHTML = '<span class="pg-warn">This prototype’s project isn’t linked to a repo.</span>';
+    draw(el, '<span class="pg-warn">This prototype’s project isn’t linked to a repo.</span>');
     return;
   }
   const s = await Fenmyr.gitStatus(root).catch(() => null);
   if (s?.kind !== 'repo') {
     const where = esc(root);
-    el.innerHTML = `<span class="pg-warn">Git can’t read the repo at ${where}.</span>`;
+    draw(el, `<span class="pg-warn">Git can’t read the repo at ${where}.</span>`);
     return;
   }
   const own = b.kind === 'prototype' ? s.changed.filter(c => inCommit(b.proto.dir, c.path)).length : 0,
     elsewhere = s.changed.length - own,
     sync = syncOf(s);
-  const repo = esc(s.root.split('/').pop() ?? s.root),
+  const name = s.root.split('/').pop() ?? s.root,
+    repo = esc(name),
     where = esc(s.root),
+    repoTip = esc(`${name} · ${s.root}`),
     branch = esc(s.branch ?? 'no branch'),
-    branchIcon = Icon('git-branch', { size: 13 }),
-    changes = own ? `${plural(own, 'change')} not committed` : 'Everything committed',
+    branchIcon = Icon('git-branch', { size: 14 }),
+    changes = own ? `${plural(own, 'file')} not committed` : 'Everything committed',
     changesTip = esc(
       elsewhere
         ? `Files in this prototype that changed since its last commit. ${plural(elsewhere, 'other file')} changed elsewhere in the repo.`
@@ -78,20 +109,30 @@ export async function renderGitBar(b: Board) {
     ),
     syncText = esc(sync.text),
     syncTip = esc(sync.tip),
-    syncIcon = sync.icon ? Icon(sync.icon, { size: 14 }) : '',
+    syncIcon = sync.icon ? Icon(sync.icon, { size: 13 }) : '',
     commitIcon = Icon('git-commit', { size: 14 }),
-    pushIcon = Icon('cloud-up', { size: 14 }),
-    pullIcon = Icon('cloud-down', { size: 14 }),
-    hub = githubUrl(s),
-    hubIcon = Icon('github', { size: 15 }),
-    hubTitle = esc(`Open ${hub.replace('https://', '')} in your browser`),
-    github = hub ? `<button class="pv-btn pg-gh" data-git="github" title="${hubTitle}">${hubIcon}</button>` : '',
+    moreIcon = Icon('more', { size: 15 }),
+    gh = onGitHub(s),
+    hub = gh ? `https://github.com/${gh.owner}/${gh.name}` : '',
+    ghName = gh ? esc(`${gh.owner}/${gh.name}`) : '',
     behind = s.behind,
-    pull = behind ? `<button class="pv-btn" data-git="pull">${pullIcon}Pull ${behind} from GitHub</button>` : '';
-  el.innerHTML = `<b class="pg-repo" title="${where}">${repo}</b><span class="pg-chip">${branchIcon}${branch}</span><span title="${changesTip}">${changes}</span><span class="pg-sync" title="${syncTip}">${syncIcon}${syncText}</span>${pull}<button class="pv-btn" data-git="commit">${commitIcon}Commit</button><button class="pv-btn" data-git="push">${pushIcon}Push</button>${github}`;
+    push = s.branch ? `Push ${branch} to GitHub` : 'Push to GitHub',
+    heading = `<span class="pg-where" id="pgWhere" aria-hidden="true"><b>${repo}</b><small>${where}</small></span>`;
+  draw(
+    el,
+    `<span class="pg-ic">${branchIcon}</span><b class="pg-branch" title="${repoTip}">${branch}</b><span class="pg-state"><span title="${changesTip}">${changes}</span> · <span title="${syncTip}">${syncIcon}${syncText}</span></span><button class="pv-btn pg-commit" data-git="commit">${commitIcon}Commit</button><button class="pv-btn pg-more" data-git="more" title="More git actions" aria-label="More git actions" aria-haspopup="menu" aria-expanded="false">${moreIcon}</button>`,
+  );
+  // with no remote, line two already says it isn't on GitHub, so there's nowhere to push
+  const actions: MenuItem[] = [
+    ...when(s.remotes.length > 0, [{ label: push, run: () => gitAction('push') }]),
+    ...when(behind > 0, [{ label: `Pull ${behind} from GitHub`, run: () => gitAction('pull') }]),
+    ...when(!!hub, [{ label: `Open ${ghName} on GitHub`, run: () => Fenmyr.openURL(hub) }]),
+  ];
+  const more = when(actions.length > 0, ['-', ...actions]);
   el.onclick = e => {
-    const a = closestTo(e.target, '[data-git]')?.dataset.git;
-    if (a === 'github') Fenmyr.openURL(hub);
+    const at = closestTo(e.target, '[data-git]'),
+      a = at?.dataset.git;
+    if (at && a === 'more') openMore(at, heading, more);
     else if (a) gitAction(a);
   };
 }

@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { type Launched, launch } from './support/launch.ts';
+import { fromGitMenu } from './support/prototype.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-done-')));
 const repo = path.join(work, 'acme'),
@@ -202,7 +203,7 @@ try {
     .click();
   await until(async () => /Committed\./.test(await myra()), 'the commit is made');
 
-  await page.click('#prGit [data-git="push"]');
+  await fromGitMenu(page, 'Push main to GitHub');
   await until(async () => /Push main of acme to /.test(await myra()), 'Myra asks before pushing');
   await page.locator('#mcList .m-acts button.danger', { hasText: 'Push main to' }).last().click();
   await until(async () => /Pushed\./.test(await myra()), 'the push is made');
