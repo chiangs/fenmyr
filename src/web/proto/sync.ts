@@ -49,7 +49,7 @@ function clash(b: Prototype, root: string, files: string[], redo: string) {
       {
         label: 'Keep mine on a new branch',
         cls: 'next',
-        held: () => stillBuilding(b, 'pull'),
+        // a new branch where this one is, then a push, changes no file a build is writing, so it doesn't wait
         run: () =>
           Fenmyr.gitKeepMine({ root, branch, account: account(root) })
             .then(() => say(`Your version is on ${branch}, on GitHub too ✦`, 6000))
