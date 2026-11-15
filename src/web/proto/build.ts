@@ -9,6 +9,8 @@ import { refreshPanes } from './buildButtons.ts';
 import { asked, ended, endedLost, redrawBlock, redrawNewest, started } from './buildRecord.ts';
 import {
   building,
+  catchUp,
+  caughtUp,
   claimSlot,
   dequeue,
   enqueue,
@@ -80,8 +82,10 @@ function nextWaiting() {
   return null;
 }
 
-// One build at a time across the app: the oldest waiting request starts once none runs, whichever board is open.
+// One build at a time across the app: the oldest waiting request starts once none runs and the open board's preview
+// has caught up with the last one, whichever board is open.
 async function pump() {
+  await caughtUp();
   if (runningBuild()) return;
   const w = nextWaiting();
   if (!w) return;
@@ -141,31 +145,33 @@ function land(r: Running, e: End, said?: string) {
 }
 
 // Another board only hears how it ended, on the status line, by the board's name as it is then. name: the board's
-// name for a failure to write it. The next build waits for the open board's preview to show this one's code, so it is
+// name for a failure to write it. The next build waits until the open board's preview shows this one's code, so it is
 // sent that code's errors and not the code's before.
 function landOn(board: string, name: string, e: End, done: () => void, change: (b: Board) => boolean) {
   // the board's name as it lands, which stays null when the board was deleted
   let landed: string | null = null;
-  void changeBoard(board, b => {
-    if (!change(b)) return false;
-    landed = b.name;
-    return true;
-  }).then(
-    () => {
-      done();
-      const open = session.board?.id === board,
-        words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
-      // the open board shows no note, since its block says how it went, but a screen reader hears it
-      if (landed !== null) (open ? noteHeard : noteStatus)(words);
-      void (open ? refreshPanes() : Promise.resolve()).finally(pump);
-    },
-    (err: unknown) => {
-      done();
-      console.error('A build’s result could not be written to its board', err);
-      noteStatus(`Couldn’t save ${landed ?? name}’s build to its chat`);
-      void pump();
-    },
+  catchUp(
+    changeBoard(board, b => {
+      if (!change(b)) return false;
+      landed = b.name;
+      return true;
+    }).then(
+      () => {
+        done();
+        const open = session.board?.id === board,
+          words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
+        // the open board shows no note, since its block says how it went, but a screen reader hears it
+        if (landed !== null) (open ? noteHeard : noteStatus)(words);
+        return open ? refreshPanes() : undefined;
+      },
+      (err: unknown) => {
+        done();
+        console.error('A build’s result could not be written to its board', err);
+        noteStatus(`Couldn’t save ${landed ?? name}’s build to its chat`);
+      },
+    ),
   );
+  void pump();
 }
 
 // The host's protoBuild events, for the build that's running: its start, each file as Claude Code writes it, which

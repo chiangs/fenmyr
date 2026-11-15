@@ -40,6 +40,22 @@ export type Waiting = Pick<Running, 'build' | 'board' | 'name' | 'root' | 'reque
 let running: Running | null = null;
 // oldest first
 const queue: Waiting[] = [];
+// the open board's preview catching up with the builds that have landed
+let catching: Promise<unknown> = Promise.resolve();
+
+/** Holds the next build back until `landed` settles: a build has landed, and the open board's preview is catching up with
+ *  it. A build started before then would be sent the errors of the code before. */
+export function catchUp(landed: Promise<unknown>) {
+  catching = Promise.allSettled([catching, landed]);
+}
+
+/** Settles once the open board's preview has caught up with every build that has landed, one that lands meanwhile too. */
+export async function caughtUp() {
+  for (let c = catching; ; c = catching) {
+    await c;
+    if (c === catching) return;
+  }
+}
 
 /** Takes the slot, before anything is awaited, so a second request can't slip in while this one starts. */
 export function claimSlot(r: Running) {

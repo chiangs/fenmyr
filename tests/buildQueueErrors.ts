@@ -1,5 +1,6 @@
 // A build that waited its turn on the open board is sent the errors the preview shows once it has caught up with the
-// build before it, not the errors of the code that build replaced.
+// build before it, not the errors of the code that build replaced, even when another request arrives as that build
+// lands.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -32,6 +33,8 @@ const until = async (check: () => Promise<boolean> | boolean, what: string, ms =
 };
 const build = (request: string) =>
   page.evaluate(r => window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: r } }, r), request);
+const OLD = "export function App() { console.error('boom-old'); return <h1>Old</h1>; }\n",
+  FIXED = 'export function App() { return <h1>Fixed</h1>; }\n';
 const logged = () =>
   page.evaluate(() => [...document.querySelectorAll('#pr-preview .pv-log *')].map(e => e.textContent ?? '').join(' '));
 
@@ -61,7 +64,7 @@ try {
   await settle(page, 600);
 
   standIn.next({
-    files: { 'src/App.tsx': "export function App() { console.error('boom-old'); return <h1>Old</h1>; }\n" },
+    files: { 'src/App.tsx': OLD },
     reply: 'Broken.',
   });
   await build('Broken build.');
@@ -69,7 +72,7 @@ try {
   await until(async () => (await logged()).includes('boom-old'), 'and the preview shows its error');
 
   standIn.next({
-    files: { 'src/App.tsx': 'export function App() { return <h1>Fixed</h1>; }\n' },
+    files: { 'src/App.tsx': FIXED },
     hold: true,
     reply: 'Fixed.',
   });
@@ -84,6 +87,27 @@ try {
   const [, fix = '', waited = ''] = standIn.builds();
   assert(fix.includes('boom-old'), 'the fix was sent the error the preview showed');
   assert(!waited.includes('boom-old'), 'the build that waited isn’t sent the error the fix took away');
+
+  await until(async () => !(await logged()).includes('boom-old'), 'the preview shows the fixed code');
+  standIn.next({ files: { 'src/App.tsx': OLD }, reply: 'Broken again.' });
+  await build('Broken again.');
+  await until(async () => (await logged()).includes('boom-old'), 'the error is back in the preview');
+  standIn.next({ files: { 'src/App.tsx': FIXED }, hold: true, reply: 'Fixed again.' });
+  await build('Fix again.');
+  await until(() => standIn.wrote() === 1, 'the next build writes the fix');
+  await build('Waiting again.');
+  await until(async () => !!(await texts()).at(-1)?.startsWith('Waiting'), 'another waits');
+  standIn.next({ files: { 'src/Three.tsx': 'export const three = 3;\n' }, reply: 'Waited again.' });
+  standIn.release();
+  await until(async () => (await texts()).includes('Fixed again.'), 'the fix lands');
+  // asked while the preview is still catching up with the fix
+  await build('Late.');
+  await until(
+    async () => (await texts()).filter(t => t === 'Waited again.').length === 2,
+    'both builds behind it land',
+  );
+  const late = standIn.builds().find(p => p.includes('Waiting again.')) ?? '';
+  assert(!late.includes('boom-old'), 'a request that arrives as a build lands doesn’t send the next one stale errors');
   assert.deepStrictEqual(l.errors, [], 'no errors');
   console.log('BUILD QUEUE ERRORS OK');
 } finally {
