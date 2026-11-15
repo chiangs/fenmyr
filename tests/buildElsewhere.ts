@@ -201,6 +201,24 @@ try {
   await open('pb');
   assert.deepStrictEqual(await buttonsUnder('Second.'), kept, 'after reopening too');
 
+  // a build started on Checkout, still running once One is open
+  const buildThenLeave = async (body: string) => {
+    await open('pb');
+    standIn.next({ files: { 'src/App.tsx': body }, hold: true, reply: 'Done.' });
+    await build('Again.');
+    await until(async () => appNow().toString() === body, 'the build writes App.tsx');
+    await open('one');
+  };
+  await buildThenLeave('export const App = () => <h1>Renamed</h1>;\n');
+  await page.evaluate(() =>
+    window.__fenmyr.changeBoard('pb', b => {
+      b.name = 'Payment';
+      return true;
+    }),
+  );
+  standIn.release();
+  await until(async () => (await status()) === 'Payment is built', 'the note names the board as it is called now');
+
   // both start in the same tick, in the order given
   const race = (text: string, first: 'change' | 'open') =>
     page.evaluate(
@@ -226,6 +244,16 @@ try {
     await settle(page, 600);
     assert.strictEqual(chatOf('pb').filter(m => m.text === text).length, 1, `${text}: and so does its file`);
   }
+
+  await buildThenLeave('export const App = () => <h1>Deleted</h1>;\n');
+  await page.evaluate(async () => {
+    await window.Fenmyr.remove('pb');
+    await window.__fenmyr.refreshBoards();
+  });
+  standIn.release();
+  await until(async () => !(await status()).startsWith('Building'), 'the build of a deleted board ends');
+  assert.strictEqual(await status(), 'Ready', 'and nothing announces it');
+  assert.ok(!fs.existsSync(path.join(l.data, 'fenmyr', 'boards', 'pb.json')), 'and the board stays deleted');
   assert.deepStrictEqual(l.errors, []);
   console.log('BUILD ELSEWHERE OK');
 } finally {

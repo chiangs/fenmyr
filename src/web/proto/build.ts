@@ -184,8 +184,8 @@ function endLines(b: Prototype, e: Extract<BuildEvent, { type: 'done' | 'error' 
 }
 
 // The host's protoBuild events, for the build that's running; its end repeats the snapshot its start carries, so the
-// start changes nothing here. The end lands in the build's own prototype whichever board is open, and another board
-// only hears of it on the status line.
+// start changes nothing here. The end lands in the build's own prototype whichever board is open, and the status line
+// says it's building until then. Another board only hears how it ended, on the status line.
 export function buildEvent(data: unknown) {
   const e = readBuildEvent(data);
   if (!running || running === 'starting' || e?.id !== running.id || e.type === 'start') return;
@@ -193,16 +193,19 @@ export function buildEvent(data: unknown) {
     { board, name, job } = end;
   if (e.type === 'edit') return job.show({ kind: 'building', board, name, file: e.file.split('/').at(-1) ?? null });
   running = null;
-  job.end();
-  if (session.board?.id !== board) noteStatus(e.type === 'done' ? `${name} is built` : `${name}’s build stopped`);
+  // the board's name as it lands, which stays null when the board was deleted
+  let landed: string | null = null;
   void changeBoard(board, b => {
     if (b.kind !== 'prototype') return false;
     const lines = endLines(b, e, end);
     for (const m of lines) pushMsg(b, m);
     // drawn in the tick they're added, so the redraw of a board that has just opened can't draw them twice
     if (b === session.board) showAdded(lines);
+    landed = b.name;
     return true;
   }).then(() => {
+    job.end();
     if (session.board?.id === board) void refresh();
+    else if (landed !== null) noteStatus(e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`);
   });
 }
