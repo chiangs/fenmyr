@@ -73,7 +73,15 @@ try {
     return proto.dir;
   }, repo);
   const app = path.join(repo, dir, 'src/App.tsx'),
-    starter = fs.readFileSync(app);
+    starter = fs.readFileSync(app),
+    // Undo this build can remove the file for a moment while it puts it back
+    appNow = () => {
+      try {
+        return fs.readFileSync(app);
+      } catch {
+        return Buffer.alloc(0);
+      }
+    };
   git('add', '-A');
   git('commit', '-qm', 'start');
 
@@ -84,7 +92,7 @@ try {
     reply: 'I put the total first.\nCARDS: src/App.tsx=n1',
   });
   await build('Put the total first.');
-  await until(async () => fs.readFileSync(app, 'utf8').includes('Total first'), 'the build writes App.tsx');
+  await until(async () => appNow().includes('Total first'), 'the build writes App.tsx');
   await open('one');
   const before = { file: chatOf('one').length, shown: (await texts()).length };
   assert.strictEqual(await status(), 'Building Checkout', 'another board’s status line names the build');
@@ -118,11 +126,11 @@ try {
     'opening the prototype shows its buttons',
   );
   await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
-  await until(async () => fs.readFileSync(app).equals(starter), 'Undo this build puts App.tsx back');
+  await until(async () => appNow().equals(starter), 'Undo this build puts App.tsx back');
 
   standIn.next({ files: { 'src/App.tsx': 'half written\n' }, hold: true, fail: 'I ran out of room.' });
   await build('Add a coupon field.');
-  await until(async () => fs.readFileSync(app, 'utf8') === 'half written\n', 'the failing build writes App.tsx');
+  await until(async () => appNow().toString() === 'half written\n', 'the failing build writes App.tsx');
   await open('one');
   standIn.release();
   await until(async () => (await status()) === 'Checkout’s build stopped', 'a stopped build is noted elsewhere');
@@ -130,7 +138,7 @@ try {
   const failed = 'I couldn’t finish that. I ran out of room.';
   assert.deepStrictEqual(await buttonsUnder(failed), [['Undo this build']], 'a failed build that changed files');
   await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
-  await until(async () => fs.readFileSync(app).equals(starter), 'can be undone, byte for byte');
+  await until(async () => appNow().equals(starter), 'can be undone, byte for byte');
 
   standIn.next({ files: {}, fail: 'I couldn’t read the cards.' });
   await build('Try again.');
