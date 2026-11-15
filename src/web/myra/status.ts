@@ -75,6 +75,8 @@ let noteT: ReturnType<typeof setTimeout> | undefined;
 /** Says `text` on the status line for 8 seconds, in place of the resting text. An empty text takes the note away. */
 export function noteStatus(text: string) {
   note = text;
+  // what a screen reader heard before it, such as a build starting, isn't news once the note says how it ended
+  heard = '';
   clearTimeout(noteT);
   noteT = setTimeout(() => {
     note = '';
@@ -103,7 +105,7 @@ export function noteHeard(text: string) {
 export function paintStatus() {
   const all = [...jobs.values()],
     top = all.at(-1),
-    // a note that a build ended keeps the line for its 8 seconds even when the next build starts straight after, and
+    // a note that a build ended keeps the line for its 8 seconds even when a waiting build starts straight after, and
     // that build's line follows
     shown = note && top?.kind === 'building' ? undefined : top,
     line = shown ? busyLine(shown) : { say: note || restText(), more: '' },

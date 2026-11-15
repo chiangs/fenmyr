@@ -97,6 +97,9 @@ async function pump() {
   const next = nextWaiting();
   if (!next) return;
   const { w, name } = next;
+  // A note that the build before ended keeps the line over a build that starts by itself, whose line follows once the
+  // note has had its time, but not over one just asked for, which is the news now.
+  if (!w.waited) noteStatus('');
   const r = claimSlot({
     build: w.build,
     board: w.board,
