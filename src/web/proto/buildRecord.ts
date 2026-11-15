@@ -2,7 +2,7 @@ import type { BuildEvent, BuildRecord, FileDiff } from '../../shared/build.ts';
 import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
-import { chatLog, pushMsg, redrawMsg, showAdded } from '../myra/chatLog.ts';
+import { chatLog, pushMsg, redrawMsgs, showAdded } from '../myra/chatLog.ts';
 import type { Running } from './buildSlot.ts';
 import { keepSources } from './sources.ts';
 
@@ -41,16 +41,21 @@ const line = (text: string, acts: ChatAction[]): ChatMsg =>
 /** Draws a build's block again, where its board is open. */
 export function redrawBlock(build: string) {
   const found = find(chatLog(), build);
-  if (found) redrawMsg(found.m);
+  if (found) redrawMsgs([found.m]);
 }
 
 /** A build's record in the open board's chat, if it still has one. */
 export const recordOf = (build: string) => find(chatLog(), build)?.a ?? null;
 
-// Every block, and every line with Undo this build or Commit: which of their buttons show follows the newest build.
-const NEWEST_ONLY = new Set<ChatAction['kind']>(['build', 'buildUndo', 'commit']);
-function redrawBuilds() {
-  for (const m of chatLog()) if (m.acts?.some(a => NEWEST_ONLY.has(a.kind))) redrawMsg(m);
+// Which of a block's or a line's Undo this build and Commit show follows the newest build, so when it changes only the
+// lines of the builds it changed between are drawn again, and those of a board from before builds were named, which go
+// by the newest in the chat. Drawing every one would lay out the whole thread again on each build.
+type NewestOnly = Extract<ChatAction, { kind: 'build' | 'buildUndo' | 'commit' }>;
+const newestOnly = (a: ChatAction): a is NewestOnly =>
+  a.kind === 'build' || a.kind === 'buildUndo' || a.kind === 'commit';
+function redrawBuilds(...builds: (string | undefined)[]) {
+  const which = new Set([...builds, undefined]);
+  redrawMsgs(chatLog().filter(m => m.acts?.some(a => newestOnly(a) && which.has(a.build))));
 }
 
 /** Asked: the block, as soon as the build is asked for. */
@@ -62,7 +67,7 @@ export const asked =
     pushMsg(b, m);
     if (b !== session.board) return true;
     // the build before it stops being the newest
-    redrawBuilds();
+    redrawBuilds(b.proto.build, r.build);
     showAdded([m]);
     return true;
   };
@@ -137,7 +142,8 @@ export const ended =
     }
     for (const m of added) if (m !== found.m) pushMsg(b, m);
     if (b === session.board) {
-      redrawBuilds();
+      // it is the newest, or, when it changed nothing or never started, the one before it is again
+      redrawBuilds(build, b.proto.build);
       showAdded(added);
     }
     return true;
@@ -151,6 +157,6 @@ export const undone =
     if (!found || found.a.undone) return false;
     found.a.undone = true;
     // the block says so, and Commit goes from her line
-    if (b === session.board) redrawBuilds();
+    if (b === session.board) redrawBuilds(build);
     return true;
   };

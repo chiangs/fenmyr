@@ -145,14 +145,16 @@ function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   return d;
 }
 
-/** Draws one message of the open chat again from the buttons it keeps, leaving every other line and its buttons as they
- *  are, and the list at the bottom when it was. For a line whose buttons are all kept, such as a build's. */
-export function redrawMsg(m: ChatMsg) {
-  const parts = partsOf.get(m),
-    list = $('mcList');
-  if (!parts?.isConnected) return;
-  const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 2;
-  drawActs(parts, m, m.acts ?? []);
+/** Draws messages of the open chat again from the buttons they keep, leaving every other line and its buttons as they
+ *  are, and the list at the bottom when it was. For lines whose buttons are all kept, such as a build's. The scroll is
+ *  read once and set once, since reading it after each draw would lay the whole list out again per line. */
+export function redrawMsgs(msgs: Iterable<ChatMsg>) {
+  const list = $('mcList'),
+    atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 2;
+  for (const m of msgs) {
+    const parts = partsOf.get(m);
+    if (parts?.isConnected) drawActs(parts, m, m.acts ?? []);
+  }
   if (atBottom) list.scrollTop = list.scrollHeight;
 }
 
