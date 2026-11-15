@@ -79,6 +79,12 @@ const relaunch = async () => {
 const chatOf = (id: string): ChatMsg[] =>
   JSON.parse(fs.readFileSync(path.join(data, 'fenmyr', 'boards', `${id}.json`), 'utf8')).chat ?? [];
 const tap = (label: string) => page().locator('#mcList button', { hasText: label }).last().click();
+// her line once an Undo this build has finished, panes and all, which lands after the files are back
+const back = async (n: number) =>
+  until(
+    async () => (await texts()).filter(t => t === 'It’s back to how it was before that build ✦').length === n,
+    'and she says it’s back',
+  );
 
 try {
   const dir = await page().evaluate(async repo => {
@@ -141,6 +147,7 @@ try {
   assert.deepStrictEqual(await buttonsUnder('An older build.'), [[]], 'takes the older build’s Commit and Undo away');
   await tap('Undo this build');
   await until(async () => !fs.existsSync(file('src/Half.tsx')), 'and its own Undo this build takes Half.tsx away');
+  await back(1);
 
   await page().evaluate(() => Object.assign(document.querySelector('#mcList .mc-msg.me') ?? {}, { kept: 'yes' }));
   const explained = 'I made the form and put the total first.';
@@ -221,6 +228,7 @@ try {
   await until(async () => !fs.existsSync(file('src/Form.tsx')), 'and takes Form.tsx away');
   assert.strictEqual(git('diff', '--cached', '--name-only').trim(), 'staged.txt', 'leaving what was staged');
   await until(async () => (await last())?.head.endsWith(' · undone') ?? false, 'and the block says it was undone');
+  await back(2);
   assert.deepStrictEqual(
     await buttonsUnder(explained),
     [['Add a coupon field', 'Show the total in bold']],
@@ -292,6 +300,7 @@ try {
   await until(async () => fs.readFileSync(file('src/App.tsx'), 'utf8') === total, 'which puts App.tsx back');
   await until(async () => (await last())?.buttons.length === 0, 'and goes');
   assert.match((await last())?.head ?? '', / · undone$/, 'as the block says');
+  await back(3);
 
   standIn.next({ files: { 'src/Clear.tsx': 'export const c = 1;\n' }, hold: true, reply: 'I kept going.' });
   await build('Keep going.');
