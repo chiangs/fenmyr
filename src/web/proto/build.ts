@@ -90,10 +90,10 @@ async function pump() {
     files: [],
     job: startJob({ kind: 'building', board: w.board, name: w.name, file: null }),
   });
-  redrawNewest(r);
-  // the preview belongs to the open board
-  const errors = session.board?.id === w.board ? previewErrors() : '';
   try {
+    redrawNewest(r);
+    // the preview belongs to the open board
+    const errors = session.board?.id === w.board ? previewErrors() : '';
     const started = await Fenmyr.protoBuild({ ...w.args, errors, pictures: await w.pictures });
     if (started.kind === 'started') {
       r.id = started.id;
@@ -121,7 +121,6 @@ function land(r: Running, e: End, said?: string) {
   const done = () => {
     freeSlot(r);
     r.job.end();
-    void pump();
   };
   landOn(r.board, r.name, e, done, b => {
     // the block is drawn from its record from here on
@@ -131,7 +130,8 @@ function land(r: Running, e: End, said?: string) {
 }
 
 // Another board only hears how it ended, on the status line, by the board's name as it is then. name: the board's
-// name for a failure to write it.
+// name for a failure to write it. The next build waits for the open board's preview to show this one's code, so it is
+// sent that code's errors and not the code's before.
 function landOn(board: string, name: string, e: End, done: () => void, change: (b: Board) => boolean) {
   // the board's name as it lands, which stays null when the board was deleted
   let landed: string | null = null;
@@ -144,14 +144,15 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
       done();
       const open = session.board?.id === board,
         words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
-      if (open) void refreshPanes();
       // the open board shows no note, since its block says how it went, but a screen reader hears it
       if (landed !== null) (open ? noteHeard : noteStatus)(words);
+      void (open ? refreshPanes() : Promise.resolve()).finally(pump);
     },
     (err: unknown) => {
       done();
       console.error('A build’s result could not be written to its board', err);
       noteStatus(`Couldn’t save ${landed ?? name}’s build to its chat`);
+      void pump();
     },
   );
 }
@@ -165,8 +166,8 @@ export function buildEvent(data: unknown) {
   if (!e) return;
   if (e.id !== r?.id) {
     if (e.type !== 'done' && e.type !== 'error') return;
-    if (e.build && e.build !== r?.build) landOn(e.board, 'a prototype', e, () => {}, endedLost(e));
-    // the host has let go of the repo, so a request it turned away can start
+    // the host has let go of the repo, so a request it turned away can start, once this end has landed
+    if (e.build && e.build !== r?.build) return landOn(e.board, 'a prototype', e, () => {}, endedLost(e));
     return void pump();
   }
   if (e.type === 'start') {
