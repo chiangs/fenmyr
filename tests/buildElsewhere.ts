@@ -188,7 +188,11 @@ try {
     .filter({ hasText: /^Commit / })
     .getByRole('button', { name: 'Commit' })
     .click();
-  await until(async () => git('status', '--porcelain').trim() === '', 'and its Commit still commits');
+  // read without git's index lock, which the app's commit may be taking at the same moment
+  await until(
+    async () => git('--no-optional-locks', 'status', '--porcelain').trim() === '',
+    'and its Commit still commits',
+  );
 
   standIn.next({ files: {}, fail: 'Claude Code stopped.' });
   await build('Third.');
