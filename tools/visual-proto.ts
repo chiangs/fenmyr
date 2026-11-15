@@ -32,9 +32,12 @@ export const PROTO_GROUPS: Record<string, Group> = {
 
 // A prototype board in a fresh repo, its starter running in the preview. A checkout without prototypes (main, until
 // the feature lands) has no protoCreate, so it shows its ordinary board and the state is listed as meant.
+// One folder for the whole run, so both sides show the same path in the git bar's More menu.
+let parent = '';
 export async function openPrototype(page: Page) {
-  // a fixed name, since the git bar shows it
-  const repo = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-repo-')), 'acme');
+  parent ||= fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-repo-'));
+  const repo = path.join(parent, 'acme');
+  fs.rmSync(repo, { recursive: true, force: true });
   fs.mkdirSync(repo);
   execFileSync('git', ['-C', repo, 'init', '-q', '-b', 'main']);
   const made = await page.evaluate(async repo => {
