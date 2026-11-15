@@ -169,9 +169,9 @@ export function readBuildRecord(x: Fields): BuildRecord | null {
   };
 }
 
-/** A build running in this session: starting until the host has saved the folder, then writing, with the files its
- *  edits have named so far, first seen first. */
-export type BuildLive = { phase: 'starting' } | { phase: 'writing'; files: readonly string[] };
+/** A build in this session: waiting its turn behind another, starting until the host has saved the folder, then writing,
+ *  with the files its edits have named so far, first seen first. */
+export type BuildLive = { phase: 'queued' } | { phase: 'starting' } | { phase: 'writing'; files: readonly string[] };
 
 /** How a build reads now, from its record and, while it runs in this session, how far it has got. ms: how long it ran,
  *  by the renderer's clock. */
@@ -205,6 +205,8 @@ function took(ms: number) {
 export function buildHead(s: BuildState, undone: boolean): string {
   const mark = undone ? ' · undone' : '';
   switch (s.phase) {
+    case 'queued':
+      return 'Waiting for the build before it';
     case 'starting':
       return 'Starting…';
     case 'writing':

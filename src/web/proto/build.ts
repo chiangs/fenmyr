@@ -3,23 +3,28 @@ import type { Board, Card } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
-import { say } from '../myra/say.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { refreshPanes } from './buildButtons.ts';
-import { asked, ended, endedLost, redrawBlock, started } from './buildRecord.ts';
-import { building, claimSlot, freeSlot, type Running, runningBuild } from './buildSlot.ts';
+import { asked, ended, endedLost, redrawBlock, redrawNewest, started } from './buildRecord.ts';
+import {
+  building,
+  claimSlot,
+  dequeue,
+  enqueue,
+  freeSlot,
+  type Running,
+  runningBuild,
+  type Waiting,
+} from './buildSlot.ts';
 import { picturesOf } from './pictures.ts';
 import { previewErrors } from './preview.ts';
 import { beforeBuild } from './sync.ts';
 
-// Myra's "build": the host writes the code with Claude Code while the build's block in its prototype's chat grows a
-// line per file, then the block says how it went, her explanation follows, and the code, the preview and the git bar
-// catch up.
+// Myra's "build": a request waits its turn behind any build running or waiting, then the host writes the code with
+// Claude Code while the build's block in its prototype's chat grows a line per file, then the block says how it went,
+// her explanation follows, and the code, the preview and the git bar catch up.
 type End = Extract<BuildEvent, { type: 'done' | 'error' }>;
-
-// nothing starts it later, so she promises nothing
-export const WAIT = 'I’m still writing the last change. Ask me again once it’s done.';
 
 // what the builder reads from the board: the selected cards, or all of them, without positions or styling
 const brief = (c: Card) =>
@@ -31,7 +36,8 @@ const brief = (c: Card) =>
 
 // `cards`: the selection the request was sent with, or all of them when it was empty; null reads the selection now;
 // `brought`: the cards a new prototype brought, and none when it brought none. `synced`: the repo was checked against
-// GitHub just now (beforeBuild), so this is the go-ahead.
+// GitHub just now (beforeBuild), so this is the go-ahead. The request waits its turn, so what its build needs from the
+// board is read now.
 export async function startBuild(
   request: string,
   cards: readonly string[] | { brought: readonly string[] } | null,
@@ -40,54 +46,70 @@ export async function startBuild(
   const b = session.board;
   const root = b ? rootOf(b) : null;
   if (b?.kind !== 'prototype' || !root) return;
-  if (building()) return say(WAIT, 6000);
-  if (!synced) return beforeBuild(b, request, () => startBuild(request, cards, true));
-  // a note left by an earlier build would come back once this one ends
-  noteStatus('');
+  // pulling under a build that runs or waits would change its files
+  if (!synced && !building()) return beforeBuild(b, request, () => startBuild(request, cards, true));
   const sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
     picked = b.cards.filter(c => sel.has(c.id));
   const chosen = (picked.length || (cards && 'brought' in cards) ? picked : b.cards).slice(0, 80);
-  const r = claimSlot({
-    build: uid(),
+  const { dir, stack, purpose = '', device = '' } = b.proto,
+    build = uid(),
+    briefs = JSON.stringify(chosen.map(brief));
+  const w: Waiting = {
+    build,
     board: b.id,
     name: b.name,
     request,
     cards: chosen.length,
+    args: { root, dir, stack, request, purpose, device, cards: briefs, build, board: b.id },
+    pictures: picturesOf(chosen),
+  };
+  enqueue(w);
+  void changeBoard(b.id, asked(w));
+  void pump();
+}
+
+// One build at a time across the app: the oldest waiting request starts once none runs, whichever board is open.
+async function pump() {
+  if (runningBuild()) return;
+  const w = dequeue();
+  if (!w) return;
+  // a note left by an earlier build would come back once this one ends
+  noteStatus('');
+  const r = claimSlot({
+    build: w.build,
+    board: w.board,
+    name: w.name,
+    request: w.request,
+    cards: w.cards,
     asked: Date.now(),
     id: null,
     start: null,
     was: undefined,
     files: [],
-    job: startJob({ kind: 'building', board: b.id, name: b.name, file: null }),
+    job: startJob({ kind: 'building', board: w.board, name: w.name, file: null }),
   });
-  void changeBoard(b.id, asked(r));
-  const briefs = JSON.stringify(chosen.map(brief)),
-    pictures = await picturesOf(chosen);
-  const { dir, stack, purpose = '', device = '' } = b.proto;
+  redrawNewest(r);
+  // the preview belongs to the open board
+  const errors = session.board?.id === w.board ? previewErrors() : '';
   try {
-    const started = await Fenmyr.protoBuild({
-      root,
-      dir,
-      stack,
-      request,
-      purpose,
-      device,
-      cards: briefs,
-      errors: previewErrors(),
-      pictures,
-      build: r.build,
-      board: r.board,
-    });
-    // the host is still writing a build this window didn't start, as one left by an earlier window would be
-    if (started.kind === 'busy') return turnedAway(r, WAIT);
-    r.id = started.id;
+    const started = await Fenmyr.protoBuild({ ...w.args, errors, pictures: await w.pictures });
+    if (started.kind === 'started') {
+      r.id = started.id;
+      return;
+    }
+    // The host is still writing a build this window didn't start, as one left by an earlier window would be, so this
+    // waits again, first in line, until that build's end is heard.
+    freeSlot(r);
+    r.job.end();
+    enqueue(w, true);
+    redrawNewest(r);
   } catch (e) {
     turnedAway(r, e instanceof Error ? e.message : String(e));
   }
 }
 
-// A request the host turned away or failed on before it answered: its block reads "Couldn't start", and her line is
-// `said` as it stands.
+// A request the host failed on before it answered: its block reads "Couldn't start", and her line is `said` as it
+// stands.
 const turnedAway = (r: Running, said: string) =>
   land(r, { id: '', build: r.build, board: r.board, type: 'error', text: said, snapshot: null, files: [] }, said);
 
@@ -97,6 +119,7 @@ function land(r: Running, e: End, said?: string) {
   const done = () => {
     freeSlot(r);
     r.job.end();
+    void pump();
   };
   landOn(r.board, r.name, e, done, b => {
     // the block is drawn from its record from here on
@@ -139,9 +162,10 @@ export function buildEvent(data: unknown) {
     r = runningBuild();
   if (!e) return;
   if (e.id !== r?.id) {
-    if ((e.type === 'done' || e.type === 'error') && e.build && e.build !== r?.build)
-      landOn(e.board, 'a prototype', e, () => {}, endedLost(e));
-    return;
+    if (e.type !== 'done' && e.type !== 'error') return;
+    if (e.build && e.build !== r?.build) landOn(e.board, 'a prototype', e, () => {}, endedLost(e));
+    // the host has let go of the repo, so a request it turned away can start
+    return void pump();
   }
   if (e.type === 'start') {
     r.start = { at: Date.now(), snapshot: e.snapshot };

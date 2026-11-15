@@ -15,6 +15,8 @@ type Prototype = Extract<Board, { kind: 'prototype' }>;
 type Found = { m: ChatMsg; a: BuildRecord };
 // what landing a build needs to know of it
 type Landing = Pick<Running, 'board' | 'build' | 'request' | 'cards' | 'asked' | 'start' | 'was' | 'files'>;
+// what its block needs from the moment it is asked for
+type Asked = Pick<Running, 'board' | 'build' | 'request' | 'cards'>;
 
 function find(msgs: readonly ChatMsg[], build: string): Found | null {
   for (let i = msgs.length - 1; i >= 0; i--) {
@@ -25,14 +27,14 @@ function find(msgs: readonly ChatMsg[], build: string): Found | null {
   return null;
 }
 
-function newBlock(r: Landing): Found {
+function newBlock(r: Asked, start: Landing['start'] = null): Found {
   const a: BuildRecord = {
     kind: 'build',
     board: r.board,
     build: r.build,
     request: r.request.slice(0, 200),
     cards: r.cards,
-    ...(r.start ? { start: r.start } : {}),
+    ...(start ? { start } : {}),
   };
   return { m: { who: 'myra', text: '', t: Date.now(), acts: [a] }, a };
 }
@@ -60,17 +62,21 @@ function redrawBuilds(...builds: (string | undefined)[]) {
   redrawMsgs(chatLog().filter(m => m.acts?.some(a => newestOnly(a) && which.has(a.build))));
 }
 
-/** Asked: the block, as soon as the build is asked for. */
+/** A build has left the queue, or gone back to it, so which is its prototype's newest has changed where it is open:
+ *  the build before it shows Undo this build and Commit only while this one doesn't run. */
+export function redrawNewest(r: Pick<Running, 'board' | 'build'>) {
+  const b = session.board;
+  if (b?.kind === 'prototype' && b.id === r.board) redrawBuilds(b.proto.build, r.build);
+}
+
+/** Asked: the block, as soon as the build is asked for, whether it starts or waits its turn. */
 export const asked =
-  (r: Running): Change =>
+  (r: Asked): Change =>
   b => {
     if (b.kind !== 'prototype' || find(b.chat ?? [], r.build)) return false;
     const { m } = newBlock(r);
     pushMsg(b, m);
-    if (b !== session.board) return true;
-    // the build before it stops being the newest
-    redrawBuilds(b.proto.build, r.build);
-    showAdded([m]);
+    if (b === session.board) showAdded([m]);
     return true;
   };
 
@@ -121,7 +127,7 @@ export const ended =
     const added: ChatMsg[] = [];
     let found = find(b.chat ?? [], r.build);
     if (!found) {
-      found = newBlock(r);
+      found = newBlock(r, r.start);
       pushMsg(b, found.m);
       added.push(found.m);
     }

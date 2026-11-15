@@ -3064,6 +3064,7 @@ body:is(.calm, .myra-calm) .m-bar::after { animation: none; transform: translate
 .m-summary li[data-mark]::before { content: ""; position: absolute; left: 3px; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--pink-deep); }
 .m-summary li[data-mark="done"]::before { top: .3em; left: 4px; width: 3.5px; height: 7.5px; border: solid var(--ink-soft); border-width: 0 1.6px 1.6px 0; border-radius: 0; background: none; transform: rotate(45deg); }
 .m-summary li[data-mark="bad"]::before { border-radius: 1px; }
+.m-summary li[data-mark="wait"]::before { box-sizing: border-box; border: 1.5px solid var(--ink-soft); background: none; }
 /* colours used in one or two places around the app, named by where they're used and what for; #251 turns these into per-theme tokens */
 :root {
   --anim-shadow: #facea3; --anim-shadow-2: #dca36a; --au-bg: #ff5a6e; --au-bg-2: #fbf8f5; --au-bg-3: #1d1a16; --bd-bg: #2b2722;

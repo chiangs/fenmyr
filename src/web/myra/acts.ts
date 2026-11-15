@@ -23,8 +23,8 @@ type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
 export type After = 'stay' | 'self' | 'row';
 // live: whether it still applies when pressed, as it did when drawn
 export type Button = SayAction & { title?: string; after: After; live?: () => boolean };
-// how a step in a list stands: done, being done now, or gone wrong
-export type Mark = 'done' | 'now' | 'bad';
+// how a step in a list stands: done, being done now, waiting its turn, or gone wrong
+export type Mark = 'done' | 'now' | 'wait' | 'bad';
 // A box of lines under her words: what a reply changed, a plan's numbered steps, or a build's. cls: its kind, for the
 // look. dim: the lines that no longer apply. hover: told which line the pointer is on, or null when it leaves them.
 // plan: the waiting plan whose steps these are, so they can be reworded where they show. busy: a moving bar under the
