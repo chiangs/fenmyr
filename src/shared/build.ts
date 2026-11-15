@@ -213,3 +213,12 @@ export function fileLines(s: BuildState): string[] {
   if (s.phase === 'built') return s.end.files.map(fileLine);
   return s.phase === 'failed' ? s.files.map(fileLine) : [];
 }
+
+/** A block in one line, for Myra's snapshot of the chat, whose block has no words of its own: "Built in 48 s:
+ *  src/App.tsx +3 −1, src/Form.tsx +24 −0". */
+export function buildLine(a: BuildRecord, live: BuildLive | null) {
+  const s = buildState(a, live),
+    head = buildHead(s, !!a.undone),
+    files = fileLines(s);
+  return files.length ? `${head}: ${files.join(', ')}` : head;
+}

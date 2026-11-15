@@ -1,9 +1,9 @@
 // A build is one block in its prototype's chat. It grows a line per file while Claude Code writes, with the chat left
 // as it is, then reads "Built in N s" with the lines each file gained and lost and the card it was made from. Her
 // explanation follows with Undo this build, Commit and her next steps, which her reply that started it doesn't have.
-// The block and her buttons come back after a restart, Undo this build says so on it, only the newest build shows
-// Undo this build and Commit, a build cut off by quitting reads stopped and can be undone, and a block the chat lost
-// while the build ran comes back.
+// Myra reads the block, it and her buttons come back after a restart, Undo this build says so on it, only the newest
+// build shows Undo this build and Commit, a build cut off by quitting reads stopped and can be undone, and a block the
+// chat lost while the build ran comes back.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -164,6 +164,13 @@ try {
     await page().evaluate(() => Reflect.get(document.querySelector('#mcList .mc-msg.me') ?? {}, 'kept')),
     'yes',
     'the chat was never drawn again: the person’s line is the same element',
+  );
+
+  await page().evaluate(() => window.__fenmyr.ask('What did you change?'));
+  assert.match(
+    standIn.asks().at(-1) ?? '',
+    new RegExp(`Myra: Built in \\d+ s: src/App\\.tsx \\+1 −${starterLines}, src/Form\\.tsx \\+3 −0`),
+    'Myra reads the block when asked next',
   );
 
   await relaunch();
