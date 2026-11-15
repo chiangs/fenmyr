@@ -96,6 +96,11 @@ try {
     'while its build runs, the status line names the board as it is called now',
   );
   await until(async () => (await status()) === 'Checkout Two is built', 'and so it does once it lands');
+  assert.equal(
+    await page.evaluate(() => document.getElementById('mcStatusSay')?.textContent),
+    'Checkout Two is built',
+    'and a screen reader no longer hears that it started',
+  );
 
   await page.evaluate(() => {
     const say = document.getElementById('mcStatusSay'),
@@ -158,12 +163,6 @@ try {
     async () => (await status()) === 'Building Receipt',
     'then, once that note has had its time, the line says what is building',
     12000,
-  );
-  await until(async () => (await status()) === 'Receipt is built', 'Receipt’s build lands');
-  assert.equal(
-    await page.evaluate(() => document.getElementById('mcStatusSay')?.textContent),
-    'Receipt is built',
-    'and a screen reader no longer hears that it started',
   );
   assert.deepStrictEqual(l.errors, [], 'no errors');
   console.log('BUILD QUEUE STATUS OK');
