@@ -1,6 +1,7 @@
 // A request waiting its turn whose board goes before its turn never runs, whether the board is deleted in the library
 // or its file goes some other way, and the request behind it still does. A deleted board's request no longer holds back
-// Commit on the other prototypes in its repo.
+// Commit on the other prototypes in its repo. Clear all chats takes the waiting requests with their blocks, while the
+// build that runs goes on and its block comes back when it lands.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -53,7 +54,18 @@ const inSidebar = (name: string) =>
     name => [...document.querySelectorAll('.board-row')].some(r => r.querySelector('span')?.textContent === name),
     name,
   );
-const NAMES = ['Basket two', 'Checkout two', 'Basket', 'Checkout', 'Receipt', 'Invoice'];
+const NAMES = [
+  'Basket two',
+  'Checkout two',
+  'Cleared two',
+  'Basket',
+  'Checkout',
+  'Receipt',
+  'Invoice',
+  'Cleared',
+  'Held',
+  'After',
+];
 const ran = () => standIn.builds().map(p => NAMES.find(n => p.includes(`${n} build.`)));
 
 try {
@@ -140,6 +152,23 @@ try {
     ['Basket', 'Checkout', 'Basket two', 'Checkout two'],
     'and the request of a board whose file has gone never runs',
   );
+
+  standIn.next({ files: { 'src/Held.tsx': 'export const held = 1;\n' }, hold: true, reply: 'Held.' });
+  await build('Held build.');
+  await until(() => standIn.wrote() === 1, 'a build runs on Checkout');
+  await build('Cleared build.');
+  await build('Cleared two build.');
+  await until(async () => (await heads()).filter(h => h === WAITING).length === 2, 'two requests wait behind it');
+  await page.evaluate(() => document.getElementById('clearChats')?.click());
+  await until(async () => !(await heads()).length, 'Clear all chats takes their blocks');
+  standIn.next({ files: { 'src/After.tsx': 'export const after = 1;\n' }, reply: 'After.' });
+  standIn.release();
+  await until(() => chatOf('pb').some(m => m.text === 'Held.'), 'the build that ran goes on and lands');
+  await until(async () => /^Built in/.test((await heads())[0] ?? ''), 'and its block comes back');
+  await settle(page, 1500);
+  await build('After build.');
+  await until(() => chatOf('pb').some(m => m.text === 'After.'), 'a later request still runs');
+  assert.deepStrictEqual(ran().slice(4), ['Held', 'After'], 'and the requests that waited through the clear never ran');
   assert.deepStrictEqual(l.errors, [], 'no errors');
   console.log('BUILD QUEUE GONE OK');
 } finally {

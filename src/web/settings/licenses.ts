@@ -12,6 +12,7 @@ import { dropPlan } from '../myra/heldPlan.ts';
 import { showConnections } from '../myra/helpers.ts';
 import { chirp, say } from '../myra/say.ts';
 import { buildEvent } from '../proto/build.ts';
+import { dropWaiting } from '../proto/buildSlot.ts';
 import { ghLoginEnded } from '../repo/setup.ts';
 import { closestTo, esc, htmlIn } from '../ui/dom.ts';
 import { closeSettings } from './colors.ts';
@@ -190,6 +191,8 @@ export function init29() {
   $('clearChats').onclick = async () => {
     clearDrafts();
     dropPlan();
+    // the requests waiting their turn go with the blocks that showed them and their Cancel
+    dropWaiting();
     await clearSavedChats(false);
     Object.keys(sessionChats).forEach(k => {
       delete sessionChats[k];
