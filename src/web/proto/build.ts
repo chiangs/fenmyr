@@ -97,8 +97,6 @@ async function pump() {
   const next = nextWaiting();
   if (!next) return;
   const { w, name } = next;
-  // a note left by an earlier build would come back once this one ends
-  noteStatus('');
   const r = claimSlot({
     build: w.build,
     board: w.board,

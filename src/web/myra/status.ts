@@ -103,7 +103,10 @@ export function noteHeard(text: string) {
 export function paintStatus() {
   const all = [...jobs.values()],
     top = all.at(-1),
-    line = top ? busyLine(top) : { say: note || restText(), more: '' },
+    // a note that a build ended keeps the line for its 8 seconds even when the next build starts straight after, and
+    // that build's line follows
+    shown = note && top?.kind === 'building' ? undefined : top,
+    line = shown ? busyLine(shown) : { say: note || restText(), more: '' },
     // a build runs in the background, so it shows in the header without dots or the thinking pose
     thinking = all.some(b => b.kind !== 'building'),
     typing = all.some(answersInChat),

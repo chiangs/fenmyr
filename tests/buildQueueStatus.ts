@@ -1,6 +1,7 @@
 // What the status line shows and a screen reader hears as builds wait their turn: a board renamed while its request
 // waits is named as it is called when its build starts and when it lands; the live region says a request waits, that
-// it started and that it was cancelled; and after Cancel, keyboard focus stays on the block it left.
+// it started and that it was cancelled; after Cancel, keyboard focus stays on the block it left; and the note that a
+// build on another board is built keeps the line for its 8 seconds when the next build starts straight after it.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -137,6 +138,26 @@ try {
   await until(
     async () => (await heard()).includes('Checkout Two’s build has started'),
     'and hears the waiting build start by itself',
+  );
+  await until(async () => !(await heads()).includes('Building…'), 'it lands');
+  await settle(page, 1000);
+
+  standIn.next({ files: { 'src/App.tsx': 'export const App = () => <h1>Again</h1>;\n' }, hold: true });
+  await build('Checkout build.');
+  await until(() => standIn.wrote() === 1, 'another build runs on Checkout Two');
+  await open('pd');
+  await build('Receipt build.');
+  await until(waits, 'a request on Receipt waits behind it');
+  await open('one');
+  const ran = standIn.builds().length;
+  standIn.next({ files: { 'src/Receipt.tsx': 'export const receipt = 1;\n' }, ms: 10000 });
+  standIn.release();
+  await until(() => standIn.builds().length === ran + 1, 'Receipt’s build starts as soon as Checkout Two’s lands');
+  assert.equal(await status(), 'Checkout Two is built', 'and the status line still says the one before is built');
+  await until(
+    async () => (await status()) === 'Building Receipt',
+    'then, once that note has had its time, the line says what is building',
+    12000,
   );
   assert.deepStrictEqual(l.errors, [], 'no errors');
   console.log('BUILD QUEUE STATUS OK');
