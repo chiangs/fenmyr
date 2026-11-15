@@ -11,223 +11,64 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}   # a newer push to a branch or pull request replaces its older run; main always finishes
 
+# The jobs run side by side. Each starts with the same setup steps, written once in `checks` and reused by alias.
 jobs:
-  test:
+  checks:
     runs-on: ubuntu-latest
-    container:
+    timeout-minutes: 10
+    container: &container
       image: archlinux:latest
       options: --shm-size=1g   # Chromium shares big messages through /dev/shm; Docker's default 64 MB is far below any desktop's
     steps:
-      - name: Install packages
+      - &packages
+        name: Install packages
         run: |
           pacman -Syu --noconfirm --needed git nodejs npm electron fontconfig ttf-dejavu nss alsa-lib gtk3 libxss libxtst at-spi2-core libdrm mesa
-      - uses: actions/checkout@v5
+      - &checkout
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Trust the checkout (the container runs as a different user)
+      - &trust
+        name: Trust the checkout (the container runs as a different user)
         run: git config --global --add safe.directory "$PWD"
       - name: Shell syntax
         run: bash -n install.sh && bash -n uninstall.sh && bash -n make-release.sh && bash -n packaging/install-mac.sh
-      - name: Dependencies
+      - &dependencies
+        name: Dependencies
         run: npm ci --no-audit --no-fund && node node_modules/electron/install.js
       - name: Types, lint, unused code and the budget
         run: npm run check:fast
-      - name: Build
+
+  # Every file in tests/ runs in one of these parts, alone and one at a time, split by tools/run-tests.ts so the
+  # slowest part takes about as long as the others. Add a part here and the split follows.
+  test:
+    name: Tests ${{ matrix.part }}/${{ strategy.job-total }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: *container
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
+    steps:
+      - *packages
+      - *checkout
+      - *trust
+      - *dependencies
+      - &build
+        name: Build
         run: npm run build
-      - name: Theme test (every colour theme's contrast, and card colours that stay apart for colour blindness)
-        run: node tests/themes.ts
-      - name: Vault test (reading notes, privacy rules)
-        run: node tests/vault.ts
-      - name: Code map test (imports, cycles, descriptions, the lookup command)
-        run: node tests/codemap.ts
-      - name: Save test (running-only flags stay out of board files)
-        run: node tests/persist.ts
-      - name: Model test (board and library files, prototype fields)
-        run: node tests/model.ts
-      - name: Context bar placement test (above, flipped, stuck and beside a line, without the app)
-        run: node tests/barPlace.ts
-      - name: Rich text test (the note dialect, its markup, and round trips)
-        run: node tests/richtext.ts
-      - name: Rich paste test (HTML, Markdown and PDF clipboards into notes)
-        run: node tests/richpaste.ts
-      - name: Rich notes test (pasted formatting kept through redraw, save and reopen, in the real app)
-        run: node tests/richNotes.ts
-      - name: Rich typing test (shortcuts, lists by hand, list keys and the selection bar, in the real app)
-        run: node tests/richTyping.ts
-      - name: Rich integration test (Myra, the clipboard, tags, collection heights and the Workshop starter with rich notes, in the real app)
-        run: node tests/richIntegration.ts
-      - name: Rich links test (links and typed Markdown in notes, in the real app)
-        run: node tests/richLinks.ts
-      - name: Rich access test (rich notes with a keyboard and a screen reader, in the real app)
-        run: node tests/richAccess.ts
-      - name: Rich docs test (a rich note dropped into a Doc keeps its formatting, in the real app)
-        run: node tests/richDocs.ts
-      - name: Placement test (moving and copying boards and folders with prototypes)
-        run: node tests/placement.ts
-      - name: Fit test (how a prototype board's columns fold)
-        run: node tests/fit.ts
-      - name: Git test (the git and gh bridge, with real git and a stand-in gh)
-        run: node tests/git.ts
-      - name: Link test (a project's repo, from its menu)
-        run: node tests/link.ts
-      - name: Setup test (git and GitHub in Settings, with a stand-in gh)
-        run: node tests/setup.ts
-      - name: GitHub test (a project's GitHub repo, with a stand-in gh)
-        run: node tests/github.ts
-      - name: Prototype test (prototyping folders and new prototypes in a linked repo)
-        run: node tests/prototype.ts
-      - name: Layout test (a prototype board's screen)
-        run: node tests/layout.ts
-      - name: Prototype chat test (Myra's chat docked on a prototype board)
-        run: node tests/protoChat.ts
-      - name: Prototype hop test (Myra hops into the docked chat's header as a prototype board opens)
-        run: node tests/protoHop.ts
-      - name: Prototype hop path test (Myra's hop under the window's top, slower when far, from Home, and a click on her)
-        run: node tests/protoHopPath.ts
-      - name: Dock header test (the board's name and stack in the docked chat's header)
-        run: node tests/dockHead.ts
-      - name: Dock git bar test (the git bar above Myra's input on a prototype board, and its More menu)
-        run: node tests/dockGit.ts
-      - name: Menu keys test (the git bar's More and the zoom menu by keyboard and screen reader)
-        run: node tests/menuKeys.ts
-      - name: Prototype thread test (one chat on each prototype board)
-        run: node tests/protoThread.ts
-      - name: Prototype reading test (an earlier chat keeps its place while what Myra sees changes)
-        run: node tests/protoReading.ts
-      - name: Preview test (a prototype running in its sandbox)
-        run: node tests/preview.ts
-      - name: Build test (Myra writing a prototype's code, with a stand-in Claude Code)
-        run: node tests/build.ts
-      - name: Build buttons test (Myra's stored Commit and Undo across builds and boards)
-        run: node tests/buildButtons.ts
-      - name: Build elsewhere test (a build lands in its own prototype's chat while another board is open)
-        run: node tests/buildElsewhere.ts
-      - name: Build host test (a build's snapshot, lines added and removed, next steps and one build per repo, with a fake code agent)
-        run: node tests/buildHost.ts
-      - name: Build quit test (quitting Fenmyr during a build stops Claude Code)
-        run: node tests/buildQuit.ts
-      - name: Build race test (two builds asked for at once, and the one that ran keeps its Undo)
-        run: node tests/buildRace.ts
-      - name: Build undo test (Undo puts back the files git sees and never touches an ignored file)
-        run: node tests/buildUndo.ts
-      - name: Prototype offer test (Myra offers a prototype board for a request that needs code, and Start and build makes it and builds)
-        run: node tests/protoOffer.ts
-      - name: Offer kept test (Myra's prototype offer kept until its board is made, and never built on another board)
-        run: node tests/offerKept.ts
-      - name: Packages test (installed packages in a prototype, with a stand-in npm)
-        run: node tests/packages.ts
-      - name: Sync test (fetch, pull and clashes with a stand-in GitHub)
-        run: node tests/sync.ts
-      - name: Controls test (a prototype's knobs above the preview)
-        run: node tests/controls.ts
-      - name: Done test (link, prototype, build, point, commit, push, reopen)
-        run: node tests/done.ts
-      - name: Myra reply test
-        run: node tests/reply.ts
-      - name: Offer read test (Myra's prototype offer read from her reply and from the board file, a bad one dropping alone)
-        run: node tests/offerRead.ts
-      - name: Change record test (what a reply changed, sorted into added, moved, edited, removed and re-laid)
-        run: node tests/changes.ts
-      - name: Land plan test (a planned reply lands as planned, and what the person changed since stays theirs)
-        run: node tests/landPlan.ts
-      - name: Ask first test (when a reply waits as a plan, counted per card)
-        run: node tests/askFirst.ts
-      - name: Myra replies test (what each kind of reply does to the board, her chat, the library and templates)
-        run: node tests/replies.ts
-      - name: Reply undo test (one undo step per reply, replies in turn, previews that change nothing)
-        run: node tests/replyUndo.ts
-      - name: Reply while busy test (a reply that arrives mid-drag or mid-typing lands as it would once they let go)
-        run: node tests/replyWhileBusy.ts
-      - name: Reply plan test (a big reply waits as a plan; Do it lands it with no second request, Cancel leaves the board)
-        run: node tests/replyPlan.ts
-      - name: Plan do it test (Do it on a plan the person worked around while it waited)
-        run: node tests/planDoIt.ts
-      - name: Plan since test (Do it on cards changed since the plan, and what she says about them)
-        run: node tests/planSince.ts
-      - name: Plan talk test (messages, a typed yes or no, and Change the plan while a plan waits)
-        run: node tests/planTalk.ts
-      - name: Plan drop test (a waiting plan ends with its board, New chat, Clear all chats and a restart)
-        run: node tests/planDrop.ts
-      - name: Plan preview test (a waiting plan drawn on the board as dashed boxes that are no cards)
-        run: node tests/planPreview.ts
-      - name: Plan preview landing test (cards land where their boxes were, and the preview goes with the plan)
-        run: node tests/planPreviewLand.ts
-      - name: Plan glide test (the view glides to a waiting plan once they aren't busy, unless they moved it)
-        run: node tests/planGlide.ts
-      - name: Plan pictures test (no export or build picture of the window shows a waiting plan's preview)
-        run: node tests/planPictures.ts
-      - name: Plan steps test (a plan's steps say what Do it would do, reworded in place in the chat and her bubble)
-        run: node tests/planSteps.ts
-      - name: Plan preview look test (where the preview's names sit, how they read in light and dark, screen readers)
-        run: node tests/planPreviewLook.ts
-      - name: Chat buttons test (Myra's next steps, sources and build buttons, kept with her replies)
-        run: node tests/chatButtons.ts
-      - name: Reply acts test (Changed on the board, Show on board and Undo under a reply, in the chat and her bubble)
-        run: node tests/replyActs.ts
-      - name: Reply sources test (what Myra read as links and her next steps under a reply, kept across reopen and restart)
-        run: node tests/replySources.ts
-      - name: Chat keys test (what each key does in Myra's chat input)
-        run: node tests/chatKeys.ts
-      - name: Chat rules test (her input's hint and her name cut short)
-        run: node tests/chatRules.ts
-      - name: Chat starters test (what an empty chat offers to ask, for each kind of board)
-        run: node tests/chatStarters.ts
-      - name: Chat greeting test (her hello by her given name, and starters from the board)
-        run: node tests/chatGreeting.ts
-      - name: Chat sees test (the "Myra sees" chips, what each message is sent with, and the header's status line)
-        run: node tests/chatSees.ts
-      - name: Chat add test (pictures, files and vault notes added to one message, and their limits)
-        run: node tests/chatAdd.ts
-      - name: Mac font list test
-        run: node tests/mac.ts
-      - name: Smoke test (the real app, with stand-in claude and whisper)
-        run: node tests/smoke.ts
-      - name: Zoom test
-        run: node tests/zoom.ts
-      - name: Docs editor test
-        run: node tests/docs.ts
-      - name: Phone layout test
-        run: node tests/phone.ts
-      - name: Popup test
-        run: node tests/popups.ts
-      - name: Selection bar test (what it kept, where it floats, and that it steps aside for gestures)
-        run: node tests/contextBar.ts
-      - name: Selection bar groups test (which groups and buttons it shows for every kind of card, a connector and cropping)
-        run: node tests/barGroups.ts
-      - name: Selection bar keyboard test (F10 in, Space and Enter, Escape out, names after a hover, clicks leave keys to the board)
-        run: node tests/barKeyboard.ts
-      - name: Selection bar room test (dropdowns near the top, presses on the bar, a 900 px window)
-        run: node tests/barRoom.ts
-      - name: Drawing and find test (what they do, on a computer and a phone)
-        run: node tests/modeBar.ts
-      - name: Mode bar room test (Myra's chat, her timer and the toolbar's pickers keep clear of find's bar)
-        run: node tests/modeRoom.ts
-      - name: Bottom bar test (where it sits, what hides it, drops and the wheel on it, Tab order, a phone's strips)
-        run: node tests/bottomBar.ts
-      - name: Bar layer test (what opens over the bottom bar and Myra's chat)
-        run: node tests/barLayer.ts
-      - name: Myra's box test (her box in the bottom bar, where her chat opens, her bubble, fitting around the chat)
-        run: node tests/myraBox.ts
-      - name: Chat close test (what opens and closes Myra's chat, focus, its resize and the draft line)
-        run: node tests/chatClose.ts
-      - name: Chat Expand test (the writing area keeps the draft and caret, Esc shrinks before it closes, and a send, a close or a board switch shrinks it)
-        run: node tests/chatExpand.ts
-      - name: Chat draft test (an unsent message survives closing the chat, switching boards and a restart, follows Keep chats, and goes with a deleted board)
-        run: node tests/chatDraft.ts
-      - name: Chat draft leftovers test (a deleted board leaves no draft, Clear all chats reaches prototype boards, and Keep chats takes drafts out of files)
-        run: node tests/chatDraftKept.ts
-      - name: Chat paste test (a paste over 2,000 characters is a chip whose full text reaches Myra, with Open, Ctrl+Shift+V and its limits)
-        run: node tests/chatPaste.ts
-      - name: Chat give-back test (a message that never reached Myra comes back with its words, files and pastes, within the limits)
-        run: node tests/chatGiveBack.ts
-      - name: Quick capture test (Enter saves to Unsorted, Shift+Enter writes it out on the board first)
-        run: node tests/capture.ts
-      - name: Image actions test (download, copy and replace a picture, in the real app)
-        run: node tests/imageActions.ts
-      - name: Updater test
-        run: node tests/update.ts
-      - name: Caelestia theme test
-        run: node tests/theme.ts
+      - name: Tests
+        run: node tools/run-tests.ts --shard ${{ matrix.part }}/${{ strategy.job-total }}
+
+  install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: *container
+    steps:
+      - *packages
+      - *checkout
+      - *trust
       - name: Install from a fresh clone, run the installed copy, uninstall
         run: |
           # each part's output goes to a file; on failure its last lines become annotations, so they're readable without the full log
@@ -238,8 +79,17 @@ jobs:
           su tester -c "cd ~/fenmyr && npm ci --ignore-scripts --no-audit --no-fund && FENMYR_APP=\$HOME/.local/lib/fenmyr/app node tests/smoke.ts" > smoke.log 2>&1 || report installed-smoke smoke.log
           su tester -c 'cd ~/fenmyr && ./uninstall.sh --purge' > uninstall.log 2>&1 || report uninstall uninstall.log
           test ! -e /home/tester/.local/bin/fenmyr
-      # last, so a deliberate pixel change still lets every other check run; it fails the job all the same.
-      # A pull request is compared with the branch it merges into, so one into a feature branch lists only its own changes.
+
+  # A pull request is compared with the branch it merges into, so one into a feature branch lists only its own changes.
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: *container
+    steps:
+      - *packages
+      - *checkout
+      - *trust
+      - *dependencies
       - name: Visual check against the base branch
         env:
           BASE: ${{ github.base_ref || 'main' }}
@@ -249,11 +99,22 @@ jobs:
         with:
           name: visual-diff
           path: /tmp/visual
+
+  appimage:
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    needs: [checks, test, install, visual]   # built only from a change that passed everything, as before
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: *container
+    steps:
+      - *packages
+      - *checkout
+      - *trust
+      - *dependencies
+      - *build
       - name: Build the AppImage
-        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         run: npx electron-builder --linux AppImage --x64 --publish never
       - uses: actions/upload-artifact@v5
-        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         with:
           name: Fenmyr-x86_64.AppImage
           path: build/release/*.AppImage
