@@ -19,8 +19,9 @@ export function tip(text: string) {
   if (settings.chat === 'chatty') say(text, 6000);
 }
 
-// a button under one of Myra's lines
-export type SayAction = { label: string; cls?: string; ghost?: boolean; run: () => unknown };
+// a button under one of Myra's lines. held: true when it can't run yet, once it has said why; that press then takes
+// nothing away, so it works later
+export type SayAction = { label: string; cls?: string; ghost?: boolean; held?: () => boolean; run: () => unknown };
 
 // keep: an answer to something you asked, so it also goes into the chat even when the chat window is closed
 export function say(text: string, ms = 6000, acts: Act[] = [], keep = false) {

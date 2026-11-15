@@ -76,3 +76,6 @@ export function liveOf(build: string): BuildLive | null {
 
 // a build runs or waits, so one asked for now would wait its turn
 export const building = () => running !== null || queue.length > 0;
+
+/** A build runs or waits on this prototype, so Undo this build, a commit or a pull would change files under it. */
+export const busyOn = (board: string) => running?.board === board || queue.some(w => w.board === board);

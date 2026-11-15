@@ -1,7 +1,7 @@
 // A build lands in its own prototype's chat wherever the person is: an ordinary board open meanwhile gains nothing and
 // hears of it on the status line, by the board's name as it is then, the prototype keeps her explanation with buttons
-// that work when it opens, a failed build that changed files can be undone, a question asked meanwhile keeps its
-// buttons, and a change to a board as it opens, is renamed or is moved is never lost.
+// that work when it opens, a failed build that changed files can be undone, a question asked before a build keeps its
+// buttons, with its Commit waiting for the build, and a change to a board as it opens, is renamed or is moved is never lost.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -167,7 +167,7 @@ try {
   await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
   await until(async () => appNow().equals(starter), 'the failed build that changed files can be undone, byte for byte');
 
-  // a question asked while a build runs keeps the buttons it was drawn with when the build lands on its open board
+  // a question asked before a build keeps the buttons it was drawn with when the build lands on its open board
   const question = () =>
     page.evaluate(() =>
       [...document.querySelectorAll('#mcList .mc-msg.myra')]
@@ -177,22 +177,30 @@ try {
   standIn.next({ files: { 'src/App.tsx': 'export function App() { return <h1>First</h1>; }\n' }, reply: 'First.' });
   await build('First.');
   await until(async () => (await buttonsUnder('First.')).length === 1, 'the first build lands');
+  await page.click('#prGit [data-git="commit"]');
+  await until(async () => (await question()).length === 1, 'Commit asks first');
   const other = path.join(repo, dir, 'src/Other.tsx');
   standIn.next({ files: { 'src/Other.tsx': 'export const other = 2;\n' }, hold: true, reply: 'Second.' });
   await build('Second.');
   await until(async () => fs.existsSync(other), 'the second build writes Other.tsx');
   await until(async () => (await buttonsUnder('First.'))[0]?.length === 0, 'the first build’s buttons go as it starts');
-  await page.click('#prGit [data-git="commit"]');
-  await until(async () => (await question()).length === 1, 'Commit asks first');
+  const tapCommit = () =>
+    page
+      .locator('#mcList .mc-msg.myra')
+      .filter({ hasText: /^Commit / })
+      .getByRole('button', { name: 'Commit' })
+      .click();
+  await tapCommit();
+  await until(
+    async () => (await texts()).includes('I’m still building. You can commit once it’s done.'),
+    'its Commit waits for the build',
+  );
+  assert.deepStrictEqual(await question(), [['Commit', 'Not now']], 'and stays');
   standIn.release();
   await until(async () => (await buttonsUnder('Second.')).length === 1, 'the second build lands on its open board');
   assert.deepStrictEqual(await question(), [['Commit', 'Not now']], 'the question keeps its buttons');
   assert.deepStrictEqual(await buttonsUnder('First.'), [[]], 'and the first build’s buttons stay gone');
-  await page
-    .locator('#mcList .mc-msg.myra')
-    .filter({ hasText: /^Commit / })
-    .getByRole('button', { name: 'Commit' })
-    .click();
+  await tapCommit();
   // read without git's index lock, which the app's commit may be taking at the same moment
   await until(
     async () => git('--no-optional-locks', 'status', '--porcelain').trim() === '',

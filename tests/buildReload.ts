@@ -24,7 +24,7 @@ let l = await start();
 const standIn = buildStandIn(l);
 const page = () => l.page;
 
-const BUSY = 'I’m still writing that build. Undo it once it’s done.';
+const BUSY = 'I’m still building. You can undo once it’s done.';
 const texts = () =>
   page().evaluate(() => [...document.querySelectorAll('#mcList .mc-msg')].map(m => m.firstChild?.textContent ?? ''));
 const block = () =>
