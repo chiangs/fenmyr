@@ -1,5 +1,6 @@
-// Two builds asked for at once: one runs, Myra turns the other away in her own words, and the one that ran keeps its
-// Undo. A build the host refuses gets the same line from her and leaves the board's newest build as it was.
+// Two builds asked for at once: one runs, Myra turns the other away in her own words, after her reply and promising
+// nothing, and the one that ran keeps its Undo. A build the host refuses gets the same words from her and leaves the
+// board's newest build as it was.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -34,7 +35,7 @@ esac
   { mode: 0o755 },
 );
 
-const WAIT = 'I’m still writing the last change. I’ll start on this once it’s done.';
+const WAIT = 'I’m still writing the last change. Ask me again once it’s done.';
 const l = await launch({
   boards: [replyBoard('one', 'One')],
   open: 'one',
@@ -113,10 +114,10 @@ try {
   const said = await lines();
   assert.deepStrictEqual(
     said.filter(t => t.includes('still writing') || t.includes('already running')),
-    [WAIT],
-    'Myra turns the other away once, in her own words',
+    [`Writing it now. ${WAIT}`],
+    'Myra turns the other away once, in her own words, after her reply',
   );
-  assert.deepStrictEqual(await builtRows(), [['Commit', 'Undo this build']], 'and the build that ran keeps its Undo');
+  assert.deepStrictEqual(await builtRows(), [['Undo this build', 'Commit']], 'and the build that ran keeps its Undo');
 
   const kept = await newest();
   assert.ok(kept, 'the board names its newest build');
@@ -133,11 +134,13 @@ try {
         cards: '[]',
         errors: '',
         pictures: [],
+        build: '',
+        board: '',
       }),
     { repo, dir },
   );
   await build('Third build.');
-  await until(async () => (await lines()).filter(t => t === WAIT).length === 2, 'the host refuses it');
+  await until(async () => (await lines()).filter(t => t === WAIT).length === 1, 'the host refuses it');
   assert(!(await lines()).some(t => t.includes('already running')), 'in her words, not the host’s');
   assert.equal(await newest(), kept, 'a build the host refuses leaves the board’s newest build as it was');
   await until(async () => fs.readFileSync(count, 'utf8').trim() === '2', 'the other build ends');
@@ -146,7 +149,7 @@ try {
   await open('pb');
   assert.deepStrictEqual(
     await builtRows(),
-    [['Commit', 'Undo this build']],
+    [['Undo this build', 'Commit']],
     'so the build that ran still has its Undo',
   );
   assert.deepStrictEqual(l.errors, []);

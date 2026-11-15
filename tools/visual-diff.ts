@@ -7,7 +7,7 @@ import { everyOfflineCard, richNotes } from '../tests/fixtures/boards.ts';
 import { launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
 import { type Group, MYRA_GROUPS, type Step } from './visual-myra.ts';
-import { openPrototype, PROTO_GROUPS } from './visual-proto.ts';
+import { openPrototype, PROTO_GROUPS, removeProtoFolders } from './visual-proto.ts';
 
 const FROZEN_MOTION =
   '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
@@ -127,7 +127,7 @@ async function shoot(dir: string, out: string) {
   fs.mkdirSync(out, { recursive: true });
   for (const [name, group] of Object.entries(GROUPS)) {
     const shown = (group.board ?? everyOfflineCard)();
-    const l = await launch({ dir, boards: [shown], open: shown.id, settings: group.settings });
+    const l = await launch({ dir, boards: [shown], open: shown.id, settings: group.settings, env: group.env });
     const width = group.phone ? 600 : group.width;
     if (width) {
       await l.app.evaluate(({ BrowserWindow }, w) => {
@@ -219,6 +219,7 @@ try {
   await shoot(ROOT, path.join(out, 'head'));
 } finally {
   base.remove();
+  removeProtoFolders();
 }
 // States a branch changes on purpose, each with the reason, in tools/visual-expected.json. The file is reviewed in the
 // PR like code; an entry whose state no longer differs is reported so it can be removed.

@@ -36,6 +36,8 @@ export async function builder(t: Smoke) {
         cards: '[]',
         errors: '',
         pictures: [],
+        build: '',
+        board: '',
       });
       await Promise.race([ended.promise, new Promise(r => setTimeout(r, 20000))]);
     } finally {

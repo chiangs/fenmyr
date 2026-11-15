@@ -1,5 +1,6 @@
 import { type ChatAction, clip, type ReadNote, type WebPage } from '../../shared/chat.ts';
-import { buildUndoButton, commitButton } from '../proto/build.ts';
+import { buildPieces } from '../proto/buildBlock.ts';
+import { buildUndoButton, commitButton } from '../proto/buildButtons.ts';
 import { sourceButton } from '../proto/sources.ts';
 import { offerPieces } from '../repo/offer.ts';
 import { openNote } from '../vault/notes.ts';
@@ -22,9 +23,12 @@ type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
 export type After = 'stay' | 'self' | 'row';
 // live: whether it still applies when pressed, as it did when drawn
 export type Button = SayAction & { title?: string; after: After; live?: () => boolean };
-// A box of lines under her words: what a reply changed, or a plan's numbered steps. cls: its kind, for the look. dim:
-// the lines that no longer apply. hover: told which line the pointer is on, or null when it leaves them. plan: the
-// waiting plan whose steps these are, so they can be reworded where they show.
+// how a step in a list stands: done, being done now, or gone wrong
+export type Mark = 'done' | 'now' | 'bad';
+// A box of lines under her words: what a reply changed, a plan's numbered steps, or a build's. cls: its kind, for the
+// look. dim: the lines that no longer apply. hover: told which line the pointer is on, or null when it leaves them.
+// plan: the waiting plan whose steps these are, so they can be reworded where they show. busy: a moving bar under the
+// head, for work with no known end. marks: one per line, in order.
 export type Piece =
   | {
       slot: 'summary';
@@ -35,6 +39,8 @@ export type Piece =
       dim?: ReadonlySet<number>;
       hover?: (line: number | null) => void;
       plan?: string;
+      busy?: boolean;
+      marks?: readonly Mark[];
     }
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };
@@ -78,6 +84,7 @@ const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) =
   source: a => one('other', 'stay', sourceButton(a.card)),
   buildUndo: a => one('other', 'self', buildUndoButton(a)),
   commit: a => one('other', 'self', commitButton(a)),
+  build: buildPieces,
   read: readPieces,
   plan: planPieces,
   offer: offerPieces,

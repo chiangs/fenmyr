@@ -129,15 +129,33 @@ function renderHistory() {
   }
 }
 
+// each message's buttons and boxes as they show, so one can be drawn again on its own
+const partsOf = new WeakMap<ChatMsg, HTMLElement>();
+
+// A message with no words, such as a build's block, is only its parts, so it draws as a card, not a speech bubble.
 function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   const d = document.createElement('div'),
     parts = document.createElement('div');
-  d.className = `mc-msg ${m.who}`;
+  d.className = m.text ? `mc-msg ${m.who}` : `mc-msg ${m.who} bare`;
   d.textContent = m.text;
   parts.className = 'm-parts';
   d.appendChild(parts);
+  partsOf.set(m, parts);
   drawActs(parts, m, acts);
   return d;
+}
+
+/** Draws messages of the open chat again from the buttons they keep, leaving every other line and its buttons as they
+ *  are, and the list at the bottom when it was. For lines whose buttons are all kept, such as a build's. The scroll is
+ *  read once and set once, since reading it after each draw would lay the whole list out again per line. */
+export function redrawMsgs(msgs: Iterable<ChatMsg>) {
+  const list = $('mcList'),
+    atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 2;
+  for (const m of msgs) {
+    const parts = partsOf.get(m);
+    if (parts?.isConnected) drawActs(parts, m, m.acts ?? []);
+  }
+  if (atBottom) list.scrollTop = list.scrollHeight;
 }
 
 export function renderChat() {

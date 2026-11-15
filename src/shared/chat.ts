@@ -1,5 +1,6 @@
 // Myra's chat as a board stores it: each message, and the buttons of the kinds that outlast the window, as data.
 import { MAX_FILES } from './askFiles.ts';
+import { type BuildRecord, readBuildRecord } from './build.ts';
 import type { ChangeSet } from './changes.ts';
 import { DEVICES, type Proto } from './repos.ts';
 
@@ -17,7 +18,10 @@ export type ChatAction =
   // before the build, so only the newest build's Undo shows: an older one would undo the builds after it too. `build`
   // names the build, which boards from before it was kept don't have.
   | { kind: 'buildUndo'; board: string; snapshot: string; build?: string }
-  | { kind: 'commit'; board: string; message: string }
+  // a commit takes the whole folder, so it too shows only under the newest build, which `build` names
+  | { kind: 'commit'; board: string; message: string; build?: string }
+  // a build's block: what was asked, how far it got and how it ended
+  | BuildRecord
   // what she read for this reply: notes from a vault, and pages on the web
   | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] }
   // A plan she showed before changing the board, with its steps as worded then. Its buttons show only while it waits,
@@ -233,8 +237,14 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
       : null,
   commit: x =>
     typeof x.board === 'string' && typeof x.message === 'string'
-      ? { kind: 'commit', board: x.board, message: x.message }
+      ? {
+          kind: 'commit',
+          board: x.board,
+          message: x.message,
+          ...(typeof x.build === 'string' ? { build: x.build } : {}),
+        }
       : null,
+  build: readBuildRecord,
   read: x => {
     const notes = entries(x.notes, readNote),
       pages = entries(x.pages, readPage);

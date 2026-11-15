@@ -7,7 +7,8 @@ import { startTimer, stopTimer, timer } from '../features/timer.ts';
 import { loadLib } from '../library/nesting.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { byName, findFolder, makeFolder, makeProject, moveBoard, putFolder, saveLib } from '../library/tree.ts';
-import { startBuild } from '../proto/build.ts';
+import { startBuild, WAIT } from '../proto/build.ts';
+import { building } from '../proto/buildSlot.ts';
 import { gitAction } from '../proto/gitActions.ts';
 import { askInstall } from '../proto/install.ts';
 import { applyNewPrototype } from '../repo/myra.ts';
@@ -63,7 +64,9 @@ export async function runEffects(effects: readonly Effect[], touched: readonly C
     failed: string[] = [];
   for (const e of effects)
     try {
-      await runEffect(e, touched, acts);
+      // a build turned away at once: her words follow her reply in its line, rather than coming before it
+      if (e.kind === 'build' && building()) failed.push(WAIT);
+      else await runEffect(e, touched, acts);
     } catch {
       failed.push(`I couldn’t ${tried(e)}.`);
     }
