@@ -240,6 +240,28 @@ try {
   await until(async () => (await status()) === 'Payment is built', 'a build that ends as you leave its board is noted');
   assert.strictEqual(chatOf('pb').filter(m => m.text === 'Left.').length, 1, 'and lands once in its file');
 
+  const logged: string[] = [];
+  page.on('console', m => {
+    if (m.type() === 'error') logged.push(m.text());
+  });
+  await buildThenLeave('export const App = () => <h1>Unsaved</h1>;\n');
+  await page.evaluate(() => {
+    const save = window.Fenmyr.save.bind(window.Fenmyr);
+    let full = true;
+    window.Fenmyr.save = async b => {
+      if (b.id !== 'pb' || !full) return save(b);
+      full = false;
+      throw new Error('No space left on device');
+    };
+  });
+  standIn.release();
+  const unsaved = 'Couldn’t save Payment’s build to its chat';
+  await until(async () => (await status()) === unsaved, 'a write that fails says so in place of the note');
+  assert.ok(
+    logged.some(t => t.includes('No space left on device')),
+    `and logs the error: ${JSON.stringify(logged)}`,
+  );
+
   // both start in the same tick, in the order given
   const race = (text: string, first: 'change' | 'open') =>
     page.evaluate(

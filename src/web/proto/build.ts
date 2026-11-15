@@ -203,9 +203,16 @@ export function buildEvent(data: unknown) {
     if (b === session.board) showAdded(lines);
     landed = b.name;
     return true;
-  }).then(() => {
-    job.end();
-    if (session.board?.id === board) void refresh();
-    else if (landed !== null) noteStatus(e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`);
-  });
+  }).then(
+    () => {
+      job.end();
+      if (session.board?.id === board) void refresh();
+      else if (landed !== null) noteStatus(e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`);
+    },
+    (err: unknown) => {
+      job.end();
+      console.error('A build’s result could not be written to its board', err);
+      noteStatus(`Couldn’t save ${landed ?? name}’s build to its chat`);
+    },
+  );
 }
