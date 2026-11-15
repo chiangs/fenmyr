@@ -72,6 +72,17 @@ const building: Step = async page => {
     if (Date.now() > end) throw new Error('the stand-in never wrote App.tsx');
 };
 
+// A second request while that build runs: it waits as its own block. A checkout without a queue turns it away.
+const queued: Step = async page => {
+  await page.evaluate(() =>
+    window.__fenmyr.applyMyra(
+      { say: 'I’ll do that next.', build: { request: 'Add a coupon field under the total.' } },
+      'Add a coupon field',
+    ),
+  );
+  await settle(page, 600);
+};
+
 export const PROTO_GROUPS: Record<string, Group> = {
   'proto-wide': { proto: true, width: 1440, states: screen },
   'proto-medium': { proto: true, width: 1200, states: [...screen, ['git-more', gitMore]] },
@@ -86,6 +97,7 @@ export const PROTO_GROUPS: Record<string, Group> = {
       ['failed', seeded(failedChat)],
       ['stopped', seeded(stoppedChat)],
       ['building', building],
+      ['queued', queued],
     ],
   },
   'proto-build-dark': { proto: true, width: 1200, settings: { theme: 'dark' }, states: [['built', seeded(builtChat)]] },
