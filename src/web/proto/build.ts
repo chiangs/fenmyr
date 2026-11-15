@@ -59,7 +59,6 @@ export async function startBuild(
   const w: Waiting = {
     build,
     board: b.id,
-    name: b.name,
     root,
     request,
     cards: chosen.length,
@@ -75,10 +74,13 @@ export async function startBuild(
 const boardNow = (id: string) =>
   session.board?.id === id ? session.board : (appState.boardList.find(x => x.id === id) ?? null);
 
-// The oldest waiting request whose board is still there. One whose board has gone has nothing to build for, and its
-// build would leave files in the repo the other prototypes share.
+// The oldest waiting request whose board is still there, with the board's name as it is now. One whose board has gone
+// has nothing to build for, and its build would leave files in the repo the other prototypes share.
 function nextWaiting() {
-  for (let w = dequeue(); w; w = dequeue()) if (boardNow(w.board)) return w;
+  for (let w = dequeue(); w; w = dequeue()) {
+    const b = boardNow(w.board);
+    if (b) return { w, name: b.name };
+  }
   return null;
 }
 
@@ -87,14 +89,15 @@ function nextWaiting() {
 async function pump() {
   await caughtUp();
   if (runningBuild()) return;
-  const w = nextWaiting();
-  if (!w) return;
+  const next = nextWaiting();
+  if (!next) return;
+  const { w, name } = next;
   // a note left by an earlier build would come back once this one ends
   noteStatus('');
   const r = claimSlot({
     build: w.build,
     board: w.board,
-    name: w.name,
+    name,
     root: w.root,
     request: w.request,
     cards: w.cards,
@@ -103,7 +106,7 @@ async function pump() {
     start: null,
     was: undefined,
     files: [],
-    job: startJob({ kind: 'building', board: w.board, name: w.name, file: null }),
+    job: startJob({ kind: 'building', board: w.board, name, file: null }),
   });
   try {
     redrawNewest(r);
@@ -189,7 +192,12 @@ export function buildEvent(data: unknown) {
   }
   if (e.type === 'start') {
     r.start = { at: Date.now(), snapshot: e.snapshot };
-    return void changeBoard(r.board, started(r));
+    return void changeBoard(r.board, b => {
+      // the status line names the board as it is called now, renamed while closed or not
+      r.name = b.name;
+      r.job.show({ kind: 'building', board: r.board, name: b.name, file: null });
+      return started(r)(b);
+    });
   }
   if (e.type === 'edit') {
     if (!r.files.includes(e.file)) r.files.push(e.file);

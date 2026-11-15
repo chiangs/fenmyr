@@ -4,12 +4,13 @@ import type { Launched } from './launch.ts';
 
 // A stand-in Claude Code for builds, told before each build what to do: the files it writes in the prototype's folder,
 // reported the way stream-json does, whether it waits for a release after each file but the last (`pause`) and before it
-// ends (`hold`), and whether it ends with a failure instead of `reply`. It counts each file it has reported, and logs
+// ends (`hold`), how many milliseconds more it takes to end (`ms`), and whether it ends with a failure instead of `reply`. It counts each file it has reported, and logs
 // each build's prompt. Any other question gets a short answer, and its prompt is logged too.
 type BuildScript = {
   files: Record<string, string>;
   pause?: boolean;
   hold?: boolean;
+  ms?: number;
   fail?: string;
   reply?: string;
 };
@@ -59,6 +60,7 @@ if (!process.argv.includes('stream-json')) {
       if (s.pause && i < files.length - 1) await wait();
     }
     if (s.hold) await wait();
+    if (s.ms) await new Promise(r => setTimeout(r, s.ms));
     say({ type: 'result', is_error: !!s.fail, result: s.fail ?? s.reply ?? 'I built it.' });
   })();
 }

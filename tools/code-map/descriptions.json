@@ -344,6 +344,7 @@
     "tests/buildQueueErrors.ts": "Checks that a build that waited its turn is sent the preview's errors once it shows the build before it, not the errors that build took away.",
     "tests/buildQueueGone.ts": "Checks that a waiting build whose board is deleted, or whose file goes, never runs, and that the one behind it still does.",
     "tests/buildQueueReload.ts": "Checks that a build asked for after a reload mid-build waits for the host's build to end, then starts by itself, rather than reading Couldn't start.",
+    "tests/buildQueueStatus.ts": "Checks what the status line shows and a screen reader hears as builds wait, start, land and are cancelled.",
     "tests/buildQuit.ts": "Tests that quitting Fenmyr during a build stops Claude Code, so nothing is written after.",
     "tests/buildRace.ts": "Tests that a build asked for while another starts waits its turn and then runs, and that one asked for while the host writes a build this window didn't start waits for its end.",
     "tests/buildReload.ts": "Checks that after a reload mid-build Undo this build is turned away while the host writes, and that the build's end still lands with a working Undo.",
