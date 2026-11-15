@@ -219,6 +219,27 @@ try {
   standIn.release();
   await until(async () => (await status()) === 'Payment is built', 'the note names the board as it is called now');
 
+  await open('pb');
+  standIn.next({ files: { 'src/App.tsx': 'export const App = () => <h1>Left</h1>;\n' }, hold: true, reply: 'Left.' });
+  await build('Again.');
+  await until(async () => appNow().includes('Left'), 'the build writes App.tsx');
+  await page.evaluate(() => {
+    const load = window.Fenmyr.load.bind(window.Fenmyr);
+    let slow = true;
+    window.Fenmyr.load = async id => {
+      const b = await load(id);
+      if (id === 'one' && slow) {
+        slow = false;
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      return b;
+    };
+    void window.__fenmyr.openBoard('one');
+  });
+  standIn.release();
+  await until(async () => (await status()) === 'Payment is built', 'a build that ends as you leave its board is noted');
+  assert.strictEqual(chatOf('pb').filter(m => m.text === 'Left.').length, 1, 'and lands once in its file');
+
   // both start in the same tick, in the order given
   const race = (text: string, first: 'change' | 'open') =>
     page.evaluate(

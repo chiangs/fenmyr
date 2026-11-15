@@ -16,11 +16,21 @@ function queue(id: string, task: () => Promise<void>) {
   return run;
 }
 
-/** openBoard holds a board from before it loads it until session.board is that board. Resolves with the release. */
-export function holdBoard(id: string): Promise<() => void> {
+function holdBoard(id: string): Promise<() => void> {
   return new Promise(granted => {
     void queue(id, () => new Promise<void>(release => granted(release)));
   });
+}
+
+/** openBoard holds the board it leaves and the one it opens, from before it loads until session.board is the new one,
+ *  so a change to either waits to see which is open. In id order, so two opens never each hold what the other waits
+ *  for. Resolves with the release. */
+export async function holdBoards(ids: readonly string[]): Promise<() => void> {
+  const releases: (() => void)[] = [];
+  for (const id of [...new Set(ids)].sort()) releases.push(await holdBoard(id));
+  return () => {
+    for (const release of releases) release();
+  };
 }
 
 /** Changes a board whether or not it is open, one change at a time per board, after any hold on it. On the open board
