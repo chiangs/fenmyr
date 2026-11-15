@@ -1,6 +1,6 @@
 // The buttons under Myra's build lines once they are stored: after two builds only the newest build's Undo this build
-// and Commit show, and Undo puts back only that build; Commit and Undo this build show only on the prototype they built; and a reply that
-// opens a new prototype doesn't take what it changed on the old board with it.
+// and Commit show, and Undo puts back only that build; Commit and Undo this build show only on the prototype they
+// built; and a reply that opens a new prototype doesn't take what it changed on the old board with it.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
