@@ -1,8 +1,9 @@
 // A build is one block in its prototype's chat. It grows a line per file while Claude Code writes, with the chat left
 // as it is, then reads "Built in N s" with the lines each file gained and lost and the card it was made from. Her
-// explanation follows with Undo this build, Commit and her next steps. The block and her buttons come back after a
-// restart, Undo this build says so on it, only the newest build shows Undo this build and Commit, a build cut off by
-// quitting reads stopped and can be undone, and a block the chat lost while the build ran comes back.
+// explanation follows with Undo this build, Commit and her next steps, which her reply that started it doesn't have.
+// The block and her buttons come back after a restart, Undo this build says so on it, only the newest build shows
+// Undo this build and Commit, a build cut off by quitting reads stopped and can be undone, and a block the chat lost
+// while the build ran comes back.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -124,7 +125,7 @@ try {
     hold: true,
     reply: `${explained}\nCARDS: src/App.tsx=n1; src/Form.tsx=n1\nNEXT: Add a coupon field | Show the total in bold`,
   });
-  await build('Make the checkout form.');
+  await build('Make the checkout form.', ['A chip on the wrong line']);
   await until(
     async () => (await last())?.lines.join('|') === 'Read 2 cards|src/App.tsx',
     'it grows a line for App.tsx',
@@ -153,6 +154,7 @@ try {
   await until(async () => (await buttonsUnder(explained)).length === 1, 'her explanation follows');
   const hers = [['Undo this build', 'Commit', 'Add a coupon field', 'Show the total in bold']];
   assert.deepStrictEqual(await buttonsUnder(explained), hers, 'with Undo this build, Commit and her next steps');
+  assert.deepStrictEqual(await buttonsUnder('Writing it now.'), [[]], 'her reply that started it has no next steps');
   assert.deepStrictEqual(
     (await texts()).slice(1).map(t => (t?.startsWith('Built in') ? 'block' : t)),
     ['Writing it now.', 'block', `${explained}Undo this buildCommitAdd a coupon fieldShow the total in bold`],
