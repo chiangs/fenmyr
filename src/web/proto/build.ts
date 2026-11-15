@@ -3,9 +3,10 @@ import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import type { Board, Card } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
-import { chatLog, pushMsg, renderChat } from '../myra/chatLog.ts';
+import type { Button } from '../myra/acts.ts';
+import { chatLog, pushMsg, showAdded } from '../myra/chatLog.ts';
 import { type SayAction, say } from '../myra/say.ts';
 import { type Job, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
@@ -120,11 +121,17 @@ const newestUndo = (board: string) =>
 const isLatest = (b: Prototype, a: BuildUndo) =>
   b.proto.build ? a.build === b.proto.build : newestUndo(a.board)?.snapshot === a.snapshot;
 
-export function buildUndoButton(a: BuildUndo): SayAction | null {
+// A newer build that lands on the open board leaves this one's button showing, so pressing it then only takes it away.
+export function buildUndoButton(a: BuildUndo): Omit<Button, 'after'> | null {
   const b = openProto(a.board),
     root = b && rootOf(b);
   if (!b || !root || !isLatest(b, a)) return null;
-  return { label: 'Undo this build', ghost: true, run: () => undo(root, b.proto.dir, a.snapshot) };
+  return {
+    label: 'Undo this build',
+    ghost: true,
+    live: () => isLatest(b, a),
+    run: () => undo(root, b.proto.dir, a.snapshot),
+  };
 }
 
 export function commitButton(a: Extract<ChatAction, { kind: 'commit' }>): SayAction | null {
@@ -135,33 +142,32 @@ export function commitButton(a: Extract<ChatAction, { kind: 'commit' }>): SayAct
 const line = (text: string, acts: ChatAction[] = []): ChatMsg =>
   acts.length ? { who: 'myra', text, t: Date.now(), acts } : { who: 'myra', text, t: Date.now() };
 
-// Her lines for how a build ended, added to its prototype's chat with buttons that are kept, so they work whenever
-// that prototype is open. A failed build that changed files can be undone too.
-function landEnd(b: Prototype, e: Extract<BuildEvent, { type: 'done' | 'error' }>, build: string, request: string) {
+// Her lines for how a build ended, for its prototype's chat, with buttons that are kept, so they work whenever that
+// prototype is open. A failed build that changed files can be undone too.
+function endLines(b: Prototype, e: Extract<BuildEvent, { type: 'done' | 'error' }>, build: string, request: string) {
   const board = b.id;
   if (e.type === 'error') {
     const undo: ChatAction[] =
       e.snapshot && e.files.length ? [{ kind: 'buildUndo', board, snapshot: e.snapshot, build }] : [];
-    return pushMsg(b, line(`I couldn’t finish that. ${e.text}`, undo));
+    return [line(`I couldn’t finish that. ${e.text}`, undo)];
   }
   // the commit message she suggests: the first line of what she was asked to do
   const message = request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
-  pushMsg(
-    b,
+  const lines = [
     line(e.text, [
       { kind: 'commit', board, message },
       { kind: 'buildUndo', board, snapshot: e.snapshot, build },
     ]),
-  );
+  ];
   const used = keepSources(b, e.sources);
-  if (used.length) pushMsg(b, line(cardsLine(b, used), cardButtons(b, used)));
+  if (used.length) lines.push(line(cardsLine(b, used), cardButtons(b, used)));
   if (e.outside.length)
-    pushMsg(
-      b,
+    lines.push(
       line(
         `I also changed files outside this prototype: ${e.outside.join(', ')}. Undo this build only puts this prototype back, so check those in the git bar.`,
       ),
     );
+  return lines;
 }
 
 // The host's protoBuild events, for the build that's running; its end repeats the snapshot its start carries, so the
@@ -177,12 +183,12 @@ export function buildEvent(data: unknown) {
   if (session.board?.id !== board) noteStatus(e.type === 'done' ? `${name} is built` : `${name}’s build stopped`);
   void changeBoard(board, b => {
     if (b.kind !== 'prototype') return false;
-    landEnd(b, e, build, request);
+    const lines = endLines(b, e, build, request);
+    for (const m of lines) pushMsg(b, m);
+    // drawn in the tick they're added, so the redraw of a board that has just opened can't draw them twice
+    if (b === session.board) showAdded(lines);
     return true;
   }).then(() => {
-    if (session.board?.id !== board) return;
-    appState.histOpen = false;
-    renderChat();
-    void refresh();
+    if (session.board?.id === board) void refresh();
   });
 }

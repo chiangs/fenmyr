@@ -189,9 +189,23 @@ export function addMsg(who: string, text: string, acts: readonly Act[] = []) {
   if (stored.length) m.acts = stored;
   append(chatLog(), session.board, m);
   if (chatKeep() === 'board') save();
+  appendMsg(m, acts);
+  return m;
+}
+
+// below the lines showing, whose buttons a redraw would lose when they are a question's closures
+function appendMsg(m: ChatMsg, acts?: readonly Act[]) {
   const list = $('mcList');
   list.querySelector('.mc-empty')?.remove();
   list.appendChild(msgEl(m, acts));
   list.scrollTop = list.scrollHeight;
-  return m;
+}
+
+/** Shows lines just added to the open board's chat, leaving the lines showing and their buttons as they are. */
+export function showAdded(msgs: readonly ChatMsg[]) {
+  if (appState.histOpen) {
+    appState.histOpen = false;
+    return renderChat();
+  }
+  for (const m of msgs) appendMsg(m);
 }

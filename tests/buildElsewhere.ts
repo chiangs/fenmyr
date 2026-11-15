@@ -84,6 +84,8 @@ try {
     };
   git('add', '-A');
   git('commit', '-qm', 'start');
+  git('config', 'user.name', 'T');
+  git('config', 'user.email', 't@e.st');
 
   await open('pb');
   standIn.next({
@@ -150,6 +152,40 @@ try {
   const empty = 'I couldn’t finish that. I couldn’t read the cards.';
   await until(async () => (await buttonsUnder(empty)).length === 1, 'a failure that changed nothing lands');
   assert.deepStrictEqual(await buttonsUnder(empty), [[]], 'with nothing to undo');
+
+  // a question asked while a build runs keeps the buttons it was drawn with when the build lands on its open board
+  const question = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('#mcList .mc-msg.myra')]
+        .filter(m => m.firstChild?.textContent?.startsWith('Commit '))
+        .map(m => [...m.querySelectorAll('.m-acts button')].map(b => b.textContent ?? '')),
+    );
+  standIn.next({ files: { 'src/App.tsx': 'export function App() { return <h1>First</h1>; }\n' }, reply: 'First.' });
+  await build('First.');
+  await until(async () => (await buttonsUnder('First.')).length === 1, 'the first build lands');
+  const other = path.join(repo, dir, 'src/Other.tsx');
+  standIn.next({ files: { 'src/Other.tsx': 'export const other = 2;\n' }, hold: true, reply: 'Second.' });
+  await build('Second.');
+  await until(async () => fs.existsSync(other), 'the second build writes Other.tsx');
+  await page.click('#prGit [data-git="commit"]');
+  await until(async () => (await question()).length === 1, 'Commit asks first');
+  standIn.release();
+  await until(async () => (await buttonsUnder('Second.')).length === 1, 'the second build lands on its open board');
+  assert.deepStrictEqual(await question(), [['Commit', 'Not now']], 'the question keeps its buttons');
+  await page
+    .locator('#mcList .mc-msg.myra')
+    .filter({ hasText: /^First\./ })
+    .getByRole('button', { name: 'Undo this build' })
+    .click();
+  await settle(page, 600);
+  assert.ok(fs.existsSync(other), 'the first build’s Undo this build, pressed after the second, changes nothing');
+  assert.deepStrictEqual(await buttonsUnder('First.'), [['Commit']], 'and goes');
+  await page
+    .locator('#mcList .mc-msg.myra')
+    .filter({ hasText: /^Commit / })
+    .getByRole('button', { name: 'Commit' })
+    .click();
+  await until(async () => git('status', '--porcelain').trim() === '', 'and its Commit still commits');
 
   // both start in the same tick, in the order given
   const race = (text: string, first: 'change' | 'open') =>
