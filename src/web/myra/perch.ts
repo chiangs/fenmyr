@@ -13,6 +13,8 @@ let gooAt = { x: 0, y: 0 };
 let gooAnim: { stop(): void } | null = null;
 // when her latest hop touches down, on performance.now()'s clock
 let landsAt = 0;
+// a hop hasn't touched down by its own frames yet, which a long task can hold back past landsAt
+let aloft = false;
 let dizzyAt = 0;
 
 const gooMove = (t: Point) => {
@@ -116,6 +118,7 @@ function flyGoo(to: Point, fade: boolean, far = false) {
   const vref = Math.hypot(Math.abs(dx), Math.abs(dy) + 4 * h) / AIR;
   const t0 = performance.now();
   landsAt = t0 + WIND + AIR;
+  aloft = true;
   const sm = (k: number) => k * k * (3 - 2 * k),
     lerp = (a: number, b: number, k: number) => a + (b - a) * k;
   let target = to,
@@ -146,6 +149,7 @@ function flyGoo(to: Point, fade: boolean, far = false) {
     } else {
       const l = e - WIND - AIR;
       if (!landFrom) {
+        aloft = false;
         landFrom = { x: from.x + dx, y: from.y + dy };
         gooRest();
         target = perched ? perchTarget() : { x: 0, y: 0 };
@@ -169,6 +173,7 @@ function flyGoo(to: Point, fade: boolean, far = false) {
   gooAnim = {
     stop() {
       stopped = true;
+      aloft = false;
       cancelAnimationFrame(raf);
     },
   };
@@ -226,7 +231,7 @@ export function hopFrom(from: DOMRect | null) {
 let wonderT: ReturnType<typeof setTimeout> | undefined;
 export const wonderIfEmpty = () => {
   const tilt = () => {
-    if (gooSlot.getAnimations().length) {
+    if (gooSlot.getAnimations().length || aloft) {
       wonderT = setTimeout(tilt, 40);
       return;
     }
