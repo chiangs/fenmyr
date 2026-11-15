@@ -4,7 +4,7 @@ import { appState, session } from '../core/state.ts';
 import { say } from '../myra/say.ts';
 import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { busyOn } from './buildSlot.ts';
+import { stillBuilding } from './buildWait.ts';
 import { renderGitBar } from './gitbar.ts';
 import { pullNow } from './sync.ts';
 
@@ -13,17 +13,6 @@ import { pullNow } from './sync.ts';
 type Prototype = Extract<Board, { kind: 'prototype' }>;
 
 const failed = (e: unknown) => say(e instanceof Error ? e.message : String(e), 8000);
-
-/** Her words when Undo this build, a commit or a pull waits for a build, since it would change the files under it. */
-export const waitsForBuild = (verb: 'undo' | 'commit' | 'pull') =>
-  say(`I’m still building. You can ${verb} once it’s done.`, 6000);
-
-/** True, once she has said so, while a build runs or waits on this prototype. Nothing is changed. */
-export function stillBuilding(board: string, verb: 'undo' | 'commit' | 'pull') {
-  if (!busyOn(board)) return false;
-  waitsForBuild(verb);
-  return true;
-}
 const projectOf = (b: Prototype) => {
   const root = rootOf(b);
   return root ? { root, repo: root.split('/').pop() ?? root } : null;
@@ -38,7 +27,7 @@ async function commit(b: Prototype, root: string, message: string) {
 // message: the one she suggests, or a plain one when it's empty
 export async function askCommit(b: Prototype, message: string) {
   const where = projectOf(b);
-  if (!where || stillBuilding(b.id, 'commit')) return;
+  if (!where || stillBuilding(b, 'commit')) return;
   const s = await Fenmyr.gitStatus(where.root).catch(() => null);
   const changed = s?.kind === 'repo' ? s.changed.filter(c => inCommit(b.proto.dir, c.path)) : [];
   if (!changed.length) return say('There’s nothing new in this prototype to commit.', 5000);
@@ -61,7 +50,7 @@ export async function askCommit(b: Prototype, message: string) {
         label: 'Commit',
         cls: 'next',
         // asked before a build began
-        held: () => stillBuilding(b.id, 'commit'),
+        held: () => stillBuilding(b, 'commit'),
         run: () => commit(b, where.root, said).catch(failed),
       },
       { label: 'Not now', ghost: true, run: () => {} },
@@ -105,6 +94,6 @@ export function gitAction(action: string, message = '') {
   const b = session.board;
   if (b?.kind !== 'prototype') return;
   if (action === 'commit') return askCommit(b, message);
-  if (action === 'pull') return stillBuilding(b.id, 'pull') ? undefined : pullNow(b);
+  if (action === 'pull') return stillBuilding(b, 'pull') ? undefined : pullNow(b);
   return action === 'push' ? askPush(b) : undefined;
 }

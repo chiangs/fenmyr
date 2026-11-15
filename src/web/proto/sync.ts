@@ -4,6 +4,7 @@ import { say } from '../myra/say.ts';
 import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { startBuild } from './build.ts';
+import { stillBuilding } from './buildWait.ts';
 import { renderCode } from './code.ts';
 import { renderGitBar } from './gitbar.ts';
 import { renderPreview } from './preview.ts';
@@ -48,6 +49,7 @@ function clash(b: Prototype, root: string, files: string[], redo: string) {
       {
         label: 'Keep mine on a new branch',
         cls: 'next',
+        held: () => stillBuilding(b, 'pull'),
         run: () =>
           Fenmyr.gitKeepMine({ root, branch, account: account(root) })
             .then(() => say(`Your version is on ${branch}, on GitHub too ✦`, 6000))
@@ -57,6 +59,7 @@ function clash(b: Prototype, root: string, files: string[], redo: string) {
       {
         label: 'Take GitHub’s version',
         cls: 'danger',
+        held: () => stillBuilding(b, 'pull'),
         run: () =>
           Fenmyr.gitTakeTheirs({ root })
             .then(() => catchUp(b))
@@ -95,7 +98,13 @@ export async function beforeBuild(b: Prototype, request: string, go: () => void)
     `GitHub has ${n} this computer doesn't have. Pull them before I start?`,
     'Someone changed this repo somewhere else. Pulling first means I build on the latest version instead of an old one.',
     [
-      { label: 'Pull first', cls: 'next', run: () => pullNow(b, request).then(ok => ok && go()) },
+      {
+        label: 'Pull first',
+        cls: 'next',
+        // asked before a build began
+        held: () => stillBuilding(b, 'pull'),
+        run: () => pullNow(b, request).then(ok => ok && go()),
+      },
       { label: 'Build anyway', ghost: true, run: go },
     ],
   );

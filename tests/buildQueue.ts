@@ -1,8 +1,8 @@
 // A build asked for while another runs waits its turn as its own block, "Waiting for the build before it", with its
 // request and Cancel, then starts with no click when the one before it ends, on whichever board is open, and lands in
 // its own prototype. Cancel leaves "Not started" and nothing for the builder. While a build runs or waits on a
-// prototype, Undo this build, Commit and Pull are turned away in Myra's words, change no file and stay where they were,
-// so they work once nothing waits. Myra's facts say a build is running, so her words can match.
+// prototype, or on another in its repo, Undo this build, Commit and Pull are turned away in Myra's words, change no file
+// and stay where they were, so they work once nothing waits. Myra's facts say a build is running, so her words can match.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -15,6 +15,8 @@ import { launch, settle } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
 
 const { work, repo } = freshRepo('fenmyr-build-queue-');
+// another project's repo, which the host doesn't guard while Acme's builds run
+const other = freshRepo('fenmyr-build-queue-other-');
 const git = (...args: string[]) =>
   execFileSync('git', ['-C', repo, '-c', 'user.name=T', '-c', 'user.email=t@e.st', ...args]).toString();
 fs.mkdirSync(path.join(repo, 'prototypes'));
@@ -76,25 +78,36 @@ const recordIn = (id: string, request: string) =>
 const commits = () => git('rev-list', '--all', '--count').trim();
 
 try {
-  const dirs = await page.evaluate(async repo => {
-    await window.Fenmyr.saveFolders({
-      projects: [{ id: 'p1', name: 'Acme', open: true, repo: { path: repo } }],
-      folders: [{ id: 'pf', name: 'Prototypes', project: 'p1', kind: 'prototyping', open: true }],
-      order: {},
-    });
-    const made: string[] = [];
-    for (const [id, name] of [
-      ['pb', 'Checkout'],
-      ['pc', 'Basket'],
-    ] as const) {
-      const proto = await window.Fenmyr.protoCreate({ root: repo, name, stack: 'react' });
-      await window.Fenmyr.save({ id, name, folder: 'pf', kind: 'prototype', proto, cards: [], links: [], tray: [] });
-      made.push(proto.dir);
-    }
-    await window.__fenmyr.refreshBoards();
-    return made;
-  }, repo);
-  const [pbDir = '', pcDir = ''] = dirs;
+  const dirs = await page.evaluate(
+    async ({ repo, otherRepo }) => {
+      await window.Fenmyr.saveFolders({
+        projects: [
+          { id: 'p1', name: 'Acme', open: true, repo: { path: repo } },
+          { id: 'p2', name: 'Shop', open: true, repo: { path: otherRepo } },
+        ],
+        folders: [
+          { id: 'pf', name: 'Prototypes', project: 'p1', kind: 'prototyping', open: true },
+          { id: 'pf2', name: 'Prototypes', project: 'p2', kind: 'prototyping', open: true },
+        ],
+        order: {},
+      });
+      const made: string[] = [],
+        protos: [string, string, string, string][] = [
+          ['pb', 'Checkout', repo, 'pf'],
+          ['pd', 'Receipt', repo, 'pf'],
+          ['pc', 'Basket', otherRepo, 'pf2'],
+        ];
+      for (const [id, name, root, folder] of protos) {
+        const proto = await window.Fenmyr.protoCreate({ root, name, stack: 'react' });
+        await window.Fenmyr.save({ id, name, folder, kind: 'prototype', proto, cards: [], links: [], tray: [] });
+        made.push(proto.dir);
+      }
+      await window.__fenmyr.refreshBoards();
+      return made;
+    },
+    { repo, otherRepo: other.repo },
+  );
+  const [pbDir = '', , pcDir = ''] = dirs;
   const inPb = (f: string) => path.join(repo, pbDir, f);
   git('add', '-A');
   git('commit', '-qm', 'start');
@@ -179,7 +192,7 @@ try {
     reply: 'Basket.',
   });
   await build('Basket build.');
-  await until(() => standIn.wrote() === 1, 'a build runs on the other prototype');
+  await until(() => standIn.wrote() === 1, 'a build runs on another project’s prototype');
   await open('pb');
   assert.deepStrictEqual(await buttonsUnder('Fifth.'), [['Undo this build', 'Commit']], 'the newest build here');
   await build('Sixth build.');
@@ -189,6 +202,7 @@ try {
   await tapUnder('Fifth.', 'Undo this build');
   const noUndo = 'I’m still building. You can undo once it’s done.';
   await until(async () => (await texts()).includes(noUndo), 'Undo this build waits while a build waits here');
+  await settle(page, 600);
   assert(fs.existsSync(inPb('src/Late.tsx')), 'and changes no file');
   await tapUnder('Fifth.', 'Commit');
   const noCommit = 'I’m still building. You can commit once it’s done.';
@@ -206,21 +220,46 @@ try {
 
   await page.locator('#mcList .mc-msg.bare').last().getByRole('button', { name: 'Cancel' }).click();
   await until(async () => (await blocks()).at(-1)?.head === 'Not started', 'the sixth is cancelled');
-  standIn.release();
-  await until(() => chatOf('pc').some(m => m.text === 'Basket.'), 'the other prototype’s build lands');
-  assert(fs.readFileSync(path.join(repo, pcDir, 'src/App.tsx'), 'utf8').includes('Basket'), 'in its own folder');
   await tapUnder('Fifth.', 'Undo this build');
+  await until(() => !fs.existsSync(inPb('src/Late.tsx')), 'once nothing waits here, the same Undo this build works');
+  standIn.release();
+  await until(() => chatOf('pc').some(m => m.text === 'Basket.'), 'the other project’s build lands');
+  assert(fs.readFileSync(path.join(other.repo, pcDir, 'src/App.tsx'), 'utf8').includes('Basket'), 'in its own repo');
+
+  standIn.next({ files: { 'src/Seven.tsx': 'export const seven = 7;\n' }, reply: 'Seventh.' });
+  await build('Seventh build.');
+  await until(async () => (await buttonsUnder('Seventh.')).length === 1, 'another build lands here');
+  await open('pd');
+  standIn.next({
+    files: { 'src/App.tsx': 'export const App = () => <h1>Receipt</h1>;\n' },
+    hold: true,
+    reply: 'Receipt.',
+  });
+  await build('Receipt build.');
+  await until(() => standIn.wrote() === 1, 'a build runs on another prototype in the same repo');
+  await open('pb');
+  await tapUnder('Seventh.', 'Undo this build');
   await until(
-    () => !fs.existsSync(inPb('src/Late.tsx')),
-    'once no build runs or waits, the same Undo this build works',
+    async () => (await texts()).filter(t => t === noUndo).length === 2,
+    'Undo this build waits for a build in the same repo',
   );
+  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Pulling now.', git: { action: 'pull' } }, 'pull'));
+  await until(
+    async () => (await texts()).filter(t => t.includes('You can pull once it’s done.')).length === 2,
+    'and so does Pull, which would change that build’s files',
+  );
+  await settle(page, 600);
+  assert(fs.existsSync(inPb('src/Seven.tsx')), 'and changes no file');
+  assert.deepStrictEqual(await buttonsUnder('Seventh.'), [['Undo this build', 'Commit']], 'and its buttons stay');
+  standIn.release();
+  await until(() => chatOf('pd').some(m => m.text === 'Receipt.'), 'that build lands');
+  await tapUnder('Seventh.', 'Undo this build');
+  await until(() => !fs.existsSync(inPb('src/Seven.tsx')), 'then the same Undo this build works');
+
+  const names = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Basket', 'Sixth', 'Seventh', 'Receipt'];
   assert.deepStrictEqual(
-    standIn
-      .builds()
-      .map(p =>
-        ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Basket', 'Sixth'].find(n => p.includes(`${n} build.`)),
-      ),
-    ['First', 'Second', 'Fourth', 'Fifth', 'Basket'],
+    standIn.builds().map(p => names.find(n => p.includes(`${n} build.`))),
+    ['First', 'Second', 'Fourth', 'Fifth', 'Basket', 'Seventh', 'Receipt'],
     'and the builder ran each build in turn, never a cancelled one',
   );
   assert.deepStrictEqual(l.errors, [], 'no errors');
@@ -228,5 +267,6 @@ try {
 } finally {
   await l.close();
   fs.rmSync(work, { recursive: true, force: true });
+  fs.rmSync(other.work, { recursive: true, force: true });
   fs.rmSync(data, { recursive: true, force: true });
 }

@@ -9,8 +9,9 @@ import { type SayAction, say } from '../myra/say.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { recordOf, undone } from './buildRecord.ts';
 import { runningBuild } from './buildSlot.ts';
+import { stillBuilding, waitsForBuild } from './buildWait.ts';
 import { renderCode } from './code.ts';
-import { askCommit, stillBuilding, waitsForBuild } from './gitActions.ts';
+import { askCommit } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
 import { renderPreview } from './preview.ts';
 
@@ -66,7 +67,7 @@ export function buildUndoButton(a: BuildUndo): Omit<Button, 'after'> | null {
   return {
     label: 'Undo this build',
     ghost: true,
-    held: () => stillBuilding(b.id, 'undo'),
+    held: () => stillBuilding(b, 'undo'),
     run: () => undo(b, root, a.snapshot, a.build),
   };
 }
@@ -91,7 +92,7 @@ export function commitButton(a: Commit): SayAction | null {
   return {
     label: 'Commit',
     cls: 'next',
-    held: () => stillBuilding(b.id, 'commit'),
+    held: () => stillBuilding(b, 'commit'),
     run: () => askCommit(b, a.message),
   };
 }
@@ -106,7 +107,7 @@ export function stoppedUndo(a: BuildRecord): Omit<Button, 'after'> | null {
   return {
     label: 'Undo this build',
     ghost: true,
-    held: () => stillBuilding(b.id, 'undo'),
+    held: () => stillBuilding(b, 'undo'),
     run: () => undo(b, root, start.snapshot, a.build),
   };
 }
