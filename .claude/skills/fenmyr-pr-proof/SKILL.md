@@ -15,7 +15,7 @@ Compare against the branch the work stacks on, not always `origin/main`. For the
 
 ## Gates, in this order
 
-1. `npm run check:fast` after every hand edit. Type check, lint, knip, budget, name/CI/code-map checks.
+1. `npm run check:fast` after every hand edit. Type check, lint, knip, budget, name and code-map checks.
 2. `npm test` once at the final head. It builds first.
 3. `npm run visual -- <base>` for any renderer change. Look at every changed image yourself. Each changed state must be
    in `tools/visual-expected.json` with an accurate reason, and stale entries for changes already on the base must be
@@ -39,9 +39,8 @@ A test that passes with the fix reverted proves nothing. Rewrite it.
 
 ## Wiring a new test
 
-A new test goes in a new file and must be added to all three of: the `test` script in `package.json`,
-`.github/workflows/ci.yml`, and `tools/code-map/descriptions.json`. `tools/check-ci.ts` and `tools/code-map/check.ts`
-catch some omissions, not all.
+A new test goes in a new file in `tests/` with its line in `tools/code-map/descriptions.json`, and nothing else.
+`tools/run-tests.ts` finds it for `npm test` and for CI's parallel parts. Run it alone with `npm test -- <name>`.
 
 ## Traps
 
@@ -52,8 +51,8 @@ catch some omissions, not all.
   `tools/build.ts` stops at the `esbuild.wasm` copy and tests see a half-built app.
 - **Shared scratch.** Logs named `perf.log`, `visual.log` or `test.log` get mixed when agents share a folder. Keep
   logs in a folder named for your branch.
-- **Shared files.** `package.json`, `.github/workflows/ci.yml`, `tools/code-map/descriptions.json` and
-  `tools/visual-expected.json` are touched by every PR. Add only your own lines so parallel branches merge cleanly.
+- **Shared files.** `tools/code-map/descriptions.json` and `tools/visual-expected.json` are touched by every PR.
+  Add only your own lines so parallel branches merge cleanly.
 - **Budget.** `markupLogic` and `longFiles` stay 0; a file is at most 400 lines by the budget's count. `rawColours`
   may only go down.
 
