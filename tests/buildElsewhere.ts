@@ -187,6 +187,18 @@ try {
     .click();
   await until(async () => git('status', '--porcelain').trim() === '', 'and its Commit still commits');
 
+  standIn.next({ files: {}, fail: 'Claude Code stopped.' });
+  await build('Third.');
+  await until(
+    async () => (await buttonsUnder('I couldn’t finish that. Claude Code stopped.')).length === 1,
+    'it fails',
+  );
+  const kept = [['Commit', 'Undo this build']];
+  assert.deepStrictEqual(await buttonsUnder('Second.'), kept, 'a failure that changed nothing keeps the last Undo');
+  await open('one');
+  await open('pb');
+  assert.deepStrictEqual(await buttonsUnder('Second.'), kept, 'after reopening too');
+
   // both start in the same tick, in the order given
   const race = (text: string, first: 'change' | 'open') =>
     page.evaluate(

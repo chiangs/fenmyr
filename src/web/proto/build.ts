@@ -21,8 +21,17 @@ import { beforeBuild } from './sync.ts';
 // Myra's "build": the host writes the code with Claude Code while the status line shows what's being written, then her
 // explanation lands in the prototype's own chat with Undo this build, and the code, the preview and the git bar catch up.
 type Prototype = Extract<Board, { kind: 'prototype' }>;
-// board and name: the prototype it builds, which may not be the open board by the time it ends
-type Running = { id: string; build: string; board: string; name: string; request: string; job: Job };
+// board and name: the prototype it builds, which may not be the open board by the time it ends. was: the board's
+// build before it, still the one to undo if this one changes nothing
+type Running = {
+  id: string;
+  build: string;
+  was: string | undefined;
+  board: string;
+  name: string;
+  request: string;
+  job: Job;
+};
 // 'starting' from the moment a build is asked for until the host answers, so one asked for meanwhile waits
 let running: Running | 'starting' | null = null;
 
@@ -88,7 +97,7 @@ export async function startBuild(
       back();
       return say(WAIT, 6000);
     }
-    running = { id: r.id, build, board: b.id, name: b.name, request, job };
+    running = { id: r.id, build, was, board: b.id, name: b.name, request, job };
   } catch (e) {
     back();
     say(e instanceof Error ? e.message : String(e), 8000);
@@ -144,12 +153,14 @@ const line = (text: string, acts: ChatAction[] = []): ChatMsg =>
 
 // Her lines for how a build ended, for its prototype's chat, with buttons that are kept, so they work whenever that
 // prototype is open. A failed build that changed files can be undone too.
-function endLines(b: Prototype, e: Extract<BuildEvent, { type: 'done' | 'error' }>, build: string, request: string) {
+function endLines(b: Prototype, e: Extract<BuildEvent, { type: 'done' | 'error' }>, { build, was, request }: Running) {
   const board = b.id;
   if (e.type === 'error') {
-    const undo: ChatAction[] =
-      e.snapshot && e.files.length ? [{ kind: 'buildUndo', board, snapshot: e.snapshot, build }] : [];
-    return [line(`I couldn’t finish that. ${e.text}`, undo)];
+    if (e.snapshot && e.files.length)
+      return [line(`I couldn’t finish that. ${e.text}`, [{ kind: 'buildUndo', board, snapshot: e.snapshot, build }])];
+    // it changed nothing, so the build before it keeps its Undo this build, unless a newer one has started since
+    if (b.proto.build === build) b.proto = { ...b.proto, build: was };
+    return [line(`I couldn’t finish that. ${e.text}`)];
   }
   // the commit message she suggests: the first line of what she was asked to do
   const message = request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
@@ -176,14 +187,15 @@ function endLines(b: Prototype, e: Extract<BuildEvent, { type: 'done' | 'error' 
 export function buildEvent(data: unknown) {
   const e = readBuildEvent(data);
   if (!running || running === 'starting' || e?.id !== running.id || e.type === 'start') return;
-  const { build, board, name, request, job } = running;
+  const end = running,
+    { board, name, job } = end;
   if (e.type === 'edit') return job.show({ kind: 'building', board, name, file: e.file.split('/').at(-1) ?? null });
   running = null;
   job.end();
   if (session.board?.id !== board) noteStatus(e.type === 'done' ? `${name} is built` : `${name}’s build stopped`);
   void changeBoard(board, b => {
     if (b.kind !== 'prototype') return false;
-    const lines = endLines(b, e, build, request);
+    const lines = endLines(b, e, end);
     for (const m of lines) pushMsg(b, m);
     // drawn in the tick they're added, so the redraw of a board that has just opened can't draw them twice
     if (b === session.board) showAdded(lines);
