@@ -339,6 +339,7 @@
     "tests/buildHost.ts": "Tests the host's build events with a fake code agent: the snapshot, lines added and removed, next steps and one build per repo.",
     "tests/buildLine.ts": "Tests that Myra's one line for a build's block names at most ten files, then how many more.",
     "tests/buildLongThread.ts": "Checks that a build on a 125-build thread restyles about as much as on a short one, and that the thread stays at the bottom, or where the person scrolled to, as a block grows.",
+    "tests/buildQueue.ts": "Checks that a build asked for during another waits as a block with Cancel and starts by itself on any open board, and that Undo, Commit and Pull wait while a build runs or waits there.",
     "tests/buildQueueReload.ts": "Checks that a build asked for after a reload mid-build waits for the host's build to end, then starts by itself, rather than reading Couldn't start.",
     "tests/buildQuit.ts": "Tests that quitting Fenmyr during a build stops Claude Code, so nothing is written after.",
     "tests/buildRace.ts": "Tests that a build asked for while another starts waits its turn and then runs, and that one asked for while the host writes a build this window didn't start waits for its end.",
