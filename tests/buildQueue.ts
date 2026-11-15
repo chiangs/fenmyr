@@ -119,6 +119,11 @@ try {
     'a request during a build waits, with its first line and Cancel',
   );
   assert(!(await texts()).some(t => /still writing|Ask me again/.test(t)), 'and Myra doesn’t turn it away');
+  const [reply, waiting] = (await texts()).slice(-2);
+  assert(
+    reply === 'Writing it now.' && waiting?.startsWith('Waiting'),
+    'the block follows her reply, as a build’s does',
+  );
 
   await page.evaluate(() => window.__fenmyr.ask('Is it done yet?'));
   assert.match(
@@ -129,9 +134,14 @@ try {
 
   await build('Third build.');
   await until(async () => (await blocks()).length === 3, 'a third request waits too');
+  await until(() => !!recordIn('pb', 'Third build.'), 'its block is written when it is asked for');
+  const board = () => fs.readFileSync(path.join(data, 'fenmyr', 'boards', 'pb.json'), 'utf8'),
+    unCancelled = board();
   await page.locator('#mcList .mc-msg.bare').nth(2).getByRole('button', { name: 'Cancel' }).click();
   await until(async () => (await blocks())[2]?.head === 'Not started', 'Cancel leaves it reading Not started');
   assert.deepStrictEqual((await blocks())[2]?.buttons, [], 'with no button');
+  await settle(page, 600);
+  assert.equal(board(), unCancelled, 'and the board file isn’t written for it');
   assert.deepStrictEqual((await blocks())[1]?.head, 'Waiting for the build before it', 'and the other still waits');
 
   standIn.next({ files: { 'src/Form.tsx': 'export const Form = () => null;\n' }, reply: 'Second.' });
