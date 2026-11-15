@@ -283,6 +283,11 @@ try {
   const stopped = await last();
   assert.strictEqual(stopped?.head, 'Stopped · Fenmyr closed before it finished', 'quitting cuts it off');
   assert.deepStrictEqual(stopped?.buttons, ['Undo this build'], 'and its block offers Undo this build');
+  assert.deepStrictEqual(
+    await buttonsUnder('I added the total.'),
+    [[]],
+    'while the build before it, never undone, offers neither Undo this build nor Commit',
+  );
   await tap('Undo this build');
   await until(async () => fs.readFileSync(file('src/App.tsx'), 'utf8') === total, 'which puts App.tsx back');
   await until(async () => (await last())?.buttons.length === 0, 'and goes');
