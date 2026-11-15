@@ -35,10 +35,16 @@ if (!process.argv.includes('stream-json')) {
   say({ type: 'result', is_error: false, result: JSON.stringify({ say: 'ok' }) });
 } else {
   const s = JSON.parse(fs.readFileSync(${JSON.stringify(script)}, 'utf8'));
+  // an app that doesn't stop Claude Code as it quits, such as one from before builds were stopped, would otherwise wait
+  // on this stand-in for ever: it leaves once that app has gone
+  const app = process.ppid;
   let waits = 0;
   const wait = async () => {
     const gate = path.join(${JSON.stringify(work)}, 'gate-' + ++waits);
-    while (!fs.existsSync(gate)) await new Promise(r => setTimeout(r, 50));
+    while (!fs.existsSync(gate)) {
+      if (process.ppid !== app) process.exit(0);
+      await new Promise(r => setTimeout(r, 50));
+    }
   };
   (async () => {
     const files = Object.entries(s.files);
