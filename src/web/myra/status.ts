@@ -72,7 +72,7 @@ const NOTE_MS = 8000;
 let note = '';
 let noteT: ReturnType<typeof setTimeout> | undefined;
 
-/** Says `text` on the status line for 8 seconds, in place of the resting text. */
+/** Says `text` on the status line for 8 seconds, in place of the resting text. An empty text takes the note away. */
 export function noteStatus(text: string) {
   note = text;
   clearTimeout(noteT);

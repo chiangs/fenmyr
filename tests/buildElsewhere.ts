@@ -141,17 +141,19 @@ try {
   await open('one');
   standIn.release();
   await until(async () => (await status()) === 'Checkout’s build stopped', 'a stopped build is noted elsewhere');
+  const stopped = Date.now();
   await open('pb');
   const failed = 'I couldn’t finish that. I ran out of room.';
   assert.deepStrictEqual(await buttonsUnder(failed), [['Undo this build']], 'a failed build that changed files');
-  await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
-  await until(async () => appNow().equals(starter), 'can be undone, byte for byte');
 
   standIn.next({ files: {}, fail: 'I couldn’t read the cards.' });
   await build('Try again.');
   const empty = 'I couldn’t finish that. I couldn’t read the cards.';
   await until(async () => (await buttonsUnder(empty)).length === 1, 'a failure that changed nothing lands');
   assert.deepStrictEqual(await buttonsUnder(empty), [[]], 'with nothing to undo');
+  assert.strictEqual(await status(), 'Ready', `the note went when it started, ${Date.now() - stopped} ms after it`);
+  await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
+  await until(async () => appNow().equals(starter), 'the failed build that changed files can be undone, byte for byte');
 
   // a question asked while a build runs keeps the buttons it was drawn with when the build lands on its open board
   const question = () =>

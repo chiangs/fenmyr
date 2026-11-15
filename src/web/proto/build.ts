@@ -62,6 +62,8 @@ export async function startBuild(
   if (running) return say(WAIT, 6000);
   if (!synced) return beforeBuild(b, request, () => startBuild(request, cards, true));
   running = 'starting';
+  // a note left by an earlier build would come back once this one ends
+  noteStatus('');
   // kept before anything is awaited, while this prototype is surely the open board
   const build = uid(),
     was = b.proto.build;
