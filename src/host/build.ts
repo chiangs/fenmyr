@@ -29,13 +29,17 @@ const outside = async (repo: string, dir: string) => {
 // the repos with a build running: two builds in one folder would write over each other
 const busy = new Set<string>();
 
-// Undo this build waits for the repo's build to end, since it would go on writing into the folder put back. A window
-// reloaded mid-build can offer it.
-export async function undoBuild(root: string, dir: string, commit: string) {
-  if (busy.has(path.resolve(root))) return { kind: 'busy' } as const;
-  await undo(root, dir, commit);
-  return { kind: 'undone' } as const;
-}
+/** Runs `op` on a repo unless a build is writing in it, as Undo this build, a commit, a pull or taking GitHub's version
+ *  would put back, take or change files under it. The window guards them too, but a window reloaded mid-build doesn't
+ *  know of the build. */
+export const unlessBuilding = <T>(root: string, op: () => Promise<T>) =>
+  busy.has(path.resolve(root)) ? Promise.resolve({ kind: 'busy' } as const) : op();
+
+export const undoBuild = (root: string, dir: string, commit: string) =>
+  unlessBuilding(root, async () => {
+    await undo(root, dir, commit);
+    return { kind: 'undone' } as const;
+  });
 
 // Set as Fenmyr quits. A build stopped then isn't counted: counting stages through a temporary index, and the app
 // would exit before the index is removed. Nor does it send an end, which would say it changed nothing, so its record

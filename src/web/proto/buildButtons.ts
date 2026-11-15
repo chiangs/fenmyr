@@ -9,7 +9,7 @@ import { type SayAction, say } from '../myra/say.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { recordOf, undone } from './buildRecord.ts';
 import { runningBuild } from './buildSlot.ts';
-import { stillBuilding, waitsForBuild } from './buildWait.ts';
+import { hostBusy, stillBuilding } from './buildWait.ts';
 import { renderCode } from './code.ts';
 import { askCommit } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
@@ -37,10 +37,10 @@ export async function refreshPanes() {
 async function undo(b: Prototype, root: string, snapshot: string, build: string | undefined) {
   const done = await Fenmyr.protoUndo({ root, dir: b.proto.dir, snapshot });
   // a window reloaded while the build ran thinks it stopped
-  if (done.kind === 'busy') return waitsForBuild('undo');
+  if (done.kind === 'busy') return hostBusy('undo');
   if (build) await changeBoard(b.id, undone(build));
   await refreshPanes();
-  say('It’s back to how it was before that build ✦', 5000);
+  return say('It’s back to how it was before that build ✦', 5000);
 }
 
 const openProto = (board: string) => {

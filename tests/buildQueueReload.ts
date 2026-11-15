@@ -1,7 +1,9 @@
-// A window reloaded while a build runs knows nothing of that build, but the host goes on writing it. A build asked for
-// then is one the host can't take yet, so it waits its turn as its own block rather than reading "Couldn't start", and
-// starts by itself once the end of the build from before the reload is heard.
+// A window reloaded while a build runs knows nothing of that build, but the host goes on writing it. A commit or a pull
+// then is turned away by the host in Myra's words, changing nothing, and the question's Commit stays so it works once
+// the build is done. A build asked for then is one the host can't take yet, so it waits its turn as its own block rather
+// than reading "Couldn't start", and starts by itself once the end of the build from before the reload is heard.
 import assert from 'node:assert';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,6 +13,9 @@ import { launch, settle } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
 
 const { work, repo } = freshRepo('fenmyr-build-queue-reload-');
+const git = (...args: string[]) => execFileSync('git', ['-C', repo, ...args]).toString();
+git('config', 'user.name', 'T');
+git('config', 'user.email', 't@e.st');
 fs.mkdirSync(path.join(repo, 'prototypes'));
 fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), 'x\n');
 const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-build-queue-reload-data-'));
@@ -39,6 +44,12 @@ const until = async (check: () => Promise<boolean> | boolean, what: string, ms =
 };
 const build = (request: string) =>
   page.evaluate(r => window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: r } }, r), request);
+const question = () => page.locator('#mcList .mc-msg.myra', { hasText: 'Committing saves this version' }).last();
+const tapCommit = () =>
+  question()
+    .locator('.m-acts button', { hasText: /^Commit$/ })
+    .click();
+const commits = () => git('rev-list', '--all', '--count').trim();
 const open = async (id: string) => {
   await page.evaluate(id => window.__fenmyr.openBoard(id), id);
   await settle(page, 600);
@@ -65,6 +76,8 @@ try {
     await window.__fenmyr.refreshBoards();
     return proto.dir;
   }, repo);
+  git('add', '-A');
+  git('commit', '-qm', 'start');
   await open('pb');
 
   standIn.next({
@@ -77,6 +90,30 @@ try {
   await page.reload();
   await page.waitForFunction(() => !!window.__fenmyr?.curBoard());
   await open('pb');
+
+  await page.click('#prGit [data-git="commit"]');
+  await until(
+    async () => (await question().count()) === 1,
+    'the git bar’s Commit asks, as the window knows of no build',
+  );
+  const before = commits();
+  await tapCommit();
+  await until(
+    async () => (await texts()).includes('I’m still building. You can commit once it’s done.'),
+    'the host turns the commit away, in her words',
+  );
+  await settle(page, 400);
+  assert.equal(commits(), before, 'nothing is committed under the build');
+  assert.deepStrictEqual(
+    await question().locator('.m-acts button').allTextContents(),
+    ['Commit', 'Not now'],
+    'and the question’s Commit stays',
+  );
+  await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Pulling now.', git: { action: 'pull' } }, 'pull'));
+  await until(
+    async () => (await texts()).includes('I’m still building. You can pull once it’s done.'),
+    'Pull is turned away the same way',
+  );
 
   await build('After the reload.');
   await until(async () => (await blocks()).length === 2, 'a build asked for after the reload adds its block');
@@ -95,6 +132,8 @@ try {
   assert.match((await blocks())[1]?.head ?? '', /^Built in \d+ s$/, 'its block reads built');
   assert(fs.existsSync(path.join(repo, dir, 'src/After.tsx')), 'and it wrote its file');
   assert.equal(standIn.builds().length, 2, 'the builder ran it once');
+  await tapCommit();
+  await until(() => commits() !== before, 'once the build is done, the same Commit commits');
   assert.deepStrictEqual(l.errors, [], 'no errors');
   console.log('BUILD QUEUE RELOAD OK');
 } finally {

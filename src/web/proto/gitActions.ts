@@ -4,7 +4,7 @@ import { appState, session } from '../core/state.ts';
 import { say } from '../myra/say.ts';
 import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { stillBuilding } from './buildWait.ts';
+import { hostBusy, stillBuilding } from './buildWait.ts';
 import { renderGitBar } from './gitbar.ts';
 import { pullNow } from './sync.ts';
 
@@ -19,9 +19,10 @@ const projectOf = (b: Prototype) => {
 };
 
 async function commit(b: Prototype, root: string, message: string) {
-  await Fenmyr.gitCommit({ root, dir: b.proto.dir, message });
+  const done = await Fenmyr.gitCommit({ root, dir: b.proto.dir, message });
+  if (done.kind === 'busy') return hostBusy('commit');
   say('Committed. This version is in the history now ✦', 4000);
-  if (session.board?.id === b.id) renderGitBar(b);
+  return session.board?.id === b.id ? renderGitBar(b) : undefined;
 }
 
 // message: the one she suggests, or a plain one when it's empty

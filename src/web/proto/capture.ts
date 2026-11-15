@@ -9,6 +9,7 @@ import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { esc } from '../ui/dom.ts';
+import { hostBusy } from './buildWait.ts';
 import { renderGitBar } from './gitbar.ts';
 import { knobsChanged } from './knobs.ts';
 import { previewShot, showCommit } from './preview.ts';
@@ -39,11 +40,13 @@ async function take(commit: string) {
 async function commitThenTake(b: Prototype, root: string, message: string) {
   try {
     const s = await Fenmyr.gitCommit({ root, dir: b.proto.dir, message });
+    if (s.kind === 'busy') return hostBusy('commit');
     renderGitBar(b);
     if (s.kind === 'repo' && s.head) await take(s.head);
   } catch (e) {
     failed(e);
   }
+  return undefined;
 }
 
 export async function takeCapture(b: Prototype) {
