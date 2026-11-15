@@ -11,6 +11,7 @@ import { foldersIn, makeFolder, makeProject, saveLib } from '../library/tree.ts'
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
 import { newBoard } from '../model/boards.ts';
+import { renderDockHead } from '../proto/dockHead.ts';
 import { offerRename } from '../repo/codeFolder.ts';
 import { addBoardTo } from '../repo/prototypes.ts';
 import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
@@ -148,6 +149,7 @@ export function init21() {
   const nameField = elementById('boardName', HTMLInputElement);
   nameField.oninput = () => {
     session.board.name = nameField.value || 'Untitled board';
+    renderDockHead(session.board);
     save();
   };
   nameField.onchange = () => offerRename(session.board);
