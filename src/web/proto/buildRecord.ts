@@ -100,10 +100,10 @@ const inWriteOrder = (files: FileDiff[], named: readonly string[]) => [
   ...files.filter(f => !named.includes(f.path)),
 ];
 
-/** Ended: how it ended goes on the record, then her line: her explanation with Undo this build, Commit and her next
- *  steps, or why it stopped, with Undo this build when it changed files. said: her words for a failure, in place of
- *  "I couldn't finish that" and the reason. A block the chat no longer has, trimmed or cleared away, comes back first.
- *  Once the record has an end, nothing happens. */
+/** Ended: how it ended goes on the record, then her line: her explanation with her next steps, or why it stopped,
+ *  with Undo this build, and Commit after her explanation, when it changed files. said: her words for a failure, in
+ *  place of "I couldn't finish that" and the reason. A block the chat no longer has, trimmed or cleared away, comes back
+ *  first. Once the record has an end, nothing happens. */
 export const ended =
   (r: Running, e: Extract<BuildEvent, { type: 'done' | 'error' }>, at: number, said?: string): Change =>
   b => {
@@ -119,24 +119,20 @@ export const ended =
       added.push(found.m);
     }
     const { board, build } = r,
-      files = inWriteOrder(e.files, r.files);
+      files = inWriteOrder(e.files, r.files),
+      undo: ChatAction[] =
+        e.snapshot && files.length ? [{ kind: 'buildUndo', board, snapshot: e.snapshot, build }] : [];
+    // One that changed nothing has nothing to undo or commit, so the build before it stays the newest, with its own
+    // Undo this build and Commit, unless a newer one has started since.
+    if (!files.length && b.proto.build === build) b.proto = { ...b.proto, build: r.was };
     if (e.type === 'done') {
       found.a.end = { kind: 'built', at, files, outside: e.outside, from: keepSources(b, e.sources) };
       // the commit message she suggests: the first line of what she was asked to do
-      const message = r.request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
-      added.push(
-        line(e.text, [
-          { kind: 'buildUndo', board, snapshot: e.snapshot, build },
-          { kind: 'commit', board, message, build },
-          ...e.next.map((text): ChatAction => ({ kind: 'next', text })),
-        ]),
-      );
+      const message = r.request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '',
+        commit: ChatAction[] = files.length ? [{ kind: 'commit', board, message, build }] : [];
+      added.push(line(e.text, [...undo, ...commit, ...e.next.map((text): ChatAction => ({ kind: 'next', text }))]));
     } else {
       found.a.end = { kind: 'failed', at, files };
-      // it changed nothing, so the build before it keeps Undo this build, unless a newer one has started since
-      if (!files.length && b.proto.build === build) b.proto = { ...b.proto, build: r.was };
-      const undo: ChatAction[] =
-        e.snapshot && files.length ? [{ kind: 'buildUndo', board, snapshot: e.snapshot, build }] : [];
       added.push(line(said ?? `I couldn’t finish that. ${e.text}`, undo));
     }
     for (const m of added) if (m !== found.m) pushMsg(b, m);
@@ -154,6 +150,7 @@ export const undone =
     const found = find(b.chat ?? [], build);
     if (!found || found.a.undone) return false;
     found.a.undone = true;
-    if (b === session.board) redrawMsg(found.m);
+    // the block says so, and Commit goes from her line
+    if (b === session.board) redrawBuilds();
     return true;
   };

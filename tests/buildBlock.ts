@@ -2,8 +2,9 @@
 // as it is and the board file unwritten, then reads "Built in N s" with the lines each file gained and lost and the card
 // it was made from. Her explanation follows with Undo this build, Commit and her next steps, which her reply that
 // started it doesn't have. Myra reads the block, it and her buttons come back after a restart, and Undo this build says
-// so on it. Only the newest build shows Undo this build and Commit, from the moment it is asked for. A build cut off by
-// quitting reads stopped and can be undone, and a block the chat lost while the build ran comes back.
+// so on it and takes Commit away. Only the newest build shows Undo this build and Commit, from the moment it is asked
+// for, and one that changed nothing leaves them with the build before. A build cut off by quitting reads stopped and
+// can be undone, and a block the chat lost while the build ran comes back.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -220,6 +221,11 @@ try {
   await until(async () => !fs.existsSync(file('src/Form.tsx')), 'and takes Form.tsx away');
   assert.strictEqual(git('diff', '--cached', '--name-only').trim(), 'staged.txt', 'leaving what was staged');
   await until(async () => (await last())?.head.endsWith(' · undone') ?? false, 'and the block says it was undone');
+  assert.deepStrictEqual(
+    await buttonsUnder(explained),
+    [['Add a coupon field', 'Show the total in bold']],
+    'and Commit goes from her line',
+  );
 
   standIn.next({ files: { 'src/Total.tsx': 'export const total = 1;\n' }, reply: 'I added the total.' });
   await build('Add the total.');
@@ -257,6 +263,12 @@ try {
     if (typeof go === 'function') go();
   });
   await until(async () => (await buttonsUnder('Nothing needed changing.')).length === 1, 'it ends');
+  assert.deepStrictEqual(await buttonsUnder('Nothing needed changing.'), [[]], 'having changed nothing to undo');
+  assert.deepStrictEqual(
+    await buttonsUnder('I added the total.'),
+    [['Undo this build', 'Commit']],
+    'so the build before is the newest again',
+  );
 
   const total = fs.readFileSync(file('src/App.tsx'), 'utf8');
   standIn.next({ files: { 'src/App.tsx': 'export const App = () => <h1>Cut off</h1>;\n' }, hold: true });

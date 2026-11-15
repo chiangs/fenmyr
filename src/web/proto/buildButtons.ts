@@ -70,10 +70,11 @@ const newestCommit = (board: string) =>
     .flatMap(m => m.acts ?? [])
     .findLast((a): a is Commit => a.kind === 'commit' && a.board === board);
 
-// A Commit from before it named its build shows while it is the newest in the chat and the newest build has no block.
+// Not once Undo this build has put the build's files back: the message would be for changes that are gone. A Commit
+// from before it named its build shows while it is the newest in the chat and the newest build has no block.
 function commitShows(b: Prototype, a: Commit) {
   const newest = newestBuild(b);
-  if (a.build) return a.build === newest;
+  if (a.build) return a.build === newest && !recordOf(a.build)?.undone;
   return newestCommit(a.board) === a && !(newest && recordOf(newest));
 }
 
