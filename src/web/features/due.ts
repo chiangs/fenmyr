@@ -203,8 +203,8 @@ export function dueArm() {
 
 export async function dueJump(it: DueItem) {
   if (!session.board || session.board.id !== it.b) {
-    closeHome();
     await openBoard(it.b);
+    closeHome();
   }
   const c = byId(it.c);
   if (c) {

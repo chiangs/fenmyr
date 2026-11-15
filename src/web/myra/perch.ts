@@ -11,6 +11,8 @@ export let gooSlot: HTMLElement;
 export let perched = false;
 let gooAt = { x: 0, y: 0 };
 let gooAnim: { stop(): void } | null = null;
+// when her latest hop touches down, on performance.now()'s clock
+let landsAt = 0;
 let dizzyAt = 0;
 
 const gooMove = (t: Point) => {
@@ -46,6 +48,15 @@ const gooRest = () => {
   gooSlot.style.transformOrigin = '';
 };
 
+const landed = () => {
+  if (!appState.flightLive) return;
+  appState.flightLive = false;
+  liveOff();
+};
+
+const fades = () => !!window.myraCalm || matchMedia('(prefers-reduced-motion: reduce)').matches;
+const boxHidden = () => document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none';
+
 // Calm, calmest and reduced motion: she fades out of one place and into the other, with no hop
 function fadeGoo() {
   const out = gooSlot.animate({ opacity: [1, 0] }, { duration: 120, fill: 'forwards' });
@@ -66,26 +77,22 @@ function fadeGoo() {
   };
 }
 
-function flyGoo(to: Point, fade: boolean) {
+// `far`: a hop into a prototype board's docked header can cross the window, so the further she goes the longer she is
+// in the air and the higher she arcs. The hop onto the chat keeps the timing it was tuned for.
+function flyGoo(to: Point, fade: boolean, far = false) {
   const from = gooAt;
   if (gooAnim) {
     gooAnim.stop();
     gooAnim = null;
   }
-  const done = () => {
-    if (appState.flightLive) {
-      appState.flightLive = false;
-      liveOff();
-    }
-  };
   if (Math.abs(from.x - to.x) < 1 && Math.abs(from.y - to.y) < 1) {
     gooRest();
     gooMove(to);
-    done();
+    landed();
     return;
   }
   if (fade) {
-    done();
+    landed();
     fadeGoo();
     return;
   }
@@ -94,16 +101,22 @@ function flyGoo(to: Point, fade: boolean) {
     liveOn();
   }
   gooRest();
-  const up = to.y < from.y,
-    WIND = up ? HOP.wind : HOP.wind * 0.6,
-    AIR = up ? HOP.up : HOP.home,
-    h = HOP.arc * (up ? 1 : 0.7),
-    LAND = HOP.land;
   const dx = to.x - from.x,
     dy = to.y - from.y,
-    vref = Math.hypot(Math.abs(dx), Math.abs(dy) + 4 * h) / AIR;
-  const t0 = performance.now(),
-    sm = (k: number) => k * k * (3 - 2 * k),
+    up = to.y < from.y,
+    grow = far ? Math.min(1.5, Math.max(1, Math.sqrt(Math.hypot(dx, dy) / 500))) : 1,
+    WIND = up ? HOP.wind : HOP.wind * 0.6,
+    AIR = (up ? HOP.up : HOP.home) * grow,
+    LAND = HOP.land;
+  // When 4h > |dy| her arc peaks (4h - |dy|)² / 16h above the higher end of the hop. h is capped so the peak stays 8 px
+  // below the window's top edge, room for her stretch.
+  const top = gooSlot.getBoundingClientRect().bottom - gooSlot.offsetHeight - from.y,
+    room = Math.max(0, top + Math.min(from.y, to.y) - 8),
+    h = Math.min(HOP.arc * (up ? 1 : 0.7) * grow, (Math.sqrt(Math.abs(dy) + room) + Math.sqrt(room)) ** 2 / 4);
+  const vref = Math.hypot(Math.abs(dx), Math.abs(dy) + 4 * h) / AIR;
+  const t0 = performance.now();
+  landsAt = t0 + WIND + AIR;
+  const sm = (k: number) => k * k * (3 - 2 * k),
     lerp = (a: number, b: number, k: number) => a + (b - a) * k;
   let target = to,
     landFrom: Point | null = null,
@@ -141,7 +154,7 @@ function flyGoo(to: Point, fade: boolean) {
         gooRest();
         gooMove(target);
         gooAnim = null;
-        done();
+        landed();
         return;
       }
       const sq = Math.exp(-l / 85) * Math.cos(l / 40),
@@ -163,8 +176,7 @@ function flyGoo(to: Point, fade: boolean) {
 }
 
 export function perchGoo(on: boolean) {
-  const hidden = document.body.classList.contains('phone') || getComputedStyle($('mPill')).display === 'none';
-  if (hidden) return;
+  if (boxHidden()) return;
   const now = Date.now();
   appState.toggleLog = appState.toggleLog.filter(t => now - t < 3000);
   appState.toggleLog.push(now);
@@ -175,33 +187,65 @@ export function perchGoo(on: boolean) {
   } // toggled over and over: she gets dizzy
   perched = on;
   gooSlot.classList.toggle('perched', on);
-  flyGoo(
-    on ? perchTarget() : { x: 0, y: 0 },
-    !!window.myraCalm || matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
+  flyGoo(on ? perchTarget() : { x: 0, y: 0 }, fades());
 }
 
 export const keepPerch = () => {
   if (perched && !gooAnim) gooMove(perchTarget());
 };
-// click her in the chat and she does something
+
+// Her slot moved between her box and a prototype board's docked chat. Her offset, perch and any flight belonged to the
+// old home, so she rests at the new one.
+export function dockReset() {
+  gooAnim?.stop();
+  gooAnim = null;
+  landed();
+  perched = false;
+  gooSlot.classList.remove('perched');
+  gooRest();
+  gooMove({ x: 0, y: 0 });
+}
+
+// none on a phone, or on a prototype board, where she already sits in the docked chat's header
+export const gooFrom = () => (boxHidden() ? null : gooSlot.getBoundingClientRect());
+
+const docked = () => gooSlot.parentElement?.id === 'mcPerch';
+
+// Her slot has just moved to a new home. She is drawn back where she was, then hops or fades into it. The caller moves
+// her and calls this in one task, so no frame shows her at the new home first.
+export function hopFrom(from: DOMRect | null) {
+  if (!from) return;
+  const to = gooSlot.getBoundingClientRect();
+  gooMove({ x: from.left - to.left, y: from.top - to.top });
+  flyGoo({ x: 0, y: 0 }, fades(), true);
+}
+
 // you opened an empty chat (the button or M): once she has landed in the chat's header she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)
-export const wonderIfEmpty = () =>
-  setTimeout(
-    () => {
-      if (chatOpen() && !chatLog().length && Date.now() - dizzyAt > 2500 && !$('myra').classList.contains('thinking'))
-        playAnim('curious', false);
-    },
-    window.myraMuted ? 150 : 700,
-  );
+// She tilts 80 ms after a long hop into a prototype's header touches down, as she does after the hop onto the chat, and
+// once a fade has ended. A second open before she tilts replaces the first, so she tilts once.
+let wonderT: ReturnType<typeof setTimeout> | undefined;
+export const wonderIfEmpty = () => {
+  const tilt = () => {
+    if (gooSlot.getAnimations().length) {
+      wonderT = setTimeout(tilt, 40);
+      return;
+    }
+    if (chatOpen() && !chatLog().length && Date.now() - dizzyAt > 2500 && !$('myra').classList.contains('thinking'))
+      playAnim('curious', false);
+  };
+  clearTimeout(wonderT);
+  wonderT = setTimeout(tilt, Math.max(window.myraMuted ? 150 : 700, landsAt + 80 - performance.now()));
+};
 
 export function initPerch() {
   gooSlot = $('gooSlot');
   appState.toggleLog = [];
   appState.dizzyAuto = true;
 
+  // click her in the chat and she does something: on her perch, or in a prototype board's docked header, where she
+  // always sits. In her box a click opens the chat.
   gooSlot.addEventListener('click', e => {
-    if (!perched) return;
+    if (!perched && !docked()) return;
     e.stopPropagation();
     playAnim(pickAnim(), false);
   });

@@ -80,6 +80,10 @@ jobs:
         run: node tests/layout.ts
       - name: Prototype chat test (Myra's chat docked on a prototype board)
         run: node tests/protoChat.ts
+      - name: Prototype hop test (Myra hops into the docked chat's header as a prototype board opens)
+        run: node tests/protoHop.ts
+      - name: Prototype hop path test (Myra's hop under the window's top, slower when far, from Home, and a click on her)
+        run: node tests/protoHopPath.ts
       - name: Dock header test (the board's name and stack in the docked chat's header)
         run: node tests/dockHead.ts
       - name: Dock git bar test (the git bar above Myra's input on a prototype board, and its More menu)

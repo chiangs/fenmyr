@@ -2,6 +2,7 @@
 // into its header, her lines rising from the box, her name cut short, fitting the board around the chat, a phone's sheet.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
+import * as hop from './support/flight.ts';
 import { settle } from './support/launch.ts';
 
 const { l, page, check, done } = await openBar();
@@ -9,16 +10,7 @@ const size = async (w: number, h = 900) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
   await settle(page, 400);
 };
-const edges = (ids: string[]) =>
-  page.evaluate(ids => {
-    const out: Record<string, Edges | null> = {};
-    for (const id of ids) {
-      const el = document.getElementById(id);
-      const r = el?.checkVisibility({ opacityProperty: true }) ? el.getBoundingClientRect() : null;
-      out[id] = r && { l: r.left, t: r.top, r: r.right, b: r.bottom };
-    }
-    return out;
-  }, ids);
+const edges = (ids: string[]) => hop.edges(page, ids);
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 const setChat = async (open: boolean) => {
   if ((await isOpen()) !== open) await page.click(open ? '#mPill' : '#mcClose');
@@ -91,34 +83,16 @@ const inSettings = async (change: () => Promise<void>) => {
 };
 const lively = (v: 'lively' | 'calm' | 'calmest') =>
   inSettings(() => page.click(`[data-seg="myraCalm"] [data-v="${v}"]`));
-// where her slot is, every frame, from opening the chat until she has settled in it
+// opening the chat, the frames she spends between her box and its header
 const flight = async () => {
-  const before = (await edges(['gooSlot'])).gooSlot;
-  const frames = page.evaluate(
-    () =>
-      new Promise<number[][]>(done => {
-        const slot = document.getElementById('gooSlot'),
-          seen: number[][] = [],
-          t0 = performance.now();
-        const tick = () => {
-          const r = slot?.getBoundingClientRect();
-          if (r) seen.push([r.left, r.top]);
-          if (performance.now() - t0 < 1600) requestAnimationFrame(tick);
-          else done(seen);
-        };
-        requestAnimationFrame(tick);
-      }),
-  );
-  await page.click('#mPill');
-  const seen = await frames,
-    { gooSlot: after, mcPerch } = await edges(['gooSlot', 'mcPerch']);
+  const { before, after, between } = await hop.flight(page, () => page.click('#mPill')),
+    { mcPerch } = await edges(['mcPerch']);
   await setChat(false);
   await page.waitForTimeout(900);
-  assert.ok(before && after && mcPerch, 'her slot and the header’s spot are up');
+  assert.ok(before && mcPerch, 'her slot and the header’s spot are up');
   near(after.l, mcPerch.l, 'where she lands, left');
   near(after.t, mcPerch.t, 'where she lands, top');
-  const off = (p: number[], q: Edges) => Math.hypot((p[0] ?? 0) - q.l, (p[1] ?? 0) - q.t);
-  return seen.filter(p => off(p, before) > 3 && off(p, after) > 3).length;
+  return between;
 };
 
 await check('her box is 200 px wide and one piece with the tools', async () => {

@@ -56,8 +56,8 @@ export async function createPrototype(f: Folder, root: string, w: Wish, seed?: S
   saved?.();
   await refreshBoards();
   // made from a folder's home, it opens in place of the home, as a new board does
-  closeHome();
   await openBoard(b.id);
+  closeHome();
   showWelcome();
   if (brought.length) selectOnly(brought.map(c => c.id));
   chirp(`Made “${w.name}”. Its code is in ${proto.dir} ✦`, 4000);
