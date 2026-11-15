@@ -18,6 +18,7 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
 import { chirp, say } from '../myra/say.ts';
+import { dropWaiting } from '../proto/buildSlot.ts';
 import { renderDockHead } from '../proto/dockHead.ts';
 import { offerRename } from '../repo/codeFolder.ts';
 import { linkRepo } from '../repo/link.ts';
@@ -66,6 +67,7 @@ async function copyBoard(id: string, into: { name?: string; parent?: string; fol
 
 async function dropBoard(id: string) {
   for (const k of appState.boardList.filter(x => x.parent === id)) await dropBoard(k.id);
+  dropWaiting(id);
   await Fenmyr.remove(id);
   dueForget(id);
 }

@@ -1,7 +1,7 @@
 import { type BuildEvent, readBuildEvent } from '../../shared/build.ts';
 import type { Board, Card } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
-import { session } from '../core/state.ts';
+import { appState, session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
@@ -69,10 +69,21 @@ export async function startBuild(
   void pump();
 }
 
+// the board as it is now, or null once it has been deleted
+const boardNow = (id: string) =>
+  session.board?.id === id ? session.board : (appState.boardList.find(x => x.id === id) ?? null);
+
+// The oldest waiting request whose board is still there. One whose board has gone has nothing to build for, and its
+// build would leave files in the repo the other prototypes share.
+function nextWaiting() {
+  for (let w = dequeue(); w; w = dequeue()) if (boardNow(w.board)) return w;
+  return null;
+}
+
 // One build at a time across the app: the oldest waiting request starts once none runs, whichever board is open.
 async function pump() {
   if (runningBuild()) return;
-  const w = dequeue();
+  const w = nextWaiting();
   if (!w) return;
   // a note left by an earlier build would come back once this one ends
   noteStatus('');

@@ -62,6 +62,12 @@ export function enqueue(w: Waiting, first = false) {
 
 export const dequeue = () => queue.shift() ?? null;
 
+/** Takes a board's waiting requests off the queue, or every one when no board is named, as when the board or the chats
+ *  that showed them are gone and they can no longer be seen or cancelled. */
+export function dropWaiting(board?: string) {
+  for (let i = queue.length - 1; i >= 0; i--) if (!board || queue[i]?.board === board) queue.splice(i, 1);
+}
+
 /** Takes a waiting request off the queue. False when it isn't waiting, as one that has started isn't. */
 export function cancel(build: string) {
   const i = queue.findIndex(w => w.build === build);
