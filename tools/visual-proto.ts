@@ -127,3 +127,9 @@ export async function openPrototype(page: Page) {
   if (made) await page.frameLocator('#pr-preview iframe').locator('h1').waitFor({ timeout: 30000 });
   await settle(page, 800);
 }
+
+/** Removes this run's stand-in and prototype folders, once both checkouts are shot. */
+export function removeProtoFolders() {
+  fs.rmSync(standInAt, { recursive: true, force: true });
+  if (parent) fs.rmSync(parent, { recursive: true, force: true });
+}
