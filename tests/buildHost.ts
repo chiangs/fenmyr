@@ -1,19 +1,20 @@
 // The host's side of a build, with no window: a fake code agent edits a prototype in a temp repo, and the events carry
 // the snapshot as it starts, every changed file with the lines it gained and lost as it ends, the snapshot and files
-// when it fails, and the builder's next steps. One build runs in a repo at a time. The renderer's parse keeps what the
-// host sends and drops what is malformed.
+// when it fails, and the builder's next steps. One build runs in a repo at a time, and one cut off by Fenmyr quitting
+// sends no end. The renderer's parse keeps what the host sends and drops what is malformed.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import type { CodeAgent } from '../src/host/codeAgent.ts';
 import { type BuildEvent, type FileDiff, readBuildEvent } from '../src/shared/build.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-build-host-')));
 // the host keeps its own files under XDG_DATA_HOME, read when its modules load
 process.env.XDG_DATA_HOME = work;
-const { startBuild } = await import('../src/host/build.ts');
+const { startBuild, stopBuilds } = await import('../src/host/build.ts');
 
 const repo = path.join(work, 'acme'),
   dir = 'prototypes/checkout',
@@ -179,6 +180,28 @@ const many = Array.from({ length: 250 }, (_, i) => ({ kind: 'binary', path: `img
 const capped = readBuildEvent({ id: 'b1', type: 'error', text: 'Stopped.', snapshot: 'nope', files: many });
 assert(capped?.type === 'error', 'a failure lands even with a bad snapshot');
 assert.deepStrictEqual([capped.snapshot, capped.files.length], [null, 200], 'and keeps at most 200 files');
+
+// Quitting stops Claude Code, and what it had written by then isn't counted. An end would say the build changed
+// nothing, so none goes, and its record reads stopped next time, with Undo this build.
+const cutOff: BuildEvent[] = [],
+  killed = Promise.withResolvers<void>();
+const halfway: CodeAgent = async ({ cwd }, edited) => {
+  fs.writeFileSync(path.join(cwd, 'src/App.tsx'), 'half\n');
+  edited('src/App.tsx');
+  await killed.promise;
+  throw new Error('Claude Code stopped before it finished.');
+};
+startBuild({ root: repo, dir, stack: 'react', request: 'Quit' }, e => cutOff.push(e), halfway);
+for (const end = Date.now() + 10000; !cutOff.some(e => e.type === 'edit'); await sleep(20))
+  assert(Date.now() < end, 'the build that is cut off writes App.tsx');
+stopBuilds();
+killed.resolve();
+await sleep(500);
+assert.deepStrictEqual(
+  cutOff.map(e => e.type),
+  ['start', 'edit'],
+  'a build cut off by quitting sends no end',
+);
 
 fs.rmSync(work, { recursive: true, force: true });
 console.log('BUILD HOST OK');

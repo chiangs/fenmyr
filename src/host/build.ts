@@ -30,7 +30,8 @@ const outside = async (repo: string, dir: string) => {
 const busy = new Set<string>();
 
 // Set as Fenmyr quits. A build stopped then isn't counted: counting stages through a temporary index, and the app
-// would exit before the index is removed.
+// would exit before the index is removed. Nor does it send an end, which would say it changed nothing, so its record
+// reads stopped next time, with Undo this build.
 let quitting = false;
 export function stopBuilds() {
   quitting = true;
@@ -54,7 +55,7 @@ export function startBuild(
   // the repo is free before the last event goes, so a build asked for as this one ends can start
   const end = (e: Extract<BuildEvent, { type: 'done' | 'error' }>) => {
     busy.delete(key);
-    send(e);
+    if (!quitting) send(e);
   };
   // set once the folder is saved, so the end can count what changed since
   let saved: { repo: string; snapshot: string } | null = null;
