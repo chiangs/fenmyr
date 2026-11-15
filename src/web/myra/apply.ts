@@ -200,6 +200,7 @@ export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned):
         ...line.acts,
         { kind: 'changes', reply: id, set: storedSet(changes), lines: summaryLines(record, changes) },
       ]);
+    for (const go of ran.later) go();
     return { said, changes, reply: id, leftAll };
   } catch {
     // her line, with Undo under it, is kept before it is drawn, so drawing the chat again shows it

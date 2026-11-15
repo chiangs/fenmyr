@@ -56,21 +56,23 @@ export function effectsOf({ reply: r, q, ctx }: HeldReply): Effect[] {
 }
 
 // Runs them in order, each on its own, so one that fails costs only itself. Returns the buttons they offer under her
-// line, and a sentence for each that failed, naming what she tried in plain words rather than the system's error.
-// `touched`: the cards the reply made, moved or edited, in the order it did so.
+// line, a sentence for each that failed, naming what she tried in plain words rather than the system's error, and what
+// starts once her line is in: a build, whose block follows the line that says she's writing it or that it waits its
+// turn. `touched`: the cards the reply made, moved or edited, in the order it did so.
 export async function runEffects(effects: readonly Effect[], touched: readonly Card[]) {
   const acts: SayAction[] = [],
-    failed: string[] = [];
+    failed: string[] = [],
+    later: (() => void)[] = [];
   for (const e of effects)
     try {
-      await runEffect(e, touched, acts);
+      await runEffect(e, touched, acts, later);
     } catch {
       failed.push(`I couldn’t ${tried(e)}.`);
     }
-  return { acts, failed };
+  return { acts, failed, later };
 }
 
-async function runEffect(e: Effect, touched: readonly Card[], acts: SayAction[]) {
+async function runEffect(e: Effect, touched: readonly Card[], acts: SayAction[], later: (() => void)[]) {
   switch (e.kind) {
     case 'stopTimer':
       if (timer && !askedLately(timerAskedAt)) stopTimer(false);
@@ -110,7 +112,7 @@ async function runEffect(e: Effect, touched: readonly Card[], acts: SayAction[])
       acts.push(...(await applyNewPrototype(e.want)));
       break;
     case 'build':
-      startBuild(e.request, e.cards);
+      later.push(() => void startBuild(e.request, e.cards));
       break;
     case 'git':
       gitAction(e.action, e.message);
