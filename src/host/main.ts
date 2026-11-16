@@ -4,8 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
-import { startBuild, stopBuilds, undoBuild, unlessBuilding } from './build.ts';
+import { startBuild, undoBuild, unlessBuilding } from './build.ts';
 import * as claude from './claude.ts';
+import { stopCodeAgents } from './claudeCode.ts';
 import { explainCode } from './explain.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
@@ -376,5 +377,5 @@ app.on('window-all-closed', () => app.quit());
 app.on('before-quit', () => {
   saveBounds();
   update.onQuit();
-  stopBuilds();
+  stopCodeAgents();
 });

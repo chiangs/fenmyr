@@ -14,7 +14,8 @@ import { type BuildEvent, type FileDiff, readBuildEvent } from '../src/shared/bu
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-build-host-')));
 // the host keeps its own files under XDG_DATA_HOME, read when its modules load
 process.env.XDG_DATA_HOME = work;
-const { startBuild, stopBuilds } = await import('../src/host/build.ts');
+const { startBuild } = await import('../src/host/build.ts');
+const { stopCodeAgents } = await import('../src/host/claudeCode.ts');
 
 const repo = path.join(work, 'acme'),
   dir = 'prototypes/checkout',
@@ -198,7 +199,7 @@ const halfway: CodeAgent = async ({ cwd }, edited) => {
 startBuild({ root: repo, dir, stack: 'react', request: 'Quit' }, e => cutOff.push(e), halfway);
 for (const end = Date.now() + 10000; !cutOff.some(e => e.type === 'edit'); await sleep(20))
   assert(Date.now() < end, 'the build that is cut off writes App.tsx');
-stopBuilds();
+stopCodeAgents();
 killed.resolve();
 await sleep(500);
 assert.deepStrictEqual(

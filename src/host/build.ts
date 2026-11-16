@@ -5,7 +5,7 @@ import path from 'node:path';
 import type { BuildEvent } from '../shared/build.ts';
 import type { Ops } from '../shared/ops.ts';
 import { PROTO_DIR, splitBuildReply } from '../shared/repos.ts';
-import { claudeCode, stopCodeAgents } from './claudeCode.ts';
+import { claudeCode, quitting } from './claudeCode.ts';
 import type { CodeAgent } from './codeAgent.ts';
 import { status } from './git.ts';
 import * as prompts from './prompts.ts';
@@ -41,15 +41,6 @@ export const undoBuild = (root: string, dir: string, commit: string) =>
     return { kind: 'undone' } as const;
   });
 
-// Set as Fenmyr quits. A build stopped then isn't counted: counting stages through a temporary index, and the app
-// would exit before the index is removed. Nor does it send an end, which would say it changed nothing, so its record
-// reads stopped next time, with Undo this build.
-let quitting = false;
-export function stopBuilds() {
-  quitting = true;
-  stopCodeAgents();
-}
-
 // Starts a build and answers at once with its id; its start, each file edited, and how it ended arrive as protoBuild
 // events. Busy, with no events, while another build runs in the repo.
 export function startBuild(
@@ -65,15 +56,17 @@ export function startBuild(
   const key = path.resolve(root);
   if (busy.has(key)) return { kind: 'busy' } as const;
   busy.add(key);
-  // the repo is free before the last event goes, so a build asked for as this one ends can start
+  // The repo is free before the last event goes, so a build asked for as this one ends can start. A build Fenmyr quits
+  // during sends no end, which would say it changed nothing, so its record reads stopped next time, with Undo this build.
   const end = (e: Extract<BuildEvent, { type: 'done' | 'error' }>) => {
     busy.delete(key);
-    if (!quitting) send(e);
+    if (!quitting()) send(e);
   };
-  // set once the folder is saved, so the end can count what changed since
+  // Set once the folder is saved, so the end can count what changed since. A build Fenmyr quits during isn't counted:
+  // counting stages through a temporary index, and the app would exit before the index is removed.
   let saved: { repo: string; snapshot: string } | null = null;
   const changed = () =>
-    saved && !quitting ? filesSince(saved.repo, dir, saved.snapshot).catch(() => []) : Promise.resolve([]);
+    saved && !quitting() ? filesSince(saved.repo, dir, saved.snapshot).catch(() => []) : Promise.resolve([]);
   const run = async () => {
     const s = await status(root);
     if (s.kind !== 'repo') throw new Error("This prototype's repo isn't there any more.");

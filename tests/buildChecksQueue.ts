@@ -70,6 +70,58 @@ const prototype = (id: string, name: string) =>
     { repo, id, name },
   );
 
+// A build lands while another board is open. Then a newer one is asked for as its board opens, with the panes held
+// until it has landed, so the older one's check never begins. lose: the newer build's start never reaches the window.
+const overtakenOnOpening = async (older: string, newer: string, lose = false) => {
+  standIn.next({ files: { 'src/App.tsx': app(older) }, hold: true, reply: older });
+  await ask(older);
+  await until(() => standIn.wrote() === 1, 'a build writes its file');
+  await open('one');
+  standIn.release();
+  await until(() => !!recordOf('pb', older)?.end, 'it lands while another board is open');
+  standIn.next({ files: { 'src/App.tsx': app(newer) }, hold: true, reply: newer });
+  await page.evaluate(
+    async ({ newer, lose }) => {
+      const files = window.Fenmyr.protoFiles,
+        heard = window.__fenmyrEvent;
+      let release = () => {};
+      const released = new Promise<void>(done => {
+        release = done;
+      });
+      Reflect.set(window, 'releaseFiles', () => {
+        window.Fenmyr.protoFiles = files;
+        release();
+      });
+      window.Fenmyr.protoFiles = a => released.then(() => files(a));
+      if (lose)
+        window.__fenmyrEvent = (name, data) => {
+          if (name === 'protoBuild' && Reflect.get(Object(data), 'type') === 'start') window.__fenmyrEvent = heard;
+          else heard?.(name, data);
+        };
+      await window.__fenmyr.openBoard('pb');
+      await window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: newer } }, newer);
+    },
+    { newer, lose },
+  );
+  const olderSays = (what: string) =>
+    until(
+      async () => JSON.stringify((await blocks()).at(-2)?.lines.slice(1)) === JSON.stringify(['src/App.tsx +1 −1']),
+      `${what}, the block before it stops saying its preview isn’t checked yet`,
+      5000,
+    );
+  await until(() => standIn.wrote() === 1, 'a build asked as its board opens writes before its panes catch up');
+  if (!lose) await olderSays('once it starts');
+  standIn.release();
+  await until(() => !!recordOf('pb', newer)?.end, 'it lands before its panes catch up');
+  await olderSays('once it lands');
+  await page.evaluate(() => {
+    const release = Reflect.get(window, 'releaseFiles');
+    if (typeof release === 'function') release();
+  });
+  await until(() => !!checkOf(recordOf('pb', newer)), 'and is checked once they have');
+  assert.strictEqual(checkOf(recordOf('pb', older)), undefined, 'and it is never checked');
+};
+
 const TWO = "export function App() { console.error('boom-one'); console.error('boom-two'); return <h1>Two</h1>; }\n";
 const app = (words: string) => `export function App() { return <h1>${words}</h1>; }\n`;
 // an error logged a second after the frame loads, which only a check that waits sees
@@ -142,6 +194,12 @@ try {
     'the check its board began on opening ends, and its block stops saying it is being checked',
   );
   assert.strictEqual(checkOf(recordOf('pb', 'Overtaken.')), undefined, 'and isn’t kept once a newer build has started');
+
+  // The same, with the newer build started before the preview of the board it opens on has rendered, so the check
+  // never begins: the older block said "not checked yet" as the board opened, and must stop once the newer one starts.
+  await overtakenOnOpening('Passed.', 'Passes.');
+  // and when the newer build's start never reaches the window, its end moves it on in its place
+  await overtakenOnOpening('Unheard.', 'Unheard, then done.', true);
 
   standIn.next({ files: { 'src/App.tsx': TWO }, reply: 'Switched.' });
   await ask('Switched.');

@@ -55,6 +55,22 @@ const airSpeed = (frames: hop.Frame[]) => {
   assert.ok(a && b && b.ms > a.ms, `she is in the air in ${air.length} frames`);
   return { speed: apart(a, b) / (b.ms - a.ms), ms: b.ms - a.ms };
 };
+// A slow runner opening a prototype: the main thread is held for `ms` in the frame she takes off.
+const holdTakeoff = (ms: number) =>
+  page.evaluate(ms => {
+    const raf = window.requestAnimationFrame.bind(window),
+      slot = document.getElementById('gooSlot'),
+      air = () => !!slot?.style.transform.includes('rotate');
+    window.requestAnimationFrame = cb =>
+      raf(ts => {
+        const was = air();
+        cb(ts);
+        if (was || !air()) return;
+        window.requestAnimationFrame = raf;
+        const until = performance.now() + ms;
+        while (performance.now() < until);
+      });
+  }, ms);
 const myraCalm = async (v: 'lively' | 'calmest') => {
   await page.click('#gearBtn');
   await page.click('#setTabs [data-tab="myra"]');
@@ -132,6 +148,15 @@ try {
       const tilt = f.frames.findIndex(fr => fr.anim === 'curious'),
         landed = f.frames.findLastIndex(fr => fr.air);
       assert.ok(tilt > landed, `she tilts her head once she has landed, frame ${tilt} after frame ${landed}`);
+    },
+  );
+
+  await check(
+    'with a frame held back as she takes off, her hop still measures no faster than 1.7 px per ms',
+    async () => {
+      await holdTakeoff(100);
+      const { speed } = airSpeed((await hop.flight(page, () => open('pb'))).frames);
+      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms`);
     },
   );
 
