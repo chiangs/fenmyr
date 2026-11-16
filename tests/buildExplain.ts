@@ -140,9 +140,10 @@ try {
 
   await until(() => standIn.explains().length === 1, 'Claude Code is asked');
   const [run] = standIn.explains();
-  const args = run?.args.join(' ') ?? '';
-  assert(args.includes('--allowedTools Read,Glob,Grep'), `it may only read: ${args}`);
-  assert(args.includes('--tools Read,Glob,Grep'), 'its tools are the reading ones alone');
+  const args = run?.args ?? [],
+    after = (flag: string) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
+  assert.strictEqual(after('--allowedTools'), 'Read,Glob,Grep', `it may only read: ${args.join(' ')}`);
+  assert.strictEqual(after('--tools'), 'Read,Glob,Grep', 'its tools are the reading ones alone');
   assert(!args.includes('acceptEdits'), 'and it accepts no edits');
   assert.strictEqual(run?.cwd, path.join(repo, dir), 'it runs in the prototype’s folder');
   assert.match(

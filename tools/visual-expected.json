@@ -1,5 +1,5 @@
 {
-  "proto-build-built": "New in 7j: the finished build's block gains a last line, Preview runs · no errors, marked done, from the check kept on its record. The base doesn't read the check, so its block ends at src/Form.tsx +24 −0, and everything under it sits one line higher.",
-  "proto-build-dark-built": "New in 7j: the same Preview runs · no errors line in the dark theme, marked done with the same tick as the file lines. The base's block ends at src/Form.tsx +24 −0.",
-  "proto-build-errors": "New in 7j: a seeded build whose kept check found two errors. Its block ends with Preview runs · 2 errors: and the first error, marked as gone wrong by a square in the accent's text shade, then Fix the errors above Made from. The base doesn't read the check, so it shows the same block as proto-build-built with no check line and no button."
+  "proto-build-built": "New in 7k: her explanation under the build gains Explain the code, a ghost button between Undo this build and Commit. In the docked chat's width the three no longer share a row, so each button sits on its own line and the thread scrolls up by about two button heights; the block above is unchanged.",
+  "proto-build-dark-built": "New in 7k: the same Explain the code ghost button between Undo this build and Commit in the dark theme, with each button on its own line and the thread scrolled up to fit them.",
+  "proto-build-errors": "New in 7k: her explanation under the build whose check found errors gains Explain the code between Undo this build and Commit. The thread scrolls up by one button height, so the block's head now sits at the top; the block itself, with Fix the errors, is unchanged."
 }
