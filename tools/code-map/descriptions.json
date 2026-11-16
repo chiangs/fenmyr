@@ -337,6 +337,7 @@
     "tests/buildAccess.ts": "Checks that a build's bar stands still when Myra is calm, a screen reader hears the build end on its board, and following Caelestia leaves the block its own tint.",
     "tests/buildBlock.ts": "Checks that a build is one block that grows as it runs, ends with each file’s counts, survives a restart, reads stopped after a quit, and that only the newest build offers Undo and Commit.",
     "tests/buildCheckCounts.ts": "Checks that a preview check counts every error its render logs by 3 s after the frame's scripts ran, past the log's 200 lines, and cuts the first on the block's line.",
+    "tests/buildCheckWait.ts": "Checks that a preview check starts once the frame's scripts have run, follows a render that takes the frame, ends at its cap when the scripts never run, and runs on Back to latest.",
     "tests/buildChecks.ts": "Checks that a build’s block says whether its preview bundled and ran without errors, that a failure offers Fix the errors, and that a build that landed elsewhere is checked when its board opens.",
     "tests/buildChecksQueue.ts": "Checks that a build that landed elsewhere is checked when its board opens, an older one never is, a waiting build starts once the one before is checked, and Fix the errors waits its turn.",
     "tests/buildButtons.ts": "Checks the buttons under Myra's build lines once stored: only the newest Undo this build, and Commit and Undo this build only on their prototype.",

@@ -1,5 +1,5 @@
-// Runs inside the preview frame, first, and sends what happens there to the preview pane: errors, console lines and,
-// while pointing, the element clicked. It's turned into text with toString(), so it uses nothing from outside itself.
+// Runs inside the preview frame, first, and sends what happens there to the preview pane: that the page's scripts have
+// run, errors, console lines and, while pointing, the element clicked. It's turned into text with toString(), so it uses nothing from outside itself.
 export function previewBridge() {
   // so a prototype's custom controls know they're in Fenmyr's preview
   Reflect.set(globalThis, '__fenmyr', true);
@@ -15,6 +15,8 @@ export function previewBridge() {
       return String(x);
     }
   };
+  // the page's own scripts have run, whatever images or fonts it still loads
+  addEventListener('DOMContentLoaded', () => send('ran', {}));
   addEventListener('error', e => send('error', { text: String(e.message), where: e.lineno ? `line ${e.lineno}` : '' }));
   addEventListener('unhandledrejection', e =>
     send('error', { text: words(e.reason instanceof Error ? e.reason.message : e.reason), where: '' }),

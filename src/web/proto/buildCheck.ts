@@ -10,14 +10,15 @@ import { previewCheck } from './preview.ts';
 // Checking the preview after a build. One rule: once the open prototype's preview has rendered, its newest build, if
 // it was built, isn't undone and hasn't been checked, is checked and the result kept on its record. That covers the
 // refresh right after a build lands and a build that landed while another board was open, checked when its board opens.
-// What is being checked lives only here, by build id, so a check cut off by closing is simply done again. null: a build
+// What is being checked lives only here, by build id, so a check cut off by closing is simply done again. coming: a build
 // landing on the open board, whose check starts once the panes have begun to catch up with it.
-const checking = new Map<string, Promise<void> | null>();
+type Checking = { kind: 'coming' } | { kind: 'running'; done: Promise<void> };
+const checking = new Map<string, Checking>();
 
 /** A build is landing on the open board: its block says it is being checked from the moment it lands, rather than not
  *  checked yet, until checkNewest starts its check or finds it isn't due. */
 export function checkComing(build: string) {
-  checking.set(build, null);
+  checking.set(build, { kind: 'coming' });
 }
 
 // it will be checked once its preview renders: only the newest build is, since the preview runs the newest code
@@ -61,8 +62,8 @@ export function checkNewest(): Promise<void> {
   const b = session.board,
     a = b?.kind === 'prototype' && b.proto.build ? recordOf(b.proto.build) : null,
     next = b && a && due(b, a) ? a : null;
-  for (const [build, p] of checking)
-    if (p === null && build !== next?.build) {
+  for (const [build, c] of checking)
+    if (c.kind === 'coming' && build !== next?.build) {
       checking.delete(build);
       redrawBlock(build);
     }
@@ -71,14 +72,14 @@ export function checkNewest(): Promise<void> {
 }
 
 function start(b: Board, a: BuildRecord) {
-  const running = checking.get(a.build);
-  if (running) return running;
+  const now = checking.get(a.build);
+  if (now?.kind === 'running') return now.done;
   const p = check(b, a.build).catch(e => {
     checking.delete(a.build);
     redrawBlock(a.build);
     console.error('The preview check failed', e);
   });
-  checking.set(a.build, p);
+  checking.set(a.build, { kind: 'running', done: p });
   redrawBlock(a.build);
   return p;
 }

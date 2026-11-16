@@ -39,12 +39,14 @@ function logged(line: Line) {
   if (errors.first.length < KEPT) errors.first.push(line.text);
 }
 // Each render, counted, so a check reads only the render it waited on and a newer one, such as a newer build's, never
-// answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or whether its frame loaded,
-// false once a newer render has taken the frame. letGo: settles the last render's frame as taken.
-type Drawn = { board: string; unbuilt: string } | { board: string; loaded: Promise<boolean> };
+// answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or whether its frame's scripts
+// ran, false once a newer render has taken the frame. letGo: settles the last render's frame as taken. ran: settles it
+// as having run, when its frame says so.
+type Drawn = { kind: 'unbuilt'; board: string; error: string } | { kind: 'ran'; board: string; ran: Promise<boolean> };
 let renders = 0;
 let drawn: Promise<Drawn | null> = Promise.resolve(null);
 let letGo = () => {};
+let ran = () => {};
 function nextRender() {
   letGo();
   return ++renders;
@@ -138,7 +140,7 @@ async function draw(gen: number): Promise<Drawn | null> {
       problem.textContent = `The preview couldn’t be built. ${built.message}`;
     }
     showLog();
-    return { board: id, unbuilt: built.message };
+    return { kind: 'unbuilt', board: id, error: built.message };
   }
   if (problem) problem.hidden = true;
   html = built.html;
@@ -150,42 +152,41 @@ async function draw(gen: number): Promise<Drawn | null> {
       if (board) renderGitBar(board);
     });
   if (gen !== renders) return null;
-  // with no frame to load, a check waits out its cap
-  const loaded = new Promise<boolean>(done => {
+  // With no frame, a check waits out its cap. The frame says it ran once its own scripts have, so an image or a font
+  // still loading doesn't hold the check.
+  const running = new Promise<boolean>(done => {
     letGo = () => done(false);
+    ran = () => done(true);
     if (!f) return;
     // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
-    f.onload = () => {
-      sendTweaks(f);
-      done(true);
-    };
+    f.onload = () => sendTweaks(f);
     f.srcdoc = html;
   });
   showLog();
-  return { board: id, loaded };
+  return { kind: 'ran', board: id, ran: running };
 }
 
-// how long a check gives the frame to load, and then to show its errors (owner decision 7)
-const LOAD_MS = 15000;
+// how long a check gives the frame's scripts to run, and then to show their errors (owner decision 7)
+const RUN_MS = 15000;
 const WATCH_MS = 3000;
 const after = (ms: number) => new Promise<false>(done => setTimeout(() => done(false), ms));
 
 /** What the preview of `id`, the open prototype, does as it stands: whether it bundled, and the errors it logged by 3 s
- *  after its frame loaded. A render that begins meanwhile is checked in its place, so what is read is one render's.
- *  Null while the preview shows a capture or another board. */
+ *  after its frame's scripts ran. A render that begins meanwhile is checked in its place, so what is read is one
+ *  render's. Null while the preview shows a capture or another board. */
 export async function previewCheck(id: string): Promise<PreviewCheck | null> {
   for (;;) {
     const gen = renders,
       d = await drawn;
     if (gen !== renders) continue;
     if (!d || viewing || d.board !== id) return null;
-    if ('unbuilt' in d) return unbuiltCheck(d.unbuilt);
-    const loaded = await Promise.race([d.loaded, after(LOAD_MS)]);
+    if (d.kind === 'unbuilt') return unbuiltCheck(d.error);
+    const started = await Promise.race([d.ran, after(RUN_MS)]);
     if (gen !== renders) continue;
-    if (loaded) await after(WATCH_MS);
+    if (started) await after(WATCH_MS);
     if (gen !== renders) continue;
     const { count, first } = errors;
-    return loaded ? ranCheck(first, count) : ranCheck(['The preview didn’t finish loading.', ...first], count + 1);
+    return started ? ranCheck(first, count) : ranCheck(['The preview didn’t finish loading.', ...first], count + 1);
   }
 }
 
@@ -202,6 +203,7 @@ addEventListener('message', e => {
   const d: Record<string, unknown> = e.data;
   if (d.fenmyrPreview !== true) return;
   const text = String(d.text ?? '').slice(0, 2000);
+  if (d.type === 'ran') ran();
   if (d.type === 'error') logged({ kind: 'error', text: d.where ? `${text} (${String(d.where)})` : text });
   if (d.type === 'console') logged({ kind: d.level === 'error' ? 'error' : d.level === 'warn' ? 'warn' : 'log', text });
   if (d.type === 'tweak') tweakFromFrame(child($('pr-preview'), '.pv-knobs'), String(d.key), String(d.value));
