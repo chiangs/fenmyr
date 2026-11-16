@@ -1,8 +1,8 @@
 // A build that landed while another board was open reads "Preview not checked yet" and is checked when its board
 // opens, while one that is no longer its prototype's newest is never checked. A build waiting its turn starts only once
-// the build before it has been checked, so it is sent every error that check found. Fix the errors pressed while
-// another prototype builds waits its turn like any request, and is sent the errors its board's check kept when it starts
-// while that board is closed.
+// the build before it has been checked, so it is sent every error that check found, and says it waits for the check.
+// Fix the errors pressed while another prototype builds waits its turn like any request, and is sent the errors its
+// board's check kept when it starts while that board is closed.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -24,10 +24,11 @@ const l = await launch({ data, boards: [replyBoard('one', 'One')], open: 'one', 
 const standIn = buildStandIn(l);
 const { page } = l;
 
-type Block = { lines: string[]; marks: string[]; buttons: string[] };
+type Block = { head: string; lines: string[]; marks: string[]; buttons: string[] };
 const blocks = (): Promise<Block[]> =>
   page.evaluate(() =>
     [...document.querySelectorAll('#mcList .mc-msg.bare')].map(m => ({
+      head: m.querySelector('.m-summary b')?.textContent ?? '',
       lines: [...m.querySelectorAll('.m-summary li')].map(li => li.textContent ?? ''),
       marks: [...m.querySelectorAll('.m-summary li')].map(
         li => (li instanceof HTMLElement ? li.dataset.mark : '') ?? '',
@@ -36,6 +37,7 @@ const blocks = (): Promise<Block[]> =>
     })),
   );
 const lastLine = async () => (await blocks()).at(-1)?.lines.at(-1) ?? '';
+const heard = () => page.evaluate(() => document.querySelector('#mcStatusSay .mc-heard')?.textContent ?? '');
 const texts = () =>
   page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg')].map(m => m.firstChild?.textContent ?? ''));
 const until = async (check: () => Promise<boolean> | boolean, what: string, ms = 30000) => {
@@ -168,6 +170,10 @@ try {
   standIn.next({ files: { 'src/Behind.tsx': 'export const behind = 1;\n' }, reply: 'Behind, done.' });
   const ran = standIn.builds().length;
   standIn.release();
+  await until(
+    async () => (await blocks()).at(-1)?.head === 'Waiting for the preview check',
+    'once the build before it lands, the one behind says it waits for its check',
+  );
   await until(() => standIn.builds().length > ran, 'the build that waited starts');
   assert.deepStrictEqual(
     checkOf(recordOf('pb', 'Late.')),
@@ -176,7 +182,23 @@ try {
   );
   assert(standIn.builds().at(-1)?.includes('late-boom'), 'and it is sent the error that check found');
   await until(async () => (await texts()).includes('Behind, done.'), 'it lands');
-  await until(async () => /^Preview runs · 1 error/.test(await lastLine()), 'and is checked');
+  await until(async () => (await lastLine()) === 'Checking the preview', 'and is being checked');
+  standIn.next({ files: { 'src/During.tsx': 'export const during = 1;\n' }, reply: 'During, done.' });
+  await ask('During.');
+  await until(async () => (await lastLine()) === 'During.', 'another is asked during the check');
+  const during = (await blocks()).at(-1);
+  assert.deepStrictEqual(
+    [during?.head, during?.lines.at(-1)],
+    ['Waiting for the preview check', 'During.'],
+    'a request asked during a check says it waits for the check',
+  );
+  assert.strictEqual(await heard(), 'Checkout’s build waits its turn', 'and a screen reader hears it wait');
+  await until(async () => /^Preview runs · 1 error/.test(await lastLine()), 'it runs after the check, and is checked');
+  assert.deepStrictEqual(
+    checkOf(recordOf('pb', 'Behind.')),
+    { kind: 'ran', count: 1, errors: ['late-boom'] },
+    'once the check it waited for was kept',
+  );
 
   await open('pc');
   standIn.next({ files: { 'src/App.tsx': app('Basket') }, hold: true, reply: 'Basket.' });

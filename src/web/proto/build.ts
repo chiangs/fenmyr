@@ -15,10 +15,12 @@ import {
   claimSlot,
   dequeue,
   enqueue,
+  firstWaiting,
   freeSlot,
   type Running,
   runningBuild,
   type Waiting,
+  waitsTurn,
 } from './buildSlot.ts';
 import { picturesOf } from './pictures.ts';
 import { previewErrors } from './preview.ts';
@@ -65,7 +67,7 @@ export async function startBuild(
     cards: chosen.length,
     args: { root, dir, stack, request, purpose, device, cards: briefs, build, board: b.id },
     pictures: picturesOf(chosen),
-    waited: building(),
+    waited: waitsTurn(),
   };
   if (w.waited) noteHeard(waitsWords(b.name));
   enqueue(w);
@@ -177,6 +179,9 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
       if (b === session.board && e.type === 'done' && e.files.length) checkComing(e.build);
       if (!change(b)) return false;
       landed = b.name;
+      // the request next in line now waits for this build's check rather than for a build
+      const next = firstWaiting();
+      if (next) redrawBlock(next);
       return true;
     }).then(
       () => {
