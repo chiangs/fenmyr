@@ -257,13 +257,10 @@ export function buildHead(s: BuildState, undone: boolean): string {
 // how much of an error the block's line shows
 const LINE_ERROR = 120;
 const cut = (s: string) => {
-  const chars = Array.from(s.split('\n')[0] ?? '');
-  return chars.length <= LINE_ERROR
-    ? chars.join('')
-    : `${chars
-        .slice(0, LINE_ERROR - 1)
-        .join('')
-        .trimEnd()}…`;
+  const first = s.split('\n')[0] ?? '',
+    chars = Array.from(first),
+    kept = chars.slice(0, LINE_ERROR - 1).join('');
+  return chars.length > LINE_ERROR ? `${kept.trimEnd()}…` : first;
 };
 
 /** A check in one line: "Preview runs · no errors", "Preview runs · 2 errors: TypeError: …" or "The preview couldn't be

@@ -17,9 +17,9 @@ import { renderGitBar } from './gitbar.ts';
 import { renderPreview } from './preview.ts';
 
 // The buttons a build leaves: Undo this build and Commit under her line, Undo this build on the block of a build Fenmyr
-// closed on, and Fix the errors on the block of one whose preview check failed. Each shows only while its prototype is open, and only for the board's newest build: Undo puts the
-// whole folder back as it was before the build, so an older one would undo the builds after it too, and Commit takes
-// the whole folder.
+// closed on, and Fix the errors on the block of one whose preview check failed. Each shows only while its prototype is
+// open, and only for the board's newest build: Undo puts the whole folder back as it was before the build, so an older
+// one would undo the builds after it too, Commit takes the whole folder, and the preview runs the newest code.
 type Prototype = Extract<Board, { kind: 'prototype' }>;
 
 // A build being asked for on this board is already its newest: the one before it can't be undone while the host saves

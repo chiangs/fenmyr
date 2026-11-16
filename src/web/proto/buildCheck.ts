@@ -38,13 +38,12 @@ async function check(b: Board, build: string) {
   const c = await previewCheck(b.id);
   checking.delete(build);
   let kept = false;
-  // only while its board is still open, so the preview that ran was its own, and the record checks it is still due
-  if (c && session.board?.id === b.id)
+  if (c)
     await changeBoard(b.id, x => {
       kept = checked(build, c)(x);
       return kept;
     });
-  if (c && kept) noteHeard(heard(b.name, c));
+  if (c && kept && session.board?.id === b.id) noteHeard(heard(b.name, c));
   // the block stops saying it is being checked
   else redrawBlock(build);
 }

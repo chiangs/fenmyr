@@ -67,6 +67,7 @@ const prototype = (id: string, name: string) =>
     { repo, id, name },
   );
 
+const TWO = "export function App() { console.error('boom-one'); console.error('boom-two'); return <h1>Two</h1>; }\n";
 const app = (words: string) => `export function App() { return <h1>${words}</h1>; }\n`;
 // an error logged a second after the frame loads, which only a check that waits sees
 const LATE = "setTimeout(() => console.error('late-boom'), 1000);\nexport function App() { return <h1>Late</h1>; }\n";
@@ -119,6 +120,24 @@ try {
   const older = (await blocks()).at(-2)?.lines ?? [];
   assert.deepStrictEqual(older.slice(1), ['src/App.tsx +1 −1'], 'the one before it says nothing of a check');
   assert.strictEqual(checkOf(recordOf('pb', 'Older.')), undefined, 'and is never checked');
+
+  standIn.next({ files: { 'src/App.tsx': TWO }, reply: 'Switched.' });
+  await ask('Switched.');
+  await until(async () => (await lastLine()) === 'Checking the preview', 'a build lands and its preview is checked');
+  await open('pc');
+  await page.waitForTimeout(4000);
+  assert.strictEqual(
+    checkOf(recordOf('pb', 'Switched.')),
+    undefined,
+    'another prototype’s preview, opened during the check, doesn’t answer for it',
+  );
+  await open('pb');
+  await until(async () => /^Preview runs · 2 errors/.test(await lastLine()), 'it is checked again on its own board');
+  assert.deepStrictEqual(
+    checkOf(recordOf('pb', 'Switched.')),
+    { kind: 'ran', count: 2, errors: ['boom-one', 'boom-two'] },
+    'and keeps its own errors',
+  );
 
   standIn.next({ files: { 'src/App.tsx': LATE }, hold: true, reply: 'Late.' });
   await ask('Late.');

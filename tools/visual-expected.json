@@ -1,3 +1,5 @@
 {
-  "proto-build-queued": "New in 7i: a second request while a build runs. Her reply, I’ll do that next., is followed by its own block, Waiting for the build before it, with Read 3 cards, the request’s first line marked as waiting, and Cancel. The base turns it away instead, adding I’m still writing the last change. Ask me again once it’s done. to her reply, with no block."
+  "proto-build-built": "New in 7j: the finished build's block gains a last line, Preview runs · no errors, marked done, from the check kept on its record. The base doesn't read the check, so its block ends at src/Form.tsx +24 −0, and everything under it sits one line higher.",
+  "proto-build-dark-built": "New in 7j: the same Preview runs · no errors line in the dark theme, marked done with the same tick as the file lines. The base's block ends at src/Form.tsx +24 −0.",
+  "proto-build-errors": "New in 7j: a seeded build whose kept check found two errors. Its block ends with Preview runs · 2 errors: and the first error, marked as gone wrong, then Fix the errors above Made from. The base doesn't read the check, so it shows the same block as proto-build-built with no check line and no button."
 }
