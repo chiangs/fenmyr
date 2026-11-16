@@ -210,8 +210,16 @@ try {
     assert.ok(apart, `at ${z * 100}% the bar keeps clear of the picker: ${JSON.stringify(r)}`);
     assert.ok(!!r && r.bar.right <= r.sideR, `at ${z * 100}% the bar folds to fit beside it: ${JSON.stringify(r)}`);
   }
+  // the empty screen at 50%: first with room on its right for the picker and a wide bar left of it, then moved right
+  // so the picker docks on its left and the bar has 262 px
   await page.evaluate(() => {
-    Object.assign(window.__fenmyr.view, { x: 300, y: 30, z: 1 });
+    Object.assign(window.__fenmyr.view, { x: 365, y: 60, z: 0.5 });
+    window.__fenmyr.applyView();
+  });
+  await openOn('empty');
+  await settle(page, 300);
+  await page.evaluate(() => {
+    Object.assign(window.__fenmyr.view, { x: 665, y: 60, z: 0.5 });
     window.__fenmyr.applyView();
   });
   await settle(page, 400);
