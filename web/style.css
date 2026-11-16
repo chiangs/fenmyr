@@ -3054,6 +3054,9 @@ body.proto #mcInput { height: var(--input-h, 140px); max-height: none; field-siz
    on each step and the cards its code came from. The bar stands still when moving stamps and wiggles are off, when she
    is calm, and under reduced motion. */
 #mcList .mc-msg.bare { display: block; align-self: stretch; max-width: none; padding: 10px 13px 11px; border: 1px solid color-mix(in oklch, var(--ink) 12%, transparent); border-radius: 16px; corner-shape: squircle; background: color-mix(in oklch, var(--ink) 3%, transparent); }
+/* a line of hers with buttons, such as a build's actions and next steps, takes the chat's width as the build's block
+   does, since a bubble this narrow would stack them one to a row */
+body.proto #mcList .mc-msg.myra:has(> .m-parts > .m-acts > button) { max-width: none; }
 /* focus lands on a block once Cancel has gone from it */
 #mcList .mc-msg.bare:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
 .mc-msg.bare .m-summary { margin-top: 0; padding-top: 0; border-top: 0; }

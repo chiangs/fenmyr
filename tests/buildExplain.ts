@@ -116,6 +116,18 @@ try {
     [['Undo this build', EXPLAIN, 'Commit']],
     'Explain the code sits between Undo this build and Commit under her explanation',
   );
+  assert.strictEqual(
+    await page().evaluate(() => {
+      const tops = [
+        ...([...document.querySelectorAll('#mcList .mc-msg.myra')].at(-1)?.querySelectorAll('button') ?? []),
+      ]
+        .slice(0, 2)
+        .map(b => b.getBoundingClientRect().top);
+      return tops.length === 2 && tops[0] === tops[1];
+    }),
+    true,
+    'and Undo this build and Explain the code share a row in the docked chat',
+  );
   await build('Second.', {
     'src/App.tsx': 'import { Form } from "./Form";\nexport function App() { return <Form />; }\n',
     'src/Form.tsx': 'export function Form() { return <form />; }\n',
