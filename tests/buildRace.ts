@@ -116,6 +116,11 @@ try {
 
   const kept = await newest();
   assert.ok(kept, 'the board names its newest build');
+  // the queue also waits for the second build's preview check, so that ends first and the host is all a build waits for
+  await until(
+    async () => (await lines()).filter(t => t.includes('Preview runs')).length === 2,
+    'the second build’s preview is checked',
+  );
   // a build the renderer didn't start holds the repo, as one left running by an earlier window would
   await page.evaluate(
     ({ repo, dir }) =>
