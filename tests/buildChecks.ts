@@ -117,9 +117,10 @@ try {
     Array.isArray(seen) && !seen.includes('Preview not checked yet'),
     `a build that lands on the open board goes straight to checking: ${JSON.stringify(seen)}`,
   );
-  // the earlier messages are kept as they are drawn, so a redraw of the whole chat would show
+  // the earlier messages and their buttons are kept as they are drawn, so a redraw of the whole chat would show
   await page().evaluate(() => {
-    for (const m of document.querySelectorAll('#mcList .mc-msg:not(.bare)')) Reflect.set(m, 'kept', true);
+    const others = '#mcList .mc-msg:not(.bare), #mcList .mc-msg:not(.bare) button';
+    for (const m of document.querySelectorAll(others)) Reflect.set(m, 'kept', true);
     const save = window.Fenmyr.save.bind(window.Fenmyr);
     Reflect.set(window, 'saves', 0);
     window.Fenmyr.save = b => {
@@ -135,7 +136,9 @@ try {
   assert.strictEqual(await page().evaluate(() => Reflect.get(window, 'saves')), 1, 'the check is one write');
   assert(
     await page().evaluate(() =>
-      [...document.querySelectorAll('#mcList .mc-msg:not(.bare)')].every(m => Reflect.get(m, 'kept') === true),
+      [...document.querySelectorAll('#mcList .mc-msg:not(.bare), #mcList .mc-msg:not(.bare) button')].every(
+        m => Reflect.get(m, 'kept') === true,
+      ),
     ),
     'and it draws only the block again',
   );
