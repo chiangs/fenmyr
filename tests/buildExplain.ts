@@ -1,4 +1,4 @@
-// Explain the code under the newest build: one press adds the person's line, says "Reading the code…" with no typing
+// Explain the code under the newest build: one press adds the person's line, says "Reading the code" with no typing
 // dots, and runs Claude Code able only to read, in the prototype's folder and told the build's files. Her answer lands in
 // the prototype's chat even when another board is open by then, with file names in code font. The button goes while
 // she reads and is spent once her answer lands, so a press cut off by a quit or a reload is offered again, and it doesn't
@@ -162,7 +162,7 @@ try {
     'focus moves to the person’s line, since the pressed button goes',
   );
   await until(async () => (await texts()).at(-1) === EXPLAIN, 'pressing it adds the person’s line');
-  await until(async () => (await status()).say === 'Reading the code…', 'the status line says she reads the code');
+  await until(async () => (await status()).say === 'Reading the code', 'the status line says she reads the code');
   assert.strictEqual((await status()).dots, false, 'with no typing dots, since the answer may land elsewhere');
   assert.deepStrictEqual(
     await buttonsUnder('Done: Second.'),

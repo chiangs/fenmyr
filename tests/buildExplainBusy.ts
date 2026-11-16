@@ -59,6 +59,33 @@ const buttonsUnder = (text: string) =>
 const tapUnder = (text: string, label: string) =>
   page.locator('#mcList .mc-msg.myra', { hasText: text }).getByRole('button', { name: label, exact: true }).click();
 const app = (h: string) => `export function App() { return <h1>${h}</h1>; }\n`;
+// whether the status line's words show whole, so no ellipsis cuts them short
+const fits = Object.assign(
+  () =>
+    page.evaluate(() => {
+      const line = document.getElementById('mcStatus'),
+        words = document.getElementById('mcStatusSay');
+      return !!line && !!words && words.getBoundingClientRect().right <= line.getBoundingClientRect().right;
+    }),
+  {
+    room: () =>
+      page.evaluate(() => ({
+        line: document.getElementById('mcStatus')?.getBoundingClientRect().right,
+        words: document.getElementById('mcStatusSay')?.getBoundingClientRect().right,
+      })),
+  },
+);
+const narrow = async () => {
+  const grip = await page.locator('.pr-div[data-d="chat"]').boundingBox();
+  assert(grip, 'the chat has a divider to drag');
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(grip.x + 200, grip.y + 10, { steps: 4 });
+  await page.mouse.up();
+  await settle(page, 400);
+  const width = await page.evaluate(() => document.getElementById('mcList')?.getBoundingClientRect().width ?? 0);
+  assert(width < 282, `the chat is at its narrowest: ${width}`);
+};
 
 try {
   await page.evaluate(async repo => {
@@ -102,7 +129,25 @@ try {
 
   standIn.explain({ reply: 'A explained.', hold: true });
   await tapUnder('Done: A.', EXPLAIN);
-  await until(async () => (await say()) === 'Reading the code…', 'the status line names the explanation, begun last');
+  await until(async () => (await say()) === 'Reading the code', 'the status line names the explanation, begun last');
+  assert(await fits(), `and its words fit the header: ${JSON.stringify(await fits.room())}`);
+  await open('pb2');
+  assert.strictEqual(await say(), 'Reading Checkout', 'another prototype’s names the one she reads');
+  assert(await fits(), `and fit too: ${JSON.stringify(await fits.room())}`);
+  // A name as long as Checkout fills a 280 px chat's header to the pixel, as "Building Checkout" does, so there it may be
+  // cut short; a screen reader and the tooltip still have every word.
+  await narrow();
+  assert.deepStrictEqual(
+    await page.evaluate(() => [
+      document.getElementById('mcStatusSay')?.textContent,
+      document.getElementById('mcStatus')?.title,
+    ]),
+    ['Reading Checkout', 'Reading Checkout'],
+    'in a 280 px chat, its words are whole for a screen reader and the tooltip',
+  );
+  await open('pb');
+  await narrow();
+  assert(await fits(), `and her own prototype’s: ${JSON.stringify(await fits.room())}`);
   await until(() => standIn.explains().length === 1, 'Claude Code reads while Basket builds');
   standIn.explained();
   await until(async () => (await texts()).at(-1) === 'A explained.', 'her answer lands while the request still waits');
@@ -126,7 +171,7 @@ try {
   await until(async () => (await say()) === 'Building', 'the status line names the build, begun last');
   standIn.release();
   await landed('C.');
-  await until(async () => (await say()) === 'Reading the code…', 'and goes back to the explanation once it has landed');
+  await until(async () => (await say()) === 'Reading the code', 'and goes back to the explanation once it has landed');
   standIn.explained();
   await until(
     async () => (await texts()).at(-1)?.endsWith('B explained.') ?? false,

@@ -31,7 +31,8 @@ function busyLine(b: Busy): Line {
       if (session.board?.id !== b.board) return { say: `Building ${b.name}`, more: '' };
       return { say: 'Building', more: b.file ? ` ${b.file}` : '' };
     case 'explaining':
-      return { say: session.board?.id === b.board ? 'Reading the code…' : `Reading ${b.name}’s code…`, more: '' };
+      // as short as a build's words, so they fit the header where those do
+      return { say: session.board?.id === b.board ? 'Reading the code' : `Reading ${b.name}`, more: '' };
     case 'pictures':
       return { say: `Making ${plural(b.n, 'picture', 'pictures')}`, more: '' };
     case 'rewriting':
