@@ -79,7 +79,7 @@ const overtakenOnOpening = async (older: string, newer: string, lose = false) =>
   await open('one');
   standIn.release();
   await until(() => !!recordOf('pb', older)?.end, 'it lands while another board is open');
-  standIn.next({ files: { 'src/App.tsx': app(newer) }, reply: newer });
+  standIn.next({ files: { 'src/App.tsx': app(newer) }, hold: true, reply: newer });
   await page.evaluate(
     async ({ newer, lose }) => {
       const files = window.Fenmyr.protoFiles,
@@ -103,17 +103,22 @@ const overtakenOnOpening = async (older: string, newer: string, lose = false) =>
     },
     { newer, lose },
   );
-  await until(() => !!recordOf('pb', newer)?.end, 'a build asked as its board opens lands before its panes catch up');
+  const olderSays = (what: string) =>
+    until(
+      async () => JSON.stringify((await blocks()).at(-2)?.lines.slice(1)) === JSON.stringify(['src/App.tsx +1 −1']),
+      `${what}, the block before it stops saying its preview isn’t checked yet`,
+      5000,
+    );
+  await until(() => standIn.wrote() === 1, 'a build asked as its board opens writes before its panes catch up');
+  if (!lose) await olderSays('once it starts');
+  standIn.release();
+  await until(() => !!recordOf('pb', newer)?.end, 'it lands before its panes catch up');
+  await olderSays('once it lands');
   await page.evaluate(() => {
     const release = Reflect.get(window, 'releaseFiles');
     if (typeof release === 'function') release();
   });
   await until(() => !!checkOf(recordOf('pb', newer)), 'and is checked once they have');
-  await until(
-    async () => JSON.stringify((await blocks()).at(-2)?.lines.slice(1)) === JSON.stringify(['src/App.tsx +1 −1']),
-    'once a newer build starts, the block before it stops saying its preview isn’t checked yet',
-    5000,
-  );
   assert.strictEqual(checkOf(recordOf('pb', older)), undefined, 'and it is never checked');
 };
 
