@@ -83,7 +83,7 @@ const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) =
   changes: changesPieces,
   source: a => one('other', 'stay', sourceButton(a.card)),
   buildUndo: a => one('other', 'self', buildUndoButton(a)),
-  explain: a => one('other', 'self', explainButton(a)),
+  explain: a => one('other', 'stay', explainButton(a)),
   commit: a => one('other', 'self', commitButton(a)),
   build: buildPieces,
   read: readPieces,

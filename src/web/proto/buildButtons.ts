@@ -5,7 +5,7 @@ import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import type { Button } from '../myra/acts.ts';
 import { ask } from '../myra/chat.ts';
-import { addMsg, chatLog, focusMsg, pushMsg, showAdded } from '../myra/chatLog.ts';
+import { addMsg, chatLog, focusMsg, pushMsg, redrawMsgs, showAdded } from '../myra/chatLog.ts';
 import { noEmoji } from '../myra/replyText.ts';
 import { type SayAction, say } from '../myra/say.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
@@ -142,44 +142,67 @@ export function fixButton(a: BuildRecord): Omit<Button, 'after'> | null {
 
 type Explain = Extract<ChatAction, { kind: 'explain' }>;
 
-// Her answer lands in the prototype's own chat wherever the person is by then, and only the new line is drawn. The
-// status line says she is reading until it has landed. A failure, often a passing one such as a timeout, carries the
-// button again, so it can be tried once more while it is still the newest build's.
+// the builds whose Explain the code was pressed in this window and whose answer hasn't landed yet
+const explaining = new Set<string>();
+
+// A press is spent once her answer or her failure lands, from every line of hers that offers it for this build, so one
+// cut off by a quit or a reload is offered again. Returns those lines.
+function spendExplain(x: Board, build: string) {
+  const offering = (x.chat ?? []).filter(m => m.acts?.some(a => a.kind === 'explain' && a.build === build));
+  for (const m of offering) {
+    const left = m.acts?.filter(a => a.kind !== 'explain' || a.build !== build) ?? [];
+    if (left.length) m.acts = left;
+    else delete m.acts;
+  }
+  return offering;
+}
+
+// Her answer lands in the prototype's own chat wherever the person is by then, and only the new line, and the lines
+// whose button it spends, are drawn. The status line says she is reading until it has landed. A failure, often a
+// passing one such as a timeout, carries the button again, so it can be tried once more while it is still the newest
+// build's.
 async function explain(b: Prototype, root: string, a: Explain) {
+  explaining.add(a.build);
   const asked = addMsg('me', 'Explain the code');
   // the pressed button goes from under focus, so focus moves to the line the press added
   if (asked) focusMsg(asked);
   const job = startJob({ kind: 'explaining', board: b.id, name: b.name });
-  const [failed, answer] = await Fenmyr.protoExplain({ root, dir: b.proto.dir, files: a.files }).then(
-    (t): [boolean, ChatMsg] => [false, { who: 'myra', text: noEmoji(t), t: Date.now() }],
-    (e: unknown): [boolean, ChatMsg] => [
-      true,
-      {
-        who: 'myra',
-        text: `I couldn’t read the code just now. ${e instanceof Error ? e.message : e}`,
-        t: Date.now(),
-        acts: [{ ...a }],
-      },
-    ],
+  const said = await Fenmyr.protoExplain({ root, dir: b.proto.dir, files: a.files }).then(
+    t => ({ failed: false, text: noEmoji(t) }),
+    (e: unknown) => ({
+      failed: true,
+      text: `I couldn’t read the code just now. ${e instanceof Error ? e.message : e}`,
+    }),
   );
   const landed: { on: string | null } = { on: null };
   await changeBoard(b.id, x => {
+    explaining.delete(a.build);
     landed.on = x.name;
+    const spent = spendExplain(x, a.build),
+      answer: ChatMsg = said.failed
+        ? { who: 'myra', text: said.text, t: Date.now(), acts: [{ ...a }] }
+        : { who: 'myra', text: said.text, t: Date.now() };
     pushMsg(x, answer);
-    if (x === session.board) showAdded([answer]);
+    if (x === session.board) {
+      redrawMsgs(spent);
+      showAdded([answer]);
+    }
     return true;
-  }).finally(() => job.end());
+  }).finally(() => {
+    explaining.delete(a.build);
+    job.end();
+  });
   if (landed.on === null) return;
   // the open board shows her answer, which a screen reader hears of; another board says so on the status line
-  const words = failed ? `Couldn’t explain ${landed.on}’s code` : `${landed.on}’s code is explained`;
+  const words = said.failed ? `Couldn’t explain ${landed.on}’s code` : `${landed.on}’s code is explained`;
   (session.board?.id === b.id ? noteHeard : noteStatus)(words);
 }
 
-/** Explain the code under her line, for the newest build while it isn't undone. One press spends it. It only reads, so
- *  it runs during a build or while one waits. */
+/** Explain the code under her line, for the newest build while it isn't undone. It goes while she reads, so one press
+ *  is one run. It only reads, so it runs during a build or while one waits. */
 export function explainButton(a: Explain): Omit<Button, 'after'> | null {
   const b = openProto(a.board),
     root = b && rootOf(b);
-  if (!b || !root || newestBuild(b) !== a.build || recordOf(a.build)?.undone) return null;
+  if (!b || !root || explaining.has(a.build) || newestBuild(b) !== a.build || recordOf(a.build)?.undone) return null;
   return { label: 'Explain the code', ghost: true, run: () => explain(b, root, a) };
 }

@@ -1,9 +1,9 @@
 // Explain the code under the newest build: one press adds the person's line, says "Reading the code…" with no typing
 // dots, and runs Claude Code able only to read, in the prototype's folder and told the build's files. Her answer lands in
-// the prototype's chat even when another board is open by then, with file names in code font. The button comes back
-// after a restart until it is pressed, and not after, and a newer build takes it from the one before. A failure lands
-// in her words, drawing only the new line, a screen reader hears it, and it carries the button to try again until the
-// build is undone.
+// the prototype's chat even when another board is open by then, with file names in code font. The button goes while
+// she reads and is spent once her answer lands, so a press cut off by a quit or a reload is offered again, and it doesn't
+// come back after a restart once spent. A newer build takes it from the one before. A failure lands in her words,
+// drawing only the new line, a screen reader hears it, and it carries the button to try again until the build is undone.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -130,7 +130,28 @@ try {
     'it comes back after a restart until it is pressed',
   );
 
+  // a press cut off by a quit, then by a reload, before her answer lands
   standIn.explain({ reply: ANSWER, hold: true });
+  const asked = (n: number) => () => stored().filter(m => m.who === 'me' && m.text === EXPLAIN).length === n;
+  await tapUnder('Done: Second.', EXPLAIN);
+  await until(asked(1), 'the person’s line is saved');
+  await restart();
+  assert.deepStrictEqual(
+    await buttonsUnder('Done: Second.'),
+    [['Undo this build', EXPLAIN, 'Commit']],
+    'a press cut off by a quit is offered again',
+  );
+  await tapUnder('Done: Second.', EXPLAIN);
+  await until(asked(2), 'pressed again, and saved');
+  await page().reload();
+  await page().waitForFunction(() => !!window.__fenmyr?.curBoard());
+  await open('pb');
+  assert.deepStrictEqual(
+    await buttonsUnder('Done: Second.'),
+    [['Undo this build', EXPLAIN, 'Commit']],
+    'and one cut off by a reload',
+  );
+
   await tapUnder('Done: Second.', EXPLAIN);
   assert.strictEqual(
     await page().evaluate(() => {
@@ -143,16 +164,20 @@ try {
   await until(async () => (await texts()).at(-1) === EXPLAIN, 'pressing it adds the person’s line');
   await until(async () => (await status()).say === 'Reading the code…', 'the status line says she reads the code');
   assert.strictEqual((await status()).dots, false, 'with no typing dots, since the answer may land elsewhere');
-  assert.deepStrictEqual(await buttonsUnder('Done: Second.'), [['Undo this build', 'Commit']], 'one press spends it');
+  assert.deepStrictEqual(
+    await buttonsUnder('Done: Second.'),
+    [['Undo this build', 'Commit']],
+    'it goes while she reads, so one press is one run',
+  );
   const spent = () => {
     const acts = stored().flatMap(m => m.acts ?? []),
       second = acts.findLast(a => a.kind === 'build')?.build;
     return !!second && !acts.some(a => a.kind === 'explain' && a.build === second);
   };
-  await until(spent, 'and its board file no longer keeps it');
 
-  await until(() => standIn.explains().length === 1, 'Claude Code is asked');
-  const [run] = standIn.explains();
+  // the runs cut off by the quit and the reload asked first
+  await until(() => standIn.explains().length === 3, 'Claude Code is asked');
+  const run = standIn.explains().at(-1);
   const args = run?.args ?? [],
     after = (flag: string) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
   assert.strictEqual(after('--allowedTools'), 'Read,Glob,Grep', `it may only read: ${args.join(' ')}`);
@@ -172,6 +197,7 @@ try {
     'her answer lands in the prototype’s chat while another board is open',
   );
   assert.strictEqual(stored().at(-2)?.text, EXPLAIN, 'after the person’s line');
+  assert(spent(), 'and once it lands, its board file no longer offers Explain the code');
   await until(async () => (await status()).say === 'Checkout’s code is explained', 'the other board hears it landed');
 
   await open('pb');
