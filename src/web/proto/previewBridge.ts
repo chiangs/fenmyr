@@ -7,6 +7,8 @@ export function previewBridge() {
     parent.postMessage({ fenmyrPreview: true, type, ...data }, '*');
   const words = (x: unknown) => {
     if (typeof x === 'string') return x;
+    // an Error's own fields don't enumerate, so JSON would make it {}
+    if (x instanceof Error) return `${x.name}: ${x.message}`;
     try {
       return JSON.stringify(x);
     } catch {

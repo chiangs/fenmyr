@@ -25,8 +25,19 @@ let html = '';
 let pointing = false;
 // a capture whose commit the preview shows instead of the files on disk, until Back to latest or the next build
 let viewing: Capture | null = null;
-// what went wrong and what was logged since the last build, newest last
+// what went wrong and what was logged since the last build, newest last, trimmed to the newest lines
 const log: Line[] = [];
+// The last render's errors, counted as they arrive and the first of them kept, apart from the log, so a preview that
+// logs a lot can't push them out of it.
+const KEPT = 20;
+let errors: { count: number; first: string[] } = { count: 0, first: [] };
+function logged(line: Line) {
+  log.push(line);
+  if (log.length > 200) log.splice(0, log.length - 200);
+  if (line.kind !== 'error') return;
+  errors.count++;
+  if (errors.first.length < KEPT) errors.first.push(line.text);
+}
 // Each render, counted, so a check reads only the render it waited on and a newer one, such as a newer build's, never
 // answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or whether its frame loaded,
 // false once a newer render has taken the frame. letGo: settles the last render's frame as taken.
@@ -40,11 +51,7 @@ function nextRender() {
 }
 
 // the errors, for Myra to fix with her next change
-export const previewErrors = () =>
-  log
-    .filter(l => l.kind === 'error')
-    .map(l => l.text)
-    .join('\n');
+export const previewErrors = () => errors.first.join('\n');
 
 // other parts of the page post messages too, so this can run before any preview exists
 const frame = () => document.querySelector<HTMLIFrameElement>('#pr-preview iframe');
@@ -122,9 +129,10 @@ async function draw(gen: number): Promise<Drawn | null> {
   );
   if (gen !== renders) return null;
   log.length = 0;
+  errors = { count: 0, first: [] };
   const problem = $('pr-preview').querySelector<HTMLElement>('.pv-error');
   if (built.kind === 'error') {
-    log.push({ kind: 'error', text: built.message });
+    logged({ kind: 'error', text: built.message });
     if (problem) {
       problem.hidden = false;
       problem.textContent = `The preview couldn’t be built. ${built.message}`;
@@ -176,8 +184,8 @@ export async function previewCheck(id: string): Promise<PreviewCheck | null> {
     if (gen !== renders) continue;
     if (loaded) await after(WATCH_MS);
     if (gen !== renders) continue;
-    const errors = log.filter(l => l.kind === 'error').map(l => l.text);
-    return ranCheck(loaded ? errors : ['The preview didn’t finish loading.', ...errors]);
+    const { count, first } = errors;
+    return loaded ? ranCheck(first, count) : ranCheck(['The preview didn’t finish loading.', ...first], count + 1);
   }
 }
 
@@ -194,9 +202,8 @@ addEventListener('message', e => {
   const d: Record<string, unknown> = e.data;
   if (d.fenmyrPreview !== true) return;
   const text = String(d.text ?? '').slice(0, 2000);
-  if (d.type === 'error') log.push({ kind: 'error', text: d.where ? `${text} (${String(d.where)})` : text });
-  if (d.type === 'console')
-    log.push({ kind: d.level === 'error' ? 'error' : d.level === 'warn' ? 'warn' : 'log', text });
+  if (d.type === 'error') logged({ kind: 'error', text: d.where ? `${text} (${String(d.where)})` : text });
+  if (d.type === 'console') logged({ kind: d.level === 'error' ? 'error' : d.level === 'warn' ? 'warn' : 'log', text });
   if (d.type === 'tweak') tweakFromFrame(child($('pr-preview'), '.pv-knobs'), String(d.key), String(d.value));
   if (d.type === 'point') {
     const field = textField('mcInput'),
@@ -207,7 +214,6 @@ addEventListener('message', e => {
     setPointing(false);
     if (d.at) showSource(String(d.at));
   }
-  if (log.length > 200) log.splice(0, log.length - 200);
   showLog();
 });
 
