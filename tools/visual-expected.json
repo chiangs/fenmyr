@@ -1,4 +1,8 @@
 {
-  "wireframe-screen": "New in 8a: the Sign in screen selected. The bar's label reads \"Screen\" where the base reads \"Frame\", and the wider word moves the bar's buttons right.",
-  "wireframe-tool": "New in 8a: W puts the screen tool in hand. The mode bar shows the device row with iPhone lit, an iPhone ghost rides the pointer, the hint reads \"Click for an iPhone screen, or drag any size · Esc to cancel\", and the panel's Screen button is lit. On the base W does nothing."
+  "wireframe-dark-pieces": "New in 8b: the Pieces picker beside the Sign in screen in the dark theme, on the surface colour, with the bar folded to its left. On the base there is no Pieces button, so the screen is only selected.",
+  "wireframe-hint": "New in 8b: zoomed to 50%, the empty phone screen shows an Add pieces button and \"or press R for a box, X for text\" in its middle. The base shows the empty screen bare.",
+  "wireframe-icons": "New in 8b: the picker's Icons view, a grid of the icon set under its search. The base has no picker.",
+  "wireframe-phone-pieces": "New in 8b: at 600 px the strip's Pieces opens the picker above the bottom bar, full width less 20 px, six cells to a row. The base shows the strip with no Pieces button.",
+  "wireframe-pieces": "New in 8b: Pieces opens the picker 12 px right of the Sign in screen, with Basics led by Box and Text and each piece drawn small. The bar folds to the screen's side of it, down to Pieces, ··· and Delete. The base has no picker.",
+  "wireframe-screen": "Changed in 8b: the selected screen's bar shows Pieces straight after the Screen label, which moves the bar's other buttons right."
 }
