@@ -444,6 +444,7 @@
     "tests/richTyping.ts": "Checks shortcuts, typed lists, list keys and the selection bar while a note is typed in.",
     "tests/richpaste.ts": "Checks pasted HTML, Markdown and PDF text become the right rich note, real clipboard samples included.",
     "tests/richtext.ts": "Checks a rich note's text reads, writes and draws the same way, over 1,000 random notes.",
+    "tests/screenAccess.ts": "Tests the screen tool for a screen reader and a phone: what is pressed, the row’s role, Myra’s sees strip naming a card once, and the strips and hint at 390 px.",
     "tests/screenTool.ts": "Tests the screen tool: W and the panel’s Screen button, the device row, keys, a click, a drag, the default device, putting it down, R and X on the bare board, and a tap on a phone.",
     "tests/setup.ts": "Tests the Git and GitHub setup screen with real git and a stand-in gh.",
     "tests/smoke.ts": "The end-to-end smoke test: opens the real app headless and drives it through each section.",
