@@ -108,6 +108,8 @@ export async function explainer(t: Smoke) {
       args.includes('--disallowedTools Write,Edit,MultiEdit,NotebookEdit,Bash,WebFetch,WebSearch,Task') &&
       args.includes('--strict-mcp-config') &&
       !args.includes('acceptEdits'),
+    // the person's own default mode, which may skip every check, never applies
+    fixedMode: args.includes('--permission-mode default'),
     folderOnly: args.includes('blockReadsOutsideWorkingDirectories'),
     inFolder: !!r.dir && read('explain-cwd.txt') === fs.realpathSync(path.join(repo, r.dir)),
     namesFiles: read('explain-prompt.txt').includes('THE FILES THE LAST BUILD CHANGED:\nsrc/App.tsx'),
