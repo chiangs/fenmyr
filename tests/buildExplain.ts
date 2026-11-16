@@ -270,6 +270,16 @@ try {
   await until(async () => (await status()).heard === 'Couldn’t explain Checkout’s code', 'a screen reader hears it');
   const failed = 'I couldn’t read the code just now. Claude Code isn’t signed in.';
   assert.deepStrictEqual(await buttonsUnder(failed), [[EXPLAIN]], 'and it can be tried again from her line');
+  await page()
+    .locator('#mcList .mc-msg.myra', { hasText: 'Done: Third.' })
+    .locator('.m-acts button', { hasText: /^Commit$/ })
+    .click();
+  assert.deepStrictEqual(
+    await buttonsUnder('Done: Third.'),
+    [['Undo this build']],
+    'where it was pressed, it doesn’t come back when another of the line’s buttons is pressed',
+  );
+  await page().getByRole('button', { name: 'Not now', exact: true }).click();
   await tapUnder('Done: Third.', 'Undo this build');
   await until(
     async () => (await texts()).includes('It’s back to how it was before that build ✦'),
