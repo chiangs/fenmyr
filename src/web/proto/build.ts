@@ -6,7 +6,7 @@ import { changeBoard } from '../library/boardWrites.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { refreshPanes } from './buildButtons.ts';
-import { checkNewest } from './buildCheck.ts';
+import { checkComing, checkNewest } from './buildCheck.ts';
 import { asked, ended, endedLost, redrawBlock, redrawNewest, started } from './buildRecord.ts';
 import {
   building,
@@ -164,6 +164,8 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
   let landed: string | null = null;
   catchUp(
     changeBoard(board, b => {
+      // a build that changed files is the newest, so it is checked as soon as the preview catches up
+      if (b === session.board && e.type === 'done' && e.files.length) checkComing(e.build);
       if (!change(b)) return false;
       landed = b.name;
       return true;
@@ -174,8 +176,7 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
           words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
         // the open board shows no note, since its block says how it went, but a screen reader hears it
         if (landed !== null) (open ? noteHeard : noteStatus)(words);
-        // the check starts with the refresh and follows its render, so the block goes straight to checking
-        return open ? Promise.all([refreshPanes(), checkNewest()]) : undefined;
+        return open ? refreshPanes().then(checkNewest) : undefined;
       },
       (err: unknown) => {
         done();

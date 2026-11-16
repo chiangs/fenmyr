@@ -100,9 +100,23 @@ try {
   git('commit', '-qm', 'start');
   await settle(page(), 600);
 
+  // every line the block shows from the moment it lands, drawn or not between polls
+  await page().evaluate(() => {
+    const seen: string[] = [];
+    Reflect.set(window, 'seen', seen);
+    new MutationObserver(() => {
+      const li = [...document.querySelectorAll('#mcList .mc-msg.bare .m-summary li')].at(-1);
+      if (li?.textContent && seen.at(-1) !== li.textContent) seen.push(li.textContent);
+    }).observe(document.getElementById('mcList') ?? document.body, { childList: true, subtree: true });
+  });
   await build('Clean build.', { 'src/App.tsx': CLEAN });
   await landed('Clean build.');
   await until(async () => (await lastLine()) === 'Checking the preview', 'the block says it checks the preview');
+  const seen: unknown = await page().evaluate(() => Reflect.get(window, 'seen'));
+  assert(
+    Array.isArray(seen) && !seen.includes('Preview not checked yet'),
+    `a build that lands on the open board goes straight to checking: ${JSON.stringify(seen)}`,
+  );
   // the earlier messages are kept as they are drawn, so a redraw of the whole chat would show
   await page().evaluate(() => {
     for (const m of document.querySelectorAll('#mcList .mc-msg:not(.bare)')) Reflect.set(m, 'kept', true);

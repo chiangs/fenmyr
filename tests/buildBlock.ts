@@ -218,8 +218,11 @@ try {
     'Myra reads the block when asked next',
   );
 
+  // its preview check, which tests/buildChecks.ts covers, is kept before the restart
+  await until(async () => /^Preview runs/.test((await last())?.lines.at(-1) ?? ''), 'its preview is checked');
+  const kept = await last();
   await relaunch();
-  assert.deepStrictEqual(await last(), built, 'after a restart the block reads the same');
+  assert.deepStrictEqual(await last(), kept, 'after a restart the block reads the same');
   assert.deepStrictEqual(await buttonsUnder(explained), hers, 'and her buttons come back');
   await tap('Undo this build');
   await until(
