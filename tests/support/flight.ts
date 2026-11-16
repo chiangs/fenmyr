@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import type { Page } from 'playwright';
 import type { Edges } from './bar.ts';
 
-// ms: since sampling began. onTop: she is what shows at her centre. home: the id of the element her slot sits in.
+// ms: the time of the frame that drew her so, since sampling began. onTop: she is what shows at her centre. home: the id of the element her slot sits in.
 // air: she is in the air, stretched along her path. anim: the last of her animations to play.
 export type Frame = {
   ms: number;
@@ -40,12 +40,15 @@ export async function flight(page: Page, trigger: () => Promise<unknown>) {
         const slot = document.getElementById('gooSlot'),
           seen: Frame[] = [],
           t0 = performance.now();
-        const tick = () => {
+        // Her hop's frames run after this sampler's in each frame, since sampling starts first, so what it reads was
+        // drawn in the frame before, at that frame's time. Timed by this one, a long frame would shorten her flight.
+        let drawn = t0;
+        const tick = (now: number) => {
           const r = slot?.getBoundingClientRect();
           if (slot && r) {
             const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
             seen.push({
-              ms: performance.now() - t0,
+              ms: drawn - t0,
               l: r.left,
               t: r.top,
               w: r.width,
@@ -58,6 +61,7 @@ export async function flight(page: Page, trigger: () => Promise<unknown>) {
               anim: window.__fenmyr.lastAnimName(),
             });
           }
+          drawn = now;
           if (performance.now() - t0 < 1600) requestAnimationFrame(tick);
           else done(seen);
         };
