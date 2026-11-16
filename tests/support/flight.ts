@@ -3,8 +3,9 @@ import assert from 'node:assert';
 import type { Page } from 'playwright';
 import type { Edges } from './bar.ts';
 
-// ms: the time of the frame that drew her so, since sampling began. onTop: she is what shows at her centre. home: the id of the element her slot sits in.
-// air: she is in the air, stretched along her path. anim: the last of her animations to play.
+// ms: since sampling began, by the frame that drew her pose. onTop: she is what shows at her centre. home: the id of
+// the element her slot sits in. air: she is in the air, stretched along her path. anim: the last of her animations to
+// play.
 export type Frame = {
   ms: number;
   l: number;
