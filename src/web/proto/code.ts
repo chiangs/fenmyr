@@ -17,8 +17,6 @@ let shown = '';
 // the prototype the pane shows, for Point to open its files
 let here: { root: string; dir: string } | null = null;
 let all = false;
-// the width the tabs need on one row, measured when they're drawn
-let needed = 0;
 let watching = false;
 let listed: string[] = [];
 let drawn: Promise<void> = Promise.resolve();
@@ -41,12 +39,16 @@ const folderOf = (f: string) => {
   return f === VALUES || !l.includes('/') ? '' : l.slice(0, l.lastIndexOf('/'));
 };
 
+// Tabs or the picker, from the tabs measured as they are now, dots included. A folded column has no width to measure,
+// so the pane fits once it opens, when its size changes.
 function fitBar() {
   const el = $('pr-code'),
-    bar = el.querySelector<HTMLElement>('.pc-bar');
-  if (!bar) return;
+    bar = el.querySelector<HTMLElement>('.pc-bar'),
+    files = bar?.querySelector<HTMLElement>('.pc-files');
+  if (!bar?.clientWidth || !files) return;
+  el.classList.remove('pc-many');
   const acts = bar.querySelector<HTMLElement>('.pc-acts')?.offsetWidth ?? 0;
-  el.classList.toggle('pc-many', needed > bar.clientWidth - 16 - acts - 6);
+  el.classList.toggle('pc-many', files.scrollWidth > bar.clientWidth - 16 - acts - 6);
 }
 
 // wide enough for a component's file name without wrapping
@@ -68,6 +70,7 @@ function paint() {
     note = el.querySelector<HTMLElement>('.pc-dots');
   if (pick) mark(pick, isChanged(shown));
   if (note) note.hidden = !listed.some(isChanged);
+  fitBar();
 }
 
 /** Marks the files the newest build changed, as the changes counter counts them. */
@@ -245,8 +248,6 @@ async function draw(b: Board) {
     caret = Icon('caret-down', { size: 12 });
   el.classList.remove('pc-many');
   el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"><span></span>${caret}</button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><p class="pc-dots" hidden>Dots mark what the last build changed</p><div class="pc-from-slot"></div><pre class="pc-text"><code></code></pre>`;
-  needed = el.querySelector('.pc-files')?.scrollWidth ?? 0;
-  fitBar();
   if (!watching) {
     watching = true;
     new ResizeObserver(fitBar).observe(el);

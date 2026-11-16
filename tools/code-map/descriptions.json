@@ -379,6 +379,7 @@
     "tests/controls.ts": "Tests a prototype’s controls: drawn from tweaks.json, live changes and Keep these values.",
     "tests/dockGit.ts": "Tests the git bar in the docked chat: its place above the input, its two lines at 280 px, Commit, and Push, Pull and GitHub in its More menu.",
     "tests/dockChanges.ts": "Tests the changes counter: what it reads beside the git bar, opening the code pane on the changed files with their dots, and after a Commit, a build and Undo this build.",
+    "tests/dockChangesFit.ts": "Tests the code pane the changes counter opens is fitted to its width: dotted tabs that never overrun their row, and a column folded as the build landed opening on the picker.",
     "tests/dockChangesWhen.ts": "Tests when the changes counter updates: after a restart, between prototypes, while another prototype builds or a request waits, and for a build that lands while its board is closed.",
     "tests/dockChangesWhich.ts": "Tests which files the changes counter counts and the code pane marks: a build that changed nothing, a failed build, hidden and deleted files.",
     "tests/dockHead.ts": "Tests the docked chat’s header on a prototype board: the board’s name, its stack and the status line, after both kinds of rename.",
