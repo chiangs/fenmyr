@@ -2,5 +2,7 @@
   "proto-build-built": "New in 7l: the docked chat's header reads \"2 changes\" with a dot, on the board's name line, for the newest build's two files. The code pane marks App.tsx with a dot, and a caption under its bar, \"Dots mark what the last build changed\", moves the code down one line. Form.tsx isn't in the starter's folder, so it counts but has no tab to mark.",
   "proto-build-dark-built": "New in 7l: the same \"2 changes\" counter in the header, the dot on App.tsx and the caption under the code pane's bar, in the dark theme.",
   "proto-build-errors": "New in 7l: the build whose check found errors still changed two files, so the header reads \"2 changes\", App.tsx carries a dot and the caption moves the code down one line. The chat is unchanged.",
-  "proto-build-failed": "New in 7l: a failed build counts the files it changed, so the header reads \"1 change\", App.tsx carries a dot and the caption moves the code down one line."
+  "proto-build-failed": "New in 7l: a failed build counts the files it changed, so the header reads \"1 change\", App.tsx carries a dot and the caption moves the code down one line.",
+  "wireframe-screen": "New in 8a: the Sign in screen selected. The bar's label reads \"Screen\" where the base reads \"Frame\", and the wider word moves the bar's buttons right.",
+  "wireframe-tool": "New in 8a: W puts the screen tool in hand. The mode bar shows the device row with iPhone lit, an iPhone ghost rides the pointer, the hint reads \"Click for an iPhone screen, or drag any size · Esc to cancel\", and the panel's Screen button is lit. On the base W does nothing."
 }
