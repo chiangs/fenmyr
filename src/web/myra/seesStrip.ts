@@ -47,7 +47,8 @@ function oneLabel(): string | null {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 34);
-  return words ? `${labelOf(one.type)} · “${words}”` : labelOf(one.type);
+  const type = labelOf(one.type);
+  return words && words !== type ? `${type} · “${words}”` : type;
 }
 
 function seesInput(): SeesInput {
