@@ -161,11 +161,20 @@ try {
   assert.match(prompt, /Make the Checkout heading\./, 'the builder gets the request');
   assert.match(prompt, /Checkout: show the total first/, 'and the cards');
   assert.match(prompt, /Buttons are always mint\./, 'and design.md');
-  const settings = JSON.parse(
-    fs
-      .readFileSync(path.join(work, 'args.txt'), 'utf8')
-      .split('\n')
-      .find(a => a.startsWith('{')) ?? '{}',
+  const args = fs.readFileSync(path.join(work, 'args.txt'), 'utf8').split('\n'),
+    settings = JSON.parse(args.find(a => a.startsWith('{')) ?? '{}'),
+    mode = args.indexOf('--permission-mode');
+  assert.deepStrictEqual(
+    args.slice(mode, mode + 6),
+    [
+      '--permission-mode',
+      'acceptEdits',
+      '--allowedTools',
+      'Read,Write,Edit,MultiEdit,Glob,Grep',
+      '--disallowedTools',
+      'Bash,WebFetch,WebSearch,Task',
+    ],
+    'the builder may edit with its file tools alone, named in the order it always had',
   );
   assert.deepStrictEqual(
     settings.permissions,

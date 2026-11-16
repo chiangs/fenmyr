@@ -18,7 +18,8 @@ export async function explainCode(a: Untrusted<Ops['protoExplain']['args']>) {
   if (!repo) throw new Error("This prototype's repo isn't there any more.");
   const base = path.join(repo, dir),
     files = (Array.isArray(a.files) ? a.files : []).slice(0, MAX_EXPLAINED).map(text);
-  if (files.some(f => !f || path.isAbsolute(f) || !path.resolve(base, f).startsWith(`${base}/`)))
+  // a control character, such as a newline, would add a line of its own to her instructions
+  if (files.some(f => !f || /\p{Cc}/u.test(f) || path.isAbsolute(f) || !path.resolve(base, f).startsWith(`${base}/`)))
     throw new Error("That file isn't part of this prototype.");
   if (!fs.existsSync(base)) throw new Error("This prototype's folder isn't there any more.");
   const said = await claudeCode(

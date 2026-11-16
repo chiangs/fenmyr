@@ -223,7 +223,7 @@ try {
   assert.deepStrictEqual(
     await buttonsUnder('Fifth.'),
     [['Undo this build', 'Explain the code', 'Commit']],
-    'and both buttons stay',
+    'and all three buttons stay',
   );
 
   await page.locator('#mcList .mc-msg.bare').last().getByRole('button', { name: 'Cancel' }).click();
