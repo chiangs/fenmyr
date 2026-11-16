@@ -1,7 +1,8 @@
 // The changes counter's click lands on a code pane fitted to the width it shows at. Tabs never run past the end of
 // their row once the dots widen them, and a code column folded as the build landed opens on the file picker when its
 // tabs don't fit. Up and Down move through the picker's menu, and Escape hands focus back to what opened it. A click
-// while the pane draws again acts on its newest draw.
+// while the pane draws again acts on its newest draw, and one in a window too narrow for the code says why nothing
+// opened.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -146,6 +147,18 @@ try {
   });
   await until(async () => (await head()).focused === 'src/Basket.tsx', 'the click acts on the newest draw');
   await page.keyboard.press('Escape');
+
+  await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1000, 900));
+  await until(async () => (await head()).folded, 'a 1000 px window has no room for the code column');
+  await page.click('#mcChanges');
+  await settle(page, 600);
+  h = await head();
+  assert.ok(h.folded && !h.menu, 'the click can’t open it');
+  assert.strictEqual(
+    await page.evaluate(() => document.getElementById('mcStatusSay')?.textContent),
+    'Widen the window to see the code',
+    'so the status line says why',
+  );
 
   assert.deepStrictEqual(l.errors, []);
   console.log('DOCK CHANGES FIT OK');

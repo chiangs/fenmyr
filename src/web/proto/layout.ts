@@ -246,6 +246,9 @@ export function openColumn(p: Foldable) {
   return new Promise<void>(done => setTimeout(done, slides ? MOVE_MS : 0));
 }
 
+/** Whether the window is too narrow for a column the person left open, so it stays folded. */
+export const crowdedOut = (p: Foldable) => !layout().closed.includes(p) && fit(layout(), innerWidth).includes(p);
+
 export function showProto(b: Board) {
   const on = b.kind === 'prototype',
     was = document.body.classList.contains('proto'),

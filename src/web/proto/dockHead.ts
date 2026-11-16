@@ -1,9 +1,10 @@
 import type { Board } from '../../shared/model.ts';
 import type { Proto } from '../../shared/repos.ts';
 import { $ } from '../core/dom.ts';
+import { noteStatus } from '../myra/status.ts';
 import { newestChanges } from './buildRecord.ts';
 import { markChanged, openChanged } from './code.ts';
-import { openColumn } from './layout.ts';
+import { crowdedOut, openColumn } from './layout.ts';
 
 // The docked chat's header names the prototype and what its code is written in. Myra's own name stays the chat's
 // accessible name, hidden from view there.
@@ -28,6 +29,9 @@ export function showChanges(b: Board) {
   btn.hidden = !files.length;
   btn.textContent = count;
   btn.ariaLabel = `${count} in the last build`;
-  btn.onclick = () => openColumn('code').then(openChanged);
+  btn.onclick = () =>
+    openColumn('code').then(() =>
+      crowdedOut('code') ? noteStatus('Widen the window to see the code') : openChanged(),
+    );
   markChanged(files);
 }

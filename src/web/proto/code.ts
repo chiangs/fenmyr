@@ -206,7 +206,7 @@ export async function openChanged() {
   const el = $('pr-code'),
     at = here,
     first = listed.find(isChanged);
-  // a window too narrow for the code column keeps it folded, with nothing to show in it
+  // folded again as it slid open, or by a window narrowed meanwhile
   if (!at || el.closest('.folded')) return;
   if (first) await showFile(at.root, at.dir, first);
   fitBar();
