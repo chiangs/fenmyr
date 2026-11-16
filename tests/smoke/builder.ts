@@ -114,6 +114,7 @@ export async function explainer(t: Smoke) {
     folderOnly: args.includes('blockReadsOutsideWorkingDirectories'),
     inFolder: !!r.dir && read('explain-cwd.txt') === fs.realpathSync(path.join(repo, r.dir)),
     namesFiles: read('explain-prompt.txt').includes('THE FILES THE LAST BUILD CHANGED:\nsrc/App.tsx'),
+    noGreeting: read('explain-prompt.txt').includes('Begin with the explanation itself: no greeting'),
     outside: r.outside === "That file isn't part of this prototype.",
     absolute: r.absolute === "That file isn't part of this prototype.",
     notProto: r.notProto === "That isn't a prototype's folder.",
