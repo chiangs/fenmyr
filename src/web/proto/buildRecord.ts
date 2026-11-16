@@ -130,9 +130,9 @@ function startIn(b: Prototype, r: Landing) {
   return changed;
 }
 
-/** Started: the host's start event. It was already the newest build since it was asked for, so its buttons show and
- *  only its block, now building, is drawn again, with the block of the build before it, which stops waiting for a
- *  check of its preview. */
+/** Started: the host's start event. Its block, now building, is drawn again, and so is the block of the build before
+ *  it, which is no longer the newest and stops waiting for a check of its preview. Their buttons were drawn when it
+ *  left the queue. */
 export const started =
   (r: Running): Change =>
   b => {
@@ -193,8 +193,9 @@ export const ended =
     }
     for (const m of added) if (m !== found.m) pushMsg(b, m);
     if (b === session.board) {
-      // it is the newest, or, when it changed nothing or never started, the one before it is again
-      redrawBuilds(build, b.proto.build);
+      // It is the newest, or, when it changed nothing or never started, the one before it is again. When its start was
+      // never heard, the one before it is drawn too, since it no longer waits for a check.
+      redrawBuilds(build, b.proto.build, r.was);
       showAdded(added);
     }
     return true;
