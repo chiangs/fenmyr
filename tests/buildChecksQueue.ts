@@ -143,6 +143,42 @@ try {
   );
   assert.strictEqual(checkOf(recordOf('pb', 'Overtaken.')), undefined, 'and isn’t kept once a newer build has started');
 
+  // The same, with the newer build started before the preview of the board it opens on has rendered, so the check
+  // never begins: the older block said "not checked yet" as the board opened, and must stop once the newer one starts.
+  standIn.next({ files: { 'src/App.tsx': app('Passed') }, hold: true, reply: 'Passed.' });
+  await ask('Passed.');
+  await until(() => standIn.wrote() === 1, 'a build writes its file');
+  await open('one');
+  standIn.release();
+  await until(() => !!recordOf('pb', 'Passed.')?.end, 'it lands while another board is open');
+  standIn.next({ files: { 'src/App.tsx': app('Passes') }, reply: 'Passes.' });
+  await page.evaluate(async () => {
+    const real = window.Fenmyr.protoFiles;
+    let release = () => {};
+    const released = new Promise<void>(done => {
+      release = done;
+    });
+    Reflect.set(window, 'releaseFiles', () => {
+      window.Fenmyr.protoFiles = real;
+      release();
+    });
+    window.Fenmyr.protoFiles = a => released.then(() => real(a));
+    await window.__fenmyr.openBoard('pb');
+    await window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: 'Passes.' } }, 'Passes.');
+  });
+  await until(
+    () => !!recordOf('pb', 'Passes.')?.end,
+    'a build asked as its board opens lands before its panes catch up',
+  );
+  await page.evaluate(() => Reflect.get(window, 'releaseFiles')());
+  await until(() => !!checkOf(recordOf('pb', 'Passes.')), 'and is checked once they have');
+  await until(
+    async () => JSON.stringify((await blocks()).at(-2)?.lines.slice(1)) === JSON.stringify(['src/App.tsx +1 −1']),
+    'once a newer build starts, the block before it stops saying its preview isn’t checked yet',
+    5000,
+  );
+  assert.strictEqual(checkOf(recordOf('pb', 'Passed.')), undefined, 'and it is never checked');
+
   standIn.next({ files: { 'src/App.tsx': TWO }, reply: 'Switched.' });
   await ask('Switched.');
   await until(async () => (await lastLine()) === 'Checking the preview', 'a build lands and its preview is checked');
