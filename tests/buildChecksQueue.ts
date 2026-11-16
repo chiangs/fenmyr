@@ -133,16 +133,12 @@ try {
     await window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: 'Overtakes.' } }, 'Overtakes.');
   });
   await until(() => !!checkOf(recordOf('pb', 'Overtakes.')), 'a build asked as its board opens lands and is checked');
-  assert.strictEqual(
-    checkOf(recordOf('pb', 'Overtaken.')),
-    undefined,
-    'the check its board began on opening isn’t kept once a newer build has started',
+  // the check begun on opening follows the newer build's render, so it ends about when that one's does
+  await until(
+    async () => JSON.stringify((await blocks()).at(-2)?.lines.slice(1)) === JSON.stringify(['src/App.tsx +1 −1']),
+    'the check its board began on opening ends, and its block stops saying it is being checked',
   );
-  assert.deepStrictEqual(
-    (await blocks()).at(-2)?.lines.slice(1),
-    ['src/App.tsx +1 −1'],
-    'and its block stops saying it is being checked',
-  );
+  assert.strictEqual(checkOf(recordOf('pb', 'Overtaken.')), undefined, 'and isn’t kept once a newer build has started');
 
   standIn.next({ files: { 'src/App.tsx': TWO }, reply: 'Switched.' });
   await ask('Switched.');
