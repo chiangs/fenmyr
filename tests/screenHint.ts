@@ -55,7 +55,7 @@ try {
     mid = await middleOf('empty');
   assert.deepStrictEqual(
     shown.map(h => [h.id, h.words]),
-    [['empty', 'Add piecesor press R for a box, X for text']],
+    [['empty', 'Add piecesor press R for a box,X for text']],
     'only the empty screen shows Add pieces and the keys for a box and text',
   );
   assert.ok(
@@ -86,6 +86,20 @@ try {
     (await hints()).map(h => h.id),
     ['empty'],
     'undoing the piece brings the hint back',
+  );
+  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
+  await page.keyboard.press('n');
+  const on = await middleOf('empty');
+  await page.mouse.click(on.x, on.y - 120);
+  await settle(page, 300);
+  assert.deepStrictEqual(await hints(), [], 'a note dropped on the screen, though not filed into it, hides the hint');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Control+z');
+  await settle(page, 300);
+  assert.deepStrictEqual(
+    (await hints()).map(h => h.id),
+    ['empty'],
+    'and taking the note away brings it back',
   );
   await zoom(0.25);
   assert.deepStrictEqual(await hints(), [], 'at 25% the screen is 98 px wide on screen, too small for the hint');
