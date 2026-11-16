@@ -8,7 +8,7 @@ import { ask } from '../myra/chat.ts';
 import { chatLog } from '../myra/chatLog.ts';
 import { type SayAction, say } from '../myra/say.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { recordOf, undone } from './buildRecord.ts';
+import { focusBlock, recordOf, redrawBlock, undone } from './buildRecord.ts';
 import { runningBuild } from './buildSlot.ts';
 import { hostBusy, stillBuilding } from './buildWait.ts';
 import { renderCode } from './code.ts';
@@ -113,12 +113,26 @@ export function stoppedUndo(a: BuildRecord): Omit<Button, 'after'> | null {
   };
 }
 
+// a build whose Fix the errors was pressed and her answer to it hasn't landed yet
+let fixing: string | null = null;
+
 /** Fix the errors on the block of a build whose preview check found errors, while it is the newest and not undone. It
  *  asks her as the person would, so a build it leads to waits its turn like any other. Its errors reach that build as
- *  the preview's errors when it starts. */
+ *  the preview's errors when it starts. It goes while she answers, so one press is one request. */
 export function fixButton(a: BuildRecord): Omit<Button, 'after'> | null {
   const b = openProto(a.board),
     check = a.end?.kind === 'built' ? a.end.check : undefined;
-  if (!b || !check || !checkFailed(check) || a.undone || newestBuild(b) !== a.build) return null;
-  return { label: 'Fix the errors', run: () => ask('Fix the errors in the preview') };
+  if (!b || !check || !checkFailed(check) || a.undone || newestBuild(b) !== a.build || fixing === a.build) return null;
+  return {
+    label: 'Fix the errors',
+    run: () => {
+      fixing = a.build;
+      // the button goes from under focus, so focus stays on its block
+      focusBlock(a.build);
+      return ask('Fix the errors in the preview').finally(() => {
+        fixing = null;
+        redrawBlock(a.build);
+      });
+    },
+  };
 }

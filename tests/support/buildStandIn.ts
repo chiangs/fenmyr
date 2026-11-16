@@ -5,8 +5,8 @@ import type { Launched } from './launch.ts';
 // A stand-in Claude Code for builds, told before each build what to do: the files it writes in the prototype's folder,
 // reported the way stream-json does, whether it waits for a release after each file but the last (`pause`) and before it
 // ends (`hold`), how many milliseconds more it takes to end (`ms`), and whether it ends with a failure instead of `reply`. It counts each file it has reported, and logs
-// each build's prompt. Any other question gets a short answer, or the one it was last told to give, and its prompt is
-// logged too.
+// each build's prompt. Any other question gets a short answer, or the one it was last told to give after the wait it was
+// told, and its prompt is logged too.
 type BuildScript = {
   files: Record<string, string>;
   pause?: boolean;
@@ -36,8 +36,11 @@ const say = j => console.log(JSON.stringify(j));
 if (process.argv[2] !== '-p') process.exit(0);
 if (!process.argv.includes('stream-json')) {
   fs.appendFileSync(${JSON.stringify(asks)}, JSON.stringify(process.argv[3] ?? '') + '\\n');
-  const answer = fs.existsSync(${JSON.stringify(answer)}) ? fs.readFileSync(${JSON.stringify(answer)}, 'utf8') : '';
-  say({ type: 'result', is_error: false, result: answer || JSON.stringify({ say: 'ok' }) });
+  const told = fs.existsSync(${JSON.stringify(answer)}) ? JSON.parse(fs.readFileSync(${JSON.stringify(answer)}, 'utf8')) : null;
+  setTimeout(
+    () => say({ type: 'result', is_error: false, result: JSON.stringify(told ? told.reply : { say: 'ok' }) }),
+    told ? told.ms : 0,
+  );
 } else {
   fs.appendFileSync(${JSON.stringify(builds)}, JSON.stringify(process.argv[3] ?? '') + '\\n');
   const s = JSON.parse(fs.readFileSync(${JSON.stringify(script)}, 'utf8'));
@@ -86,8 +89,8 @@ if (!process.argv.includes('stream-json')) {
       fs.writeFileSync(script, JSON.stringify(s));
     },
     release: () => fs.writeFileSync(gate(++released), ''),
-    // her reply to every question from now on, as Myra's JSON
-    answer: (reply: Record<string, unknown>) => fs.writeFileSync(answer, JSON.stringify(reply)),
+    // her reply to every question from now on, as Myra's JSON, given `ms` after she is asked
+    answer: (reply: Record<string, unknown>, ms = 0) => fs.writeFileSync(answer, JSON.stringify({ reply, ms })),
     // how many files this build has reported so far
     wrote: () => (fs.existsSync(wrote) ? Number(fs.readFileSync(wrote, 'utf8')) : 0),
     // every question's prompt, oldest first

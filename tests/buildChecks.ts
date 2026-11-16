@@ -164,11 +164,13 @@ try {
   );
   assert.strictEqual(await heard(), 'Checkout’s preview runs with 2 errors', 'a screen reader hears them');
 
+  standIn.answer({ say: 'I’ll look at them.' }, 1500);
   await page().locator('#mcList .mc-msg.bare button', { hasText: 'Fix the errors' }).last().click();
   await until(
     async () => (await texts()).includes('Fix the errors in the preview'),
     'Fix the errors is sent as the person’s message',
   );
+  assert.deepStrictEqual((await last())?.buttons, [], 'and goes while she answers, so it can’t be sent twice');
   const mine = await page().evaluate(
     () => [...document.querySelectorAll('#mcList .mc-msg.me')].at(-1)?.firstChild?.textContent ?? '',
   );
@@ -177,7 +179,8 @@ try {
   const asked = standIn.asks().at(-1) ?? '';
   assert(asked.includes('Fix the errors in the preview'), 'she is asked to fix the errors');
   assert(asked.includes('Preview runs · 2 errors: boom-one'), `and she reads how the check went: ${asked.slice(-600)}`);
-  assert.deepStrictEqual((await last())?.buttons, ['Fix the errors'], 'the button stays with the record');
+  await until(async () => (await texts()).includes('I’ll look at them.'), 'she answers');
+  assert.deepStrictEqual((await last())?.buttons, ['Fix the errors'], 'and the button is back with the record');
 
   await build('Throws.', { 'src/App.tsx': THROWS });
   await landed('Throws.');
