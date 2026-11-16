@@ -79,6 +79,18 @@ const restart = async () => {
   ({ l, standIn } = await start());
   await open('pb');
 };
+// Quitting stops Claude Code before the window closes. This holds the window open for a while after, as a slow machine
+// might, so whatever the stopped run sends back has time to land.
+const slowQuit = () =>
+  l.app.evaluate(({ app }) => {
+    let held = false;
+    app.on('before-quit', e => {
+      if (held) return;
+      held = true;
+      e.preventDefault();
+      setTimeout(() => app.quit(), 1500);
+    });
+  });
 const tapUnder = (text: string, label: string) =>
   page().locator('#mcList .mc-msg.myra', { hasText: text }).getByRole('button', { name: label, exact: true }).click();
 const stored = (): ChatMsg[] =>
@@ -147,6 +159,7 @@ try {
   const asked = (n: number) => () => stored().filter(m => m.who === 'me' && m.text === EXPLAIN).length === n;
   await tapUnder('Done: Second.', EXPLAIN);
   await until(asked(1), 'the person’s line is saved');
+  await slowQuit();
   await restart();
   assert.deepStrictEqual(
     await buttonsUnder('Done: Second.'),
