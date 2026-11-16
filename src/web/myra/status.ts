@@ -9,6 +9,8 @@ export type Busy =
   | { kind: 'reading'; notes: number }
   // board and name: the prototype it builds, named on the status line while another board is open
   | { kind: 'building'; board: string; name: string; file: string | null }
+  // reading a prototype's code to explain it, whose answer lands in that prototype's chat
+  | { kind: 'explaining'; board: string; name: string }
   | { kind: 'pictures'; n: number }
   | { kind: 'rewriting' };
 
@@ -28,6 +30,8 @@ function busyLine(b: Busy): Line {
     case 'building':
       if (session.board?.id !== b.board) return { say: `Building ${b.name}`, more: '' };
       return { say: 'Building', more: b.file ? ` ${b.file}` : '' };
+    case 'explaining':
+      return { say: session.board?.id === b.board ? 'Reading the code…' : `Reading ${b.name}’s code…`, more: '' };
     case 'pictures':
       return { say: `Making ${plural(b.n, 'picture', 'pictures')}`, more: '' };
     case 'rewriting':
@@ -39,8 +43,8 @@ function busyLine(b: Busy): Line {
   }
 }
 
-// a build and a rewrite answer outside the chat, so they show no typing dots there
-const answersInChat = (b: Busy) => b.kind !== 'building' && b.kind !== 'rewriting';
+// a build, an explanation and a rewrite can answer outside the open chat, so they show no typing dots there
+const answersInChat = (b: Busy) => b.kind !== 'building' && b.kind !== 'explaining' && b.kind !== 'rewriting';
 
 // Claude Code turned down the last question for want of signing in; only a later answer shows it is signed in
 let signedOut = false;

@@ -131,7 +131,7 @@ try {
   const built = await buttons();
   assert.deepStrictEqual(
     built,
-    [['↗ Checkout: show the total first'], ['Undo this build', 'Commit']],
+    [['↗ Checkout: show the total first'], ['Undo this build', 'Explain the code', 'Commit']],
     'Myra links the code back to the card it came from',
   );
   await page.waitForTimeout(500);

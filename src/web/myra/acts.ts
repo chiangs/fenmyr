@@ -1,6 +1,6 @@
 import { type ChatAction, clip, type ReadNote, type WebPage } from '../../shared/chat.ts';
 import { buildPieces } from '../proto/buildBlock.ts';
-import { buildUndoButton, commitButton } from '../proto/buildButtons.ts';
+import { buildUndoButton, commitButton, explainButton } from '../proto/buildButtons.ts';
 import { sourceButton } from '../proto/sources.ts';
 import { offerPieces } from '../repo/offer.ts';
 import { openNote } from '../vault/notes.ts';
@@ -83,6 +83,7 @@ const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) =
   changes: changesPieces,
   source: a => one('other', 'stay', sourceButton(a.card)),
   buildUndo: a => one('other', 'self', buildUndoButton(a)),
+  explain: a => one('other', 'self', explainButton(a)),
   commit: a => one('other', 'self', commitButton(a)),
   build: buildPieces,
   read: readPieces,

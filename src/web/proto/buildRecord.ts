@@ -64,12 +64,12 @@ export function focusBlock(build: string) {
 /** A build's record in the open board's chat, if it still has one. */
 export const recordOf = (build: string) => find(chatLog(), build)?.a ?? null;
 
-// Which of a block's or a line's Undo this build and Commit show follows the newest build, so when it changes only the
-// lines of the builds it changed between are drawn again, and those of a board from before builds were named, which go
-// by the newest in the chat. Drawing every one would lay out the whole thread again on each build.
-type NewestOnly = Extract<ChatAction, { kind: 'build' | 'buildUndo' | 'commit' }>;
+// Which of a block's or a line's Undo this build, Explain the code and Commit show follows the newest build, so when it
+// changes only the lines of the builds it changed between are drawn again, and those of a board from before builds were
+// named, which go by the newest in the chat. Drawing every one would lay out the whole thread again on each build.
+type NewestOnly = Extract<ChatAction, { kind: 'build' | 'buildUndo' | 'explain' | 'commit' }>;
 const newestOnly = (a: ChatAction): a is NewestOnly =>
-  a.kind === 'build' || a.kind === 'buildUndo' || a.kind === 'commit';
+  a.kind === 'build' || a.kind === 'buildUndo' || a.kind === 'explain' || a.kind === 'commit';
 function redrawBuilds(...builds: (string | undefined)[]) {
   const which = new Set([...builds, undefined]);
   redrawMsgs(chatLog().filter(m => m.acts?.some(a => newestOnly(a) && which.has(a.build))));
@@ -155,8 +155,14 @@ export const ended =
       found.a.end = { kind: 'built', at, files, outside: e.outside, from: keepSources(b, e.sources) };
       // the commit message she suggests: the first line of what she was asked to do
       const message = r.request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '',
-        commit: ChatAction[] = files.length ? [{ kind: 'commit', board, message, build }] : [];
-      added.push(line(e.text, [...undo, ...commit, ...e.next.map((text): ChatAction => ({ kind: 'next', text }))]));
+        paths = files.slice(0, 40).map(f => f.path),
+        kept: ChatAction[] = files.length
+          ? [
+              { kind: 'explain', board, build, files: paths },
+              { kind: 'commit', board, message, build },
+            ]
+          : [];
+      added.push(line(e.text, [...undo, ...kept, ...e.next.map((text): ChatAction => ({ kind: 'next', text }))]));
     } else {
       found.a.end = { kind: 'failed', at, files };
       added.push(line(said ?? `I couldn’t finish that. ${e.text}`, undo));

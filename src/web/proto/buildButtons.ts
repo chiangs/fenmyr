@@ -1,12 +1,14 @@
 import { type BuildRecord, checkFailed } from '../../shared/build.ts';
-import type { ChatAction } from '../../shared/chat.ts';
+import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import type { Button } from '../myra/acts.ts';
 import { ask } from '../myra/chat.ts';
-import { chatLog } from '../myra/chatLog.ts';
+import { addMsg, chatLog, pushMsg, showAdded } from '../myra/chatLog.ts';
+import { noEmoji } from '../myra/replyText.ts';
 import { type SayAction, say } from '../myra/say.ts';
+import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { focusBlock, recordOf, redrawBlock, undone } from './buildRecord.ts';
 import { runningBuild } from './buildSlot.ts';
@@ -16,10 +18,11 @@ import { askCommit } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
 import { renderPreview } from './preview.ts';
 
-// The buttons a build leaves: Undo this build and Commit under her line, Undo this build on the block of a build Fenmyr
-// closed on, and Fix the errors on the block of one whose preview check failed. Each shows only while its prototype is
-// open, and only for the board's newest build: Undo puts the whole folder back as it was before the build, so an older
-// one would undo the builds after it too, Commit takes the whole folder, and the preview runs the newest code.
+// The buttons a build leaves: Undo this build, Explain the code and Commit under her line, Undo this build on the block
+// of a build Fenmyr closed on, and Fix the errors on the block of one whose preview check failed. Each shows only while
+// its prototype is open, and only for the board's newest build: Undo puts the whole folder back as it was before the
+// build, so an older one would undo the builds after it too, Commit takes the whole folder, and the explanation and the
+// preview are of the newest code.
 type Prototype = Extract<Board, { kind: 'prototype' }>;
 
 // A build being asked for on this board is already its newest: the one before it can't be undone while the host saves
@@ -135,4 +138,41 @@ export function fixButton(a: BuildRecord): Omit<Button, 'after'> | null {
       });
     },
   };
+}
+
+type Explain = Extract<ChatAction, { kind: 'explain' }>;
+
+// Her answer lands in the prototype's own chat wherever the person is by then, and only the new line is drawn. The
+// status line says she is reading until it has landed.
+async function explain(b: Prototype, root: string, files: string[]) {
+  addMsg('me', 'Explain the code');
+  const job = startJob({ kind: 'explaining', board: b.id, name: b.name });
+  const [ok, said] = await Fenmyr.protoExplain({ root, dir: b.proto.dir, files }).then(
+    (t): [boolean, string] => [true, noEmoji(t)],
+    (e: unknown): [boolean, string] => [
+      false,
+      `I couldn’t read the code just now. ${e instanceof Error ? e.message : e}`,
+    ],
+  );
+  let landed: string | null = null;
+  await changeBoard(b.id, x => {
+    const m: ChatMsg = { who: 'myra', text: said, t: Date.now() };
+    landed = x.name;
+    pushMsg(x, m);
+    if (x === session.board) showAdded([m]);
+    return true;
+  }).finally(() => job.end());
+  if (landed === null) return;
+  // the open board shows her answer, which a screen reader hears of; another board says so on the status line
+  const words = ok ? `${landed}’s code is explained` : `Couldn’t explain ${landed}’s code`;
+  (session.board?.id === b.id ? noteHeard : noteStatus)(words);
+}
+
+/** Explain the code under her line, for the newest build while it isn't undone. One press spends it. It only reads, so
+ *  it runs during a build or while one waits. */
+export function explainButton(a: Explain): Omit<Button, 'after'> | null {
+  const b = openProto(a.board),
+    root = b && rootOf(b);
+  if (!b || !root || newestBuild(b) !== a.build || recordOf(a.build)?.undone) return null;
+  return { label: 'Explain the code', ghost: true, run: () => explain(b, root, a.files) };
 }

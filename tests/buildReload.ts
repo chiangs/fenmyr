@@ -123,7 +123,9 @@ try {
     'with what it changed, and how its preview ran',
   );
   assert.deepStrictEqual(built.buttons, [], 'and no Undo of its own once her line has one');
-  assert.deepStrictEqual(await buttonsUnder('Built through a reload.'), [['Undo this build', 'Commit']]);
+  assert.deepStrictEqual(await buttonsUnder('Built through a reload.'), [
+    ['Undo this build', 'Explain the code', 'Commit'],
+  ]);
 
   await page().locator('#mcList button', { hasText: 'Undo this build' }).last().click();
   await until(

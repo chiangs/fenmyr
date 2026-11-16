@@ -20,6 +20,9 @@ export type ChatAction =
   | { kind: 'buildUndo'; board: string; snapshot: string; build?: string }
   // a commit takes the whole folder, so it too shows only under the newest build, which `build` names
   | { kind: 'commit'; board: string; message: string; build?: string }
+  // Explain the code, under the newest build until it is pressed once. files: the build's, at most 40, so the run never
+  // looks up a record the chat may have trimmed
+  | { kind: 'explain'; board: string; build: string; files: string[] }
   // a build's block: what was asked, how far it got and how it ended
   | BuildRecord
   // what she read for this reply: notes from a vault, and pages on the web
@@ -217,6 +220,8 @@ export function readOffer(x: unknown): ProtoOffer | null {
   };
 }
 
+const MAX_EXPLAINED = 40;
+
 // One reader per kind. The mapped type makes a kind without a reader fail the type check.
 const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { kind: K }> | null } = {
   next: x => (typeof x.text === 'string' ? { kind: 'next', text: x.text } : null),
@@ -242,6 +247,15 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
           board: x.board,
           message: x.message,
           ...(typeof x.build === 'string' ? { build: x.build } : {}),
+        }
+      : null,
+  explain: x =>
+    typeof x.board === 'string' && typeof x.build === 'string'
+      ? {
+          kind: 'explain',
+          board: x.board,
+          build: x.build,
+          files: strings(x.files) ? x.files.slice(0, MAX_EXPLAINED) : [],
         }
       : null,
   build: readBuildRecord,

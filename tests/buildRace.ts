@@ -112,7 +112,11 @@ try {
   await until(async () => (await builtRows()).length === 2, 'then runs once the first ends, with no click');
   assert.equal(fs.readFileSync(count, 'utf8').trim(), '2', 'both builds run');
   assert(!(await lines()).some(t => /still writing|already running|Couldn’t start/.test(t)), 'neither is turned away');
-  assert.deepStrictEqual(await builtRows(), [[], ['Undo this build', 'Commit']], 'and the newest keeps its Undo');
+  assert.deepStrictEqual(
+    await builtRows(),
+    [[], ['Undo this build', 'Explain the code', 'Commit']],
+    'and the newest keeps its Undo',
+  );
 
   const kept = await newest();
   assert.ok(kept, 'the board names its newest build');
@@ -154,7 +158,7 @@ try {
   await open('pb');
   assert.deepStrictEqual(
     await builtRows(),
-    [[], [], ['Undo this build', 'Commit']],
+    [[], [], ['Undo this build', 'Explain the code', 'Commit']],
     'so only the newest build has its Undo',
   );
   assert.deepStrictEqual(l.errors, []);

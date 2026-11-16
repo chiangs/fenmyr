@@ -192,7 +192,7 @@ try {
   assert.ok(!built?.bar, 'and no bar');
   assert.deepStrictEqual(built?.made, ['↗ Checkout: show the total first'], 'made from the card it names');
   await until(async () => (await buttonsUnder(explained)).length === 1, 'her explanation follows');
-  const hers = [['Undo this build', 'Commit', 'Add a coupon field', 'Show the total in bold']];
+  const hers = [['Undo this build', 'Explain the code', 'Commit', 'Add a coupon field', 'Show the total in bold']];
   assert.deepStrictEqual(await buttonsUnder(explained), hers, 'with Undo this build, Commit and her next steps');
   assert.deepStrictEqual(
     (await buttonsUnder('Writing it now.')).at(-1),
@@ -201,7 +201,11 @@ try {
   );
   assert.deepStrictEqual(
     (await texts()).slice(-3).map(t => (t?.startsWith('Built in') ? 'block' : t)),
-    ['Writing it now.', 'block', `${explained}Undo this buildCommitAdd a coupon fieldShow the total in bold`],
+    [
+      'Writing it now.',
+      'block',
+      `${explained}Undo this buildExplain the codeCommitAdd a coupon fieldShow the total in bold`,
+    ],
     'three messages: her reply, the block and her explanation',
   );
   assert.strictEqual(
@@ -243,7 +247,7 @@ try {
   await until(async () => (await buttonsUnder('I added the total.')).length === 1, 'a second build lands');
   const newest = [
     ['Add a coupon field', 'Show the total in bold'],
-    ['Undo this build', 'Commit'],
+    ['Undo this build', 'Explain the code', 'Commit'],
   ];
   const rows = async () => [...(await buttonsUnder(explained)), ...(await buttonsUnder('I added the total.'))];
   assert.deepStrictEqual(await rows(), newest, 'only the newest build shows Undo this build and Commit');
@@ -277,7 +281,7 @@ try {
   assert.deepStrictEqual(await buttonsUnder('Nothing needed changing.'), [[]], 'having changed nothing to undo');
   assert.deepStrictEqual(
     await buttonsUnder('I added the total.'),
-    [['Undo this build', 'Commit']],
+    [['Undo this build', 'Explain the code', 'Commit']],
     'so the build before is the newest again',
   );
 

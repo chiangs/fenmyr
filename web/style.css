@@ -859,6 +859,7 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 /* her messages share the class of her own figure (.myra), whose placement must not follow them out of the dock */
 .mc-msg.myra { align-self: flex-start; background: #f7f4f1; border-bottom-left-radius: 6px; position: relative; left: auto; bottom: auto; transform: none; z-index: 2; }
 .mc-msg.me { align-self: flex-end; background: #fdecdb; border-bottom-right-radius: 6px; }
+.mc-msg code { padding: 0 4px; border-radius: 5px; background: color-mix(in oklch, var(--ink) 8%, transparent); font: 500 .9em/1.3 ui-monospace, monospace; overflow-wrap: anywhere; }
 .mc-msg .m-acts { margin-top: 8px; }
 .mc-msg .m-acts button { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .mc-msg .m-acts button.ghost { background: none; color: var(--ink); }
