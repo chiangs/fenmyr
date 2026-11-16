@@ -1,6 +1,6 @@
 // Where the context bar goes beside a selection or a connector, worked out without the app.
 import assert from 'node:assert';
-import { type Box, type Placement, place, type Side, type Size } from '../src/web/selbar/place.ts';
+import { type Box, dockBeside, type Placement, place, type Side, type Size } from '../src/web/selbar/place.ts';
 
 // the free view on a 1440 x 900 window: between the side widgets, under the header, above the bottom bar
 const FRAME: Box = { l: 258, t: 59, r: 1162, b: 820 };
@@ -62,5 +62,44 @@ assert.deepStrictEqual(
   at(point(700, 500), 'left', box(450, 59, 950, 820)),
   is(550, 438, 'above'),
   'no room on either side of an upright line: above its middle',
+);
+
+// the Pieces picker beside its screen, 292 px wide and 480 tall
+const PICKER: Size = { w: 292, h: 480 };
+const dock = (b: Box) => dockBeside(b, FRAME, PICKER);
+assert.deepStrictEqual(
+  dock(box(300, 100, 600, 700)),
+  { x: 612, y: 100, side: 'right' },
+  'room on the right: 12 px right',
+);
+assert.deepStrictEqual(
+  dock(box(700, 100, 1000, 700)),
+  { x: 396, y: 100, side: 'left' },
+  'room only on the left: 12 px left',
+);
+assert.deepStrictEqual(
+  dock(box(400, 100, 900, 700)),
+  { x: 870, y: 100, side: 'edge' },
+  'room on neither side: against the far edge with more room',
+);
+assert.deepStrictEqual(
+  dock(box(500, 100, 1100, 700)),
+  { x: 258, y: 100, side: 'edge' },
+  'more room on the left: against the left edge',
+);
+assert.deepStrictEqual(
+  dock(box(300, -500, 600, 2000)),
+  { x: 612, y: 59, side: 'right' },
+  'a screen above the view: the picker starts at the top of the view',
+);
+assert.deepStrictEqual(
+  dock(box(300, 600, 600, 1400)),
+  { x: 612, y: 340, side: 'right' },
+  'a screen low in the view: the picker is kept inside its bottom',
+);
+assert.deepStrictEqual(
+  dock(box(-900, 100, -100, 700)),
+  { x: 870, y: 100, side: 'edge' },
+  'a screen off to the left: the picker stays inside the view, on the side with room',
 );
 console.log('BAR PLACE OK');

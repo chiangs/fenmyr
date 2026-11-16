@@ -59,3 +59,21 @@ export function place({ box, prefer }: Anchor, frame: Box, size: Size): Placemen
     stuck: under ? 'bottom' : 'top',
   };
 }
+
+/** Where the Pieces picker docks beside its screen: 12 px right when the free view has room there, else 12 px left,
+ *  else against the free view's edge on the side with more room, covering part of the screen. Top-aligned with the
+ *  screen, and kept inside the free view. */
+export function dockBeside(
+  screen: Box,
+  frame: Box,
+  size: Size,
+): { x: number; y: number; side: 'right' | 'left' | 'edge' } {
+  const y = slide(screen.t, frame.t, frame.b - size.h),
+    inside = (x: number) => x >= frame.l && x + size.w <= frame.r,
+    right = screen.r + GAP,
+    left = screen.l - GAP - size.w;
+  if (inside(right)) return { x: right, y, side: 'right' };
+  if (inside(left)) return { x: left, y, side: 'left' };
+  const far = frame.r - screen.r >= screen.l - frame.l ? frame.r - size.w : frame.l;
+  return { x: slide(far, frame.l, frame.r - size.w), y, side: 'edge' };
+}
