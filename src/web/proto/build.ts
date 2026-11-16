@@ -176,12 +176,14 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
           words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
         // the open board shows no note, since its block says how it went, but a screen reader hears it
         if (landed !== null) (open ? noteHeard : noteStatus)(words);
-        return open ? refreshPanes().then(checkNewest) : undefined;
+        // even when the panes fail to catch up, so the block doesn't go on saying it is being checked
+        return open ? refreshPanes().finally(checkNewest) : undefined;
       },
       (err: unknown) => {
         done();
         console.error('A build’s result could not be written to its board', err);
         noteStatus(`Couldn’t save ${landed ?? name}’s build to its chat`);
+        if (session.board?.id === board) void checkNewest();
       },
     ),
   );
