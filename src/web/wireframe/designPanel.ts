@@ -8,6 +8,7 @@ import { session } from '../core/state.ts';
 import { prototypeThis } from '../repo/start.ts';
 import { selCards } from '../selbar/selected.ts';
 import { startPlacing, stopPlacing } from '../tools/place.ts';
+import { startScreen } from '../tools/screenTool.ts';
 import { closestTo, htmlIn, textField } from '../ui/dom.ts';
 import {
   alignSection,
@@ -22,7 +23,7 @@ import {
   textSection,
 } from './designMarkup.ts';
 import { groupSel } from './stack.ts';
-import { DEVICES, WF } from './wireframes.ts';
+import { DEVICES, isDevice, WF } from './wireframes.ts';
 
 // icons: search Myra's icon set, then click to place (or swap the selected icon)
 let iconSwap: string | null = null;
@@ -46,7 +47,6 @@ export function pickWF(t: string | null = null) {
   htmlIn(document, '[data-wf]').forEach(b => {
     b.classList.toggle('on', b.dataset.wf === t);
   });
-  $('dzPresets').classList.toggle('on', t === 'frame');
   $('dzIcons').classList.toggle('on', t === 'icon');
   if (t === 'icon') {
     renderIcons();
@@ -58,12 +58,6 @@ export function pickWF(t: string | null = null) {
     htmlIn(document, '.dz-piece-grid .on').forEach(x => {
       x.classList.remove('on');
     });
-  if (t === 'frame') {
-    $('dzPresets').innerHTML = Object.keys(DEVICES)
-      .map(n => `<button data-dev="${n}">${n}</button>`)
-      .join('');
-    return;
-  }
   if (t) startPlacing(t);
 }
 
@@ -151,8 +145,7 @@ function setProp(one: Card, k: string, raw: string) {
       if (one.type === 'text') one.weight = +raw;
       break;
     case 'device': {
-      const d = DEVICES[raw];
-      if (d) [one.w, one.h, one.radius] = d;
+      if (isDevice(raw)) [one.w, one.h, one.radius] = DEVICES[raw];
       if (one.type === 'frame') one.device = raw;
       break;
     }
@@ -208,6 +201,7 @@ export function initDesign() {
 
   htmlIn(document, '[data-wf]').forEach(b => {
     b.onclick = () => {
+      if (b.dataset.wf === 'frame') return startScreen();
       if (b.classList.contains('on')) {
         stopPlacing();
         pickWF(null);
@@ -216,15 +210,6 @@ export function initDesign() {
       pickWF(b.dataset.wf ?? null);
     };
   });
-
-  $('dzPresets').onclick = e => {
-    const b = closestTo(e.target, '[data-dev]');
-    if (!b) return;
-    htmlIn($('dzPresets'), 'button').forEach(x => {
-      x.classList.toggle('on', x === b);
-    });
-    startPlacing('frame', { device: b.dataset.dev });
-  };
 
   $('design').addEventListener('pointerdown', e => e.stopPropagation());
 

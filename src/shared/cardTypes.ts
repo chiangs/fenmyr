@@ -52,7 +52,7 @@ const CARD_TYPES = {
   spotify: { label: 'Spotify', wordy: true, notInTemplates: true, noun: ['Spotify card', 'Spotify cards'] },
   ink: { label: 'Drawing', size: [10, 10], noRotate: true, noTilt: true, noLabel: true },
   frame: {
-    label: 'Frame',
+    label: 'Screen',
     size: [393, 852],
     anyFill: true,
     strokable: true,

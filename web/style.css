@@ -740,6 +740,11 @@ body.exporting .card.sel::after { display: none; }
 /* ---------- drawing ---------- */
 .drawbar { display: flex; align-items: center; gap: 2px; height: 50px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); }
 .drawbar[hidden] { display: none; }
+.sc-devs { display: flex; gap: 2px; }
+.sc-dev { height: 38px; padding: 0 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12.5px/1 var(--font); color: var(--ink-soft); white-space: nowrap; cursor: pointer; }
+.sc-dev:hover { background: var(--blush); color: var(--ink); }
+.sc-dev.on { background: var(--blush); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--pink); }
+body.phone .dock .screenbar .sc-dev { height: 44px; padding: 0 10px; font-size: 13.5px; }
 .db-done { height: 38px; padding: 0 16px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--hilite); font: 600 12.5px/1 var(--font); cursor: pointer; }
 .db-tool { width: 38px; height: 38px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; display: grid; place-items: center; cursor: pointer; color: var(--ink-soft); }
 .db-tool svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -992,10 +997,6 @@ body.dark .home-back:hover { background: var(--pn-light-ink); color: var(--pn-da
 .dz-tools button { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px 8px; border: 0; border-radius: 16px; corner-shape: squircle; background: #f8f5f3; color: var(--ink-soft); font: 600 11px/1 var(--font); cursor: pointer; }
 .dz-tools button:hover, .dz-tools button.on { background: var(--blush); color: var(--ink); }
 .dz-tools button.on { box-shadow: inset 0 0 0 1.5px var(--pink); }
-.dz-presets { display: none; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-.dz-presets.on { display: flex; }
-.dz-presets button { padding: 6px 9px; border: 1.5px solid #efebe6; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 11px/1 var(--font); color: var(--ink); cursor: pointer; }
-.dz-presets button:hover, .dz-presets button.on { border-color: var(--pink); background: var(--blush); }
 .dz-props:empty { display: none; }
 .dz-props { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f3f0ec; display: grid; gap: 10px; }
 .dz-sec { display: grid; gap: 6px; }
@@ -1034,7 +1035,6 @@ body.dark .home-back:hover { background: var(--pn-light-ink); color: var(--pn-da
 body.dark .design { background: rgba(38, 33, 28, .96); }
 body.dark .dz-tools button, body.dark .dz-f, body.dark .dz-row button { background: #322c25; }
 body.dark .dz-props { border-color: #3c3731; }
-body.dark .dz-presets button { border-color: #464038; }
 /* shortcut hints: each one is its own little row item so wrapped lines never overlap */
 .keys { row-gap: 7px; line-height: 1; align-items: center; }
 .keys span { display: inline-flex; align-items: center; gap: 4px; height: 20px; white-space: nowrap; }

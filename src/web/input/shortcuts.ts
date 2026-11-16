@@ -23,6 +23,7 @@ import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { drawPen, endPen, penT, startPen } from '../tools/pen.ts';
 import { addCard, drawVec, endVec, refit, vec, vecCard } from '../tools/penEdit.ts';
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
+import { startScreen } from '../tools/screenTool.ts';
 import { closeColor } from '../ui/colorPicker.ts';
 import { clickIn, isTyping } from '../ui/dom.ts';
 import { toPointer } from '../ui/toolbar.ts';
@@ -32,8 +33,9 @@ import { groupSel, restack } from '../wireframe/stack.ts';
 import { initKeyed, keyedButton } from './keyed.ts';
 
 let CLEAN_EL: Element[] = [];
-// the letters below that start placing a card, a wireframe piece or a picture (Shift+V, video, is checked on its own)
-const TOOL_KEYS = ['n', 't', 'c', 'g', 'r', 'x', 'd', 'l', 'a', 'i'];
+// the letters below that start placing a card, a wireframe piece, a screen or a picture (Shift+V, video, is checked on
+// its own)
+const TOOL_KEYS = ['n', 't', 'c', 'g', 'r', 'x', 'w', 'd', 'l', 'a', 'i'];
 
 function setClean(on: boolean) {
   if (on === document.body.classList.contains('clean') || (on && document.body.classList.contains('phone'))) return;
@@ -318,6 +320,7 @@ export function init20() {
     if (k === 'g') startPlacing('coll');
     if (k === 'r') pickWF('box');
     if (k === 'x') pickWF('text');
+    if (k === 'w') startScreen();
     if (k === 'd') startPlacing('doc');
     if (k === 's') clickIn($('tools'), '[data-add="shape"]');
     if (k === 'e') clickIn($('tools'), '[data-add="stamp"]');

@@ -186,8 +186,7 @@ try {
   for (const x of [0.45, 0.7]) {
     // the first screen is taller than the view, so its selection bar holds at the top, where the second one goes
     await page.evaluate(() => window.__fenmyr.selectOnly([]));
-    await page.click('[data-wf="frame"]');
-    await page.click('#dzPresets [data-dev="iPhone"]');
+    await page.keyboard.press('w');
     await page.mouse.click(stage.x + stage.width * x, stage.y + 120);
   }
   await page.waitForFunction(() =>
@@ -217,8 +216,7 @@ try {
     'the screens are copied into a new prototype, selected for Myra to build from',
   );
   await page.evaluate(() => window.__fenmyr.openBoard('sketch'));
-  await page.click('[data-wf="frame"]');
-  await page.click('#dzPresets [data-dev="iPhone"]');
+  await page.keyboard.press('w');
   await page.mouse.click(stage.x + stage.width * 0.55, stage.y + 500);
   await page.waitForTimeout(500);
   assert.ok(

@@ -1,6 +1,7 @@
 import { labelOf } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
+import { syncScreenBar } from '../tools/screenTool.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
 import { arrange } from './arrange.ts';
 import { initBarKeys, keepFocus } from './barKeys.ts';
@@ -193,6 +194,7 @@ export function init56() {
   initFontPop();
 
   (function tick() {
+    syncScreenBar();
     placeSelbar();
     drawOverlays();
     requestAnimationFrame(tick);
