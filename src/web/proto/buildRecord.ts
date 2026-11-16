@@ -64,6 +64,9 @@ export function focusBlock(build: string) {
 /** A build's record in the open board's chat, if it still has one. */
 export const recordOf = (build: string) => find(chatLog(), build)?.a ?? null;
 
+/** A build's record in a board's chat, open or not, if it still has one. */
+export const recordIn = (b: Board, build: string) => find(b.chat ?? [], build)?.a ?? null;
+
 // Which of a block's or a line's Undo this build, Explain the code and Commit show follows the newest build, so when it
 // changes only the lines of the builds it changed between are drawn again, and those of a board from before builds were
 // named, which go by the newest in the chat. Drawing every one would lay out the whole thread again on each build.

@@ -1,7 +1,8 @@
 // Explain the code only reads, so it takes no part in the one-build-at-a-time slot. It runs and lands while another
 // prototype builds and this prototype's request waits behind it, and that request still starts once the build before
 // it ends. Pressed before a build of its own prototype, it leaves that build free to start and land, and her answer
-// follows. The status line names whichever began last.
+// follows, saying first that the code has changed since she read it. Pressed before Undo this build, her answer says
+// that code is gone. The status line names whichever began last.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -127,9 +128,30 @@ try {
   await landed('C.');
   await until(async () => (await say()) === 'Reading the code…', 'and goes back to the explanation once it has landed');
   standIn.explained();
-  await until(async () => (await texts()).at(-1) === 'B explained.', 'her answer lands after the build');
+  await until(
+    async () => (await texts()).at(-1)?.endsWith('B explained.') ?? false,
+    'her answer lands after the build',
+  );
+  assert.strictEqual(
+    (await texts()).at(-1),
+    'I read this before your latest build, so some of it may have changed.\n\nB explained.',
+    'and she says the code has changed since she read it',
+  );
   assert.deepStrictEqual(await buttonsUnder('Done: B.'), [[]], 'the build before has no buttons left');
   assert.deepStrictEqual(await buttonsUnder('Done: C.'), [['Undo this build', EXPLAIN, 'Commit']], 'the newest has');
+
+  standIn.explain({ reply: 'C explained.', hold: true });
+  await tapUnder('Done: C.', EXPLAIN);
+  await until(() => standIn.explains().length === 3, 'Claude Code reads C’s code');
+  await tapUnder('Done: C.', 'Undo this build');
+  await until(async () => (await texts()).includes('It’s back to how it was before that build ✦'), 'C is undone');
+  standIn.explained();
+  await until(async () => (await texts()).at(-1)?.endsWith('C explained.') ?? false, 'her answer lands after the Undo');
+  assert.strictEqual(
+    (await texts()).at(-1),
+    'I read this before you undid that build, so it describes code that’s no longer there.\n\nC explained.',
+    'and she says that code is gone',
+  );
   console.log('BUILD EXPLAIN BUSY OK');
 } finally {
   await l.close();

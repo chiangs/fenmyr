@@ -10,7 +10,7 @@ import { noEmoji } from '../myra/replyText.ts';
 import { type SayAction, say } from '../myra/say.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { focusBlock, recordOf, redrawBlock, undone } from './buildRecord.ts';
+import { focusBlock, recordIn, recordOf, redrawBlock, undone } from './buildRecord.ts';
 import { runningBuild } from './buildSlot.ts';
 import { hostBusy, stillBuilding } from './buildWait.ts';
 import { renderCode } from './code.ts';
@@ -145,6 +145,15 @@ type Explain = Extract<ChatAction, { kind: 'explain' }>;
 // the builds whose Explain the code was pressed in this window and whose answer hasn't landed yet
 const explaining = new Set<string>();
 
+// Her words before an explanation of code that changed while she read it: a newer build started, or the build was
+// undone. Only the newest build offers the button, so either means the code is no longer what she describes.
+function since(x: Board, build: string) {
+  if (x.kind !== 'prototype') return '';
+  if (recordIn(x, build)?.undone)
+    return 'I read this before you undid that build, so it describes code that’s no longer there.';
+  return x.proto.build === build ? '' : 'I read this before your latest build, so some of it may have changed.';
+}
+
 // A press is spent once her answer or her failure lands, from every line of hers that offers it for this build, so one
 // cut off by a quit or a reload is offered again. Returns those lines.
 function spendExplain(x: Board, build: string) {
@@ -181,7 +190,7 @@ async function explain(b: Prototype, root: string, a: Explain) {
     const spent = spendExplain(x, a.build),
       answer: ChatMsg = said.failed
         ? { who: 'myra', text: said.text, t: Date.now(), acts: [{ ...a }] }
-        : { who: 'myra', text: said.text, t: Date.now() };
+        : { who: 'myra', text: [since(x, a.build), said.text].filter(Boolean).join('\n\n'), t: Date.now() };
     pushMsg(x, answer);
     if (x === session.board) {
       redrawMsgs(spent);
