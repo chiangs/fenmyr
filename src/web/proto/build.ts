@@ -6,6 +6,7 @@ import { changeBoard } from '../library/boardWrites.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { refreshPanes } from './buildButtons.ts';
+import { checkNewest } from './buildCheck.ts';
 import { asked, ended, endedLost, redrawBlock, redrawNewest, started } from './buildRecord.ts';
 import {
   building,
@@ -156,8 +157,8 @@ function land(r: Running, e: End, said?: string) {
 }
 
 // Another board only hears how it ended, on the status line, by the board's name as it is then. name: the board's
-// name for a failure to write it. The next build waits until the open board's preview shows this one's code, so it is
-// sent that code's errors and not the code's before.
+// name for a failure to write it. The next build waits until the open board's preview shows this one's code and has
+// been checked, so it is sent all the errors that code logged and not the code's before.
 function landOn(board: string, name: string, e: End, done: () => void, change: (b: Board) => boolean) {
   // the board's name as it lands, which stays null when the board was deleted
   let landed: string | null = null;
@@ -173,7 +174,7 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
           words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
         // the open board shows no note, since its block says how it went, but a screen reader hears it
         if (landed !== null) (open ? noteHeard : noteStatus)(words);
-        return open ? refreshPanes() : undefined;
+        return open ? refreshPanes().then(checkNewest) : undefined;
       },
       (err: unknown) => {
         done();

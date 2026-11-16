@@ -1,3 +1,4 @@
+import { type PreviewCheck, ranCheck, unbuiltCheck } from '../../shared/build.ts';
 import type { Board } from '../../shared/model.ts';
 import type { Capture, Proto } from '../../shared/repos.ts';
 import { $ } from '../core/dom.ts';
@@ -26,6 +27,11 @@ let pointing = false;
 let viewing: Capture | null = null;
 // what went wrong and what was logged since the last build, newest last
 const log: Line[] = [];
+// Each render, counted, so a check reads only the render it waited on and a newer one, such as a newer build's, never
+// answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or once its frame has loaded.
+type Drawn = { board: string; unbuilt: string } | { board: string; loaded: Promise<void> };
+let renders = 0;
+let drawn: Promise<Drawn | null> = Promise.resolve(null);
 
 // the errors, for Myra to fix with her next change
 export const previewErrors = () =>
@@ -84,12 +90,22 @@ function showViewing(problem: string) {
   child(then, 'span').textContent = problem || words;
 }
 
-async function refreshPreview() {
-  if (!board || !root) return;
+function refreshPreview() {
+  renders++;
+  drawn = draw();
+  return drawn;
+}
+
+async function draw(): Promise<Drawn | null> {
+  if (!board || !root) return null;
   const { dir, stack } = board.proto;
   const then = viewing ? await Fenmyr.protoAtCommit({ root, dir, commit: viewing.commit }).catch(() => null) : null;
-  if (viewing && !then) return showViewing('That version isn’t in this repo any more.');
+  if (viewing && !then) {
+    showViewing('That version isn’t in this repo any more.');
+    return null;
+  }
   showViewing('');
+  const id = board.id;
   const files = then ? Object.keys(then) : await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
   const built = await buildPreview(
     stack,
@@ -105,23 +121,53 @@ async function refreshPreview() {
       problem.hidden = false;
       problem.textContent = `The preview couldn’t be built. ${built.message}`;
     }
-  } else {
-    if (problem) problem.hidden = true;
-    html = built.html;
-    const f = frame(),
-      knobs = child($('pr-preview'), '.pv-knobs');
-    if (then) knobs.hidden = true;
-    else
-      await loadKnobs(knobs, { root, dir, files }, frame, () => {
-        if (board) renderGitBar(board);
-      });
-    if (f) {
-      // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
-      f.onload = () => sendTweaks(f);
-      f.srcdoc = html;
-    }
+    showLog();
+    return { board: id, unbuilt: built.message };
   }
+  if (problem) problem.hidden = true;
+  html = built.html;
+  const f = frame(),
+    knobs = child($('pr-preview'), '.pv-knobs');
+  if (then) knobs.hidden = true;
+  else
+    await loadKnobs(knobs, { root, dir, files }, frame, () => {
+      if (board) renderGitBar(board);
+    });
+  // with no frame to load, a check waits out its cap
+  const loaded = new Promise<void>(done => {
+    if (!f) return;
+    // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
+    f.onload = () => {
+      sendTweaks(f);
+      done();
+    };
+    f.srcdoc = html;
+  });
   showLog();
+  return { board: id, loaded };
+}
+
+// how long a check gives the frame to load, and then to show its errors (owner decision 7)
+const LOAD_MS = 15000;
+const WATCH_MS = 3000;
+const after = (ms: number) => new Promise<false>(done => setTimeout(() => done(false), ms));
+
+/** What the preview of `id`, the open prototype, does as it stands: whether it bundled, and the errors it logged by 3 s
+ *  after its frame loaded. A render that begins meanwhile is checked in its place, so what is read is one render's.
+ *  Null while the preview shows a capture or another board. */
+export async function previewCheck(id: string): Promise<PreviewCheck | null> {
+  for (;;) {
+    const gen = renders,
+      d = await drawn;
+    if (gen !== renders) continue;
+    if (!d || viewing || d.board !== id) return null;
+    if ('unbuilt' in d) return unbuiltCheck(d.unbuilt);
+    const loaded = await Promise.race([d.loaded.then(() => true), after(LOAD_MS)]);
+    if (loaded) await after(WATCH_MS);
+    if (gen !== renders) continue;
+    const errors = log.filter(l => l.kind === 'error').map(l => l.text);
+    return ranCheck(loaded ? errors : ['The preview didn’t finish loading.', ...errors]);
+  }
 }
 
 function setPointing(on: boolean) {

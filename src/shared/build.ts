@@ -111,9 +111,14 @@ export function readBuildEvent(x: unknown): BuildEvent | null {
   return READ[x.type](x, x.id);
 }
 
-/** How a build ended. from: the cards its code came from that were still on the board when it landed. */
+/** What the preview did once a build landed. ran: it bundled, and logged `count` errors by 3 s after its frame loaded,
+ *  the first of which are kept. unbuilt: the bundler refused the code. */
+export type PreviewCheck = { kind: 'ran'; count: number; errors: string[] } | { kind: 'unbuilt'; error: string };
+
+/** How a build ended. from: the cards its code came from that were still on the board when it landed. check: what its
+ *  preview did, once checked. */
 type BuildEnd =
-  | { kind: 'built'; at: number; files: FileDiff[]; outside: string[]; from: string[] }
+  | { kind: 'built'; at: number; files: FileDiff[]; outside: string[]; from: string[]; check?: PreviewCheck }
   | { kind: 'failed'; at: number; files: FileDiff[] };
 
 /** One build, as its prototype's chat keeps it, on the message that shows its block. It is written when the build is
@@ -135,19 +140,40 @@ export type BuildRecord = {
 
 const MAX_REQUEST = 200;
 const MAX_FROM = 80;
+const MAX_ERRORS = 3;
+const ERROR_LENGTH = 200;
 const isTime = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x) && x >= 0;
+
+/** A check of a preview that ran, from the errors it logged, oldest first. The record keeps the first few, each cut
+ *  short, and how many there were. */
+export function ranCheck(errors: readonly string[], count = errors.length): PreviewCheck {
+  const kept = errors.slice(0, MAX_ERRORS).map(e => e.slice(0, ERROR_LENGTH));
+  return { kind: 'ran', count: Math.max(count, kept.length), errors: kept };
+}
+
+export const unbuiltCheck = (error: string): PreviewCheck => ({ kind: 'unbuilt', error: error.slice(0, ERROR_LENGTH) });
+
+function readCheck(x: unknown): PreviewCheck | null {
+  if (!isRecord(x)) return null;
+  if (x.kind === 'unbuilt') return typeof x.error === 'string' ? unbuiltCheck(x.error) : null;
+  if (x.kind !== 'ran') return null;
+  const errors = textsOf(x.errors);
+  return ranCheck(errors, isCount(x.count) ? x.count : errors.length);
+}
 
 function readEnd(x: unknown): BuildEnd | null {
   if (!isRecord(x) || !isTime(x.at)) return null;
   const files = filesOf(x.files);
   if (x.kind === 'failed') return { kind: 'failed', at: x.at, files };
   if (x.kind !== 'built') return null;
+  const check = readCheck(x.check);
   return {
     kind: 'built',
     at: x.at,
     files,
     outside: textsOf(x.outside).slice(0, MAX_FILES),
     from: textsOf(x.from).slice(0, MAX_FROM),
+    ...(check ? { check } : {}),
   };
 }
 
@@ -228,6 +254,29 @@ export function buildHead(s: BuildState, undone: boolean): string {
   }
 }
 
+// how much of an error the block's line shows
+const LINE_ERROR = 120;
+const cut = (s: string) => {
+  const chars = Array.from(s.split('\n')[0] ?? '');
+  return chars.length <= LINE_ERROR
+    ? chars.join('')
+    : `${chars
+        .slice(0, LINE_ERROR - 1)
+        .join('')
+        .trimEnd()}…`;
+};
+
+/** A check in one line: "Preview runs · no errors", "Preview runs · 2 errors: TypeError: …" or "The preview couldn't be
+ *  built: …", the error on its first line and cut short. */
+export function checkLine(c: PreviewCheck) {
+  if (c.kind === 'unbuilt') return `The preview couldn’t be built: ${cut(c.error)}`;
+  if (!c.count) return 'Preview runs · no errors';
+  return `Preview runs · ${c.count} ${c.count === 1 ? 'error' : 'errors'}: ${cut(c.errors[0] ?? '')}`;
+}
+
+/** The check found something to fix: errors as it ran, or code that couldn't be bundled. */
+export const checkFailed = (c: PreviewCheck) => c.kind === 'unbuilt' || c.count > 0;
+
 /** "src/App.tsx +3 −1", or the path alone for a binary file. */
 const fileLine = (f: FileDiff) => (f.kind === 'text' ? `${f.path} +${f.added} −${f.removed}` : f.path);
 
@@ -242,12 +291,14 @@ export function fileLines(s: BuildState): string[] {
 const LINE_FILES = 10;
 
 /** A block in one line, for Myra's snapshot of the chat, whose block has no words of its own: "Built in 48 s:
- *  src/App.tsx +3 −1, src/Form.tsx +24 −0", and after ten files "and 40 more". */
+ *  src/App.tsx +3 −1, src/Form.tsx +24 −0", and after ten files "and 40 more", then how its preview check went. */
 export function buildLine(a: BuildRecord, live: BuildLive | null) {
   const s = buildState(a, live),
     head = buildHead(s, !!a.undone),
     files = fileLines(s),
     more = files.length - LINE_FILES,
-    named = more > 0 ? [...files.slice(0, LINE_FILES), `and ${more} more`] : files;
-  return named.length ? `${head}: ${named.join(', ')}` : head;
+    named = more > 0 ? [...files.slice(0, LINE_FILES), `and ${more} more`] : files,
+    line = named.length ? `${head}: ${named.join(', ')}` : head,
+    check = s.phase === 'built' && s.end.check ? checkLine(s.end.check) : '';
+  return check ? `${line}. ${check}` : line;
 }

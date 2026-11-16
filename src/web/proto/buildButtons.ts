@@ -1,9 +1,10 @@
-import type { BuildRecord } from '../../shared/build.ts';
+import { type BuildRecord, checkFailed } from '../../shared/build.ts';
 import type { ChatAction } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import type { Button } from '../myra/acts.ts';
+import { ask } from '../myra/chat.ts';
 import { chatLog } from '../myra/chatLog.ts';
 import { type SayAction, say } from '../myra/say.ts';
 import { rootOf } from '../repo/codeFolder.ts';
@@ -15,8 +16,8 @@ import { askCommit } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
 import { renderPreview } from './preview.ts';
 
-// The buttons a build leaves: Undo this build and Commit under her line, and Undo this build on the block of a build
-// Fenmyr closed on. Each shows only while its prototype is open, and only for the board's newest build: Undo puts the
+// The buttons a build leaves: Undo this build and Commit under her line, Undo this build on the block of a build Fenmyr
+// closed on, and Fix the errors on the block of one whose preview check failed. Each shows only while its prototype is open, and only for the board's newest build: Undo puts the
 // whole folder back as it was before the build, so an older one would undo the builds after it too, and Commit takes
 // the whole folder.
 type Prototype = Extract<Board, { kind: 'prototype' }>;
@@ -110,4 +111,14 @@ export function stoppedUndo(a: BuildRecord): Omit<Button, 'after'> | null {
     held: () => stillBuilding(b, 'undo'),
     run: () => undo(b, root, start.snapshot, a.build),
   };
+}
+
+/** Fix the errors on the block of a build whose preview check found errors, while it is the newest and not undone. It
+ *  asks her as the person would, so a build it leads to waits its turn like any other. Its errors reach that build as
+ *  the preview's errors when it starts. */
+export function fixButton(a: BuildRecord): Omit<Button, 'after'> | null {
+  const b = openProto(a.board),
+    check = a.end?.kind === 'built' ? a.end.check : undefined;
+  if (!b || !check || !checkFailed(check) || a.undone || newestBuild(b) !== a.build) return null;
+  return { label: 'Fix the errors', run: () => ask('Fix the errors in the preview') };
 }
