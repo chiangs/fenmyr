@@ -33,6 +33,9 @@ type Point = { x: number; y: number };
 // what the tool being placed carries: the shape, piece, icon, device or stamp you picked
 type PlaceExtra = { shape?: string; piece?: string; name?: string; device?: string; stamp?: Stamp };
 
+const sameTool = (a: PlaceExtra, b: PlaceExtra) =>
+  a.shape === b.shape && a.piece === b.piece && a.name === b.name && a.device === b.device && a.stamp === b.stamp;
+
 // the card a tool makes, before it lands
 function newCard(type: string, more: PlaceExtra): Card | null {
   const dev = DEVICES[more.device ?? ''];
@@ -104,7 +107,7 @@ const PLACE: Record<string, [label: string, size: [number, number]]> = {
 };
 
 export function startPlacing(type: string, extra: PlaceExtra = {}, quiet = false) {
-  if (placing?.type === type && placing.extra.shape === extra.shape) return stopPlacing();
+  if (placing?.type === type && sameTool(placing.extra, extra)) return stopPlacing();
   stopPlacing();
   placing = { type, extra };
   selectOnly([]);
