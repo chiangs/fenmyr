@@ -232,15 +232,18 @@ function inputGrip() {
   inputHeight(Number(localStorage.getItem(INPUT_KEY)) || INPUT_H);
 }
 
-// a folded column opened by something other than its strip, such as Myra's Show files
+// A folded column opened by something other than its strip, such as Myra's Show files. It settles once the column has
+// its width, after the slide, so what it shows can be fitted to it.
 export function openColumn(p: Foldable) {
   const l = layout();
-  if (!l.closed.includes(p)) return;
+  if (!l.closed.includes(p)) return Promise.resolve();
   l.closed = l.closed.filter(x => x !== p);
   remember();
   animate = true;
+  const slides = moving();
   place();
   animate = false;
+  return new Promise<void>(done => setTimeout(done, slides ? MOVE_MS : 0));
 }
 
 export function showProto(b: Board) {

@@ -3031,14 +3031,24 @@ body.proto #mcNew { display: none; }
 .mc-head .goo-slot canvas { width: 40px; height: 35px; }
 /* the header names the prototype over its stack and the status line; elsewhere the wrappers step aside, so ordinary
    boards lay out as before. Myra's name stays the chat's accessible name. */
-.mc-titles, .mc-sub { display: contents; }
+.mc-titles, .mc-top, .mc-sub { display: contents; }
 #mcBoardName, #mcStack { display: none; }
 body.proto .mc-titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+body.proto .mc-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
 body.proto #mcBoardName { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.25; }
 body.proto .mc-sub { display: flex; align-items: center; min-width: 0; font: 600 11px/1 var(--font); color: var(--ink-soft); }
 body.proto #mcStack { display: block; flex: none; white-space: nowrap; }
 body.proto #mcStack::after { content: '·' / ''; margin: 0 5px; }
 body.proto #mcHeadName, .mc-heard { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+/* the changes counter, and a dot on each file it opens in the code pane, the dot in the accent's readable shade, as on a
+   build's block */
+#mcChanges { display: none; }
+/* on the name's line, so the stack and the status line keep their room in a narrow chat; it doesn't make the line taller */
+body.proto #mcChanges:not([hidden]) { display: flex; align-items: center; gap: 6px; flex: none; margin: -5px 0 -5px auto; white-space: nowrap; }
+:is(#mcChanges, .pc-dots)::before, :is(.pc-file, .pc-menu button)[data-changed]::before, .pc-pick[data-changed] span::before { content: '' / ''; display: inline-block; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-text); }
+:is(.pc-file, .pc-menu button)[data-changed]::before, .pc-pick[data-changed] span::before { margin-right: 6px; vertical-align: 1px; }
+.pc-dots { display: flex; align-items: center; gap: 6px; margin: 0; padding: 6px 10px; border-bottom: 1px solid color-mix(in oklch, var(--ink) 8%, transparent); font: 600 10.5px/1.2 var(--font); color: var(--ink-soft); }
+.pc-dots[hidden] { display: none; }
 .mc-grip { display: none; }
 /* the open chat's top edge: drag it for a taller or shorter chat */
 .mc-top-grip { position: absolute; left: 0; right: 0; top: -6px; margin: 0; z-index: 3; }

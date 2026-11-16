@@ -20,6 +20,12 @@ let all = false;
 // the width the tabs need on one row, measured when they're drawn
 let needed = 0;
 let watching = false;
+// what the pane lists, and its drawing in progress
+let listed: string[] = [];
+let drawn: Promise<void> = Promise.resolve();
+// what the newest build changed, marked with a dot wherever the pane lists it; Values shows tweaks.json
+let changed: ReadonlySet<string> = new Set();
+const isChanged = (f: string) => changed.has(f === VALUES ? 'src/tweaks.json' : f);
 
 // styles.css counts once it holds more than Tailwind's import: a theme, or styles of the prototype's own
 const ownStyles = (css: string) =>
@@ -47,6 +53,28 @@ const MENU_W = 260;
 
 const closePicker = () => document.querySelector('.pc-menu')?.remove();
 
+function mark(el: HTMLElement, on: boolean) {
+  el.toggleAttribute('data-changed', on);
+  el.ariaDescription = on ? 'Changed by the last build' : null;
+}
+
+// the dots on the tabs, the picker's menu and the picker while it shows a changed file, and the caption while any shows
+function paint() {
+  const el = $('pr-code');
+  for (const f of document.querySelectorAll<HTMLElement>('#pr-code [data-file], .pc-menu [data-file]'))
+    mark(f, isChanged(f.dataset.file ?? ''));
+  const pick = el.querySelector<HTMLElement>('.pc-pick'),
+    note = el.querySelector<HTMLElement>('.pc-dots');
+  if (pick) mark(pick, isChanged(shown));
+  if (note) note.hidden = !listed.some(isChanged);
+}
+
+/** Marks the files the newest build changed, as the changes counter counts them. */
+export function markChanged(paths: readonly string[]) {
+  changed = new Set(paths);
+  paint();
+}
+
 // The files as a menu under the picker: the same menu as a row's right-click menu, so it follows the theme
 function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
   closePicker();
@@ -73,6 +101,7 @@ function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
   const r = btn.getBoundingClientRect();
   Object.assign(m.style, { left: `${r.left}px`, top: `${r.bottom + 4}px`, minWidth: `${Math.max(r.width, MENU_W)}px` });
   keepOnScreen(m);
+  paint();
   m.querySelector<HTMLElement>('.on')?.focus();
   m.onclick = e => {
     const f = closestTo(e.target, '[data-file]')?.dataset.file;
@@ -110,6 +139,7 @@ async function showFile(root: string, dir: string, file: string) {
   for (const b of el.querySelectorAll<HTMLElement>('[data-file]')) b.classList.toggle('on', b.dataset.file === file);
   const pick = el.querySelector('.pc-pick span');
   if (pick) pick.textContent = labelOf(file);
+  paint();
   const read = (f: string) => Fenmyr.protoRead({ root, dir, file: f });
   const shownAs = await (file === VALUES ? read('src/tweaks.json').then(valuesText) : read(file)).then(
     text => highlighted(file, text),
@@ -150,9 +180,33 @@ async function entries(root: string, dir: string, react: boolean, files: string[
   return { list: [...(all ? files : code), ...values], hidden: files.length - code.length };
 }
 
-export async function renderCode(b: Board) {
+/** The changes counter's click, once the code column is open: the first changed file the pane lists, with focus on its
+ *  tab, or in the picker's menu when the tabs don't fit. With none listed, as when the build only deleted files or
+ *  changed Fenmyr's wiring, focus goes to the file the pane shows, or to the picker. */
+export async function openChanged() {
+  await drawn;
+  const el = $('pr-code'),
+    at = here,
+    first = listed.find(isChanged);
+  // a window too narrow for the code column keeps it folded, with nothing to show in it
+  if (!at || el.closest('.folded')) return;
+  if (first) await showFile(at.root, at.dir, first);
+  fitBar();
+  const many = el.classList.contains('pc-many'),
+    pick = el.querySelector<HTMLElement>('.pc-pick');
+  if (first && many && pick) return openPicker(pick, listed, f => showFile(at.root, at.dir, f));
+  (many ? pick : el.querySelector<HTMLElement>('.pc-file.on'))?.focus();
+}
+
+export function renderCode(b: Board) {
+  drawn = draw(b);
+  return drawn;
+}
+
+async function draw(b: Board) {
   const el = $('pr-code'),
     root = rootOf(b);
+  listed = [];
   if (b.kind !== 'prototype' || !root) {
     el.innerHTML =
       '<p class="pr-note">This prototype’s project isn’t linked to a repo, so there’s no code to show.</p>';
@@ -167,6 +221,7 @@ export async function renderCode(b: Board) {
     return;
   }
   const { list, hidden } = await entries(root, dir, stack === 'react', files);
+  listed = list;
   if (!list.includes(shown)) shown = list.find(f => /(^|\/)App\.tsx$/.test(f)) ?? list[0] ?? '';
   const tabs = list
     .map(f => {
@@ -183,7 +238,7 @@ export async function renderCode(b: Board) {
   const copy = copyLabel(false),
     caret = Icon('caret-down', { size: 12 });
   el.classList.remove('pc-many');
-  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"><span></span>${caret}</button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><div class="pc-from-slot"></div><pre class="pc-text"><code></code></pre>`;
+  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"><span></span>${caret}</button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><p class="pc-dots" hidden>Dots mark what the last build changed</p><div class="pc-from-slot"></div><pre class="pc-text"><code></code></pre>`;
   needed = el.querySelector('.pc-files')?.scrollWidth ?? 0;
   fitBar();
   if (!watching) {
@@ -203,7 +258,7 @@ export async function renderCode(b: Board) {
     if (copy) copyShown(copy);
     if (closestTo(e.target, '.pc-all')) {
       all = !all;
-      renderCode(b);
+      void renderCode(b);
     }
   };
   await showFile(root, dir, shown);
