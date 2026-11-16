@@ -65,7 +65,12 @@ try {
     'Esc with words clears them and keeps the picker',
   );
   await page.press('#pkSearch', 'Escape');
-  assert.deepStrictEqual([await open(), await focus()], [false, 'signin'], 'a second Esc closes it, back on Pieces');
+  await settle(page, 150);
+  assert.deepStrictEqual(
+    [await open(), await focus()],
+    [false, 'signin'],
+    'a second Esc closes it, back on Pieces after the bar redraws',
+  );
 
   await closes('×', () => page.click('#piecePick [data-pk-close]'));
   await closes('Pieces again', () => page.click('#selbar [data-pieces]'));
@@ -108,6 +113,14 @@ try {
   await page.mouse.click(piece.x, piece.y);
   await settle(page, 250);
   assert.ok(await open(), 'a press on a piece in its screen keeps the picker');
+  const held = await page.evaluate(() => window.__fenmyr.sel);
+  await page.keyboard.press('Escape');
+  assert.deepStrictEqual(
+    [await open(), held.includes('head0'), await page.evaluate(() => window.__fenmyr.sel)],
+    [false, true, held],
+    'Esc on the board closes the picker before it clears the selection',
+  );
+  await openOn('signin');
   const before = await count();
   await page.click('#pkGrid [data-pk-piece="Divider"]');
   await settle(page, 300);
@@ -123,6 +136,22 @@ try {
   await page.keyboard.press('Enter');
   await settle(page, 250);
   assert.deepStrictEqual([await open(), await focus()], [true, 'pkSearch'], 'Enter opens the picker, in its search');
+  const told = () =>
+    page.evaluate(() => {
+      const p = document.getElementById('piecePick');
+      return [
+        document.querySelector('#selbar [data-pieces]')?.getAttribute('aria-expanded'),
+        p?.getAttribute('role'),
+        p?.getAttribute('aria-label'),
+        [...document.querySelectorAll('#piecePick [data-pk-view]')].map(b => b.getAttribute('aria-pressed')).join(),
+      ];
+    });
+  await settle(page, 100);
+  assert.deepStrictEqual(
+    await told(),
+    ['true', 'dialog', 'Pieces', 'true,false'],
+    'a screen reader hears Pieces expanded, a dialog named Pieces, and which view is showing',
+  );
   const keys: string[] = [];
   for (const k of ['ArrowDown', 'ArrowRight', 'ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp']) {
     await page.keyboard.press(k);
@@ -147,7 +176,9 @@ try {
   assert.ok((await count()) > n && heading, 'Enter on a cell adds it to the screen');
   assert.ok(await open(), 'and the picker stays open');
   await page.keyboard.press('Escape');
+  await settle(page, 150);
   assert.deepStrictEqual([await open(), await focus()], [false, 'signin'], 'Esc on a cell closes, back on Pieces');
+  assert.strictEqual((await told())[0], 'false', 'and Pieces says it is collapsed');
 
   for (const [on, x, y, z] of [
     ['signin', 300, 40, 0.3],
