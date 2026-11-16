@@ -150,14 +150,17 @@ async function explain(b: Prototype, root: string, a: Explain) {
   // the pressed button goes from under focus, so focus moves to the line the press added
   if (asked) focusMsg(asked);
   const job = startJob({ kind: 'explaining', board: b.id, name: b.name });
-  const answer = await Fenmyr.protoExplain({ root, dir: b.proto.dir, files: a.files }).then(
-    (t): ChatMsg => ({ who: 'myra', text: noEmoji(t), t: Date.now() }),
-    (e: unknown): ChatMsg => ({
-      who: 'myra',
-      text: `I couldn’t read the code just now. ${e instanceof Error ? e.message : e}`,
-      t: Date.now(),
-      acts: [{ ...a }],
-    }),
+  const [failed, answer] = await Fenmyr.protoExplain({ root, dir: b.proto.dir, files: a.files }).then(
+    (t): [boolean, ChatMsg] => [false, { who: 'myra', text: noEmoji(t), t: Date.now() }],
+    (e: unknown): [boolean, ChatMsg] => [
+      true,
+      {
+        who: 'myra',
+        text: `I couldn’t read the code just now. ${e instanceof Error ? e.message : e}`,
+        t: Date.now(),
+        acts: [{ ...a }],
+      },
+    ],
   );
   const landed: { on: string | null } = { on: null };
   await changeBoard(b.id, x => {
@@ -168,7 +171,7 @@ async function explain(b: Prototype, root: string, a: Explain) {
   }).finally(() => job.end());
   if (landed.on === null) return;
   // the open board shows her answer, which a screen reader hears of; another board says so on the status line
-  const words = answer.acts ? `Couldn’t explain ${landed.on}’s code` : `${landed.on}’s code is explained`;
+  const words = failed ? `Couldn’t explain ${landed.on}’s code` : `${landed.on}’s code is explained`;
   (session.board?.id === b.id ? noteHeard : noteStatus)(words);
 }
 
