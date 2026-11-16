@@ -11,7 +11,7 @@ import { askFiles } from './smoke/askFiles.ts';
 import { birthday } from './smoke/birthday.ts';
 import { board, noteTags } from './smoke/board.ts';
 import { bridge } from './smoke/bridge.ts';
-import { builder } from './smoke/builder.ts';
+import { builder, explainer } from './smoke/builder.ts';
 import { chatInput } from './smoke/chatInput.ts';
 import { boardOrder, clearButtons, cursorEdge, heightGrips, popups, shortcutLabels } from './smoke/chrome.ts';
 import { deleteConfirm, deleteCurrent, deleteLastBoard } from './smoke/deletes.ts';
@@ -38,7 +38,11 @@ import { HEADLESS, MOUSE } from './support/launch.ts';
     path.join(bin, 'claude'),
     `#!/bin/sh
 if [ "$1" = mcp ]; then echo "claude.ai Mobbin: https://mobbin - ✓ Connected"; echo "claude.ai higgsfield: https://h - ! Needs authentication"; exit 0; fi
-case "$*" in *stream-json*)
+case "$*" in *'--tools Read,Glob,Grep'*)
+  printf '%s' "$2" > "${data}/explain-prompt.txt"; pwd > "${data}/explain-cwd.txt"; shift 2; echo "$@" > "${data}/explain-args.txt"
+  printf '%s\\n' '{"type":"result","is_error":false,"result":"I read \`src/App.tsx\`. It shows the heading.\\nNext: change the words in it."}'
+  exit 0;;
+*stream-json*)
   echo 'export function App() { return <h1>Built</h1>; }' > src/App.tsx
   echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'"$PWD"'/src/App.tsx"}}]}}'
   printf '%s\\n' '{"type":"result","is_error":false,"result":"I built it.\\nNEXT: Add a total | Show a receipt\\nCARDS: none"}'
@@ -98,6 +102,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await askFiles(t);
   await repoOps(t);
   await builder(t);
+  await explainer(t);
   await look(t);
   await collectionCount(t);
   await library(t);

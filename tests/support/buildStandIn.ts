@@ -5,8 +5,9 @@ import type { Launched } from './launch.ts';
 // A stand-in Claude Code for builds, told before each build what to do: the files it writes in the prototype's folder,
 // reported the way stream-json does, whether it waits for a release after each file but the last (`pause`) and before it
 // ends (`hold`), how many milliseconds more it takes to end (`ms`), and whether it ends with a failure instead of `reply`. It counts each file it has reported, and logs
-// each build's prompt. Any other question gets a short answer, or the one it was last told to give after the wait it was
-// told, and its prompt is logged too.
+// each build's prompt. A run that can only read, as Explain the code's is, writes nothing and answers what it was last
+// told to. Any other question gets a short answer, or the one it was last told to give after the wait it was told, and
+// its prompt is logged too.
 type BuildScript = {
   files: Record<string, string>;
   pause?: boolean;
@@ -22,7 +23,10 @@ export function writeBuildStandIn(file: string, work: string) {
     wrote = path.join(work, 'wrote'),
     asks = path.join(work, 'asks.log'),
     builds = path.join(work, 'builds.log'),
-    answer = path.join(work, 'answer.json');
+    answer = path.join(work, 'answer.json'),
+    explained = path.join(work, 'explains.log'),
+    explaining = path.join(work, 'explain.json'),
+    held = path.join(work, 'explain-held');
   // the nth wait goes on once gate-n exists, so a release that comes before its wait isn't lost
   const gate = (n: number) => path.join(work, `gate-${n}`);
   fs.mkdirSync(work, { recursive: true });
@@ -34,7 +38,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 const say = j => console.log(JSON.stringify(j));
 if (process.argv[2] !== '-p') process.exit(0);
-if (!process.argv.includes('stream-json')) {
+if (process.argv.includes('--tools')) {
+  fs.appendFileSync(${JSON.stringify(explained)}, JSON.stringify({ prompt: process.argv[3], args: process.argv.slice(4), cwd: process.cwd() }) + '\\n');
+  const told = fs.existsSync(${JSON.stringify(explaining)}) ? JSON.parse(fs.readFileSync(${JSON.stringify(explaining)}, 'utf8')) : {};
+  const app = process.ppid;
+  (async () => {
+    while (fs.existsSync(${JSON.stringify(held)})) {
+      if (process.ppid !== app) process.exit(0);
+      await new Promise(r => setTimeout(r, 50));
+    }
+    say({ type: 'result', is_error: !!told.fail, result: told.fail ?? told.reply ?? 'I read the code.' });
+  })();
+} else if (!process.argv.includes('stream-json')) {
   fs.appendFileSync(${JSON.stringify(asks)}, JSON.stringify(process.argv[3] ?? '') + '\\n');
   const told = fs.existsSync(${JSON.stringify(answer)}) ? JSON.parse(fs.readFileSync(${JSON.stringify(answer)}, 'utf8')) : null;
   setTimeout(
@@ -97,6 +112,22 @@ if (!process.argv.includes('stream-json')) {
     asks: () => logged(asks),
     // every build's prompt, oldest first
     builds: () => logged(builds),
+    // What the next run that can only read answers, or how it fails, and whether it waits for `explained` first. Such a
+    // run is told apart by --tools, which only it is given.
+    explain(e: { reply?: string; fail?: string; hold?: boolean }) {
+      fs.writeFileSync(explaining, JSON.stringify(e));
+      if (e.hold) fs.writeFileSync(held, '');
+    },
+    explained: () => fs.rmSync(held, { force: true }),
+    // every run that could only read: its prompt, its arguments after the prompt and the folder it ran in
+    explains: (): { prompt: string; args: string[]; cwd: string }[] =>
+      fs.existsSync(explained)
+        ? fs
+            .readFileSync(explained, 'utf8')
+            .split('\n')
+            .filter(Boolean)
+            .map(l => JSON.parse(l))
+        : [],
   };
 }
 

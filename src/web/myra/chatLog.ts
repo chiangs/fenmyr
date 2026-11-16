@@ -132,12 +132,25 @@ function renderHistory() {
 // each message's buttons and boxes as they show, so one can be drawn again on its own
 const partsOf = new WeakMap<ChatMsg, HTMLElement>();
 
+// Her file names, in backticks, show in code font, as when she explains a prototype's code. Built as text nodes, so
+// nothing she says is read as markup. Her bubble lays its children out as a column (it shares .myra with her figure), so
+// a line with code is one span, or each piece would sit on a line of its own.
+function withCode(d: HTMLElement, text: string) {
+  const pieces = text.split(/`([^`\n]+)`/);
+  if (pieces.length === 1) return void (d.textContent = text);
+  const line = d.appendChild(document.createElement('span'));
+  for (const [i, piece] of pieces.entries())
+    if (i % 2) line.appendChild(document.createElement('code')).textContent = piece;
+    else if (piece) line.append(piece);
+}
+
 // A message with no words, such as a build's block, is only its parts, so it draws as a card, not a speech bubble.
 function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   const d = document.createElement('div'),
     parts = document.createElement('div');
   d.className = m.text ? `mc-msg ${m.who}` : `mc-msg ${m.who} bare`;
-  d.textContent = m.text;
+  if (m.who === 'myra') withCode(d, m.text);
+  else d.textContent = m.text;
   parts.className = 'm-parts';
   d.appendChild(parts);
   partsOf.set(m, parts);

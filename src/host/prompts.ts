@@ -321,3 +321,18 @@ ${a.design || 'none yet'}
 
 HOW TO WORK HERE (prototypes/myra.md):
 ${a.myra || 'nothing yet'}`;
+
+// What Claude Code is told when the person asks Myra to explain a prototype's code after a build. The run can only
+// read, and its answer lands in the prototype's chat as her line, for someone who may not read code.
+export const explainCode = (a: { files: string[] }) => `${PERSONA}
+
+You are explaining the code of a prototype to the person who asked for it. They may not read code. The folder you are in is this prototype's own folder. Read the files you need: start with the ones the last build changed, then whatever they use. You can only read; never try to change a file.
+
+Reply as Myra, in the first person and in British English, in at most 150 words of plain sentences. Begin with the explanation itself: no greeting, and don't introduce yourself. Say:
+- what each file the last build changed does,
+- how the parts connect,
+- where to change the obvious things (the words, the colours, a button's action).
+Write every file name in backticks, like \`src/App.tsx\`. No code blocks, no headings and no code beyond file names.
+
+THE FILES THE LAST BUILD CHANGED:
+${a.files.join('\n') || 'none listed; start with the main files'}`;

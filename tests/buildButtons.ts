@@ -133,7 +133,7 @@ try {
   await built(2);
   assert.deepStrictEqual(
     await builtRows(),
-    [[], ['Undo this build', 'Commit']],
+    [[], ['Undo this build', 'Explain the code', 'Commit']],
     'after two builds only the newest one’s Undo and Commit show',
   );
 
@@ -143,8 +143,8 @@ try {
   await reopen('pb');
   assert.deepStrictEqual(
     await builtRows(),
-    [[], ['Undo this build']],
-    'Commit then Not now keeps that build’s Undo, and only the Commit goes',
+    [[], ['Undo this build', 'Explain the code']],
+    'Commit then Not now keeps that build’s Undo and Explain the code, and only the Commit goes',
   );
   await tap('Undo this build');
   await until(async () => fs.readFileSync(app, 'utf8').includes('Build 1'), 'Undo puts back the last build');

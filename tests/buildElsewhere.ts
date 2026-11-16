@@ -127,9 +127,10 @@ try {
     landed[0]?.acts?.map(a => [a.kind, 'board' in a && a.board]),
     [
       ['buildUndo', 'pb'],
+      ['explain', 'pb'],
       ['commit', 'pb'],
     ],
-    'with Undo this build and Commit kept',
+    'with Undo this build, Explain the code and Commit kept',
   );
   assert.ok(
     chatOf('pb').some(m =>
@@ -141,7 +142,7 @@ try {
   await open('pb');
   assert.deepStrictEqual(
     await buttonsUnder('I put the total first.'),
-    [['Undo this build', 'Commit']],
+    [['Undo this build', 'Explain the code', 'Commit']],
     'opening the prototype shows its buttons',
   );
   await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
@@ -213,7 +214,7 @@ try {
     async () => (await buttonsUnder('I couldn’t finish that. Claude Code stopped.')).length === 1,
     'it fails',
   );
-  const kept = [['Undo this build', 'Commit']];
+  const kept = [['Undo this build', 'Explain the code', 'Commit']];
   assert.deepStrictEqual(await buttonsUnder('Second.'), kept, 'a failure that changed nothing keeps the last Undo');
   await open('one');
   await open('pb');

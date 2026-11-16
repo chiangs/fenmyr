@@ -194,7 +194,11 @@ try {
   await build('Basket build.');
   await until(() => standIn.wrote() === 1, 'a build runs on another project’s prototype');
   await open('pb');
-  assert.deepStrictEqual(await buttonsUnder('Fifth.'), [['Undo this build', 'Commit']], 'the newest build here');
+  assert.deepStrictEqual(
+    await buttonsUnder('Fifth.'),
+    [['Undo this build', 'Explain the code', 'Commit']],
+    'the newest build here',
+  );
   await build('Sixth build.');
   await until(async () => (await blocks()).at(-1)?.head === 'Waiting for the build before it', 'the sixth waits');
   const before = commits();
@@ -216,7 +220,11 @@ try {
   );
   assert.equal(commits(), before, 'nothing was committed');
   assert(!(await texts()).some(t => t.startsWith('Commit ')), 'nor asked about');
-  assert.deepStrictEqual(await buttonsUnder('Fifth.'), [['Undo this build', 'Commit']], 'and both buttons stay');
+  assert.deepStrictEqual(
+    await buttonsUnder('Fifth.'),
+    [['Undo this build', 'Explain the code', 'Commit']],
+    'and all three buttons stay',
+  );
 
   await page.locator('#mcList .mc-msg.bare').last().getByRole('button', { name: 'Cancel' }).click();
   await until(async () => (await blocks()).at(-1)?.head === 'Not started', 'the sixth is cancelled');
@@ -250,7 +258,11 @@ try {
   );
   await settle(page, 600);
   assert(fs.existsSync(inPb('src/Seven.tsx')), 'and changes no file');
-  assert.deepStrictEqual(await buttonsUnder('Seventh.'), [['Undo this build', 'Commit']], 'and its buttons stay');
+  assert.deepStrictEqual(
+    await buttonsUnder('Seventh.'),
+    [['Undo this build', 'Explain the code', 'Commit']],
+    'and its buttons stay',
+  );
   standIn.release();
   await until(() => chatOf('pd').some(m => m.text === 'Receipt.'), 'that build lands');
   await tapUnder('Seventh.', 'Undo this build');
