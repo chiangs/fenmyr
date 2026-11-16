@@ -3,7 +3,8 @@ import { mrot, realBox, tiltOf } from '../canvas/handles.ts';
 import { wireGeom } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
-import { chatPlace, setModeBar } from '../myra/chatWindow.ts';
+import { freeOf } from '../myra/chatRules.ts';
+import { chatOverBoard, chatPlace, setModeBar } from '../myra/chatWindow.ts';
 import { type BarContext, toolContext } from './context.ts';
 import { type Anchor, type Box, GAP, place } from './place.ts';
 
@@ -73,11 +74,21 @@ const rectsIn = (id: string) =>
     .map(el => el.getBoundingClientRect())
     .filter(r => r.width && r.height);
 
+// The open Pieces picker counts as a side column on the side it docked, so the bars keep clear of it.
+function pickerColumn(placing?: HTMLElement) {
+  const p = document.getElementById('piecePick');
+  if (!p || p === placing || p.hidden || onPhone()) return { l: [], r: [] };
+  const r = p.getBoundingClientRect(),
+    s = stage.getBoundingClientRect();
+  return p.dataset.dock === 'left' ? { l: [r.right - s.left + GAP], r: [] } : { l: [], r: [r.left - s.left - GAP] };
+}
+
 // The part of the board nothing else covers, in stage pixels: right of the left widgets, left of the right ones, under
 // the header and its saved line, above the bottom bar and the mode bar on it (unless that is the bar being placed).
 // Read from the screen, so moved widgets, a folded tray and a prototype's narrower board all count.
 function readFrame(placing?: HTMLElement): Box {
   const s = stage.getBoundingClientRect(),
+    picker = pickerColumn(placing),
     head = [document.querySelector('.top'), document.getElementById('saved')]
       .filter(el => el?.checkVisibility())
       .map(el => el?.getBoundingClientRect().bottom ?? 0),
@@ -92,6 +103,7 @@ function readFrame(placing?: HTMLElement): Box {
       ...rectsIn('side')
         .filter(r => r.right > s.left)
         .map(r => r.right - s.left + GAP),
+      ...picker.l,
     ),
     t: Math.max(GAP, ...head.map(b => b - s.top + GAP)),
     r: Math.min(
@@ -99,9 +111,20 @@ function readFrame(placing?: HTMLElement): Box {
       ...rectsIn('sideR')
         .filter(r => r.left < s.right)
         .map(r => r.left - s.left - GAP),
+      ...picker.r,
     ),
     b: Math.min(s.height - GAP, ...floor),
   };
+}
+
+/** The free view less an open chat, in stage pixels, for something docked beside a card on the board. */
+export function dockFrame(docking: HTMLElement): Box {
+  const s = stage.getBoundingClientRect(),
+    chat = chatOverBoard();
+  return freeOf(
+    readFrame(docking),
+    chat && { l: chat.l - s.left, t: chat.t - s.top, r: chat.r - s.left, b: chat.b - s.top },
+  );
 }
 
 const writeData = (el: HTMLElement, key: 'side' | 'stuck', value: string) => {

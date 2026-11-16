@@ -1,12 +1,12 @@
-import { toWorld } from '../canvas/handles.ts';
 import { hasAll, queryWords } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { centerWorld, revealCards } from '../panels/zoomMenu.ts';
 import { selCards } from '../selbar/selected.ts';
-import { placeAt, placing, startPlacing, stopPlacing } from '../tools/place.ts';
+import { stopPlacing } from '../tools/place.ts';
 import { closestTo, htmlIn, oneIn, textField } from '../ui/dom.ts';
 import { pickWF } from './designPanel.ts';
 import { PIECE_GROUPS, wordsOf } from './pieceGroups.ts';
+import { justDragged, startGridDrag } from './piecePick.ts';
 import { PIECES } from './pieces.ts';
 import { addToScreen, placePiece } from './placePiece.ts';
 import { screenOf } from './screenScope.ts';
@@ -49,10 +49,6 @@ function dzFilter() {
   $('dzNone').hidden = !words.length || any;
   dzApply();
 }
-
-// dragging an element from the panel onto the board puts it exactly where you let go (the preview follows the pointer, above the panels)
-let pDrag: { name: string; x: number; y: number; on: boolean } | null = null;
-let pDragged = false;
 
 // a click on an element in the panel adds it straight away: into the screen in scope, or in the middle of the view (drag it from the panel to put it exactly somewhere)
 function addPiece(name: string) {
@@ -104,7 +100,7 @@ export function init48() {
       return;
     }
     const piece = closestTo(e.target, '[data-piece]')?.dataset.piece;
-    if (!piece || pDragged) return;
+    if (!piece || justDragged()) return;
     pickWF(null);
     stopPlacing();
     addPiece(piece);
@@ -112,46 +108,8 @@ export function init48() {
 
   $('design').addEventListener('pointerdown', e => {
     const name = closestTo(e.target, '[data-piece]')?.dataset.piece;
-    if (name && !e.button) pDrag = { name, x: e.clientX, y: e.clientY, on: false };
+    if (name) startGridDrag(e, { kind: 'piece', name });
   });
-
-  addEventListener(
-    'pointermove',
-    e => {
-      if (!pDrag || pDrag.on || Math.hypot(e.clientX - pDrag.x, e.clientY - pDrag.y) < 6) return;
-      pDrag.on = true;
-      pickWF(null);
-      startPlacing('piece', { piece: pDrag.name }, true);
-      document.body.classList.add('dz-dragging');
-    },
-    true,
-  );
-
-  addEventListener(
-    'pointerup',
-    e => {
-      if (!pDrag) return;
-      const d = pDrag;
-      pDrag = null;
-      if (!d.on) return;
-      document.body.classList.remove('dz-dragging');
-      pDragged = true;
-      setTimeout(() => {
-        pDragged = false;
-      }, 0);
-      const over = document.elementFromPoint(e.clientX, e.clientY);
-      if (
-        placing &&
-        placing.type === 'piece' &&
-        !over?.closest(
-          '.design, .side, .tray, .tools, .dock, .myra, .selbar, .modebar, .m-chat, .keys, .top, .hub, .sheet, .settings',
-        )
-      )
-        placeAt(toWorld(e.clientX, e.clientY));
-      else stopPlacing();
-    },
-    true,
-  );
 
   dzApply();
 }

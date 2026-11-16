@@ -47,8 +47,8 @@ export const PIECE_GROUPS: readonly { key: GroupKey; heading: string; cells: rea
 
 // other words people might type to find a piece or tool
 const WORDS: Readonly<Record<string, string>> = {
-  Box: 'rectangle shape draw',
-  Text: 'type words label',
+  Box: 'rectangle shape square draw',
+  Text: 'paragraph copy label type',
   Heading: 'title headline',
   Image: 'picture photo placeholder',
   Video: 'player movie clip media',
