@@ -137,6 +137,13 @@ try {
     { inHand: true, ghost: '834px × 1194px', row: true, lit: 'iPad' },
     'iPhone then iPad keeps the tool in hand with iPad lit',
   );
+  await page.hover('#screenbar [data-dev="Watch"]');
+  assert.ok(
+    await page.evaluate(
+      () => getComputedStyle(document.getElementById('ghost') ?? document.body).visibility === 'hidden',
+    ),
+    'pointing at the row hides the ghost',
+  );
   await click(0.4, 0.2);
   assert.deepStrictEqual(
     await last(),
