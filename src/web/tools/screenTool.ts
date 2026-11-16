@@ -89,14 +89,19 @@ export function syncScreenBar() {
     bar = $('screenbar');
   if (!lit && bar.hidden) return;
   if (bar.hidden === !!lit) bar.hidden = !lit;
-  for (const b of htmlIn(bar, '[data-dev]')) b.classList.toggle('on', b.dataset.dev === lit);
-  screenButton?.classList.toggle('on', !!lit);
+  for (const b of htmlIn(bar, '[data-dev]')) {
+    b.classList.toggle('on', b.dataset.dev === lit);
+    b.ariaPressed = String(b.dataset.dev === lit);
+  }
+  if (!screenButton) return;
+  screenButton.classList.toggle('on', !!lit);
+  screenButton.ariaPressed = String(!!lit);
 }
 
 const chip = (d: Device, i: number) => {
   const [w, h] = DEVICES[d],
     tip = `${d} · ${w} × ${h} · ${i + 1}`;
-  return `<button class="sc-dev" data-dev="${d}" title="${tip}">${d}</button>`;
+  return `<button class="sc-dev" data-dev="${d}" title="${tip}" aria-pressed="false">${d}</button>`;
 };
 
 export function initScreenTool() {
