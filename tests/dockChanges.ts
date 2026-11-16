@@ -47,7 +47,7 @@ const head = () =>
       menu: [...document.querySelectorAll<HTMLElement>('.pc-menu [data-changed]')].map(f => f.dataset.file),
       tabs: !pane?.classList.contains('pc-many'),
       pick: !!pane?.querySelector('.pc-pick[data-changed]'),
-      described: pane?.querySelector<HTMLElement>('.pc-file[data-changed]')?.ariaDescription ?? '',
+      described: pane?.querySelector('.pc-file[data-changed]')?.getAttribute('aria-description') ?? '',
       focused: document.activeElement instanceof HTMLElement ? (document.activeElement.dataset.file ?? '') : '',
       focusIn: document.activeElement?.closest('.pc-menu')
         ? 'menu'
@@ -136,6 +136,7 @@ try {
 
   await page.evaluate(() => window.__fenmyr.openBoard('one'));
   await settle(page, 400);
+  assert.strictEqual((await head()).counter, null, 'an ordinary board’s chat has no counter');
   await page.evaluate(() => window.__fenmyr.openBoard('pb'));
   await settle(page, 800);
   assert.ok(!(await head()).tabs, 'at the code column’s first width its files don’t fit as tabs');
@@ -169,6 +170,13 @@ try {
   assert.strictEqual(h.focusIn, 'tabs', 'with focus on its tab, since the tabs fit');
   assert.deepStrictEqual(h.dots.sort(), ['src/App.tsx', 'src/Form.tsx'], 'and both tabs carry the dot');
 
+  await foldCode();
+  await page.click('#mcChanges');
+  await page.click('#mcChanges');
+  await until(async () => (await head()).focusIn === 'tabs', 'a double click lands on the tab too');
+  await settle(page, 400);
+  assert.ok(!(await page.$('.pc-menu')), 'with no picker left open from the second click');
+
   await tapUnder('Done: Make the form.', 'Commit');
   await until(async () => !!(await has('Message: “Make the form”')), 'Commit asks first');
   await page.locator('#mcList .m-acts button', { hasText: 'Commit' }).last().click();
@@ -192,6 +200,13 @@ try {
     /Form/,
     'Undo put the build’s file back, so nothing the counter could count is left',
   );
+
+  await build('Say hi.', { 'src/App.tsx': 'export function App() { return <p>Hi</p>; }\n' });
+  await landed('Say hi.');
+  assert.strictEqual((await head()).counter, '1 change', 'a build after the Undo is counted');
+  await page.evaluate(() => document.getElementById('clearChats')?.click());
+  await until(async () => (await head()).counter === null, 'Clear all chats takes the build it counted');
+  assert.deepStrictEqual((await head()).dots, [], 'and its dots');
   assert.deepStrictEqual(l.errors, []);
   console.log('DOCK CHANGES OK');
 } finally {

@@ -20,9 +20,10 @@ let all = false;
 // the width the tabs need on one row, measured when they're drawn
 let needed = 0;
 let watching = false;
-// what the pane lists, and its drawing in progress
 let listed: string[] = [];
 let drawn: Promise<void> = Promise.resolve();
+// each draw's number, so one that a newer draw has overtaken while it waited stops
+let draws = 0;
 // what the newest build changed, marked with a dot wherever the pane lists it; Values shows tweaks.json
 let changed: ReadonlySet<string> = new Set();
 const isChanged = (f: string) => changed.has(f === VALUES ? 'src/tweaks.json' : f);
@@ -195,6 +196,8 @@ export async function openChanged() {
   const many = el.classList.contains('pc-many'),
     pick = el.querySelector<HTMLElement>('.pc-pick');
   if (first && many && pick) return openPicker(pick, listed, f => showFile(at.root, at.dir, f));
+  // a second click while the column slid open may have opened the picker at the narrow width
+  closePicker();
   (many ? pick : el.querySelector<HTMLElement>('.pc-file.on'))?.focus();
 }
 
@@ -205,7 +208,8 @@ export function renderCode(b: Board) {
 
 async function draw(b: Board) {
   const el = $('pr-code'),
-    root = rootOf(b);
+    root = rootOf(b),
+    n = ++draws;
   listed = [];
   if (b.kind !== 'prototype' || !root) {
     el.innerHTML =
@@ -215,12 +219,14 @@ async function draw(b: Board) {
   const { dir, stack } = b.proto;
   here = { root, dir };
   const files = await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
+  if (n !== draws) return;
   if (!files.length) {
     const where = esc(dir);
     el.innerHTML = `<p class="pr-note">There are no files in ${where} yet.</p>`;
     return;
   }
   const { list, hidden } = await entries(root, dir, stack === 'react', files);
+  if (n !== draws) return;
   listed = list;
   if (!list.includes(shown)) shown = list.find(f => /(^|\/)App\.tsx$/.test(f)) ?? list[0] ?? '';
   const tabs = list

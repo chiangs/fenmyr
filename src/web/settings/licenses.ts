@@ -13,6 +13,7 @@ import { showConnections } from '../myra/helpers.ts';
 import { chirp, say } from '../myra/say.ts';
 import { buildEvent } from '../proto/build.ts';
 import { dropWaiting } from '../proto/buildSlot.ts';
+import { renderDockHead } from '../proto/dockHead.ts';
 import { ghLoginEnded } from '../repo/setup.ts';
 import { closestTo, esc, htmlIn } from '../ui/dom.ts';
 import { closeSettings } from './colors.ts';
@@ -198,6 +199,8 @@ export function init29() {
       delete sessionChats[k];
     });
     renderChat();
+    // the builds' records went with the chats, so a prototype's changes counter has nothing left to count
+    if (session.board) renderDockHead(session.board);
     $('clearChats').textContent = 'Cleared ✓';
     setTimeout(() => ($('clearChats').textContent = 'Clear all chats'), 1800);
   };

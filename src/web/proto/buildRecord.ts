@@ -80,7 +80,10 @@ function redrawBuilds(...builds: (string | undefined)[]) {
 
 /** The files a prototype's newest build changed, for the changes counter: none while one of its builds runs, once the
  *  newest is undone, or when it changed nothing. The newest is the last one in its chat that started, so a request
- *  waiting its turn, or one that never started, leaves the build before it counted, since neither changed a file. */
+ *  waiting its turn, or one that never started, leaves the build before it counted, since neither changed a file. It
+ *  isn't `proto.build`, which goes back to the build before one that changed nothing, so that build's Undo this build
+ *  and Commit return; the counter says what the last build changed, which was nothing. A build Fenmyr closed on has no
+ *  end, so what it changed isn't known and nothing is counted. */
 export function newestChanges(b: Board): string[] {
   if (b.kind !== 'prototype' || runningBuild()?.board === b.id) return [];
   const a = (b.chat ?? [])
