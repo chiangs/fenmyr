@@ -130,13 +130,17 @@ function startIn(b: Prototype, r: Landing) {
   return changed;
 }
 
-/** Started: the host's start event. It was already the newest build since it was asked for, so only its block, now
- *  building, is drawn again. */
+/** Started: the host's start event. It was already the newest build since it was asked for, so its buttons show and
+ *  only its block, now building, is drawn again, with the block of the build before it, which stops waiting for a
+ *  check of its preview. */
 export const started =
   (r: Running): Change =>
   b => {
     if (b.kind !== 'prototype' || !startIn(b, r)) return false;
-    if (b === session.board) redrawBlock(r.build);
+    if (b === session.board) {
+      redrawBlock(r.build);
+      if (r.was) redrawBlock(r.was);
+    }
     return true;
   };
 
