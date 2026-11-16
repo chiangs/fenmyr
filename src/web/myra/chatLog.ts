@@ -133,11 +133,15 @@ function renderHistory() {
 const partsOf = new WeakMap<ChatMsg, HTMLElement>();
 
 // Her file names, in backticks, show in code font, as when she explains a prototype's code. Built as text nodes, so
-// nothing she says is read as markup.
+// nothing she says is read as markup. Her bubble lays its children out as a column (it shares .myra with her figure), so
+// a line with code is one span, or each piece would sit on a line of its own.
 function withCode(d: HTMLElement, text: string) {
-  for (const [i, part] of text.split(/`([^`\n]+)`/).entries())
-    if (i % 2) d.appendChild(document.createElement('code')).textContent = part;
-    else if (part) d.append(part);
+  const pieces = text.split(/`([^`\n]+)`/);
+  if (pieces.length === 1) return void (d.textContent = text);
+  const line = d.appendChild(document.createElement('span'));
+  for (const [i, piece] of pieces.entries())
+    if (i % 2) line.appendChild(document.createElement('code')).textContent = piece;
+    else if (piece) line.append(piece);
 }
 
 // A message with no words, such as a build's block, is only its parts, so it draws as a card, not a speech bubble.

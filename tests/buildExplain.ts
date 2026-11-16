@@ -189,6 +189,18 @@ try {
     ['src/App.tsx', 'src/Form.tsx', 'src/Terminal.tsx', 'src/Form.tsx'],
     'with its file names in code font',
   );
+  assert(
+    await page().evaluate(() => {
+      const code = [...document.querySelectorAll('#mcList .mc-msg.myra')].at(-1)?.querySelector('code'),
+        before = code?.previousSibling;
+      if (!code || !before) return false;
+      const range = document.createRange();
+      range.selectNodeContents(before);
+      const end = [...range.getClientRects()].at(-1);
+      return !!end && Math.abs(end.top - code.getBoundingClientRect().top) < 4;
+    }),
+    'set in her sentence, not on a line of its own',
+  );
 
   await restart();
   assert.deepStrictEqual(
