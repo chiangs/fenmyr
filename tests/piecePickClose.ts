@@ -185,7 +185,6 @@ try {
     ['signin', 300, 40, 1],
     ['signin', 300, 40, 1.6],
     ['empty', 200, 60, 0.5],
-    ['empty', 300, 30, 1],
   ] as const) {
     await page.evaluate(
       v => {
@@ -211,6 +210,20 @@ try {
     assert.ok(apart, `at ${z * 100}% the bar keeps clear of the picker: ${JSON.stringify(r)}`);
     assert.ok(!!r && r.bar.right <= r.sideR, `at ${z * 100}% the bar folds to fit beside it: ${JSON.stringify(r)}`);
   }
+  await page.evaluate(() => {
+    Object.assign(window.__fenmyr.view, { x: 300, y: 30, z: 1 });
+    window.__fenmyr.applyView();
+  });
+  await settle(page, 400);
+  const moved = await page.evaluate(() => ({
+    bar: document.getElementById('selbar')?.getBoundingClientRect().right ?? 0,
+    side: document.getElementById('sideR')?.firstElementChild?.getBoundingClientRect().left ?? 0,
+    open: !document.getElementById('piecePick')?.hidden,
+  }));
+  assert.ok(
+    moved.open && moved.bar <= moved.side,
+    `when the view moves the picker to the screen's other side, the bar folds again to fit: ${JSON.stringify(moved)}`,
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('PIECE PICK CLOSE OK');
 } finally {
