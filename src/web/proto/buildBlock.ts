@@ -1,11 +1,14 @@
 import { type BuildRecord, buildHead, buildState, fileLines } from '../../shared/build.ts';
+import { session } from '../core/state.ts';
 import type { Button, Mark, Piece } from '../myra/acts.ts';
+import { noteHeard } from '../myra/status.ts';
 import { stoppedUndo } from './buildButtons.ts';
-import { liveOf } from './buildSlot.ts';
+import { focusBlock } from './buildRecord.ts';
+import { cancel, liveOf } from './buildSlot.ts';
 import { sourceButton } from './sources.ts';
 
-// A build's block in its prototype's chat, drawn from its record and, while it runs here, how far it has got: the head,
-// a moving bar while it runs, how many cards it read, a line per file, and the cards its code came from.
+// A build's block in its prototype's chat, drawn from its record and, while it waits or runs here, how far it has got:
+// the head, a moving bar while it runs, how many cards it read, a line per file, and the cards its code came from.
 const MAX_FROM = 4;
 
 const cardsRead = (n: number) => (n ? `Read ${n} ${n === 1 ? 'card' : 'cards'}` : 'No cards to read');
@@ -24,6 +27,22 @@ export function buildPieces(a: BuildRecord): Piece[] {
     ...(busy ? { busy } : {}),
   });
   switch (s.phase) {
+    case 'queued': {
+      // nothing is stored for a cancel: a request that isn't waiting and never started reads not started
+      const stop: Button = {
+        label: 'Cancel',
+        ghost: true,
+        after: 'stay',
+        // The chat draws the block again after the press, reading not started with no button, so focus stays on the
+        // block, where Tab goes on to the next Cancel.
+        run: () => {
+          if (!cancel(a.build)) return;
+          noteHeard(`${session.board?.name ?? 'This prototype'}’s build is cancelled`);
+          focusBlock(a.build);
+        },
+      };
+      return [box([a.request.split('\n')[0] ?? ''], ['wait']), { slot: 'other', button: stop }];
+    }
     case 'starting':
       return [box([], [], true)];
     case 'writing':

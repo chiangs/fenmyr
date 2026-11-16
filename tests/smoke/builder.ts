@@ -4,7 +4,8 @@ import { readBuildEvent } from '../../src/shared/build.ts';
 import type { Smoke } from './kit.ts';
 
 // A build through the bridge, with the stand-in Claude Code rewriting the starter's App.tsx as one line: the page gets
-// the snapshot as it starts, then the file with its lines added and removed, and the next steps, as it ends.
+// the snapshot as it starts, then the file with its lines added and removed, and the next steps, as it ends. While it
+// runs, a commit, a pull, taking GitHub's version and Undo this build in its repo answer busy.
 export async function builder(t: Smoke) {
   const repo = path.join(t.data, 'smoke-build');
   fs.mkdirSync(repo, { recursive: true });
@@ -24,7 +25,8 @@ export async function builder(t: Smoke) {
       const type = typeof data === 'object' && data !== null && 'type' in data ? data.type : null;
       if (type === 'done' || type === 'error') ended.resolve();
     };
-    let answer: unknown = null;
+    let answer: unknown = null,
+      refused: string[] = [];
     try {
       answer = await F.protoBuild({
         root: repo,
@@ -39,11 +41,20 @@ export async function builder(t: Smoke) {
         build: '',
         board: '',
       });
+      // while the build writes, nothing else may change or take the repo's files
+      refused = (
+        await Promise.all([
+          F.gitCommit({ root: repo, dir, message: 'Under the build' }),
+          F.gitPull({ root: repo, account: '' }),
+          F.gitTakeTheirs({ root: repo }),
+          F.protoUndo({ root: repo, dir, snapshot: 'HEAD' }),
+        ])
+      ).map(x => x.kind);
       await Promise.race([ended.promise, new Promise(r => setTimeout(r, 20000))]);
     } finally {
       window.__fenmyrEvent = was;
     }
-    return { starter, events, answer };
+    return { starter, events, answer, refused };
   }, repo);
   const lines = r.starter.split('\n').length - (r.starter.endsWith('\n') ? 1 : 0);
   const [start, edit, done, ...more] = r.events.map(readBuildEvent);
@@ -51,6 +62,7 @@ export async function builder(t: Smoke) {
   const id = typeof r.answer === 'object' && r.answer !== null && 'id' in r.answer ? r.answer.id : null;
   t.checkAll('builder', {
     started: JSON.stringify(r.answer) === JSON.stringify({ kind: 'started', id }) && start?.id === id,
+    busy: JSON.stringify(r.refused) === '["busy","busy","busy","busy"]',
     startSnapshot: start?.type === 'start' && /^[0-9a-f]{40}$/.test(start.snapshot),
     edit: edit?.type === 'edit' && edit.file === 'src/App.tsx',
     done: done?.type === 'done' && !more.length,

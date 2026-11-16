@@ -3053,6 +3053,8 @@ body.proto #mcInput { height: var(--input-h, 140px); max-height: none; field-siz
    on each step and the cards its code came from. The bar stands still when moving stamps and wiggles are off, when she
    is calm, and under reduced motion. */
 #mcList .mc-msg.bare { display: block; align-self: stretch; max-width: none; padding: 10px 13px 11px; border: 1px solid color-mix(in oklch, var(--ink) 12%, transparent); border-radius: 16px; corner-shape: squircle; background: color-mix(in oklch, var(--ink) 3%, transparent); }
+/* focus lands on a block once Cancel has gone from it */
+#mcList .mc-msg.bare:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
 .mc-msg.bare .m-summary { margin-top: 0; padding-top: 0; border-top: 0; }
 .m-summary.build b { font: 700 12.5px/1.35 var(--font); opacity: 1; }
 .m-bar { position: relative; height: 3px; margin: 7px 0 3px; overflow: hidden; border-radius: 2px; background: color-mix(in oklch, var(--ink) 10%, transparent); }
@@ -3064,6 +3066,7 @@ body:is(.calm, .myra-calm) .m-bar::after { animation: none; transform: translate
 .m-summary li[data-mark]::before { content: ""; position: absolute; left: 3px; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--pink-deep); }
 .m-summary li[data-mark="done"]::before { top: .3em; left: 4px; width: 3.5px; height: 7.5px; border: solid var(--ink-soft); border-width: 0 1.6px 1.6px 0; border-radius: 0; background: none; transform: rotate(45deg); }
 .m-summary li[data-mark="bad"]::before { border-radius: 1px; }
+.m-summary li[data-mark="wait"]::before { box-sizing: border-box; border: 1.5px solid var(--ink-soft); background: none; }
 /* colours used in one or two places around the app, named by where they're used and what for; #251 turns these into per-theme tokens */
 :root {
   --anim-shadow: #facea3; --anim-shadow-2: #dca36a; --au-bg: #ff5a6e; --au-bg-2: #fbf8f5; --au-bg-3: #1d1a16; --bd-bg: #2b2722;

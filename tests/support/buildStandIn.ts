@@ -4,12 +4,13 @@ import type { Launched } from './launch.ts';
 
 // A stand-in Claude Code for builds, told before each build what to do: the files it writes in the prototype's folder,
 // reported the way stream-json does, whether it waits for a release after each file but the last (`pause`) and before it
-// ends (`hold`), and whether it ends with a failure instead of `reply`. It counts each file it has reported. Any other
-// question gets a short answer, and its prompt is logged.
+// ends (`hold`), how many milliseconds more it takes to end (`ms`), and whether it ends with a failure instead of `reply`. It counts each file it has reported, and logs
+// each build's prompt. Any other question gets a short answer, and its prompt is logged too.
 type BuildScript = {
   files: Record<string, string>;
   pause?: boolean;
   hold?: boolean;
+  ms?: number;
   fail?: string;
   reply?: string;
 };
@@ -18,7 +19,8 @@ type BuildScript = {
 export function writeBuildStandIn(file: string, work: string) {
   const script = path.join(work, 'next.json'),
     wrote = path.join(work, 'wrote'),
-    asks = path.join(work, 'asks.log');
+    asks = path.join(work, 'asks.log'),
+    builds = path.join(work, 'builds.log');
   // the nth wait goes on once gate-n exists, so a release that comes before its wait isn't lost
   const gate = (n: number) => path.join(work, `gate-${n}`);
   fs.mkdirSync(work, { recursive: true });
@@ -34,6 +36,7 @@ if (!process.argv.includes('stream-json')) {
   fs.appendFileSync(${JSON.stringify(asks)}, JSON.stringify(process.argv[3] ?? '') + '\\n');
   say({ type: 'result', is_error: false, result: JSON.stringify({ say: 'ok' }) });
 } else {
+  fs.appendFileSync(${JSON.stringify(builds)}, JSON.stringify(process.argv[3] ?? '') + '\\n');
   const s = JSON.parse(fs.readFileSync(${JSON.stringify(script)}, 'utf8'));
   // an app that doesn't stop Claude Code as it quits, such as one from before builds were stopped, would otherwise wait
   // on this stand-in for ever: it leaves once that app has gone
@@ -57,6 +60,7 @@ if (!process.argv.includes('stream-json')) {
       if (s.pause && i < files.length - 1) await wait();
     }
     if (s.hold) await wait();
+    if (s.ms) await new Promise(r => setTimeout(r, s.ms));
     say({ type: 'result', is_error: !!s.fail, result: s.fail ?? s.reply ?? 'I built it.' });
   })();
 }
@@ -64,6 +68,14 @@ if (!process.argv.includes('stream-json')) {
     { mode: 0o755 },
   );
   let released = 0;
+  const logged = (file: string): string[] =>
+    fs.existsSync(file)
+      ? fs
+          .readFileSync(file, 'utf8')
+          .split('\n')
+          .filter(Boolean)
+          .map(l => String(JSON.parse(l)))
+      : [];
   return {
     next(s: BuildScript) {
       for (const f of fs.readdirSync(work)) if (f.startsWith('gate-') || f === 'wrote') fs.rmSync(path.join(work, f));
@@ -74,14 +86,9 @@ if (!process.argv.includes('stream-json')) {
     // how many files this build has reported so far
     wrote: () => (fs.existsSync(wrote) ? Number(fs.readFileSync(wrote, 'utf8')) : 0),
     // every question's prompt, oldest first
-    asks: (): string[] =>
-      fs.existsSync(asks)
-        ? fs
-            .readFileSync(asks, 'utf8')
-            .split('\n')
-            .filter(Boolean)
-            .map(l => String(JSON.parse(l)))
-        : [],
+    asks: () => logged(asks),
+    // every build's prompt, oldest first
+    builds: () => logged(builds),
   };
 }
 

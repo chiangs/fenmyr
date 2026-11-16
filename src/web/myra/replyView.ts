@@ -8,6 +8,10 @@ import { chatKeep } from './chatLog.ts';
 // how many times each host has been drawn, so a click that drew something else there doesn't draw over it
 const drawn = new WeakMap<HTMLElement, number>();
 
+/** What a button's run resolves to when it is turned away only after the press, as by the host, so the press takes
+ *  nothing away after all and the button comes back. */
+export const HELD = Symbol('held');
+
 // A used button doesn't come back when the chat opens again: a click takes what it takes off the message too.
 export function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (!m.acts || !used.length) return;
@@ -67,7 +71,7 @@ export function drawActs(
   const pieces = acts.flatMap(a => piecesOf(a).map((p): [Act, Piece] => [a, p]));
   const button = (
     into: HTMLElement,
-    { label, cls, ghost, title, after, live, run }: Button,
+    { label, cls, ghost, title, after, live, held, run }: Button,
     a: Act,
     slotActs: readonly Act[],
   ) => {
@@ -76,13 +80,15 @@ export function drawActs(
     b.className = cls || (ghost ? 'ghost' : '');
     if (title) b.title = title;
     b.onclick = () => {
+      if (held?.()) return;
       // one that stopped applying after it was drawn, such as an offer in her bubble once another board is open, takes
       // and runs nothing: it only draws again, and its view leaves it out
       if (live && !live()) return drawActs(host, m, acts, onClick);
-      const gone = after === 'stay' ? [] : after === 'self' ? [a] : slotActs;
+      const gone = after === 'stay' ? [] : after === 'self' ? [a] : slotActs,
+        had = m?.acts;
       if (m) spend(m, storedOf(gone));
       onClick?.(after);
-      run();
+      const ran = run();
       if (drawn.get(host) === turn)
         drawActs(
           host,
@@ -90,6 +96,17 @@ export function drawActs(
           acts.filter(x => !gone.includes(x)),
           onClick,
         );
+      const redrawn = drawn.get(host);
+      // turned away after the press, as by the host: what it spent comes back, and so do the buttons
+      if (ran instanceof Promise)
+        void ran.then(r => {
+          if (r !== HELD) return;
+          if (m && had && m.acts !== had) {
+            m.acts = had;
+            if (chatKeep() === 'board') save();
+          }
+          if (drawn.get(host) === redrawn) drawActs(host, m, acts, onClick);
+        });
     };
   };
   for (const slot of SLOTS) {

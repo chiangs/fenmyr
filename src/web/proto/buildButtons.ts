@@ -9,6 +9,7 @@ import { type SayAction, say } from '../myra/say.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { recordOf, undone } from './buildRecord.ts';
 import { runningBuild } from './buildSlot.ts';
+import { hostBusy, stillBuilding } from './buildWait.ts';
 import { renderCode } from './code.ts';
 import { askCommit } from './gitActions.ts';
 import { renderGitBar } from './gitbar.ts';
@@ -36,10 +37,10 @@ export async function refreshPanes() {
 async function undo(b: Prototype, root: string, snapshot: string, build: string | undefined) {
   const done = await Fenmyr.protoUndo({ root, dir: b.proto.dir, snapshot });
   // a window reloaded while the build ran thinks it stopped
-  if (done.kind === 'busy') return say('I’m still writing that build. Undo it once it’s done.', 6000);
+  if (done.kind === 'busy') return hostBusy('undo');
   if (build) await changeBoard(b.id, undone(build));
   await refreshPanes();
-  say('It’s back to how it was before that build ✦', 5000);
+  return say('It’s back to how it was before that build ✦', 5000);
 }
 
 const openProto = (board: string) => {
@@ -63,7 +64,12 @@ export function buildUndoButton(a: BuildUndo): Omit<Button, 'after'> | null {
   const b = openProto(a.board),
     root = b && rootOf(b);
   if (!b || !root || !isLatest(b, a)) return null;
-  return { label: 'Undo this build', ghost: true, run: () => undo(b, root, a.snapshot, a.build) };
+  return {
+    label: 'Undo this build',
+    ghost: true,
+    held: () => stillBuilding(b, 'undo'),
+    run: () => undo(b, root, a.snapshot, a.build),
+  };
 }
 
 type Commit = Extract<ChatAction, { kind: 'commit' }>;
@@ -82,7 +88,13 @@ function commitShows(b: Prototype, a: Commit) {
 
 export function commitButton(a: Commit): SayAction | null {
   const b = openProto(a.board);
-  return b && commitShows(b, a) ? { label: 'Commit', cls: 'next', run: () => askCommit(b, a.message) } : null;
+  if (!b || !commitShows(b, a)) return null;
+  return {
+    label: 'Commit',
+    cls: 'next',
+    held: () => stillBuilding(b, 'commit'),
+    run: () => askCommit(b, a.message),
+  };
 }
 
 /** Undo this build on the block of a build Fenmyr closed on, which has no line of hers to carry it. A click mustn't
@@ -92,5 +104,10 @@ export function stoppedUndo(a: BuildRecord): Omit<Button, 'after'> | null {
     root = b && rootOf(b),
     start = a.start;
   if (!b || !root || !start || a.undone || newestBuild(b) !== a.build) return null;
-  return { label: 'Undo this build', ghost: true, run: () => undo(b, root, start.snapshot, a.build) };
+  return {
+    label: 'Undo this build',
+    ghost: true,
+    held: () => stillBuilding(b, 'undo'),
+    run: () => undo(b, root, start.snapshot, a.build),
+  };
 }

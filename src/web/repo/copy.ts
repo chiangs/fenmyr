@@ -5,6 +5,7 @@ import { appState } from '../core/state.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { boardsIn, saveLib } from '../library/tree.ts';
 import { say } from '../myra/say.ts';
+import { hostBusy } from '../proto/buildWait.ts';
 import { renderGitBar } from '../proto/gitbar.ts';
 import { openColumn } from '../proto/layout.ts';
 import { askGit } from './askGit.ts';
@@ -56,12 +57,14 @@ type Prototype = Extract<Board, { kind: 'prototype' }>;
 
 async function commitCopy(b: Prototype, root: string, message: string) {
   try {
-    await Fenmyr.gitCommit({ root, dir: b.proto.dir, message });
+    const done = await Fenmyr.gitCommit({ root, dir: b.proto.dir, message });
+    if (done.kind === 'busy') return hostBusy('commit');
     say('Committed. This version is in the history now ✦', 4000);
     renderGitBar(b);
   } catch (e) {
     failed(e);
   }
+  return undefined;
 }
 
 // A copied prototype, opened for the first time: Myra says where it came from and offers to commit it, in git's
