@@ -1,6 +1,7 @@
 // The changes counter's click lands on a code pane fitted to the width it shows at. Tabs never run past the end of
 // their row once the dots widen them, and a code column folded as the build landed opens on the file picker when its
-// tabs don't fit. Up and Down move through the picker's menu, and Escape hands focus back to what opened it.
+// tabs don't fit. Up and Down move through the picker's menu, and Escape hands focus back to what opened it. A click
+// while the pane draws again acts on its newest draw.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -129,6 +130,22 @@ try {
   await until(async () => (await head()).focusIn === 'menu', 'the picker opens its menu');
   await page.keyboard.press('Escape');
   assert.match((await head()).focused, /pc-pick/, 'Escape in a menu the picker opened hands focus back to the picker');
+
+  await page.evaluate(() => {
+    const f = window.Fenmyr,
+      real = f.protoFiles,
+      all = () => document.querySelector<HTMLElement>('#pr-code .pc-all')?.click();
+    // each draw waits for its files, so the pane starts a second draw while the counter's click waits on the first
+    f.protoFiles = o => new Promise(r => setTimeout(r, 300)).then(() => real(o));
+    setTimeout(() => {
+      f.protoFiles = real;
+    }, 2000);
+    all();
+    document.getElementById('mcChanges')?.click();
+    setTimeout(all, 100);
+  });
+  await until(async () => (await head()).focused === 'src/Basket.tsx', 'the click acts on the newest draw');
+  await page.keyboard.press('Escape');
 
   assert.deepStrictEqual(l.errors, []);
   console.log('DOCK CHANGES FIT OK');

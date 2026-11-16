@@ -197,7 +197,12 @@ async function entries(root: string, dir: string, react: boolean, files: string[
  *  tab, or in the picker's menu when the tabs don't fit. With none listed, as when the build only deleted files or
  *  changed Fenmyr's wiring, focus goes to the file the pane shows, or to the picker. */
 export async function openChanged() {
-  await drawn;
+  // a draw that starts while this waits replaces the one it waited for, so it waits for that one too
+  let settled: Promise<void>;
+  do {
+    settled = drawn;
+    await settled;
+  } while (settled !== drawn);
   const el = $('pr-code'),
     at = here,
     first = listed.find(isChanged);
