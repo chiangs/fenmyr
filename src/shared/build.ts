@@ -273,6 +273,9 @@ export function checkLine(c: PreviewCheck) {
   return first ? `Preview runs · ${n}: ${first}` : `Preview runs · ${n}`;
 }
 
+/** The errors a check kept, one per line, as the builder is sent the preview's errors. */
+export const checkErrors = (c: PreviewCheck) => (c.kind === 'unbuilt' ? c.error : c.errors.join('\n'));
+
 /** The check found something to fix: errors as it ran, or code that couldn't be bundled. */
 export const checkFailed = (c: PreviewCheck) => c.kind === 'unbuilt' || c.count > 0;
 

@@ -1,4 +1,10 @@
-import type { BuildEvent, BuildRecord, FileDiff, PreviewCheck } from '../../shared/build.ts';
+import {
+  type BuildEvent,
+  type BuildRecord,
+  checkErrors,
+  type FileDiff,
+  type PreviewCheck,
+} from '../../shared/build.ts';
 import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
@@ -191,6 +197,13 @@ export const checked =
     if (b === session.board) redrawBlock(build);
     return true;
   };
+
+/** The errors the kept check of a board's newest build found, or none when it has no check or was undone. */
+export function newestErrors(b: Board) {
+  const a = b.kind === 'prototype' && b.proto.build ? find(b.chat ?? [], b.proto.build)?.a : undefined,
+    check = a?.end?.kind === 'built' && !a.undone ? a.end.check : undefined;
+  return check ? checkErrors(check) : '';
+}
 
 /** Undone: Undo this build put the folder back as it was before the build. */
 export const undone =

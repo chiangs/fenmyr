@@ -1,7 +1,8 @@
 // A build that landed while another board was open reads "Preview not checked yet" and is checked when its board
 // opens, while one that is no longer its prototype's newest is never checked. A build waiting its turn starts only once
-// the build before it has been checked, so it is sent every error that check found, and Fix the errors pressed while
-// another prototype builds waits its turn like any request.
+// the build before it has been checked, so it is sent every error that check found. Fix the errors pressed while
+// another prototype builds waits its turn like any request, and is sent the errors its board's check kept when it starts
+// while that board is closed.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -198,9 +199,18 @@ try {
     'and the build it leads to waits its turn',
   );
   assert.deepStrictEqual(waiting?.buttons, ['Cancel'], 'with Cancel');
+  await open('pc');
+  const before = standIn.builds().length;
   standIn.release();
-  await until(async () => (await texts()).includes('Fixed.'), 'it runs once the other prototype’s build lands');
-  assert(standIn.builds().at(-1)?.includes('late-boom'), 'and is sent the preview’s errors');
+  await until(() => standIn.builds().length > before, 'it runs once the other prototype’s build lands');
+  const fix = standIn.builds().at(-1) ?? '';
+  assert.match(
+    fix.slice(fix.indexOf('ERRORS THE PREVIEW SHOWED')),
+    /^ERRORS THE PREVIEW SHOWED:\nlate-boom\n/,
+    'and, starting while its board is closed, is sent the errors its board’s check kept',
+  );
+  await until(() => !!recordOf('pb', 'Fix the errors in the preview')?.end, 'it lands on its closed board');
+  await open('pb');
   await until(async () => (await lastLine()) === 'Preview runs · no errors', 'the fix is checked');
   assert.deepStrictEqual(l.errors, [], 'no errors');
   console.log('BUILD CHECKS QUEUE OK');

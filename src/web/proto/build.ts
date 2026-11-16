@@ -7,7 +7,7 @@ import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { refreshPanes } from './buildButtons.ts';
 import { checkComing, checkNewest } from './buildCheck.ts';
-import { asked, ended, endedLost, redrawBlock, redrawNewest, started } from './buildRecord.ts';
+import { asked, ended, endedLost, newestErrors, redrawBlock, redrawNewest, started } from './buildRecord.ts';
 import {
   building,
   catchUp,
@@ -73,6 +73,15 @@ export async function startBuild(
   void pump();
 }
 
+async function keptErrors(board: string) {
+  let errors = '';
+  await changeBoard(board, b => {
+    errors = newestErrors(b);
+    return false;
+  });
+  return errors;
+}
+
 // what a screen reader hears as a request waits its turn, the block showing it as waiting
 const waitsWords = (name: string) => `${name}’s build waits its turn`;
 
@@ -118,8 +127,8 @@ async function pump() {
   if (w.waited) noteHeard(`${name}’s build has started`);
   try {
     redrawNewest(r);
-    // the preview belongs to the open board
-    const errors = session.board?.id === w.board ? previewErrors() : '';
+    // The preview belongs to the open board. A board that is closed has only the errors its newest build's check kept.
+    const errors = session.board?.id === w.board ? previewErrors() : await keptErrors(w.board);
     const started = await Fenmyr.protoBuild({ ...w.args, errors, pictures: await w.pictures });
     if (started.kind === 'started') {
       r.id = started.id;
