@@ -171,10 +171,12 @@ try {
   assert.deepStrictEqual(h.dots.sort(), ['src/App.tsx', 'src/Form.tsx'], 'and both tabs carry the dot');
 
   await foldCode();
-  await page.click('#mcChanges');
-  // the second click lands while the column slides open, as an impatient double click does
-  await page.waitForTimeout(80);
-  await page.click('#mcChanges');
+  // the second click lands a frame into the column's slide, as an impatient double click does
+  await page.evaluate(() => {
+    const counter = document.getElementById('mcChanges');
+    counter?.click();
+    setTimeout(() => counter?.click(), 16);
+  });
   await until(async () => (await head()).focusIn === 'tabs', 'a double click lands on the tab too');
   await settle(page, 400);
   assert.ok(!(await page.$('.pc-menu')), 'with no picker left open from the second click');
