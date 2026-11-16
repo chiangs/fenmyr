@@ -1,5 +1,6 @@
 // Runs inside the preview frame, first, and sends what happens there to the preview pane: that the page's scripts have
-// run, errors, console lines and, while pointing, the element clicked. It's turned into text with toString(), so it uses nothing from outside itself.
+// run, errors, console lines and, while pointing, the element clicked. It's turned into text with toString(), so it
+// uses nothing from outside itself.
 export function previewBridge() {
   // so a prototype's custom controls know they're in Fenmyr's preview
   Reflect.set(globalThis, '__fenmyr', true);
