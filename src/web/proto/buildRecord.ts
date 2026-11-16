@@ -1,4 +1,10 @@
-import type { BuildEvent, BuildRecord, FileDiff } from '../../shared/build.ts';
+import {
+  type BuildEvent,
+  type BuildRecord,
+  checkErrors,
+  type FileDiff,
+  type PreviewCheck,
+} from '../../shared/build.ts';
 import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
@@ -6,10 +12,11 @@ import { chatLog, focusMsg, pushMsg, redrawMsgs, showAdded } from '../myra/chatL
 import type { Running } from './buildSlot.ts';
 import { keepSources } from './sources.ts';
 
-// A build's record in its prototype's chat and the four times it is written: asked, started, ended and undone. Each is
-// one changeBoard, open board or not. Each finds the record by build id and applies only what is missing, so running one
-// twice changes nothing. On the open board each draws what it changed in the same tick, so a board that has just opened
-// can't draw it twice, and none draws the whole chat again, which would lose the buttons of a question showing there.
+// A build's record in its prototype's chat and the five times it is written: asked, started, ended, checked and
+// undone. Each is one changeBoard, open board or not. Each finds the record by build id and applies only what is missing,
+// so running one twice changes nothing. On the open board each draws what it changed in the same tick, so a board that
+// has just opened can't draw it twice, and none draws the whole chat again, which would lose the buttons of a question
+// showing there.
 type Change = (b: Board) => boolean;
 type Prototype = Extract<Board, { kind: 'prototype' }>;
 type Found = { m: ChatMsg; a: BuildRecord };
@@ -177,6 +184,26 @@ export const endedLost =
       Date.now(),
     )(b);
   };
+
+/** Checked: what its preview did, kept once, while it is still the board's newest build and not undone, so a newer
+ *  build's preview never answers for it. Only its block shows it. */
+export const checked =
+  (build: string, check: PreviewCheck): Change =>
+  b => {
+    if (b.kind !== 'prototype' || b.proto.build !== build) return false;
+    const a = find(b.chat ?? [], build)?.a;
+    if (a?.end?.kind !== 'built' || a.end.check || a.undone) return false;
+    a.end.check = check;
+    if (b === session.board) redrawBlock(build);
+    return true;
+  };
+
+/** The errors the kept check of a board's newest build found, or none when it has no check or was undone. */
+export function newestErrors(b: Board) {
+  const a = b.kind === 'prototype' && b.proto.build ? find(b.chat ?? [], b.proto.build)?.a : undefined,
+    check = a?.end?.kind === 'built' && !a.undone ? a.end.check : undefined;
+  return check ? checkErrors(check) : '';
+}
 
 /** Undone: Undo this build put the folder back as it was before the build. */
 export const undone =

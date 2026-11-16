@@ -1,9 +1,9 @@
 import type { ChatAction, ChatMsg } from '../../src/shared/chat.ts';
 import type { Card } from '../../src/shared/model.ts';
 
-// A prototype's chat after one build, kept as the build's block keeps it, for the visual check: built, failed, or cut
-// off by Fenmyr closing. The board names BUILD as its newest, so Undo this build and Commit show. The snapshot is never
-// put back, so any 40 hex characters do.
+// A prototype's chat after one build, kept as the build's block keeps it, for the visual check: built with a clean
+// preview or one that logged errors, failed, or cut off by Fenmyr closing. The board names BUILD as its newest, so Undo
+// this build, Commit and Fix the errors show. The snapshot is never put back, so any 40 hex characters do.
 export const BUILD = 'vbuild1';
 const SNAPSHOT = 'a'.repeat(40);
 const T = Date.UTC(2026, 10, 2, 9, 30);
@@ -39,7 +39,8 @@ const block = (board: string, end?: End): ChatMsg => ({
 });
 const undo = (board: string): ChatAction => ({ kind: 'buildUndo', board, snapshot: SNAPSHOT, build: BUILD });
 
-export const builtChat = (board: string): ChatMsg[] => [
+type Check = Extract<NonNullable<End>, { kind: 'built' }>['check'];
+const built = (board: string, check: Check): ChatMsg[] => [
   ...askedFor(),
   block(board, {
     kind: 'built',
@@ -50,6 +51,7 @@ export const builtChat = (board: string): ChatMsg[] => [
     ],
     outside: [],
     from: ['c1'],
+    check,
   }),
   {
     who: 'myra',
@@ -63,6 +65,18 @@ export const builtChat = (board: string): ChatMsg[] => [
     ],
   },
 ];
+
+export const builtChat = (board: string) => built(board, { kind: 'ran', count: 0, errors: [] });
+
+export const errorsChat = (board: string) =>
+  built(board, {
+    kind: 'ran',
+    count: 2,
+    errors: [
+      "TypeError: Cannot read properties of undefined (reading 'total') (line 12)",
+      'Uncaught RangeError: Invalid currency code : £',
+    ],
+  });
 
 export const failedChat = (board: string): ChatMsg[] => [
   ...askedFor(),

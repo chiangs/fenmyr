@@ -2,13 +2,15 @@ import { type BuildRecord, buildHead, buildState, fileLines } from '../../shared
 import { session } from '../core/state.ts';
 import type { Button, Mark, Piece } from '../myra/acts.ts';
 import { noteHeard } from '../myra/status.ts';
-import { stoppedUndo } from './buildButtons.ts';
+import { fixButton, stoppedUndo } from './buildButtons.ts';
+import { checkShown } from './buildCheck.ts';
 import { focusBlock } from './buildRecord.ts';
 import { cancel, liveOf } from './buildSlot.ts';
 import { sourceButton } from './sources.ts';
 
 // A build's block in its prototype's chat, drawn from its record and, while it waits or runs here, how far it has got:
-// the head, a moving bar while it runs, how many cards it read, a line per file, and the cards its code came from.
+// the head, a moving bar while it runs, how many cards it read, a line per file, how its preview check went, and the
+// cards its code came from.
 const MAX_FROM = 4;
 
 const cardsRead = (n: number) => (n ? `Read ${n} ${n === 1 ? 'card' : 'cards'}` : 'No cards to read');
@@ -57,14 +59,19 @@ export function buildPieces(a: BuildRecord): Piece[] {
       const outside = s.end.outside.length
           ? [`Also changed outside this prototype: ${s.end.outside.join(', ')}. Undo this build won’t put that back.`]
           : [],
-        marks = [...files.map((): Mark => 'done'), ...outside.map((): Mark => 'bad')];
+        check = checkShown(a),
+        checks = check ? [check.line] : [],
+        marks = [...files.map((): Mark => 'done'), ...outside.map((): Mark => 'bad'), ...(check ? [check.mark] : [])];
       // a click on a card mustn't take the record with it
       const links = s.end.from.slice(0, MAX_FROM).flatMap((id): Button[] => {
         const b = sourceButton(id);
         return b ? [{ ...b, after: 'stay' }] : [];
       });
       const made: Piece[] = links.length ? [{ slot: 'sources', head: 'Made from', links }] : [];
-      return [box([...files, ...outside], marks), ...made];
+      // the record says when it no longer shows: a click mustn't take the record with it
+      const fix = fixButton(a),
+        fixing: Piece[] = fix ? [{ slot: 'other', button: { ...fix, after: 'stay' } }] : [];
+      return [box([...files, ...outside, ...checks], marks), ...fixing, ...made];
     }
     case 'failed':
       return [box(files)];

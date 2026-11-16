@@ -6,7 +6,8 @@ import { changeBoard } from '../library/boardWrites.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { refreshPanes } from './buildButtons.ts';
-import { asked, ended, endedLost, redrawBlock, redrawNewest, started } from './buildRecord.ts';
+import { checkComing, checkNewest } from './buildCheck.ts';
+import { asked, ended, endedLost, newestErrors, redrawBlock, redrawNewest, started } from './buildRecord.ts';
 import {
   building,
   catchUp,
@@ -14,10 +15,12 @@ import {
   claimSlot,
   dequeue,
   enqueue,
+  firstWaiting,
   freeSlot,
   type Running,
   runningBuild,
   type Waiting,
+  waitsTurn,
 } from './buildSlot.ts';
 import { picturesOf } from './pictures.ts';
 import { previewErrors } from './preview.ts';
@@ -64,12 +67,21 @@ export async function startBuild(
     cards: chosen.length,
     args: { root, dir, stack, request, purpose, device, cards: briefs, build, board: b.id },
     pictures: picturesOf(chosen),
-    waited: building(),
+    waited: waitsTurn(),
   };
   if (w.waited) noteHeard(waitsWords(b.name));
   enqueue(w);
   void changeBoard(b.id, asked(w));
   void pump();
+}
+
+async function keptErrors(board: string) {
+  let errors = '';
+  await changeBoard(board, b => {
+    errors = newestErrors(b);
+    return false;
+  });
+  return errors;
 }
 
 // what a screen reader hears as a request waits its turn, the block showing it as waiting
@@ -117,8 +129,8 @@ async function pump() {
   if (w.waited) noteHeard(`${name}’s build has started`);
   try {
     redrawNewest(r);
-    // the preview belongs to the open board
-    const errors = session.board?.id === w.board ? previewErrors() : '';
+    // The preview belongs to the open board. A board that is closed has only the errors its newest build's check kept.
+    const errors = session.board?.id === w.board ? previewErrors() : await keptErrors(w.board);
     const started = await Fenmyr.protoBuild({ ...w.args, errors, pictures: await w.pictures });
     if (started.kind === 'started') {
       r.id = started.id;
@@ -156,15 +168,20 @@ function land(r: Running, e: End, said?: string) {
 }
 
 // Another board only hears how it ended, on the status line, by the board's name as it is then. name: the board's
-// name for a failure to write it. The next build waits until the open board's preview shows this one's code, so it is
-// sent that code's errors and not the code's before.
+// name for a failure to write it. The next build waits until the open board's preview shows this one's code and has
+// been checked, so it is sent all the errors that code logged and not the code's before.
 function landOn(board: string, name: string, e: End, done: () => void, change: (b: Board) => boolean) {
   // the board's name as it lands, which stays null when the board was deleted
   let landed: string | null = null;
   catchUp(
     changeBoard(board, b => {
+      // a build that changed files is the newest, so it is checked as soon as the preview catches up
+      if (b === session.board && e.type === 'done' && e.files.length) checkComing(e.build);
       if (!change(b)) return false;
       landed = b.name;
+      // the request next in line now waits for this build's check rather than for a build
+      const next = firstWaiting();
+      if (next) redrawBlock(next);
       return true;
     }).then(
       () => {
@@ -173,12 +190,14 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
           words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
         // the open board shows no note, since its block says how it went, but a screen reader hears it
         if (landed !== null) (open ? noteHeard : noteStatus)(words);
-        return open ? refreshPanes() : undefined;
+        // even when the panes fail to catch up, so the block doesn't go on saying it is being checked
+        return open ? refreshPanes().finally(checkNewest) : undefined;
       },
       (err: unknown) => {
         done();
         console.error('A build’s result could not be written to its board', err);
         noteStatus(`Couldn’t save ${landed ?? name}’s build to its chat`);
+        if (session.board?.id === board) void checkNewest();
       },
     ),
   );

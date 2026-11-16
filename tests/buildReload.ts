@@ -114,12 +114,13 @@ try {
     async () => (await texts()).includes('Built through a reload.'),
     'the build’s end lands after the reload',
   );
+  await until(async () => /^Preview runs/.test((await block()).lines.at(-1) ?? ''), 'its preview is checked');
   const built = await block();
   assert.match(built.head, /^Built in \d+ s$/, 'the block reads that it was built');
   assert.deepStrictEqual(
-    built.lines.slice(1),
-    [`src/App.tsx +1 −${starterLines}`, 'src/late.tsx +1 −0'],
-    'with what it changed',
+    built.lines,
+    ['No cards to read', `src/App.tsx +1 −${starterLines}`, 'src/late.tsx +1 −0', 'Preview runs · no errors'],
+    'with what it changed, and how its preview ran',
   );
   assert.deepStrictEqual(built.buttons, [], 'and no Undo of its own once her line has one');
   assert.deepStrictEqual(await buttonsUnder('Built through a reload.'), [['Undo this build', 'Commit']]);

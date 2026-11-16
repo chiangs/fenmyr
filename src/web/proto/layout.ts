@@ -5,6 +5,7 @@ import { dockReset, gooFrom, hopFrom, wonderIfEmpty } from '../myra/perch.ts';
 import { heightGrip } from '../settings/panelHeights.ts';
 import { applyLayout } from '../settings/widgets.ts';
 import { applyBoxes } from '../ui/boxes.ts';
+import { checkNewest } from './buildCheck.ts';
 import { watchCaptures } from './capture.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
@@ -263,7 +264,8 @@ export function showProto(b: Board) {
   renderDockHead(b);
   renderGitBar(b);
   renderCode(b);
-  renderPreview(b);
+  // a build that landed while another board was open is checked now
+  void renderPreview(b).then(() => checkNewest());
   startSync(b);
   // last, so the panes' first render doesn't eat her wind-up
   hopFrom(from);

@@ -4,7 +4,14 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import type { ChatMsg } from '../src/shared/chat.ts';
-import { BUILD, builtChat, failedChat, protoBuildCards, stoppedChat } from '../tests/fixtures/protoBuild.ts';
+import {
+  BUILD,
+  builtChat,
+  errorsChat,
+  failedChat,
+  protoBuildCards,
+  stoppedChat,
+} from '../tests/fixtures/protoBuild.ts';
 import { writeBuildStandIn } from '../tests/support/buildStandIn.ts';
 import { settle } from '../tests/support/launch.ts';
 import type { Group, Step } from './visual-myra.ts';
@@ -94,6 +101,7 @@ export const PROTO_GROUPS: Record<string, Group> = {
     env: withStandIn,
     states: [
       ['built', seeded(builtChat)],
+      ['errors', seeded(errorsChat)],
       ['failed', seeded(failedChat)],
       ['stopped', seeded(stoppedChat)],
       ['building', building],

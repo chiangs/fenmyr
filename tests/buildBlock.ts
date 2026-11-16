@@ -186,8 +186,8 @@ try {
   const built = await last();
   assert.deepStrictEqual(
     built?.lines,
-    ['Read 2 cards', `src/App.tsx +1 −${starterLines}`, 'src/Form.tsx +3 −0'],
-    'with the lines each file gained and lost',
+    ['Read 2 cards', `src/App.tsx +1 −${starterLines}`, 'src/Form.tsx +3 −0', 'Checking the preview'],
+    'with the lines each file gained and lost, and its preview being checked',
   );
   assert.ok(!built?.bar, 'and no bar');
   assert.deepStrictEqual(built?.made, ['↗ Checkout: show the total first'], 'made from the card it names');
@@ -217,8 +217,11 @@ try {
     'Myra reads the block when asked next',
   );
 
+  // its preview check, which tests/buildChecks.ts covers, is kept before the restart
+  await until(async () => /^Preview runs/.test((await last())?.lines.at(-1) ?? ''), 'its preview is checked');
+  const kept = await last();
   await relaunch();
-  assert.deepStrictEqual(await last(), built, 'after a restart the block reads the same');
+  assert.deepStrictEqual(await last(), kept, 'after a restart the block reads the same');
   assert.deepStrictEqual(await buttonsUnder(explained), hers, 'and her buttons come back');
   await tap('Undo this build');
   await until(
@@ -314,7 +317,12 @@ try {
     ['block', 'I kept going.'],
     'its block comes back before her explanation',
   );
-  assert.deepStrictEqual((await last())?.lines, ['Read 2 cards', 'src/Clear.tsx +1 −0'], 'with what it wrote');
+  await until(async () => /^Preview runs/.test((await last())?.lines.at(-1) ?? ''), 'its preview is checked');
+  assert.deepStrictEqual(
+    (await last())?.lines,
+    ['Read 2 cards', 'src/Clear.tsx +1 −0', 'Preview runs · no errors'],
+    'with what it wrote, and how its preview ran',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('BUILD BLOCK OK');
 } finally {

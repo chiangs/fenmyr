@@ -3063,7 +3063,8 @@ body.proto #mcInput { height: var(--input-h, 140px); max-height: none; field-siz
 body:is(.calm, .myra-calm) .m-bar::after { animation: none; transform: translateX(75%); }
 @media (prefers-reduced-motion: reduce) { .m-bar::after { animation: none; transform: translateX(75%); } }
 .m-summary li[data-mark] { position: relative; padding-left: 17px; }
-.m-summary li[data-mark]::before { content: ""; position: absolute; left: 3px; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--pink-deep); }
+/* the accent as text, not as a fill, so a dot this small still stands out from the panel at 3:1 */
+.m-summary li[data-mark]::before { content: ""; position: absolute; left: 3px; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-text); }
 .m-summary li[data-mark="done"]::before { top: .3em; left: 4px; width: 3.5px; height: 7.5px; border: solid var(--ink-soft); border-width: 0 1.6px 1.6px 0; border-radius: 0; background: none; transform: rotate(45deg); }
 .m-summary li[data-mark="bad"]::before { border-radius: 1px; }
 .m-summary li[data-mark="wait"]::before { box-sizing: border-box; border: 1.5px solid var(--ink-soft); background: none; }

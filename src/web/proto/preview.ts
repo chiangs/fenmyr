@@ -1,9 +1,11 @@
+import { type PreviewCheck, ranCheck, unbuiltCheck } from '../../shared/build.ts';
 import type { Board } from '../../shared/model.ts';
 import type { Capture, Proto } from '../../shared/repos.ts';
 import { $ } from '../core/dom.ts';
 import { setChatText } from '../myra/chatInput.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { child, closestTo, esc, textField } from '../ui/dom.ts';
+import { checkNewest } from './buildCheck.ts';
 import { buildPreview } from './bundle.ts';
 import { takeCapture } from './capture.ts';
 import { renderCode, showSource } from './code.ts';
@@ -24,15 +26,41 @@ let html = '';
 let pointing = false;
 // a capture whose commit the preview shows instead of the files on disk, until Back to latest or the next build
 let viewing: Capture | null = null;
-// what went wrong and what was logged since the last build, newest last
+// what went wrong and what was logged since the last build, newest last, trimmed to the newest lines
 const log: Line[] = [];
+// The last render's errors, counted as they arrive and the first of them kept, apart from the log, so a preview that
+// logs a lot can't push them out of it.
+const KEPT = 20;
+let errors: { count: number; first: string[] } = { count: 0, first: [] };
+function logged(line: Line) {
+  log.push(line);
+  if (log.length > 200) log.splice(0, log.length - 200);
+  if (line.kind !== 'error') return;
+  errors.count++;
+  if (errors.first.length < KEPT) errors.first.push(line.text);
+}
+// Each render, counted, so a check reads only the render it waited on and a newer one, such as a newer build's, never
+// answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or what settles once its frame's
+// scripts have run. ran: settles that, when the frame says so. overtaken: settles once a newer render begins, so a check
+// waiting on the last one, for its scripts or through its 3 s, moves on to the newer one at once.
+type Drawn = { kind: 'unbuilt'; board: string; error: string } | { kind: 'ran'; board: string; ran: Promise<void> };
+let renders = 0;
+let drawn: Promise<Drawn | null> = Promise.resolve(null);
+let ran = () => {};
+let overtake = () => {};
+let overtaken = new Promise<void>(done => {
+  overtake = done;
+});
+function nextRender() {
+  overtake();
+  overtaken = new Promise<void>(done => {
+    overtake = done;
+  });
+  return ++renders;
+}
 
 // the errors, for Myra to fix with her next change
-export const previewErrors = () =>
-  log
-    .filter(l => l.kind === 'error')
-    .map(l => l.text)
-    .join('\n');
+export const previewErrors = () => errors.first.join('\n');
 
 // other parts of the page post messages too, so this can run before any preview exists
 const frame = () => document.querySelector<HTMLIFrameElement>('#pr-preview iframe');
@@ -84,12 +112,23 @@ function showViewing(problem: string) {
   child(then, 'span').textContent = problem || words;
 }
 
-async function refreshPreview() {
-  if (!board || !root) return;
+function refreshPreview() {
+  drawn = draw(nextRender());
+  return drawn;
+}
+
+// A render a newer one has overtaken stops at its next step, so it can't draw over the newer one's frame.
+async function draw(gen: number): Promise<Drawn | null> {
+  if (!board || !root) return null;
   const { dir, stack } = board.proto;
   const then = viewing ? await Fenmyr.protoAtCommit({ root, dir, commit: viewing.commit }).catch(() => null) : null;
-  if (viewing && !then) return showViewing('That version isn’t in this repo any more.');
+  if (gen !== renders) return null;
+  if (viewing && !then) {
+    showViewing('That version isn’t in this repo any more.');
+    return null;
+  }
   showViewing('');
+  const id = board.id;
   const files = then ? Object.keys(then) : await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
   const built = await buildPreview(
     stack,
@@ -97,31 +136,65 @@ async function refreshPreview() {
     file => (then ? Promise.resolve(then[file] ?? '') : Fenmyr.protoRead({ root, dir, file })),
     file => Fenmyr.protoModule({ root, file }),
   );
+  if (gen !== renders) return null;
   log.length = 0;
+  errors = { count: 0, first: [] };
   const problem = $('pr-preview').querySelector<HTMLElement>('.pv-error');
   if (built.kind === 'error') {
-    log.push({ kind: 'error', text: built.message });
+    logged({ kind: 'error', text: built.message });
     if (problem) {
       problem.hidden = false;
       problem.textContent = `The preview couldn’t be built. ${built.message}`;
     }
-  } else {
-    if (problem) problem.hidden = true;
-    html = built.html;
-    const f = frame(),
-      knobs = child($('pr-preview'), '.pv-knobs');
-    if (then) knobs.hidden = true;
-    else
-      await loadKnobs(knobs, { root, dir, files }, frame, () => {
-        if (board) renderGitBar(board);
-      });
-    if (f) {
-      // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
-      f.onload = () => sendTweaks(f);
-      f.srcdoc = html;
-    }
+    showLog();
+    return { kind: 'unbuilt', board: id, error: built.message };
   }
+  if (problem) problem.hidden = true;
+  html = built.html;
+  const f = frame(),
+    knobs = child($('pr-preview'), '.pv-knobs');
+  if (then) knobs.hidden = true;
+  else
+    await loadKnobs(knobs, { root, dir, files }, frame, () => {
+      if (board) renderGitBar(board);
+    });
+  if (gen !== renders) return null;
+  // With no frame, a check waits out its cap. The frame says it ran once its own scripts have, so an image or a font
+  // still loading doesn't hold the check.
+  const running = new Promise<void>(done => {
+    ran = () => done();
+    if (!f) return;
+    // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
+    f.onload = () => sendTweaks(f);
+    f.srcdoc = html;
+  });
   showLog();
+  return { kind: 'ran', board: id, ran: running };
+}
+
+// how long a check gives the frame's scripts to run, and then to show their errors (owner decision 7)
+const RUN_MS = 15000;
+const WATCH_MS = 3000;
+const after = (ms: number) => new Promise<false>(done => setTimeout(() => done(false), ms));
+
+/** What the preview of `id`, the open prototype, does as it stands: whether it bundled, and the errors it logged by 3 s
+ *  after its frame's scripts ran. A render that begins meanwhile is checked in its place, so what is read is one
+ *  render's. Null while the preview shows a capture or another board. */
+export async function previewCheck(id: string): Promise<PreviewCheck | null> {
+  for (;;) {
+    const gen = renders,
+      newer = overtaken,
+      d = await drawn;
+    if (gen !== renders) continue;
+    if (!d || viewing || d.board !== id) return null;
+    if (d.kind === 'unbuilt') return unbuiltCheck(d.error);
+    const started = await Promise.race([d.ran.then(() => true), after(RUN_MS), newer.then(() => false)]);
+    if (gen !== renders) continue;
+    if (started) await Promise.race([after(WATCH_MS), newer]);
+    if (gen !== renders) continue;
+    const { count, first } = errors;
+    return started ? ranCheck(first, count) : ranCheck(['The preview didn’t finish loading.', ...first], count + 1);
+  }
 }
 
 function setPointing(on: boolean) {
@@ -137,9 +210,9 @@ addEventListener('message', e => {
   const d: Record<string, unknown> = e.data;
   if (d.fenmyrPreview !== true) return;
   const text = String(d.text ?? '').slice(0, 2000);
-  if (d.type === 'error') log.push({ kind: 'error', text: d.where ? `${text} (${String(d.where)})` : text });
-  if (d.type === 'console')
-    log.push({ kind: d.level === 'error' ? 'error' : d.level === 'warn' ? 'warn' : 'log', text });
+  if (d.type === 'ran') ran();
+  if (d.type === 'error') logged({ kind: 'error', text: d.where ? `${text} (${String(d.where)})` : text });
+  if (d.type === 'console') logged({ kind: d.level === 'error' ? 'error' : d.level === 'warn' ? 'warn' : 'log', text });
   if (d.type === 'tweak') tweakFromFrame(child($('pr-preview'), '.pv-knobs'), String(d.key), String(d.value));
   if (d.type === 'point') {
     const field = textField('mcInput'),
@@ -150,7 +223,6 @@ addEventListener('message', e => {
     setPointing(false);
     if (d.at) showSource(String(d.at));
   }
-  if (log.length > 200) log.splice(0, log.length - 200);
   showLog();
 });
 
@@ -203,6 +275,8 @@ export async function renderPreview(b: Board) {
   viewing = null;
   root = rootOf(b) ?? '';
   if (b.kind !== 'prototype' || !root) {
+    nextRender();
+    drawn = Promise.resolve(null);
     board = null;
     el.innerHTML = '<p class="pr-note">This prototype’s project isn’t linked to a repo, so there’s nothing to run.</p>';
     return;
@@ -225,13 +299,14 @@ export async function renderPreview(b: Board) {
     }
     if (act === 'point') setPointing(!pointing);
     if (act === 'capture') takeCapture(b);
+    // back on the live preview, a newest build left unchecked while a capture showed is checked
     if (act === 'latest') {
       viewing = null;
-      refreshPreview();
+      void refreshPreview().then(checkNewest);
     }
     // Refresh reads the files again everywhere, for changes made outside Fenmyr
     if (act === 'refresh') {
-      refreshPreview();
+      void refreshPreview().then(checkNewest);
       renderCode(b);
       renderGitBar(b);
     }
