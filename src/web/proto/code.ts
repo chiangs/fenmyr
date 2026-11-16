@@ -2,6 +2,7 @@ import type { Board } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { closestTo, esc } from '../ui/dom.ts';
+import { menuKeys } from '../ui/menuKeys.ts';
 import { closeOnOutsidePress, keepOnScreen } from '../ui/popover.ts';
 import { highlighted } from './highlight.ts';
 import { fromCards, showCard } from './sources.ts';
@@ -80,8 +81,10 @@ export function markChanged(paths: readonly string[]) {
 }
 
 // The files as a menu under the picker: the same menu as a row's right-click menu, so it follows the theme
-function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
+function openPicker(btn: HTMLElement, list: string[], choose: (f: string) => void) {
   closePicker();
+  // where Escape sends focus back to: the picker, or the changes counter when its click opened the menu
+  const from = document.activeElement instanceof HTMLButtonElement ? document.activeElement : btn;
   const groups = new Map<string, string[]>();
   for (const f of list) groups.set(folderOf(f), [...(groups.get(folderOf(f)) ?? []), f]);
   const items = [...groups]
@@ -91,7 +94,7 @@ function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
             const name = esc(f),
               label = esc(labelOf(f).split('/').pop() ?? f),
               on = f === shown ? ' class="on"' : '';
-            return `<button data-file="${name}"${on}>${label}</button>`;
+            return `<button data-file="${name}" role="menuitem"${on}>${label}</button>`;
           })
           .join(''),
         heading = esc(`${folder}/`);
@@ -102,6 +105,7 @@ function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
   m.className = 'row-menu pc-menu';
   m.innerHTML = items;
   document.body.appendChild(m);
+  menuKeys(m);
   const r = btn.getBoundingClientRect();
   Object.assign(m.style, { left: `${r.left}px`, top: `${r.bottom + 4}px`, minWidth: `${Math.max(r.width, MENU_W)}px` });
   keepOnScreen(m);
@@ -112,9 +116,14 @@ function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
     if (!f) return;
     closePicker();
     choose(f);
+    btn.focus();
   };
   m.onkeydown = e => {
-    if (e.key === 'Escape') closePicker();
+    if (e.key !== 'Escape') return;
+    // the board's own Escape would take focus away again
+    e.stopPropagation();
+    closePicker();
+    from.focus();
   };
 }
 
@@ -258,7 +267,7 @@ async function draw(b: Board) {
     if (f) showFile(root, dir, f);
     const card = closestTo(e.target, '[data-card]')?.dataset.card;
     if (card) showCard(card);
-    const pick = closestTo(e.target, '.pc-pick');
+    const pick = closestTo(e.target, '.pc-pick', HTMLElement);
     if (pick)
       return document.querySelector('.pc-menu') ? closePicker() : openPicker(pick, list, f => showFile(root, dir, f));
     const copy = closestTo(e.target, '.pc-copy');

@@ -1,6 +1,6 @@
 // The changes counter's click lands on a code pane fitted to the width it shows at. Tabs never run past the end of
 // their row once the dots widen them, and a code column folded as the build landed opens on the file picker when its
-// tabs don't fit.
+// tabs don't fit. Up and Down move through the picker's menu, and Escape hands focus back to what opened it.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -116,9 +116,19 @@ try {
   await page.click('#mcChanges');
   await until(async () => !(await head()).folded, 'a click unfolds the code column');
   await until(async () => (await head()).focused === 'src/Basket.tsx', 'focus lands on the first changed file');
-  const h = await head();
+  let h = await head();
   assert.ok(!h.tabs, 'a column folded as the build landed opens on the picker, since its tabs don’t fit');
   assert.strictEqual(h.focusIn, 'menu', 'with focus in the picker’s menu');
+  await page.keyboard.press('ArrowDown');
+  assert.strictEqual((await head()).focused, 'src/Coupon.tsx', 'Down moves to the menu’s next file');
+  await page.keyboard.press('Escape');
+  h = await head();
+  assert.ok(!h.menu, 'Escape closes the menu');
+  assert.strictEqual(h.focused, 'mcChanges', 'and hands focus back to the counter that opened it');
+  await page.click('.pc-pick');
+  await until(async () => (await head()).focusIn === 'menu', 'the picker opens its menu');
+  await page.keyboard.press('Escape');
+  assert.match((await head()).focused, /pc-pick/, 'Escape in a menu the picker opened hands focus back to the picker');
 
   assert.deepStrictEqual(l.errors, []);
   console.log('DOCK CHANGES FIT OK');
