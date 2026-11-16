@@ -9,7 +9,8 @@ import { type ChatAction, type ChatMsg, MAX_EXPLAINED } from '../../shared/chat.
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
 import { chatLog, focusMsg, pushMsg, redrawMsgs, showAdded } from '../myra/chatLog.ts';
-import type { Running } from './buildSlot.ts';
+import { type Running, runningBuild } from './buildSlot.ts';
+import { showChanges } from './dockHead.ts';
 import { keepSources } from './sources.ts';
 
 // A build's record in its prototype's chat and the five times it is written: asked, started, ended, checked and
@@ -69,13 +70,29 @@ export const recordIn = (b: Board, build: string) => find(b.chat ?? [], build)?.
 
 // Which of a block's or a line's Undo this build, Explain the code and Commit show follows the newest build, so when it
 // changes only the lines of the builds it changed between are drawn again, and those of a board from before builds were
-// named, which go by the newest in the chat. Drawing every one would lay out the whole thread again on each build.
+// named, which go by the newest in the chat. Drawing every one would lay out the whole thread again on each build. The
+// header's changes counter follows it too.
 type NewestOnly = Extract<ChatAction, { kind: 'build' | 'buildUndo' | 'explain' | 'commit' }>;
 const newestOnly = (a: ChatAction): a is NewestOnly =>
   a.kind === 'build' || a.kind === 'buildUndo' || a.kind === 'explain' || a.kind === 'commit';
 function redrawBuilds(...builds: (string | undefined)[]) {
   const which = new Set([...builds, undefined]);
   redrawMsgs(chatLog().filter(m => m.acts?.some(a => newestOnly(a) && which.has(a.build))));
+  if (session.board) showChanges(session.board);
+}
+
+/** The files a prototype's newest build changed, for the changes counter: none while one of its builds runs, once the
+ *  newest is undone, or when it changed nothing. The newest is the last one in its chat that started, so a request
+ *  waiting its turn, or one that never started, leaves the build before it counted, since neither changed a file. It
+ *  isn't `proto.build`, which goes back to the build before one that changed nothing, so that build's Undo this build
+ *  and Commit return; the counter says what the last build changed, which was nothing. A build Fenmyr closed on has no
+ *  end, so what it changed isn't known and nothing is counted. */
+export function newestChanges(b: Board): string[] {
+  if (b.kind !== 'prototype' || runningBuild()?.board === b.id) return [];
+  const a = (b.chat ?? [])
+    .flatMap(m => m.acts ?? [])
+    .findLast((x): x is BuildRecord => x.kind === 'build' && !!x.start);
+  return a?.end && !a.undone ? a.end.files.map(f => f.path) : [];
 }
 
 /** A build has left the queue, or gone back to it, so which is its prototype's newest has changed where it is open:

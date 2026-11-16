@@ -2,6 +2,7 @@ import type { Board } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { closestTo, esc } from '../ui/dom.ts';
+import { menuKeys } from '../ui/menuKeys.ts';
 import { closeOnOutsidePress, keepOnScreen } from '../ui/popover.ts';
 import { highlighted } from './highlight.ts';
 import { fromCards, showCard } from './sources.ts';
@@ -17,9 +18,14 @@ let shown = '';
 // the prototype the pane shows, for Point to open its files
 let here: { root: string; dir: string } | null = null;
 let all = false;
-// the width the tabs need on one row, measured when they're drawn
-let needed = 0;
 let watching = false;
+let listed: string[] = [];
+let drawn: Promise<void> = Promise.resolve();
+// each draw's number, so one that a newer draw has overtaken while it waited stops
+let draws = 0;
+// what the newest build changed, marked with a dot wherever the pane lists it; Values shows tweaks.json
+let changed: ReadonlySet<string> = new Set();
+const isChanged = (f: string) => changed.has(f === VALUES ? 'src/tweaks.json' : f);
 
 // styles.css counts once it holds more than Tailwind's import: a theme, or styles of the prototype's own
 const ownStyles = (css: string) =>
@@ -34,12 +40,16 @@ const folderOf = (f: string) => {
   return f === VALUES || !l.includes('/') ? '' : l.slice(0, l.lastIndexOf('/'));
 };
 
+// Tabs or the picker, from the tabs measured as they are now, dots included. A folded column has no width to measure,
+// so the pane fits once it opens, when its size changes.
 function fitBar() {
   const el = $('pr-code'),
-    bar = el.querySelector<HTMLElement>('.pc-bar');
-  if (!bar) return;
+    bar = el.querySelector<HTMLElement>('.pc-bar'),
+    files = bar?.querySelector<HTMLElement>('.pc-files');
+  if (!bar?.clientWidth || !files) return;
+  el.classList.remove('pc-many');
   const acts = bar.querySelector<HTMLElement>('.pc-acts')?.offsetWidth ?? 0;
-  el.classList.toggle('pc-many', needed > bar.clientWidth - 16 - acts - 6);
+  el.classList.toggle('pc-many', files.scrollWidth > bar.clientWidth - 16 - acts - 6);
 }
 
 // wide enough for a component's file name without wrapping
@@ -47,9 +57,34 @@ const MENU_W = 260;
 
 const closePicker = () => document.querySelector('.pc-menu')?.remove();
 
+function mark(el: HTMLElement, on: boolean) {
+  el.toggleAttribute('data-changed', on);
+  el.ariaDescription = on ? 'Changed by the last build' : null;
+}
+
+// the dots on the tabs, the picker's menu and the picker while it shows a changed file, and the caption while any shows
+function paint() {
+  const el = $('pr-code');
+  for (const f of document.querySelectorAll<HTMLElement>('#pr-code [data-file], .pc-menu [data-file]'))
+    mark(f, isChanged(f.dataset.file ?? ''));
+  const pick = el.querySelector<HTMLElement>('.pc-pick'),
+    note = el.querySelector<HTMLElement>('.pc-dots');
+  if (pick) mark(pick, isChanged(shown));
+  if (note) note.hidden = !listed.some(isChanged);
+  fitBar();
+}
+
+/** Marks the files the newest build changed, as the changes counter counts them. */
+export function markChanged(paths: readonly string[]) {
+  changed = new Set(paths);
+  paint();
+}
+
 // The files as a menu under the picker: the same menu as a row's right-click menu, so it follows the theme
-function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
+function openPicker(btn: HTMLElement, list: string[], choose: (f: string) => void) {
   closePicker();
+  // where Escape sends focus back to: the picker, or the changes counter when its click opened the menu
+  const from = document.activeElement instanceof HTMLButtonElement ? document.activeElement : btn;
   const groups = new Map<string, string[]>();
   for (const f of list) groups.set(folderOf(f), [...(groups.get(folderOf(f)) ?? []), f]);
   const items = [...groups]
@@ -59,7 +94,7 @@ function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
             const name = esc(f),
               label = esc(labelOf(f).split('/').pop() ?? f),
               on = f === shown ? ' class="on"' : '';
-            return `<button data-file="${name}"${on}>${label}</button>`;
+            return `<button data-file="${name}" role="menuitem"${on}>${label}</button>`;
           })
           .join(''),
         heading = esc(`${folder}/`);
@@ -70,18 +105,25 @@ function openPicker(btn: Element, list: string[], choose: (f: string) => void) {
   m.className = 'row-menu pc-menu';
   m.innerHTML = items;
   document.body.appendChild(m);
+  menuKeys(m);
   const r = btn.getBoundingClientRect();
   Object.assign(m.style, { left: `${r.left}px`, top: `${r.bottom + 4}px`, minWidth: `${Math.max(r.width, MENU_W)}px` });
   keepOnScreen(m);
+  paint();
   m.querySelector<HTMLElement>('.on')?.focus();
   m.onclick = e => {
     const f = closestTo(e.target, '[data-file]')?.dataset.file;
     if (!f) return;
     closePicker();
     choose(f);
+    btn.focus();
   };
   m.onkeydown = e => {
-    if (e.key === 'Escape') closePicker();
+    if (e.key !== 'Escape') return;
+    // the board's own Escape would take focus away again
+    e.stopPropagation();
+    closePicker();
+    from.focus();
   };
 }
 
@@ -110,6 +152,7 @@ async function showFile(root: string, dir: string, file: string) {
   for (const b of el.querySelectorAll<HTMLElement>('[data-file]')) b.classList.toggle('on', b.dataset.file === file);
   const pick = el.querySelector('.pc-pick span');
   if (pick) pick.textContent = labelOf(file);
+  paint();
   const read = (f: string) => Fenmyr.protoRead({ root, dir, file: f });
   const shownAs = await (file === VALUES ? read('src/tweaks.json').then(valuesText) : read(file)).then(
     text => highlighted(file, text),
@@ -150,9 +193,41 @@ async function entries(root: string, dir: string, react: boolean, files: string[
   return { list: [...(all ? files : code), ...values], hidden: files.length - code.length };
 }
 
-export async function renderCode(b: Board) {
+/** The changes counter's click, once the code column is open: the first changed file the pane lists, with focus on its
+ *  tab, or in the picker's menu when the tabs don't fit. With none listed, as when the build only deleted files or
+ *  changed Fenmyr's wiring, focus goes to the file the pane shows, or to the picker. */
+export async function openChanged() {
+  // a draw that starts while this waits replaces the one it waited for, so it waits for that one too
+  let settled: Promise<void>;
+  do {
+    settled = drawn;
+    await settled;
+  } while (settled !== drawn);
   const el = $('pr-code'),
-    root = rootOf(b);
+    at = here,
+    first = listed.find(isChanged);
+  // folded again as it slid open, or by a window narrowed meanwhile
+  if (!at || el.closest('.folded')) return;
+  if (first) await showFile(at.root, at.dir, first);
+  fitBar();
+  const many = el.classList.contains('pc-many'),
+    pick = el.querySelector<HTMLElement>('.pc-pick');
+  if (first && many && pick) return openPicker(pick, listed, f => showFile(at.root, at.dir, f));
+  // a second click while the column slid open may have opened the picker at the narrow width
+  closePicker();
+  (many ? pick : el.querySelector<HTMLElement>('.pc-file.on'))?.focus();
+}
+
+export function renderCode(b: Board) {
+  drawn = draw(b);
+  return drawn;
+}
+
+async function draw(b: Board) {
+  const el = $('pr-code'),
+    root = rootOf(b),
+    n = ++draws;
+  listed = [];
   if (b.kind !== 'prototype' || !root) {
     el.innerHTML =
       '<p class="pr-note">This prototype’s project isn’t linked to a repo, so there’s no code to show.</p>';
@@ -161,12 +236,15 @@ export async function renderCode(b: Board) {
   const { dir, stack } = b.proto;
   here = { root, dir };
   const files = await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
+  if (n !== draws) return;
   if (!files.length) {
     const where = esc(dir);
     el.innerHTML = `<p class="pr-note">There are no files in ${where} yet.</p>`;
     return;
   }
   const { list, hidden } = await entries(root, dir, stack === 'react', files);
+  if (n !== draws) return;
+  listed = list;
   if (!list.includes(shown)) shown = list.find(f => /(^|\/)App\.tsx$/.test(f)) ?? list[0] ?? '';
   const tabs = list
     .map(f => {
@@ -183,9 +261,7 @@ export async function renderCode(b: Board) {
   const copy = copyLabel(false),
     caret = Icon('caret-down', { size: 12 });
   el.classList.remove('pc-many');
-  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"><span></span>${caret}</button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><div class="pc-from-slot"></div><pre class="pc-text"><code></code></pre>`;
-  needed = el.querySelector('.pc-files')?.scrollWidth ?? 0;
-  fitBar();
+  el.innerHTML = `<div class="pc-bar"><div class="pc-files">${tabs}</div><button class="pv-btn pc-pick" aria-haspopup="menu"><span></span>${caret}</button><div class="pc-acts">${toggle}<button class="pv-btn pc-copy" title="Copy this file">${copy}</button></div></div><p class="pc-dots" hidden>Dots mark what the last build changed</p><div class="pc-from-slot"></div><pre class="pc-text"><code></code></pre>`;
   if (!watching) {
     watching = true;
     new ResizeObserver(fitBar).observe(el);
@@ -196,14 +272,14 @@ export async function renderCode(b: Board) {
     if (f) showFile(root, dir, f);
     const card = closestTo(e.target, '[data-card]')?.dataset.card;
     if (card) showCard(card);
-    const pick = closestTo(e.target, '.pc-pick');
+    const pick = closestTo(e.target, '.pc-pick', HTMLElement);
     if (pick)
       return document.querySelector('.pc-menu') ? closePicker() : openPicker(pick, list, f => showFile(root, dir, f));
     const copy = closestTo(e.target, '.pc-copy');
     if (copy) copyShown(copy);
     if (closestTo(e.target, '.pc-all')) {
       all = !all;
-      renderCode(b);
+      void renderCode(b);
     }
   };
   await showFile(root, dir, shown);
