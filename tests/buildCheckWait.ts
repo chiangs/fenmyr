@@ -1,7 +1,7 @@
 // How long a preview check waits, and for what. It starts once the frame's own scripts have run, so an image that never
 // loads neither holds the build waiting behind it nor counts as an error, while a frame whose scripts never run ends at
-// the 15 s cap as an error. A render that takes the frame meanwhile is checked in its place, so the check doesn't wait
-// out the cap on the frame it lost. A check cut short by a capture's commit is done once Back to latest shows the files.
+// the 15 s cap as an error. A render that takes the frame meanwhile is checked in its place at once, so the check
+// waits out neither the cap nor the 3 s on the frame it lost. A check cut short by a capture's commit is done once Back to latest shows the files.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -26,12 +26,17 @@ const l = await launch({ data, boards: [replyBoard('one', 'One')], open: 'one', 
 const standIn = buildStandIn(l);
 const { page } = l;
 
-// a server that takes a connection and never answers, so what the frame asks of it never arrives
-const sockets: net.Socket[] = [];
-const server = net.createServer(s => sockets.push(s));
-await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
-const address = server.address();
-const hang = `https://127.0.0.1:${address && typeof address === 'object' ? address.port : 0}`;
+// A server that takes a connection and never answers, so what the frame asks of it never arrives. One per case, since
+// Chromium can hand a later request a connection it began for an earlier one, which then gives up on its own clock.
+const sockets: net.Socket[] = [],
+  servers: net.Server[] = [];
+async function hangs() {
+  const server = net.createServer(s => sockets.push(s));
+  servers.push(server);
+  await new Promise<void>(done => server.listen(0, '127.0.0.1', done));
+  const address = server.address();
+  return `https://127.0.0.1:${address && typeof address === 'object' ? address.port : 0}`;
+}
 
 const lastLine = () =>
   page.evaluate(() => [...document.querySelectorAll('#mcList .mc-msg.bare .m-summary li')].at(-1)?.textContent ?? '');
@@ -74,7 +79,7 @@ async function queuedBehind(request: string, files: Record<string, string>, mean
   standIn.release();
   await landed(request);
   const at = Date.now();
-  if (files['index.html']?.includes(hang))
+  if (files['index.html']?.includes('https://127.0.0.1'))
     await until(() => sockets.length > asked, 'the frame asks for what never comes', 10000);
   await meanwhile();
   let kept = -1,
@@ -137,8 +142,9 @@ try {
   await page.click('[data-pv="latest"]');
   await until(async () => (await lastLine()) === 'Preview runs · no errors', 'Back to latest checks the build');
 
+  const image = await hangs();
   const slow = await queuedBehind('Slow.', {
-    'index.html': index('', `<img src="${hang}/never.png" alt="">`),
+    'index.html': index('', `<img src="${image}/never.png" alt="">`),
     'src/App.tsx': app('Slow'),
   });
   assert.deepStrictEqual(
@@ -149,12 +155,17 @@ try {
   assert(slow.kept > 0 && slow.kept < 9000, `the check doesn't wait for it (${slow.kept} ms)`);
   assert(slow.started > 0 && slow.started < 10000, `nor does the build behind it (${slow.started} ms)`);
 
-  const stuck = index(`<link rel="stylesheet" href="${hang}/never.css">`);
-  const taken = await queuedBehind('Taken.', { 'index.html': stuck, 'src/App.tsx': app('Taken') }, async () => {
-    await page.waitForTimeout(1000);
-    fs.writeFileSync(path.join(repo, proto.dir, 'index.html'), index(''));
-    await page.click('#pr-preview [data-pv="refresh"]');
-  });
+  // a stylesheet that never arrives holds the scripts after it
+  const stuck = (at: string) => index(`<link rel="stylesheet" href="${at}/never.css">`);
+  const taken = await queuedBehind(
+    'Taken.',
+    { 'index.html': stuck(await hangs()), 'src/App.tsx': app('Taken') },
+    async () => {
+      await page.waitForTimeout(1000);
+      fs.writeFileSync(path.join(repo, proto.dir, 'index.html'), index(''));
+      await page.click('#pr-preview [data-pv="refresh"]');
+    },
+  );
   assert.deepStrictEqual(
     checkOf('Taken.'),
     { kind: 'ran', count: 0, errors: [] },
@@ -166,7 +177,18 @@ try {
   );
   assert(taken.started > 0 && taken.started < 10000, `and the build behind it starts then (${taken.started} ms)`);
 
-  const never = await queuedBehind('Never.', { 'index.html': stuck, 'src/App.tsx': app('Never') });
+  const again = await queuedBehind('Again.', { 'index.html': index(''), 'src/App.tsx': app('Again') }, async () => {
+    await page.waitForTimeout(500);
+    await page.click('#pr-preview [data-pv="refresh"]');
+  });
+  assert.deepStrictEqual(
+    checkOf('Again.'),
+    { kind: 'ran', count: 0, errors: [] },
+    'a render that takes a running frame',
+  );
+  assert(again.kept > 0 && again.kept < 5000, `is watched for 3 s from its own start (${again.kept} ms)`);
+
+  const never = await queuedBehind('Never.', { 'index.html': stuck(await hangs()), 'src/App.tsx': app('Never') });
   assert.deepStrictEqual(
     checkOf('Never.'),
     { kind: 'ran', count: 1, errors: ['The preview didn’t finish loading.'] },
@@ -177,7 +199,7 @@ try {
   console.log('BUILD CHECK WAIT OK');
 } finally {
   for (const s of sockets) s.destroy();
-  server.close();
+  for (const s of servers) s.close();
   await l.close();
   fs.rmSync(work, { recursive: true, force: true });
   fs.rmSync(data, { recursive: true, force: true });

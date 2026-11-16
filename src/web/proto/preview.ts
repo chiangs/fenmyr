@@ -40,16 +40,22 @@ function logged(line: Line) {
   if (errors.first.length < KEPT) errors.first.push(line.text);
 }
 // Each render, counted, so a check reads only the render it waited on and a newer one, such as a newer build's, never
-// answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or whether its frame's scripts
-// ran, false once a newer render has taken the frame. letGo: settles the last render's frame as taken. ran: settles it
-// as having run, when its frame says so.
-type Drawn = { kind: 'unbuilt'; board: string; error: string } | { kind: 'ran'; board: string; ran: Promise<boolean> };
+// answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or what settles once its frame's
+// scripts have run. ran: settles that, when the frame says so. overtaken: settles once a newer render begins, so a check
+// waiting on the last one, for its scripts or through its 3 s, moves on to the newer one at once.
+type Drawn = { kind: 'unbuilt'; board: string; error: string } | { kind: 'ran'; board: string; ran: Promise<void> };
 let renders = 0;
 let drawn: Promise<Drawn | null> = Promise.resolve(null);
-let letGo = () => {};
 let ran = () => {};
+let overtake = () => {};
+let overtaken = new Promise<void>(done => {
+  overtake = done;
+});
 function nextRender() {
-  letGo();
+  overtake();
+  overtaken = new Promise<void>(done => {
+    overtake = done;
+  });
   return ++renders;
 }
 
@@ -155,9 +161,8 @@ async function draw(gen: number): Promise<Drawn | null> {
   if (gen !== renders) return null;
   // With no frame, a check waits out its cap. The frame says it ran once its own scripts have, so an image or a font
   // still loading doesn't hold the check.
-  const running = new Promise<boolean>(done => {
-    letGo = () => done(false);
-    ran = () => done(true);
+  const running = new Promise<void>(done => {
+    ran = () => done();
     if (!f) return;
     // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
     f.onload = () => sendTweaks(f);
@@ -178,13 +183,14 @@ const after = (ms: number) => new Promise<false>(done => setTimeout(() => done(f
 export async function previewCheck(id: string): Promise<PreviewCheck | null> {
   for (;;) {
     const gen = renders,
+      newer = overtaken,
       d = await drawn;
     if (gen !== renders) continue;
     if (!d || viewing || d.board !== id) return null;
     if (d.kind === 'unbuilt') return unbuiltCheck(d.error);
-    const started = await Promise.race([d.ran, after(RUN_MS)]);
+    const started = await Promise.race([d.ran.then(() => true), after(RUN_MS), newer.then(() => false)]);
     if (gen !== renders) continue;
-    if (started) await after(WATCH_MS);
+    if (started) await Promise.race([after(WATCH_MS), newer]);
     if (gen !== renders) continue;
     const { count, first } = errors;
     return started ? ranCheck(first, count) : ranCheck(['The preview didn’t finish loading.', ...first], count + 1);
