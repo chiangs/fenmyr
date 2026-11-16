@@ -196,8 +196,6 @@ export async function openChanged() {
   const many = el.classList.contains('pc-many'),
     pick = el.querySelector<HTMLElement>('.pc-pick');
   if (first && many && pick) return openPicker(pick, listed, f => showFile(at.root, at.dir, f));
-  // a second click while the column slid open may have opened the picker at the narrow width
-  closePicker();
   (many ? pick : el.querySelector<HTMLElement>('.pc-file.on'))?.focus();
 }
 
