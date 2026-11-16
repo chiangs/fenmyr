@@ -9,6 +9,7 @@ import { frameTip } from '../repo/start.ts';
 import { selCards } from '../selbar/selected.ts';
 import { snapTo } from '../settings/licenses.ts';
 import { closestTo, htmlIn, isTyping } from '../ui/dom.ts';
+import { pickWF } from '../wireframe/designPanel.ts';
 import { screenOf } from '../wireframe/screenScope.ts';
 import { DEVICES, type Device, isDevice } from '../wireframe/wireframes.ts';
 import { addCard } from './penEdit.ts';
@@ -30,7 +31,6 @@ function litDevice(): Device | null {
 
 export const screenToolOn = () => litDevice() !== null;
 
-// the selected screen's device, else that of the last screen in the board's list with one, else iPhone
 function defaultDevice(): Device {
   const own = screenOf(selCards())?.device,
     last = session.board.cards
@@ -50,6 +50,7 @@ function hold(d: Device) {
 /** W and the panel's Screen button: the screen tool in hand with the device the board suggests, or down again. */
 export function startScreen() {
   if (placing?.type === 'frame') return stopPlacing();
+  pickWF(null); // the panel's other tools go out, and an icon swap waiting in its grid is forgotten
   hold(defaultDevice());
 }
 
@@ -86,7 +87,8 @@ let screenButton: Element | null = null;
 export function syncScreenBar() {
   const lit = litDevice(),
     bar = $('screenbar');
-  if (bar.hidden !== !lit) bar.hidden = !lit;
+  if (!lit && bar.hidden) return;
+  if (bar.hidden === !!lit) bar.hidden = !lit;
   for (const b of htmlIn(bar, '[data-dev]')) b.classList.toggle('on', b.dataset.dev === lit);
   screenButton?.classList.toggle('on', !!lit);
 }

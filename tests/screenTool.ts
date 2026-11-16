@@ -143,6 +143,13 @@ try {
     { type: 'frame', w: 834, h: 1194, name: 'Screen', device: 'iPad', radius: 20, selected: true, on: null },
     'a click places an iPad screen',
   );
+  await key('w');
+  await drag(0.7, 0.6, 4, 3);
+  assert.deepStrictEqual(
+    await last(),
+    { type: 'frame', w: 834, h: 1194, name: 'Screen', device: 'iPad', radius: 20, selected: true, on: null },
+    'zoomed out, a press that slips a few pixels is still a click',
+  );
   await page.click('[data-wf="icon"]');
   await page.click('#iconGrid [data-icon]:nth-child(1)');
   await page.click('#iconGrid [data-icon]:nth-child(2)');
@@ -248,8 +255,10 @@ try {
     ['×', () => page.click('#scX')],
     ['V', () => key('v')],
     ['N', () => key('n')],
+    ['Home', () => page.click('#homeBtn')],
   ] as const) {
     await key('w');
+    assert.ok((await tool()).inHand, `in hand before ${how}`);
     await put();
     assert.deepStrictEqual({ ...(await tool()), ghost: '' }, down, `${how} puts the tool down`);
   }
@@ -261,9 +270,22 @@ try {
   await click(0.3, 0.75);
   assert.strictEqual(await count(), kept + 1, 'a screen placed');
   assert.ok(!(await said()), 'the prototype offer comes once');
+  await key('r');
+  const b = await at(0.55, 0.05);
+  await page.mouse.move(b.x, b.y);
+  await page.mouse.down();
+  await page.mouse.move(b.x + 40, b.y + 30, { steps: 2 });
+  await page.mouse.up();
+  await key('w');
+  await key('Enter');
+  await settle(page, 600);
   await page.keyboard.press('Control+z');
   await settle(page, 300);
-  assert.strictEqual(await count(), kept, 'one undo removes the screen');
+  assert.deepStrictEqual(
+    { n: await count(), last: (await last())?.type },
+    { n: kept + 2, last: 'box' },
+    'undo takes back the screen Enter placed, and not the box drawn just before it',
+  );
 
   await fresh('guards', 1);
   await key('w');
@@ -277,6 +299,10 @@ try {
     { type: 'box', w: 160, h: 90, selected: true, on: null },
     'R draws a box on the bare board',
   );
+  await key('r');
+  await key('w');
+  assert.ok(!(await page.evaluate(() => !!document.querySelector('[data-wf="box"].on'))), "W puts out the panel's Box");
+  await key('Escape');
   await key('r');
   await drag(0.3, 0.2, 100, 60);
   assert.deepStrictEqual(
