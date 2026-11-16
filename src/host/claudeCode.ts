@@ -16,7 +16,7 @@ const ACCESS = {
     '--permission-mode',
     'acceptEdits',
     '--allowedTools',
-    [...READS, ...EDITS].join(','),
+    ['Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep'].join(','),
     '--disallowedTools',
     NEVER.join(','),
   ],
