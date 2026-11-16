@@ -5,9 +5,31 @@ import type { CodeAgent } from './codeAgent.ts';
 import { env, isRecord, text } from './util.ts';
 
 // Claude Code works in the prototype's folder with file tools only: no shell, no web, no other agents. Claude Code keeps
-// writes inside its working folder, and Fenmyr checks afterwards that nothing outside changed.
-const TOOLS = ['Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep'];
+// writes inside its working folder, and Fenmyr checks afterwards that nothing outside changed. A run that only reads
+// has the reading tools alone, with every other tool left out and turned down, and no MCP servers, whose tools could
+// write or reach the network.
+const READS = ['Read', 'Glob', 'Grep'];
 const EDITS = new Set(['Write', 'Edit', 'MultiEdit']);
+const NEVER = ['Bash', 'WebFetch', 'WebSearch', 'Task'];
+const ACCESS = {
+  edit: [
+    '--permission-mode',
+    'acceptEdits',
+    '--allowedTools',
+    [...READS, ...EDITS].join(','),
+    '--disallowedTools',
+    NEVER.join(','),
+  ],
+  read: [
+    '--tools',
+    READS.join(','),
+    '--allowedTools',
+    READS.join(','),
+    '--disallowedTools',
+    [...EDITS, 'NotebookEdit', ...NEVER].join(','),
+    '--strict-mcp-config',
+  ],
+};
 
 // Every Claude Code still writing. It outlives Fenmyr unless it's stopped, and would keep changing files no one sees.
 const running = new Set<ChildProcess>();
@@ -15,9 +37,12 @@ export function stopCodeAgents() {
   for (const p of running) p.kill();
 }
 
-export const claudeCode: CodeAgent = async ({ cwd, prompt, readable }, edited) => {
+export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access }, edited) => {
   const claude = await claudePath();
-  if (!claude) throw new Error('I need Claude Code to write code. Settings → Helpers shows how to set it up.');
+  if (!claude)
+    throw new Error(
+      `I need Claude Code to ${access === 'read' ? 'read' : 'write'} code. Settings → Helpers shows how to set it up.`,
+    );
   const args = [
     '-p',
     prompt,
@@ -25,10 +50,8 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable }, edited) =
     'stream-json',
     '--verbose',
     ...hookArgs({ permissions: FOLDER_ONLY }),
-    '--permission-mode',
-    'acceptEdits',
+    ...ACCESS[access],
   ];
-  args.push('--allowedTools', TOOLS.join(','), '--disallowedTools', 'Bash,WebFetch,WebSearch,Task');
   for (const d of readable) args.push('--add-dir', d);
   return new Promise((res, rej) => {
     const p = spawn(claude, args, { cwd, env: env(), stdio: ['ignore', 'pipe', 'pipe'] });

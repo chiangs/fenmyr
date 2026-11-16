@@ -103,8 +103,9 @@ export function startBuild(
       packages: installed(s.root).join(', '),
       pictures: pictures.join('\n'),
     });
-    const said = await agent({ cwd: path.join(s.root, dir), prompt, readable: pictures.length ? [shots] : [] }, file =>
-      send({ id, type: 'edit', file }),
+    const said = await agent(
+      { cwd: path.join(s.root, dir), prompt, readable: pictures.length ? [shots] : [], access: 'edit' },
+      file => send({ id, type: 'edit', file }),
     ).finally(() => fs.rmSync(shots, { recursive: true, force: true }));
     const files = await changed(),
       strays = (await outside(s.root, dir)).filter(p => !before.has(p));

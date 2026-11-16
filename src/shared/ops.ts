@@ -268,6 +268,9 @@ export type Ops = {
   captureArea: { args: { x: number; y: number; w: number; h: number }; result: string };
   // when: seconds since 1970 of the last commit touching it, 0 when it has none
   protoLastChange: { args: { root: string; dir: string }; result: { branch: string; when: number; subject: string } };
+  // a short explanation, in Myra's words, of how the prototype's code works now, starting with these files (paths inside
+  // its folder), from a Claude Code run that can only read
+  protoExplain: { args: { root: string; dir: string; files: string[] }; result: string };
   // busy, with nothing put back, while a build runs in the repo
   protoUndo: { args: { root: string; dir: string; snapshot: string }; result: { kind: 'undone' } | { kind: 'busy' } };
   // a file of an installed package, or null when there's none by that name
