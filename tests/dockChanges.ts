@@ -172,6 +172,8 @@ try {
 
   await foldCode();
   await page.click('#mcChanges');
+  // the second click lands while the column slides open, as an impatient double click does
+  await page.waitForTimeout(80);
   await page.click('#mcChanges');
   await until(async () => (await head()).focusIn === 'tabs', 'a double click lands on the tab too');
   await settle(page, 400);
