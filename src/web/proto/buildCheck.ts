@@ -1,4 +1,4 @@
-import { type BuildRecord, checkLine, type PreviewCheck } from '../../shared/build.ts';
+import { type BuildRecord, checkFailed, checkLine, type PreviewCheck } from '../../shared/build.ts';
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
@@ -17,11 +17,11 @@ const checking = new Map<string, Promise<void>>();
 const due = (b: Board, a: BuildRecord) =>
   b.kind === 'prototype' && b.proto.build === a.build && a.end?.kind === 'built' && !a.end.check && !a.undone;
 
-/** The block's line for its preview check, from the record and whether a check runs now. Null for a build that won't
- *  be checked: one that failed, was undone or isn't the newest. */
+/** The block's line for its preview check, from the record and whether a check runs now. A kept check shows whatever
+ *  the build's state. Null for an unchecked build that won't be checked: one that was undone or isn't the newest. */
 export function checkShown(a: BuildRecord): { line: string; mark: Mark } | null {
   const check = a.end?.kind === 'built' ? a.end.check : undefined;
-  if (check) return { line: checkLine(check), mark: check.kind === 'ran' && !check.count ? 'done' : 'bad' };
+  if (check) return { line: checkLine(check), mark: checkFailed(check) ? 'bad' : 'done' };
   if (checking.has(a.build)) return { line: 'Checking the preview', mark: 'now' };
   return session.board && due(session.board, a) ? { line: 'Preview not checked yet', mark: 'wait' } : null;
 }
@@ -58,6 +58,7 @@ export function checkNewest(): Promise<void> {
   if (running) return running;
   const p = check(b, a.build).catch(e => {
     checking.delete(a.build);
+    redrawBlock(a.build);
     console.error('The preview check failed', e);
   });
   checking.set(a.build, p);

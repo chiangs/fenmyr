@@ -268,7 +268,9 @@ const cut = (s: string) => {
 export function checkLine(c: PreviewCheck) {
   if (c.kind === 'unbuilt') return `The preview couldn’t be built: ${cut(c.error)}`;
   if (!c.count) return 'Preview runs · no errors';
-  return `Preview runs · ${c.count} ${c.count === 1 ? 'error' : 'errors'}: ${cut(c.errors[0] ?? '')}`;
+  const n = `${c.count} ${c.count === 1 ? 'error' : 'errors'}`,
+    first = cut(c.errors[0] ?? '');
+  return first ? `Preview runs · ${n}: ${first}` : `Preview runs · ${n}`;
 }
 
 /** The check found something to fix: errors as it ran, or code that couldn't be bundled. */

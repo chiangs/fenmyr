@@ -121,9 +121,33 @@ try {
   assert.deepStrictEqual(older.slice(1), ['src/App.tsx +1 −1'], 'the one before it says nothing of a check');
   assert.strictEqual(checkOf(recordOf('pb', 'Older.')), undefined, 'and is never checked');
 
+  standIn.next({ files: { 'src/App.tsx': app('Overtaken') }, hold: true, reply: 'Overtaken.' });
+  await ask('Overtaken.');
+  await until(() => standIn.wrote() === 1, 'a build writes its file');
+  await open('one');
+  standIn.release();
+  await until(() => !!recordOf('pb', 'Overtaken.')?.end, 'it lands while another board is open');
+  standIn.next({ files: { 'src/App.tsx': app('Overtakes') }, reply: 'Overtakes.' });
+  await page.evaluate(async () => {
+    await window.__fenmyr.openBoard('pb');
+    await window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: 'Overtakes.' } }, 'Overtakes.');
+  });
+  await until(() => !!checkOf(recordOf('pb', 'Overtakes.')), 'a build asked as its board opens lands and is checked');
+  assert.strictEqual(
+    checkOf(recordOf('pb', 'Overtaken.')),
+    undefined,
+    'the check its board began on opening isn’t kept once a newer build has started',
+  );
+  assert.deepStrictEqual(
+    (await blocks()).at(-2)?.lines.slice(1),
+    ['src/App.tsx +1 −1'],
+    'and its block stops saying it is being checked',
+  );
+
   standIn.next({ files: { 'src/App.tsx': TWO }, reply: 'Switched.' });
   await ask('Switched.');
   await until(async () => (await lastLine()) === 'Checking the preview', 'a build lands and its preview is checked');
+  await page.frameLocator('#pr-preview iframe').locator('h1', { hasText: 'Two' }).waitFor({ timeout: 30000 });
   await open('pc');
   await page.waitForTimeout(4000);
   assert.strictEqual(

@@ -28,10 +28,16 @@ let viewing: Capture | null = null;
 // what went wrong and what was logged since the last build, newest last
 const log: Line[] = [];
 // Each render, counted, so a check reads only the render it waited on and a newer one, such as a newer build's, never
-// answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or once its frame has loaded.
-type Drawn = { board: string; unbuilt: string } | { board: string; loaded: Promise<void> };
+// answers for it. drawn: the render in flight, or the last, with the bundler's refusal, or whether its frame loaded,
+// false once a newer render has taken the frame. letGo: settles the last render's frame as taken.
+type Drawn = { board: string; unbuilt: string } | { board: string; loaded: Promise<boolean> };
 let renders = 0;
 let drawn: Promise<Drawn | null> = Promise.resolve(null);
+let letGo = () => {};
+function nextRender() {
+  letGo();
+  return ++renders;
+}
 
 // the errors, for Myra to fix with her next change
 export const previewErrors = () =>
@@ -91,15 +97,16 @@ function showViewing(problem: string) {
 }
 
 function refreshPreview() {
-  renders++;
-  drawn = draw();
+  drawn = draw(nextRender());
   return drawn;
 }
 
-async function draw(): Promise<Drawn | null> {
+// A render a newer one has overtaken stops at its next step, so it can't draw over the newer one's frame.
+async function draw(gen: number): Promise<Drawn | null> {
   if (!board || !root) return null;
   const { dir, stack } = board.proto;
   const then = viewing ? await Fenmyr.protoAtCommit({ root, dir, commit: viewing.commit }).catch(() => null) : null;
+  if (gen !== renders) return null;
   if (viewing && !then) {
     showViewing('That version isn’t in this repo any more.');
     return null;
@@ -113,6 +120,7 @@ async function draw(): Promise<Drawn | null> {
     file => (then ? Promise.resolve(then[file] ?? '') : Fenmyr.protoRead({ root, dir, file })),
     file => Fenmyr.protoModule({ root, file }),
   );
+  if (gen !== renders) return null;
   log.length = 0;
   const problem = $('pr-preview').querySelector<HTMLElement>('.pv-error');
   if (built.kind === 'error') {
@@ -133,13 +141,15 @@ async function draw(): Promise<Drawn | null> {
     await loadKnobs(knobs, { root, dir, files }, frame, () => {
       if (board) renderGitBar(board);
     });
+  if (gen !== renders) return null;
   // with no frame to load, a check waits out its cap
-  const loaded = new Promise<void>(done => {
+  const loaded = new Promise<boolean>(done => {
+    letGo = () => done(false);
     if (!f) return;
     // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
     f.onload = () => {
       sendTweaks(f);
-      done();
+      done(true);
     };
     f.srcdoc = html;
   });
@@ -162,7 +172,8 @@ export async function previewCheck(id: string): Promise<PreviewCheck | null> {
     if (gen !== renders) continue;
     if (!d || viewing || d.board !== id) return null;
     if ('unbuilt' in d) return unbuiltCheck(d.unbuilt);
-    const loaded = await Promise.race([d.loaded.then(() => true), after(LOAD_MS)]);
+    const loaded = await Promise.race([d.loaded, after(LOAD_MS)]);
+    if (gen !== renders) continue;
     if (loaded) await after(WATCH_MS);
     if (gen !== renders) continue;
     const errors = log.filter(l => l.kind === 'error').map(l => l.text);
@@ -249,6 +260,8 @@ export async function renderPreview(b: Board) {
   viewing = null;
   root = rootOf(b) ?? '';
   if (b.kind !== 'prototype' || !root) {
+    nextRender();
+    drawn = Promise.resolve(null);
     board = null;
     el.innerHTML = '<p class="pr-note">This prototype’s project isn’t linked to a repo, so there’s nothing to run.</p>';
     return;

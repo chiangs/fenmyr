@@ -117,7 +117,7 @@ try {
   const built = await block();
   assert.match(built.head, /^Built in \d+ s$/, 'the block reads that it was built');
   assert.deepStrictEqual(
-    built.lines.slice(1),
+    built.lines.slice(1, 3),
     [`src/App.tsx +1 −${starterLines}`, 'src/late.tsx +1 −0'],
     'with what it changed',
   );

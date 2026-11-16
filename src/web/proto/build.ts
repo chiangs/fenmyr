@@ -174,7 +174,8 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
           words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
         // the open board shows no note, since its block says how it went, but a screen reader hears it
         if (landed !== null) (open ? noteHeard : noteStatus)(words);
-        return open ? refreshPanes().then(checkNewest) : undefined;
+        // the check starts with the refresh and follows its render, so the block goes straight to checking
+        return open ? Promise.all([refreshPanes(), checkNewest()]) : undefined;
       },
       (err: unknown) => {
         done();

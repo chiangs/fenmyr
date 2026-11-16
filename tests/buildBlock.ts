@@ -184,8 +184,9 @@ try {
 
   await until(async () => /^Built in \d+ s$/.test((await last())?.head ?? ''), 'it ends built');
   const built = await last();
+  // the preview check's line follows, which tests/buildChecks.ts covers
   assert.deepStrictEqual(
-    built?.lines,
+    built?.lines.slice(0, 3),
     ['Read 2 cards', `src/App.tsx +1 −${starterLines}`, 'src/Form.tsx +3 −0'],
     'with the lines each file gained and lost',
   );
@@ -314,7 +315,11 @@ try {
     ['block', 'I kept going.'],
     'its block comes back before her explanation',
   );
-  assert.deepStrictEqual((await last())?.lines, ['Read 2 cards', 'src/Clear.tsx +1 −0'], 'with what it wrote');
+  assert.deepStrictEqual(
+    (await last())?.lines.slice(0, 2),
+    ['Read 2 cards', 'src/Clear.tsx +1 −0'],
+    'with what it wrote',
+  );
   assert.deepStrictEqual(l.errors, []);
   console.log('BUILD BLOCK OK');
 } finally {

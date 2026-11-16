@@ -133,7 +133,10 @@ try {
 
   await build('Two errors.', { 'src/App.tsx': TWO });
   await landed('Two errors.');
+  await until(async () => (await lastLine()) === 'Checking the preview', 'it is checked in turn');
+  await page().evaluate(() => Reflect.set(window, 'saves', 0));
   await checked('the build that logs errors is checked');
+  assert.strictEqual(await page().evaluate(() => Reflect.get(window, 'saves')), 1, 'its two errors are one write');
   assert.strictEqual(await lastLine(), 'Preview runs · 2 errors: boom-one', 'errors are counted, the first shown');
   assert.strictEqual((await last())?.marks.at(-1), 'bad', 'and marked as gone wrong');
   assert.deepStrictEqual((await last())?.buttons, ['Fix the errors'], 'errors offer a fix');

@@ -2,8 +2,8 @@ import type { ChatAction, ChatMsg } from '../../src/shared/chat.ts';
 import type { Card } from '../../src/shared/model.ts';
 
 // A prototype's chat after one build, kept as the build's block keeps it, for the visual check: built with a clean
-// preview or one that logged errors, failed, or cut off by Fenmyr closing. The board names BUILD as its newest, so Undo this build and Commit show. The snapshot is never
-// put back, so any 40 hex characters do.
+// preview or one that logged errors, failed, or cut off by Fenmyr closing. The board names BUILD as its newest, so Undo
+// this build, Commit and Fix the errors show. The snapshot is never put back, so any 40 hex characters do.
 export const BUILD = 'vbuild1';
 const SNAPSHOT = 'a'.repeat(40);
 const T = Date.UTC(2026, 10, 2, 9, 30);
