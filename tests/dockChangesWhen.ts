@@ -100,6 +100,8 @@ try {
   standIn.next({ files: files(3, 'two'), reply: 'Done.', ms: 3000 });
   await ask('Three parts.');
   await settle(page(), 600);
+  await open('one');
+  await open('pb');
   assert.strictEqual(
     await counter(),
     '2 changes',
