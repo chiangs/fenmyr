@@ -68,7 +68,7 @@ function showView(view: View) {
 }
 
 /** Opens the picker on a screen, docked beside it, with the cursor in its search. */
-function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
+export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
   const fresh = !picker;
   picker = { for: { kind: 'add', screen: screen.id }, view: picker?.view ?? 'pieces', from };
   if (fresh) search().value = '';

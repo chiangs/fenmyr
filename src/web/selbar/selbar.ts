@@ -4,6 +4,7 @@ import { $ } from '../core/dom.ts';
 import { syncScreenBar } from '../tools/screenTool.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
 import { initPiecePick, syncPicker } from '../wireframe/piecePick.ts';
+import { initScreenHints } from '../wireframe/screenHint.ts';
 import { arrange } from './arrange.ts';
 import { initBarKeys, keepFocus } from './barKeys.ts';
 import { closeSbPops, foldSelbar, initIcons, initPops, initTips, snapSoon } from './barKit.ts';
@@ -196,6 +197,7 @@ export function init56() {
   initIcons();
   initFontPop();
   initPiecePick();
+  initScreenHints();
 
   (function tick() {
     syncScreenBar();
