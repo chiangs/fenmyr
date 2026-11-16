@@ -220,7 +220,8 @@ export function readOffer(x: unknown): ProtoOffer | null {
   };
 }
 
-const MAX_EXPLAINED = 40;
+/** How many of a build's files Explain the code names to Claude Code. */
+export const MAX_EXPLAINED = 40;
 
 // One reader per kind. The mapped type makes a kind without a reader fail the type check.
 const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { kind: K }> | null } = {

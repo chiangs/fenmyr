@@ -31,7 +31,8 @@ const ACCESS = {
   ],
 };
 
-// Every Claude Code still writing. It outlives Fenmyr unless it's stopped, and would keep changing files no one sees.
+// Every Claude Code still running. It outlives Fenmyr unless it's stopped, and would keep changing files no one sees, or
+// answer no one.
 const running = new Set<ChildProcess>();
 export function stopCodeAgents() {
   for (const p of running) p.kill();

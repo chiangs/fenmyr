@@ -101,7 +101,7 @@ export async function explainer(t: Smoke) {
   const read = (f: string) => fs.readFileSync(path.join(t.data, f), 'utf8').trim();
   const args = read('explain-args.txt');
   t.checkAll('explain', {
-    answer: r.answer === 'I read `src/App.tsx`. It shows the heading.',
+    answer: r.answer === 'I read `src/App.tsx`. It shows the heading.\nNext: change the words in it.',
     readOnly:
       args.includes('--tools Read,Glob,Grep') &&
       args.includes('--allowedTools Read,Glob,Grep') &&

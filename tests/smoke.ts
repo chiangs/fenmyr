@@ -40,7 +40,7 @@ import { HEADLESS, MOUSE } from './support/launch.ts';
 if [ "$1" = mcp ]; then echo "claude.ai Mobbin: https://mobbin - ✓ Connected"; echo "claude.ai higgsfield: https://h - ! Needs authentication"; exit 0; fi
 case "$*" in *'--tools Read,Glob,Grep'*)
   printf '%s' "$2" > "${data}/explain-prompt.txt"; pwd > "${data}/explain-cwd.txt"; shift 2; echo "$@" > "${data}/explain-args.txt"
-  printf '%s\\n' '{"type":"result","is_error":false,"result":"I read \`src/App.tsx\`. It shows the heading.\\nNEXT: none"}'
+  printf '%s\\n' '{"type":"result","is_error":false,"result":"I read \`src/App.tsx\`. It shows the heading.\\nNext: change the words in it."}'
   exit 0;;
 *stream-json*)
   echo 'export function App() { return <h1>Built</h1>; }' > src/App.tsx

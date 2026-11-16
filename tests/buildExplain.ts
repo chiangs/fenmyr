@@ -2,7 +2,8 @@
 // dots, and runs Claude Code able only to read, in the prototype's folder and told the build's files. Her answer lands in
 // the prototype's chat even when another board is open by then, with file names in code font. The button comes back
 // after a restart until it is pressed, and not after, and a newer build takes it from the one before. A failure lands
-// in her words, drawing only the new line, and a screen reader hears it.
+// in her words, drawing only the new line, a screen reader hears it, and it carries the button to try again until the
+// build is undone.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -29,6 +30,10 @@ let { l, standIn } = await start();
 const page = () => l.page;
 
 const EXPLAIN = 'Explain the code';
+// A last line that reads like the NEXT: of a build's reply stays hers, and a file name stays as it is spelt, where the
+// window says a Mac's words in Linux's.
+const ANSWER =
+  'I split it in two: `src/App.tsx` shows `src/Form.tsx` and `src/Terminal.tsx`.\nNext: change the words in `src/Form.tsx`.';
 const texts = () =>
   page().evaluate(() =>
     [...document.querySelectorAll('#mcList .mc-msg')].map(m =>
@@ -125,8 +130,16 @@ try {
     'it comes back after a restart until it is pressed',
   );
 
-  standIn.explain({ reply: 'I split it in two: `src/App.tsx` shows `src/Form.tsx`.\nNEXT: none', hold: true });
+  standIn.explain({ reply: ANSWER, hold: true });
   await tapUnder('Done: Second.', EXPLAIN);
+  assert.strictEqual(
+    await page().evaluate(() => {
+      const f = document.activeElement;
+      return f?.classList.contains('mc-msg') ? f.firstChild?.textContent : f?.tagName;
+    }),
+    EXPLAIN,
+    'focus moves to the person’s line, since the pressed button goes',
+  );
   await until(async () => (await texts()).at(-1) === EXPLAIN, 'pressing it adds the person’s line');
   await until(async () => (await status()).say === 'Reading the code…', 'the status line says she reads the code');
   assert.strictEqual((await status()).dots, false, 'with no typing dots, since the answer may land elsewhere');
@@ -155,7 +168,7 @@ try {
   await open('one');
   standIn.explained();
   await until(
-    () => stored().at(-1)?.text === 'I split it in two: `src/App.tsx` shows `src/Form.tsx`.',
+    () => stored().at(-1)?.text === ANSWER,
     'her answer lands in the prototype’s chat while another board is open',
   );
   assert.strictEqual(stored().at(-2)?.text, EXPLAIN, 'after the person’s line');
@@ -164,7 +177,7 @@ try {
   await open('pb');
   assert.strictEqual(
     (await texts()).at(-1),
-    'I split it in two: src/App.tsx shows src/Form.tsx.',
+    'I split it in two: src/App.tsx shows src/Form.tsx and src/Terminal.tsx.\nNext: change the words in src/Form.tsx.',
     'her answer shows when the prototype opens again',
   );
   assert.deepStrictEqual(
@@ -173,7 +186,7 @@ try {
         c => c.textContent,
       ),
     ),
-    ['src/App.tsx', 'src/Form.tsx'],
+    ['src/App.tsx', 'src/Form.tsx', 'src/Terminal.tsx', 'src/Form.tsx'],
     'with its file names in code font',
   );
 
@@ -217,6 +230,14 @@ try {
     'and only the new lines are drawn',
   );
   await until(async () => (await status()).heard === 'Couldn’t explain Checkout’s code', 'a screen reader hears it');
+  const failed = 'I couldn’t read the code just now. Claude Code isn’t signed in.';
+  assert.deepStrictEqual(await buttonsUnder(failed), [[EXPLAIN]], 'and it can be tried again from her line');
+  await tapUnder('Done: Third.', 'Undo this build');
+  await until(
+    async () => (await texts()).includes('It’s back to how it was before that build ✦'),
+    'the build is undone',
+  );
+  assert.deepStrictEqual(await buttonsUnder(failed), [[]], 'and once the build is undone, there is nothing to explain');
   console.log('BUILD EXPLAIN OK');
 } finally {
   await l.close();

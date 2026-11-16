@@ -113,8 +113,8 @@ export function paintStatus() {
     // that build's line follows
     shown = note && top?.kind === 'building' ? undefined : top,
     line = shown ? busyLine(shown) : { say: note || restText(), more: '' },
-    // a build runs in the background, so it shows in the header without dots or the thinking pose
-    thinking = all.some(b => b.kind !== 'building'),
+    // a build and an explanation run in the background, so they show in the header without dots or the thinking pose
+    thinking = all.some(b => b.kind !== 'building' && b.kind !== 'explaining'),
     typing = all.some(answersInChat),
     list = $('mcList'),
     dots = list.querySelector(':scope > .typing'),

@@ -5,7 +5,7 @@ import { session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import type { Button } from '../myra/acts.ts';
 import { ask } from '../myra/chat.ts';
-import { addMsg, chatLog, pushMsg, showAdded } from '../myra/chatLog.ts';
+import { addMsg, chatLog, focusMsg, pushMsg, showAdded } from '../myra/chatLog.ts';
 import { noEmoji } from '../myra/replyText.ts';
 import { type SayAction, say } from '../myra/say.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
@@ -143,28 +143,32 @@ export function fixButton(a: BuildRecord): Omit<Button, 'after'> | null {
 type Explain = Extract<ChatAction, { kind: 'explain' }>;
 
 // Her answer lands in the prototype's own chat wherever the person is by then, and only the new line is drawn. The
-// status line says she is reading until it has landed.
-async function explain(b: Prototype, root: string, files: string[]) {
-  addMsg('me', 'Explain the code');
+// status line says she is reading until it has landed. A failure, often a passing one such as a timeout, carries the
+// button again, so it can be tried once more while it is still the newest build's.
+async function explain(b: Prototype, root: string, a: Explain) {
+  const asked = addMsg('me', 'Explain the code');
+  // the pressed button goes from under focus, so focus moves to the line the press added
+  if (asked) focusMsg(asked);
   const job = startJob({ kind: 'explaining', board: b.id, name: b.name });
-  const [ok, said] = await Fenmyr.protoExplain({ root, dir: b.proto.dir, files }).then(
-    (t): [boolean, string] => [true, noEmoji(t)],
-    (e: unknown): [boolean, string] => [
-      false,
-      `I couldn’t read the code just now. ${e instanceof Error ? e.message : e}`,
-    ],
+  const answer = await Fenmyr.protoExplain({ root, dir: b.proto.dir, files: a.files }).then(
+    (t): ChatMsg => ({ who: 'myra', text: noEmoji(t), t: Date.now() }),
+    (e: unknown): ChatMsg => ({
+      who: 'myra',
+      text: `I couldn’t read the code just now. ${e instanceof Error ? e.message : e}`,
+      t: Date.now(),
+      acts: [{ ...a }],
+    }),
   );
-  let landed: string | null = null;
+  const landed: { on: string | null } = { on: null };
   await changeBoard(b.id, x => {
-    const m: ChatMsg = { who: 'myra', text: said, t: Date.now() };
-    landed = x.name;
-    pushMsg(x, m);
-    if (x === session.board) showAdded([m]);
+    landed.on = x.name;
+    pushMsg(x, answer);
+    if (x === session.board) showAdded([answer]);
     return true;
   }).finally(() => job.end());
-  if (landed === null) return;
+  if (landed.on === null) return;
   // the open board shows her answer, which a screen reader hears of; another board says so on the status line
-  const words = ok ? `${landed}’s code is explained` : `Couldn’t explain ${landed}’s code`;
+  const words = answer.acts ? `Couldn’t explain ${landed.on}’s code` : `${landed.on}’s code is explained`;
   (session.board?.id === b.id ? noteHeard : noteStatus)(words);
 }
 
@@ -174,5 +178,5 @@ export function explainButton(a: Explain): Omit<Button, 'after'> | null {
   const b = openProto(a.board),
     root = b && rootOf(b);
   if (!b || !root || newestBuild(b) !== a.build || recordOf(a.build)?.undone) return null;
-  return { label: 'Explain the code', ghost: true, run: () => explain(b, root, a.files) };
+  return { label: 'Explain the code', ghost: true, run: () => explain(b, root, a) };
 }

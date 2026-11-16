@@ -5,7 +5,7 @@ import {
   type FileDiff,
   type PreviewCheck,
 } from '../../shared/build.ts';
-import type { ChatAction, ChatMsg } from '../../shared/chat.ts';
+import { type ChatAction, type ChatMsg, MAX_EXPLAINED } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
 import { session } from '../core/state.ts';
 import { chatLog, focusMsg, pushMsg, redrawMsgs, showAdded } from '../myra/chatLog.ts';
@@ -155,7 +155,7 @@ export const ended =
       found.a.end = { kind: 'built', at, files, outside: e.outside, from: keepSources(b, e.sources) };
       // the commit message she suggests: the first line of what she was asked to do
       const message = r.request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '',
-        paths = files.slice(0, 40).map(f => f.path),
+        paths = files.slice(0, MAX_EXPLAINED).map(f => f.path),
         kept: ChatAction[] = files.length
           ? [
               { kind: 'explain', board, build, files: paths },
