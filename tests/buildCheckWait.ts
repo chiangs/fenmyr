@@ -1,7 +1,7 @@
 // How long a preview check waits, and for what. It starts once the frame's own scripts have run, so an image that never
 // loads neither holds the build waiting behind it nor counts as an error, while a frame whose scripts never run ends at
 // the 15 s cap as an error. A render that takes the frame meanwhile is checked in its place, so the check doesn't wait
-// out the cap on the frame it lost.
+// out the cap on the frame it lost. A check cut short by a capture's commit is done once Back to latest shows the files.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -119,6 +119,23 @@ try {
     { proto, capture },
   );
   await settle(page, 600);
+
+  standIn.next({ files: { 'src/App.tsx': app('Captured') }, reply: 'Done: Captured.' });
+  await ask('Captured.');
+  await landed('Captured.');
+  await until(async () => (await lastLine()) === 'Checking the preview', 'a build lands and is being checked');
+  await page.locator('.card[data-id="cap"]').evaluate(el => {
+    const r = el.getBoundingClientRect(),
+      at = { bubbles: true, clientX: r.x + 20, clientY: r.y + 20, pointerId: 1 };
+    el.dispatchEvent(new PointerEvent('pointerdown', at));
+    el.dispatchEvent(new PointerEvent('pointerup', at));
+  });
+  await until(
+    async () => (await lastLine()) === 'Preview not checked yet',
+    'a capture shown during the check stops it',
+  );
+  await page.click('[data-pv="latest"]');
+  await until(async () => (await lastLine()) === 'Preview runs · no errors', 'Back to latest checks the build');
 
   const slow = await queuedBehind('Slow.', {
     'index.html': index('', `<img src="${hang}/never.png" alt="">`),

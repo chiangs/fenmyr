@@ -5,6 +5,7 @@ import { $ } from '../core/dom.ts';
 import { setChatText } from '../myra/chatInput.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { child, closestTo, esc, textField } from '../ui/dom.ts';
+import { checkNewest } from './buildCheck.ts';
 import { buildPreview } from './bundle.ts';
 import { takeCapture } from './capture.ts';
 import { renderCode, showSource } from './code.ts';
@@ -292,13 +293,14 @@ export async function renderPreview(b: Board) {
     }
     if (act === 'point') setPointing(!pointing);
     if (act === 'capture') takeCapture(b);
+    // back on the live preview, a newest build left unchecked while a capture showed is checked
     if (act === 'latest') {
       viewing = null;
-      refreshPreview();
+      void refreshPreview().then(checkNewest);
     }
     // Refresh reads the files again everywhere, for changes made outside Fenmyr
     if (act === 'refresh') {
-      refreshPreview();
+      void refreshPreview().then(checkNewest);
       renderCode(b);
       renderGitBar(b);
     }
