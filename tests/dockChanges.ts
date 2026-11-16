@@ -20,7 +20,14 @@ git('config', 'user.email', 'ann@example.com');
 fs.mkdirSync(path.join(repo, 'prototypes'));
 fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), 'x\n');
 const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-dock-changes-data-'));
-const l = await launch({ data, boards: [replyBoard('one', 'One')], open: 'one', claude: true });
+// with motion on, so the code column slides open and the pane is fitted to the width it ends at
+const l = await launch({
+  data,
+  boards: [replyBoard('one', 'One')],
+  open: 'one',
+  claude: true,
+  settings: { motion: true },
+});
 const { page } = l;
 const standIn = buildStandIn(l);
 
@@ -39,6 +46,8 @@ const head = () =>
       folded: !!pane?.closest('.folded'),
       menu: [...document.querySelectorAll<HTMLElement>('.pc-menu [data-changed]')].map(f => f.dataset.file),
       tabs: !pane?.classList.contains('pc-many'),
+      pick: !!pane?.querySelector('.pc-pick[data-changed]'),
+      described: pane?.querySelector<HTMLElement>('.pc-file[data-changed]')?.ariaDescription ?? '',
       focused: document.activeElement instanceof HTMLElement ? (document.activeElement.dataset.file ?? '') : '',
       focusIn: document.activeElement?.closest('.pc-menu')
         ? 'menu'
@@ -119,6 +128,7 @@ try {
   assert.strictEqual(h.name, '2 changes in the last build', 'and so does the name a screen reader hears');
   assert.deepStrictEqual(h.dots.sort(), ['src/App.tsx', 'src/Form.tsx'], 'both changed files carry the dot');
   assert.ok(h.caption, 'with the caption that says what the dots mean');
+  assert.strictEqual(h.described, 'Changed by the last build', 'and a screen reader hears what a dot means');
   assert.ok(
     await asked.evaluate(m => Reflect.get(m, 'kept') === true),
     'the counter came without drawing the chat again',
@@ -137,6 +147,7 @@ try {
   assert.strictEqual(h.shown, 'src/App.tsx', 'on the first changed file the pane lists');
   assert.strictEqual(h.focusIn, 'menu', 'and, since the tabs don’t fit, in the file picker’s menu');
   assert.deepStrictEqual(h.menu.sort(), ['src/App.tsx', 'src/Form.tsx'], 'where both changed files carry the dot');
+  assert.ok(h.pick, 'as does the picker, which shows a changed file');
   await page.keyboard.press('Escape');
 
   const d = await page.locator('.pr-div[data-d="code"]').boundingBox();

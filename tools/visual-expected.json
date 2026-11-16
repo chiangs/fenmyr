@@ -1,5 +1,6 @@
 {
-  "proto-build-built": "New in 7k: her explanation under the build gains Explain the code, a ghost button between Undo this build and Commit. In the docked chat's width the three no longer share a row, so each button sits on its own line and the thread scrolls up by about two button heights; the block above is unchanged.",
-  "proto-build-dark-built": "New in 7k: the same Explain the code ghost button between Undo this build and Commit in the dark theme, with each button on its own line and the thread scrolled up to fit them.",
-  "proto-build-errors": "New in 7k: her explanation under the build whose check found errors gains Explain the code between Undo this build and Commit. The thread scrolls up by one button height, so the block's head now sits at the top; the block itself, with Fix the errors, is unchanged."
+  "proto-build-built": "New in 7l: the docked chat's header reads \"2 changes\" with a dot, on the board's name line, for the newest build's two files. The code pane marks App.tsx with a dot, and a caption under its bar, \"Dots mark what the last build changed\", moves the code down one line. Form.tsx isn't in the starter's folder, so it counts but has no tab to mark.",
+  "proto-build-dark-built": "New in 7l: the same \"2 changes\" counter in the header, the dot on App.tsx and the caption under the code pane's bar, in the dark theme.",
+  "proto-build-errors": "New in 7l: the build whose check found errors still changed two files, so the header reads \"2 changes\", App.tsx carries a dot and the caption moves the code down one line. The chat is unchanged.",
+  "proto-build-failed": "New in 7l: a failed build counts the files it changed, so the header reads \"1 change\", App.tsx carries a dot and the caption moves the code down one line."
 }

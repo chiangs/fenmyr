@@ -33,6 +33,7 @@ const head = () =>
       dots: [...(pane?.querySelectorAll<HTMLElement>('.pc-file[data-changed]') ?? [])].map(f => f.dataset.file).sort(),
       caption: !!pane?.querySelector<HTMLElement>('.pc-dots')?.checkVisibility(),
       menu: !!document.querySelector('.pc-menu'),
+      many: !!pane?.classList.contains('pc-many'),
       focused: at instanceof HTMLElement && pane?.contains(at) ? (at.dataset.file ?? at.className) : '',
     };
   });
@@ -147,7 +148,7 @@ try {
         end: {
           kind: 'built',
           at: 2,
-          files: [text('src/App.tsx'), text('index.html'), text('src/Gone.tsx')],
+          files: [text('src/App.tsx'), text('index.html'), text('src/Gone.tsx'), text('src/tweaks.json')],
           outside: [],
           from: [],
         },
@@ -156,13 +157,21 @@ try {
     'b4',
   );
   h = await head();
-  assert.strictEqual(h.counter, '3 changes', 'a hidden file and a deleted one both count');
-  assert.deepStrictEqual(h.dots, ['src/App.tsx'], 'but only the listed file carries a dot');
+  assert.strictEqual(h.counter, '4 changes', 'hidden files and a deleted one all count');
+  assert.deepStrictEqual(
+    h.dots,
+    [':values', 'src/App.tsx'],
+    'but only listed files carry a dot, Values standing for the controls’ tweaks.json',
+  );
   await page.click('.pc-all');
-  await until(async () => (await head()).dots.length === 2, 'All files lists the wiring');
-  assert.deepStrictEqual((await head()).dots, ['index.html', 'src/App.tsx'], 'where the changed wiring carries a dot');
+  await until(async () => (await head()).dots.length === 4, 'All files lists the wiring');
+  assert.deepStrictEqual(
+    (await head()).dots,
+    [':values', 'index.html', 'src/App.tsx', 'src/tweaks.json'],
+    'where the changed wiring carries a dot',
+  );
   await page.click('.pc-all');
-  await until(async () => (await head()).dots.length === 1, 'Fewer files hides the wiring again');
+  await until(async () => (await head()).dots.length === 2, 'Fewer files hides the wiring again');
 
   await seed(
     [
@@ -176,6 +185,7 @@ try {
   h = await head();
   assert.strictEqual(h.counter, '2 changes', 'a build that changed only hidden and deleted files is counted');
   assert.ok(!h.caption, 'with no dot listed there is no caption');
+  assert.ok(h.many, 'the pane shows its picker, since the tabs don’t fit');
   await page.click('#mcChanges');
   await until(async () => (await head()).focused !== '', 'focus moves into the code pane');
   h = await head();
