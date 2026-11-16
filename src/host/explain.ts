@@ -3,7 +3,7 @@ import path from 'node:path';
 import { MAX_EXPLAINED } from '../shared/chat.ts';
 import type { Ops } from '../shared/ops.ts';
 import { PROTO_DIR } from '../shared/repos.ts';
-import { claudeCode } from './claudeCode.ts';
+import { claudeCode, quitting } from './claudeCode.ts';
 import { topLevel } from './git.ts';
 import * as prompts from './prompts.ts';
 import { text, type Untrusted } from './util.ts';
@@ -25,7 +25,11 @@ export async function explainCode(a: Untrusted<Ops['protoExplain']['args']>) {
   const said = await claudeCode(
     { cwd: base, prompt: prompts.explainCode({ files }), readable: [], access: 'read' },
     () => {},
-  );
+  ).catch((e: unknown) => {
+    // no answer, so the window doesn't save the cut-off run as a failure, and the press is offered again next time
+    if (quitting()) return new Promise<never>(() => {});
+    throw e;
+  });
   const answer = said.trim().slice(0, 3000);
   if (!answer) throw new Error('Claude Code gave no explanation.');
   return answer;

@@ -37,9 +37,14 @@ const ACCESS = {
 // Every Claude Code still running. It outlives Fenmyr unless it's stopped, and would keep changing files no one sees, or
 // answer no one.
 const running = new Set<ChildProcess>();
+let stopped = false;
+/** Stops every run as Fenmyr quits. */
 export function stopCodeAgents() {
+  stopped = true;
   for (const p of running) p.kill();
 }
+/** True once Fenmyr is quitting. A run cut off then didn't fail, so nothing is said of how it ended. */
+export const quitting = () => stopped;
 
 export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access }, edited) => {
   const claude = await claudePath();
