@@ -1,11 +1,25 @@
 // The font picker from the keyboard: Esc anywhere in it closes it with the keyboard back on its button and the
 // selection kept, in the bar and in Settings. ↓ and ↑ walk the rows, and ↑ from the search reaches the Use row, while
-// Enter in the search picks the first match. Google Fonts is stubbed, so the test never reaches it.
+// Enter in the search picks the first match. Every font on the computer is found by search, though the list opens
+// with the first 400. Google Fonts is stubbed, so the test never reaches it.
 import assert from 'node:assert';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const l = await launch({ boards: [wireframeBoard()], open: 'wire' });
+// a computer with 450 fonts: the app lists them with fc-list, so a stand-in one answers first on the PATH
+const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-fc-'));
+const FACES = Array.from({ length: 450 }, (_, i) => `Stub Face ${String(i + 1).padStart(3, '0')}`);
+fs.writeFileSync(path.join(bin, 'fc-list'), `#!/bin/sh\nprintf '%s\\n' ${FACES.map(f => `'${f}'`).join(' ')}\n`, {
+  mode: 0o755,
+});
+const l = await launch({
+  boards: [wireframeBoard()],
+  open: 'wire',
+  env: { PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}` },
+});
 const { page, app } = l;
 await app
   .context()
@@ -88,6 +102,20 @@ try {
     await page.keyboard.press('Control+z');
   });
 
+  await check('every font on the computer is found by search, past the first 400', async () => {
+    await select(['head0']);
+    await openFonts();
+    const shown = () =>
+      page.evaluate(() => [...document.querySelectorAll('#fontPop .dp-font')].filter(b => b.checkVisibility()).length);
+    assert.ok((await shown()) <= 420, `the list opens with no more than its first 400 fonts: ${await shown()}`);
+    await page.keyboard.type('Stub Face 450');
+    assert.ok(await page.isVisible('#fontPop .dp-font[data-bfont="Stub Face 450"]'), 'the 450th is found by search');
+    assert.ok(!(await page.isVisible('#fontPop .dp-use')), 'as a font on this computer, with no Use row');
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type('Stub Face');
+    assert.ok((await shown()) <= 400, `a search shows no more than 400 at once: ${await shown()}`);
+  });
+
   await check('Esc on a row in Settings → Default font gives the keyboard back to its button', async () => {
     await page.click('#gearBtn');
     await page.click('#setTabs [data-tab="board"]');
@@ -107,4 +135,5 @@ try {
   console.log('fontKeys: ok');
 } finally {
   await l.close();
+  fs.rmSync(bin, { recursive: true, force: true });
 }

@@ -71,12 +71,21 @@ export function boardFonts() {
   return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([f]) => f);
 }
 
-const fontRow = (cur: string | null) => (f: string) => {
-  const cls = f === cur ? 'on' : '',
-    name = esc(f),
-    where = isLocalFont(f) ? '' : '<small>Google Fonts</small>';
-  return `<button type="button" class="dp-row dp-font ${cls}" data-bfont="${name}" style="font-family:'${name}', ${DOC_FONT}, system-ui">${name}${where}</button>`;
-};
+// Every font on this computer is in the list, but no more than 400 show at once, as each row shown loads its font.
+// Past the first 400, a search finds them.
+const LOCAL_SHOWN = 400;
+
+// local: a font on this computer, the i-th of them
+const fontRow =
+  (cur: string | null, local = false) =>
+  (f: string, i = 0) => {
+    const on = f === cur ? 'on' : '',
+      cls = local ? `${on} dp-local` : on,
+      hide = local && i >= LOCAL_SHOWN ? ' hidden' : '',
+      name = esc(f),
+      where = isLocalFont(f) ? '' : '<small>Google Fonts</small>';
+    return `<button type="button" class="dp-row dp-font ${cls}"${hide} data-bfont="${name}" style="font-family:'${name}', ${DOC_FONT}, system-ui">${name}${where}</button>`;
+  };
 
 // The one font list both pickers use, and what a pick does in it. A row picked lands at once; the Use row's name
 // lands once Google Fonts sends it. Clicking the same button again closes it. Returns null when it closed.
@@ -140,8 +149,10 @@ function fontShell({ key, html, at, place, defName, pick, back }: Shell) {
     const typed = q.value.trim(),
       v = typed.toLowerCase(),
       rows = htmlIn(pop, '.dp-font');
+    let local = 0;
     rows.forEach(b => {
-      b.hidden = !!v && !(b.dataset.bfont || defName).toLowerCase().includes(v);
+      const hit = !v || (b.dataset.bfont || defName).toLowerCase().includes(v);
+      b.hidden = !hit || (b.classList.contains('dp-local') && ++local > LOCAL_SHOWN);
     });
     htmlIn(pop, '.dp-h').forEach(h => {
       h.hidden = !!v;
@@ -182,8 +193,7 @@ function boardFontPop(btn: Element, list: Card[], back: string) {
       .map(row)
       .join(''),
     local = FONTS.filter(f => !SUGGESTED_FONTS.includes(f) && !onBoard.includes(f))
-      .slice(0, 400)
-      .map(row)
+      .map(fontRow(cur, true))
       .join('');
   let previewed = false;
   // a font shows on every card by the class that forces it; Default shows Figtree on a card that has no board default
@@ -262,8 +272,7 @@ function defaultFontPop(btn: Element) {
       .map(row)
       .join(''),
     local = FONTS.filter(f => !SUGGESTED_FONTS.includes(f))
-      .slice(0, 400)
-      .map(row)
+      .map(fontRow(cur, true))
       .join('');
   const pop = fontShell({
     key: 'default',
