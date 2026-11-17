@@ -6,6 +6,7 @@ import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
 import { revealCards } from '../panels/zoomMenu.ts';
+import type { Box } from '../selbar/place.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { newCard } from '../tools/place.ts';
 import { PIECES } from './pieces.ts';
@@ -81,8 +82,9 @@ function nextSlot(f: Screen, web: boolean) {
 }
 
 /** A pick from the Pieces picker or a click in the panel: the piece or icon goes into the screen at its next free spot,
- *  as its own undo step, and is selected and brought into view. Bars go to the screen's top or bottom edge. */
-export function addToScreen(f: Screen, what: { kind: 'piece' | 'icon'; name: string }): Card[] {
+ *  as its own undo step, and is selected and brought into view, into `area` when the picker leaves only part of it.
+ *  Bars go to the screen's top or bottom edge. */
+export function addToScreen(f: Screen, what: { kind: 'piece' | 'icon'; name: string }, area?: Box): Card[] {
   remember();
   const z = session.view.z,
     x = f.x + margin(f);
@@ -116,6 +118,6 @@ export function addToScreen(f: Screen, what: { kind: 'piece' | 'icon'; name: str
       return unknown;
     }
   }
-  revealCards(made);
+  revealCards(made, area);
   return made;
 }

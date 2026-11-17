@@ -205,8 +205,9 @@ function pick(cell: HTMLElement) {
   if (pkTool === 'box' || pkTool === 'text') return pickWF(pkTool);
   stopPlacing();
   pickWF(null);
-  if (pkPiece) addToScreen(s, { kind: 'piece', name: pkPiece });
-  if (pkIcon) addToScreen(s, { kind: 'icon', name: pkIcon });
+  const area = freeArea() ?? undefined;
+  if (pkPiece) addToScreen(s, { kind: 'piece', name: pkPiece }, area);
+  if (pkIcon) addToScreen(s, { kind: 'icon', name: pkIcon }, area);
 }
 
 /** A press on a piece or icon in a grid: after 6 px it rides the cursor, and lands where it is let go. */

@@ -1,6 +1,7 @@
-// The Pieces picker in a narrow window and on a prototype board. When the free board has no room for the picker beside
-// its screen, it becomes a sheet across the bottom: every control the bar shows can still be clicked, and the screen
-// still shows.
+// The Pieces picker in a narrow window, on a phone and on a prototype board. Each pick lands in sight and clear of the
+// picker, and the view stays put while the new piece is already in sight. When the free board has no room for the
+// picker beside its screen, it becomes a sheet across the bottom: every control the bar shows can still be clicked,
+// and the screen still shows.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import { launch, settle } from './support/launch.ts';
@@ -24,6 +25,7 @@ const size = async (w: number, h: number) => {
   await app.evaluate(({ BrowserWindow }, [w = 0, h = 0]) => BrowserWindow.getAllWindows()[0]?.setSize(w, h), [w, h]);
   await settle(page, 700);
 };
+const view = () => page.evaluate(() => ({ ...window.__fenmyr.view }));
 // the bar's controls that answer a click at their middle and those that don't, and how much of the screen shows
 const look = () =>
   page.evaluate(() => {
@@ -65,9 +67,73 @@ const openOn = async (id: string, z: number, x: number, y: number) => {
   await settle(page, 450);
   return before;
 };
+// a click on a cell, then where the new piece is: its middle on the board under the header, and clear of the picker
+const pick = async (name: string) => {
+  const before = await page.evaluate(() => (window.__fenmyr.curBoard()?.cards ?? []).map(c => c.id));
+  await page.evaluate(n => document.querySelector<HTMLElement>(`#pkGrid [data-pk-piece="${n}"]`)?.click(), name);
+  await settle(page, 600);
+  return page.evaluate(before => {
+    const made = (window.__fenmyr.curBoard()?.cards ?? []).filter(c => !before.includes(c.id)),
+      rs = made.flatMap(c => document.querySelector(`#cards [data-id="${c.id}"]`)?.getBoundingClientRect() ?? []),
+      p = document.getElementById('piecePick')?.getBoundingClientRect(),
+      st = document.getElementById('stage')?.getBoundingClientRect(),
+      head = document.querySelector('.top')?.getBoundingClientRect().bottom ?? 0;
+    if (!p || !st || !rs.length || rs.length < made.length) return 'missing';
+    const l = Math.min(...rs.map(r => r.left)),
+      t = Math.min(...rs.map(r => r.top)),
+      r = Math.max(...rs.map(r => r.right)),
+      b = Math.max(...rs.map(r => r.bottom)),
+      x = (l + r) / 2,
+      y = (t + b) / 2;
+    if (x < st.left || x > st.right || y < Math.max(st.top, head) || y > st.bottom) return 'out of sight';
+    return l < p.right && r > p.left && t < p.bottom && b > p.top ? 'under the picker' : 'in sight';
+  }, before);
+};
 
 try {
   await settle(page, 800);
+  for (const [w, h] of [
+    [1280, 800],
+    [800, 800],
+  ] as const) {
+    await size(w, h);
+    for (const [tag, id, z, x, y] of [
+      ['phone screen at 100%', 'ph', 1, 300, 60],
+      ['Desktop screen at 50%', 'dk', 0.5, 280, 60],
+    ] as const) {
+      await openOn(id, z, x, y);
+      const seen: string[] = [];
+      for (const name of ['Heading', 'Image', 'Button', 'Input', 'Card', 'List row', 'Table'])
+        seen.push(`${name}: ${await pick(name)}`);
+      assert.deepStrictEqual(
+        seen.filter(s => !s.endsWith('in sight')),
+        [],
+        `at ${w} px, on a ${tag}, each pick lands in sight and clear of the picker`,
+      );
+    }
+  }
+
+  await size(1440, 900);
+  await openOn('ph', 1, 300, 60);
+  const v0 = await view(),
+    wide = [await pick('Heading'), await pick('Button')];
+  assert.deepStrictEqual(
+    [wide, await view()],
+    [['in sight', 'in sight'], v0],
+    'at 1440 px a pick already in sight leaves the view where it is',
+  );
+
+  await size(390, 844);
+  await openOn('ph', 0.4, 20, 80);
+  const p0 = await view(),
+    onPhone: string[] = [];
+  for (const name of ['Heading', 'Button', 'Input', 'Card', 'Toggle']) onPhone.push(await pick(name));
+  assert.deepStrictEqual(
+    [onPhone, await view()],
+    [Array(5).fill('in sight'), p0],
+    'on a phone each pick lands above the picker, and the view stays put while it is in sight',
+  );
+
   await size(800, 800);
   const st = await page.evaluate(() => document.getElementById('stage')?.getBoundingClientRect().toJSON());
   const W = st?.width ?? 800,
