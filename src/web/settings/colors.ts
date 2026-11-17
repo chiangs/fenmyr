@@ -169,12 +169,11 @@ export function setTab(t: string) {
   }
 }
 
-// panel heights: drag the little bar at the bottom of your boards list, Layers, Wireframe or Unsorted (double-click it to go back to automatic). Layers always keeps at least one row showing
+// panel heights: drag the little bar at the bottom of your boards list, Layers or Unsorted (double-click it to go back to automatic). Layers always keeps at least one row showing
 export const PANELS: Record<string, () => HTMLElement | null> = {
   boards: () => $('boards'),
   layers: () => $('layers'),
   tray: () => $('trayList'),
-  design: () => htmlOrNull(document.querySelector('#design .dz-body')),
 };
 // Claude usage (desktop app): Myra's own tally, plus a door to the plan limits page
 const kTok = (n: number) =>

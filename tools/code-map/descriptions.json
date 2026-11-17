@@ -31,7 +31,7 @@
     "web/tools": "The tools that make things: pen, ink drawing, shape and stamp pickers, and placing a new card.",
     "web/ui": "Shared interface parts: popovers, dialogs, the colour picker, palette, toolbar, minimisable boxes and DOM helpers.",
     "web/vault": "Obsidian vault support in the page: connecting vaults, who may read them, vault note cards, and notes or tasks gathered for Myra.",
-    "web/wireframe": "Wireframe design: the elements Myra and you place, screens, the design panel, sections, stacking order and tilt."
+    "web/wireframe": "Wireframe design: the elements Myra and you place, screens, the Pieces picker, sections, stacking order and tilt."
   },
   "files": {
     ".claude/hooks/check.ts": "Runs the fast checks before Claude finishes and hands failures back once.",
@@ -303,7 +303,7 @@
     "src/web/tools/penEdit.ts": "Editing a path’s points, corner roundness and curve handles.",
     "src/web/tools/penPointer.ts": "Pointer handling for editing a path on its outline.",
     "src/web/tools/place.ts": "Placing things: carries the chosen shape, piece, icon or stamp until it lands.",
-    "src/web/tools/screenTool.ts": "The screen tool: W, its device row in the mode bar, keys 1 to 5 and Enter, and the screens it places.",
+    "src/web/tools/screenTool.ts": "The wireframe tools: W and the Wireframe button, the mode bar’s devices with Box, Text and Icon, keys 1 to 5 and Enter, and the screens it places.",
     "src/web/tools/shapes.ts": "The shape picker row.",
     "src/web/tools/stamps.ts": "Stamps: Myra’s pictures or emoji, and the wheel to choose them.",
     "src/web/ui/boxes.ts": "Floating boxes that minimise to their title and remember it.",
@@ -323,9 +323,6 @@
     "src/web/vault/ask.ts": "Finds the best few notes and open tasks for a request, for Myra to read.",
     "src/web/vault/notes.ts": "Vault note cards on the board, with flip, open in Obsidian and refresh.",
     "src/web/vault/vaults.ts": "Connecting Obsidian vaults and choosing their folders in Settings.",
-    "src/web/wireframe/designMarkup.ts": "Markup for the design panel’s sections: fonts, icons, groups and frames.",
-    "src/web/wireframe/designPanel.ts": "The design panel: pick and place wireframe pieces and icons.",
-    "src/web/wireframe/drawer.ts": "The wireframe panel by kind: Basics, Buttons and inputs, Building blocks, Layouts.",
     "src/web/wireframe/pieceGrid.ts": "The Pieces picker's grid: the pieces under their headings or the icons, search, and the arrow keys between cells.",
     "src/web/wireframe/pieceGroups.ts": "The pieces and tools people add to a screen, in four groups, with the words a search finds each by.",
     "src/web/wireframe/pieceKit.ts": "What a piece is asked for, read safely from Myra’s replies.",
@@ -495,7 +492,7 @@
     "tests/smoke/library.ts": "Smoke checks for templates and Obsidian vaults.",
     "tests/smoke/look.ts": "Smoke checks for icons, default fonts, starter boards and layering.",
     "tests/smoke/myra.ts": "Smoke checks for Myra’s button, chat and idle behaviour.",
-    "tests/smoke/panels.ts": "Smoke checks for licences, exports and the wireframe panel.",
+    "tests/smoke/panels.ts": "Smoke checks for licences, exports, and wireframe pieces from the Pieces picker.",
     "tests/smoke/pictures.ts": "Smoke checks that pictures never live inside a note.",
     "tests/smoke/reminders.ts": "Smoke checks for due dates and Myra’s greeting.",
     "tests/smoke/repoOps.ts": "Smoke checks for the repo and prototype bridge operations against a throwaway repo.",

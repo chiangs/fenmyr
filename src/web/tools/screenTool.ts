@@ -9,7 +9,6 @@ import { frameTip } from '../repo/start.ts';
 import { selCards } from '../selbar/selected.ts';
 import { snapTo } from '../settings/licenses.ts';
 import { closestTo, htmlIn, isTyping } from '../ui/dom.ts';
-import { pickWF } from '../wireframe/designPanel.ts';
 import { screenOf } from '../wireframe/screenScope.ts';
 import { DEVICES, type Device, isDevice } from '../wireframe/wireframes.ts';
 import { addCard } from './penEdit.ts';
@@ -22,14 +21,29 @@ const ORDER = Object.keys(DEVICES).filter(isDevice);
 // the smallest screen a drag draws, so a slip of the hand still makes one there is room to work in
 const MIN = 120;
 
-/** The lit device: the one in hand, or the one a screen drag would make. Null when the screen tool is down. */
-function litDevice(): Device | null {
-  if (placing?.type === 'frame') return placing.extra.device ?? 'iPhone';
+/** The wireframe tool in hand, which the Wireframe row lights: a device's screen, R's box, X's text, or an icon whose
+ *  glyph is picked once it lands. An icon dragged from the picker already has one, and is not a tool. */
+type WfTool = { kind: 'screen'; device: Device } | { kind: 'box' } | { kind: 'text' } | { kind: 'icon' };
+
+function wfTool(): WfTool | null {
   const d = appState.drag;
-  return d?.mode === 'drawbox' && d.make.kind === 'screen' ? d.make.device : null;
+  if (d?.mode === 'drawbox')
+    return d.make.kind === 'screen' ? { kind: 'screen', device: d.make.device } : { kind: 'box' };
+  switch (placing?.type) {
+    case 'frame':
+      return { kind: 'screen', device: placing.extra.device ?? 'iPhone' };
+    case 'box':
+      return { kind: 'box' };
+    case 'text':
+      return { kind: 'text' };
+    case 'icon':
+      return placing.extra.name ? null : { kind: 'icon' };
+    default:
+      return null;
+  }
 }
 
-export const screenToolOn = () => litDevice() !== null;
+export const wfToolOn = () => wfTool() !== null;
 
 function defaultDevice(): Device {
   const own = screenOf(selCards())?.device,
@@ -47,10 +61,9 @@ function hold(d: Device) {
   $('placeHint').textContent = `Click for ${a} ${d} screen, or drag any size · Esc to cancel`;
 }
 
-/** W and the panel's Screen button: the screen tool in hand with the device the board suggests, or down again. */
+/** W and the Wireframe button: the screen tool in hand with the device the board suggests, or down again. */
 export function startScreen() {
   if (placing?.type === 'frame') return stopPlacing();
-  pickWF(null); // the panel's other tools go out, and an icon swap waiting in its grid is forgotten
   hold(defaultDevice());
 }
 
@@ -81,21 +94,23 @@ export function drawScreen(r: Rect) {
   land(c);
 }
 
-let screenButton: Element | null = null;
+let wfButton: Element | null = null;
 
-/** Runs every frame, so it writes only on a change: the device row and the panel's Screen button follow the tool. */
+const press = (b: Element, on: boolean) => {
+  b.classList.toggle('on', on);
+  b.ariaPressed = String(on);
+};
+
+/** Runs every frame, so it writes only on a change: the Wireframe row and the bottom bar's button follow the tool. */
 export function syncScreenBar() {
-  const lit = litDevice(),
+  const t = wfTool(),
     bar = $('screenbar');
-  if (!lit && bar.hidden) return;
-  if (bar.hidden === !!lit) bar.hidden = !lit;
-  for (const b of htmlIn(bar, '[data-dev]')) {
-    b.classList.toggle('on', b.dataset.dev === lit);
-    b.ariaPressed = String(b.dataset.dev === lit);
-  }
-  if (!screenButton) return;
-  screenButton.classList.toggle('on', !!lit);
-  screenButton.ariaPressed = String(!!lit);
+  if (!t && bar.hidden) return;
+  if (bar.hidden === !!t) bar.hidden = !t;
+  const lit = t?.kind === 'screen' ? t.device : null;
+  for (const b of htmlIn(bar, '[data-dev]')) press(b, b.dataset.dev === lit);
+  for (const b of htmlIn(bar, '[data-wft]')) press(b, b.dataset.wft === t?.kind);
+  if (wfButton) press(wfButton, !!t);
 }
 
 const chip = (d: Device, i: number) => {
@@ -105,13 +120,15 @@ const chip = (d: Device, i: number) => {
 };
 
 export function initScreenTool() {
-  screenButton = document.querySelector('[data-wf="frame"]');
+  wfButton = $('tools').querySelector('[data-add="frame"]');
   $('scDevs').innerHTML = ORDER.map(chip).join('');
   $('screenbar').addEventListener('pointerdown', e => e.stopPropagation());
   $('screenbar').onclick = e => {
     if (closestTo(e.target, '#scX')) return stopPlacing();
-    const d = closestTo(e.target, '[data-dev]')?.dataset.dev;
+    const d = closestTo(e.target, '[data-dev]')?.dataset.dev,
+      tool = closestTo(e.target, '[data-wft]')?.dataset.wft;
     if (isDevice(d)) hold(d);
+    if (tool === 'box' || tool === 'text' || tool === 'icon') startPlacing(tool);
   };
   addEventListener('keydown', e => {
     if (placing?.type !== 'frame' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || isTyping(e.target)) return;

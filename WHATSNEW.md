@@ -6,7 +6,7 @@ Write them for people, not for code: one line each, saying what changed and why 
 ## October 2026 · 1.0.0
 
 - Meet Myra, a small cloudberry who helps on your boards.
-- Click a wireframe element to add it inside the selected screen or the middle of your view, or drag it out.
+- Press W or the Wireframe button for a screen. Select it and choose Pieces to add parts. The Wireframe panel's tools now sit in the bar.
 - Type **/** in Myra's chat to see what she can do without thinking, such as `/find`, `/tag`, `/tidy` and `/fit`.
 - **Ctrl+F** finds things on the board, with a bar to change the words and step through matches.
 - Paste a picture into a note, and it lands on the board as its own connected card.

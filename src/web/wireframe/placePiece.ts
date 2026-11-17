@@ -43,7 +43,7 @@ export function placePiece(name: string | undefined, w: Point, opts: { frame?: S
         .find(f => f.type === 'frame' && w.x > f.x && w.x < f.x + f.w && w.y > f.y && w.y < f.y + f.h),
     M = f ? margin(f) : 24;
   const W = (P.bar || P.web) && f ? f.w : P.web ? 1200 : Math.min(P.w || 360, f ? f.w - M * 2 : Infinity),
-    items = P.make(W, { panel: true });
+    items = P.make(W, { byHand: true });
   const bw = Math.max(1, ...items.map(i => i.x + i.w)),
     bh = Math.max(1, ...items.map(i => i.y + i.h));
   let ox = w.x - 14 / session.view.z,
@@ -81,7 +81,7 @@ function nextSlot(f: Screen, web: boolean) {
   return f.y + (f.w <= 500 ? 44 : 0) + (web ? 0 : 20);
 }
 
-/** A pick from the Pieces picker or a click in the panel: the piece or icon goes into the screen at its next free spot,
+/** A pick from the Pieces picker: the piece or icon goes into the screen at its next free spot,
  *  as its own undo step, and is selected and brought into view, into `area` when the picker leaves only part of it.
  *  Bars go to the screen's top or bottom edge. */
 export function addToScreen(f: Screen, what: { kind: 'piece' | 'icon'; name: string }, area?: Box): Card[] {

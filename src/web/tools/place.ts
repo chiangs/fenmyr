@@ -18,8 +18,7 @@ import { card, newBoard } from '../model/boards.ts';
 import { tip } from '../myra/say.ts';
 import { newNoteColor, snapTo } from '../settings/licenses.ts';
 import { openColor } from '../ui/colorPicker.ts';
-import { htmlIn } from '../ui/dom.ts';
-import { pickWF } from '../wireframe/designPanel.ts';
+import { toggleSwap } from '../wireframe/piecePick.ts';
 import { PIECES } from '../wireframe/pieces.ts';
 import { placePiece } from '../wireframe/placePiece.ts';
 import { fileIntoFrame } from '../wireframe/tilt.ts';
@@ -197,7 +196,6 @@ export function placeAt(w: Point) {
   if (placing.type === 'piece') {
     const n = placing.extra.piece;
     stopPlacing();
-    for (const x of htmlIn(document, '.dz-piece-grid .on')) x.classList.remove('on');
     placePiece(n, w);
     return;
   }
@@ -235,10 +233,9 @@ export function placeAt(w: Point) {
     dropInto(t, [c.id], w);
     save();
   }
-  if (WF.includes(type)) {
-    fileIntoFrame([c]);
-    pickWF(null);
-  }
+  if (WF.includes(type)) fileIntoFrame([c]);
+  // the Wireframe row's Icon lands a star and asks for its glyph straight away
+  if (c.type === 'icon' && !more.name) toggleSwap([c.id]);
   if (['note', 'todo', 'title', 'doc', 'canvas', 'text'].includes(type)) startEdit(c.id); // ready to type right away, so the first letters never act as shortcuts
   if (type === 'coll') startEdit(c.id);
   if (c.type === 'swatch') setTimeout(() => openColor(c), 60);

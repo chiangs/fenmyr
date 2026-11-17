@@ -64,8 +64,6 @@ import * as m56 from './ui/colorPicker.ts';
 import * as m20 from './ui/toolbar.ts';
 import * as m18 from './ui/toolbarConfig.ts';
 import * as m38 from './vault/ask.ts';
-import { initDesign } from './wireframe/designPanel.ts';
-import * as m47 from './wireframe/drawer.ts';
 import * as m46 from './wireframe/tilt.ts';
 import * as m45 from './wireframe/wireframes.ts';
 
@@ -115,8 +113,6 @@ m43.init44();
 m44.init45();
 m45.init46();
 m46.init47();
-m47.init48();
-initDesign();
 initScreenTool();
 m48.init49();
 m49.init50();

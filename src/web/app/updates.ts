@@ -118,9 +118,9 @@ function fitUpBar() {
   const st = stage.getBoundingClientRect(),
     t = document.querySelector('.top')?.getBoundingClientRect(),
     w = b.getBoundingClientRect().width;
-  const right = [$('design'), $('tray')]
-    .map(el => el?.getBoundingClientRect())
-    .filter(r => r?.width && r.top < 140)
+  const right = [...$('sideR').children]
+    .map(el => el.getBoundingClientRect())
+    .filter(r => r.width && r.top < 140)
     .reduce((m, r) => Math.min(m, r.left), st.right);
   const from = (t ? t.right : st.left) + 20,
     to = right - 20;

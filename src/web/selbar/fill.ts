@@ -8,7 +8,6 @@ import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { cssToHex } from '../ui/color.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
-import { syncDesign } from '../wireframe/designPanel.ts';
 import { caret, closeSbPops, FOLD_PIECE, G, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
 import { every, group, only } from './group.ts';
 import { opacityHtml } from './opacity.ts';
@@ -146,7 +145,6 @@ function setTextFill(v: string) {
     renderCard(c);
   });
   selectOnly(cs.map(c => c.id));
-  syncDesign();
   save();
   const t = htmlIn($('selbar'), '.sb-tcur')[0];
   if (t) {
@@ -167,7 +165,6 @@ function setFill(v: string, keep?: boolean) {
     renderCard(c);
   });
   selectOnly(cs.map(c => c.id));
-  syncDesign();
   save();
   const t = htmlIn(document, '[data-pop="fill"] .sb-cur')[0];
   if (t) {

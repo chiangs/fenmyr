@@ -2,7 +2,6 @@ import { B, IC, numOf, PH, type Piece, recs, str, strs, T } from './pieceKit.ts'
 
 export const WEB: Record<string, Piece> = {
   'Card grid': {
-    icon: 'card-grid',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -34,7 +33,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Header: {
-    icon: 'globe',
     web: true,
     make: (W, o) => {
       const links = strs(o.links, ['Product', 'Pricing', 'About', 'Blog']),
@@ -59,7 +57,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Hero: {
-    icon: 'rows',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -85,7 +82,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Features: {
-    icon: 'columns',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -116,7 +112,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Stats: {
-    icon: 'insights',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -136,7 +131,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Testimonials: {
-    icon: 'quotes',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -166,7 +160,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Pricing: {
-    icon: 'tag',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -221,7 +214,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Gallery: {
-    icon: 'images',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -246,7 +238,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Logos: {
-    icon: 'workspaces',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -265,7 +256,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   CTA: {
-    icon: 'megaphone',
     web: true,
     make: (W, o) => {
       const M = 64,
@@ -297,7 +287,6 @@ export const WEB: Record<string, Piece> = {
     },
   },
   Footer: {
-    icon: 'cursor-click',
     web: true,
     make: (W, o) => {
       const M = 64,

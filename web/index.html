@@ -52,6 +52,7 @@
     <button data-add="title" aria-label="Big title · T" data-tip="Big title · T"><svg class="ic" data-ico="title" width="18" height="18"></svg></button>
     <button data-add="coll" aria-label="Collection · G" data-tip="Collection · G"><svg class="ic" data-ico="collection" width="18" height="18"></svg></button>
     <button data-add="canvas" aria-label="Canvas (a board inside this one)" data-tip="Canvas"><svg class="ic" data-ico="canvas" width="18" height="18"></svg></button>
+    <button data-add="frame" aria-label="Wireframe · W" data-tip="Wireframe · W" aria-pressed="false"><svg class="ic" data-ico="screen" width="18" height="18"></svg></button>
   <button data-add="link" aria-label="Link · L" data-tip="Link · L"><svg class="ic" data-ico="link" width="18" height="18"></svg></button>
     <button data-add="image" aria-label="Image · I" data-tip="Image · I"><svg class="ic" data-ico="image" width="18" height="18"></svg></button>
     <button data-add="audio" aria-label="Voice memo · A" data-tip="Voice memo · A"><svg class="ic" data-ico="mic" width="18" height="18"></svg></button>
@@ -148,10 +149,14 @@
       <i class="fb-sep"></i>
       <button type="button" class="fb-b" id="fbX" title="Close (Esc)" aria-label="Close find"><svg data-ico="close" width="16" height="16"></svg></button>
     </div>
-    <!-- the screen tool: one chip per device, lit for the screen a click places; it wears drawing's bar -->
-    <div class="drawbar screenbar" id="screenbar" role="group" aria-label="Screen" hidden>
+    <!-- the wireframe tools: one chip per device, lit for the screen a click places, then Box, Text and Icon for the bare board; it wears drawing's bar -->
+    <div class="drawbar screenbar" id="screenbar" role="group" aria-label="Wireframe" hidden>
       <span class="sc-devs" id="scDevs"></span><span class="sb-sep"></span>
-      <button type="button" class="fb-b" id="scX" title="Close (Esc)" aria-label="Put the screen tool down"><svg data-ico="close" width="16" height="16"></svg></button>
+      <button type="button" class="db-tool sc-tool" data-wft="box" aria-pressed="false" aria-label="Box · R" title="Box · R: drag to draw"><svg data-ico="rectangle" width="18" height="18"></svg></button>
+      <button type="button" class="db-tool sc-tool" data-wft="text" aria-pressed="false" aria-label="Text · X" title="Text · X"><svg data-ico="text" width="18" height="18"></svg></button>
+      <button type="button" class="db-tool sc-tool" data-wft="icon" aria-pressed="false" aria-label="Icon" title="Icon: click the board, then pick one"><svg data-ico="star" width="18" height="18"></svg></button>
+      <span class="sb-sep"></span>
+      <button type="button" class="fb-b" id="scX" title="Close (Esc)" aria-label="Put the tool down"><svg data-ico="close" width="16" height="16"></svg></button>
     </div>
   </div>
   <!-- a doc opens beside the board (or full page), with a clear way back -->
@@ -169,40 +174,6 @@
 
   <button class="clean-back" id="cleanBack" type="button">Show panels <kbd>⌘\</kbd></button>
   <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>⌘K</kbd> quick capture</span><span><kbd>⌘F</kbd> find</span><span><kbd>space</kbd> drag to pan</span><span><kbd>⌘\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
-  <!-- wireframes: screens, boxes and text, plus a design panel for the selection -->
-  <aside class="design" id="design">
-    <div class="dz-head"><span class="label">Wireframe</span><button class="mini" id="dzMin" title="Minimise">–</button></div>
-    <div class="dz-body">
-      <label class="dz-search"><svg data-ico="search" width="15" height="15"></svg><input id="dzSearch" placeholder="Search elements…" autocomplete="off" spellcheck="false" aria-label="Search elements"></label>
-      <section class="dz-group" data-g="basics">
-        <button class="dz-gh" type="button" aria-expanded="true"><span class="label">Basics</span><svg data-ico="caret-down" width="14" height="14"></svg></button>
-        <div class="dz-gb">
-          <div class="dz-tools">
-            <button data-wf="frame" aria-pressed="false" data-kw="screen frame device phone mobile desktop page artboard" title="Screen (W): click for a device's screen, or drag any size"><svg data-ico="screen" width="18" height="18"></svg><span>Screen</span></button>
-            <button data-wf="box" data-kw="box rectangle shape square draw" title="Box: drag to draw (R)"><svg data-ico="rectangle" width="18" height="18"></svg><span>Box</span></button>
-            <button data-wf="text" data-kw="text paragraph copy label type" title="Text (X)"><svg data-ico="text" width="18" height="18"></svg><span>Text</span></button>
-            <button data-wf="icon" data-kw="icon symbol glyph" title="Icon: pick one from the icon set"><svg data-ico="star" width="18" height="18"></svg><span>Icon</span></button>
-          </div>
-          <div class="dz-icons" id="dzIcons"><input id="iconSearch" placeholder="Search icons… home, heart, settings" spellcheck="false" autocomplete="off"><div class="dz-icon-grid" id="iconGrid"></div></div>
-          <div class="dz-piece-grid" data-g="basics"></div>
-        </div>
-      </section>
-      <section class="dz-group" data-g="controls">
-        <button class="dz-gh" type="button" aria-expanded="true"><span class="label">Buttons &amp; inputs</span><svg data-ico="caret-down" width="14" height="14"></svg></button>
-        <div class="dz-gb"><div class="dz-piece-grid" data-g="controls"></div></div>
-      </section>
-      <section class="dz-group" data-g="blocks">
-        <button class="dz-gh" type="button" aria-expanded="true"><span class="label">Building blocks</span><svg data-ico="caret-down" width="14" height="14"></svg></button>
-        <div class="dz-gb"><div class="dz-piece-grid" data-g="blocks"></div></div>
-      </section>
-      <section class="dz-group" data-g="layouts">
-        <button class="dz-gh" type="button" aria-expanded="true"><span class="label">Layouts</span><svg data-ico="caret-down" width="14" height="14"></svg></button>
-        <div class="dz-gb"><div class="dz-piece-grid" data-g="layouts"></div></div>
-      </section>
-      <div class="dz-none" id="dzNone" hidden>No elements match that</div>
-      <div class="dz-props" id="dzProps"></div>
-    </div>
-  </aside>
   <div class="place-hint" id="placeHint" hidden></div>
   <svg class="guides" id="guides"></svg>
   <input type="file" id="filePick" accept="image/*,video/*" multiple hidden>
@@ -379,7 +350,6 @@
         <p class="set-lead">Turn on the ones you use. The Boards panel always stays, since it's home to your boards and Settings.</p>
         <label class="set-row"><div><b>Layers</b><small>Everything on the board, top first. Rename, hide, lock and restack</small></div><input type="checkbox" class="tgl" data-set="wLayers"></label>
         <label class="set-row"><div><b>Board colours</b><small>The colours you've saved for this board</small></div><input type="checkbox" class="tgl" data-set="wColors"></label>
-        <label class="set-row"><div><b>Wireframe</b><small>Screens, boxes and ready-made pieces to sketch with</small></div><input type="checkbox" class="tgl" data-set="wDesign"></label>
         <label class="set-row"><div><b>Unsorted</b><small>Ideas waiting for a spot. ⌘K still saves there when this is off.</small></div><input type="checkbox" class="tgl" data-set="wTray"></label>
         <div class="set-row"><div><b>Arrange them</b><small>Drag a widget by its title to any spot on either side.</small></div><button class="set-btn" id="wgReset">Reset layout</button></div>
       </section>

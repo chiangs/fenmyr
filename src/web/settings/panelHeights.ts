@@ -27,29 +27,25 @@ export function applyPanelH() {
         maxHeight: 'none',
         flex: `0 1 ${h}px`,
         overflowY: 'auto',
-        overflowX: k === 'tray' || k === 'design' ? 'hidden' : '',
+        overflowX: k === 'tray' ? 'hidden' : '',
       });
     } else
       Object.assign(el.style, { height: '', minHeight: '', maxHeight: '', flex: '', overflowY: '', overflowX: '' });
-    el.closest('.design, .tray')?.classList.toggle('sized', !!v);
+    el.closest('.tray')?.classList.toggle('sized', !!v);
   });
   fitSides();
 }
 
-// Wireframe and Unsorted share the right column: a height you dragged (or saved) is a wish, trimmed so everything in the column stays on screen (Wireframe gives way first)
+// a height you dragged (or saved) for Unsorted is a wish, trimmed so everything in its column stays on screen
 export function fitSides() {
   document.querySelectorAll('.side').forEach(side => {
-    let over = side.scrollHeight - side.clientHeight;
+    const over = side.scrollHeight - side.clientHeight;
     if (over < 2) return;
-    ['design', 'tray'].forEach(k => {
-      const el = PANELS[k]?.();
-      if (over < 2 || !el || !el.closest('.side') || el.closest('.side') !== side || !el.closest('.sized')) return;
-      const cur = el.getBoundingClientRect().height,
-        h = Math.max(panelMin(k), Math.floor(cur - over));
-      if (h >= cur) return;
-      Object.assign(el.style, { height: `${h}px`, flex: `0 1 ${h}px` });
-      over -= cur - h;
-    });
+    const el = PANELS.tray?.();
+    if (!el || el.closest('.side') !== side || !el.closest('.sized')) return;
+    const cur = el.getBoundingClientRect().height,
+      h = Math.max(panelMin('tray'), Math.floor(cur - over));
+    if (h < cur) Object.assign(el.style, { height: `${h}px`, flex: `0 1 ${h}px` });
   });
 }
 
@@ -120,7 +116,7 @@ function gripBulge(grip: HTMLElement) {
 }
 
 // A height grip: drag it to resize what it belongs to, double-click it to go back to the automatic height. Under
-// Layers, Wireframe and Unsorted, and above Myra's input on a prototype board.
+// Layers and Unsorted, and above Myra's input on a prototype board.
 export function heightGrip(
   title: string,
   h: { start: () => (dy: number) => void; end?: () => void; reset: () => void },

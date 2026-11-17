@@ -36,7 +36,6 @@ const DEFAULTS = {
   dblNote: true,
   wLayers: true,
   wColors: true,
-  wDesign: true,
   wTray: true,
   myra: 'golden',
   greet: true,

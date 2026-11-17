@@ -96,14 +96,8 @@ export function layerIcon(c: Card) {
   return toolIcon(c.type) || LICON[c.type] || CIC[c.type] || LICON.box || '';
 }
 
-// the very same icon as the button you made it with (the toolbar, or the wireframe panel), so a piece looks the same in both places
-const TOOL_OF: Record<string, string> = {
-  ink: '[data-add="draw"]',
-  frame: '[data-wf="frame"]',
-  box: '[data-wf="box"]',
-  icon: '[data-wf="icon"]',
-  text: '[data-wf="text"]',
-};
+// the very same icon as the toolbar button you made it with, so a card looks the same in both places
+const TOOL_OF: Record<string, string> = { ink: '[data-add="draw"]' };
 const toolIc: Record<string, string | null> = {};
 
 function toolIcon(type: string) {

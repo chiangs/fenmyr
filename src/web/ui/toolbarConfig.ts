@@ -198,5 +198,5 @@ export function init19() {
   addEventListener('resize', fitSoon);
   // the right widgets grow as Unsorted fills and shrink as one folds, and the bar keeps clear of them
   const widgetSizes = new ResizeObserver(fitSoon);
-  for (const w of htmlIn(document, '#tray, #design, .box[data-box]')) widgetSizes.observe(w);
+  for (const w of htmlIn(document, '#tray, .box[data-box]')) widgetSizes.observe(w);
 }

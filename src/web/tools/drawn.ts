@@ -3,7 +3,6 @@ import { selectOnly } from '../canvas/wires.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
-import { pickWF } from '../wireframe/designPanel.ts';
 import { fileIntoFrame } from '../wireframe/tilt.ts';
 import { addCard } from './penEdit.ts';
 import type { placing } from './place.ts';
@@ -30,7 +29,6 @@ export function finishDrawn(make: Drawn, a: Point, b: Point) {
         c = card('box', { x: r.x, y: r.y, ...size, r: 0, fill: '#e4e4e7', radius: 6 });
       addCard(c);
       fileIntoFrame([c]);
-      pickWF(null);
       selectOnly([c.id]);
       save();
       return;
