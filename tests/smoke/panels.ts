@@ -50,14 +50,14 @@ async function wireframes(t: Smoke) {
   const res = await t.page.evaluate(async () => {
     const T = window.__t,
       M = window.__fenmyr,
-      names = M.GROUPS.flatMap(g => g[1]),
+      names = M.PIECE_GROUPS.flatMap(g => g.cells.flatMap(c => (c.kind === 'piece' ? [c.name] : []))),
       shown = () =>
         T.all('#design [data-piece]')
           .filter(b => !b.hidden)
           .map(b => b.dataset.piece)
           .join(','),
       layouts = () => T.el('.dz-group[data-g="layouts"]');
-    const counts = M.GROUPS.map(g => g[1].length).join(','),
+    const counts = M.PIECE_GROUPS.map(g => g.cells.filter(c => c.kind === 'piece').length).join(','),
       buttons =
         document.querySelectorAll('#design .dz-piece-grid button').length +
         document.querySelectorAll('#design .dz-tools button').length,

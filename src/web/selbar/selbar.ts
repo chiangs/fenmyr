@@ -3,6 +3,8 @@ import type { Card } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { syncScreenBar } from '../tools/screenTool.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
+import { initPiecePick, syncPicker } from '../wireframe/piecePick.ts';
+import { initScreenHints } from '../wireframe/screenHint.ts';
 import { arrange } from './arrange.ts';
 import { initBarKeys, keepFocus } from './barKeys.ts';
 import { closeSbPops, foldSelbar, initIcons, initPops, initTips, snapSoon } from './barKit.ts';
@@ -17,6 +19,7 @@ import { group } from './group.ts';
 import { lineStyle } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
 import { canvas, crop, doc, due, imageSpot, link, picture, spotify, swatch, tag, tags, vnote } from './own.ts';
+import { pieces } from './pieces.ts';
 import { stroke } from './stroke.ts';
 import { syncTypingFormats, text } from './textBar.ts';
 import { initTypingFocus } from './typingFocus.ts';
@@ -76,6 +79,7 @@ const label = group({
 // Every group the bar can show, in the order it shows them. Each one says for itself whether it shows.
 const GROUPS = [
   label,
+  pieces,
   arrange,
   collColours,
   noteColours,
@@ -192,9 +196,12 @@ export function placeSelbar() {
 export function init56() {
   initIcons();
   initFontPop();
+  initPiecePick();
+  initScreenHints();
 
   (function tick() {
     syncScreenBar();
+    syncPicker();
     placeSelbar();
     drawOverlays();
     requestAnimationFrame(tick);

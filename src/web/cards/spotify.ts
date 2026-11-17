@@ -9,11 +9,10 @@ import { addVideo } from '../media/videoFile.ts';
 import { card } from '../model/boards.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { say } from '../myra/say.ts';
-import { centerWorld } from '../panels/zoomMenu.ts';
+import { centerWorld, revealCards } from '../panels/zoomMenu.ts';
 import { settings } from '../settings/settings.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { cardEl } from '../ui/dom.ts';
-import { revealCards } from '../wireframe/drawer.ts';
 
 type Point = { x: number; y: number };
 const SP_DESC: Record<string, string> = {

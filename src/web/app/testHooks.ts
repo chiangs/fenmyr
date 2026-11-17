@@ -59,8 +59,9 @@ import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { refreshVNotes } from '../vault/notes.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
-import { GROUPS, placePiece } from '../wireframe/drawer.ts';
+import { PIECE_GROUPS } from '../wireframe/pieceGroups.ts';
 import { PIECES } from '../wireframe/pieces.ts';
+import { placePiece } from '../wireframe/placePiece.ts';
 import { restack } from '../wireframe/stack.ts';
 import { openSetup, startTour } from './onboarding.ts';
 
@@ -140,7 +141,7 @@ const makeHooks = () => ({
   parseTimer,
   placePiece,
   PIECES,
-  GROUPS,
+  PIECE_GROUPS,
   newNote: (x = 0, y = 0) => {
     const w = centerWorld(),
       c = card('note', { color: 'white', name: '' });

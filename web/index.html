@@ -94,6 +94,8 @@
     <div class="cards" id="cards"></div>
     <div class="group-boxes" id="groupBoxes"></div>
     <div class="plan-preview" id="planPreview" aria-hidden="true"></div>
+    <!-- an empty screen's Add pieces button, which keeps one size on screen at any zoom -->
+    <div class="screen-hints" id="screenHints"></div>
   </div>
   <div class="marquee" id="marquee"></div>
 
@@ -423,6 +425,15 @@
   </div>
 </div>
 
+<!-- the Pieces picker: docked beside the screen it adds to, and open across picks -->
+<div class="piece-pick" id="piecePick" role="dialog" aria-label="Pieces" hidden>
+  <div class="pk-head">
+    <div class="pk-tabs" role="group" aria-label="Show"><button type="button" data-pk-view="pieces" aria-pressed="true">Pieces</button><button type="button" data-pk-view="icons" aria-pressed="false">Icons</button></div>
+    <button type="button" class="pk-x" data-pk-close title="Close" aria-label="Close">×</button>
+  </div>
+  <label class="pk-search"><svg data-ico="search" width="15" height="15"></svg><input id="pkSearch" placeholder="Search pieces…" autocomplete="off" spellcheck="false" aria-label="Search pieces"></label>
+  <div class="pk-grid" id="pkGrid"></div>
+</div>
 <script src="icons/pack.js"></script>
 <script src="vendor/editor.js"></script>
 <script src="dist/app.js"></script>

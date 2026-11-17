@@ -733,7 +733,7 @@ body.calm .card.stamp .st img, body.calm .sp-grid img, body.calm .ws-ring img { 
 .row-menu .rm-sep { height: 1px; margin: 4px 6px; background: var(--pn-menu-sep); }
 /* while exporting: just the cards, no app around them */
 body.exporting .side, body.exporting .dock, body.exporting .selbar, body.exporting .modebar, body.exporting .tray, body.exporting .top, body.exporting .keys, body.exporting .ghost, body.exporting .grid,
-body.exporting .marquee, body.exporting .shapepick, body.exporting .wheel-stamps, body.exporting .stamp-pick { visibility: hidden !important; }
+body.exporting .marquee, body.exporting .shapepick, body.exporting .wheel-stamps, body.exporting .stamp-pick, body.exporting .screen-hints, body.exporting .piece-pick { visibility: hidden !important; }
 body.exporting .card .handle, body.exporting .card .knob, body.exporting .card .chip { display: none !important; }
 body.exporting .card.sel::after { display: none; }
 
@@ -1256,8 +1256,8 @@ body.dark .pp-head { color: rgb(var(--sh)); }
 .plan-preview.lit .pp-box:not(.hot) { border-color: color-mix(in oklch, var(--pp-line) 30%, transparent); background: none; }
 .plan-preview.lit .pp-box:not(.hot) .pp-label { opacity: .35; }
 .plan-preview.lit .pp-box.hot { --pp-line: var(--select); box-shadow: 0 0 0 4px color-mix(in oklch, var(--select) 22%, transparent); }
-/* no picture of the window shows it: an export, or a build's picture of a screen */
-body.picturing .plan-preview { visibility: hidden !important; }
+/* no picture of the window shows a plan's preview, an empty screen's hint or the picker: an export, or a build's picture of a screen */
+body.picturing :is(.plan-preview, .screen-hints, .piece-pick) { visibility: hidden !important; }
 
 /* design thinking templates: a little menu above the toolbar */
 .tplpick { position: fixed; left: 50%; bottom: calc(var(--bar-b) + 66px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 22; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
@@ -3104,3 +3104,58 @@ body:is(.calm, .myra-calm) .m-bar::after { animation: none; transform: translate
   --wg-shadow: #443220; --wires-ink: #968f85; --ws-bg: #e9f4ff; --ws-bg-2: #d9ecff; --ws-bg-3: #2c3644; --ws-bg-4: #34404f;
   --ws-shadow: #8cc1ff;
 }
+
+/* ---------- the Pieces picker: docked beside the screen it adds to; on a phone, above the bottom bar ---------- */
+.piece-pick { position: fixed; z-index: 30; width: 292px; height: 480px; display: flex; flex-direction: column; padding: 8px; border-radius: 20px; corner-shape: squircle; background: var(--snow); box-shadow: 0 12px 32px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); font: 500 13px/1.2 var(--font); color: var(--ink); transition: opacity .15s; }
+.piece-pick[hidden] { display: none; }
+.piece-pick.paused { opacity: 0; pointer-events: none; }
+.piece-pick .pk-head { display: flex; align-items: center; gap: 6px; }
+.piece-pick .pk-tabs { flex: 1; display: flex; gap: 2px; padding: 2px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--vd-bg); }
+.piece-pick .pk-tabs button { flex: 1; padding: 6px 8px; border: 0; border-radius: 10px; corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
+.piece-pick .pk-tabs [aria-pressed="true"] { background: var(--snow); color: var(--ink); box-shadow: 0 1px 3px rgba(var(--sh), calc(.18 * var(--sh-k))); }
+.piece-pick .pk-x { flex: none; width: 30px; height: 30px; border: 0; border-radius: 10px; corner-shape: squircle; background: none; font: 400 20px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
+.piece-pick .pk-x:hover { background: var(--blush); color: var(--ink); }
+.piece-pick .pk-search { flex: none; display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; padding: 8px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--vd-bg); color: var(--ink-soft); cursor: text; }
+.piece-pick .pk-search svg { width: 15px; height: 15px; flex: none; }
+.piece-pick .pk-search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: 500 13px/1.2 var(--font); color: var(--ink); }
+.piece-pick .pk-search:focus-within { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
+.piece-pick .pk-grid { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; padding: 0 2px 4px; }
+.piece-pick .pk-group[hidden], .piece-pick .pk-grid [hidden] { display: none; }
+.piece-pick .pk-h { margin: 0; padding: 10px 4px 6px; font: 600 10.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
+.piece-pick .pk-cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 4px; }
+.piece-pick .pk-cells.pk-icons { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); padding-top: 4px; }
+.piece-pick .pk-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 6px 4px 7px; border: 0; border-radius: 14px; corner-shape: squircle; background: color-mix(in oklch, var(--ink) 4%, transparent); color: var(--ink-soft); font: 600 10.5px/1.1 var(--font); cursor: pointer; }
+.piece-pick .pk-cell:hover, .piece-pick .pk-icon:hover { background: var(--blush); color: var(--ink); }
+.piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-tabs button, .pk-x):focus-visible { outline: 2px solid var(--select); outline-offset: -2px; }
+.piece-pick .pk-th { display: grid; place-items: center; width: 72px; height: 44px; color: var(--ink-soft); }
+.piece-pick .pk-th svg { width: 100%; height: 100%; overflow: visible; }
+.piece-pick .pk-tool .pk-th svg { width: 22px; height: 22px; }
+.piece-pick .pk-n { display: flex; align-items: center; gap: 4px; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.piece-pick .pk-n kbd { padding: 1px 4px; font-size: 9.5px; }
+.piece-pick .pk-th .b { fill: color-mix(in oklch, var(--ink) 9%, transparent); stroke: color-mix(in oklch, var(--ink) 30%, transparent); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.piece-pick .pk-th .bd { fill: color-mix(in oklch, var(--ink) 70%, transparent); }
+.piece-pick .pk-th .t { fill: color-mix(in oklch, var(--ink) 45%, transparent); }
+.piece-pick .pk-th .i { fill: color-mix(in oklch, var(--ink) 55%, transparent); }
+.piece-pick .pk-th .tl { fill: var(--snow); }
+.piece-pick .pk-icon { display: grid; place-items: center; aspect-ratio: 1; border: 0; border-radius: 12px; corner-shape: squircle; background: none; color: var(--ink); cursor: pointer; }
+.piece-pick .pk-icon svg { width: 20px; height: 20px; }
+.piece-pick .pk-none { padding: 18px 10px; text-align: center; color: var(--ink-soft); }
+.piece-pick .pk-none p { margin: 0 0 10px; }
+.piece-pick .pk-more { padding: 7px 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: var(--vd-bg); font: 600 12px/1.2 var(--font); color: var(--ink); cursor: pointer; }
+.piece-pick .pk-more:hover { background: var(--blush); }
+body.dark .piece-pick { background: var(--surface); box-shadow: 0 12px 32px rgb(from var(--shade) r g b / .45); }
+body.dark .piece-pick :is(.pk-tabs, .pk-search, .pk-more) { background: rgb(from var(--hilite) r g b / .08); }
+body.dark .piece-pick .pk-tabs [aria-pressed="true"] { background: var(--surface-2); }
+body.dark .piece-pick .pk-cell { background: var(--surface-2); }
+body.dark .piece-pick .pk-th .tl { fill: var(--surface); }
+body.dark .piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-x):hover { background: var(--ob-line); }
+
+/* ---------- an empty screen's hint: one size on screen at any zoom, centred in the screen ---------- */
+.screen-hints { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; }
+.screen-hint { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 8px; width: max-content; transform-origin: 0 0; transform: scale(var(--hz, 1)) translate(-50%, -50%); font: 500 12.5px/1.3 var(--font); color: var(--wf-faint); }
+.screen-hint span { text-align: center; }
+.screen-hint button { pointer-events: auto; padding: 9px 16px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 0 0 1px color-mix(in oklch, var(--wf-ink) 14%, transparent), 0 1px 3px rgba(var(--sh), calc(.12 * var(--sh-k))); font: 600 13px/1 var(--font); color: var(--wf-ink); cursor: pointer; }
+/* with a tool in hand, the eraser or Space held, a press on the hint is a press on the board */
+.stage:is(.placing, .drawing, .erasing, .pen-mode, .space) .screen-hint button { pointer-events: none; }
+.screen-hint button:hover { background: color-mix(in oklch, var(--wf-ink) 8%, var(--snow)); }
+.screen-hint button:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }

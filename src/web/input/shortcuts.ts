@@ -28,6 +28,7 @@ import { closeColor } from '../ui/colorPicker.ts';
 import { clickIn, isTyping } from '../ui/dom.ts';
 import { toPointer } from '../ui/toolbar.ts';
 import { pickWF } from '../wireframe/designPanel.ts';
+import { closePicker, pickerScreen } from '../wireframe/piecePick.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { groupSel, restack } from '../wireframe/stack.ts';
 import { initKeyed, keyedButton } from './keyed.ts';
@@ -211,6 +212,10 @@ export function init20() {
         $('stampPick').classList.contains('on'))
     ) {
       stopPlacing();
+      return;
+    }
+    if (e.key === 'Escape' && pickerScreen()) {
+      closePicker();
       return;
     }
     if (e.key === 'Escape' && session.selWire) {
