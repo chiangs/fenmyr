@@ -2,7 +2,7 @@
 // whole piece, a font card, an icon and a box folds nothing, and with the Pieces picker open it tucks away no control
 // it showed before them. On a phone at 390 px the strip for a text and an icon shows what it did, the new controls
 // wait in ···, and Type ▾ and Change icon opened from there sit above the strip, inside the window. A font card's
-// strip folds nothing, whatever its font's name.
+// strip folds nothing, whatever its font's name. Change icon opened from ··· closes ··· and says its picker is open.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -154,6 +154,21 @@ try {
       return !!r && !!dock && r.height > 0 && r.bottom <= dock.top && r.left >= 0 && r.right <= innerWidth;
     });
     assert.ok(p, 'Change icon opens the picker above the dock, inside the window');
+    assert.strictEqual(await page.locator('#selbar [data-popw="more"].open').count(), 0, 'and ··· closes behind it');
+    assert.strictEqual(
+      await page.getAttribute('#selbar [data-chicon]', 'aria-expanded'),
+      'true',
+      'Change icon says its picker is open',
+    );
+    // a press on Change icon again, as from ···, closes it
+    await page.evaluate(() => document.querySelector<HTMLElement>('#selbar [data-chicon]')?.click());
+    await settle(page, 250);
+    assert.ok(await page.evaluate(() => document.getElementById('piecePick')?.hidden), 'a second press closes it');
+    assert.strictEqual(
+      await page.getAttribute('#selbar [data-chicon]', 'aria-expanded'),
+      'false',
+      'and Change icon says so',
+    );
   });
 
   await check('the phone, a font card', async () => {
@@ -198,6 +213,27 @@ try {
       await page.evaluate(() => document.activeElement?.getAttribute('data-pop')),
       'more',
       'Esc gives the keyboard back to ···, where the device dropdown folded',
+    );
+  });
+
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(800, 800));
+  await settle(page, 800);
+  await check('at 800, Change icon from ··· gives the keyboard back to ··· on Esc', async () => {
+    await select(['ficon']);
+    await page.click('#selbar [data-pop="more"]');
+    await page.click('#selbar [data-chicon]');
+    await page.waitForFunction(() => document.activeElement?.closest('#piecePick'));
+    assert.strictEqual(
+      await page.locator('#selbar [data-popw="more"].open').count(),
+      0,
+      '··· closes as the picker opens',
+    );
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+    assert.strictEqual(
+      await page.evaluate(() => document.activeElement?.getAttribute('data-pop')),
+      'more',
+      'Esc closes the picker, with the keyboard on ···, where Change icon is',
     );
   });
 

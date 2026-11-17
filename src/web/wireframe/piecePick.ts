@@ -9,7 +9,7 @@ import { remember, save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { revealCards } from '../panels/zoomMenu.ts';
-import { rebuildBar } from '../selbar/barKit.ts';
+import { focusBar, rebuildBar } from '../selbar/barKit.ts';
 import { gestureRuns } from '../selbar/context.ts';
 import { dockFrame } from '../selbar/float.ts';
 import { type Box, dockBeside, GAP } from '../selbar/place.ts';
@@ -138,7 +138,7 @@ export function closePicker(back = false) {
   rebuildBar();
   if (!back) return;
   // the bar is drawn again on the next frame, so focus waits for its new button
-  if (swap) return requestAnimationFrame(() => oneIn($('selbar'), '[data-chicon]')?.focus());
+  if (swap) return requestAnimationFrame(() => focusBar('[data-chicon]'));
   const pieces = () => oneIn($('selbar'), '[data-pieces]');
   if (from === 'bar') return pieces()?.focus();
   // the hint, hidden while its screen's picker is open, is drawn again on the next frame
