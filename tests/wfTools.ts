@@ -95,6 +95,64 @@ try {
     assert.deepStrictEqual(await tools(), { row: true, lit: ['box'], button: true }, 'Enter on Box puts it in hand');
   });
 
+  await check(
+    'the keyboard alone places a box and an icon from the Wireframe button, and R then Enter a box',
+    async () => {
+      const n = await count();
+      await page.focus('#tools [data-add="frame"]');
+      await key('Enter');
+      assert.ok(
+        await page.evaluate(() => document.activeElement?.matches('#screenbar [data-dev="iPhone"].on')),
+        'Enter on the Wireframe button takes the keyboard to the lit device',
+      );
+      for (let i = 0; i < 5; i++) await key('Tab');
+      await key('Enter');
+      assert.deepStrictEqual(await tools(), { row: true, lit: ['box'], button: true }, 'Tab to Box and Enter takes it');
+      await key('Enter');
+      await settle(page, 200);
+      const box = await page.evaluate(() => {
+        const c = window.__fenmyr.curBoard()?.cards.at(-1),
+          v = window.__fenmyr.view,
+          s = document.getElementById('stage')?.getBoundingClientRect();
+        return c && s
+          ? {
+              type: c.type,
+              w: c.w,
+              h: c.h,
+              centred:
+                Math.abs((c.x + c.w / 2) * v.z + v.x - s.width / 2) < 30 &&
+                Math.abs((c.y + c.h / 2) * v.z + v.y - s.height / 2) < 30,
+            }
+          : null;
+      });
+      assert.deepStrictEqual(box, { type: 'box', w: 160, h: 100, centred: true }, 'Enter again places it mid-view');
+      assert.strictEqual(await count(), n + 1, 'one box');
+      await page.focus('#tools [data-add="frame"]');
+      await key('Enter');
+      for (let i = 0; i < 7; i++) await key('Tab');
+      await key('Enter');
+      await key('Enter');
+      await settle(page, 300);
+      assert.strictEqual((await newest())?.name, 'star', 'Tab to Icon and Enter twice lands a star');
+      assert.strictEqual(
+        await page.evaluate(() => document.getElementById('piecePick')?.getAttribute('aria-label')),
+        'Change icon',
+        'and opens the picker for its glyph',
+      );
+      await key('Escape');
+      await page.evaluate(() => window.__fenmyr.selectOnly([]));
+      await blur();
+      await key('r');
+      await key('Enter');
+      await settle(page, 200);
+      assert.deepStrictEqual(
+        await newest().then(c => c && { type: c.type, w: c.w }),
+        { type: 'box', w: 160 },
+        'R then Enter places a box',
+      );
+    },
+  );
+
   await check("the mode bar's Box draws a box on the bare board, and the row stays while it is in hand", async () => {
     await page.click('#tools [data-add="frame"]');
     await page.click('#screenbar [data-wft="box"]');

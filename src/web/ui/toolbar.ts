@@ -17,7 +17,7 @@ import { addBoardTo } from '../repo/prototypes.ts';
 import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { endPen, penT, startPen } from '../tools/pen.ts';
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
-import { startScreen, wfToolOn } from '../tools/screenTool.ts';
+import { focusScreenBar, startScreen, wfToolOn } from '../tools/screenTool.ts';
 import { renderWheel } from '../tools/stamps.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { closestTo, elementById } from './dom.ts';
@@ -131,7 +131,13 @@ export function init21() {
       }
       return;
     }
-    if (t === 'frame') return wfToolOn() ? stopPlacing() : startScreen();
+    if (t === 'frame') {
+      if (wfToolOn()) return stopPlacing();
+      startScreen();
+      // a click with no pointer is Enter or Space, and the keyboard follows the tool into its row
+      if (e.detail === 0) focusScreenBar();
+      return;
+    }
     if (t === 'audio') return readyToRecord().then(ok => ok && startPlacing('audio'));
     startPlacing(t);
   };
