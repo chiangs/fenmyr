@@ -74,6 +74,8 @@ export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
   if (fresh) search().value = '';
   showView(picker.view);
   el().hidden = false;
+  // a fresh open starts at the top of the grid
+  if (fresh) grid().scrollTop = 0;
   docked = '';
   syncPicker();
   setExpanded(true);

@@ -173,6 +173,11 @@ try {
     'pkSearch',
     'on a phone the picker opens without raising the keyboard',
   );
+  assert.strictEqual(
+    await page.evaluate(() => document.getElementById('pkGrid')?.scrollTop),
+    0,
+    'it opens scrolled to the top',
+  );
   const cell = await centre('#pkGrid [data-pk-piece="Avatar"]');
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [cell] });
   for (let i = 1; i <= 15; i++) {
