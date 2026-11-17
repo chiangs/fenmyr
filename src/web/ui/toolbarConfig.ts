@@ -121,6 +121,14 @@ function fitToolbar() {
   if (!desk || !fit(joinRoom, JOIN_KEEPS)) fit(room, 1);
 }
 
+/** Runs every frame, so it writes only on a change: ··· lights while a tool tucked in it is in hand. A class set from
+ *  here, not a :has() rule, which made every style recalc dearer. */
+export function syncMore() {
+  const more = $('tbMore'),
+    held = !!$('tools').querySelector(':scope > .tb-over.on');
+  if (more.classList.contains('on') !== held) more.classList.toggle('on', held);
+}
+
 export const tbRect = (b: Element) => (b.classList.contains('tb-over') ? $('tbMore') : b).getBoundingClientRect();
 export function init19() {
   // ---------- your toolbar: pick which tools show at the bottom and in what order (shortcuts keep working for hidden ones) ----------
