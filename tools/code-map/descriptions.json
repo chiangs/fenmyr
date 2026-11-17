@@ -477,6 +477,7 @@
     "tests/richTyping.ts": "Checks shortcuts, typed lists, list keys and the selection bar while a note is typed in.",
     "tests/richpaste.ts": "Checks pasted HTML, Markdown and PDF text become the right rich note, real clipboard samples included.",
     "tests/richtext.ts": "Checks a rich note's text reads, writes and draws the same way, over 1,000 random notes.",
+    "tests/rowIconUndo.ts": "The Wireframe row's Icon: placing its star and picking the glyph undo as one step.",
     "tests/screenAccess.ts": "Tests the screen tool for a screen reader and a phone: what is pressed, the row’s role, Myra’s sees strip naming a card once, and the strips and hint at 390 px.",
     "tests/screenBar.ts": "Checks a screen's device dropdown: Name, the devices, a typed W or H making it Custom, X carrying its pieces, and a handle resize reading Custom.",
     "tests/screenHint.ts": "Checks an empty screen's Add pieces hint, its size at any zoom, that it opens the picker and goes once a piece lands, and the picker on a phone.",

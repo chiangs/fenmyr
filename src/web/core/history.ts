@@ -58,6 +58,14 @@ export function visitChange(first: boolean, change: () => void) {
   remember();
 }
 
+/** Takes the last step back off, so the next change joins it: a star placed from the Wireframe row and the glyph then
+ *  picked for it undo as one. */
+export function joinLast() {
+  clearTimeout(snapT);
+  remember();
+  if (past.length > 1) past.pop();
+}
+
 export function resetHistory() {
   past = session.board ? [stateOf()] : [];
   future = [];
