@@ -129,8 +129,8 @@ try {
     const use = page.locator('#fontPop .dp-use');
     assert.ok(await use.isVisible(), 'a name no listed font has offers the Use row');
     assert.strictEqual(
-      (await use.evaluate(b => b.firstChild?.textContent + (b.querySelector('span')?.textContent ?? ''))).trim(),
-      'Use “Zilla Slab',
+      await use.evaluate(b => b.querySelector('span')?.textContent),
+      'Use “Zilla Slab”',
       'it reads Use “Zilla Slab”',
     );
     await page.keyboard.press('Enter');

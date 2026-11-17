@@ -78,15 +78,15 @@ const fontRow = (cur: string | null) => (f: string) => {
 };
 
 // any name the list doesn't have, offered as a Google font after the matches
-const USE_ROW =
-  '<button type="button" class="dp-row dp-use" hidden>Use “<span></span>”<small>Google Fonts</small></button>';
+const USE_ROW = '<button type="button" class="dp-row dp-use" hidden><span></span><small>Google Fonts</small></button>';
 
 function showUse(pop: HTMLElement, typed: string, listed: boolean) {
   const use = oneIn(pop, '.dp-use'),
     said = use?.querySelector('span');
   if (!use || !said) return;
   use.hidden = !typed || listed;
-  said.textContent = typed;
+  // one run of text, as the row spreads its parts apart
+  said.textContent = `Use “${typed}”`;
   if (use.hidden) delete use.dataset.bfont;
   else use.dataset.bfont = typed;
 }
