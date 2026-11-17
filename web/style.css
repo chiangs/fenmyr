@@ -434,8 +434,9 @@ body { --bar-b: 18px; }
 .dock .tools { position: static; transform: none; left: auto; top: auto; }
 .dock .tools button::after { top: auto; bottom: calc(100% + 12px); transform: translate(-50%, 3px); }
 .dock .tools button:hover::after { transform: translate(-50%, 0); }
-.dock .tools button.on { background: var(--blush); }
-.dock .tools button.on .ic { color: var(--ink); }
+/* ··· lights while a tool tucked in it is in hand, so drawing at a width that tucks Draw still shows */
+.dock .tools button.on, .dock .tools:has(> .tb-over.on) > #tbMore { background: var(--blush); }
+.dock .tools button.on .ic, .dock .tools:has(> .tb-over.on) > #tbMore .ic { color: var(--ink); }
 .dock .myra { position: relative; left: auto; bottom: auto; transform: none; }
 /* her box: one piece with the tools, as wide whatever her name */
 .dock .m-pill { width: 200px; border: 0; text-align: start; }

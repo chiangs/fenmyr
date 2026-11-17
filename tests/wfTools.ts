@@ -172,6 +172,22 @@ try {
     assert.deepStrictEqual(await tools(), DOWN, 'the lit Wireframe button puts R’s box down too');
   });
 
+  await check('··· lights while a tool tucked in it is in hand, as drawing is at 1440 px', async () => {
+    await key('p');
+    const drawing = await page.evaluate(() => {
+      const more = document.getElementById('tbMore'),
+        draw = document.querySelector('#tools [data-add="draw"]');
+      return {
+        on: !!draw?.classList.contains('on') && !!draw.classList.contains('tb-over'),
+        more: more ? getComputedStyle(more).backgroundColor : '',
+        rest: getComputedStyle(document.querySelector('#tools [data-add="note"]') ?? document.body).backgroundColor,
+      };
+    });
+    assert.ok(drawing.on, 'Draw is on and tucked');
+    assert.notStrictEqual(drawing.more, drawing.rest, '··· is lit while drawing');
+    await key('Escape');
+  });
+
   await check('at a width that tucks it, the button sits in ··· and works from there', async () => {
     await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1000, 800));
     await settle(page, 500);
