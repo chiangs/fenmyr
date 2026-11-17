@@ -137,8 +137,8 @@ const TOUR: TourStep[] = [
     text: 'Your boards live here. Group them into projects and folders. Right-click anything to rename, move, duplicate or delete it.',
   },
   {
-    // the Wireframe button, or ··· when the bottom bar has tucked it in there
-    el: '#tools [data-add="frame"]:not(.tb-over), #tbMore',
+    // the Wireframe button, or ··· when the bottom bar has tucked it in there (··· comes first in the bar's markup)
+    el: '#tools [data-add="frame"]:not(.tb-over), #tools:has([data-add="frame"].tb-over) #tbMore',
     side: 'top',
     text: 'Wireframes start here, or with W. Click the board for a phone screen, or drag any size. Select a screen and choose Pieces for nav bars, forms and whole website sections. Things snap into line as you move them.',
     try: 'Try it: press W and drag on the board.',
