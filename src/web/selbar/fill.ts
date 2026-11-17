@@ -9,21 +9,9 @@ import { remember, save } from '../core/history.ts';
 import { cssToHex } from '../ui/color.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
-import {
-  caret,
-  closeSbPops,
-  FOLD_PIECE,
-  focusBar,
-  G,
-  inVisit,
-  marks,
-  openBarColor,
-  pct,
-  pop,
-  rebuildBar,
-  syncPair,
-} from './barKit.ts';
+import { caret, closeSbPops, FOLD_PIECE, G, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
 import { every, group, only } from './group.ts';
+import { initOpacity, opacityHtml } from './opacity.ts';
 import { selCards } from './selected.ts';
 
 const BOX_FILLS = [
@@ -48,7 +36,6 @@ const ANY_FILL = typesWith('anyFill'),
 const fillable = (c: Card) =>
   ANY_FILL.includes(c.type) && !(c.type === 'box' && c.src) && !(c.type === 'path' && !c.closed);
 const isTextFill = (c: Card) => TEXT_COLOUR.includes(c.type);
-const isBox = (c: Card): c is CardOf<'box'> => c.type === 'box';
 // an icon's colour has no hollow version, so No fill is left out wherever one is selected
 const colourTip = (cs: readonly Card[]) => (cs.every(c => c.type === 'icon') ? 'Colour' : 'Text colour');
 
@@ -66,18 +53,6 @@ const dot = (attr: string, v: string, on: boolean) => {
   const cls = on ? 'on' : '';
   return `<button data-${attr}="${v}" title="${v}" style="background:${v}" class="${cls}"></button>`;
 };
-
-// boxes alone also get their opacity, as a slider and a number in per cent
-function opacityHtml(cs: readonly Card[]) {
-  const boxes = cs.filter(isBox);
-  if (boxes.length !== cs.length) return '';
-  const ops = boxes.map(c => Math.round((c.opacity ?? 1) * 100)),
-    same = ops.every(o => o === ops[0]),
-    v = same ? (ops[0] ?? 100) : 100,
-    shown = same ? String(v) : '',
-    p = pct(v, 0, 100);
-  return `<div class="sbc-top sb-oprow"><span>Opacity</span><input type="range" min="0" max="100" step="1" value="${v}" style="--p:${p}" data-bop aria-label="Opacity"><input type="number" min="0" max="100" step="1" value="${shown}" placeholder="–" data-bopn aria-label="Opacity in per cent"><b class="sb-unit">%</b></div>`;
-}
 
 // box (and screen) fill: wireframe grays, your pastels, and any color
 function boxFillHtml(cs: [Card, ...Card[]]) {
@@ -329,35 +304,7 @@ function initFill() {
     }
   });
 
-  $('selbar').addEventListener('input', e => {
-    const p = syncPair(e.target, 'data-bop', 'data-bopn'),
-      n = Number(p?.r.value);
-    if (p && Number.isFinite(n)) setOpacity(p.r, n);
-  });
-  // Enter in the number closes Fill, with the keyboard back on its button
-  $('selbar').addEventListener('keydown', e => {
-    if (!closestTo(e.target, '[data-bopn]')) return;
-    e.stopPropagation();
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    closeSbPops();
-    focusBar('[data-pop="fill"]');
-  });
-}
-
-// every selected box at this opacity, in per cent; one visit to Fill is one undo step
-function setOpacity(el: Element, percent: number) {
-  const boxes = selCards().filter(isBox),
-    v = Math.max(0, Math.min(100, Math.round(percent)));
-  inVisit(el, () => {
-    boxes.forEach(c => {
-      if (v === 100) delete c.opacity;
-      else c.opacity = v / 100;
-      renderCard(c);
-    });
-    selectOnly(boxes.map(c => c.id));
-    save();
-  });
+  initOpacity();
 }
 
 export const fill = group({ on: every(fillable), html: boxFillHtml, init: initFill });
