@@ -74,14 +74,16 @@ const rectsIn = (id: string) =>
     .map(el => el.getBoundingClientRect())
     .filter(r => r.width && r.height);
 
-// The open Pieces picker counts as a side column on the side it docked, so the selection bar keeps clear of it. The
-// mode bar sits over the tools, below it, and stays where it is.
-function pickerColumn(placing?: HTMLElement) {
+// The open Pieces picker counts as a side column on the side it docked, or as a floor when it is a sheet across the
+// bottom, so the selection bar keeps clear of it. The mode bar sits over the tools, below it, and stays where it is.
+function pickerColumn(placing?: HTMLElement): { l: number[]; r: number[]; b: number[] } {
   const p = document.getElementById('piecePick');
-  if (!p || p === placing || placing?.id === 'modebar' || p.hidden || onPhone()) return { l: [], r: [] };
+  if (!p || p === placing || placing?.id === 'modebar' || p.hidden || onPhone()) return { l: [], r: [], b: [] };
   const r = p.getBoundingClientRect(),
     s = stage.getBoundingClientRect();
-  return p.dataset.dock === 'left' ? { l: [r.right - s.left + GAP], r: [] } : { l: [], r: [r.left - s.left - GAP] };
+  if (p.dataset.dock === 'left') return { l: [r.right - s.left + GAP], r: [], b: [] };
+  if (p.dataset.dock === 'right') return { l: [], r: [r.left - s.left - GAP], b: [] };
+  return { l: [], r: [], b: [r.top - s.top - GAP] };
 }
 
 // The part of the board nothing else covers, in stage pixels: right of the left widgets, left of the right ones, under
@@ -114,7 +116,7 @@ function readFrame(placing?: HTMLElement): Box {
         .map(r => r.left - s.left - GAP),
       ...picker.r,
     ),
-    b: Math.min(s.height - GAP, ...floor),
+    b: Math.min(s.height - GAP, ...floor, ...picker.b),
   };
 }
 

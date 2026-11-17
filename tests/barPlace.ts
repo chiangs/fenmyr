@@ -66,40 +66,58 @@ assert.deepStrictEqual(
 
 // the Pieces picker beside its screen, 292 px wide and 480 tall
 const PICKER: Size = { w: 292, h: 480 };
-const dock = (b: Box) => dockBeside(b, FRAME, PICKER);
+const BOARD = { l: 12, r: 1428 };
+const dock = (b: Box) => dockBeside(b, FRAME, PICKER, BOARD);
 assert.deepStrictEqual(
   dock(box(300, 100, 600, 700)),
-  { x: 612, y: 100, side: 'right' },
+  { x: 612, y: 100, w: 292, h: 480, side: 'right' },
   'room on the right: 12 px right',
 );
 assert.deepStrictEqual(
   dock(box(700, 100, 1000, 700)),
-  { x: 396, y: 100, side: 'left' },
+  { x: 396, y: 100, w: 292, h: 480, side: 'left' },
   'room only on the left: 12 px left',
 );
 assert.deepStrictEqual(
   dock(box(400, 100, 900, 700)),
-  { x: 870, y: 100, side: 'edge' },
+  { x: 870, y: 100, w: 292, h: 480, side: 'edge' },
   'room on neither side: against the far edge with more room',
 );
 assert.deepStrictEqual(
   dock(box(500, 100, 1100, 700)),
-  { x: 258, y: 100, side: 'edge' },
+  { x: 258, y: 100, w: 292, h: 480, side: 'edge' },
   'more room on the left: against the left edge',
 );
 assert.deepStrictEqual(
   dock(box(300, -500, 600, 2000)),
-  { x: 612, y: 59, side: 'right' },
+  { x: 612, y: 59, w: 292, h: 480, side: 'right' },
   'a screen above the view: the picker starts at the top of the view',
 );
 assert.deepStrictEqual(
   dock(box(300, 600, 600, 1400)),
-  { x: 612, y: 340, side: 'right' },
+  { x: 612, y: 340, w: 292, h: 480, side: 'right' },
   'a screen low in the view: the picker is kept inside its bottom',
 );
 assert.deepStrictEqual(
   dock(box(-900, 100, -100, 700)),
-  { x: 870, y: 100, side: 'edge' },
+  { x: 870, y: 100, w: 292, h: 480, side: 'edge' },
   'a screen off to the left: the picker stays inside the view, on the side with room',
+);
+// a free view narrower than two pickers: a sheet across its bottom, half its height
+const NARROW: Box = { l: 258, t: 59, r: 700, b: 720 };
+assert.deepStrictEqual(
+  dockBeside(box(341, 272, 459, 528), NARROW, PICKER, BOARD),
+  { x: 258, y: 389.5, w: 442, h: 330.5, side: 'sheet' },
+  'no room for a column beside the screen: a sheet across the bottom of the free view',
+);
+assert.deepStrictEqual(
+  dockBeside(box(290, 300, 320, 400), { l: 278, t: 59, r: 330, b: 820 }, PICKER, { l: 12, r: 330 }),
+  { x: 38, y: 439.5, w: 292, h: 380.5, side: 'sheet' },
+  'a free view narrower than the picker: the sheet keeps its width, reaching left over the widgets',
+);
+assert.deepStrictEqual(
+  dockBeside(box(300, 100, 340, 300), { ...FRAME, r: FRAME.l + 595 }, PICKER, BOARD).side,
+  'sheet',
+  'a free view one pixel short of two pickers and a gap gets the sheet, even where the picker would fit beside',
 );
 console.log('BAR PLACE OK');

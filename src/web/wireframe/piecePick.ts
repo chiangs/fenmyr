@@ -6,10 +6,11 @@ import { $, stage } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
+import { revealCards } from '../panels/zoomMenu.ts';
 import { rebuildBar } from '../selbar/barKit.ts';
 import { gestureRuns } from '../selbar/context.ts';
 import { dockFrame } from '../selbar/float.ts';
-import { dockBeside } from '../selbar/place.ts';
+import { type Box, dockBeside, GAP } from '../selbar/place.ts';
 import { selCards } from '../selbar/selected.ts';
 import { placeAt, placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { closestTo, oneIn, textField } from '../ui/dom.ts';
@@ -78,6 +79,7 @@ export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
   if (fresh) grid().scrollTop = 0;
   docked = '';
   syncPicker();
+  showScreen(screen);
   setExpanded(true);
   // a phone would raise its keyboard over the picker
   if (!onPhone()) search().focus({ preventScroll: true });
@@ -124,7 +126,7 @@ function dock(s: CardOf<'frame'>) {
       bottom: `${innerHeight - d.top + PHONE_GAP}px`,
       height: `${Math.min(innerHeight / 2, d.top - PHONE_GAP * 2)}px`,
     });
-    delete p.dataset.dock;
+    p.dataset.dock = 'sheet';
     rebuildBar();
     return;
   }
@@ -135,14 +137,50 @@ function dock(s: CardOf<'frame'>) {
   if (key === docked) return;
   docked = key;
   p.style.width = p.style.bottom = '';
-  p.style.height = `${Math.min(MAX_H, frame.b - frame.t)}px`;
-  const at = dockBeside(box, frame, { w: p.offsetWidth, h: p.offsetHeight }),
-    st = stage.getBoundingClientRect();
-  p.style.left = `${st.left + at.x}px`;
-  p.style.top = `${st.top + at.y}px`;
-  // the bar keeps to the screen's side of it, and folds again for the room it leaves
-  p.dataset.dock = at.side === 'edge' ? (at.x + p.offsetWidth / 2 < (box.l + box.r) / 2 ? 'left' : 'right') : at.side;
+  const st = stage.getBoundingClientRect(),
+    at = dockBeside(
+      box,
+      frame,
+      { w: p.offsetWidth, h: Math.min(MAX_H, frame.b - frame.t) },
+      { l: GAP, r: st.width - GAP },
+    );
+  Object.assign(p.style, {
+    left: `${st.left + at.x}px`,
+    top: `${st.top + at.y}px`,
+    width: `${at.w}px`,
+    height: `${at.h}px`,
+  });
+  // the bar keeps to the screen's side of it, or above a sheet, and folds again for the room it leaves
+  p.dataset.dock = at.side === 'edge' ? (at.x + at.w / 2 < (box.l + box.r) / 2 ? 'left' : 'right') : at.side;
   rebuildBar();
+}
+
+/** The part of the free view the open picker leaves, in stage pixels: beside it, or above it when it is a sheet. */
+function freeArea(): Box | null {
+  const p = el();
+  if (!picker || p.hidden) return null;
+  const f = dockFrame(p),
+    r = p.getBoundingClientRect(),
+    st = stage.getBoundingClientRect();
+  if (p.dataset.dock === 'left') f.l = r.right - st.left + GAP;
+  else if (p.dataset.dock === 'right') f.r = r.left - st.left - GAP;
+  else f.b = Math.min(f.b, r.top - st.top - GAP);
+  return f;
+}
+
+const meets = (a: Box, b: Box) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+
+// When the picker covers all of its screen that is in view, the view moves to show the screen's top beside or above it.
+function showScreen(s: CardOf<'frame'>) {
+  const a = freeArea();
+  if (!a) return;
+  const { x, y, z } = session.view,
+    st = stage.getBoundingClientRect(),
+    r = el().getBoundingClientRect(),
+    box = { l: s.x * z + x, t: s.y * z + y, r: (s.x + s.w) * z + x, b: (s.y + s.h) * z + y },
+    under = { l: r.left - st.left, t: r.top - st.top, r: r.right - st.left, b: r.bottom - st.top };
+  if (meets(box, a) || !meets(box, under)) return;
+  revealCards([{ x: s.x, y: s.y, w: s.w, h: Math.min(s.h, (a.b - a.t) / 2 / z) }], a);
 }
 
 /** Each frame: closes the picker when its screen is gone, or the selection is about something off it, and otherwise

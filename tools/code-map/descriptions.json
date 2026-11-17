@@ -420,6 +420,7 @@
     "tests/piecePickClose.ts": "Checks what closes the Pieces picker and what keeps it, the keyboard from F10 through its grid, and the bar folding clear of it.",
     "tests/piecePickDrag.ts": "Checks the Pieces picker's Icons view, and a piece or icon dragged from it landing on a screen, on the bare board, or nowhere over the picker.",
     "tests/piecePickEdges.ts": "Checks the Pieces picker's edges: a finger scrolling its grid, Esc mid-drag, a click after a pick moved the view, the mode bar, Esc on the board, and the hint's double-click, name and export.",
+    "tests/piecePickNarrow.ts": "Checks the Pieces picker in narrow windows, on a phone and on a prototype board: picks landing in sight, the sheet across the bottom, and the bar staying reachable.",
     "tests/placement.ts": "Tests every row of the rule for moving boards and folders.",
     "tests/planDoIt.ts": "Checks Do it on a plan the person worked around: a collection they dragged, the open doc, cards changed or connected since, her count and glow, and parts that fail.",
     "tests/planDrop.ts": "Checks a waiting Myra plan is dropped when another board opens, on New chat, Clear all chats and a restart, with nothing landed and its message reading Not done.",
