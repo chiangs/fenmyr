@@ -16,7 +16,6 @@ import { readyToRecord } from '../media/devices.ts';
 import { camOn } from '../media/video.ts';
 import { card, newBoard } from '../model/boards.ts';
 import { tip } from '../myra/say.ts';
-import { frameTip } from '../repo/start.ts';
 import { newNoteColor, snapTo } from '../settings/licenses.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { htmlIn } from '../ui/dom.ts';
@@ -24,18 +23,21 @@ import { pickWF } from '../wireframe/designPanel.ts';
 import { placePiece } from '../wireframe/drawer.ts';
 import { PIECES } from '../wireframe/pieces.ts';
 import { fileIntoFrame } from '../wireframe/tilt.ts';
-import { DEVICES, WF } from '../wireframe/wireframes.ts';
+import { DEVICES, type Device, WF } from '../wireframe/wireframes.ts';
 import { addCard } from './penEdit.ts';
 import type { Stamp } from './stamps.ts';
 import { stampAt, stampHTML } from './stamps.ts';
 
 type Point = { x: number; y: number };
 // what the tool being placed carries: the shape, piece, icon, device or stamp you picked
-type PlaceExtra = { shape?: string; piece?: string; name?: string; device?: string; stamp?: Stamp };
+type PlaceExtra = { shape?: string; piece?: string; name?: string; device?: Device; stamp?: Stamp };
+
+const sameTool = (a: PlaceExtra, b: PlaceExtra) =>
+  a.shape === b.shape && a.piece === b.piece && a.name === b.name && a.device === b.device && a.stamp === b.stamp;
 
 // the card a tool makes, before it lands
-function newCard(type: string, more: PlaceExtra): Card | null {
-  const dev = DEVICES[more.device ?? ''];
+export function newCard(type: string, more: PlaceExtra): Card | null {
+  const dev = more.device && DEVICES[more.device];
   switch (type) {
     case 'icon':
       return card('icon', { name: more.name || 'star', color: '#27272a', w: 28, h: 28, r: 0 });
@@ -104,7 +106,7 @@ const PLACE: Record<string, [label: string, size: [number, number]]> = {
 };
 
 export function startPlacing(type: string, extra: PlaceExtra = {}, quiet = false) {
-  if (placing?.type === type && placing.extra.shape === extra.shape) return stopPlacing();
+  if (placing?.type === type && sameTool(placing.extra, extra)) return stopPlacing();
   stopPlacing();
   placing = { type, extra };
   selectOnly([]);
@@ -130,7 +132,7 @@ export function startPlacing(type: string, extra: PlaceExtra = {}, quiet = false
     g.innerHTML = Icon(extra.name ?? 'star', { cls: 'ci', size: 28 });
     g.style.width = g.style.height = '28px';
   }
-  const device = type === 'frame' ? DEVICES[extra.device ?? ''] : undefined;
+  const device = type === 'frame' && extra.device ? DEVICES[extra.device] : undefined;
   if (device) {
     g.style.width = `${device[0]}px`;
     g.style.height = `${device[1]}px`;
@@ -174,6 +176,18 @@ function moveGhost() {
   g.style.transform = `scale(${session.view.z})`;
 }
 
+/** A finger has no ghost to aim with: the card goes centred on the tap, and kept on screen. */
+export function centreOnTap(c: Card, w: Point) {
+  const r = stage.getBoundingClientRect(),
+    z = session.view.z,
+    wl = (r.left + 12 - session.view.x) / z,
+    wr = (r.right - 12 - session.view.x) / z,
+    wt = (r.top + 70 - session.view.y) / z,
+    wb = (r.bottom - 100 - session.view.y) / z;
+  c.x = snapTo(clamp(w.x - c.w / 2, wl, Math.max(wl, wr - c.w)));
+  c.y = snapTo(clamp(w.y - c.h / 2, wt, Math.max(wt, wb - c.h)));
+}
+
 export function placeAt(w: Point) {
   if (!placing) return;
   if (placing.type === 'stamp') {
@@ -200,17 +214,7 @@ export function placeAt(w: Point) {
     c.w = 200;
     c.h = 24;
   }
-  if (window.__phone?.on) {
-    // a finger has no ghost to aim with: center it on the tap, and keep it on screen
-    const r = stage.getBoundingClientRect(),
-      z = session.view.z,
-      wl = (r.left + 12 - session.view.x) / z,
-      wr = (r.right - 12 - session.view.x) / z,
-      wt = (r.top + 70 - session.view.y) / z,
-      wb = (r.bottom - 100 - session.view.y) / z;
-    c.x = snapTo(clamp(w.x - c.w / 2, wl, Math.max(wl, wr - c.w)));
-    c.y = snapTo(clamp(w.y - c.h / 2, wt, Math.max(wt, wb - c.h)));
-  }
+  if (window.__phone?.on) centreOnTap(c, w);
   if (c.type === 'swatch') {
     c.label = colorName(c.hex);
     c.autoName = true;
@@ -238,7 +242,6 @@ export function placeAt(w: Point) {
   if (['note', 'todo', 'title', 'doc', 'canvas', 'text'].includes(type)) startEdit(c.id); // ready to type right away, so the first letters never act as shortcuts
   if (type === 'coll') startEdit(c.id);
   if (c.type === 'swatch') setTimeout(() => openColor(c), 60);
-  if (c.type === 'frame') frameTip();
   if (c.type === 'audio') {
     c.ready = true;
     renderCard(c);

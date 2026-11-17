@@ -6,14 +6,16 @@ import { oneIn } from '../ui/dom.ts';
 // ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
 export const WF = typesWith('wireframe');
 
-// width, height and corner radius
-export const DEVICES: Record<string, [w: number, h: number, radius: number]> = {
+// width, height and corner radius, in the order keys 1 to 5 pick them
+export const DEVICES = {
   iPhone: [393, 852, 44],
   Android: [412, 915, 28],
   iPad: [834, 1194, 20],
   Desktop: [1440, 1024, 10],
   Watch: [205, 251, 40],
-};
+} as const satisfies Record<string, readonly [w: number, h: number, radius: number]>;
+export type Device = keyof typeof DEVICES;
+export const isDevice = (x: unknown): x is Device => typeof x === 'string' && Object.hasOwn(DEVICES, x);
 
 export let FONTS = ['Figtree', 'Shantell Sans'];
 

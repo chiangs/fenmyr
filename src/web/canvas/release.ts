@@ -6,14 +6,12 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { docTarget, dropIntoDoc } from '../docs/drop.ts';
 import { startEdit } from '../edit/editing.ts';
-import { card } from '../model/boards.ts';
 import { snapTo } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
+import { finishDrawn } from '../tools/drawn.ts';
 import { drawPen, penT } from '../tools/pen.ts';
-import { addCard } from '../tools/penEdit.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { cardEl } from '../ui/dom.ts';
-import { pickWF } from '../wireframe/designPanel.ts';
 import { fileIntoFrame } from '../wireframe/tilt.ts';
 import { selKey, toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
@@ -174,21 +172,7 @@ export function onRelease(e: PointerEvent) {
   }
   if (d.mode === 'drawbox') {
     d.rect?.remove();
-    const w = toWorld(e.clientX, e.clientY);
-    let x = Math.min(d.sx, w.x),
-      y = Math.min(d.sy, w.y),
-      bw = Math.abs(w.x - d.sx),
-      bh = Math.abs(w.y - d.sy);
-    if (bw < 6 && bh < 6) {
-      bw = 160;
-      bh = 100;
-    } // a click makes a standard box
-    const c = card('box', { x, y, w: Math.round(bw), h: Math.round(bh), r: 0, fill: '#e4e4e7', radius: 6 });
-    addCard(c);
-    fileIntoFrame([c]);
-    pickWF(null);
-    selectOnly([c.id]);
-    save();
+    finishDrawn(d.make, { x: d.sx, y: d.sy }, toWorld(e.clientX, e.clientY));
   }
   if (d.mode === 'rewire') {
     const w = toWorld(e.clientX, e.clientY),

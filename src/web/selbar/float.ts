@@ -126,7 +126,7 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   if (!anchor) return;
   const frame = readFrame(bar),
     chat = ctx.kind === 'tool' ? chatPlace() : null;
-  // drawing's and find's bar keeps to the left of a chat joined to the tools
+  // the mode bar keeps to the left of a chat joined to the tools
   if (chat?.kind === 'joined') frame.r = Math.min(frame.r, chat.chat.l - stage.getBoundingClientRect().left - GAP);
   const p = place(anchor, frame, { w: bar.offsetWidth, h: bar.offsetHeight }),
     d = devicePixelRatio || 1,
@@ -138,7 +138,7 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   bar.classList.remove('paused');
 }
 
-/** Holds drawing's and find's bar over the tools, and lifts Myra's bubble, a wide chat and the toolbar's pickers over
+/** Holds the mode bar (drawing's, find's and the screen tool's rows) over the tools, and lifts Myra's bubble, a wide chat and the toolbar's pickers over
  *  it, as they sit at its height. It is pinned to the bottom bar, not the board, so no gesture moves it. */
 export function floatModeBar() {
   const bar = $('modebar'),

@@ -183,13 +183,28 @@ try {
   );
   const stage = await page.locator('#stage').boundingBox();
   if (!stage) throw new Error('no stage');
-  for (const x of [0.45, 0.7]) {
-    // the first screen is taller than the view, so its selection bar holds at the top, where the second one goes
+  // a busy runner draws its next frame long after a key or a click: here each comes 150 ms late, until both screens
+  // are down
+  await page.evaluate(() => {
+    const raf = window.requestAnimationFrame.bind(window),
+      screens = () => window.__fenmyr.curBoard()?.cards.filter(c => c.type === 'frame').length ?? 0;
+    window.requestAnimationFrame = cb => {
+      if (screens() < 2) return (setTimeout(() => raf(cb), 150), 0);
+      window.requestAnimationFrame = raf;
+      return raf(cb);
+    };
+  });
+  const placeScreen = async (x: number, y: number) => {
     await page.evaluate(() => window.__fenmyr.selectOnly([]));
-    await page.click('[data-wf="frame"]');
-    await page.click('#dzPresets [data-dev="iPhone"]');
-    await page.mouse.click(stage.x + stage.width * x, stage.y + 120);
-  }
+    await page.keyboard.press('w');
+    // the selection bar steps aside on the next frame: a click before then lands on the bar, not the board
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await page.mouse.click(stage.x + stage.width * x, stage.y + y);
+  };
+  await placeScreen(0.45, 120);
+  // the first screen is taller than the view, so its selection bar holds at the top, where the second one goes
+  await page.waitForSelector('#selbar.on:not(.paused)');
+  await placeScreen(0.7, 120);
   await page.waitForFunction(() =>
     /Want to see these working\?/.test(document.getElementById('mSay')?.textContent ?? ''),
   );
@@ -217,17 +232,17 @@ try {
     'the screens are copied into a new prototype, selected for Myra to build from',
   );
   await page.evaluate(() => window.__fenmyr.openBoard('sketch'));
-  await page.click('[data-wf="frame"]');
-  await page.click('#dzPresets [data-dev="iPhone"]');
-  await page.mouse.click(stage.x + stage.width * 0.55, stage.y + 500);
+  await placeScreen(0.55, 500);
   await page.waitForTimeout(500);
-  assert.ok(
-    !(await page.evaluate(
-      () =>
-        document.getElementById('mBubble')?.classList.contains('on') &&
+  assert.deepStrictEqual(
+    await page.evaluate(() => ({
+      screens: window.__fenmyr.curBoard()?.cards.filter(c => c.type === 'frame').length,
+      tip:
+        !!document.getElementById('mBubble')?.classList.contains('on') &&
         /Want to see these working/.test(document.getElementById('mSay')?.textContent ?? ''),
-    )),
-    'and she says it only once',
+    })),
+    { screens: 3, tip: false },
+    'a third screen lands, and she says it only once',
   );
   assert.deepStrictEqual(l.errors, []);
   console.log('LINK OK');

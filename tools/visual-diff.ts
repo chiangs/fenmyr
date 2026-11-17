@@ -8,6 +8,7 @@ import { launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
 import { type Group, MYRA_GROUPS, type Step } from './visual-myra.ts';
 import { openPrototype, PROTO_GROUPS, removeProtoFolders } from './visual-proto.ts';
+import { WIREFRAME_GROUPS } from './visual-wireframe.ts';
 
 const FROZEN_MOTION =
   '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
@@ -121,6 +122,7 @@ const GROUPS: Record<string, Group> = {
     ]),
   },
   ...MYRA_GROUPS,
+  ...WIREFRAME_GROUPS,
 };
 
 async function shoot(dir: string, out: string) {
