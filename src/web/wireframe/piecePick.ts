@@ -16,7 +16,7 @@ import { placeAt, placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { closestTo, oneIn, textField } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
 import { pickWF } from './designPanel.ts';
-import { fillGrid, filterGrid, stepCell, type View, visibleCells } from './pieceGrid.ts';
+import { fillGrid, filterGrid, rove, stepCell, type View, visibleCells } from './pieceGrid.ts';
 import { addToScreen } from './placePiece.ts';
 import { screenOf } from './screenScope.ts';
 
@@ -102,8 +102,10 @@ export function closePicker(back = false) {
   endGridDrag();
   rebuildBar();
   if (!back) return;
-  const to = (from === 'hint' && oneIn($('screenHints'), `[data-hint="${id}"]`)) || oneIn($('selbar'), '[data-pieces]');
-  to?.focus();
+  const pieces = () => oneIn($('selbar'), '[data-pieces]');
+  if (from === 'bar') return pieces()?.focus();
+  // the hint, hidden while its screen's picker is open, is drawn again on the next frame
+  requestAnimationFrame(() => (oneIn($('screenHints'), `[data-hint="${id}"]`) ?? pieces())?.focus());
 }
 
 /** Pieces in the bar: opens the picker on its screen, or closes it when it is already open there. */
@@ -306,6 +308,10 @@ export function initPiecePick() {
     p.addEventListener(t, e => e.stopPropagation(), { passive: true });
   });
   p.addEventListener('keydown', onKey);
+  p.addEventListener('focusin', e => {
+    const cell = closestTo(e.target, '[data-kw]', HTMLElement);
+    if (cell) rove(grid(), cell);
+  });
   search().addEventListener('input', () => filterGrid(grid(), queryWords(search().value)));
   p.addEventListener('click', e => {
     const view = closestTo(e.target, '[data-pk-view]')?.dataset.pkView;

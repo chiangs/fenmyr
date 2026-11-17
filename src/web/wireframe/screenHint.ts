@@ -4,7 +4,7 @@ import { $ } from '../core/dom.ts';
 import { boardRevision } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { closestTo, esc } from '../ui/dom.ts';
-import { openPicker } from './piecePick.ts';
+import { openPicker, pickerScreen } from './piecePick.ts';
 
 // a screen narrower than this on screen has no room for the hint
 const MIN_W = 140;
@@ -26,17 +26,19 @@ function emptyScreens(cards: readonly Card[]) {
   );
 }
 
-/** Every empty screen shows, in the middle of its body, an Add pieces button and the keys for a box and text. Worked
- *  out again only when the board changes, the zoom changes or a drag runs. */
+/** Every empty screen shows, in the middle of its body, an Add pieces button and the keys for a box and text, except
+ *  the one the open picker adds to. Worked out again only when the board, the zoom or the picker's screen changes, or
+ *  a drag runs. */
 export function drawScreenHints() {
   if (!session.board) return;
   const z = session.view.z,
-    now = `${session.board.id} ${boardRevision()} ${z}`;
+    open = pickerScreen(),
+    now = `${session.board.id} ${boardRevision()} ${z} ${open}`;
   if (now === seen && !appState.drag) return;
   if (now !== seen) $('screenHints').style.setProperty('--hz', String(1 / z));
   seen = now;
   const html = emptyScreens(session.board.cards)
-    .filter(f => f.w * z >= MIN_W)
+    .filter(f => f.w * z >= MIN_W && f.id !== open)
     .map(f => {
       const x = f.x + f.w / 2,
         y = f.y + f.h / 2,

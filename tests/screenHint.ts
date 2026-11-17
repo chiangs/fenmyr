@@ -100,10 +100,13 @@ try {
 
   await page.keyboard.press('Control+z');
   await settle(page, 300);
+  const undone = [(await hints()).length, (await picker()).open];
+  await page.keyboard.press('Escape');
+  await settle(page, 300);
   assert.deepStrictEqual(
-    (await hints()).map(h => h.id),
-    ['empty'],
-    'undoing the piece brings the hint back',
+    [undone, (await hints()).map(h => h.id)],
+    [[0, true], ['empty']],
+    'undoing the piece keeps the hint hidden while the picker stays open, and closing the picker brings it back',
   );
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.keyboard.press('n');

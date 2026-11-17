@@ -148,7 +148,7 @@ try {
   assert.deepStrictEqual(
     await page.evaluate(() => {
       document.body.classList.add('exporting');
-      const seen = ['#screenHints .screen-hint', '#piecePick'].map(
+      const seen = ['#screenHints', '#piecePick'].map(
         s => document.querySelector(s)?.checkVisibility({ visibilityProperty: true }) ?? null,
       );
       document.body.classList.remove('exporting');

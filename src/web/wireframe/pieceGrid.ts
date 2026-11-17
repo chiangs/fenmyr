@@ -17,14 +17,14 @@ function cellHtml(c: Cell) {
         kw = wordsOf(name),
         tip = `Add ${name.toLowerCase()}`,
         thumb = pieceThumb(name);
-      return `<button type="button" class="pk-cell" data-pk-piece="${name}" data-kw="${kw}" title="${tip}"><span class="pk-th">${thumb}</span><span class="pk-n">${name}</span></button>`;
+      return `<button type="button" class="pk-cell" tabindex="-1" data-pk-piece="${name}" data-kw="${kw}" title="${tip}"><span class="pk-th">${thumb}</span><span class="pk-n">${name}</span></button>`;
     }
     case 'tool': {
       const { name, icon, tip } = TOOL[c.tool],
         kw = wordsOf(name),
         svg = Icon(icon, { size: 22 }),
         key = c.key;
-      return `<button type="button" class="pk-cell pk-tool" data-pk-tool="${c.tool}" data-kw="${kw}" title="${tip}"><span class="pk-th">${svg}</span><span class="pk-n">${name}<kbd>${key}</kbd></span></button>`;
+      return `<button type="button" class="pk-cell pk-tool" tabindex="-1" data-pk-tool="${c.tool}" data-kw="${kw}" title="${tip}"><span class="pk-th">${svg}</span><span class="pk-n">${name}<kbd>${key}</kbd></span></button>`;
     }
     default: {
       const unknown: never = c;
@@ -53,7 +53,7 @@ function iconsHtml() {
         tip = name.replace(/-/g, ' '),
         kw = i.kw,
         svg = Icon(name);
-      return `<button type="button" class="pk-icon" data-pk-icon="${name}" data-kw="${kw}" title="${tip}" aria-label="${tip}">${svg}</button>`;
+      return `<button type="button" class="pk-icon" tabindex="-1" data-pk-icon="${name}" data-kw="${kw}" title="${tip}" aria-label="${tip}">${svg}</button>`;
     })
     .join('');
   return `<div class="pk-cells pk-icons">${iconsMarkup}</div>`;
@@ -90,9 +90,16 @@ export function filterGrid(grid: HTMLElement, words: string[]) {
     said = grid.querySelector('.pk-more span');
   if (none instanceof HTMLElement) none.hidden = any;
   if (said) said.textContent = words.join(' ');
+  rove(grid, visibleCells(grid)[0]);
 }
 
 export const visibleCells = (grid: HTMLElement) => htmlIn(grid, '[data-kw]').filter(b => !b.hidden);
+
+/** The grid is one stop for Tab, at the cell last focused or the first shown; the arrow keys move inside it. */
+export function rove(grid: HTMLElement, to: HTMLElement | undefined) {
+  grid.querySelector('[data-kw][tabindex="0"]')?.setAttribute('tabindex', '-1');
+  to?.setAttribute('tabindex', '0');
+}
 
 const mid = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
 
