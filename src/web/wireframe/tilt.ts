@@ -191,18 +191,48 @@ export function snapWF(start: { c: Card; x: number; y: number }[], dx: number, d
 }
 
 // fonts: use what's on this computer; anything else is fetched from Google Fonts so the real type shows
-const fontsLoaded = new Set<string>();
-
 export const isLocalFont = (f: string | undefined) =>
   FONTS.some(x => x.toLowerCase() === String(f || '').toLowerCase()) || ['Figtree', 'Shantell Sans'].includes(f ?? '');
 
-export function useFont(f: string | undefined) {
-  if (!f || isLocalFont(f) || fontsLoaded.has(f)) return;
-  fontsLoaded.add(f);
+export const googleCss = (f: string) =>
+  `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;700&display=swap`;
+
+// a Google font's stylesheet: on its way, here, or turned away at a time
+type FontLoad = { kind: 'asking'; done: Promise<boolean> } | { kind: 'loaded' } | { kind: 'failed'; at: number };
+const fontLoads = new Map<string, FontLoad>();
+// every card drawn in a font asks for it, so one that failed waits a while before a drawing asks again
+const ASK_AGAIN_MS = 10000;
+
+/** Asks Google Fonts for a font, once at a time, and resolves true once it is here. A font that failed is asked for
+ *  again by its next use after a pause, or at once when `now`, so a font picked offline loads once the network is
+ *  back. */
+export function loadFont(f: string | undefined, now = false): Promise<boolean> {
+  if (!f || isLocalFont(f)) return Promise.resolve(true);
+  const was = fontLoads.get(f);
+  if (was?.kind === 'loaded') return Promise.resolve(true);
+  if (was?.kind === 'asking') return was.done;
+  if (was?.kind === 'failed' && !now && Date.now() - was.at < ASK_AGAIN_MS) return Promise.resolve(false);
   const l = document.createElement('link');
   l.rel = 'stylesheet';
-  l.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;700&display=swap`;
+  l.href = googleCss(f);
+  const done = new Promise<boolean>(res => {
+    l.onload = () => {
+      fontLoads.set(f, { kind: 'loaded' });
+      res(true);
+    };
+    l.onerror = () => {
+      l.remove();
+      fontLoads.set(f, { kind: 'failed', at: Date.now() });
+      res(false);
+    };
+  });
+  fontLoads.set(f, { kind: 'asking', done });
   document.head.appendChild(l);
+  return done;
+}
+
+export function useFont(f: string | undefined) {
+  loadFont(f);
 }
 
 // groups: ready-made pieces arrive grouped; Ctrl+G groups a selection, Ctrl+Shift+G ungroups

@@ -110,6 +110,13 @@ export function openBarColor(o: {
   });
 }
 
+/** Gives the keyboard back to a bar button after its dropdown or picker closed, or to ··· when it folded in there. */
+export function focusBar(sel: string) {
+  const bar = $('selbar'),
+    b = oneIn(bar, sel);
+  (b?.closest('.sb-morebody') ? oneIn(bar, '[data-pop="more"]') : b)?.focus();
+}
+
 // the bar is rebuilt on the next frame
 export const rebuildBar = () => {
   $('selbar').dataset.key = '';
@@ -141,8 +148,11 @@ export function foldSelbar(bar: HTMLElement, room: number) {
     label = oneIn(bar, ':scope > .sb-label');
   if (body && wrap && sep) {
     const groups = htmlIn(bar, '.sb-g').sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0));
+    // ··· takes room only once something folds into it
+    wrap.hidden = sep.hidden = true;
     for (const g of groups) {
       if (bar.scrollWidth <= room) break;
+      wrap.hidden = sep.hidden = false;
       htmlIn(g, ':scope > .sb-sep').forEach(x => {
         x.remove();
       });

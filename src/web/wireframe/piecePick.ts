@@ -1,13 +1,15 @@
 import type { CardOf } from '../../shared/model.ts';
-import { toWorld } from '../canvas/handles.ts';
-import { byId } from '../canvas/wires.ts';
+import { boxOf } from '../canvas/emptySpot.ts';
+import { type Bounds, toWorld } from '../canvas/handles.ts';
+import { renderCard } from '../canvas/render.ts';
+import { byId, selectOnly } from '../canvas/wires.ts';
 import { queryWords } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
-import { remember } from '../core/history.ts';
+import { remember, save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { revealCards } from '../panels/zoomMenu.ts';
-import { rebuildBar } from '../selbar/barKit.ts';
+import { focusBar, rebuildBar } from '../selbar/barKit.ts';
 import { gestureRuns } from '../selbar/context.ts';
 import { dockFrame } from '../selbar/float.ts';
 import { type Box, dockBeside, GAP } from '../selbar/place.ts';
@@ -20,8 +22,8 @@ import { fillGrid, filterGrid, rove, stepCell, type View, visibleCells } from '.
 import { addToScreen } from './placePiece.ts';
 import { screenOf } from './screenScope.ts';
 
-/** What a pick does: add to a screen. Swapping icons (8d) widens it. */
-type PickFor = { kind: 'add'; screen: string };
+/** What a pick does: add to a screen, or give these icons another glyph. */
+type PickFor = { kind: 'add'; screen: string } | { kind: 'swap'; ids: readonly string[] };
 /** The picker's only state. `from` is what opened it, which Esc gives focus back to. `loose` is what a drop from the
  *  grid left off any screen: while it is the selection, the picker stays with its screen. */
 type Picker = { for: PickFor; view: View; from: 'bar' | 'hint'; loose: readonly string[] } | null;
@@ -48,12 +50,26 @@ const grid = () => $('pkGrid');
 const search = () => textField('pkSearch');
 const onPhone = () => document.body.classList.contains('phone');
 
-/** The screen the open picker adds to, or null while it is closed. */
-export const pickerScreen = () => picker?.for.screen ?? null;
+/** The screen the open picker adds to, or null while it is closed or swapping icons. */
+export const pickerScreen = () => (picker?.for.kind === 'add' ? picker.for.screen : null);
+export const pickerFor = () => picker?.for ?? null;
 
 function boundScreen() {
-  const s = picker ? byId(picker.for.screen) : undefined;
+  const s = picker?.for.kind === 'add' ? byId(picker.for.screen) : undefined;
   return s?.type === 'frame' ? s : null;
+}
+
+// the icons a swap changes, while every one is still on the board
+function swapIcons() {
+  if (picker?.for.kind !== 'swap') return null;
+  const cs = picker.for.ids.map(byId).filter(c => c?.type === 'icon');
+  return cs.length === picker.for.ids.length ? cs : null;
+}
+
+// what the picker docks beside: its screen, or the icons it swaps (their screen when they share one)
+function anchor(): Bounds | null {
+  const icons = swapIcons();
+  return icons ? (screenOf(icons) ?? boxOf(icons)) : boundScreen();
 }
 
 function showView(view: View) {
@@ -71,17 +87,35 @@ function showView(view: View) {
 
 /** Opens the picker on a screen, docked beside it, with the cursor in its search. */
 export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
-  const fresh = !picker;
-  picker = { for: { kind: 'add', screen: screen.id }, view: picker?.view ?? 'pieces', from, loose: [] };
+  const fresh = !picker || picker.for.kind === 'swap',
+    view = picker?.for.kind === 'add' ? picker.view : 'pieces';
+  picker = { for: { kind: 'add', screen: screen.id }, view, from, loose: [] };
+  show(fresh);
+  showScreen(screen);
+  setExpanded(true);
+}
+
+/** Change icon in the bar: opens the picker on its icons alone, to give every one of these icons the glyph picked. */
+export function toggleSwap(ids: readonly string[]) {
+  if (picker?.for.kind === 'swap' && picker.for.ids.join() === ids.join()) return closePicker();
+  picker = { for: { kind: 'swap', ids }, view: 'icons', from: 'bar', loose: [] };
+  show(true);
+}
+
+function show(fresh: boolean) {
+  if (!picker) return;
+  const swap = picker.for.kind === 'swap',
+    p = el();
   if (fresh) search().value = '';
+  oneIn(p, '.pk-tabs')?.toggleAttribute('hidden', swap);
+  oneIn(p, '.pk-title')?.toggleAttribute('hidden', !swap);
+  p.setAttribute('aria-label', swap ? 'Change icon' : 'Pieces');
   showView(picker.view);
-  el().hidden = false;
+  p.hidden = false;
   // a fresh open starts at the top of the grid
   if (fresh) grid().scrollTop = 0;
   docked = '';
   syncPicker();
-  showScreen(screen);
-  setExpanded(true);
   // a phone would raise its keyboard over the picker
   if (!onPhone()) search().focus({ preventScroll: true });
 }
@@ -95,13 +129,16 @@ function setExpanded(open: boolean) {
 export function closePicker(back = false) {
   if (!picker) return;
   const from = picker.from,
-    id = picker.for.screen;
+    swap = picker.for.kind === 'swap',
+    id = picker.for.kind === 'add' ? picker.for.screen : '';
   picker = null;
   el().hidden = true;
   setExpanded(false);
   endGridDrag();
   rebuildBar();
   if (!back) return;
+  // the bar is drawn again on the next frame, so focus waits for its new button
+  if (swap) return requestAnimationFrame(() => focusBar('[data-chicon]'));
   const pieces = () => oneIn($('selbar'), '[data-pieces]');
   if (from === 'bar') return pieces()?.focus();
   // the hint, hidden while its screen's picker is open, is drawn again on the next frame
@@ -110,12 +147,12 @@ export function closePicker(back = false) {
 
 /** Pieces in the bar: opens the picker on its screen, or closes it when it is already open there. */
 export function togglePicker(screen: CardOf<'frame'>) {
-  if (picker?.for.screen === screen.id) closePicker();
+  if (pickerScreen() === screen.id) closePicker();
   else openPicker(screen, 'bar');
 }
 
-// Docks the picker beside its screen, or on a phone above the bottom bar, writing only when the place changed.
-function dock(s: CardOf<'frame'>) {
+// Docks the picker beside what it acts on, or on a phone above the bottom bar, writing only when the place changed.
+function dock(s: Bounds) {
   const p = el();
   if (onPhone()) {
     const d = $('dock').getBoundingClientRect(),
@@ -191,19 +228,35 @@ function showScreen(s: CardOf<'frame'>) {
  *  or after a pick brought its piece into view, it stays where it is and takes clicks, and docks once settled. */
 export function syncPicker() {
   if (!picker) return;
-  const s = boundScreen(),
+  const s = anchor(),
     sel = selCards(),
-    loose = picker.loose,
-    dropped = sel.length === loose.length && sel.every(c => loose.includes(c.id));
-  if (homeAt || !s || (sel.length > 0 && !dropped && screenOf(sel)?.id !== s.id)) return closePicker();
+    keep = picker.for.kind === 'swap' ? picker.for.ids : picker.loose,
+    same = sel.length === keep.length && sel.every(c => keep.includes(c.id)),
+    off = picker.for.kind === 'swap' ? !same : sel.length > 0 && !same && screenOf(sel)?.id !== boundScreen()?.id;
+  if (homeAt || !s || off) return closePicker();
   const paused = !onPhone() && gestureRuns();
   el().classList.toggle('paused', paused);
   if (!paused && !stage.classList.contains('moving')) dock(s);
 }
 
+// Every icon being swapped takes the glyph picked, as one undo step, and the picker closes.
+function swapTo(name: string, keyed: boolean) {
+  const icons = swapIcons();
+  if (!icons) return;
+  remember();
+  icons.forEach(c => {
+    c.name = name;
+    renderCard(c);
+  });
+  selectOnly(icons.map(c => c.id));
+  save();
+  closePicker(keyed);
+}
+
 // A click on a cell: a piece or icon goes into the screen, and the Box and Text cells put R's and X's tools in hand.
 // Nothing happens while a drag runs, or for the click that ends a drag from the grid.
-function pick(cell: HTMLElement) {
+function pick(cell: HTMLElement, keyed: boolean) {
+  if (picker?.for.kind === 'swap' && cell.dataset.pkIcon) return swapTo(cell.dataset.pkIcon, keyed);
   const s = boundScreen();
   if (!s || appState.drag || dragged) return;
   const { pkPiece, pkIcon, pkTool } = cell.dataset;
@@ -265,7 +318,7 @@ function keepAfterDrop() {
   if (!picker) return;
   const sel = selCards(),
     on = screenOf(sel);
-  if (on) picker.for = { kind: 'add', screen: on.id };
+  if (on && picker.for.kind === 'add') picker.for = { kind: 'add', screen: on.id };
   else picker.loose = sel.map(c => c.id);
 }
 
@@ -327,9 +380,11 @@ export function initPiecePick() {
       return;
     }
     const cell = closestTo(e.target, '[data-kw]', HTMLElement);
-    if (cell) pick(cell);
+    // a click with no pointer is Enter or Space
+    if (cell) pick(cell, e.detail === 0);
   });
   p.addEventListener('pointerdown', e => {
+    if (picker?.for.kind === 'swap') return;
     const cell = closestTo(e.target, '[data-pk-piece], [data-pk-icon]'),
       piece = cell?.dataset.pkPiece,
       icon = cell?.dataset.pkIcon;

@@ -1566,6 +1566,8 @@ body.phone .dock .selbar { gap: 4px; padding: 6px 10px; }
 body.phone .selbar .sb-ic svg { width: 23px; height: 23px; }
 body.phone .selbar .sb-txt { height: 44px; padding: 0 15px; font-size: 14px; border-radius: 20px; corner-shape: squircle; }
 body.phone .selbar .sb-label { font-size: 13px; padding: 0 6px; }
+/* a font card's Font stays in a 390 px strip beside its label, Add a label and Tilt, whatever the font's name */
+body.phone .selbar > .sb-g > .sb-font { max-width: 110px; }
 body.phone .sb-dots { gap: 7px; } body.phone .sb-dots button { width: 26px; height: 26px; }
 body.phone .sb-sizes button { min-width: 42px; height: 44px; font-size: 13.5px; border-radius: 19px; corner-shape: squircle; }
 body.phone .sb-style button { font-size: 17px; }
@@ -1700,8 +1702,9 @@ html.native .side { top: 18px; }
 /* fonts */
 .dp-search, .dp-link input { width: 100%; height: 36px; padding: 0 12px; border: 0; border-radius: 14px; corner-shape: squircle; background: var(--dp-bg); font: 500 13.5px/1 var(--font); color: var(--ink); outline: none; }
 .dp-search:focus, .dp-link input:focus { box-shadow: 0 0 0 2px var(--dt-shadow); background: var(--snow); }
+.dp-note { margin: 8px 4px 2px; padding: 0 6px; font: 500 12.5px/1.4 var(--font); color: var(--ink-soft); }
 .dp-scroll { max-height: 340px; overflow-y: auto; margin-top: 4px; scrollbar-width: thin; }
-.dp-font { font-size: 15px; } .dp-font[hidden] { display: none; }
+.dp-font, .dp-use { font-size: 15px; } .dp-font[hidden], .dp-use[hidden] { display: none; }
 /* colors */
 .dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 4px 8px 6px; }
 .dp-sw { aspect-ratio: 1; width: 100%; padding: 0; border: 0; border-radius: 50%; background: var(--sw); box-shadow: inset 0 0 0 1px rgb(from var(--shade) r g b / .1); cursor: pointer; transition: transform .1s; }
@@ -2227,6 +2230,8 @@ body.dark .sb-tipbub { background: var(--sb-bg-3); color: var(--sb-ink-3); }
 .sbc-top input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 22px; background: none; cursor: pointer; --p: 50%; }
 .sbc-top input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: linear-gradient(90deg, var(--select) var(--p), rgb(from var(--shade) r g b / .1) var(--p)); }
 .sbc-top input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: var(--snow); box-shadow: 0 1px 4px rgb(from var(--shade) r g b / .25), 0 0 0 1px rgb(from var(--shade) r g b / .06); cursor: grab; }
+/* line heights that differ: no value on the slider until one is chosen */
+.sbc-top input[type=range].sb-mixed { --p: 0% !important; } .sbc-top input[type=range].sb-mixed::-webkit-slider-thumb { opacity: 0; }
 .sbc-top input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.1); }
 body.dark .sbc-top input[type=range]::-webkit-slider-runnable-track { background: linear-gradient(90deg, var(--select) var(--p), rgb(from var(--hilite) r g b / .14) var(--p)); }
 .sbc-top input[type=number] { width: 54px; padding: 7px 8px; border: 0; border-radius: 9px; background: rgb(from var(--shade) r g b / .05); font: 700 13px/1 var(--font); color: var(--ink); text-align: right; outline: none; -moz-appearance: textfield; }
@@ -2298,6 +2303,15 @@ body.dark .sbz-f input { background: rgb(from var(--hilite) r g b / .08); }
 .sb-fsrow > span:first-child { margin-right: auto; }
 .sb-sizelist button em { margin-left: auto; font: 600 11.5px/1 var(--font); font-style: normal; color: var(--ink-faint); }
 body.dark .sb-fsrow { border-color: rgb(from var(--hilite) r g b / .1); } body.dark .sb-fsrow .sb-fsstep { background: rgb(from var(--hilite) r g b / .08) !important; }
+.sb-type .sb-fsrow { margin-bottom: 0; }
+.sb-weights, .sb-talign { grid-template-columns: repeat(3, 1fr); } .sb-weights button, .sb-talign button { justify-content: center; }
+.sb-talign button svg { width: 16px; height: 16px; }
+body.dark .sb-weights button.on, body.dark .sb-talign button.on { background: var(--select) !important; color: var(--hilite); }
+.sb-fillbox { display: grid; gap: 10px; } .sb-oprow > span { margin-right: auto; } .sb-oprow input[type=range] { min-width: 0; }
+.sbz-fontrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px !important; border-radius: 9px !important; background: rgb(from var(--shade) r g b / .04) !important; font: 700 12px/1 var(--font); color: var(--ink-soft); }
+.sbz-fontrow b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-size: 13px; color: var(--ink); }
+.sbz-fontrow:hover { background: var(--blush) !important; } body.dark .sbz-fontrow { background: rgb(from var(--hilite) r g b / .08) !important; }
+.sb-chicon { display: inline-flex; align-items: center; gap: 4px; }
 .sb-fsbox { display: grid; width: 230px; } .sb-fsbox .sb-sizelist { min-width: 0; }
 /* voice memos scale with their card: everything inside grows as the card gets wider (1 --u = 1px on a normal 290px card),
    the live waveform fills the free space, and the buttons sit at the bottom */
@@ -2415,6 +2429,7 @@ body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .card.no-fill .text, .card.no-fill .tx { -webkit-text-fill-color: transparent; }
 .sb-nofill, .sb-cur.sb-none { background: var(--snow) linear-gradient(135deg, transparent 45%, var(--rec) 45% 55%, transparent 55%) !important; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .14) !important; }
 .sb-tcur { display: grid; place-items: center; background: none !important; box-shadow: none !important; font: 800 15px/1 var(--font); font-style: normal; color: var(--c); -webkit-text-stroke: .6px rgb(from var(--shade) r g b / .15); }
+.sb-tcur.sb-icur { background: var(--c) !important; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .12) !important; }
 .sb-tcur.sb-none { color: transparent; -webkit-text-stroke: 1.2px var(--ink); background: none !important; box-shadow: none !important; }
 .card.frame.no-fill .fr-body { box-shadow: none; }
 .pen-live .pl-rdot { fill: var(--hilite); stroke: var(--au-bg); }
@@ -3133,6 +3148,8 @@ body:is(.calm, .myra-calm) .m-bar::after { animation: none; transform: translate
 .piece-pick .pk-tabs { flex: 1; display: flex; gap: 2px; padding: 2px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--vd-bg); }
 .piece-pick .pk-tabs button { flex: 1; padding: 6px 8px; border: 0; border-radius: 10px; corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .piece-pick .pk-tabs [aria-pressed="true"] { background: var(--snow); color: var(--ink); box-shadow: 0 1px 3px rgba(var(--sh), calc(.18 * var(--sh-k))); }
+.piece-pick .pk-title { flex: 1; padding: 0 8px; font: 600 13px/1 var(--font); color: var(--ink); }
+.piece-pick .pk-tabs[hidden], .piece-pick .pk-title[hidden] { display: none; }
 .piece-pick .pk-x { flex: none; width: 30px; height: 30px; border: 0; border-radius: 10px; corner-shape: squircle; background: none; font: 400 20px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .piece-pick .pk-x:hover { background: var(--blush); color: var(--ink); }
 .piece-pick .pk-search { flex: none; display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; padding: 8px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--vd-bg); color: var(--ink-soft); cursor: text; }
