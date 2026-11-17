@@ -1,4 +1,5 @@
 {
+  "rich-select": "Changed in 8d's fix round: a note's bar fits whole at this width, so ··· no longer takes room before anything folds. Add a label shows after the colour dot where the base folded it into ···, which moves Tags to Tilt right; the bar ends where it did, with no ···.",
   "wireframe-align": "Changed in 8d: the whole Sign in button selected on its screen. Its bar gains Font ▾ (Figtree) after Align ▾, which moves Stroke, Create section, Ungroup and Delete right. Align ▾ is open above it on both sides.",
   "wireframe-icon": "New in 8d: the Sign in screen's back arrow selected. Its bar gains Change icon (the arrow glyph) after 24 ▾, and Colour as a dot before Stroke, which moves the bar's end right. The base bar, at the same height, has neither.",
   "wireframe-text": "New in 8d: the Welcome back heading selected. Its bar gains Figtree ▾ and 28 ▾ after 345 ▾, which moves the other buttons right, with Type ▾ open below it: size with − and +, six weights with Extra on, line height, and left, centre and right. The base bar, at the same height, has neither and nothing open."
