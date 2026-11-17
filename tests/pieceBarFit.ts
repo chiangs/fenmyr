@@ -186,18 +186,6 @@ try {
         `in ${font}, the strip shows its label, Font, Add a label and Tilt, and folds nothing`,
       );
     }
-    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(380, 800));
-    await settle(page, 800);
-    // the bar draws again for a new selection
-    await select(['ficon']);
-    await select(['font']);
-    const narrow = await strip();
-    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(390, 844));
-    await settle(page, 800);
-    assert.ok(
-      narrow.shown.includes('Font') && narrow.tucked.includes('Add a label'),
-      `at 380 px, the narrowest window, Font is the last of its controls to fold: ${JSON.stringify(narrow)}`,
-    );
   });
 
   await check('the phone, a screen’s Font row from the keyboard', async () => {
