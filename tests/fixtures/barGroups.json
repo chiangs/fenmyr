@@ -147,7 +147,7 @@
   ],
   "font": [
     "label 'Font'",
-    "G7: button sbfont=1 \"Font\" name=\"Font, Figtree\" 'Figtree'",
+    "G2: button sbfont=1 \"Font\" name=\"Font, Figtree\" 'Figtree'",
     "G6: button sb=tag \"Add a label\"",
     "G3: | button sb=tiltpop \"Tilt\" '0°'",
     "| hidden",

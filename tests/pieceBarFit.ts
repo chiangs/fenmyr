@@ -1,7 +1,8 @@
 // The new Type ▾, Font, Change icon and Colour fit the bar. At 1280 × 800 the bar for a text with a long font name, a
 // whole piece, a font card, an icon and a box folds nothing, and with the Pieces picker open it tucks away no control
 // it showed before them. On a phone at 390 px the strip for a text and an icon shows what it did, the new controls
-// wait in ···, and Type ▾ and Change icon opened from there sit above the strip, inside the window.
+// wait in ···, and Type ▾ and Change icon opened from there sit above the strip, inside the window. A font card's
+// strip folds nothing, whatever its font's name.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -153,6 +154,35 @@ try {
       return !!r && !!dock && r.height > 0 && r.bottom <= dock.top && r.left >= 0 && r.right <= innerWidth;
     });
     assert.ok(p, 'Change icon opens the picker above the dock, inside the window');
+  });
+
+  await check('the phone, a font card', async () => {
+    for (const font of ['Shantell Sans', 'Libre Baskerville Display Long']) {
+      await page.evaluate(f => {
+        const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'font');
+        if (c) c.font = f;
+        window.__fenmyr.renderAll();
+      }, font);
+      await select(['font']);
+      const s = await strip();
+      assert.deepStrictEqual(
+        [s.shown, s.tucked, s.label],
+        [['Font', 'Add a label', 'Tilt', 'Delete'], [], true],
+        `in ${font}, the strip shows its label, Font, Add a label and Tilt, and folds nothing`,
+      );
+    }
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(380, 800));
+    await settle(page, 800);
+    // the bar draws again for a new selection
+    await select(['ficon']);
+    await select(['font']);
+    const narrow = await strip();
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(390, 844));
+    await settle(page, 800);
+    assert.ok(
+      narrow.shown.includes('Font') && narrow.tucked.includes('Add a label'),
+      `at 380 px, the narrowest window, Font is the last of its controls to fold: ${JSON.stringify(narrow)}`,
+    );
   });
 
   await check('the phone, a screen’s Font row from the keyboard', async () => {

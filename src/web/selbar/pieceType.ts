@@ -291,7 +291,8 @@ function initType() {
 /** A wireframe text's size, weight, line height and alignment, in one dropdown whose trigger shows the size. */
 export const type = group({ on: ctx => textsOf(cards(ctx)), html: typeHtml, init: initType });
 
-const SIZED = typesWith('sized');
+const SIZED = typesWith('sized'),
+  FOLD_FONT_CARD = 2;
 
 /** The Font button for wireframe text, font cards and whole pieces, when no note or title is selected: the text
  *  controls carry the Font button then, so there is only ever one. A screen's own fonts are a row in its dropdown. */
@@ -302,5 +303,6 @@ export const font = group({
     const ts = fontTargets(cs);
     return ts.length ? ts : null;
   },
-  html: ts => G(FOLD_PIECE, fontButton(ts)),
+  // a font card's Font is what the card is for, so it folds after the controls it shares the bar with
+  html: ts => G(ts.every(c => c.type === 'font') ? FOLD_FONT_CARD : FOLD_PIECE, fontButton(ts)),
 });

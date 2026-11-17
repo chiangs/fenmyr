@@ -148,8 +148,11 @@ export function foldSelbar(bar: HTMLElement, room: number) {
     label = oneIn(bar, ':scope > .sb-label');
   if (body && wrap && sep) {
     const groups = htmlIn(bar, '.sb-g').sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0));
+    // ··· takes room only once something folds into it
+    wrap.hidden = sep.hidden = true;
     for (const g of groups) {
       if (bar.scrollWidth <= room) break;
+      wrap.hidden = sep.hidden = false;
       htmlIn(g, ':scope > .sb-sep').forEach(x => {
         x.remove();
       });

@@ -1566,6 +1566,8 @@ body.phone .dock .selbar { gap: 4px; padding: 6px 10px; }
 body.phone .selbar .sb-ic svg { width: 23px; height: 23px; }
 body.phone .selbar .sb-txt { height: 44px; padding: 0 15px; font-size: 14px; border-radius: 20px; corner-shape: squircle; }
 body.phone .selbar .sb-label { font-size: 13px; padding: 0 6px; }
+/* a font card's Font stays in a 390 px strip beside its label, Add a label and Tilt, whatever the font's name */
+body.phone .selbar > .sb-g > .sb-font { max-width: 110px; }
 body.phone .sb-dots { gap: 7px; } body.phone .sb-dots button { width: 26px; height: 26px; }
 body.phone .sb-sizes button { min-width: 42px; height: 44px; font-size: 13.5px; border-radius: 19px; corner-shape: squircle; }
 body.phone .sb-style button { font-size: 17px; }
