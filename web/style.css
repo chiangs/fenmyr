@@ -1584,6 +1584,14 @@ body.phone .selbar .sb-ic svg, body.phone .dock .drawbar .db-tool svg { width: 2
 /* phone: the action bar scrolls sideways, so its far edge fades to say "there's more" */
 body.phone .dock .selbar { -webkit-mask-image: linear-gradient(90deg, var(--shade) calc(100% - 34px), transparent); mask-image: linear-gradient(90deg, var(--shade) calc(100% - 34px), transparent); }
 body.phone .dock .selbar.end { -webkit-mask-image: none; mask-image: none; }
+/* the strip scrolls, which clips anything outside it: while a dropdown is open it lets the dropdown out, and every
+   dropdown, ··· and those inside it too, opens just above the strip, at least as wide as it and centred on it. Layout
+   containment makes the strip, not the window, the box a fixed dropdown is placed in */
+body.phone .dock .selbar:has(.sb-popw.open) { overflow: visible; -webkit-mask-image: none; mask-image: none; contain: layout; }
+body.phone .dock .selbar .sb-popw.open > .sb-pop { position: fixed; left: 50%; right: auto; top: auto; bottom: calc(100% + 12px); translate: -50% 0;
+  width: max-content; min-width: 100%; max-width: calc(100vw - 24px); justify-content: center; }
+/* one inside ··· is placed in the ··· menu, whose translate makes it the box for fixed dropdowns: it sits on the menu */
+body.phone .dock .selbar .sb-morebody .sb-popw.open > .sb-pop { bottom: 0; }
 /* the left column scrolls, and scrolling clips shadows into hard edges: give it 20px of invisible room on every side
    (and pull it out by the same amount) so the panels sit exactly where they did and their shadows fade out softly */
 .side { left: -6px; top: -6px; bottom: -6px; width: calc(var(--side) + 40px); padding: 20px; scroll-padding: 20px; }
@@ -2229,6 +2237,18 @@ body.dark .sbc-top input[type=range]::-webkit-slider-runnable-track { background
 .sbc-chips button i { width: 14px; height: 14px; border-top: 2px solid currentColor; border-left: 2px solid currentColor; opacity: .7; }
 .sbc-chips button:hover { background: var(--blush) !important; } .sbc-chips button.on { background: var(--select) !important; color: var(--hilite); }
 body.dark .sbc-top input[type=number], body.dark .sbc-chips button { background: rgb(from var(--hilite) r g b / .08) !important; }
+/* a screen's device dropdown and a piece's size dropdown: labelled fields, two to a row */
+.sb-size { display: grid; gap: 8px; width: 232px; padding: 4px; }
+.sbz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.sbz-f { display: flex; align-items: center; gap: 6px; min-width: 0; font: 700 12px/1 var(--font); color: var(--ink-soft); }
+.sbz-f.wide { grid-column: 1 / -1; }
+.sbz-f span { min-width: 12px; }
+.sbz-f input { flex: 1; width: 0; min-width: 0; padding: 7px 8px; border: 0; border-radius: 9px; background: rgb(from var(--shade) r g b / .05); font: 700 13px/1 var(--font); color: var(--ink); outline: none; }
+.sbz-f input[type=number] { text-align: right; -moz-appearance: textfield; } .sbz-f input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.sbz-f input:focus { box-shadow: inset 0 0 0 2px var(--select); }
+.sbz-f input:disabled, .sbz-devices button:disabled, .sb-arrange button:disabled { opacity: .45; cursor: default; }
+.sbz-devices button b { width: 62px; }
+body.dark .sbz-f input { background: rgb(from var(--hilite) r g b / .08); }
 .selbar [data-pop="corners"] svg { fill: none !important; stroke: currentColor; stroke-linecap: round; }
 .sb-fills { display: grid !important; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .sb-fills button { width: 24px; height: 24px; padding: 0 !important; border-radius: 50% !important; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .1); }

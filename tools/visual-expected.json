@@ -1,8 +1,6 @@
 {
-  "wireframe-dark-pieces": "New in 8b: the Pieces picker beside the Sign in screen in the dark theme, on the surface colour, with the bar folded to its left. On the base there is no Pieces button, so the screen is only selected.",
-  "wireframe-hint": "New in 8b: zoomed to 50%, the empty phone screen shows an Add pieces button, a white pill with a thin edge, and \"or press R for a box, X for text\" in its middle. The base shows the empty screen bare.",
-  "wireframe-icons": "New in 8b: the picker's Icons view, a grid of the icon set under its search. The base has no picker.",
-  "wireframe-phone-pieces": "New in 8b: at 600 px the strip's Pieces opens the picker above the bottom bar, full width less 20 px, six cells to a row. The base shows the strip with no Pieces button.",
-  "wireframe-pieces": "New in 8b: Pieces opens the picker 12 px right of the Sign in screen, with Basics led by Box and Text and each piece drawn small. The bar folds to the screen's side of it, down to Pieces, ··· and Delete. The base has no picker.",
-  "wireframe-screen": "Changed in 8b: the selected screen's bar shows Pieces straight after the Screen label, which moves the bar's other buttons right."
+  "wireframe-align": "New in 8c: the whole Sign in button selected on its screen. Its bar shows Align ▾ in place of six inline align buttons, so it is narrower, with Align ▾ open above it holding the six buttons. The base bar, at the same height, shows the six inline buttons and nothing open.",
+  "wireframe-phone-pieces": "Changed in 8c: at 600 px the strip under the open picker shows iPhone ▾ after Pieces, which moves Add a label, Fill, Stroke and Corners right.",
+  "wireframe-screen": "Changed in 8c: the selected screen's bar shows iPhone ▾ after Pieces, which moves the bar's other buttons right.",
+  "wireframe-size": "New in 8c: the Sign in button's box selected. Its bar gains Align ▾ and 345 × 48 ▾ after Pieces, which moves the other buttons right, with the size dropdown open above it: X, Y, W and H two to a row, and Rotate° across. The base bar, at the same height, has neither and nothing open."
 }

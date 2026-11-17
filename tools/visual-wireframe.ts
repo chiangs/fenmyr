@@ -15,8 +15,19 @@ const pieces: Step = async page => {
   await openPieces(page);
 };
 
-// The wireframe board as later Phase 8 PRs change it: at rest, with the screen tool in hand, a screen selected, the
-// Pieces picker and its Icons view beside it, and an empty screen's hint zoomed in.
+// The Sign in button's box with its Size ▾ open, or the whole button with Align ▾ open. A base without the dropdown
+// shows the selection alone.
+const openDropdown =
+  (ids: string[], pop: string): Step =>
+  async page => {
+    await page.evaluate(i => window.__fenmyr.selectOnly(i), ids);
+    await page.waitForTimeout(150);
+    await page.evaluate(p => document.querySelector<HTMLElement>(`#selbar [data-pop="${p}"]`)?.click(), pop);
+    await page.mouse.move(5, 450);
+  };
+
+// The wireframe board as later Phase 8 PRs change it: at rest, with the screen tool in hand, a screen selected, a
+// piece's Size ▾ and Align ▾ open, the Pieces picker and its Icons view beside it, and an empty screen's hint zoomed in.
 const wireframe: Group = {
   board: wireframeBoard,
   states: [
@@ -39,6 +50,8 @@ const wireframe: Group = {
         await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
       },
     ],
+    ['size', openDropdown(['go0'], 'place')],
+    ['align', openDropdown(['go0', 'go1'], 'align')],
     ['pieces', openPieces],
     [
       'icons',

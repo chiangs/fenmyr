@@ -78,6 +78,7 @@
   ],
   "text": [
     "label 'Text'",
+    "G7: button pop=place \"Size and place\" name=\"Size and place, 220\" '220' { input size=x name=\"X position\" ; input size=y name=\"Y position\" ; input size=w name=\"Width\" ; input size=rot name=\"Rotation in degrees\" }",
     "G6: button sb=tag \"Add a label\"",
     "G2: button pop=tfill \"Text colour\" 'A' { button tf=none \"No fill\" ; button tf=#27272a \"#27272a\" ; button tf=#ffffff \"#ffffff\" ; button tf=#ff5a6e \"#ff5a6e\" ; button tf=#f6b45e \"#f6b45e\" ; button tf=#f7b955 \"#f7b955\" ; button tf=#5fc795 \"#5fc795\" ; button tf=#4f9dff \"#4f9dff\" ; button tf=#9b7bff \"#9b7bff\" ; button tfwheel=1 \"Any colour\" }",
     "G2: button pop=stroke \"Stroke\" { input skw ; input skn name=\"Stroke width\" ; button skc=#000000 \"#000000\" ; button skc=#ffffff \"#ffffff\" ; button skc=#71717a \"#71717a\" ; button skc=#a1a1aa \"#a1a1aa\" ; button skc=#ff5a6e \"#ff5a6e\" ; button skc=#f6b45e \"#f6b45e\" ; button skc=#f7b955 \"#f7b955\" ; button skc=#5fc795 \"#5fc795\" ; button skc=#4f9dff \"#4f9dff\" ; button skc=#9b7bff \"#9b7bff\" ; button skc=#e88a24 \"#e88a24\" ; button skwheel=1 \"Any colour\" }",
@@ -132,6 +133,7 @@
   ],
   "icon": [
     "label 'Icon'",
+    "G7: button pop=place \"Size and place\" name=\"Size and place, 28\" '28' { input size=x name=\"X position\" ; input size=y name=\"Y position\" ; input size=isz name=\"Icon size\" ; input size=rot name=\"Rotation in degrees\" }",
     "G6: button sb=tag \"Add a label\"",
     "G2: button pop=stroke \"Stroke\" { input skw ; input skn name=\"Stroke width\" ; button skc=#000000 \"#000000\" ; button skc=#ffffff \"#ffffff\" ; button skc=#71717a \"#71717a\" ; button skc=#a1a1aa \"#a1a1aa\" ; button skc=#ff5a6e \"#ff5a6e\" ; button skc=#f6b45e \"#f6b45e\" ; button skc=#f7b955 \"#f7b955\" ; button skc=#5fc795 \"#5fc795\" ; button skc=#4f9dff \"#4f9dff\" ; button skc=#9b7bff \"#9b7bff\" ; button skc=#e88a24 \"#e88a24\" ; button skwheel=1 \"Any colour\" }",
     "| hidden",
@@ -247,6 +249,7 @@
     "label 'Screen'",
     "button pieces=frame \"Add pieces to this screen\" 'Pieces'",
     "|",
+    "G7: button pop=place \"Device and size\" name=\"Device and size, Custom\" 'Custom' { input size=name name=\"Screen name\" ; button device=Custom 'Custom' [on pressed] ; button device=iPhone 'iPhone 393 × 852' ; button device=Android 'Android 412 × 915' ; button device=iPad 'iPad 834 × 1194' ; button device=Desktop 'Desktop 1440 × 1024' ; button device=Watch 'Watch 205 × 251' ; input size=x name=\"X position\" ; input size=y name=\"Y position\" ; input size=w name=\"Width\" ; input size=h name=\"Height\" }",
     "G6: button sb=tag \"Add a label\"",
     "G2: button pop=fill \"Fill\" { button bfill=none \"No fill\" ; button bfill=#ffffff \"#ffffff\" [on] ; button bfill=#f4f4f5 \"#f4f4f5\" ; button bfill=#e4e4e7 \"#e4e4e7\" ; button bfill=#a1a1aa \"#a1a1aa\" ; button bfill=#27272a \"#27272a\" ; button bfill=#ffdcd8 \"#ffdcd8\" ; button bfill=#ffe3bd \"#ffe3bd\" ; button bfill=#e0edd3 \"#e0edd3\" ; button bfill=#d9e7f3 \"#d9e7f3\" ; button bfill=#ebe1f2 \"#ebe1f2\" ; button bfill=#f1ebe2 \"#f1ebe2\" ; button bfill=#f6b45e \"#f6b45e\" ; button bfwheel=1 \"Any colour\" }",
     "G2: button pop=stroke \"Stroke\" { input skw ; input skn name=\"Stroke width\" ; button skc=#000000 \"#000000\" ; button skc=#ffffff \"#ffffff\" ; button skc=#71717a \"#71717a\" ; button skc=#a1a1aa \"#a1a1aa\" ; button skc=#ff5a6e \"#ff5a6e\" ; button skc=#f6b45e \"#f6b45e\" ; button skc=#f7b955 \"#f7b955\" ; button skc=#5fc795 \"#5fc795\" ; button skc=#4f9dff \"#4f9dff\" ; button skc=#9b7bff \"#9b7bff\" ; button skc=#e88a24 \"#e88a24\" ; button skwheel=1 \"Any colour\" ; button skd=solid 'Solid' ; button skd=dash 'Dashed' ; button skd=dot 'Dotted' ; button skd=none 'None' [on] ; input skr=dl ; input skrn=dl name=\"Dash\" ; input skr=dg ; input skrn=dg name=\"Gap\" }",
@@ -271,6 +274,7 @@
   ],
   "box": [
     "label 'Box'",
+    "G7: button pop=place \"Size and place\" name=\"Size and place, 160 × 100\" '160 × 100' { input size=x name=\"X position\" ; input size=y name=\"Y position\" ; input size=w name=\"Width\" ; input size=h name=\"Height\" ; input size=rot name=\"Rotation in degrees\" }",
     "button fill=1 \"Fill this image spot\" 'Fill image ✦'",
     "G6: button sb=tag \"Add a label\"",
     "G2: button pop=fill \"Fill\" { button bfill=none \"No fill\" ; button bfill=#ffffff \"#ffffff\" ; button bfill=#f4f4f5 \"#f4f4f5\" ; button bfill=#e4e4e7 \"#e4e4e7\" [on] ; button bfill=#a1a1aa \"#a1a1aa\" ; button bfill=#27272a \"#27272a\" ; button bfill=#ffdcd8 \"#ffdcd8\" ; button bfill=#ffe3bd \"#ffe3bd\" ; button bfill=#e0edd3 \"#e0edd3\" ; button bfill=#d9e7f3 \"#d9e7f3\" ; button bfill=#ebe1f2 \"#ebe1f2\" ; button bfill=#f1ebe2 \"#f1ebe2\" ; button bfill=#f6b45e \"#f6b45e\" ; button bfwheel=1 \"Any colour\" }",
@@ -346,6 +350,7 @@
   ],
   "pictured": [
     "label 'Box'",
+    "G7: button pop=place \"Size and place\" name=\"Size and place, 160 × 100\" '160 × 100' { input size=x name=\"X position\" ; input size=y name=\"Y position\" ; input size=w name=\"Width\" ; input size=h name=\"Height\" ; input size=rot name=\"Rotation in degrees\" }",
     "G6: button sb=tag \"Add a label\"",
     "G2: button pop=stroke \"Stroke\" { input skw ; input skn name=\"Stroke width\" ; button skc=#000000 \"#000000\" ; button skc=#ffffff \"#ffffff\" ; button skc=#71717a \"#71717a\" ; button skc=#a1a1aa \"#a1a1aa\" ; button skc=#ff5a6e \"#ff5a6e\" ; button skc=#f6b45e \"#f6b45e\" ; button skc=#f7b955 \"#f7b955\" ; button skc=#5fc795 \"#5fc795\" ; button skc=#4f9dff \"#4f9dff\" ; button skc=#9b7bff \"#9b7bff\" ; button skc=#e88a24 \"#e88a24\" ; button skwheel=1 \"Any colour\" ; button skd=solid 'Solid' ; button skd=dash 'Dashed' ; button skd=dot 'Dotted' ; button skd=none 'None' [on] ; input skr=dl ; input skrn=dl name=\"Dash\" ; input skr=dg ; input skrn=dg name=\"Gap\" }",
     "G3: button pop=corners \"Corners\" '0' { input cornersRange ; input cornersNum ; button corners=0 '0' [on] ; button corners=4 '4' ; button corners=8 '8' ; button corners=12 '12' ; button corners=16 '16' ; button corners=24 '24' ; button corners=32 '32' ; button corners=999 'Pill' }",
@@ -356,6 +361,7 @@
   ],
   "plainbox": [
     "label 'Box'",
+    "G7: button pop=place \"Size and place\" name=\"Size and place, 160 × 100\" '160 × 100' { input size=x name=\"X position\" ; input size=y name=\"Y position\" ; input size=w name=\"Width\" ; input size=h name=\"Height\" ; input size=rot name=\"Rotation in degrees\" }",
     "G6: button sb=tag \"Add a label\"",
     "G2: button pop=fill \"Fill\" { button bfill=none \"No fill\" ; button bfill=#ffffff \"#ffffff\" ; button bfill=#f4f4f5 \"#f4f4f5\" ; button bfill=#e4e4e7 \"#e4e4e7\" [on] ; button bfill=#a1a1aa \"#a1a1aa\" ; button bfill=#27272a \"#27272a\" ; button bfill=#ffdcd8 \"#ffdcd8\" ; button bfill=#ffe3bd \"#ffe3bd\" ; button bfill=#e0edd3 \"#e0edd3\" ; button bfill=#d9e7f3 \"#d9e7f3\" ; button bfill=#ebe1f2 \"#ebe1f2\" ; button bfill=#f1ebe2 \"#f1ebe2\" ; button bfill=#f6b45e \"#f6b45e\" ; button bfwheel=1 \"Any colour\" }",
     "G2: button pop=stroke \"Stroke\" { input skw ; input skn name=\"Stroke width\" ; button skc=#000000 \"#000000\" ; button skc=#ffffff \"#ffffff\" ; button skc=#71717a \"#71717a\" ; button skc=#a1a1aa \"#a1a1aa\" ; button skc=#ff5a6e \"#ff5a6e\" ; button skc=#f6b45e \"#f6b45e\" ; button skc=#f7b955 \"#f7b955\" ; button skc=#5fc795 \"#5fc795\" ; button skc=#4f9dff \"#4f9dff\" ; button skc=#9b7bff \"#9b7bff\" ; button skc=#e88a24 \"#e88a24\" ; button skwheel=1 \"Any colour\" ; button skd=solid 'Solid' ; button skd=dash 'Dashed' ; button skd=dot 'Dotted' ; button skd=none 'None' [on] ; input skr=dl ; input skrn=dl name=\"Dash\" ; input skr=dg ; input skrn=dg name=\"Gap\" }",
@@ -672,7 +678,6 @@
   ],
   "grouped": [
     "label '2 selected'",
-    "G0: button arr=left \"Align left edges\" button arr=hcenter \"Align centres\" button arr=right \"Align right edges\" button arr=top \"Align tops\" button arr=vcenter \"Align middles\" button arr=bottom \"Align bottoms\"",
     "G2: button pop=color \"Colour\" { button c=white \"Snow\" [on] ; button c=pink \"Lingonberry\" ; button c=butter \"Cloudberry\" ; button c=mint \"Moss\" ; button c=lilac \"Heather\" ; button c=sky \"Fjord\" ; button c=peach \"Birch\" } |",
     "G1: | button ts=bold \"Bold · Ctrl+B\" name=\"Bold\" 'B' button ts=italic \"Italic · Ctrl+I\" name=\"Italic\" 'I' button ts=under \"Underline · Ctrl+U\" name=\"Underline\" 'U' button ts=strike \"Strikethrough\" 'S'",
     "G1: button al=left \"Align left\" [on] button al=center \"Centre\" button al=right \"Align right\"",

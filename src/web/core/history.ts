@@ -21,6 +21,7 @@ import { appState, session } from './state.ts';
 let past: string[] = [];
 let future: string[] = [];
 let restoring = false;
+let visitStep: string | undefined;
 let revision = 0;
 export let snapT: ReturnType<typeof setTimeout> | undefined;
 
@@ -41,6 +42,20 @@ export function remember() {
     if (past.length > 80) past.shift();
     future = [];
   }
+}
+
+/** Makes one change of a dropdown visit. All of a visit's changes, however far apart, undo as one step, the one on top
+ *  that each rewrites. A change from elsewhere meanwhile, a Delete or Myra's, takes its own step after it, and the
+ *  visit's next change starts a step of its own. `first` starts a new visit. */
+export function visitChange(first: boolean, change: () => void) {
+  clearTimeout(snapT);
+  remember(); // the board before this change, with any change from elsewhere still waiting for its step
+  if (first) visitStep = undefined;
+  change();
+  const st = stateOf();
+  if (visitStep !== undefined && past[past.length - 1] === visitStep) past.pop();
+  visitStep = past[past.length - 1] === st ? undefined : st; // a value typed back to where it was leaves no step
+  remember();
 }
 
 export function resetHistory() {
