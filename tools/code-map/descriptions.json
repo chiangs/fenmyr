@@ -512,6 +512,7 @@
     "tests/sync.ts": "Tests keeping a prototype in step with GitHub: fetch, pull and clashes.",
     "tests/theme.ts": "Tests following the Caelestia colour scheme.",
     "tests/themes.ts": "Every colour theme keeps its contrast and colour-blindness promise, and its known gaps are still real.",
+    "tests/typeFields.ts": "Tests the number fields in Type ▾ and Fill’s Opacity: a typed number lands once, whole, within each end, and a blank one changes nothing.",
     "tests/update.ts": "Tests that the updater compares what is installed with GitHub.",
     "tests/vault.ts": "Tests the vault module on its own: parsing and the privacy rules.",
     "tests/voice.ts": "Asks the real Myra tricky questions so a person can read her answers.",

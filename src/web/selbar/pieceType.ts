@@ -62,17 +62,20 @@ function shared<T>(ts: Texts, of: (c: CardOf<'text'>) => T): T | null {
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
+// what a number typed or slid leaves on a text
+const sizeFrom = (n: number) => clamp(Math.round(n), SIZE.min, SIZE.max);
+const lhFrom = (n: number) => Math.round(clamp(n, LH.min, LH.max) * 100) / 100;
 
 function setType(c: CardOf<'text'>, ch: TypeChange) {
   switch (ch.k) {
     case 'size':
-      c.size = clamp(Math.round(ch.v), SIZE.min, SIZE.max);
+      c.size = sizeFrom(ch.v);
       return;
     case 'weight':
       c.weight = ch.v;
       return;
     case 'lh':
-      c.lh = Math.round(clamp(ch.v, LH.min, LH.max) * 100) / 100;
+      c.lh = lhFrom(ch.v);
       return;
     case 'align':
       if (ch.v === 'left') delete c.align;
@@ -107,6 +110,7 @@ function alignsHtml(ts: Texts) {
 // the size shown on the trigger and in the field: the shared size, or blank when the texts differ
 const sizeShown = (ts: Texts) => String(shared(ts, sizeOf) ?? '');
 const lhShown = (ts: Texts) => shared(ts, lhOf) ?? DEF.lh;
+const lhField = (ts: Texts) => String(lhShown(ts));
 
 function typeHtml(ts: Texts) {
   const size = sizeShown(ts),
@@ -187,17 +191,33 @@ export function syncType(bar: HTMLElement) {
   }
 }
 
+// A typed number lands once, when the field is left or Enter pressed, so 60 never sets 6 first. A blank or broken
+// number puts back what the texts have.
+function commit(i: HTMLInputElement) {
+  const ts = ownersOf(i),
+    n = Number(i.value),
+    size = i.matches('[data-ty-size]');
+  if (!ts) return;
+  // the blur after Enter finds nothing left to land
+  if (i.value !== '' && Number.isFinite(n)) {
+    if (size && ts.some(c => sizeOf(c) !== sizeFrom(n))) apply(i, { k: 'size', v: n });
+    if (!size && ts.some(c => lhOf(c) !== lhFrom(n))) apply(i, { k: 'lh', v: n });
+  }
+  i.value = size ? sizeShown(ts) : lhField(ts);
+  if (!size) syncPair(i, 'data-ty-lh', 'data-ty-lhn');
+}
+
 function initType() {
   const bar = $('selbar');
+  // the slider lands as it moves, and its number follows
   bar.addEventListener('input', e => {
-    const t = e.target;
-    if (t instanceof HTMLInputElement && t.matches('[data-ty-size]')) {
-      // a value under the least size is a number still being typed, as the 2 of 24
-      if (+t.value >= SIZE.min) apply(t, { k: 'size', v: +t.value });
-      return;
-    }
-    const pair = syncPair(t, 'data-ty-lh', 'data-ty-lhn');
-    if (pair && Number.isFinite(+pair.r.value)) apply(pair.r, { k: 'lh', v: +pair.r.value });
+    if (!closestTo(e.target, '[data-ty-lh]')) return;
+    const pair = syncPair(e.target, 'data-ty-lh', 'data-ty-lhn');
+    if (pair) apply(pair.r, { k: 'lh', v: +pair.r.value });
+  });
+  bar.addEventListener('change', e => {
+    const i = closestTo(e.target, '[data-ty-size], [data-ty-lhn]', HTMLInputElement);
+    if (i) commit(i);
   });
   bar.addEventListener('click', e => {
     const step = closestTo(e.target, '[data-ty-step]'),
@@ -217,16 +237,30 @@ function initType() {
     const a = align?.dataset.tyAlign;
     if (align && isAlign(a)) apply(align, { k: 'align', v: a });
   });
-  // Enter in a field closes the dropdown, with the keyboard back on its button, or on ··· when it folded in there
+  // Enter in a field lands its number and closes the dropdown, with the keyboard back on its button, or on ··· when
+  // it folded in there
   bar.addEventListener('keydown', e => {
     const i = closestTo(e.target, '[data-ty-size], [data-ty-lhn]', HTMLInputElement);
     if (!i) return;
     e.stopPropagation();
     if (e.key !== 'Enter') return;
     e.preventDefault();
+    commit(i);
     closeSbPops();
     focusBar('[data-pop="type"]');
   });
+  // Esc leaves what was typed and not yet landed, so the field's blur as the dropdown closes changes nothing.
+  // Registered before the bar's own Esc, which closes the dropdown.
+  addEventListener(
+    'keydown',
+    e => {
+      const i = closestTo(e.target, '[data-ty-size], [data-ty-lhn]', HTMLInputElement),
+        ts = i && ownersOf(i);
+      if (e.key !== 'Escape' || !i || !ts) return;
+      i.value = i.matches('[data-ty-size]') ? sizeShown(ts) : lhField(ts);
+    },
+    true,
+  );
 }
 
 /** A wireframe text's size, weight, line height and alignment, in one dropdown whose trigger shows the size. */
