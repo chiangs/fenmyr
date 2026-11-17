@@ -83,6 +83,10 @@ const openToolbarSettings = () => {
 // default) still show: a bar of Select alone costs more than a wide chat does.
 const JOIN_KEEPS = 4;
 
+// Whether the right widgets reach down beside the bar. The open chat's clearance lifts their column, so while it does
+// the bar keeps to the column as the closed chat leaves it, and nothing in the bar changes as the chat opens or closes.
+let widgetsReach = false;
+
 // tools that don't fit tuck into ··· at the end: the bar ends 16 px inside the window, or 14 px before the right
 // widgets where they reach down to it, so it never covers them. On a computer they also leave room for Myra's chat to
 // open joined to them, open or not so nothing jumps, unless that would tuck past JOIN_KEEPS.
@@ -95,8 +99,9 @@ function fitToolbar() {
   const bar = $('dock').getBoundingClientRect(),
     widgets = htmlIn($('sideR'), ':scope > *')
       .filter(w => w.checkVisibility())
-      .map(w => w.getBoundingClientRect()),
-    end = widgets.some(w => w.bottom > bar.top) ? Math.min(...widgets.map(w => w.left)) - 14 : innerWidth - 16,
+      .map(w => w.getBoundingClientRect());
+  if (!$('sideR').style.bottom) widgetsReach = widgets.some(w => w.bottom > bar.top);
+  const end = widgetsReach && widgets.length ? Math.min(...widgets.map(w => w.left)) - 14 : innerWidth - 16,
     room = end - bar.left - others,
     body = document.body.classList,
     desk = !body.contains('phone') && !body.contains('proto'),
