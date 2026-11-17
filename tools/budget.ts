@@ -63,12 +63,14 @@ function rawColours(file: string): Finding[] {
     .readFileSync(path.join(ROOT, file), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, c => c.replace(/[^\n]/g, ' '));
   const found: Finding[] = [];
-  for (const d of css.matchAll(/([^{};]+):([^{};]*)/g)) {
-    if (d[1]?.trim().startsWith('--')) continue;
-    const line = css.slice(0, d.index).split('\n').length,
-      n = (d[2] ?? '').match(RAW_COLOUR)?.length ?? 0;
-    found.push(...Array.from({ length: n }, () => ({ file, line, kind: 'rawColours' as const })));
-  }
+  // only inside a rule's braces: a selector like [style*="color: #302c26"] matches a literal in the page, and has to stay
+  for (const block of css.matchAll(/\{([^{}]*)\}/g))
+    for (const d of (block[1] ?? '').matchAll(/([^;:]+):([^;]*)/g)) {
+      if (d[1]?.trim().startsWith('--')) continue;
+      const line = css.slice(0, (block.index ?? 0) + 1 + (d.index ?? 0)).split('\n').length,
+        n = (d[2] ?? '').match(RAW_COLOUR)?.length ?? 0;
+      found.push(...Array.from({ length: n }, () => ({ file, line, kind: 'rawColours' as const })));
+    }
   return found;
 }
 
