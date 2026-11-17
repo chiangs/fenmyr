@@ -65,7 +65,11 @@ try {
   for (const [what, ids] of Object.entries(SELECTIONS)) {
     await page.evaluate(i => window.__fenmyr.selectOnly(i), ids);
     await settle(page, 300);
-    assert.deepStrictEqual(await folded(), { tucked: [], label: true }, `at 1280 the bar for a ${what} folds nothing`);
+    assert.deepStrictEqual(
+      await folded(),
+      { tucked: [], label: true },
+      `at 1280 the bar for the ${what} folds nothing`,
+    );
     const before = BEFORE[what];
     if (!before) continue;
     await page.click('#selbar [data-pieces]');
@@ -75,7 +79,7 @@ try {
     assert.deepStrictEqual(
       [...old].sort(),
       [...before].sort(),
-      `with the picker open a ${what}’s bar tucks away what it did before: ${tucked}`,
+      `with the picker open the ${what}’s bar tucks away what it did before: ${tucked}`,
     );
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');

@@ -30,6 +30,14 @@ export function markVisit() {
   marks.visit = true;
 }
 
+/** Lets the visit's step go once no dropdown is open, however it closed: a pick, Esc, a press elsewhere or its own
+ *  trigger. Runs every frame. */
+export function endVisit() {
+  if (!marks.visit || document.querySelector('.sb-popw.open')) return;
+  marks.visit = false;
+  holdSnapshots(false);
+}
+
 // a slider and its number box sit side by side: a change in one moves the other. Returns the one that changed,
 // the slider, and the setting it's for (the attribute's value), or null when the event isn't from this pair.
 export function syncPair(target: EventTarget | null, rangeAttr: string, numAttr: string) {
@@ -79,10 +87,7 @@ export function closeSbPops() {
     w.classList.remove('open');
   });
   marks.fs = marks.sp = marks.sk = marks.sq = false;
-  if (marks.visit) {
-    marks.visit = false;
-    holdSnapshots(false);
-  }
+  endVisit();
   if (was) $('selbar').dataset.key = '';
 }
 

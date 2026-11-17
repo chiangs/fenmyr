@@ -7,7 +7,7 @@ import { initPiecePick, syncPicker } from '../wireframe/piecePick.ts';
 import { initScreenHints } from '../wireframe/screenHint.ts';
 import { arrange } from './arrange.ts';
 import { initBarKeys, keepFocus } from './barKeys.ts';
-import { closeSbPops, foldSelbar, initIcons, initPops, initTips, snapSoon } from './barKit.ts';
+import { closeSbPops, endVisit, foldSelbar, initIcons, initPops, initTips, snapSoon } from './barKit.ts';
 import { collColours, noteColours } from './colours.ts';
 import { type BarContext, barContext, barPaused, type SelBarContext } from './context.ts';
 import { corners } from './corners.ts';
@@ -208,6 +208,7 @@ export function init56() {
   (function tick() {
     syncScreenBar();
     syncPicker();
+    endVisit();
     placeSelbar();
     drawOverlays();
     requestAnimationFrame(tick);

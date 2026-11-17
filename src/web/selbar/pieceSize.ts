@@ -1,15 +1,15 @@
 import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { renderWires, selectOnly } from '../canvas/wires.ts';
+import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { session } from '../core/state.ts';
 import { keyedButton } from '../input/keyed.ts';
 import { closestTo, esc, htmlIn, oneIn } from '../ui/dom.ts';
 import { fileIntoFrame, onFrame } from '../wireframe/tilt.ts';
 import { DEVICES, type Device, isDevice } from '../wireframe/wireframes.ts';
 import { caret, closeSbPops, FOLD_PIECE, G, markVisit, pop } from './barKit.ts';
 import { group, one } from './group.ts';
-import { selCards } from './selected.ts';
 
 type Field = 'name' | 'x' | 'y' | 'w' | 'h' | 'rot' | 'isz';
 type SizeOf =
@@ -52,12 +52,7 @@ function sizeOf(c: Card | null | undefined): SizeOf | null {
   }
 }
 
-/** The device a screen is sized as, or Custom once its size is anything else, so a resize by hand shows Custom. */
-const deviceOf = (c: CardOf<'frame'>): Device | 'Custom' => {
-  const d = c.device,
-    size = isDevice(d) ? DEVICES[d] : undefined;
-  return isDevice(d) && Math.round(c.w) === size?.[0] && Math.round(c.h) === size[1] ? d : 'Custom';
-};
+const deviceOf = (c: CardOf<'frame'>): Device | 'Custom' => (isDevice(c.device) ? c.device : 'Custom');
 
 function triggerOf(s: SizeOf) {
   switch (s.kind) {
@@ -124,23 +119,22 @@ function sizeHtml(s: SizeOf) {
     lead = s.kind === 'screen' && first ? fieldHtml(s.c, first) + devicesHtml(s.c) : '',
     fields = (lead ? rest : FIELDS[s.kind]).map(f => fieldHtml(s.c, f)).join(''),
     trig = esc(triggerOf(s)),
+    id = s.c.id,
     CARET = caret();
   return G(
     FOLD_PIECE,
     pop(
       'size',
       `<b>${trig}</b>${CARET}`,
-      `<div class="sb-size">${lead}<div class="sbz-grid">${fields}</div></div>`,
+      `<div class="sb-size" data-size-for="${id}">${lead}<div class="sbz-grid">${fields}</div></div>`,
       tipOf(s),
       readOf(s),
     ),
   );
 }
 
-const sizeNow = () => {
-  const cs = selCards();
-  return sizeOf(cs.length === 1 ? cs[0] : null);
-};
+// the card a dropdown was drawn for, which may no longer be the one selected
+const ownerOf = (el: Element) => sizeOf(byId(el.closest<HTMLElement>('[data-size-for]')?.dataset.sizeFor ?? ''));
 
 // a screen brings what sits on it along, as a drag does; a piece is filed into whatever screen it lands on
 function moveTo(c: Card, axis: 'x' | 'y', n: number) {
@@ -183,33 +177,37 @@ function setField(c: Card, f: Field, raw: string): Card[] {
   }
 }
 
+// a field can commit as a press elsewhere selects another card, so the selection is redrawn only while it's this card
 function changed(c: Card, cs: Card[]) {
   cs.forEach(k => {
     renderCard(k);
   });
-  selectOnly([c.id]);
+  if (session.sel.size === 1 && session.sel.has(c.id)) selectOnly([c.id]);
   renderWires();
   save();
 }
 
+// the value goes on the card the dropdown was drawn for, which may no longer be the one selected
 function commit(i: HTMLInputElement) {
   const f = i.dataset.size,
-    s = sizeNow();
+    s = ownerOf(i);
   if (!isField(f) || !s || s.c.locked || shownOf(s.c, f) === i.value) return;
   markVisit();
   const cs = setField(s.c, f, i.value);
   if (cs.length) changed(s.c, cs);
 }
 
-// closes the dropdown, with the keyboard back on the button that opened it
+// closes the dropdown, with the keyboard back on the button that opened it, or on ··· when it had folded in there
 function closeTo(el: Element) {
-  const trig = oneIn($('selbar'), '[data-pop="size"]');
+  const bar = $('selbar'),
+    folded = !!el.closest('.sb-morebody');
   closeSbPops();
-  if (keyedButton(el) || el instanceof HTMLInputElement) trig?.focus();
+  if (keyedButton(el) || el instanceof HTMLInputElement)
+    oneIn(bar, folded ? '[data-pop="more"]' : '[data-pop="size"]')?.focus();
 }
 
 function setDevice(d: string, el: HTMLElement) {
-  const s = sizeNow();
+  const s = ownerOf(el);
   if (s?.kind !== 'screen' || s.c.locked || !(isDevice(d) || d === 'Custom')) return;
   markVisit();
   if (isDevice(d)) [s.c.w, s.c.h, s.c.radius] = DEVICES[d];
@@ -264,10 +262,11 @@ function initSize() {
   addEventListener(
     'keydown',
     e => {
+      if (e.key !== 'Escape') return;
       const i = closestTo(e.target, '[data-size]', HTMLInputElement),
         f = i?.dataset.size,
-        s = sizeNow();
-      if (e.key === 'Escape' && i && isField(f) && s) i.value = shownOf(s.c, f);
+        s = i && ownerOf(i);
+      if (i && isField(f) && s) i.value = shownOf(s.c, f);
     },
     true,
   );

@@ -143,7 +143,12 @@ export function onRelease(e: PointerEvent) {
       }
     }
   }
-  if (d.mode === 'resize') save();
+  if (d.mode === 'resize') {
+    const c = byId(d.id);
+    // a screen sized by hand is no longer the device it was made as
+    if (c?.type === 'frame' && (c.w !== d.w0 || c.h !== d.h0)) c.device = 'Custom';
+    save();
+  }
   if (d.mode === 'gresize') {
     d.items.forEach(it => {
       renderCard(it.c);

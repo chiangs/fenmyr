@@ -150,6 +150,17 @@ try {
   const resized = await card('signin');
   assert.ok(resized.w > 393 && resized.h > 852, `the handle made it bigger: ${resized.w} × ${resized.h}`);
   assert.strictEqual(await trigger(), 'Custom', 'after a handle resize the trigger says Custom');
+  assert.deepStrictEqual(
+    [
+      resized.device,
+      await page.evaluate(() => {
+        const d = document.querySelector('#dzProps select[data-k="device"]');
+        return d instanceof HTMLSelectElement ? d.value : null;
+      }),
+    ],
+    ['Custom', 'Custom'],
+    'as do the screen itself and the panel',
+  );
   await open();
   const after = await fields();
   assert.deepStrictEqual(

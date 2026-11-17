@@ -47,7 +47,8 @@ export function remember() {
 /** While held, changes wait to become an undo step until it is let go, so a dropdown's many changes undo as one. */
 export function holdSnapshots(on: boolean) {
   held = on;
-  if (!on) remember();
+  if (on) clearTimeout(snapT);
+  else remember();
 }
 
 export function resetHistory() {
