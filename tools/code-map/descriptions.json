@@ -416,6 +416,7 @@
     "tests/perf.ts": "Times opening, dragging, zooming and editing a 500-card board against another branch.",
     "tests/persist.ts": "Checks a saved card keeps its content and drops what only mattered while running.",
     "tests/phone.ts": "Checks the phone layout opens a panel as a bottom sheet.",
+    "tests/phoneBarPops.ts": "Checks that on a phone the strip’s dropdowns, ··· and those folded into it, open above the strip and take presses.",
     "tests/piecePick.ts": "Checks Pieces in the bar, the picker's headings, thumbnails and search, every piece landing in its screen, three picks in a row, undo per pick, and the Box and Text cells.",
     "tests/piecePickAccess.ts": "Checks the empty-screen hint hiding while its screen's picker is open, pictures without the hint or picker, Tab through the grid, the eraser and Space over the hint, and the hint on every fill.",
     "tests/piecePickClose.ts": "Checks what closes the Pieces picker and what keeps it, the keyboard from F10 through its grid, and the bar folding clear of it.",

@@ -1584,6 +1584,10 @@ body.phone .selbar .sb-ic svg, body.phone .dock .drawbar .db-tool svg { width: 2
 /* phone: the action bar scrolls sideways, so its far edge fades to say "there's more" */
 body.phone .dock .selbar { -webkit-mask-image: linear-gradient(90deg, var(--shade) calc(100% - 34px), transparent); mask-image: linear-gradient(90deg, var(--shade) calc(100% - 34px), transparent); }
 body.phone .dock .selbar.end { -webkit-mask-image: none; mask-image: none; }
+/* the strip scrolls, which clips anything outside it: while a dropdown is open it lets the dropdown out, and every
+   dropdown, ··· and those inside it too, opens just above the strip and as wide as it */
+body.phone .dock .selbar:has(.sb-popw.open) { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+body.phone .dock .selbar .sb-popw.open > .sb-pop { position: fixed; left: 0; right: 0; top: auto; bottom: calc(100% + 12px); translate: none; justify-content: center; }
 /* the left column scrolls, and scrolling clips shadows into hard edges: give it 20px of invisible room on every side
    (and pull it out by the same amount) so the panels sit exactly where they did and their shadows fade out softly */
 .side { left: -6px; top: -6px; bottom: -6px; width: calc(var(--side) + 40px); padding: 20px; scroll-padding: 20px; }
