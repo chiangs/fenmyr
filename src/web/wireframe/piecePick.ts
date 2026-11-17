@@ -22,8 +22,9 @@ import { screenOf } from './screenScope.ts';
 
 /** What a pick does: add to a screen. Swapping icons (8d) widens it. */
 type PickFor = { kind: 'add'; screen: string };
-/** The picker's only state. `from` is what opened it, which Esc gives focus back to. */
-type Picker = { for: PickFor; view: View; from: 'bar' | 'hint' } | null;
+/** The picker's only state. `from` is what opened it, which Esc gives focus back to. `loose` is what a drop from the
+ *  grid left off any screen: while it is the selection, the picker stays with its screen. */
+type Picker = { for: PickFor; view: View; from: 'bar' | 'hint'; loose: readonly string[] } | null;
 /** What a drag from a grid, the picker's or the Wireframe panel's, carries onto the board. */
 export type Drop = { kind: 'piece' | 'icon'; name: string };
 type GridDrag = { drop: Drop; x: number; y: number; on: boolean } | null;
@@ -71,7 +72,7 @@ function showView(view: View) {
 /** Opens the picker on a screen, docked beside it, with the cursor in its search. */
 export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
   const fresh = !picker;
-  picker = { for: { kind: 'add', screen: screen.id }, view: picker?.view ?? 'pieces', from };
+  picker = { for: { kind: 'add', screen: screen.id }, view: picker?.view ?? 'pieces', from, loose: [] };
   if (fresh) search().value = '';
   showView(picker.view);
   el().hidden = false;
@@ -189,8 +190,10 @@ function showScreen(s: CardOf<'frame'>) {
 export function syncPicker() {
   if (!picker) return;
   const s = boundScreen(),
-    sel = selCards();
-  if (homeAt || !s || (sel.length > 0 && screenOf(sel)?.id !== s.id)) return closePicker();
+    sel = selCards(),
+    loose = picker.loose,
+    dropped = sel.length === loose.length && sel.every(c => loose.includes(c.id));
+  if (homeAt || !s || (sel.length > 0 && !dropped && screenOf(sel)?.id !== s.id)) return closePicker();
   const paused = !onPhone() && gestureRuns();
   el().classList.toggle('paused', paused);
   if (!paused && !stage.classList.contains('moving')) dock(s);
@@ -251,6 +254,17 @@ function dragEnd(e: PointerEvent) {
   if (placing?.type !== d.drop.kind || over?.closest(CHROME)) return stopPlacing();
   remember();
   placeAt(toWorld(e.clientX, e.clientY));
+  keepAfterDrop();
+}
+
+// A drop keeps the picker open: one on another screen moves it to that screen, and one on the bare board leaves it
+// with its own while what was dropped stays selected.
+function keepAfterDrop() {
+  if (!picker) return;
+  const sel = selCards(),
+    on = screenOf(sel);
+  if (on) picker.for = { kind: 'add', screen: on.id };
+  else picker.loose = sel.map(c => c.id);
 }
 
 function onKey(e: KeyboardEvent) {

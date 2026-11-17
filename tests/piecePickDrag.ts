@@ -1,6 +1,7 @@
 // The Pieces picker's Icons view adds an icon into its screen, and a piece or icon dragged out of the grid lands where it
-// is let go: on a screen, filed into it, or on the bare board. Let go over the picker, it lands nowhere. A click on a
-// cell while a drag moves the board adds nothing.
+// is let go: on a screen, filed into it, or on the bare board. Either way the picker stays open: a drop on another
+// screen moves it there, and one on the bare board leaves it with its own. Let go over the picker, it lands nowhere. A
+// click on a cell while a drag moves the board adds nothing.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -63,6 +64,15 @@ const dragOut = async (cell: string, to: { x: number; y: number }) => {
   await page.mouse.up();
   await settle(page, 300);
 };
+const shown = () => page.evaluate(() => !document.getElementById('piecePick')?.hidden);
+// selects the screen and opens the picker on it, unless it is open there already
+const openOn = async (id: string) => {
+  await page.evaluate(i => window.__fenmyr.selectOnly([i]), id);
+  await settle(page, 250);
+  if ((await page.getAttribute('#selbar [data-pieces]', 'aria-expanded')) !== 'true')
+    await page.click('#selbar [data-pieces]');
+  await settle(page, 250);
+};
 // a piece or icon is let go with its top-left corner 14 px up and left of the pointer, as the ghost carries it
 const near = (c: { x: number; y: number } | undefined, w: { x: number; y: number; z: number }) =>
   !!c && Math.abs(c.x - (w.x - 14 / w.z)) < 2 && Math.abs(c.y - (w.y - 14 / w.z)) < 2;
@@ -104,39 +114,66 @@ try {
     `an icon dragged onto the bare board lands where it is let go: ${JSON.stringify(dropped)}`,
   );
 
-  assert.ok(
-    await page.evaluate(() => document.getElementById('piecePick')?.hidden),
-    'the icon on the bare board is selected, off the screen, so the picker closes',
+  assert.ok(await shown(), 'after a drop on the bare board the picker stays open');
+  before = await cards();
+  await page.click('#pkGrid [data-pk-icon="heart"]');
+  await settle(page, 300);
+  assert.deepStrictEqual(
+    (await made(before)).map(c => c.on),
+    ['signin'],
+    'and its next pick still goes into its own screen',
   );
-  await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
-  await page.click('#selbar [data-pieces]');
-  await settle(page, 250);
   const onScreen = await pointIn('desk', 0.8, 0.8);
   before = await cards();
-  await dragOut('#pkGrid [data-pk-piece="Video"]', onScreen);
-  let video = await made(before);
-  const w = await toWorld(onScreen.x, onScreen.y);
+  await dragOut('#pkGrid [data-pk-icon="heart"]', onScreen);
+  const icon = await made(before),
+    w = await toWorld(onScreen.x, onScreen.y);
   assert.ok(
-    video.length > 0 && video.every(c => c.on === 'desk') && near(corner(video), w),
-    `Video dragged onto a screen lands where it is let go, filed in: ${JSON.stringify({ video, w })}`,
+    icon.length === 1 && icon[0]?.on === 'desk' && near(corner(icon), w),
+    `an icon dragged onto another screen lands where it is let go, filed in: ${JSON.stringify({ icon, w })}`,
+  );
+  assert.ok(await shown(), 'after a drop on another screen the picker stays open');
+  before = await cards();
+  await page.click('#piecePick [data-pk-view="pieces"]');
+  await page.fill('#pkSearch', '');
+  await page.click('#pkGrid [data-pk-piece="Heading"]');
+  await settle(page, 300);
+  assert.deepStrictEqual(
+    [
+      await shown(),
+      await page.getAttribute('#selbar [data-pieces]', 'aria-expanded'),
+      (await made(before)).map(c => c.on),
+    ],
+    [true, 'true', ['desk', 'desk']],
+    'a drop on another screen keeps the picker open and moves it there, so the next pick goes into that screen',
+  );
+  await page.evaluate(() => window.__fenmyr.selectOnly(['font']));
+  await settle(page, 250);
+  assert.ok(!(await shown()), 'selecting a card off its screen still closes it');
+
+  await openOn('signin');
+  const onDesk = await pointIn('desk', 0.6, 0.85);
+  before = await cards();
+  await dragOut('#pkGrid [data-pk-piece="Video"]', onDesk);
+  const onto = await made(before),
+    dw = await toWorld(onDesk.x, onDesk.y);
+  assert.ok(
+    onto.length > 0 && onto.every(c => c.on === 'desk') && near(corner(onto), dw),
+    `Video dragged onto a screen lands where it is let go, filed in: ${JSON.stringify({ onto, dw })}`,
   );
 
-  await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
-  await page.click('#selbar [data-pieces]');
-  await settle(page, 250);
+  await openOn('signin');
   const off = await bare();
   before = await cards();
   await dragOut('#pkGrid [data-pk-piece="Video"]', off);
-  video = await made(before);
-  const ow = await toWorld(off.x, off.y);
+  const video = await made(before),
+    ow = await toWorld(off.x, off.y);
   assert.ok(
     video.length > 0 && video.every(c => c.on === null) && near(corner(video), ow),
     `Video dragged onto the bare board lands there: ${JSON.stringify({ video, ow })}`,
   );
 
-  await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
-  await page.click('#selbar [data-pieces]');
-  await settle(page, 250);
+  await openOn('signin');
   const pick = await page.locator('#pkGrid .pk-h').first().boundingBox();
   if (!pick) throw new Error('no heading');
   before = await cards();
