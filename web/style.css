@@ -28,7 +28,7 @@ kbd { font: 500 11px/1 var(--font); padding: 3px 6px; border-radius: 6px; backgr
 
 /* the side panels', Home's and menus' own colours; #251 turns these into per-theme tokens */
 :root {
-  --pn-add-edge: #e3dcd5; --pn-amber: #965f23; --pn-check: #d9771f; --pn-danger: #d6455d; --pn-danger-hover: #bf3850;
+  --pn-add-edge: #e3dcd5; --pn-amber: #965f23; --pn-danger: #d6455d; --pn-danger-hover: #bf3850;
   --pn-dark-add-edge: #524c44; --pn-dark-box: #26211c; --pn-dark-home: #12100d; --pn-dark-home-dot: #332d25; --pn-dark-ink: #1d1a16;
   --pn-dark-tip: #f6f2ee; --pn-dark-tip-ink: #302c26; --pn-dark-top: #2b2722; --pn-folder: #f4f0ec; --pn-folder-face: #fbd9b7;
   --pn-home: #fdfaf7; --pn-home-dot: #e8e1da; --pn-hover: #fbf8f5; --pn-light-ink: #f0ebe4; --pn-menu-edge: #efebe6; --pn-menu-sep: #f1ede9;
@@ -185,7 +185,7 @@ button.zoom { justify-content: flex-end; font-family: inherit; font-size: 12px; 
   --chat-bg: #282830; --chat-bg-10: #3b2d1f; --chat-bg-2: #f7f4f1; --chat-bg-3: #584a3c; --chat-bg-4: #2e2a25; --chat-bg-5: #fdecdb;
   --chat-bg-6: #2b2722; --chat-bg-7: #38332d; --chat-bg-8: #fdf1e2; --chat-bg-9: #fdf0e2; --chat-ink: #222222; --chat-ink-2: #7fd8ff;
   --chat-ink-3: #3f3a34; --chat-ink-4: #b8621a; --chat-ink-5: #f6c38a; --chat-line: #fde8d2; --chat-shadow: #3a2816; --dt-bg-3: #f0ebe4;
-  --dt-bg-4: #d9771f; --dt-ink-2: #1d1a16; --hub-shadow: #dca36a; --lf-shadow-2: #755a3f; --proto-ink: #d6455d; --proto-ink-2: #b7791f;
+  --dt-ink-2: #1d1a16; --hub-shadow: #dca36a; --lf-shadow-2: #755a3f; --proto-ink: #d6455d; --proto-ink-2: #b7791f;
   --proto-shadow: #3c2814;
 }
 .m-pill { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 10px; border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--chat-bg) r g b / .94); color: var(--hilite); box-shadow: 0 12px 30px rgb(from var(--chat-shadow) r g b / .3); cursor: pointer; transition: width .35s cubic-bezier(.2, .8, .3, 1); }
@@ -1424,7 +1424,7 @@ body.dark .dbs-knob { background: var(--coll-ink); }
   animation: lfPop .55s cubic-bezier(.3, 1.6, .5, 1) .05s both, lfWave .5s ease-in-out .6s 2 alternate; filter: drop-shadow(0 calc(3px * var(--iz)) calc(4px * var(--iz)) rgb(from var(--lf-shadow-2) r g b / .25)); }
 @keyframes lfPop { from { transform: scale(0) rotate(-20deg); } to { transform: scale(1) rotate(-6deg); } }
 @keyframes lfWave { from { transform: rotate(-6deg); } to { transform: rotate(6deg) translateY(calc(-2px * var(--iz))); } }
-.lf-spark { position: absolute; left: 0; top: 0; translate: calc(22px * var(--iz)) calc(-38px * var(--iz)); font: 700 calc(15px * var(--iz))/1 var(--font); color: var(--pink-deep); animation: lfSpark .9s ease-out .25s both; }
+.lf-spark { position: absolute; left: 0; top: 0; translate: calc(22px * var(--iz)) calc(-38px * var(--iz)); font: 700 calc(15px * var(--iz))/1 var(--font); color: var(--accent-text); animation: lfSpark .9s ease-out .25s both; }
 @keyframes lfSpark { 0% { opacity: 0; transform: scale(.3) rotate(0); } 40% { opacity: 1; transform: scale(1.15) rotate(40deg); } 100% { opacity: 0; transform: scale(.8) rotate(90deg); } }
 
 .tgl, label.set-row { cursor: pointer; }   /* switches are buttons, never a text cursor (with the system cursor too) */
@@ -1448,7 +1448,7 @@ body.phone .hub { display: grid; grid-template-columns: repeat(5, 1fr); align-it
 .hub button { position: relative; display: grid; justify-items: center; align-content: center; gap: 3px; height: 52px; border: 0; border-radius: 22px; corner-shape: squircle; background: none; color: var(--ink-soft); font: 600 10.5px/1 var(--font); -webkit-tap-highlight-color: transparent; }
 .hub button svg { width: 22px; height: 22px; }
 .hub button.on { color: var(--ink); background: var(--blush); }
-.hub .hub-add { width: 58px; height: 58px; justify-self: center; margin-top: -26px; border-radius: 50%; background: var(--pink-deep); color: var(--hilite); box-shadow: 0 10px 24px rgb(from var(--hub-shadow) r g b / .45), 0 0 0 5px rgb(from var(--hilite) r g b / .95); transition: transform .2s; }
+.hub .hub-add { width: 58px; height: 58px; justify-self: center; margin-top: -26px; border-radius: 50%; background: var(--pink-deep); color: var(--on-accent); box-shadow: 0 10px 24px rgb(from var(--hub-shadow) r g b / .45), 0 0 0 5px rgb(from var(--hilite) r g b / .95); transition: transform .2s; }
 .hub .hub-add svg { width: 26px; height: 26px; }
 .hub .hub-add.on { background: var(--ink); color: var(--hilite); transform: rotate(45deg); }
 .hub canvas { width: 30px; height: 26px; image-rendering: pixelated; }
@@ -1629,7 +1629,7 @@ html.native .side { top: 18px; }
 
 .dt-myra { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; margin-left: auto; padding: 0 12px 0 10px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--hilite); font: 700 12.5px/1 var(--font); cursor: pointer; }
 .dt-myra svg { width: 16px; height: 16px; }
-.dt-myra:hover, .dt-myra.open { background: var(--dt-bg-4); }
+.dt-myra:hover, .dt-myra.open { background: var(--pink-deep); color: var(--on-accent); }
 
 /* the floating bar over selected words */
 .dv-bubble { position: fixed; z-index: 60; display: none; align-items: center; gap: 2px; padding: 4px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgb(from var(--dv-pop-shadow) r g b / .22), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
@@ -1778,7 +1778,7 @@ body.phone .clean-btn, body.exporting .clean-back { display: none; }
   box-shadow: 0 10px 28px rgba(var(--sh), calc(.16 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.07 * var(--sh-k))); animation: ubIn .45s cubic-bezier(.3, 1.4, .5, 1); }
 .upbar[hidden] { display: none; }
 @keyframes ubIn { from { opacity: 0; translate: -50% -10px; } }
-.ub-spark { color: var(--accent, var(--vd-ink-2)); font-size: 13px; margin-right: 4px; }
+.ub-spark { color: var(--accent-text); font-size: 13px; margin-right: 4px; }
 .ub-text { margin-right: 6px; }
 .upbar button { border: 0; cursor: pointer; font: inherit; border-radius: var(--pill-r); corner-shape: squircle; }
 .ub-link { padding: 7px 10px; background: none; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 3px; }
@@ -1905,7 +1905,7 @@ body.dark .card.spotify .body { background: var(--dark-raised); }
   font: 500 11.5px/1.3 var(--font); color: var(--ink-soft); cursor: pointer; }
 .au-dev:hover { background: rgb(from var(--clean-bg) r g b / .07); color: var(--ink); } .au-dev svg { width: 13px; height: 13px; flex: none; }
 .row-menu .dm-h { font: 700 10.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); pointer-events: none; }
-.row-menu .dm-ck { display: inline-block; width: 16px; color: var(--accent, var(--pn-check)); font-weight: 700; }
+.row-menu .dm-ck { display: inline-block; width: 16px; color: var(--accent-text); font-weight: 700; }
 
 /* Settings → Camera & microphone */
 .dev-sel { max-width: 230px; height: 34px; padding: 0 30px 0 12px; border: 0; border-radius: 14px; corner-shape: squircle; background: var(--dp-bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238d8595' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 10px center / 11px;
@@ -1973,7 +1973,7 @@ body.dark .box header .gear[data-tip]::after { background: var(--pn-dark-tip); c
 /* writing out a video: a button in its bar, and the words underneath */
 .vd-txb { width: 28px; height: 28px; display: grid; place-items: center; flex: none; border: 0; border-radius: 50%; background: none; color: var(--ink-soft); cursor: pointer; position: relative; }
 .vd-txb:hover { background: rgb(from var(--vd-bg) r g b / .9); color: var(--ink); }
-.vd-txb.on { color: var(--pink-deep, var(--vd-ink-2)); }
+.vd-txb.on { color: var(--accent-text); }
 .vd-txb[data-tip]::after { content: attr(data-tip); position: absolute; right: 0; bottom: calc(100% + 6px); padding: 5px 9px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--hilite); font: 600 10.5px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s; }
 .vd-txb[data-tip]:hover::after { opacity: 1; transition-delay: .25s; }
 .vd-txt { flex: none; height: 120px; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; background: var(--fill, var(--snow)); border-top: 1px solid rgb(from var(--clean-bg) r g b / .08); }
@@ -1988,7 +1988,7 @@ body.dark .vd-txt-acts button { background: rgb(from var(--hilite) r g b / .08);
 /* the video bar's small icons (sound, captions) match: soft gray, a gentle shade on hover, never heavier */
 .vd-bar .vd-txb, .vd-bar .vd-mute { color: var(--ink-soft) !important; transition: background .12s, color .12s; }
 .vd-bar .vd-txb:hover, .vd-bar .vd-mute:hover { background: rgb(from var(--vd-bg) r g b / .9); color: var(--ink) !important; }
-.vd-bar .vd-txb.on { color: var(--pink-deep, var(--vd-ink-2)) !important; }
+.vd-bar .vd-txb.on { color: var(--accent-text) !important; }
 .vd-txb svg { stroke-width: 1.5; }
 body.dark .vd-bar .vd-txb:hover, body.dark .vd-bar .vd-mute:hover { background: rgb(from var(--hilite) r g b / .08); }
 
@@ -2984,8 +2984,8 @@ body.proto .dock { left: calc(var(--slot-l) + 8px); max-width: calc(var(--slot-w
 .kb input[type="range"] { accent-color: var(--ink); }
 /* calls to action in the git and GitHub setup, the repo and prototype dialogs, and Keep these values use the accent */
 body .git-setup .set-btn.hot, body .rl-body .set-btn.hot, body #npOk, body .pv-btn.hot { background: var(--pink-deep); border-color: var(--pink-deep); color: var(--hilite); }
-/* text on the amber fill is ink, so it reads at 4.5:1 (the prototype board's .pv-btn.hot follows with the Myra work) */
-body .git-setup .set-btn.hot, body .rl-body .set-btn.hot, body #npOk { color: var(--on-accent); }
+/* text on the amber fill is ink, so it reads at 4.5:1 */
+body .git-setup .set-btn.hot, body .rl-body .set-btn.hot, body #npOk, body .pv-btn.hot { color: var(--on-accent); }
 body .git-setup .set-btn.hot:hover, body .rl-body .set-btn.hot:hover, body #npOk:hover, body .pv-btn.hot:hover { filter: brightness(1.08); }
 body.following-caelestia .git-setup .set-btn.hot, body.following-caelestia .rl-body .set-btn.hot, body.following-caelestia #npOk, body.following-caelestia .pv-btn.hot { background: var(--pink-deep); border-color: var(--pink-deep); color: var(--panel); }
 .kb-acts { display: flex; gap: 6px; margin-left: auto; }
