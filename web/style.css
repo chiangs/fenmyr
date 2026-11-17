@@ -441,6 +441,8 @@ body { --bar-b: 18px; }
 /* her box: one piece with the tools, as wide whatever her name */
 .dock .m-pill { width: 200px; border: 0; text-align: start; }
 body:not(.proto, .phone) .dock .tools { border-start-end-radius: 0; border-end-end-radius: 0; }
+/* a 1 px gap, so all the tools show at 1440 px beside the room kept for a joined chat */
+body:not(.proto, .phone) .dock .tools { gap: 1px; }
 body:not(:has(.stage.at-home)) .dock .m-pill { border-start-start-radius: 0; border-end-start-radius: 0; }
 /* a joined chat covers her box, and its input is where the box was; she flies on over it into the header */
 .myra.chat:has(> .m-chat[data-place="joined"]) .m-pill { visibility: hidden; }

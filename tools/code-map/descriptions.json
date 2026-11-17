@@ -347,6 +347,7 @@
     "tests/barLayer.ts": "The bottom bar's layer in the real app: what opens over Myra's chat, the bar clear of a tall Unsorted, and presses reaching an open doc.",
     "tests/barPlace.ts": "Checks where the context bar goes, worked out without the app: above, flipped, stuck, slid and beside a line.",
     "tests/barRoom.ts": "The selection bar where room runs short: dropdowns near the top of the view, presses on the bar, and a 900 px window.",
+    "tests/barTucks.ts": "With the Wireframe button after Canvas, every tool shows at 1440 × 900, and at 1366 and 1280 px the same tools tuck into ··· as before it.",
     "tests/barVisitUndo.ts": "Checks that Delete or Ctrl+D pressed while a size dropdown is open takes its own undo step after the dropdown's, and that Size then Align ▾ undo one at a time.",
     "tests/bottomBar.ts": "The bottom bar in the real app: where it sits, what hides it, pictures dropped and the wheel on it, its place in Tab order, and a phone's strips.",
     "tests/build.ts": "Tests Myra building a prototype through a stand-in Claude Code, with Undo.",

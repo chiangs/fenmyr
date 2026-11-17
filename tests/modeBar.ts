@@ -162,11 +162,7 @@ await stopAll();
 await check('while drawing the Draw button is lit, and picking another tool stops drawing', async () => {
   await page.keyboard.press('p');
   await frames();
-  // at 1440 px Draw is tucked into ···, which lights for it
-  assert.ok(
-    await seen('#tools [data-add="draw"].on:not(.tb-over), #tools:has(> [data-add="draw"].on.tb-over) > #tbMore'),
-    'the Draw button, or ··· holding it, is lit',
-  );
+  assert.ok(await seen('#tools [data-add="draw"].on'), 'the Draw button is lit');
   await page.evaluate(() => document.querySelector<HTMLElement>('#tools [data-add="note"]')?.click());
   await frames();
   assert.ok(!(await seen('#drawbar')), 'picking Note stops drawing');

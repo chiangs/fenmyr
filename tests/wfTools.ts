@@ -230,7 +230,9 @@ try {
     assert.deepStrictEqual(await tools(), DOWN, 'the lit Wireframe button puts R’s box down too');
   });
 
-  await check('··· lights while a tool tucked in it is in hand, as drawing is at 1440 px', async () => {
+  await check('··· lights while a tool tucked in it is in hand, as drawing is at 1280 px', async () => {
+    await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 800));
+    await settle(page, 500);
     await key('p');
     const drawing = await page.evaluate(() => {
       const more = document.getElementById('tbMore'),
@@ -244,6 +246,8 @@ try {
     assert.ok(drawing.on, 'Draw is on and tucked');
     assert.notStrictEqual(drawing.more, drawing.rest, '··· is lit while drawing');
     await key('Escape');
+    await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1440, 900));
+    await settle(page, 500);
   });
 
   await check('at a width that tucks it, the button sits in ··· and works from there', async () => {
