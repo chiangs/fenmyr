@@ -11,7 +11,7 @@ import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
 import { caret, closeSbPops, FOLD_PIECE, G, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
 import { every, group, only } from './group.ts';
-import { initOpacity, opacityHtml } from './opacity.ts';
+import { opacityHtml } from './opacity.ts';
 import { selCards } from './selected.ts';
 
 const BOX_FILLS = [
@@ -303,8 +303,6 @@ function initFill() {
       rebuildBar();
     }
   });
-
-  initOpacity();
 }
 
 export const fill = group({ on: every(fillable), html: boxFillHtml, init: initFill });

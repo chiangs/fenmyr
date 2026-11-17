@@ -16,6 +16,7 @@ import { grouping, moreAndDelete, newSection, prototype, section, tilt } from '.
 import { fill, shapeFill, textColour } from './fill.ts';
 import { barRoom, floatBar, floatModeBar } from './float.ts';
 import { initFontPop } from './fontPop.ts';
+import { opacity } from './opacity.ts';
 import { group } from './group.ts';
 import { lineStyle } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
@@ -108,6 +109,7 @@ const GROUPS = [
   spotify,
   lineStyle,
   shapeFill,
+  opacity,
   text,
   fill,
   textColour,

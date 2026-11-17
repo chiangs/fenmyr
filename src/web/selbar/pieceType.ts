@@ -6,7 +6,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { cardEl, closestTo, htmlIn, oneIn } from '../ui/dom.ts';
-import { caret, closeSbPops, FOLD_PIECE, focusBar, G, inVisit, pct, pop, syncPair } from './barKit.ts';
+import { ARROWS, caret, closeSbPops, FOLD_PIECE, focusBar, G, inVisit, pct, pop, syncPair } from './barKit.ts';
 import { fontButton, fontTargets } from './fontPop.ts';
 import { cards, group } from './group.ts';
 
@@ -41,8 +41,6 @@ const DEF = { size: 18, weight: 500, lh: 1.3, align: 'left' } as const;
 // at least what the Wireframe panel let a text keep, which had no ends of its own
 const SIZE = { min: 1, max: 1000 },
   LH = { min: 0.5, max: 4, step: 0.05 };
-
-const ARROWS: Readonly<Record<string, number>> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
 
 const isText = (c: Card): c is CardOf<'text'> => c.type === 'text';
 const isWeight = (n: number): n is Weight => WEIGHTS.some(([w]) => w === n);

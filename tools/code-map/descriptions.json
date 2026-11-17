@@ -274,7 +274,7 @@
     "src/web/selbar/fontUse.ts": "The font picker’s Use row for any Google font: it lands a typed name only once Google Fonts sends it, and says why when it can’t.",
     "src/web/selbar/group.ts": "The one shape every group on the selection bar has, and how a group says which selections it shows for.",
     "src/web/selbar/lineStyle.ts": "Line looks: wavy, zigzag, loopy and their sliders.",
-    "src/web/selbar/opacity.ts": "Fill’s Opacity row for boxes: a slider and a number in per cent.",
+    "src/web/selbar/opacity.ts": "Opacity for boxes as a slider and a number in per cent: a row in Fill, and a picture’s own dropdown.",
     "src/web/selbar/overlays.ts": "Dims the board’s name when a card slides under it.",
     "src/web/selbar/own.ts": "The buttons only one kind of card has (open, flip, crop, caption, swatch, link), its label, tags and due date, and the crop bar.",
     "src/web/selbar/pieceIcon.ts": "Change icon in the bar, for icons alone: it opens the Pieces picker on its icons to swap every selected one.",
