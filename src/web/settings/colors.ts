@@ -289,9 +289,9 @@ export function init28() {
   });
 
   addEventListener('resize', fitSides);
-  document.querySelectorAll('.side').forEach(el => {
-    new ResizeObserver(() => requestAnimationFrame(fitSides)).observe(el);
-  });
+  // the columns change with the window and the open chat, and the widgets in them as they fill, fold or load
+  const refit = new ResizeObserver(() => requestAnimationFrame(fitSides));
+  for (const el of htmlIn(document, '.side, #tray, .box[data-box]')) refit.observe(el);
 
   applyPanelH();
 

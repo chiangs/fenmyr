@@ -34,17 +34,21 @@ export function applyPanelH() {
   fitSides();
 }
 
-// a height you dragged (or saved) for Unsorted is a wish, trimmed so everything in its column stays on screen
+const setTrayH = (el: HTMLElement, h: number) => Object.assign(el.style, { height: `${h}px`, flex: `0 1 ${h}px` });
+
+// A height you dragged (or saved) for Unsorted is a wish, trimmed so everything in its column stays on screen. Each fit
+// starts again from the wish, so Unsorted grows back when its column does: the chat closing, a taller window.
 export function fitSides() {
-  document.querySelectorAll('.side').forEach(side => {
-    const over = side.scrollHeight - side.clientHeight;
-    if (over < 2) return;
-    const el = PANELS.tray?.();
-    if (!el || el.closest('.side') !== side || !el.closest('.sized')) return;
-    const cur = el.getBoundingClientRect().height,
-      h = Math.max(panelMin('tray'), Math.floor(cur - over));
-    if (h < cur) Object.assign(el.style, { height: `${h}px`, flex: `0 1 ${h}px` });
-  });
+  const el = PANELS.tray?.(),
+    side = el?.closest('.side'),
+    wish = settings.panelH.tray;
+  if (!el || !side || !wish) return;
+  setTrayH(el, Math.max(panelMin('tray'), wish));
+  const over = side.scrollHeight - side.clientHeight;
+  if (over < 2) return;
+  const cur = el.getBoundingClientRect().height,
+    h = Math.max(panelMin('tray'), Math.floor(cur - over));
+  if (h < cur) setTrayH(el, h);
 }
 
 // the height grips bulge on hover: the line widens and swells into a small round peak above and below, with a wobble that settles (a damped spring on its width and thickness)
