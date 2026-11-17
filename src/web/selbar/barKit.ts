@@ -2,7 +2,7 @@ import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
-import { holdSnapshots, remember, save } from '../core/history.ts';
+import { remember, save, visitChange } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
@@ -12,7 +12,7 @@ import { opensUp } from './float.ts';
 export let ICON: Record<string, string> = {};
 
 // one undo step per visit to a dropdown: set on the first change, cleared when the dropdown closes
-export const marks = { fs: false, sk: false, sp: false, sq: false, fill: false, corners: false, visit: false };
+export const marks = { fs: false, sk: false, sp: false, sq: false, fill: false, corners: false };
 
 // the first change in a dropdown visit makes the undo step
 export function markOnce(k: keyof typeof marks) {
@@ -21,21 +21,20 @@ export function markOnce(k: keyof typeof marks) {
   marks[k] = true;
 }
 
-/** The first change in a dropdown whose every change, however far apart, undoes as one step: it takes the step, and
- *  the changes after it join that step until the dropdown closes. */
-export function markVisit() {
-  if (marks.visit) return;
-  remember();
-  holdSnapshots(true);
-  marks.visit = true;
+// the dropdown whose changes are building one undo step
+let visited: Element | null = null;
+
+/** Makes a change from inside a dropdown whose every change, however far apart, undoes as one step until it closes. */
+export function inVisit(from: Element, change: () => void) {
+  const w = from.closest('.sb-popw');
+  visitChange(w !== visited, change);
+  visited = w;
 }
 
-/** Lets the visit's step go once no dropdown is open, however it closed: a pick, Esc, a press elsewhere or its own
- *  trigger. Runs every frame. */
+/** Ends the visit once its dropdown has closed, however it closed: a pick, Esc, a press elsewhere, its own trigger or
+ *  another dropdown opening. Runs every frame. */
 export function endVisit() {
-  if (!marks.visit || document.querySelector('.sb-popw.open')) return;
-  marks.visit = false;
-  holdSnapshots(false);
+  if (visited && !visited.classList.contains('open')) visited = null;
 }
 
 // a slider and its number box sit side by side: a change in one moves the other. Returns the one that changed,

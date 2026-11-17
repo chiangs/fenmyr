@@ -8,7 +8,7 @@ import { keyedButton } from '../input/keyed.ts';
 import { closestTo, esc, htmlIn, oneIn } from '../ui/dom.ts';
 import { fileIntoFrame, onFrame } from '../wireframe/tilt.ts';
 import { DEVICES, type Device, isDevice } from '../wireframe/wireframes.ts';
-import { caret, closeSbPops, FOLD_PIECE, G, markVisit, pop } from './barKit.ts';
+import { caret, closeSbPops, FOLD_PIECE, G, inVisit, pop } from './barKit.ts';
 import { group, one } from './group.ts';
 
 type Field = 'name' | 'x' | 'y' | 'w' | 'h' | 'rot' | 'isz';
@@ -192,9 +192,10 @@ function commit(i: HTMLInputElement) {
   const f = i.dataset.size,
     s = ownerOf(i);
   if (!isField(f) || !s || s.c.locked || shownOf(s.c, f) === i.value) return;
-  markVisit();
-  const cs = setField(s.c, f, i.value);
-  if (cs.length) changed(s.c, cs);
+  inVisit(i, () => {
+    const cs = setField(s.c, f, i.value);
+    if (cs.length) changed(s.c, cs);
+  });
 }
 
 // closes the dropdown, with the keyboard back on the button that opened it, or on ··· when it had folded in there
@@ -209,10 +210,11 @@ function closeTo(el: Element) {
 function setDevice(d: string, el: HTMLElement) {
   const s = ownerOf(el);
   if (s?.kind !== 'screen' || s.c.locked || !(isDevice(d) || d === 'Custom')) return;
-  markVisit();
-  if (isDevice(d)) [s.c.w, s.c.h, s.c.radius] = DEVICES[d];
-  s.c.device = d;
-  changed(s.c, [s.c]);
+  inVisit(el, () => {
+    if (isDevice(d)) [s.c.w, s.c.h, s.c.radius] = DEVICES[d];
+    s.c.device = d;
+    changed(s.c, [s.c]);
+  });
   closeTo(el);
 }
 

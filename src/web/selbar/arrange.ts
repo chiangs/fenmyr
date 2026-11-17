@@ -6,7 +6,7 @@ import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
 import { screenOf } from '../wireframe/screenScope.ts';
-import { caret, FOLD_PIECE, G, markVisit, pop } from './barKit.ts';
+import { caret, FOLD_PIECE, G, inVisit, pop } from './barKit.ts';
 import { cards, group } from './group.ts';
 import { selCards } from './selected.ts';
 
@@ -80,18 +80,16 @@ function arrangeHtml(a: Arrange) {
 }
 
 // What to move and the box to line it up in: the unlocked units and the space they fill, or one unit and its screen.
-// Lining up with each other is a step of its own; against a screen, a step for the dropdown's visit.
-function targetOf(a: Arrange) {
+type Target = { units: Card[][]; ref: CardOf<'frame'> | null };
+function targetOf(a: Arrange): Target | null {
   switch (a.ref) {
     case 'each other': {
       const units = unitsOf(a.units.flat().filter(c => !c.locked));
       if (units.length < 2) return null;
-      remember();
       return { units, ref: null };
     }
     case 'screen':
       if (a.unit.some(c => c.locked)) return null;
-      markVisit();
       return { units: [a.unit], ref: a.screen };
     default: {
       const unknown: never = a;
@@ -100,11 +98,18 @@ function targetOf(a: Arrange) {
   }
 }
 
-// line selected things up with each other or with their screen, or space them evenly (titles use their real drawn height)
-function arrangeAs(how: string) {
+// Lining up with each other is a step of its own; against a screen, a step for the dropdown's visit.
+function arrangeAs(how: string, from: Element) {
   const a = arrangeOf(selCards()),
     t = a && targetOf(a);
   if (!t) return;
+  if (t.ref) return inVisit(from, () => place(t, how));
+  remember();
+  place(t, how);
+}
+
+// line selected things up with each other or with their screen, or space them evenly (titles use their real drawn height)
+function place(t: Target, how: string) {
   const cs = t.units.flat();
   // real sizes right now (a title's saved width catches up a moment after it changes, which made the first click land off-center)
   const W = (c: Card) => (c.type === 'title' ? cardEl(c.id)?.offsetWidth || c.w : c.w),
@@ -220,10 +225,11 @@ function initArrange() {
   $('selbar').addEventListener(
     'click',
     e => {
-      const how = closestTo(e.target, '[data-arr]')?.dataset.arr;
-      if (!how) return;
+      const b = closestTo(e.target, '[data-arr]'),
+        how = b?.dataset.arr;
+      if (!b || !how) return;
       e.stopImmediatePropagation();
-      arrangeAs(how);
+      arrangeAs(how, b);
     },
     true,
   );
