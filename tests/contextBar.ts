@@ -1,5 +1,5 @@
 // The selection bar in the real app. First what it did before it floated: the typing state and F10, the crop bar, the
-// Wireframe panel and the phone strip. Then where it floats, for a selection and a connector, and that it steps aside
+// size fields following a drag, and the phone strip. Then where it floats, for a selection and a connector, and that it steps aside
 // during a drag, resize, pan or zoom.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
@@ -35,8 +35,8 @@ assert.deepStrictEqual(await cardOf('pic'), picBefore, 'Cancel leaves the pictur
 
 await view(-300, 300);
 await select(['wf']);
-const xField = () => page.evaluate(() => document.querySelector<HTMLInputElement>('#dzProps input[data-k="x"]')?.value);
-assert.strictEqual(await xField(), '800', 'a wireframe piece fills the Wireframe panel');
+const xField = () => page.evaluate(() => document.querySelector<HTMLInputElement>('#selbar [data-size="x"]')?.value);
+assert.strictEqual(await xField(), '800', "a wireframe box fills the bar's Size and place");
 const wf = await page.locator('#cards [data-id="wf"]').boundingBox();
 assert.ok(wf, 'the box is on screen');
 await page.mouse.move(wf.x + wf.width / 2, wf.y + wf.height / 2);
@@ -46,10 +46,9 @@ await page.mouse.up();
 await frames();
 const moved = await cardOf('wf');
 assert.ok(moved && moved.x !== 800, 'the box moved');
-assert.strictEqual(await xField(), String(Math.round(moved.x)), 'the panel follows it');
+assert.strictEqual(await xField(), String(Math.round(moved.x)), 'and its X follows the drag');
 await page.keyboard.press('Escape');
 await frames();
-assert.ok(await page.locator('#dzProps .dz-hint').count(), 'with nothing selected the panel shows its hint');
 
 const top = (s: { card: Edges | null; dot: Edges | null }) => Math.min(s.card?.t ?? NaN, s.dot?.t ?? Infinity);
 // 12 px over the selection, or over its turn dot when it has one

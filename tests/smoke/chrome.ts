@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Smoke } from './kit.ts';
+import { openPicker, type Smoke } from './kit.ts';
 
 // shortcut labels are written with the Mac symbols and read Ctrl+ here (so a Mac shows ⌘); Ctrl+, opens Settings even while typing
 export async function shortcutLabels(t: Smoke) {
@@ -154,18 +154,20 @@ export async function cursorEdge(t: Smoke) {
   });
 }
 
-// search and text fields get a clear (x) button; the wireframe search stays visible while the palette scrolls
+// search and text fields get a clear (x) button; the picker's search stays visible while its grid scrolls
 export async function clearButtons(t: Smoke) {
   const { page } = t,
     vis = () => page.evaluate(() => !document.getElementById('clrBtn')?.hidden && !!document.getElementById('clrBtn')),
-    pieces = () =>
-      page.evaluate(
-        () => window.__t.all('.dz-body [data-wf], .dz-body [data-piece]').filter(b => b.offsetParent).length,
-      );
+    pieces = () => page.evaluate(() => window.__t.all('#pkGrid [data-kw]').filter(b => b.offsetParent).length);
   await page.keyboard.press('Escape');
-  await page.mouse.click(700, 420);
-  await page.waitForTimeout(150);
-  await page.locator('#dzSearch').click();
+  const before = await page.evaluate(async () => {
+    const M = window.__fenmyr,
+      n = M.board.cards.length;
+    await M.applyMyra({ say: 'ok', screens: [{ name: 'Clear', device: 'iPhone', items: [{ piece: 'Heading' }] }] });
+    return n;
+  });
+  await openPicker(t);
+  await page.locator('#pkSearch').click();
   await page.waitForTimeout(150);
   const empty = await vis();
   await page.keyboard.type('box');
@@ -174,20 +176,29 @@ export async function clearButtons(t: Smoke) {
     hits = await pieces();
   await page.locator('#clrBtn').click();
   await page.waitForTimeout(150);
-  const value = await page.evaluate(() => window.__t.input('#dzSearch').value),
-    focus = await page.evaluate(() => document.activeElement?.id === 'dzSearch'),
+  const value = await page.evaluate(() => window.__t.input('#pkSearch').value),
+    focus = await page.evaluate(() => document.activeElement?.id === 'pkSearch'),
     after = await pieces();
   const sticky = await page.evaluate(async () => {
     const T = window.__t,
-      body = T.el('#design .dz-body');
-    body.scrollTop = 400;
+      grid = T.el('#pkGrid'),
+      top = T.el('#pkSearch').getBoundingClientRect().top;
+    grid.scrollTop = 400;
     await T.wait(100);
-    const a = T.el('#design .dz-search').getBoundingClientRect(),
-      b = body.getBoundingClientRect(),
-      res = { scrolled: body.scrollTop > 100, atTop: Math.abs(a.top - b.top) < 3 };
-    body.scrollTop = 0;
+    const res = {
+      scrolled: grid.scrollTop > 100,
+      still: Math.abs(T.el('#pkSearch').getBoundingClientRect().top - top) < 1,
+    };
+    grid.scrollTop = 0;
     return res;
   });
+  await page.keyboard.press('Escape');
+  await page.evaluate(n => {
+    const M = window.__fenmyr;
+    M.board.cards.length = n;
+    M.selectOnly([]);
+    M.renderAll();
+  }, before);
   await page.locator('#mcInput').evaluate(el => {
     el.closest('.m-chat')?.classList.add('on');
   });
@@ -197,7 +208,7 @@ export async function clearButtons(t: Smoke) {
     hiddenWhenEmpty: !empty,
     showsWithText: shown,
     clears: value === '' && focus && after > hits,
-    sticky: sticky.scrolled && sticky.atTop,
+    sticky: sticky.scrolled && sticky.still,
   });
 }
 
@@ -226,33 +237,40 @@ export async function heightGrips(t: Smoke) {
     own = await cursorClass('rsz');
   await page.mouse.move(5, 400);
   await page.waitForTimeout(900);
-  const dz = page.locator('.rz-grip[data-panel="design"]'),
-    d0 = await dz.boundingBox();
-  if (!d0) throw new Error('no design panel grip');
-  await page.mouse.move(d0.x + d0.width / 2, d0.y + 6);
-  await page.mouse.down();
-  await page.mouse.move(d0.x + d0.width / 2, d0.y + 6 + 30, { steps: 5 });
-  await page.waitForTimeout(150);
-  const d1 = await dz.boundingBox(),
-    sized = await page.evaluate(() => window.__t.el('#design').classList.contains('sized'));
+  const grip = page.locator('.rz-grip[data-panel="tray"]'),
+    drag = async (dy: number, steps: number) => {
+      const b = await grip.boundingBox();
+      if (!b) throw new Error('no Unsorted grip');
+      await page.mouse.move(b.x + b.width / 2, b.y + 6);
+      await page.mouse.down();
+      await page.mouse.move(b.x + b.width / 2, b.y + 6 + dy, { steps });
+      await page.waitForTimeout(150);
+      return b;
+    };
+  // an empty Unsorted is shorter than its least height, so the first drag sizes it and the next one is followed
+  await drag(120, 6);
   await page.mouse.up();
-  await page.mouse.move(d0.x + d0.width / 2, d0.y + 36);
-  await page.mouse.down();
-  await page.mouse.move(d0.x + d0.width / 2, d0.y + 760, { steps: 12 });
-  await page.waitForTimeout(200);
+  const sized = await page.evaluate(() => window.__t.el('#tray').classList.contains('sized')),
+    d0 = await drag(30, 5),
+    d1 = await grip.boundingBox();
+  await page.mouse.up();
+  await drag(760, 12);
   await page.mouse.up();
   const trayIn = await page.evaluate(() => {
     const b = window.__t.el('#tray').getBoundingClientRect();
     return b.height >= 140 && b.bottom <= innerHeight;
   });
-  await dz.dblclick();
+  await grip.dblclick();
   await page.mouse.move(5, 400);
   await page.waitForTimeout(900); // (double-click gives the height back to automatic)
   // the card resize corner, shown on its own: the pointer turns into a diagonal resize cursor over it
+  // over the bare board at 700, 420, wherever the last selection left it
   const was = await page.evaluate(() => {
     const rh = window.__t.el('#rh'),
-      was = rh.getAttribute('style');
-    rh.style.cssText += ';display:block;z-index:2147480000';
+      was = rh.getAttribute('style'),
+      { x, y, z } = window.__fenmyr.view,
+      s = window.__t.el('#stage').getBoundingClientRect();
+    rh.style.cssText += `;display:block;z-index:2147480000;left:${(700 - s.left - x) / z}px;top:${(420 - s.top - y) / z}px`;
     return was;
   });
   const rb = await page.evaluate(() => {

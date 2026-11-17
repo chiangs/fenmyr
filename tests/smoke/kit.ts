@@ -104,3 +104,17 @@ export const chatOpen = (t: Smoke, on: boolean) =>
   t.page.evaluate(on => window.__t.el('#myra').classList.toggle('chat', on), on);
 
 export const pose = (t: Smoke) => t.page.evaluate(() => window.__fenmyr.currentPose());
+
+// Pieces in the bar opens the picker on the newest screen, brought into view
+export async function openPicker(t: Smoke) {
+  await t.page.evaluate(() => {
+    const M = window.__fenmyr,
+      f = M.board.cards.findLast(c => c.type === 'frame');
+    if (!f) throw new Error('no screen');
+    M.selectOnly([f.id]);
+    M.fit([f]);
+  });
+  await t.page.waitForTimeout(500);
+  await t.page.click('#selbar [data-pieces]');
+  await t.page.waitForTimeout(300);
+}

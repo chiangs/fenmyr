@@ -1,7 +1,7 @@
 // A selected screen's bar shows its device after Pieces, as a dropdown with Name, the devices with their sizes, and X,
 // Y, W and H. A device sets the size and corners as one undo step, a typed W or H makes it Custom, and X moves the
 // screen with what sits on it. The trigger and the fields follow a resize by its handle, and a screen resized alone
-// or with another card reads Custom. An edit in the bar shows in the Wireframe panel and the other way round.
+// or with another card reads Custom.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -150,17 +150,7 @@ try {
   const resized = await card('signin');
   assert.ok(resized.w > 393 && resized.h > 852, `the handle made it bigger: ${resized.w} × ${resized.h}`);
   assert.strictEqual(await trigger(), 'Custom', 'after a handle resize the trigger says Custom');
-  assert.deepStrictEqual(
-    [
-      resized.device,
-      await page.evaluate(() => {
-        const d = document.querySelector('#dzProps select[data-k="device"]');
-        return d instanceof HTMLSelectElement ? d.value : null;
-      }),
-    ],
-    ['Custom', 'Custom'],
-    'as do the screen itself and the panel',
-  );
+  assert.strictEqual(resized.device, 'Custom', 'as does the screen itself');
   await open();
   const after = await fields();
   assert.deepStrictEqual(
@@ -169,22 +159,8 @@ try {
     'and the fields show the new size',
   );
 
-  // The panel's X while the bar's dropdown is open: a press in the panel leaves the dropdown open
-  await page.evaluate(() => {
-    const x = document.querySelector('#dzProps input[data-k="x"]');
-    if (!(x instanceof HTMLInputElement)) throw new Error('no X in the panel');
-    x.value = '120';
-    x.dispatchEvent(new Event('input', { bubbles: true }));
-  });
-  await page.waitForTimeout(150);
-  assert.ok(await isOpen(), 'the dropdown is still open');
-  assert.strictEqual((await fields()).x, '120', 'X typed in the panel shows in the bar’s open fields');
   await type('y', '-60');
-  const panelY = await page.evaluate(() => {
-    const y = document.querySelector('#dzProps input[data-k="y"]');
-    return y instanceof HTMLInputElement ? y.value : null;
-  });
-  assert.strictEqual(panelY, '-60', 'Y typed in the bar shows in the panel');
+  assert.strictEqual((await card('signin')).y, -60, 'Y typed in the open fields moves the screen');
   await page.keyboard.press('Escape');
 
   await select(['empty', 'signin']);
@@ -197,16 +173,9 @@ try {
   await settle(page, 250);
   await select(['empty']);
   assert.deepStrictEqual(
-    [
-      await trigger(),
-      (await card('empty')).device,
-      await page.evaluate(() => {
-        const d = document.querySelector('#dzProps select[data-k="device"]');
-        return d instanceof HTMLSelectElement ? d.value : null;
-      }),
-    ],
-    ['Custom', 'Custom', 'Custom'],
-    'a screen resized with another reads Custom in the trigger, on itself and in the panel',
+    [await trigger(), (await card('empty')).device],
+    ['Custom', 'Custom'],
+    'a screen resized with another reads Custom in the trigger and on itself',
   );
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');
   console.log('screenBar: ok');

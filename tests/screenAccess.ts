@@ -1,4 +1,4 @@
-// The screen tool for a screen reader and a phone: which device chip, pen and Screen button is pressed, the row's role,
+// The screen tool for a screen reader and a phone: which device chip, pen and Wireframe button is pressed, the row's role,
 // how Myra's sees strip names a card called after its type, and the mode bar's strips and hint at 390 px wide.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
@@ -44,7 +44,7 @@ const pressed = (sel: string) =>
     sel,
   );
 const screenButton = () =>
-  page.evaluate(() => document.querySelector('[data-wf="frame"]')?.getAttribute('aria-pressed'));
+  page.evaluate(() => document.querySelector('#tools [data-add="frame"]')?.getAttribute('aria-pressed'));
 // the strip is drawn as the chat opens, so each card is selected first and the chat opened on it
 const sees = async (id: string) => {
   await page.evaluate(id => window.__fenmyr.selectOnly([id]), id);
@@ -73,14 +73,14 @@ const box = (sel: string) =>
 
 try {
   await settle(page, 400);
-  assert.strictEqual(await screenButton(), 'false', 'the panel’s Screen button says it is not pressed');
+  assert.strictEqual(await screenButton(), 'false', 'the bottom bar’s Wireframe button says it is not pressed');
   await key('w');
   assert.strictEqual(
     await pressed('#screenbar [data-dev]'),
     'iPhone=true Android=false iPad=false Desktop=false Watch=false',
     'W presses the iPhone chip and no other',
   );
-  assert.strictEqual(await screenButton(), 'true', 'with the tool in hand the panel’s Screen button is pressed');
+  assert.strictEqual(await screenButton(), 'true', 'with the tool in hand the Wireframe button is pressed');
   await key('3');
   assert.strictEqual(
     await pressed('#screenbar [data-dev]'),
@@ -93,7 +93,7 @@ try {
     'the row is a group, as Tab moves through its chips',
   );
   await key('Escape');
-  assert.strictEqual(await screenButton(), 'false', 'Esc leaves the panel’s Screen button not pressed');
+  assert.strictEqual(await screenButton(), 'false', 'Esc leaves the Wireframe button not pressed');
 
   await key('p');
   assert.strictEqual(
