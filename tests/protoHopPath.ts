@@ -47,30 +47,57 @@ const spot = async () => {
 };
 const centre = (f: hop.Frame) => ({ x: f.l + f.w / 2, y: f.t + f.h / 2 });
 const apart = (a: hop.Frame, b: hop.Frame) => Math.hypot(centre(a).x - centre(b).x, centre(a).y - centre(b).y);
-// straight from her first frame in the air to her last, over the time between them, in px per ms
-const airSpeed = (frames: hop.Frame[]) => {
-  const air = frames.filter(f => f.air),
-    a = air[0],
-    b = air.at(-1);
-  assert.ok(a && b && b.ms > a.ms, `she is in the air in ${air.length} frames`);
-  return { speed: apart(a, b) / (b.ms - a.ms), ms: b.ms - a.ms };
+// Her time in the air as her frames bound it: at least from her first frame in the air to her last, at most from her
+// last frame on the ground before them to her first after. A long frame as she takes off or lands widens the bounds and
+// never moves them off her real time. Timed by her frames in the air alone, such a frame cut her time short. Frames so
+// slow that watching ends before she lands leave no upper bound.
+const inAir = (frames: hop.Frame[]) => {
+  const first = frames.findIndex(f => f.air),
+    last = frames.findLastIndex(f => f.air),
+    before = frames[first - 1],
+    a = frames[first],
+    b = frames[last],
+    after = frames[last + 1];
+  assert.ok(a && b, 'she is in the air');
+  return { least: b.ms - a.ms, most: before && after ? after.ms - before.ms : Number.POSITIVE_INFINITY };
 };
-// A slow runner opening a prototype: the main thread is held for `ms` in the frame she takes off.
-const holdTakeoff = (ms: number) =>
-  page.evaluate(ms => {
-    const raf = window.requestAnimationFrame.bind(window),
-      slot = document.getElementById('gooSlot'),
-      air = () => !!slot?.style.transform.includes('rotate');
-    window.requestAnimationFrame = cb =>
-      raf(ts => {
-        const was = air();
-        cb(ts);
-        if (was || !air()) return;
-        window.requestAnimationFrame = raf;
-        const until = performance.now() + ms;
-        while (performance.now() < until);
-      });
-  }, ms);
+// the slowest her frames allow, in px per ms: the whole way she goes, rest to rest, over the most time she can have
+// been in the air
+const leastSpeed = (frames: hop.Frame[]) => {
+  const a = frames[0],
+    b = frames.at(-1);
+  assert.ok(a && b && apart(a, b) > 1000, 'she crosses more than 1000 px');
+  return apart(a, b) / inAir(frames).most;
+};
+const keeps480 = (frames: hop.Frame[]) => {
+  const { least, most } = inAir(frames);
+  assert.ok(least <= 480 && most >= 480, `she is in the air for ${Math.round(least)} to ${Math.round(most)} ms`);
+};
+// A slow runner busy as she hops: the main thread is held for `ms` in the first frame at least `after` ms into her
+// crouch, or into her time in the air.
+const holdFrame = (pose: 'crouch' | 'air', ms: number, after = 0) =>
+  page.evaluate(
+    ({ pose, ms, after }) => {
+      const raf = window.requestAnimationFrame.bind(window),
+        slot = document.getElementById('gooSlot'),
+        mark = pose === 'air' ? 'rotate' : 'scale';
+      let since: number | null = null,
+        held = false;
+      // every callback asked for before the hold runs through here, so only the first to get there holds
+      window.requestAnimationFrame = cb =>
+        raf(ts => {
+          cb(ts);
+          if (held || !slot?.style.transform.includes(mark)) return;
+          since ??= ts;
+          if (ts - since < after) return;
+          held = true;
+          window.requestAnimationFrame = raf;
+          const until = performance.now() + ms;
+          while (performance.now() < until);
+        });
+    },
+    { pose, ms, after },
+  );
 const myraCalm = async (v: 'lively' | 'calmest') => {
   await page.click('#gearBtn');
   await page.click('#setTabs [data-tab="myra"]');
@@ -140,11 +167,8 @@ try {
     'across a 1920 px window her hop is no faster than 1.7 px per ms, and she tilts once landed',
     async () => {
       const f = await hop.flight(page, () => open('pb')),
-        { speed } = airSpeed(f.frames);
-      const a = f.frames[0],
-        b = f.frames.at(-1);
-      assert.ok(a && b && apart(a, b) > 1000, 'she crosses more than 1000 px');
-      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms`);
+        speed = leastSpeed(f.frames);
+      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms or faster`);
       const tilt = f.frames.findIndex(fr => fr.anim === 'curious'),
         landed = f.frames.findLastIndex(fr => fr.air);
       assert.ok(tilt > landed, `she tilts her head once she has landed, frame ${tilt} after frame ${landed}`);
@@ -154,16 +178,28 @@ try {
   await check(
     'with a frame held back as she takes off, her hop still measures no faster than 1.7 px per ms',
     async () => {
-      await holdTakeoff(100);
-      const { speed } = airSpeed((await hop.flight(page, () => open('pb'))).frames);
-      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms`);
+      await holdFrame('air', 100);
+      const speed = leastSpeed((await hop.flight(page, () => open('pb'))).frames);
+      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms or faster`);
+    },
+  );
+
+  await check(
+    'with a frame held back as she comes in to land, her hop still measures no faster than 1.7 px per ms',
+    async () => {
+      await holdFrame('air', 200, 540);
+      const speed = leastSpeed((await hop.flight(page, () => open('pb'))).frames);
+      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms or faster`);
     },
   );
 
   await check('her hop onto the open chat keeps its 480 ms in the air', async () => {
-    const f = await hop.flight(page, () => page.click('#mPill')),
-      { ms } = airSpeed(f.frames);
-    assert.ok(ms > 400 && ms < 490, `she is in the air for ${Math.round(ms)} ms`);
+    keeps480((await hop.flight(page, () => page.click('#mPill'))).frames);
+  });
+
+  await check('with a frame held back as she crouches, her hop onto the open chat still keeps its 480 ms', async () => {
+    await holdFrame('crouch', 250);
+    keeps480((await hop.flight(page, () => page.click('#mPill'))).frames);
   });
 
   await check('from Home she hops from where Home showed her, with no jump', async () => {
