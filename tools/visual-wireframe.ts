@@ -27,7 +27,8 @@ const openDropdown =
   };
 
 // The wireframe board as later Phase 8 PRs change it: at rest, with the screen tool in hand, a screen selected, a
-// piece's Size ▾ and Align ▾ open, the Pieces picker and its Icons view beside it, and an empty screen's hint zoomed in.
+// piece's Size ▾ and Align ▾ open, a heading's Type ▾ open, an icon selected, the Pieces picker and its Icons view
+// beside it, and an empty screen's hint zoomed in.
 const wireframe: Group = {
   board: wireframeBoard,
   states: [
@@ -52,6 +53,15 @@ const wireframe: Group = {
     ],
     ['size', openDropdown(['go0'], 'place')],
     ['align', openDropdown(['go0', 'go1'], 'align')],
+    ['text', openDropdown(['head0'], 'type')],
+    [
+      'icon',
+      async page => {
+        await page.keyboard.press('Escape');
+        await page.evaluate(() => window.__fenmyr.selectOnly(['nav1']));
+        await page.mouse.move(5, 450);
+      },
+    ],
     ['pieces', openPieces],
     [
       'icons',

@@ -2,6 +2,7 @@ import { labelOf } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { syncScreenBar } from '../tools/screenTool.ts';
+import { isTyping } from '../ui/dom.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
 import { initPiecePick, syncPicker } from '../wireframe/piecePick.ts';
 import { initScreenHints } from '../wireframe/screenHint.ts';
@@ -19,8 +20,10 @@ import { group } from './group.ts';
 import { lineStyle } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
 import { canvas, crop, doc, due, imageSpot, link, picture, spotify, swatch, tag, tags, vnote } from './own.ts';
+import { changeIcon } from './pieceIcon.ts';
 import { size, syncSize } from './pieceSize.ts';
 import { pieces } from './pieces.ts';
+import { font, syncType, type } from './pieceType.ts';
 import { stroke } from './stroke.ts';
 import { syncTypingFormats, text } from './textBar.ts';
 import { initTypingFocus } from './typingFocus.ts';
@@ -61,6 +64,7 @@ const KEY_FIELDS = [
   'device',
   'name',
   'locked',
+  'opacity',
 ];
 function cardKey(c: Card) {
   const r: Record<string, unknown> = c,
@@ -86,6 +90,9 @@ const GROUPS = [
   pieces,
   arrange,
   size,
+  font,
+  type,
+  changeIcon,
   collColours,
   noteColours,
   swatch,
@@ -118,6 +125,9 @@ const GROUPS = [
 
 const barHtml = (ctx: SelBarContext) => GROUPS.map(g => g.html(ctx)).join('');
 
+// the panel's redraw, put off while one of its fields was being typed in
+let designLate = false;
+
 function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection' }>) {
   const cs = ctx.cards;
   if (bar.classList.contains('typing') !== ctx.typing) {
@@ -135,10 +145,14 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
   if (bar.dataset.key === key || bar.querySelector('.sb-popw.open')) {
     syncDesign();
     syncSize(bar, cs);
+    syncType(bar);
     return;
   }
   bar.dataset.key = key;
-  renderDesign();
+  // the panel keeps the field being typed in, which a redraw would take away mid-word, and redraws once it's left
+  const typedIn = document.activeElement;
+  designLate = isTyping(typedIn) && $('dzProps').contains(typedIn);
+  if (!designLate) renderDesign();
   keepFocus(bar, () => {
     bar.innerHTML = barHtml(ctx);
     foldSelbar(bar, barRoom());
@@ -214,6 +228,11 @@ export function init56() {
     requestAnimationFrame(tick);
   })();
 
+  $('dzProps').addEventListener('focusout', e => {
+    if (!designLate || (e.relatedTarget instanceof Node && $('dzProps').contains(e.relatedTarget))) return;
+    designLate = false;
+    renderDesign();
+  });
   $('selbar').addEventListener('pointerdown', e => e.stopPropagation());
   // each group's handlers answer only its own buttons, so the order they are wired in doesn't matter
   for (const g of GROUPS) g.init(placeSelbar);
