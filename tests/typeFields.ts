@@ -1,6 +1,6 @@
 // The number fields in Type ▾ and in Fill's Opacity: a typed number lands once, whole, when the field is left or Enter
 // pressed, so 60 never sets 6 first. A size past either end lands at that end, and a cleared field leaves the cards
-// as they were.
+// as they were. Type ▾ takes every size and line height the Wireframe panel kept.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -163,6 +163,25 @@ try {
     assert.deepStrictEqual(await both(), [null, null], '150 lands as 100%, which keeps no opacity');
     assert.strictEqual(await page.inputValue('#selbar [data-bopn]'), '100', 'and the field reads 100');
     await page.keyboard.press('Escape');
+    await undo();
+  });
+
+  await check('Type ▾ takes the sizes and line heights the panel kept', async () => {
+    await select(['ta']);
+    await openTo('type', '[data-ty-size]');
+    await page.keyboard.type('500');
+    await page.keyboard.press('Enter');
+    await settle(page, 250);
+    assert.strictEqual(await prop('ta', 'size'), 500, 'a size of 500 lands');
+    await openTo('type', '[data-ty-lhn]');
+    await page.keyboard.type('0.5');
+    await page.keyboard.press('Enter');
+    await settle(page, 250);
+    assert.strictEqual(await prop('ta', 'lh'), 0.5, 'and a line height of 0.5');
+    await page.click('#selbar [data-pop="type"]');
+    assert.ok(+((await page.getAttribute('#selbar [data-ty-lh]', 'min')) ?? 1) <= 0.5, 'the slider reaches 0.5 too');
+    await page.keyboard.press('Escape');
+    await undo();
     await undo();
   });
 
