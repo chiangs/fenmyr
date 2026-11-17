@@ -2,7 +2,7 @@ import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
-import { remember, save } from '../core/history.ts';
+import { holdSnapshots, remember, save } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
@@ -12,13 +12,22 @@ import { opensUp } from './float.ts';
 export let ICON: Record<string, string> = {};
 
 // one undo step per visit to a dropdown: set on the first change, cleared when the dropdown closes
-export const marks = { fs: false, sk: false, sp: false, sq: false, fill: false, corners: false };
+export const marks = { fs: false, sk: false, sp: false, sq: false, fill: false, corners: false, visit: false };
 
 // the first change in a dropdown visit makes the undo step
 export function markOnce(k: keyof typeof marks) {
   if (marks[k]) return;
   remember();
   marks[k] = true;
+}
+
+/** The first change in a dropdown whose every change, however far apart, undoes as one step: it takes the step, and
+ *  the changes after it join that step until the dropdown closes. */
+export function markVisit() {
+  if (marks.visit) return;
+  remember();
+  holdSnapshots(true);
+  marks.visit = true;
 }
 
 // a slider and its number box sit side by side: a change in one moves the other. Returns the one that changed,
@@ -36,11 +45,17 @@ export function syncPair(target: EventTarget | null, rangeAttr: string, numAttr:
 }
 
 // a little dropdown inside the bar (its options use the same buttons, so they work exactly like before)
-export const pop = (id: string, trig: string, body: string, tip: string) =>
-  `<span class="sb-popw" data-popw="${id}"><button class="sb-poptrig" data-pop="${id}" title="${tip}">${trig}</button><div class="sb-pop sb-pop-${id}">${body}</div></span>`;
+export const pop = (id: string, trig: string, body: string, tip: string, read?: string) => {
+  const name = read ? ` aria-label="${read}"` : '';
+  return `<span class="sb-popw" data-popw="${id}"><button class="sb-poptrig" data-pop="${id}" title="${tip}"${name}>${trig}</button><div class="sb-pop sb-pop-${id}">${body}</div></span>`;
+};
 
 // a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first, 0 last)
 export const G = (fold: number, html: string) => `<span class="sb-g" data-fold="${fold}">${html}</span>`;
+
+// Size and Align ▾ on a wireframe piece fold before the groups the bar had before them, so the picker, which narrows
+// the room, tucks no more of those away than it did
+export const FOLD_PIECE = 7;
 
 export const SEP = '<span class="sb-sep"></span>';
 
@@ -64,6 +79,10 @@ export function closeSbPops() {
     w.classList.remove('open');
   });
   marks.fs = marks.sp = marks.sk = marks.sq = false;
+  if (marks.visit) {
+    marks.visit = false;
+    holdSnapshots(false);
+  }
   if (was) $('selbar').dataset.key = '';
 }
 

@@ -21,6 +21,7 @@ import { appState, session } from './state.ts';
 let past: string[] = [];
 let future: string[] = [];
 let restoring = false;
+let held = false;
 let revision = 0;
 export let snapT: ReturnType<typeof setTimeout> | undefined;
 
@@ -41,6 +42,12 @@ export function remember() {
     if (past.length > 80) past.shift();
     future = [];
   }
+}
+
+/** While held, changes wait to become an undo step until it is let go, so a dropdown's many changes undo as one. */
+export function holdSnapshots(on: boolean) {
+  held = on;
+  if (!on) remember();
 }
 
 export function resetHistory() {
@@ -92,7 +99,7 @@ export function save() {
     cleanNumbers();
     syncBoardTags();
   }
-  if (!restoring) {
+  if (!restoring && !held) {
     clearTimeout(snapT);
     snapT = setTimeout(remember, 350);
   }

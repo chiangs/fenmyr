@@ -19,14 +19,15 @@ import { group } from './group.ts';
 import { lineStyle } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
 import { canvas, crop, doc, due, imageSpot, link, picture, spotify, swatch, tag, tags, vnote } from './own.ts';
+import { size, syncSize } from './pieceSize.ts';
 import { pieces } from './pieces.ts';
 import { stroke } from './stroke.ts';
 import { syncTypingFormats, text } from './textBar.ts';
 import { initTypingFocus } from './typingFocus.ts';
 import { wire, wireKey } from './wireBar.ts';
 
-// the bar is rebuilt only when one of these changes on a selected card: moving and resizing don't count, but dropping
-// into a screen does, since the Wireframe panel then offers to align with it
+// the bar is rebuilt only when one of these changes on a selected card: moving and resizing don't count (the size
+// fields follow them without a rebuild), but dropping into a screen does, since the bar then offers Align ▾
 const KEY_FIELDS = [
   'id',
   'tcase',
@@ -57,6 +58,9 @@ const KEY_FIELDS = [
   'strike',
   'group',
   'onFrame',
+  'device',
+  'name',
+  'locked',
 ];
 function cardKey(c: Card) {
   const r: Record<string, unknown> = c,
@@ -81,6 +85,7 @@ const GROUPS = [
   label,
   pieces,
   arrange,
+  size,
   collColours,
   noteColours,
   swatch,
@@ -129,6 +134,7 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
   }
   if (bar.dataset.key === key || bar.querySelector('.sb-popw.open')) {
     syncDesign();
+    syncSize(bar, cs);
     return;
   }
   bar.dataset.key = key;
