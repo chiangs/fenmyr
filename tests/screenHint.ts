@@ -69,6 +69,24 @@ try {
   );
   await zoom(0.5);
 
+  const button = await page.locator('#screenHints [data-hint="empty"]').boundingBox();
+  if (!button) throw new Error('no hint');
+  const screens = () =>
+    page.evaluate(() => window.__fenmyr.curBoard()?.cards.filter(c => c.type === 'frame').length ?? 0);
+  const before = await screens();
+  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
+  await page.keyboard.press('w');
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.mouse.click(button.x + button.width / 2, button.y + button.height / 2);
+  await settle(page, 300);
+  assert.strictEqual(
+    (await screens()) - before,
+    1,
+    'with the screen tool in hand, a click on the hint places a screen',
+  );
+  await page.keyboard.press('Control+z');
+  await page.keyboard.press('Escape');
+  await settle(page, 300);
   await page.click('#screenHints [data-hint="empty"]');
   await settle(page, 300);
   assert.deepStrictEqual(
