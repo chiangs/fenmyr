@@ -1,6 +1,6 @@
 {
   "wireframe-dark-pieces": "New in 8b: the Pieces picker beside the Sign in screen in the dark theme, on the surface colour, with the bar folded to its left. On the base there is no Pieces button, so the screen is only selected.",
-  "wireframe-hint": "New in 8b: zoomed to 50%, the empty phone screen shows an Add pieces button and \"or press R for a box, X for text\" in its middle. The base shows the empty screen bare.",
+  "wireframe-hint": "New in 8b: zoomed to 50%, the empty phone screen shows an Add pieces button, a white pill with a thin edge, and \"or press R for a box, X for text\" in its middle. The base shows the empty screen bare.",
   "wireframe-icons": "New in 8b: the picker's Icons view, a grid of the icon set under its search. The base has no picker.",
   "wireframe-phone-pieces": "New in 8b: at 600 px the strip's Pieces opens the picker above the bottom bar, full width less 20 px, six cells to a row. The base shows the strip with no Pieces button.",
   "wireframe-pieces": "New in 8b: Pieces opens the picker 12 px right of the Sign in screen, with Basics led by Box and Text and each piece drawn small. The bar folds to the screen's side of it, down to Pieces, ··· and Delete. The base has no picker.",
