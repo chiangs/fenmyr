@@ -125,6 +125,9 @@ const GROUPS = [
 
 const barHtml = (ctx: SelBarContext) => GROUPS.map(g => g.html(ctx)).join('');
 
+// the panel's redraw, put off while one of its fields was being typed in
+let designLate = false;
+
 function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection' }>) {
   const cs = ctx.cards;
   if (bar.classList.contains('typing') !== ctx.typing) {
@@ -146,9 +149,10 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
     return;
   }
   bar.dataset.key = key;
-  // the panel keeps the field being typed in, which a redraw would take away mid-word
+  // the panel keeps the field being typed in, which a redraw would take away mid-word, and redraws once it's left
   const typedIn = document.activeElement;
-  if (!(isTyping(typedIn) && $('dzProps').contains(typedIn))) renderDesign();
+  designLate = isTyping(typedIn) && $('dzProps').contains(typedIn);
+  if (!designLate) renderDesign();
   keepFocus(bar, () => {
     bar.innerHTML = barHtml(ctx);
     foldSelbar(bar, barRoom());
@@ -224,6 +228,11 @@ export function init56() {
     requestAnimationFrame(tick);
   })();
 
+  $('dzProps').addEventListener('focusout', e => {
+    if (!designLate || (e.relatedTarget instanceof Node && $('dzProps').contains(e.relatedTarget))) return;
+    designLate = false;
+    renderDesign();
+  });
   $('selbar').addEventListener('pointerdown', e => e.stopPropagation());
   // each group's handlers answer only its own buttons, so the order they are wired in doesn't matter
   for (const g of GROUPS) g.init(placeSelbar);

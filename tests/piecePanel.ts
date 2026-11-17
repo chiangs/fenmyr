@@ -1,10 +1,25 @@
 // Until the Wireframe panel goes, its font, icon, colour and opacity controls keep working beside the bar's: a change
-// made in one shows in the other.
+// made in one shows in the other. A redraw the panel puts off while one of its fields is typed in happens once the
+// field is left.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const l = await launch({ boards: [wireframeBoard()], open: 'wire' });
+const board = wireframeBoard();
+board.cards.push({
+  id: 'ta',
+  type: 'text',
+  x: 510,
+  y: 100,
+  w: 220,
+  h: 30,
+  r: 0,
+  color: 'white',
+  onFrame: 'empty',
+  text: 'Alone',
+  size: 18,
+});
+const l = await launch({ boards: [board], open: 'wire' });
 const { page } = l;
 
 const select = async (ids: string[]) => {
@@ -148,6 +163,30 @@ try {
       'typing 35 in the panel’s Opacity % lands, every key kept',
     );
     assert.ok(await field.evaluate(i => i === document.activeElement), 'and the field keeps the keyboard');
+  });
+
+  await check('a change from elsewhere while a panel field is typed in shows once the field is left', async () => {
+    await select(['ta']);
+    await page.click('#dzProps input[data-k="size"]');
+    // as Myra might: a weight and a lock, which redraws the bar
+    await page.evaluate(() => {
+      const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'ta');
+      if (c?.type === 'text') Object.assign(c, { weight: 800, locked: true });
+      window.__fenmyr.renderAll();
+    });
+    await settle(page, 250);
+    assert.ok(
+      await page.evaluate(() => document.activeElement?.matches('#dzProps input[data-k="size"]')),
+      'the field being typed in keeps the keyboard',
+    );
+    await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
+    await settle(page, 250);
+    assert.strictEqual(await panelValue('select[data-k="weight"]'), '800', 'once it is left, the panel reads Extra');
+    await page.evaluate(() => {
+      const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'ta');
+      if (c?.type === 'text') Object.assign(c, { weight: undefined, locked: undefined });
+      window.__fenmyr.renderAll();
+    });
   });
 
   for (const f of failed) console.log(`FAILED ${f}`);
