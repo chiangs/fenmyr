@@ -164,7 +164,11 @@ try {
     assert.strictEqual(await box().getByRole('group', { name: 'Weight' }).count(), 1, 'the weights are one group');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
-    await page.keyboard.type('30');
+    await page.keyboard.press('Control+a');
+    await page.keyboard.type('3');
+    await page.waitForTimeout(100);
+    assert.strictEqual((await look('ta')).size, 18, 'a 3 on its way to 30 leaves the text at its size, not 6');
+    await page.keyboard.type('0');
     await page.keyboard.press('Enter');
     await settle(page, 250);
     assert.strictEqual((await look('ta')).size, 30, 'Tab reaches the size, and a typed 30 lands');
