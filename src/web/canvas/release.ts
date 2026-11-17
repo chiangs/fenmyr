@@ -1,3 +1,4 @@
+import type { Card } from '../../shared/model.ts';
 import { parentOf } from '../cards/collection.ts';
 import { collAt, dropInto } from '../cards/kanban.ts';
 import { tilt, uid } from '../core/base.ts';
@@ -19,6 +20,11 @@ import { renderCard } from './render.ts';
 import { byId, pinAt, renderTray, renderWires, selectOnly, sendToTray } from './wires.ts';
 
 const DOUBLE_TAP_MS = 420;
+
+// a screen sized by hand, alone or with others, is no longer the device it was made as
+function sizedByHand(c: Card | undefined, w0: number, h0: number) {
+  if (c?.type === 'frame' && (c.w !== w0 || c.h !== h0)) c.device = 'Custom';
+}
 
 // letting go: the drag lands (snaps, files into a column or a screen, goes to Unsorted) and is saved
 export function onRelease(e: PointerEvent) {
@@ -144,13 +150,12 @@ export function onRelease(e: PointerEvent) {
     }
   }
   if (d.mode === 'resize') {
-    const c = byId(d.id);
-    // a screen sized by hand is no longer the device it was made as
-    if (c?.type === 'frame' && (c.w !== d.w0 || c.h !== d.h0)) c.device = 'Custom';
+    sizedByHand(byId(d.id), d.w0, d.h0);
     save();
   }
   if (d.mode === 'gresize') {
     d.items.forEach(it => {
+      sizedByHand(it.c, it.w, it.h);
       renderCard(it.c);
       if (it.c.type === 'note' || it.c.type === 'todo') it.c.userH = it.c.h;
     });

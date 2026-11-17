@@ -1,7 +1,7 @@
 // A selected screen's bar shows its device after Pieces, as a dropdown with Name, the devices with their sizes, and X,
 // Y, W and H. A device sets the size and corners as one undo step, a typed W or H makes it Custom, and X moves the
-// screen with what sits on it. The trigger and the fields follow a resize by its handle, and an edit in the bar shows
-// in the Wireframe panel and the other way round.
+// screen with what sits on it. The trigger and the fields follow a resize by its handle, and a screen resized alone
+// or with another card reads Custom. An edit in the bar shows in the Wireframe panel and the other way round.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -185,6 +185,29 @@ try {
     return y instanceof HTMLInputElement ? y.value : null;
   });
   assert.strictEqual(panelY, '-60', 'Y typed in the bar shows in the panel');
+  await page.keyboard.press('Escape');
+
+  await select(['empty', 'signin']);
+  const grh = await page.locator('#rh').boundingBox();
+  assert.ok(grh, 'the resize corner is up for two screens');
+  await page.mouse.move(grh.x + grh.width / 2, grh.y + grh.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(grh.x + 40, grh.y + 30, { steps: 6 });
+  await page.mouse.up();
+  await settle(page, 250);
+  await select(['empty']);
+  assert.deepStrictEqual(
+    [
+      await trigger(),
+      (await card('empty')).device,
+      await page.evaluate(() => {
+        const d = document.querySelector('#dzProps select[data-k="device"]');
+        return d instanceof HTMLSelectElement ? d.value : null;
+      }),
+    ],
+    ['Custom', 'Custom', 'Custom'],
+    'a screen resized with another reads Custom in the trigger, on itself and in the panel',
+  );
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');
   console.log('screenBar: ok');
 } finally {
