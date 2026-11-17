@@ -467,6 +467,7 @@
     "tests/screenHint.ts": "Checks an empty screen's Add pieces hint, its size at any zoom, that it opens the picker and goes once a piece lands, and the picker on a phone.",
     "tests/screenTool.ts": "Tests the screen tool: W and the panel’s Screen button, the device row, keys, a click, a drag, the default device, putting it down, R and X on the bare board, and a tap on a phone.",
     "tests/setup.ts": "Tests the Git and GitHub setup screen with real git and a stand-in gh.",
+    "tests/sizeBarCommit.ts": "Checks that a value typed in a size dropdown is applied once when Enter closes it, and that a screen in a collection keeps its place, and so does what sits on it.",
     "tests/sizeBar.ts": "Checks a box's, text's and icon's size dropdown: the fields, one undo per visit, following Myra and a drag, the keyboard, a locked card, and the phone.",
     "tests/sizeBarEdges.ts": "Checks a size dropdown ended by a press on another card or the bare board, by its own trigger or by a clamped value, and Enter inside ··· on a phone.",
     "tests/smoke.ts": "The end-to-end smoke test: opens the real app headless and drives it through each section.",

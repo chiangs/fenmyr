@@ -1,6 +1,7 @@
 import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
+import { parentOf } from '../cards/collection.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
@@ -136,8 +137,10 @@ function sizeHtml(s: SizeOf) {
 // the card a dropdown was drawn for, which may no longer be the one selected
 const ownerOf = (el: Element) => sizeOf(byId(el.closest<HTMLElement>('[data-size-for]')?.dataset.sizeFor ?? ''));
 
-// a screen brings what sits on it along, as a drag does; a piece is filed into whatever screen it lands on
+// a screen brings what sits on it along, as a drag does; a piece is filed into whatever screen it lands on. A card in a
+// collection stays where the collection puts it.
 function moveTo(c: Card, axis: 'x' | 'y', n: number) {
+  if (parentOf(c.id)) return [];
   const d = n - c[axis],
     moved = c.type === 'frame' ? [c, ...onFrame(c)] : [c];
   moved.forEach(k => {
@@ -196,6 +199,7 @@ function commit(i: HTMLInputElement) {
     const cs = setField(s.c, f, i.value);
     if (cs.length) changed(s.c, cs);
   });
+  i.value = shownOf(s.c, f); // what the card took, so the blur after Enter finds nothing left to commit
 }
 
 // closes the dropdown, with the keyboard back on the button that opened it, or on ··· when it had folded in there
