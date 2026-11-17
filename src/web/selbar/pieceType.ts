@@ -6,7 +6,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { cardEl, closestTo, htmlIn, oneIn } from '../ui/dom.ts';
-import { ARROWS, caret, closeSbPops, FOLD_PIECE, focusBar, G, inVisit, pct, pop, syncPair } from './barKit.ts';
+import { caret, closeSbPops, FOLD_PIECE, focusBar, G, inVisit, pct, pop, SLIDER_KEYS, syncPair } from './barKit.ts';
 import { fontButton, fontTargets } from './fontPop.ts';
 import { cards, group } from './group.ts';
 
@@ -257,7 +257,7 @@ function initType() {
   // an arrow on the slider while the texts' line heights differ moves each from its own, not all to the slider's
   bar.addEventListener('keydown', e => {
     const r = closestTo(e.target, '[data-ty-lh].sb-mixed', HTMLInputElement),
-      by = ARROWS[e.key];
+      by = SLIDER_KEYS[e.key];
     if (!r || by === undefined) return;
     e.preventDefault();
     apply(r, { k: 'lhBy', v: by * LH.step });

@@ -4,7 +4,7 @@ import { byId, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { closestTo, oneIn } from '../ui/dom.ts';
-import { ARROWS, caret, closeSbPops, focusBar, G, inVisit, pct, pop, syncPair } from './barKit.ts';
+import { caret, closeSbPops, focusBar, G, inVisit, pct, pop, SLIDER_KEYS, syncPair } from './barKit.ts';
 import { every, group } from './group.ts';
 
 type Boxes = readonly CardOf<'box'>[];
@@ -123,10 +123,10 @@ function initOpacity() {
     const p = syncPair(e.target, 'data-bop', 'data-bopn');
     if (p) setOpacity(p.r, () => +p.r.value);
   });
-  // an arrow on the slider while the boxes differ moves each from its own, not all to the slider's
+  // an arrow or Page key on the slider while the boxes differ moves each from its own, not all to the slider's
   bar.addEventListener('keydown', e => {
     const r = closestTo(e.target, '[data-bop].sb-mixed', HTMLInputElement),
-      by = ARROWS[e.key];
+      by = SLIDER_KEYS[e.key];
     if (!r || by === undefined) return;
     e.preventDefault();
     setOpacity(r, now => now + by);

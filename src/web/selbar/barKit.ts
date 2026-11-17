@@ -75,8 +75,15 @@ export const btn = (a: string, icon: string, tip: string, on?: boolean, disabled
 
 export const caret = () => Icon('caret-down', { cls: 'sb-caret' });
 
-// how far an arrow key moves a slider, in its steps
-export const ARROWS: Readonly<Record<string, number>> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
+// how far each key moves a slider, in its steps, as the browser moves one
+export const SLIDER_KEYS: Readonly<Record<string, number>> = {
+  ArrowRight: 1,
+  ArrowUp: 1,
+  ArrowLeft: -1,
+  ArrowDown: -1,
+  PageUp: 10,
+  PageDown: -10,
+};
 
 // a range slider's filled part, as a percentage of the way from min to max
 export const pct = (v: number, min: number, max: number) =>

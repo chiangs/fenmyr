@@ -1,6 +1,6 @@
 // A box holding a picture has no Fill, so it gets an Opacity dropdown of its own in the bar, which the Wireframe
-// panel's Opacity % used to give it. Boxes at different opacities show Fill's slider as Mixed, and an arrow nudges each
-// box from its own opacity rather than setting every one to the slider's.
+// panel's Opacity % used to give it. Boxes at different opacities show Fill's slider as Mixed, and an arrow or Page key
+// nudges each box from its own opacity rather than setting every one to the slider's.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -115,6 +115,13 @@ try {
       await page.keyboard.press('ArrowRight');
       await settle(page, 150);
       assert.deepStrictEqual([await opacityOf('b1'), await opacityOf('b2')], [0.41, 0.81], 'and ArrowRight back up');
+      await page.keyboard.press('PageDown');
+      await settle(page, 150);
+      assert.deepStrictEqual(
+        [await opacityOf('b1'), await opacityOf('b2')],
+        [0.31, 0.71],
+        'PageDown takes each ten down',
+      );
       assert.deepStrictEqual(await slider(), { mixed: true, read: 'Mixed' }, 'still Mixed while they differ');
       await page.keyboard.press('Escape');
       await undo();
