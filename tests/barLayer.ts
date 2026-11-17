@@ -123,7 +123,7 @@ const showTools = async (tools: string[], shown: boolean) => {
   await page.click('#setClose');
   await still();
 };
-const beforeShape = ['title', 'coll', 'canvas', 'link', 'image', 'audio', 'video', 'swatch'];
+const beforeShape = ['title', 'coll', 'canvas', 'frame', 'link', 'image', 'audio', 'video', 'swatch'];
 await check('with Myra’s chat open, #shapePick opens over it from the Shape tool on the bar', async () => {
   await showTools(beforeShape, false);
   await size(860, 900);
@@ -156,7 +156,8 @@ await check('with Myra’s chat open, a colour card’s wheel opens over it', as
   assert.strictEqual(top, '#cpop');
 });
 await check('on a short window, quick capture opens over Myra’s open chat', async () => {
-  await size(1350, 640);
+  // narrow enough that the chat, joined to the bottom bar, reaches under the capture box
+  await size(1200, 640);
   await setChat(true);
   await page.keyboard.press('Control+k');
   await still();

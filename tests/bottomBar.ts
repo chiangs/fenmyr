@@ -151,7 +151,7 @@ await check('a picture dropped on Myra’s open chat lands on the board', async 
   await page.waitForTimeout(400);
 });
 
-await check('where Myra’s open chat meets a right widget, the chat is on top', async () => {
+await check('Myra’s open chat never meets a right widget: the column ends above it', async () => {
   await page.click('#mPill');
   await page.waitForTimeout(400);
   const top = await page.evaluate(() => {
@@ -169,7 +169,7 @@ await check('where Myra’s open chat meets a right widget, the chat is on top',
   });
   await page.click('#mcClose');
   await page.waitForTimeout(400);
-  assert.strictEqual(top, 'chat');
+  assert.strictEqual(top, 'they do not meet');
 });
 
 await check('the wheel over the tools or Myra’s box pans the board', async () => {
@@ -234,7 +234,8 @@ await check(
     if (await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat')))
       await page.click('#mcClose');
     await page.waitForTimeout(400);
-    await page.focus('#tools [data-add="pointer"]');
+    // ··· comes first in the bar when tools are tucked into it
+    await page.focus((await page.isVisible('#tbMore')) ? '#tbMore' : '#tools [data-add="pointer"]');
     await page.keyboard.press('Shift+Tab');
     const before = await focusedIn();
     await page.focus('#cleanBtn');

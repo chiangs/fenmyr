@@ -139,6 +139,12 @@ await check('after the Pen is picked from the keyboard, Space still pans and the
   await view(500, 400);
   await select([]);
   await page.keyboard.press('Shift');
+  // at 1440 px the Wireframe button tucks the Pen into ···, so it steps out of the bar to leave the Pen showing
+  await page.evaluate(() => {
+    document.querySelector<HTMLElement>('#tools [data-add="frame"]')?.toggleAttribute('hidden', true);
+    dispatchEvent(new Event('resize'));
+  });
+  await frames();
   await page.focus('#tools [data-add="pen"]');
   await press('Enter');
   await page.mouse.click(700, 600);
@@ -156,5 +162,6 @@ await check('after the Pen is picked from the keyboard, Space still pans and the
     'the Pen is still on',
   );
   await press('Escape', 'Escape');
+  await page.evaluate(() => window.__fenmyr.applyToolbar());
 });
 await done('BAR KEYBOARD OK');
