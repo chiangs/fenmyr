@@ -5,10 +5,10 @@ import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { formatOn, isFormat, runFormat } from '../edit/noteKeys.ts';
 import { fitText } from '../edit/text.ts';
-import { closestTo, esc, htmlIn } from '../ui/dom.ts';
+import { closestTo, htmlIn } from '../ui/dom.ts';
 import { caret, closeSbPops, G, markOnce, marks, pct, pop, rebuildBar, redraw, syncPair } from './barKit.ts';
-import { boardFontPop } from './fontPop.ts';
-import { group, some } from './group.ts';
+import { fontButton, fontTargets } from './fontPop.ts';
+import { cards, group, some } from './group.ts';
 import { selCards } from './selected.ts';
 import { FS, FS_BASE, fitNote, fsPx, lhOf, lsOf, SIZED, setFsPx, setSpacing, sizedCards } from './textSize.ts';
 import { backToNote, editedNoteBody } from './typingFocus.ts';
@@ -127,7 +127,7 @@ function typingFormatsHtml(typing: boolean) {
 }
 
 // the text controls for notes, titles, checklists, shapes and collections
-function textBarHtml(sized: [Card, ...Card[]]) {
+function textBarHtml({ sized, all }: { sized: [Card, ...Card[]]; all: Card[] }) {
   const first = sized[0],
     typing = typedIn(sized),
     styles = STYLES.map(([k, l, t]) => {
@@ -142,20 +142,13 @@ function textBarHtml(sized: [Card, ...Card[]]) {
         icon = Icon(`text-${k}`);
       return `<button data-al="${k}" title="${t}" class="${cls}">${icon}</button>`;
     }).join(''),
-    mixed = !sized.every(c => (c.font || '') === (first.font || '')),
-    fnt = mixed ? '' : first.font || '',
-    fontStyle = fnt ? `font-family:'${esc(fnt)}', var(--font)` : '',
-    fontName = mixed ? 'Mixed fonts' : esc(fnt || 'Default font'),
-    fontCaret = Icon('caret-down', { cls: 'sb-caret', size: 10 }),
+    font = fontButton(fontTargets(all)),
     sep = `<span class="sb-sep"></span>`;
   return (
     G(1, `${sep}<div class="sb-sizes sb-style">${styles}</div>`) + // B I U S stay together
     (sized.length === 1 && first.type === 'note' ? typingFormatsHtml(!!typing) : '') +
     G(1, `<div class="sb-sizes sb-style sb-align">${aligns}</div>`) +
-    G(
-      5,
-      `${sep}<button class="sb-txt sb-font" data-sbfont="1" title="Font"><span style="${fontStyle}">${fontName}</span>${fontCaret}</button>`,
-    ) +
+    G(5, sep + font) +
     G(4, sep + sizeHtml(sized, first)) +
     G(6, spacingHtml(first))
   );
@@ -310,7 +303,7 @@ function initTextBar(place: () => void) {
     true,
   );
 
-  // bold, italic, underline and strikethrough; the font picker; the named sizes
+  // bold, italic, underline and strikethrough; the named sizes
   $('selbar').addEventListener('click', e => {
     const body = editedNoteBody(),
       word = closestTo(e.target, '[data-ts], [data-fmt]'),
@@ -323,7 +316,6 @@ function initTextBar(place: () => void) {
     }
     const list = sizedCards(),
       ts = closestTo(e.target, '[data-ts]')?.dataset.ts,
-      font = closestTo(e.target, '[data-sbfont]'),
       fs = closestTo(e.target, '[data-fs]')?.dataset.fs;
     if (isStyle(ts)) {
       const to = !list.every(c => isOn(c, ts));
@@ -332,7 +324,6 @@ function initTextBar(place: () => void) {
       });
       redraw(selCards());
     }
-    if (font) return boardFontPop(font, list);
     if (fs) {
       list.forEach(c => {
         if (fs === 'm') delete c.fs;
@@ -344,4 +335,13 @@ function initTextBar(place: () => void) {
   });
 }
 
-export const text = group({ on: some(c => SIZED.includes(c.type)), html: textBarHtml, init: initTextBar });
+const someSized = some(c => SIZED.includes(c.type));
+// the text controls show for the sized cards, and the Font button acts on every card the selection gives a font
+export const text = group({
+  on: ctx => {
+    const sized = someSized(ctx);
+    return sized && { sized, all: cards(ctx) ?? sized };
+  },
+  html: textBarHtml,
+  init: initTextBar,
+});

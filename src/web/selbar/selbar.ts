@@ -19,8 +19,10 @@ import { group } from './group.ts';
 import { lineStyle } from './lineStyle.ts';
 import { drawOverlays } from './overlays.ts';
 import { canvas, crop, doc, due, imageSpot, link, picture, spotify, swatch, tag, tags, vnote } from './own.ts';
+import { changeIcon } from './pieceIcon.ts';
 import { size, syncSize } from './pieceSize.ts';
 import { pieces } from './pieces.ts';
+import { font, syncType, type } from './pieceType.ts';
 import { stroke } from './stroke.ts';
 import { syncTypingFormats, text } from './textBar.ts';
 import { initTypingFocus } from './typingFocus.ts';
@@ -61,6 +63,7 @@ const KEY_FIELDS = [
   'device',
   'name',
   'locked',
+  'opacity',
 ];
 function cardKey(c: Card) {
   const r: Record<string, unknown> = c,
@@ -86,6 +89,9 @@ const GROUPS = [
   pieces,
   arrange,
   size,
+  font,
+  type,
+  changeIcon,
   collColours,
   noteColours,
   swatch,
@@ -135,10 +141,12 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
   if (bar.dataset.key === key || bar.querySelector('.sb-popw.open')) {
     syncDesign();
     syncSize(bar, cs);
+    syncType(bar);
     return;
   }
   bar.dataset.key = key;
-  renderDesign();
+  // the panel keeps the field being typed in, which a redraw would take away mid-word
+  if (!$('dzProps').contains(document.activeElement)) renderDesign();
   keepFocus(bar, () => {
     bar.innerHTML = barHtml(ctx);
     foldSelbar(bar, barRoom());

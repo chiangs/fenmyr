@@ -7,9 +7,21 @@ import { colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { cssToHex } from '../ui/color.ts';
-import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
+import { cardEl, closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
-import { caret, closeSbPops, G, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
+import {
+  caret,
+  closeSbPops,
+  FOLD_PIECE,
+  G,
+  inVisit,
+  marks,
+  openBarColor,
+  pct,
+  pop,
+  rebuildBar,
+  syncPair,
+} from './barKit.ts';
 import { every, group, only } from './group.ts';
 import { selCards } from './selected.ts';
 
@@ -35,6 +47,9 @@ const ANY_FILL = typesWith('anyFill'),
 const fillable = (c: Card) =>
   ANY_FILL.includes(c.type) && !(c.type === 'box' && c.src) && !(c.type === 'path' && !c.closed);
 const isTextFill = (c: Card) => TEXT_COLOUR.includes(c.type);
+const isBox = (c: Card): c is CardOf<'box'> => c.type === 'box';
+// an icon's colour has no hollow version, so No fill is left out wherever one is selected
+const colourTip = (cs: readonly Card[]) => (cs.every(c => c.type === 'icon') ? 'Colour' : 'Text colour');
 
 // going to No fill: if it has no border yet, it gets one in the color the fill had, so it never just disappears
 function autoBorder(c: Card, was: string | null | undefined) {
@@ -51,42 +66,63 @@ const dot = (attr: string, v: string, on: boolean) => {
   return `<button data-${attr}="${v}" title="${v}" style="background:${v}" class="${cls}"></button>`;
 };
 
+// boxes alone also get their opacity, as a slider and a number in per cent
+function opacityHtml(cs: readonly Card[]) {
+  const boxes = cs.filter(isBox);
+  if (boxes.length !== cs.length) return '';
+  const ops = boxes.map(c => Math.round((c.opacity ?? 1) * 100)),
+    v = ops.every(o => o === ops[0]) ? (ops[0] ?? 100) : 100,
+    p = pct(v, 0, 100);
+  return `<div class="sbc-top sb-oprow"><span>Opacity</span><input type="range" min="0" max="100" step="1" value="${v}" style="--p:${p}" data-bop aria-label="Opacity"><input type="number" min="0" max="100" step="1" value="${v}" data-bopn aria-label="Opacity in per cent"><b class="sb-unit">%</b></div>`;
+}
+
 // box (and screen) fill: wireframe grays, your pastels, and any color
-function boxFillHtml(f: Card) {
-  const cur = fillOf(f) || '#ffffff',
+function boxFillHtml(cs: [Card, ...Card[]]) {
+  const f = cs[0],
+    cur = fillOf(f) || '#ffffff',
     none = cur === 'none',
     noneCls = none ? ' sb-none' : '',
     bg = none ? '' : cur,
     noneOn = none ? 'on' : '',
     dots = BOX_FILLS.map(v => dot('bfill', v, cur.toLowerCase() === v)).join(''),
+    opacity = opacityHtml(cs),
     CARET = caret();
   return G(
     2,
     pop(
       'fill',
       `<i class="sb-cur${noneCls}" style="background:${bg}"></i>${CARET}`,
-      `<div class="sb-dots sb-fills"><button data-bfill="none" title="No fill" class="sb-nofill ${noneOn}"></button>${dots}<button class="sb-anycolor" data-bfwheel="1" title="Any colour"></button></div>`,
+      `<div class="sb-fillbox"><div class="sb-dots sb-fills"><button data-bfill="none" title="No fill" class="sb-nofill ${noneOn}"></button>${dots}<button class="sb-anycolor" data-bfwheel="1" title="Any colour"></button></div>${opacity}</div>`,
       'Fill',
     ),
   );
 }
 
-// text color for titles and wireframe text, with No fill (hollow letters)
-function textFillHtml(f: Card) {
-  const cur = f.type === 'title' ? f.tc || '' : f.color || '#27272a',
+// the colour of titles' and wireframe text's letters, with No fill (hollow letters), and of icons, shown as a dot
+function textFillHtml(cs: [Card, ...Card[]]) {
+  const f = cs[0],
+    icons = cs.some(c => c.type === 'icon'),
+    tip = colourTip(cs),
+    cur = f.type === 'title' ? f.tc || '' : f.color || '#27272a',
     none = cur === 'none',
     noneCls = none ? ' sb-none' : '',
+    iconCls = tip === 'Colour' ? ' sb-icur' : '',
+    letter = tip === 'Colour' ? '' : 'A',
     c = cur && !none ? cur : 'var(--ink)',
     noneOn = none ? 'on' : '',
+    noFill = icons ? '' : `<button data-tf="none" title="No fill" class="sb-nofill ${noneOn}"></button>`,
     dots = TEXT_FILLS.map(v => dot('tf', v, cur.toLowerCase() === v)).join(''),
-    CARET = caret();
+    CARET = caret(),
+    // an icon's colour came with Change icon, so like it, it folds before the controls the bar had before them
+    fold = tip === 'Colour' ? FOLD_PIECE : 2;
   return G(
-    2,
+    fold,
     pop(
       'tfill',
-      `<i class="sb-cur sb-tcur${noneCls}" style="--c:${c}">A</i>${CARET}`,
-      `<div class="sb-dots sb-fills"><button data-tf="none" title="No fill" class="sb-nofill ${noneOn}"></button>${dots}<button class="sb-anycolor" data-tfwheel="1" title="Any colour"></button></div>`,
-      'Text colour',
+      `<i class="sb-cur sb-tcur${noneCls}${iconCls}" style="--c:${c}">${letter}</i>${CARET}`,
+      `<div class="sb-dots sb-fills">${noFill}${dots}<button class="sb-anycolor" data-tfwheel="1" title="Any colour"></button></div>`,
+      tip,
+      tip,
     ),
   );
 }
@@ -212,7 +248,7 @@ function initTextFill() {
         first = cs[0],
         was = cs.map(c => ({ tc: c.tc, color: c.color, stroke: c.stroke, sw: c.sw }));
       openBarColor({
-        title: 'Text colour',
+        title: colourTip(cs),
         hex: cssToHex((first?.type === 'title' ? first.tc : first?.color) ?? '') || '#27272a',
         presets: TEXT_FILLS,
         apply: hex => setTextFill(hex),
@@ -289,8 +325,38 @@ function initFill() {
       rebuildBar();
     }
   });
+
+  $('selbar').addEventListener('input', e => {
+    const p = syncPair(e.target, 'data-bop', 'data-bopn'),
+      n = Number(p?.r.value);
+    if (p && Number.isFinite(n)) setOpacity(p.r, n);
+  });
+  // Enter in the number closes Fill, with the keyboard back on its button
+  $('selbar').addEventListener('keydown', e => {
+    if (!closestTo(e.target, '[data-bopn]')) return;
+    e.stopPropagation();
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    closeSbPops();
+    oneIn($('selbar'), '[data-pop="fill"]')?.focus();
+  });
 }
 
-export const fill = group({ on: every(fillable), html: cs => boxFillHtml(cs[0]), init: initFill });
-export const textColour = group({ on: every(isTextFill), html: cs => textFillHtml(cs[0]), init: initTextFill });
+// every selected box at this opacity, in per cent; one visit to Fill is one undo step
+function setOpacity(el: Element, percent: number) {
+  const boxes = selCards().filter(isBox),
+    v = Math.max(0, Math.min(100, Math.round(percent)));
+  inVisit(el, () => {
+    boxes.forEach(c => {
+      if (v === 100) delete c.opacity;
+      else c.opacity = v / 100;
+      renderCard(c);
+    });
+    selectOnly(boxes.map(c => c.id));
+    save();
+  });
+}
+
+export const fill = group({ on: every(fillable), html: boxFillHtml, init: initFill });
+export const textColour = group({ on: every(isTextFill), html: textFillHtml, init: initTextFill });
 export const shapeFill = group({ on: ctx => only(ctx, 'shape'), html: shapeFillHtml, init: initShapeFill });

@@ -10,6 +10,7 @@ import { closestTo, esc, htmlIn, oneIn } from '../ui/dom.ts';
 import { fileIntoFrame, onFrame } from '../wireframe/tilt.ts';
 import { DEVICES, type Device, isDevice } from '../wireframe/wireframes.ts';
 import { caret, closeSbPops, FOLD_PIECE, G, inVisit, pop } from './barKit.ts';
+import { fontLabel, fontTargets } from './fontPop.ts';
 import { group, one } from './group.ts';
 
 type Field = 'name' | 'x' | 'y' | 'w' | 'h' | 'rot' | 'isz';
@@ -115,9 +116,18 @@ function devicesHtml(c: CardOf<'frame'>) {
   return `<div class="sb-sizelist sbz-devices" role="group" aria-label="Device">${list}</div>`;
 }
 
+// the fonts of every text on the screen, opening the font picker for all of them; none while it holds no text
+function fontRowHtml(c: CardOf<'frame'>) {
+  const ts = fontTargets([c]);
+  if (!ts.length) return '';
+  const { name, style } = fontLabel(ts),
+    read = `Font of every text on this screen, ${name}`;
+  return `<button class="sbz-fontrow" data-sbfont="screen" aria-label="${read}" aria-haspopup="dialog"><span>Font</span><b style="${style}">${name}</b></button>`;
+}
+
 function sizeHtml(s: SizeOf) {
   const [first, ...rest] = FIELDS[s.kind],
-    lead = s.kind === 'screen' && first ? fieldHtml(s.c, first) + devicesHtml(s.c) : '',
+    lead = s.kind === 'screen' && first ? fieldHtml(s.c, first) + devicesHtml(s.c) + fontRowHtml(s.c) : '',
     fields = (lead ? rest : FIELDS[s.kind]).map(f => fieldHtml(s.c, f)).join(''),
     trig = esc(triggerOf(s)),
     id = s.c.id,

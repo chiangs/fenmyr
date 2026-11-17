@@ -28,7 +28,16 @@ const piece = board.cards.filter(c => 'group' in c && c.group === 'go').map(c =>
 const l = await launch({ boards: [board], open: 'wire' });
 const { page, app } = l;
 
-const NEW = ['Device and size', 'Size and place', 'Align on its screen'];
+// and those 8d brought, which fold first too
+const NEW = [
+  'Device and size',
+  'Size and place',
+  'Align on its screen',
+  'Font',
+  'Size, weight, line height and alignment',
+  'Change icon',
+  'Colour',
+];
 // what the bar tucked away with the picker open before this change, measured on the base
 const BEFORE: Record<string, string[]> = {
   screen: ['Make a clickable prototype from these screens', 'Add a label', 'Corners', 'Fill', 'Stroke'],

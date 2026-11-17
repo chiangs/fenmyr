@@ -215,7 +215,7 @@ function font(c: CardOf<'font'>) {
     where = isLocalFont(c.font) ? 'On your computer' : 'Google Fonts',
     sample = esc(c.text || 'The quick brown fox jumps over the lazy dog');
   useFont(c.font);
-  return `<div class="fs-aa" style="font-family:'${f}', system-ui">Aa</div><div class="fs-meta"><b>${f}</b><span class="fs-src">${where}</span></div><div class="fs-sample text" style="font-family:'${f}', system-ui">${sample}</div>`;
+  return `<div class="fs-aa" style="font-family:'${f}', system-ui">Aa</div><div class="fs-meta"><b>${f}</b><span class="fs-src">${where}</span></div><div class="fs-sample text" title="Double-click to try your own words" style="font-family:'${f}', system-ui">${sample}</div>`;
 }
 
 function coll(c: CardOf<'coll'>) {
