@@ -421,6 +421,7 @@
     "tests/offerKept.ts": "Checks Myra’s prototype offer is kept until its board is made, and that her bubble’s buttons never build on another board.",
     "tests/offerRead.ts": "Checks Myra’s prototype offer as read from her reply and from the board file, a bad one dropping alone.",
     "tests/packages.ts": "Tests installing packages into a prototype and bundling them in the preview.",
+    "tests/panelGone.ts": "The Wireframe panel is gone: saved layouts, settings, boxes and a toolbar order from before load cleanly, plus Settings, Ctrl+\\, the update bar and the tour's wireframe step.",
     "tests/perf.ts": "Times opening, dragging, zooming and editing a 500-card board against another branch.",
     "tests/persist.ts": "Checks a saved card keeps its content and drops what only mattered while running.",
     "tests/phone.ts": "Checks the phone layout opens a panel as a bottom sheet.",
