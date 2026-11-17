@@ -1,6 +1,6 @@
 {
-  "wireframe-align": "New in 8c: the whole Sign in button selected on its screen, with Align ▾ open above the bar showing the six align buttons. The base shows the same selection with six inline align buttons in a bar further down, and nothing open.",
+  "wireframe-align": "New in 8c: the whole Sign in button selected on its screen. Its bar shows Align ▾ in place of six inline align buttons, so it is narrower, with Align ▾ open above it holding the six buttons. The base bar, at the same height, shows the six inline buttons and nothing open.",
   "wireframe-phone-pieces": "Changed in 8c: at 600 px the strip under the open picker shows iPhone ▾ after Pieces, which moves Add a label, Fill, Stroke and Corners right.",
   "wireframe-screen": "Changed in 8c: the selected screen's bar shows iPhone ▾ after Pieces, which moves the bar's other buttons right.",
-  "wireframe-size": "New in 8c: the Sign in button's box selected, with Align ▾ and 345 × 48 ▾ in the bar and the size dropdown open above it: X, Y, W and H two to a row, and Rotate° across. The base shows the box's bar further down, with neither."
+  "wireframe-size": "New in 8c: the Sign in button's box selected. Its bar gains Align ▾ and 345 × 48 ▾ after Pieces, which moves the other buttons right, with the size dropdown open above it: X, Y, W and H two to a row, and Rotate° across. The base bar, at the same height, has neither and nothing open."
 }
