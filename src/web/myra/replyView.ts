@@ -5,13 +5,15 @@ import { save } from '../core/history.ts';
 import { type Act, type After, type Button, type Piece, piecesOf, SLOTS, storedOf } from './acts.ts';
 import { chatKeep } from './chatLog.ts';
 
-const HEADING = 'Changed on the board';
-
 // how many times each host has been drawn, so a click that drew something else there doesn't draw over it
 const drawn = new WeakMap<HTMLElement, number>();
 
+/** What a button's run resolves to when it is turned away only after the press, as by the host, so the press takes
+ *  nothing away after all and the button comes back. */
+export const HELD = Symbol('held');
+
 // A used button doesn't come back when the chat opens again: a click takes what it takes off the message too.
-function spend(m: ChatMsg, used: readonly ChatAction[]) {
+export function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (!m.acts || !used.length) return;
   const left = m.acts.filter(a => !used.includes(a));
   if (left.length) m.acts = left;
@@ -19,14 +21,32 @@ function spend(m: ChatMsg, used: readonly ChatAction[]) {
   if (chatKeep() === 'board') save();
 }
 
-function summaryEl(lines: readonly string[]) {
+function summaryEl(p: Extract<Piece, { slot: 'summary' }>) {
   const box = document.createElement('div'),
     head = document.createElement('b'),
-    list = document.createElement('ul');
-  box.className = 'm-summary';
-  head.textContent = HEADING;
-  for (const line of lines) list.appendChild(document.createElement('li')).textContent = line;
-  box.append(head, list);
+    list = document.createElement(p.numbered ? 'ol' : 'ul');
+  box.className = p.cls ? `m-summary ${p.cls}` : 'm-summary';
+  if (p.plan) box.dataset.plan = p.plan;
+  head.textContent = p.head;
+  const { hover } = p;
+  p.lines.forEach((line, i) => {
+    const li = list.appendChild(document.createElement('li')),
+      mark = p.marks?.[i];
+    li.textContent = line;
+    li.classList.toggle('dim', !!p.dim?.has(i));
+    if (mark) li.dataset.mark = mark;
+    if (!hover) return;
+    li.onmouseenter = () => hover(i);
+    li.onmouseleave = () => hover(null);
+  });
+  box.append(head);
+  if (p.busy) {
+    const bar = box.appendChild(document.createElement('div'));
+    bar.className = 'm-bar';
+    bar.setAttribute('role', 'progressbar');
+    bar.setAttribute('aria-label', 'Building');
+  }
+  box.append(list);
   return box;
 }
 
@@ -51,7 +71,7 @@ export function drawActs(
   const pieces = acts.flatMap(a => piecesOf(a).map((p): [Act, Piece] => [a, p]));
   const button = (
     into: HTMLElement,
-    { label, cls, ghost, title, after, run }: Button,
+    { label, cls, ghost, title, after, live, held, run }: Button,
     a: Act,
     slotActs: readonly Act[],
   ) => {
@@ -60,10 +80,15 @@ export function drawActs(
     b.className = cls || (ghost ? 'ghost' : '');
     if (title) b.title = title;
     b.onclick = () => {
-      const gone = after === 'stay' ? [] : after === 'self' ? [a] : slotActs;
+      if (held?.()) return;
+      // one that stopped applying after it was drawn, such as an offer in her bubble once another board is open, takes
+      // and runs nothing: it only draws again, and its view leaves it out
+      if (live && !live()) return drawActs(host, m, acts, onClick);
+      const gone = after === 'stay' ? [] : after === 'self' ? [a] : slotActs,
+        had = m?.acts;
       if (m) spend(m, storedOf(gone));
       onClick?.(after);
-      run();
+      const ran = run();
       if (drawn.get(host) === turn)
         drawActs(
           host,
@@ -71,6 +96,17 @@ export function drawActs(
           acts.filter(x => !gone.includes(x)),
           onClick,
         );
+      const redrawn = drawn.get(host);
+      // turned away after the press, as by the host: what it spent comes back, and so do the buttons
+      if (ran instanceof Promise)
+        void ran.then(r => {
+          if (r !== HELD) return;
+          if (m && had && m.acts !== had) {
+            m.acts = had;
+            if (chatKeep() === 'board') save();
+          }
+          if (drawn.get(host) === redrawn) drawActs(host, m, acts, onClick);
+        });
     };
   };
   for (const slot of SLOTS) {
@@ -80,7 +116,7 @@ export function drawActs(
     row.className = 'm-acts';
     for (const [a, p] of here) {
       if (p.slot === 'summary') {
-        if (p.lines.length) host.appendChild(summaryEl(p.lines));
+        if (p.lines.length) host.appendChild(summaryEl(p));
       } else if (p.slot === 'sources') {
         const box = host.appendChild(sourcesEl(p.head));
         for (const l of p.links) button(box, { ...l, cls: 'm-link' }, a, all);

@@ -34,8 +34,9 @@ type Wish = { name: string; stack: Proto['stack']; purpose?: string; device?: Pr
 export type Seed = { cards: Card[]; links: Link[] };
 
 // A prototype board and its own folder of code in the repo, opened. Brought cards go beside Myra's notes, selected,
-// so asking her to build uses them.
-export async function createPrototype(f: Folder, root: string, w: Wish, seed?: Seed) {
+// so asking her to build uses them. `saved` runs once the board is saved, while the board it was started from is still
+// open.
+export async function createPrototype(f: Folder, root: string, w: Wish, seed?: Seed, saved?: () => void) {
   const made = await Fenmyr.protoCreate({ root, name: w.name, stack: w.stack });
   const proto: Proto = {
     ...made,
@@ -52,10 +53,11 @@ export async function createPrototype(f: Folder, root: string, w: Wish, seed?: S
     links: seed?.links ?? [],
   };
   await Fenmyr.save(b);
+  saved?.();
   await refreshBoards();
   // made from a folder's home, it opens in place of the home, as a new board does
-  closeHome();
   await openBoard(b.id);
+  closeHome();
   showWelcome();
   if (brought.length) selectOnly(brought.map(c => c.id));
   chirp(`Made “${w.name}”. Its code is in ${proto.dir} ✦`, 4000);

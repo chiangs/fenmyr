@@ -113,6 +113,12 @@ export function glideTo(cs: Card[]) {
   applyView();
   glideView(to);
 }
+const onPrototype = () => session.board?.kind === 'prototype';
+const slashClear = () =>
+  onPrototype()
+    ? reply('I keep one chat for each prototype, so how it was built stays in one place.')
+    : $('mcNew').click();
+
 export function init33() {
   addEventListener('focus', () => {
     if (greetDay && dayKey(bdNow()) !== greetDay) greet('newday');
@@ -209,7 +215,18 @@ export function init33() {
       },
       run: slashAnimate,
     },
-    { cmd: 'clear', group: 'chat', desc: 'Start a fresh chat', run: () => $('mcNew').click(), quiet: true },
+    {
+      cmd: 'clear',
+      group: 'chat',
+      get desc() {
+        return onPrototype() ? 'Clears nothing, since a prototype keeps one chat' : 'Start a fresh chat';
+      },
+      // on a prototype she answers it, and her answer reads only under the /clear it answers
+      get quiet() {
+        return !onPrototype();
+      },
+      run: slashClear,
+    },
     { cmd: 'help', group: 'chat', desc: 'What I can do without thinking', run: () => reply(helpText()) },
   ];
 }

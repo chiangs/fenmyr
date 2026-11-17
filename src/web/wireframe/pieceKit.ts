@@ -29,7 +29,6 @@ type Style = Omit<PieceItem, 'type' | 'x' | 'y' | 'w' | 'h'>;
 
 // bar: where a bar sits on a screen; w: the width it's made at; web: a full-width section of a web page
 export type Piece = {
-  icon: string;
   bar?: 'top' | 'bottom' | 'row';
   w?: number;
   web?: boolean;

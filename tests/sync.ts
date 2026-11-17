@@ -1,11 +1,13 @@
 // Keeping a prototype in step with GitHub: a fetch when its board opens shows what's new, Pull brings it in, Myra asks
-// to pull before building, and a clash leaves files as they were with two ways out.
+// to pull before building, and a clash leaves files as they were with two ways out. Keeping mine on a new branch
+// changes no file, so it doesn't wait for a build.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { launch } from './support/launch.ts';
+import { fromGitMenu } from './support/prototype.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-sync-')));
 const repo = path.join(work, 'acme'),
@@ -21,6 +23,7 @@ fs.writeFileSync(
   `#!/bin/sh
 case "$*" in
   *stream-json*)
+    case "$*" in *'Wait for go.'*) i=0; while [ ! -e "${path.join(work, 'go')}" ] && [ $i -lt 600 ]; do sleep 0.1; i=$((i+1)); done ;; esac
     echo '{"type":"result","is_error":false,"result":"I made the change."}' ;;
   *) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"ok\\"}"}' ;;
 esac
@@ -89,8 +92,8 @@ try {
 
   teammatePushes('NOTES.md', 'from the teammate\n', 'Add notes at the root');
   await page.evaluate(() => window.__fenmyr.openBoard('pb'));
-  await until(async () => /Pull 1 from GitHub/.test(await bar()), 'opening the board fetches and shows what’s new');
-  await page.click('#prGit [data-git="pull"]');
+  await until(async () => /1 to pull/.test(await bar()), 'opening the board fetches and shows what’s new');
+  await fromGitMenu(page, 'Pull 1 from GitHub');
   await until(async () => /Pulled\./.test(await myra()), 'Pull brings it in');
   assert.ok(fs.existsSync(path.join(repo, 'NOTES.md')), 'a change at the repo root arrives too');
 
@@ -111,13 +114,31 @@ try {
   fs.writeFileSync(path.join(repo, app), 'export const App = () => <p>mine</p>;\n');
   git(repo, 'commit', '-qam', 'My heading');
   await reopen();
-  await until(async () => /Pull 1 from GitHub/.test(await bar()), 'their commit shows');
-  await page.click('#prGit [data-git="pull"]');
+  await until(async () => /1 to pull/.test(await bar()), 'their commit shows');
+  await fromGitMenu(page, 'Pull 1 from GitHub');
   await until(async () => /src\/App\.tsx changed both here and on GitHub/.test(await myra()), 'a clash is explained');
   assert.match(fs.readFileSync(path.join(repo, app), 'utf8'), /mine/, 'and the files are left as they were');
   assert.ok(!fs.existsSync(path.join(repo, '.git', 'rebase-merge')), 'with nothing half-merged');
+  await page.evaluate(() =>
+    window.__fenmyr.applyMyra({ say: 'Writing it.', build: { request: 'Wait for go.' } }, 'go'),
+  );
+  await until(
+    async () => /Pull them before I start\?/.test((await myra()).split(' | ').at(-1) ?? ''),
+    'she asks first',
+  );
+  await tap('Build anyway');
+  await until(
+    async () => page.evaluate(() => /^Building/.test(document.getElementById('mcStatusSay')?.textContent ?? '')),
+    'a build runs',
+  );
   await tap('Keep mine on a new branch');
-  await until(async () => /Your version is on prototype\/checkout-/.test(await myra()), 'mine goes to a new branch');
+  await until(
+    async () => /Your version is on prototype\/checkout-/.test(await myra()),
+    'mine goes to a new branch, even while a build runs',
+  );
+  assert.doesNotMatch(await myra(), /You can pull once it’s done/, 'and isn’t turned away');
+  fs.writeFileSync(path.join(work, 'go'), '');
+  await until(async () => (await myra()).split('I made the change.').length === 3, 'the build lands');
   assert.match(
     execFileSync('git', ['-C', github, 'branch'], { env }).toString(),
     /prototype\/checkout-/,
@@ -126,8 +147,8 @@ try {
 
   git(repo, 'switch', '-q', 'main');
   await reopen();
-  await until(async () => /Pull 1 from GitHub/.test(await bar()), 'main is still behind');
-  await page.click('#prGit [data-git="pull"]');
+  await until(async () => /1 to pull/.test(await bar()), 'main is still behind');
+  await fromGitMenu(page, 'Pull 1 from GitHub');
   await until(async () => (await myra()).split('changed both here and on GitHub').length === 3, 'the clash again');
   await tap('Take GitHub’s version');
   await until(async () => /theirs/.test(fs.readFileSync(path.join(repo, app), 'utf8')), 'theirs is taken');

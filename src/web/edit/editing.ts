@@ -194,7 +194,6 @@ export function startEdit(id: string, target?: Element | null) {
   if (c.type === 'note') for (const [k, v] of Object.entries(NOTE_FIELD)) t.setAttribute(k, v);
   t.contentEditable = 'true';
   t.focus();
-  if (c.userH == null && c.type === 'note') c.userH = c.h;
   const r = document.createRange();
   r.selectNodeContents(t);
   r.collapse(false);

@@ -9,6 +9,7 @@ import { fitText } from '../edit/text.ts';
 import { audioAct } from '../media/devices.ts';
 import { videoAct } from '../media/video.ts';
 import { card } from '../model/boards.ts';
+import { revealCards } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
 import { newNoteColor, snapTo } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
@@ -16,7 +17,6 @@ import { endPen, penT } from '../tools/pen.ts';
 import { addCard } from '../tools/penEdit.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
 import { flipVNote, openVNote, toggleVNFull } from '../vault/notes.ts';
-import { revealCards } from '../wireframe/drawer.ts';
 import { onDragMove } from './dragMove.ts';
 import { stepZoom, toWorld, viewSoon, zoomAt } from './handles.ts';
 import { clearStuckDrag } from './pointerKit.ts';
@@ -151,7 +151,7 @@ export function init16() {
     if (
       closestTo(
         e.target,
-        '.tray, .m-bubble, .cpop, .home, .m-chat, .design, .side, .row-menu, .stamp-pick, .wheel-stamps, .docview, .settings, .shapepick, .tplpick',
+        '.tray, .m-bubble, .cpop, .home, .m-chat, .side, .row-menu, .stamp-pick, .wheel-stamps, .docview, .settings, .shapepick, .tplpick',
       )
     )
       return;

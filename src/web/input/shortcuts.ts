@@ -23,17 +23,19 @@ import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { drawPen, endPen, penT, startPen } from '../tools/pen.ts';
 import { addCard, drawVec, endVec, refit, vec, vecCard } from '../tools/penEdit.ts';
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
+import { startScreen } from '../tools/screenTool.ts';
 import { closeColor } from '../ui/colorPicker.ts';
 import { clickIn, isTyping } from '../ui/dom.ts';
 import { toPointer } from '../ui/toolbar.ts';
-import { pickWF } from '../wireframe/designPanel.ts';
+import { closePicker, pickerFor } from '../wireframe/piecePick.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { groupSel, restack } from '../wireframe/stack.ts';
 import { initKeyed, keyedButton } from './keyed.ts';
 
 let CLEAN_EL: Element[] = [];
-// the letters below that start placing a card, a wireframe piece or a picture (Shift+V, video, is checked on its own)
-const TOOL_KEYS = ['n', 't', 'c', 'g', 'r', 'x', 'd', 'l', 'a', 'i'];
+// the letters below that start placing a card, a wireframe piece, a screen or a picture (Shift+V, video, is checked on
+// its own)
+const TOOL_KEYS = ['n', 't', 'c', 'g', 'r', 'x', 'w', 'd', 'l', 'a', 'i'];
 
 function setClean(on: boolean) {
   if (on === document.body.classList.contains('clean') || (on && document.body.classList.contains('phone'))) return;
@@ -58,10 +60,9 @@ export const openSettingsKey = () => {
 };
 export function init20() {
   // ---------- just the board: every panel tucks away (Ctrl+\, like Figma), and comes back with Ctrl+\ or Esc ----------
-  CLEAN_EL = [
-    ...['side', 'tray', 'dock', 'modebar', 'keys', 'design'].map(id => $(id)),
-    document.querySelector('.top'),
-  ].filter(el => el !== null);
+  CLEAN_EL = [...['side', 'tray', 'dock', 'modebar', 'keys'].map(id => $(id)), document.querySelector('.top')].filter(
+    el => el !== null,
+  );
 
   $('cleanBtn').onclick = () => setClean(true);
 
@@ -211,6 +212,10 @@ export function init20() {
       stopPlacing();
       return;
     }
+    if (e.key === 'Escape' && pickerFor()) {
+      closePicker();
+      return;
+    }
     if (e.key === 'Escape' && session.selWire) {
       selectWire(null);
       return;
@@ -316,8 +321,9 @@ export function init20() {
     if (k === 't') startPlacing('title');
     if (k === 'c') startPlacing('todo');
     if (k === 'g') startPlacing('coll');
-    if (k === 'r') pickWF('box');
-    if (k === 'x') pickWF('text');
+    if (k === 'r') startPlacing('box');
+    if (k === 'x') startPlacing('text');
+    if (k === 'w') startScreen();
     if (k === 'd') startPlacing('doc');
     if (k === 's') clickIn($('tools'), '[data-add="shape"]');
     if (k === 'e') clickIn($('tools'), '[data-add="stamp"]');

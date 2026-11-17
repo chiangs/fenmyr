@@ -4,20 +4,11 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { everyOfflineCard, richNotes } from '../tests/fixtures/boards.ts';
-import { type Board, launch, ROOT, settle } from '../tests/support/launch.ts';
-import { longText, pasteIntoChat } from '../tests/support/paste.ts';
+import { launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
-
-type Step = (page: Page) => Promise<void>;
-// width: the window's, for the prototype screen at each of its layouts; proto: open a prototype board first
-type Group = {
-  settings?: Record<string, unknown>;
-  board?: () => Board;
-  phone?: boolean;
-  width?: number;
-  proto?: boolean;
-  states: [string, Step][];
-};
+import { type Group, MYRA_GROUPS, type Step } from './visual-myra.ts';
+import { openPrototype, PROTO_GROUPS, removeProtoFolders } from './visual-proto.ts';
+import { WIREFRAME_GROUPS } from './visual-wireframe.ts';
 
 const FROZEN_MOTION =
   '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
@@ -61,7 +52,16 @@ const board: [string, Step][] = [
       await page.mouse.click(p.x, p.y, { button: 'right' });
     },
   ],
-  ['zoom-in', keys('Control+0', 'Control+=', 'Control+=', 'Control+=')],
+  // card-menu leaves the pointer on the note, and zooming would slide a selection bar button under it, hovered or not
+  // depending on when the browser next checks; the window's bottom-right corner has nothing a zoom can move there
+  [
+    'zoom-in',
+    async page => {
+      const corner = await page.evaluate(() => ({ x: innerWidth - 1, y: innerHeight - 1 }));
+      await page.mouse.move(corner.x, corner.y);
+      await keys('Control+0', 'Control+=', 'Control+=', 'Control+=')(page);
+    },
+  ],
   ['zoom-out', keys('Control+0', 'Control+-', 'Control+-', 'Control+-')],
   [
     'home',
@@ -70,41 +70,9 @@ const board: [string, Step][] = [
     },
   ],
 ];
-const screen: [string, Step][] = [['screen', async () => {}]];
-// a reply that changed the board, under her words in the open chat
-const CHANGED = {
-  say: 'I’ve sorted these into phases.',
-  collections: [{ name: 'Phases', kanban: true, columns: ['To do', 'Doing', 'Done'] }],
-  edit: [
-    { id: 'todo', in: 'Phases' },
-    { id: 'doc', in: 'Phases' },
-    { id: 'note', in: 'Phases' },
-    { id: 't1', text: 'Reworded by Myra' },
-    { id: 't2', text: 'Also reworded' },
-  ],
-  remove: ['myranote'],
-  next: ['Name the columns', 'Add due dates', 'Sum up each phase'],
-  pages: [{ url: 'https://example.com/planning', title: 'Planning in phases' }],
-};
-// the notes she was given for it, with the web on, so what she read shows under her reply
-const note = (rel: string, title: string) => ({
-  vault: 'Notes',
-  vaultId: 'v1',
-  rel,
-  title,
-  tags: [],
-  props: undefined,
-  excerpt: title,
-  text: title,
-});
-const READ = { asked: true, used: [note('Roadmap.md', 'Roadmap'), note('Retro.md', 'Retro notes')], web: true };
-// a 1×1 picture for the files added to a message
-const DOT = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 const GROUPS: Record<string, Group> = {
   light: { states: board },
-  'proto-wide': { proto: true, width: 1440, states: screen },
-  'proto-medium': { proto: true, width: 1200, states: screen },
-  'proto-narrow': { proto: true, width: 900, states: screen },
+  ...PROTO_GROUPS,
   dark: { settings: { theme: 'dark' }, states: board.slice(0, 3) },
   phone: { phone: true, states: [['board', async () => {}]] },
   rich: {
@@ -144,56 +112,6 @@ const GROUPS: Record<string, Group> = {
       ],
     ],
   },
-  reply: {
-    states: [
-      [
-        'chat',
-        async page => {
-          await page.evaluate(() =>
-            document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
-          );
-          await page.evaluate(([r, ctx]) => window.__fenmyr.applyMyra(r, 'q', ctx), [CHANGED, READ] as const);
-          await settle(page, 1000);
-          await page.keyboard.press('Escape');
-          await page.click('#mPill');
-        },
-      ],
-    ],
-  },
-  // what goes with the next message: the board, two selected cards, and the web left out
-  sees: {
-    settings: { webAccess: true },
-    states: [
-      [
-        'chat',
-        async page => {
-          await page.evaluate(() =>
-            document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
-          );
-          await page.evaluate(() => window.__fenmyr.selectOnly(['note', 'todo']));
-          await page.click('#mPill');
-          const web = page.locator('#mcSees [data-chip="web"] .mcs-x');
-          if (await web.count()) await web.click();
-          // the resting look, not the hovered one
-          await page.mouse.move(1, 1);
-        },
-      ],
-      [
-        'added',
-        async page => {
-          const input = page.locator('#mcFile');
-          if (await input.count())
-            await input.setInputFiles([
-              { name: 'moodboard.png', mimeType: 'image/png', buffer: Buffer.from(DOT, 'base64') },
-              { name: 'brief.md', mimeType: 'text/markdown', buffer: Buffer.from('The brief') },
-            ]);
-          const add = page.locator('#mcSees .mcs-add');
-          if (await add.count()) await add.click();
-          await page.mouse.move(1, 1);
-        },
-      ],
-    ],
-  },
   settings: {
     states: TABS.map(t => [
       t,
@@ -203,81 +121,15 @@ const GROUPS: Record<string, Group> = {
       },
     ]),
   },
-  panels: {
-    states: [
-      [
-        'doc-editor',
-        async page => {
-          await page.locator('#cards .card.doc').dblclick();
-          await page.waitForSelector('.dv-prose');
-        },
-      ],
-      [
-        'myra-chat',
-        async page => {
-          await page.keyboard.press('Escape');
-          await page.click('#mPill');
-        },
-      ],
-      [
-        'myra-draft',
-        async page => {
-          await page.fill('#mcInput', 'Group these by theme\nthen name each group\nand keep it short');
-          await page.keyboard.press('Escape');
-        },
-      ],
-      [
-        'myra-expand',
-        async page => {
-          await page.click('#mPill');
-          const expand = page.locator('#mcExpand');
-          if (await expand.count()) await expand.click();
-          await pasteIntoChat(page, longText(100));
-        },
-      ],
-    ],
-  },
+  ...MYRA_GROUPS,
+  ...WIREFRAME_GROUPS,
 };
-
-// A prototype board in a fresh repo, its starter running in the preview. A checkout without prototypes (main, until
-// the feature lands) has no protoCreate, so it shows its ordinary board and the state is listed as meant.
-async function openPrototype(page: Page) {
-  // a fixed name, since the git bar shows it
-  const repo = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-repo-')), 'acme');
-  fs.mkdirSync(repo);
-  execFileSync('git', ['-C', repo, 'init', '-q', '-b', 'main']);
-  const made = await page.evaluate(async repo => {
-    const api: Record<string, unknown> = { ...window.Fenmyr };
-    if (typeof api.protoCreate !== 'function') return false;
-    await window.Fenmyr.saveFolders({
-      projects: [{ id: 'vp', name: 'Acme', open: true, repo: { path: repo } }],
-      folders: [{ id: 'vf', name: 'Prototypes', project: 'vp', kind: 'prototyping', open: true }],
-      order: {},
-    });
-    const proto = await window.Fenmyr.protoCreate({ root: repo, name: 'Checkout', stack: 'react' });
-    await window.Fenmyr.save({
-      id: 'vb',
-      name: 'Checkout',
-      folder: 'vf',
-      kind: 'prototype',
-      proto,
-      cards: [],
-      links: [],
-      tray: [],
-    });
-    await window.__fenmyr.refreshBoards();
-    await window.__fenmyr.openBoard('vb');
-    return true;
-  }, repo);
-  if (made) await page.frameLocator('#pr-preview iframe').locator('h1').waitFor({ timeout: 30000 });
-  await settle(page, 800);
-}
 
 async function shoot(dir: string, out: string) {
   fs.mkdirSync(out, { recursive: true });
   for (const [name, group] of Object.entries(GROUPS)) {
     const shown = (group.board ?? everyOfflineCard)();
-    const l = await launch({ dir, boards: [shown], open: shown.id, settings: group.settings });
+    const l = await launch({ dir, boards: [shown], open: shown.id, settings: group.settings, env: group.env });
     const width = group.phone ? 600 : group.width;
     if (width) {
       await l.app.evaluate(({ BrowserWindow }, w) => {
@@ -369,6 +221,7 @@ try {
   await shoot(ROOT, path.join(out, 'head'));
 } finally {
   base.remove();
+  removeProtoFolders();
 }
 // States a branch changes on purpose, each with the reason, in tools/visual-expected.json. The file is reviewed in the
 // PR like code; an entry whose state no longer differs is reported so it can be removed.

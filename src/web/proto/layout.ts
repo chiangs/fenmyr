@@ -1,14 +1,15 @@
 import type { Board } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
-import { playAnim } from '../myra/anim.ts';
-import { chatLog } from '../myra/chatLog.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
+import { dockReset, gooFrom, hopFrom, wonderIfEmpty } from '../myra/perch.ts';
 import { heightGrip } from '../settings/panelHeights.ts';
 import { applyLayout } from '../settings/widgets.ts';
 import { applyBoxes } from '../ui/boxes.ts';
+import { checkNewest } from './buildCheck.ts';
 import { watchCaptures } from './capture.ts';
 import { initChatPictures } from './chatPictures.ts';
 import { renderCode } from './code.ts';
+import { renderDockHead } from './dockHead.ts';
 import { DEFAULT_LAYOUT, DIVIDER, FOLD_ORDER, type Foldable, fit, type Layout, MIN, type Pane, STRIP } from './fit.ts';
 import { renderGitBar } from './gitbar.ts';
 import { dragOverFrame, renderPreview } from './preview.ts';
@@ -23,6 +24,8 @@ const LABEL: Record<Pane, string> = { preview: 'Preview', code: 'Code', canvas: 
 let layouts: Record<string, Layout> = {};
 let boardId = '';
 let root: HTMLElement | null = null;
+// the board Fenmyr opens as it starts has no board before it for Myra to hop from
+let shown = false;
 
 const readLayouts = (): Record<string, Layout> => {
   try {
@@ -83,8 +86,13 @@ function build() {
   const el = document.createElement('div');
   el.className = 'pr-root';
   el.id = 'proto';
-  el.innerHTML = `<div class="pr-main"><div class="pr-git" id="prGit"></div><div class="pr-row">${panes}</div></div><div class="pr-div" data-d="chat"></div><div class="pr-chat" id="prChat"></div>`;
+  el.innerHTML = `<div class="pr-row">${panes}</div><div class="pr-div" data-d="chat"></div><div class="pr-chat" id="prChat"></div>`;
   document.body.appendChild(el);
+  // the git bar lives in Myra's chat, between the thread and the input's height grip; off a prototype board it's hidden
+  const git = document.createElement('div');
+  git.className = 'pr-git';
+  git.id = 'prGit';
+  $('mcList').after(git);
   el.addEventListener('click', e => {
     const t = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-fold], [data-open]') : null;
     const p = FOLD_ORDER.find(x => x === (t?.dataset.fold ?? t?.dataset.open));
@@ -195,11 +203,8 @@ function dockChat(on: boolean) {
   if (chat.parentElement !== home) home.prepend(chat);
   const slot = $('gooSlot'),
     spot = on ? $('mcPerch') : $('mPill');
-  if (spot && slot.parentElement !== spot) {
-    slot.classList.remove('perched');
-    slot.style.transform = '';
-    spot.prepend(slot);
-  }
+  if (slot.parentElement !== spot) spot.prepend(slot);
+  dockReset();
 }
 
 const INPUT_KEY = 'fenmyr:protoInputH',
@@ -227,20 +232,31 @@ function inputGrip() {
   inputHeight(Number(localStorage.getItem(INPUT_KEY)) || INPUT_H);
 }
 
-// a folded column opened by something other than its strip, such as Myra's Show files
+// A folded column opened by something other than its strip, such as Myra's Show files. It settles once the column has
+// its width, after the slide, so what it shows can be fitted to it.
 export function openColumn(p: Foldable) {
   const l = layout();
-  if (!l.closed.includes(p)) return;
+  if (!l.closed.includes(p)) return Promise.resolve();
   l.closed = l.closed.filter(x => x !== p);
   remember();
   animate = true;
+  const slides = moving();
   place();
   animate = false;
+  return new Promise<void>(done => setTimeout(done, slides ? MOVE_MS : 0));
 }
 
+/** Whether the window is too narrow for a column the person left open, so it stays folded. */
+export const crowdedOut = (p: Foldable) => !layout().closed.includes(p) && fit(layout(), innerWidth).includes(p);
+
 export function showProto(b: Board) {
-  const on = b.kind === 'prototype';
-  if (!on && !document.body.classList.contains('proto')) return;
+  const on = b.kind === 'prototype',
+    was = document.body.classList.contains('proto'),
+    first = !shown;
+  shown = true;
+  if (!on && !was) return;
+  // read while the board you're leaving is still drawn, before the prototype's screen moves her
+  const from = on && !was && !first ? gooFrom() : null;
   root ??= build();
   if (!Object.keys(layouts).length) layouts = readLayouts();
   boardId = b.id;
@@ -250,11 +266,15 @@ export function showProto(b: Board) {
   dockChat(on);
   myraOpen(on);
   if (!on) return startSync(b);
-  // an empty chat: she tilts her head, wondering what you'll build
-  if (!chatLog().length) playAnim('curious', false);
   place();
+  renderDockHead(b);
   renderGitBar(b);
   renderCode(b);
-  renderPreview(b);
+  // a build that landed while another board was open is checked now
+  void renderPreview(b).then(() => checkNewest());
   startSync(b);
+  // last, so the panes' first render doesn't eat her wind-up
+  hopFrom(from);
+  // an empty chat: once she has landed she tilts her head, wondering what you'll build
+  wonderIfEmpty();
 }

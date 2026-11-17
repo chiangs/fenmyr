@@ -1,4 +1,4 @@
-import type { Folder, Project } from '../../shared/model.ts';
+import type { Board, Folder, Project } from '../../shared/model.ts';
 
 export type Kind = 'board' | 'folder' | 'project';
 // a row in the left box: a board, folder or project, each using the fields it has
@@ -18,12 +18,15 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { dueForget } from '../features/due.ts';
 import { chirp, say } from '../myra/say.ts';
+import { dropWaiting } from '../proto/buildSlot.ts';
+import { renderDockHead } from '../proto/dockHead.ts';
 import { offerRename } from '../repo/codeFolder.ts';
 import { linkRepo } from '../repo/link.ts';
 import { newPrototypingFolder } from '../repo/prototypes.ts';
 import { child, esc } from '../ui/dom.ts';
 import { keepOnScreen, removeOnOutsidePress } from '../ui/popover.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
+import { changeBoard } from './boardWrites.ts';
 import { confirmDelete } from './confirmDelete.ts';
 import { renderCrumbs, where } from './crumbs.ts';
 import { homeAt, renderHome } from './home.ts';
@@ -64,6 +67,7 @@ async function copyBoard(id: string, into: { name?: string; parent?: string; fol
 
 async function dropBoard(id: string) {
   for (const k of appState.boardList.filter(x => x.parent === id)) await dropBoard(k.id);
+  dropWaiting(id);
   await Fenmyr.remove(id);
   dueForget(id);
 }
@@ -200,16 +204,19 @@ export async function renameBoard(b: { id: string }, v: string) {
   if (!v) return;
   if (session.board && session.board.id === b.id) {
     session.board.name = v;
+    renderDockHead(session.board);
     const field = $('boardName');
     if (field instanceof HTMLInputElement) field.value = v;
     save();
     return offerRename(session.board);
   }
-  const bb = await Fenmyr.load(b.id);
-  if (!bb) return;
-  bb.name = v;
-  await Fenmyr.save(bb);
-  offerRename(bb);
+  let renamed: Board | undefined;
+  await changeBoard(b.id, bb => {
+    bb.name = v;
+    renamed = bb;
+    return true;
+  });
+  if (renamed) offerRename(renamed);
 }
 
 export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElement) {

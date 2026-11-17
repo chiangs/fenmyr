@@ -1,10 +1,9 @@
 import { isRecord } from '../../shared/model.ts';
 import { B, FIELD_LABEL, IC, numOf, type Piece, recs, str, strs, T } from './pieceKit.ts';
 
-// more elements: media, form fields, tabs, a table, an accordion and a dialog (a person can search all of them in the panel)
+// more elements: media, form fields, tabs, a table, an accordion and a dialog (a person can search all of them in the Pieces picker)
 export const MORE: Record<string, Piece> = {
   Video: {
-    icon: 'play-circle',
     w: 320,
     make: (W, o) => {
       const h = numOf(o.h, Math.round((W * 9) / 16));
@@ -18,7 +17,6 @@ export const MORE: Record<string, Piece> = {
     },
   },
   Map: {
-    icon: 'map',
     w: 320,
     make: (W, o) => {
       const h = numOf(o.h, 200);
@@ -32,16 +30,14 @@ export const MORE: Record<string, Piece> = {
       ];
     },
   },
-  Divider: { icon: 'divider', w: 300, make: W => [B(0, 0, W, 1, { fill: '#e4e4e7' })] },
-  // a gap on a screen Myra builds; in the panel it's a dashed-looking placeholder so there is something to place
+  Divider: { w: 300, make: W => [B(0, 0, W, 1, { fill: '#e4e4e7' })] },
+  // a gap on a screen Myra builds; placed by hand it's a dashed-looking placeholder so there is something to place
   Space: {
-    icon: 'space',
     w: 300,
     make: (W, o) =>
-      o.panel ? [B(0, 0, W, numOf(o.h, 32), { fill: '#f4f4f5', stroke: '#d4d4d8', sw: 1, radius: 8 })] : [],
+      o.byHand ? [B(0, 0, W, numOf(o.h, 32), { fill: '#f4f4f5', stroke: '#d4d4d8', sw: 1, radius: 8 })] : [],
   },
   Textarea: {
-    icon: 'textarea',
     w: 300,
     make: (W, o) => {
       const top = o.label ? 22 : 0,
@@ -54,7 +50,6 @@ export const MORE: Record<string, Piece> = {
     },
   },
   Dropdown: {
-    icon: 'dropdown',
     w: 300,
     make: (W, o) => {
       const top = o.label ? 22 : 0;
@@ -67,7 +62,6 @@ export const MORE: Record<string, Piece> = {
     },
   },
   Radio: {
-    icon: 'radio',
     w: 240,
     make: (W, o) => {
       const opts =
@@ -86,7 +80,6 @@ export const MORE: Record<string, Piece> = {
     },
   },
   Tabs: {
-    icon: 'tabs',
     w: 320,
     make: (W, o) => {
       const tabs = (Array.isArray(o.tabs) ? o.tabs : ['Overview', 'Details', 'Reviews'])
@@ -109,7 +102,6 @@ export const MORE: Record<string, Piece> = {
     },
   },
   Table: {
-    icon: 'table',
     w: 420,
     make: (W, o) => {
       const cols = strs(o.cols, ['Name', 'Role', 'Status']).slice(0, 6).map(String),
@@ -141,7 +133,6 @@ export const MORE: Record<string, Piece> = {
     },
   },
   Accordion: {
-    icon: 'accordion',
     w: 360,
     make: (W, o) => {
       const items = recs(o.items, [
@@ -168,7 +159,6 @@ export const MORE: Record<string, Piece> = {
     },
   },
   Modal: {
-    icon: 'modal',
     w: 340,
     make: (W, o) => {
       const t = T(24, 24, W - 80, str(o.title, 'Are you sure?'), { size: 20, weight: 800 }),

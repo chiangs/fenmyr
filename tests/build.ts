@@ -1,13 +1,14 @@
 // Myra writing a prototype's code through a stand-in Claude Code: the files change in the prototype's folder, the
-// preview shows the result, her explanation comes with an Undo that puts the folder back without touching what's
-// staged, the header says Building until the build ends, a selection left out of the request reaches the builder as
-// every card, and a change outside the folder is reported.
+// preview shows the result, the build's block links the card it came from, her explanation comes with an Undo that
+// puts the folder back without touching what's staged, the header says Building until the build ends, a selection left
+// out of the request reaches the builder as every card, and a change outside the folder is reported on the block.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { launch } from './support/launch.ts';
+import { fromGitMenu } from './support/prototype.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-build-')));
 const repo = path.join(work, 'acme');
@@ -120,30 +121,28 @@ try {
     'her explanation arrives',
   );
   assert.doesNotMatch(await lastMyra(), /CARDS:/, 'the builder’s card line stays out of the chat');
-  await until(
-    async () =>
-      /I built it from these cards on the board: “Checkout: show the total first”\.↗ Checkout: show the total first/.test(
-        await lastMyra(),
-      ),
-    'Myra links the code back to the card it came from',
-  );
+  // the build's block, with the card its code came from, then her explanation with its buttons
   const buttons = () =>
     page.evaluate(() =>
       [...document.querySelectorAll('#mcList .mc-msg.myra')]
         .slice(-2)
-        .map(m => [...m.querySelectorAll('.m-acts button')].map(b => b.textContent)),
+        .map(m => [...m.querySelectorAll('button')].map(b => b.textContent)),
     );
   const built = await buttons();
-  assert.deepStrictEqual(built, [['Commit', 'Undo'], ['↗ Checkout: show the total first']]);
+  assert.deepStrictEqual(
+    built,
+    [['↗ Checkout: show the total first'], ['Undo this build', 'Explain the code', 'Commit']],
+    'Myra links the code back to the card it came from',
+  );
   await page.waitForTimeout(500);
   await page.evaluate(id => window.__fenmyr.openBoard(id), home);
   await page.waitForTimeout(300);
   await page.evaluate(() => window.__fenmyr.openBoard('pb'));
-  await until(async () => (await lastMyra()).includes('I built it from these cards'), 'the prototype opens again');
+  await until(async () => (await lastMyra()).includes('I built the heading'), 'the prototype opens again');
   await page.waitForTimeout(300);
   assert.deepStrictEqual(await buttons(), built, 'Commit, Undo and the card button are back after opening it again');
   await page.evaluate(() => window.__fenmyr.selectOnly([]));
-  await page.locator('#mcList .m-acts button', { hasText: '↗ Checkout' }).last().click();
+  await page.locator('#mcList button', { hasText: '↗ Checkout' }).last().click();
   assert.deepStrictEqual(await page.evaluate(() => window.__fenmyr.sel), ['n1'], 'her card button selects it');
   const sources = () =>
     JSON.stringify(JSON.parse(fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', 'pb.json'), 'utf8')).proto.sources);
@@ -162,11 +161,20 @@ try {
   assert.match(prompt, /Make the Checkout heading\./, 'the builder gets the request');
   assert.match(prompt, /Checkout: show the total first/, 'and the cards');
   assert.match(prompt, /Buttons are always mint\./, 'and design.md');
-  const settings = JSON.parse(
-    fs
-      .readFileSync(path.join(work, 'args.txt'), 'utf8')
-      .split('\n')
-      .find(a => a.startsWith('{')) ?? '{}',
+  const args = fs.readFileSync(path.join(work, 'args.txt'), 'utf8').split('\n'),
+    settings = JSON.parse(args.find(a => a.startsWith('{')) ?? '{}'),
+    mode = args.indexOf('--permission-mode');
+  assert.deepStrictEqual(
+    args.slice(mode, mode + 6),
+    [
+      '--permission-mode',
+      'acceptEdits',
+      '--allowedTools',
+      'Read,Write,Edit,MultiEdit,Glob,Grep',
+      '--disallowedTools',
+      'Bash,WebFetch,WebSearch,Task',
+    ],
+    'the builder may edit with its file tools alone, named in the order it always had',
   );
   assert.deepStrictEqual(
     settings.permissions,
@@ -198,7 +206,7 @@ try {
     /Built by Myra|<!doctype/i,
   );
 
-  await page.locator('#mcList .m-acts button', { hasText: 'Undo' }).last().click();
+  await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
   await until(async () => fs.readFileSync(app, 'utf8') === starter, 'Undo puts the folder back');
   assert.strictEqual(
     git('diff', '--cached', '--name-only').trim(),
@@ -235,7 +243,10 @@ try {
   const bare = path.join(work, 'github.git');
   execFileSync('git', ['init', '-q', '--bare', bare]);
   git('remote', 'add', 'origin', bare);
-  await page.click('#prGit [data-git="push"]');
+  // coming back to the window, as from the terminal that added the remote, reads the repo again
+  await page.evaluate(() => dispatchEvent(new Event('focus')));
+  await page.waitForFunction(() => document.querySelector('#prGit .pg-state')?.textContent?.endsWith('Not pushed yet'));
+  await fromGitMenu(page, 'Push main to GitHub');
   await until(async () => /Push main of acme to /.test(await lastMyra()), 'Myra asks before pushing');
   await page.locator('#mcList .m-acts button.danger', { hasText: 'Push main to' }).last().click();
   await until(async () => /Pushed\./.test(await lastMyra()), 'the push is made');
@@ -253,7 +264,12 @@ try {
   await tapMyra('Commit');
   await until(async () => /Git doesn’t know who is committing/.test(await lastMyra()), 'a commit git refuses says why');
 
-  const status = () => page.evaluate(() => document.getElementById('mcStatus')?.textContent ?? '');
+  // what the header's status line shows, without what only a screen reader hears
+  const status = () =>
+    page.evaluate(() => {
+      const s = document.getElementById('mcStatus');
+      return (s?.textContent ?? '').replace(s?.querySelector('.mc-heard')?.textContent ?? '', '');
+    });
   await build('SLOW heading.');
   await until(async () => (await status()).startsWith('Building'), 'the header says she is building');
   await page.evaluate(() => window.__fenmyr.ask('Is it nearly done?'));
@@ -283,7 +299,8 @@ try {
 
   await build('OUTSIDE this time.');
   await until(
-    async () => /I also changed files outside this prototype: stray\.txt/.test(await lastMyra()),
+    async () =>
+      /Also changed outside this prototype: stray\.txt\. Undo this build won’t put that back\./.test(await lastMyra()),
     'a change outside the folder is reported',
   );
   const shot = await page.evaluate(() => window.Fenmyr.captureArea({ x: 0, y: 0, w: 40, h: 30 }));

@@ -9,6 +9,7 @@ import { session } from '../core/state.ts';
 import { startEdit } from '../edit/editing.ts';
 import { boardMenu } from '../features/export.ts';
 import { card } from '../model/boards.ts';
+import type { Box } from '../selbar/place.ts';
 import { addCard } from '../tools/penEdit.ts';
 
 // ---------- zoom from the menu (click the %) or the keyboard: it glides there, centered on the part of the board you're looking at ----------
@@ -75,6 +76,39 @@ export function centerWorld(v: View = session.view) {
     return toWorld(left + Math.max((r.right - left) / 2, HALF_CARD), r.top + r.height / 2, v);
   }
   return toWorld(r.left + 270 + (r.width - 530) / 2, r.top + r.height / 2, v);
+}
+
+type Spot = { x: number; y: number; w: number; h: number };
+
+// along one axis: nothing when lo..hi is inside a0..a1, else what centres it there, or puts its start at a0 if longer
+const into = (lo: number, hi: number, a0: number, a1: number) =>
+  lo >= a0 && hi <= a1 ? 0 : hi - lo > a1 - a0 ? a0 - lo : (a0 + a1 - lo - hi) / 2;
+
+// Bring something that landed out of sight into view (a screen far from where you are looking). Given `area`, the part
+// of the view in stage pixels that something docked leaves, the view moves only when it is not already wholly there.
+export function revealCards(cs: readonly Spot[], area?: Box) {
+  if (!cs.length) return;
+  const r = stage.getBoundingClientRect(),
+    x0 = Math.min(...cs.map(c => c.x)),
+    y0 = Math.min(...cs.map(c => c.y)),
+    x1 = Math.max(...cs.map(c => c.x + c.w)),
+    y1 = Math.max(...cs.map(c => c.y + c.h));
+  const { x, y, z } = session.view;
+  if (area) {
+    const dx = into(x0 * z + x, x1 * z + x, area.l, area.r),
+      dy = into(y0 * z + y, y1 * z + y, area.t, area.b);
+    if (!dx && !dy) return;
+    session.view.x += dx;
+    session.view.y += dy;
+    return applyView();
+  }
+  const sx = r.left + x + ((x0 + x1) / 2) * z,
+    sy = r.top + y + ((y0 + y1) / 2) * z;
+  if (sx > r.left + 280 && sx < r.right - 280 && sy > r.top + 80 && sy < r.bottom - 120) return;
+  const c = centerWorld();
+  session.view.x += (c.x - (x0 + x1) / 2) * z;
+  session.view.y += (c.y - (y0 + y1) / 2) * z;
+  applyView();
 }
 
 export function addAtCenter<T extends CardType>(type: T, extra: Partial<CardOf<T>> = {}) {

@@ -13,6 +13,7 @@ import type { Piece } from './acts.ts';
 import { replyRecord } from './replyMemory.ts';
 import { reply } from './say.ts';
 
+const HEADING = 'Changed on the board';
 const GONE = 'Those cards aren’t on the board any more.';
 const UNDO_TIP = 'Undo everything this reply changed';
 
@@ -50,7 +51,7 @@ function undoReply(id: string) {
 export function changesPieces({ reply: id, set, lines }: Extract<ChatAction, { kind: 'changes' }>): Piece[] {
   const record = replyRecord(id),
     found = [set.added, set.moved, set.edited].some(l => l?.length),
-    pieces: Piece[] = [{ slot: 'summary', lines: lines ?? countLines(set) }];
+    pieces: Piece[] = [{ slot: 'summary', head: HEADING, lines: lines ?? countLines(set) }];
   if (found)
     pieces.push({ slot: 'reply', button: { label: 'Show on board', after: 'stay', run: () => showReply(set) } });
   if (record && undoable(record, session.board))

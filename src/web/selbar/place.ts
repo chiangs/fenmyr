@@ -59,3 +59,31 @@ export function place({ box, prefer }: Anchor, frame: Box, size: Size): Placemen
     stuck: under ? 'bottom' : 'top',
   };
 }
+
+/** Where the Pieces picker docks, and how big it is. Beside its screen when the free view keeps at least the picker's
+ *  width of board beside it: 12 px right when there is room there, else 12 px left, else against the free view's edge
+ *  on the side with more room, covering part of the screen, top-aligned with the screen and kept inside. A narrower
+ *  free view gets it as a sheet across its bottom, at most half its height, as on a phone. A sheet is never narrower
+ *  than the picker while the board has room: it then reaches over the widgets beside the free view. */
+export function dockBeside(
+  screen: Box,
+  frame: Box,
+  size: Size,
+  board: { l: number; r: number },
+): { x: number; y: number; w: number; h: number; side: 'right' | 'left' | 'edge' | 'sheet' } {
+  const fw = frame.r - frame.l;
+  if (fw < size.w * 2 + GAP) {
+    const w = Math.min(Math.max(fw, size.w), board.r - board.l),
+      h = Math.min(size.h, (frame.b - frame.t) / 2);
+    return { x: slide(frame.l, board.l, board.r - w), y: frame.b - h, w, h, side: 'sheet' };
+  }
+  const y = slide(screen.t, frame.t, frame.b - size.h),
+    inside = (x: number) => x >= frame.l && x + size.w <= frame.r,
+    right = screen.r + GAP,
+    left = screen.l - GAP - size.w,
+    dock = (x: number, side: 'right' | 'left' | 'edge') => ({ x, y, ...size, side });
+  if (inside(right)) return dock(right, 'right');
+  if (inside(left)) return dock(left, 'left');
+  const far = frame.r - screen.r >= screen.l - frame.l ? frame.r - size.w : frame.l;
+  return dock(slide(far, frame.l, frame.r - size.w), 'edge');
+}

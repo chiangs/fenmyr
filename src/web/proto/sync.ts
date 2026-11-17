@@ -4,6 +4,7 @@ import { say } from '../myra/say.ts';
 import { askGit } from '../repo/askGit.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { startBuild } from './build.ts';
+import { hostBusy, stillBuilding } from './buildWait.ts';
 import { renderCode } from './code.ts';
 import { renderGitBar } from './gitbar.ts';
 import { renderPreview } from './preview.ts';
@@ -48,6 +49,7 @@ function clash(b: Prototype, root: string, files: string[], redo: string) {
       {
         label: 'Keep mine on a new branch',
         cls: 'next',
+        // a new branch where this one is, then a push, changes no file a build is writing, so it doesn't wait
         run: () =>
           Fenmyr.gitKeepMine({ root, branch, account: account(root) })
             .then(() => say(`Your version is on ${branch}, on GitHub too ✦`, 6000))
@@ -57,22 +59,29 @@ function clash(b: Prototype, root: string, files: string[], redo: string) {
       {
         label: 'Take GitHub’s version',
         cls: 'danger',
+        held: () => stillBuilding(b, 'pull'),
         run: () =>
           Fenmyr.gitTakeTheirs({ root })
-            .then(() => catchUp(b))
-            .then(() => (redo ? startBuild(redo, null, true) : say('This is GitHub’s version now ✦', 5000)))
+            .then((r): unknown =>
+              r.kind === 'busy'
+                ? hostBusy('pull')
+                : catchUp(b).then(() =>
+                    redo ? startBuild(redo, null, true) : say('This is GitHub’s version now ✦', 5000),
+                  ),
+            )
             .catch(failed),
       },
     ],
   );
 }
 
-// Pulls, and says how it went; true when the files are up to date.
+// Pulls, and says how it went; true when the files are up to date, HELD when the host is still building there.
 export async function pullNow(b: Prototype, redo = '') {
   const root = rootOf(b);
   if (!root) return false;
   try {
     const r = await Fenmyr.gitPull({ root, account: account(root) });
+    if (r.kind === 'busy') return hostBusy('pull');
     if (r.kind === 'conflict') {
       clash(b, root, r.files, redo);
       return false;
@@ -95,7 +104,13 @@ export async function beforeBuild(b: Prototype, request: string, go: () => void)
     `GitHub has ${n} this computer doesn't have. Pull them before I start?`,
     'Someone changed this repo somewhere else. Pulling first means I build on the latest version instead of an old one.',
     [
-      { label: 'Pull first', cls: 'next', run: () => pullNow(b, request).then(ok => ok && go()) },
+      {
+        label: 'Pull first',
+        cls: 'next',
+        // asked before a build began
+        held: () => stillBuilding(b, 'pull'),
+        run: () => pullNow(b, request).then(r => (r === true ? go() : r)),
+      },
       { label: 'Build anyway', ghost: true, run: go },
     ],
   );

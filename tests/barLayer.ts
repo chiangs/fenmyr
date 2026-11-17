@@ -123,7 +123,7 @@ const showTools = async (tools: string[], shown: boolean) => {
   await page.click('#setClose');
   await still();
 };
-const beforeShape = ['title', 'coll', 'canvas', 'link', 'image', 'audio', 'video', 'swatch'];
+const beforeShape = ['title', 'coll', 'canvas', 'frame', 'link', 'image', 'audio', 'video', 'swatch'];
 await check('with Myra’s chat open, #shapePick opens over it from the Shape tool on the bar', async () => {
   await showTools(beforeShape, false);
   await size(860, 900);
@@ -142,13 +142,14 @@ await check('with Myra’s chat open, #shapePick opens over it from the Shape to
   assert.strictEqual(top, '#shapePick');
 });
 await check('with Myra’s chat open, a colour card’s wheel opens over it', async () => {
-  // the colour card just over the top left of her chat, joined to the tools at 1440 px
+  // the colour card just over the top left of her chat, joined to the tools at 1440 px, wherever the chat starts
   await size(1440, 900);
+  await setChat(true);
   await page.evaluate(() => {
-    Object.assign(window.__fenmyr.view, { x: 540, y: 0, z: 1 });
+    const chat = document.getElementById('mChat')?.getBoundingClientRect().left ?? 1076;
+    Object.assign(window.__fenmyr.view, { x: chat + 24 - 560, y: 0, z: 1 });
     window.__fenmyr.applyView();
   });
-  await setChat(true);
   await page.locator('.card[data-id="sw"]').dblclick();
   await still();
   const top = await onTopWhereMeets('#cpop', '#mChat');
@@ -156,7 +157,8 @@ await check('with Myra’s chat open, a colour card’s wheel opens over it', as
   assert.strictEqual(top, '#cpop');
 });
 await check('on a short window, quick capture opens over Myra’s open chat', async () => {
-  await size(1350, 640);
+  // narrow enough that the chat, joined to the bottom bar, reaches under the capture box
+  await size(1200, 640);
   await setChat(true);
   await page.keyboard.press('Control+k');
   await still();

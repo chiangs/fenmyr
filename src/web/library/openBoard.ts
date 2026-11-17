@@ -8,6 +8,7 @@ import { leaveDraft, restoreDraft } from '../myra/chatDraft.ts';
 import { setExpanded } from '../myra/chatExpand.ts';
 import { renderChat } from '../myra/chatLog.ts';
 import { chatOpen } from '../myra/chatWindow.ts';
+import { dropPlan } from '../myra/heldPlan.ts';
 import { forgetReplies } from '../myra/replyMemory.ts';
 import { showProto } from '../proto/layout.ts';
 import { checkCode } from '../repo/codeFolder.ts';
@@ -16,12 +17,24 @@ import { closeColor } from '../ui/colorPicker.ts';
 import { renderPalette } from '../ui/palette.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { refreshVNotes, vnFull } from '../vault/notes.ts';
+import { holdBoards } from './boardWrites.ts';
 import { miniCache } from './homeTiles.ts';
 import { refreshBoards } from './rowMenu.ts';
 
 export async function openBoard(id: string) {
   // an edit still waiting to save belongs to the board you're leaving: save it first
   if (appState.saveT && session.board) await saveNow();
+  // held until this is the open board. A change to it or to the board you're leaving waits until then, so it lands in
+  // the open board or in a closed board's file, and a build that ends as you leave is announced like any other
+  const release = await holdBoards(session.board ? [id, session.board.id] : [id]);
+  try {
+    await swapIn(id);
+  } finally {
+    release();
+  }
+}
+
+async function swapIn(id: string) {
   const b = await Fenmyr.load(id);
   if (!b) return;
   // the draft goes with the board you're leaving, words typed while this one loaded included
@@ -42,6 +55,7 @@ export async function openBoard(id: string) {
   session.board.palette = session.board.palette || [];
   setTimeout(resetHistory, 0);
   forgetReplies();
+  dropPlan();
   session.view = { x: 160, y: 140, z: 1, ...b.view };
   session.sel.clear();
   session.editing = null;

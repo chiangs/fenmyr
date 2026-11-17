@@ -23,13 +23,14 @@ import {
 import { durText, parseTimer, timerRequest } from '../features/duration.ts';
 import { saveAsTemplate, saveWithDialog, useTemplate } from '../features/templates.ts';
 import { currentPose, timer, timerCheck } from '../features/timer.ts';
+import { changeBoard } from '../library/boardWrites.ts';
 import { openHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
-import { refreshBoards } from '../library/rowMenu.ts';
+import { refreshBoards, renameBoard } from '../library/rowMenu.ts';
 import { boardsIn, moveBoard, putFolder } from '../library/tree.ts';
 import { card } from '../model/boards.ts';
 import { ANIMS, animIntent, animName, animRequest, lastAnim, playAnim, stopAnim } from '../myra/anim.ts';
-import { applyHeld, holdReply, previewHeld, Turn } from '../myra/apply.ts';
+import { applyHeld, asItWouldLand, holdReply, planHeld, Turn } from '../myra/apply.ts';
 import type { Picked } from '../myra/applyTypes.ts';
 import {
   bdState,
@@ -44,6 +45,7 @@ import {
 import { ask } from '../myra/chat.ts';
 import { draftBoards } from '../myra/chatDraft.ts';
 import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
+import { heldLists, planAsk, settle } from '../myra/heldPlan.ts';
 import { idleCheck, idleState } from '../myra/idle.ts';
 import { perched, perchGoo } from '../myra/perch.ts';
 import { replyRecord } from '../myra/replyMemory.ts';
@@ -57,8 +59,9 @@ import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { refreshVNotes } from '../vault/notes.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
-import { GROUPS, placePiece } from '../wireframe/drawer.ts';
+import { PIECE_GROUPS } from '../wireframe/pieceGroups.ts';
 import { PIECES } from '../wireframe/pieces.ts';
+import { placePiece } from '../wireframe/placePiece.ts';
 import { restack } from '../wireframe/stack.ts';
 import { openSetup, startTour } from './onboarding.ts';
 
@@ -89,6 +92,8 @@ const makeHooks = () => ({
   copyCards,
   pasteCards,
   openBoard,
+  // a build's write to a board, open or not
+  changeBoard,
   curBoard: () => session.board,
   nextBoards,
   draftBoards,
@@ -96,6 +101,8 @@ const makeHooks = () => ({
   refreshBoards: () => refreshBoards(),
   // what dropping a board or folder in the library calls
   moveBoard,
+  // what renaming a board in the library calls
+  renameBoard,
   putFolder,
   boardOrder: () => appState.boardOrder,
   boardsOf: (fid: string) => boardsIn(fid).map(b => b.name),
@@ -134,7 +141,7 @@ const makeHooks = () => ({
   parseTimer,
   placePiece,
   PIECES,
-  GROUPS,
+  PIECE_GROUPS,
   newNote: (x = 0, y = 0) => {
     const w = centerWorld(),
       c = card('note', { color: 'white', name: '' });
@@ -166,8 +173,18 @@ const makeHooks = () => ({
   // a reply as if Claude had just sent it: it waits its turn behind any other
   applyMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
     Turn.take(async turn => applyHeld(turn, await holdReply(r, q, { ...ctx, sees: peekSees() })), session.board.id),
+  // a reply as if Claude had just sent it, through the check that holds a big one as a plan, and about any plan waiting
+  answerMyra: (r: MyraReply, q = '', ctx = NO_VAULT) =>
+    Turn.take(
+      async turn => settle(turn, await holdReply(r, q, { ...ctx, sees: peekSees() }), planAsk()?.id ?? null),
+      session.board.id,
+    ),
+  heldLists,
   replyRecord,
-  previewMyra: async (r: MyraReply) => previewHeld(await holdReply(r, '', { ...NO_VAULT, sees: peekSees() })),
+  previewMyra: async (r: MyraReply) => {
+    const p = planHeld(await holdReply(r, '', { ...NO_VAULT, sees: peekSees() }));
+    return { lists: asItWouldLand(p).lists, changes: p.changes };
+  },
   fit,
   lib: () => snapshot().library,
   docEditor: liveEditor,

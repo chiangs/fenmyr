@@ -1,3 +1,4 @@
+import type { Card } from '../../shared/model.ts';
 import { parentOf } from '../cards/collection.ts';
 import { collAt, dropInto } from '../cards/kanban.ts';
 import { tilt, uid } from '../core/base.ts';
@@ -6,14 +7,12 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { docTarget, dropIntoDoc } from '../docs/drop.ts';
 import { startEdit } from '../edit/editing.ts';
-import { card } from '../model/boards.ts';
 import { snapTo } from '../settings/licenses.ts';
 import { settings } from '../settings/settings.ts';
+import { finishDrawn } from '../tools/drawn.ts';
 import { drawPen, penT } from '../tools/pen.ts';
-import { addCard } from '../tools/penEdit.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { cardEl } from '../ui/dom.ts';
-import { pickWF } from '../wireframe/designPanel.ts';
 import { fileIntoFrame } from '../wireframe/tilt.ts';
 import { selKey, toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
@@ -21,6 +20,11 @@ import { renderCard } from './render.ts';
 import { byId, pinAt, renderTray, renderWires, selectOnly, sendToTray } from './wires.ts';
 
 const DOUBLE_TAP_MS = 420;
+
+// a screen sized by hand, alone or with others, is no longer the device it was made as
+function sizedByHand(c: Card | undefined, w0: number, h0: number) {
+  if (c?.type === 'frame' && (c.w !== w0 || c.h !== h0)) c.device = 'Custom';
+}
 
 // letting go: the drag lands (snaps, files into a column or a screen, goes to Unsorted) and is saved
 export function onRelease(e: PointerEvent) {
@@ -145,9 +149,13 @@ export function onRelease(e: PointerEvent) {
       }
     }
   }
-  if (d.mode === 'resize') save();
+  if (d.mode === 'resize') {
+    sizedByHand(byId(d.id), d.w0, d.h0);
+    save();
+  }
   if (d.mode === 'gresize') {
     d.items.forEach(it => {
+      sizedByHand(it.c, it.w, it.h);
       renderCard(it.c);
       if (it.c.type === 'note' || it.c.type === 'todo') it.c.userH = it.c.h;
     });
@@ -174,21 +182,7 @@ export function onRelease(e: PointerEvent) {
   }
   if (d.mode === 'drawbox') {
     d.rect?.remove();
-    const w = toWorld(e.clientX, e.clientY);
-    let x = Math.min(d.sx, w.x),
-      y = Math.min(d.sy, w.y),
-      bw = Math.abs(w.x - d.sx),
-      bh = Math.abs(w.y - d.sy);
-    if (bw < 6 && bh < 6) {
-      bw = 160;
-      bh = 100;
-    } // a click makes a standard box
-    const c = card('box', { x, y, w: Math.round(bw), h: Math.round(bh), r: 0, fill: '#e4e4e7', radius: 6 });
-    addCard(c);
-    fileIntoFrame([c]);
-    pickWF(null);
-    selectOnly([c.id]);
-    save();
+    finishDrawn(d.make, { x: d.sx, y: d.sy }, toWorld(e.clientX, e.clientY));
   }
   if (d.mode === 'rewire') {
     const w = toWorld(e.clientX, e.clientY),

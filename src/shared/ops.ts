@@ -1,4 +1,5 @@
 import type { AskFile } from './askFiles.ts';
+import type { BuildEvent } from './build.ts';
 
 type None = Record<string, never>;
 
@@ -98,6 +99,10 @@ export type UpdateInfo =
 export type Chattiness = 'quiet' | 'normal' | 'chatty';
 export type MyraStyle = { name: string; chat: Chattiness; emoji: boolean };
 export type SlashCommand = { cmd: string; arg?: string; desc: string; ex?: string | string[]; opts?: string[] };
+/** A plan of Myra's waiting when a message was sent: the question it answered, her held reply as JSON without her
+ *  words, and its steps as the chat shows them. */
+export type PlanAsk = { request: string; reply: string; steps: string[] };
+
 export type VaultNoteForMyra = { vault: string; path: string; title: string; tags: string[]; text: string };
 
 type ImageJob = { id: string; label: string };
@@ -178,6 +183,7 @@ export type Ops = {
       vaultTasks?: { items: VaultTaskForMyra[]; summary: string };
       /** Pictures and text files added to this message; the host checks them against src/shared/askFiles.ts. */
       files?: AskFile[];
+      plan?: PlanAsk;
     };
     result: string;
   };
@@ -238,7 +244,8 @@ export type Ops = {
   protoRead: { args: { root: string; dir: string; file: string }; result: string };
   // a built preview, saved as a page and opened in the person's browser
   previewOpen: { args: { html: string; name: string }; result: true };
-  // Myra writing a prototype's code: answers with the build's id at once; protoBuild events follow
+  // Myra writing a prototype's code: answers with the build's id at once, and protoBuild events follow; busy when a
+  // build is already running in the repo
   protoBuild: {
     args: {
       root: string;
@@ -251,26 +258,34 @@ export type Ops = {
       errors: string;
       // what the sketches, screenshots and wireframes look like, as data: URLs
       pictures: { name: string; data: string }[];
+      // the renderer's names for the build and its board, which its end repeats
+      build: string;
+      board: string;
     };
-    result: { id: string };
+    result: { kind: 'started'; id: string } | { kind: 'busy' };
   };
   // part of the window as a PNG data: URL, for a wireframe's picture
   captureArea: { args: { x: number; y: number; w: number; h: number }; result: string };
   // when: seconds since 1970 of the last commit touching it, 0 when it has none
   protoLastChange: { args: { root: string; dir: string }; result: { branch: string; when: number; subject: string } };
-  protoUndo: { args: { root: string; dir: string; snapshot: string }; result: true };
+  // a short explanation, in Myra's words, of how the prototype's code works now, starting with these files (paths inside
+  // its folder), from a Claude Code run that can only read
+  protoExplain: { args: { root: string; dir: string; files: string[] }; result: string };
+  // busy, with nothing put back, while a build runs in the repo
+  protoUndo: { args: { root: string; dir: string; snapshot: string }; result: { kind: 'undone' } | { kind: 'busy' } };
   // a file of an installed package, or null when there's none by that name
   protoModule: { args: { root: string; file: string }; result: string | null };
   protoInstall: { args: { root: string; packages: string[] }; result: string[] };
   gitFetch: { args: { root: string; account: string }; result: GitStatus };
+  // busy, with nothing changed, while a build runs in the repo: the pull, the commit and taking GitHub's version
   gitPull: {
     args: { root: string; account: string };
-    result: { kind: 'pulled' } | { kind: 'conflict'; files: string[] };
+    result: { kind: 'pulled' } | { kind: 'conflict'; files: string[] } | { kind: 'busy' };
   };
   gitKeepMine: { args: { root: string; account: string; branch: string }; result: GitStatus };
-  gitTakeTheirs: { args: { root: string }; result: GitStatus };
+  gitTakeTheirs: { args: { root: string }; result: GitStatus | { kind: 'busy' } };
   protoWriteTweaks: { args: { root: string; dir: string; json: string }; result: true };
-  gitCommit: { args: { root: string; dir: string; message: string }; result: GitStatus };
+  gitCommit: { args: { root: string; dir: string; message: string }; result: GitStatus | { kind: 'busy' } };
   // account: the gh login that reaches this project's GitHub copy, if it has one
   gitPush: { args: { root: string; account: string }; result: GitStatus };
   ghRepoCreate: {
@@ -284,10 +299,5 @@ export type HostEvents = {
   boardsChanged: null;
   settings: null;
   ghLogin: { ok: boolean; message: string };
-  // outside: paths beyond the prototype's folder that the build changed
-  protoBuild:
-    | { id: string; type: 'edit'; file: string }
-    // sources: which cards each file it wrote came from
-    | { id: string; type: 'done'; text: string; snapshot: string; outside: string[]; sources: Record<string, string[]> }
-    | { id: string; type: 'error'; text: string };
+  protoBuild: BuildEvent;
 };

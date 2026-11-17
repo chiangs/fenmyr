@@ -9,21 +9,22 @@ import { endEdit } from './editing.ts';
 
 // ---------- editing text ----------
 // notes and checklists fit their words, like auto-height in Figma: taller as you type, back down as you delete,
-// but never shorter than the height you gave the card yourself (c.userH, remembered the first time you edit or resize it)
+// but never shorter than the height you gave the card yourself (c.userH, remembered the first time typing or a resize
+// changes its height, so a card only clicked into is not changed)
 export function fitText(c: Card | null | undefined) {
   if (!c || !['note', 'todo'].includes(c.type) || parentOf(c.id)) return;
   const el = cardEl(c.id),
     b = el?.querySelector('.body');
   if (!el || !(b instanceof HTMLElement)) return;
-  c.userH ??= c.h;
   const was = el.style.height;
   el.style.height = 'auto';
   b.style.height = 'auto';
   const need = Math.ceil(b.offsetHeight) + 2;
   b.style.height = '';
   el.style.height = was;
-  const h = Math.max(c.userH, need);
+  const h = Math.max(c.userH ?? c.h, need);
   if (Math.abs(h - c.h) > 1) {
+    c.userH ??= c.h;
     c.h = h;
     el.style.height = `${h}px`;
     if (typeof renderWires === 'function') renderWires();
@@ -43,7 +44,6 @@ export function editField(el: HTMLElement, t: HTMLElement, set: (text: string) =
   s?.addRange(r);
   const oneLine = !t.matches('.body > .text'); // notes and titles can wrap; labels, headings and list items are one line
   const fc = byId(el.dataset.id ?? '');
-  if (fc && fc.userH == null && ['note', 'todo'].includes(fc.type)) fc.userH = fc.h;
   t.oninput = () => {
     set(oneLine ? t.innerText.replace(/\n/g, ' ').trim() : t.innerText.replace(/\n$/, ''));
     fitText(fc);

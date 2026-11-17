@@ -119,7 +119,7 @@ export function dropIntoDoc(t: 'page' | DocCard, cs: Card[], e: MouseEvent) {
         } else {
           doc.body = before.body;
           doc.doc = before.doc;
-          if (docCard === doc && ed) ed.commands.setContent(docHTML(doc), false);
+          if (docCard === doc && ed) ed.commands.setContent(docHTML(doc), { emitUpdate: false });
         }
         renderCard(doc);
         save();

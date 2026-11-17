@@ -211,10 +211,8 @@ export function renderHome(): void {
       'board',
       b,
       b.updated ? `edited ${ago(b.updated)}` : '',
-      () => {
-        closeHome();
-        openBoard(b.id);
-      },
+      // Home closes once the board is open, so Myra hops into a prototype's header from where you saw her
+      () => void openBoard(b.id).then(closeHome),
       [['ren', 'Rename', '✎']],
     );
     child(t, '[data-a="ren"]').onclick = () => inlineRename(child(t, '.tile-meta b'), b, v => renameBoard(b, v));

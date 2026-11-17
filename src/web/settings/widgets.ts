@@ -6,7 +6,6 @@ import { renderHint } from '../myra/chatWindow.ts';
 import { goos } from '../myra/goos.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
-import { placeTray } from '../wireframe/designPanel.ts';
 import { useFont } from '../wireframe/tilt.ts';
 import { applyColors, following } from './colors.ts';
 import { choiceOf, flagOn, MYRA_COLORS, myraColors, settings } from './settings.ts';
@@ -15,15 +14,13 @@ type Side = { left: string[]; right: string[] };
 
 // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
 // the Boards panel is pinned at the top left (it's home to your boards and Settings), everything else can move
-const WG_DEFAULT: Side = { left: ['layers', 'colors'], right: ['design', 'tray'] };
+const WG_DEFAULT: Side = { left: ['layers', 'colors'], right: ['tray'] };
 
-const WG_ALL = ['layers', 'colors', 'design', 'tray'];
+const WG_ALL = ['layers', 'colors', 'tray'];
 
-const wgEl = (k: string) =>
-  k === 'design' ? $('design') : k === 'tray' ? $('tray') : document.querySelector(`.box[data-box="${k}"]`);
+const wgEl = (k: string) => (k === 'tray' ? $('tray') : document.querySelector(`.box[data-box="${k}"]`));
 
-const wgKey = (el: Element) =>
-  el.id === 'design' ? 'design' : el.id === 'tray' ? 'tray' : el instanceof HTMLElement ? (el.dataset.box ?? '') : '';
+const wgKey = (el: Element) => (el.id === 'tray' ? 'tray' : el instanceof HTMLElement ? (el.dataset.box ?? '') : '');
 
 function wgLayout() {
   // the saved layout, with anything missing (a new widget) added where it belongs by default
@@ -144,7 +141,6 @@ function wgDragStart(e: PointerEvent, el: HTMLElement) {
       settings.layout = { left: keys($('side')), right: keys($('sideR')) };
       wgLast = layoutKey();
       applySettings();
-      placeTray();
     }
   };
   const up = () => end(true),
@@ -159,11 +155,9 @@ function wgDragStart(e: PointerEvent, el: HTMLElement) {
   addEventListener('keydown', esc, true);
   move(e);
 }
-// listen first: some widgets (Wireframe) keep their clicks to themselves
 const WIDGETS: [string, () => Element | null][] = [
   ['wLayers', () => document.querySelector('.box[data-box="layers"]')],
   ['wColors', () => document.querySelector('.box[data-box="colors"]')],
-  ['wDesign', () => $('design')],
   ['wTray', () => $('tray')],
 ];
 
@@ -183,10 +177,7 @@ export function applySettings() {
     ['tray', 'wTray'],
   ] as const)
     document.querySelector(`#hub [data-sheet="${sh}"]`)?.classList.toggle('wg-off', !flagOn(k));
-  queueMicrotask(() => {
-    applyLayout();
-    placeTray();
-  });
+  queueMicrotask(() => applyLayout());
   const dark = following()
     ? appState.cae?.mode === 'dark'
     : settings.theme === 'dark' || (settings.theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
@@ -267,7 +258,7 @@ export function init26() {
   document.addEventListener(
     'pointerdown',
     e => {
-      const h = closestTo(e.target, '.side .box > header, .side #design .dz-head, .side #tray .tray-head');
+      const h = closestTo(e.target, '.side .box > header, .side #tray .tray-head');
       if (!h || e.button !== 0 || e.pointerType === 'touch' || closestTo(e.target, 'button, input, .brand')) return;
       // there's one column on a prototype board, so widgets are arranged on the others
       if (onProto()) return;

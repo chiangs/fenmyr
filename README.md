@@ -16,7 +16,7 @@ Fenmyr is a free, open-source canvas for Linux. Put notes, pictures, links, chec
 - An endless board. Pan with two fingers and pinch to zoom. Cards tilt slightly, or sit straight if you prefer.
 - Card types for notes, titles, checklists, docs, collections, kanbans, links, images with crop, voice memos, videos, colours, shapes, stamps, drawings, the Pen, and curved connectors.
 - **Ctrl+K** drops an idea into Unsorted without losing your place, and **F** focuses on what you're working on.
-- Wireframes made of screens, boxes, text and icons, with ready-made elements and full layouts. The panel's search understands words like "dialog" or "FAQ".
+- Wireframes made of screens, boxes, text and icons, with ready-made elements and full layouts. Select a screen and choose Pieces; its search understands words like "dialog" or "FAQ".
 - Projects, folders and boards, with a home page for all of them.
 - Light and dark mode, or your [Caelestia](#follow-your-caelestia-theme) colours.
 - Undo, and export of any card or board as an image or PDF. Docs download as PDF or Word.
@@ -164,7 +164,7 @@ The first memo downloads the speech model, about 140 MB, into `~/.local/share/fe
 | **V** | Select |
 | **L · I · A · Shift+V** | Link, image, voice memo, video |
 | **S · E · P · Shift+P** | Shapes, stamps, draw, the Pen |
-| **R · X** | Wireframe box, wireframe text |
+| **W · R · X** | Wireframe screen, box, text |
 | **M** | Ask Myra |
 | **Ctrl+Enter** | Send to Myra; Enter adds a line |
 | **F** | Focus on the selection |

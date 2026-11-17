@@ -83,6 +83,10 @@ const openToolbarSettings = () => {
 // default) still show: a bar of Select alone costs more than a wide chat does.
 const JOIN_KEEPS = 4;
 
+// Whether the right widgets reach down beside the bar. The open chat's clearance lifts their column, so while it does
+// the bar keeps to the column as the closed chat leaves it, and nothing in the bar changes as the chat opens or closes.
+let widgetsReach = false;
+
 // tools that don't fit tuck into ··· at the end: the bar ends 16 px inside the window, or 14 px before the right
 // widgets where they reach down to it, so it never covers them. On a computer they also leave room for Myra's chat to
 // open joined to them, open or not so nothing jumps, unless that would tuck past JOIN_KEEPS.
@@ -95,8 +99,9 @@ function fitToolbar() {
   const bar = $('dock').getBoundingClientRect(),
     widgets = htmlIn($('sideR'), ':scope > *')
       .filter(w => w.checkVisibility())
-      .map(w => w.getBoundingClientRect()),
-    end = widgets.some(w => w.bottom > bar.top) ? Math.min(...widgets.map(w => w.left)) - 14 : innerWidth - 16,
+      .map(w => w.getBoundingClientRect());
+  if (!$('sideR').style.bottom) widgetsReach = widgets.some(w => w.bottom > bar.top);
+  const end = widgetsReach && widgets.length ? Math.min(...widgets.map(w => w.left)) - 14 : innerWidth - 16,
     room = end - bar.left - others,
     body = document.body.classList,
     desk = !body.contains('phone') && !body.contains('proto'),
@@ -109,11 +114,28 @@ function fitToolbar() {
     more.hidden = true;
     if (width() <= limit) return true;
     more.hidden = false;
-    const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden);
-    for (let i = shown.length - 1; i >= keep && width() > limit; i--) shown[i]?.classList.add('tb-over');
-    return width() <= limit;
+    // measured once, then tucked from the end: each tucked tool takes its width and one gap out of the bar
+    const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden),
+      sizes = shown.map(b => b.getBoundingClientRect().width),
+      gap = parseFloat(getComputedStyle(box).columnGap) || 0;
+    let w = width();
+    for (let i = shown.length - 1; i >= keep && w > limit; i--) {
+      shown[i]?.classList.add('tb-over');
+      w -= (sizes[i] ?? 0) + gap;
+    }
+    return w <= limit;
   };
   if (!desk || !fit(joinRoom, JOIN_KEEPS)) fit(room, 1);
+}
+
+/** Runs every frame, so it writes only on a change: ··· lights, and reads as pressed, while a tool tucked in it is in
+ *  hand. A class set from here, not a :has() rule, which made every style recalc dearer. */
+export function syncMore() {
+  const more = $('tbMore'),
+    held = !!$('tools').querySelector(':scope > .tb-over.on');
+  // putting a tool down clears every lit button in the bar, ··· too, so each is checked on its own
+  if (more.classList.contains('on') !== held) more.classList.toggle('on', held);
+  if ((more.ariaPressed === 'true') !== held) more.ariaPressed = held ? 'true' : null;
 }
 
 export const tbRect = (b: Element) => (b.classList.contains('tb-over') ? $('tbMore') : b).getBoundingClientRect();
@@ -186,7 +208,11 @@ export function init19() {
       ...over.map(b => {
         const icon = iconOf(b),
           name = esc(tbName(b));
-        return { label: `<span class="tbm-row">${icon}<span>${name}</span></span>`, run: () => b.click() };
+        return {
+          label: `<span class="tbm-row">${icon}<span>${name}</span></span>`,
+          run: () => b.click(),
+          checked: b.classList.contains('on'),
+        };
       }),
       '-',
       { label: 'Customise toolbar…', run: openToolbarSettings },
@@ -198,5 +224,5 @@ export function init19() {
   addEventListener('resize', fitSoon);
   // the right widgets grow as Unsorted fills and shrink as one folds, and the bar keeps clear of them
   const widgetSizes = new ResizeObserver(fitSoon);
-  for (const w of htmlIn(document, '#tray, #design, .box[data-box]')) widgetSizes.observe(w);
+  for (const w of htmlIn(document, '#tray, .box[data-box]')) widgetSizes.observe(w);
 }

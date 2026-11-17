@@ -2,7 +2,7 @@ import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
-import { remember, save } from '../core/history.ts';
+import { remember, save, visitChange } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
@@ -21,6 +21,22 @@ export function markOnce(k: keyof typeof marks) {
   marks[k] = true;
 }
 
+// the dropdown whose changes are building one undo step
+let visited: Element | null = null;
+
+/** Makes a change from inside a dropdown whose every change, however far apart, undoes as one step until it closes. */
+export function inVisit(from: Element, change: () => void) {
+  const w = from.closest('.sb-popw');
+  visitChange(w !== visited, change);
+  visited = w;
+}
+
+/** Ends the visit once its dropdown has closed, however it closed: a pick, Esc, a press elsewhere, its own trigger or
+ *  another dropdown opening. Runs every frame. */
+export function endVisit() {
+  if (visited && !visited.classList.contains('open')) visited = null;
+}
+
 // a slider and its number box sit side by side: a change in one moves the other. Returns the one that changed,
 // the slider, and the setting it's for (the attribute's value), or null when the event isn't from this pair.
 export function syncPair(target: EventTarget | null, rangeAttr: string, numAttr: string) {
@@ -36,11 +52,17 @@ export function syncPair(target: EventTarget | null, rangeAttr: string, numAttr:
 }
 
 // a little dropdown inside the bar (its options use the same buttons, so they work exactly like before)
-export const pop = (id: string, trig: string, body: string, tip: string) =>
-  `<span class="sb-popw" data-popw="${id}"><button class="sb-poptrig" data-pop="${id}" title="${tip}">${trig}</button><div class="sb-pop sb-pop-${id}">${body}</div></span>`;
+export const pop = (id: string, trig: string, body: string, tip: string, read?: string) => {
+  const name = read ? ` aria-label="${read}"` : '';
+  return `<span class="sb-popw" data-popw="${id}"><button class="sb-poptrig" data-pop="${id}" title="${tip}"${name}>${trig}</button><div class="sb-pop sb-pop-${id}">${body}</div></span>`;
+};
 
 // a group that folds into the ··· menu when the bar runs out of room (higher numbers fold first, 0 last)
 export const G = (fold: number, html: string) => `<span class="sb-g" data-fold="${fold}">${html}</span>`;
+
+// Size and Align ▾ on a wireframe piece fold before the groups the bar had before them, so the picker, which narrows
+// the room, tucks no more of those away than it did
+export const FOLD_PIECE = 7;
 
 export const SEP = '<span class="sb-sep"></span>';
 
@@ -53,6 +75,19 @@ export const btn = (a: string, icon: string, tip: string, on?: boolean, disabled
 
 export const caret = () => Icon('caret-down', { cls: 'sb-caret' });
 
+// how far each key moves a slider, in its steps, as the browser moves one: Home and End go all the way, as the values
+// are clamped to the slider's range
+export const SLIDER_KEYS: Readonly<Record<string, number>> = {
+  ArrowRight: 1,
+  ArrowUp: 1,
+  ArrowLeft: -1,
+  ArrowDown: -1,
+  PageUp: 10,
+  PageDown: -10,
+  Home: -Infinity,
+  End: Infinity,
+};
+
 // a range slider's filled part, as a percentage of the way from min to max
 export const pct = (v: number, min: number, max: number) =>
   `${Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100))}%`;
@@ -64,6 +99,7 @@ export function closeSbPops() {
     w.classList.remove('open');
   });
   marks.fs = marks.sp = marks.sk = marks.sq = false;
+  endVisit();
   if (was) $('selbar').dataset.key = '';
 }
 
@@ -85,6 +121,13 @@ export function openBarColor(o: {
     at: { x: r.left + r.width / 2 - 140, y: opensUp(bar, 480) ? r.top - 480 : r.bottom + 12 },
     ...o,
   });
+}
+
+/** Gives the keyboard back to a bar button after its dropdown or picker closed, or to ··· when it folded in there. */
+export function focusBar(sel: string) {
+  const bar = $('selbar'),
+    b = oneIn(bar, sel);
+  (b?.closest('.sb-morebody') ? oneIn(bar, '[data-pop="more"]') : b)?.focus();
 }
 
 // the bar is rebuilt on the next frame
@@ -118,8 +161,11 @@ export function foldSelbar(bar: HTMLElement, room: number) {
     label = oneIn(bar, ':scope > .sb-label');
   if (body && wrap && sep) {
     const groups = htmlIn(bar, '.sb-g').sort((a, b) => +(b.dataset.fold ?? 0) - +(a.dataset.fold ?? 0));
+    // ··· takes room only once something folds into it
+    wrap.hidden = sep.hidden = true;
     for (const g of groups) {
       if (bar.scrollWidth <= room) break;
+      wrap.hidden = sep.hidden = false;
       htmlIn(g, ':scope > .sb-sep').forEach(x => {
         x.remove();
       });

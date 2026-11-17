@@ -4,8 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
-import { startBuild } from './build.ts';
+import { startBuild, undoBuild, unlessBuilding } from './build.ts';
 import * as claude from './claude.ts';
+import { stopCodeAgents } from './claudeCode.ts';
+import { explainCode } from './explain.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
 import { packageManager } from './install.ts';
@@ -305,16 +307,20 @@ const OPS = {
     return img.toDataURL();
   },
   protoLastChange: a => prototypes.lastChange(text(a.root), text(a.dir)),
-  protoUndo: a => prototypes.undo(text(a.root), text(a.dir), text(a.snapshot)),
+  protoUndo: a => undoBuild(text(a.root), text(a.dir), text(a.snapshot)),
+  protoExplain: a => explainCode(a),
   protoModule: a => prototypes.moduleFile(text(a.root), text(a.file)),
   protoInstall: a => prototypes.install(text(a.root), strings(a.packages)),
   gitFetch: async a => git.fetchOrigin(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
-  gitPull: async a => git.pull(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+  gitPull: a =>
+    unlessBuilding(text(a.root), async () =>
+      git.pull(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
+    ),
   gitKeepMine: async a =>
     git.keepMine(text(a.root), text(a.branch), text(a.account) ? await gh.asAccount(text(a.account)) : null),
-  gitTakeTheirs: a => git.takeTheirs(text(a.root)),
+  gitTakeTheirs: a => unlessBuilding(text(a.root), () => git.takeTheirs(text(a.root))),
   protoWriteTweaks: a => prototypes.writeTweaks(text(a.root), text(a.dir), text(a.json)),
-  gitCommit: a => git.commitFolder(text(a.root), text(a.dir), text(a.message)),
+  gitCommit: a => unlessBuilding(text(a.root), () => git.commitFolder(text(a.root), text(a.dir), text(a.message))),
   gitPush: async a => git.push(text(a.root), text(a.account) ? await gh.asAccount(text(a.account)) : null),
   ghRepoCreate: a => gh.createRepo(text(a.path), text(a.account), text(a.name), a.private !== false),
 } satisfies Handlers;
@@ -371,4 +377,5 @@ app.on('window-all-closed', () => app.quit());
 app.on('before-quit', () => {
   saveBounds();
   update.onQuit();
+  stopCodeAgents();
 });

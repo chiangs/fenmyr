@@ -96,7 +96,10 @@ function renderDrawbar() {
       return `<button data-ink="${n}" title="${label}" style="background:${bg}" class="${on}"></button>`;
     })
     .join('');
-  for (const b of htmlIn($('drawbar'), '[data-pen]')) b.classList.toggle('on', b.dataset.pen === pen.tool);
+  for (const b of htmlIn($('drawbar'), '[data-pen]')) {
+    b.classList.toggle('on', b.dataset.pen === pen.tool);
+    b.ariaPressed = String(b.dataset.pen === pen.tool);
+  }
   paintSize();
   stage.classList.toggle('erasing', drawOn && pen.tool === 'eraser');
   stage.classList.toggle('drawing', drawOn && pen.tool !== 'eraser');

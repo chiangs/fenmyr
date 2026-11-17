@@ -1,6 +1,6 @@
 import { shareStrings } from '../../shared/changes.ts';
 import type { Card } from '../../shared/model.ts';
-import { fit, toWorld } from '../canvas/handles.ts';
+import { type Bounds, fit, toWorld } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { endEdit } from '../edit/editing.ts';
@@ -21,6 +21,8 @@ import { appState, session } from './state.ts';
 let past: string[] = [];
 let future: string[] = [];
 let restoring = false;
+let visitStep: string | undefined;
+let revision = 0;
 export let snapT: ReturnType<typeof setTimeout> | undefined;
 
 const stateOf = () =>
@@ -40,6 +42,28 @@ export function remember() {
     if (past.length > 80) past.shift();
     future = [];
   }
+}
+
+/** Makes one change of a dropdown visit. All of a visit's changes, however far apart, undo as one step, the one on top
+ *  that each rewrites. A change from elsewhere meanwhile, a Delete or Myra's, takes its own step after it, and the
+ *  visit's next change starts a step of its own. `first` starts a new visit. */
+export function visitChange(first: boolean, change: () => void) {
+  clearTimeout(snapT);
+  remember(); // the board before this change, with any change from elsewhere still waiting for its step
+  if (first) visitStep = undefined;
+  change();
+  const st = stateOf();
+  if (visitStep !== undefined && past[past.length - 1] === visitStep) past.pop();
+  visitStep = past[past.length - 1] === st ? undefined : st; // a value typed back to where it was leaves no step
+  remember();
+}
+
+/** Takes the last step back off, so the next change joins it: a star placed from the Wireframe row and the glyph then
+ *  picked for it undo as one. */
+export function joinLast() {
+  clearTimeout(snapT);
+  remember();
+  if (past.length > 1) past.pop();
 }
 
 export function resetHistory() {
@@ -81,7 +105,11 @@ function cleanNumbers() {
   });
 }
 
+/** Goes up by one on every save, so something drawn from the board can tell it changed. */
+export const boardRevision = () => revision;
+
 export function save() {
+  revision++;
   if (!appState.drag && session.board) {
     layoutAll();
     cleanNumbers();
@@ -110,21 +138,28 @@ async function writeBoard() {
  *  no undo step. */
 export async function saveNow() {
   if (!session.board) return;
+  revision++;
   clearTimeout(appState.saveT);
   await writeBoard();
+}
+
+/** Glides to show these beside the open chat, unless they're in view already. True when it glides. */
+export function bringIntoView(bs: readonly Bounds[]) {
+  const r = stage.getBoundingClientRect(),
+    free = freeOf({ l: r.left + 270, t: r.top + 60, r: r.right - 260, b: r.bottom - 110 }, chatOverBoard()),
+    a = toWorld(free.l, free.t),
+    b = toWorld(free.r, free.b);
+  const inView =
+    bs.every(c => c.x >= a.x && c.y >= a.y && c.x + c.w <= b.x && c.y + c.h <= b.y) && session.view.z > 0.45;
+  if (!inView) fit(bs, 140, 1);
+  return !inView;
 }
 
 // after Myra works: glide to what she made (unless it's already in view) and let it glow for a moment
 export function showWhatMyraMade(made: Card[]) {
   const cs = [...new Set(made)].filter(c => session.board.cards.includes(c));
   if (!cs.length) return;
-  const r = stage.getBoundingClientRect(),
-    free = freeOf({ l: r.left + 270, t: r.top + 60, r: r.right - 260, b: r.bottom - 110 }, chatOverBoard()),
-    a = toWorld(free.l, free.t),
-    b = toWorld(free.r, free.b);
-  const inView =
-    cs.every(c => c.x >= a.x && c.y >= a.y && c.x + c.w <= b.x && c.y + c.h <= b.y) && session.view.z > 0.45;
-  if (!inView) fit(cs, 140, 1);
+  const inView = !bringIntoView(cs);
   const glow = cs.filter(c => !WF.includes(c.type) || c.type === 'frame' || !c.onFrame); // whole screens glow, not every word on them
   setTimeout(
     () =>

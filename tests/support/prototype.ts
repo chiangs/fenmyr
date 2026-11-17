@@ -13,6 +13,12 @@ export function freshRepo(prefix: string) {
   return { work, repo };
 }
 
+// Push, Pull and Open on GitHub, from the git bar's More menu
+export async function fromGitMenu(page: Page, label: string | RegExp) {
+  await page.click('#prGit [data-git="more"]');
+  await page.locator('#rowMenu button', { hasText: label }).click();
+}
+
 export async function openPrototype(page: Page, repo: string) {
   await page.evaluate(async repo => {
     await window.Fenmyr.saveFolders({

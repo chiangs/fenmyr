@@ -1,6 +1,8 @@
 import { toWorld } from '../canvas/handles.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
+import { drawPlanPreview } from '../myra/planPreview.ts';
+import { drawScreenHints } from '../wireframe/screenHint.ts';
 import { selCards } from './selected.ts';
 
 let coverT = 0;
@@ -59,8 +61,11 @@ function drawGroupBoxes() {
     .join('');
 }
 
-// every frame: the outline around each selected group, and every eighth frame the name check
+// every frame: the outline around each selected group, a waiting plan's preview, the empty screens' hints, and every
+// eighth frame the name check
 export function drawOverlays() {
   drawGroupBoxes();
+  drawPlanPreview();
+  drawScreenHints();
   if (++coverT % 8 === 0) checkTitleCover();
 }

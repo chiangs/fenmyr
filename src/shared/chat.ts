@@ -1,6 +1,8 @@
 // Myra's chat as a board stores it: each message, and the buttons of the kinds that outlast the window, as data.
 import { MAX_FILES } from './askFiles.ts';
+import { type BuildRecord, readBuildRecord } from './build.ts';
 import type { ChangeSet } from './changes.ts';
+import { DEVICES, type Proto } from './repos.ts';
 
 // A button that is saved with its message, so it comes back when the chat or the board opens again. Buttons that only
 // make sense once (Install, Link a repo) stay closures and are not stored.
@@ -16,9 +18,39 @@ export type ChatAction =
   // before the build, so only the newest build's Undo shows: an older one would undo the builds after it too. `build`
   // names the build, which boards from before it was kept don't have.
   | { kind: 'buildUndo'; board: string; snapshot: string; build?: string }
-  | { kind: 'commit'; board: string; message: string }
+  // a commit takes the whole folder, so it too shows only under the newest build, which `build` names
+  | { kind: 'commit'; board: string; message: string; build?: string }
+  // Explain the code, under the newest build until it is pressed once. files: the build's, at most 40, so the run never
+  // looks up a record the chat may have trimmed
+  | { kind: 'explain'; board: string; build: string; files: string[] }
+  // a build's block: what was asked, how far it got and how it ended
+  | BuildRecord
   // what she read for this reply: notes from a vault, and pages on the web
-  | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] };
+  | { kind: 'read'; notes: ReadNote[]; pages: WebPage[] }
+  // A plan she showed before changing the board, with its steps as worded then. Its buttons show only while it waits,
+  // in memory. ended: how it stopped waiting; one with none that no longer waits was dropped unanswered. left: Do it
+  // found every card it would change changed since, so nothing landed. superseded: replaced by an answer that landed at
+  // once, under Skip plans.
+  | { kind: 'plan'; plan: string; steps: string[]; ended?: PlanEnd }
+  // Her offer of a prototype board for a request that needs code, kept so it still works when the chat or the app opens
+  // again. Its buttons show while `board`, where the cards it is made from are, is open.
+  | { kind: 'offer'; board: string; offer: ProtoOffer };
+
+export type PlanEnd = 'done' | 'left' | 'cancelled' | 'replaced' | 'superseded';
+const ENDS: readonly PlanEnd[] = ['done', 'left', 'cancelled', 'replaced', 'superseded'];
+
+/** What she offers to make. project and folder: by name, else the open board's project and its first prototyping
+ *  folder. from: ids of the cards on her offer's board it is made from, maybe none. build: the first build request. */
+export type ProtoOffer = {
+  name: string;
+  stack: Proto['stack'];
+  device?: NonNullable<Proto['device']>;
+  purpose?: string;
+  project?: string;
+  folder?: string;
+  from: string[];
+  build: string;
+};
 
 // vault: the vault's id; rel: the note's path in it
 export type ReadNote = { vault: string; rel: string; title: string };
@@ -162,6 +194,35 @@ const readPage = (x: unknown): WebPage | null =>
 const entries = <T>(x: unknown, read: (x: unknown) => T | null): T[] =>
   (Array.isArray(x) ? x : []).map(read).filter(e => e !== null);
 
+const MAX_BUILD = 8000,
+  MAX_FROM = 80;
+const oneLine = (x: unknown, n: number) => (typeof x === 'string' ? clip(x.replace(/\s+/g, ' ').trim(), n) : '');
+
+/** An offer as the app keeps it, from her reply or from the board file: null without a name or a build request. */
+export function readOffer(x: unknown): ProtoOffer | null {
+  if (!isRecord(x)) return null;
+  const name = oneLine(x.name, 60),
+    build = typeof x.build === 'string' ? clip(x.build.trim(), MAX_BUILD) : '';
+  if (!name || !build) return null;
+  const device = DEVICES.find(d => d === x.device),
+    purpose = oneLine(x.purpose, 300),
+    project = oneLine(x.project, 200),
+    folder = oneLine(x.folder, 200);
+  return {
+    name,
+    stack: x.stack === 'html' ? 'html' : 'react',
+    ...(device ? { device } : {}),
+    ...(purpose ? { purpose } : {}),
+    ...(project ? { project } : {}),
+    ...(folder ? { folder } : {}),
+    from: strings(x.from) ? [...new Set(x.from)].slice(0, MAX_FROM) : [],
+    build,
+  };
+}
+
+/** How many of a build's files Explain the code names to Claude Code. */
+export const MAX_EXPLAINED = 40;
+
 // One reader per kind. The mapped type makes a kind without a reader fail the type check.
 const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { kind: K }> | null } = {
   next: x => (typeof x.text === 'string' ? { kind: 'next', text: x.text } : null),
@@ -182,12 +243,36 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
       : null,
   commit: x =>
     typeof x.board === 'string' && typeof x.message === 'string'
-      ? { kind: 'commit', board: x.board, message: x.message }
+      ? {
+          kind: 'commit',
+          board: x.board,
+          message: x.message,
+          ...(typeof x.build === 'string' ? { build: x.build } : {}),
+        }
       : null,
+  explain: x =>
+    typeof x.board === 'string' && typeof x.build === 'string'
+      ? {
+          kind: 'explain',
+          board: x.board,
+          build: x.build,
+          files: strings(x.files) ? x.files.slice(0, MAX_EXPLAINED) : [],
+        }
+      : null,
+  build: readBuildRecord,
   read: x => {
     const notes = entries(x.notes, readNote),
       pages = entries(x.pages, readPage);
     return notes.length || pages.length ? { kind: 'read', notes, pages } : null;
+  },
+  plan: x => {
+    const ended = ENDS.find(e => e === x.ended);
+    if (typeof x.plan !== 'string' || !strings(x.steps)) return null;
+    return { kind: 'plan', plan: x.plan, steps: x.steps, ...(ended ? { ended } : {}) };
+  },
+  offer: x => {
+    const offer = readOffer(x.offer);
+    return typeof x.board === 'string' && offer ? { kind: 'offer', board: x.board, offer } : null;
   },
 };
 

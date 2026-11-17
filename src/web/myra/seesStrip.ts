@@ -2,7 +2,7 @@ import { kindOf, MAX_FILES } from '../../shared/askFiles.ts';
 import { labelOf } from '../../shared/cardTypes.ts';
 import { DRAFT_MAX } from '../../shared/chat.ts';
 import { $ } from '../core/dom.ts';
-import { session } from '../core/state.ts';
+import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo, esc } from '../ui/dom.ts';
 import { aiGrants } from '../vault/ask.ts';
@@ -47,7 +47,8 @@ function oneLabel(): string | null {
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 34);
-  return words ? `${labelOf(one.type)} · “${words}”` : labelOf(one.type);
+  const type = labelOf(one.type);
+  return words && words !== type ? `${type} · “${words}”` : type;
 }
 
 function seesInput(): SeesInput {
@@ -174,8 +175,9 @@ export function renderSees() {
   drawn = html;
   el.innerHTML = html;
   renderHint();
-  // the empty chat's starters fit what goes with the next message
-  if (!chatLog().length) renderChat();
+  // the empty chat's starters fit what goes with the next message. Earlier chats shows none, and drawing it again would
+  // lose the reader's place.
+  if (!chatLog().length && !appState.histOpen) renderChat();
 }
 
 /** How many selected cards go with the next message. */

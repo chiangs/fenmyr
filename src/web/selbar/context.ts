@@ -7,6 +7,7 @@ import { $, stage } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { drawOn } from '../tools/draw.ts';
+import { wfToolOn } from '../tools/screenTool.ts';
 import { selCards } from './selected.ts';
 import { editedNoteBody } from './typingFocus.ts';
 
@@ -45,8 +46,8 @@ export function barContext(): SelBarContext | null {
 
 const TOOL: BarContext = { kind: 'tool' };
 
-/** Drawing or find is on. Both can be at once, and their bar holds both, so it doesn't say which. */
-export const toolContext = () => (drawOn || find.on ? TOOL : null);
+/** Drawing, find or a wireframe tool is on. More than one can be, and their bar holds each, so it doesn't say which. */
+export const toolContext = () => (drawOn || find.on || wfToolOn() ? TOOL : null);
 
 function dragHides(d: Drag): boolean {
   switch (d.mode) {
@@ -70,8 +71,10 @@ function dragHides(d: Drag): boolean {
   }
 }
 
+/** A gesture moves the board or what is on it. */
+export const gestureRuns = () => appState.drag !== null && dragHides(appState.drag);
+
 /** The bar steps aside while a gesture moves the board or what is on it, and while the view settles after a wheel,
  *  pinch or zoom step. The phone's strip never covers the board, so it stays. */
 export const barPaused = () =>
-  !document.body.classList.contains('phone') &&
-  ((appState.drag !== null && dragHides(appState.drag)) || stage.classList.contains('moving'));
+  !document.body.classList.contains('phone') && (gestureRuns() || stage.classList.contains('moving'));

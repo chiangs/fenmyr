@@ -3,7 +3,8 @@ import { mrot, realBox, tiltOf } from '../canvas/handles.ts';
 import { wireGeom } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
-import { chatPlace, setModeBar } from '../myra/chatWindow.ts';
+import { freeOf } from '../myra/chatRules.ts';
+import { chatOverBoard, chatPlace, setModeBar } from '../myra/chatWindow.ts';
 import { type BarContext, toolContext } from './context.ts';
 import { type Anchor, type Box, GAP, place } from './place.ts';
 
@@ -73,11 +74,24 @@ const rectsIn = (id: string) =>
     .map(el => el.getBoundingClientRect())
     .filter(r => r.width && r.height);
 
+// The open Pieces picker counts as a side column on the side it docked, or as a floor when it is a sheet across the
+// bottom, so the selection bar keeps clear of it. The mode bar sits over the tools, below it, and stays where it is.
+function pickerColumn(placing?: HTMLElement): { l: number[]; r: number[]; b: number[] } {
+  const p = document.getElementById('piecePick');
+  if (!p || p === placing || placing?.id === 'modebar' || p.hidden || onPhone()) return { l: [], r: [], b: [] };
+  const r = p.getBoundingClientRect(),
+    s = stage.getBoundingClientRect();
+  if (p.dataset.dock === 'left') return { l: [r.right - s.left + GAP], r: [], b: [] };
+  if (p.dataset.dock === 'right') return { l: [], r: [r.left - s.left - GAP], b: [] };
+  return { l: [], r: [], b: [r.top - s.top - GAP] };
+}
+
 // The part of the board nothing else covers, in stage pixels: right of the left widgets, left of the right ones, under
 // the header and its saved line, above the bottom bar and the mode bar on it (unless that is the bar being placed).
 // Read from the screen, so moved widgets, a folded tray and a prototype's narrower board all count.
 function readFrame(placing?: HTMLElement): Box {
   const s = stage.getBoundingClientRect(),
+    picker = pickerColumn(placing),
     head = [document.querySelector('.top'), document.getElementById('saved')]
       .filter(el => el?.checkVisibility())
       .map(el => el?.getBoundingClientRect().bottom ?? 0),
@@ -92,6 +106,7 @@ function readFrame(placing?: HTMLElement): Box {
       ...rectsIn('side')
         .filter(r => r.right > s.left)
         .map(r => r.right - s.left + GAP),
+      ...picker.l,
     ),
     t: Math.max(GAP, ...head.map(b => b - s.top + GAP)),
     r: Math.min(
@@ -99,9 +114,20 @@ function readFrame(placing?: HTMLElement): Box {
       ...rectsIn('sideR')
         .filter(r => r.left < s.right)
         .map(r => r.left - s.left - GAP),
+      ...picker.r,
     ),
-    b: Math.min(s.height - GAP, ...floor),
+    b: Math.min(s.height - GAP, ...floor, ...picker.b),
   };
+}
+
+/** The free view less an open chat, in stage pixels, for something docked beside a card on the board. */
+export function dockFrame(docking: HTMLElement): Box {
+  const s = stage.getBoundingClientRect(),
+    chat = chatOverBoard();
+  return freeOf(
+    readFrame(docking),
+    chat && { l: chat.l - s.left, t: chat.t - s.top, r: chat.r - s.left, b: chat.b - s.top },
+  );
 }
 
 const writeData = (el: HTMLElement, key: 'side' | 'stuck', value: string) => {
@@ -126,7 +152,7 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   if (!anchor) return;
   const frame = readFrame(bar),
     chat = ctx.kind === 'tool' ? chatPlace() : null;
-  // drawing's and find's bar keeps to the left of a chat joined to the tools
+  // the mode bar keeps to the left of a chat joined to the tools
   if (chat?.kind === 'joined') frame.r = Math.min(frame.r, chat.chat.l - stage.getBoundingClientRect().left - GAP);
   const p = place(anchor, frame, { w: bar.offsetWidth, h: bar.offsetHeight }),
     d = devicePixelRatio || 1,
@@ -138,7 +164,7 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   bar.classList.remove('paused');
 }
 
-/** Holds drawing's and find's bar over the tools, and lifts Myra's bubble, a wide chat and the toolbar's pickers over
+/** Holds the mode bar (drawing's, find's and the screen tool's rows) over the tools, and lifts Myra's bubble, a wide chat and the toolbar's pickers over
  *  it, as they sit at its height. It is pinned to the bottom bar, not the board, so no gesture moves it. */
 export function floatModeBar() {
   const bar = $('modebar'),

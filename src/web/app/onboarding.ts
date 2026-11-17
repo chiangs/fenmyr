@@ -22,7 +22,7 @@ import { applySettings } from '../settings/widgets.ts';
 import { closestTo, elementById } from '../ui/dom.ts';
 import { scope } from '../ui/toolbar.ts';
 
-type Counts = { cards: number; tray: number };
+type Counts = { cards: number; tray: number; screens: number };
 type TourStep = {
   el: string | null;
   side?: 'top' | 'left' | 'right';
@@ -30,6 +30,7 @@ type TourStep = {
   try?: string;
   done?: (at: Counts) => boolean;
 };
+const screens = () => session.board.cards.filter(c => c.type === 'frame').length;
 const nameField = () => elementById('obName', HTMLInputElement);
 const each = (selector: string, f: (el: HTMLElement) => void) => {
   for (const el of document.querySelectorAll(selector)) if (el instanceof HTMLElement) f(el);
@@ -136,9 +137,12 @@ const TOUR: TourStep[] = [
     text: 'Your boards live here. Group them into projects and folders. Right-click anything to rename, move, duplicate or delete it.',
   },
   {
-    el: '#design',
-    side: 'left',
-    text: 'Wireframes: screens, boxes, text, icons, and ready-made pieces, from nav bars to whole website sections. Things snap into line as you move them.',
+    // the Wireframe button, or ··· when the bottom bar has tucked it in there (··· comes first in the bar's markup)
+    el: '#tools [data-add="frame"]:not(.tb-over), #tools:has([data-add="frame"].tb-over) #tbMore',
+    side: 'top',
+    text: 'Wireframes start here, or with W. Click the board for a phone screen, or drag any size. Select a screen and choose Pieces for nav bars, forms and whole website sections. Things snap into line as you move them.',
+    try: 'Try it: press W and drag on the board.',
+    done: t => screens() > t.screens,
   },
   {
     el: '#mPill',
@@ -194,7 +198,7 @@ function tourGo(i: number) {
   const st = TOUR[i];
   if (!st) return;
   tourAt = i;
-  const start = { cards: session.board.cards.length, tray: session.board.tray.length };
+  const start = { cards: session.board.cards.length, tray: session.board.tray.length, screens: screens() };
   $('coachStep').textContent = `${i + 1} of ${TOUR.length}`;
   $('coachText').textContent = st.text;
   $('coachTry').textContent = st.try || '';

@@ -1,10 +1,13 @@
 import { labelOf } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
-import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
+import { syncScreenBar } from '../tools/screenTool.ts';
+import { syncMore } from '../ui/toolbarConfig.ts';
+import { initPiecePick, syncPicker } from '../wireframe/piecePick.ts';
+import { initScreenHints } from '../wireframe/screenHint.ts';
 import { arrange } from './arrange.ts';
 import { initBarKeys, keepFocus } from './barKeys.ts';
-import { closeSbPops, foldSelbar, initIcons, initPops, initTips, snapSoon } from './barKit.ts';
+import { closeSbPops, endVisit, foldSelbar, initIcons, initPops, initTips, snapSoon } from './barKit.ts';
 import { collColours, noteColours } from './colours.ts';
 import { type BarContext, barContext, barPaused, type SelBarContext } from './context.ts';
 import { corners } from './corners.ts';
@@ -14,15 +17,20 @@ import { barRoom, floatBar, floatModeBar } from './float.ts';
 import { initFontPop } from './fontPop.ts';
 import { group } from './group.ts';
 import { lineStyle } from './lineStyle.ts';
+import { opacity } from './opacity.ts';
 import { drawOverlays } from './overlays.ts';
 import { canvas, crop, doc, due, imageSpot, link, picture, spotify, swatch, tag, tags, vnote } from './own.ts';
+import { changeIcon } from './pieceIcon.ts';
+import { size, syncSize } from './pieceSize.ts';
+import { pieces } from './pieces.ts';
+import { font, syncType, type } from './pieceType.ts';
 import { stroke } from './stroke.ts';
 import { syncTypingFormats, text } from './textBar.ts';
 import { initTypingFocus } from './typingFocus.ts';
 import { wire, wireKey } from './wireBar.ts';
 
-// the bar is rebuilt only when one of these changes on a selected card: moving and resizing don't count, but dropping
-// into a screen does, since the Wireframe panel then offers to align with it
+// the bar is rebuilt only when one of these changes on a selected card: moving and resizing don't count (the size
+// fields follow them without a rebuild), but dropping into a screen does, since the bar then offers Align ▾
 const KEY_FIELDS = [
   'id',
   'tcase',
@@ -53,6 +61,10 @@ const KEY_FIELDS = [
   'strike',
   'group',
   'onFrame',
+  'device',
+  'name',
+  'locked',
+  'opacity',
 ];
 function cardKey(c: Card) {
   const r: Record<string, unknown> = c,
@@ -75,7 +87,12 @@ const label = group({
 // Every group the bar can show, in the order it shows them. Each one says for itself whether it shows.
 const GROUPS = [
   label,
+  pieces,
   arrange,
+  size,
+  font,
+  type,
+  changeIcon,
   collColours,
   noteColours,
   swatch,
@@ -93,6 +110,7 @@ const GROUPS = [
   shapeFill,
   text,
   fill,
+  opacity,
   textColour,
   stroke,
   corners,
@@ -123,11 +141,11 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
     bar.dataset.ids = ids;
   }
   if (bar.dataset.key === key || bar.querySelector('.sb-popw.open')) {
-    syncDesign();
+    syncSize(bar, cs);
+    syncType(bar);
     return;
   }
   bar.dataset.key = key;
-  renderDesign();
   keepFocus(bar, () => {
     bar.innerHTML = barHtml(ctx);
     foldSelbar(bar, barRoom());
@@ -149,10 +167,7 @@ function drawWire(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'connector'
 function clearBar(bar: HTMLElement) {
   closeSbPops();
   if (bar.dataset.ids) bar.dataset.ids = '';
-  if (bar.dataset.key !== '') {
-    bar.dataset.key = '';
-    renderDesign();
-  }
+  if (bar.dataset.key !== '') bar.dataset.key = '';
 }
 
 function drawBar(bar: HTMLElement, ctx: SelBarContext | null) {
@@ -191,8 +206,14 @@ export function placeSelbar() {
 export function init56() {
   initIcons();
   initFontPop();
+  initPiecePick();
+  initScreenHints();
 
   (function tick() {
+    syncScreenBar();
+    syncMore();
+    syncPicker();
+    endVisit();
     placeSelbar();
     drawOverlays();
     requestAnimationFrame(tick);

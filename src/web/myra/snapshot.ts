@@ -1,14 +1,23 @@
+import { buildLine } from '../../shared/build.ts';
+import type { ChatMsg } from '../../shared/chat.ts';
 import type { Card } from '../../shared/model.ts';
 import { appState, session } from '../core/state.ts';
 import { hasDue } from '../features/due.ts';
 import { myTpls } from '../features/templates.ts';
 import { foldersIn, looseFolders } from '../library/tree.ts';
+import { building, liveOf } from '../proto/buildSlot.ts';
 import { canonical } from '../richtext/dialect.ts';
 import { settings } from '../settings/settings.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
 import { birthdayFacts } from './birthday.ts';
 import { chatKeep, chatLog } from './chatLog.ts';
 import { SLASH } from './greet.ts';
+
+// a line as she reads it back: a build's block has no words of its own, so it reads as how the build went
+const saidIn = (m: ChatMsg) => {
+  const block = m.acts?.find(a => a.kind === 'build');
+  return block?.kind === 'build' ? buildLine(block, liveOf(block.build)) : m.text;
+};
 
 // what Myra sees: the cards (trimmed), where they are, which are selected, and what's in Unsorted. `selected`: the
 // cards a question was sent with, which may differ from what is selected when her turn comes.
@@ -55,13 +64,19 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
       400,
     ),
     recentChat: (chatKeep() === 'off' ? chatLog().slice(-2) : chatLog().slice(-8)).map(
-      m => `${m.who === 'me' ? 'Person' : 'Myra'}: ${m.text}`,
+      m => `${m.who === 'me' ? 'Person' : 'Myra'}: ${saidIn(m)}`,
     ),
     myraStyle: { name: settings.name || '', chat: settings.chat, emoji: !!settings.emoji }, // the host turns these into words (TONES in linux/prompts.js)
     commands: SLASH.filter(c => !c.dev).map(c => ({ cmd: c.cmd, arg: c.arg, desc: c.desc, ex: c.ex, opts: c.opts })),
+    // building: a build runs or waits, so one she asks for now waits its turn
     prototype:
       session.board.kind === 'prototype'
-        ? { stack: session.board.proto.stack, purpose: session.board.proto.purpose, device: session.board.proto.device }
+        ? {
+            stack: session.board.proto.stack,
+            purpose: session.board.proto.purpose,
+            device: session.board.proto.device,
+            building: building() || undefined,
+          }
         : undefined,
     person: birthdayFacts(), // the slash commands, so she knows every one (the host puts them in her instructions)
     library: {

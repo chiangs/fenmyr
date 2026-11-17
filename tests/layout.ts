@@ -58,46 +58,37 @@ try {
   let s = await state();
   assert.doesNotMatch(s.git, /isn’t linked/, 'starting the app on a prototype board finds its repo straight away');
   assert.deepStrictEqual(
-    await page.evaluate(() => [
-      document.getElementById('tray')?.parentElement?.id,
-      document.getElementById('design')?.parentElement?.id,
-    ]),
-    ['side', 'side'],
-    'Unsorted and Wireframe join the left column, beside the board',
+    await page.evaluate(() =>
+      [...(document.getElementById('side')?.children ?? [])]
+        .filter(e => e instanceof HTMLElement && (e.dataset.box || e.id === 'tray'))
+        .map(e => (e instanceof HTMLElement ? (e.dataset.box ?? e.id) : '')),
+    ),
+    ['boards', 'layers', 'colors', 'tray'],
+    'the left column holds Boards, Layers, Colours and then Unsorted, beside the board',
   );
   const folded = () =>
     page.evaluate(() => {
-      const min = (k: string) =>
-        !!document.querySelector(k === 'design' ? '#design' : `.box[data-box="${k}"]`)?.classList.contains('min');
-      return { boards: min('boards'), layers: min('layers'), colors: min('colors'), design: min('design') };
+      const min = (k: string) => !!document.querySelector(`.box[data-box="${k}"]`)?.classList.contains('min');
+      return { boards: min('boards'), layers: min('layers'), colors: min('colors') };
     });
   assert.deepStrictEqual(
     await folded(),
-    { boards: false, layers: true, colors: true, design: true },
+    { boards: false, layers: true, colors: true },
     'a prototype board opens with only the board list and Unsorted unfolded',
-  );
-  assert.deepStrictEqual(
-    await page.evaluate(() => {
-      const d = document.getElementById('design');
-      const grip = d?.querySelector(':scope > .rz-grip');
-      return [!!grip && getComputedStyle(grip).display, !!d && d.scrollHeight <= d.clientHeight];
-    }),
-    ['none', true],
-    'a folded Wireframe shows its whole title, with no grip and no scrollbar',
   );
   await page.click('.box[data-box="layers"] .mini');
   await page.evaluate(() => window.__fenmyr.openBoard('plain'));
   await page.waitForTimeout(300);
   assert.deepStrictEqual(
     await folded(),
-    { boards: false, layers: false, colors: false, design: false },
+    { boards: false, layers: false, colors: false },
     'other boards keep their own',
   );
   await page.evaluate(() => window.__fenmyr.openBoard('pb'));
   await page.waitForTimeout(300);
   assert.deepStrictEqual(
     await folded(),
-    { boards: false, layers: false, colors: true, design: true },
+    { boards: false, layers: false, colors: true },
     'and what the person opens on a prototype board stays open there',
   );
   assert.ok(s.proto && s.docked === 'prChat' && s.chatOpen, 'a prototype board docks Myra’s chat open on the left');
@@ -109,8 +100,8 @@ try {
   assert.strictEqual(dock.b, pane.b - 18, '18 px over its bottom');
   assert.match(
     s.git,
-    /acme\s*main\s*\d+ changes? not committed\s*No commits yet/,
-    'the git bar names the repo, branch, changes and sync',
+    /main\s*\d+ files? not committed · No commits yet/,
+    'the git bar names the branch, changes and sync',
   );
   const gitBar = await page.evaluate(() => {
     return {
@@ -120,8 +111,8 @@ try {
   });
   assert.deepStrictEqual(
     gitBar,
-    { icons: ['git-branch', 'git-commit', 'cloud-up'], commit: 'Commit' },
-    'the branch and buttons carry icons, and Commit has no ellipsis',
+    { icons: ['git-branch', 'git-commit', 'more'], commit: 'Commit' },
+    'the branch, Commit and More carry icons, and Commit has no ellipsis',
   );
   assert.match(s.code, /export function App/, 'the code pane opens on App.tsx');
   assert.deepStrictEqual(s.stage, s.slot, 'the canvas sits exactly in its column');
@@ -224,14 +215,14 @@ try {
     document.body.classList.add('dark', 'following-caelestia');
     document.body.style.setProperty('--panel', 'rgb(16, 20, 30)');
     const bg = (sel: string) => getComputedStyle(document.querySelector(sel) ?? document.body).backgroundColor;
-    const out = [bg('[data-p="code"]'), bg('#prGit'), bg('#prChat')];
+    const out = [bg('[data-p="code"]'), bg('#prChat')];
     document.body.classList.remove('dark', 'following-caelestia');
     document.body.style.removeProperty('--panel');
     return out;
   });
   assert.deepStrictEqual(
     panes,
-    ['rgb(16, 20, 30)', 'rgb(16, 20, 30)', 'rgb(16, 20, 30)'],
+    ['rgb(16, 20, 30)', 'rgb(16, 20, 30)'],
     'with Caelestia’s dark panels, the prototype screen takes its panel colour',
   );
 

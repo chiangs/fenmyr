@@ -1,8 +1,11 @@
 import { type ChatAction, clip, type ReadNote, type WebPage } from '../../shared/chat.ts';
-import { buildUndoButton, commitButton } from '../proto/build.ts';
+import { buildPieces } from '../proto/buildBlock.ts';
+import { buildUndoButton, commitButton, explainButton } from '../proto/buildButtons.ts';
 import { sourceButton } from '../proto/sources.ts';
+import { offerPieces } from '../repo/offer.ts';
 import { openNote } from '../vault/notes.ts';
 import { ask } from './chat.ts';
+import { planPieces } from './heldPlan.ts';
 import { changesPieces } from './replyUndo.ts';
 import type { SayAction } from './say.ts';
 
@@ -18,13 +21,32 @@ type Row = Exclude<(typeof SLOTS)[number], 'summary' | 'sources'>;
 
 // what a click takes away: nothing, this button, or every button in its row
 export type After = 'stay' | 'self' | 'row';
-export type Button = SayAction & { title?: string; after: After };
+// live: whether it still applies when pressed, as it did when drawn
+export type Button = SayAction & { title?: string; after: After; live?: () => boolean };
+// how a step in a list stands: done, being done now, waiting its turn, or gone wrong
+export type Mark = 'done' | 'now' | 'wait' | 'bad';
+// A box of lines under her words: what a reply changed, a plan's numbered steps, or a build's. cls: its kind, for the
+// look. dim: the lines that no longer apply. hover: told which line the pointer is on, or null when it leaves them.
+// plan: the waiting plan whose steps these are, so they can be reworded where they show. busy: a moving bar under the
+// head, for work with no known end. marks: one per line, in order.
 export type Piece =
-  | { slot: 'summary'; lines: readonly string[] }
+  | {
+      slot: 'summary';
+      head: string;
+      lines: readonly string[];
+      numbered?: boolean;
+      cls?: string;
+      dim?: ReadonlySet<number>;
+      hover?: (line: number | null) => void;
+      plan?: string;
+      busy?: boolean;
+      marks?: readonly Mark[];
+    }
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };
 
-const one = (slot: Row, after: After, b: SayAction | null): Piece[] => (b ? [{ slot, button: { ...b, after } }] : []);
+const one = (slot: Row, after: After, b: Omit<Button, 'after'> | null): Piece[] =>
+  b ? [{ slot, button: { ...b, after } }] : [];
 
 const count = (n: number, single: string, plural: string) => `${n} ${n === 1 ? single : plural}`;
 const link = (label: string, title: string, run: () => unknown): Button => ({ label, title, after: 'stay', run });
@@ -61,8 +83,12 @@ const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) =
   changes: changesPieces,
   source: a => one('other', 'stay', sourceButton(a.card)),
   buildUndo: a => one('other', 'self', buildUndoButton(a)),
+  explain: a => one('other', 'stay', explainButton(a)),
   commit: a => one('other', 'self', commitButton(a)),
+  build: buildPieces,
   read: readPieces,
+  plan: planPieces,
+  offer: offerPieces,
 };
 
 const viewOf = <K extends ChatAction['kind']>(k: K, a: Extract<ChatAction, { kind: K }>) => VIEW[k](a);

@@ -1,3 +1,4 @@
+import { PIECES } from '../../src/web/wireframe/pieces.ts';
 import type { Board } from '../support/launch.ts';
 
 type Card = {
@@ -294,4 +295,36 @@ export function replyBoard(id = 'reply', name = 'Replies'): FixtureBoard {
     view: { x: 160, y: 140, z: 1 },
     palette: [],
   };
+}
+
+// A wireframe board: a filled-in phone sign-in screen, an empty phone screen, a desktop page with a header and a hero,
+// and a font card. The pieces are made as the panel makes them, each a group on its screen.
+export function wireframeBoard(): FixtureBoard {
+  const screen = (id: string, x: number, device: string, w: number, h: number, radius: number, name: string) =>
+    at(id, 'frame', x, 0, w, h, { device, radius, name, fill: '#ffffff' });
+  const piece = (id: string, frame: Card, name: string, x: number, y: number, w: number, o = {}): Card[] =>
+    (PIECES[name]?.make(w, o) ?? []).map(({ x: ix, y: iy, ...it }, i) =>
+      at(`${id}${i}`, it.type, frame.x + x + ix, frame.y + y + iy, it.w, it.h, {
+        ...it,
+        group: id,
+        onFrame: frame.id,
+      }),
+    );
+  const signIn = screen('signin', 0, 'iPhone', 393, 852, 44, 'Sign in'),
+    empty = screen('empty', 470, 'iPhone', 393, 852, 44, 'Screen'),
+    desk = screen('desk', 940, 'Desktop', 1440, 1024, 10, 'Desktop');
+  const cards: Card[] = [
+    signIn,
+    ...piece('nav', signIn, 'Nav bar', 0, 0, 393, { title: 'Sign in' }),
+    ...piece('head', signIn, 'Heading', 24, 96, 345, { text: 'Welcome back', sub: '' }),
+    ...piece('email', signIn, 'Input', 24, 170, 345, { label: 'Email', text: 'you@example.com' }),
+    ...piece('pass', signIn, 'Input', 24, 260, 345, { label: 'Password', text: 'Password' }),
+    ...piece('go', signIn, 'Button', 24, 360, 345, { text: 'Sign in' }),
+    desk,
+    ...piece('top', desk, 'Header', 0, 0, 1440),
+    ...piece('hero', desk, 'Hero', 0, 90, 1440),
+    empty,
+    at('font', 'font', 0, 940, 300, 210, { font: 'Shantell Sans' }),
+  ];
+  return { id: 'wire', name: 'Wireframes', color: 'sky', cards, links: [], tray: [], view: { x: 300, y: 110, z: 0.3 } };
 }

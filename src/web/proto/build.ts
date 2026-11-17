@@ -1,26 +1,35 @@
-import type { ChatAction } from '../../shared/chat.ts';
+import { type BuildEvent, readBuildEvent } from '../../shared/build.ts';
 import type { Board, Card } from '../../shared/model.ts';
-import { readSources } from '../../shared/repos.ts';
 import { uid } from '../core/base.ts';
-import { save } from '../core/history.ts';
-import { session } from '../core/state.ts';
-import type { Act } from '../myra/acts.ts';
-import { addMsg, chatLog } from '../myra/chatLog.ts';
-import { type SayAction, say } from '../myra/say.ts';
-import { type Job, startJob } from '../myra/status.ts';
+import { appState, session } from '../core/state.ts';
+import { changeBoard } from '../library/boardWrites.ts';
+import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { renderCode } from './code.ts';
-import { askCommit } from './gitActions.ts';
-import { renderGitBar } from './gitbar.ts';
+import { refreshPanes } from './buildButtons.ts';
+import { checkComing, checkNewest } from './buildCheck.ts';
+import { asked, ended, endedLost, newestErrors, redrawBlock, redrawNewest, started } from './buildRecord.ts';
+import {
+  building,
+  catchUp,
+  caughtUp,
+  claimSlot,
+  dequeue,
+  enqueue,
+  firstWaiting,
+  freeSlot,
+  type Running,
+  runningBuild,
+  type Waiting,
+  waitsTurn,
+} from './buildSlot.ts';
 import { picturesOf } from './pictures.ts';
-import { previewErrors, renderPreview } from './preview.ts';
-import { cardButtons, cardsLine, keepSources } from './sources.ts';
+import { previewErrors } from './preview.ts';
 import { beforeBuild } from './sync.ts';
 
-// Myra's "build": the host writes the code with Claude Code while the chat shows what's being written, then the code,
-// the preview and the git bar catch up and her explanation arrives with an Undo.
-type Prototype = Extract<Board, { kind: 'prototype' }>;
-let running: { id: string; build: string; proto: Prototype; root: string; request: string; job: Job } | null = null;
+// Myra's "build": a request waits its turn behind any build running or waiting, then the host writes the code with
+// Claude Code while the build's block in its prototype's chat grows a line per file, then the block says how it went,
+// her explanation follows, and the code, the preview and the git bar catch up.
+type End = Extract<BuildEvent, { type: 'done' | 'error' }>;
 
 // what the builder reads from the board: the selected cards, or all of them, without positions or styling
 const brief = (c: Card) =>
@@ -30,126 +39,197 @@ const brief = (c: Card) =>
     ),
   );
 
-// `cards`: the selection the request was sent with; null reads the selection now. `synced`: the repo was checked
-// against GitHub just now (beforeBuild), so this is the go-ahead.
-export async function startBuild(request: string, cards: readonly string[] | null, synced = false) {
+// `cards`: the selection the request was sent with, or all of them when it was empty; null reads the selection now;
+// `brought`: the cards a new prototype brought, and none when it brought none. `synced`: the repo was checked against
+// GitHub just now (beforeBuild), so this is the go-ahead. The request waits its turn, so what its build needs from the
+// board is read now.
+export async function startBuild(
+  request: string,
+  cards: readonly string[] | { brought: readonly string[] } | null,
+  synced = false,
+) {
   const b = session.board;
   const root = b ? rootOf(b) : null;
   if (b?.kind !== 'prototype' || !root) return;
-  if (running) return say('I’m still writing the last change. I’ll start on this once it’s done.', 6000);
-  if (!synced) return beforeBuild(b, request, () => startBuild(request, cards, true));
-  // kept before anything is awaited, while this prototype is surely the open board
-  const build = uid();
-  b.proto = { ...b.proto, build };
-  save();
-  const sel = new Set(cards ?? session.sel),
+  // pulling under a build that runs or waits would change its files
+  if (!synced && !building()) return beforeBuild(b, request, () => startBuild(request, cards, true));
+  const sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
     picked = b.cards.filter(c => sel.has(c.id));
-  const chosen = (picked.length ? picked : b.cards).slice(0, 80),
-    briefs = JSON.stringify(chosen.map(brief)),
-    pictures = await picturesOf(chosen);
-  const { dir, stack, purpose = '', device = '' } = b.proto;
-  const job = startJob({ kind: 'building', file: null });
+  const chosen = (picked.length || (cards && 'brought' in cards) ? picked : b.cards).slice(0, 80);
+  const { dir, stack, purpose = '', device = '' } = b.proto,
+    build = uid(),
+    briefs = JSON.stringify(chosen.map(brief));
+  const w: Waiting = {
+    build,
+    board: b.id,
+    root,
+    request,
+    cards: chosen.length,
+    args: { root, dir, stack, request, purpose, device, cards: briefs, build, board: b.id },
+    pictures: picturesOf(chosen),
+    waited: waitsTurn(),
+  };
+  if (w.waited) noteHeard(waitsWords(b.name));
+  enqueue(w);
+  void changeBoard(b.id, asked(w));
+  void pump();
+}
+
+async function keptErrors(board: string) {
+  let errors = '';
+  await changeBoard(board, b => {
+    errors = newestErrors(b);
+    return false;
+  });
+  return errors;
+}
+
+// what a screen reader hears as a request waits its turn, the block showing it as waiting
+const waitsWords = (name: string) => `${name}’s build waits its turn`;
+
+// the board as it is now, or null once it has been deleted
+const boardNow = (id: string) =>
+  session.board?.id === id ? session.board : (appState.boardList.find(x => x.id === id) ?? null);
+
+// The oldest waiting request whose board is still there, with the board's name as it is now. One whose board has gone
+// has nothing to build for, and its build would leave files in the repo the other prototypes share.
+function nextWaiting() {
+  for (let w = dequeue(); w; w = dequeue()) {
+    const b = boardNow(w.board);
+    if (b) return { w, name: b.name };
+  }
+  return null;
+}
+
+// One build at a time across the app: the oldest waiting request starts once none runs and the open board's preview
+// has caught up with the last one, whichever board is open.
+async function pump() {
+  await caughtUp();
+  if (runningBuild()) return;
+  const next = nextWaiting();
+  if (!next) return;
+  const { w, name } = next;
+  // A note that the build before ended keeps the line over a build that starts by itself, whose line follows once the
+  // note has had its time, but not over one just asked for, which is the news now.
+  if (!w.waited) noteStatus('');
+  const r = claimSlot({
+    build: w.build,
+    board: w.board,
+    name,
+    root: w.root,
+    request: w.request,
+    cards: w.cards,
+    asked: Date.now(),
+    id: null,
+    start: null,
+    was: undefined,
+    files: [],
+    job: startJob({ kind: 'building', board: w.board, name, file: null }),
+  });
+  if (w.waited) noteHeard(`${name}’s build has started`);
   try {
-    const { id } = await Fenmyr.protoBuild({
-      root,
-      dir,
-      stack,
-      request,
-      purpose,
-      device,
-      cards: briefs,
-      errors: previewErrors(),
-      pictures,
-    });
-    running = { id, build, proto: b, root, request, job };
+    redrawNewest(r);
+    // The preview belongs to the open board. A board that is closed has only the errors its newest build's check kept.
+    const errors = session.board?.id === w.board ? previewErrors() : await keptErrors(w.board);
+    const started = await Fenmyr.protoBuild({ ...w.args, errors, pictures: await w.pictures });
+    if (started.kind === 'started') {
+      r.id = started.id;
+      return;
+    }
+    // The host is still writing a build this window didn't start, as one left by an earlier window would be, so this
+    // waits again, first in line, until that build's end is heard.
+    freeSlot(r);
+    r.job.end();
+    enqueue({ ...w, waited: true }, true);
+    noteHeard(waitsWords(name));
+    redrawNewest(r);
   } catch (e) {
-    job.end();
-    say(e instanceof Error ? e.message : String(e), 8000);
+    turnedAway(r, e instanceof Error ? e.message : String(e));
   }
 }
 
-async function refresh() {
-  if (session.board?.kind !== 'prototype') return;
-  await Promise.all([renderCode(session.board), renderGitBar(session.board), renderPreview(session.board)]);
+// A request the host failed on before it answered: its block reads "Couldn't start", and her line is `said` as it
+// stands.
+const turnedAway = (r: Running, said: string) =>
+  land(r, { id: '', build: r.build, board: r.board, type: 'error', text: said, snapshot: null, files: [] }, said);
+
+// How it ended lands in the build's own prototype whichever board is open, and the status line says it's building
+// until then.
+function land(r: Running, e: End, said?: string) {
+  const done = () => {
+    freeSlot(r);
+    r.job.end();
+  };
+  landOn(r.board, r.name, e, done, b => {
+    // the block is drawn from its record from here on
+    freeSlot(r);
+    return ended(r, e, Date.now(), said)(b);
+  });
 }
 
-async function undo(root: string, dir: string, snapshot: string) {
-  await Fenmyr.protoUndo({ root, dir, snapshot });
-  await refresh();
-  say('It’s back to how it was before that change ✦', 5000);
+// Another board only hears how it ended, on the status line, by the board's name as it is then. name: the board's
+// name for a failure to write it. The next build waits until the open board's preview shows this one's code and has
+// been checked, so it is sent all the errors that code logged and not the code's before.
+function landOn(board: string, name: string, e: End, done: () => void, change: (b: Board) => boolean) {
+  // the board's name as it lands, which stays null when the board was deleted
+  let landed: string | null = null;
+  catchUp(
+    changeBoard(board, b => {
+      // a build that changed files is the newest, so it is checked as soon as the preview catches up
+      if (b === session.board && e.type === 'done' && e.files.length) checkComing(e.build);
+      if (!change(b)) return false;
+      landed = b.name;
+      // the request next in line now waits for this build's check rather than for a build
+      const next = firstWaiting();
+      if (next) redrawBlock(next);
+      return true;
+    }).then(
+      () => {
+        done();
+        const open = session.board?.id === board,
+          words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
+        // the open board shows no note, since its block says how it went, but a screen reader hears it
+        if (landed !== null) (open ? noteHeard : noteStatus)(words);
+        // even when the panes fail to catch up, so the block doesn't go on saying it is being checked
+        return open ? refreshPanes().finally(checkNewest) : undefined;
+      },
+      (err: unknown) => {
+        done();
+        console.error('A build’s result could not be written to its board', err);
+        noteStatus(`Couldn’t save ${landed ?? name}’s build to its chat`);
+        if (session.board?.id === board) void checkNewest();
+      },
+    ),
+  );
+  void pump();
 }
 
-const undoView = (root: string, dir: string, snapshot: string): SayAction => ({
-  label: 'Undo',
-  ghost: true,
-  run: () => undo(root, dir, snapshot),
-});
-const commitView = (b: Prototype, message: string): SayAction => ({
-  label: 'Commit',
-  cls: 'next',
-  run: () => askCommit(b, message),
-});
-
-const openProto = (board: string) => {
-  const b = session.board;
-  return b?.id === board && b.kind === 'prototype' ? b : null;
-};
-
-type BuildUndo = Extract<ChatAction, { kind: 'buildUndo' }>;
-const newestUndo = (board: string) =>
-  chatLog()
-    .flatMap(m => m.acts ?? [])
-    .findLast((a): a is BuildUndo => a.kind === 'buildUndo' && a.board === board);
-
-// A board from before builds were named goes by the newest Undo in its chat.
-const isLatest = (b: Prototype, a: BuildUndo) =>
-  b.proto.build ? a.build === b.proto.build : newestUndo(a.board)?.snapshot === a.snapshot;
-
-export function buildUndoButton(a: BuildUndo): SayAction | null {
-  const b = openProto(a.board),
-    root = b && rootOf(b);
-  if (!b || !root || !isLatest(b, a)) return null;
-  return undoView(root, b.proto.dir, a.snapshot);
-}
-
-export function commitButton(a: Extract<ChatAction, { kind: 'commit' }>): SayAction | null {
-  const b = openProto(a.board);
-  return b && commitView(b, a.message);
-}
-
-// the host's protoBuild events, for the build that's running
+// The host's protoBuild events, for the build that's running: its start, each file as Claude Code writes it, which
+// grows its block where its board is open without writing the board, and how it ended. Of a build this window didn't
+// start only the end is heard, on the record its board keeps.
 export function buildEvent(data: unknown) {
-  if (!running || typeof data !== 'object' || data === null) return;
-  const e: Record<string, unknown> = { ...data };
-  if (e.id !== running.id) return;
-  if (e.type === 'edit') return running.job.show({ kind: 'building', file: String(e.file).split('/').at(-1) ?? null });
-  const { root, build, proto, request, job } = running;
-  running = null;
-  job.end();
-  if (e.type === 'error') return say(`I couldn’t finish that. ${String(e.text)}`, 10000);
-  const snapshot = String(e.snapshot),
-    strays = Array.isArray(e.outside) ? e.outside.map(String) : [],
-    board = proto.id,
-    here = session.board?.id === board,
-    // the commit message she suggests: the first line of what she was asked to do
-    message = request.split(/[\n.]/)[0]?.trim().slice(0, 72) ?? '';
-  // Kept with her line when it lands in the prototype's own chat. Her line lands in whichever board is open, and its
-  // buttons there must still act on this prototype, so those stay closures.
-  const acts: Act[] = here
-    ? [
-        { kind: 'commit', board, message },
-        { kind: 'buildUndo', board, snapshot, build },
-      ]
-    : [commitView(proto, message), undoView(root, proto.proto.dir, snapshot)];
-  if (here) refresh();
-  addMsg('myra', String(e.text), acts);
-  const used = here ? keepSources(readSources(e.sources)) : [];
-  if (used.length) addMsg('myra', cardsLine(used), cardButtons(used));
-  if (strays.length)
-    say(
-      `I also changed files outside this prototype: ${strays.join(', ')}. Undo only puts this prototype back, so check those in the git bar.`,
-      0,
-      [],
-      true,
-    );
+  const e = readBuildEvent(data),
+    r = runningBuild();
+  if (!e) return;
+  if (e.id !== r?.id) {
+    if (e.type !== 'done' && e.type !== 'error') return;
+    // the host has let go of the repo, so a request it turned away can start, once this end has landed
+    if (e.build && e.build !== r?.build) return landOn(e.board, 'a prototype', e, () => {}, endedLost(e));
+    return void pump();
+  }
+  if (e.type === 'start') {
+    r.start = { at: Date.now(), snapshot: e.snapshot };
+    return void changeBoard(r.board, b => {
+      // the status line names the board as it is called now, renamed while closed or not
+      r.name = b.name;
+      r.job.show({ kind: 'building', board: r.board, name: b.name, file: null });
+      return started(r)(b);
+    });
+  }
+  if (e.type === 'edit') {
+    if (!r.files.includes(e.file)) r.files.push(e.file);
+    r.job.show({ kind: 'building', board: r.board, name: r.name, file: e.file.split('/').at(-1) ?? null });
+    return redrawBlock(r.build);
+  }
+  land(r, e);
 }

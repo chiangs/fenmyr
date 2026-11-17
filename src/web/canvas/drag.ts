@@ -1,4 +1,5 @@
 import type { Card, Link } from '../../shared/model.ts';
+import type { Device } from '../wireframe/wireframes.ts';
 
 // ---------- what the pointer is doing while a button is held: one of these at a time ----------
 type Point = { x: number; y: number };
@@ -8,6 +9,9 @@ type Moving = { c: Card; x: number; y: number; el?: HTMLElement | null; lifted?:
 type Sized = { c: Card; x: number; y: number; w: number; h: number; fs0?: number; size0?: number; sw0?: number };
 // a card in a selection being turned: its middle, its size, its tilt before, and whether it's a wireframe piece
 type Turning = { c: Card; mx: number; my: number; w: number; h: number; r0: number; wf: boolean };
+
+/** What a box drag makes when it lets go: a box, or a screen whose click size is the lit device's. */
+export type Drawn = { kind: 'box' } | { kind: 'screen'; device: Device };
 
 // sx, sy: where the press began (world or screen, as each mode needs)
 export type Drag =
@@ -48,7 +52,7 @@ export type Drag =
     }
   | { mode: 'rotate'; c: Card; cx: number; cy: number; tilt: boolean }
   | { mode: 'wire'; id: string; a: Point; b?: Point }
-  | { mode: 'drawbox'; sx: number; sy: number; rect?: HTMLElement }
+  | { mode: 'drawbox'; sx: number; sy: number; rect?: HTMLElement; make: Drawn }
   | { mode: 'bend'; l: Link }
   | { mode: 'rewire'; l: Link; end: 'a' | 'b' }
   | { mode: 'marquee'; sx: number; sy: number; base: Set<string>; sec?: string };

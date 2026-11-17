@@ -7,6 +7,7 @@ import { linkUnder } from '../edit/noteLinks.ts';
 import { selCards } from '../selbar/selected.ts';
 import { fsMul } from '../selbar/textSize.ts';
 import { drawDown, drawOn } from '../tools/draw.ts';
+import { drawnBy } from '../tools/drawn.ts';
 import { penDown, penT } from '../tools/pen.ts';
 import { placeAt, placing, stopPlacing } from '../tools/place.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
@@ -154,10 +155,11 @@ export function onPress(e: PointerEvent) {
     cropDown(e);
     return;
   }
-  if (placing?.type === 'box' && e.button === 0) {
+  const make = drawnBy(placing);
+  if (make && e.button === 0) {
     e.preventDefault();
     stopPlacing();
-    appState.drag = { mode: 'drawbox', sx: w.x, sy: w.y };
+    appState.drag = { mode: 'drawbox', sx: w.x, sy: w.y, make };
     stage.setPointerCapture(e.pointerId);
     return;
   }

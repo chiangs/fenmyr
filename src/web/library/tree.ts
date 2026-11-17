@@ -5,6 +5,7 @@ import { COLOR_NAMES, COLORS, uid } from '../core/base.ts';
 import { appState, session } from '../core/state.ts';
 import { chirp, say } from '../myra/say.ts';
 import { copyPrototype, copyPrototypingFolder } from '../repo/copy.ts';
+import { changeBoard } from './boardWrites.ts';
 import { renderCrumbsSoon, unhook } from './nesting.ts';
 // the order you dragged boards into, per folder (or 'loose'): lists of board ids, kept with the folders so a reorder never rewrites a board
 export const saveLib = () =>
@@ -146,11 +147,11 @@ export async function moveBoard(id: string, folderId: string | null) {
     renderCrumbsSoon();
     return;
   }
-  const b = await Fenmyr.load(id);
-  if (!b) return;
-  b.folder = folderId;
-  delete b.parent;
-  await Fenmyr.save(b);
+  await changeBoard(id, b => {
+    b.folder = folderId;
+    delete b.parent;
+    return true;
+  });
 }
 export function init5() {
   // ---------- the library: projects hold folders, folders hold boards ----------

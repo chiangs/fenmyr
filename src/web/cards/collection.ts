@@ -26,7 +26,7 @@ export const colls = () => session.board.cards.filter(c => c.type === 'coll');
 export const parentOf = (id: string) =>
   session.board.cards.find((s): s is CardOf<'coll'> => s.type === 'coll' && s.kids.includes(id));
 
-function naturalHeight(c: Card, el: HTMLElement) {
+export function naturalHeight(c: Card, el: HTMLElement) {
   if (c.type === 'image') return Math.round(CW * (c.h / c.w));
   if (!['note', 'todo'].includes(c.type)) return c.h;
   const was = el.style.height;
@@ -104,9 +104,20 @@ export function arrange(s: CardOf<'coll'>, cards: readonly Card[], measure?: (c:
   return placed;
 }
 
+let layouts = 0;
+// the cards their collection's last layout measured selected or typed in, when a note shows its empty name, taller
+const measuredMarked = new Set<string>();
+/** Goes up by one each time a collection is laid out, which measures each card in it again. */
+export const layoutCount = () => layouts;
+/** Whether a card's last layout measured it selected or typed in, so as tall as it is drawn then. */
+export const laidMarked = (id: string) => measuredMarked.has(id);
+
 export function layoutColl(s: CardOf<'coll'>) {
+  layouts++;
   const placed = arrange(s, session.board.cards, c => {
     const el = cardEl(c.id);
+    if (session.sel.has(c.id) || session.editing === c.id) measuredMarked.add(c.id);
+    else measuredMarked.delete(c.id);
     return el ? naturalHeight(c, el) : null;
   });
   placed.forEach(c => {

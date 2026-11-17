@@ -1,7 +1,6 @@
-// The buttons under Myra's build lines once they are stored: after two builds only the newest Undo shows, and it puts
-// back only that build; Commit and Undo show only on the prototype they built; a build that lands while another board is
-// open leaves its buttons there for that visit alone; and a reply that opens a new prototype doesn't take what it
-// changed on the old board with it.
+// The buttons under Myra's build lines once they are stored: after two builds only the newest build's Undo this build
+// and Commit show, and Undo puts back only that build; Commit and Undo this build show only on the prototype they
+// built; and a reply that opens a new prototype doesn't take what it changed on the old board with it.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -21,13 +20,12 @@ git('config', 'user.email', 'ann@example.com');
 fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), 'x\n');
 const bin = path.join(work, 'bin');
 fs.mkdirSync(bin);
-// a stand-in for Claude Code whose builds are numbered, and slow when asked, so a board can be switched mid-build
+// a stand-in for Claude Code whose builds are numbered
 fs.writeFileSync(
   path.join(bin, 'claude'),
   `#!/bin/sh
 case "$*" in
   *stream-json*)
-    case "$2" in *SLOW*) sleep 4 ;; esac
     n=$(cat ${work}/n 2>/dev/null || echo 0); n=$((n+1)); echo $n > ${work}/n
     echo "export function App() { return <h1>Build $n</h1>; }" > src/App.tsx
     echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'"$PWD"'/src/App.tsx"}}]}}'
@@ -100,12 +98,15 @@ try {
       cards: [{ id: 'n1', type: 'note', x: 0, y: 0, w: 220, h: 120, text: 'Checkout: show the total first' }],
       links: [],
       tray: [],
-      // builds from before they were named
+      // builds from before they were named, with a Commit that doesn't name its build either
       chat: ['aaa', 'bbb'].map((snapshot, t) => ({
         who: 'myra',
         text: 'An older build.',
         t,
-        acts: [{ kind: 'buildUndo', board: 'pb', snapshot }],
+        acts: [
+          { kind: 'commit', board: 'pb', message: 'Older' },
+          { kind: 'buildUndo', board: 'pb', snapshot },
+        ],
       })),
     });
     await window.__fenmyr.refreshBoards();
@@ -119,8 +120,8 @@ try {
   await open('pb');
   assert.deepStrictEqual(
     await rowsOf('An older build.'),
-    [[], ['Undo']],
-    'a prototype from before builds were named shows only the newest Undo in its chat',
+    [[], ['Commit', 'Undo this build']],
+    'a prototype from before builds were named shows only the newest Commit and Undo in its chat',
   );
   await build('First build.');
   await built(1);
@@ -132,8 +133,8 @@ try {
   await built(2);
   assert.deepStrictEqual(
     await builtRows(),
-    [['Commit'], ['Commit', 'Undo']],
-    'after two builds only the newest one’s Undo shows',
+    [[], ['Undo this build', 'Explain the code', 'Commit']],
+    'after two builds only the newest one’s Undo and Commit show',
   );
 
   await tap('Commit');
@@ -142,40 +143,13 @@ try {
   await reopen('pb');
   assert.deepStrictEqual(
     await builtRows(),
-    [['Commit'], ['Undo']],
-    'Commit then Not now keeps that build’s Undo, and only the Commit goes',
+    [[], ['Undo this build', 'Explain the code']],
+    'Commit then Not now keeps that build’s Undo and Explain the code, and only the Commit goes',
   );
-  await tap('Undo');
+  await tap('Undo this build');
   await until(async () => fs.readFileSync(app, 'utf8').includes('Build 1'), 'Undo puts back the last build');
   assert.match(fs.readFileSync(app, 'utf8'), /Build 1/, 'and only the last build');
 
-  await build('SLOW third build.');
-  await page.waitForTimeout(300);
-  await open('one');
-  await built(1);
-  assert.deepStrictEqual(await builtRows(), [['Commit', 'Undo']], 'a build that lands on another board shows there');
-  assert.deepStrictEqual(
-    fileOf('one')
-      .chat.filter((m: { text: string }) => m.text === 'I built it.')
-      .map((m: { acts?: unknown }) => m.acts),
-    [undefined],
-    'but its buttons aren’t kept with that board',
-  );
-  await tap('Commit');
-  await until(
-    async () => /Commit 1 changed file in acme\/prototypes\/checkout/.test((await page.textContent('#mcList')) ?? ''),
-    'its Commit there asks about the prototype it built',
-  );
-  await tap('Not now');
-  await reopen('one');
-  assert.deepStrictEqual(await builtRows(), [[]], 'and they are gone once that board opens again');
-  await open('pb');
-  assert.deepStrictEqual(
-    await builtRows(),
-    [['Commit'], []],
-    'the prototype shows no Undo from before a build that landed elsewhere',
-  );
-  assert.match(fs.readFileSync(app, 'utf8'), /Build 3/, 'so that build stays');
   await open('one');
 
   const made = await page.evaluate(() =>

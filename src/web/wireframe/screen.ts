@@ -5,7 +5,7 @@ import { IC, numOf, type Opts, type PieceItem, str, T } from './pieceKit.ts';
 import { PIECES } from './pieces.ts';
 import { WEB } from './pieceWeb.ts';
 import { useFont } from './tilt.ts';
-import { DEVICES } from './wireframes.ts';
+import { DEVICES, isDevice } from './wireframes.ts';
 
 const IPHONE: [number, number, number] = [393, 852, 44];
 // one entry in a screen's list: the piece's name and its options, with its numbers read
@@ -63,7 +63,7 @@ function themeIt(list: PieceItem[], th: Theme | null) {
   });
 }
 
-// elements only Myra asks for by name (they are the panel's Text and Icon tools)
+// elements only Myra asks for by name (a person places them with the Text and Icon tools)
 const EXTRA: Record<string, (W: number, o: Opts) => PieceItem[]> = {
   Text: (W, o) => [
     T(0, 0, W, str(o.text), {
@@ -107,7 +107,7 @@ export function buildScreen(raw: unknown, x: number, y: number) {
     ),
     device = str(spec.device),
     theme = readTheme(spec.theme),
-    named = DEVICES[device],
+    named = isDevice(device) ? DEVICES[device] : undefined,
     dev = named ?? IPHONE,
     W = num(spec.w) || dev[0],
     phone = !device || /iPhone|Android/.test(device),
