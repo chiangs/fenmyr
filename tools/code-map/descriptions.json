@@ -417,6 +417,7 @@
     "tests/persist.ts": "Checks a saved card keeps its content and drops what only mattered while running.",
     "tests/phone.ts": "Checks the phone layout opens a panel as a bottom sheet.",
     "tests/piecePick.ts": "Checks Pieces in the bar, the picker's headings, thumbnails and search, every piece landing in its screen, three picks in a row, undo per pick, and the Box and Text cells.",
+    "tests/piecePickAccess.ts": "Checks that a picture of the window, as a build takes of a screen, shows neither the empty-screen hint nor the Pieces picker.",
     "tests/piecePickClose.ts": "Checks what closes the Pieces picker and what keeps it, the keyboard from F10 through its grid, and the bar folding clear of it.",
     "tests/piecePickDrag.ts": "Checks the Pieces picker's Icons view, a piece or icon dragged from it landing on a screen, on the bare board, or nowhere over the picker, and the picker staying open after a drop.",
     "tests/piecePickEdges.ts": "Checks the Pieces picker's edges: a finger scrolling its grid, Esc mid-drag, a click after a pick moved the view, the mode bar, Esc on the board, and the hint's double-click, name and export.",
