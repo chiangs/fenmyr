@@ -71,8 +71,10 @@ function dragHides(d: Drag): boolean {
   }
 }
 
+/** A gesture moves the board or what is on it. */
+export const gestureRuns = () => appState.drag !== null && dragHides(appState.drag);
+
 /** The bar steps aside while a gesture moves the board or what is on it, and while the view settles after a wheel,
  *  pinch or zoom step. The phone's strip never covers the board, so it stays. */
 export const barPaused = () =>
-  !document.body.classList.contains('phone') &&
-  ((appState.drag !== null && dragHides(appState.drag)) || stage.classList.contains('moving'));
+  !document.body.classList.contains('phone') && (gestureRuns() || stage.classList.contains('moving'));

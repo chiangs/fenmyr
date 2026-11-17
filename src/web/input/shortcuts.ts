@@ -215,7 +215,7 @@ export function init20() {
       return;
     }
     if (e.key === 'Escape' && pickerScreen()) {
-      closePicker(true);
+      closePicker();
       return;
     }
     if (e.key === 'Escape' && session.selWire) {

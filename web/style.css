@@ -733,7 +733,7 @@ body.calm .card.stamp .st img, body.calm .sp-grid img, body.calm .ws-ring img { 
 .row-menu .rm-sep { height: 1px; margin: 4px 6px; background: var(--pn-menu-sep); }
 /* while exporting: just the cards, no app around them */
 body.exporting .side, body.exporting .dock, body.exporting .selbar, body.exporting .modebar, body.exporting .tray, body.exporting .top, body.exporting .keys, body.exporting .ghost, body.exporting .grid,
-body.exporting .marquee, body.exporting .shapepick, body.exporting .wheel-stamps, body.exporting .stamp-pick { visibility: hidden !important; }
+body.exporting .marquee, body.exporting .shapepick, body.exporting .wheel-stamps, body.exporting .stamp-pick, body.exporting .screen-hints, body.exporting .piece-pick { visibility: hidden !important; }
 body.exporting .card .handle, body.exporting .card .knob, body.exporting .card .chip { display: none !important; }
 body.exporting .card.sel::after { display: none; }
 

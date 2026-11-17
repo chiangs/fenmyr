@@ -74,10 +74,11 @@ const rectsIn = (id: string) =>
     .map(el => el.getBoundingClientRect())
     .filter(r => r.width && r.height);
 
-// The open Pieces picker counts as a side column on the side it docked, so the bars keep clear of it.
+// The open Pieces picker counts as a side column on the side it docked, so the selection bar keeps clear of it. The
+// mode bar sits over the tools, below it, and stays where it is.
 function pickerColumn(placing?: HTMLElement) {
   const p = document.getElementById('piecePick');
-  if (!p || p === placing || p.hidden || onPhone()) return { l: [], r: [] };
+  if (!p || p === placing || placing?.id === 'modebar' || p.hidden || onPhone()) return { l: [], r: [] };
   const r = p.getBoundingClientRect(),
     s = stage.getBoundingClientRect();
   return p.dataset.dock === 'left' ? { l: [r.right - s.left + GAP], r: [] } : { l: [], r: [r.left - s.left - GAP] };

@@ -3,7 +3,7 @@ import { byId, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { boardRevision } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
-import { closestTo } from '../ui/dom.ts';
+import { closestTo, esc } from '../ui/dom.ts';
 import { openPicker } from './piecePick.ts';
 
 // a screen narrower than this on screen has no room for the hint
@@ -40,8 +40,9 @@ export function drawScreenHints() {
     .map(f => {
       const x = f.x + f.w / 2,
         y = f.y + f.h / 2,
-        id = f.id;
-      return `<div class="screen-hint" style="left:${x}px;top:${y}px"><button type="button" data-hint="${id}">Add pieces</button><span>or press R for a box,<br>X for text</span></div>`;
+        id = f.id,
+        name = esc(`Add pieces to ${f.name || 'this screen'}`);
+      return `<div class="screen-hint" style="left:${x}px;top:${y}px"><button type="button" data-hint="${id}" aria-label="${name}">Add pieces</button><span>or press R for a box,<br>X for text</span></div>`;
     })
     .join('');
   if (html === drawn) return;
@@ -51,8 +52,8 @@ export function drawScreenHints() {
 
 export function initScreenHints() {
   const layer = $('screenHints');
-  // a press on the button is not a press on the board, so it starts no marquee
-  layer.addEventListener('pointerdown', e => e.stopPropagation());
+  // a press on the button is not a press on the board: it starts no marquee, and a double-click makes no note
+  for (const t of ['pointerdown', 'dblclick']) layer.addEventListener(t, e => e.stopPropagation());
   layer.addEventListener('click', e => {
     const s = byId(closestTo(e.target, '[data-hint]')?.dataset.hint ?? '');
     if (s?.type !== 'frame') return;

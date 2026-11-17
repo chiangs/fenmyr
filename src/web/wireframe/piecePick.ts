@@ -7,7 +7,7 @@ import { remember } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { rebuildBar } from '../selbar/barKit.ts';
-import { barPaused } from '../selbar/context.ts';
+import { gestureRuns } from '../selbar/context.ts';
 import { dockFrame } from '../selbar/float.ts';
 import { dockBeside } from '../selbar/place.ts';
 import { selCards } from '../selbar/selected.ts';
@@ -76,7 +76,14 @@ export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
   el().hidden = false;
   docked = '';
   syncPicker();
-  search().focus({ preventScroll: true });
+  setExpanded(true);
+  // a phone would raise its keyboard over the picker
+  if (!onPhone()) search().focus({ preventScroll: true });
+}
+
+// The bar is drawn again on the next frame; Pieces says at once whether the picker is open.
+function setExpanded(open: boolean) {
+  $('selbar').querySelector('[data-pieces]')?.setAttribute('aria-expanded', String(open));
 }
 
 /** Closes the picker. `back`: give focus back to what opened it, as Esc does. */
@@ -86,6 +93,8 @@ export function closePicker(back = false) {
     id = picker.for.screen;
   picker = null;
   el().hidden = true;
+  setExpanded(false);
+  endGridDrag();
   rebuildBar();
   if (!back) return;
   const to = (from === 'hint' && oneIn($('screenHints'), `[data-hint="${id}"]`)) || oneIn($('selbar'), '[data-pieces]');
@@ -129,21 +138,22 @@ function dock(s: CardOf<'frame'>) {
     st = stage.getBoundingClientRect();
   p.style.left = `${st.left + at.x}px`;
   p.style.top = `${st.top + at.y}px`;
-  // the bars keep to the screen's side of it, and the selection bar folds again for the room it leaves
-  p.dataset.dock = at.x + p.offsetWidth / 2 < (box.l + box.r) / 2 ? 'left' : 'right';
+  // the bar keeps to the screen's side of it, and folds again for the room it leaves
+  p.dataset.dock = at.side === 'edge' ? (at.x + p.offsetWidth / 2 < (box.l + box.r) / 2 ? 'left' : 'right') : at.side;
   rebuildBar();
 }
 
 /** Each frame: closes the picker when its screen is gone, or the selection is about something off it, and otherwise
- *  keeps it docked. It fades while a gesture moves the board, as the bar does. */
+ *  keeps it docked. It fades while a gesture moves the board, as the bar does. While the view settles after a zoom,
+ *  or after a pick brought its piece into view, it stays where it is and takes clicks, and docks once settled. */
 export function syncPicker() {
   if (!picker) return;
   const s = boundScreen(),
     sel = selCards();
   if (homeAt || !s || (sel.length > 0 && screenOf(sel)?.id !== s.id)) return closePicker();
-  const paused = barPaused();
+  const paused = !onPhone() && gestureRuns();
   el().classList.toggle('paused', paused);
-  if (!paused) dock(s);
+  if (!paused && !stage.classList.contains('moving')) dock(s);
 }
 
 // A click on a cell: a piece or icon goes into the screen, and the Box and Text cells put R's and X's tools in hand.
@@ -174,6 +184,17 @@ function dragMove(e: PointerEvent) {
   const { kind, name } = gridDrag.drop;
   startPlacing(kind, kind === 'piece' ? { piece: name } : { name }, true);
   document.body.classList.add('dz-dragging');
+}
+
+// A drag from a grid stops without landing: Esc, a scroll that took the pointer, or the picker closing.
+function endGridDrag() {
+  if (!gridDrag?.on) {
+    gridDrag = null;
+    return;
+  }
+  gridDrag = null;
+  document.body.classList.remove('dz-dragging');
+  stopPlacing();
 }
 
 function dragEnd(e: PointerEvent) {
@@ -211,7 +232,11 @@ function onKey(e: KeyboardEvent) {
   }
   if (e.key === 'Escape') {
     e.stopPropagation();
-    closePicker(true);
+    // Esc puts down what is in hand first, a piece being dragged out or R's and X's tool, as it does on the board
+    if (placing) {
+      endGridDrag();
+      stopPlacing();
+    } else closePicker(true);
     return;
   }
   if (!cell || !e.key.startsWith('Arrow')) return;
@@ -252,5 +277,7 @@ export function initPiecePick() {
   });
   addEventListener('pointermove', dragMove, true);
   addEventListener('pointerup', dragEnd, true);
+  // a finger that scrolls the grid hands the pointer to the scroll
+  addEventListener('pointercancel', endGridDrag, true);
   closeOnOutsidePress(KEEPS, () => picker !== null, closePicker);
 }
