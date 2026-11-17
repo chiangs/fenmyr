@@ -1,6 +1,7 @@
-// The screen tool: W or the panel's Screen button puts it in hand with a row of devices in the mode bar. A click places
-// the lit device's screen, a drag draws a Custom one, and keys, the row and Esc work it. R and X still draw on the
-// bare board, and on a phone the + sheet starts it and a tap places a screen centred on the tap.
+// The screen tool: W or the bottom bar's Wireframe button puts it in hand with a row of devices in the mode bar. A click
+// places the lit device's screen, a drag draws a Custom one, and keys, the row and Esc work it. The row's Box, Text and
+// Icon swap one tool for another. R and X still draw on the bare board, and on a phone the + sheet starts it and a tap
+// places a screen centred on the tap.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import { nounOf } from '../src/shared/cardTypes.ts';
@@ -46,6 +47,15 @@ const tool = async () => {
   });
 };
 const down = { inHand: false, ghost: '', row: false, lit: '' };
+// aria-pressed on the row's Box, Text and Icon, then on the bottom bar's Wireframe button
+const pressed = async () => {
+  await frames();
+  return page.evaluate(() =>
+    [...document.querySelectorAll('#screenbar [data-wft]'), document.querySelector('#tools [data-add="frame"]')]
+      .map(b => b?.getAttribute('aria-pressed'))
+      .join(' '),
+  );
+};
 const count = () => page.evaluate(() => window.__fenmyr.curBoard()?.cards.length ?? 0);
 const last = () =>
   page.evaluate(() => {
@@ -109,10 +119,7 @@ try {
     { inHand: true, ghost: '393px × 852px', row: true, lit: 'iPhone' },
     'W puts the screen tool in hand with iPhone lit',
   );
-  assert.ok(
-    await page.evaluate(() => !!document.querySelector('[data-wf="frame"].on')),
-    "the panel's Screen button is lit",
-  );
+  assert.strictEqual(await pressed(), 'false false false true', "only the bottom bar's Wireframe button is pressed");
   await click(0.4, 0.3);
   assert.deepStrictEqual(
     await last(),
@@ -157,13 +164,11 @@ try {
     { type: 'frame', w: 834, h: 1194, name: 'Screen', device: 'iPad', radius: 20, selected: true, on: null },
     'zoomed out, a press that slips a few pixels is still a click',
   );
-  await page.click('[data-wf="icon"]');
-  await page.click('#iconGrid [data-icon]:nth-child(1)');
-  await page.click('#iconGrid [data-icon]:nth-child(2)');
-  assert.ok(
-    await page.evaluate(() => !!document.getElementById('ghost')?.classList.contains('icon')),
-    'one icon then another keeps the icon tool in hand',
-  );
+  await key('r');
+  await page.click('#screenbar [data-wft="icon"]');
+  assert.strictEqual(await pressed(), 'false false true true', "R's box then the row's Icon swaps one for the other");
+  await page.click('#screenbar [data-wft="icon"]');
+  assert.deepStrictEqual({ ...(await tool()), ghost: '' }, down, "and the row's Icon again puts it down");
   await page.keyboard.press('Escape');
 
   await fresh('keys');
@@ -199,13 +204,13 @@ try {
   assert.strictEqual(await count(), before + 1, 'W then Enter places a screen');
   assert.ok(middle && middle.dx < 60 && middle.dy < 30, `in the middle of the free board: ${JSON.stringify(middle)}`);
   await key('Escape');
-  await page.click('[data-wf="frame"]');
+  await page.click('#tools [data-add="frame"]');
   assert.deepStrictEqual(
     await tool(),
     { inHand: true, ghost: '1440px × 1024px', row: true, lit: 'Desktop' },
-    "the panel's Screen button puts up the same tool, with the board's last device",
+    "the bottom bar's Wireframe button puts up the same tool, with the board's last device",
   );
-  await page.click('[data-wf="frame"]');
+  await page.click('#tools [data-add="frame"]');
   assert.deepStrictEqual({ ...(await tool()), ghost: '' }, down, 'and a second press puts it down');
 
   await fresh('drag', 1);
@@ -308,7 +313,7 @@ try {
   );
   await key('r');
   await key('w');
-  assert.ok(!(await page.evaluate(() => !!document.querySelector('[data-wf="box"].on'))), "W puts out the panel's Box");
+  assert.strictEqual(await pressed(), 'false false false true', "W puts out R's box, and the row's Box is not pressed");
   await key('Escape');
   await key('r');
   await drag(0.3, 0.2, 100, 60);
@@ -357,8 +362,7 @@ try {
     window.__fenmyr.applyView();
   });
   await page.click('[data-sheet="add"]');
-  await page.click('#shTabs [data-t="1"]');
-  await page.click('#design [data-wf="frame"]');
+  await page.click('#shBody [data-add="frame"]');
   await settle(page, 300);
   const sheet = await page.evaluate(() => ({
     sheetOpen: !!document.getElementById('sheet')?.classList.contains('on'),
@@ -368,7 +372,7 @@ try {
   assert.deepStrictEqual(
     sheet,
     { sheetOpen: false, inDock: true, shown: true },
-    'on a phone, Screen closes the sheet and shows the row in the dock',
+    'on a phone, Wireframe closes the sheet and shows the row in the dock',
   );
   const tap = await at(0.5, 0.4);
   await page.mouse.click(tap.x, tap.y);

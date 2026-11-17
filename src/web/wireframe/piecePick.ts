@@ -5,7 +5,7 @@ import { renderCard } from '../canvas/render.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { queryWords } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
-import { remember, save } from '../core/history.ts';
+import { joinLast, remember, save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { revealCards } from '../panels/zoomMenu.ts';
@@ -17,18 +17,17 @@ import { selCards } from '../selbar/selected.ts';
 import { placeAt, placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { closestTo, oneIn, textField } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
-import { pickWF } from './designPanel.ts';
 import { fillGrid, filterGrid, rove, stepCell, type View, visibleCells } from './pieceGrid.ts';
 import { addToScreen } from './placePiece.ts';
 import { screenOf } from './screenScope.ts';
 
 /** What a pick does: add to a screen, or give these icons another glyph. */
-type PickFor = { kind: 'add'; screen: string } | { kind: 'swap'; ids: readonly string[] };
+type PickFor = { kind: 'add'; screen: string } | { kind: 'swap'; ids: readonly string[]; placed: boolean };
 /** The picker's only state. `from` is what opened it, which Esc gives focus back to. `loose` is what a drop from the
  *  grid left off any screen: while it is the selection, the picker stays with its screen. */
 type Picker = { for: PickFor; view: View; from: 'bar' | 'hint'; loose: readonly string[] } | null;
-/** What a drag from a grid, the picker's or the Wireframe panel's, carries onto the board. */
-export type Drop = { kind: 'piece' | 'icon'; name: string };
+/** What a drag from the picker's grid carries onto the board. */
+type Drop = { kind: 'piece' | 'icon'; name: string };
 type GridDrag = { drop: Drop; x: number; y: number; on: boolean } | null;
 
 let picker: Picker = null;
@@ -39,7 +38,7 @@ let docked = '';
 
 // a drop over any of these is cancelled
 const CHROME =
-  '.design, .piece-pick, .side, .tray, .tools, .dock, .myra, .selbar, .modebar, .m-chat, .keys, .top, .hub, .sheet, .settings';
+  '.piece-pick, .side, .tray, .tools, .dock, .myra, .selbar, .modebar, .m-chat, .keys, .top, .hub, .sheet, .settings';
 // a press inside these leaves the picker open; a press on a card closes it only when it selects one off its screen
 const KEEPS = '#piecePick, #selbar, #screenHints, #rh, #mrot, #clrBtn, .card';
 const PHONE_GAP = 10;
@@ -96,9 +95,9 @@ export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
 }
 
 /** Change icon in the bar: opens the picker on its icons alone, to give every one of these icons the glyph picked. */
-export function toggleSwap(ids: readonly string[]) {
+export function toggleSwap(ids: readonly string[], placed = false) {
   if (picker?.for.kind === 'swap' && picker.for.ids.join() === ids.join()) return closePicker();
-  picker = { for: { kind: 'swap', ids }, view: 'icons', from: 'bar', loose: [] };
+  picker = { for: { kind: 'swap', ids, placed }, view: 'icons', from: 'bar', loose: [] };
   show(true);
 }
 
@@ -239,11 +238,13 @@ export function syncPicker() {
   if (!paused && !stage.classList.contains('moving')) dock(s);
 }
 
-// Every icon being swapped takes the glyph picked, as one undo step, and the picker closes.
+// Every icon being swapped takes the glyph picked, as one undo step, and the picker closes. A star placed to be given
+// its glyph takes it in the step that placed it.
 function swapTo(name: string, keyed: boolean) {
   const icons = swapIcons();
-  if (!icons) return;
-  remember();
+  if (!icons || picker?.for.kind !== 'swap') return;
+  if (picker.for.placed) joinLast();
+  else remember();
   icons.forEach(c => {
     c.name = name;
     renderCard(c);
@@ -260,26 +261,21 @@ function pick(cell: HTMLElement, keyed: boolean) {
   const s = boundScreen();
   if (!s || appState.drag || dragged) return;
   const { pkPiece, pkIcon, pkTool } = cell.dataset;
-  if (pkTool === 'box' || pkTool === 'text') return pickWF(pkTool);
+  if (pkTool === 'box' || pkTool === 'text') return startPlacing(pkTool);
   stopPlacing();
-  pickWF(null);
   const area = freeArea() ?? undefined;
   if (pkPiece) addToScreen(s, { kind: 'piece', name: pkPiece }, area);
   if (pkIcon) addToScreen(s, { kind: 'icon', name: pkIcon }, area);
 }
 
-/** A press on a piece or icon in a grid: after 6 px it rides the cursor, and lands where it is let go. */
-export function startGridDrag(e: PointerEvent, drop: Drop) {
+/** A press on a piece or icon in the grid: after 6 px it rides the cursor, and lands where it is let go. */
+function startGridDrag(e: PointerEvent, drop: Drop) {
   if (!e.button) gridDrag = { drop, x: e.clientX, y: e.clientY, on: false };
 }
-
-/** Whether a drag from a grid has just ended, so the click it makes is not a pick. */
-export const justDragged = () => dragged;
 
 function dragMove(e: PointerEvent) {
   if (!gridDrag || gridDrag.on || Math.hypot(e.clientX - gridDrag.x, e.clientY - gridDrag.y) < 6) return;
   gridDrag.on = true;
-  pickWF(null);
   const { kind, name } = gridDrag.drop;
   startPlacing(kind, kind === 'piece' ? { piece: name } : { name }, true);
   document.body.classList.add('dz-dragging');

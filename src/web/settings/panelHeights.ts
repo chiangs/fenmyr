@@ -10,9 +10,7 @@ export const panelMin = (k: string) =>
     ? Math.max(30, rowHeight($('layers'), '.ly') || 30)
     : k === 'boards'
       ? Math.max(30, rowHeight($('boards'), '.board-row, .folder-row, .proj-row') || 32)
-      : k === 'tray'
-        ? 60
-        : 120;
+      : 60;
 
 export function applyPanelH() {
   Object.entries(PANELS).forEach(([k, f]) => {
@@ -27,30 +25,30 @@ export function applyPanelH() {
         maxHeight: 'none',
         flex: `0 1 ${h}px`,
         overflowY: 'auto',
-        overflowX: k === 'tray' || k === 'design' ? 'hidden' : '',
+        overflowX: k === 'tray' ? 'hidden' : '',
       });
     } else
       Object.assign(el.style, { height: '', minHeight: '', maxHeight: '', flex: '', overflowY: '', overflowX: '' });
-    el.closest('.design, .tray')?.classList.toggle('sized', !!v);
+    el.closest('.tray')?.classList.toggle('sized', !!v);
   });
   fitSides();
 }
 
-// Wireframe and Unsorted share the right column: a height you dragged (or saved) is a wish, trimmed so everything in the column stays on screen (Wireframe gives way first)
+const setTrayH = (el: HTMLElement, h: number) => Object.assign(el.style, { height: `${h}px`, flex: `0 1 ${h}px` });
+
+// A height you dragged (or saved) for Unsorted is a wish, trimmed so everything in its column stays on screen. Each fit
+// starts again from the wish, so Unsorted grows back when its column does: the chat closing, a taller window.
 export function fitSides() {
-  document.querySelectorAll('.side').forEach(side => {
-    let over = side.scrollHeight - side.clientHeight;
-    if (over < 2) return;
-    ['design', 'tray'].forEach(k => {
-      const el = PANELS[k]?.();
-      if (over < 2 || !el || !el.closest('.side') || el.closest('.side') !== side || !el.closest('.sized')) return;
-      const cur = el.getBoundingClientRect().height,
-        h = Math.max(panelMin(k), Math.floor(cur - over));
-      if (h >= cur) return;
-      Object.assign(el.style, { height: `${h}px`, flex: `0 1 ${h}px` });
-      over -= cur - h;
-    });
-  });
+  const el = PANELS.tray?.(),
+    side = el?.closest('.side'),
+    wish = settings.panelH.tray;
+  if (!el || !side || !wish) return;
+  setTrayH(el, Math.max(panelMin('tray'), wish));
+  const over = side.scrollHeight - side.clientHeight;
+  if (over < 2) return;
+  const cur = el.getBoundingClientRect().height,
+    h = Math.max(panelMin('tray'), Math.floor(cur - over));
+  if (h < cur) setTrayH(el, h);
 }
 
 // the height grips bulge on hover: the line widens and swells into a small round peak above and below, with a wobble that settles (a damped spring on its width and thickness)
@@ -120,7 +118,7 @@ function gripBulge(grip: HTMLElement) {
 }
 
 // A height grip: drag it to resize what it belongs to, double-click it to go back to the automatic height. Under
-// Layers, Wireframe and Unsorted, and above Myra's input on a prototype board.
+// Layers and Unsorted, and above Myra's input on a prototype board.
 export function heightGrip(
   title: string,
   h: { start: () => (dy: number) => void; end?: () => void; reset: () => void },

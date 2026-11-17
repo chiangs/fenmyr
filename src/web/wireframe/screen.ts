@@ -63,7 +63,7 @@ function themeIt(list: PieceItem[], th: Theme | null) {
   });
 }
 
-// elements only Myra asks for by name (they are the panel's Text and Icon tools)
+// elements only Myra asks for by name (a person places them with the Text and Icon tools)
 const EXTRA: Record<string, (W: number, o: Opts) => PieceItem[]> = {
   Text: (W, o) => [
     T(0, 0, W, str(o.text), {

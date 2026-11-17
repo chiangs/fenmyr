@@ -6,7 +6,6 @@ import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { drawVec, syncCornerPop, vec, vecCard } from '../tools/penEdit.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
-import { syncDesign } from '../wireframe/designPanel.ts';
 import { caret, closeSbPops, G, markOnce, marks, pct, pop, rebuildBar, syncPair } from './barKit.ts';
 import { every, group } from './group.ts';
 import { selCards } from './selected.ts';
@@ -70,7 +69,6 @@ function setCorners(raw: string | number, keepOpen?: boolean) {
     renderCard(c);
   });
   selectOnly(cs.map(c => c.id));
-  syncDesign();
   save();
   const p = document.querySelector('.sb-pop-corners');
   if (p) {

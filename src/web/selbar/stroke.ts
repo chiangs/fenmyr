@@ -5,7 +5,6 @@ import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
-import { syncDesign } from '../wireframe/designPanel.ts';
 import { caret, closeSbPops, G, markOnce, openBarColor, pct, pop, syncPair } from './barKit.ts';
 import { every, group } from './group.ts';
 import { selCards } from './selected.ts';
@@ -131,7 +130,6 @@ function setStroke(patch: Patch) {
     renderCard(c);
   });
   selectOnly(cs.map(c => c.id));
-  syncDesign();
   renderWires();
   save();
   syncPop(f);

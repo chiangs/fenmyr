@@ -89,7 +89,9 @@ async function exportCards(cs: Card[], name: string, pdf: boolean) {
 }
 
 // '-' draws a divider; a label may hold markup (a tick, an icon)
-export type MenuItem = '-' | { label: string; run: () => unknown; danger?: boolean; disabled?: boolean };
+export type MenuItem =
+  | '-'
+  | { label: string; run: () => unknown; danger?: boolean; disabled?: boolean; checked?: boolean };
 // menu items that only show sometimes
 export const when = (on: boolean, items: MenuItem[]) => (on ? items : []);
 export function boardMenu(e: { clientX: number; clientY: number }, items: MenuItem[]) {
@@ -103,8 +105,9 @@ export function boardMenu(e: { clientX: number; clientY: number }, items: MenuIt
     .map((it, i) => {
       if (it === '-') return '<span class="rm-sep" role="separator"></span>';
       const cls = it.danger ? 'danger' : '',
-        off = it.disabled ? ' disabled' : '';
-      return `<button data-i="${i}" class="${cls}" role="menuitem"${off}>${it.label}</button>`;
+        off = it.disabled ? ' disabled' : '',
+        role = it.checked ? ' role="menuitemcheckbox" aria-checked="true"' : ' role="menuitem"';
+      return `<button data-i="${i}" class="${cls}"${role}${off}>${it.label}</button>`;
     })
     .join('');
   document.body.appendChild(m);

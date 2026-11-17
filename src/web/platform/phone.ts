@@ -55,7 +55,6 @@ export function init62() {
         title: 'Add',
         tabs: [
           ['Basics', () => $('tools')],
-          ['Wireframe', () => $('design')],
           ['Colours', () => box('colors')],
         ],
       },

@@ -7,7 +7,7 @@ import { $, stage } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { drawOn } from '../tools/draw.ts';
-import { screenToolOn } from '../tools/screenTool.ts';
+import { wfToolOn } from '../tools/screenTool.ts';
 import { selCards } from './selected.ts';
 import { editedNoteBody } from './typingFocus.ts';
 
@@ -46,8 +46,8 @@ export function barContext(): SelBarContext | null {
 
 const TOOL: BarContext = { kind: 'tool' };
 
-/** Drawing, find or the screen tool is on. More than one can be, and their bar holds each, so it doesn't say which. */
-export const toolContext = () => (drawOn || find.on || screenToolOn() ? TOOL : null);
+/** Drawing, find or a wireframe tool is on. More than one can be, and their bar holds each, so it doesn't say which. */
+export const toolContext = () => (drawOn || find.on || wfToolOn() ? TOOL : null);
 
 function dragHides(d: Drag): boolean {
   switch (d.mode) {

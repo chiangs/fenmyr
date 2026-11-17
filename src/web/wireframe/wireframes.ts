@@ -3,7 +3,7 @@ import type { Card } from '../../shared/model.ts';
 import { applyStroke } from '../canvas/render.ts';
 import { oneIn } from '../ui/dom.ts';
 
-// ---------- wireframes: screens, boxes and text, a design panel, and snapping ----------
+// ---------- wireframes: screens, boxes and text, and snapping ----------
 export const WF = typesWith('wireframe');
 
 // width, height and corner radius, in the order keys 1 to 5 pick them

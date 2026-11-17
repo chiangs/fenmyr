@@ -6,7 +6,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { cardEl, closestTo, htmlIn, oneIn } from '../ui/dom.ts';
-import { caret, closeSbPops, FOLD_PIECE, focusBar, G, inVisit, pct, pop, syncPair } from './barKit.ts';
+import { caret, closeSbPops, FOLD_PIECE, focusBar, G, inVisit, pct, pop, SLIDER_KEYS, syncPair } from './barKit.ts';
 import { fontButton, fontTargets } from './fontPop.ts';
 import { cards, group } from './group.ts';
 
@@ -22,7 +22,7 @@ type TypeChange =
   | { k: 'lhBy'; v: number }
   | { k: 'align'; v: TextAlign };
 
-// the panel's names for the weights
+// each weight by name
 const WEIGHTS: readonly (readonly [Weight, string])[] = [
   [300, 'Light'],
   [400, 'Regular'],
@@ -41,8 +41,6 @@ const DEF = { size: 18, weight: 500, lh: 1.3, align: 'left' } as const;
 // at least what the Wireframe panel let a text keep, which had no ends of its own
 const SIZE = { min: 1, max: 1000 },
   LH = { min: 0.5, max: 4, step: 0.05 };
-
-const ARROWS: Readonly<Record<string, number>> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
 
 const isText = (c: Card): c is CardOf<'text'> => c.type === 'text';
 const isWeight = (n: number): n is Weight => WEIGHTS.some(([w]) => w === n);
@@ -171,8 +169,8 @@ function apply(el: Element, ch: TypeChange) {
   });
 }
 
-/** Keeps the Type dropdown on the texts' own values through an undo, the panel's edits or Myra's, leaving alone the
- *  field being typed in. */
+/** Keeps the Type dropdown on the texts' own values through an undo or Myra's edits, leaving alone the field being
+ *  typed in. */
 export function syncType(bar: HTMLElement) {
   const box = oneIn(bar, '[data-type-for]'),
     ts = box ? ownersOf(box) : null,
@@ -259,7 +257,7 @@ function initType() {
   // an arrow on the slider while the texts' line heights differ moves each from its own, not all to the slider's
   bar.addEventListener('keydown', e => {
     const r = closestTo(e.target, '[data-ty-lh].sb-mixed', HTMLInputElement),
-      by = ARROWS[e.key];
+      by = SLIDER_KEYS[e.key];
     if (!r || by === undefined) return;
     e.preventDefault();
     apply(r, { k: 'lhBy', v: by * LH.step });

@@ -5,7 +5,6 @@ import { WEB } from './pieceWeb.ts';
 
 const CONTROLS: Record<string, Piece> = {
   'Nav bar': {
-    icon: 'browser',
     bar: 'top',
     make: (W, o) => [
       B(0, 0, W, 56, { fill: '#fafafa', stroke: '#e4e4e7', sw: 1 }),
@@ -15,7 +14,6 @@ const CONTROLS: Record<string, Piece> = {
     ],
   },
   'Tab bar': {
-    icon: 'browsers',
     bar: 'bottom',
     make: (W, o) => {
       const items = (
@@ -47,7 +45,6 @@ const CONTROLS: Record<string, Piece> = {
     },
   },
   Button: {
-    icon: 'cursor-click',
     w: 160,
     make: (W, o) => {
       const sec = o.style === 'secondary' || o.style === 'outline';
@@ -68,7 +65,6 @@ const CONTROLS: Record<string, Piece> = {
     },
   },
   Input: {
-    icon: 'input',
     w: 300,
     make: (W, o) => {
       const top = o.label ? 22 : 0;
@@ -80,7 +76,6 @@ const CONTROLS: Record<string, Piece> = {
     },
   },
   Search: {
-    icon: 'search',
     w: 300,
     make: (W, o) => [
       B(0, 0, W, 44, { fill: '#f4f4f5', radius: 22 }),
@@ -89,7 +84,6 @@ const CONTROLS: Record<string, Piece> = {
     ],
   },
   Card: {
-    icon: 'rectangle',
     w: 300,
     make: (W, o) => [
       B(0, 0, W, 236, { fill: '#ffffff', stroke: '#e4e4e7', sw: 1, radius: 14 }),
@@ -100,7 +94,6 @@ const CONTROLS: Record<string, Piece> = {
     ],
   },
   'List row': {
-    icon: 'list',
     bar: 'row',
     make: (W, o) => [
       B(0, 0, W, 68, { fill: '#ffffff' }),
@@ -112,7 +105,6 @@ const CONTROLS: Record<string, Piece> = {
     ],
   },
   Toggle: {
-    icon: 'toggle',
     w: 52,
     make: (W, o) =>
       o.text
@@ -124,7 +116,6 @@ const CONTROLS: Record<string, Piece> = {
         : [B(0, 0, 52, 30, { fill: '#27272a', radius: 15 }), B(25, 3, 24, 24, { fill: '#ffffff', radius: 12 })],
   },
   Checkbox: {
-    icon: 'task',
     w: 240,
     make: (W, o) => [
       B(0, 0, 22, 22, { fill: o.on === false ? '#ffffff' : '#27272a', stroke: '#27272a', sw: 1.5, radius: 6 }),
@@ -133,7 +124,6 @@ const CONTROLS: Record<string, Piece> = {
     ],
   },
   Avatar: {
-    icon: 'user-circle',
     w: 56,
     make: (_W, o) => {
       const s = numOf(o.size, 56);
@@ -141,7 +131,6 @@ const CONTROLS: Record<string, Piece> = {
     },
   },
   Image: {
-    icon: 'image',
     w: 300,
     make: (W, o) => {
       const h = numOf(o.h, 180);
@@ -151,7 +140,6 @@ const CONTROLS: Record<string, Piece> = {
     },
   },
   Heading: {
-    icon: 'title',
     w: 300,
     make: (W, o) => [
       T(0, 0, W, str(o.text, str(o.title, 'Heading')), {
@@ -172,5 +160,5 @@ const CONTROLS: Record<string, Piece> = {
   },
 };
 
-// every element the panel offers and Myra can ask for by name
+// every element the Pieces picker offers and Myra can ask for by name
 export const PIECES: Record<string, Piece> = { ...CONTROLS, ...MORE, ...WEB };

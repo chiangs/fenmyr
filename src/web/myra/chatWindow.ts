@@ -27,6 +27,8 @@ import { initSees, pastesOf, renderSees, seenSelection } from './seesStrip.ts';
 export const chatOpen = () => $('myra').classList.contains('chat');
 
 const ruler = document.createElement('canvas').getContext('2d');
+// the room the right column leaves above the open chat
+const SIDE_GAP = 12;
 
 // with cards going along, the hint says so
 export function renderHint() {
@@ -109,8 +111,25 @@ export function relayout() {
     setVar(myra, '--chat-h', c.b - c.t);
   }
   if ($('mChat').dataset.place !== p.kind) $('mChat').dataset.place = p.kind;
+  clearSide();
   renderHint();
   keepPerch();
+}
+
+// While the open chat sits over the board below the right column, the column ends 12 px above it, so Unsorted
+// shrinks and scrolls its list instead of running under the chat. Below Unsorted's least height the chat covers it.
+function clearSide() {
+  const side = $('sideR');
+  side.style.bottom = '';
+  const chat = chatOverBoard();
+  if (!chat) return;
+  const r = side.getBoundingClientRect(),
+    css = getComputedStyle(side),
+    l = r.left + parseFloat(css.paddingLeft),
+    right = r.right - parseFloat(css.paddingRight),
+    end = r.bottom - parseFloat(css.paddingBottom),
+    to = chat.t - SIDE_GAP;
+  if (chat.l < right && chat.r > l && to < end) side.style.bottom = `${parseFloat(css.bottom) + end - to}px`;
 }
 
 /** Where the open chat sits, or null when it is closed. */
@@ -135,6 +154,7 @@ export function myraOpen(on: boolean, toBox = false) {
   }
   if (!on) setExpanded(false);
   $('myra').classList.toggle('chat', on);
+  clearSide();
   $('mPill').setAttribute('aria-expanded', String(on));
   // a closed chat is inert, so nothing in it can keep the cursor. Her box can take it only once the joined chat stops
   // covering it.

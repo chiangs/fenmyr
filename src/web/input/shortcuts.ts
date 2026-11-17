@@ -27,7 +27,6 @@ import { startScreen } from '../tools/screenTool.ts';
 import { closeColor } from '../ui/colorPicker.ts';
 import { clickIn, isTyping } from '../ui/dom.ts';
 import { toPointer } from '../ui/toolbar.ts';
-import { pickWF } from '../wireframe/designPanel.ts';
 import { closePicker, pickerFor } from '../wireframe/piecePick.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { groupSel, restack } from '../wireframe/stack.ts';
@@ -61,10 +60,9 @@ export const openSettingsKey = () => {
 };
 export function init20() {
   // ---------- just the board: every panel tucks away (Ctrl+\, like Figma), and comes back with Ctrl+\ or Esc ----------
-  CLEAN_EL = [
-    ...['side', 'tray', 'dock', 'modebar', 'keys', 'design'].map(id => $(id)),
-    document.querySelector('.top'),
-  ].filter(el => el !== null);
+  CLEAN_EL = [...['side', 'tray', 'dock', 'modebar', 'keys'].map(id => $(id)), document.querySelector('.top')].filter(
+    el => el !== null,
+  );
 
   $('cleanBtn').onclick = () => setClean(true);
 
@@ -323,8 +321,8 @@ export function init20() {
     if (k === 't') startPlacing('title');
     if (k === 'c') startPlacing('todo');
     if (k === 'g') startPlacing('coll');
-    if (k === 'r') pickWF('box');
-    if (k === 'x') pickWF('text');
+    if (k === 'r') startPlacing('box');
+    if (k === 'x') startPlacing('text');
     if (k === 'w') startScreen();
     if (k === 'd') startPlacing('doc');
     if (k === 's') clickIn($('tools'), '[data-add="shape"]');

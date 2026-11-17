@@ -39,15 +39,10 @@ const open = async (pop: string) => {
   await page.click(`#selbar [data-pop="${pop}"]`);
   await page.waitForTimeout(150);
 };
-// a change from the Wireframe panel, which leaves its undo step to the board's 350 ms settle
-const panelX = async (x: number) => {
-  await page.evaluate(v => {
-    const i = document.querySelector('#dzProps input[data-k="x"]');
-    if (!(i instanceof HTMLInputElement)) throw new Error('no X in the panel');
-    i.value = String(v);
-    i.dispatchEvent(new Event('input', { bubbles: true }));
-  }, x);
-  await page.waitForTimeout(500);
+// a change from outside any dropdown, as Myra moves the box: each reply is its own undo step
+const moveX = async (x: number) => {
+  await page.evaluate(v => window.__fenmyr.applyMyra({ say: 'ok', move: [{ id: 'fbox', x: v }] }, 'q'), x);
+  await settle(page, 250);
 };
 const undo = async () => {
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
@@ -85,8 +80,8 @@ try {
   await page.keyboard.press('Tab');
   await page.click('#selbar [data-pop="place"]');
   await page.waitForTimeout(150);
-  await panelX(600);
-  await panelX(640);
+  await moveX(600);
+  await moveX(640);
   await undo();
   assert.deepStrictEqual(
     await card('fbox'),
@@ -100,8 +95,8 @@ try {
   await page.waitForTimeout(150);
   await page.click('#selbar [data-pop="align"]');
   await page.waitForTimeout(150);
-  await panelX(560);
-  await panelX(580);
+  await moveX(560);
+  await moveX(580);
   await undo();
   assert.strictEqual((await card('fbox')).x, 560, 'and so after Align ▾ closed by its trigger');
 
@@ -119,8 +114,8 @@ try {
     '8',
     'and the field shows the 8 it took',
   );
-  await panelX(520);
-  await panelX(540);
+  await moveX(520);
+  await moveX(540);
   await undo();
   assert.deepStrictEqual(await card('fbox'), { x: 520, w: 8 }, 'and later changes still undo one at a time');
 

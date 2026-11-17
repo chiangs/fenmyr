@@ -1,4 +1,4 @@
-// What the Pieces picker and the Wireframe panel offer, by what things are.
+// What the Pieces picker offers, by what things are.
 
 export type GroupKey = 'basics' | 'controls' | 'blocks' | 'layouts';
 /** One thing to pick: a piece, or the Box or Text tool that R and X also put in hand. */

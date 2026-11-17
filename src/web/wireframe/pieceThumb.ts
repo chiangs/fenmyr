@@ -52,7 +52,7 @@ export function pieceThumb(name: string): string {
   if (kept !== undefined) return kept;
   const P = PIECES[name];
   if (!P) return '';
-  const items = P.make(P.web ? 1200 : P.w || PHONE_W, { panel: true }),
+  const items = P.make(P.web ? 1200 : P.w || PHONE_W, { byHand: true }),
     bw = Math.max(1, ...items.map(i => i.x + i.w)),
     bh = Math.max(1, ...items.map(i => i.y + i.h)),
     vw = Math.max(bw, MIN_VIEW),

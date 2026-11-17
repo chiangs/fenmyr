@@ -1,7 +1,6 @@
 // A wireframe text's Type ▾ in the bar sets its size, weight, line height and alignment, and one visit undoes as one
 // step while a change from elsewhere meanwhile takes its own. The keyboard and a screen reader reach every control in
-// it. The Wireframe panel's Type section keeps working beside it: an edit in one shows in the other, and typing in the
-// panel keeps its field.
+// it.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -106,26 +105,30 @@ try {
     );
   });
 
-  await check('a change from the panel during a visit takes its own step', async () => {
+  await check('a change from Myra to the same text during a visit takes its own step', async () => {
     await select(['ta']);
     await open();
     await box().getByRole('button', { name: 'Extra' }).click();
     await page.waitForTimeout(450);
-    // the panel's Line height, typed while Type ▾ stays open
-    await page.fill('#dzProps input[data-k="lh"]', '2');
+    await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'ok', edit: [{ id: 'ta', text: 'Hers' }] }, 'q'));
     await page.waitForTimeout(450);
-    assert.strictEqual((await look('ta')).lh, 2, 'the panel sets the line height while Type ▾ is open');
+    assert.ok(await isOpen(), 'Type ▾ stays open through her change');
     await box().getByRole('button', { name: 'Light' }).click();
     await settle(page, 450);
     await page.keyboard.press('Escape');
+    const text = () =>
+      page.evaluate(() => {
+        const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'ta');
+        return c?.type === 'text' ? c.text : null;
+      });
     await undo();
     assert.deepStrictEqual(
-      [(await look('ta')).weight, (await look('ta')).lh],
-      [800, 2],
-      'the first undo takes back only what the visit did after the panel’s change',
+      [(await look('ta')).weight, await text()],
+      [800, 'Hers'],
+      'the first undo takes back only what the visit did after her change',
     );
     await undo();
-    assert.strictEqual((await look('ta')).lh, undefined, 'the next undo takes back the panel’s change');
+    assert.strictEqual(await text(), 'First', 'the next undo takes back her change');
     await undo();
     assert.strictEqual((await look('ta')).weight, undefined, 'and the one after it the visit’s first change');
   });
@@ -177,49 +180,6 @@ try {
       'Enter closes it, with focus back on the trigger',
     );
     await undo();
-  });
-
-  await check('an edit in the bar shows in the panel', async () => {
-    await select(['ta']);
-    await open();
-    await box().getByRole('spinbutton', { name: 'Text size in pixels' }).fill('26');
-    await box().getByRole('button', { name: 'Semi' }).click();
-    await page.keyboard.press('Escape');
-    await settle(page, 250);
-    const panel = await page.evaluate(() => {
-      const v = (sel: string) => {
-        const el = document.querySelector(`#dzProps ${sel}`);
-        return el instanceof HTMLInputElement || el instanceof HTMLSelectElement ? el.value : null;
-      };
-      return [v('input[data-k="size"]'), v('select[data-k="weight"]')];
-    });
-    assert.deepStrictEqual(panel, ['26', '600'], 'the panel’s Size and Weight read 26 and Semi');
-    await undo();
-  });
-
-  await check('an edit in the panel shows in the bar, and the panel keeps the field being typed in', async () => {
-    await select(['ta']);
-    const size = page.locator('#dzProps input[data-k="size"]');
-    await size.click();
-    await size.press('Control+a');
-    await page.keyboard.type('34', { delay: 120 });
-    await page.waitForTimeout(200);
-    assert.strictEqual((await look('ta')).size, 34, 'typing 34 in the panel’s Size lands, every key kept');
-    assert.ok(await size.evaluate(i => i === document.activeElement), 'the panel’s field keeps the keyboard');
-    assert.strictEqual(await trigger(), '34', 'the bar’s Type ▾ reads 34');
-    await page.evaluate(() => {
-      const w = document.querySelector('#dzProps select[data-k="weight"]');
-      if (!(w instanceof HTMLSelectElement)) throw new Error('no Weight in the panel');
-      w.value = '300';
-      w.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    await settle(page, 250);
-    await open();
-    assert.strictEqual(
-      await box().getByRole('button', { name: 'Light' }).getAttribute('aria-pressed'),
-      'true',
-      'Light chosen in the panel shows pressed in the bar',
-    );
   });
 
   for (const f of failed) console.log(`FAILED ${f}`);

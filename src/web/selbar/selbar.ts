@@ -2,8 +2,7 @@ import { labelOf } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { syncScreenBar } from '../tools/screenTool.ts';
-import { isTyping } from '../ui/dom.ts';
-import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
+import { syncMore } from '../ui/toolbarConfig.ts';
 import { initPiecePick, syncPicker } from '../wireframe/piecePick.ts';
 import { initScreenHints } from '../wireframe/screenHint.ts';
 import { arrange } from './arrange.ts';
@@ -18,6 +17,7 @@ import { barRoom, floatBar, floatModeBar } from './float.ts';
 import { initFontPop } from './fontPop.ts';
 import { group } from './group.ts';
 import { lineStyle } from './lineStyle.ts';
+import { opacity } from './opacity.ts';
 import { drawOverlays } from './overlays.ts';
 import { canvas, crop, doc, due, imageSpot, link, picture, spotify, swatch, tag, tags, vnote } from './own.ts';
 import { changeIcon } from './pieceIcon.ts';
@@ -110,6 +110,7 @@ const GROUPS = [
   shapeFill,
   text,
   fill,
+  opacity,
   textColour,
   stroke,
   corners,
@@ -124,9 +125,6 @@ const GROUPS = [
 ];
 
 const barHtml = (ctx: SelBarContext) => GROUPS.map(g => g.html(ctx)).join('');
-
-// the panel's redraw, put off while one of its fields was being typed in
-let designLate = false;
 
 function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection' }>) {
   const cs = ctx.cards;
@@ -143,16 +141,11 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
     bar.dataset.ids = ids;
   }
   if (bar.dataset.key === key || bar.querySelector('.sb-popw.open')) {
-    syncDesign();
     syncSize(bar, cs);
     syncType(bar);
     return;
   }
   bar.dataset.key = key;
-  // the panel keeps the field being typed in, which a redraw would take away mid-word, and redraws once it's left
-  const typedIn = document.activeElement;
-  designLate = isTyping(typedIn) && $('dzProps').contains(typedIn);
-  if (!designLate) renderDesign();
   keepFocus(bar, () => {
     bar.innerHTML = barHtml(ctx);
     foldSelbar(bar, barRoom());
@@ -174,10 +167,7 @@ function drawWire(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'connector'
 function clearBar(bar: HTMLElement) {
   closeSbPops();
   if (bar.dataset.ids) bar.dataset.ids = '';
-  if (bar.dataset.key !== '') {
-    bar.dataset.key = '';
-    renderDesign();
-  }
+  if (bar.dataset.key !== '') bar.dataset.key = '';
 }
 
 function drawBar(bar: HTMLElement, ctx: SelBarContext | null) {
@@ -221,6 +211,7 @@ export function init56() {
 
   (function tick() {
     syncScreenBar();
+    syncMore();
     syncPicker();
     endVisit();
     placeSelbar();
@@ -228,11 +219,6 @@ export function init56() {
     requestAnimationFrame(tick);
   })();
 
-  $('dzProps').addEventListener('focusout', e => {
-    if (!designLate || (e.relatedTarget instanceof Node && $('dzProps').contains(e.relatedTarget))) return;
-    designLate = false;
-    renderDesign();
-  });
   $('selbar').addEventListener('pointerdown', e => e.stopPropagation());
   // each group's handlers answer only its own buttons, so the order they are wired in doesn't matter
   for (const g of GROUPS) g.init(placeSelbar);

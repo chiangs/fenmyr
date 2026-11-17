@@ -7,7 +7,6 @@ import { docTarget } from '../docs/drop.ts';
 import { fsMul, SIZED } from '../selbar/textSize.ts';
 import { penMove, penT } from '../tools/pen.ts';
 import { cardEl, oneIn } from '../ui/dom.ts';
-import { syncDesign } from '../wireframe/designPanel.ts';
 import { groupOf, snapWF } from '../wireframe/tilt.ts';
 import { cloneForDrag } from './clipboard.ts';
 import { ROT_FIXED, toWorld } from './handles.ts';
@@ -222,7 +221,6 @@ export function onDragMove(e: PointerEvent) {
     } else {
       d.c.rot = Math.round(a);
       cardEl(d.c.id)?.style.setProperty('--rot', `${d.c.rot}deg`);
-      syncDesign();
     }
     const rb = $('rotBadge');
     rb.textContent = `${Math.round(a)}°`;

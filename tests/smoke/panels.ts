@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Smoke } from './kit.ts';
+import { openPicker, type Smoke } from './kit.ts';
 
-// Licences, the files the exports wrote, the wireframe panel, and placing elements from it.
+// Licences, the files the exports wrote, the Pieces picker, and placing pieces from it.
 export async function panels(t: Smoke) {
   await licences(t);
   await exportsWritten(t);
@@ -45,30 +45,13 @@ async function exportsWritten(t: Smoke) {
   });
 }
 
-// the panel's groups, search and folding; every element places; Myra builds screens from them
+// the picker holds every piece in its groups and finds them by search; every piece places; Myra builds screens from them
 async function wireframes(t: Smoke) {
-  const res = await t.page.evaluate(async () => {
-    const T = window.__t,
-      M = window.__fenmyr,
+  const { page } = t;
+  const res = await page.evaluate(async () => {
+    const M = window.__fenmyr,
       names = M.PIECE_GROUPS.flatMap(g => g.cells.flatMap(c => (c.kind === 'piece' ? [c.name] : []))),
-      shown = () =>
-        T.all('#design [data-piece]')
-          .filter(b => !b.hidden)
-          .map(b => b.dataset.piece)
-          .join(','),
-      layouts = () => T.el('.dz-group[data-g="layouts"]');
-    const counts = M.PIECE_GROUPS.map(g => g.cells.filter(c => c.kind === 'piece').length).join(','),
-      buttons =
-        document.querySelectorAll('#design .dz-piece-grid button').length +
-        document.querySelectorAll('#design .dz-tools button').length,
-      titles = T.all('#design .dz-gh .label')
-        .map(e => e.textContent)
-        .join('|'),
-      layoutsFolded = layouts().classList.contains('closed'),
-      iconsKnown = names.every(n => {
-        const p = M.PIECES[n];
-        return !!p && window.iconKnown(p.icon);
-      }),
+      counts = M.PIECE_GROUPS.map(g => g.cells.filter(c => c.kind === 'piece').length).join(','),
       failed: string[] = [];
     for (const n of names) {
       const b = M.board.cards.length;
@@ -79,24 +62,6 @@ async function wireframes(t: Smoke) {
       }
       if (M.board.cards.length <= b) failed.push(`${n}: placed nothing`);
     }
-    const s = T.input('#dzSearch'),
-      type = (v: string) => {
-        s.value = v;
-        s.dispatchEvent(new Event('input'));
-      };
-    type('dialog');
-    const dialog = shown(),
-      openWhileSearching = !layouts().classList.contains('closed') || layouts().hidden;
-    type('zzzz');
-    const noneMessage = !T.el('#dzNone').hidden;
-    type('faq');
-    const faq = shown();
-    type('');
-    T.click('.dz-group[data-g="basics"] .dz-gh');
-    const basicsFolded = T.el('.dz-group[data-g="basics"]').classList.contains('closed'),
-      saved: unknown = JSON.parse(localStorage.getItem('fenmyr:dzOpen') || '{}'),
-      remembered = !!saved && typeof saved === 'object' && 'basics' in saved && saved.basics === false;
-    T.click('.dz-group[data-g="basics"] .dz-gh');
     const n0 = M.board.cards.length;
     await M.applyMyra({
       say: 'ok',
@@ -132,42 +97,41 @@ async function wireframes(t: Smoke) {
       tabsNotABar =
         !added.some(c => c.type === 'icon' && c.name === 'circle') &&
         added.some(c => c.type === 'text' && c.text === 'One');
-    return {
-      counts,
-      buttons,
-      titles,
-      layoutsFolded,
-      iconsKnown,
-      failed,
-      dialog,
-      openWhileSearching,
-      noneMessage,
-      faq,
-      basicsFolded,
-      remembered,
-      myraBuilt,
-      tabsNotABar,
-    };
+    return { names: names.join(','), counts, failed, myraBuilt, tabsNotABar };
   });
-  t.results.wf = res;
+  await openPicker(t);
+  const shown = () =>
+    page.evaluate(() =>
+      window.__t
+        .all('#pkGrid [data-pk-piece]')
+        .filter(b => !b.hidden)
+        .map(b => b.dataset.pkPiece)
+        .join(','),
+    );
+  const cells = await shown();
+  await page.fill('#pkSearch', 'dialog');
+  const dialog = await shown();
+  await page.fill('#pkSearch', 'zzzz');
+  const noneMessage = await page.evaluate(() => !window.__t.el('#pkGrid .pk-none').hidden);
+  await page.fill('#pkSearch', 'faq');
+  const faq = await shown();
+  await page.fill('#pkSearch', '');
+  await page.keyboard.press('Escape');
+  const all = { ...res, cells, dialog, noneMessage, faq };
+  t.results.wf = all;
   t.checkAll('wireframes', {
-    counts: res.counts === '7,8,8,11',
-    buttons: res.buttons === 38,
-    titles: res.titles === 'Basics|Buttons & inputs|Building blocks|Layouts',
-    layoutsFolded: res.layoutsFolded,
-    iconsKnown: res.iconsKnown,
-    allPlace: !res.failed.length,
-    dialog: res.dialog === 'Modal',
-    noneMessage: res.noneMessage,
-    faq: res.faq === 'Accordion',
-    basicsFolded: res.basicsFolded,
-    remembered: res.remembered,
-    myraBuilt: res.myraBuilt > 30,
-    tabsNotABar: res.tabsNotABar,
+    counts: all.counts === '7,8,8,11',
+    cells: all.cells === all.names,
+    allPlace: !all.failed.length,
+    dialog: all.dialog === 'Modal',
+    noneMessage: all.noneMessage,
+    faq: all.faq === 'Accordion',
+    myraBuilt: all.myraBuilt > 30,
+    tabsNotABar: all.tabsNotABar,
   });
 }
 
-// a click adds the element at once (middle of the view with nothing selected, stacked inside a selected screen), a drag drops it where released
+// a click in the picker stacks the piece inside its screen, and a drag out of it drops the piece where released
 async function placing(t: Smoke) {
   const { page } = t;
   const sel = () =>
@@ -177,43 +141,25 @@ async function placing(t: Smoke) {
         z = M.view.z,
         r = window.__t.el('#stage').getBoundingClientRect();
       return {
-        n: c.length,
         cards: M.board.cards.length,
         cx: Math.min(...c.map(x => x.x)) * z + M.view.x + r.left,
         cy: Math.min(...c.map(x => x.y)) * z + M.view.y + r.top,
-        vw: innerWidth,
-        vh: innerHeight,
       };
     });
-  const empty = () =>
-    page.evaluate(() => {
-      const M = window.__fenmyr;
-      M.board.cards.length = 0;
-      M.selectOnly([]);
-      M.renderAll();
-    });
-  const pickScreen = () =>
-    page.evaluate(() => {
-      const M = window.__fenmyr,
-        f = M.board.cards.find(c => c.type === 'frame');
-      if (f) M.selectOnly([f.id]);
-    });
-  await empty();
-  await page.click('[data-piece="Dropdown"]');
-  const a = await sel();
   await page.evaluate(async () => {
     const M = window.__fenmyr;
     M.board.cards.length = 0;
+    M.selectOnly([]);
+    M.renderAll();
     await M.applyMyra({
       say: 'ok',
       screens: [{ name: 'S', device: 'iPhone', items: [{ piece: 'Heading', text: 'Hello' }] }],
     });
   });
-  await pickScreen();
-  await page.evaluate(() => window.__fenmyr.fit(window.__fenmyr.board.cards));
+  await openPicker(t);
   for (const n of ['Nav bar', 'Tab bar', 'Dropdown', 'Table', 'Accordion']) {
-    await page.click(`[data-piece="${n}"]`);
-    await pickScreen();
+    await page.click(`#pkGrid [data-pk-piece="${n}"]`);
+    await page.waitForTimeout(100);
   }
   const st = await page.evaluate(() => {
     const cards = window.__fenmyr.board.cards,
@@ -223,24 +169,30 @@ async function placing(t: Smoke) {
       inside: !!f && cards.filter(c => c.onFrame === f.id).every(c => c.y >= f.y && c.y + c.h <= f.y + f.h + 1),
     };
   });
-  await empty();
-  const bt = page.locator('[data-piece="Video"]');
+  const bt = page.locator('#pkGrid [data-pk-piece="Video"]');
   await bt.scrollIntoViewIfNeeded();
   const bb = await bt.boundingBox(),
-    c0 = (await sel()).cards;
-  if (!bb) throw new Error('no Video button');
+    c0 = (await sel()).cards,
+    to = await page.evaluate(() => {
+      const M = window.__fenmyr,
+        f = M.board.cards.find(c => c.type === 'frame'),
+        r = window.__t.el('#stage').getBoundingClientRect();
+      if (!f) throw new Error('no screen');
+      return { x: (f.x + f.w / 2) * M.view.z + M.view.x + r.left, y: (f.y + f.h / 2) * M.view.z + M.view.y + r.top };
+    });
+  if (!bb) throw new Error('no Video cell');
   await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2);
   await page.mouse.down();
   await page.mouse.move(bb.x - 60, bb.y + 20, { steps: 4 });
   const dragging = await page.evaluate(() => window.__t.el('#ghost').classList.contains('on'));
-  await page.mouse.move(500, 450, { steps: 6 });
+  await page.mouse.move(to.x, to.y, { steps: 6 });
   await page.mouse.up();
   const d = await sel();
+  await page.keyboard.press('Escape');
   t.checkAll('place', {
-    centre: a.n >= 1 && a.cx > a.vw * 0.15 && a.cx < a.vw * 0.7 && a.cy > a.vh * 0.1 && a.cy < a.vh * 0.8,
     stacked: st.outside === 0 && st.inside,
     dragging,
-    dropped: d.cards > c0 && Math.abs(d.cx - 500) < 200 && Math.abs(d.cy - 450) < 200,
+    dropped: d.cards > c0 && Math.abs(d.cx - to.x) < 200 && Math.abs(d.cy - to.y) < 200,
     hintGone: await page.evaluate(() => window.__t.el('#placeHint').hidden),
   });
 }

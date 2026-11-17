@@ -151,7 +151,7 @@ export function init16() {
     if (
       closestTo(
         e.target,
-        '.tray, .m-bubble, .cpop, .home, .m-chat, .design, .side, .row-menu, .stamp-pick, .wheel-stamps, .docview, .settings, .shapepick, .tplpick',
+        '.tray, .m-bubble, .cpop, .home, .m-chat, .side, .row-menu, .stamp-pick, .wheel-stamps, .docview, .settings, .shapepick, .tplpick',
       )
     )
       return;

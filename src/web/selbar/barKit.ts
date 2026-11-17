@@ -75,6 +75,19 @@ export const btn = (a: string, icon: string, tip: string, on?: boolean, disabled
 
 export const caret = () => Icon('caret-down', { cls: 'sb-caret' });
 
+// how far each key moves a slider, in its steps, as the browser moves one: Home and End go all the way, as the values
+// are clamped to the slider's range
+export const SLIDER_KEYS: Readonly<Record<string, number>> = {
+  ArrowRight: 1,
+  ArrowUp: 1,
+  ArrowLeft: -1,
+  ArrowDown: -1,
+  PageUp: 10,
+  PageDown: -10,
+  Home: -Infinity,
+  End: Infinity,
+};
+
 // a range slider's filled part, as a percentage of the way from min to max
 export const pct = (v: number, min: number, max: number) =>
   `${Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100))}%`;

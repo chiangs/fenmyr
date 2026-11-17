@@ -2,13 +2,12 @@ import { isRecord } from '../../shared/model.ts';
 import { $, stage, world } from '../core/dom.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
-import { placeTray, renderDesign } from '../wireframe/designPanel.ts';
 
 // Which widgets are minimised, by name, remembered between launches. A prototype board keeps its own set, where all
 // but the board list and Unsorted start minimised so the board, preview and code get the room; what the person
 // changes there is kept for prototype boards.
 const KEYS = { plain: 'fenmyr:boxes', proto: 'fenmyr:protoBoxes' } as const;
-const PROTO_START: Record<string, boolean> = { layers: true, colors: true, design: true };
+const PROTO_START: Record<string, boolean> = { layers: true, colors: true };
 type Mode = keyof typeof KEYS;
 const mode = (): Mode => (document.body.classList.contains('proto') ? 'proto' : 'plain');
 let boxState: Record<string, boolean> = {};
@@ -25,14 +24,13 @@ const readBoxes = (m: Mode): Record<string, boolean> => {
   }
 };
 
-// each widget that minimises, with its button: the boxes, and Wireframe
+// each widget that minimises, with its button
 const widgets = (): [string, HTMLElement, HTMLElement][] => {
   const out: [string, HTMLElement, HTMLElement][] = [];
   for (const b of document.querySelectorAll('.box')) {
     const btn = b.querySelector('.mini:not(.home-btn):not(.gear)');
     if (b instanceof HTMLElement && btn instanceof HTMLElement) out.push([b.dataset.box ?? '', b, btn]);
   }
-  out.push(['design', $('design'), $('dzMin')]);
   return out;
 };
 
@@ -46,7 +44,6 @@ const show = (el: HTMLElement, btn: HTMLElement, min: boolean) => {
 export function applyBoxes() {
   boxState = readBoxes(mode());
   for (const [k, el, btn] of widgets()) show(el, btn, !!boxState[k]);
-  placeTray();
 }
 
 export function init58() {
@@ -59,7 +56,6 @@ export function init58() {
       try {
         localStorage.setItem(KEYS[mode()], JSON.stringify(boxState));
       } catch (_e) {}
-      placeTray();
     };
   applyBoxes();
 
@@ -83,6 +79,4 @@ export function init58() {
   });
 
   world.appendChild($('guides'));
-  setTimeout(placeTray, 0);
-  renderDesign();
 }
