@@ -142,13 +142,14 @@ await check('with Myra’s chat open, #shapePick opens over it from the Shape to
   assert.strictEqual(top, '#shapePick');
 });
 await check('with Myra’s chat open, a colour card’s wheel opens over it', async () => {
-  // the colour card just over the top left of her chat, joined to the tools at 1440 px
+  // the colour card just over the top left of her chat, joined to the tools at 1440 px, wherever the chat starts
   await size(1440, 900);
+  await setChat(true);
   await page.evaluate(() => {
-    Object.assign(window.__fenmyr.view, { x: 540, y: 0, z: 1 });
+    const chat = document.getElementById('mChat')?.getBoundingClientRect().left ?? 1076;
+    Object.assign(window.__fenmyr.view, { x: chat + 24 - 560, y: 0, z: 1 });
     window.__fenmyr.applyView();
   });
-  await setChat(true);
   await page.locator('.card[data-id="sw"]').dblclick();
   await still();
   const top = await onTopWhereMeets('#cpop', '#mChat');
