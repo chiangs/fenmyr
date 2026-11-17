@@ -85,8 +85,32 @@ const wireframe: Group = {
   ],
 };
 
+// On a phone: the + sheet on Basics, which holds the Wireframe button, then the button chosen, with the Wireframe row
+// in the dock. A base without the button keeps the sheet open on its second step.
+const phoneAdd: Step = async page => {
+  await page.evaluate(() => {
+    document.querySelector<HTMLElement>('#piecePick [data-pk-close]')?.click();
+    window.__fenmyr.selectOnly([]);
+    document.querySelector<HTMLElement>('[data-sheet="add"]')?.click();
+  });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.querySelector<HTMLElement>('#shTabs [data-t="0"]')?.click());
+};
+const phoneScreen: Step = async page => {
+  await page.evaluate(() => document.querySelector<HTMLElement>('#shBody [data-add="frame"]')?.click());
+  await page.waitForTimeout(300);
+};
+
 export const WIREFRAME_GROUPS = {
   wireframe,
   'wireframe-dark': { board: wireframeBoard, settings: { theme: 'dark' }, states: [['pieces', pieces]] },
-  'wireframe-phone': { board: wireframeBoard, phone: true, states: [['pieces', pieces]] },
+  'wireframe-phone': {
+    board: wireframeBoard,
+    phone: true,
+    states: [
+      ['pieces', pieces],
+      ['add', phoneAdd],
+      ['screen', phoneScreen],
+    ],
+  },
 } satisfies Record<string, Group>;
