@@ -55,22 +55,31 @@ const airSpeed = (frames: hop.Frame[]) => {
   assert.ok(a && b && b.ms > a.ms, `she is in the air in ${air.length} frames`);
   return { speed: apart(a, b) / (b.ms - a.ms), ms: b.ms - a.ms };
 };
-// A slow runner opening a prototype: the main thread is held for `ms` in the frame she takes off.
-const holdTakeoff = (ms: number) =>
-  page.evaluate(ms => {
-    const raf = window.requestAnimationFrame.bind(window),
-      slot = document.getElementById('gooSlot'),
-      air = () => !!slot?.style.transform.includes('rotate');
-    window.requestAnimationFrame = cb =>
-      raf(ts => {
-        const was = air();
-        cb(ts);
-        if (was || !air()) return;
-        window.requestAnimationFrame = raf;
-        const until = performance.now() + ms;
-        while (performance.now() < until);
-      });
-  }, ms);
+// A slow runner busy as she hops: the main thread is held for `ms` in the first frame at least `after` ms into her
+// crouch, or into her time in the air.
+const holdFrame = (pose: 'crouch' | 'air', ms: number, after = 0) =>
+  page.evaluate(
+    ({ pose, ms, after }) => {
+      const raf = window.requestAnimationFrame.bind(window),
+        slot = document.getElementById('gooSlot'),
+        mark = pose === 'air' ? 'rotate' : 'scale';
+      let since: number | null = null,
+        held = false;
+      // every callback asked for before the hold runs through here, so only the first to get there holds
+      window.requestAnimationFrame = cb =>
+        raf(ts => {
+          cb(ts);
+          if (held || !slot?.style.transform.includes(mark)) return;
+          since ??= ts;
+          if (ts - since < after) return;
+          held = true;
+          window.requestAnimationFrame = raf;
+          const until = performance.now() + ms;
+          while (performance.now() < until);
+        });
+    },
+    { pose, ms, after },
+  );
 const myraCalm = async (v: 'lively' | 'calmest') => {
   await page.click('#gearBtn');
   await page.click('#setTabs [data-tab="myra"]');
@@ -154,13 +163,29 @@ try {
   await check(
     'with a frame held back as she takes off, her hop still measures no faster than 1.7 px per ms',
     async () => {
-      await holdTakeoff(100);
+      await holdFrame('air', 100);
+      const { speed } = airSpeed((await hop.flight(page, () => open('pb'))).frames);
+      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms`);
+    },
+  );
+
+  await check(
+    'with a frame held back as she comes in to land, her hop still measures no faster than 1.7 px per ms',
+    async () => {
+      await holdFrame('air', 200, 540);
       const { speed } = airSpeed((await hop.flight(page, () => open('pb'))).frames);
       assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms`);
     },
   );
 
   await check('her hop onto the open chat keeps its 480 ms in the air', async () => {
+    const f = await hop.flight(page, () => page.click('#mPill')),
+      { ms } = airSpeed(f.frames);
+    assert.ok(ms > 400 && ms < 490, `she is in the air for ${Math.round(ms)} ms`);
+  });
+
+  await check('with a frame held back as she crouches, her hop onto the open chat still keeps its 480 ms', async () => {
+    await holdFrame('crouch', 250);
     const f = await hop.flight(page, () => page.click('#mPill')),
       { ms } = airSpeed(f.frames);
     assert.ok(ms > 400 && ms < 490, `she is in the air for ${Math.round(ms)} ms`);
