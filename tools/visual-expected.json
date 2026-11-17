@@ -1,6 +1,5 @@
 {
-  "wireframe-align": "New in 8c: the whole Sign in button selected on its screen. Its bar shows Align ▾ in place of six inline align buttons, so it is narrower, with Align ▾ open above it holding the six buttons. The base bar, at the same height, shows the six inline buttons and nothing open.",
-  "wireframe-phone-pieces": "Changed in 8c: at 600 px the strip under the open picker shows iPhone ▾ after Pieces, which moves Add a label, Fill, Stroke and Corners right.",
-  "wireframe-screen": "Changed in 8c: the selected screen's bar shows iPhone ▾ after Pieces, which moves the bar's other buttons right.",
-  "wireframe-size": "New in 8c: the Sign in button's box selected. Its bar gains Align ▾ and 345 × 48 ▾ after Pieces, which moves the other buttons right, with the size dropdown open above it: X, Y, W and H two to a row, and Rotate° across. The base bar, at the same height, has neither and nothing open."
+  "wireframe-align": "Changed in 8d: the whole Sign in button selected on its screen. Its bar gains Font ▾ (Figtree) after Align ▾, which moves Stroke, Create section, Ungroup and Delete right. Align ▾ is open above it on both sides.",
+  "wireframe-icon": "New in 8d: the Sign in screen's back arrow selected. Its bar gains Change icon (the arrow glyph) after 24 ▾, and Colour as a dot before Stroke, which moves the bar's end right. The base bar, at the same height, has neither.",
+  "wireframe-text": "New in 8d: the Welcome back heading selected. Its bar gains Figtree ▾ and 28 ▾ after 345 ▾, which moves the other buttons right, with Type ▾ open below it: size with − and +, six weights with Extra on, line height, and left, centre and right. The base bar, at the same height, has neither and nothing open."
 }
