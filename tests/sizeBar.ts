@@ -40,12 +40,12 @@ const select = async (ids: string[]) => {
   await page.evaluate(i => window.__fenmyr.selectOnly(i), ids);
   await settle(page, 250);
 };
-const trigger = () => page.evaluate(() => document.querySelector('#selbar [data-pop="size"]')?.textContent?.trim());
+const trigger = () => page.evaluate(() => document.querySelector('#selbar [data-pop="place"]')?.textContent?.trim());
 const open = async () => {
-  await page.click('#selbar [data-pop="size"]');
+  await page.click('#selbar [data-pop="place"]');
   await page.waitForTimeout(150);
 };
-const isOpen = () => page.evaluate(() => !!document.querySelector('#selbar [data-popw="size"].open'));
+const isOpen = () => page.evaluate(() => !!document.querySelector('#selbar [data-popw="place"].open'));
 const focused = () =>
   page.evaluate(() => {
     const a = document.activeElement;
@@ -61,7 +61,7 @@ const fields = () =>
     ),
   );
 const field = (name: string) =>
-  page.locator('#selbar [data-popw="size"]').getByRole('spinbutton', { name, exact: true });
+  page.locator('#selbar [data-popw="place"]').getByRole('spinbutton', { name, exact: true });
 const undo = async () => {
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.keyboard.press('Control+z');
@@ -135,7 +135,7 @@ try {
   await page.keyboard.press('Escape');
   await settle(page, 150);
   assert.strictEqual((await card('fbox')).x, 530, 'Esc leaves the typed X uncommitted');
-  assert.strictEqual(await focused(), 'size', 'and puts focus back on the trigger');
+  assert.strictEqual(await focused(), 'place', 'and puts focus back on the trigger');
   assert.ok(!(await isOpen()), 'and closes the dropdown');
 
   const box = await page.locator('#cards [data-id="fbox"]').boundingBox();
@@ -168,8 +168,8 @@ try {
   // the keyboard: F10 into the bar, Tab to the trigger, Enter opens, Tab walks the fields, Enter commits
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.keyboard.press('F10');
-  for (let i = 0; i < 12 && (await focused()) !== 'size'; i++) await page.keyboard.press('Tab');
-  assert.strictEqual(await focused(), 'size', 'Tab reaches the size trigger');
+  for (let i = 0; i < 12 && (await focused()) !== 'place'; i++) await page.keyboard.press('Tab');
+  assert.strictEqual(await focused(), 'place', 'Tab reaches the size trigger');
   await page.keyboard.press('Enter');
   await page.waitForTimeout(150);
   assert.ok(await isOpen(), 'Enter opens it');
@@ -185,7 +185,7 @@ try {
   await page.keyboard.press('Enter');
   await settle(page, 150);
   assert.strictEqual((await card('fbox')).w, 240, 'Enter commits W 240');
-  assert.deepStrictEqual([await isOpen(), await focused()], [false, 'size'], 'and closes onto the trigger');
+  assert.deepStrictEqual([await isOpen(), await focused()], [false, 'place'], 'and closes onto the trigger');
 
   await select(['ftext']);
   assert.strictEqual(await trigger(), '220', 'a text’s trigger shows its width');
@@ -248,15 +248,15 @@ try {
   });
   assert.deepStrictEqual(
     strip,
-    { shows: ['pieces', 'fill', 'stroke', 'more', 'del'], tucked: ['align', 'size', 'tag', 'corners'] },
+    { shows: ['pieces', 'fill', 'stroke', 'more', 'del'], tucked: ['align', 'place', 'tag', 'corners'] },
     'at 390 px the strip shows Pieces, Fill, Stroke, ··· and Delete, with Align, Size, the label and Corners in ···',
   );
   await page.click('#selbar [data-pop="more"]');
   await page.waitForTimeout(250);
-  await page.click('#selbar [data-pop="size"]');
+  await page.click('#selbar [data-pop="place"]');
   await page.waitForTimeout(250);
   const sheet = await page.evaluate(() => {
-    const p = document.querySelector('.sb-pop-size')?.getBoundingClientRect(),
+    const p = document.querySelector('.sb-pop-place')?.getBoundingClientRect(),
       strip = document.getElementById('selbar')?.getBoundingClientRect(),
       w = document.querySelector('#selbar [data-size="w"]'),
       r = w?.getBoundingClientRect(),

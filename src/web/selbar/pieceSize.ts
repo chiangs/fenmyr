@@ -124,7 +124,7 @@ function sizeHtml(s: SizeOf) {
   return G(
     FOLD_PIECE,
     pop(
-      'size',
+      'place',
       `<b>${trig}</b>${CARET}`,
       `<div class="sb-size" data-size-for="${id}">${lead}<div class="sbz-grid">${fields}</div></div>`,
       tipOf(s),
@@ -203,7 +203,7 @@ function closeTo(el: Element) {
     folded = !!el.closest('.sb-morebody');
   closeSbPops();
   if (keyedButton(el) || el instanceof HTMLInputElement)
-    oneIn(bar, folded ? '[data-pop="more"]' : '[data-pop="size"]')?.focus();
+    oneIn(bar, folded ? '[data-pop="more"]' : '[data-pop="place"]')?.focus();
 }
 
 function setDevice(d: string, el: HTMLElement) {
@@ -219,7 +219,7 @@ function setDevice(d: string, el: HTMLElement) {
 /** Keeps the trigger and the fields on the card's own values through a drag, a resize, an undo or Myra's change,
  *  leaving alone the field being typed in. */
 export function syncSize(bar: HTMLElement, cs: Card[]) {
-  const trig = oneIn(bar, '[data-pop="size"]'),
+  const trig = oneIn(bar, '[data-pop="place"]'),
     s = sizeOf(cs.length === 1 ? cs[0] : null),
     b = trig?.querySelector('b');
   if (!trig || !s || !b) return;

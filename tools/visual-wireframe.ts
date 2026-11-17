@@ -50,7 +50,7 @@ const wireframe: Group = {
         await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
       },
     ],
-    ['size', openDropdown(['go0'], 'size')],
+    ['size', openDropdown(['go0'], 'place')],
     ['align', openDropdown(['go0', 'go1'], 'align')],
     ['pieces', openPieces],
     [

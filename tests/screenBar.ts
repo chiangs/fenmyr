@@ -28,12 +28,12 @@ const select = async (ids: string[]) => {
   await page.evaluate(i => window.__fenmyr.selectOnly(i), ids);
   await settle(page, 250);
 };
-const trigger = () => page.evaluate(() => document.querySelector('#selbar [data-pop="size"]')?.textContent?.trim());
+const trigger = () => page.evaluate(() => document.querySelector('#selbar [data-pop="place"]')?.textContent?.trim());
 const open = async () => {
-  await page.click('#selbar [data-pop="size"]');
+  await page.click('#selbar [data-pop="place"]');
   await page.waitForTimeout(150);
 };
-const isOpen = () => page.evaluate(() => !!document.querySelector('#selbar [data-popw="size"].open'));
+const isOpen = () => page.evaluate(() => !!document.querySelector('#selbar [data-popw="place"].open'));
 const fields = () =>
   page.evaluate(() =>
     Object.fromEntries(
@@ -63,7 +63,7 @@ try {
       .map(b => b.getAttribute('data-pieces') ?? b.getAttribute('data-pop') ?? ''),
   );
   assert.strictEqual(await trigger(), 'iPhone', 'a selected screen’s bar shows its device');
-  assert.strictEqual(order[order.indexOf('signin') + 1], 'size', `the device comes straight after Pieces: ${order}`);
+  assert.strictEqual(order[order.indexOf('signin') + 1], 'place', `the device comes straight after Pieces: ${order}`);
 
   await open();
   const rows = await page.evaluate(() =>
@@ -93,7 +93,7 @@ try {
   await type('name', 'Log in', 'Enter');
   assert.strictEqual((await card('signin')).name, 'Log in', 'Name renames the screen');
   assert.ok(
-    !(await isOpen()) && (await page.evaluate(() => document.activeElement?.getAttribute('data-pop'))) === 'size',
+    !(await isOpen()) && (await page.evaluate(() => document.activeElement?.getAttribute('data-pop'))) === 'place',
     'Enter commits and closes, with focus back on the trigger',
   );
 

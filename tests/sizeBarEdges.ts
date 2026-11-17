@@ -58,7 +58,7 @@ const undo = async () => {
 try {
   await settle(page, 800);
   await select(['fbox']);
-  await open('size');
+  await open('place');
   await page.fill('#selbar [data-size="w"]', '300');
   await page.locator('#cards [data-id="gbox"]').click();
   await settle(page, 250);
@@ -69,7 +69,7 @@ try {
   );
 
   await select(['fbox']);
-  await open('size');
+  await open('place');
   await page.fill('#selbar [data-size="w"]', '250');
   await page.mouse.click(760, 700);
   await settle(page, 250);
@@ -80,10 +80,10 @@ try {
   );
 
   await select(['fbox']);
-  await open('size');
+  await open('place');
   await page.fill('#selbar [data-size="w"]', '200');
   await page.keyboard.press('Tab');
-  await page.click('#selbar [data-pop="size"]');
+  await page.click('#selbar [data-pop="place"]');
   await page.waitForTimeout(150);
   await panelX(600);
   await panelX(640);
@@ -106,7 +106,7 @@ try {
   assert.strictEqual((await card('fbox')).x, 560, 'and so after Align ▾ closed by its trigger');
 
   await select(['fbox']);
-  await open('size');
+  await open('place');
   await page.fill('#selbar [data-size="w"]', '3');
   await page.keyboard.press('Enter');
   await settle(page, 150);
@@ -128,7 +128,7 @@ try {
   await settle(page, 700);
   await select(['fbox']);
   await open('more');
-  await open('size');
+  await open('place');
   await page.click('#selbar [data-size="w"]');
   await page.keyboard.press('Control+a');
   await page.keyboard.type('120');
