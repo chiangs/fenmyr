@@ -126,6 +126,15 @@ function fontShell({ key, html, at, place, defName, pick, back }: Shell) {
       back();
     }
     if (e.key === 'Enter' && e.target === q) oneIn(pop, '.dp-font:not([hidden]), .dp-use:not([hidden])')?.click();
+    // ↓ and ↑ walk the rows shown and round to the search, so ↑ from the search reaches the last row: the Use row,
+    // when the name typed is no listed font's
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const stops = [q, ...htmlIn(pop, '.dp-font, .dp-use').filter(b => !b.hidden)],
+        at = stops.findIndex(b => b === document.activeElement),
+        by = e.key === 'ArrowDown' ? 1 : -1;
+      stops[(at + by + stops.length) % stops.length]?.focus();
+    }
   };
   q.addEventListener('input', () => {
     const typed = q.value.trim(),
