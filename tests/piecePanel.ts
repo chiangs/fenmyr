@@ -121,6 +121,35 @@ try {
     assert.strictEqual(await panelValue('input[data-k="opacity"]'), '70', 'and Fill’s shows in the panel');
   });
 
+  await check('the panel’s Group button turns to Ungroup once pressed', async () => {
+    await select(['email1', 'pass1']);
+    await page.click('#dzProps [data-grp="on"]');
+    await settle(page, 250);
+    assert.strictEqual(
+      await page.locator('#dzProps [data-grp]').getAttribute('data-grp'),
+      'off',
+      'the panel redraws while its button has focus, and offers Ungroup',
+    );
+  });
+
+  await check('typing in the panel keeps its field', async () => {
+    await select(['go0']);
+    const field = page.locator('#dzProps input[data-k="opacity"]');
+    await field.click();
+    await field.press('Control+a');
+    await page.keyboard.type('35', { delay: 120 });
+    await page.waitForTimeout(200);
+    assert.strictEqual(
+      await page.evaluate(() => {
+        const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'go0');
+        return c?.type === 'box' ? c.opacity : null;
+      }),
+      0.35,
+      'typing 35 in the panel’s Opacity % lands, every key kept',
+    );
+    assert.ok(await field.evaluate(i => i === document.activeElement), 'and the field keeps the keyboard');
+  });
+
   for (const f of failed) console.log(`FAILED ${f}`);
   assert.deepStrictEqual(failed, [], 'every check passes');
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');

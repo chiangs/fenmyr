@@ -110,6 +110,13 @@ export function openBarColor(o: {
   });
 }
 
+/** Gives the keyboard back to a bar button after its dropdown or picker closed, or to ··· when it folded in there. */
+export function focusBar(sel: string) {
+  const bar = $('selbar'),
+    b = oneIn(bar, sel);
+  (b?.closest('.sb-morebody') ? oneIn(bar, '[data-pop="more"]') : b)?.focus();
+}
+
 // the bar is rebuilt on the next frame
 export const rebuildBar = () => {
   $('selbar').dataset.key = '';

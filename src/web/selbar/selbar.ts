@@ -2,6 +2,7 @@ import { labelOf } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { syncScreenBar } from '../tools/screenTool.ts';
+import { isTyping } from '../ui/dom.ts';
 import { renderDesign, syncDesign } from '../wireframe/designPanel.ts';
 import { initPiecePick, syncPicker } from '../wireframe/piecePick.ts';
 import { initScreenHints } from '../wireframe/screenHint.ts';
@@ -146,7 +147,8 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
   }
   bar.dataset.key = key;
   // the panel keeps the field being typed in, which a redraw would take away mid-word
-  if (!$('dzProps').contains(document.activeElement)) renderDesign();
+  const typedIn = document.activeElement;
+  if (!(isTyping(typedIn) && $('dzProps').contains(typedIn))) renderDesign();
   keepFocus(bar, () => {
     bar.innerHTML = barHtml(ctx);
     foldSelbar(bar, barRoom());

@@ -7,12 +7,13 @@ import { colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { cssToHex } from '../ui/color.ts';
-import { cardEl, closestTo, htmlIn, oneIn } from '../ui/dom.ts';
+import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import { syncDesign } from '../wireframe/designPanel.ts';
 import {
   caret,
   closeSbPops,
   FOLD_PIECE,
+  focusBar,
   G,
   inVisit,
   marks,
@@ -71,9 +72,11 @@ function opacityHtml(cs: readonly Card[]) {
   const boxes = cs.filter(isBox);
   if (boxes.length !== cs.length) return '';
   const ops = boxes.map(c => Math.round((c.opacity ?? 1) * 100)),
-    v = ops.every(o => o === ops[0]) ? (ops[0] ?? 100) : 100,
+    same = ops.every(o => o === ops[0]),
+    v = same ? (ops[0] ?? 100) : 100,
+    shown = same ? String(v) : '',
     p = pct(v, 0, 100);
-  return `<div class="sbc-top sb-oprow"><span>Opacity</span><input type="range" min="0" max="100" step="1" value="${v}" style="--p:${p}" data-bop aria-label="Opacity"><input type="number" min="0" max="100" step="1" value="${v}" data-bopn aria-label="Opacity in per cent"><b class="sb-unit">%</b></div>`;
+  return `<div class="sbc-top sb-oprow"><span>Opacity</span><input type="range" min="0" max="100" step="1" value="${v}" style="--p:${p}" data-bop aria-label="Opacity"><input type="number" min="0" max="100" step="1" value="${shown}" placeholder="–" data-bopn aria-label="Opacity in per cent"><b class="sb-unit">%</b></div>`;
 }
 
 // box (and screen) fill: wireframe grays, your pastels, and any color
@@ -338,7 +341,7 @@ function initFill() {
     if (e.key !== 'Enter') return;
     e.preventDefault();
     closeSbPops();
-    oneIn($('selbar'), '[data-pop="fill"]')?.focus();
+    focusBar('[data-pop="fill"]');
   });
 }
 

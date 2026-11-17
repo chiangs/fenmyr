@@ -12,7 +12,7 @@ import { cardEl, closestTo, esc, htmlIn, oneIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
 import { isLocalFont, onFrame, useFont } from '../wireframe/tilt.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
-import { closeSbPops, rebuildBar } from './barKit.ts';
+import { closeSbPops, focusBar, rebuildBar } from './barKit.ts';
 import { onBar } from './group.ts';
 import { selCards } from './selected.ts';
 
@@ -209,7 +209,7 @@ function boardFontPop(btn: Element, list: Card[], back: string) {
     });
     selectOnly(selCards().map(c => c.id));
   };
-  const goBack = () => requestAnimationFrame(() => oneIn($('selbar'), back)?.focus());
+  const goBack = () => requestAnimationFrame(() => focusBar(back));
   q.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     restore();

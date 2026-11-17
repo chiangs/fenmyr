@@ -155,6 +155,22 @@ try {
     assert.ok(p, 'Change icon opens the picker above the dock, inside the window');
   });
 
+  await check('the phone, a screen’s Font row from the keyboard', async () => {
+    await select(['signin']);
+    await page.click('#selbar [data-pop="more"]');
+    await page.click('#selbar [data-pop="place"]');
+    await page.locator('#selbar [data-sbfont="screen"]').focus();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(150);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+    assert.strictEqual(
+      await page.evaluate(() => document.activeElement?.getAttribute('data-pop')),
+      'more',
+      'Esc gives the keyboard back to ···, where the device dropdown folded',
+    );
+  });
+
   for (const f of failed) console.log(`FAILED ${f}`);
   assert.deepStrictEqual(failed, [], 'every check passes');
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');

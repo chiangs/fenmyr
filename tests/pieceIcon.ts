@@ -58,9 +58,14 @@ try {
   await check('Change icon swaps every selected icon as one step, and closes', async () => {
     await select(['nav1', 'nav3']);
     const btn = page.locator('#selbar [data-chicon]');
-    assert.strictEqual(await btn.getAttribute('aria-label'), 'Change icon', 'two icons show Change icon');
+    assert.deepStrictEqual(
+      [await btn.getAttribute('aria-label'), await btn.getAttribute('aria-expanded')],
+      ['Change icon, arrow left', 'false'],
+      'two icons show Change icon, read with the first one’s glyph',
+    );
     await btn.click();
     await settle(page, 200);
+    assert.strictEqual(await btn.getAttribute('aria-expanded'), 'true', 'it says its picker is open');
     assert.deepStrictEqual(
       await picker(),
       { name: 'Change icon', tabs: false, search: 'Search icons…' },
@@ -90,7 +95,11 @@ try {
     await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
     await page.keyboard.press('Escape');
     await settle(page, 150);
-    assert.strictEqual(await picker(), null, 'Esc on the board closes the swap');
+    assert.deepStrictEqual(
+      [await picker(), await page.evaluate(() => [...window.__fenmyr.sel])],
+      [null, ['nav1']],
+      'Esc on the board closes the swap first, keeping the icon selected',
+    );
     await page.click('#selbar [data-chicon]');
     await settle(page, 200);
     await select(['signin']);
@@ -134,6 +143,16 @@ try {
     await settle(page, 250);
     assert.strictEqual((await card('nav1'))?.color, '#ff5a6e', 'red sets the icon’s colour');
     await undo();
+  });
+
+  await check('two boxes at different opacities show a blank number', async () => {
+    await page.evaluate(() => {
+      const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'go0');
+      if (c?.type === 'box') c.opacity = 0.4;
+    });
+    await select(['go0', 'email1']);
+    await page.click('#selbar [data-pop="fill"]');
+    assert.strictEqual(await page.inputValue('#selbar [data-bopn]'), '', 'Opacity reads blank, not the first box’s');
   });
 
   await check('a box’s opacity is a row in Fill', async () => {

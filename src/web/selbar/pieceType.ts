@@ -6,7 +6,7 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { cardEl, closestTo, htmlIn, oneIn } from '../ui/dom.ts';
-import { caret, closeSbPops, FOLD_PIECE, G, inVisit, pct, pop, syncPair } from './barKit.ts';
+import { caret, closeSbPops, FOLD_PIECE, focusBar, G, inVisit, pct, pop, syncPair } from './barKit.ts';
 import { fontButton, fontTargets } from './fontPop.ts';
 import { cards, group } from './group.ts';
 
@@ -191,8 +191,9 @@ function initType() {
   const bar = $('selbar');
   bar.addEventListener('input', e => {
     const t = e.target;
-    if (t instanceof HTMLInputElement && t.matches('[data-ty-size]') && t.value) {
-      apply(t, { k: 'size', v: +t.value });
+    if (t instanceof HTMLInputElement && t.matches('[data-ty-size]')) {
+      // a value under the least size is a number still being typed, as the 2 of 24
+      if (+t.value >= SIZE.min) apply(t, { k: 'size', v: +t.value });
       return;
     }
     const pair = syncPair(t, 'data-ty-lh', 'data-ty-lhn');
@@ -223,9 +224,8 @@ function initType() {
     e.stopPropagation();
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    const folded = !!i.closest('.sb-morebody');
     closeSbPops();
-    oneIn(bar, folded ? '[data-pop="more"]' : '[data-pop="type"]')?.focus();
+    focusBar('[data-pop="type"]');
   });
 }
 

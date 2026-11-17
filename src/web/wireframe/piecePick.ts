@@ -52,7 +52,7 @@ const onPhone = () => document.body.classList.contains('phone');
 
 /** The screen the open picker adds to, or null while it is closed or swapping icons. */
 export const pickerScreen = () => (picker?.for.kind === 'add' ? picker.for.screen : null);
-export const pickerOpen = () => picker !== null;
+export const pickerFor = () => picker?.for ?? null;
 
 function boundScreen() {
   const s = picker?.for.kind === 'add' ? byId(picker.for.screen) : undefined;

@@ -154,7 +154,10 @@ try {
     assert.ok((await look()).cls?.includes('has-font'), 'hovering Shantell Sans previews it on the card');
     await page.mouse.move(5, 450);
     await page.waitForTimeout(100);
-    assert.deepStrictEqual(await look(), before, 'leaving the picker leaves the card as it was, without has-font');
+    const after = await look();
+    // drawing never gives a font card has-font, so its having one is the preview left behind
+    assert.ok(!after.cls?.includes('has-font'), `leaving the picker leaves the card without has-font: ${after.cls}`);
+    assert.deepStrictEqual(after, before, 'and exactly as it was');
     await page.keyboard.press('Escape');
     await undo();
     assert.strictEqual(await fontOf('font'), 'Lato', 'the next undo takes back the last pick, not a hover');
