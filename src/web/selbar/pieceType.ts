@@ -18,6 +18,8 @@ type TypeChange =
   | { k: 'size'; v: number }
   | { k: 'weight'; v: Weight }
   | { k: 'lh'; v: number }
+  // a nudge to each text's own line height, from a slider that shows them mixed
+  | { k: 'lhBy'; v: number }
   | { k: 'align'; v: TextAlign };
 
 // the panel's names for the weights
@@ -39,6 +41,8 @@ const DEF = { size: 18, weight: 500, lh: 1.3, align: 'left' } as const;
 // at least what the Wireframe panel let a text keep, which had no ends of its own
 const SIZE = { min: 1, max: 1000 },
   LH = { min: 0.5, max: 4, step: 0.05 };
+
+const ARROWS: Readonly<Record<string, number>> = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
 
 const isText = (c: Card): c is CardOf<'text'> => c.type === 'text';
 const isWeight = (n: number): n is Weight => WEIGHTS.some(([w]) => w === n);
@@ -78,6 +82,9 @@ function setType(c: CardOf<'text'>, ch: TypeChange) {
     case 'lh':
       c.lh = lhFrom(ch.v);
       return;
+    case 'lhBy':
+      c.lh = lhFrom(lhOf(c) + ch.v);
+      return;
     case 'align':
       if (ch.v === 'left') delete c.align;
       else c.align = ch.v;
@@ -108,23 +115,28 @@ function alignsHtml(ts: Texts) {
   }).join('');
 }
 
-// the size shown on the trigger and in the field: the shared size, or blank when the texts differ
+// the size and line height shown on the trigger and in the fields: the shared one, or blank when the texts differ
 const sizeShown = (ts: Texts) => String(shared(ts, sizeOf) ?? '');
-const lhShown = (ts: Texts) => shared(ts, lhOf) ?? DEF.lh;
-const lhField = (ts: Texts) => String(lhShown(ts));
+const lhField = (ts: Texts) => String(shared(ts, lhOf) ?? '');
+// the slider sits at the shared line height; with the texts mixed it reads Mixed and its thumb doesn't show
+const lhSlid = (ts: Texts) => shared(ts, lhOf) ?? DEF.lh;
+const triggerOf = (ts: Texts) => sizeShown(ts) || 'Type';
+const readOf = (ts: Texts) => `Type, ${sizeShown(ts) || 'mixed sizes'}`;
 
 function typeHtml(ts: Texts) {
   const size = sizeShown(ts),
-    trig = size || 'Type',
-    lh = lhShown(ts),
-    p = pct(lh, LH.min, LH.max),
+    trig = triggerOf(ts),
+    lh = lhField(ts),
+    slid = lhSlid(ts),
+    mixed = lh ? '' : ' class="sb-mixed" aria-valuetext="Mixed"',
+    p = pct(slid, LH.min, LH.max),
     ids = ts.map(c => c.id).join(),
     weights = weightsHtml(ts),
     aligns = alignsHtml(ts),
-    read = `Type, ${trig}`,
+    read = readOf(ts),
     CARET = caret();
   const sizeRow = `<div class="sbc-top sb-fsrow"><span>Size</span><button class="sb-fsstep" data-ty-step="-1" title="Smaller (⇧ for 10)" aria-label="Smaller">−</button><input type="number" min="${SIZE.min}" max="${SIZE.max}" step="1" value="${size}" placeholder="–" data-ty-size aria-label="Text size in pixels"><span class="sb-fspx">px</span><button class="sb-fsstep" data-ty-step="1" title="Bigger (⇧ for 10)" aria-label="Bigger">+</button></div>`,
-    lhRow = `<div class="sbc-top"><span>Line height</span><input type="range" min="${LH.min}" max="${LH.max}" step="${LH.step}" value="${lh}" style="--p:${p}" data-ty-lh aria-label="Line height"><input type="number" min="${LH.min}" max="${LH.max}" step="${LH.step}" value="${lh}" data-ty-lhn aria-label="Line height"><b class="sb-unit">×</b></div>`;
+    lhRow = `<div class="sbc-top"><span>Line height</span><input type="range" min="${LH.min}" max="${LH.max}" step="${LH.step}" value="${slid}" style="--p:${p}"${mixed} data-ty-lh aria-label="Line height"><input type="number" min="${LH.min}" max="${LH.max}" step="${LH.step}" value="${lh}" placeholder="–" data-ty-lhn aria-label="Line height as a multiple of the size"><b class="sb-unit">×</b></div>`;
   return G(
     FOLD_PIECE,
     pop(
@@ -167,21 +179,25 @@ export function syncType(bar: HTMLElement) {
     trig = oneIn(bar, '[data-pop="type"]'),
     b = trig?.querySelector('b');
   if (!box || !ts || !trig || !b) return;
-  const size = sizeShown(ts),
-    shown = size || 'Type';
+  const shown = triggerOf(ts);
   if (b.textContent !== shown) {
     b.textContent = shown;
-    trig.ariaLabel = `Type, ${shown}`;
+    trig.ariaLabel = readOf(ts);
   }
-  const lh = String(lhShown(ts)),
+  const lh = lhField(ts),
     weight = String(shared(ts, weightOf)),
     align = shared(ts, alignOf);
   for (const i of htmlIn(box, 'input')) {
-    const v = i.matches('[data-ty-size]') ? size : lh;
-    if (i instanceof HTMLInputElement && i !== document.activeElement && i.value !== v) {
-      i.value = v;
-      if (i.type === 'range') i.style.setProperty('--p', pct(+v, LH.min, LH.max));
+    const range = i.matches('[data-ty-lh]'),
+      v = i.matches('[data-ty-size]') ? sizeShown(ts) : range ? String(lhSlid(ts)) : lh;
+    if (range && i.classList.contains('sb-mixed') !== !lh) {
+      i.classList.toggle('sb-mixed', !lh);
+      if (lh) i.removeAttribute('aria-valuetext');
+      else i.setAttribute('aria-valuetext', 'Mixed');
     }
+    if (!(i instanceof HTMLInputElement) || i === document.activeElement || i.value === v) continue;
+    i.value = v;
+    if (range) i.style.setProperty('--p', pct(+v, LH.min, LH.max));
   }
   for (const btn of htmlIn(box, '[data-ty-weight], [data-ty-align]')) {
     const on = btn.dataset.tyWeight === weight || btn.dataset.tyAlign === align;
@@ -240,6 +256,14 @@ function initType() {
   });
   // Enter in a field lands its number and closes the dropdown, with the keyboard back on its button, or on ··· when
   // it folded in there
+  // an arrow on the slider while the texts' line heights differ moves each from its own, not all to the slider's
+  bar.addEventListener('keydown', e => {
+    const r = closestTo(e.target, '[data-ty-lh].sb-mixed', HTMLInputElement),
+      by = ARROWS[e.key];
+    if (!r || by === undefined) return;
+    e.preventDefault();
+    apply(r, { k: 'lhBy', v: by * LH.step });
+  });
   bar.addEventListener('keydown', e => {
     const i = closestTo(e.target, '[data-ty-size], [data-ty-lhn]', HTMLInputElement);
     if (!i) return;

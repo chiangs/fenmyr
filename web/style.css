@@ -2228,6 +2228,8 @@ body.dark .sb-tipbub { background: var(--sb-bg-3); color: var(--sb-ink-3); }
 .sbc-top input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 22px; background: none; cursor: pointer; --p: 50%; }
 .sbc-top input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: linear-gradient(90deg, var(--select) var(--p), rgb(from var(--shade) r g b / .1) var(--p)); }
 .sbc-top input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: var(--snow); box-shadow: 0 1px 4px rgb(from var(--shade) r g b / .25), 0 0 0 1px rgb(from var(--shade) r g b / .06); cursor: grab; }
+/* line heights that differ: no value on the slider until one is chosen */
+.sbc-top input[type=range].sb-mixed { --p: 0% !important; } .sbc-top input[type=range].sb-mixed::-webkit-slider-thumb { opacity: 0; }
 .sbc-top input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.1); }
 body.dark .sbc-top input[type=range]::-webkit-slider-runnable-track { background: linear-gradient(90deg, var(--select) var(--p), rgb(from var(--hilite) r g b / .14) var(--p)); }
 .sbc-top input[type=number] { width: 54px; padding: 7px 8px; border: 0; border-radius: 9px; background: rgb(from var(--shade) r g b / .05); font: 700 13px/1 var(--font); color: var(--ink); text-align: right; outline: none; -moz-appearance: textfield; }

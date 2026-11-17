@@ -1,6 +1,7 @@
 // The number fields in Type ▾ and in Fill's Opacity: a typed number lands once, whole, when the field is left or Enter
 // pressed, so 60 never sets 6 first. A size past either end lands at that end, and a cleared field leaves the cards
-// as they were. Type ▾ takes every size and line height the Wireframe panel kept.
+// as they were. Type ▾ takes every size and line height the Wireframe panel kept. Texts whose line heights differ show
+// them blank, as differing sizes do, and an arrow on the slider moves each from its own.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -20,6 +21,8 @@ const on = (id: string, type: string, x: number, y: number, w: number, h: number
 });
 board.cards.push(
   on('ta', 'text', 40, 100, 220, 30, { text: 'First', size: 18 }),
+  on('tb', 'text', 40, 160, 220, 30, { text: 'Tight', size: 18, lh: 1 }),
+  on('tc', 'text', 40, 220, 220, 60, { text: 'Airy', size: 24, lh: 2.2 }),
   on('b1', 'box', 40, 400, 160, 100, { fill: '#e4e4e7' }),
   on('b2', 'box', 40, 520, 160, 100, { fill: '#e4e4e7', opacity: 0.4 }),
 );
@@ -182,6 +185,35 @@ try {
     assert.ok(+((await page.getAttribute('#selbar [data-ty-lh]', 'min')) ?? 1) <= 0.5, 'the slider reaches 0.5 too');
     await page.keyboard.press('Escape');
     await undo();
+    await undo();
+  });
+
+  await check('mixed line heights read blank, and an arrow moves each from its own', async () => {
+    await select(['tb', 'tc']);
+    const trig = page.locator('#selbar [data-pop="type"]');
+    assert.strictEqual(
+      await trig.getAttribute('aria-label'),
+      'Type, mixed sizes',
+      'the trigger reads Type, mixed sizes',
+    );
+    await trig.click();
+    await page.waitForTimeout(150);
+    const box = page.locator('#selbar [data-popw="type"]'),
+      num = box.getByRole('spinbutton', { name: 'Line height as a multiple of the size', exact: true }),
+      slider = box.getByRole('slider', { name: 'Line height', exact: true });
+    assert.strictEqual(await num.count(), 1, 'the number has a name of its own');
+    assert.strictEqual(await num.inputValue(), '', 'and reads blank');
+    assert.strictEqual(await slider.getAttribute('aria-valuetext'), 'Mixed', 'the slider reads Mixed');
+    await slider.focus();
+    await page.keyboard.press('ArrowRight');
+    await settle(page, 250);
+    assert.deepStrictEqual(
+      [await prop('tb', 'lh'), await prop('tc', 'lh')],
+      [1.05, 2.25],
+      'one ArrowRight moves each a step from its own',
+    );
+    assert.strictEqual(await num.inputValue(), '', 'and the number still reads blank');
+    await page.keyboard.press('Escape');
     await undo();
   });
 
