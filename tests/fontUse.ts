@@ -24,6 +24,27 @@ await app.context().route(/fonts\.(googleapis|gstatic)\.com/, route => {
   return route.fulfill({ status: 200, contentType: 'text/css', body: `/* ${family} */` });
 });
 
+const fontOf = (id: string) =>
+  page.evaluate(i => window.__fenmyr.curBoard()?.cards.find(k => k.id === i)?.font ?? null, id);
+const pickerOpen = () => page.evaluate(() => document.getElementById('fontPop')?.hidden === false);
+const note = () =>
+  page.evaluate(() => {
+    const n = document.querySelector('#fontPop .dp-note');
+    return n instanceof HTMLElement && !n.hidden ? n.textContent : null;
+  });
+const useName = async (name: string) => {
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type(name);
+  await page.click('#fontPop .dp-use');
+  await settle(page, 300);
+};
+// whether a stylesheet for this family is on the page and loaded
+const loaded = (family: string) =>
+  page.evaluate(
+    f => [...document.querySelectorAll('link')].some(k => k.href.includes(`family=${f}:`) && !!k.sheet),
+    family.replace(/ /g, '+'),
+  );
+const MISSING = 'Google Fonts has no font called “zila slab”. Check the spelling and capitals.';
 const select = async (ids: string[]) => {
   await page.evaluate(i => window.__fenmyr.selectOnly(i), ids);
   await settle(page, 250);
@@ -95,6 +116,78 @@ try {
     }
     await page.evaluate(() => document.body.classList.remove('dark'));
   });
+
+  await check('a name Google lacks leaves the card as it was, and the picker says why', async () => {
+    await select(['head0']);
+    const before = await fontOf('head0');
+    await openFonts();
+    await useName('zila slab');
+    assert.strictEqual(await note(), MISSING, 'the picker says Google Fonts has no such font');
+    assert.ok(await pickerOpen(), 'and stays open to fix the name');
+    assert.strictEqual(await fontOf('head0'), before, 'the text keeps its font');
+    await page.keyboard.type('x');
+    assert.strictEqual(await note(), null, 'typing again clears what it said');
+  });
+
+  await check('a name typed in lower case lands with Google’s capitals', async () => {
+    await select(['head0']);
+    await openFonts();
+    await useName('pacifico');
+    assert.strictEqual(await fontOf('head0'), 'Pacifico', 'pacifico lands as Pacifico');
+    assert.ok(!(await pickerOpen()), 'and the picker closes');
+    assert.ok(await loaded('Pacifico'), 'with its stylesheet loaded');
+  });
+
+  await check('offline, a typed name is not used, and the picker says so', async () => {
+    offline = true;
+    await select(['head0']);
+    const before = await fontOf('head0');
+    await openFonts();
+    await useName('Rubik Dirt');
+    offline = false;
+    assert.strictEqual(
+      await note(),
+      'Google Fonts can’t be reached, so “Rubik Dirt” wasn’t used. Try again when you’re online.',
+      'the picker says Google Fonts can’t be reached',
+    );
+    assert.strictEqual(await fontOf('head0'), before, 'and the text keeps its font');
+  });
+
+  await check('a font that failed offline loads when picked again once the network is back', async () => {
+    offline = true;
+    await page.evaluate(() => {
+      const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'email0');
+      if (c) c.font = 'Rubik Dirt';
+      window.__fenmyr.renderAll();
+    });
+    await settle(page, 300);
+    assert.ok(!(await loaded('Rubik Dirt')), 'offline, Rubik Dirt doesn’t load');
+    offline = false;
+    await select(['head0']);
+    await openFonts();
+    await page.click('#fontPop [data-bfont="Rubik Dirt"]');
+    await settle(page, 300);
+    assert.strictEqual(await fontOf('head0'), 'Rubik Dirt', 'it is picked from Used on this board');
+    assert.ok(await loaded('Rubik Dirt'), 'and loads now the network is back');
+  });
+
+  await check('Settings → Default font takes only a font Google sends', async () => {
+    await page.click('#gearBtn');
+    await page.click('#setTabs [data-tab="board"]');
+    const shown = () => page.textContent('#defaultFontBtn');
+    const before = await shown();
+    await openFonts('#defaultFontBtn');
+    await useName('zila slab');
+    assert.strictEqual(await note(), MISSING, 'it says Google Fonts has no such font');
+    assert.strictEqual(await shown(), before, 'and the default font stays as it was');
+    await useName('pacifico');
+    assert.strictEqual(await shown(), 'Pacifico', 'pacifico becomes the default as Pacifico');
+    await openFonts('#defaultFontBtn');
+    await page.click('#fontPop [data-bfont=""]');
+    await page.click('#setClose');
+  });
+
+  assert.ok(asked.length > 0, 'every font request went to the stub');
 
   for (const f of failed) console.log(`FAILED ${f}`);
   assert.deepStrictEqual(failed, [], 'every check passes');

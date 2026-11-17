@@ -10,9 +10,10 @@ import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { cardEl, closestTo, esc, htmlIn, oneIn } from '../ui/dom.ts';
 import { closeOnOutsidePress } from '../ui/popover.ts';
-import { isLocalFont, onFrame, useFont } from '../wireframe/tilt.ts';
+import { isLocalFont, loadFont, onFrame, useFont } from '../wireframe/tilt.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
 import { closeSbPops, focusBar, rebuildBar } from './barKit.ts';
+import { showUse, USE_NOTE, USE_ROW, useTyped } from './fontUse.ts';
 import { onBar } from './group.ts';
 import { selCards } from './selected.ts';
 
@@ -77,29 +78,19 @@ const fontRow = (cur: string | null) => (f: string) => {
   return `<button type="button" class="dp-row dp-font ${cls}" data-bfont="${name}" style="font-family:'${name}', ${DOC_FONT}, system-ui">${name}${where}</button>`;
 };
 
-// any name the list doesn't have, offered as a Google font after the matches
-const USE_ROW = '<button type="button" class="dp-row dp-use" hidden><span></span><small>Google Fonts</small></button>';
-
-function showUse(pop: HTMLElement, typed: string, listed: boolean) {
-  const use = oneIn(pop, '.dp-use'),
-    said = use?.querySelector('span');
-  if (!use || !said) return;
-  use.hidden = !typed || listed;
-  // one run of text, as the row spreads its parts apart
-  said.textContent = `Use “${typed}”`;
-  if (use.hidden) delete use.dataset.bfont;
-  else use.dataset.bfont = typed;
-}
-
-// The one font list both pickers use. Clicking the same button again closes it. Returns null when it closed.
-// defName: what the Default row is called when searching ('' when it never matches)
-function fontShell(
-  key: string,
-  html: string,
-  at: DOMRect,
-  place: (p: HTMLElement, r: DOMRect) => void,
-  defName: string,
-) {
+// The one font list both pickers use, and what a pick does in it. A row picked lands at once; the Use row's name
+// lands once Google Fonts sends it. Clicking the same button again closes it. Returns null when it closed.
+type Shell = {
+  key: string;
+  html: string;
+  at: DOMRect;
+  place: (p: HTMLElement, r: DOMRect) => void;
+  // what the Default row is called when searching ('' when it never matches)
+  defName: string;
+  // keyed: picked with the keyboard (a click with no pointer)
+  pick: (f: string, keyed: boolean) => void;
+};
+function fontShell({ key, html, at, place, defName, pick }: Shell) {
   let p = document.getElementById('fontPop');
   if (p && !p.hidden && p.dataset.for === key) {
     p.hidden = true;
@@ -146,6 +137,18 @@ function fontShell(
       rows.some(b => (b.dataset.bfont || defName).toLowerCase() === v),
     );
   });
+  pop.onclick = e => {
+    const row = closestTo(e.target, '[data-bfont]'),
+      f = row?.dataset.bfont,
+      keyed = e.detail === 0;
+    if (!row || f === undefined) return;
+    const done = (name: string) => {
+      pop.hidden = true;
+      pick(name, keyed);
+    };
+    if (row.classList.contains('dp-use')) useTyped(pop, f, done);
+    else done(f);
+  };
   setTimeout(() => q.focus(), 30);
   return { pop, q };
 }
@@ -167,21 +170,36 @@ function boardFontPop(btn: Element, list: Card[], back: string) {
       .slice(0, 400)
       .map(row)
       .join('');
-  const shell = fontShell(
-    list.map(c => c.id).join(),
-    `<input class="dp-search" placeholder="Search fonts…" aria-label="Search fonts" autocomplete="off" spellcheck="false">
+  const shell = fontShell({
+    key: list.map(c => c.id).join(),
+    html: `<input class="dp-search" placeholder="Search fonts…" aria-label="Search fonts" autocomplete="off" spellcheck="false">${USE_NOTE}
       <div class="dp-scroll"><button type="button" class="dp-row dp-font ${defCls}" data-bfont="">Default font<small>Fenmyr’s own</small></button>
       ${used}<div class="dp-h">Suggested</div>${suggested}
       <div class="dp-h">On your computer</div>${local}${USE_ROW}</div>`,
-    btn.getBoundingClientRect(),
-    (p, r) => {
+    at: btn.getBoundingClientRect(),
+    place: (p, r) => {
       p.style.zIndex = '';
       p.style.left = `${Math.max(10, Math.min(innerWidth - 270, r.left + r.width / 2 - 130))}px`;
       if (r.top > innerHeight / 2) p.style.bottom = `${innerHeight - r.top + 8}px`;
       else p.style.top = `${r.bottom + 8}px`;
     },
-    '',
-  );
+    defName: '',
+    pick: (f, keyed) => {
+      previewed = false;
+      remember();
+      // a font that failed earlier, offline say, is asked for again
+      loadFont(f, true);
+      list.forEach(c => {
+        if (f) c.font = f;
+        else delete c.font;
+        renderCard(c);
+      });
+      rebuildBar();
+      selectOnly(selCards().map(c => c.id));
+      save();
+      if (keyed) goBack();
+    },
+  });
   if (!shell) return;
   SUGGESTED_FONTS.concat(onBoard).forEach(useFont);
   const { pop, q } = shell;
@@ -220,24 +238,6 @@ function boardFontPop(btn: Element, list: Card[], back: string) {
     if (f !== undefined) preview(f);
   };
   pop.onmouseleave = restore;
-  pop.onclick = e => {
-    const f = closestTo(e.target, '[data-bfont]')?.dataset.bfont;
-    if (f === undefined) return;
-    previewed = false;
-    remember();
-    list.forEach(c => {
-      if (f) c.font = f;
-      else delete c.font;
-      useFont(f);
-      renderCard(c);
-    });
-    pop.hidden = true;
-    rebuildBar();
-    selectOnly(selCards().map(c => c.id));
-    save();
-    // a pick made with Enter (a click with no pointer) gives the keyboard back to the bar
-    if (e.detail === 0) goBack();
-  };
 }
 
 // Settings → Board → Default font: the same list as the font picker, applied to every board
@@ -252,32 +252,28 @@ function defaultFontPop(btn: Element) {
       .slice(0, 400)
       .map(row)
       .join('');
-  const shell = fontShell(
-    'default',
-    `<input class="dp-search" placeholder="Search fonts…" aria-label="Search fonts" autocomplete="off" spellcheck="false">
+  const shell = fontShell({
+    key: 'default',
+    html: `<input class="dp-search" placeholder="Search fonts…" aria-label="Search fonts" autocomplete="off" spellcheck="false">${USE_NOTE}
       <div class="dp-scroll"><button type="button" class="dp-row dp-font ${defCls}" data-bfont="">${DOC_FONT}<small>Fenmyr’s own</small></button>
       <div class="dp-h">Suggested</div>${suggested}
       <div class="dp-h">On your computer</div>${local}${USE_ROW}</div>`,
-    btn.getBoundingClientRect(),
-    (p, r) => {
+    at: btn.getBoundingClientRect(),
+    place: (p, r) => {
       p.style.zIndex = '120'; // above the Settings window
       p.style.left = `${Math.max(10, Math.min(innerWidth - 270, r.right - 260))}px`;
       p.style.top = innerHeight - r.bottom > 340 ? `${r.bottom + 8}px` : `${Math.max(10, r.top - 8 - 330)}px`;
     },
-    DOC_FONT,
-  );
+    defName: DOC_FONT,
+    pick: f => {
+      settings.defaultFont = f;
+      applySettings();
+    },
+  });
   if (!shell) return;
   SUGGESTED_FONTS.forEach(useFont);
-  const { pop } = shell;
-  pop.onmouseover = null;
-  pop.onmouseleave = null;
-  pop.onclick = e => {
-    const f = closestTo(e.target, '[data-bfont]')?.dataset.bfont;
-    if (f === undefined) return;
-    settings.defaultFont = f;
-    applySettings();
-    pop.hidden = true;
-  };
+  shell.pop.onmouseover = null;
+  shell.pop.onmouseleave = null;
 }
 
 export function initFontPop() {

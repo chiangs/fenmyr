@@ -9,6 +9,10 @@ const board = wireframeBoard();
 board.cards.push({ id: 'ttl', type: 'title', x: 0, y: 1300, w: 320, h: 50, r: 0, color: 'white', text: 'A title' });
 const l = await launch({ boards: [board], open: 'wire' });
 const { page } = l;
+// Google Fonts answers every name here; tests/fontUse.ts covers the names it turns away
+await l.app
+  .context()
+  .route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
 
 const fontOf = (id: string) =>
   page.evaluate(i => window.__fenmyr.curBoard()?.cards.find(k => k.id === i)?.font ?? null, id);

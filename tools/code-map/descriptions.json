@@ -271,6 +271,7 @@
     "src/web/selbar/fill.ts": "Fill controls for boxes, screens, text and pen shapes.",
     "src/web/selbar/float.ts": "Floats the selection bar beside what it is for, in the part of the board nothing covers, and fades it during gestures; holds drawing's and find's bar just above the bottom bar.",
     "src/web/selbar/fontPop.ts": "The font list of the board’s own fonts, most used first.",
+    "src/web/selbar/fontUse.ts": "The font picker’s Use row for any Google font: it lands a typed name only once Google Fonts sends it, and says why when it can’t.",
     "src/web/selbar/group.ts": "The one shape every group on the selection bar has, and how a group says which selections it shows for.",
     "src/web/selbar/lineStyle.ts": "Line looks: wavy, zigzag, loopy and their sliders.",
     "src/web/selbar/overlays.ts": "Dims the board’s name when a card slides under it.",
