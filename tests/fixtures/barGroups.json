@@ -678,7 +678,6 @@
   ],
   "grouped": [
     "label '2 selected'",
-    "G0: button arr=left \"Align left edges\" button arr=hcenter \"Align centres\" button arr=right \"Align right edges\" button arr=top \"Align tops\" button arr=vcenter \"Align middles\" button arr=bottom \"Align bottoms\"",
     "G2: button pop=color \"Colour\" { button c=white \"Snow\" [on] ; button c=pink \"Lingonberry\" ; button c=butter \"Cloudberry\" ; button c=mint \"Moss\" ; button c=lilac \"Heather\" ; button c=sky \"Fjord\" ; button c=peach \"Birch\" } |",
     "G1: | button ts=bold \"Bold · Ctrl+B\" name=\"Bold\" 'B' button ts=italic \"Italic · Ctrl+I\" name=\"Italic\" 'I' button ts=under \"Underline · Ctrl+U\" name=\"Underline\" 'U' button ts=strike \"Strikethrough\" 'S'",
     "G1: button al=left \"Align left\" [on] button al=center \"Centre\" button al=right \"Align right\"",

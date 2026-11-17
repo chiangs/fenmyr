@@ -248,8 +248,8 @@ try {
   });
   assert.deepStrictEqual(
     strip,
-    { shows: ['pieces', 'fill', 'stroke', 'more', 'del'], tucked: ['size', 'tag', 'corners'] },
-    'at 390 px the strip shows Pieces, Fill, Stroke, ··· and Delete, with Size, the label and Corners in ···',
+    { shows: ['pieces', 'fill', 'stroke', 'more', 'del'], tucked: ['align', 'size', 'tag', 'corners'] },
+    'at 390 px the strip shows Pieces, Fill, Stroke, ··· and Delete, with Align, Size, the label and Corners in ···',
   );
   await page.click('#selbar [data-pop="more"]');
   await page.waitForTimeout(250);

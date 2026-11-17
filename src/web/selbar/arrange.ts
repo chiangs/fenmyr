@@ -1,42 +1,111 @@
-import type { Card } from '../../shared/model.ts';
+import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
-import { G } from './barKit.ts';
-import { group, many } from './group.ts';
+import { screenOf } from '../wireframe/screenScope.ts';
+import { caret, FOLD_PIECE, G, markVisit, pop } from './barKit.ts';
+import { cards, group } from './group.ts';
 import { selCards } from './selected.ts';
 
-const ARRANGE: [string, string, string][] = [
-  ['left', 'Align left edges', 'align-l'],
-  ['hcenter', 'Align centres', 'align-c'],
-  ['right', 'Align right edges', 'align-r'],
-  ['top', 'Align tops', 'align-t'],
-  ['vcenter', 'Align middles', 'align-m'],
-  ['bottom', 'Align bottoms', 'align-b'],
-  ['dh', 'Space evenly across', 'distribute-h'],
-  ['dv', 'Space evenly down', 'distribute-v'],
+// each button's setting, its name when lining things up with each other, its icon, and its name against a screen
+const ARRANGE: [string, string, string, string][] = [
+  ['left', 'Align left edges', 'align-l', 'To the left edge'],
+  ['hcenter', 'Align centres', 'align-c', 'To the centre'],
+  ['right', 'Align right edges', 'align-r', 'To the right edge'],
+  ['top', 'Align tops', 'align-t', 'To the top'],
+  ['vcenter', 'Align middles', 'align-m', 'To the middle'],
+  ['bottom', 'Align bottoms', 'align-b', 'To the bottom'],
+  ['dh', 'Space evenly across', 'distribute-h', ''],
+  ['dv', 'Space evenly down', 'distribute-v', ''],
 ];
 
-// the align buttons for two or more things; spacing evenly needs three
-function arrangeHtml(n: number) {
-  const buttons = ARRANGE.slice(0, n > 2 ? 8 : 6)
-    .map(([k, t, icon], i) => {
-      const gap = i === 3 || i === 6 ? '<i class="sb-gap"></i>' : '',
-        svg = Icon(icon);
-      return `${gap}<button data-arr="${k}" title="${t}">${svg}</button>`;
-    })
-    .join('');
-  return G(0, `<div class="sb-sizes sb-style sb-arrange">${buttons}</div>`);
+/** What the align buttons line things up against: two or more units with each other, or one unit sitting on a screen
+ *  with that screen. A unit is a group selected whole, or any other card on its own. */
+type Arrange = { ref: 'each other'; units: Card[][] } | { ref: 'screen'; unit: Card[]; screen: CardOf<'frame'> };
+
+function unitsOf(cs: readonly Card[]): Card[][] {
+  const ids = new Set(cs.map(c => c.id)),
+    units = new Map<string, Card[]>();
+  cs.forEach(c => {
+    const whole = c.group && session.board.cards.filter(k => k.group === c.group).every(k => ids.has(k.id)),
+      key = whole ? `g:${c.group}` : c.id;
+    units.set(key, [...(units.get(key) ?? []), c]);
+  });
+  return [...units.values()];
 }
 
-// line selected things up with each other, or space them evenly (titles use their real drawn height)
+// a lone unit on the bare board has nothing to line up with, so it gets no buttons
+function arrangeOf(cs: readonly Card[]): Arrange | null {
+  const units = unitsOf(cs),
+    unit = units[0],
+    screen = unit ? screenOf(unit) : null;
+  if (units.length > 1) return { ref: 'each other', units };
+  return unit && screen && !unit.includes(screen) ? { ref: 'screen', unit, screen } : null;
+}
+
+// the align buttons, and spacing evenly when there are three or more units to space
+function buttonsHtml(n: number, onScreen: boolean, locked: boolean) {
+  const off = locked ? ' disabled' : '';
+  const buttons = ARRANGE.slice(0, n > 2 ? 8 : 6).map(([k, t, icon, s], i) => {
+    const gap = i === 3 || i === 6 ? '<i class="sb-gap"></i>' : '',
+      tip = onScreen ? s : t,
+      svg = Icon(icon);
+    return `${gap}<button data-arr="${k}" title="${tip}"${off}>${svg}</button>`;
+  });
+  const list = buttons.join('');
+  return `<div class="sb-sizes sb-style sb-arrange">${list}</div>`;
+}
+
+function arrangeHtml(a: Arrange) {
+  switch (a.ref) {
+    case 'each other':
+      return G(0, buttonsHtml(a.units.length, false, false));
+    case 'screen': {
+      const buttons = buttonsHtml(
+          1,
+          true,
+          a.unit.some(c => c.locked),
+        ),
+        CARET = caret();
+      return G(FOLD_PIECE, pop('align', `<b>Align</b>${CARET}`, buttons, 'Align on its screen'));
+    }
+    default: {
+      const unknown: never = a;
+      return unknown;
+    }
+  }
+}
+
+// What to move and the box to line it up in: the unlocked units and the space they fill, or one unit and its screen.
+// Lining up with each other is a step of its own; against a screen, a step for the dropdown's visit.
+function targetOf(a: Arrange) {
+  switch (a.ref) {
+    case 'each other': {
+      const units = unitsOf(a.units.flat().filter(c => !c.locked));
+      if (units.length < 2) return null;
+      remember();
+      return { units, ref: null };
+    }
+    case 'screen':
+      if (a.unit.some(c => c.locked)) return null;
+      markVisit();
+      return { units: [a.unit], ref: a.screen };
+    default: {
+      const unknown: never = a;
+      return unknown;
+    }
+  }
+}
+
+// line selected things up with each other or with their screen, or space them evenly (titles use their real drawn height)
 function arrangeAs(how: string) {
-  const cs = selCards().filter(c => !c.locked);
-  if (cs.length < 2) return;
-  remember();
+  const a = arrangeOf(selCards()),
+    t = a && targetOf(a);
+  if (!t) return;
+  const cs = t.units.flat();
   // real sizes right now (a title's saved width catches up a moment after it changes, which made the first click land off-center)
   const W = (c: Card) => (c.type === 'title' ? cardEl(c.id)?.offsetWidth || c.w : c.w),
     H = (c: Card) => (c.type === 'title' ? cardEl(c.id)?.offsetHeight || c.h : c.h);
@@ -46,15 +115,8 @@ function arrangeAs(how: string) {
       c.h = H(c);
     }
   });
-  // units: a whole group you selected moves as one block (its pieces keep their layout); pieces picked out of a group line up on their own
-  const ids = new Set(cs.map(c => c.id)),
-    units = new Map<string, Card[]>();
-  cs.forEach(c => {
-    const whole = c.group && session.board.cards.filter(k => k.group === c.group).every(k => ids.has(k.id)),
-      key = whole ? `g:${c.group}` : c.id;
-    units.set(key, [...(units.get(key) ?? []), c]);
-  });
-  const U = [...units.values()].map(m => {
+  // a whole group moves as one block (its pieces keep their layout); pieces picked out of a group line up on their own
+  const U = t.units.map(m => {
     const x = Math.min(...m.map(c => c.x)),
       y = Math.min(...m.map(c => c.y));
     return {
@@ -67,11 +129,11 @@ function arrangeAs(how: string) {
       ny: y,
     };
   });
-  if (U.length < 2) return;
-  const x0 = Math.min(...U.map(u => u.x)),
-    x1 = Math.max(...U.map(u => u.x + u.w)),
-    y0 = Math.min(...U.map(u => u.y)),
-    y1 = Math.max(...U.map(u => u.y + u.h));
+  const r = t.ref,
+    x0 = r ? r.x : Math.min(...U.map(u => u.x)),
+    x1 = r ? r.x + r.w : Math.max(...U.map(u => u.x + u.w)),
+    y0 = r ? r.y : Math.min(...U.map(u => u.y)),
+    y1 = r ? r.y + r.h : Math.max(...U.map(u => u.y + u.h));
   const moved = new Map(cs.map(c => [c.id, { ox: c.x, oy: c.y }]));
   if (how === 'left')
     U.forEach(u => {
@@ -97,7 +159,7 @@ function arrangeAs(how: string) {
     U.forEach(u => {
       u.ny = (y0 + y1) / 2 - u.h / 2;
     });
-  if (how === 'dh') {
+  if (how === 'dh' && U.length > 1) {
     const o = [...U].sort((a, b) => a.x - b.x),
       gap = (x1 - x0 - o.reduce((n, u) => n + u.w, 0)) / (o.length - 1);
     let x = x0;
@@ -106,7 +168,7 @@ function arrangeAs(how: string) {
       x += u.w + gap;
     });
   }
-  if (how === 'dv') {
+  if (how === 'dv' && U.length > 1) {
     const o = [...U].sort((a, b) => a.y - b.y),
       gap = (y1 - y0 - o.reduce((n, u) => n + u.h, 0)) / (o.length - 1);
     let y = y0;
@@ -167,4 +229,11 @@ function initArrange() {
   );
 }
 
-export const arrange = group({ on: many, html: cs => arrangeHtml(cs.length), init: initArrange });
+export const arrange = group({
+  on: ctx => {
+    const cs = cards(ctx);
+    return cs && arrangeOf(cs);
+  },
+  html: arrangeHtml,
+  init: initArrange,
+});
