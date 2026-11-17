@@ -154,22 +154,25 @@ await check('a picture dropped on Myra’s open chat lands on the board', async 
 await check('Myra’s open chat never meets a right widget: the column ends above it', async () => {
   await page.click('#mPill');
   await page.waitForTimeout(400);
-  const top = await page.evaluate(() => {
-    const chat = document.getElementById('mChat')?.getBoundingClientRect();
-    const widget = [...(document.getElementById('sideR')?.children ?? [])]
-      .filter(c => c.checkVisibility())
-      .map(c => c.getBoundingClientRect())
-      .find(r => chat && r.left < chat.right && r.right > chat.left && r.bottom > chat.top && r.top < chat.bottom);
-    if (!chat || !widget) return 'they do not meet';
-    const el = document.elementFromPoint(
-      (Math.max(chat.left, widget.left) + Math.min(chat.right, widget.right)) / 2,
-      (Math.max(chat.top, widget.top) + Math.min(chat.bottom, widget.bottom)) / 2,
-    );
-    return el?.closest('#mChat') ? 'chat' : el?.closest('#sideR') ? 'widget' : 'nothing';
+  const seen = await page.evaluate(() => {
+    const chat = document.getElementById('mChat')?.getBoundingClientRect(),
+      widgets = [...(document.getElementById('sideR')?.children ?? [])]
+        .filter(c => c.checkVisibility())
+        .map(c => c.getBoundingClientRect());
+    if (!chat) return null;
+    return {
+      widgets: widgets.length,
+      below: widgets.some(r => r.left < chat.right && r.right > chat.left),
+      meets: widgets.some(
+        r => r.left < chat.right && r.right > chat.left && r.bottom > chat.top && r.top < chat.bottom,
+      ),
+    };
   });
   await page.click('#mcClose');
   await page.waitForTimeout(400);
-  assert.strictEqual(top, 'they do not meet');
+  assert.ok(seen && seen.widgets > 0, `a right widget shows: ${JSON.stringify(seen)}`);
+  assert.ok(seen.below, 'the open chat sits below the right column');
+  assert.ok(!seen.meets, 'and no widget reaches down to it');
 });
 
 await check('the wheel over the tools or Myra’s box pans the board', async () => {

@@ -1,5 +1,6 @@
 // On a short window the open chat lifts the right column clear of it. What tucks into ··· keeps to the column as the
-// closed chat leaves it, so no tool in the bottom bar comes or goes as the chat opens and closes.
+// closed chat leaves it, so no tool in the bottom bar comes or goes as the chat opens and closes. Below about 750 px
+// Unsorted can't shrink enough and the chat still meets it; there the chat is on top.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -20,6 +21,7 @@ const SIZES: [number, number][] = [
   [1000, 640],
 ];
 const board = { id: 'b', name: 'Ideas', cards: [note], links: [], tray, view: { x: 300, y: 200, z: 1 } };
+const met: string[] = [];
 
 for (const settings of [{}, { panelH: { tray: 560 } }]) {
   const l = await launch({ boards: [board], open: 'b', settings });
@@ -45,6 +47,20 @@ for (const settings of [{}, { panelH: { tray: 560 } }]) {
         `${at}: the open chat lifts the column`,
       );
       assert.strictEqual(await tucked(), closed, `${at}: the same tools tuck with the chat open`);
+      const top = await page.evaluate(() => {
+        const c = document.getElementById('mChat')?.getBoundingClientRect(),
+          u = document.getElementById('tray')?.getBoundingClientRect();
+        if (!c || !u || !(c.left < u.right && c.right > u.left && c.top < u.bottom && c.bottom > u.top)) return null;
+        const el = document.elementFromPoint(
+          (Math.max(c.left, u.left) + Math.min(c.right, u.right)) / 2,
+          (Math.max(c.top, u.top) + Math.min(c.bottom, u.bottom)) / 2,
+        );
+        return el?.closest('#mChat') ? 'chat' : el?.closest('#tray') ? 'Unsorted' : 'something else';
+      });
+      if (top) {
+        met.push(at);
+        assert.strictEqual(top, 'chat', `${at}: where the chat meets Unsorted, the chat is on top`);
+      }
       await page.keyboard.press('Escape');
       await settle(page, 600);
       assert.strictEqual(await tucked(), closed, `${at}: and again once it closes`);
@@ -54,4 +70,5 @@ for (const settings of [{}, { panelH: { tray: 560 } }]) {
     await l.close();
   }
 }
+assert.ok(met.length, 'on some short window the chat still meets Unsorted, so the check above ran');
 console.log('chatTuck: ok');

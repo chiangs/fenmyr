@@ -105,12 +105,12 @@ try {
     );
   });
 
-  await check('a change from Myra during a visit takes its own step', async () => {
+  await check('a change from Myra to the same text during a visit takes its own step', async () => {
     await select(['ta']);
     await open();
     await box().getByRole('button', { name: 'Extra' }).click();
     await page.waitForTimeout(450);
-    await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'ok', edit: [{ id: 'tb', text: 'Hers' }] }, 'q'));
+    await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'ok', edit: [{ id: 'ta', text: 'Hers' }] }, 'q'));
     await page.waitForTimeout(450);
     assert.ok(await isOpen(), 'Type ▾ stays open through her change');
     await box().getByRole('button', { name: 'Light' }).click();
@@ -118,7 +118,7 @@ try {
     await page.keyboard.press('Escape');
     const text = () =>
       page.evaluate(() => {
-        const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'tb');
+        const c = window.__fenmyr.curBoard()?.cards.find(k => k.id === 'ta');
         return c?.type === 'text' ? c.text : null;
       });
     await undo();
@@ -128,7 +128,7 @@ try {
       'the first undo takes back only what the visit did after her change',
     );
     await undo();
-    assert.strictEqual(await text(), 'Second', 'the next undo takes back her change');
+    assert.strictEqual(await text(), 'First', 'the next undo takes back her change');
     await undo();
     assert.strictEqual((await look('ta')).weight, undefined, 'and the one after it the visit’s first change');
   });
