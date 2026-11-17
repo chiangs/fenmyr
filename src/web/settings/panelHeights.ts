@@ -10,9 +10,7 @@ export const panelMin = (k: string) =>
     ? Math.max(30, rowHeight($('layers'), '.ly') || 30)
     : k === 'boards'
       ? Math.max(30, rowHeight($('boards'), '.board-row, .folder-row, .proj-row') || 32)
-      : k === 'tray'
-        ? 60
-        : 120;
+      : 60;
 
 export function applyPanelH() {
   Object.entries(PANELS).forEach(([k, f]) => {

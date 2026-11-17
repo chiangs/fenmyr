@@ -22,7 +22,7 @@ type TypeChange =
   | { k: 'lhBy'; v: number }
   | { k: 'align'; v: TextAlign };
 
-// the panel's names for the weights
+// each weight by name
 const WEIGHTS: readonly (readonly [Weight, string])[] = [
   [300, 'Light'],
   [400, 'Regular'],
@@ -169,8 +169,8 @@ function apply(el: Element, ch: TypeChange) {
   });
 }
 
-/** Keeps the Type dropdown on the texts' own values through an undo, the panel's edits or Myra's, leaving alone the
- *  field being typed in. */
+/** Keeps the Type dropdown on the texts' own values through an undo or Myra's edits, leaving alone the field being
+ *  typed in. */
 export function syncType(bar: HTMLElement) {
   const box = oneIn(bar, '[data-type-for]'),
     ts = box ? ownersOf(box) : null,
