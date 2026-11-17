@@ -18,7 +18,7 @@ export function menuKeys(m: HTMLElement) {
     opener = active instanceof HTMLButtonElement ? active : null,
     byKeys = keyed && !!opener,
     popup = opener?.hasAttribute('aria-haspopup') ? opener : null,
-    items = [...m.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)')];
+    items = [...m.querySelectorAll<HTMLElement>('[role^="menuitem"]:not(:disabled)')];
   m.setAttribute('role', 'menu');
   popup?.setAttribute('aria-expanded', 'true');
   // a menu goes by many routes (an item, Esc, a press outside, the next menu), so watch for it leaving the page

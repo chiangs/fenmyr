@@ -418,6 +418,7 @@
     "tests/mac.ts": "Tests the Mac font-list reading.",
     "tests/menuKeys.ts": "Tests menus by keyboard and screen reader: the git bar’s More and the zoom menu, their keys, roles and where focus goes.",
     "tests/modeBar.ts": "Drawing and find in the real app: what they do on a computer and a phone, and that they sit just above the bottom bar, which keeps its shape.",
+    "tests/moreHeld.ts": "With a tool tucked into ··· in hand, ··· reads as pressed and the tool's row in its menu as checked, in Chromium's accessibility tree.",
     "tests/modeRoom.ts": "What sits around find's bar keeps clear of it: Myra's reply, chat and timer, on a short window too, and the toolbar's pickers.",
     "tests/model.ts": "Checks library and board files keep what they had and prototype fields are validated.",
     "tests/myraBox.ts": "Myra's box in the bottom bar in the real app: where her chat opens from it, her bubble rising from it, fitting the board around the open chat, and a phone's sheet.",

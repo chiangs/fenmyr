@@ -128,12 +128,14 @@ function fitToolbar() {
   if (!desk || !fit(joinRoom, JOIN_KEEPS)) fit(room, 1);
 }
 
-/** Runs every frame, so it writes only on a change: ··· lights while a tool tucked in it is in hand. A class set from
- *  here, not a :has() rule, which made every style recalc dearer. */
+/** Runs every frame, so it writes only on a change: ··· lights, and reads as pressed, while a tool tucked in it is in
+ *  hand. A class set from here, not a :has() rule, which made every style recalc dearer. */
 export function syncMore() {
   const more = $('tbMore'),
     held = !!$('tools').querySelector(':scope > .tb-over.on');
+  // putting a tool down clears every lit button in the bar, ··· too, so each is checked on its own
   if (more.classList.contains('on') !== held) more.classList.toggle('on', held);
+  if ((more.ariaPressed === 'true') !== held) more.ariaPressed = held ? 'true' : null;
 }
 
 export const tbRect = (b: Element) => (b.classList.contains('tb-over') ? $('tbMore') : b).getBoundingClientRect();
@@ -206,7 +208,11 @@ export function init19() {
       ...over.map(b => {
         const icon = iconOf(b),
           name = esc(tbName(b));
-        return { label: `<span class="tbm-row">${icon}<span>${name}</span></span>`, run: () => b.click() };
+        return {
+          label: `<span class="tbm-row">${icon}<span>${name}</span></span>`,
+          run: () => b.click(),
+          checked: b.classList.contains('on'),
+        };
       }),
       '-',
       { label: 'Customise toolbar…', run: openToolbarSettings },
