@@ -63,6 +63,8 @@ try {
   await page.keyboard.press('Escape');
   await setView(300, 60, 1);
   await openOn('signin');
+  assert.ok(await open(), 'the picker opens at 100%');
+  await page.locator('#pkGrid [data-pk-piece="Card"]').scrollIntoViewIfNeeded();
   let moved = false,
     second = -1;
   for (let i = 0; i < 12 && !moved; i++) {
