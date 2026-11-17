@@ -405,6 +405,7 @@
     "tests/fit.ts": "Tests how the prototype board’s columns fold as the window narrows.",
     "tests/fixtures/boards.ts": "Sample boards for tests, including one with every card kind, a big one and one for Myra’s replies.",
     "tests/fixtures/protoBuild.ts": "Seeded chats of a prototype after one build, built, failed or cut off by quitting, for the visual check.",
+    "tests/fontKeys.ts": "Tests the font picker from the keyboard: Esc anywhere in it, the arrow keys, and every font on the computer found by search.",
     "tests/fontUse.ts": "Tests the font picker’s Use row: one run of text, a name landing only once Google Fonts sends it, and what it says when it can’t.",
     "tests/git.ts": "Tests the git and gh bridge against a real throwaway repo.",
     "tests/github.ts": "Tests giving a linked project a GitHub repo, new or taken from its origin.",

@@ -89,8 +89,10 @@ type Shell = {
   defName: string;
   // keyed: picked with the keyboard (a click with no pointer)
   pick: (f: string, keyed: boolean) => void;
+  // after Esc closed it: the keyboard goes back to the button that opened it
+  back: () => void;
 };
-function fontShell({ key, html, at, place, defName, pick }: Shell) {
+function fontShell({ key, html, at, place, defName, pick, back }: Shell) {
   let p = document.getElementById('fontPop');
   if (p && !p.hidden && p.dataset.for === key) {
     p.hidden = true;
@@ -116,11 +118,15 @@ function fontShell({ key, html, at, place, defName, pick }: Shell) {
   place(pop, at);
   const q = pop.querySelector('.dp-search');
   if (!(q instanceof HTMLInputElement)) return null;
-  q.addEventListener('keydown', e => {
+  // a key pressed anywhere in it stays in it, as Esc would otherwise clear the selection too
+  pop.onkeydown = e => {
     e.stopPropagation();
-    if (e.key === 'Escape') pop.hidden = true;
-    if (e.key === 'Enter') oneIn(pop, '.dp-font:not([hidden]), .dp-use:not([hidden])')?.click();
-  });
+    if (e.key === 'Escape') {
+      pop.hidden = true;
+      back();
+    }
+    if (e.key === 'Enter' && e.target === q) oneIn(pop, '.dp-font:not([hidden]), .dp-use:not([hidden])')?.click();
+  };
   q.addEventListener('input', () => {
     const typed = q.value.trim(),
       v = typed.toLowerCase(),
@@ -150,7 +156,7 @@ function fontShell({ key, html, at, place, defName, pick }: Shell) {
     else done(f);
   };
   setTimeout(() => q.focus(), 30);
-  return { pop, q };
+  return pop;
 }
 
 // the font for the selected notes, titles, wireframe text and font cards: hover to preview on the cards, click to keep.
@@ -170,7 +176,32 @@ function boardFontPop(btn: Element, list: Card[], back: string) {
       .slice(0, 400)
       .map(row)
       .join('');
-  const shell = fontShell({
+  let previewed = false;
+  // a font shows on every card by the class that forces it; Default shows Figtree on a card that has no board default
+  const preview = (f: string) => {
+    previewed = true;
+    list.forEach(c => {
+      const el = cardEl(c.id),
+        v = f || (SIZED.includes(c.type) ? '' : 'Figtree');
+      if (!el) return;
+      el.classList.toggle('has-font', !!v);
+      if (v) {
+        useFont(v);
+        el.style.setProperty('--cf', `"${v.replace(/"/g, '')}"`);
+      } else el.style.removeProperty('--cf');
+    });
+  };
+  // drawing each card again puts back exactly what it had, whatever its kind
+  const restore = () => {
+    if (!previewed) return;
+    previewed = false;
+    list.forEach(c => {
+      renderCard(c);
+    });
+    selectOnly(selCards().map(c => c.id));
+  };
+  const goBack = () => requestAnimationFrame(() => focusBar(back));
+  const pop = fontShell({
     key: list.map(c => c.id).join(),
     html: `<input class="dp-search" placeholder="Search fonts…" aria-label="Search fonts" autocomplete="off" spellcheck="false">${USE_NOTE}
       <div class="dp-scroll"><button type="button" class="dp-row dp-font ${defCls}" data-bfont="">Default font<small>Fenmyr’s own</small></button>
@@ -199,40 +230,13 @@ function boardFontPop(btn: Element, list: Card[], back: string) {
       save();
       if (keyed) goBack();
     },
+    back: () => {
+      restore();
+      goBack();
+    },
   });
-  if (!shell) return;
+  if (!pop) return;
   SUGGESTED_FONTS.concat(onBoard).forEach(useFont);
-  const { pop, q } = shell;
-  let previewed = false;
-  // a font shows on every card by the class that forces it; Default shows Figtree on a card that has no board default
-  const preview = (f: string) => {
-    previewed = true;
-    list.forEach(c => {
-      const el = cardEl(c.id),
-        v = f || (SIZED.includes(c.type) ? '' : 'Figtree');
-      if (!el) return;
-      el.classList.toggle('has-font', !!v);
-      if (v) {
-        useFont(v);
-        el.style.setProperty('--cf', `"${v.replace(/"/g, '')}"`);
-      } else el.style.removeProperty('--cf');
-    });
-  };
-  // drawing each card again puts back exactly what it had, whatever its kind
-  const restore = () => {
-    if (!previewed) return;
-    previewed = false;
-    list.forEach(c => {
-      renderCard(c);
-    });
-    selectOnly(selCards().map(c => c.id));
-  };
-  const goBack = () => requestAnimationFrame(() => focusBar(back));
-  q.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    restore();
-    goBack();
-  });
   pop.onmouseover = e => {
     const f = closestTo(e.target, '[data-bfont]')?.dataset.bfont;
     if (f !== undefined) preview(f);
@@ -252,7 +256,7 @@ function defaultFontPop(btn: Element) {
       .slice(0, 400)
       .map(row)
       .join('');
-  const shell = fontShell({
+  const pop = fontShell({
     key: 'default',
     html: `<input class="dp-search" placeholder="Search fonts…" aria-label="Search fonts" autocomplete="off" spellcheck="false">${USE_NOTE}
       <div class="dp-scroll"><button type="button" class="dp-row dp-font ${defCls}" data-bfont="">${DOC_FONT}<small>Fenmyr’s own</small></button>
@@ -269,11 +273,14 @@ function defaultFontPop(btn: Element) {
       settings.defaultFont = f;
       applySettings();
     },
+    back: () => {
+      if (btn instanceof HTMLElement) btn.focus();
+    },
   });
-  if (!shell) return;
+  if (!pop) return;
   SUGGESTED_FONTS.forEach(useFont);
-  shell.pop.onmouseover = null;
-  shell.pop.onmouseleave = null;
+  pop.onmouseover = null;
+  pop.onmouseleave = null;
 }
 
 export function initFontPop() {
