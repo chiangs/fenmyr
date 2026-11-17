@@ -130,6 +130,17 @@ function hexOfOklch([L, C, H]: Oklch) {
   ]);
 }
 
+// what CSS color-mix(in oklch, a, b) gives, with k the share of b: lightness and chroma blend, the hue takes the
+// shorter way round, and a grey has no hue of its own so it takes the other colour's
+export function mixOklch(a: string, b: string, k: number) {
+  const [l1, c1, h1] = oklchOf(a),
+    [l2, c2, h2] = oklchOf(b),
+    grey = (c: number) => c < 1e-4,
+    turn = ((((h2 - h1) % (2 * Math.PI)) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI,
+    hue = grey(c1) ? h2 : grey(c2) ? h1 : h1 + turn * k;
+  return hexOfOklch([l1 + (l2 - l1) * k, c1 + (c2 - c1) * k, hue]);
+}
+
 // The colour's own hue, made darker on light backgrounds or lighter on dark ones until it reads at `target` against
 // every one of them. Used for amber text from a custom accent, so a pale accent still makes readable links.
 export function readableShade(hex: string, against: string[], target: number) {
