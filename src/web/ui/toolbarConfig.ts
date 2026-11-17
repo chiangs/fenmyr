@@ -114,9 +114,16 @@ function fitToolbar() {
     more.hidden = true;
     if (width() <= limit) return true;
     more.hidden = false;
-    const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden);
-    for (let i = shown.length - 1; i >= keep && width() > limit; i--) shown[i]?.classList.add('tb-over');
-    return width() <= limit;
+    // measured once, then tucked from the end: each tucked tool takes its width and one gap out of the bar
+    const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden),
+      sizes = shown.map(b => b.getBoundingClientRect().width),
+      gap = parseFloat(getComputedStyle(box).columnGap) || 0;
+    let w = width();
+    for (let i = shown.length - 1; i >= keep && w > limit; i--) {
+      shown[i]?.classList.add('tb-over');
+      w -= (sizes[i] ?? 0) + gap;
+    }
+    return w <= limit;
   };
   if (!desk || !fit(joinRoom, JOIN_KEEPS)) fit(room, 1);
 }
