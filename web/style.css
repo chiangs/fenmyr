@@ -2301,6 +2301,7 @@ body.dark .sb-fsrow { border-color: rgb(from var(--hilite) r g b / .1); } body.d
 .sb-type .sb-fsrow { margin-bottom: 0; }
 .sb-weights, .sb-talign { grid-template-columns: repeat(3, 1fr); } .sb-weights button, .sb-talign button { justify-content: center; }
 .sb-talign button svg { width: 16px; height: 16px; }
+body.dark .sb-weights button.on, body.dark .sb-talign button.on { background: var(--select) !important; color: var(--hilite); }
 .sb-fillbox { display: grid; gap: 10px; } .sb-oprow > span { margin-right: auto; } .sb-oprow input[type=range] { min-width: 0; }
 .sbz-fontrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px !important; border-radius: 9px !important; background: rgb(from var(--shade) r g b / .04) !important; font: 700 12px/1 var(--font); color: var(--ink-soft); }
 .sbz-fontrow b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-size: 13px; color: var(--ink); }
