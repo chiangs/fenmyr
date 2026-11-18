@@ -400,6 +400,7 @@
     "tests/themesCss.ts": "The theme variables: the page computes every token from the table in light and dark, and style.css defines none of them again.",
     "tests/colourDerive.ts": "The colour deriver: a light-only colour keeps its dark value, a dark-only and a both-modes one are fitted, and unused ones go.",
     "tests/themePicker.ts": "The theme picker in Settings: rows with names and colours, choosing restyles at once and is kept, arrow keys, light and dark chosen apart, and colours of your own.",
+    "tests/themeAudit.ts": "Every theme reads as well as Default in the running app: text on the board, in Settings, chat, a doc and Home is measured, and none is under 3:1 where Default is not.",
     "tests/colourFit.ts": "The colour fitter: a colour that is a core token, a mix of two, one that fits in light but not dark, and one that fits nothing.",
     "tests/colourConvert.ts": "The colour converter: hex and rgba, token pairs, comments and custom properties left alone, unknown colours reported, and a second run finding nothing.",
     "tests/contextBar.ts": "The selection bar in the real app: what it kept (typing, crop, size fields following a drag, phone strip) and where it floats, and that it steps aside for gestures.",

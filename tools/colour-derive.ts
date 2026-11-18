@@ -4,13 +4,16 @@
 //
 //   node tools/colour-derive.ts --core tools/colour-core.json [--tolerance 0.02] [--apply] [--pairs pairs.json]
 //                               [--css web/style.css] [--themes web/themes.css] [--table src/web/settings/derived.ts]
-//                               [--source src/web]
+//                               [--source src/web] [--prefix RE] [--skip-core RE] [--keep-hex]
 //
 // Only the mode a token is used in has to match: a token used in light rules alone is fitted in light, one used in
 // dark rules alone in dark, and one used in both in both. A token nothing uses is removed. Tokens used by the html
 // element (which can't see what is defined on body), set by the renderer, or defined again in some part of the page are
 // left alone, and so is any token that doesn't fit; they are listed.
 // --apply writes the expressions into src/web/settings/derived.ts and removes the old definitions from web/style.css.
+// --prefix limits the tokens looked at by name. --skip-core leaves out core tokens matching RE as building blocks (the
+// card fills are for cards, not for UI colours that happen to match one). --keep-hex writes a token that fits nothing as
+// its old colour in the table, so every colour is set in one place.
 // --pairs writes [property, old light value, new value, old dark value, mode] for tools/colour-compare.ts.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,6 +26,9 @@ const coreFile = opt('--core'),
   tolerance = Number(opt('--tolerance') || 0.02),
   apply = args.includes('--apply'),
   pairsFile = opt('--pairs');
+const prefix = new RegExp(opt('--prefix') || '.'),
+  skipCore = opt('--skip-core') ? new RegExp(opt('--skip-core')) : null,
+  keepHex = args.includes('--keep-hex');
 const cssFile = opt('--css') || path.join(ROOT, 'web/style.css'),
   themesFile = opt('--themes') || path.join(ROOT, 'web/themes.css'),
   DERIVED = opt('--table') || path.join(ROOT, 'src/web/settings/derived.ts'),
@@ -47,6 +53,8 @@ const themes = fs.readFileSync(themesFile, 'utf8'),
   lightCore = valuesIn(blockOf(':root')),
   darkCore = valuesIn(blockOf('body.dark'));
 for (const [name, l] of lightCore) if (!core.has(name)) core.set(name, [l, darkCore.get(name) ?? l]);
+
+if (skipCore) for (const name of [...core.keys()]) if (skipCore.test(name)) core.delete(name);
 
 const css = fs.readFileSync(cssFile, 'utf8'),
   rules: Rule[] = parseRules(css),
@@ -79,7 +87,7 @@ const source = (function walk(p: string): string {
         .readdirSync(p)
         .map(f => walk(path.join(p, f)))
         .join('\n')
-    : /\.(ts|html)$/.test(p) && p !== DERIVED
+    : /\.(ts|html)$/.test(p) && path.basename(p) !== 'derived.ts' && p !== DERIVED
       ? fs.readFileSync(p, 'utf8')
       : '';
 })(sourceDir);
@@ -95,7 +103,7 @@ const derived: Record<string, string> = {},
   left: string[] = [],
   unused: string[] = [];
 for (const [t, l] of [...light].sort()) {
-  if (core.has(t) || scoped.has(t)) continue;
+  if (core.has(t) || scoped.has(t) || !prefix.test(t)) continue;
   if (onHtml.has(t) || setByRenderer.has(t) || named(t) || families.some(f => t.startsWith(f))) {
     left.push(t);
     continue;
@@ -112,6 +120,10 @@ for (const [t, l] of [...light].sort()) {
     found = fit(g, core, tolerance).fit;
   if (!found) {
     unfit.push(`${t} ${l}${d === l ? '' : ` / ${d}`}`);
+    if (keepHex) {
+      derived[t] = l;
+      if (d !== l) kept[t] = d;
+    }
     continue;
   }
   // a token used in light rules alone is still on screen in dark mode wherever no dark rule beats it; if the mix would
