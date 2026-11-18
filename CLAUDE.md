@@ -17,6 +17,7 @@ Fenmyr is an Electron canvas app for Linux. The renderer in `src/web/` draws boa
 | `node tools/budget.ts --write` | Lowers the budget after you pay part of it down. It never raises it. |
 | `node tools/colour-convert.ts --map map.json --pairs pairs.json` | Moves raw colours in `web/style.css` onto variables of the same value, from a map of colour to token. `--include`/`--exclude` pick rules by selector, `--dry` changes nothing. Its header says how to write the map. |
 | `node tools/colour-compare.ts pairs.json` | Proves a conversion changed nothing: the running app computes the same colour from every old and new value in the pairs file, in light and dark mode. |
+| `node tools/colour-fit.ts --core core.json` | Says which area colours are the core tokens in disguise: each light and dark pair is matched to one core token or a mix of two, within a tolerance. It lists what fits and what doesn't. |
 | `node tools/code-map/query.ts <file or area>` | Says what a file is for, what it imports and what imports it. |
 
 Node runs `.ts` files directly, so tests and tools need no build step. Write imports with the `.ts` extension.
