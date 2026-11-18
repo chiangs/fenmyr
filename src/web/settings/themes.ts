@@ -9,16 +9,74 @@ type Tokens = {
   bg: string;
   dot: string;
   panel: string;
+  surface2: string;
   ink: string;
   inkSoft: string;
+  inkFaint: string;
+  inkInverse: string;
+  blush: string;
   accent: string;
+  accentSoft: string;
+  accentDeep: string;
   accentText: string;
+  accentTint: string;
+  accentWash: string;
+  accentMid: string;
   onAccent: string;
+  onPastel: string;
   focus: string;
+  danger: string;
+  ok: string;
+  rec: string;
+  snow: string;
+  shade: string;
   cards: Record<string, CardColour>;
 };
 type CheckId = 'text' | 'softText' | 'accentText' | 'onAccent' | 'focus' | 'cardText' | 'cardLink' | 'cardsApart';
-type Theme = { id: string; name: string; mode: Mode; target: Target; tokens: Tokens; knownGaps: CheckId[] };
+export type Theme = { id: string; name: string; mode: Mode; target: Target; tokens: Tokens; knownGaps: CheckId[] };
+
+// The CSS variable each token sets, in the order tools/themes-css.ts writes them. `bg` isn't here: the board's colour is
+// set at run time (a board can have its own). The cards' fills and link colour are written as --card-<key>.
+export const CSS_VARS: Record<Exclude<keyof Tokens, 'bg' | 'cards'>, string> = {
+  ink: '--ink',
+  inkSoft: '--ink-soft',
+  inkFaint: '--ink-faint',
+  inkInverse: '--ink-inverse',
+  panel: '--surface',
+  surface2: '--surface-2',
+  dot: '--dot',
+  blush: '--blush',
+  accent: '--pink-deep',
+  accentSoft: '--accent-soft',
+  accentDeep: '--accent-deep',
+  accentText: '--accent-text',
+  accentTint: '--accent-tint',
+  accentWash: '--accent-wash',
+  accentMid: '--accent-mid',
+  onAccent: '--on-accent',
+  onPastel: '--on-pastel',
+  focus: '--select',
+  danger: '--danger',
+  ok: '--ok',
+  rec: '--rec',
+  snow: '--snow',
+  shade: '--shade',
+};
+
+// colours that are the same in light and in dark: the amber tints, the status colours, white and black
+const SAME = {
+  accentSoft: '#f6b45e',
+  accentDeep: '#965f23',
+  accentTint: '#f9c795',
+  accentWash: '#fbdcbc',
+  accentMid: '#d9771f',
+  danger: '#e0455a',
+  ok: '#3fae6a',
+  rec: '#ff5a6e',
+  snow: '#ffffff',
+  shade: '#000000',
+  onPastel: '#3f3a34',
+};
 
 // The card colours, keyed as boards store them; core/base.ts reads them from here. Lingonberry, Moss, Fjord and
 // Heather were nudged apart (#251) so no two look alike for any kind of colour blindness.
@@ -58,6 +116,11 @@ export const THEMES: Theme[] = [
       panel: '#ffffff',
       ink: '#3b342d',
       inkSoft: '#796f63',
+      inkFaint: '#bcb1a3',
+      inkInverse: '#ffffff',
+      surface2: '#f4f0ed',
+      blush: '#fdeedd',
+      ...SAME,
       accent: '#e88a24',
       accentText: '#b15800',
       onAccent: '#3b342d',
@@ -77,6 +140,11 @@ export const THEMES: Theme[] = [
       panel: '#242019',
       ink: '#f6f2ec',
       inkSoft: '#c6bcae',
+      inkFaint: '#8f8576',
+      inkInverse: '#1d1a16',
+      surface2: '#2e2922',
+      blush: '#3d2f22',
+      ...SAME,
       accent: '#e88a24',
       accentText: '#e88a24',
       onAccent: '#1d1a16',

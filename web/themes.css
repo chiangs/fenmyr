@@ -1,0 +1,67 @@
+/* Written by tools/themes-css.ts from src/web/settings/themes.ts. Change the table, not this file. */
+:root {
+  --ink: #3b342d;
+  --ink-soft: #796f63;
+  --ink-faint: #bcb1a3;
+  --ink-inverse: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f4f0ed;
+  --dot: #e4dccf;
+  --blush: #fdeedd;
+  --pink-deep: #e88a24;
+  --accent-soft: #f6b45e;
+  --accent-deep: #965f23;
+  --accent-text: #b15800;
+  --accent-tint: #f9c795;
+  --accent-wash: #fbdcbc;
+  --accent-mid: #d9771f;
+  --on-accent: #3b342d;
+  --on-pastel: #3f3a34;
+  --select: #0090f5;
+  --danger: #e0455a;
+  --ok: #3fae6a;
+  --rec: #ff5a6e;
+  --snow: #ffffff;
+  --shade: #000000;
+  --card-white: #ffffff;
+  --card-pink: #ffd7d3;
+  --card-butter: #ffe3bd;
+  --card-mint: #e2eed0;
+  --card-lilac: #ece0ec;
+  --card-sky: #d6e8fb;
+  --card-peach: #f1ebe2;
+  --card-link: #a24900;
+}
+body.dark {
+  --ink: #f6f2ec;
+  --ink-soft: #c6bcae;
+  --ink-faint: #8f8576;
+  --ink-inverse: #1d1a16;
+  --surface: #242019;
+  --surface-2: #2e2922;
+  --dot: #332d25;
+  --blush: #3d2f22;
+  --pink-deep: #e88a24;
+  --accent-soft: #f6b45e;
+  --accent-deep: #965f23;
+  --accent-text: #e88a24;
+  --accent-tint: #f9c795;
+  --accent-wash: #fbdcbc;
+  --accent-mid: #d9771f;
+  --on-accent: #1d1a16;
+  --on-pastel: #3f3a34;
+  --select: #0090f5;
+  --danger: #e0455a;
+  --ok: #3fae6a;
+  --rec: #ff5a6e;
+  --snow: #ffffff;
+  --shade: #000000;
+  --card-white: #38332d;
+  --card-pink: #e2b0ac;
+  --card-butter: #e0bd8c;
+  --card-mint: #bccba5;
+  --card-lilac: #cabbca;
+  --card-sky: #aec5dc;
+  --card-peach: #cdc6bb;
+  --card-link: #842e00;
+}
