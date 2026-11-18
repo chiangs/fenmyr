@@ -18,7 +18,7 @@ Fenmyr is a free, open-source canvas for Linux. Put notes, pictures, links, chec
 - **Ctrl+K** drops an idea into Unsorted without losing your place, and **F** focuses on what you're working on.
 - Wireframes made of screens, boxes, text and icons, with ready-made elements and full layouts. Select a screen and choose Pieces; its search understands words like "dialog" or "FAQ".
 - Projects, folders and boards, with a home page for all of them.
-- Light and dark mode, or your [Caelestia](#follow-your-caelestia-theme) colours.
+- Light and dark mode, each with a choice of colour theme: Default, Midsummer or Clear for light, and Default, Polar Night or Lantern for dark. Clear and Lantern are made for accessibility. Or your [Caelestia](#follow-your-caelestia-theme) colours.
 - Undo, and export of any card or board as an image or PDF. Docs download as PDF or Word.
 - Card colours named Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch.
 
@@ -213,7 +213,7 @@ The board fills the window, with no title bar. Move and resize it the way your c
 
 If you use the [Caelestia](https://github.com/caelestia-dots/shell) Hyprland shell, Fenmyr can take on your desktop's colours and change with them.
 
-This is on by default when Caelestia is installed. The switch is **Follow Caelestia**, under *Look* in Settings → General, and it only appears with Caelestia. While it's on, the Theme buttons and Settings → Board → Colours are dimmed, because Caelestia decides them. Switch it off, and your own colours and theme come back.
+This is on by default when Caelestia is installed. The switch is **Follow Caelestia**, under *Look* in Settings → General, and it only appears with Caelestia. While it's on, the Theme buttons and Settings → Board → Colours are dimmed, because Caelestia decides them. The light and dark theme pickers stay usable: the theme you pick is what Caelestia's colours are put on. Switch it off, and your own colours and theme come back.
 
 This is what changes:
 

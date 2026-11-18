@@ -1,1 +1,19 @@
-{}
+{
+  "clear-board": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "clear-chat": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "clear-select-note": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "clear-settings": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "lantern-board": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "lantern-chat": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "lantern-select-note": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "lantern-settings": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "midsummer-board": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "midsummer-chat": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "midsummer-select-note": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "midsummer-settings": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "polar-night-board": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "polar-night-chat": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "polar-night-select-note": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "polar-night-settings": "#251: a new state for the four themes. The base ignores the lightTheme and darkTheme settings, so it draws Default here.",
+  "settings-general": "#251: the theme picker is new under Theme in Settings: a radio row for each light and dark theme, with its name and ten colours."
+}

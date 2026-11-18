@@ -70,10 +70,34 @@ const board: [string, Step][] = [
     },
   ],
 ];
+// each new theme: the board, a selected card, Myra's chat open, and Settings with the picker
+const themeGroup = (name: string, mode: 'light' | 'dark'): Group => ({
+  settings: { theme: mode, [mode === 'dark' ? 'darkTheme' : 'lightTheme']: name },
+  states: [
+    ['board', async () => {}],
+    ['select-note', select(['note'])],
+    [
+      'chat',
+      async page => {
+        await page.click('#mPill');
+      },
+    ],
+    [
+      'settings',
+      async page => {
+        await page.click('#gearBtn');
+      },
+    ],
+  ],
+});
 const GROUPS: Record<string, Group> = {
   light: { states: board },
   ...PROTO_GROUPS,
   dark: { settings: { theme: 'dark' }, states: board.slice(0, 3) },
+  midsummer: themeGroup('midsummer', 'light'),
+  clear: themeGroup('clear', 'light'),
+  'polar-night': themeGroup('polar-night', 'dark'),
+  lantern: themeGroup('lantern', 'dark'),
   phone: { phone: true, states: [['board', async () => {}]] },
   rich: {
     board: richNotes,

@@ -44,6 +44,9 @@ const DEFAULTS = {
   motion: true,
   keys: true,
   theme: 'system',
+  // the colour theme for each mode: the name in tools/themes-css.ts's blocks, 'default' when it isn't one that exists
+  lightTheme: 'default',
+  darkTheme: 'default',
   chat: NORMAL,
   emoji: true,
   noteColor: 'random',

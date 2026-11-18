@@ -7,9 +7,11 @@ import { group, onBar, only, some } from './group.ts';
 
 const FILLABLE = typesWith('fillable');
 
-// in dark mode a Snow card is drawn dark, so its chip shows what you will get
+// in dark mode a Snow card is drawn dark, so its chip shows what you will get; another theme's swatches already hold its own Snow
 const chipBg = (n: string | undefined) =>
-  n === 'white' && document.body.classList.contains('dark') ? '#38332d' : COLORS[n ?? ''];
+  n === 'white' && document.body.classList.contains('dark') && !document.body.className.includes('theme-')
+    ? '#38332d'
+    : COLORS[n ?? ''];
 
 export const colorPop = (cur: string, dots: string) => {
   const CARET = caret();

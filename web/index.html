@@ -291,6 +291,11 @@
     <div class="set-body">
       <section data-tab="general"><h3>Look</h3>
         <div class="set-row"><div><b>Theme</b><small>Light, dark, or whatever your system is using</small></div><div class="seg" data-seg="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button><button data-v="system">Match my system</button></div></div>
+        <div class="tp" id="themePick">
+          <div class="tp-grp"><b id="tpLight">Light theme</b><div id="themeLight" role="radiogroup" aria-labelledby="tpLight" data-seg="lightTheme"></div></div>
+          <div class="tp-grp"><b id="tpDark">Dark theme</b><div id="themeDark" role="radiogroup" aria-labelledby="tpDark" data-seg="darkTheme"></div></div>
+          <p class="tp-note" id="themeNote" hidden>Your own colours sit on top of the theme you pick. <button class="set-btn" id="themeReset">Reset to theme</button></p>
+        </div>
         <div class="set-row"><div><b>Icon style</b><small>Regular is plain outlines. Duotone adds a tint to the bottom bar and Myra's chat header.</small></div><div class="seg" data-seg="iconStyle"><button data-v="regular">Regular</button><button data-v="duotone">Duotone</button></div></div>
         <label class="set-row native-only cae-only"><div><b>Follow Caelestia</b><small>Use your desktop's colours and light or dark mode. Your own colours come back when you turn this off.</small></div><input type="checkbox" class="tgl" data-set="caelestia"></label>
       </section>

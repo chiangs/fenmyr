@@ -269,6 +269,10 @@ export const THEMES: Theme[] = [
   },
 ];
 
+// "midsummer" for midsummer-light: the name a setting stores and the class on <body> is built from
+export const themeName = (t: Theme) => t.id.replace(/-(light|dark)$/, '');
+export const themeClass = (t: Theme) => (themeName(t) === 'default' ? '' : `theme-${themeName(t)}`);
+
 export const themeOf = (mode: Mode, id = 'default') =>
   THEMES.find(t => t.mode === mode && t.id === `${id}-${mode}`) ?? THEMES.find(t => t.mode === mode);
 
