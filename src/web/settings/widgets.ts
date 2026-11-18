@@ -7,8 +7,10 @@ import { goos } from '../myra/goos.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { useFont } from '../wireframe/tilt.ts';
+import { applyTheme } from './activeTheme.ts';
 import { applyColors, following } from './colors.ts';
 import { choiceOf, flagOn, MYRA_COLORS, myraColors, settings } from './settings.ts';
+import { paintThemePicker } from './themePicker.ts';
 
 type Side = { left: string[]; right: string[] };
 
@@ -203,7 +205,9 @@ export function applySettings() {
   }
   document.body.classList.toggle('icons-duo', settings.iconStyle === 'duotone');
   document.body.classList.toggle('dark', dark);
+  applyTheme(dark ? 'dark' : 'light');
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  paintThemePicker();
   for (const g of htmlIn(document, '[data-seg]'))
     for (const b of htmlIn(g, '[data-v]')) b.classList.toggle('on', choiceOf(g.dataset.seg ?? '') === b.dataset.v);
   const randomOn = settings.noteColor === 'random' ? 'on' : '',

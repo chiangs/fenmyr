@@ -8,16 +8,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DERIVED } from '../src/web/settings/derived.ts';
-import { CSS_VARS, THEMES, type Theme } from '../src/web/settings/themes.ts';
+import { CSS_VARS, THEMES, type Theme, themeClass } from '../src/web/settings/themes.ts';
 
 const FILE = path.resolve(import.meta.dirname, '..', 'web', 'themes.css');
 
 // Default is :root and body.dark. Another theme is a class on <body>, written after them so it wins at the same weight,
 // and a dark one also carries .dark so the rest of the stylesheet's dark rules still apply.
 function selectorOf(t: Theme) {
-  const name = t.id.replace(/-(light|dark)$/, '');
-  if (name === 'default') return t.mode === 'dark' ? 'body.dark' : ':root';
-  return `body.${t.mode === 'dark' ? 'dark.' : ''}theme-${name}`;
+  if (!themeClass(t)) return t.mode === 'dark' ? 'body.dark' : ':root';
+  return `body.${t.mode === 'dark' ? 'dark.' : ''}${themeClass(t)}`;
 }
 
 function blockOf(t: Theme) {

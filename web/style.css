@@ -3100,3 +3100,20 @@ body.dark .piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-x):hover { backgroun
 .stage:is(.placing, .drawing, .erasing, .pen-mode, .space) .screen-hint button { pointer-events: none; }
 .screen-hint button:hover { background: color-mix(in oklch, var(--wf-ink) 8%, var(--snow)); }
 .screen-hint button:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
+
+/* the theme picker in Settings: a radio row per theme, with its name and its colours */
+.tp { display: grid; gap: 16px; padding: 6px 0 14px; }
+.tp-grp > b { display: block; margin: 0 0 8px; font: 700 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+.tp-grp > div { display: grid; gap: 6px; }
+.tp-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 1.5px solid transparent; border-radius: 14px; corner-shape: squircle; background: var(--surface-2); color: var(--ink); font: 600 13px/1.2 var(--font); text-align: left; cursor: pointer; }
+.tp-row:hover { border-color: rgb(from var(--ink) r g b / .2); }
+.tp-row[aria-checked="true"] { border-color: var(--accent-text); }
+.tp-row:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
+.tp-radio { flex: none; width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--ink-soft); }
+.tp-row[aria-checked="true"] .tp-radio { box-shadow: inset 0 0 0 1.5px var(--accent-text), inset 0 0 0 4.5px var(--surface-2), inset 0 0 0 8px var(--accent-text); }
+.tp-name { flex: 1; min-width: 0; }
+.tp-name small { display: block; margin-top: 3px; font: 500 11px/1 var(--font); color: var(--ink-soft); }
+.tp-chips { display: flex; flex: none; gap: 3px; }
+.tp-chips i { width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(from var(--ink) r g b / .18); }
+.tp-note { margin: 0; font: 500 12px/1.4 var(--font); color: var(--ink-soft); }
+.tp-note .set-btn { margin-left: 6px; }

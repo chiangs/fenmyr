@@ -14,20 +14,20 @@ import { child, closestTo, elementById, esc, htmlIn } from '../ui/dom.ts';
 import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
+import { themeFor } from './activeTheme.ts';
 import { myCur, paintCursor } from './cursor.ts';
 import { applyPanelH, fitSides, heightGrip, panelMin } from './panelHeights.ts';
 import { settings } from './settings.ts';
-import { type Mode, themeOf } from './themes.ts';
+import type { Mode } from './themes.ts';
 import { applySettings } from './widgets.ts';
 
 export const htmlOrNull = (el: Element | null) => (el instanceof HTMLElement ? el : null);
 
 // ---------- your colors: the board, its dots, the panels and the accent, set per light/dark; one board can also have its own background ----------
 const defaultsOf = (mode: Mode): Record<string, string> => {
-  const t = themeOf(mode)?.tokens;
+  const t = themeFor(mode)?.tokens;
   return t ? { bg: t.bg, dot: t.dot, panel: t.panel, accent: t.accent } : {};
 };
-const COLOR_DEFAULTS: Record<Mode, Record<string, string>> = { light: defaultsOf('light'), dark: defaultsOf('dark') };
 
 const modeName = (): Mode => (document.body.classList.contains('dark') ? 'dark' : 'light');
 
@@ -52,7 +52,7 @@ export const myColors = (): Record<string, string> => {
 };
 
 const boardBg = () => (typeof session.board?.bg === 'string' ? session.board.bg : '');
-export const colorOf = (k: string) => (k === 'bg' && boardBg()) || myColors()[k] || COLOR_DEFAULTS[modeName()][k] || '';
+export const colorOf = (k: string) => (k === 'bg' && boardBg()) || myColors()[k] || defaultsOf(modeName())[k] || '';
 
 export function applyColors() {
   const B = document.body.style,
