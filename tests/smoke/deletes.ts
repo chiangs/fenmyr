@@ -32,7 +32,8 @@ export async function deleteConfirm(t: Smoke) {
   const folder = await asked('.node.folder > .node-head:has-text("Del folder")');
   await page.locator('#rowMenu [data-m="no"]').click();
   const board = await asked('.board-row:has-text("Del board")');
-  const RED = 'rgb(214, 69, 93)',
+  // the one danger colour, which the menu's red button shares with Settings' (it had its own, 0.015 apart, until #251)
+  const RED = 'rgb(224, 69, 90)',
     SUB = 'This can’t be undone.';
   t.checkAll('deleteConfirm', {
     project:

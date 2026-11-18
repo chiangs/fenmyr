@@ -45,8 +45,18 @@ async function at(l: Launched, z: number) {
 // Each name's fill and the contrast of its words on it, and whether it covers any of its card's words on screen.
 const names = (l: Launched) =>
   l.page.evaluate(() => {
+    // a colour-mix() computes to oklab(...); a canvas says which rgba() it paints
+    const paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    const rgba = (c: string) => {
+      if (!paint) return c;
+      paint.clearRect(0, 0, 1, 1);
+      paint.fillStyle = c;
+      paint.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = paint.getImageData(0, 0, 1, 1).data;
+      return `rgba(${r}, ${g}, ${b}, ${(a ?? 255) / 255})`;
+    };
     const lum = (c: string) => {
-      const [r = 0, g = 0, b = 0] = (c.match(/[\d.]+/g) ?? []).map(Number).map(v => v / 255);
+      const [r = 0, g = 0, b = 0] = (rgba(c).match(/[\d.]+/g) ?? []).map(Number).map(v => v / 255);
       const f = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
       return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
     };
@@ -62,7 +72,7 @@ const names = (l: Launched) =>
       const lines = words ? [...range.getClientRects()] : [];
       return {
         id,
-        opaque: ((s.backgroundColor.match(/[\d.]+/g) ?? []).map(Number)[3] ?? 1) === 1,
+        opaque: ((rgba(s.backgroundColor).match(/[\d.]+/g) ?? []).map(Number)[3] ?? 1) === 1,
         contrast: Math.round((10 * ((hi ?? 0) + 0.05)) / ((lo ?? 0) + 0.05)) / 10,
         over: lines.some(r => meets(r, n.getBoundingClientRect())),
       };

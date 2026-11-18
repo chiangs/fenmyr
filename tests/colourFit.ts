@@ -6,7 +6,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { mixOklch } from '../src/web/ui/color.ts';
+import { mixOklab } from '../src/web/ui/color.ts';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-fit-')),
   css = path.join(dir, 'style.css'),
@@ -22,7 +22,7 @@ fs.writeFileSync(
 );
 fs.writeFileSync(
   css,
-  `:root { --a-same: #ffffff; --a-mid: ${mixOklch('#ffffff', '#3b342d', 0.5)}; --a-mid-dark: ${mixOklch('#242019', '#f6f2ec', 0.5)}; --a-far: #ff0000; --a-light: #ffffff; --a-dark-swap: #000000; --b-other: #ffffff; }
+  `:root { --a-same: #ffffff; --a-mid: ${mixOklab('#ffffff', '#3b342d', 0.5)}; --a-mid-dark: ${mixOklab('#242019', '#f6f2ec', 0.5)}; --a-far: #ff0000; --a-light: #ffffff; --a-dark-swap: #000000; --b-other: #ffffff; }
 .one { background: var(--a-same); }
 .two { background: var(--a-mid); }
 body.dark .two { background: var(--a-mid-dark); }
@@ -60,7 +60,7 @@ assert.equal(find('--a-same').fit?.expr, 'var(--snow)', 'an exact core colour is
 assert.equal(find('--a-same').uses, 2, 'a shorthand counts as a use');
 assert.match(
   find('--a-mid').fit?.expr ?? '',
-  /^color-mix\(in oklch, var\(--(ink|panel)\) \d+%, var\(--(ink|panel)\)\)$/,
+  /^color-mix\(in oklab, var\(--(ink|panel)\) \d+%, var\(--(ink|panel)\)\)$/,
 );
 assert.equal(find('--a-far').fit, null, 'a colour far from both is left');
 assert.equal(find('--a-light').fit, null, 'a swap that is black in dark mode fits neither core colour');
