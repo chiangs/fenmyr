@@ -38,42 +38,14 @@ for (const t of THEMES) {
 }
 assert.deepStrictEqual(problems, [], 'every theme keeps its promise');
 
-// until the stylesheet reads its colours from this table, the two must agree
+// the core colours reach the page from web/themes.css, which tests/themesCss.ts checks against this table; the one colour
+// still written in style.css that has to agree with it is the link on a dark Snow note
 const css = fs.readFileSync(path.join(import.meta.dirname, '..', 'web', 'style.css'), 'utf8');
 const declared = (block: RegExp, name: string) =>
   css.match(block)?.[1]?.match(new RegExp(`${name}:\\s*(#[0-9a-f]{6})`))?.[1];
-const ROOT = /:root \{([^}]*)\}/,
-  DARK = /body\.dark \{ --sh: [^}]*\}/;
-const light = THEMES.find(t => t.id === 'default-light')?.tokens,
-  dark = THEMES.find(t => t.id === 'default-dark')?.tokens;
-assert.ok(light && dark, 'both Default themes are in the table');
-const cardVars = (t: typeof light): [string, string][] => [
-  ...Object.entries(t.cards).map(([k, c]): [string, string] => [`--card-${k}`, c.fill]),
-  ['--card-link', t.cards.pink?.link ?? ''],
-];
-const lightVars: [string, string][] = [
-  ['--ink', light.ink],
-  ['--ink-soft', light.inkSoft],
-  ['--dot', light.dot],
-  ['--pink-deep', light.accent],
-  ['--select', light.focus],
-  ['--accent-text', light.accentText],
-  ['--on-accent', light.onAccent],
-  ...cardVars(light),
-];
-for (const [name, value] of lightVars)
-  assert.strictEqual(declared(ROOT, name), value, `style.css :root ${name} matches the light Default`);
-const darkCss = css.match(DARK)?.[0] ?? '';
-const darkVars: [string, string][] = [
-  ['--ink', dark.ink],
-  ['--ink-soft', dark.inkSoft],
-  ['--dot', dark.dot],
-  ['--accent-text', dark.accentText],
-  ['--on-accent', dark.onAccent],
-  ...cardVars(dark),
-];
-for (const [name, value] of darkVars)
-  assert.ok(darkCss.includes(`${name}: ${value}`), `style.css body.dark ${name} matches the dark Default`);
+const ROOT = /:root \{([^}]*)\}/;
+const dark = THEMES.find(t => t.id === 'default-dark')?.tokens;
+assert.ok(dark, 'the dark Default theme is in the table');
 
 assert.strictEqual(
   declared(ROOT, '--link-on-dark'),

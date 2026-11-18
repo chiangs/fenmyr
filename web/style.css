@@ -1,24 +1,24 @@
 /* Myra: an infinite canvas with a Nordic feel. Snow paper, a soft birch dot grid, crisp cards that can tilt a little,
    squircle corners, warm amber shadows, Figtree + Shantell Sans. */
 :root {
-  --ink: #3b342d; --ink-soft: #796f63; --ink-faint: #bcb1a3; --paper: #ffffff; --dot: #e4dccf;
-  --blush: #fdeedd; --pink: #f6b45e; --pink-deep: #e88a24; --butter-deep: #f0b04a;
+  --paper: #ffffff;
+  --pink: #f6b45e; --butter-deep: #f0b04a;
   --mint: #e2eed0; --mint-deep: #7fb86a; --lilac: #ece0ec; --lilac-deep: #a98ad6; --sky: #d6e8fb; --sky-deep: #6fa3d6;
-  --peach: #f1ebe2; --peach-deep: #c9b49a; --coral: #e07a5f; --select: #0090f5;
+  --peach: #f1ebe2; --peach-deep: #c9b49a; --coral: #e07a5f;
   --k-pink: #e8796b; --k-butter: #f0b04a; --k-mint: #7fb86a; --k-lilac: #a98ad6; --k-sky: #6fa3d6; --k-peach: #c9b49a;
   --font: "Myra Mark", "Figtree", system-ui, -apple-system, sans-serif; --hand: "Myra Mark", "Shantell Sans", "Comic Sans MS", cursive;
   --side: 232px;
   --sh: 150, 95, 35; --sh-k: 1;   /* shadow color and strength: warm amber in light mode */
   --pill-r: 12px;   /* what used to be pill-shaped (toolbar, buttons, tags, tooltips) is a squircle now */
   /* amber used as text (links, counts) is deeper than the amber fill, so it reads at 4.5:1; text on the amber fill is ink */
-  --accent-text: #b15800; --on-accent: #3b342d; --card-link: #a24900;
+
   /* card fills; render.ts points each card's --fill here, so dark mode can dim them without redrawing */
-  --card-white: #ffffff; --card-pink: #ffd7d3; --card-butter: #ffe3bd; --card-mint: #e2eed0; --card-lilac: #ece0ec; --card-sky: #d6e8fb; --card-peach: #f1ebe2;
+
   /* card colours and the shades used on and around cards; #251 turns these into per-theme tokens */
-  --snow: #ffffff; --hilite: #ffffff; --shade: #000000; --on-pastel: #3f3a34; --dark-snow: #38332d; --dark-raised: #2e2a25; --dark-line: #403b35; --dark-ring: #191510;
+  --hilite: #ffffff; --dark-snow: #38332d; --dark-raised: #2e2a25; --dark-line: #403b35; --dark-ring: #191510;
   --link-line: #dca36a; --link-on-dark: #f9c795; --mic-bg: #fef8f1;
   --wf-ink: #27272a; --wf-faint: #a1a1aa;
-  --rec: #ff5a6e; --danger: #e0455a; --due-soon: #ffd98a; --due-soon-ink: #5a3a05; --due-over: #ff9d8f; --due-over-ink: #5b1409;
+  --due-soon: #ffd98a; --due-soon-ink: #5a3a05; --due-over: #ff9d8f; --due-over-ink: #5b1409;
   --sec-shadow: #896e53; --sec-edge: #a7917b; --scrim: #14100c;
 }
 * { box-sizing: border-box; }
@@ -803,9 +803,9 @@ body.phone .dock .screenbar #scX { position: sticky; right: 0; background: inher
 
 /* ---------- dark mode ---------- */
 body.dark { --sh: 0, 0, 0; --sh-k: 2.2;   /* dark mode: plain dark shadows, not an amber glow */
-  --ink: #f6f2ec; --ink-soft: #c6bcae; --ink-faint: #8f8576; --blush: #3d2f22; --dot: #332d25; --surface: #242019; --surface-2: #2e2922; color-scheme: dark; 
-  --accent-text: #e88a24; --on-accent: #1d1a16; --card-link: #842e00;
-  --card-white: #38332d; --card-pink: #e2b0ac; --card-butter: #e0bd8c; --card-mint: #bccba5; --card-lilac: #cabbca; --card-sky: #aec5dc; --card-peach: #cdc6bb; }
+  color-scheme: dark;
+
+  }
 body.dark, body.dark .stage { background: var(--body-bg); }
 body.dark .box, body.dark .tools, body.dark .tray, body.dark .selbar, body.dark .find-bar, body.dark .drawbar, body.dark .cpop, body.dark .capture, body.dark .shapepick, body.dark .wheel-stamps,
 body.dark .stamp-pick, body.dark .row-menu, body.dark .cover-menu, body.dark .set-panel, body.dark .docview, body.dark .tile, body.dark .tile.folder .paper, body.dark .tile.project .mf,
@@ -3126,10 +3126,3 @@ body.dark .piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-x):hover { backgroun
 .stage:is(.placing, .drawing, .erasing, .pen-mode, .space) .screen-hint button { pointer-events: none; }
 .screen-hint button:hover { background: color-mix(in oklch, var(--wf-ink) 8%, var(--snow)); }
 .screen-hint button:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
-
-/* core colours the rest of the stylesheet is made from; #251 gives each theme its own values */
-:root { --surface: #ffffff; --surface-2: #f4f0ed; }
-
-/* core colours the rest of the stylesheet is made from; #251 gives each theme its own values */
-:root { --accent-deep: #965f23; --accent-mid: #d9771f; --accent-soft: #f6b45e; --accent-tint: #f9c795; --accent-wash: #fbdcbc; --ink-inverse: #ffffff; --ok: #3fae6a; }
-body.dark { --ink-inverse: #1d1a16; }
