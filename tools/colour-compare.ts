@@ -2,14 +2,15 @@
 // tools/colour-convert.ts --pairs), the running app computes the same colour from both, in light and in dark mode.
 // A screenshot only shows the states it takes; this covers every declaration. Exits 1 and lists the differences if any.
 //   node tools/colour-compare.ts pairs.json [--tolerance 0.02]
-// A pair may carry a fourth value, the old value in dark mode, for a declaration whose body.dark rule swapped it.
+// A pair may carry a fourth value, the old value in dark mode, for a declaration whose body.dark rule swapped it, and a
+// fifth, 'light' or 'dark', when it only has to hold in that mode.
 // --tolerance accepts colours that differ by less than that OKLab distance (and alpha by less than .01), for a change
 // that replaces a colour with a core token that looks the same, as tools/colour-fit.ts --apply does.
 import fs from 'node:fs';
 import { apart, hexOf, type Rgb } from '../src/web/ui/color.ts';
 import { launch } from '../tests/support/launch.ts';
 
-type Pair = [property: string, before: string, after: string, darkBefore?: string];
+type Pair = [property: string, before: string, after: string, darkBefore?: string, only?: 'light' | 'dark'];
 type Seen = {
   mode: 'light' | 'dark';
   property: string;
@@ -23,10 +24,13 @@ function readPairs(file: string): Pair[] {
   const raw: unknown = JSON.parse(fs.readFileSync(file, 'utf8'));
   if (!Array.isArray(raw)) throw new Error(`${file} must hold a list of pairs`);
   return raw.map((p): Pair => {
-    const [property, before, after, darkBefore] = Array.isArray(p) ? p : [];
+    const [property, before, after, darkBefore, only] = Array.isArray(p) ? p : [];
     if (typeof property !== 'string' || typeof before !== 'string' || typeof after !== 'string')
       throw new Error('each pair is [property, old value, new value]');
-    return typeof darkBefore === 'string' ? [property, before, after, darkBefore] : [property, before, after];
+    const dark = typeof darkBefore === 'string' ? darkBefore : undefined;
+    return only === 'light' || only === 'dark'
+      ? [property, before, after, dark, only]
+      : [property, before, after, dark];
   });
 }
 
@@ -85,7 +89,8 @@ const seen: Seen[] = await app.page.evaluate(pairs => {
       });
   for (const dark of [false, true]) {
     document.body.classList.toggle('dark', dark);
-    for (const [property, lightBefore, after, darkBefore] of pairs) {
+    for (const [property, lightBefore, after, darkBefore, only] of pairs) {
+      if (only && only !== (dark ? 'dark' : 'light')) continue;
       const computed = (value: string) => {
         el.style.cssText = '';
         el.style.setProperty(property, value);

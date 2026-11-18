@@ -4,6 +4,7 @@ import assert from 'node:assert';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { DERIVED } from '../src/web/settings/derived.ts';
 import { CSS_VARS, THEMES } from '../src/web/settings/themes.ts';
 import { launch } from './support/launch.ts';
 
@@ -24,7 +25,7 @@ const wanted = (mode: 'light' | 'dark') => {
 };
 
 const style = fs.readFileSync(path.join(root, 'web/style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-for (const [name] of wanted('light'))
+for (const name of [...wanted('light').map(([n]) => n), ...Object.keys(DERIVED)])
   assert(
     !new RegExp(`(?<![\\w-])${name}\\s*:`).test(style),
     `style.css defines ${name} again; it comes from themes.css`,
@@ -47,5 +48,18 @@ for (const mode of ['light', 'dark'] as const) {
     `in ${mode} mode the page computes the table's colours`,
   );
 }
+// a derived colour follows the mode: it is worked out on <body>, where the dark class and the theme apply
+const flips = await app.page.evaluate(
+  names =>
+    names.filter(name => {
+      const at = (dark: boolean) => {
+        document.body.classList.toggle('dark', dark);
+        return getComputedStyle(document.body).getPropertyValue(name).trim();
+      };
+      return at(false) === '' || at(true) === '';
+    }),
+  Object.keys(DERIVED),
+);
+assert.deepStrictEqual(flips, [], 'every derived colour is defined in light and in dark');
 await app.close();
 console.log('THEMES CSS OK');

@@ -72,5 +72,14 @@ assert.strictEqual(
   0,
   'unless the tolerance allows',
 );
+// a fifth value limits a pair to one mode: a token used in light rules alone isn't held to anything in dark
+const lightOnly = compare([['background', '#ffffff', 'var(--surface)', '#000000', 'light']]);
+assert.strictEqual(lightOnly.status, 0, `a light-only pair ignores dark mode: ${lightOnly.stdout}`);
+assert.strictEqual(
+  compare([['background', '#ffffff', 'var(--surface)', '#000000']]).status,
+  1,
+  'and is held to it without',
+);
+
 fs.rmSync(dir, { recursive: true, force: true });
 console.log('COLOUR COMPARE OK');

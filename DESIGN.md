@@ -29,7 +29,7 @@ The interface takes every colour from a variable. Never write a new hex, `rgb()`
 - **A colour that's really new** becomes a token in the `:root` block (and its dark value in `body.dark`), with a name for what it's for, not what it looks like.
 - **Token values are hex.** Work out lightness and contrast in OKLCH, which is perceptually even; HSL isn't, so two HSL colours with the same lightness can differ a lot in contrast.
 
-`npm run budget` counts raw colours in `web/style.css` and fails when the count rises. Every colour in the stylesheet is a token now. The core tokens are set per theme in `src/web/settings/themes.ts`, and `web/themes.css` is written from that table (`node tools/themes-css.ts`): a block of variables per theme, switched by the class on `<body>`. Don't define a core token in `style.css`. #251 is moving the area tokens onto the core ones, so that a theme sets the core ones and the rest follow; `tools/colour-core.json` lists them for the tools.
+`npm run budget` counts raw colours in `web/style.css` and fails when the count rises. Every colour in the stylesheet is a token now. The core tokens are set per theme in `src/web/settings/themes.ts`, and `web/themes.css` is written from that table (`node tools/themes-css.ts`): a block of variables per theme, switched by the class on `<body>`. Don't define a core token in `style.css`. An area colour that is a mix of core tokens is written in `src/web/settings/derived.ts`, which `themes.css` puts on `<body>` too; a new one is a `color-mix()` of core tokens there, not a hex in `style.css`. #251 is moving the area tokens onto the core ones, so that a theme sets the core ones and the rest follow; `tools/colour-core.json` lists them for the tools.
 
 The main variables:
 
