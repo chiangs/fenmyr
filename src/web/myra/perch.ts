@@ -224,10 +224,16 @@ export function dockReset() {
   gooMove({ x: 0, y: 0 });
 }
 
-// none on a phone, or on a prototype board, where she already sits in the docked chat's header
-export const gooFrom = () => (boxHidden() ? null : gooSlot.getBoundingClientRect());
-
 const docked = () => gooSlot.parentElement?.id === 'mcPerch';
+
+// where she is, to hop from when she is about to change homes: none on a phone, or when she isn't showing. She shows in
+// her box, or on a prototype board in the docked chat's header, where her box is hidden.
+export const gooFrom = () => {
+  const showing = docked()
+    ? !document.body.classList.contains('phone') && gooSlot.checkVisibility({ visibilityProperty: true })
+    : !boxHidden();
+  return showing ? gooSlot.getBoundingClientRect() : null;
+};
 
 // Her slot has just moved to a new home. She is drawn back where she was, then hops or fades into it. The caller moves
 // her and calls this in one task, so no frame shows her at the new home first.
