@@ -80,21 +80,22 @@ export function caelestiaTokens(scheme: CaelestiaScheme, theme: Theme): Tokens {
       cardsApart: themeCards,
       cardText: themeCards,
       cardLink: themeCards,
-      onAccent: { accent: base.accent, onAccent: base.onAccent },
       text: { ink: base.ink },
       softText: { inkSoft: base.inkSoft },
       focus: { focus: base.focus },
     };
-  // each promise the theme makes is checked on what came out; the colours behind one that fails go back to the theme's, and
-  // if something still fails after that, the theme's own colours are used as they are
-  let now = chosen;
-  for (let pass = 0; pass < 4; pass++) {
-    const tokens = derive(theme.mode, theme.target, now),
-      failing = checksOf({ ...theme, tokens }).filter(k => k.got < k.need);
-    if (!failing.length) return tokens;
-    const fix = failing.map(k => themeOwn[k.id]);
-    if (fix.some(f => !f)) return base;
+  // each promise the theme makes is checked on what came out, and the text, focus and card colours behind one that fails go
+  // back to the theme's. The scheme's board, dots, panel and accent are never given up: if a promise still can't be kept
+  // on them, they are what you chose, and the result is used as it is
+  let now = chosen,
+    tokens = derive(theme.mode, theme.target, now);
+  for (let pass = 0; pass < 3; pass++) {
+    const fix = checksOf({ ...theme, tokens })
+      .filter(k => k.got < k.need)
+      .flatMap(k => (themeOwn[k.id] ? [themeOwn[k.id]] : []));
+    if (!fix.length) break;
     now = Object.assign({}, now, ...fix);
+    tokens = derive(theme.mode, theme.target, now);
   }
-  return base;
+  return tokens;
 }
