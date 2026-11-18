@@ -7,6 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron } from 'playwright';
 import { HEADLESS } from './support/launch.ts';
+import { installPaint } from './support/paint.ts';
 
 type Node = { type: string; text?: string; marks?: Node[]; attrs?: Record<string, unknown>; content?: Node[] };
 const T = (text: string, marks?: Node[]): Node => ({ type: 'text', text, ...(marks ? { marks } : {}) });
@@ -286,6 +287,7 @@ const DOC: Node = {
   await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(out, 'doc.png') });
   // the PDF page copies the doc's styles; the colours they take from the app's variables must come with them
+  await installPaint(page);
   const pdf = await page.evaluate(async (): Promise<{ missing: string[]; colours: Record<string, number[]> }> => {
     const f = document.createElement('iframe');
     f.style.cssText = 'position:fixed;left:0;top:0;width:800px;height:600px;opacity:0';
@@ -299,15 +301,9 @@ const DOC: Node = {
       missing = [...new Set(css.match(/var\(--[\w-]+(?=\))/g) ?? [])]
         .map(v => v.slice(4))
         .filter(n => !root.getPropertyValue(n).trim()),
-      // a colour-mix() computes to oklab(...), so a canvas says which pixel it paints
-      paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true }),
       seen = (sel: string, prop: string) => {
         const el = d.querySelector(sel);
-        if (!el || !paint) return [-1, -1, -1];
-        paint.clearRect(0, 0, 1, 1);
-        paint.fillStyle = getComputedStyle(el).getPropertyValue(prop);
-        paint.fillRect(0, 0, 1, 1);
-        return [...paint.getImageData(0, 0, 1, 1).data].slice(0, 3);
+        return el ? window.__paint(getComputedStyle(el).getPropertyValue(prop)).slice(0, 3) : [-1, -1, -1];
       },
       colours = {
         code: seen('.dv-prose code', 'background-color'),

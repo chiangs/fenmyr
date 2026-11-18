@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import { apart, hexOf, type Rgb } from '../src/web/ui/color.ts';
 import { launch } from '../tests/support/launch.ts';
+import { installPaint } from '../tests/support/paint.ts';
 
 type Pair = [property: string, before: string, after: string, darkBefore?: string, only?: 'light' | 'dark'];
 type Seen = {
@@ -72,20 +73,16 @@ const pairs = readPairs(file),
   // the launcher waits for a card, so the board has one
   note = { id: 'n', type: 'note', x: 0, y: 0, w: 200, h: 100, r: 0, text: 'x' },
   app = await launch({ boards: [{ id: 'b', name: 'B', cards: [note], links: [], tray: [] }], open: 'b' });
+await installPaint(app.page);
 const seen: Seen[] = await app.page.evaluate(pairs => {
   const el = document.createElement('div');
   document.querySelector('#cards')?.appendChild(el);
   const out: Seen[] = [],
-    pixel = document.createElement('canvas').getContext('2d', { willReadFrequently: true }),
-    // getComputedStyle keeps a colour-mix() result as oklch(...); a canvas turns that into the pixel it would paint
+    // getComputedStyle keeps a colour-mix() result as oklch(...); the paint helper turns that into the pixel it would paint
     rgbOf = (v: string) =>
       v.replace(/(?:oklch|oklab|lab|lch|hsla?|hwb)\([^)]*\)/g, c => {
-        if (!pixel) return c;
-        pixel.clearRect(0, 0, 1, 1);
-        pixel.fillStyle = c;
-        pixel.fillRect(0, 0, 1, 1);
-        const [r, g, b, a] = pixel.getImageData(0, 0, 1, 1).data;
-        return `rgba(${r}, ${g}, ${b}, ${Math.round(((a ?? 255) / 255) * 1000) / 1000})`;
+        const [r, g, b, a] = window.__paint(c);
+        return `rgba(${r}, ${g}, ${b}, ${Math.round(a * 1000) / 1000})`;
       });
   for (const dark of [false, true]) {
     document.body.classList.toggle('dark', dark);

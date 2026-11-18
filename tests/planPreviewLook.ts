@@ -6,6 +6,7 @@ import assert from 'node:assert';
 import type { MyraReply } from '../src/shared/myraReply.ts';
 import { replyBoard } from './fixtures/boards.ts';
 import { type Launched, launch, settle } from './support/launch.ts';
+import { installPaint } from './support/paint.ts';
 
 const failed: string[] = [];
 async function check(name: string, run: () => Promise<void>) {
@@ -43,17 +44,12 @@ async function at(l: Launched, z: number) {
   await settle(l.page, 500);
 }
 // Each name's fill and the contrast of its words on it, and whether it covers any of its card's words on screen.
-const names = (l: Launched) =>
-  l.page.evaluate(() => {
-    // a colour-mix() computes to oklab(...); a canvas says which rgba() it paints
-    const paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+const names = async (l: Launched) => {
+  await installPaint(l.page);
+  return l.page.evaluate(() => {
     const rgba = (c: string) => {
-      if (!paint) return c;
-      paint.clearRect(0, 0, 1, 1);
-      paint.fillStyle = c;
-      paint.fillRect(0, 0, 1, 1);
-      const [r, g, b, a] = paint.getImageData(0, 0, 1, 1).data;
-      return `rgba(${r}, ${g}, ${b}, ${(a ?? 255) / 255})`;
+      const [r, g, b, a] = window.__paint(c);
+      return `rgba(${r}, ${g}, ${b}, ${a})`;
     };
     const lum = (c: string) => {
       const [r = 0, g = 0, b = 0] = (rgba(c).match(/[\d.]+/g) ?? []).map(Number).map(v => v / 255);
@@ -78,6 +74,7 @@ const names = (l: Launched) =>
       };
     });
   });
+};
 
 let l = await launch({ boards: [replyBoard('look', 'look')], open: 'look', claude: true });
 
