@@ -6,6 +6,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron, type Page } from 'playwright';
+import { caelestiaTokens } from '../src/web/settings/caelestia.ts';
+import { THEMES } from '../src/web/settings/themes.ts';
 import { HEADLESS } from './support/launch.ts';
 
 const scheme = (mode: string, surface: string, primary: string) => ({
@@ -15,12 +17,28 @@ const scheme = (mode: string, surface: string, primary: string) => ({
   variant: 'tonalspot',
   colours: {
     surface: surface.slice(1),
-    surfaceContainer: primary.slice(1),
+    surfaceContainer: mode === 'dark' ? '24283b' : 'f3ede2',
     outlineVariant: '777777',
     primary: primary.slice(1),
     onPrimary: 'ffffff',
+    onSurface: mode === 'dark' ? 'c0caf5' : '1c1b1f',
+    surfaceContainerHighest: mode === 'dark' ? '3b4261' : 'ded5c4',
+    yellow: 'f6d39d',
+    pink: 'f9b5c7',
+    green: 'a6d6a8',
+    sky: 'c1e3fd',
+    mauve: 'd0c7ef',
+    peach: 'ecdfc8',
   },
 });
+// the Cloudberry fill Follow Caelestia should give a scheme on the Default theme for its mode, worked out the way the app does
+const cloudberry = (s: ReturnType<typeof scheme>) => {
+  const theme = THEMES.find(t => t.id === `default-${s.mode}`);
+  if (!theme) throw new Error('no default theme');
+  const colours = Object.fromEntries(Object.entries(s.colours).map(([k, v]) => [k, `#${v}`]));
+  return caelestiaTokens({ name: s.name, mode: s.mode === 'light' ? 'light' : 'dark', colours }, theme).cards.butter
+    ?.fill;
+};
 // the way Caelestia saves it: a new file swapped in, not an edit
 const put = (dir: string, s: object) => {
   fs.writeFileSync(path.join(dir, 'scheme.json.tmp'), JSON.stringify(s));
@@ -55,6 +73,13 @@ const look = (page: Page) =>
       board: b.getPropertyValue('--board').trim(),
       accent: b.getPropertyValue('--pink-deep').trim(),
       panel: b.getPropertyValue('--panel').trim(),
+      butter: b.getPropertyValue('--card-butter').trim(),
+      swatch: (() => {
+        const el = document.querySelector('#noteColors [data-nc="butter"]');
+        return el ? getComputedStyle(el).backgroundColor : '';
+      })(),
+      base: document.getElementById('caeBase')?.textContent ?? '',
+      noteHidden: !!document.getElementById('themeNote')?.hidden,
       offered: !!sw && getComputedStyle(sw).display !== 'none',
       home: style('#homeBtn')?.backgroundColor,
       rowOnRing: style('.board-row.on')?.boxShadow !== 'none',
@@ -80,7 +105,9 @@ const follow = (page: Page, on: boolean) =>
   const state = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-state-')),
     dir = path.join(state, 'caelestia');
   fs.mkdirSync(dir);
-  put(dir, scheme('dark', '#1a1b26', '#bb9af7'));
+  const darkScheme = scheme('dark', '#1a1b26', '#bb9af7'),
+    lightScheme = scheme('light', '#fdf8f0', '#2e7d32');
+  put(dir, darkScheme);
   const { app, page, errors } = await open({ XDG_STATE_HOME: state });
   const on = await look(page); // on from the start
   await follow(page, false);
@@ -88,7 +115,7 @@ const follow = (page: Page, on: boolean) =>
   const before = await look(page); // switched off: your own colors
   await follow(page, true);
   await settle();
-  put(dir, scheme('light', '#fdf8f0', '#2e7d32'));
+  put(dir, lightScheme);
   await settle(); // a new wallpaper
   const live = await look(page);
   await follow(page, false);
@@ -106,8 +133,16 @@ const follow = (page: Page, on: boolean) =>
     r.on.rowOnRing &&
     !r.off.rowOnRing &&
     r.on.board === '#1a1b26' &&
+    // the cards follow the scheme too, the swatches show them, and the row names the theme they sit on
+    r.on.butter === cloudberry(darkScheme) &&
+    r.on.butter !== r.off.butter &&
+    r.live.butter === cloudberry(lightScheme) &&
+    ['#ffe3bd', '#e0bd8c'].includes(r.off.butter) &&
+    r.on.swatch !== r.off.swatch &&
+    r.on.base === 'Based on Default.' &&
+    r.on.noteHidden &&
     r.on.accent === '#bb9af7' &&
-    r.on.panel === '#bb9af7' &&
+    r.on.panel === '#24283b' &&
     !r.live.dark &&
     r.live.board === '#fdf8f0' &&
     r.live.accent === '#2e7d32' &&

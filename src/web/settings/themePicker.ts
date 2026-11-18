@@ -3,7 +3,7 @@
 // data-seg handler as every other choice, so the setting is saved and the page restyled with no reload.
 import { $ } from '../core/dom.ts';
 import { htmlIn } from '../ui/dom.ts';
-import { myColors } from './colors.ts';
+import { caelestiaFor, themeFor } from './activeTheme.ts';
 import { settings } from './settings.ts';
 import { type Mode, THEMES, type Theme, themeName, themeOf } from './themes.ts';
 
@@ -61,6 +61,11 @@ export function paintThemePicker() {
       row.tabIndex = on ? 0 : -1;
     }
   }
-  $('themeNote').hidden = !Object.keys(myColors()).length;
+  // the Follow Caelestia row says which theme its colours go on
+  const mode = document.body.classList.contains('dark') ? 'dark' : 'light',
+    base = themeFor(mode);
+  $('caeBase').textContent = base ? `Based on ${base.name}.` : '';
+  // colours of your own: not Caelestia's, which are not yours to reset
+  $('themeNote').hidden = !!caelestiaFor(mode) || !Object.keys(settings.colors[mode]).length;
   $('themeReset').onclick = () => $('colReset').click();
 }

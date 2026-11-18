@@ -222,10 +222,14 @@ This is what changes:
 | Board background | `surface` |
 | Grid dots | `outlineVariant` |
 | Panels (sidebar, tray, toolbar, menus) | `surfaceContainer` |
-| Accent (buttons, selection, highlights) | `primary` |
+| Second surface (inputs, wells, hovered rows) | `surfaceContainerHigh` |
+| Text, and quiet text | `onSurface`, `onSurfaceVariant` |
+| Accent (buttons, selection, highlights) | `primary`, with `onPrimary` for text on it |
+| Focus ring | `secondary` |
+| Card colours: Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather, Birch | `surfaceContainerHighest`, `yellow`, `pink` or `red`, `green`, `sky` or `blue`, `mauve` or `lavender`, `peach` or `rosewater` |
 | Light or dark | the scheme's mode |
 
-Card colours such as Cloudberry, Moss and Heather are part of your boards and stay as they are. Text greys, the cursor, switches and Myra keep their own colours.
+The theme you pick for that mode (Settings → General → Look) is what these go on, and it supplies anything Caelestia doesn't. Every colour is held to the contrast that theme promises: one that falls short is moved in lightness until it reads, and if that can't be done the theme's own is used, so Clear and Lantern keep their AAA contrast. If Caelestia's card colours would look alike to someone with colour blindness, all seven cards use the theme's instead, so a board's colours stay consistent. The cursor, switches and Myra keep their own colours.
 
 These Caelestia actions restyle it within about a second, with no restart:
 

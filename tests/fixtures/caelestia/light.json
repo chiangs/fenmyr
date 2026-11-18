@@ -1,0 +1,29 @@
+{
+  "name": "dynamic",
+  "mode": "light",
+  "flavour": "default",
+  "variant": "tonalspot",
+  "colours": {
+    "primary": "2e7d32",
+    "onPrimary": "ffffff",
+    "secondary": "1565c0",
+    "surface": "fdf8f0",
+    "surfaceContainer": "f3ede2",
+    "surfaceContainerHigh": "e9e1d3",
+    "surfaceContainerHighest": "ded5c4",
+    "onSurface": "1c1b1f",
+    "onSurfaceVariant": "49454f",
+    "outline": "79747e",
+    "outlineVariant": "cac4d0",
+    "yellow": "e6a817",
+    "pink": "d81b60",
+    "red": "e53935",
+    "green": "43a047",
+    "sky": "0288d1",
+    "blue": "1565c0",
+    "mauve": "8e24aa",
+    "lavender": "7e57c2",
+    "peach": "ef6c00",
+    "rosewater": "c2185b"
+  }
+}
