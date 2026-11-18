@@ -155,6 +155,10 @@ export function mixOklab(a: string, b: string, k: number) {
   return hexOfOklch([l1 + (l2 - l1) * k, Math.hypot(A, B), Math.atan2(B, A)]);
 }
 
+// a colour from OKLCH, with the hue in degrees: a starting point for a status colour, which readableShade then moves
+export const solidOklch = (lightness: number, chroma: number, hue: number) =>
+  hexOfOklch([lightness, chroma, (hue * Math.PI) / 180]);
+
 // The colour's own hue, made darker on light backgrounds or lighter on dark ones until it reads at `target` against
 // every one of them. Used for amber text from a custom accent, so a pale accent still makes readable links.
 export function readableShade(hex: string, against: string[], target: number) {
