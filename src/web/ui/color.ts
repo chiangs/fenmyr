@@ -141,6 +141,20 @@ export function mixOklch(a: string, b: string, k: number) {
   return hexOfOklch([l1 + (l2 - l1) * k, c1 + (c2 - c1) * k, hue]);
 }
 
+// Chrome drops the hue of a colour with chroma under about 0.02, which takes in white, black and the warm greys of the
+// ink, and then paints the mix of two of them pink; mixed in oklab, where the arithmetic is the plain one, it doesn't
+export const isGrey = (hex: string) => oklchOf(hex)[1] < 0.025;
+export function mixOklab(a: string, b: string, k: number) {
+  const [l1, c1, h1] = oklchOf(a),
+    [l2, c2, h2] = oklchOf(b),
+    at = (c: number, h: number) => [c * Math.cos(h), c * Math.sin(h)] as const,
+    [a1, b1] = at(c1, h1),
+    [a2, b2] = at(c2, h2),
+    A = a1 + (a2 - a1) * k,
+    B = b1 + (b2 - b1) * k;
+  return hexOfOklch([l1 + (l2 - l1) * k, Math.hypot(A, B), Math.atan2(B, A)]);
+}
+
 // The colour's own hue, made darker on light backgrounds or lighter on dark ones until it reads at `target` against
 // every one of them. Used for amber text from a custom accent, so a pale accent still makes readable links.
 export function readableShade(hex: string, against: string[], target: number) {

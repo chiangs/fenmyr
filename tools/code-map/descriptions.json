@@ -552,6 +552,8 @@
     "tools/code-map/types.ts": "The shape of code-map.json.",
     "tools/code-map/visible.ts": "Builds the circles and lines for the files view and the areas view, with the page’s filters applied.",
     "tools/colour-compare.ts": "Proves a colour conversion changed nothing: the running app computes the same colour from every old and new value, in light and dark.",
+    "tools/colour-rewrite.ts": "Rewrites the stylesheet from what the fitter found: matched uses take their core expression, redundant body.dark declarations go, and unused area tokens are removed.",
+    "tools/colour-survey.ts": "Reads the stylesheet into rules and pairs of light and dark colours, and matches each pair against the core tokens.",
     "tools/colour-fit.ts": "Finds which area colours are the core tokens in disguise: matches each light and dark pair against the core tokens, or a mix of two, within a tolerance.",
     "tools/colour-convert.ts": "Moves raw colours in the stylesheet onto variables of the same value, from a map you give it, and lists what it changed.",
     "tools/editor/docx-entry.js": "Source of the Word export bundle.",

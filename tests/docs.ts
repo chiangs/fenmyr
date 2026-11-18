@@ -286,7 +286,7 @@ const DOC: Node = {
   await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(out, 'doc.png') });
   // the PDF page copies the doc's styles; the colours they take from the app's variables must come with them
-  const pdf = await page.evaluate(async () => {
+  const pdf = await page.evaluate(async (): Promise<{ missing: string[]; colours: Record<string, number[]> }> => {
     const f = document.createElement('iframe');
     f.style.cssText = 'position:fixed;left:0;top:0;width:800px;height:600px;opacity:0';
     f.srcdoc = window.__fenmyr.docPrintHTML('letter').replace(/__WEB__\//g, location.href.replace(/[^/]*$/, ''));
@@ -299,9 +299,15 @@ const DOC: Node = {
       missing = [...new Set(css.match(/var\(--[\w-]+(?=\))/g) ?? [])]
         .map(v => v.slice(4))
         .filter(n => !root.getPropertyValue(n).trim()),
+      // a colour-mix() computes to oklab(...), so a canvas says which pixel it paints
+      paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true }),
       seen = (sel: string, prop: string) => {
         const el = d.querySelector(sel);
-        return el ? getComputedStyle(el).getPropertyValue(prop) : 'none';
+        if (!el || !paint) return [-1, -1, -1];
+        paint.clearRect(0, 0, 1, 1);
+        paint.fillStyle = getComputedStyle(el).getPropertyValue(prop);
+        paint.fillRect(0, 0, 1, 1);
+        return [...paint.getImageData(0, 0, 1, 1).data].slice(0, 3);
       },
       colours = {
         code: seen('.dv-prose code', 'background-color'),
@@ -351,14 +357,14 @@ const DOC: Node = {
     r.docx.zip &&
     r.docx.size > 5000 &&
     !r.pdf.missing.length &&
-    JSON.stringify(r.pdf.colours) ===
-      JSON.stringify({
-        code: 'rgb(246, 242, 239)',
-        pre: 'rgb(41, 38, 34)',
-        th: 'rgb(250, 248, 245)',
-        quote: 'rgb(232, 138, 36)',
-        rule: 'rgb(237, 232, 228)',
-      }) &&
+    // the colours the doc's styles take from the app's variables, to within what the eye can't tell apart
+    Object.entries({
+      code: [246, 242, 239],
+      pre: [41, 38, 34],
+      th: [250, 248, 245],
+      quote: [232, 138, 36],
+      rule: [237, 232, 228],
+    }).every(([k, want]) => want.every((v, i) => Math.abs(v - (r.pdf.colours[k]?.[i] ?? -99)) <= 10)) &&
     !errors.length;
   if (process.env.KEEP) console.log('output in', out);
   else fs.rmSync(data, { recursive: true, force: true });

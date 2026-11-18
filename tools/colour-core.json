@@ -17,5 +17,9 @@
   "--shade": ["#000000", "#000000"],
   "--rec": ["#ff5a6e", "#ff5a6e"],
   "--on-pastel": ["#3f3a34", "#3f3a34"],
-  "--ok": ["#3fae6a", "#3fae6a"]
+  "--ok": ["#3fae6a", "#3fae6a"],
+  "--ink-inverse": ["#ffffff", "#1d1a16"],
+  "--accent-tint": ["#f9c795", "#f9c795"],
+  "--accent-wash": ["#fbdcbc", "#fbdcbc"],
+  "--accent-mid": ["#d9771f", "#d9771f"]
 }
