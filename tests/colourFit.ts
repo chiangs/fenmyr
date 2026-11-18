@@ -69,4 +69,40 @@ assert(!rows().some(r => r.tokens.includes('--b-other')), 'the prefix leaves oth
 
 const tight = JSON.parse(run('--prefix', '^--a-', '--tolerance', '0.001').split('\n')[0] ?? '{}');
 assert(tight.unmatched >= 3, 'a tighter tolerance matches fewer pairs');
+// --apply: the matched use takes the core token, its body.dark swap goes, the area token goes, and the pair is
+// recorded with its dark value for colour-compare
+const apply = path.join(dir, 'apply.css'),
+  pairs = path.join(dir, 'pairs.json');
+fs.writeFileSync(
+  apply,
+  `:root { --p-card: #ffffff; --p-card-dark: #242019; --p-keep: #123456; }
+/* the card */
+.card { background: var(--p-card); border: 1px solid var(--p-keep); }
+body.dark .card { background: var(--p-card-dark); }
+body.dark .other { color: var(--p-keep); }
+`,
+);
+execFileSync('node', [
+  'tools/colour-fit.ts',
+  '--core',
+  core,
+  '--css',
+  apply,
+  '--prefix',
+  '^--p-card',
+  '--apply',
+  '--pairs',
+  pairs,
+]);
+const after = fs.readFileSync(apply, 'utf8');
+assert.match(
+  after,
+  /\.card \{ background: var\(--panel\); border: 1px solid var\(--p-keep\); \}/,
+  'the use takes the token',
+);
+assert(!after.includes('body.dark .card'), 'the swap that is now redundant is gone');
+assert(after.includes('body.dark .other'), 'a rule that was not swapped stays');
+assert(!after.includes('--p-card'), 'the area tokens nothing uses go');
+assert(after.includes('/* the card */') && after.includes('--p-keep: #123456'), 'comments and other tokens stay');
+assert.deepEqual(JSON.parse(fs.readFileSync(pairs, 'utf8')), [['background', '#ffffff', 'var(--panel)', '#242019']]);
 console.log('colour fit ok');

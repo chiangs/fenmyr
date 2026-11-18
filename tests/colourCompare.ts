@@ -46,5 +46,31 @@ assert.match(
   'the true pair adds nothing, the other four give two each',
 );
 
+// a fourth value is the old value in dark mode: a swap that was a different colour there
+const swapped = compare([['background', '#ffffff', 'var(--surface)', '#242019']]);
+assert.strictEqual(swapped.status, 0, `a dark swap is compared against its dark value: ${swapped.stdout}`);
+assert.strictEqual(
+  compare([['background', '#ffffff', 'var(--surface)']]).status,
+  1,
+  'without it the dark mode differs',
+);
+
+// a tolerance accepts a colour that looks the same, and a mix the browser reports as oklch()
+const near = (tolerance: string, after: string) => {
+  const file = path.join(dir, 'near.json');
+  fs.writeFileSync(file, JSON.stringify([['background', '#f4f0ed', after, '#2e2922']]));
+  return spawnSync('node', [tool, file, '--tolerance', tolerance], { encoding: 'utf8' });
+};
+assert.strictEqual(near('0.02', 'var(--surface-2)').status, 0, 'the same colour passes');
+assert.strictEqual(
+  near('0.02', 'color-mix(in oklch, var(--ink-faint) 45%, var(--surface))').status,
+  1,
+  'a different one fails',
+);
+assert.strictEqual(
+  near('0.2', 'color-mix(in oklch, var(--ink-faint) 45%, var(--surface))').status,
+  0,
+  'unless the tolerance allows',
+);
 fs.rmSync(dir, { recursive: true, force: true });
 console.log('COLOUR COMPARE OK');
