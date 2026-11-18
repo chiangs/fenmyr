@@ -1,8 +1,7 @@
 // Every colour theme keeps its promise: AA or AAA contrast for text, focus and card text, and card colours that stay
 // apart for every kind of colour blindness. Gaps a theme is known to have are recorded, and must still be real.
 import assert from 'node:assert';
-import fs from 'node:fs';
-import path from 'node:path';
+import { DERIVED } from '../src/web/settings/derived.ts';
 import { checksOf, THEMES } from '../src/web/settings/themes.ts';
 import { apart, bestInk, contrast, readableShade } from '../src/web/ui/color.ts';
 
@@ -38,19 +37,11 @@ for (const t of THEMES) {
 }
 assert.deepStrictEqual(problems, [], 'every theme keeps its promise');
 
-// the core colours reach the page from web/themes.css, which tests/themesCss.ts checks against this table; the one colour
-// still written in style.css that has to agree with it is the link on a dark Snow note
-const css = fs.readFileSync(path.join(import.meta.dirname, '..', 'web', 'style.css'), 'utf8');
-const declared = (block: RegExp, name: string) =>
-  css.match(block)?.[1]?.match(new RegExp(`${name}:\\s*(#[0-9a-f]{6})`))?.[1];
-const ROOT = /:root \{([^}]*)\}/;
+// the core colours reach the page from web/themes.css, which tests/themesCss.ts checks against this table; the one place
+// two tables have to agree is the link on a dark Snow note, which is the accent tint
 const dark = THEMES.find(t => t.id === 'default-dark')?.tokens;
 assert.ok(dark, 'the dark Default theme is in the table');
-
-assert.strictEqual(
-  declared(ROOT, '--link-on-dark'),
-  dark.cards.white?.link,
-  'a link on a dark Snow note matches --link-on-dark',
-);
+assert.strictEqual(DERIVED['--link-on-dark'], 'var(--accent-tint)', '--link-on-dark is the accent tint');
+assert.strictEqual(dark.accentTint, dark.cards.white?.link, 'a link on a dark Snow note matches the accent tint');
 
 console.log(`THEMES OK (${THEMES.length} themes)`);

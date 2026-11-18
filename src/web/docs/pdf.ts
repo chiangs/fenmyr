@@ -30,13 +30,21 @@ function proseCSS() {
 
 // The copied rules take their colours from the app's variables, which the PDF page doesn't have, so it gets their
 // values. The page's own --paper variables stay as they are: downloads are always light pages.
+// Most are set on <body>, where the theme and the dark class apply, so the class is off while they are read; no paint
+// happens in between.
 function varsFor(css: string) {
-  const root = getComputedStyle(document.documentElement),
-    names = new Set(css.match(/var\(--[\w-]+/g)?.map(v => v.slice(4)));
-  return [...names]
-    .filter(n => !/^--(paper|board-font|desk)/.test(n) && root.getPropertyValue(n).trim())
-    .map(n => `${n}: ${root.getPropertyValue(n).trim()};`)
-    .join(' ');
+  const names = new Set(css.match(/var\(--[\w-]+/g)?.map(v => v.slice(4))),
+    dark = document.body.classList.contains('dark');
+  document.body.classList.remove('dark');
+  try {
+    const seen = getComputedStyle(document.body);
+    return [...names]
+      .filter(n => !/^--(paper|board-font|desk)/.test(n) && seen.getPropertyValue(n).trim())
+      .map(n => `${n}: ${seen.getPropertyValue(n).trim()};`)
+      .join(' ');
+  } finally {
+    document.body.classList.toggle('dark', dark);
+  }
 }
 
 export function docPrintHTML(paper: string) {

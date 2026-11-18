@@ -7,6 +7,8 @@ type Fit = { expr: string; light: number; dark: number };
 export type Group = {
   light: string;
   dark: string;
+  // a token used in only one mode has to match in that mode alone
+  only?: 'light' | 'dark';
   tokens: string[];
   uses: number;
   allowed: boolean;
@@ -78,7 +80,7 @@ export function fit(g: Group, core: Map<string, Pair>, tolerance: number) {
       light: apart(a[0], g.light, 'typical'),
       dark: apart(a[1], g.dark, 'typical'),
     }),
-    worst = (f: Fit) => Math.max(f.light, f.dark),
+    worst = (f: Fit) => (g.only === 'light' ? f.light : g.only === 'dark' ? f.dark : Math.max(f.light, f.dark)),
     limit = g.allowed ? ALLOWED : tolerance;
   let nearest: Fit | null = null,
     single: Fit | null = null;

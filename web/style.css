@@ -2,9 +2,8 @@
    squircle corners, warm amber shadows, Figtree + Shantell Sans. */
 :root {
   --paper: #ffffff;
-  --pink: #f6b45e; --butter-deep: #f0b04a;
-  --mint: #e2eed0; --mint-deep: #7fb86a; --lilac: #ece0ec; --lilac-deep: #a98ad6; --sky: #d6e8fb; --sky-deep: #6fa3d6;
-  --peach: #f1ebe2; --peach-deep: #c9b49a; --coral: #e07a5f;
+  --pink: #f6b45e;
+  --mint-deep: #7fb86a; --lilac-deep: #a98ad6;
   --k-pink: #e8796b; --k-butter: #f0b04a; --k-mint: #7fb86a; --k-lilac: #a98ad6; --k-sky: #6fa3d6; --k-peach: #c9b49a;
   --font: "Myra Mark", "Figtree", system-ui, -apple-system, sans-serif; --hand: "Myra Mark", "Shantell Sans", "Comic Sans MS", cursive;
   --side: 232px;
@@ -15,11 +14,7 @@
   /* card fills; render.ts points each card's --fill here, so dark mode can dim them without redrawing */
 
   /* card colours and the shades used on and around cards; #251 turns these into per-theme tokens */
-  --hilite: #ffffff; --dark-snow: #38332d; --dark-raised: #2e2a25; --dark-line: #403b35; --dark-ring: #191510;
-  --link-line: #dca36a; --link-on-dark: #f9c795; --mic-bg: #fef8f1;
-  --wf-ink: #27272a; --wf-faint: #a1a1aa;
   --due-soon: #ffd98a; --due-soon-ink: #5a3a05; --due-over: #ff9d8f; --due-over-ink: #5b1409;
-  --sec-shadow: #896e53; --sec-edge: #a7917b; --scrim: #14100c;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: color-mix(in oklab, var(--ink-faint) 8%, var(--snow)); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none; }
@@ -28,11 +23,8 @@ kbd { font: 500 11px/1 var(--font); padding: 3px 6px; border-radius: 6px; backgr
 
 /* the side panels', Home's and menus' own colours; #251 turns these into per-theme tokens */
 :root {
-  --pn-add-edge: #e3dcd5; --pn-danger-hover: #bf3850;
-  --pn-dark-add-edge: #524c44; --pn-dark-box: #26211c; --pn-dark-home: #12100d; --pn-dark-home-dot: #332d25; --pn-dark-ink: #1d1a16;
-  --pn-dark-tip: #f6f2ee; --pn-dark-top: #2b2722;
-  --pn-home: #fdfaf7; --pn-light-ink: #f0ebe4;
-  --pn-top: #fcfaf8; --pn-tree-line: #ede6e0;
+  --pn-danger-hover: #bf3850;
+  --pn-dark-top: #2b2722;
 }
 /* ---------- the floating boxes on the left ---------- */
 .side { position: fixed; left: 14px; top: 14px; bottom: 14px; width: var(--side); z-index: 20; display: flex; flex-direction: column; gap: 10px; pointer-events: none; overflow: auto; scrollbar-width: none; }
@@ -74,11 +66,9 @@ svg.brand-mark.ico .ico-r { display: none; } svg.brand-mark.ico .ico-d { display
 .wires circle.w-bend { fill: var(--select); stroke: var(--snow); }
 /* the context bar's and the bottom bar's own colours; #251 turns these into per-theme tokens */
 :root {
-  --sb-bg: #f0ebe4; --sb-bg-10: #6bcb77; --sb-bg-11: #4d96ff; --sb-bg-12: #f8b572; --sb-bg-14: #f6b45e;
-  --sb-bg-15: #f7e055; --sb-bg-16: #5fc795; --sb-bg-17: #4f9dff; --sb-bg-18: #9b7bff; --sb-bg-2: #806e5c; --sb-bg-3: #f6f2ee;
-  --sb-bg-4: #ff6b6b; --sb-bg-6: #fdefe1; --sb-bg-7: #ffdcd8; --sb-bg-8: #302b25; --sb-bg-9: #ffd93d;
-  --sb-ink-2: #1d1a16; --sb-ink-3: #302c26; --sb-ink-4: #3f3a34; --sb-ink-5: #bfb9b0; --sb-shadow: #f8bd82; --sb-shadow-2: #4e3c2a;
-  --sb-shadow-3: #fad0a5; --sb-shadow-4: #27272a; --tl-bg: #faf8f6;
+  --sb-bg-10: #6bcb77;
+  --sb-bg-15: #f7e055; --sb-bg-16: #5fc795; --sb-bg-18: #9b7bff;
+  --sb-bg-9: #ffd93d;
 }
 .selbar .sb-txt { height: 34px; padding: 0 11px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .selbar .sb-txt:hover { background: var(--blush); color: var(--ink); }
@@ -182,10 +172,8 @@ button.zoom { justify-content: flex-end; font-family: inherit; font-size: 12px; 
 .myra { position: absolute; left: calc(50% + 8px); bottom: 22px; transform: translateX(-50%); z-index: 15; display: flex; flex-direction: column; align-items: center; }
 /* the colours left in Myra's chat and bubble, the builder dock and prototype board and the phone hub, named by area and job; #251 turns these into per-theme tokens */
 :root {
-  --chat-bg: #282830; --chat-bg-10: #3b2d1f; --chat-bg-3: #584a3c; --chat-bg-4: #2e2a25;
-  --chat-bg-6: #2b2722; --chat-bg-7: #38332d; --chat-ink: #222222; --chat-ink-2: #7fd8ff;
-  --chat-ink-4: #b8621a; --chat-ink-5: #f6c38a; --chat-shadow: #3a2816; --dt-bg-3: #f0ebe4;
-  --dt-ink-2: #1d1a16; --hub-shadow: #dca36a; --lf-shadow-2: #755a3f; --proto-ink-2: #b7791f;
+  --chat-ink: #222222; --chat-ink-2: #7fd8ff;
+  --chat-shadow: #3a2816;
   --proto-shadow: #3c2814;
 }
 .m-pill { display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 18px 0 10px; border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--chat-bg) r g b / .94); color: var(--snow); box-shadow: 0 12px 30px rgb(from var(--chat-shadow) r g b / .3); cursor: pointer; transition: width .35s cubic-bezier(.2, .8, .3, 1); }
@@ -673,12 +661,8 @@ body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.a
 .box header .gear + .mini { margin-left: 0; }
 /* Settings' own colours; #251 turns these into per-theme tokens */
 :root {
-  --set-chip: #f9f6f4; --set-dark-ink: #1d1a16; --set-dark-input-edge: #403b34; --set-dark-knob: #ded9d3;
-  --set-dark-line: #3c3731; --set-dark-ready: #1f3529;
-  --set-feedback: #fef7f0; --set-feedback-dark: #f8bd82; --set-input: #faf7f2; --set-input-edge: #efebe6; --set-light-ink: #f0ebe4;
-  --set-line: #f3f0ec; --set-link-on-dark: #f6c38a; --set-rand-1: #fbdcbc; --set-rand-2: #f8e08a; --set-rand-3: #a8e6c3;
-  --set-rand-4: #aed3ff; --set-ready-ink: #1f9a5e; --set-scrim: #453729;
-  --set-toggle-on: #3fc48a;
+  --set-rand-2: #f8e08a;
+  --set-ready-ink: #1f9a5e;
 }
 .settings { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: rgb(from var(--set-scrim) r g b / .18); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .2s; }
 .settings.on { opacity: 1; pointer-events: auto; }
@@ -1551,11 +1535,8 @@ html.native .side { top: 18px; }
 /* ---------- docs: a real page you write on, with a slim formatting bar ---------- */
 /* the doc view's own colours; #251 turns these into per-theme tokens */
 :root {
-  --dv-back-hover: #2f2f2f; --dv-btn: #f7f4f1; --dv-dark-code: #38332c;
-  --dv-dark-ink: #1d1a16; --dv-dark-panel: #302c26; --dv-dark-placeholder: #746e65; --dv-dark-pre: #1a1612;
-  --dv-dark-th: #312d27; --dv-light-ink: #f0ebe4; --dv-page-btn: #ffd76a; --dv-placeholder: #bdb7af;
-  --dv-pop-shadow: #584634; --dv-pre: #292622;
-  --dv-sheet-edge: #3a2d1f; --dv-sheet-shadow: #6c553f; --dv-tools-edge: #f0ebe7;
+  --dv-dark-panel: #302c26;
+  --dv-page-btn: #ffd76a;
 }
 .docview { --paper: #ffffff; --paper-ink: #302c26; --paper-soft: #706b63; --desk: #f6f3f1; }
 .docview .dv-page { background: var(--desk); padding: 22px 24px 120px; }
@@ -1993,7 +1974,7 @@ body.dark .vd-bar .vd-txb:hover, body.dark .vd-bar .vd-mute:hover { background: 
 /* an open doc slides over the right side: the right widget column steps back behind it (the board area is its own layer, so the doc can't rise above the column on its own) */
 body:has(.stage.doc-open) #sideR { z-index: 0; }
 
-:root { --sec-tint: #fce1c6; }   /* the warm tint in a section's frosted glass */
+:root { }   /* the warm tint in a section's frosted glass */
 /* ---------- glass sections: a soft frosted bubble around a bunch of things ---------- */
 .card.section { z-index: 0 !important; border-radius: 54px; corner-shape: squircle; --tilt: 0deg !important; }
 .card.section .sec-glass { position: absolute; inset: 0; border-radius: 54px; corner-shape: squircle; pointer-events: auto;
@@ -2448,9 +2429,9 @@ svg.ico.ico.ico.ico .s { fill: none !important; stroke: currentColor !important;
 svg.ico.ico.ico.ico .f { fill: currentColor !important; stroke: none !important; }
 svg.ico.ico.ico.ico .t { fill: var(--ico-tint) !important; fill-opacity: var(--ico-tint-op); }
 svg.ico.ico.ico.ico .t2 { fill: var(--ico-tint2) !important; fill-opacity: var(--ico-tint-op); }
-:root { --ico-tint: #e8912a; --ico-tint2: #4f9a3d; --ico-tint-op: .55; }
+:root { --ico-tint2: #4f9a3d; --ico-tint-op: .55; }
 /* tuned so the outline keeps strong contrast against the tint (at least 4:1) and the tint stands out from the background */
-body.dark { --ico-tint: #ff9d1f; --ico-tint2: #7fcf5f; --ico-tint-op: .55; }
+body.dark { --ico-tint2: #7fcf5f; --ico-tint-op: .55; }
 /* in dark mode the outline of a duotone icon uses the brightest text color, so it never blends into the tint */
 body.dark svg.ico .ico-d { color: var(--ink); }
 @media (prefers-contrast: more) { :root { --ico-tint-op: .7; } body.dark { --ico-tint-op: .7; } }
@@ -3051,23 +3032,16 @@ body:is(.calm, .myra-calm) .m-bar::after { animation: none; transform: translate
 .m-summary li[data-mark="wait"]::before { box-sizing: border-box; border: 1.5px solid var(--ink-soft); background: none; }
 /* colours used in one or two places around the app, named by where they're used and what for; #251 turns these into per-theme tokens */
 :root {
-  --anim-shadow-2: #dca36a; --au-bg-2: #fbf8f5; --au-bg-3: #1d1a16; --bd-bg: #2b2722;
-  --bd-ink: #3b342d; --bd-ink-2: #f6f2ec; --body-bg: #12100d; --bx-ink: #a1a1aa; --clean-bg: #965f23; --clean-bg-2: #2e2a25;
-  --clean-ink: #f6f2ee; --clean-ink-2: #908a82; --clr-ink: #6b6259; --clr-ink-2: #d8d0c6; --coach-bg-2: #3b2d1f;
-  --coach-bg-4: #1f3529; --coach-ink: #1f9a5e; --coll-ink: #f0ebe4;
-  --cp-line: #efebe6; --cp-line-2: #464038; --crop-shadow: #181410; --dbs-bg: #302b25; --dbs-bg-2: #f3efeb; --dbs-shadow: #4e3c2a;
-  --dp-bg: #f7f3f0; --dp-ink-2: #2f6fd6; --dt-bg: #eeeae6; --dt-ink: #bfb9b0;
-  --dt-shadow: #e88a24; --fb-ink: #c2701a; --gear-bg: #3fc48a;
-  --html-bg: #faf7f2; --kb-bg: #26231e; --lf-shadow: #ecb680;
-  --news-bg: #fbf8f6; --notecolors-bg: #fbdcbc; --notecolors-bg-2: #f8e08a; --notecolors-bg-3: #a8e6c3; --notecolors-bg-4: #aed3ff;
-  --ob-bg-3: #2f2f2f; --ob-bg-4: #322c25; --ob-line: #433e37; --ob-line-2: #ebe6e0;
-  --onboard-bg: #fef2e5; --pg-bg: #27231e; --rz-bg: #806e5c; --sf-bg: #f6b45e; --sf-bg-2: #f0b04a; --sf-bg-3: #7fb86a; --sf-bg-4: #6fa3d6;
+  --coach-ink: #1f9a5e;
+  --crop-shadow: #181410;
+  --dp-ink-2: #2f6fd6;
+  --gear-bg: #3fc48a;
+  --html-bg: #faf7f2;
+  --notecolors-bg-2: #f8e08a;
   --sf-bg-5: #a98ad6; --sh-bg: #f6f3f0; --sh-bg-2: #524c44; --sh-bg-3: #413c34; --sh-bg-4: #3a2d1f; --sh-bg-5: #e5e0dc; --sh-bg-6: #28231d;
-  --sh-shadow: #58412a; --su-bg: #403b35; --sub-line: #ede6e0; --tdlg-bg: #3c2814; --tp-bg: #ffdcd8;
-  --tplpick-ink: #8a8076; --ub-ink: #c2bab0; --usage-bg: #f9f6f4; --vd-bg: #f4f0ed; --vd-bg-2: #211e1a;
-  --vd-ink: #302c26; --vd-ink-2: #d9771f; --vn-bg: #3f3a34; --web-ink: #f6c38a; --web-ink-2: #a3774b; --wg-bg: #fdf0e2;
-  --wg-shadow: #443220; --wires-ink: #968f85; --ws-bg: #e9f4ff; --ws-bg-2: #d9ecff; --ws-bg-3: #2c3644; --ws-bg-4: #34404f;
-  --ws-shadow: #8cc1ff;
+  --sh-shadow: #58412a; --tdlg-bg: #3c2814;
+  --ub-ink: #c2bab0;
+  --vd-ink: #302c26;
 }
 
 /* ---------- the Pieces picker: docked beside the screen it adds to; on a phone, above the bottom bar ---------- */
