@@ -1,11 +1,12 @@
 // The colour themes. Each one sets every token for its mode, and the contrast it promises: AA or AAA.
 // tests/themes.ts checks each theme against its promise, and the gaps a theme is still known to have.
 import { apart, contrast, type Vision } from '../ui/color.ts';
+import { derive, TEXT } from './derive.ts';
 
 export type Mode = 'light' | 'dark';
-type Target = 'aa' | 'aaa';
+export type Target = 'aa' | 'aaa';
 type CardColour = { fill: string; ink: string; link: string };
-type Tokens = {
+export type Tokens = {
   bg: string;
   dot: string;
   panel: string;
@@ -153,12 +154,124 @@ export const THEMES: Theme[] = [
     },
     knownGaps: [],
   },
+  // the four themes from #251: a pair for light and a pair for dark, one made for looks and one for accessibility
+  {
+    id: 'midsummer-light',
+    name: 'Midsummer',
+    mode: 'light',
+    target: 'aa',
+    tokens: derive('light', 'aa', {
+      bg: '#f1f4ee',
+      dot: '#cfd8c8',
+      panel: '#ffffff',
+      surface2: '#eaf0e5',
+      ink: '#24302a',
+      inkSoft: '#55645b',
+      accent: '#c4502a',
+      onAccent: '#ffffff',
+      focus: '#2f6fd6',
+      cardInk: '#24302a',
+      fills: {
+        white: '#ffffff',
+        butter: '#f6d39d',
+        pink: '#f9b5c7',
+        mint: '#a6d6a8',
+        sky: '#c1e3fd',
+        lilac: '#d0c7ef',
+        peach: '#ecdfc8',
+      },
+    }),
+    knownGaps: [],
+  },
+  {
+    id: 'clear-light',
+    name: 'Clear',
+    mode: 'light',
+    target: 'aaa',
+    tokens: derive('light', 'aaa', {
+      bg: '#f3f0e9',
+      dot: '#cbc2b4',
+      panel: '#fbfaf6',
+      surface2: '#ebe7de',
+      ink: '#14110e',
+      inkSoft: '#3f3831',
+      accent: '#8a3d00',
+      onAccent: '#ffffff',
+      focus: '#0047b3',
+      cardInk: '#14110e',
+      fills: {
+        white: '#ffffff',
+        butter: '#fdc563',
+        pink: '#c59099',
+        mint: '#87b24b',
+        sky: '#9cd9f5',
+        lilac: '#c3a7d7',
+        peach: '#f3dec0',
+      },
+    }),
+    knownGaps: [],
+  },
+  {
+    id: 'polar-night-dark',
+    name: 'Polar Night',
+    mode: 'dark',
+    target: 'aa',
+    tokens: derive('dark', 'aa', {
+      bg: '#0e1621',
+      dot: '#23303e',
+      panel: '#16202c',
+      surface2: '#1f2c3a',
+      ink: '#e6edf3',
+      inkSoft: '#a9b6c3',
+      accent: '#6fe0c0',
+      onAccent: '#0e1621',
+      focus: '#8ab4ff',
+      cardInk: '#eef2f6',
+      fills: {
+        white: '#2b3644',
+        butter: '#6b4b16',
+        pink: '#743f4a',
+        mint: '#235448',
+        sky: '#13568a',
+        lilac: '#5b3f74',
+        peach: '#4a4034',
+      },
+    }),
+    knownGaps: [],
+  },
+  {
+    id: 'lantern-dark',
+    name: 'Lantern',
+    mode: 'dark',
+    target: 'aaa',
+    tokens: derive('dark', 'aaa', {
+      bg: '#141619',
+      dot: '#3a3f46',
+      panel: '#1e2125',
+      surface2: '#2a2e33',
+      ink: '#f4f2ee',
+      inkSoft: '#cfcac2',
+      accent: '#ffb547',
+      onAccent: '#141619',
+      focus: '#7cc0ff',
+      cardInk: '#101214',
+      fills: {
+        white: '#d9dde2',
+        butter: '#f2ce9b',
+        pink: '#ed8fb3',
+        mint: '#74b76a',
+        sky: '#7ec7f9',
+        lilac: '#af9ae6',
+        peach: '#d2bca4',
+      },
+    }),
+    knownGaps: [],
+  },
 ];
 
 export const themeOf = (mode: Mode, id = 'default') =>
   THEMES.find(t => t.mode === mode && t.id === `${id}-${mode}`) ?? THEMES.find(t => t.mode === mode);
 
-const TEXT: Record<Target, number> = { aa: 4.5, aaa: 7 };
 const NON_TEXT: Record<Target, number> = { aa: 3, aaa: 4.5 };
 // below about 0.02 two colours look the same; the accessible themes keep three times that
 const APART: Record<Target, number> = { aa: 0.02, aaa: 0.06 };
