@@ -1,0 +1,21 @@
+{
+  "--ink": ["#3b342d", "#f6f2ec"],
+  "--ink-soft": ["#796f63", "#c6bcae"],
+  "--ink-faint": ["#bcb1a3", "#8f8576"],
+  "--surface": ["#ffffff", "#242019"],
+  "--surface-2": ["#f4f0ed", "#2e2922"],
+  "--dot": ["#e4dccf", "#332d25"],
+  "--blush": ["#fdeedd", "#3d2f22"],
+  "--pink-deep": ["#e88a24", "#e88a24"],
+  "--accent-soft": ["#f6b45e", "#f6b45e"],
+  "--accent-deep": ["#965f23", "#965f23"],
+  "--accent-text": ["#b15800", "#e88a24"],
+  "--on-accent": ["#3b342d", "#1d1a16"],
+  "--danger": ["#e0455a", "#e0455a"],
+  "--snow": ["#ffffff", "#ffffff"],
+  "--select": ["#0090f5", "#0090f5"],
+  "--shade": ["#000000", "#000000"],
+  "--rec": ["#ff5a6e", "#ff5a6e"],
+  "--on-pastel": ["#3f3a34", "#3f3a34"],
+  "--ok": ["#3fae6a", "#3fae6a"]
+}
