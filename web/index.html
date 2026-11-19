@@ -45,25 +45,7 @@
 <!-- the bottom bar: the tools, then Myra. It sits over the board and the widgets, so it lives outside the stage -->
 <div class="dock" id="dock">
 <div class="tools" id="tools">
-    <button data-add="pointer" aria-label="Select · V" data-tip="Select · V" class="on"><svg class="ic" data-ico="select" width="18" height="18"></svg></button>
-  <button data-add="note" aria-label="Note · N" data-tip="Note · N"><svg class="ic" data-ico="note" width="18" height="18"></svg></button>
-  <button data-add="vnote" aria-label="Vault note · Alt+N" data-tip="Vault note · Alt+N" hidden><svg class="ic" data-ico="notebook" width="18" height="18"></svg></button>
-    <button data-add="doc" aria-label="Doc · D" data-tip="Doc · D"><svg class="ic" data-ico="doc" width="18" height="18"></svg></button>
-  <button data-add="todo" aria-label="Checklist · C" data-tip="Checklist · C"><svg class="ic" data-ico="checklist" width="18" height="18"></svg></button>
-    <button data-add="title" aria-label="Big title · T" data-tip="Big title · T"><svg class="ic" data-ico="title" width="18" height="18"></svg></button>
-    <button data-add="coll" aria-label="Collection · G" data-tip="Collection · G"><svg class="ic" data-ico="collection" width="18" height="18"></svg></button>
-    <button data-add="canvas" aria-label="Canvas (a board inside this one)" data-tip="Canvas"><svg class="ic" data-ico="canvas" width="18" height="18"></svg></button>
-    <button data-add="frame" aria-label="Wireframe · W" data-tip="Wireframe · W" aria-pressed="false"><svg class="ic" data-ico="screen" width="18" height="18"></svg></button>
-  <button data-add="link" aria-label="Link · L" data-tip="Link · L"><svg class="ic" data-ico="link" width="18" height="18"></svg></button>
-    <button data-add="image" aria-label="Image · I" data-tip="Image · I"><svg class="ic" data-ico="image" width="18" height="18"></svg></button>
-    <button data-add="audio" aria-label="Voice memo · A" data-tip="Voice memo · A"><svg class="ic" data-ico="mic" width="18" height="18"></svg></button>
-    <button data-add="video" aria-label="Video · ⇧V" data-tip="Video · ⇧V"><svg class="ic" data-ico="video" width="18" height="18"></svg></button>
-  <button data-add="swatch" aria-label="Colour" data-tip="Colour"><svg class="ic" data-ico="palette" width="18" height="18"></svg></button>
-    <button data-add="shape" aria-label="Shapes · S" data-tip="Shapes · S"><svg class="ic" data-ico="shapes" width="18" height="18"></svg></button>
-  <button data-add="stamp" aria-label="Stamps · E" data-tip="Stamps · E"><svg class="ic" data-ico="stamp" width="18" height="18"></svg></button>
-  <button data-add="tpl" aria-label="Templates" data-tip="Templates"><svg class="ic" data-ico="templates" width="18" height="18"></svg></button>
-  <button data-add="pen" aria-label="Pen · ⇧P" data-tip="Pen · ⇧P"><svg class="ic" data-ico="pen" width="18" height="18"></svg></button>
-  <button data-add="draw" aria-label="Draw · P" data-tip="Draw · P"><svg class="ic" data-ico="draw" width="18" height="18"></svg></button>
+  <!-- the tool buttons are built from src/web/ui/toolbarTable.ts -->
   <button class="tb-more" id="tbMore" aria-label="More tools" data-tip="More tools" aria-haspopup="menu" hidden><svg class="ic" data-ico="more" width="18" height="18"></svg></button>
   <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
   <button class="clean-btn" id="cleanBtn" aria-label="Just the board · ⌘\" data-tip="Just the board · ⌘\"><svg class="ic" data-ico="board-only" width="18" height="18"></svg></button>

@@ -9,8 +9,9 @@ import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { activeGrants, vaults } from '../vault/vaults.ts';
 import { closestTo, esc, htmlIn } from './dom.ts';
+import { TOOLBAR } from './toolbarTable.ts';
 
-let TB_DEFAULT: string[] = [];
+const DEFAULT_ORDER = TOOLBAR.tools.map(t => t.id);
 
 // the HTML elements matching a selector, under root
 const toolButton = (k: string) => {
@@ -19,7 +20,7 @@ const toolButton = (k: string) => {
 };
 const iconOf = (b: Element) => b.querySelector('svg')?.outerHTML || '';
 
-const tbName = (b: HTMLElement) => (b.dataset.tip || b.getAttribute('aria-label') || '').split('·')[0]?.trim() ?? '';
+const nameOf = (b: HTMLElement) => TOOLBAR.tool(b.dataset.add ?? '')?.label ?? '';
 
 // the Vault note tool only shows on a board that can read a vault
 const vaultToolOn = () => {
@@ -30,11 +31,33 @@ const vaultToolOn = () => {
   }
 };
 
+export function renderTools() {
+  const more = $('tbMore');
+  for (const t of TOOLBAR.tools) {
+    const tip = t.key ? `${t.label} · ${t.key}` : t.label,
+      b = document.createElement('button'),
+      icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    b.dataset.add = t.id;
+    b.setAttribute('aria-label', t.aria ?? tip);
+    b.dataset.tip = tip;
+    if (t.lit) b.className = 'on';
+    if (t.toggle) b.ariaPressed = 'false';
+    if (t.needs) b.hidden = true;
+    icon.setAttribute('class', 'ic');
+    icon.dataset.ico = t.icon;
+    icon.setAttribute('width', '18');
+    icon.setAttribute('height', '18');
+    b.append(icon);
+    more.before(b);
+  }
+  hydrateIcons($('tools'));
+}
+
 export function applyToolbar() {
   const box = $('tools'),
     hidden = new Set(settings.toolbar?.hidden ?? []);
-  const order = (settings.toolbar?.order ?? []).filter(k => TB_DEFAULT.includes(k));
-  TB_DEFAULT.forEach((k, i) => {
+  const order = (settings.toolbar?.order ?? []).filter(k => DEFAULT_ORDER.includes(k));
+  DEFAULT_ORDER.forEach((k, i) => {
     if (!order.includes(k)) order.splice(Math.min(i, order.length), 0, k);
   }); // tools added in a later version slot in where they belong
   const end = $('zoom');
@@ -42,7 +65,7 @@ export function applyToolbar() {
     const b = toolButton(k);
     if (b) {
       box.insertBefore(b, end);
-      b.hidden = hidden.has(k) || (k === 'vnote' && !vaultToolOn());
+      b.hidden = hidden.has(k) || (TOOLBAR.tool(k)?.needs === 'vault' && !vaultToolOn());
     }
   });
   document.body.dataset.tb = settings.tbSize || 'm';
@@ -66,7 +89,7 @@ export function renderTbList() {
       if (!b) return '';
       const off = hidden.has(k) ? ' off' : '',
         icon = iconOf(b),
-        name = esc(tbName(b)),
+        name = esc(nameOf(b)),
         checked = hidden.has(k) ? '' : 'checked';
       return `<div class="tbe-row${off}" draggable="true" data-tb="${k}"><span class="tbe-grip">⋮⋮</span><span class="tbe-ic">${icon}</span><span class="tbe-name">${name}</span><input type="checkbox" class="tgl" ${checked} aria-label="Show ${name}"></div>`;
     })
@@ -79,8 +102,8 @@ const openToolbarSettings = () => {
   renderTbList();
 };
 
-// A joined chat is worth tucking tools for only while Select and the first three tools (Note, Doc and Checklist by
-// default) still show: a bar of Select alone costs more than a wide chat does.
+// A joined chat is worth tucking tools for only while the four tools that tuck last still show (Select, Note, Doc and
+// Checklist by default): a bar of Select alone costs more than a wide chat does.
 const JOIN_KEEPS = 4;
 
 // Whether the right widgets reach down beside the bar. The open chat's clearance lifts their column, so while it does
@@ -114,12 +137,15 @@ function fitToolbar() {
     more.hidden = true;
     if (width() <= limit) return true;
     more.hidden = false;
-    // measured once, then tucked from the end: each tucked tool takes its width and one gap out of the bar
+    // measured once, then tucked in the table's tuck order: each tucked tool takes its width and one gap out of the bar
     const shown = htmlIn(box, ':scope > [data-add]').filter(b => !b.hidden),
+      ids = shown.map(b => b.dataset.add ?? ''),
       sizes = shown.map(b => b.getBoundingClientRect().width),
-      gap = parseFloat(getComputedStyle(box).columnGap) || 0;
+      gap = parseFloat(getComputedStyle(box).columnGap) || 0,
+      queue = TOOLBAR.tuckOrder(ids).map(id => ids.indexOf(id));
     let w = width();
-    for (let i = shown.length - 1; i >= keep && w > limit; i--) {
+    for (let n = 0; n < queue.length - keep && w > limit; n++) {
+      const i = queue[n] ?? -1;
       shown[i]?.classList.add('tb-over');
       w -= (sizes[i] ?? 0) + gap;
     }
@@ -141,8 +167,6 @@ export function syncMore() {
 export const tbRect = (b: Element) => (b.classList.contains('tb-over') ? $('tbMore') : b).getBoundingClientRect();
 export function init19() {
   // ---------- your toolbar: pick which tools show at the bottom and in what order (shortcuts keep working for hidden ones) ----------
-  TB_DEFAULT = htmlIn($('tools'), ':scope > [data-add]').map(b => b.dataset.add ?? '');
-
   (() => {
     const L = $('setTbList');
     if (!L) return;
@@ -207,7 +231,7 @@ export function init19() {
     boardMenu({ clientX: r.left, clientY: r.top - 8 - over.length * 36 }, [
       ...over.map(b => {
         const icon = iconOf(b),
-          name = esc(tbName(b));
+          name = esc(nameOf(b));
         return {
           label: `<span class="tbm-row">${icon}<span>${name}</span></span>`,
           run: () => b.click(),
