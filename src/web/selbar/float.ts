@@ -202,8 +202,7 @@ export function floatModeBar() {
   if (document.body.style.getPropertyValue('--mode-h') !== `${lift}px`)
     document.body.style.setProperty('--mode-h', `${lift}px`);
   floatBar(bar, ctx, false);
-  // her chat joins her box only when this bar fits left of it, from as far left as it can sit
-  setModeBar(shown ? { lift, l: readFrame(bar).l + stage.getBoundingClientRect().left, w: bar.offsetWidth } : null);
+  setModeBar(lift);
 }
 
 /** How wide the bar may grow before groups tuck into ···: the free view, or on a phone the strip beside Myra. */
