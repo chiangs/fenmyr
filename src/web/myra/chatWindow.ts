@@ -84,6 +84,12 @@ function measure(): Geometry {
     bar: { l: bar.left, t: bar.top, r: bar.right, b: bar.bottom },
     box: boxRect(),
     mode,
+    // a mode bar over the bottom bar lifts the chat instead, through `mode`
+    tools: [$('tools'), ...($('modebar').dataset.side === 'left' ? [$('modebar')] : [])]
+      .filter(el => el.checkVisibility())
+      .map(el => el.getBoundingClientRect())
+      .filter(r => r.height)
+      .map(r => ({ l: r.left, t: r.top, r: r.right, b: r.bottom })),
     timer: !$('timerChip').hidden,
     height,
     where: whereNow(),
@@ -133,7 +139,7 @@ function clearSide() {
 }
 
 /** Where the open chat sits, or null when it is closed. */
-export const chatPlace = (): Placement | null => (chatOpen() ? placed : null);
+const chatPlace = (): Placement | null => (chatOpen() ? placed : null);
 
 /** The open chat's rect when it sits over the board (not a phone's sheet or a prototype's docked chat). */
 export function chatOverBoard(): Rect | null {
@@ -259,10 +265,11 @@ function closeRules() {
 export function init30() {
   closeRules();
   addEventListener('resize', relayout);
-  // tools tucking into ··· or coming back move her box, and the chat with it
-  const barWatch = new ResizeObserver(relayout);
-  barWatch.observe($('dock'));
-  barWatch.observe($('tools'));
+  // her box moves as the bar's width changes, at Home and back, and the chat with it; it keeps under the tools as
+  // they change height
+  const watch = new ResizeObserver(relayout);
+  watch.observe($('dock'));
+  watch.observe($('tools'));
 
   initSees();
   ['pointerup', 'keyup'].forEach(ev => {

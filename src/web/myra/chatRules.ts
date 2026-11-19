@@ -18,6 +18,8 @@ export type Geometry = {
   box: Rect;
   /** Drawing's or find's bar, when it is up over the bottom bar. */
   mode: ModeBar | null;
+  /** The tools panel at the top right and a mode bar beside it, as they show. */
+  tools: Rect[];
   /** A timer chip shows, and sits above the open chat. */
   timer: boolean;
   /** The height dragged at the chat's top edge, or null for the usual 560. */
@@ -56,10 +58,12 @@ export function placeChat(g: Geometry): Placement {
     modeClear = !g.mode || g.mode.l + g.mode.w <= g.box.l - CHAT.gap,
     joined = room >= CHAT.minW && modeClear,
     b = joined ? g.bar.b : g.bar.t - CHAT.gap - (g.mode?.lift ?? 0),
-    chip = g.timer ? CHAT.chip : 0,
-    h = Math.min(Math.max(CHAT.minH, Math.min(g.height ?? CHAT.h, b - CHAT.top - chip)), b - CHAT.edge - chip),
     l = joined ? g.box.l : g.bar.l,
-    r = joined ? l + Math.min(CHAT.w, room) : right;
+    r = joined ? l + Math.min(CHAT.w, room) : right,
+    // a narrow window brings the chat under the tools, and it stops short of them so they stay in reach
+    top = Math.max(CHAT.top, ...g.tools.filter(t => t.l < r && t.r > l).map(t => t.b + CHAT.gap)),
+    chip = g.timer ? CHAT.chip : 0,
+    h = Math.min(Math.max(CHAT.minH, Math.min(g.height ?? CHAT.h, b - top - chip)), b - CHAT.edge - chip);
   return { kind: joined ? 'joined' : 'wide', chat: { l, t: b - h, r, b } };
 }
 

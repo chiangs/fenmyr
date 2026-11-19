@@ -194,7 +194,7 @@ function drawBar(bar: HTMLElement, ctx: SelBarContext | null) {
 }
 
 // The content stays current during a gesture though no one sees it: Ctrl+B presses the bar's own Bold, and the bar
-// is back the moment the gesture ends. The mode bar goes first, as the selection bar keeps above it.
+// is back the moment the gesture ends. The mode bar goes first, as the selection bar keeps clear of it.
 export function placeSelbar() {
   const bar = $('selbar'),
     ctx = barContext();
