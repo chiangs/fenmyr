@@ -1,11 +1,12 @@
 // Drawing and find in the real app. First what they did in the bottom bar: the pens, a stroke, a size, Done and
 // Escape; Ctrl+F through Myra's box, stepping through matches, closing, and a draft in her box; drawing on a phone.
-// Then that each sits 12 px left of the tools, level with them, and the tools and the bottom bar stay as they were.
+// Then that drawing sits 12 px left of the tools, level with them, find 12 px over the bottom bar in its middle, and
+// the tools and the bottom bar stay as they were.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
 import { settle } from './support/launch.ts';
 
-const { l, page, frames, view, select, check, done } = await openBar();
+const { l, page, frames, view, select, shape, check, done } = await openBar();
 const seen = (sel: string) => page.evaluate(sel => !!document.querySelector(sel)?.checkVisibility(), sel);
 const text = (sel: string) => page.evaluate(sel => document.querySelector(sel)?.textContent?.trim() ?? '', sel);
 const inks = () => page.evaluate(() => window.__fenmyr.curBoard()?.cards.filter(c => c.type === 'ink').length ?? 0);
@@ -132,19 +133,31 @@ const stopAll = async () => {
   await page.keyboard.press('Escape');
   await frames();
 };
-// the bottom bar and the tools as they are with no mode on; each mode must leave them so, and sit 12 px left of the
+// the bottom bar and the tools as they are with no mode on; drawing must leave them so, and sit 12 px left of the
 // tools, level with them
-const sitsBeside = async (bar: 'draw' | 'find', width: number) => {
+const sitsBeside = async (width: number) => {
   const plain = await edges();
   return async () => {
     const s = await edges(),
-      up = s[bar],
+      up = s.draw,
       tools = plain.toolsBox;
     assert.deepStrictEqual([s.dock, s.toolsBox], [plain.dock, tools], 'the bottom bar and the tools stay as they were');
     assert.ok(!s.inDock, 'the bar is not in the bottom bar');
     assert.ok(up && tools, 'the bar and the tools are up');
     near(up.r, tools.l - 12, `at ${width} px, its right`);
     assert.ok(up.t < tools.b && up.b > tools.t, `at ${width} px, it is level with the tools`);
+  };
+};
+// find sits 12 px over the bottom bar, in its middle, and leaves it and the tools as they were
+const sitsAbove = async (width: number) => {
+  const plain = await edges();
+  return async () => {
+    const s = await edges();
+    assert.deepStrictEqual([s.dock, s.toolsBox], [plain.dock, plain.toolsBox], 'the bottom bar and the tools stay');
+    assert.ok(!s.inDock, 'the bar is not in the bottom bar');
+    assert.ok(s.find && plain.dock, 'the find bar and the bottom bar are up');
+    near(s.find.b, plain.dock.t - 12, `at ${width} px, its bottom`);
+    near(middle(s.find), middle(plain.dock), `at ${width} px, its middle`);
   };
 };
 const setWidth = async (w: number) => {
@@ -155,7 +168,7 @@ const [width0] = await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAl
 
 await view(-3000, 0);
 await check('drawing leaves the bottom bar and the tools as they are, and sits left of the tools', async () => {
-  const then = await sitsBeside('draw', width0 ?? 0);
+  const then = await sitsBeside(width0 ?? 0);
   await page.keyboard.press('p');
   await frames();
   await then();
@@ -208,26 +221,26 @@ await view(-3000, 0);
 for (const width of [1100, width0 ?? 0]) {
   await setWidth(width);
   await check(
-    `at ${width} px, find leaves the bottom bar and the tools as they are, and sits left of the tools`,
+    `at ${width} px, find leaves the bottom bar and the tools as they are, and sits just above the bar`,
     async () => {
-      const then = await sitsBeside('find', width);
+      const then = await sitsAbove(width);
       await openFind('a');
       await then();
     },
   );
   await stopAll();
 }
-await check('drawing and find on together stack left of the tools', async () => {
+await check('drawing and find on together: drawing left of the tools, find just above the bottom bar', async () => {
   const plain = await edges();
   await openFind('a');
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.keyboard.press('p');
   await frames();
   const { draw, find, dock, toolsBox } = await edges();
-  assert.ok(draw && find, 'both are up');
+  assert.ok(draw && find && dock && toolsBox, 'both are up');
   assert.deepStrictEqual(dock, plain.dock, 'the bottom bar keeps its shape');
-  assert.ok(draw.b <= find.t || find.b <= draw.t, 'one above the other');
-  near(Math.max(draw.r, find.r), (toolsBox?.l ?? NaN) - 12, 'the wider one’s right');
+  near(draw.r, toolsBox.l - 12, 'drawing’s right');
+  near(find.b, dock.t - 12, 'find’s bottom');
 });
 await stopAll();
 await check('Myra’s chat keeps clear of the find bar', async () => {
@@ -243,15 +256,17 @@ await check('Myra’s chat keeps clear of the find bar', async () => {
   assert.ok(clear, 'her chat is below the find bar or beside it');
 });
 await stopAll();
-await check('a selection’s bar keeps below the find bar', async () => {
+await check('a selection’s bar keeps above the find bar', async () => {
   await openFind('a');
-  const { find } = await edges();
-  assert.ok(find, 'the find bar is up');
-  // the note just under the find bar, where a bar above the note would cover it
-  await view(middle(find) - 110, find.b + 4);
+  const { find } = await edges(),
+    top = (await shape()).header + 22,
+    bottom = (find?.t ?? NaN) - 30,
+    z = (bottom - top) / 140;
+  // too near the top for its bar above it, and low enough that a bar below it would cover the find bar
+  await view(400, top, z);
   await select(['note']);
   const { bar } = await edges();
-  assert.ok(bar && bar.t >= find.b + 11, `the bar starts at ${bar?.t}, under the find bar ending at ${find.b}`);
+  assert.ok(bar && find && bar.b <= find.t - 11, `the bar ends at ${bar?.b}, over the find bar at ${find?.t}`);
 });
 await stopAll();
 await select([]);
