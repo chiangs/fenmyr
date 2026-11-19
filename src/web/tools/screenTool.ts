@@ -1,5 +1,5 @@
 import type { Card } from '../../shared/model.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { $ } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';

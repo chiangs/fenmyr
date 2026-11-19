@@ -1,7 +1,7 @@
 import { cropDown, cropping } from '../cards/crop.ts';
 import { stage } from '../core/dom.ts';
 import { remember, snapT } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, linkById, session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
 import { linkUnder } from '../edit/noteLinks.ts';
 import { selCards } from '../selbar/selected.ts';
@@ -17,7 +17,7 @@ import { WF } from '../wireframe/wireframes.ts';
 import { anchorOf, mrot, realBox, rhFor, tiltOf, toWorld } from './handles.ts';
 import { clearStuckDrag, targetHas, targetId } from './pointerKit.ts';
 import { TILTS } from './render.ts';
-import { byId, linkById, selectOnly, selectWire } from './wires.ts';
+import { selectOnly, selectWire } from './selection.ts';
 
 // a press on the board: what it starts depends on where it lands (a handle, a wire, a card, empty board) and the tool in hand
 export function onPress(e: PointerEvent) {

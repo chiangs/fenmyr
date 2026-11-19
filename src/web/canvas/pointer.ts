@@ -2,7 +2,7 @@ import { pullColors } from '../cards/imageColors.ts';
 import { clamp } from '../core/base.ts';
 import { boardLayers, cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { endEdit, startEdit } from '../edit/editing.ts';
 import { linkUnder } from '../edit/noteLinks.ts';
 import { fitText } from '../edit/text.ts';
@@ -23,7 +23,7 @@ import { clearStuckDrag } from './pointerKit.ts';
 import { onPress } from './press.ts';
 import { onRelease } from './release.ts';
 import { renderCard } from './render.ts';
-import { byId, selectOnly } from './wires.ts';
+import { selectOnly } from './selection.ts';
 
 let ctrlHeld = false;
 let wheelSum = 0;

@@ -1,6 +1,8 @@
 import { type Card, isRecord } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { renderTray, renderWires, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
+import { renderTray } from '../canvas/tray.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { uid } from '../core/base.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';

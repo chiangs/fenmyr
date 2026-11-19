@@ -1,7 +1,7 @@
 import { typesWith } from '../../shared/cardTypes.ts';
 import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard, STROKE_TEXT } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { SHAPE_FILL } from '../cards/shapes.ts';
 import { colorLabel } from '../core/base.ts';
 import { $ } from '../core/dom.ts';

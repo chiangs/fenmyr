@@ -1,6 +1,6 @@
 import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save, visitChange } from '../core/history.ts';
 import { openColor } from '../ui/colorPicker.ts';

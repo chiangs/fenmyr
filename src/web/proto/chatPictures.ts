@@ -1,4 +1,4 @@
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { addImages } from '../cards/spotify.ts';
 import { $ } from '../core/dom.ts';
 import { say } from '../myra/say.ts';

@@ -1,8 +1,8 @@
 import type { CardType } from '../../shared/cardTypes.ts';
 import type { CardOf, View } from '../../shared/model.ts';
 import { fit, toWorld, ZOOM_STEPS } from '../canvas/handles.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { applyView } from '../canvas/view.ts';
-import { selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';

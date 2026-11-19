@@ -1,11 +1,12 @@
 import type { Card } from '../../shared/model.ts';
 import { realBox } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
-import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { opensUp } from '../selbar/float.ts';
 import { O } from '../tools/draw.ts';

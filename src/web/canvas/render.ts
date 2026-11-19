@@ -21,8 +21,9 @@ import { cardEl, esc, oneIn } from '../ui/dom.ts';
 import { useFont } from '../wireframe/tilt.ts';
 import { styleWF, WF } from '../wireframe/wireframes.ts';
 import { inner } from './cardMarkup.ts';
+import { renderTray } from './tray.ts';
 import { applyView } from './view.ts';
-import { renderTray, renderWires } from './wires.ts';
+import { renderWires } from './wires.ts';
 
 // ---------- rendering ----------
 

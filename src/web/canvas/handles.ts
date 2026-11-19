@@ -4,7 +4,7 @@ import { cropping } from '../cards/crop.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { clamp } from '../core/base.ts';
 import { stage, world } from '../core/dom.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { freeOf, type Rect } from '../myra/chatRules.ts';
 import { chatOverBoard } from '../myra/chatWindow.ts';
 import { drawOn } from '../tools/draw.ts';
@@ -12,7 +12,6 @@ import { vec } from '../tools/penEdit.ts';
 import { cardEl } from '../ui/dom.ts';
 import { boxOf, nearestEmptySpot } from './emptySpot.ts';
 import { applyView } from './view.ts';
-import { byId } from './wires.ts';
 
 let rh: HTMLElement;
 export let rhEl: HTMLElement;

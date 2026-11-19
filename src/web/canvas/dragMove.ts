@@ -2,7 +2,7 @@ import { CGAP, CPAD, CW, layoutColl } from '../cards/collection.ts';
 import { collAt } from '../cards/kanban.ts';
 import { clamp } from '../core/base.ts';
 import { $, cardsEl, stage, world } from '../core/dom.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { docTarget } from '../docs/drop.ts';
 import { fsMul, SIZED } from '../selbar/textSize.ts';
 import { penMove, penT } from '../tools/pen.ts';
@@ -12,8 +12,9 @@ import { cloneForDrag } from './clipboard.ts';
 import { ROT_FIXED, toWorld } from './handles.ts';
 import { overTray, setFs } from './pointerKit.ts';
 import { titleW } from './render.ts';
+import { selectOnly } from './selection.ts';
 import { applyView } from './view.ts';
-import { byId, renderWires, selectOnly, wireGeom } from './wires.ts';
+import { renderWires, wireGeom } from './wires.ts';
 
 // the pointer moving with a button held: one step of whatever the press started
 export function onDragMove(e: PointerEvent) {

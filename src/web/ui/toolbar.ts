@@ -1,8 +1,7 @@
-import { byId } from '../canvas/wires.ts';
 import { addImages } from '../cards/spotify.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
 import { closeHome, homeAt } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';

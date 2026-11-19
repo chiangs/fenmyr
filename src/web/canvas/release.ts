@@ -4,7 +4,7 @@ import { collAt, dropInto } from '../cards/kanban.ts';
 import { tilt, uid } from '../core/base.ts';
 import { $, cardsEl, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { docTarget, dropIntoDoc } from '../docs/drop.ts';
 import { startEdit } from '../edit/editing.ts';
 import { snapTo } from '../settings/licenses.ts';
@@ -17,7 +17,9 @@ import { fileIntoFrame } from '../wireframe/tilt.ts';
 import { selKey, toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
 import { renderCard } from './render.ts';
-import { byId, pinAt, renderTray, renderWires, selectOnly, sendToTray } from './wires.ts';
+import { selectOnly } from './selection.ts';
+import { renderTray, sendToTray } from './tray.ts';
+import { pinAt, renderWires } from './wires.ts';
 
 const DOUBLE_TAP_MS = 420;
 

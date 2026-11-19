@@ -1,9 +1,10 @@
 import type { CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { byId, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { byId } from '../core/state.ts';
 import { ask } from '../myra/chat.ts';
 import { chirp } from '../myra/say.ts';
 import { settings } from '../settings/settings.ts';

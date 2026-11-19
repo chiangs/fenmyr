@@ -3,10 +3,10 @@ import { elementById, textField } from '../ui/dom.ts';
 
 const findField = () => elementById('fbQ', HTMLInputElement);
 
-import { byId, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { find, hasAll, queryWords } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { setChatText } from '../myra/chatInput.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
 import { glideTo, wordsOf } from '../myra/greet.ts';

@@ -1,8 +1,7 @@
 import { type Card, type CardOf, isRecord } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { byId } from '../canvas/wires.ts';
 import { save, showWhatMyraMade } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { DL } from '../myra/chat.ts';
 import { addMsg } from '../myra/chatLog.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';

@@ -1,11 +1,11 @@
 import type { Card, CardOf, PathPoint } from '../../shared/model.ts';
 import { toWorld } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
-import { byId, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { SHAPE_FILL } from '../cards/shapes.ts';
 import { stage, world } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
 import { say } from '../myra/say.ts';
 import { closestTo } from '../ui/dom.ts';

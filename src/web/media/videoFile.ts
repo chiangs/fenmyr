@@ -1,5 +1,5 @@
 import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { save } from '../core/history.ts';
 import { card } from '../model/boards.ts';
 import { say } from '../myra/say.ts';

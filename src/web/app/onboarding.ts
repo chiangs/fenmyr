@@ -1,6 +1,7 @@
 import { fit } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
-import { renderTray, renderWires } from '../canvas/wires.ts';
+import { renderTray } from '../canvas/tray.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';

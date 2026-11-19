@@ -1,6 +1,6 @@
 import type { PathPoint } from '../../shared/model.ts';
 import { toWorld } from '../canvas/handles.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { $, stage, world } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { session } from '../core/state.ts';

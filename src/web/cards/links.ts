@@ -1,7 +1,7 @@
 import type { CardOf } from '../../shared/model.ts';
 import type { LinkPreview } from '../../shared/ops.ts';
 import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { removeSelected } from '../myra/helpers.ts';

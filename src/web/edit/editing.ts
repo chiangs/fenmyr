@@ -1,11 +1,11 @@
 import { renderCard } from '../canvas/render.ts';
-import { byId, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { openCanvas, renameChild } from '../cards/canvas.ts';
 import { layoutColl } from '../cards/collection.ts';
 import { wireLinkInput } from '../cards/links.ts';
 import { cardsEl } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { openDoc } from '../docs/editor.ts';
 import { editField, editTag, fitText } from '../edit/text.ts';
 import { wireTagTyping } from '../features/tags.ts';

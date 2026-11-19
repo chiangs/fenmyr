@@ -1,6 +1,6 @@
 import type { Board, Card, Folder, Link, Project } from '../../shared/model.ts';
 import type { Proto } from '../../shared/repos.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { appState } from '../core/state.ts';
 import { closeHome } from '../library/home.ts';
 import { newBoardIn } from '../library/nesting.ts';
