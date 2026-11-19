@@ -129,11 +129,12 @@ await check('held back while they type in a card, then glides once they stop', a
 
 await check('held back while they drag a card, then glides once they let go', async () => {
   await start('drag');
+  // the second note, left of her open chat
   const g = await glides(),
-    n3 = await box('n3');
-  await page.mouse.move(n3.x + 40, n3.y + 40);
+    n2 = await box('n2');
+  await page.mouse.move(n2.x + 40, n2.y + 40);
   await page.mouse.down();
-  await page.mouse.move(n3.x + 70, n3.y + 60, { steps: 4 });
+  await page.mouse.move(n2.x + 70, n2.y + 60, { steps: 4 });
   await arrive();
   await page.waitForTimeout(900);
   assert.strictEqual((await glides()) - g, 0, 'not while dragging');

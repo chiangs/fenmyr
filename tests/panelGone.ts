@@ -4,12 +4,33 @@
 // centres between the board's name and Unsorted, and the tour's wireframe step rings the Wireframe button, or ··· when
 // it is tucked, and finishes when a screen is added.
 import assert from 'node:assert';
+import type { Page } from 'playwright';
+import { TOOLBAR } from '../src/web/ui/toolbarTable.ts';
 import { launch, settle } from './support/launch.ts';
 
 // the toolbar order a person saved before the Wireframe button existed
 const OLD_ORDER = ['pointer', 'note', 'vnote', 'doc', 'todo', 'title', 'coll', 'canvas', 'link', 'image', 'audio'];
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
 const board = { id: 'b', name: 'Upgrade', cards: [note], links: [], tray: [], view: { x: 300, y: 200, z: 1 } };
+
+// the tour's wireframe step, reached by Continue from the start
+const toWireframeStep = async (page: Page) => {
+  await page.evaluate(() => window.__fenmyr.startTour());
+  await settle(page, 300);
+  for (let i = 0; i < 12; i++) {
+    // settles once there, as the ring slides to its target
+    if (/Wireframes start here/.test((await page.textContent('#coachText')) ?? '')) return settle(page, 600);
+    await page.click('#coachNext');
+    await page.waitForTimeout(250);
+  }
+  throw new Error('the tour has no wireframe step');
+};
+const ringOn = (page: Page, sel: string) =>
+  page.evaluate(sel => {
+    const ring = document.getElementById('coachRing')?.getBoundingClientRect(),
+      t = document.querySelector(sel)?.getBoundingClientRect();
+    return !!ring && !!t && t.width > 0 && Math.abs(ring.left + 8 - t.left) < 1 && Math.abs(ring.top + 8 - t.top) < 1;
+  }, sel);
 
 const failed: string[] = [];
 const run = async (name: string, f: () => Promise<void>) => {
@@ -114,50 +135,22 @@ try {
     assert.ok(r && Math.abs(r.mid - r.want) <= 1, `centred: ${JSON.stringify(r)}`);
   });
 
-  // the tour's wireframe step, reached by Continue from the start
-  const toWireframeStep = async () => {
-    await page.evaluate(() => window.__fenmyr.startTour());
-    await settle(page, 300);
-    for (let i = 0; i < 12; i++) {
-      // settles once there, as the ring slides to its target
-      if (/Wireframes start here/.test((await page.textContent('#coachText')) ?? '')) return settle(page, 600);
-      await page.click('#coachNext');
-      await page.waitForTimeout(250);
-    }
-    throw new Error('the tour has no wireframe step');
-  };
-  const ringOn = (sel: string) =>
-    page.evaluate(sel => {
-      const ring = document.getElementById('coachRing')?.getBoundingClientRect(),
-        t = document.querySelector(sel)?.getBoundingClientRect();
-      return !!ring && !!t && t.width > 0 && Math.abs(ring.left + 8 - t.left) < 1 && Math.abs(ring.top + 8 - t.top) < 1;
-    }, sel);
-
-  await run("the tour's wireframe step rings the Wireframe button, and ··· where it is tucked", async () => {
-    await toWireframeStep();
-    assert.ok(await ringOn('#tools [data-add="frame"]'), 'the ring sits on the Wireframe button');
+  await run("the tour's wireframe step rings the Wireframe button", async () => {
+    await toWireframeStep(page);
+    assert.ok(await ringOn(page, '#tools [data-add="frame"]'), 'the ring sits on the Wireframe button');
     assert.strictEqual(await page.textContent('#coachTry'), 'Try it: press W and drag on the board.');
-    await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1000, 800));
-    await settle(page, 500);
     await page.click('#coachNext');
     await page.waitForTimeout(250);
-    await toWireframeStep();
-    assert.ok(
-      await page.evaluate(() => document.querySelector('#tools [data-add="frame"]')?.classList.contains('tb-over')),
-      'at 1000 px the button is tucked',
-    );
-    assert.ok(await ringOn('#tbMore'), 'and the ring sits on ···');
-    await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1440, 900));
-    await settle(page, 500);
   });
 
   await run("the tour's wireframe step finishes when a screen is added", async () => {
-    await toWireframeStep();
+    await toWireframeStep(page);
     await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
     await page.keyboard.press('w');
-    await page.mouse.move(900, 300);
+    // clear of the tour's card, which sits left of the tools
+    await page.mouse.move(400, 500);
     await page.mouse.down();
-    await page.mouse.move(1000, 420, { steps: 6 });
+    await page.mouse.move(500, 620, { steps: 6 });
     await page.mouse.up();
     await page.waitForFunction(() => document.getElementById('coachTry')?.classList.contains('yay'), null, {
       timeout: 3000,
@@ -168,6 +161,29 @@ try {
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');
 } finally {
   await l.close();
+}
+
+// Wireframe last in a person's own order tucks first, and a short window tucks it
+const tucked = await launch({
+  boards: [board],
+  open: 'b',
+  settings: { toolbar: { order: [...TOOLBAR.tools.map(t => t.id).filter(id => id !== 'frame'), 'frame'], hidden: [] } },
+});
+try {
+  await run("the tour's wireframe step rings ··· where the button is tucked", async () => {
+    const page = tucked.page;
+    await tucked.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1000, 560));
+    await settle(page, 500);
+    assert.ok(
+      await page.evaluate(() => document.querySelector('#tools [data-add="frame"]')?.classList.contains('tb-over')),
+      'the button is tucked',
+    );
+    await toWireframeStep(page);
+    assert.ok(await ringOn(page, '#tbMore'), 'and the ring sits on ···');
+  });
+  assert.deepStrictEqual(tucked.errors, [], 'no errors on the page');
+} finally {
+  await tucked.close();
 }
 
 // a layout from before with Unsorted moved to the left keeps it there, leaving the right column empty

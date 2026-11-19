@@ -1,7 +1,9 @@
-// Myra's hop into a prototype board's docked header along the way: under the window's top edge with a tall chat, no
-// faster than a stroll across a wide window while the hop onto the chat keeps its timing, from where Home showed her,
-// and a click on her there. Also what a second open does mid-hop, and the tilt she gives an empty chat.
+// Myra's hop into a prototype board's docked header along the way: under the window's top edge with a tall chat, quick
+// to get going and settled within about 0.75 s across a wide window while the hop onto the chat keeps its timing, from
+// where Home showed her, and a click on her there. Also what a second open does mid-hop, and the tilt she gives an empty
+// chat.
 import assert from 'node:assert';
+import type { Edges } from './support/bar.ts';
 import * as hop from './support/flight.ts';
 import { launch, settle } from './support/launch.ts';
 import { freshRepo, openPrototype } from './support/prototype.ts';
@@ -61,13 +63,60 @@ const inAir = (frames: hop.Frame[]) => {
   assert.ok(a && b, 'she is in the air');
   return { least: b.ms - a.ms, most: before && after ? after.ms - before.ms : Number.POSITIVE_INFINITY };
 };
-// the slowest her frames allow, in px per ms: the whole way she goes, rest to rest, over the most time she can have
-// been in the air
-const leastSpeed = (frames: hop.Frame[]) => {
-  const a = frames[0],
-    b = frames.at(-1);
-  assert.ok(a && b && apart(a, b) > 1000, 'she crosses more than 1000 px');
-  return apart(a, b) / inAir(frames).most;
+// How soon she gets going, how far she is within her first 150 ms in the air, and when she is at rest, from her frames.
+// Her first frame in the header is the switch. She is at rest after her last frame more than 1 px from where she ends,
+// in place or in size, which a squash on landing counts in. That frame's time is what is used, so a frame dropped on a
+// busy runner cannot make her look slower than she is. The same goes for her first movement: her wind-up is 70 ms and
+// the limit 100, which a slow frame or two between the switch and her first move can use up, so the time a frame takes
+// beyond one at 60 Hz is not counted, unless the frame is under one and a half of them, which is ordinary jitter.
+const FRAME = 1000 / 60;
+const slowBy = (run: hop.Frame[]) =>
+  run.slice(1).reduce((sum, f, i) => {
+    const gap = f.ms - (run[i]?.ms ?? f.ms);
+    return gap > FRAME * 1.5 ? sum + gap - FRAME : sum;
+  }, 0);
+const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.flight>>) => {
+  assert.ok(before, 'she shows before the switch');
+  const gone = (f: { l: number; t: number }, q: Edges) => Math.hypot(f.l - q.l, f.t - q.t),
+    switched = frames.find(f => f.home === 'mcPerch'),
+    moved = frames.find(f => gone(f, before) > 3),
+    air = frames.find(f => f.air),
+    off = frames.findLastIndex(
+      f => gone(f, after) > 1 || Math.abs(f.w - (after.r - after.l)) > 1 || Math.abs(f.h - (after.b - after.t)) > 1,
+    ),
+    rest = frames[off];
+  assert.ok(switched && moved && air && rest, 'she moves, hops and comes to rest');
+  assert.ok(gone(after, before) > 1000, 'she crosses more than 1000 px');
+  // the share of the straight way from where she was to where she ends
+  const line = { x: after.l - before.l, y: after.t - before.t },
+    way = (f: hop.Frame) => ((f.l - before.l) * line.x + (f.t - before.t) * line.y) / (line.x ** 2 + line.y ** 2),
+    upTo = frames.findLast(f => f.ms <= air.ms + 150),
+    next = frames.find(f => f.ms > air.ms + 150),
+    // Between the frames either side of the 150 ms mark, so which frame falls just short of it doesn't tip the result.
+    // A frame held back across the mark leaves only the frame after it to go by.
+    stalled = upTo && next && next.ms - upTo.ms > 40,
+    covered =
+      upTo && next && !stalled
+        ? way(upTo) + ((way(next) - way(upTo)) * (air.ms + 150 - upTo.ms)) / (next.ms - upTo.ms)
+        : way(next ?? upTo ?? air);
+  return {
+    moves: moved.ms - switched.ms - slowBy(frames.slice(frames.indexOf(switched), frames.indexOf(moved) + 1)),
+    covered,
+    rest: rest.ms - switched.ms,
+    held: Math.max(...frames.slice(1).map((f, i) => f.ms - (frames[i]?.ms ?? 0))),
+  };
+};
+// at least a third of the way in her first 150 ms in the air, and at rest by 0.75 s and a frame or two; every claim
+// that fails is named
+const quick = (f: Awaited<ReturnType<typeof hop.flight>>, held = 0) => {
+  const p = pace(f),
+    missed = [
+      p.moves > 100 && `she first moves ${p.moves.toFixed(0)} ms after the switch`,
+      p.covered < 1 / 3 && `she is ${(p.covered * 100).toFixed(0)}% of the way after 150 ms in the air`,
+      p.rest > 800 && `she is at rest ${p.rest.toFixed(0)} ms after the switch`,
+      p.held < held && `her longest frame is ${p.held.toFixed(0)} ms, not the ${held} ms held back`,
+    ].filter(Boolean);
+  assert.strictEqual(missed.join('; '), '');
 };
 const keeps480 = (frames: hop.Frame[]) => {
   const { least, most } = inAir(frames);
@@ -164,34 +213,32 @@ try {
   });
 
   await check(
-    'across a 1920 px window her hop is no faster than 1.7 px per ms, and she tilts once landed',
+    'across a 1920 px window she gets going within 100 ms, covers a third of the way in her first 150 ms in the air, and is at rest by 0.75 s, and she tilts once landed',
     async () => {
-      const f = await hop.flight(page, () => open('pb')),
-        speed = leastSpeed(f.frames);
-      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms or faster`);
+      const f = await hop.flight(page, () => open('pb'));
+      quick(f);
       const tilt = f.frames.findIndex(fr => fr.anim === 'curious'),
         landed = f.frames.findLastIndex(fr => fr.air);
       assert.ok(tilt > landed, `she tilts her head once she has landed, frame ${tilt} after frame ${landed}`);
     },
   );
 
-  await check(
-    'with a frame held back as she takes off, her hop still measures no faster than 1.7 px per ms',
-    async () => {
-      await holdFrame('air', 100);
-      const speed = leastSpeed((await hop.flight(page, () => open('pb'))).frames);
-      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms or faster`);
-    },
-  );
+  await check('with a frame held back as she takes off, her hop is still as quick', async () => {
+    await holdFrame('air', 100);
+    quick(await hop.flight(page, () => open('pb')), 90);
+  });
 
-  await check(
-    'with a frame held back as she comes in to land, her hop still measures no faster than 1.7 px per ms',
-    async () => {
-      await holdFrame('air', 200, 540);
-      const speed = leastSpeed((await hop.flight(page, () => open('pb'))).frames);
-      assert.ok(speed <= 1.7, `she flies at ${speed.toFixed(2)} px per ms or faster`);
-    },
-  );
+  await check('with a frame held back as she crouches, it is not counted against her first movement', async () => {
+    await holdFrame('crouch', 120);
+    const p = pace(await hop.flight(page, () => open('pb')));
+    assert.ok(p.held >= 110, `a frame of ${p.held.toFixed(0)} ms was held back, not 120`);
+    assert.ok(p.moves <= 100, `she first moves ${p.moves.toFixed(0)} ms after the switch`);
+  });
+
+  await check('with a frame held back as she comes in to land, her hop is still as quick', async () => {
+    await holdFrame('air', 200, 380);
+    quick(await hop.flight(page, () => open('pb')), 190);
+  });
 
   await check('her hop onto the open chat keeps its 480 ms in the air', async () => {
     keeps480((await hop.flight(page, () => page.click('#mPill'))).frames);

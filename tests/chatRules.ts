@@ -21,7 +21,8 @@ const desk = (w: number, h: number, toolsR: number, more: Partial<Geometry> = {}
   view: { w, h },
   bar: { l: 260, t: h - 68, r: toolsR + 200, b: h - 18 },
   box: { l: toolsR, t: h - 68, r: toolsR + 200, b: h - 18 },
-  mode: null,
+  lift: 0,
+  tools: [],
   timer: false,
   height: null,
   where: 'desk',
@@ -49,25 +50,18 @@ assert.deepStrictEqual(
   { kind: 'wide', chat: { l: 260, t: 160, r: 1266, b: 720 } },
   'under 320 px of room it spans from the bar’s left to 14 px from the window’s right, 12 px above the bar',
 );
-// drawing's bar as it is: 674 px wide, from 258 px at the furthest left, 58 px with its gap
-const drawing = { mode: { lift: 58, l: 258, w: 674 } };
+// find's bar over the bottom bar, 50 px tall, with its 12 px gap
+const finding = { lift: 62 };
 assert.deepStrictEqual(
-  placeChat(desk(1280, 800, 1064, drawing)),
-  { kind: 'wide', chat: { l: 260, t: 102, r: 1266, b: 662 } },
-  'wide, it rises over drawing’s or find’s bar',
+  placeChat(desk(1280, 800, 1064, finding)),
+  { kind: 'wide', chat: { l: 260, t: 98, r: 1266, b: 658 } },
+  'wide, it rises over find’s bar',
 );
 assert.deepStrictEqual(
-  placeChat(desk(1440, 900, 1076, drawing)),
-  { kind: 'joined', chat: { l: 1076, t: 322, r: 1426, b: 882 } },
-  'joined, it stays on the bar beside drawing’s or find’s bar',
+  placeChat(desk(1280, 800, 908, finding)),
+  { kind: 'wide', chat: { l: 260, t: 98, r: 1266, b: 658 } },
+  'with room to join, it goes wide over find’s bar, which reaches under a joined chat',
 );
-assert.deepStrictEqual(
-  placeChat(desk(1280, 800, 908, drawing)),
-  { kind: 'wide', chat: { l: 260, t: 102, r: 1266, b: 662 } },
-  'with room to join, it goes wide over drawing’s or find’s bar when that bar would reach under it',
-);
-assert.strictEqual(placeChat(desk(1440, 900, 944, drawing)).kind, 'joined', 'that bar ending 12 px short still joins');
-assert.strictEqual(placeChat(desk(1440, 900, 943.5, drawing)).kind, 'wide', 'under 12 px short it goes wide');
 assert.strictEqual(placeChat(desk(1280, 800, 908)).kind, 'joined', 'with that bar gone it joins again');
 assert.deepStrictEqual(
   placeChat(desk(1440, 640, 1076, { timer: true })),
@@ -78,6 +72,30 @@ assert.deepStrictEqual(
   placeChat(desk(1440, 300, 1076, { timer: true })),
   { kind: 'joined', chat: { l: 1076, t: 48, r: 1426, b: 282 } },
   'on a tiny window it is never under 240 px unless that would push it, or the timer over it, past the top',
+);
+// the tools panel over Unsorted at the top right, 4 rows tall
+const tools = (w: number) => ({ tools: [{ l: w - 266, t: 38, r: w - 34, b: 245 }] });
+assert.deepStrictEqual(
+  placeChat(desk(1100, 700, 482, tools(1100))),
+  { kind: 'joined', chat: { l: 482, t: 257, r: 882, b: 682 } },
+  'reaching under the tools, it keeps 12 px below them',
+);
+assert.deepStrictEqual(
+  placeChat(desk(1300, 600, 582, tools(1300))),
+  { kind: 'joined', chat: { l: 582, t: 60, r: 982, b: 582 } },
+  'clear of the tools, it may rise beside them',
+);
+// the mode card 12 px left of the panel, level with its top: drawing's 223 px tall, the Wireframe column 322
+const card = (w: number, h: number) => ({ tools: [...tools(w).tools, { l: w - 454, t: 38, r: w - 278, b: 38 + h }] });
+assert.deepStrictEqual(
+  placeChat(desk(1300, 700, 582, card(1300, 223))),
+  { kind: 'joined', chat: { l: 582, t: 273, r: 982, b: 682 } },
+  'reaching under the mode card beside the tools, it keeps 12 px below that',
+);
+assert.deepStrictEqual(
+  placeChat(desk(1100, 600, 482, card(1100, 322))),
+  { kind: 'joined', chat: { l: 482, t: 372, r: 882, b: 582 } },
+  'in a window too short for its least height below them, it is shorter, and never reaches over them',
 );
 assert.deepStrictEqual(placeChat(desk(600, 900, 300, { where: 'phone' })), { kind: 'sheet' }, 'a phone has its sheet');
 assert.deepStrictEqual(

@@ -60,9 +60,12 @@ async function drag(id: string, dx: number, dy: number) {
   await page.keyboard.press('Escape');
   const box = await page.locator(`#cards .card[data-id="${id}"]`).boundingBox();
   assert(box, `${id} is on screen`);
-  await page.mouse.move(box.x + 40, box.y + 40);
+  // its middle, as the glide to her plan can leave the card small
+  const x = box.x + box.width / 2,
+    y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.mouse.move(box.x + 40 + dx, box.y + 40 + dy, { steps: 8 });
+  await page.mouse.move(x + dx, y + dy, { steps: 8 });
   await page.mouse.up();
   await settle(page, 400);
 }

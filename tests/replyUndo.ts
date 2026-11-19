@@ -92,27 +92,28 @@ await check('a slow picture: nothing shows until all of it is ready, and one Ctr
 
 await check('the person moves a card while she works: her reply and their move are separate undo steps', async () => {
   await open('edit');
+  // the first note, left of the bubble rising from her box while she works
   const start = await boardJSON(page),
-    from = await cardAt(page, 'n2');
+    from = await cardAt(page, 'n1');
   await slowPictures(1500);
   const edit = page.evaluate(() =>
     window.__fenmyr.applyMyra({ say: 'ok', add: [{ text: 'B' }], images: [{ url: 'a' }] }, 'q'),
   );
   await page.waitForTimeout(200);
-  const box = await page.locator('#cards .card[data-id="n2"]').boundingBox();
-  assert(box, 'n2 is on screen');
+  const box = await page.locator('#cards .card[data-id="n1"]').boundingBox();
+  assert(box, 'n1 is on screen');
   await page.mouse.move(box.x + box.width - 40, box.y + 30);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width + 40, box.y + 30, { steps: 8 });
   await page.mouse.up();
   await page.waitForTimeout(500);
-  const moved = await cardAt(page, 'n2');
-  assert(moved && from && moved.x > from.x, 'the person moved n2');
+  const moved = await cardAt(page, 'n1');
+  assert(moved && from && moved.x > from.x, 'the person moved n1');
   await edit;
   await page.waitForTimeout(400);
   await undo();
   assert.deepStrictEqual(await onBoard(page, ['B']), [], 'Ctrl+Z takes back her reply');
-  assert.deepStrictEqual(await cardAt(page, 'n2'), moved, 'and leaves the move made while she worked');
+  assert.deepStrictEqual(await cardAt(page, 'n1'), moved, 'and leaves the move made while she worked');
   await undo();
   assert.strictEqual(await boardJSON(page), start, 'a second Ctrl+Z takes back the move');
 });

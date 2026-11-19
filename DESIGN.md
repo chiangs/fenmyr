@@ -65,7 +65,7 @@ People can set a default font for board text and docs. Menus and panels keep Fig
 Icons are Phosphor, plus Fenmyr's own in `tools/icons/custom.ts`. Ask for them by Fenmyr name with `Icon('note')`, never by pack name.
 
 - **Regular** (outline) is the default everywhere.
-- **Duotone** appears only in the bottom bar and Myra's chat header, and only if the person chooses it.
+- **Duotone** appears only in the tools panel, the bottom bar and Myra's chat header, and only if the person chooses it.
 
 ## Myra
 
