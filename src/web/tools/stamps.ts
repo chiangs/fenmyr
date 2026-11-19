@@ -2,6 +2,7 @@ import { isRecord } from '../../shared/model.ts';
 import { $, stage } from '../core/dom.ts';
 import { card } from '../model/boards.ts';
 import { closestTo, esc, htmlIn } from '../ui/dom.ts';
+import { openLeftOfPanel } from '../ui/popover.ts';
 import { addCard } from './penEdit.ts';
 import { mouse, startPlacing } from './place.ts';
 
@@ -161,6 +162,8 @@ export function init51() {
   $('wsMid').onclick = () => {
     $('stampWheel').classList.remove('on');
     renderPick();
+    const tool = $('tools').querySelector('[data-add="stamp"]');
+    if (tool) openLeftOfPanel($('stampPick'), tool);
     $('stampPick').classList.add('on');
   };
 

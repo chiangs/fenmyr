@@ -32,10 +32,11 @@ const OVER = {
 };
 const shown = () =>
   page.evaluate(() => getComputedStyle(document.getElementById('planPreview') ?? document.body).visibility);
-// the screen in the middle of the window, with the chat closed, once the board is drawn sharp again after moving
+// the screen high in the window, clear of her reply over her box, which Cancel takes away, with the chat closed, once
+// the board is drawn sharp again after moving
 async function look() {
   await page.evaluate(() => {
-    Object.assign(window.__fenmyr.view, { x: -900, y: -200, z: 1 });
+    Object.assign(window.__fenmyr.view, { x: -640, y: -220, z: 0.8 });
     window.__fenmyr.applyView();
   });
   await settle(page, 1000);

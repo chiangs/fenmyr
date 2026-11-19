@@ -33,6 +33,9 @@ const rects = () =>
   });
 
 try {
+  // narrow enough that her joined chat reaches under the right column, tall enough for Unsorted above it
+  await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1100, 1080));
+  await settle(page, 500);
   const closed = await rects();
   await page.click('#mPill');
   await settle(page, 800);

@@ -84,8 +84,8 @@ export function init23() {
     if (files.length) {
       const ed = session.editing && closestTo(e.target, '.card.editing') ? byId(session.editing) : null;
       if (ed?.type === 'note') pictureForNote(ed, files);
-      // the bar and Myra's open chat cover where it was dropped, and can cover Unsorted
-      else if (closestTo(e.target, '#dock')) addImages(files, w).then(placeInView);
+      // the tools, the bar and Myra's open chat cover where it was dropped, and can cover Unsorted
+      else if (closestTo(e.target, '#tools, #dock')) addImages(files, w).then(placeInView);
       else addImages(files, w, overTray(e));
       return;
     }

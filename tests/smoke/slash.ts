@@ -14,7 +14,7 @@ const note = (i: number, text: string) => ({
   r: 0,
 });
 
-// / lists what Myra can do without AI, in groups, Ctrl+F opens her with /find ready; /find opens the find bar over the tools (live search, cycling, closes)
+// / lists what Myra can do without AI, in groups, Ctrl+F opens her with /find ready; /find opens the find bar over the bottom bar (live search, cycling, closes)
 export async function slash(t: Smoke) {
   const { page } = t;
   await page.evaluate(
@@ -40,7 +40,6 @@ export async function slash(t: Smoke) {
       const T = window.__t,
         b = T.el('#findBar'),
         d = T.el('#dock').getBoundingClientRect(),
-        tools = T.el('#tools').getBoundingClientRect(),
         r = b.getBoundingClientRect(),
         prev = T.el('#fbPrev');
       return {
@@ -50,7 +49,7 @@ export async function slash(t: Smoke) {
         dim: document.querySelectorAll('.card.dim').length,
         cur: document.querySelectorAll('.card.find-cur').length,
         above: Math.abs(r.bottom - (d.top - 12)) < 1.5,
-        centred: Math.abs(r.left + r.right - (tools.left + tools.right)) < 3,
+        centred: Math.abs(r.left + r.right - (d.left + d.right)) < 3,
         prevOff: prev instanceof HTMLButtonElement && prev.disabled,
       };
     });

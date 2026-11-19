@@ -130,7 +130,7 @@ try {
   assert.deepStrictEqual({ ...(await tool()), ghost: '' }, down, 'and the tool goes down');
   assert.ok(!(await said()), 'one screen raises no prototype offer');
   await key('w');
-  await click(0.7, 0.3);
+  await click(0.6, 0.3);
   await page.waitForFunction(() =>
     /Want to see these working\?/.test(document.getElementById('mSay')?.textContent ?? ''),
   );
@@ -227,7 +227,7 @@ try {
     'a drag draws a Custom screen of its size',
   );
   await key('w');
-  await drag(0.7, 0.1, 20, 20);
+  await drag(0.6, 0.1, 20, 20);
   assert.deepStrictEqual(
     await last(),
     { type: 'frame', w: 120, h: 120, name: 'Screen', device: 'Custom', radius: 0, selected: true, on: null },
@@ -242,7 +242,7 @@ try {
   await key('Escape');
   await key('w');
   await key('1');
-  await click(0.7, 0.2);
+  await click(0.6, 0.2);
   await page.evaluate(id => window.__fenmyr.selectOnly([id]), desktop);
   await key('w');
   assert.strictEqual((await tool()).lit, 'Desktop', 'a selected Desktop screen lights Desktop');

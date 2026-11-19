@@ -42,32 +42,39 @@
   </section>
 </aside>
 
-<!-- the bottom bar: the tools, then Myra. It sits over the board and the widgets, so it lives outside the stage -->
-<div class="dock" id="dock">
+<!-- the tools: a panel at the top right, over the board and the widgets, so it lives outside the stage -->
 <div class="tools" id="tools">
-    <button data-add="pointer" aria-label="Select · V" data-tip="Select · V" class="on"><svg class="ic" data-ico="select" width="18" height="18"></svg></button>
-  <button data-add="note" aria-label="Note · N" data-tip="Note · N"><svg class="ic" data-ico="note" width="18" height="18"></svg></button>
-  <button data-add="vnote" aria-label="Vault note · Alt+N" data-tip="Vault note · Alt+N" hidden><svg class="ic" data-ico="notebook" width="18" height="18"></svg></button>
-    <button data-add="doc" aria-label="Doc · D" data-tip="Doc · D"><svg class="ic" data-ico="doc" width="18" height="18"></svg></button>
-  <button data-add="todo" aria-label="Checklist · C" data-tip="Checklist · C"><svg class="ic" data-ico="checklist" width="18" height="18"></svg></button>
-    <button data-add="title" aria-label="Big title · T" data-tip="Big title · T"><svg class="ic" data-ico="title" width="18" height="18"></svg></button>
-    <button data-add="coll" aria-label="Collection · G" data-tip="Collection · G"><svg class="ic" data-ico="collection" width="18" height="18"></svg></button>
-    <button data-add="canvas" aria-label="Canvas (a board inside this one)" data-tip="Canvas"><svg class="ic" data-ico="canvas" width="18" height="18"></svg></button>
-    <button data-add="frame" aria-label="Wireframe · W" data-tip="Wireframe · W" aria-pressed="false"><svg class="ic" data-ico="screen" width="18" height="18"></svg></button>
-  <button data-add="link" aria-label="Link · L" data-tip="Link · L"><svg class="ic" data-ico="link" width="18" height="18"></svg></button>
-    <button data-add="image" aria-label="Image · I" data-tip="Image · I"><svg class="ic" data-ico="image" width="18" height="18"></svg></button>
-    <button data-add="audio" aria-label="Voice memo · A" data-tip="Voice memo · A"><svg class="ic" data-ico="mic" width="18" height="18"></svg></button>
-    <button data-add="video" aria-label="Video · ⇧V" data-tip="Video · ⇧V"><svg class="ic" data-ico="video" width="18" height="18"></svg></button>
-  <button data-add="swatch" aria-label="Colour" data-tip="Colour"><svg class="ic" data-ico="palette" width="18" height="18"></svg></button>
-    <button data-add="shape" aria-label="Shapes · S" data-tip="Shapes · S"><svg class="ic" data-ico="shapes" width="18" height="18"></svg></button>
-  <button data-add="stamp" aria-label="Stamps · E" data-tip="Stamps · E"><svg class="ic" data-ico="stamp" width="18" height="18"></svg></button>
-  <button data-add="tpl" aria-label="Templates" data-tip="Templates"><svg class="ic" data-ico="templates" width="18" height="18"></svg></button>
-  <button data-add="pen" aria-label="Pen · ⇧P" data-tip="Pen · ⇧P"><svg class="ic" data-ico="pen" width="18" height="18"></svg></button>
-  <button data-add="draw" aria-label="Draw · P" data-tip="Draw · P"><svg class="ic" data-ico="draw" width="18" height="18"></svg></button>
+  <!-- the tool buttons are built from src/web/ui/toolbarTable.ts -->
   <button class="tb-more" id="tbMore" aria-label="More tools" data-tip="More tools" aria-haspopup="menu" hidden><svg class="ic" data-ico="more" width="18" height="18"></svg></button>
-  <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
-  <button class="clean-btn" id="cleanBtn" aria-label="Just the board · ⌘\" data-tip="Just the board · ⌘\"><svg class="ic" data-ico="board-only" width="18" height="18"></svg></button>
+</div>
+<!-- the mode card, drawing's bar or the Wireframe tools: a column left of the tools panel, level with its top, where
+     the panel's pickers open; on a phone it moves into the bottom bar as a strip. It shares the mode bar's class. -->
+<div class="modebar mode-card" id="modeCard">
+  <!-- drawing: pens, sizes, colors, eraser -->
+  <div class="drawbar" id="drawbar" hidden>
+    <button class="db-done" data-db="done" title="Done drawing (Esc)">Done</button><span class="sb-sep"></span>
+    <button class="db-tool on" data-pen="pen" title="Pen: smooth ink that widens as you slow down"><svg data-ico="pen"></svg></button>
+    <button class="db-tool" data-pen="marker" title="Marker: bold and even"><svg data-ico="marker"></svg></button>
+    <button class="db-tool" data-pen="hi" title="Highlighter: see-through"><svg data-ico="highlighter"></svg></button>
+    <button class="db-tool" data-pen="eraser" title="Eraser: swipe over a drawing to remove it"><svg data-ico="eraser"></svg></button>
+    <span class="sb-sep"></span>
+    <div class="db-size" id="dbSize" title="Size · [ and ] while drawing"><span class="dbs-dot"><i id="dbsDot"></i></span><div class="dbs-track" id="dbsTrack" role="slider" tabindex="0" aria-label="Size"><i class="dbs-fill" id="dbsFill"></i><b class="dbs-knob" id="dbsKnob"><span class="dbs-bub" id="dbsBub"><i></i></span></b></div><span class="dbs-val" id="dbsVal"></span></div>
+    <span class="sb-sep"></span>
+    <div class="db-colors" id="dbColors"></div>
   </div>
+  <!-- the wireframe tools: one chip per device, lit for the screen a click places, then Box, Text and Icon for the bare board; it wears drawing's bar -->
+  <div class="drawbar screenbar" id="screenbar" role="group" aria-label="Wireframe" hidden>
+    <span class="sc-devs" id="scDevs"></span><span class="sb-sep"></span>
+    <button type="button" class="db-tool sc-tool" data-wft="box" aria-pressed="false" aria-label="Box · R" title="Box · R: drag to draw"><svg data-ico="rectangle" width="18" height="18"></svg></button>
+    <button type="button" class="db-tool sc-tool" data-wft="text" aria-pressed="false" aria-label="Text · X" title="Text · X"><svg data-ico="text" width="18" height="18"></svg></button>
+    <button type="button" class="db-tool sc-tool" data-wft="icon" aria-pressed="false" aria-label="Icon" title="Icon: click the board, then pick one"><svg data-ico="star" width="18" height="18"></svg></button>
+    <span class="sb-sep"></span>
+    <button type="button" class="fb-b" id="scX" title="Close (Esc)" aria-label="Put the tool down"><svg data-ico="close" width="16" height="16"></svg></button>
+  </div>
+</div>
+<!-- the bottom bar: zoom, then Myra, centred -->
+<div class="dock" id="dock">
+  <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
 <!-- Myra: her box, her chat, her bubble -->
   <div class="myra" id="myra">
     <!-- Myra's chat window -->
@@ -86,7 +93,7 @@
     <div class="timer-chip" id="timerChip" hidden><svg data-ico="timer" width="15" height="15"></svg><b id="tcTime">0:00</b><span id="tcWhat"></span><button type="button" id="tcX" title="Stop the timer" aria-label="Stop the timer"><svg data-ico="close" width="13" height="13"></svg></button></div>
   </div>
 </div>
-<!-- what is being placed rides on the pointer, and over the bottom bar too -->
+<!-- what is being placed rides on the pointer, and over the tools and the bottom bar too -->
 <div class="ghost" id="ghost"></div>
 
 <main class="stage" id="stage">
@@ -128,20 +135,8 @@
 
   <!-- the bar for what's selected floats beside it; on a phone it moves into the dock as a strip -->
   <div class="selbar" id="selbar" role="group" aria-label="Selection"></div>
-  <!-- the bar a mode puts up, drawing's pens, find's field and the screen tool's devices, sits just above the dock; on a phone it moves into the dock -->
+  <!-- the mode bar: find's field -->
   <div class="modebar" id="modebar">
-    <!-- drawing: pens, sizes, colors, eraser -->
-    <div class="drawbar" id="drawbar" hidden>
-      <button class="db-done" data-db="done" title="Done drawing (Esc)">Done</button><span class="sb-sep"></span>
-      <button class="db-tool on" data-pen="pen" title="Pen: smooth ink that widens as you slow down"><svg data-ico="pen"></svg></button>
-      <button class="db-tool" data-pen="marker" title="Marker: bold and even"><svg data-ico="marker"></svg></button>
-      <button class="db-tool" data-pen="hi" title="Highlighter: see-through"><svg data-ico="highlighter"></svg></button>
-      <button class="db-tool" data-pen="eraser" title="Eraser: swipe over a drawing to remove it"><svg data-ico="eraser"></svg></button>
-      <span class="sb-sep"></span>
-      <div class="db-size" id="dbSize" title="Size · [ and ] while drawing"><span class="dbs-dot"><i id="dbsDot"></i></span><div class="dbs-track" id="dbsTrack" role="slider" tabindex="0" aria-label="Size"><i class="dbs-fill" id="dbsFill"></i><b class="dbs-knob" id="dbsKnob"><span class="dbs-bub" id="dbsBub"><i></i></span></b></div><span class="dbs-val" id="dbsVal"></span></div>
-      <span class="sb-sep"></span>
-      <div class="db-colors" id="dbColors"></div>
-    </div>
     <div class="find-bar" id="findBar" role="search" hidden>
       <label class="fb-field"><svg data-ico="search" width="16" height="16"></svg><input id="fbQ" placeholder="Find on the board" autocomplete="off" spellcheck="false" aria-label="Find on the board"></label>
       <span class="fb-count" id="fbCount" aria-live="polite"></span>
@@ -149,15 +144,6 @@
       <button type="button" class="fb-b" id="fbNext" title="Next (Enter)" aria-label="Next match"><svg data-ico="caret-down" width="16" height="16"></svg></button>
       <i class="fb-sep"></i>
       <button type="button" class="fb-b" id="fbX" title="Close (Esc)" aria-label="Close find"><svg data-ico="close" width="16" height="16"></svg></button>
-    </div>
-    <!-- the wireframe tools: one chip per device, lit for the screen a click places, then Box, Text and Icon for the bare board; it wears drawing's bar -->
-    <div class="drawbar screenbar" id="screenbar" role="group" aria-label="Wireframe" hidden>
-      <span class="sc-devs" id="scDevs"></span><span class="sb-sep"></span>
-      <button type="button" class="db-tool sc-tool" data-wft="box" aria-pressed="false" aria-label="Box · R" title="Box · R: drag to draw"><svg data-ico="rectangle" width="18" height="18"></svg></button>
-      <button type="button" class="db-tool sc-tool" data-wft="text" aria-pressed="false" aria-label="Text · X" title="Text · X"><svg data-ico="text" width="18" height="18"></svg></button>
-      <button type="button" class="db-tool sc-tool" data-wft="icon" aria-pressed="false" aria-label="Icon" title="Icon: click the board, then pick one"><svg data-ico="star" width="18" height="18"></svg></button>
-      <span class="sb-sep"></span>
-      <button type="button" class="fb-b" id="scX" title="Close (Esc)" aria-label="Put the tool down"><svg data-ico="close" width="16" height="16"></svg></button>
     </div>
   </div>
   <!-- a doc opens beside the board (or full page), with a clear way back -->
@@ -181,7 +167,7 @@
   <input type="file" id="coverPick" accept="image/*" hidden>
 </main>
 
-<!-- what opens over the bottom bar and Myra’s chat: the toolbar’s pickers, quick capture and a colour card’s wheel -->
+<!-- what opens over the bars and Myra’s chat: the tools’ pickers, quick capture and a colour card’s wheel -->
 <div id="overBar">
   <!-- stamps: a wheel of favorites; the middle opens every stamp -->
   <div class="wheel-stamps" id="stampWheel"><div class="ws-ring" id="wsRing"></div><button class="ws-mid" id="wsMid" title="All stamps">+</button></div>
@@ -297,7 +283,7 @@
           <p class="tp-note" id="themeNote" hidden>Your own colours sit on top of the theme you pick. <button class="set-btn" id="themeReset">Reset to theme</button></p>
         </div>
         <label class="set-row native-only cae-only"><div><b>Follow Caelestia</b><small>Use your desktop's colours, its light or dark mode and its card colours, on top of the theme you pick above. <span id="caeBase"></span> Your own colours come back when you turn this off.</small></div><input type="checkbox" class="tgl" data-set="caelestia"></label>
-        <div class="set-row"><div><b>Icon style</b><small>Regular is plain outlines. Duotone adds a tint to the bottom bar and Myra's chat header.</small></div><div class="seg" data-seg="iconStyle"><button data-v="regular">Regular</button><button data-v="duotone">Duotone</button></div></div>
+        <div class="set-row"><div><b>Icon style</b><small>Regular is plain outlines. Duotone adds a tint to the tools, the bottom bar and Myra's chat header.</small></div><div class="seg" data-seg="iconStyle"><button data-v="regular">Regular</button><button data-v="duotone">Duotone</button></div></div>
       </section>
       <section data-tab="general"><h3>Your cursor</h3>
         <div class="cur-prev" id="curPrev"><div class="mcur show demo"></div></div>
@@ -383,7 +369,7 @@
       <section class="set-about" data-tab="about"><svg class="brand-mark" data-ico="fenmyr-mark" width="34" height="34"></svg><div class="sa-text"><b>Fenmyr</b><small>Where ideas thrive. Free and open source (MIT).</small></div></section>
       <section class="set-update native-only" id="setUpdate" data-tab="about"><div class="su-top"><div class="su-icon"><svg data-ico="refresh" width="18" height="18"></svg></div><div class="su-text"><b id="suTitle">Updates</b><small id="suSub">Checking for a new version…</small></div><button class="set-btn hot" id="suGo" hidden>Update now</button><button class="set-btn" id="suCheck">Check now</button></div><ul class="su-notes" id="suNotes" hidden></ul></section>
       <section data-tab="toolbar"><h3>Toolbar</h3>
-        <div class="set-row"><div><b>Icon size</b><small>The size of the tools at the bottom. Tools that don't fit go into a ··· menu.</small></div><div class="seg" data-seg="tbSize"><button data-v="s">Small</button><button data-v="m">Medium</button><button data-v="l">Large</button></div></div>
+        <div class="set-row"><div><b>Icon size</b><small>The size of the tools at the top right. Tools that don't fit go into a ··· menu.</small></div><div class="seg" data-seg="tbSize"><button data-v="s">Small</button><button data-v="m">Medium</button><button data-v="l">Large</button></div></div>
         <div class="set-row"><div><b>Your tools</b><small>Switch tools on or off and drag to reorder them. Shortcuts still work for hidden tools.</small></div><button class="set-btn" id="tbReset">Reset</button></div>
         <div class="tbe-list set-tblist" id="setTbList"></div></section>
       <section class="set-devices" data-tab="general"><h3>Camera &amp; microphone</h3>
