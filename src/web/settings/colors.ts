@@ -1,4 +1,4 @@
-import type { CaelestiaScheme, UsageTotals } from '../../shared/ops.ts';
+import type { UsageTotals } from '../../shared/ops.ts';
 import { checkUpdate } from '../app/updates.ts';
 import { byId, selectOnly } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
@@ -14,11 +14,11 @@ import { child, closestTo, elementById, esc, htmlIn } from '../ui/dom.ts';
 import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
-import { themeFor } from './activeTheme.ts';
+import { caelestiaFor, themeFor } from './activeTheme.ts';
 import { myCur, paintCursor } from './cursor.ts';
 import { applyPanelH, fitSides, heightGrip, panelMin } from './panelHeights.ts';
 import { settings } from './settings.ts';
-import type { Mode } from './themes.ts';
+import { CSS_VARS, type Mode, PASTELS } from './themes.ts';
 import { applySettings } from './widgets.ts';
 
 export const htmlOrNull = (el: Element | null) => (el instanceof HTMLElement ? el : null);
@@ -33,32 +33,24 @@ const modeName = (): Mode => (document.body.classList.contains('dark') ? 'dark' 
 
 export const following = () => !!(settings.caelestia && appState.cae);
 
-function caeColors({ colours: c }: CaelestiaScheme) {
-  const picked: Record<string, string | undefined> = {
-    bg: c.surface,
-    dot: c.outlineVariant || c.outline,
-    panel: c.surfaceContainer || c.surface,
-    accent: c.primary,
-  };
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(picked)) if (v) out[k] = v;
-  return out;
-}
-
 export const myColors = (): Record<string, string> => {
-  const cae = appState.cae;
-  if (settings.caelestia && cae) return caeColors(cae);
+  const cae = caelestiaFor(modeName());
+  if (cae) return { bg: cae.bg, dot: cae.dot, panel: cae.panel, accent: cae.accent };
   return settings.colors[modeName()];
 };
 
 const boardBg = () => (typeof session.board?.bg === 'string' ? session.board.bg : '');
 export const colorOf = (k: string) => (k === 'bg' && boardBg()) || myColors()[k] || defaultsOf(modeName())[k] || '';
 
+// every variable a theme sets, which Follow Caelestia can set inline on <body> over it
+const THEME_VARS = [...Object.values(CSS_VARS), ...Object.keys(PASTELS).map(k => `--card-${k}`), '--card-link'];
+
 export function applyColors() {
   const B = document.body.style,
     mine = myColors(),
     bg = colorOf('bg'),
     darkBg = luminance(bg) < 0.2;
+  for (const name of THEME_VARS) B.removeProperty(name);
   B.setProperty('--board', bg);
   if (mine.dot) B.setProperty('--dot', mine.dot);
   else if (darkBg !== (modeName() === 'dark')) B.setProperty('--dot', mixHex(bg, darkBg ? '#ffffff' : '#000000', 0.13));
@@ -78,6 +70,13 @@ export function applyColors() {
     ['--pink-deep', '--pink', '--blush', '--accent-text', '--on-accent'].forEach(v => {
       B.removeProperty(v);
     });
+  // Follow Caelestia: the scheme's colours are on <body> over the theme's, and gone again when it is off
+  const cae = caelestiaFor(modeName());
+  if (cae) {
+    for (const [key, name] of Object.entries(CSS_VARS)) B.setProperty(name, String(Reflect.get(cae, key)));
+    for (const [key, card] of Object.entries(cae.cards)) B.setProperty(`--card-${key}`, card.fill);
+    B.setProperty('--card-link', cae.cards.butter?.link ?? '');
+  }
   document.body.classList.toggle('board-dark', darkBg);
   document.body.classList.toggle('board-light', !darkBg && modeName() === 'dark');
   for (const b of htmlIn(document, '[data-col]'))

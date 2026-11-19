@@ -5,6 +5,9 @@ import { mixHex, readableShade, solidOklch } from '../ui/color.ts';
 import type { Mode, Target, Tokens } from './themes.ts';
 
 export const TEXT: Record<Target, number> = { aa: 4.5, aaa: 7 };
+export const NON_TEXT: Record<Target, number> = { aa: 3, aaa: 4.5 };
+// below about 0.02 two colours look the same; the accessible themes keep three times that
+export const APART: Record<Target, number> = { aa: 0.02, aaa: 0.06 };
 
 export type Chosen = Pick<
   Tokens,
@@ -12,6 +15,8 @@ export type Chosen = Pick<
 > & {
   cardInk: string;
   fills: Record<string, string>;
+  // a card that doesn't use the card ink, like Default dark's Snow, which is dark with light text
+  inks?: Record<string, string>;
 };
 
 export function derive(mode: Mode, target: Target, c: Chosen): Tokens {
@@ -48,7 +53,7 @@ export function derive(mode: Mode, target: Target, c: Chosen): Tokens {
     cards: Object.fromEntries(
       Object.entries(c.fills).map(([key, fill]) => [
         key,
-        { fill, ink: c.cardInk, link: readableShade(c.accent, [fill], text) },
+        { fill, ink: c.inks?.[key] ?? c.cardInk, link: readableShade(c.accent, [fill], text) },
       ]),
     ),
   };

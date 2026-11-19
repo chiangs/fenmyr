@@ -1,7 +1,7 @@
 // The colour themes. Each one sets every token for its mode, and the contrast it promises: AA or AAA.
 // tests/themes.ts checks each theme against its promise, and the gaps a theme is still known to have.
 import { apart, contrast, type Vision } from '../ui/color.ts';
-import { derive, TEXT } from './derive.ts';
+import { APART, derive, NON_TEXT, TEXT } from './derive.ts';
 
 export type Mode = 'light' | 'dark';
 export type Target = 'aa' | 'aaa';
@@ -276,9 +276,6 @@ export const themeClass = (t: Theme) => (themeName(t) === 'default' ? '' : `them
 export const themeOf = (mode: Mode, id = 'default') =>
   THEMES.find(t => t.mode === mode && t.id === `${id}-${mode}`) ?? THEMES.find(t => t.mode === mode);
 
-const NON_TEXT: Record<Target, number> = { aa: 3, aaa: 4.5 };
-// below about 0.02 two colours look the same; the accessible themes keep three times that
-const APART: Record<Target, number> = { aa: 0.02, aaa: 0.06 };
 const VISIONS: Vision[] = ['typical', 'protan', 'deutan', 'tritan'];
 
 type Check = { id: CheckId; got: number; need: number; worst: string };
