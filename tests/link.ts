@@ -201,14 +201,14 @@ try {
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     await page.mouse.click(stage.x + stage.width * x, stage.y + y);
   };
-  // under the screen tool's row, which sits at the top beside the tools
+  // left of the Wireframe column, which sits at the top beside the tools
   await placeScreen(0.45, 200);
   // the first screen is taller than the view, so its selection bar holds at the top, where the second one goes
   await page.waitForSelector('#selbar.on:not(.paused)');
   const held = await page.locator('#selbar').boundingBox();
   if (!held) throw new Error('no selection bar');
-  // in its foot, which the screen tool's row beside the tools does not reach down to
-  await placeScreen(0.7, held.y - stage.y + held.height - 4);
+  // in its foot, left of the Wireframe column beside the tools
+  await placeScreen(0.6, held.y - stage.y + held.height - 4);
   await page.waitForFunction(() =>
     /Want to see these working\?/.test(document.getElementById('mSay')?.textContent ?? ''),
   );

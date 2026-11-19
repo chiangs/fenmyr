@@ -6,8 +6,6 @@ import { find } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
-import { drawOn } from '../tools/draw.ts';
-import { wfToolOn } from '../tools/screenTool.ts';
 import { selCards } from './selected.ts';
 import { editedNoteBody } from './typingFocus.ts';
 
@@ -15,9 +13,10 @@ import { editedNoteBody } from './typingFocus.ts';
 export type BarContext =
   | { kind: 'selection'; cards: Card[]; crop: boolean; typing: boolean }
   | { kind: 'connector'; link: Link; ends: readonly [Card, Card] }
-  | { kind: 'tool' };
-/** What the selection bar shows: never a tool, which has a bar of its own. */
-export type SelBarContext = Exclude<BarContext, { kind: 'tool' }>;
+  /** Find is on: its bar sits just above the bottom bar. */
+  | { kind: 'find' };
+/** What the selection bar shows: never find, which has a bar of its own. */
+export type SelBarContext = Exclude<BarContext, { kind: 'find' }>;
 
 // a colour wheel opened from Settings and really on screen; one opened from the bar keeps the bar
 function settingsWheelUp() {
@@ -44,10 +43,10 @@ export function barContext(): SelBarContext | null {
   return { kind: 'selection', cards, crop: one?.type === 'image' && cropping?.c === one, typing: !!editedNoteBody() };
 }
 
-const TOOL: BarContext = { kind: 'tool' };
+const FIND: BarContext = { kind: 'find' };
 
-/** Drawing, find or a wireframe tool is on. More than one can be, and their bar holds each, so it doesn't say which. */
-export const toolContext = () => (drawOn || find.on || wfToolOn() ? TOOL : null);
+/** Find is on. Drawing or a wireframe tool may be on with it; their card sits beside the tools, not over the bar. */
+export const findContext = () => (find.on ? FIND : null);
 
 function dragHides(d: Drag): boolean {
   switch (d.mode) {

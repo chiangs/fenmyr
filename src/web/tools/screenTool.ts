@@ -137,7 +137,7 @@ export function syncScreenBar() {
   if (!t && bar.hidden) return;
   if (bar.hidden === !!t) {
     bar.hidden = !t;
-    // what rides the pointer goes under the row while it is up, in the stage below the mode bar, and over the bottom
+    // what rides the pointer goes under the row while it is up, in the stage below the mode card, and over the bottom
     // bar otherwise, so a screen's ghost never hides the row's tools
     if (t) $('selbar').before($('ghost'));
     else $('stage').before($('ghost'));

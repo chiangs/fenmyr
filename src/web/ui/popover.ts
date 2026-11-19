@@ -104,8 +104,9 @@ export function keepOnScreen(popup: HTMLElement) {
 }
 
 /** Opens a popup to the left of the tools panel, level with `button`, or with ··· while the button is tucked in it.
- *  It takes another side only when the window has no room on the left. */
+ *  It takes another side only when the window has no room on the left. The mode card waits under it, as CSS says. */
 export function openLeftOfPanel(popup: HTMLElement, button: Element) {
+  popup.classList.add('left-of-panel');
   const panel = $('tools').getBoundingClientRect(),
     b = (button.classList.contains('tb-over') ? $('tbMore') : button).getBoundingClientRect(),
     at = place(

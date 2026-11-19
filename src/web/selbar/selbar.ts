@@ -13,7 +13,7 @@ import { type BarContext, barContext, barPaused, type SelBarContext } from './co
 import { corners } from './corners.ts';
 import { grouping, moreAndDelete, newSection, prototype, section, tilt } from './end.ts';
 import { fill, shapeFill, textColour } from './fill.ts';
-import { barRoom, floatBar, floatModeBar } from './float.ts';
+import { barRoom, floatBar, floatModeBar, floatModeCard } from './float.ts';
 import { initFontPop } from './fontPop.ts';
 import { group } from './group.ts';
 import { lineStyle } from './lineStyle.ts';
@@ -194,10 +194,11 @@ function drawBar(bar: HTMLElement, ctx: SelBarContext | null) {
 }
 
 // The content stays current during a gesture though no one sees it: Ctrl+B presses the bar's own Bold, and the bar
-// is back the moment the gesture ends. The mode bar goes first, as the selection bar keeps clear of it.
+// is back the moment the gesture ends. The mode card and the mode bar go first, as the selection bar keeps clear of them.
 export function placeSelbar() {
   const bar = $('selbar'),
     ctx = barContext();
+  floatModeCard();
   floatModeBar();
   drawBar(bar, ctx);
   floatBar(bar, ctx, barPaused());
