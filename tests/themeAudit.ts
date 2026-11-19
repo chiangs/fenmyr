@@ -5,12 +5,14 @@ import assert from 'node:assert';
 import { THEMES } from '../src/web/settings/themes.ts';
 import { everyOfflineCard } from './fixtures/boards.ts';
 import { launch } from './support/launch.ts';
+import { installPaint } from './support/paint.ts';
 
 // two labels that are decoration by design (#251: --ink-faint is for placeholders and decoration)
 const DECORATION = new Set(['em.', 'span#dvCount.']);
 
 const app = await launch({ boards: [everyOfflineCard()], open: 'every' }),
   { page } = app;
+await installPaint(page);
 
 // a colour that fades after a theme is applied would be measured half-way between the two
 await page.addStyleTag({
@@ -32,18 +34,9 @@ const apply = (mode: string, cls: string, bg: string) =>
 // text elements under 3:1, as "tag#id.classes" (the colours differ by theme, the element doesn't)
 const lowText = (bg: string) =>
   page.evaluate(board => {
-    const paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
     const parse = (c: string) => {
-      if (!c.startsWith('rgb') && paint) {
-        paint.clearRect(0, 0, 1, 1);
-        paint.fillStyle = '#000';
-        paint.fillStyle = c;
-        paint.fillRect(0, 0, 1, 1);
-        const d = paint.getImageData(0, 0, 1, 1).data;
-        return { r: d[0] ?? 0, g: d[1] ?? 0, b: d[2] ?? 0, a: (d[3] ?? 255) / 255 };
-      }
-      const m = c.match(/[\d.]+/g)?.map(Number) ?? [];
-      return { r: m[0] ?? 0, g: m[1] ?? 0, b: m[2] ?? 0, a: m[3] ?? 1 };
+      const [r, g, b, a] = window.__paint(c);
+      return { r, g, b, a };
     };
     const lin = (v: number) => (v / 255 <= 0.04045 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4);
     const lum = (c: { r: number; g: number; b: number }) => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
