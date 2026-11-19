@@ -53,6 +53,19 @@ assert.deepStrictEqual([before.tool('z')?.group, after.tool('z')?.group], ['b', 
 assert.deepStrictEqual(before.tuckOrder(ids(before.tools)), ['z', 'y', 'x']);
 assert.deepStrictEqual(after.tuckOrder(ids(after.tools)), ['y', 'z', 'x'], 'x was given priority, so it tucks last');
 
+const runs = toolbarOf(['a', t('x'), t('y'), 'b', t('z')]);
+assert.deepStrictEqual(runs.starts(['x', 'y', 'z']), ['z'], 'a tool after another group’s starts a row');
+assert.deepStrictEqual(
+  runs.starts(['x', 'z', 'y']),
+  ['z', 'y'],
+  'a personal order starts a row at each change of group',
+);
+assert.strictEqual(runs.rows(['x', 'y', 'z'], 5, false), 2, 'each group fills rows of its own');
+assert.strictEqual(runs.rows(['x', 'y', 'z'], 1, false), 3, 'one column holds a tool a row');
+assert.strictEqual(runs.rows(['x', 'y', 'z'], 5, true), 2, '··· takes the cell after the last tool');
+assert.strictEqual(runs.rows(['x', 'y', 'z'], 1, true), 4, '··· takes a row of its own after a full one');
+assert.strictEqual(runs.rows(['x', 'z', 'y'], 5, false), 3, 'a group a personal order splits fills a row a run');
+
 const shipped = ids(TOOLBAR.tools);
 assert.deepStrictEqual([...TOOLBAR.tuckOrder(shipped)].sort(), [...shipped].sort(), 'every tool tucks once');
 
@@ -141,9 +154,11 @@ try {
     TOOLBAR.tools.map(tool => [tool.id, tool.label]),
     'Settings lists every tool in the bar’s order under its name',
   );
+  // large icons in a short window, as tools tuck for rows, not width
+  await page.click('[data-seg="tbSize"] [data-v="l"]');
   await page.click('#setClose');
 
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 800));
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 560));
   await settle(page, 600);
   const bar = await page.$$eval('#tools > [data-add]', bs =>
     bs
@@ -151,7 +166,7 @@ try {
       .map(b => [b.getAttribute('data-add') ?? '', b.classList.contains('tb-over')] as const),
   );
   const tucked = bar.filter(([, over]) => over).map(([id]) => id);
-  assert.ok(tucked.length > 0, 'at 1280 px some tools tuck into ···');
+  assert.ok(tucked.length > 0, 'with large icons at 1280 × 560 some tools tuck into ···');
   assert.deepStrictEqual(
     [...tucked].sort(),
     TOOLBAR.tuckOrder(bar.map(([id]) => id))

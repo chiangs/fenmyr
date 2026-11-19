@@ -114,11 +114,11 @@ function fitUpBar() {
   if (b.hidden) return;
   b.classList.remove('low');
   b.style.left = '';
-  // centre it in the open space between the board's name and the panels on the right; only if that's too tight does it step down
+  // centre it in the open space between the board's name and the tools and panels on the right; only if that's too tight does it step down
   const st = stage.getBoundingClientRect(),
     t = document.querySelector('.top')?.getBoundingClientRect(),
     w = b.getBoundingClientRect().width;
-  const right = [...$('sideR').children]
+  const right = [...$('sideR').children, $('tools')]
     .map(el => el.getBoundingClientRect())
     .filter(r => r.width && r.top < 140)
     .reduce((m, r) => Math.min(m, r.left), st.right);

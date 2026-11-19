@@ -4,7 +4,7 @@ import { wireGeom } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { freeOf } from '../myra/chatRules.ts';
-import { chatOverBoard, chatPlace, setModeBar } from '../myra/chatWindow.ts';
+import { chatOverBoard, setModeBar } from '../myra/chatWindow.ts';
 import { type BarContext, toolContext } from './context.ts';
 import { type Anchor, type Box, GAP, place } from './place.ts';
 
@@ -58,7 +58,7 @@ function anchorFor(ctx: BarContext): Anchor | null {
       if (!d?.height) return null;
       return {
         box: { l: d.left - s.left, t: d.top - s.top, r: d.right - s.left, b: d.bottom - s.top },
-        prefer: 'above',
+        prefer: 'left',
       };
     }
     default: {
@@ -68,6 +68,12 @@ function anchorFor(ctx: BarContext): Anchor | null {
   }
 }
 
+function overBottomBar(): Anchor {
+  const d = $('dock').getBoundingClientRect(),
+    s = stage.getBoundingClientRect();
+  return { box: { l: d.left - s.left, t: d.top - s.top, r: d.right - s.left, b: d.bottom - s.top }, prefer: 'above' };
+}
+
 const rectsIn = (id: string) =>
   [...(document.getElementById(id)?.children ?? [])]
     .filter(el => el.checkVisibility())
@@ -75,7 +81,7 @@ const rectsIn = (id: string) =>
     .filter(r => r.width && r.height);
 
 // The open Pieces picker counts as a side column on the side it docked, or as a floor when it is a sheet across the
-// bottom, so the selection bar keeps clear of it. The mode bar sits over the tools, below it, and stays where it is.
+// bottom, so the selection bar keeps clear of it. The mode bar sits beside the tools, below it, and stays where it is.
 function pickerColumn(placing?: HTMLElement): { l: number[]; r: number[]; b: number[] } {
   const p = document.getElementById('piecePick');
   if (!p || p === placing || placing?.id === 'modebar' || p.hidden || onPhone()) return { l: [], r: [], b: [] };
@@ -86,36 +92,41 @@ function pickerColumn(placing?: HTMLElement): { l: number[]; r: number[]; b: num
   return { l: [], r: [], b: [r.top - s.top - GAP] };
 }
 
-// The part of the board nothing else covers, in stage pixels: right of the left widgets, left of the right ones, under
-// the header and its saved line, above the bottom bar and the mode bar on it (unless that is the bar being placed).
-// Read from the screen, so moved widgets, a folded tray and a prototype's narrower board all count.
+// The part of the board nothing else covers, in stage pixels: right of the left widgets, left of the right ones and the
+// tools, under the header and its saved line, above the bottom bar. A bar the tools would leave too little board for
+// beside them goes under them instead, as on a narrow prototype board. The mode bar beside the tools is a ceiling for
+// the other bars, and over the bottom bar, where one too wide for that room goes, a floor; it does not count the tools
+// for itself. Read from the screen, so moved widgets, a folded tray and a prototype's narrower board all count.
 function readFrame(placing?: HTMLElement): Box {
   const s = stage.getBoundingClientRect(),
     picker = pickerColumn(placing),
     head = [document.querySelector('.top'), document.getElementById('saved')]
       .filter(el => el?.checkVisibility())
       .map(el => el?.getBoundingClientRect().bottom ?? 0),
-    floor = [document.getElementById('dock'), document.getElementById('modebar')]
-      .filter((el): el is HTMLElement => !!el && el !== placing)
-      .map(el => el.getBoundingClientRect())
-      .filter(r => r.height)
+    tools = document.getElementById('tools'),
+    panel = tools?.checkVisibility() && placing?.id !== 'modebar' ? [tools.getBoundingClientRect()] : [],
+    mode = document.getElementById('modebar'),
+    modeBox = mode && mode !== placing && mode.checkVisibility() ? mode.getBoundingClientRect() : null,
+    ceiling = modeBox?.height && mode?.dataset.side === 'left' ? [modeBox.bottom] : [],
+    floor = [document.getElementById('dock')?.getBoundingClientRect(), ceiling.length ? null : modeBox]
+      .filter((r): r is DOMRect => !!r?.height)
       .map(r => r.top - s.top - GAP);
-  return {
-    l: Math.max(
+  const l = Math.max(
       GAP,
       ...rectsIn('side')
         .filter(r => r.right > s.left)
         .map(r => r.right - s.left + GAP),
       ...picker.l,
     ),
-    t: Math.max(GAP, ...head.map(b => b - s.top + GAP)),
-    r: Math.min(
-      s.width - GAP,
-      ...rectsIn('sideR')
-        .filter(r => r.left < s.right)
-        .map(r => r.left - s.left - GAP),
-      ...picker.r,
-    ),
+    rightOf = (rects: DOMRect[]) =>
+      Math.min(s.width - GAP, ...rects.filter(r => r.left < s.right).map(r => r.left - s.left - GAP), ...picker.r),
+    beside = rightOf([...rectsIn('sideR'), ...panel]),
+    clear = rightOf(rectsIn('sideR')),
+    under = !!placing && beside < clear && beside - l < placing.offsetWidth;
+  return {
+    l,
+    t: Math.max(GAP, ...[...head, ...ceiling, ...(under ? panel.map(r => r.bottom) : [])].map(b => b - s.top + GAP)),
+    r: under ? clear : beside,
     b: Math.min(s.height - GAP, ...floor, ...picker.b),
   };
 }
@@ -151,10 +162,10 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   const anchor = ctx && anchorFor(ctx);
   if (!anchor) return;
   const frame = readFrame(bar),
-    chat = ctx.kind === 'tool' ? chatPlace() : null;
-  // the mode bar keeps to the left of a chat joined to the tools
-  if (chat?.kind === 'joined') frame.r = Math.min(frame.r, chat.chat.l - stage.getBoundingClientRect().left - GAP);
-  const p = place(anchor, frame, { w: bar.offsetWidth, h: bar.offsetHeight }),
+    size = { w: bar.offsetWidth, h: bar.offsetHeight },
+    beside = place(anchor, frame, size),
+    // a mode bar too wide for the room left of the tools sits over the bottom bar, as it did before they moved
+    p = ctx.kind === 'tool' && beside.side !== 'left' ? place(overBottomBar(), frame, size) : beside,
     d = devicePixelRatio || 1,
     snap = (v: number) => Math.round(v * d) / d,
     at = `${snap(p.x)}px ${snap(p.y)}px`;
@@ -164,8 +175,9 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   bar.classList.remove('paused');
 }
 
-/** Holds the mode bar (drawing's, find's and the screen tool's rows) over the tools, and lifts Myra's bubble, a wide chat and the toolbar's pickers over
- *  it, as they sit at its height. It is pinned to the bottom bar, not the board, so no gesture moves it. */
+/** Holds the mode bar (drawing's, find's and the screen tool's rows) left of the tools, or over the bottom bar when it
+ *  is too wide for that room, pinned to them, not the board, so no gesture moves it. It lifts Myra's bubble and a wide
+ *  chat by its height, which is needed only over the bottom bar. */
 export function floatModeBar() {
   const bar = $('modebar'),
     ctx = toolContext(),
@@ -173,9 +185,11 @@ export function floatModeBar() {
     lift = shown ? bar.offsetHeight + GAP : 0;
   if (document.body.style.getPropertyValue('--mode-h') !== `${lift}px`)
     document.body.style.setProperty('--mode-h', `${lift}px`);
-  // the chat joins the tools only when this bar fits left of it, from as far left as it can sit
-  setModeBar(shown ? { lift, l: readFrame(bar).l + stage.getBoundingClientRect().left, w: bar.offsetWidth } : null);
   floatBar(bar, ctx, false);
+  // over the bottom bar, her chat joins it only when this bar fits left of her box, from as far left as it can sit;
+  // beside the tools it reaches under no joined chat, which keeps below it instead
+  const over = shown && bar.dataset.side !== 'left';
+  setModeBar(over ? { lift, l: readFrame(bar).l + stage.getBoundingClientRect().left, w: bar.offsetWidth } : null);
 }
 
 /** How wide the bar may grow before groups tuck into ···: the free view, or on a phone the strip beside Myra. */

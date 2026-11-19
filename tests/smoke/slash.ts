@@ -14,7 +14,7 @@ const note = (i: number, text: string) => ({
   r: 0,
 });
 
-// / lists what Myra can do without AI, in groups, Ctrl+F opens her with /find ready; /find opens the find bar over the tools (live search, cycling, closes)
+// / lists what Myra can do without AI, in groups, Ctrl+F opens her with /find ready; /find opens the find bar left of the tools (live search, cycling, closes)
 export async function slash(t: Smoke) {
   const { page } = t;
   await page.evaluate(
@@ -39,7 +39,6 @@ export async function slash(t: Smoke) {
     page.evaluate(() => {
       const T = window.__t,
         b = T.el('#findBar'),
-        d = T.el('#dock').getBoundingClientRect(),
         tools = T.el('#tools').getBoundingClientRect(),
         r = b.getBoundingClientRect(),
         prev = T.el('#fbPrev');
@@ -49,8 +48,7 @@ export async function slash(t: Smoke) {
         focus: document.activeElement?.id,
         dim: document.querySelectorAll('.card.dim').length,
         cur: document.querySelectorAll('.card.find-cur').length,
-        above: Math.abs(r.bottom - (d.top - 12)) < 1.5,
-        centred: Math.abs(r.left + r.right - (tools.left + tools.right)) < 3,
+        beside: Math.abs(r.right - (tools.left - 12)) < 1.5,
         prevOff: prev instanceof HTMLButtonElement && prev.disabled,
       };
     });
@@ -92,7 +90,7 @@ export async function slash(t: Smoke) {
     open: f1.chat && f1.val === '/find ' && f1.focus === 'mcInput',
     barOpens: b1.shown && b1.focus === 'fbQ' && b1.count === '1 of 2',
     dims: b1.dim === 2 && b1.cur === 1,
-    aboveTheBottomBar: b1.above && b1.centred,
+    leftOfTheTools: b1.beside,
     cycles: b2.count === '2 of 2' && b3.count === '2 of 2',
     live: b4.count === '1 of 1' && b4.prevOff,
     none: b5.count === 'No matches' && b5.dim === 0,
