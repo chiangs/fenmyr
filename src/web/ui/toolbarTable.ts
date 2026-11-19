@@ -10,6 +10,8 @@
 //               tool last in the panel tucks first. So with no priority set anywhere, tools tuck from the end. The
 //               tool that tucks last is the one that stays when the panel is at its shortest, so if Select must
 //               always show, give it the highest priority once any other tool has one.
+//   Rows        PANEL.maxRows is the most rows the panel takes before tools tuck into ···. It also keeps to 45 % of
+//               the window's height.
 //
 // Settings → Toolbar lets each person reorder tools and switch them off on top of this, and Reset goes back to it. A
 // person's own order counts as "the panel" in the rules above. An id is what their saved order and the code call a tool,
@@ -42,6 +44,8 @@ const TABLE: Table = [
   { id: 'pen', label: 'Pen', key: '⇧P', icon: 'pen' },
   { id: 'draw', label: 'Draw', key: 'P', icon: 'draw' },
 ];
+
+export const PANEL = { maxRows: 8 };
 
 type ToolLine = {
   id: string;
