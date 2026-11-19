@@ -255,8 +255,8 @@ export function showProto(b: Board) {
     first = !shown;
   shown = true;
   if (!on && !was) return;
-  // read while the board you're leaving is still drawn, before the prototype's screen moves her
-  const from = on && !was && !first ? gooFrom() : null;
+  // read while the board you're leaving is still drawn, before her box or the prototype's screen takes her
+  const from = on !== was && !first ? gooFrom() : null;
   root ??= build();
   if (!Object.keys(layouts).length) layouts = readLayouts();
   boardId = b.id;
@@ -265,16 +265,17 @@ export function showProto(b: Board) {
   applyBoxes();
   dockChat(on);
   myraOpen(on);
-  if (!on) return startSync(b);
-  place();
-  renderDockHead(b);
-  renderGitBar(b);
-  renderCode(b);
-  // a build that landed while another board was open is checked now
-  void renderPreview(b).then(() => checkNewest());
+  if (on) {
+    place();
+    renderDockHead(b);
+    renderGitBar(b);
+    renderCode(b);
+    // a build that landed while another board was open is checked now
+    void renderPreview(b).then(() => checkNewest());
+  }
   startSync(b);
   // last, so the panes' first render doesn't eat her wind-up
   hopFrom(from);
   // an empty chat: once she has landed she tilts her head, wondering what you'll build
-  wonderIfEmpty();
+  if (on) wonderIfEmpty();
 }
