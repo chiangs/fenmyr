@@ -220,6 +220,13 @@ try {
     quick(await hop.flight(page, () => open('pb')), 90);
   });
 
+  await check('with a frame held back as she crouches, it is not counted against her first movement', async () => {
+    await holdFrame('crouch', 120);
+    const p = pace(await hop.flight(page, () => open('pb')));
+    assert.ok(p.held >= 110, `a frame of ${p.held.toFixed(0)} ms was held back, not 120`);
+    assert.ok(p.moves <= 100, `she first moves ${p.moves.toFixed(0)} ms after the switch`);
+  });
+
   await check('with a frame held back as she comes in to land, her hop is still as quick', async () => {
     await holdFrame('air', 200, 380);
     quick(await hop.flight(page, () => open('pb')), 190);
