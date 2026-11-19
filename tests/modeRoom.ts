@@ -1,5 +1,6 @@
-// What sits around find's bar keeps clear of it: Myra's reply rises over it, her chat keeps clear of it and inside a
-// short window, her timer keeps to its place (over her box, or over her open chat), and the toolbar's pickers open above it.
+// What sits around find's bar, left of the tools, keeps clear of it or to its place: her chat keeps clear of it and
+// inside a short window, her timer keeps to its place (over her box, or over her open chat) and her reply clears it,
+// and the tools' pickers still open left of the tools.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
 import { settle } from './support/launch.ts';
@@ -64,18 +65,20 @@ await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.getElementById('findBar')?.checkVisibility());
 await still();
 
-await check('with find up and her chat closed, the timer stays over her box and her reply clears both', async () => {
+await check('with find up and her chat closed, the timer stays over her box and her reply clears it', async () => {
   const { timer, pill, bubble, find } = await boxes();
   near(timer?.b, (pill?.t ?? NaN) - 8, 'the timer’s bottom');
   assert.ok(bubble && timer && find, 'her reply, the timer and the find bar are up');
-  near(bubble.b, Math.min(timer.t, find.t) - 12, 'her reply’s bottom');
+  assert.ok(bubble.b <= timer.t - 12, `her reply ends at ${bubble.b}, over the timer at ${timer.t}`);
 });
 await check(
-  'with find up and her chat open, the chat and find’s bar keep clear of each other, and the timer sits on the chat',
+  'with find up and her chat open, it joins zoom, the chat and find’s bar keep clear of each other, and the timer sits on the chat',
   async () => {
     await setChat(true);
-    const { timer, chat, find } = await boxes();
+    const { timer, chat, find } = await boxes(),
+      place = await page.evaluate(() => document.getElementById('mChat')?.dataset.place);
     assert.ok(chat && find, 'her chat and the find bar are up');
+    assert.strictEqual(place, 'joined', 'find beside the tools reaches under no joined chat');
     assert.ok(!overlaps(chat, find), `the chat ${JSON.stringify(chat)} meets the find bar ${JSON.stringify(find)}`);
     near(timer?.b, chat.t - 8, 'the timer’s bottom');
   },
@@ -97,6 +100,18 @@ for (const timing of [true, false]) {
   }
 }
 
+await check('at 1600 × 600 with find up, her joined chat keeps below the find bar', async () => {
+  await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1600, 600));
+  await settle(page, 300);
+  await still();
+  const { chat, find } = await boxes(),
+    place = await page.evaluate(() => document.getElementById('mChat')?.dataset.place);
+  assert.ok(chat && find, 'her chat and the find bar are up');
+  assert.strictEqual(place, 'joined', 'her chat joins zoom');
+  assert.ok(chat.l < find.r && chat.r > find.l, 'it reaches under the find bar');
+  assert.ok(chat.t >= find.b + 11, `her chat starts at ${chat.t}, the find bar ends at ${find.b}`);
+});
+
 await setHeight(900);
 await setChat(false);
 const pickers = [
@@ -106,14 +121,14 @@ const pickers = [
   ['stamp', 'stampPick'],
 ] as const;
 for (const [tool, id] of pickers) {
-  await check(`with find up, the ${id} picker opens above the find bar`, async () => {
+  await check(`with find up, the ${id} picker still opens left of the tools`, async () => {
     await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
     await page.click(`#tools [data-add="${tool}"]`);
     if (id === 'stampPick') await page.click('#wsMid');
     await still();
-    const [pick, find] = await page.evaluate(
+    const [pick, find, tools] = await page.evaluate(
       id =>
-        [id, 'findBar'].map(id => {
+        [id, 'findBar', 'tools'].map(id => {
           const el = document.getElementById(id);
           if (!el?.checkVisibility({ opacityProperty: true })) return null;
           const r = el.getBoundingClientRect();
@@ -121,8 +136,8 @@ for (const [tool, id] of pickers) {
         }),
       id,
     );
-    assert.ok(pick && find, 'the picker and the find bar are up');
-    assert.ok(!overlaps(pick, find), `the picker ends at ${pick.b}, over the find bar at ${find.t}`);
+    assert.ok(pick && find && tools, 'the picker, the find bar and the tools are up');
+    assert.ok(pick.r <= tools.l, `the picker ends at ${pick.r}, left of the tools at ${tools.l}`);
   });
   await page.click('#tools [data-add="pointer"]');
 }

@@ -154,9 +154,11 @@ try {
     TOOLBAR.tools.map(tool => [tool.id, tool.label]),
     'Settings lists every tool in the bar’s order under its name',
   );
+  // large icons in a short window, as tools tuck for rows, not width
+  await page.click('[data-seg="tbSize"] [data-v="l"]');
   await page.click('#setClose');
 
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 800));
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 560));
   await settle(page, 600);
   const bar = await page.$$eval('#tools > [data-add]', bs =>
     bs
@@ -164,7 +166,7 @@ try {
       .map(b => [b.getAttribute('data-add') ?? '', b.classList.contains('tb-over')] as const),
   );
   const tucked = bar.filter(([, over]) => over).map(([id]) => id);
-  assert.ok(tucked.length > 0, 'at 1280 px some tools tuck into ···');
+  assert.ok(tucked.length > 0, 'with large icons at 1280 × 560 some tools tuck into ···');
   assert.deepStrictEqual(
     [...tucked].sort(),
     TOOLBAR.tuckOrder(bar.map(([id]) => id))

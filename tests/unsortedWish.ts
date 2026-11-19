@@ -29,7 +29,8 @@ const size = async (width: number, h: number) => {
 };
 
 try {
-  await size(1440, 900);
+  // narrow enough that her joined chat reaches under the right column
+  await size(1100, 900);
   const dragged = await height();
   await page.click('#mPill');
   await settle(page, 800);

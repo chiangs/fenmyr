@@ -43,7 +43,7 @@ const answered = (reply: object, ms: number) =>
     [reply, ms] as const,
   );
 // grabs it near its left end, holds it mid-move while her answer arrives, then moves it on and drops it
-async function dragThrough(selector: string) {
+async function dragThrough(selector: string, right = 150) {
   await page.waitForTimeout(200);
   const box = await page.locator(selector).boundingBox();
   assert(box, `${selector} is on screen`);
@@ -57,7 +57,7 @@ async function dragThrough(selector: string) {
   await page.mouse.down();
   await page.mouse.move(x + 30, y + 30, { steps: 6 });
   await page.waitForTimeout(1200);
-  await page.mouse.move(x + 150, y + 200, { steps: 8 });
+  await page.mouse.move(x + right, y + 200, { steps: 8 });
   await page.mouse.up();
 }
 const kidsOf = (id: string) =>
@@ -90,7 +90,8 @@ await check('a card dragged while her reply arrives takes her words and colour, 
 await check('a collection dragged while her reply arrives takes the note she files into it', async () => {
   await open('dragColl');
   const asked = answered({ say: 'ok', add: [{ text: 'Into ideas', in: 'ideas' }] }, 800);
-  await dragThrough('#cards .card[data-id="ideas"] .coll-head');
+  // short of the right column, where Unsorted starts under the tools, so it is dropped on the board
+  await dragThrough('#cards .card[data-id="ideas"] .coll-head', 60);
   await asked;
   const at = await page.evaluate(() => window.__fenmyr.curBoard().cards.find(c => c.id === 'ideas')?.x);
   assert(at !== undefined && at > 900, 'the collection is where they dropped it');
