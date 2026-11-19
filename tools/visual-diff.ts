@@ -90,6 +90,13 @@ const themeGroup = (name: string, mode: 'light' | 'dark'): Group => ({
     ],
   ],
 });
+// Follow Caelestia on: the dark scheme from the tests' fixtures, where the app looks for it
+const caelestiaState = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-visual-cae-'));
+fs.mkdirSync(path.join(caelestiaState, 'caelestia'));
+fs.copyFileSync(
+  path.join(import.meta.dirname, '../tests/fixtures/caelestia/dark.json'),
+  path.join(caelestiaState, 'caelestia', 'scheme.json'),
+);
 const GROUPS: Record<string, Group> = {
   light: { states: board },
   ...PROTO_GROUPS,
@@ -98,6 +105,11 @@ const GROUPS: Record<string, Group> = {
   clear: themeGroup('clear', 'light'),
   'polar-night': themeGroup('polar-night', 'dark'),
   lantern: themeGroup('lantern', 'dark'),
+  caelestia: {
+    ...themeGroup('default', 'dark'),
+    settings: { caelestia: true },
+    env: { XDG_STATE_HOME: caelestiaState },
+  },
   phone: { phone: true, states: [['board', async () => {}]] },
   rich: {
     board: richNotes,

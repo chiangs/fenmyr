@@ -1,0 +1,29 @@
+{
+  "name": "mono",
+  "mode": "dark",
+  "flavour": "default",
+  "variant": "tonalspot",
+  "colours": {
+    "primary": "6fb5a8",
+    "onPrimary": "0b1f1c",
+    "secondary": "7fc4c0",
+    "surface": "14201f",
+    "surfaceContainer": "1c2a29",
+    "surfaceContainerHigh": "243635",
+    "surfaceContainerHighest": "2d4342",
+    "onSurface": "d6e7e4",
+    "onSurfaceVariant": "a9c2be",
+    "outline": "4a6764",
+    "outlineVariant": "36504d",
+    "yellow": "5a7d7a",
+    "pink": "5b7e7c",
+    "red": "5b7e7c",
+    "green": "5a7f7b",
+    "sky": "5c7d7d",
+    "blue": "5c7d7d",
+    "mauve": "5b7c7e",
+    "lavender": "5b7c7e",
+    "peach": "5d7e7b",
+    "rosewater": "5d7e7b"
+  }
+}
