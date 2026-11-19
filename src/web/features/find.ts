@@ -11,6 +11,7 @@ import { setChatText } from '../myra/chatInput.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
 import { glideTo, wordsOf } from '../myra/greet.ts';
 import { reply } from '../myra/say.ts';
+import { floatModeBar } from '../selbar/float.ts';
 import { applyDim } from './focus.ts';
 import { cleanTag } from './tags.ts';
 
@@ -54,6 +55,8 @@ function findOpen(query = '') {
   $('findBar').hidden = false;
   findField().value = query;
   const n = findRun(false);
+  // in place, at the width its count gives it, before its field takes focus, which puts the field's clear button there
+  floatModeBar();
   findField().focus();
   findField().select();
   return n;
