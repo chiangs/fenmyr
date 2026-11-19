@@ -1,5 +1,9 @@
 {
   "board": "Tools panel: the tools leave the bottom bar for a panel at the top right, over Unsorted, which now starts under it; the bottom bar is zoom then Ask Myra, centred; the Just the board button is gone.",
+  "caelestia-board": "Tools panel: the tools leave the bottom bar for a panel at the top right, over Unsorted, which now starts under it; the bottom bar is zoom then Ask Myra, centred; the Just the board button is gone.",
+  "caelestia-chat": "Tools panel: the tools are a panel at the top right and the bottom bar, zoom then Ask Myra, is centred, so her chat opens joined over her box from the middle of the window rather than at the right.",
+  "caelestia-select-note": "Tools panel: the tools leave the bottom bar for a panel at the top right, over Unsorted, which now starts under it; the bottom bar is zoom then Ask Myra, centred; the Just the board button is gone.",
+  "caelestia-settings": "Tools panel: behind the dialog, the tools are a panel at the top right and the bottom bar is centred zoom and Ask Myra, so her open chat joins over her box from the middle of the window rather than at the right.",
   "card-menu": "Tools panel: the tools leave the bottom bar for a panel at the top right, over Unsorted, which now starts under it; the bottom bar is zoom then Ask Myra, centred; the Just the board button is gone.",
   "clear-board": "Tools panel: the tools leave the bottom bar for a panel at the top right, over Unsorted, which now starts under it; the bottom bar is zoom then Ask Myra, centred; the Just the board button is gone.",
   "clear-chat": "Tools panel: the tools are a panel at the top right and the bottom bar, zoom then Ask Myra, is centred, so her chat opens joined over her box from the middle of the window rather than at the right.",
