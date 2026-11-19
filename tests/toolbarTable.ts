@@ -53,6 +53,19 @@ assert.deepStrictEqual([before.tool('z')?.group, after.tool('z')?.group], ['b', 
 assert.deepStrictEqual(before.tuckOrder(ids(before.tools)), ['z', 'y', 'x']);
 assert.deepStrictEqual(after.tuckOrder(ids(after.tools)), ['y', 'z', 'x'], 'x was given priority, so it tucks last');
 
+const runs = toolbarOf(['a', t('x'), t('y'), 'b', t('z')]);
+assert.deepStrictEqual(runs.starts(['x', 'y', 'z']), ['z'], 'a tool after another group’s starts a row');
+assert.deepStrictEqual(
+  runs.starts(['x', 'z', 'y']),
+  ['z', 'y'],
+  'a personal order starts a row at each change of group',
+);
+assert.strictEqual(runs.rows(['x', 'y', 'z'], 5, false), 2, 'each group fills rows of its own');
+assert.strictEqual(runs.rows(['x', 'y', 'z'], 1, false), 3, 'one column holds a tool a row');
+assert.strictEqual(runs.rows(['x', 'y', 'z'], 5, true), 2, '··· takes the cell after the last tool');
+assert.strictEqual(runs.rows(['x', 'y', 'z'], 1, true), 4, '··· takes a row of its own after a full one');
+assert.strictEqual(runs.rows(['x', 'z', 'y'], 5, false), 3, 'a group a personal order splits fills a row a run');
+
 const shipped = ids(TOOLBAR.tools);
 assert.deepStrictEqual([...TOOLBAR.tuckOrder(shipped)].sort(), [...shipped].sort(), 'every tool tucks once');
 
