@@ -42,14 +42,14 @@
   </section>
 </aside>
 
-<!-- the bottom bar: the tools, then Myra. It sits over the board and the widgets, so it lives outside the stage -->
-<div class="dock" id="dock">
+<!-- the tools: a panel at the top right, over the board and the widgets, so it lives outside the stage -->
 <div class="tools" id="tools">
   <!-- the tool buttons are built from src/web/ui/toolbarTable.ts -->
   <button class="tb-more" id="tbMore" aria-label="More tools" data-tip="More tools" aria-haspopup="menu" hidden><svg class="ic" data-ico="more" width="18" height="18"></svg></button>
+</div>
+<!-- the bottom bar: zoom, then Myra, centred -->
+<div class="dock" id="dock">
   <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
-  <button class="clean-btn" id="cleanBtn" aria-label="Just the board · ⌘\" data-tip="Just the board · ⌘\"><svg class="ic" data-ico="board-only" width="18" height="18"></svg></button>
-  </div>
 <!-- Myra: her box, her chat, her bubble -->
   <div class="myra" id="myra">
     <!-- Myra's chat window -->
@@ -68,7 +68,7 @@
     <div class="timer-chip" id="timerChip" hidden><svg data-ico="timer" width="15" height="15"></svg><b id="tcTime">0:00</b><span id="tcWhat"></span><button type="button" id="tcX" title="Stop the timer" aria-label="Stop the timer"><svg data-ico="close" width="13" height="13"></svg></button></div>
   </div>
 </div>
-<!-- what is being placed rides on the pointer, and over the bottom bar too -->
+<!-- what is being placed rides on the pointer, and over the tools and the bottom bar too -->
 <div class="ghost" id="ghost"></div>
 
 <main class="stage" id="stage">
@@ -163,7 +163,7 @@
   <input type="file" id="coverPick" accept="image/*" hidden>
 </main>
 
-<!-- what opens over the bottom bar and Myra’s chat: the toolbar’s pickers, quick capture and a colour card’s wheel -->
+<!-- what opens over the bars and Myra’s chat: the tools’ pickers, quick capture and a colour card’s wheel -->
 <div id="overBar">
   <!-- stamps: a wheel of favorites; the middle opens every stamp -->
   <div class="wheel-stamps" id="stampWheel"><div class="ws-ring" id="wsRing"></div><button class="ws-mid" id="wsMid" title="All stamps">+</button></div>

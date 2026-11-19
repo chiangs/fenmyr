@@ -5,8 +5,8 @@ export let world: HTMLElement;
 export let cardsEl: HTMLElement;
 export let wires: HTMLElement;
 export let grid: HTMLElement;
-// the bottom bar and what opens over it sit outside the stage, at body level, and a drop, the wheel or a right-click
-// on them still belongs to the board under them
+// the tools, the bottom bar and what opens over them sit outside the stage, at body level, and a drop, the wheel or a
+// right-click on them still belongs to the board under them
 export let boardLayers: HTMLElement[];
 export function init1() {
   stage = $('stage');
@@ -14,5 +14,5 @@ export function init1() {
   cardsEl = $('cards');
   wires = $('wires');
   grid = $('grid');
-  boardLayers = [stage, $('dock'), $('overBar')];
+  boardLayers = [stage, $('tools'), $('dock'), $('overBar')];
 }
