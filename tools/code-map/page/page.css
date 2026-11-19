@@ -39,6 +39,10 @@
 * {
   box-sizing: border-box;
 }
+/* a control that sets display (the options under the search box) would otherwise stay on screen when the page hides it */
+[hidden] {
+  display: none !important;
+}
 body {
   background: var(--bg);
   color: var(--ink);

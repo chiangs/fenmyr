@@ -97,7 +97,8 @@ const look = () =>
     text: document.getElementById('boundary')?.textContent,
     title: document.getElementById('boundary')?.title,
     top: document.getElementById('topH')?.textContent,
-    namesHidden: document.getElementById('lNames')?.hidden,
+    namesShown: getComputedStyle(document.getElementById('lNames') ?? document.body).display !== 'none',
+    cycleShown: getComputedStyle(document.getElementById('lCycle') ?? document.body).display !== 'none',
     nodes: document.querySelectorAll('#gNodes > *').length,
     placeholder: document.getElementById('q')?.getAttribute('placeholder'),
   }));
@@ -106,7 +107,7 @@ await page.waitForSelector('#gNodes > *');
 const first = await look();
 assert.deepStrictEqual([first.areas, first.files], ['true', 'false'], 'the page opens on the areas view');
 assert.strictEqual(first.top, 'Most connected areas');
-assert.strictEqual(first.namesHidden, true, 'the file-only controls are hidden');
+assert.deepStrictEqual([first.namesShown, first.cycleShown], [false, false], 'the file-only options are not on screen');
 assert(first.nodes < 60, `areas are drawn, not every file (${first.nodes} circles)`);
 assert.match(first.placeholder ?? '', /Find an area/);
 assert.strictEqual(first.boundary, 'boundary ok');
@@ -116,7 +117,7 @@ await page.click('#vFiles');
 const files = await look();
 assert.deepStrictEqual([files.areas, files.files], ['false', 'true'], 'Files is one click away');
 assert(files.nodes > 200, 'and draws the files');
-assert.strictEqual(files.namesHidden, false);
+assert.deepStrictEqual([files.namesShown, files.cycleShown], [true, true], 'and they come back with the files');
 assert.match(files.placeholder ?? '', /Find a file/);
 
 await page.goto(`file://${path.join(site, 'broken.html')}`);
