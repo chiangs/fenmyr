@@ -1,1 +1,5 @@
-{}
+{
+  "wireframe-dark-pieces": "Mixes of the wireframe ink and of ink with transparent or white are written in oklab instead of oklch, which tinted them slightly pink; the changed pixels are the pieces' hairlines and shadows, by at most 0.085 OKLab on a few pixels.",
+  "wireframe-phone-pieces": "Mixes of the wireframe ink and of ink with transparent or white are written in oklab instead of oklch, which tinted them slightly pink; the changed pixels are the pieces' hairlines and shadows, by at most 0.085 OKLab on a few pixels.",
+  "wireframe-pieces": "Mixes of the wireframe ink and of ink with transparent or white are written in oklab instead of oklch, which tinted them slightly pink; the changed pixels are the pieces' hairlines and shadows, by at most 0.085 OKLab on a few pixels."
+}
