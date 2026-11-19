@@ -1,3 +1,4 @@
+import { explain } from '../boundary.ts';
 import type { MapFile } from '../types.ts';
 import type { VGraph, VNode } from '../visible.ts';
 import { data, state } from './ctx.ts';
@@ -130,6 +131,21 @@ export function renderLegend() {
   put('legend', ...chips);
 }
 
+// the status of the line between the two programs, in the header where it can't be missed: clean, or how many imports cross it
+export function renderBoundary() {
+  const b = data().map.boundary,
+    el = byId('boundary', HTMLElement);
+  el.className = `boundary ${b.clean ? 'ok' : 'bad'}`;
+  el.title = b.clean
+    ? `The renderer and the host import each other 0 times. Both import src/shared (${b.viaShared.renderer} and ${b.viaShared.host} imports), where the bridge contract ops.ts is.`
+    : b.violations.map(explain).join('\n');
+  put(
+    'boundary',
+    h('b', { text: 'Renderer \u2194 host' }),
+    h('span', { text: b.clean ? 'clean: no imports either way' : `${plural(b.violations.length, 'import')} cross it` }),
+  );
+}
+
 export function renderStats() {
   const { map } = data();
   const app = map.files.filter(f => f.zone !== 'tests' && f.zone !== 'tools'),
@@ -149,7 +165,7 @@ export function renderStats() {
   put(
     'sub',
     h('span', {
-      text: 'Every source file as a circle, every import as a line. The more connections a file has, the larger its circle. Tests, tooling and node_modules are left out until you ask for them.',
+      text: 'Each area of the source as a circle and the imports between areas as lines; switch to Files for every file and every import. The more connections, the larger the circle. Tests, tooling and node_modules are left out until you ask for them.',
     }),
     built,
   );
@@ -176,6 +192,15 @@ export function renderFacts() {
       ' is where they meet.',
     ),
   ];
+  if (!map.boundary.clean)
+    list.push(
+      h(
+        'li',
+        {},
+        h('b', { text: 'The line between the programs is broken. ' }),
+        ...map.boundary.violations.flatMap(c => [code(`${c.from} \u2192 ${c.to}`), ' ']),
+      ),
+    );
   const cycle = map.cycles[0];
   if (cycle) {
     const share = Math.round((100 * cycle.size) / Math.max(1, count('renderer')));

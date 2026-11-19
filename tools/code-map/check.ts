@@ -1,12 +1,16 @@
-// Fails when a source file or an area has no one-line description, or a description is left for something that is gone.
+// Fails when a source file or an area has no one-line description, or a description is left for something that is gone, and when
+// the renderer and the host import each other.
 // Descriptions live in tools/code-map/descriptions.json and are what the code map shows beside each file.
 import path from 'node:path';
 import { areaOf } from './areas.ts';
+import { boundaryOf, explain } from './boundary.ts';
 import { DESCRIPTIONS, isClean, MAX_LENGTH, problemsWith, readDescriptions } from './descriptions.ts';
 import { readGraph } from './graph.ts';
 
 const root = path.resolve(import.meta.dirname, '..', '..');
-const files = readGraph(root).files.map(f => f.path);
+const graph = readGraph(root),
+  files = graph.files.map(f => f.path),
+  boundary = boundaryOf(graph.edges);
 const areas = [...new Set(files.map(areaOf))];
 const p = problemsWith(readDescriptions(), files, areas);
 
@@ -20,6 +24,13 @@ report(p.staleFiles, 'described, but the file no longer exists. Remove it from t
 report(p.staleAreas, 'described, but no file is in this area. Remove it from tools/code-map/descriptions.json');
 report(p.long, `description is longer than ${MAX_LENGTH} characters. Keep it to one line`);
 
+if (!boundary.clean) {
+  console.error(boundary.violations.map(explain).join('\n'));
+  console.error(
+    '\nThe renderer (src/web) and the host (src/host) talk over the bridge in src/shared/ops.ts and import nothing from each other.',
+  );
+  process.exit(1);
+}
 if (!isClean(p)) {
   console.error(lines.join('\n'));
   console.error(`\n${path.relative(root, DESCRIPTIONS)} must describe every source file and area.`);

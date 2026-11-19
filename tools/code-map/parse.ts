@@ -1,4 +1,4 @@
-import type { CodeMap, MapArea, MapFile, Zone } from './types.ts';
+import type { Boundary, CodeMap, Crossing, MapArea, MapFile, Zone } from './types.ts';
 
 // code-map.json comes from disk or a web page, so it is unknown until it has been checked field by field here
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -46,6 +46,22 @@ function area(v: unknown): MapArea | null {
   };
 }
 
+function crossing(v: unknown): Crossing | null {
+  return isRecord(v) && str(v.from) && str(v.to)
+    ? { from: str(v.from), to: str(v.to), typeOnly: v.typeOnly === true, kind: str(v.kind) }
+    : null;
+}
+
+function boundary(v: unknown): Boundary {
+  const via = isRecord(v) && isRecord(v.viaShared) ? v.viaShared : {},
+    violations = isRecord(v) && Array.isArray(v.violations) ? v.violations.map(crossing).filter(c => c !== null) : [];
+  return {
+    clean: violations.length === 0,
+    violations,
+    viaShared: { renderer: num(via.renderer), host: num(via.host) },
+  };
+}
+
 const some = <T>(v: unknown, read: (x: unknown) => T | null): T[] =>
   Array.isArray(v) ? v.map(read).filter((x): x is T => x !== null) : [];
 
@@ -57,6 +73,7 @@ export function parseCodeMap(raw: unknown): CodeMap | null {
     builtAt: str(raw.builtAt),
     areas: some(raw.areas, area),
     files: some(raw.files, file),
+    boundary: boundary(raw.boundary),
     cycles: some(raw.cycles, c => (isRecord(c) ? { size: num(c.size), files: list(c.files) } : null)),
     external: some(raw.external, x => (isRecord(x) ? { package: str(x.package), files: list(x.files) } : null)),
   };

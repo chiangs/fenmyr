@@ -12,6 +12,7 @@
   --out: #2468d8;
   --in: #d4600b;
   --ring: #c2255c;
+  --good: #1a7f46;
   --nl: 46%;
   --focus: #2468d8;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -30,12 +31,17 @@
     --out: #5ea4ff;
     --in: #ffa04a;
     --ring: #ff6b9a;
+    --good: #5dd18a;
     --nl: 63%;
     --focus: #5ea4ff;
   }
 }
 * {
   box-sizing: border-box;
+}
+/* a control that sets display (the options under the search box) would otherwise stay on screen when the page hides it */
+[hidden] {
+  display: none !important;
 }
 body {
   background: var(--bg);
@@ -118,6 +124,28 @@ h1 {
   margin: 2px 0 0;
   font: 500 22px / 1.1 var(--mono);
   font-variant-numeric: tabular-nums;
+}
+.boundary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  font: 500 13px / 1.2 var(--font);
+  cursor: help;
+}
+.boundary b {
+  font-weight: 600;
+}
+.boundary.ok {
+  border-color: var(--good);
+  color: var(--good);
+}
+.boundary.bad {
+  border-color: var(--ring);
+  color: var(--ring);
 }
 .grid {
   display: grid;

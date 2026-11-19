@@ -4,7 +4,7 @@ import type { VNode } from '../visible.ts';
 import { centreOn, fit, size } from './camera.ts';
 import { data, load, state } from './ctx.ts';
 import { byId } from './h.ts';
-import { renderDetail, renderFacts, renderLegend, renderStats, renderTop } from './panel.ts';
+import { renderBoundary, renderDetail, renderFacts, renderLegend, renderStats, renderTop } from './panel.ts';
 import { wirePointer } from './pointer.ts';
 import { draw, paint, place } from './scene.ts';
 
@@ -36,7 +36,23 @@ function setView(view: 'files' | 'areas') {
   byId('vFiles', HTMLButtonElement).setAttribute('aria-pressed', String(view === 'files'));
   byId('vAreas', HTMLButtonElement).setAttribute('aria-pressed', String(view === 'areas'));
   for (const id of ['lNames', 'lCycle']) byId(id, HTMLElement).hidden = view === 'areas';
+  describeView();
   rebuild(false);
+}
+
+// what the search box, the graph's label and the size hint say follows the view
+function describeView() {
+  const areas = state.view === 'areas';
+  byId('q', HTMLInputElement).placeholder = areas
+    ? 'Find an area, such as canvas or myra'
+    : 'Find a file, such as history or tags';
+  byId('q', HTMLInputElement).setAttribute('aria-label', areas ? 'Find an area' : 'Find a file');
+  byId('svg', SVGElement).setAttribute(
+    'aria-label',
+    areas
+      ? 'Graph: each circle is an area of the source, each line the imports between two areas. Larger circles have more connections.'
+      : 'Graph: each circle is a source file, each line an import. Larger circles have more connections.',
+  );
 }
 
 function clearAll() {
@@ -135,10 +151,12 @@ function start() {
   }
   load(map);
   renderStats();
+  renderBoundary();
   renderFacts();
   renderLegend();
   wirePointer(select);
   wireControls();
+  describeView();
   rebuild(false);
 }
 
