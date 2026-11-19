@@ -1,7 +1,8 @@
 import { typesWith } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { renderWires, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';

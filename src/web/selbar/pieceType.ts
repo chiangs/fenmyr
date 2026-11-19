@@ -1,10 +1,11 @@
 import { typesWith } from '../../shared/cardTypes.ts';
 import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { cardEl, closestTo, htmlIn, oneIn } from '../ui/dom.ts';
 import { caret, closeSbPops, FOLD_PIECE, focusBar, G, inVisit, pct, pop, SLIDER_KEYS, syncPair } from './barKit.ts';
 import { fontButton, fontTargets } from './fontPop.ts';

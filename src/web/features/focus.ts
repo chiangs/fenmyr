@@ -1,6 +1,6 @@
 import type { Card } from '../../shared/model.ts';
 import { fit } from '../canvas/handles.ts';
-import { renderTray } from '../canvas/wires.ts';
+import { renderTray } from '../canvas/tray.ts';
 import { linkCard } from '../cards/spotify.ts';
 import { find } from '../core/base.ts';
 import { $ } from '../core/dom.ts';

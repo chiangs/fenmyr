@@ -1,8 +1,8 @@
 import { type Card, isRecord } from '../../shared/model.ts';
-import { byId, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember, save, showWhatMyraMade } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { closeHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { bdNow } from '../myra/birthday.ts';

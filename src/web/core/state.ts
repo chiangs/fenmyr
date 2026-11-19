@@ -74,3 +74,6 @@ export const appState: AppState = {
   warm: null,
   firstRunSetup: false,
 };
+
+export const byId = (id: string) => session.board.cards.find(c => c.id === id);
+export const linkById = (id: string) => session.board.links.find(l => l.id === id);

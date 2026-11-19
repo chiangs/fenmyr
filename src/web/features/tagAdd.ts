@@ -1,8 +1,7 @@
 import type { Card } from '../../shared/model.ts';
-import { byId } from '../canvas/wires.ts';
 import { cardsEl } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { child, closestTo } from '../ui/dom.ts';
 
 import { addTag, cleanTag, nameOf, realTag, removeTag, type Suggest, suggestRow, tagSuggestions } from './tags.ts';

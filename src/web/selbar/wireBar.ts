@@ -1,8 +1,8 @@
 import type { Link } from '../../shared/model.ts';
-import { linkById, renderWires, wireColor, wireW } from '../canvas/wires.ts';
+import { renderWires, wireColor, wireW } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { linkById, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo } from '../ui/dom.ts';
 import { caret, closeSbPops, G, ICON, moreHtml, openBarColor, pop } from './barKit.ts';

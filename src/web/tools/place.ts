@@ -1,6 +1,6 @@
 import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { parentOf } from '../cards/collection.ts';
 import { colorName } from '../cards/colorNames.ts';
 import { collAt, dropInto } from '../cards/kanban.ts';

@@ -1,10 +1,9 @@
 import type { Card, Link } from '../../shared/model.ts';
 import type { Drag } from '../canvas/drag.ts';
-import { byId, linkById } from '../canvas/wires.ts';
 import { cropping } from '../cards/crop.ts';
 import { find } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, linkById, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { selCards } from './selected.ts';
 import { editedNoteBody } from './typingFocus.ts';

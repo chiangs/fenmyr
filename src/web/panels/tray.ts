@@ -1,6 +1,6 @@
 import { toWorld } from '../canvas/handles.ts';
 import { overTray } from '../canvas/pointerKit.ts';
-import { renderTray, takeFromTray } from '../canvas/wires.ts';
+import { renderTray, takeFromTray } from '../canvas/tray.ts';
 import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';

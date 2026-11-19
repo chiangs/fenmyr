@@ -1,8 +1,8 @@
 import type { Card } from '../../shared/model.ts';
-import { byId, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { $ } from '../core/dom.ts';
 import { boardRevision } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { closestTo, esc } from '../ui/dom.ts';
 import { openPicker, pickerScreen } from './piecePick.ts';
 

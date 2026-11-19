@@ -1,7 +1,7 @@
 import { type InkPoint, isRecord } from '../../shared/model.ts';
 import { toWorld } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { colorLabel } from '../core/base.ts';
 import { $, stage, world } from '../core/dom.ts';
 import { save } from '../core/history.ts';

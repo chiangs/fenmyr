@@ -1,5 +1,5 @@
 import type { Card, CardOf } from '../../shared/model.ts';
-import { byId } from '../canvas/wires.ts';
+import { byId } from '../core/state.ts';
 
 /** The screen the wireframe tools act on: the one selected screen when every other selected card sits on it, else the
  *  screen every selected card sits on. Null for two screens, a card on none, or cards on different screens. */

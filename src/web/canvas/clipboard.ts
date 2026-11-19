@@ -3,7 +3,7 @@ import { layoutAll } from '../cards/kanban.ts';
 import { copyOf as plainCopy, uid } from '../core/base.ts';
 import { stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { chirp } from '../myra/say.ts';
@@ -13,7 +13,8 @@ import { selCards } from '../selbar/selected.ts';
 import { closestTo } from '../ui/dom.ts';
 import { onFrame } from '../wireframe/tilt.ts';
 import { renderCard } from './render.ts';
-import { byId, renderWires, selectOnly } from './wires.ts';
+import { selectOnly } from './selection.ts';
+import { renderWires } from './wires.ts';
 
 // ---------- copy, cut and paste cards: works across boards (the clip lives in Fenmyr, plus their words go to the system clipboard) ----------
 const CLIP = 'fenmyr:clip';
