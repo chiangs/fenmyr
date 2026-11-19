@@ -14,7 +14,7 @@ export type State = {
 };
 
 export const state: State = {
-  view: 'files',
+  view: 'areas',
   filter: { tests: false, tools: false, types: true },
   names: true,
   cycle: false,
