@@ -194,18 +194,16 @@ async function everyOpener(what: string) {
 }
 await check('Shapes, Templates, the stamps and Customise toolbar open left of the panel', () => everyOpener('a board'));
 
-await check('a tool’s mode bar sits left of the panel, level with it', async () => {
+await check('drawing’s card sits left of the panel, level with its top', async () => {
   await page.click('#tools [data-add="draw"]');
   await page.waitForTimeout(300);
   const g = await geo(page),
-    bar = await page.evaluate(() => document.getElementById('modebar')?.getBoundingClientRect().toJSON());
+    card = await page.evaluate(() => document.getElementById('modeCard')?.getBoundingClientRect().toJSON());
   await page.keyboard.press('Escape');
   await page.click('#tools [data-add="pointer"]');
-  assert.ok(
-    g.tools && bar && bar.right <= g.tools.l,
-    `the mode bar ends at ${bar?.right}, the panel starts at ${g.tools?.l}`,
-  );
-  assert.ok(bar.bottom > g.tools.t && bar.top < g.tools.b, `the mode bar spans ${bar.top} to ${bar.bottom}`);
+  assert.ok(g.tools && card, 'the panel and the card are up');
+  near(card.right, g.tools.l - 12, 'the card’s right');
+  near(card.top, g.tools.t, 'the card’s top');
 });
 
 await check('the open chat leaves zoom showing', async () => {

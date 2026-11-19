@@ -309,15 +309,18 @@ await check('on a phone the selection and mode strips join the bar, and leave it
   await size(600);
   const phone = await page.evaluate(() => ({
     phone: document.body.classList.contains('phone'),
-    strips: ['selbar', 'modebar'].map(id => document.getElementById(id)?.parentElement?.id),
+    strips: ['selbar', 'modeCard'].map(id => document.getElementById(id)?.parentElement?.id),
   }));
   await size(1440);
   const back = await page.evaluate(() =>
-    ['selbar', 'modebar'].map(id => document.getElementById(id)?.parentElement?.id),
+    ['selbar', 'modeCard'].map(id => {
+      const up = document.getElementById(id)?.parentElement;
+      return up === document.body ? 'body' : up?.id;
+    }),
   );
   const again = await bar();
   assert.deepStrictEqual(phone, { phone: true, strips: ['dock', 'dock'] }, 'in the bar on a phone');
-  assert.deepStrictEqual(back, ['stage', 'stage'], 'back on the board');
+  assert.deepStrictEqual(back, ['stage', 'body'], 'back on the board, and beside the tools');
   assert.deepStrictEqual(again.dock, wide.dock, 'the bar is back where it was');
 });
 

@@ -14,7 +14,6 @@ import {
   draftLabel,
   escStep,
   type Geometry,
-  type ModeBar,
   type Placement,
   placeChat,
   type Rect,
@@ -68,12 +67,12 @@ const HEIGHT_KEY = 'fenmyr:chatH';
 // what the top-edge grip set; placeChat fits it to the window
 let height: number | null = null;
 
-let mode: ModeBar | null = null;
+let lift = 0;
 
-/** Drawing's or find's bar came up, went, or changed: the chat places itself around it again. */
-export function setModeBar(m: ModeBar | null) {
-  if (m?.lift === mode?.lift && m?.l === mode?.l && m?.w === mode?.w) return;
-  mode = m;
+/** Find's bar over the bottom bar came up, went, or changed height: the chat places itself around it again. */
+export function setModeBar(to: number) {
+  if (to === lift) return;
+  lift = to;
   relayout();
 }
 
@@ -83,9 +82,8 @@ function measure(): Geometry {
     view: { w: innerWidth, h: innerHeight },
     bar: { l: bar.left, t: bar.top, r: bar.right, b: bar.bottom },
     box: boxRect(),
-    mode,
-    // a mode bar over the bottom bar lifts the chat instead, through `mode`
-    tools: [$('tools'), ...($('modebar').dataset.side === 'left' ? [$('modebar')] : [])]
+    lift,
+    tools: [$('tools'), $('modeCard')]
       .filter(el => el.checkVisibility())
       .map(el => el.getBoundingClientRect())
       .filter(r => r.height)
@@ -265,11 +263,12 @@ function closeRules() {
 export function init30() {
   closeRules();
   addEventListener('resize', relayout);
-  // her box moves as the bar's width changes, at Home and back, and the chat with it; it keeps under the tools as
-  // they change height
+  // her box moves as the bar's width changes, at Home and back, and the chat with it; it keeps under the tools and the
+  // mode card as they change height or the card comes and goes
   const watch = new ResizeObserver(relayout);
   watch.observe($('dock'));
   watch.observe($('tools'));
+  watch.observe($('modeCard'));
 
   initSees();
   ['pointerup', 'keyup'].forEach(ev => {

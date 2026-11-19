@@ -189,19 +189,22 @@ const coveredColours = () =>
       }).length,
   );
 for (const w of [1100, 1280]) {
-  await check(`at ${w} px, drawing with her chat open, the drawing bar keeps clear of the chat`, async () => {
+  await check(`at ${w} px, drawing with her chat open, drawing’s card keeps clear of the chat`, async () => {
     await size(w, 800);
     await page.keyboard.press('p');
     await setChat(true);
-    const { mChat, modebar } = await edges(['mChat', 'modebar']),
+    const { mChat, modeCard } = await edges(['mChat', 'modeCard']),
       colours = await page.locator('#dbColors > *').count(),
       covered = await coveredColours();
     await setChat(false);
     await page.keyboard.press('Escape');
     await size(1440);
-    assert.ok(mChat && modebar, 'her chat and the drawing bar are up');
-    assert.ok(!overlaps(mChat, modebar), `the chat ${JSON.stringify(mChat)} meets the bar ${JSON.stringify(modebar)}`);
-    assert.ok(colours > 0, 'the drawing bar has colours');
+    assert.ok(mChat && modeCard, 'her chat and drawing’s card are up');
+    assert.ok(
+      !overlaps(mChat, modeCard),
+      `the chat ${JSON.stringify(mChat)} meets the card ${JSON.stringify(modeCard)}`,
+    );
+    assert.ok(colours > 0, 'drawing’s card has colours');
     assert.strictEqual(covered, 0, `${covered} of ${colours} colours are covered`);
   });
 }
