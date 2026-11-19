@@ -8,6 +8,7 @@ import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { activeGrants, vaults } from '../vault/vaults.ts';
 import { closestTo, esc, htmlIn } from './dom.ts';
+import { openLeftOfPanel } from './popover.ts';
 import { PANEL, TOOLBAR } from './toolbarTable.ts';
 
 const DEFAULT_ORDER = TOOLBAR.tools.map(t => t.id);
@@ -154,7 +155,6 @@ export function syncMore() {
   if ((more.ariaPressed === 'true') !== held) more.ariaPressed = held ? 'true' : null;
 }
 
-export const tbRect = (b: Element) => (b.classList.contains('tb-over') ? $('tbMore') : b).getBoundingClientRect();
 export function init19() {
   // ---------- your toolbar: pick which tools show at the bottom and in what order (shortcuts keep working for hidden ones) ----------
   (() => {
@@ -212,13 +212,13 @@ export function init19() {
     e.preventDefault();
     e.stopPropagation();
     boardMenu(e, [{ label: 'Customise toolbar…', run: openToolbarSettings }]);
+    openLeftOfPanel($('rowMenu'), closestTo(e.target, 'button') ?? $('tools'));
   });
   // pickers that open from a tool open from ··· when the tool is tucked away
   $('tbMore').onclick = e => {
     e.stopPropagation();
-    const r = $('tbMore').getBoundingClientRect(),
-      over = htmlIn($('tools'), ':scope > .tb-over');
-    boardMenu({ clientX: r.left, clientY: r.top - 8 - over.length * 36 }, [
+    const over = htmlIn($('tools'), ':scope > .tb-over');
+    boardMenu({ clientX: 0, clientY: 0 }, [
       ...over.map(b => {
         const icon = iconOf(b),
           name = esc(nameOf(b));
@@ -231,7 +231,8 @@ export function init19() {
       '-',
       { label: 'Customise toolbar…', run: openToolbarSettings },
     ]);
-    $('rowMenu')?.classList.add('tb-menu');
+    $('rowMenu').classList.add('tb-menu');
+    openLeftOfPanel($('rowMenu'), $('tbMore'));
   };
 
   const fitSoon = () => requestAnimationFrame(fitPanel);

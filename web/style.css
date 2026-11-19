@@ -536,8 +536,9 @@ body.dark .kb-n { background: color-mix(in srgb, var(--chead) 40%, var(--kb-bg))
 .card.shape .body { padding: 0; overflow: visible; display: grid; place-items: center; }
 .card.shape svg.sh { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .card.shape .text { position: relative; max-width: 80%; text-align: center; font: 600 calc(15px * var(--fs, 1))/1.3 var(--font); outline: none; white-space: pre-wrap; }
-.shapepick { position: fixed; left: 50%; bottom: calc(var(--bar-b) + 66px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 22; display: flex; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
-.shapepick.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
+/* the tools' pickers open left of the panel, beside their button: openLeftOfPanel sets left and top */
+.shapepick { position: fixed; transform: translateY(6px); z-index: 22; display: flex; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
+.shapepick.on { opacity: 1; pointer-events: auto; transform: none; }
 .shapepick button { width: 38px; height: 38px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; display: grid; place-items: center; cursor: pointer; color: var(--ink-soft); }
 .shapepick button:hover, .shapepick button.on { background: var(--blush); color: var(--ink); }
 .shapepick svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
@@ -592,14 +593,14 @@ body:has(.stage.at-home) .tools, body:has(.stage.at-home) .dock .zoom, .stage.at
 .board-row span[contenteditable="true"] { background: var(--snow); box-shadow: 0 0 0 1.5px var(--select); border-radius: 4px; padding: 0 3px; outline: none; cursor: text; user-select: text; -webkit-user-select: text; }
 
 /* ---------- stamps (like FigJam's wheel) ---------- */
-.wheel-stamps { position: fixed; bottom: calc(var(--bar-b) + 62px + var(--mode-h, 0px)); z-index: 22; width: 220px; height: 220px; margin-left: -110px; border-radius: 50%; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .15s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
+.wheel-stamps { position: fixed; z-index: 22; width: 220px; height: 220px; border-radius: 50%; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .15s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
 .wheel-stamps.on { opacity: 1; pointer-events: auto; transform: none; }
 .ws-ring button { position: absolute; width: 50px; height: 50px; margin: -25px 0 0 -25px; border: 0; border-radius: 50%; background: none; display: grid; place-items: center; cursor: pointer; font-size: 30px; line-height: 1; transition: transform .15s, background .15s; }
 .ws-ring button:hover { background: var(--blush); transform: scale(1.15); }
 .ws-ring img, .sp-grid img { width: 40px; height: 40px; image-rendering: pixelated; pointer-events: none; }
 .ws-mid { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border: 0; border-radius: 50%; background: var(--ws-bg); font: 300 30px/1 var(--font); color: var(--ink); cursor: pointer; box-shadow: inset 0 0 0 1px rgb(from var(--select) r g b / .15); }
 .ws-mid:hover { background: var(--ws-bg-2); }
-.stamp-pick { position: fixed; bottom: calc(var(--bar-b) + 62px + var(--mode-h, 0px)); z-index: 23; width: 340px; margin-left: -170px; padding: 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
+.stamp-pick { position: fixed; z-index: 23; width: 340px; padding: 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
 .stamp-pick.on { opacity: 1; pointer-events: auto; transform: none; }
 .sp-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 .sp-tabs button { flex: 1; padding: 8px 6px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
@@ -1201,7 +1202,7 @@ body.dark .pp-head { color: rgb(var(--sh)); }
 body.picturing :is(.plan-preview, .screen-hints, .piece-pick) { visibility: hidden !important; }
 
 /* design thinking templates: a little menu above the toolbar */
-.tplpick { position: fixed; left: 50%; bottom: calc(var(--bar-b) + 66px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 22; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
+.tplpick { position: fixed; transform: translateY(6px); z-index: 22; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
 .tplpick { max-height: calc(100vh - 130px - var(--mode-h, 0px)); overflow: hidden; display: flex; flex-direction: column; gap: 0; }
 .tplpick .tp-list { display: grid; gap: 2px; min-height: 0; overflow: auto; scrollbar-width: thin; }
 .tplpick .tp-list [hidden] { display: none; }
@@ -1213,7 +1214,7 @@ body.picturing :is(.plan-preview, .screen-hints, .piece-pick) { visibility: hidd
 .tplpick .tp-search:focus-within { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
 body.dark .tplpick .tp-search { background: rgb(from var(--hilite) r g b / .08); }
 body.following-caelestia .tplpick .tp-search { background: color-mix(in srgb, var(--panel) 78%, var(--dot)); }
-.tplpick.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
+.tplpick.on { opacity: 1; pointer-events: auto; transform: none; }
 .tplpick button { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
 .tplpick button:hover { background: var(--blush); }
 .tplpick .tp-e { flex: none; width: 34px; height: 34px; border-radius: 16px; corner-shape: squircle; display: grid; place-items: center; background: var(--surface-2); color: var(--ink); }
@@ -1456,9 +1457,10 @@ body.phone .m-pill, body.phone .find-bar { display: none; }
 body.phone .dock .m-bubble { position: fixed; left: 14px; right: 14px; bottom: calc(var(--hub-h) + 24px + var(--safe)); width: auto; max-width: none; }
 body.phone .m-chat { position: fixed; left: 8px; right: 8px; bottom: calc(8px + var(--safe)); top: auto; width: auto; height: min(78vh, 640px); z-index: 60; border-radius: var(--pill-r); corner-shape: squircle; }
 /* pickers float centered over the hub */
-body.phone .shapepick, body.phone .tplpick { left: 50% !important; bottom: calc(var(--hub-h) + 26px + var(--safe)); max-width: calc(100vw - 20px); }
+body.phone .shapepick, body.phone .tplpick { left: 50% !important; top: auto !important; bottom: calc(var(--hub-h) + 26px + var(--safe)); translate: -50% 0; max-width: calc(100vw - 20px); }
 body.phone .tplpick { width: calc(100vw - 20px); max-height: 62vh; }
-body.phone .wheel-stamps, body.phone .stamp-pick { left: 50% !important; bottom: calc(var(--hub-h) + 26px + var(--safe)); }
+body.phone .wheel-stamps, body.phone .stamp-pick { left: 50% !important; top: auto !important; bottom: calc(var(--hub-h) + 26px + var(--safe)); }
+body.phone .wheel-stamps { margin-left: -110px; }
 body.phone .stamp-pick { width: calc(100vw - 20px); margin-left: calc(-50vw + 10px); }
 /* the sheet */
 body.phone .sheet { display: block; position: fixed; inset: 0; z-index: 70; pointer-events: none; }
