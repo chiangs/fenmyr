@@ -66,7 +66,15 @@ const inAir = (frames: hop.Frame[]) => {
 // How soon she gets going, how far she is within her first 150 ms in the air, and when she is at rest, from her frames.
 // Her first frame in the header is the switch. She is at rest after her last frame more than 1 px from where she ends,
 // in place or in size, which a squash on landing counts in. That frame's time is what is used, so a frame dropped on a
-// busy runner cannot make her look slower than she is.
+// busy runner cannot make her look slower than she is. The same goes for her first movement: her wind-up is 70 ms and
+// the limit 100, which a slow frame or two between the switch and her first move can use up, so the time a frame takes
+// beyond one at 60 Hz is not counted, unless the frame is under one and a half of them, which is ordinary jitter.
+const FRAME = 1000 / 60;
+const slowBy = (run: hop.Frame[]) =>
+  run.slice(1).reduce((sum, f, i) => {
+    const gap = f.ms - (run[i]?.ms ?? f.ms);
+    return gap > FRAME * 1.5 ? sum + gap - FRAME : sum;
+  }, 0);
 const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.flight>>) => {
   assert.ok(before, 'she shows before the switch');
   const gone = (f: { l: number; t: number }, q: Edges) => Math.hypot(f.l - q.l, f.t - q.t),
@@ -92,7 +100,7 @@ const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.flight>>)
         ? way(upTo) + ((way(next) - way(upTo)) * (air.ms + 150 - upTo.ms)) / (next.ms - upTo.ms)
         : way(next ?? upTo ?? air);
   return {
-    moves: moved.ms - switched.ms,
+    moves: moved.ms - switched.ms - slowBy(frames.slice(frames.indexOf(switched), frames.indexOf(moved) + 1)),
     covered,
     rest: rest.ms - switched.ms,
     held: Math.max(...frames.slice(1).map((f, i) => f.ms - (frames[i]?.ms ?? 0))),
