@@ -1,5 +1,5 @@
 import type { Card } from '../../shared/model.ts';
-import { mrot, realBox, tiltOf } from '../canvas/handles.ts';
+import { canTurn, realBox, tiltOf } from '../canvas/handles.ts';
 import { wireGeom } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
@@ -49,7 +49,9 @@ function anchorFor(ctx: BarContext): Anchor {
       const w = worldBox(ctx.cards),
         lt = toStage({ x: w.l, y: w.t }),
         rb = toStage({ x: w.r, y: w.b }),
-        dot = mrot.classList.contains('on') ? TURN_DOT : 0; // the bar never covers the dot, so turning still works
+        // The bar never covers the dot, so turning still works. The room is kept whenever the selection has a dot, not
+        // only while it is up: it hides under a press or an edit, and the bar would drop and then jump back.
+        dot = canTurn(ctx.cards) ? TURN_DOT : 0;
       return { box: { l: lt.x, t: lt.y - dot, r: rb.x, b: rb.y }, prefer: 'above' };
     }
     case 'connector': {

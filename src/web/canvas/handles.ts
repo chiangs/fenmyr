@@ -61,13 +61,19 @@ function placeDot(x: number, y: number, ang: number) {
   mrot.style.setProperty('--iz', (1 / session.view.z).toFixed(4));
 }
 
+// Whether a selection has a turn dot at all. The dot hides while a press, an edit, a crop or a drawing is under way, so
+// anything that holds its place for the dot, such as the selection bar, asks this and not whether the dot is up.
+export function canTurn(selected: readonly Card[]) {
+  const free = selected.filter(k => !k.locked),
+    one = free.length === 1 ? free[0] : undefined;
+  return free.length > 1 || (!!one && !ROT_FIXED.includes(one.type) && one.type !== 'section');
+}
+
 function syncMrot() {
   const ids = session.board ? [...session.sel] : [];
-  const cs = ids.map(byId).filter((k): k is Card => !!k && !k.locked),
-    one = cs.length === 1 ? cs[0] : undefined;
-  const turnable = cs.length > 1 || (!!one && !ROT_FIXED.includes(one.type) && one.type !== 'section');
+  const cs = ids.map(byId).filter((k): k is Card => !!k && !k.locked);
   const on =
-    turnable &&
+    canTurn(cs) &&
     !drawOn &&
     !session.editing &&
     !cropping &&

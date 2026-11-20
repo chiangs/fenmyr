@@ -7,9 +7,16 @@ const CONTROLS = 'button, input, select';
 // where F10 came from, so Escape goes back there
 let cameFrom: HTMLElement | null = null;
 
+// A bar fading back in after a gesture has opacity 0 on its first frame, and is up all the same. One on its way out
+// (paused) is not, and neither is one held at 0 by an open Doc.
+const fadingIn = (bar: HTMLElement) =>
+  !bar.classList.contains('paused') &&
+  bar.getAnimations().some(a => a instanceof CSSTransition && a.transitionProperty === 'opacity');
+
 function enterBar(bar: HTMLElement) {
   const from = document.activeElement;
-  if (!bar.classList.contains('on') || !bar.checkVisibility({ opacityProperty: true }) || isTyping(from)) return false;
+  if (!bar.classList.contains('on') || isTyping(from)) return false;
+  if (!bar.checkVisibility({ opacityProperty: true }) && !fadingIn(bar)) return false;
   const first = htmlIn(bar, CONTROLS).find(c => c.checkVisibility() && !c.matches(':disabled'));
   if (!first) return false;
   cameFrom = from instanceof HTMLElement && from !== document.body ? from : null;

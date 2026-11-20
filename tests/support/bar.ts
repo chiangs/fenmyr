@@ -61,6 +61,12 @@ export async function openBar() {
     await page.evaluate(ids => window.__fenmyr.selectOnly(ids), ids);
     await frames();
   };
+  // The bar fades in after a gesture, so a test that reads whether it is up waits for that first.
+  const barUp = () =>
+    page.waitForFunction(() => {
+      const bar = document.getElementById('selbar');
+      return !!bar?.checkVisibility() && getComputedStyle(bar).opacity === '1';
+    });
   const selectWire = async (id: string) => {
     await page.evaluate(id => window.__fenmyr.selectWire(id), id);
     await frames();
@@ -130,7 +136,7 @@ export async function openBar() {
     assert.deepStrictEqual(errors, []);
     console.log(ok);
   };
-  return { l, page, frames, still, view, select, selectWire, cardOf, focused, shape, check, done };
+  return { l, page, frames, still, view, select, selectWire, barUp, cardOf, focused, shape, check, done };
 }
 
 export const near = (actual: number | undefined, expected: number, what: string) =>

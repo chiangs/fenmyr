@@ -40,8 +40,18 @@ const editBody = async (page: Page, id: string) => {
   await page.keyboard.press('Control+End');
   await page.waitForTimeout(150);
 };
+// Clicks bare board to end the edit. The note's bar floats over the board, so no one point is always clear of it.
 const stopEditing = async (page: Page) => {
-  await page.mouse.click(720, 120);
+  const [x, y] = await page.evaluate(() => {
+    const spots = [
+      [720, 120],
+      [720, 700],
+      [1000, 700],
+      [500, 700],
+    ] as const;
+    return spots.find(([x, y]) => document.elementFromPoint(x, y)?.id === 'stage') ?? spots[0];
+  });
+  await page.mouse.click(x, y);
   await page.waitForTimeout(150);
 };
 const redraw = async (page: Page) => {

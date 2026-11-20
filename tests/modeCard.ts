@@ -64,7 +64,7 @@ function besidePanel(g: Geo, card: Edges | null, what: string) {
     assert.ok(!overlaps(card, e), `${what} ${show(card)} meets ${name} ${show(e)}`);
 }
 
-const { l, page, frames, view, select, check, done } = await openBar();
+const { l, page, frames, view, select, barUp, check, done } = await openBar();
 const size = async (w: number, h: number) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
   await settle(page, 300);
@@ -241,6 +241,7 @@ await check('a selection’s bar keeps clear of drawing’s card', async () => {
   // the note across the card's left edge, level with it, where a bar centred over the note would run under the card
   await view(g.draw.l - 110, g.draw.t + 60);
   await select(['note']);
+  await barUp();
   const { selbar, draw } = await geo(page);
   assert.ok(selbar && draw, 'the selection bar and the card are up');
   assert.ok(!overlaps(selbar, draw), `the bar ${show(selbar)} meets the card ${show(draw)}`);
