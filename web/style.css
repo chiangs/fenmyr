@@ -616,8 +616,8 @@ body.dark .ws-mid:hover { background: var(--ws-bg-4); }
 .sp-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 .sp-tabs button { flex: 1; padding: 8px 6px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .sp-tabs button.on { background: var(--blush); color: var(--ink); }
-.sp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; max-height: 260px; overflow: auto; }
-.sp-grid button { aspect-ratio: 1; border: 0; border-radius: 16px; corner-shape: squircle; background: none; display: grid; place-items: center; font-size: 28px; line-height: 1; cursor: pointer; }
+.sp-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; max-height: calc(100vh - 140px); overflow: hidden auto; }
+.sp-grid button { aspect-ratio: 1; padding: 0; border: 0; border-radius: 16px; corner-shape: squircle; background: none; display: grid; place-items: center; font-size: 28px; line-height: 1; cursor: pointer; }
 .sp-grid button:hover { background: var(--blush); }
 /* a stamp on the board: a little sticker with a white edge */
 .card.stamp > .frame { display: none; }
