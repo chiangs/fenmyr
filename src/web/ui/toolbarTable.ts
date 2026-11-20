@@ -23,13 +23,13 @@ const TABLE: Table = [
   { id: 'vnote', label: 'Vault note', key: 'Alt+N', icon: 'notebook', needs: 'vault' },
   { id: 'doc', label: 'Doc', key: 'D', icon: 'doc' },
   { id: 'todo', label: 'Checklist', key: 'C', icon: 'checklist' },
-  { id: 'tpl', label: 'Templates', key: '⌥T', icon: 'templates' },
 
   'structure',
   { id: 'title', label: 'Big title', key: 'T', icon: 'title' },
   { id: 'coll', label: 'Collection', key: 'G', icon: 'collection' },
   { id: 'canvas', label: 'Canvas', icon: 'canvas', aria: 'Canvas (a board inside this one)' },
   { id: 'frame', label: 'Wireframe', key: 'W', icon: 'screen', toggle: true },
+  { id: 'tpl', label: 'Templates', key: '⌥T', icon: 'templates' },
 
   'media',
   { id: 'link', label: 'Link', key: 'L', icon: 'link' },

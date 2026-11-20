@@ -2,9 +2,10 @@ import assert from 'node:assert';
 import { TOOLBAR } from '../src/web/ui/toolbarTable.ts';
 import { launch } from './support/launch.ts';
 
-const write = TOOLBAR.tools.filter(t => t.group === 'write');
-assert.strictEqual(TOOLBAR.tool('tpl')?.group, 'write', 'Templates is in the write group');
-assert.strictEqual(write.at(-1)?.id, 'tpl', 'and last in it, after Checklist');
+const structure = TOOLBAR.tools.filter(t => t.group === 'structure');
+assert.strictEqual(TOOLBAR.tool('tpl')?.group, 'structure', 'Templates is in the structure group');
+assert.strictEqual(structure.at(-1)?.id, 'tpl', 'and last in it');
+assert.strictEqual(structure.at(-2)?.id, 'frame', 'after Wireframe');
 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
 const l = await launch({
@@ -37,7 +38,7 @@ const press = async (keys: string) => {
 try {
   await page.mouse.click(900, 650);
   const buttons = await page.$$eval('#tools > [data-add]', bs => bs.map(b => b.getAttribute('data-add') ?? ''));
-  assert.strictEqual(buttons[buttons.indexOf('todo') + 1], 'tpl', 'the button sits right after Checklist');
+  assert.strictEqual(buttons[buttons.indexOf('frame') + 1], 'tpl', 'the button sits right after Wireframe');
   assert.strictEqual(
     await page.getAttribute('#tools [data-add="tpl"]', 'data-tip'),
     'Templates · Alt+T',
