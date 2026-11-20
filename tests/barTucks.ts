@@ -1,5 +1,5 @@
-// The Wireframe button joins the bottom bar after Canvas without hiding anything 8d showed: every tool shows at
-// 1440 × 900, and at 1366 and 1280 px the same tools tuck into ··· as before it came.
+// The tools tuck into ··· for rows, never for width: with the usual icons every tool shows, the Wireframe button too,
+// at 1440 × 900 and down to 1000 × 800, where the bottom bar used to tuck them.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -11,8 +11,9 @@ const l = await launch({
 const { page, app } = l;
 const EXPECT: [number, number, string][] = [
   [1440, 900, ''],
-  [1366, 768, 'tpl pen draw'],
-  [1280, 800, 'shape stamp tpl pen draw'],
+  [1366, 768, ''],
+  [1280, 800, ''],
+  [1000, 800, ''],
 ];
 
 try {

@@ -1,5 +1,8 @@
 // Popups and menus: the one place that knows whether one is open, so a press that closes one isn't also taken as
-// a click on what lies under it.
+// a click on what lies under it, and where the tools' popups open.
+import { $ } from '../core/dom.ts';
+import { place } from '../selbar/place.ts';
+
 type Dismissal = { inside: string; isOpen: () => boolean; close: () => void };
 
 const dismissals: Dismissal[] = [];
@@ -98,6 +101,32 @@ export function keepOnScreen(popup: HTMLElement) {
   const r = popup.getBoundingClientRect();
   if (r.bottom > innerHeight - EDGE) popup.style.top = `${Math.max(EDGE, innerHeight - r.height - EDGE)}px`;
   if (r.right > innerWidth - EDGE) popup.style.left = `${innerWidth - r.width - EDGE}px`;
+}
+
+/** Opens a popup to the left of the tools panel, level with `button`, or with ··· while the button is tucked in it.
+ *  It takes another side only when the window has no room on the left. The mode card waits under it, as CSS says. */
+export function openLeftOfPanel(popup: HTMLElement, button: Element) {
+  popup.classList.add('left-of-panel');
+  const panel = $('tools').getBoundingClientRect(),
+    b = (button.classList.contains('tb-over') ? $('tbMore') : button).getBoundingClientRect(),
+    at = place(
+      { box: { l: panel.left, t: b.top, r: panel.right, b: b.bottom }, prefer: 'left' },
+      { l: EDGE, t: EDGE, r: innerWidth - EDGE, b: innerHeight - EDGE },
+      { w: popup.offsetWidth, h: popup.offsetHeight },
+    );
+  popup.style.left = `${Math.round(at.x)}px`;
+  popup.style.top = `${Math.round(at.y)}px`;
+}
+
+/** Opens a popup under `button` with their right edges level, or above it when the window has no room below. It is
+ *  held by its right edge because a menu's words can still grow once it is shown (⌘ becomes Ctrl), and it grows left. */
+export function openBelow(popup: HTMLElement, button: Element) {
+  const b = button.getBoundingClientRect(),
+    h = popup.offsetHeight,
+    fits = b.bottom + 8 + h <= innerHeight - EDGE;
+  popup.style.left = 'auto';
+  popup.style.right = `${Math.round(innerWidth - b.right)}px`;
+  popup.style.top = `${Math.round(fits ? b.bottom + 8 : Math.max(EDGE, b.top - 8 - h))}px`;
 }
 
 export function showDialog(html: string, id?: string) {

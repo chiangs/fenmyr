@@ -38,7 +38,7 @@ Node runs `.ts` files directly, so tests and tools need no build step. Write imp
 
 ## Code map
 
-`node tools/code-map/query.ts <file or area>` says what a file is for, what it imports and what imports it. Use it before changing a shared file, to see what depends on it, and when you need to find where something lives. The same map, rebuilt on every merge to `main`, is at https://code-map.fenmyr.com/ (`code-map.json` and `code-map.md` for tools).
+`node tools/code-map/query.ts <file or area>` says what a file is for, what it imports and what imports it. Use it before changing a shared file, to see what depends on it, and when you need to find where something lives. The same map, rebuilt on every merge to `main`, is at https://code-map.fenmyr.com/ (`code-map.json` and `code-map.md` for tools). It opens on the areas and shows whether the renderer and the host import each other (they must not: they meet only in `src/shared`); `tools/code-map/check.ts`, part of `check:fast`, fails when they do.
 
 ## Add a bridge operation
 

@@ -7,6 +7,7 @@
   --k-pink: #e8796b; --k-butter: #f0b04a; --k-mint: #7fb86a; --k-lilac: #a98ad6; --k-sky: #6fa3d6; --k-peach: #c9b49a;
   --font: "Myra Mark", "Figtree", system-ui, -apple-system, sans-serif; --hand: "Myra Mark", "Shantell Sans", "Comic Sans MS", cursive;
   --side: 232px;
+  --tools-t: 14px;   /* the tools panel's top, level with the widgets' tops */
   --sh: 150, 95, 35; --sh-k: 1;   /* shadow color and strength: warm amber in light mode */
   --pill-r: 12px;   /* what used to be pill-shaped (toolbar, buttons, tags, tooltips) is a squircle now */
   /* amber used as text (links, counts) is deeper than the amber fill, so it reads at 4.5:1; text on the amber fill is ink */
@@ -79,13 +80,13 @@ svg.brand-mark.ico .ico-r { display: none; } svg.brand-mark.ico .ico-d { display
 /* ---------- cards ---------- */
 /* the colour name in the corner of a note, in the themes that print it. It sits on the frame, which no other effect uses, and out of the flow, so the card size and the export do not change */
 .card.note > .frame::after { content: var(--colour-name, none); display: var(--colour-label, none); position: absolute; right: 14px; bottom: 10px; font: 600 10px/1 var(--font); letter-spacing: .02em; color: var(--card-ink); pointer-events: none; }
-.card.c-white { --card-ink: var(--card-white-ink); --card-link: var(--card-white-link); }
-.card.c-pink { --card-ink: var(--card-pink-ink); --card-link: var(--card-pink-link); }
-.card.c-butter { --card-ink: var(--card-butter-ink); --card-link: var(--card-butter-link); }
-.card.c-mint { --card-ink: var(--card-mint-ink); --card-link: var(--card-mint-link); }
-.card.c-lilac { --card-ink: var(--card-lilac-ink); --card-link: var(--card-lilac-link); }
-.card.c-sky { --card-ink: var(--card-sky-ink); --card-link: var(--card-sky-link); }
-.card.c-peach { --card-ink: var(--card-peach-ink); --card-link: var(--card-peach-link); }
+.card.c-white { --card-ink: var(--card-white-ink); --card-soft: var(--card-white-soft); --card-faint: var(--card-white-faint); --card-link: var(--card-white-link); }
+.card.c-pink { --card-ink: var(--card-pink-ink); --card-soft: var(--card-pink-soft); --card-faint: var(--card-pink-faint); --card-link: var(--card-pink-link); }
+.card.c-butter { --card-ink: var(--card-butter-ink); --card-soft: var(--card-butter-soft); --card-faint: var(--card-butter-faint); --card-link: var(--card-butter-link); }
+.card.c-mint { --card-ink: var(--card-mint-ink); --card-soft: var(--card-mint-soft); --card-faint: var(--card-mint-faint); --card-link: var(--card-mint-link); }
+.card.c-lilac { --card-ink: var(--card-lilac-ink); --card-soft: var(--card-lilac-soft); --card-faint: var(--card-lilac-faint); --card-link: var(--card-lilac-link); }
+.card.c-sky { --card-ink: var(--card-sky-ink); --card-soft: var(--card-sky-soft); --card-faint: var(--card-sky-faint); --card-link: var(--card-sky-link); }
+.card.c-peach { --card-ink: var(--card-peach-ink); --card-soft: var(--card-peach-soft); --card-faint: var(--card-peach-faint); --card-link: var(--card-peach-link); }
 .card { position: absolute; border-radius: 24px; corner-shape: squircle; --tilt: 0deg; rotate: var(--tilt); transition: rotate .25s ease, box-shadow .2s ease, opacity .3s ease; }
 .card .frame { position: absolute; inset: 0; border-radius: 24px; corner-shape: squircle; background: var(--fill, var(--snow)); box-shadow: 0 10px 30px rgba(var(--sh), calc(.10 * var(--sh-k))), 0 1px 3px rgb(from var(--shade) r g b / .04); }
 .card .body { position: relative; height: 100%; padding: 16px 18px; overflow: hidden; border-radius: 24px; corner-shape: squircle; }
@@ -156,14 +157,18 @@ body.dark .card .chip:hover { background: color-mix(in srgb, var(--panel, var(--
 .top { position: absolute; left: calc(var(--side) + 34px); top: 22px; display: flex; align-items: baseline; gap: 10px; z-index: 10; }
 .board-name { border: 0; background: none; font: 800 22px/1 var(--font); letter-spacing: -.03em; color: var(--ink); outline: none; width: 420px; user-select: text; -webkit-user-select: text; }
 .saved { font: 600 10.5px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); }
-.tools { position: absolute; left: calc(50% + 8px); top: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); z-index: 10; }
+/* The tools: a panel at the top right, over Unsorted and as wide as its content (.side-r's right and padding), or at
+   the top right of a prototype's board. A grid of the buttons, as many columns as fit; toolbarConfig.ts marks the first
+   button of each group .tb-start, which starts a row under a hairline, and writes the panel's height to --tools-h, which
+   starts the right widgets under it. */
+.tools { --tb-w: 40px; --tb-h: 38px; --tools-w: var(--side); position: fixed; top: var(--tools-t); right: 34px; width: var(--tools-w); display: grid; grid-template-columns: repeat(auto-fill, var(--tb-w)); justify-content: space-between; align-items: end; gap: 2px; padding: 8px 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); z-index: 21; }
 .tools button { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font-size: 13px; font-weight: 500; cursor: pointer; }
 .tools button:hover { background: var(--blush); }
 .tools .ic { flex: none; color: var(--ink-soft); }
 .tools button:hover .ic { color: var(--ink); }
-.zoom { padding: 0 12px 0 8px; font-size: 12px; color: var(--ink-soft); min-width: 52px; text-align: right; }
-button.zoom { justify-content: flex-end; font-family: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }   /* a button like the tools beside it: click for 100% */
-.tools button.zoom:hover { color: var(--ink); }
+/* the zoom widget: a card like the others, with the percentage as a button in its header, one width at every zoom so the card never shifts */
+.zoom { flex: none; width: 64px; height: 24px; padding: 0; border-radius: 8px; background: var(--blush); color: var(--ink-soft); text-align: center; }
+button.zoom { font-family: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
 
 /* ---------- unsorted tray ---------- */
 .tray { position: absolute; right: 16px; top: 16px; bottom: 16px; width: 230px; padding: 14px; border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--hilite) r g b / .82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(var(--sh), calc(.12 * var(--sh-k))); z-index: 10; display: flex; flex-direction: column; transition: transform .35s cubic-bezier(.2, .8, .3, 1); }
@@ -206,6 +211,7 @@ button.zoom { justify-content: flex-end; font-family: inherit; font-size: 12px; 
 
 /* inside the desktop app: room for the window buttons at the top of the sidebar */
 html.native .side { top: 38px; }   /* below the window buttons */
+html.native { --tools-t: 38px; }
 html.native .top { top: 18px; }
 
 /* the Linux app's window buttons and drag strip, where the Mac's sit (the window has no title bar) */
@@ -381,7 +387,7 @@ html.native .home-in { padding-top: 40px; }
 
 /* the bar above the selection */
 .selbar { position: absolute; left: 0; top: 0; z-index: 14; display: none; align-items: center; gap: 6px; height: 50px; padding: 6px 7px; border-radius: var(--pill-r); corner-shape: squircle; white-space: nowrap; }
-/* drawing's and find's bars, stacked; float.ts holds it 12 px above the bottom bar */
+/* the mode bar, find's, which float.ts holds 12 px above the bottom bar; the mode card shares its class */
 .modebar { position: absolute; left: 0; top: 0; z-index: 14; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .selbar.on { display: flex; }
 .selbar button { border: 0; background: none; padding: 7px 11px; border-radius: var(--pill-r); corner-shape: squircle; font: 600 12px/1 var(--font); color: var(--ink); cursor: pointer; }
@@ -426,36 +432,34 @@ body.dark .tile .cover-btn { color: var(--ink); }
 
 /* the toolbar is icons only; its name floats up on hover */
 .tools { gap: 2px; }
-.tools button { position: relative; width: 40px; height: 38px; padding: 0; justify-content: center; }
+.tools button { position: relative; width: var(--tb-w); height: var(--tb-h); padding: 0; justify-content: center; }
 .tools .ic { width: 19px; height: 19px; }
 .tools button::after { content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 10px); transform: translate(-50%, -3px); padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--ink-inverse); font: 600 11px/1 var(--font); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; }
 body.dark .tools button::after { background: var(--sb-bg); color: var(--sb-ink-2); }
 .tools button:hover::after { opacity: 1; transform: translate(-50%, 0); }
-.tools .zoom { padding: 0 10px 0 6px; }
+.tools .tb-start { grid-column: 1; margin-top: 11px; }
+.tools .tb-start::before { content: ''; position: absolute; left: 0; top: -7px; width: calc(var(--tools-w) - 12px); height: 1px; background: rgb(from var(--ink) r g b / .1); pointer-events: none; }
+/* a tooltip in the last column ends at its button's right edge, so it never runs past the window's */
+.tools .tb-end::after { left: auto; right: 0; transform: translate(0, -3px); }
+.tools .tb-end:hover::after { transform: none; }
+/* ··· lights too (syncMore) while a tool tucked in it is in hand, so drawing with Draw tucked still shows */
+.tools button.on { background: var(--blush); }
+.tools button.on .ic { color: var(--ink); }
 
-/* ---------- the bottom bar: tools + Myra ----------
-   It starts where the canvas area does, as far from the left widgets as they are from the window, on a whole pixel so
-   its icons stay crisp. It sits above the widgets (z 20), so what rises from it can cover them. What opens over it
-   (the toolbar's pickers, quick capture, a colour card's wheel) sits at body level in #overBar, above it. */
+/* ---------- the bottom bar: Myra ----------
+   Centred on the window, with no transform, which would hold her fixed chat and timer: left and right leave it an even
+   width to centre in, and it is an even width itself (her box, 200), so it starts on a whole pixel and its text stays
+   crisp. It sits above the widgets (z 20), so what rises from it can cover them. What opens over it (the tools'
+   pickers, quick capture, a colour card's wheel) sits at body level in #overBar, above it. */
 body { --bar-b: 18px; }
-.dock { position: fixed; left: calc(var(--side) + 28px); bottom: var(--bar-b); width: max-content; z-index: 21; display: flex; align-items: flex-end; }
-.dock .tools { position: static; transform: none; left: auto; top: auto; }
-.dock .tools button::after { top: auto; bottom: calc(100% + 12px); transform: translate(-50%, 3px); }
-.dock .tools button:hover::after { transform: translate(-50%, 0); }
-/* ··· lights too (syncMore) while a tool tucked in it is in hand, so drawing at a width that tucks Draw still shows */
-.dock .tools button.on { background: var(--blush); }
-.dock .tools button.on .ic { color: var(--ink); }
+.dock { position: fixed; left: 0; right: calc(100vw - 2 * round(down, 50vw, 1px)); bottom: var(--bar-b); width: max-content; margin-inline: auto; z-index: 21; display: flex; align-items: flex-end; }
 .dock .myra { position: relative; left: auto; bottom: auto; transform: none; }
-/* her box: one piece with the tools, as wide whatever her name */
+/* her box: as wide whatever her name */
 .dock .m-pill { width: 200px; border: 0; text-align: start; }
-body:not(.proto, .phone) .dock .tools { border-start-end-radius: 0; border-end-end-radius: 0; }
-/* a 1 px gap, so all the tools show at 1440 px beside the room kept for a joined chat */
-body:not(.proto, .phone) .dock .tools { gap: 1px; }
-body:not(:has(.stage.at-home)) .dock .m-pill { border-start-start-radius: 0; border-end-start-radius: 0; }
 /* a joined chat covers her box, and its input is where the box was; she flies on over it into the header */
 .myra.chat:has(> .m-chat[data-place="joined"]) .m-pill { visibility: hidden; }
 .myra.chat .goo-slot { visibility: visible; }
-/* Myra's bubble rises over drawing's or find's bar by --mode-h, which float.ts sets on body */
+/* Myra's bubble rises over find's bar by --mode-h, which float.ts sets on body */
 .dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); margin: 0; width: max-content; }
 .selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
 .selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
@@ -540,8 +544,9 @@ body.dark .kb-n { background: color-mix(in srgb, var(--chead) 40%, var(--kb-bg))
 .card.shape .body { padding: 0; overflow: visible; display: grid; place-items: center; }
 .card.shape svg.sh { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .card.shape .text { position: relative; max-width: 80%; text-align: center; font: 600 calc(15px * var(--fs, 1))/1.3 var(--font); outline: none; white-space: pre-wrap; }
-.shapepick { position: fixed; left: 50%; bottom: calc(var(--bar-b) + 66px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 22; display: flex; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
-.shapepick.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
+/* the tools' pickers open left of the panel, beside their button: openLeftOfPanel sets left and top */
+.shapepick { position: fixed; transform: translateY(6px); z-index: 22; display: flex; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
+.shapepick.on { opacity: 1; pointer-events: auto; transform: none; }
 .shapepick button { width: 38px; height: 38px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; display: grid; place-items: center; cursor: pointer; color: var(--ink-soft); }
 .shapepick button:hover, .shapepick button.on { background: var(--blush); color: var(--ink); }
 .shapepick svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
@@ -565,12 +570,12 @@ html.native .dv-bar { padding-top: 14px; }
 .dv-body { min-height: 60vh; outline: none; font: 400 16px/1.7 var(--font); color: var(--ink); white-space: pre-wrap; user-select: text; -webkit-user-select: text; cursor: text; }
 .dv-body:empty::before { content: attr(data-ph); color: var(--ink-faint); }
 /* with a doc open, the tools step aside but Myra's bubble (and its Undo) still shows on top */
-body:has(.stage.doc-open) .dock .tools, .stage.doc-open .modebar, .stage.doc-open .selbar, body:has(.stage.doc-open) .dock .m-pill, body:has(.stage.doc-open) .shapepick { opacity: 0; pointer-events: none; }
+body:has(.stage.doc-open) .tools, body:has(.stage.doc-open) .mode-card, .stage.doc-open .modebar, .stage.doc-open .selbar, body:has(.stage.doc-open) .dock .m-pill, body:has(.stage.doc-open) .shapepick { opacity: 0; pointer-events: none; }
 /* and presses where the bar was reach the doc; her bubble and chat set their own, and her timer still takes them */
 body:has(.stage.doc-open) :is(.dock, .dock #myra) { pointer-events: none; }
 body:has(.stage.doc-open) .dock .timer-chip { pointer-events: auto; }
 /* on the All projects pages the board tools hide; Myra stays to help organize */
-body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.at-home) .shapepick { display: none; }
+body:has(.stage.at-home) .tools, body:has(.stage.at-home) .box[data-box="zoom"], .stage.at-home .selbar, body:has(.stage.at-home) .shapepick { display: none; }
 .sub-boards { margin-left: 16px; padding-left: 8px; border-left: 1.5px dashed var(--sub-line); display: flex; flex-direction: column; gap: 1px; }
 .sub-boards .board-row { font-size: 13px; }
 /* full-page docs: keep the bar clear of the floating boxes on the left */
@@ -596,7 +601,7 @@ body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.a
 .board-row span[contenteditable="true"] { background: var(--snow); box-shadow: 0 0 0 1.5px var(--select); border-radius: 4px; padding: 0 3px; outline: none; cursor: text; user-select: text; -webkit-user-select: text; }
 
 /* ---------- stamps (like FigJam's wheel) ---------- */
-.wheel-stamps { position: fixed; bottom: calc(var(--bar-b) + 62px + var(--mode-h, 0px)); z-index: 22; width: 220px; height: 220px; margin-left: -110px; border-radius: 50%; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .15s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
+.wheel-stamps { position: fixed; z-index: 22; width: 220px; height: 220px; border-radius: 50%; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: scale(.85); transition: opacity .15s, transform .25s cubic-bezier(.2, .9, .3, 1.3); }
 .wheel-stamps.on { opacity: 1; pointer-events: auto; transform: none; }
 .ws-ring button { position: absolute; width: 50px; height: 50px; margin: -25px 0 0 -25px; border: 0; border-radius: 50%; background: none; display: grid; place-items: center; cursor: pointer; font-size: 30px; line-height: 1; transition: transform .15s, background .15s; }
 .ws-ring button:hover { background: var(--blush); transform: scale(1.15); }
@@ -605,7 +610,7 @@ body:has(.stage.at-home) .dock .tools, .stage.at-home .selbar, body:has(.stage.a
 body.dark .ws-mid { background: var(--ws-bg-3); }
 .ws-mid:hover { background: var(--ws-bg-2); }
 body.dark .ws-mid:hover { background: var(--ws-bg-4); }
-.stamp-pick { position: fixed; bottom: calc(var(--bar-b) + 62px + var(--mode-h, 0px)); z-index: 23; width: 340px; margin-left: -170px; padding: 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
+.stamp-pick { position: fixed; z-index: 23; width: 340px; padding: 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 16px 44px rgba(var(--sh), calc(.24 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(6px); transition: opacity .15s, transform .2s cubic-bezier(.2, .8, .3, 1); }
 .stamp-pick.on { opacity: 1; pointer-events: auto; transform: none; }
 .sp-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 .sp-tabs button { flex: 1; padding: 8px 6px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
@@ -647,7 +652,7 @@ body.dark .ws-mid:hover { background: var(--ws-bg-4); }
 @keyframes mv-squish { 0%, 100% { transform: scale(1, 1); } 40% { transform: scale(1.15, .85); } 60% { transform: scale(.92, 1.1); } }
 @keyframes mv-spin { 0% { transform: rotate(0); } 60%, 100% { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .card.stamp .st img { animation: none !important; } }
-.dock .tools button.on::after { display: none; }
+.tools button.on::after { display: none; }
 .crumbs:empty { display: none; }
 .crumbs button:first-child { margin-left: -6px; }
 
@@ -745,7 +750,7 @@ body.dark .au-play { background: var(--coll-ink); }
 
 .row-menu .rm-sep { height: 1px; margin: 4px 6px; background: color-mix(in oklab, var(--on-accent) 8%, var(--snow)); }
 /* while exporting: just the cards, no app around them */
-body.exporting .side, body.exporting .dock, body.exporting .selbar, body.exporting .modebar, body.exporting .tray, body.exporting .top, body.exporting .keys, body.exporting .ghost, body.exporting .grid,
+body.exporting .side, body.exporting .tools, body.exporting .dock, body.exporting .selbar, body.exporting .modebar, body.exporting .tray, body.exporting .top, body.exporting .keys, body.exporting .ghost, body.exporting .grid,
 body.exporting .marquee, body.exporting .shapepick, body.exporting .wheel-stamps, body.exporting .stamp-pick, body.exporting .screen-hints, body.exporting .piece-pick { visibility: hidden !important; }
 body.exporting .card .handle, body.exporting .card .knob, body.exporting .card .chip { display: none !important; }
 body.exporting .card.sel::after { display: none; }
@@ -770,6 +775,20 @@ body.phone .dock .screenbar #scX { position: sticky; right: 0; background: inher
 .db-colors { display: flex; gap: 5px; padding: 0 6px; }
 .db-colors button { width: 22px; height: 22px; border-radius: 50%; border: 0; cursor: pointer; box-shadow: inset 0 0 0 1px rgb(from var(--shade) r g b / .12); }
 .db-colors button.on { box-shadow: 0 0 0 2px var(--snow), 0 0 0 3.5px var(--ink); }
+/* On a computer the mode card is a column left of the tools panel, where float.ts holds it: above the widgets, which it
+   may reach over on a narrow prototype board, and under the panel's tooltips. */
+body:not(.phone) .mode-card { z-index: 20; }
+body:not(.phone) .mode-card .drawbar:not([hidden]) { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; align-items: center; gap: 8px 0; width: 176px; height: auto; padding: 10px; }
+body:not(.phone) .mode-card .screenbar:not([hidden]) { grid-template-columns: repeat(3, auto); }
+body:not(.phone) .mode-card .drawbar > :not(.db-tool) { grid-column: 1 / -1; }
+body:not(.phone) .mode-card .sb-sep { width: auto; height: 1px; margin: 0; }
+body:not(.phone) .mode-card .db-size { padding: 0; }
+body:not(.phone) .mode-card .dbs-track { flex: 1; width: auto; }
+body:not(.phone) .mode-card .db-colors { flex-wrap: wrap; gap: 6px; padding: 0; }
+body:not(.phone) .mode-card .sc-devs { flex-direction: column; }
+body:not(.phone) .mode-card #scX { justify-self: start; }
+/* the left of the panel shows one thing at a time: a picker or menu opened there puts the card away until it closes */
+body:has(#rowMenu.left-of-panel, .left-of-panel.on) .mode-card { visibility: hidden; }
 .stage.drawing, .stage.drawing * { cursor: crosshair !important; }
 .stage.erasing, .stage.erasing * { cursor: none !important; }
 .erase-ring { position: absolute; z-index: 30; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; border: 2px solid var(--ink); background: rgb(from var(--snow) r g b / .5); pointer-events: none; display: none; }
@@ -828,7 +847,7 @@ body.dark .cp-fields input, body.dark .capture input { background: var(--surface
 body.dark .card > .frame { box-shadow: 0 10px 30px rgb(from var(--shade) r g b / .35); }
 body.dark .card.c-white > .frame, body.dark .card.link > .frame, body.dark .card.doc > .frame, body.dark .card.canvas > .frame, body.dark .card.audio > .frame, body.dark .card.swatch > .frame, body.dark .card.image > .frame { background: var(--dark-snow) !important; }
 /* these frames are Snow in dark, which is light in some themes, so the words on them are Snow's */
-body.dark .card:is(.link, .doc, .canvas, .audio, .swatch, .image) { --ink: var(--card-white-ink); --ink-soft: var(--card-white-soft); --ink-faint: var(--card-white-faint); color: var(--ink); }
+body.dark .card:is(.c-white, .link, .doc, .canvas, .swatch, .font):not(.audio, .image) { --ink: var(--card-white-ink); --ink-soft: var(--card-white-soft); --ink-faint: var(--card-white-faint); color: var(--ink); }
 body.dark .card:is(.note, .todo) .body { color: var(--card-ink); }
 body.dark .card:is(.note, .todo) .nname:empty::before, body.dark .card:is(.note, .todo) .text:empty::before { color: rgb(from var(--card-ink) r g b / .45); }
 body.dark .card.shape .text { color: var(--on-pastel); }
@@ -863,8 +882,6 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .m-chat { position: fixed; left: var(--chat-l); top: var(--chat-t); width: var(--chat-w); height: var(--chat-h); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink);
   box-shadow: 0 20px 50px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(10px) scale(.97); transform-origin: 0 100%; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2); }
 .m-chat[data-place="wide"] { transform-origin: 50% 100%; }
-/* square where it meets the tools, so no notch shows between them */
-.m-chat[data-place="joined"] { border-end-start-radius: 0; }
 .myra.chat .m-chat { opacity: 1; pointer-events: auto; transform: none; }
 .myra.chat .m-bubble { display: none; }
 .mc-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px 16px; border-bottom: 1px solid rgb(from var(--ink) r g b / .07); }
@@ -1211,8 +1228,7 @@ body.dark .pp-head { color: rgb(var(--sh)); }
 body.picturing :is(.plan-preview, .screen-hints, .piece-pick) { visibility: hidden !important; }
 
 /* design thinking templates: a little menu above the toolbar */
-.tplpick { position: fixed; left: 50%; bottom: calc(var(--bar-b) + 66px + var(--mode-h, 0px)); transform: translateX(-50%) translateY(6px); z-index: 22; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
-body.dark .tplpick { background: var(--surface); }
+.tplpick { position: fixed; transform: translateY(6px); z-index: 22; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
 .tplpick { max-height: calc(100vh - 130px - var(--mode-h, 0px)); overflow: hidden; display: flex; flex-direction: column; gap: 0; }
 .tplpick .tp-list { display: grid; gap: 2px; min-height: 0; overflow: auto; scrollbar-width: thin; }
 .tplpick .tp-list [hidden] { display: none; }
@@ -1224,7 +1240,7 @@ body.dark .tplpick { background: var(--surface); }
 .tplpick .tp-search:focus-within { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
 body.dark .tplpick .tp-search { background: rgb(from var(--hilite) r g b / .08); }
 body.following-caelestia .tplpick .tp-search { background: color-mix(in srgb, var(--panel) 78%, var(--dot)); }
-.tplpick.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
+.tplpick.on { opacity: 1; pointer-events: auto; transform: none; }
 .tplpick button { display: flex; align-items: center; gap: 11px; padding: 8px 10px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; text-align: left; cursor: pointer; font: inherit; color: var(--ink); }
 .tplpick button:hover { background: var(--blush); }
 body.dark .tplpick button:hover { background: var(--surface-2); }
@@ -1277,7 +1293,7 @@ body.dark .news .nw-e { background: var(--surface-2); }
 .news .nw-list small { display: block; margin-top: 2px; font: 500 12.5px/1.45 var(--font); color: var(--ink-soft); }
 body.dark .news .nw-list li { background: rgb(from var(--hilite) r g b / .05); }
 /* templates menu, what's new and the usage card in dark mode */
-body.dark .tplpick { box-shadow: 0 10px 28px rgb(from var(--shade) r g b / .45); }
+body.dark .tplpick { background: var(--surface); box-shadow: 0 10px 28px rgb(from var(--shade) r g b / .45); }
 body.dark .news .ob-panel { background: var(--surface); }
 body.dark .ws-mid { box-shadow: inset 0 0 0 1px rgb(from var(--ws-shadow) r g b / .3); }
 /* ---------- your colors ---------- */
@@ -1452,7 +1468,7 @@ body.phone .hub { display: grid; grid-template-columns: repeat(5, 1fr); align-it
 .hub canvas { width: 30px; height: 26px; image-rendering: pixelated; }
 .hub-n { position: absolute; top: 3px; right: calc(50% - 22px); min-width: 17px; height: 17px; padding: 0 4px; border-radius: 134px; corner-shape: squircle; background: var(--accent-soft); color: var(--ink); font: 700 10px/17px var(--font); }
 .hub-n:empty { display: none; }
-body.phone .dock .tools:not(.in-sheet) { display: none; }
+body.phone .tools:not(.in-sheet) { display: none; }
 /* what's selected (or the pen) takes over the bottom bar */
 body.phone .dock.ctx .hub, body.phone .dock:has(.drawbar:not([hidden])) .hub { display: none; }
 body.phone .dock .selbar, body.phone .dock .drawbar { width: 100%; height: var(--hub-h); overflow-x: auto; scrollbar-width: none; border-radius: 32px; corner-shape: squircle; padding: 6px 8px; justify-content: flex-start; }
@@ -1464,9 +1480,10 @@ body.phone .m-pill, body.phone .find-bar { display: none; }
 body.phone .dock .m-bubble { position: fixed; left: 14px; right: 14px; bottom: calc(var(--hub-h) + 24px + var(--safe)); width: auto; max-width: none; }
 body.phone .m-chat { position: fixed; left: 8px; right: 8px; bottom: calc(8px + var(--safe)); top: auto; width: auto; height: min(78vh, 640px); z-index: 60; border-radius: var(--pill-r); corner-shape: squircle; }
 /* pickers float centered over the hub */
-body.phone .shapepick, body.phone .tplpick { left: 50% !important; bottom: calc(var(--hub-h) + 26px + var(--safe)); max-width: calc(100vw - 20px); }
+body.phone .shapepick, body.phone .tplpick { left: 50% !important; top: auto !important; bottom: calc(var(--hub-h) + 26px + var(--safe)); translate: -50% 0; max-width: calc(100vw - 20px); }
 body.phone .tplpick { width: calc(100vw - 20px); max-height: 62vh; }
-body.phone .wheel-stamps, body.phone .stamp-pick { left: 50% !important; bottom: calc(var(--hub-h) + 26px + var(--safe)); }
+body.phone .wheel-stamps, body.phone .stamp-pick { left: 50% !important; top: auto !important; bottom: calc(var(--hub-h) + 26px + var(--safe)); }
+body.phone .wheel-stamps { margin-left: -110px; }
 body.phone .stamp-pick { width: calc(100vw - 20px); margin-left: calc(-50vw + 10px); }
 /* the sheet */
 body.phone .sheet { display: block; position: fixed; inset: 0; z-index: 70; pointer-events: none; }
@@ -1501,7 +1518,11 @@ body.dark .sh-tabs button.on { color: var(--hilite); }
 .sh-body .tools.in-sheet button { display: grid; justify-items: center; align-content: center; gap: 7px; width: auto; height: 78px; border-radius: 24px; corner-shape: squircle; background: var(--tl-bg); }
 .sh-body .tools.in-sheet button .ic { width: 24px; height: 24px; }
 .sh-body .tools.in-sheet button::after { content: attr(data-name); position: static; display: block; transform: none !important; opacity: 1; padding: 0; background: none; box-shadow: none; color: var(--ink-soft); font: 600 11.5px/1 var(--font); white-space: nowrap; }
-.sh-body .tools.in-sheet .zoom, .sh-body .tools.in-sheet .sep, .sh-body .tools.in-sheet .t-sep { display: none; }
+.sh-body .tools.in-sheet .sep, .sh-body .tools.in-sheet .t-sep { display: none; }
+/* the sheet keeps one grid of every tool, ··· first as it always came: the panel's group rows are for the panel */
+.sh-body .tools.in-sheet .tb-start { grid-column: auto; margin-top: 0; }
+.sh-body .tools.in-sheet .tb-start::before { content: none; }
+.sh-body .tools.in-sheet .tb-more { order: -1; }
 .sh-body .pal { padding: 12px 10px; font-size: 15px; }
 /* dark */
 body.dark.phone .top, body.dark .hub { background: rgb(from var(--pn-dark-top) r g b / .94); }
@@ -1755,9 +1776,7 @@ body.dark .dp-pdf { background: rgb(from var(--hilite) r g b / .07); }
 .pg-light { background: var(--snow); } .pg-dark { background: var(--pg-bg); } .pg-auto { background: linear-gradient(135deg, var(--snow) 50%, var(--pg-bg) 50%); }
 
 /* just the board: panels tuck away, a faint pill brings them back */
-.clean-btn { display: grid; place-items: center; width: 34px; height: 34px; margin-left: -4px; border: 0; border-radius: 14px; corner-shape: squircle; background: none; color: var(--ink-soft, var(--clean-ink-2)); cursor: pointer; }
-.clean-btn:hover { background: rgb(from var(--clean-bg) r g b / .08); color: var(--ink, var(--vd-ink)); }
-body.clean #side, body.clean #tray, body.clean #dock, body.clean #selbar, body.clean #modebar, body.clean #keys, body.clean .top { opacity: 0 !important; visibility: hidden; pointer-events: none !important; }
+body.clean #side, body.clean #tray, body.clean #tools, body.clean #dock, body.clean #selbar, body.clean #modebar, body.clean #modeCard, body.clean #keys, body.clean .top { opacity: 0 !important; visibility: hidden; pointer-events: none !important; }
 .clean-back { position: fixed; z-index: 60; left: 50%; bottom: 22px; translate: -50% 12px; display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 15px; border: 0; border-radius: var(--pill-r); corner-shape: squircle;
   background: rgb(from var(--hilite) r g b / .92); color: var(--ink, var(--vd-ink)); font: 600 13px/1 var(--font, "Figtree"), sans-serif; cursor: pointer; box-shadow: 0 8px 24px rgba(var(--sh), calc(.16 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k)));
   opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s, translate .35s cubic-bezier(.3, 1.4, .5, 1), visibility .3s; }
@@ -1766,8 +1785,7 @@ body.clean .clean-back { opacity: .45; visibility: visible; pointer-events: auto
 body.clean .clean-back:hover { opacity: 1; transition-delay: 0s; }
 body.dark .clean-back { background: rgb(from var(--clean-bg-2) r g b / .94); color: var(--clean-ink); box-shadow: 0 8px 24px rgb(from var(--shade) r g b / .4), 0 0 0 1px rgb(from var(--hilite) r g b / .06); }
 body.dark .clean-back kbd { background: rgb(from var(--hilite) r g b / .1); }
-body.dark .clean-btn:hover { background: rgb(from var(--hilite) r g b / .08); color: var(--clean-ink); }
-body.phone .clean-btn, body.exporting .clean-back { display: none; }
+body.exporting .clean-back { display: none; }
 
 /* the update bar: quiet, at the top of the board, never in the way */
 .upbar {
@@ -1921,6 +1939,7 @@ body.dark .dev-sel { background-color: rgb(from var(--hilite) r g b / .07); }
 
 /* the right sidebar: widgets stack like the left one (Unsorted by default) */
 .side-r { left: auto; right: 14px; }
+#sideR { top: calc(var(--tools-t) + var(--tools-h, 0px) + 10px); }
 .side > * { pointer-events: auto; flex: none; }
 .side > .tray { position: relative; inset: auto; width: auto; z-index: auto; transform: none; }
 .side > .tray { flex: 0 1 auto; min-height: 150px; max-height: none; }   /* Unsorted shrinks (and scrolls inside) so every widget in the column fits on screen */
@@ -1943,9 +1962,8 @@ body.dark .wg-slot.on { background: rgb(from var(--anim-shadow-2) r g b / .18); 
 
 
 /* the zoom % is a button: click it for the zoom menu */
-button.zoom { border: 0; background: none; height: 34px; border-radius: 14px; corner-shape: squircle; font: 600 12px/1 var(--font); cursor: pointer; transition: background .12s, color .12s; }
-button.zoom:hover, button.zoom:focus-visible { background: rgb(from var(--vd-bg) r g b / .9); color: var(--ink); outline: none; }
-body.dark button.zoom:hover { background: rgb(from var(--hilite) r g b / .08); }
+button.zoom { border: 0; corner-shape: squircle; font: 600 12px/1 var(--font); cursor: pointer; transition: background .12s, color .12s; }
+button.zoom:hover, button.zoom:focus-visible { background: color-mix(in oklab, var(--ink) 8%, var(--blush)); color: var(--ink); outline: none; }
 
 
 /* quick hover labels for small icon buttons outside the toolbar (the Settings gear) */
@@ -2304,11 +2322,11 @@ body.dark .sb-weights button.on, body.dark .sb-talign button.on { background: va
 .sb-spacing { box-sizing: border-box; width: 300px; } .sb-spacing .sbc-top input[type=range] { min-width: 0; } .sb-spacing .sb-spchips { width: 100%; box-sizing: border-box; }
 .sb-spacing .sb-spchips button { min-width: 0; }
 /* toolbar icon sizes (Settings → Toolbar). Large is the ceiling: 24px icons */
-body[data-tb="s"] .tools button[data-add], body[data-tb="s"] .tools .tb-more, body[data-tb="s"] .tools .clean-btn { width: 34px; height: 32px; }
+body[data-tb="s"] .tools { --tb-w: 34px; --tb-h: 32px; }
 body[data-tb="s"] #tools svg[viewBox="0 0 24 24"], body[data-tb="s"] .tools .ic { width: 17px !important; height: 17px !important; }
-body[data-tb="l"] .tools button[data-add], body[data-tb="l"] .tools .tb-more, body[data-tb="l"] .tools .clean-btn { width: 48px; height: 46px; }
+body[data-tb="l"] .tools { --tb-w: 48px; --tb-h: 46px; }
 body[data-tb="l"] #tools svg[viewBox="0 0 24 24"], body[data-tb="l"] .tools .ic { width: 24px !important; height: 24px !important; }
-/* the Myra pill is as tall as the toolbar at every size: small 46, medium 50, large 58 */
+/* Myra's box is as tall as the tool buttons at every icon size: small 46, medium 50, large 58 */
 body[data-tb="s"] .m-pill { height: 46px; }
 body[data-tb="l"] .m-pill { height: 58px; }
 /* Myra's button: no outline ring (it made her look taller than the toolbar), the toolbar's own shadow, plus a soft cloudberry-amber glow that breathes and a tiny wobble
@@ -2322,10 +2340,9 @@ body.dark .m-pill { --m-base: 0 8px 26px rgba(0, 0, 0, .31); }
   50% { box-shadow: var(--m-base), 0 0 20px 2px color-mix(in srgb, var(--m-glow) 48%, transparent); } }
 @keyframes m-wobble { 0%, 86%, 100% { transform: none; } 89% { transform: rotate(-.9deg); } 92% { transform: rotate(.8deg); } 95% { transform: rotate(-.4deg); } 97.5% { transform: rotate(.2deg); } }
 @media (prefers-reduced-motion: reduce) { .m-pill { animation: none; } }
-body[data-tb="l"] .tools .zoom { font-size: 15px; }
-body[data-tb="s"] .tools .zoom { font-size: 12px; }
 .tools .tb-over { display: none !important; }
-.tools .tb-more { position: relative; width: 40px; height: 38px; padding: 0; justify-content: center; }
+/* ··· is always the last cell */
+.tools .tb-more { order: 1; }
 .tools .tb-more[hidden] { display: none; }
 .row-menu.tb-menu .tbm-row { display: flex; align-items: center; gap: 10px; } .row-menu.tb-menu .tbm-row svg { width: 18px; height: 18px; flex: none; }
 .set-tblist { max-height: none; margin-top: 4px; }
@@ -2730,19 +2747,17 @@ body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
 @media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
 
 /* the timer: a small chip above Myra's pill, and her fuss when it runs out */
-.timer-chip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 3; height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 11px; max-width: 280px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))); font: 600 12px/1 var(--font); overflow: hidden; animation: fb-in .18s ease-out; }
-body.dark .timer-chip { color: var(--hilite); }
+.timer-chip { position: absolute; bottom: calc(100% + 8px + var(--mode-h, 0px)); left: 50%; transform: translateX(-50%); z-index: 3; height: 32px; display: flex; align-items: center; gap: 7px; padding: 0 6px 0 11px; max-width: 280px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(var(--sh), calc(.16 * var(--sh-k))); font: 600 12px/1 var(--font); overflow: hidden; animation: fb-in .18s ease-out; }
 .timer-chip[hidden] { display: none; }
 .timer-chip svg { flex: none; color: var(--ink-soft); } .timer-chip b { font-variant-numeric: tabular-nums; font-weight: 700; }
 .timer-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); font-weight: 500; }
 .timer-chip button { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ink-soft); cursor: pointer; }
 .timer-chip button:hover { background: var(--blush); color: var(--ink); }
 .timer-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: var(--pink-deep, var(--dt-shadow)); transition: width 1s linear; }
-body.dark .timer-chip { background: rgb(from var(--clean-bg-2) r g b / .97); } body.dark .timer-chip b { color: var(--hilite); }
+body.dark .timer-chip { background: rgb(from var(--clean-bg-2) r g b / .97); color: var(--hilite); } body.dark .timer-chip b { color: var(--hilite); }
 body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-panels.panel-dark .timer-chip { color: color-mix(in oklab, var(--on-accent) 8%, var(--snow)); }
-/* her reply clears the higher of the timer and drawing's or find's bar; with the chat open the timer sits over its
-   middle */
-.dock .myra.timing .m-bubble { bottom: calc(100% + 12px + max(40px, var(--mode-h, 0px))); }
+/* the timer sits over find's bar and her reply over the timer; with the chat open the timer sits over its middle */
+.dock .myra.timing .m-bubble { bottom: calc(100% + 52px + var(--mode-h, 0px)); }
 .dock .myra.chat:has(> .m-chat:is([data-place="joined"], [data-place="wide"])) .timer-chip { position: fixed; left: calc(var(--chat-l) + var(--chat-w) / 2); bottom: calc(100vh - var(--chat-t) + 8px); }
 .m-bubble.party::before { content: ""; display: block; width: 72px; height: 72px; margin: -6px auto 2px; background: url(stamps/myra-party.png) center / contain no-repeat; image-rendering: pixelated; }
 .myra.partying:not(.chat) .m-pill { animation: m-party .55s ease-in-out 6; }
@@ -2882,7 +2897,7 @@ body.proto .m-chat.writing .pr-git { display: none; }
 .pr-fold { display: grid; place-items: center; }
 /* folding and opening a column slides every column's width together; the folding one is clipped as it narrows */
 .pr-root.pr-animating .pr-pane { transition: flex .24s cubic-bezier(.2, .8, .2, 1); overflow: hidden; }
-body.proto-canvas-moving .side { opacity: 0; transition: opacity .12s; }
+body.proto-canvas-moving :is(.side, .tools, .mode-card) { opacity: 0; transition: opacity .12s; }
 .pr-pane.folded .pr-strip:hover { color: var(--ink); background: rgb(from var(--accent-deep) r g b / .06); }
 .pr-div { pointer-events: auto; cursor: col-resize; background: rgb(from var(--accent-deep) r g b / .1); }
 body.pr-dragging #pr-preview iframe { pointer-events: none; }
@@ -2931,16 +2946,17 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 body.calm .pc-mark { animation: none; }
 @media (prefers-reduced-motion: reduce) { .pc-mark { animation: none; } }
 body.proto .stage { left: var(--slot-l); top: var(--slot-t); width: var(--slot-w); height: var(--slot-h); right: auto; bottom: auto; }
-body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side, body.proto.proto-canvas-folded .dock { display: none; }
+body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side, body.proto.proto-canvas-folded .tools, body.proto.proto-canvas-folded .mode-card, body.proto.proto-canvas-folded .dock { display: none; }
 /* one column of widgets beside the board, clear of the toolbar; it holds both sides' widgets, so it can scroll */
 body.proto .side { left: calc(var(--slot-l) + 14px); top: calc(var(--slot-t) + 14px); bottom: 84px; scrollbar-width: thin; }
 body.proto .side > .tray { min-height: 96px; }
 body.proto #mcClose { display: none; }
 body.proto #keys { display: none; }
-/* on a prototype board the bottom bar and what opens over it sit 18 px over the board pane's bottom; the bar starts
-   at the pane's left, and the widgets there sit above it */
+/* on a prototype board the bottom bar and what opens over it sit 18 px over the board pane's bottom, the bar centred
+   on the pane as on the window, and the tools sit at its top right, right of the widgets */
 body.proto { --bar-b: calc(100vh - var(--slot-t) - var(--slot-h) + 18px); }
-body.proto .dock { left: calc(var(--slot-l) + 8px); max-width: calc(var(--slot-w) - 16px); overflow-x: auto; scrollbar-width: none; }
+body.proto .dock { left: round(down, var(--slot-l), 1px); right: calc(100vw - round(down, var(--slot-l), 1px) - 2 * round(down, var(--slot-w) / 2, 1px)); }
+body.proto .tools { --tools-w: min(clamp(48px, var(--slot-w) - var(--side) - 62px, 232px), var(--slot-w) - 28px); top: calc(var(--slot-t) + 14px); right: calc(100vw - var(--slot-l) - var(--slot-w) + 14px); }
 #pr-preview { display: flex; flex-direction: column; overflow: hidden; }
 .pv-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 8px; border-bottom: 1px solid rgb(from var(--accent-deep) r g b / .1); font: 500 12px/1 var(--font); }
 .pv-bar .seg button { padding: 5px 9px; font: 600 11.5px/1 var(--font); }

@@ -1,8 +1,7 @@
-import { byId } from '../canvas/wires.ts';
 import { addImages } from '../cards/spotify.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
 import { closeHome, homeAt } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
@@ -21,8 +20,7 @@ import { focusScreenBar, startScreen, wfToolOn } from '../tools/screenTool.ts';
 import { renderWheel } from '../tools/stamps.ts';
 import { openVaultPicker } from '../vault/ask.ts';
 import { closestTo, elementById } from './dom.ts';
-import { countAsMenu } from './popover.ts';
-import { tbRect } from './toolbarConfig.ts';
+import { countAsMenu, openLeftOfPanel } from './popover.ts';
 
 // links get a little paste box under the toolbar (the app can't show the browser's prompt)
 
@@ -96,11 +94,8 @@ export function init21() {
     if (t === 'stamp') {
       const on = !$('stampWheel').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b);
-      ['stampWheel', 'stampPick'].forEach(id => {
-        $(id).style.left = `${r.left + r.width / 2}px`;
-      });
       renderWheel();
+      openLeftOfPanel($('stampWheel'), b);
       $('stampWheel').classList.toggle('on', on);
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');
@@ -109,8 +104,7 @@ export function init21() {
     if (t === 'shape') {
       const on = !$('shapePick').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b);
-      $('shapePick').style.left = `${r.left + r.width / 2}px`;
+      openLeftOfPanel($('shapePick'), b);
       $('shapePick').classList.toggle('on', on);
       b.classList.toggle('on', on);
       $('mBubble').classList.remove('on');
@@ -119,16 +113,15 @@ export function init21() {
     if (t === 'tpl') {
       const on = !$('tplPick').classList.contains('on');
       stopPlacing();
-      const r = tbRect(b);
-      $('tplPick').style.left = `${r.left + r.width / 2}px`;
-      $('tplPick').classList.toggle('on', on);
-      b.classList.toggle('on', on);
-      $('mBubble').classList.remove('on');
       if (on) {
         elementById('tpSearch', HTMLInputElement).value = '';
         filterTpl();
+        openLeftOfPanel($('tplPick'), b);
         setTimeout(() => $('tpSearch').focus(), 30);
       }
+      $('tplPick').classList.toggle('on', on);
+      b.classList.toggle('on', on);
+      $('mBubble').classList.remove('on');
       return;
     }
     if (t === 'frame') {

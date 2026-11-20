@@ -95,16 +95,16 @@ try {
   await blur();
   await page.keyboard.press('w');
   await settle(page, 250);
-  const alone = await page.locator('#modebar').boundingBox();
+  const alone = await page.locator('#modeCard').boundingBox();
   await page.keyboard.press('Escape');
   await openOn('signin');
   await blur();
   await page.keyboard.press('w');
   await settle(page, 250);
-  const beside = await page.locator('#modebar').boundingBox();
+  const beside = await page.locator('#modeCard').boundingBox();
   assert.ok(
     (await open()) && alone && beside && Math.abs(alone.x - beside.x) < 1,
-    `the mode bar stays over the tools with the picker open: ${JSON.stringify({ alone, beside })}`,
+    `the Wireframe column stays beside the tools with the picker open: ${JSON.stringify({ alone, beside })}`,
   );
   await page.keyboard.press('Escape');
 

@@ -1,8 +1,8 @@
 import type { CardType } from '../../shared/cardTypes.ts';
 import type { CardOf, View } from '../../shared/model.ts';
 import { fit, toWorld, ZOOM_STEPS } from '../canvas/handles.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { applyView } from '../canvas/view.ts';
-import { selectOnly } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
@@ -11,6 +11,7 @@ import { boardMenu } from '../features/export.ts';
 import { card } from '../model/boards.ts';
 import type { Box } from '../selbar/place.ts';
 import { addCard } from '../tools/penEdit.ts';
+import { openBelow } from '../ui/popover.ts';
 
 // ---------- zoom from the menu (click the %) or the keyboard: it glides there, centered on the part of the board you're looking at ----------
 export function glideView(to: View) {
@@ -125,7 +126,7 @@ export function init14() {
   $('zoom').onclick = e => {
     e.stopPropagation();
     const b = $('zoom').getBoundingClientRect();
-    boardMenu({ clientX: b.left, clientY: b.top - 8 }, [
+    boardMenu({ clientX: b.left, clientY: b.bottom }, [
       { label: 'Zoom in  ⌘+', run: () => zoomStep(1) },
       { label: 'Zoom out  ⌘−', run: () => zoomStep(-1) },
       { label: 'Zoom to 100%  ⌘0', run: () => zoomTo(1) },
@@ -138,8 +139,7 @@ export function init14() {
     ]);
     const m = $('rowMenu');
     if (m) {
-      const mr = m.getBoundingClientRect();
-      m.style.top = `${b.top - mr.height - 8}px`;
+      openBelow(m, $('zoom'));
       m.classList.add('zoom-menu');
     }
   };

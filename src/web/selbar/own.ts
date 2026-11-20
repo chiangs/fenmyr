@@ -1,9 +1,9 @@
 import { typesWith } from '../../shared/cardTypes.ts';
-import { byId } from '../canvas/wires.ts';
 import { openCanvas } from '../cards/canvas.ts';
 import { endCrop, startCrop } from '../cards/crop.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { $ } from '../core/dom.ts';
+import { byId } from '../core/state.ts';
 import { openDoc } from '../docs/editor.ts';
 import { editTag } from '../edit/text.ts';
 import { hasDue, setDue } from '../features/due.ts';

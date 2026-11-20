@@ -27,7 +27,7 @@ const state = () =>
       slot: rect('[data-p="canvas"] .pr-body'),
     };
   });
-// the bottom bar and the board's pane, in window pixels
+// the bottom bar, in window pixels
 const barIn = () =>
   page.evaluate(() => {
     const edges = (el: Element | null | undefined) => {
@@ -37,7 +37,6 @@ const barIn = () =>
     const dock = document.getElementById('dock');
     return {
       bar: edges(dock),
-      pane: edges(document.querySelector('[data-p="canvas"] .pr-body')),
       shown: !!dock?.checkVisibility(),
     };
   });
@@ -63,8 +62,8 @@ try {
         .filter(e => e instanceof HTMLElement && (e.dataset.box || e.id === 'tray'))
         .map(e => (e instanceof HTMLElement ? (e.dataset.box ?? e.id) : '')),
     ),
-    ['boards', 'layers', 'colors', 'tray'],
-    'the left column holds Boards, Layers, Colours and then Unsorted, beside the board',
+    ['boards', 'layers', 'colors', 'tray', 'zoom'],
+    'the left column holds Boards, Layers, Colours, Unsorted and then Zoom, beside the board',
   );
   const folded = () =>
     page.evaluate(() => {
@@ -93,11 +92,9 @@ try {
   );
   assert.ok(s.proto && s.docked === 'prChat' && s.chatOpen, 'a prototype board docks Myra’s chat open on the left');
   assert.deepStrictEqual(s.folded, [], 'at 1440 px every column shows');
-  const { bar: dock, pane } = await barIn();
-  assert.ok(dock && pane, 'the bottom bar and the board are up');
-  assert.ok(dock.r <= pane.r - 8, 'the bottom bar ends 8 px inside the board, or sooner');
-  assert.strictEqual(dock.l, pane.l + 8, '8 px in from its left');
-  assert.strictEqual(dock.b, pane.b - 18, '18 px over its bottom');
+  const { bar: dock } = await barIn();
+  assert.ok(dock, 'the bottom bar is up');
+  assert.strictEqual(dock.l, dock.r, 'and empty: her chat is docked on the left, and zoom sits with the widgets');
   assert.match(
     s.git,
     /main\s*\d+ files? not committed · No commits yet/,

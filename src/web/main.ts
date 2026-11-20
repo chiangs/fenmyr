@@ -67,6 +67,8 @@ import * as m38 from './vault/ask.ts';
 import * as m46 from './wireframe/tilt.ts';
 import * as m45 from './wireframe/wireframes.ts';
 
+// before every init: start-up code looks the tool buttons up by their data-add
+m18.renderTools();
 m0.init1();
 m1.init2();
 m2.init3();

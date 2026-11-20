@@ -2,7 +2,7 @@ import type { BoardLists } from '../../shared/changes.ts';
 import type { Card, CardOf } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
 import { boxOf, nearestEmptySpot } from '../canvas/emptySpot.ts';
-import { pullFromTray } from '../canvas/wires.ts';
+import { pullFromTray } from '../canvas/tray.ts';
 import { arrange, COLL } from '../cards/collection.ts';
 import { kanbanFields, placeInColumn } from '../cards/kanban.ts';
 import { COLOR_NAMES, uid } from '../core/base.ts';

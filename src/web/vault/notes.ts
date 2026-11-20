@@ -1,7 +1,7 @@
 import type { Board, CardOf, VaultGrant } from '../../shared/model.ts';
 import type { Vault } from '../../shared/ops.ts';
 import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { $, cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';

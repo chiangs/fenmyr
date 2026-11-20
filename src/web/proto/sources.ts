@@ -2,7 +2,7 @@ import { cardName } from '../../shared/cardTypes.ts';
 import type { Board } from '../../shared/model.ts';
 import type { Sources } from '../../shared/repos.ts';
 import { fit } from '../canvas/handles.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { session } from '../core/state.ts';
 import type { SayAction } from '../myra/say.ts';
 import { esc } from '../ui/dom.ts';

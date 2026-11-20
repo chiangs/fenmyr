@@ -10,14 +10,14 @@ const closeTplPick = () => {
 import { typesWith } from '../../shared/cardTypes.ts';
 import { fit, placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
-import { byId, renderWires } from '../canvas/wires.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { FRAMEWORKS } from '../content/frameworks.ts';
 import { placeFramework, STARTERS, TPL_IC } from '../content/placeFramework.ts';
 import { hasAll, queryWords, uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { foldersIn } from '../library/tree.ts';

@@ -39,7 +39,19 @@ function perchTarget(): Point {
 // her hop is one gooey jump, no springs: a short wind-up, then she stretches along the line she is travelling (up out of her box into the chat's header, down going home), most when
 // she is fastest and round again near the top of the arc, with a soft wobble just after she leaves the ground; she slows towards the top and quickens a little coming down; on landing she squashes
 // once and settles. The landing spot is fixed when she takes off (measured again at touchdown), so she can never drift past the edge of the chat.
-const HOP = { stretch: 0.3, wobble: 0.3, arc: 100, up: 480, home: 431, squash: 0.35, wind: 140, land: 300 };
+const HOP = { stretch: 0.3, wobble: 0.3, arc: 100, squash: 0.35, land: 300 };
+
+// What differs between her two hops. `wind`: the crouch before she leaves, in ms (0.6 of it going down). `up` and
+// `home`: her ms in the air going up and coming down, before `grows` scales them with the distance, and the arc with
+// them. `drive`: 1 is a constant speed along her path, 2 starts at about twice her average speed and eases to rest as
+// she lands.
+type Hop = { wind: number; up: number; home: number; drive: 1 | 2; grows: boolean };
+const HOPS: Record<'near' | 'far', Hop> = {
+  // onto the open chat on a normal board, the timing it was tuned for
+  near: { wind: 140, up: 480, home: 431, drive: 1, grows: false },
+  // into or out of a prototype board's docked header, which can cross the window, so it leaves quickly
+  far: { wind: 70, up: 330, home: 300, drive: 2, grows: true },
+};
 
 const gooPose = (p: Point, tf?: string) => {
   gooAt = p;
@@ -79,9 +91,7 @@ function fadeGoo() {
   };
 }
 
-// `far`: a hop into a prototype board's docked header can cross the window, so the further she goes the longer she is
-// in the air and the higher she arcs. The hop onto the chat keeps the timing it was tuned for.
-function flyGoo(to: Point, fade: boolean, far = false) {
+function flyGoo(to: Point, fade: boolean, hop: Hop) {
   const from = gooAt;
   if (gooAnim) {
     gooAnim.stop();
@@ -106,9 +116,9 @@ function flyGoo(to: Point, fade: boolean, far = false) {
   const dx = to.x - from.x,
     dy = to.y - from.y,
     up = to.y < from.y,
-    grow = far ? Math.min(1.5, Math.max(1, Math.sqrt(Math.hypot(dx, dy) / 500))) : 1,
-    WIND = up ? HOP.wind : HOP.wind * 0.6,
-    AIR = (up ? HOP.up : HOP.home) * grow,
+    grow = hop.grows ? Math.min(1.5, Math.max(1, Math.sqrt(Math.hypot(dx, dy) / 500))) : 1,
+    WIND = up ? hop.wind : hop.wind * 0.6,
+    AIR = (up ? hop.up : hop.home) * grow,
     LAND = HOP.land;
   // When 4h > |dy| her arc peaks (4h - |dy|)² / 16h above the higher end of the hop. h is capped so the peak stays 8 px
   // below the window's top edge, room for her stretch.
@@ -136,10 +146,13 @@ function flyGoo(to: Point, fade: boolean, far = false) {
       gooSlot.style.transformOrigin = '50% 55%';
       const t = e - WIND,
         k = t / AIR,
-        x = from.x + dx * k,
-        y = from.y + dy * k - 4 * h * k * (1 - k);
-      const vx = dx / AIR,
-        vy = dy / AIR - (4 * h * (1 - 2 * k)) / AIR,
+        // how far along her way she is, and how fast that moves; a drive of 2 is quickest as she leaves
+        s = 1 - (1 - k) ** hop.drive,
+        ds = (hop.drive * (1 - k) ** (hop.drive - 1)) / AIR,
+        x = from.x + dx * s,
+        y = from.y + dy * s - 4 * h * s * (1 - s);
+      const vx = dx * ds,
+        vy = (dy - 4 * h * (1 - 2 * s)) * ds,
         sp = Math.hypot(vx, vy) / vref,
         th = Math.atan2(vy, vx);
       const el = sm(Math.min(1, sp)),
@@ -192,7 +205,7 @@ export function perchGoo(on: boolean) {
   } // toggled over and over: she gets dizzy
   perched = on;
   gooSlot.classList.toggle('perched', on);
-  flyGoo(on ? perchTarget() : { x: 0, y: 0 }, fades());
+  flyGoo(on ? perchTarget() : { x: 0, y: 0 }, fades(), HOPS.near);
 }
 
 export const keepPerch = () => {
@@ -211,10 +224,16 @@ export function dockReset() {
   gooMove({ x: 0, y: 0 });
 }
 
-// none on a phone, or on a prototype board, where she already sits in the docked chat's header
-export const gooFrom = () => (boxHidden() ? null : gooSlot.getBoundingClientRect());
-
 const docked = () => gooSlot.parentElement?.id === 'mcPerch';
+
+// where she is, to hop from when she is about to change homes: none on a phone, or when she isn't showing. She shows in
+// her box, or on a prototype board in the docked chat's header, where her box is hidden.
+export const gooFrom = () => {
+  const showing = docked()
+    ? !document.body.classList.contains('phone') && gooSlot.checkVisibility({ visibilityProperty: true })
+    : !boxHidden();
+  return showing ? gooSlot.getBoundingClientRect() : null;
+};
 
 // Her slot has just moved to a new home. She is drawn back where she was, then hops or fades into it. The caller moves
 // her and calls this in one task, so no frame shows her at the new home first.
@@ -222,7 +241,7 @@ export function hopFrom(from: DOMRect | null) {
   if (!from) return;
   const to = gooSlot.getBoundingClientRect();
   gooMove({ x: from.left - to.left, y: from.top - to.top });
-  flyGoo({ x: 0, y: 0 }, fades(), true);
+  flyGoo({ x: 0, y: 0 }, fades(), HOPS.far);
 }
 
 // you opened an empty chat (the button or M): once she has landed in the chat's header she tilts her head, wondering what you'll ask. (Not when a question opens it, and not when you're toggling it over and over: then she is dizzy.)

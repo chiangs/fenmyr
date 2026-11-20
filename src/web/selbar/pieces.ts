@@ -1,4 +1,4 @@
-import { byId } from '../canvas/wires.ts';
+import { byId } from '../core/state.ts';
 import { pickerScreen, togglePicker } from '../wireframe/piecePick.ts';
 import { screenOf } from '../wireframe/screenScope.ts';
 import { SEP } from './barKit.ts';

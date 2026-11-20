@@ -1,6 +1,7 @@
 import { fit, toWorld } from '../canvas/handles.ts';
+import { selectOnly } from '../canvas/selection.ts';
+import { renderTray, takeFromTray } from '../canvas/tray.ts';
 import { applyView } from '../canvas/view.ts';
-import { renderTray, selectOnly, takeFromTray } from '../canvas/wires.ts';
 import { $, stage } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
@@ -196,7 +197,7 @@ export function init62() {
         $('dock').prepend(hub);
         // strips in the bottom bar; on a computer they float
         $('dock').insertBefore($('selbar'), $('myra'));
-        $('dock').insertBefore($('modebar'), $('myra'));
+        $('dock').insertBefore($('modeCard'), $('myra'));
         // no keyboard on a phone, so just the names
         for (const b of $('tools').querySelectorAll('[data-tip]'))
           if (b instanceof HTMLElement) b.dataset.name = (b.dataset.tip ?? '').split(' · ')[0];
@@ -209,7 +210,8 @@ export function init62() {
         hide();
         restoreAll();
         hub.remove();
-        $('home').after($('selbar'), $('modebar'));
+        $('home').after($('selbar'));
+        $('tools').after($('modeCard'));
       }
       child(hub, '#hubN').textContent = String(session.board?.tray?.length || '');
     }

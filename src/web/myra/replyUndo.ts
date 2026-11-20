@@ -4,7 +4,7 @@ import type { ChatAction, StoredChangeSet } from '../../shared/chat.ts';
 import { planUndo, undoable } from '../../shared/replyUndo.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { docCard } from '../docs/editor.ts';

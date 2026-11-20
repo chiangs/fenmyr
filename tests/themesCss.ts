@@ -27,7 +27,11 @@ const classesOf = (t: (typeof THEMES)[number]) => {
   return [...(t.mode === 'dark' ? ['dark'] : []), ...(name === 'default' ? [] : [`theme-${name}`])];
 };
 
-const style = fs.readFileSync(path.join(root, 'web/style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+// a card may give its own contents another ink, as a Snow frame does in a dark theme where Snow is light; that is scoped to the card, not a second definition
+const style = fs
+  .readFileSync(path.join(root, 'web/style.css'), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/[^{}]*\.card[^{}]*\{[^{}]*\}/g, '');
 const first = THEMES[0];
 assert(first, 'there are themes');
 for (const name of [...wanted(first).map(([n]) => n), ...Object.keys(DERIVED)])

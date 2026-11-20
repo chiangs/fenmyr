@@ -1,8 +1,9 @@
 import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { byId, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
+import { byId } from '../core/state.ts';
 import { closestTo, oneIn } from '../ui/dom.ts';
 import { caret, closeSbPops, focusBar, G, inVisit, pct, pop, SLIDER_KEYS, syncPair } from './barKit.ts';
 import { every, group } from './group.ts';

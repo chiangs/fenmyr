@@ -12,7 +12,7 @@ export function editorBundle() {
 }
 
 import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { CIC } from '../cards/shapes.ts';
 import { $, stage } from '../core/dom.ts';
 import { save } from '../core/history.ts';

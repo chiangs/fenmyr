@@ -1,6 +1,7 @@
 import { fit } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
-import { renderTray, renderWires } from '../canvas/wires.ts';
+import { renderTray } from '../canvas/tray.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
@@ -108,14 +109,14 @@ export function obKeys(e: KeyboardEvent) {
 const TOUR: TourStep[] = [
   {
     el: '#tools',
-    side: 'top',
+    side: 'left',
     text: 'These are your tools. Pick one, then click the board to place it.',
     try: 'Try it: add a note (or double-click the board).',
     done: t => session.board.cards.length > t.cards,
   },
   {
     el: '#tools [data-add="tpl"]',
-    side: 'top',
+    side: 'left',
     text: 'Templates live here: thinking tools you add to a board, starter boards, and a Kanban with columns you can name. Right-click a selection or the board to save your own.',
   },
   {
@@ -137,9 +138,9 @@ const TOUR: TourStep[] = [
     text: 'Your boards live here. Group them into projects and folders. Right-click anything to rename, move, duplicate or delete it.',
   },
   {
-    // the Wireframe button, or ··· when the bottom bar has tucked it in there (··· comes first in the bar's markup)
+    // the Wireframe button, or ··· when the panel has tucked it in there
     el: '#tools [data-add="frame"]:not(.tb-over), #tools:has([data-add="frame"].tb-over) #tbMore',
-    side: 'top',
+    side: 'left',
     text: 'Wireframes start here, or with W. Click the board for a phone screen, or drag any size. Select a screen and choose Pieces for nav bars, forms and whole website sections. Things snap into line as you move them.',
     try: 'Try it: press W and drag on the board.',
     done: t => screens() > t.screens,

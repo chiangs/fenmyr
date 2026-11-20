@@ -1,6 +1,7 @@
 import type { Card } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { renderWires, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { uid } from '../core/base.ts';
 import { $, cardsEl } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';

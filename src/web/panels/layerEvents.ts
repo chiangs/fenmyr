@@ -1,9 +1,10 @@
 import { renderAll, renderCard } from '../canvas/render.ts';
-import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { $, cardsEl, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
 import { chirp } from '../myra/say.ts';
 import { closestTo } from '../ui/dom.ts';

@@ -2,12 +2,13 @@ import { endTour, obKeys } from '../app/onboarding.ts';
 import { copyCards, lastClip, pasteCards, writeClip } from '../canvas/clipboard.ts';
 import { fit } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
-import { byId, renderWires, selectOnly, selectWire } from '../canvas/wires.ts';
+import { selectOnly, selectWire } from '../canvas/selection.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { cropping, endCrop } from '../cards/crop.ts';
 import { copyOf, tilt, uid } from '../core/base.ts';
 import { $, stage } from '../core/dom.ts';
 import { remember, save, travel } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { closeDoc, docCard } from '../docs/editor.ts';
 import { endEdit } from '../edit/editing.ts';
 import { startFind } from '../features/find.ts';
@@ -25,7 +26,7 @@ import { addCard, drawVec, endVec, refit, vec, vecCard } from '../tools/penEdit.
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { startScreen } from '../tools/screenTool.ts';
 import { closeColor } from '../ui/colorPicker.ts';
-import { clickIn, isTyping } from '../ui/dom.ts';
+import { clickIn, closestTo, isTyping } from '../ui/dom.ts';
 import { toPointer } from '../ui/toolbar.ts';
 import { closePicker, pickerFor } from '../wireframe/piecePick.ts';
 import { makeSection } from '../wireframe/sections.ts';
@@ -60,11 +61,10 @@ export const openSettingsKey = () => {
 };
 export function init20() {
   // ---------- just the board: every panel tucks away (Ctrl+\, like Figma), and comes back with Ctrl+\ or Esc ----------
-  CLEAN_EL = [...['side', 'tray', 'dock', 'modebar', 'keys'].map(id => $(id)), document.querySelector('.top')].filter(
-    el => el !== null,
-  );
-
-  $('cleanBtn').onclick = () => setClean(true);
+  CLEAN_EL = [
+    ...['side', 'tray', 'tools', 'modeCard', 'dock', 'modebar', 'keys'].map(id => $(id)),
+    document.querySelector('.top'),
+  ].filter(el => el !== null);
 
   $('cleanBack').onclick = () => setClean(false);
 
@@ -227,6 +227,22 @@ export function init20() {
       setFocus(false);
       selectOnly([]);
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      return;
+    }
+    // Alt+T opens Templates: T is Big title, and Alt is where a tool's second key lives (Alt+N). By code, as Option+T
+    // types †. The picker puts the cursor in its search, so from there the same key has to close it.
+    if (
+      e.altKey &&
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !e.shiftKey &&
+      e.code === 'KeyT' &&
+      !homeAt &&
+      !$('capture').classList.contains('on') &&
+      (!typing || closestTo(e.target, '#tplPick'))
+    ) {
+      e.preventDefault();
+      clickIn($('tools'), '[data-add="tpl"]');
       return;
     }
     if (typing || homeAt || $('capture').classList.contains('on')) return; // never fire board shortcuts while quick capture is open

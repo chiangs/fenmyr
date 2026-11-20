@@ -1,9 +1,8 @@
 import { typesWith } from '../../shared/cardTypes.ts';
 import { type Card, readCards, readLinks } from '../../shared/model.ts';
 import type { Template } from '../../shared/ops.ts';
-import { byId } from '../canvas/wires.ts';
 import { copyOf, uid } from '../core/base.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { onFrame } from '../wireframe/tilt.ts';
 
 // ---------- the cards in a template: copied out of a board, and copied back in with fresh ids ----------

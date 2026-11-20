@@ -1,8 +1,7 @@
 import type { Card } from '../../shared/model.ts';
 import { applyView } from '../canvas/view.ts';
-import { byId } from '../canvas/wires.ts';
 import { $, cardsEl, stage, world } from '../core/dom.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { plainOf } from '../richtext/render.ts';
 import { cardEl, esc } from '../ui/dom.ts';
 import { initLayerIcons, LICON, layerIcon, layerName, lyText } from './layerNames.ts';

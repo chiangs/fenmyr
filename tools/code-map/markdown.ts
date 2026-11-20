@@ -1,3 +1,4 @@
+import { explain } from './boundary.ts';
 import type { CodeMap, MapFile } from './types.ts';
 
 const top = (counts: Record<string, number>, n = 6) =>
@@ -30,6 +31,16 @@ export function renderMarkdown(map: CodeMap): string {
     '|---|---|---|---|',
   );
   for (const a of map.areas) out.push(`| ${a.id} | ${a.files} | ${a.lines} | ${a.description} |`);
+  const b = map.boundary;
+  out.push(
+    '',
+    '## Renderer and host',
+    '',
+    b.clean
+      ? `Clean. The renderer and the host are two programs and import each other 0 times; both import \`src/shared\` (${b.viaShared.renderer} and ${b.viaShared.host} imports), where the bridge contract \`ops.ts\` is.`
+      : `Broken: ${b.violations.length} imports cross the line between the renderer, the host and shared code.`,
+    ...b.violations.map(c => `- ${explain(c)}`),
+  );
   out.push('', '## Most connected files', '', 'Changing one of these affects the most other files.', '');
   [...map.files]
     .sort((a, b) => a.hubRank - b.hubRank)

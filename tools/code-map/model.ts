@@ -1,4 +1,5 @@
 import { areaOf, zoneOf } from './areas.ts';
+import { boundaryOf } from './boundary.ts';
 import type { Descriptions } from './descriptions.ts';
 import type { RawGraph } from './graph.ts';
 import type { CodeMap, MapArea, MapFile } from './types.ts';
@@ -108,6 +109,7 @@ export function buildMap(raw: RawGraph, d: Descriptions, meta: { commit: string;
     builtAt: meta.builtAt,
     areas: areaInfo(files, d),
     files,
+    boundary: boundaryOf(raw.edges),
     cycles: cycles.map(g => ({ size: g.length, files: g })),
     external: [...raw.external]
       .map(([pkg, set]) => ({ package: pkg, files: [...set].sort() }))

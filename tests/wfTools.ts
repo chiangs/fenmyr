@@ -1,14 +1,13 @@
-// The Wireframe button in the bottom bar and the tools in the screen tool's mode bar, which take over the Wireframe
+// The Wireframe button in the tools and the tools in the screen tool's mode bar, which take over the Wireframe
 // panel's tool buttons: the button puts the screen tool in hand and lights, and tucks into ··· with the others; the
 // mode bar's Box, Text and Icon place each on a board with no screen, by pointer or keyboard; R and X light their tool.
 import assert from 'node:assert';
+import { TOOLBAR } from '../src/web/ui/toolbarTable.ts';
 import { launch, settle } from './support/launch.ts';
 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
-const l = await launch({
-  boards: [{ id: 'b', name: 'Bare', cards: [note], links: [], tray: [], view: { x: 300, y: 200, z: 1 } }],
-  open: 'b',
-});
+const bare = { id: 'b', name: 'Bare', cards: [note], links: [], tray: [], view: { x: 300, y: 200, z: 1 } };
+const l = await launch({ boards: [bare], open: 'b' });
 const { page } = l;
 const EMPTY = { x: 900, y: 450 };
 
@@ -230,49 +229,71 @@ try {
     assert.deepStrictEqual(await tools(), DOWN, 'the lit Wireframe button puts R’s box down too');
   });
 
-  await check('··· lights while a tool tucked in it is in hand, as drawing is at 1280 px', async () => {
-    await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 800));
-    await settle(page, 500);
-    await key('p');
-    const drawing = await page.evaluate(() => {
-      const more = document.getElementById('tbMore'),
-        draw = document.querySelector('#tools [data-add="draw"]');
-      return {
-        on: !!draw?.classList.contains('on') && !!draw.classList.contains('tb-over'),
-        more: more ? getComputedStyle(more).backgroundColor : '',
-        rest: getComputedStyle(document.querySelector('#tools [data-add="note"]') ?? document.body).backgroundColor,
-      };
-    });
-    assert.ok(drawing.on, 'Draw is on and tucked');
-    assert.notStrictEqual(drawing.more, drawing.rest, '··· is lit while drawing');
-    await key('Escape');
-    await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1440, 900));
-    await settle(page, 500);
-  });
-
-  await check('at a width that tucks it, the button sits in ··· and works from there', async () => {
-    await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1000, 800));
-    await settle(page, 500);
-    assert.ok(
-      await page.evaluate(() => document.querySelector('#tools [data-add="frame"]')?.classList.contains('tb-over')),
-      'the button is tucked',
-    );
-    await page.click('#tbMore');
-    await page.locator('#rowMenu button', { hasText: 'Wireframe' }).click();
-    await frames();
-    assert.deepStrictEqual(
-      await tools(),
-      { row: true, lit: ['iPhone'], button: true },
-      'its row in ··· puts it in hand',
-    );
-    await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1440, 900));
-    await settle(page, 500);
-  });
+  // large icons in a short window tuck the drawing tools first
+  const iconSize = async (v: 'm' | 'l') => {
+    await page.click('#gearBtn');
+    await page.click('#setTabs [data-tab="toolbar"]');
+    await page.click(`[data-seg="tbSize"] [data-v="${v}"]`);
+    await page.click('#setClose');
+  };
+  await check(
+    '··· lights while a tool tucked in it is in hand, as drawing is with large icons at 1280 × 560',
+    async () => {
+      await iconSize('l');
+      await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 560));
+      await settle(page, 500);
+      await key('p');
+      const drawing = await page.evaluate(() => {
+        const more = document.getElementById('tbMore'),
+          draw = document.querySelector('#tools [data-add="draw"]');
+        return {
+          on: !!draw?.classList.contains('on') && !!draw.classList.contains('tb-over'),
+          more: more ? getComputedStyle(more).backgroundColor : '',
+          rest: getComputedStyle(document.querySelector('#tools [data-add="note"]') ?? document.body).backgroundColor,
+        };
+      });
+      assert.ok(drawing.on, 'Draw is on and tucked');
+      assert.notStrictEqual(drawing.more, drawing.rest, '··· is lit while drawing');
+      await key('Escape');
+      await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1440, 900));
+      await iconSize('m');
+      await settle(page, 500);
+    },
+  );
 
   for (const f of failed) console.log(`FAILED ${f}`);
   assert.deepStrictEqual(failed, [], 'every check passes');
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');
-  console.log('wfTools: ok');
 } finally {
   await l.close();
+}
+
+// Wireframe last in a person's own order tucks first in a short window, and its row in ··· puts it in hand
+const order = [...TOOLBAR.tools.map(t => t.id).filter(id => id !== 'frame'), 'frame'];
+const own = await launch({ boards: [bare], open: 'b', settings: { toolbar: { order, hidden: [] } } });
+try {
+  await own.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 560));
+  await settle(own.page, 500);
+  assert.ok(
+    await own.page.evaluate(() => document.querySelector('#tools [data-add="frame"]')?.classList.contains('tb-over')),
+    'the button is tucked',
+  );
+  await own.page.click('#tbMore');
+  await own.page.locator('#rowMenu button', { hasText: 'Wireframe' }).click();
+  await own.page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  assert.deepStrictEqual(
+    await own.page.evaluate(() => ({
+      row: !!document.getElementById('screenbar')?.checkVisibility(),
+      lit: [...(document.getElementById('screenbar')?.querySelectorAll('[aria-pressed="true"]') ?? [])].map(e =>
+        e.getAttribute('data-dev'),
+      ),
+      button: !!document.querySelector('#tools [data-add="frame"].on'),
+    })),
+    { row: true, lit: ['iPhone'], button: true },
+    'its row in ··· puts it in hand',
+  );
+  assert.deepStrictEqual(own.errors, [], 'no errors on the page');
+  console.log('wfTools: ok');
+} finally {
+  await own.close();
 }

@@ -1,6 +1,6 @@
-// The bottom bar (the tools, then Myra's box) where it sits and what it does: on top of what it meets, hidden for
-// clean mode, export, a doc and Home as each needs, pictures dropped on it landing on the board, the wheel over it
-// panning, its place in Tab order, and a phone's strips leaving it when the window widens again.
+// The bottom bar (Myra's box) and the tools panel, where they sit and what they do: on top of what they
+// meet, hidden for clean mode, export, a doc and Home as each needs, pictures dropped on them landing on the board,
+// the wheel over them panning, their place in Tab order, and a phone's strips leaving the bar when the window widens.
 import assert from 'node:assert';
 import { near, openBar } from './support/bar.ts';
 import { settle } from './support/launch.ts';
@@ -64,23 +64,24 @@ const focusedIn = () =>
     return a.closest('#home, #side, #sideR, #cards, #stampWheel')?.id || a.id || a.className;
   });
 
-await check('the tools and Myra’s box sit in one row, joined, 18 px over the window’s bottom', async () => {
+await check('Myra’s box is the whole bar, 18 px over the window’s bottom and centred', async () => {
   const b = await bar();
-  assert.ok(b.tools && b.pill && b.dock, 'the bar is up');
-  near(b.tools.b, b.h - 18, 'the tools’ bottom');
+  assert.ok(b.pill && b.dock, 'the bar is up');
   near(b.pill.b, b.h - 18, 'her box’s bottom');
-  near(b.pill.l, b.tools.r, 'her box’s left, on the tools’ right');
+  near(b.dock.l, b.pill.l, 'the bar starts where her box does');
+  near(b.dock.r, b.pill.r, 'and ends where it ends');
+  near((b.dock.l + b.dock.r) / 2, b.w / 2, 'the middle of the bar, on the window’s');
 });
-await check('the bar starts at the canvas area’s left, 14 px from the left widgets', async () => {
+await check('the bar starts right of the left widgets', async () => {
   const b = await bar();
-  near(b.dock?.l, b.leftWidgets + 14, 'the bar’s left');
+  assert.ok(b.dock && b.dock.l >= b.leftWidgets + 14, `the bar starts at ${b.dock?.l}`);
 });
 await check('a press on the first tool or on Myra’s box reaches it', async () => {
   const b = await bar();
   assert.ok(b.firstTool?.hit && b.pill?.hit, 'the first tool and her box take a press');
 });
 for (const w of [1440, 1100, 1000]) {
-  await check(`at ${w} px the bar ends inside the window, with tools tucked into ··· as needed`, async () => {
+  await check(`at ${w} px the bar ends inside the window`, async () => {
     await size(w);
     const b = await bar();
     assert.ok(b.dock && b.dock.r <= b.w - 16, `the bar ends at ${b.dock?.r} in a ${b.w} px window`);
@@ -100,14 +101,16 @@ await check('clean mode hides the bar, and it comes back', async () => {
   assert.ok(back.dock?.shown && back.firstTool?.hit, 'back and in reach');
 });
 
-await check('an exported picture leaves the bar out', async () => {
+await check('an exported picture leaves the bar and the tools out', async () => {
   await view(0, 0);
   await page.evaluate(() => {
     const f = window.Fenmyr;
     const real = f.exportRect;
     f.exportRect = async () => {
       document.body.dataset.barInExport = String(
-        !!document.getElementById('dock')?.checkVisibility({ visibilityProperty: true, opacityProperty: true }),
+        ['dock', 'tools'].some(id =>
+          document.getElementById(id)?.checkVisibility({ visibilityProperty: true, opacityProperty: true }),
+        ),
       );
       f.exportRect = real;
       return '';
@@ -152,6 +155,8 @@ await check('a picture dropped on Myra’s open chat lands on the board', async 
 });
 
 await check('Myra’s open chat never meets a right widget: the column ends above it', async () => {
+  // narrow enough that her joined chat reaches under the right column, tall enough for Unsorted above it
+  await size(1100, 1080);
   await page.click('#mPill');
   await page.waitForTimeout(400);
   const seen = await page.evaluate(() => {
@@ -170,6 +175,7 @@ await check('Myra’s open chat never meets a right widget: the column ends abov
   });
   await page.click('#mcClose');
   await page.waitForTimeout(400);
+  await size(1440);
   assert.ok(seen && seen.widgets > 0, `a right widget shows: ${JSON.stringify(seen)}`);
   assert.ok(seen.below, 'the open chat sits below the right column');
   assert.ok(!seen.meets, 'and no widget reaches down to it');
@@ -237,11 +243,10 @@ await check(
     if (await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat')))
       await page.click('#mcClose');
     await page.waitForTimeout(400);
-    // ··· comes first in the bar when tools are tucked into it
-    await page.focus((await page.isVisible('#tbMore')) ? '#tbMore' : '#tools [data-add="pointer"]');
+    await page.focus('#tools [data-add="pointer"]');
     await page.keyboard.press('Shift+Tab');
     const before = await focusedIn();
-    await page.focus('#cleanBtn');
+    await page.focus('#tools [data-add="draw"]');
     await page.keyboard.press('Tab');
     const box = await focusedIn();
     const expanded = await page.getAttribute('#mPill', 'aria-expanded');
@@ -302,15 +307,18 @@ await check('on a phone the selection and mode strips join the bar, and leave it
   await size(600);
   const phone = await page.evaluate(() => ({
     phone: document.body.classList.contains('phone'),
-    strips: ['selbar', 'modebar'].map(id => document.getElementById(id)?.parentElement?.id),
+    strips: ['selbar', 'modeCard'].map(id => document.getElementById(id)?.parentElement?.id),
   }));
   await size(1440);
   const back = await page.evaluate(() =>
-    ['selbar', 'modebar'].map(id => document.getElementById(id)?.parentElement?.id),
+    ['selbar', 'modeCard'].map(id => {
+      const up = document.getElementById(id)?.parentElement;
+      return up === document.body ? 'body' : up?.id;
+    }),
   );
   const again = await bar();
   assert.deepStrictEqual(phone, { phone: true, strips: ['dock', 'dock'] }, 'in the bar on a phone');
-  assert.deepStrictEqual(back, ['stage', 'stage'], 'back on the board');
+  assert.deepStrictEqual(back, ['stage', 'body'], 'back on the board, and beside the tools');
   assert.deepStrictEqual(again.dock, wide.dock, 'the bar is back where it was');
 });
 

@@ -32,12 +32,27 @@ export type MapArea = {
   importedBy: Record<string, number>;
 };
 
+/** one import that crosses the line between the two programs, or between shared code and either of them */
+export type Crossing = { from: string; to: string; typeOnly: boolean; kind: string };
+
+/**
+ * The renderer and the host are two programs that meet only at src/shared (the bridge contract is src/shared/ops.ts), and
+ * shared code imports neither. `violations` is every import that breaks that, type-only included.
+ */
+export type Boundary = {
+  clean: boolean;
+  violations: Crossing[];
+  /** how many imports of shared code come from each program: where they meet */
+  viaShared: { renderer: number; host: number };
+};
+
 export type CodeMap = {
   version: 1;
   commit: string;
   builtAt: string;
   areas: MapArea[];
   files: MapFile[];
+  boundary: Boundary;
   /** groups of files that import each other round in a circle, over runtime imports, largest first */
   cycles: { size: number; files: string[] }[];
   /** packages from node_modules (Node's own modules left out) and the files that import them */

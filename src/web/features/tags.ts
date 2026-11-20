@@ -1,8 +1,7 @@
 import type { Card, CardOf } from '../../shared/model.ts';
-import { byId } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { keepEditedText } from '../edit/noteBody.ts';
 import { fitText } from '../edit/text.ts';
 import { cardEl, closestTo, esc } from '../ui/dom.ts';

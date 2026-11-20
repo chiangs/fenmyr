@@ -1,6 +1,6 @@
 import { addImages, linkCard, pictureForNote, spotifyOf } from '../cards/spotify.ts';
 import { $, boardLayers } from '../core/dom.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { pastedNote, pasteIntoNote } from '../edit/noteBody.ts';
 import { capture } from '../features/focus.ts';
 import { nestBoard } from '../library/nesting.ts';
@@ -11,7 +11,6 @@ import { initPlainPaste, isPlainPaste } from '../ui/plainPaste.ts';
 import { lastClip, pasteCards } from './clipboard.ts';
 import { placeInView, toWorld } from './handles.ts';
 import { overTray } from './pointerKit.ts';
-import { byId } from './wires.ts';
 export function init23() {
   // ---------- paste and drop ----------
   initPlainPaste();
@@ -84,8 +83,8 @@ export function init23() {
     if (files.length) {
       const ed = session.editing && closestTo(e.target, '.card.editing') ? byId(session.editing) : null;
       if (ed?.type === 'note') pictureForNote(ed, files);
-      // the bar and Myra's open chat cover where it was dropped, and can cover Unsorted
-      else if (closestTo(e.target, '#dock')) addImages(files, w).then(placeInView);
+      // the tools, the bar and Myra's open chat cover where it was dropped, and can cover Unsorted
+      else if (closestTo(e.target, '#tools, #dock')) addImages(files, w).then(placeInView);
       else addImages(files, w, overTray(e));
       return;
     }

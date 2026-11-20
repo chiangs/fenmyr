@@ -16,9 +16,9 @@ type Side = { left: string[]; right: string[] };
 
 // ---------- widgets snap into the left and right sidebars. Drag one by its title: little drop boxes show where it can go ----------
 // the Boards panel is pinned at the top left (it's home to your boards and Settings), everything else can move
-const WG_DEFAULT: Side = { left: ['layers', 'colors'], right: ['tray'] };
+const WG_DEFAULT: Side = { left: ['layers', 'colors'], right: ['tray', 'zoom'] };
 
-const WG_ALL = ['layers', 'colors', 'tray'];
+const WG_ALL = ['layers', 'colors', 'tray', 'zoom'];
 
 const wgEl = (k: string) => (k === 'tray' ? $('tray') : document.querySelector(`.box[data-box="${k}"]`));
 
@@ -161,6 +161,7 @@ const WIDGETS: [string, () => Element | null][] = [
   ['wLayers', () => document.querySelector('.box[data-box="layers"]')],
   ['wColors', () => document.querySelector('.box[data-box="colors"]')],
   ['wTray', () => $('tray')],
+  ['wZoom', () => document.querySelector('.box[data-box="zoom"]')],
 ];
 
 export function applySettings() {

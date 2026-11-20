@@ -1,9 +1,10 @@
 // Shift+Enter in quick capture: the idea becomes a note on the board to write out first, and goes to Unsorted when the writing is done.
 import { placeInView } from '../canvas/handles.ts';
-import { byId, renderTray, selectOnly, sendToTray, takeFromTray } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
+import { renderTray, sendToTray, takeFromTray } from '../canvas/tray.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { onEditEnd, startEdit } from '../edit/editing.ts';
 import { card } from '../model/boards.ts';
 import { say } from '../myra/say.ts';

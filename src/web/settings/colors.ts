@@ -1,8 +1,8 @@
 import type { UsageTotals } from '../../shared/ops.ts';
 import { checkUpdate } from '../app/updates.ts';
-import { byId, selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { $ } from '../core/dom.ts';
-import { appState, session } from '../core/state.ts';
+import { appState, byId, session } from '../core/state.ts';
 import { devName, openMedia } from '../media/devices.ts';
 import { camOff, camOn, cams } from '../media/video.ts';
 import { paintBd } from '../myra/birthday.ts';

@@ -1,7 +1,7 @@
 // An image card's own actions in its right-click menu: save the picture, copy it for other apps, or swap in another one.
 import type { CardOf } from '../../shared/model.ts';
 import { renderCard } from '../canvas/render.ts';
-import { selectOnly } from '../canvas/wires.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { remember, save } from '../core/history.ts';
 import type { MenuItem } from '../features/export.ts';
 import { chirp, say } from '../myra/say.ts';

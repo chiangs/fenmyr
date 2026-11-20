@@ -1,14 +1,15 @@
 import type { Card, CardOf } from '../../shared/model.ts';
 import { renderCard, TILTS } from '../canvas/render.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { applyView } from '../canvas/view.ts';
-import { byId, renderWires, selectOnly } from '../canvas/wires.ts';
+import { renderWires } from '../canvas/wires.ts';
 import { imageMenu } from '../cards/imageActions.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { kanbanMenu } from '../cards/kanban.ts';
 import { copyOf, tilt, uid } from '../core/base.ts';
 import { $, boardLayers, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
-import { session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
 import { DL } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';
@@ -139,7 +140,8 @@ export function init43() {
       stopPlacing();
       return;
     }
-    if (closestTo(e.target, '.dock, .selbar, .modebar, .side, .tray, .top, .home, .docview, .cpop, .settings')) return;
+    if (closestTo(e.target, '.tools, .dock, .selbar, .modebar, .side, .tray, .top, .home, .docview, .cpop, .settings'))
+      return;
     e.preventDefault();
     // the pointer may be captured, so look at what's really under it
     const under = document.elementFromPoint(e.clientX, e.clientY);
