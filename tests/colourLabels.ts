@@ -15,9 +15,12 @@ const measure = (classes: string[], dark: boolean) =>
         document.body.classList.remove(c);
       for (const c of cls) document.body.classList.add(c);
       const card = document.querySelector('.card.note'),
-        after = card ? getComputedStyle(card.querySelector('.frame') ?? card, '::after') : null;
+        after = card ? getComputedStyle(card.querySelector('.frame') ?? card, '::after') : null,
+        own = card ? getComputedStyle(card) : null;
       return {
-        size: card ? [card.getBoundingClientRect().width, card.getBoundingClientRect().height] : [],
+        // the note's own size, not the box it has on screen: the board's opening fit is a half-second transition on the
+        // whole board, and a box read near its end is a hair short of its final size (307.986 for 308)
+        size: own ? [parseFloat(own.width), parseFloat(own.height)] : [],
         label: after && after.display !== 'none' ? after.content : '',
       };
     },
