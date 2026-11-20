@@ -36,6 +36,17 @@ Node runs `.ts` files directly, so tests and tools need no build step. Write imp
 | `tools/` | The build, the budget, the visual diff, metrics, and generators for icons, notices and the app icon. |
 | `tools/editor/` | A separate npm package that builds `web/vendor/editor.js` and `docx.js`. |
 
+## Running from a checkout
+
+`npm start` builds into `dist/` and `web/dist/` (both gitignored) and runs the app from this checkout, so switching branches under a running app has some effects:
+
+- The host code is read once at start, and the window keeps the page it loaded, so a running app doesn't change when you switch branches.
+- Files that load later and aren't bundled (fonts, icons, stamps, vendor files) are read from disk when first needed, so they can change mid-session.
+- A reload takes `index.html` and `style.css` from the new branch, but `web/dist/app.js` stays the last build, so the page is a mix until you rebuild. `npm run build` on another branch replaces both build folders under a running app.
+- From a clone installed with `install.sh`, a branch that differs from upstream makes the update bar offer "Update now", which pulls, builds and reopens (`src/host/update.ts`). Don't use it on a branch you want to keep as it is.
+
+To work on another branch while the app runs, use a worktree (next to the rules below).
+
 ## Code map
 
 `node tools/code-map/query.ts <file or area>` says what a file is for, what it imports and what imports it. Use it before changing a shared file, to see what depends on it, and when you need to find where something lives. The same map, rebuilt on every merge to `main`, is at https://code-map.fenmyr.com/ (`code-map.json` and `code-map.md` for tools). It opens on the areas and shows whether the renderer and the host import each other (they must not: they meet only in `src/shared`); `tools/code-map/check.ts`, part of `check:fast`, fails when they do.
@@ -66,6 +77,7 @@ Each rule names the check that enforces it.
 - **Prove behaviour, not compilation.** A renderer change runs `npm run visual` and `node tests/perf.ts origin/main`. A new bridge operation gets a smoke check.
 - **User-facing text.** Myra speaks in the first person in her own lines, with ✦ used sparingly. Menus, tooltips, settings and errors are plain and neutral. Use British English.
 - **A rule comes with its check.** When a decision becomes a rule, the same change adds what keeps it true: a check in `check:fast` or a test if it can be tested; a tool if doing it by hand is repeated or easy to get wrong; a step or a trap in a skill (`.claude/skills/`) if it's part of proving a change or of a workflow. If none fits, say so where the rule is written. A rule nothing enforces is a request. Not every decision needs one: a check is worth its cost when a mistake was costly or has happened twice, or when the manual work repeats.
+- **A new branch is a new worktree.** When asked to create a branch, make it with `git worktree add .claude/worktrees/<name> -b <branch> origin/main` and work there; don't `git switch` or `git checkout -b` in the main checkout, which may be running the app (see Running from a checkout). Give the worktree `node_modules` with a symlink to the main checkout's (`ln -s <main checkout>/node_modules .claude/worktrees/<name>/node_modules`) or `npm ci`. Remove it with `git worktree remove .claude/worktrees/<name>` once the branch is merged. Nothing can check this, so it is an instruction for people and for Claude, kept here so it is written down.
 - **Commits.** The subject is a plain sentence. GitHub adds the PR number on merge.
 
 The budget in `tools/budget.json` counts untyped files, `any`, casts, long files, logic in markup, raw colours in `web/style.css` and `body.dark` selectors there. All are zero except three casts, each at a boundary (the bridge's reply, `$`, and `session` before a board loads), and the `body.dark` selectors, which #251 folds into per-mode tokens in `src/web/settings/derivedModes.ts`. `npm run budget` fails when any count rises.
