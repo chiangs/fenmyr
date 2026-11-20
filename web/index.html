@@ -165,7 +165,6 @@
 
   <button class="clean-back" id="cleanBack" type="button">Show panels <kbd>⌘\</kbd></button>
   <div class="keys" id="keys"><span><kbd>M</kbd> ask Myra</span><span><kbd>F</kbd> focus</span><span><kbd>double-click</kbd> new note</span><span><kbd>⌘K</kbd> quick capture</span><span><kbd>⌘F</kbd> find</span><span><kbd>space</kbd> drag to pan</span><span><kbd>⌘\</kbd> just the board</span><button id="keysX" title="Hide">×</button></div>
-  <div class="place-hint" id="placeHint" hidden></div>
   <svg class="guides" id="guides"></svg>
   <input type="file" id="filePick" accept="image/*,video/*" multiple hidden>
   <input type="file" id="coverPick" accept="image/*" hidden>
@@ -173,6 +172,8 @@
 
 <!-- what opens over the bars and Myra’s chat: the tools’ pickers, quick capture and a colour card’s wheel -->
 <div id="overBar">
+  <!-- the hint that opens when a tool is picked: at body level, since inside the board it sat under the panes of a prototype board -->
+  <div class="place-hint" id="placeHint" hidden></div>
   <!-- stamps: a wheel of favorites; the middle opens every stamp -->
   <div class="wheel-stamps" id="stampWheel"><div class="ws-ring" id="wsRing"></div><button class="ws-mid" id="wsMid" title="All stamps">+</button></div>
   <div class="stamp-pick" id="stampPick">

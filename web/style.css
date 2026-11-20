@@ -2717,6 +2717,9 @@ body.dark .tag-pop { background: var(--surface); }
 .place-hint { position: fixed; z-index: 9001; left: 50%; top: 16px; transform: translateX(-50%); padding: 9px 16px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--ink-inverse); font: 600 12.5px/1 var(--font); pointer-events: none; box-shadow: 0 8px 22px rgb(from var(--shade) r g b / .22); }
 body.dark .place-hint { color: var(--au-bg-3); }
 .place-hint[hidden] { display: none; }
+/* a prototype board is panes side by side: the window's centre is over the Preview pane, whose header covers a hint drawn
+   there, so it is centred on the board pane instead, below the pane's header, and wraps in a pane too narrow for one line */
+body.proto:not(.phone) .place-hint { left: calc(var(--slot-l) + var(--slot-w) / 2); top: calc(var(--slot-t) + 14px); width: max-content; max-width: calc(var(--slot-w) - 24px); white-space: normal; text-align: center; }
 body.tint-panels .place-hint { color: var(--panel); }
 body.dz-dragging, body.dz-dragging * { cursor: grabbing !important; }
 
