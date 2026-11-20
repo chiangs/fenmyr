@@ -68,7 +68,6 @@ try {
     // what the Board tab used to hold about how the board looks
     '#defaultFontBtn',
     '[data-col="accent"]',
-    '[data-set="grid"]',
     '#gridShapes',
     '#noteColors',
     '[data-set="tilt"]',
