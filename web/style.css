@@ -208,7 +208,9 @@ button.zoom { font-family: inherit; font-size: 12px; font-variant-numeric: tabul
 .capture.on { opacity: 1; pointer-events: auto; transform: translateX(-50%); }
 .capture input { width: 100%; padding: 14px 16px; border: 0; font: 17px/1 var(--font); outline: none; border-radius: 19px; corner-shape: squircle; background: var(--blush); }
 .marquee { position: absolute; border: 1.5px solid var(--select); background: rgb(from var(--select) r g b / .08); border-radius: 6px; display: none; pointer-events: none; z-index: 9; }
-.card.pop { animation: pop .5s cubic-bezier(.2, .9, .3, 1.4) both; }
+/* no fill mode: a finished animation that holds its end state keeps the card on a layer of its own, and a tilted card on one is
+   drawn from a rotated bitmap, soft instead of sharp, for as long as the card lives */
+.card.pop { animation: pop .5s cubic-bezier(.2, .9, .3, 1.4); }
 @keyframes pop { from { transform: scale(.6); opacity: 0; } }
 
 /* inside the desktop app: room for the window buttons at the top of the sidebar */
