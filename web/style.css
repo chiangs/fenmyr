@@ -843,7 +843,7 @@ body.dark { --sh: 0, 0, 0; --sh-k: 2.2;   /* dark mode: plain dark shadows, not 
 body.dark, body.dark .stage { background: var(--body-bg); }
 body.dark .box, body.dark .tools, body.dark .tray, body.dark .selbar, body.dark .find-bar, body.dark .drawbar, body.dark .cpop, body.dark .capture, body.dark .shapepick, body.dark .wheel-stamps,
 body.dark .stamp-pick, body.dark .row-menu, body.dark .cover-menu, body.dark .set-panel, body.dark .docview, body.dark .tile, body.dark .tile.folder .paper, body.dark .tile.project .mf,
-body.dark .tray-item, body.dark .ghost, body.dark kbd, body.dark .home-back { background: var(--surface) !important; color: var(--ink); }
+body.dark .tray-item, body.dark .ghost, body.dark kbd:not(.keycap), body.dark .home-back { background: var(--surface) !important; color: var(--ink); }
 body.dark .box { background: rgb(from var(--pn-dark-box) r g b / .96) !important; }
 body.dark .board-row:hover, body.dark .node-head:hover, body.dark .brand:hover, body.dark .pal:hover, body.dark .home-row, body.dark .dv-btn, body.dark .tile-art, body.dark .seg,
 body.dark .card.canvas .cv-prev, body.dark .au-tx, body.dark .tile.folder .tile-art .back, body.dark .tile.folder .tile-art .tab { background: var(--surface-2) !important; }
@@ -1899,11 +1899,14 @@ body.dark .vd-pp { background: var(--clean-ink) !important; color: var(--vd-ink)
 /* your toolbar: a little panel above the toolbar to show, hide and reorder tools */
 .tools > button[hidden] { display: none; }
 .tbe-list { display: grid; gap: 2px; max-height: 380px; overflow-y: auto; }
-.tbe-row { display: grid; grid-template-columns: 16px 28px 1fr auto; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 16px; corner-shape: squircle; cursor: grab; }
+.tbe-row { display: grid; grid-template-columns: 16px 28px 1fr 4.5em auto; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 16px; corner-shape: squircle; cursor: grab; }
 .tbe-row:hover { background: var(--dp-bg); } .tbe-row.drag { opacity: .45; } .tbe-row.off .tbe-ic, .tbe-row.off .tbe-name { opacity: .4; }
 .tbe-grip { color: var(--ink-faint); font-size: 11px; letter-spacing: -2px; }
 .tbe-ic { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: var(--dp-bg); color: var(--ink); } .tbe-ic svg { width: 17px; height: 17px; }
 .tbe-name { font-weight: 600; }
+.tbe-key { text-align: right; white-space: nowrap; }
+/* The one style for a shortcut shown beside a setting, on a <kbd>: the tool list in Settings → Layout now, the Board shortcut list next. A hairline and soft ink so it reads as a hint, not a button, in every theme. A column of them goes in a fixed-width cell with text-align: right (.tbe-key), so the keys end at one edge. */
+.keycap { display: inline-block; padding: 2px 5px; border: 1px solid color-mix(in oklab, var(--ink) 14%, transparent); border-radius: 5px; background: transparent; font: 500 11px/1 var(--font); color: var(--ink-soft); }
 body.dark .tbe-row:hover, body.dark .tbe-ic { background: rgb(from var(--hilite) r g b / .06); }
 
 /* Wide / Phone: which shape to record */

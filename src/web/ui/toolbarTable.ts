@@ -51,7 +51,7 @@ type ToolLine = {
   id: string;
   /** Its name in the tooltip, Settings → Toolbar and the ··· menu. */
   label: string;
-  /** The shortcut the tooltip shows after the name, in Mac symbols (⇧V). Windows and Linux spell them out. */
+  /** The shortcut the tooltip and Settings → Layout show, in Mac symbols (⇧V, ⌥N). Windows and Linux spell them out. */
   key?: string;
   /** A name from the icon pack. */
   icon: string;
