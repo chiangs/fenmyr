@@ -85,7 +85,7 @@ async function everywhere(bg: string) {
   };
   await take();
   await page.click('#gearBtn');
-  for (const tab of ['general', 'board', 'helpers']) {
+  for (const tab of ['general', 'appearance', 'connections', 'board', 'layout']) {
     await page.click(`#setTabs [data-tab="${tab}"]`);
     await page.waitForTimeout(100);
     await take();

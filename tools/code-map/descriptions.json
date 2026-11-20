@@ -348,6 +348,7 @@
     "src/web/wireframe/tilt.ts": "The tilt popover, frames and snapping of wireframe pieces.",
     "src/web/wireframe/wireframes.ts": "Wireframes: screens, boxes and text, devices, fonts and snapping.",
     "tests/alignBar.ts": "Checks Align ▾ for one piece on a screen, a whole piece moving as one, a locked piece staying, one undo per visit, inline buttons for two pieces and none for a lone group.",
+    "tests/appearanceTab.ts": "Settings' seven tabs and which section and control sits on each, and the Accessibility section (Colour names) shown only for Clear and Lantern.",
     "tests/askFirst.ts": "Checks when a Myra reply waits as a plan, counted per card on boards built by hand, what she says about cards a plan left, and a plan kept with its message.",
     "tests/barFold.ts": "Checks that at 1280 × 800 the bar for each wireframe piece folds nothing, and with the Pieces picker open tucks away only what it did before.",
     "tests/barGroups.ts": "Which groups and buttons the selection bar shows for every kind of card, mixed selections, a connector and cropping, against a recorded list.",

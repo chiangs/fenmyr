@@ -25,7 +25,7 @@ export function repoActs(r: MyraReply): SayAction[] {
       cls: 'next',
       run: () => {
         $('gearBtn').click();
-        setTab('helpers');
+        setTab('connections');
       },
     });
   return acts;

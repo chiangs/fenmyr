@@ -145,7 +145,7 @@ try {
   }
 
   await page.click('#gearBtn');
-  await page.click('#setTabs [data-tab="toolbar"]');
+  await page.click('#setTabs [data-tab="layout"]');
   const listed = await page.$$eval('#setTbList .tbe-row', rows =>
     rows.map(r => [r.getAttribute('data-tb'), r.querySelector('.tbe-name')?.textContent]),
   );

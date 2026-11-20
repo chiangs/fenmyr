@@ -232,7 +232,7 @@ try {
   // large icons in a short window tuck the drawing tools first
   const iconSize = async (v: 'm' | 'l') => {
     await page.click('#gearBtn');
-    await page.click('#setTabs [data-tab="toolbar"]');
+    await page.click('#setTabs [data-tab="layout"]');
     await page.click(`[data-seg="tbSize"] [data-v="${v}"]`);
     await page.click('#setClose');
   };

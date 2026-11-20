@@ -66,7 +66,7 @@ export async function look(t: Smoke) {
       fam = (sel: string) => getComputedStyle(T.el(sel)).fontFamily;
     T.click('#gearBtn');
     await T.wait(300);
-    T.click('#setTabs [data-tab="board"]');
+    T.click('#setTabs [data-tab="appearance"]');
     await T.wait(200);
     const before = fam('.card.title .text');
     T.click('#defaultFontBtn');

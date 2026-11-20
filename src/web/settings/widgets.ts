@@ -7,7 +7,7 @@ import { goos } from '../myra/goos.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
 import { applyToolbar } from '../ui/toolbarConfig.ts';
 import { useFont } from '../wireframe/tilt.ts';
-import { applyTheme } from './activeTheme.ts';
+import { applyTheme, themeFor } from './activeTheme.ts';
 import { applyColors, following } from './colors.ts';
 import { choiceOf, flagOn, MYRA_COLORS, myraColors, settings } from './settings.ts';
 import { paintThemePicker } from './themePicker.ts';
@@ -205,6 +205,9 @@ export function applySettings() {
     });
   }
   document.body.classList.toggle('icons-duo', settings.iconStyle === 'duotone');
+  document.body.classList.toggle('no-colour-names', !settings.colourNames);
+  // the accessibility options are the ones the theme in use offers, so a theme without any has no section
+  $('setAccess').hidden = !themeFor(dark ? 'dark' : 'light')?.labels;
   document.body.classList.toggle('dark', dark);
   applyTheme(dark ? 'dark' : 'light');
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';

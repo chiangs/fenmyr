@@ -19,7 +19,7 @@ const STRAY_PIXELS = 60;
 // scaled card edges land a pixel apart from run to run at this zoom; same code measured 900 to 1,600, a layout change 268,000
 const STRAY_PIXELS_SCALED: Record<string, number> = { 'zoom-out.png': 3000 };
 const CHANNEL_TOLERANCE = 2;
-const TABS = ['general', 'myra', 'helpers', 'vaults', 'board', 'toolbar', 'widgets', 'about'];
+const TABS = ['general', 'appearance', 'myra', 'connections', 'board', 'layout', 'about'];
 
 const center = async (page: Page, sel: string) => {
   const r = await page.locator(sel).first().boundingBox();
@@ -86,6 +86,9 @@ const themeGroup = (name: string, mode: 'light' | 'dark'): Group => ({
       'settings',
       async page => {
         await page.click('#gearBtn');
+        // the theme picker, which is what a theme's own Settings state is for, is on the Appearance tab; the reference may not have it yet
+        const tab = page.locator('#setTabs [data-tab="appearance"]');
+        if (await tab.count()) await tab.click();
       },
     ],
   ],
@@ -153,7 +156,9 @@ const GROUPS: Record<string, Group> = {
       t,
       async page => {
         if (!(await page.locator('#settings.on').count())) await page.click('#gearBtn');
-        await page.click(`#setTabs [data-tab="${t}"]`);
+        // a tab the reference doesn't have yet leaves Settings on General
+        const tab = page.locator(`#setTabs [data-tab="${t}"]`);
+        if (await tab.count()) await tab.click();
       },
     ]),
   },

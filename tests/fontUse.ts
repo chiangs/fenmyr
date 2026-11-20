@@ -173,7 +173,7 @@ try {
 
   await check('Settings → Default font takes only a font Google sends', async () => {
     await page.click('#gearBtn');
-    await page.click('#setTabs [data-tab="board"]');
+    await page.click('#setTabs [data-tab="appearance"]');
     const shown = () => page.textContent('#defaultFontBtn');
     const before = await shown();
     await openFonts('#defaultFontBtn');

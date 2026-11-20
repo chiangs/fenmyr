@@ -25,6 +25,8 @@ const isChat = (v: unknown): v is Chattiness => v === 'quiet' || v === 'normal' 
 const DEFAULTS = {
   defaultFont: '',
   iconStyle: 'regular',
+  // whether a theme that prints each note's colour name on it (Clear, Lantern) does; no other theme prints it
+  colourNames: true,
   winButtons: false,
   webAccess: false,
   caelestia: true,

@@ -143,7 +143,7 @@ try {
   await page.keyboard.press('Escape');
 
   await page.click('#gearBtn');
-  await page.click('#setTabs [data-tab="widgets"]');
+  await page.click('#setTabs [data-tab="layout"]');
   await page.click('#wgReset');
   await page.click('#setClose');
   await page.waitForTimeout(300);
@@ -213,7 +213,7 @@ try {
   );
 
   await p.click('#gearBtn');
-  await p.click('#setTabs [data-tab="widgets"]');
+  await p.click('#setTabs [data-tab="layout"]');
   await p.click('[data-set="wZoom"]');
   await p.click('#setClose');
   await p.waitForTimeout(300);
