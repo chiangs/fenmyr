@@ -32,11 +32,9 @@ import { closePicker, pickerFor } from '../wireframe/piecePick.ts';
 import { makeSection } from '../wireframe/sections.ts';
 import { groupSel, restack } from '../wireframe/stack.ts';
 import { initKeyed, keyedButton } from './keyed.ts';
+import { TOOL_KEYS } from './keymap.ts';
 
 let CLEAN_EL: Element[] = [];
-// the letters below that start placing a card, a wireframe piece, a screen or a picture (Shift+V, video, is checked on
-// its own)
-const TOOL_KEYS = ['n', 't', 'c', 'g', 'r', 'x', 'w', 'd', 'l', 'a', 'i'];
 
 function setClean(on: boolean) {
   if (on === document.body.classList.contains('clean') || (on && document.body.classList.contains('phone'))) return;
@@ -330,7 +328,8 @@ export function init20() {
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
-    // a letter that picks up another tool puts drawing down, as picking it from the toolbar does
+    // a letter that picks up another tool puts drawing down, as picking it from the toolbar does (Shift+V, video, is
+    // checked on its own)
     if (drawOn && (TOOL_KEYS.includes(k) || (k === 'v' && e.shiftKey))) exitDraw();
     if (k === 'f') setFocus(!session.focusSet);
     if (k === 'n') startPlacing('note');

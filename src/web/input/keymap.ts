@@ -10,6 +10,8 @@
 //                  an entry.
 //
 // The handlers themselves stay where they are: input/shortcuts.ts, edit/noteKeys.ts and features/find.ts.
+import { TOOLBAR } from '../ui/toolbarTable.ts';
+
 type ShortcutGroup = { id: string; heading: string; note?: string };
 type Shortcut = {
   id: string;
@@ -82,3 +84,9 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: 'box', keys: 'R', does: 'Box: drag on the board to draw one', group: 'wireframe', tool: true },
   { id: 'text', keys: 'X', does: 'Text: click on the board to place one', group: 'wireframe', tool: true },
 ];
+
+// The letters that put a tool in hand, which the key handler uses to put drawing down first: each toolbar tool's own
+// letter and the key-only tools'. P is the Draw tool itself, so the handler toggles drawing with it and must not.
+export const TOOL_KEYS = [...TOOLBAR.tools.map(t => t.key), ...SHORTCUTS.filter(s => s.tool).map(s => s.keys)].flatMap(
+  key => (key?.length === 1 && key !== 'P' ? [key.toLowerCase()] : []),
+);
