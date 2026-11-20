@@ -49,7 +49,7 @@ export async function look(t: Smoke) {
     T.click('[data-seg="iconStyle"] [data-v="regular"]');
     return res;
   });
-  t.check('gridShapes', ico.gridShapes === 'dot,cross,square,cloudberry,berry,leaf', ico.gridShapes);
+  t.check('gridShapes', ico.gridShapes === 'none,dot,cross,square,cloudberry,berry,leaf', ico.gridShapes);
   const unknown = await page.evaluate(names => names.filter(n => !window.iconKnown(n)), namedIcons());
   t.checkAll('icons', {
     noneMissing: !ico.missing.length,

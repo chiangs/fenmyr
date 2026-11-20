@@ -16,11 +16,14 @@ export const MYRA_COLORS: Record<string, GooColors> = {
 
 import { isRecord } from '../../shared/model.ts';
 import type { Chattiness } from '../../shared/ops.ts';
+import { type GridShape, isGridShape } from '../canvas/gridLook.ts';
 
 // keeps the default's type as all three values, not just 'normal'
 const chattiness = (c: Chattiness) => c;
 const NORMAL = chattiness('normal');
 const isChat = (v: unknown): v is Chattiness => v === 'quiet' || v === 'normal' || v === 'chatty';
+// and the grid's default is any shape, not just 'dot'
+const shape = (s: GridShape) => s;
 
 const DEFAULTS = {
   defaultFont: '',
@@ -42,7 +45,8 @@ const DEFAULTS = {
   wZoom: true,
   myra: 'golden',
   greet: true,
-  grid: true,
+  // the grid's look, None included: there is no separate switch for it to disagree with
+  gridShape: shape('dot'),
   tilt: true,
   motion: true,
   keys: true,
@@ -68,8 +72,11 @@ type Defaults = typeof DEFAULTS;
 export const myraColors = (name: string) => MYRA_COLORS[name] ?? GOLDEN;
 // the switches in Settings (data-set) and the choices (data-seg) name these
 type Flag = { [K in keyof Defaults]: Defaults[K] extends boolean ? K : never }[keyof Defaults];
-// how chatty she is has its own three values, so it's set through setChoice's own check
-type Choice = Exclude<{ [K in keyof Defaults]: Defaults[K] extends string ? K : never }[keyof Defaults], 'chat'>;
+// how chatty she is and the grid's shape have their own values, so they're set through their own checks
+type Choice = Exclude<
+  { [K in keyof Defaults]: Defaults[K] extends string ? K : never }[keyof Defaults],
+  'chat' | 'gridShape'
+>;
 type Colors = Record<string, string>;
 
 export type Settings = Defaults & {
@@ -86,7 +93,6 @@ export type Settings = Defaults & {
   // 'MM-DD'
   birthday?: string;
   layout?: { left: string[]; right: string[] } | null;
-  gridShape?: string;
 };
 
 export let settings: Settings;
@@ -117,8 +123,9 @@ function readSettings(raw: unknown): Settings {
       : { light: {}, dark: {} },
   };
   out.chat = isChat(saved.chat) ? saved.chat : NORMAL;
-  for (const k of ['name', 'micId', 'camId', 'birthday', 'gridShape'] as const)
-    if (typeof saved[k] === 'string') out[k] = saved[k];
+  // an older version kept the grid's switch apart from its shape and hid the grid whatever the shape was
+  out.gridShape = saved.grid === false ? 'none' : isGridShape(saved.gridShape) ? saved.gridShape : DEFAULTS.gridShape;
+  for (const k of ['name', 'micId', 'camId', 'birthday'] as const) if (typeof saved[k] === 'string') out[k] = saved[k];
   if (typeof saved.camFlip === 'boolean') out.camFlip = saved.camFlip;
   if (isRecord(saved.wireStyle)) {
     const { w, color } = saved.wireStyle;
@@ -132,7 +139,7 @@ function readSettings(raw: unknown): Settings {
 
 const isFlag = (k: string): k is Flag => Object.hasOwn(DEFAULTS, k) && typeof Reflect.get(DEFAULTS, k) === 'boolean';
 const isChoice = (k: string): k is Choice =>
-  k !== 'chat' && Object.hasOwn(DEFAULTS, k) && typeof Reflect.get(DEFAULTS, k) === 'string';
+  k !== 'chat' && k !== 'gridShape' && Object.hasOwn(DEFAULTS, k) && typeof Reflect.get(DEFAULTS, k) === 'string';
 
 export const flagOn = (k: string) => isFlag(k) && settings[k];
 export function setFlag(k: string, on: boolean) {

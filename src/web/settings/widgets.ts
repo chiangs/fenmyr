@@ -244,7 +244,6 @@ export function applySettings() {
     gg.draw();
   });
   document.body.classList.toggle('myra-hidden', settings.myraChar === false);
-  document.body.classList.toggle('no-grid', !settings.grid);
   document.body.classList.toggle('neat', !settings.tilt);
   document.body.classList.toggle('calm', !settings.motion);
   $('keys').classList.toggle('hide', !settings.keys);
