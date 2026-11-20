@@ -1,5 +1,5 @@
 // Zoom: Ctrl + mouse wheel moves one even step per notch, a touchpad pinch stays smooth, Ctrl+0 resets to 100%,
-// and the percentage opens the zoom menu (in, out, 100%, fit, quick sizes) with Ctrl shortcuts.
+// and the percentage opens the zoom menu (the quick sizes, then in, out, 100%, fit) with Ctrl shortcuts.
 //   node tests/zoom.ts
 
 import assert from 'node:assert';
@@ -112,8 +112,11 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
   // the percentage opens the zoom menu; "Zoom to 100%" goes back
   await page.click('#zoom');
   await page.waitForTimeout(300);
+  // a separator reads as '-', so the groups' order and the line between them are both in what is compared
   const menu = await page.evaluate(() =>
-    [...document.querySelectorAll('#rowMenu button')].map(b => (b.textContent ?? '').replace(/\s+/g, ' ').trim()),
+    [...document.querySelectorAll('#rowMenu > *')].map(b =>
+      b.getAttribute('role') === 'separator' ? '-' : (b.textContent ?? '').replace(/\s+/g, ' ').trim(),
+    ),
   );
   await page.locator('#rowMenu button', { hasText: 'Zoom to 100%' }).click();
   await page.waitForTimeout(500);
@@ -266,6 +269,8 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
     r.flick === '119%' &&
     r.click === '100%' &&
     r.plus === '110%' &&
+    JSON.stringify(r.menu.map(item => item.replace(/ (Ctrl|Shift)\S*$| ✓$/, ''))) ===
+      JSON.stringify(['50%', '100%', '200%', '-', 'Zoom in', 'Zoom out', 'Zoom to 100%', 'Zoom to fit']) &&
     r.menu.includes('Zoom in Ctrl++') &&
     r.menu.includes('Zoom to 100% Ctrl+0') &&
     !r.menu.join().includes('⌘') &&

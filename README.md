@@ -174,7 +174,7 @@ The first memo downloads the speech model, about 140 MB, into `~/.local/share/fe
 | **Ctrl + / Ctrl −** | Zoom in / out, the same steps |
 | **Shift+1** | Zoom to fit |
 | **Ctrl+0** | Back to 100% |
-| **click the zoom %** | Zoom menu: in, out, 100%, fit, 50 / 100 / 200%. The Zoom widget starts under Unsorted: drag it by its title to the other side, or switch it off in Settings → Widgets |
+| **click the zoom %** | Zoom menu: 50 / 100 / 200%, then in, out, 100%, fit. The Zoom widget starts under Unsorted: drag it by its title to the other side, or switch it off in Settings → Widgets |
 | **Ctrl+] / Ctrl+[** | Bring forward / send backward (add Shift: all the way) |
 | **Alt + drag** | Drag a copy |
 | **Ctrl+Z / Ctrl+Shift+Z** | Undo / redo |
