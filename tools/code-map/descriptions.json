@@ -593,6 +593,9 @@
     "tools/visual-myra.ts": "Myra’s states for the visual diff: a reply in the open chat, what she sees, the chat and doc panels, and a plan with its board preview, before and after Do it.",
     "tools/visual-wireframe.ts": "The wireframe board's states for the visual diff: the screen tool, a selected screen, the Pieces picker and its Icons view, an empty screen's hint, and the picker in dark and on a phone.",
     "tools/visual-proto.ts": "The prototype board’s states for the visual diff: a fresh repo’s board at three widths and in dark, its chat at its narrowest, and its git bar’s More menu open.",
-    "web/sw.js": "Keeps a copy of the app so the website version opens offline."
+    "web/sw.js": "Keeps a copy of the app so the website version opens offline.",
+    "tests/cardInk.ts": "The words on every colour of note, and on a doc, read on the card in every theme, so a light Snow card in Lantern has dark text.",
+    "tests/colourLabels.ts": "Clear and Lantern print a note's colour name on it and no other theme does, and the label doesn't change the note's size.",
+    "src/web/settings/derivedModes.ts": "The area colours that differ between light and dark, as expressions of the core tokens, which style.css reads instead of a body.dark rule."
   }
 }

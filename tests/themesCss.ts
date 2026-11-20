@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DERIVED } from '../src/web/settings/derived.ts';
-import { CSS_VARS, THEMES } from '../src/web/settings/themes.ts';
+import { CSS_VARS, cardVars, LABEL_VAR, THEMES } from '../src/web/settings/themes.ts';
 import { launch } from './support/launch.ts';
 
 const root = path.resolve(import.meta.dirname, '..'),
@@ -17,8 +17,8 @@ const wanted = (theme: (typeof THEMES)[number]) => {
     name,
     String(Reflect.get(theme.tokens, key)),
   ]);
-  for (const [key, card] of Object.entries(theme.tokens.cards)) vars.push([`--card-${key}`, card.fill]);
-  vars.push(['--card-link', theme.tokens.cards.butter?.link ?? '']);
+  vars.push([LABEL_VAR, theme.labels ? 'block' : 'none']);
+  for (const [key, card] of Object.entries(theme.tokens.cards)) vars.push(...cardVars(key, card));
   return vars;
 };
 // the classes on <body> that apply a theme: Default is :root or body.dark alone, another is body.theme-<name>
@@ -27,7 +27,11 @@ const classesOf = (t: (typeof THEMES)[number]) => {
   return [...(t.mode === 'dark' ? ['dark'] : []), ...(name === 'default' ? [] : [`theme-${name}`])];
 };
 
-const style = fs.readFileSync(path.join(root, 'web/style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+// a card may give its own contents another ink, as a Snow frame does in a dark theme where Snow is light; that is scoped to the card, not a second definition
+const style = fs
+  .readFileSync(path.join(root, 'web/style.css'), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/[^{}]*\.card[^{}]*\{[^{}]*\}/g, '');
 const first = THEMES[0];
 assert(first, 'there are themes');
 for (const name of [...wanted(first).map(([n]) => n), ...Object.keys(DERIVED)])

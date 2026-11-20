@@ -9,16 +9,17 @@ import { paintBd } from '../myra/birthday.ts';
 import { showConnections } from '../myra/helpers.ts';
 import { renderGitSetup } from '../repo/setup.ts';
 import { placing, stopPlacing } from '../tools/place.ts';
-import { bestInk, luminance, mixHex, readableShade } from '../ui/color.ts';
+import { luminance, mixHex } from '../ui/color.ts';
 import { child, closestTo, elementById, esc, htmlIn } from '../ui/dom.ts';
 import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
 import { caelestiaFor, themeFor } from './activeTheme.ts';
 import { myCur, paintCursor } from './cursor.ts';
+import { accentOver } from './derive.ts';
 import { applyPanelH, fitSides, heightGrip, panelMin } from './panelHeights.ts';
 import { settings } from './settings.ts';
-import { CSS_VARS, type Mode, PASTELS } from './themes.ts';
+import { CARD_VAR_NAMES, CSS_VARS, cardVars, type Mode } from './themes.ts';
 import { applySettings } from './widgets.ts';
 
 export const htmlOrNull = (el: Element | null) => (el instanceof HTMLElement ? el : null);
@@ -43,7 +44,7 @@ const boardBg = () => (typeof session.board?.bg === 'string' ? session.board.bg 
 export const colorOf = (k: string) => (k === 'bg' && boardBg()) || myColors()[k] || defaultsOf(modeName())[k] || '';
 
 // every variable a theme sets, which Follow Caelestia can set inline on <body> over it
-const THEME_VARS = [...Object.values(CSS_VARS), ...Object.keys(PASTELS).map(k => `--card-${k}`), '--card-link'];
+const THEME_VARS = [...Object.values(CSS_VARS), ...CARD_VAR_NAMES];
 
 export function applyColors() {
   const B = document.body.style,
@@ -59,23 +60,28 @@ export function applyColors() {
   if (mine.panel) B.setProperty('--panel', mine.panel);
   else B.removeProperty('--panel');
   document.body.classList.toggle('panel-dark', !!mine.panel && luminance(mine.panel) < 0.2);
-  if (mine.accent) {
+  const theme = themeFor(modeName()),
+    warn = document.getElementById('accentWarn');
+  if (mine.accent && theme) {
+    const t = theme.tokens,
+      over = accentOver(t, theme.target, mine.accent);
     B.setProperty('--pink-deep', mine.accent);
-    B.setProperty('--pink', mixHex(mine.accent, '#ffffff', 0.3));
-    B.setProperty('--blush', mixHex(mine.accent, modeName() === 'dark' ? '#1d1a16' : '#ffffff', 0.82));
-    // a custom accent still has to make readable links and readable button text
-    B.setProperty('--accent-text', readableShade(mine.accent, [colorOf('panel'), bg], 4.5));
-    B.setProperty('--on-accent', bestInk(mine.accent, ['#ffffff', modeName() === 'dark' ? '#1d1a16' : '#3b342d']));
-  } else
+    B.setProperty('--pink', mixHex(mine.accent, t.snow, 0.3));
+    B.setProperty('--blush', mixHex(mine.accent, modeName() === 'dark' ? t.panel : t.snow, 0.82));
+    B.setProperty('--accent-text', over.accentText);
+    B.setProperty('--on-accent', over.onAccent);
+    if (warn) warn.hidden = over.reads;
+  } else {
     ['--pink-deep', '--pink', '--blush', '--accent-text', '--on-accent'].forEach(v => {
       B.removeProperty(v);
     });
+    if (warn) warn.hidden = true;
+  }
   // Follow Caelestia: the scheme's colours are on <body> over the theme's, and gone again when it is off
   const cae = caelestiaFor(modeName());
   if (cae) {
     for (const [key, name] of Object.entries(CSS_VARS)) B.setProperty(name, String(Reflect.get(cae, key)));
-    for (const [key, card] of Object.entries(cae.cards)) B.setProperty(`--card-${key}`, card.fill);
-    B.setProperty('--card-link', cae.cards.butter?.link ?? '');
+    for (const [key, card] of Object.entries(cae.cards)) for (const [n, v] of cardVars(key, card)) B.setProperty(n, v);
   }
   document.body.classList.toggle('board-dark', darkBg);
   document.body.classList.toggle('board-light', !darkBg && modeName() === 'dark');

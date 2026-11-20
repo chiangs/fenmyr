@@ -44,6 +44,15 @@ const lowText = (bg: string) =>
       for (let e: Element | null = el; e; e = e.parentElement) {
         const c = parse(getComputedStyle(e).backgroundColor);
         if (c.a >= 0.9) return c;
+        // a card's fill is its frame, a sibling of its contents, so the words on a card are measured against that, unless the card hides its frame (a collection, a wireframe piece)
+        const frame = e.classList.contains('card') ? e.querySelector(':scope > .frame') : null,
+          f = frame ? parse(getComputedStyle(frame).backgroundColor) : null;
+        if (f && frame && getComputedStyle(frame).display !== 'none' && f.a >= 0.9) return f;
+        // a shape is drawn in its card's fill, as an svg
+        const drawn = e.classList.contains('shape')
+          ? [...e.querySelectorAll('svg.sh *')].map(n => getComputedStyle(n).fill).find(v => v !== 'none')
+          : undefined;
+        if (drawn) return parse(drawn);
       }
       return parse(board);
     };

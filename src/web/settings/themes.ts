@@ -1,11 +1,11 @@
 // The colour themes. Each one sets every token for its mode, and the contrast it promises: AA or AAA.
 // tests/themes.ts checks each theme against its promise, and the gaps a theme is still known to have.
 import { apart, contrast, type Vision } from '../ui/color.ts';
-import { APART, derive, NON_TEXT, TEXT } from './derive.ts';
+import { APART, derive, NON_TEXT, quiet, TEXT } from './derive.ts';
 
 export type Mode = 'light' | 'dark';
 export type Target = 'aa' | 'aaa';
-type CardColour = { fill: string; ink: string; link: string };
+export type CardColour = { fill: string; ink: string; soft: string; faint: string; link: string };
 export type Tokens = {
   bg: string;
   dot: string;
@@ -34,7 +34,16 @@ export type Tokens = {
   cards: Record<string, CardColour>;
 };
 type CheckId = 'text' | 'softText' | 'accentText' | 'onAccent' | 'focus' | 'cardText' | 'cardLink' | 'cardsApart';
-export type Theme = { id: string; name: string; mode: Mode; target: Target; tokens: Tokens; knownGaps: CheckId[] };
+export type Theme = {
+  id: string;
+  name: string;
+  mode: Mode;
+  target: Target;
+  tokens: Tokens;
+  // what the theme adds for people who can't rely on colour: Clear and Lantern print each note's colour name on it
+  labels: boolean;
+  knownGaps: CheckId[];
+};
 
 // The CSS variable each token sets, in the order tools/themes-css.ts writes them. `bg` isn't here: the board's colour is
 // set at run time (a board can have its own). The cards' fills and link colour are written as --card-<key>.
@@ -64,6 +73,16 @@ export const CSS_VARS: Record<Exclude<keyof Tokens, 'bg' | 'cards'>, string> = {
   shade: '--shade',
 };
 
+// the variables a card's colours are written as: its fill and what reads on it. style.css gives each card its own
+// through .c-<key>, so a Snow card that is light in one theme and dark in another needs nothing special
+export const cardVars = (key: string, c: CardColour): [string, string][] => [
+  [`--card-${key}`, c.fill],
+  [`--card-${key}-ink`, c.ink],
+  [`--card-${key}-soft`, c.soft],
+  [`--card-${key}-faint`, c.faint],
+  [`--card-${key}-link`, c.link],
+];
+
 // colours that are the same in light and in dark: the amber tints, the status colours, white and black
 const SAME = {
   accentSoft: '#f6b45e',
@@ -90,6 +109,13 @@ export const PASTELS: Record<string, string> = {
   sky: '#d6e8fb',
   peach: '#f1ebe2',
 };
+// whether a theme prints each note's colour name on it; style.css shows the label when this is not none
+export const LABEL_VAR = '--colour-label';
+
+export const CARD_VAR_NAMES = Object.keys(PASTELS).flatMap(k =>
+  cardVars(k, { fill: '', ink: '', soft: '', faint: '', link: '' }).map(([name]) => name),
+);
+
 // the same colours dimmed for a dark board, so they don't glare; Snow is a dark card there
 const DARK_FILLS: Record<string, string> = {
   white: '#38332d',
@@ -103,7 +129,12 @@ const DARK_FILLS: Record<string, string> = {
 // a link in a note is its own shade of the accent: the accent text is made for the panel and board, and on a pastel
 // card it falls under 4.5:1
 const cardsOf = (fills: Record<string, string>, ink: string, link: string, own: Record<string, CardColour> = {}) =>
-  Object.fromEntries(Object.keys(PASTELS).map(k => [k, own[k] ?? { fill: fills[k] ?? '#ffffff', ink, link }]));
+  Object.fromEntries(
+    Object.keys(PASTELS).map(k => {
+      const fill = fills[k] ?? '#ffffff';
+      return [k, own[k] ?? { fill, ink, link, ...quiet(ink, fill) }];
+    }),
+  );
 
 export const THEMES: Theme[] = [
   {
@@ -128,6 +159,7 @@ export const THEMES: Theme[] = [
       focus: '#0090f5',
       cards: cardsOf(PASTELS, '#3b342d', '#a24900'),
     },
+    labels: false,
     knownGaps: [],
   },
   {
@@ -150,8 +182,11 @@ export const THEMES: Theme[] = [
       accentText: '#e88a24',
       onAccent: '#1d1a16',
       focus: '#0090f5',
-      cards: cardsOf(DARK_FILLS, '#3f3a34', '#842e00', { white: { fill: '#38332d', ink: '#f6f2ec', link: '#f9c795' } }),
+      cards: cardsOf(DARK_FILLS, '#3f3a34', '#842e00', {
+        white: { fill: '#38332d', ink: '#f6f2ec', soft: '#c6bcae', faint: '#8f8576', link: '#f9c795' },
+      }),
     },
+    labels: false,
     knownGaps: [],
   },
   // the four themes from #251: a pair for light and a pair for dark, one made for looks and one for accessibility
@@ -181,6 +216,7 @@ export const THEMES: Theme[] = [
         peach: '#ecdfc8',
       },
     }),
+    labels: false,
     knownGaps: [],
   },
   {
@@ -209,6 +245,7 @@ export const THEMES: Theme[] = [
         peach: '#f3dec0',
       },
     }),
+    labels: true,
     knownGaps: [],
   },
   {
@@ -237,6 +274,7 @@ export const THEMES: Theme[] = [
         peach: '#4a4034',
       },
     }),
+    labels: false,
     knownGaps: [],
   },
   {
@@ -265,6 +303,7 @@ export const THEMES: Theme[] = [
         peach: '#d2bca4',
       },
     }),
+    labels: true,
     knownGaps: [],
   },
 ];

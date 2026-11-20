@@ -7,11 +7,8 @@ import { group, onBar, only, some } from './group.ts';
 
 const FILLABLE = typesWith('fillable');
 
-// in dark mode a Snow card is drawn dark, so its chip shows what you will get; another theme's swatches already hold its own Snow
-const chipBg = (n: string | undefined) =>
-  n === 'white' && document.body.classList.contains('dark') && !document.body.className.includes('theme-')
-    ? '#38332d'
-    : COLORS[n ?? ''];
+// a chip shows the colour the card gets in the theme that is on, so it follows a theme change
+const chipBg = (n: string | undefined) => (n && COLORS[n] ? `var(--card-${n})` : '');
 
 export const colorPop = (cur: string, dots: string) => {
   const CARET = caret();
@@ -73,13 +70,13 @@ export const noteColours = group({
   html: fill => {
     const [first] = fill,
       cur = fill.every(c => c.color === first.color)
-        ? chipBg(first.color) || '#fff'
-        : 'conic-gradient(#ffdcd8 0 25%, #ffe3bd 0 50%, #e0edd3 0 75%, #d9e7f3 0)',
+        ? chipBg(first.color) || 'var(--snow)'
+        : 'conic-gradient(var(--card-pink) 0 25%, var(--card-butter) 0 50%, var(--card-mint) 0 75%, var(--card-sky) 0)',
       dots = COLOR_NAMES.map(n =>
         colorDot(
           'c',
           n,
-          chipBg(n) ?? '',
+          chipBg(n),
           fill.every(c => c.color === n),
         ),
       ).join('');

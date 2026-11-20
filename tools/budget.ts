@@ -1,13 +1,14 @@
 // Counts what the codebase is paying down and fails when any count goes up:
 // files that skip type checking, `any`, `as` casts, files over the line limit, logic inside markup templates,
-// and raw colours in the stylesheet that should come from a variable.
+// raw colours in the stylesheet that should come from a variable, and `body.dark` rules, which a theme's token set
+// should make unnecessary: a token that is one colour in light and another in dark replaces the pair of rules.
 // Lower the budget after paying some down: node tools/budget.ts --write
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 
-const KINDS = ['uncheckedFiles', 'anys', 'casts', 'longFiles', 'markupLogic', 'rawColours'] as const;
+const KINDS = ['uncheckedFiles', 'anys', 'casts', 'longFiles', 'markupLogic', 'rawColours', 'darkRules'] as const;
 type Kind = (typeof KINDS)[number];
 type Counts = Record<Kind, number>;
 type Finding = { file: string; line: number; kind: Kind };
@@ -74,8 +75,29 @@ function rawColours(file: string): Finding[] {
   return found;
 }
 
-const findings = [...files.flatMap(inspect), ...STYLESHEETS.flatMap(rawColours)];
-const counts: Counts = { uncheckedFiles: 0, anys: 0, casts: 0, longFiles: 0, markupLogic: 0, rawColours: 0 };
+// a selector that starts from `body.dark`: it is a second rule for something the light rule already styles
+function darkRules(file: string): Finding[] {
+  const css = fs
+    .readFileSync(path.join(ROOT, file), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, c => c.replace(/[^\n]/g, ' '))
+    .replace(/\{[^{}]*\}/g, m => `{${m.replace(/[^\n]/g, '')}}`);
+  return Array.from(css.matchAll(/body\.dark(?![\w-])/g), m => ({
+    file,
+    line: css.slice(0, m.index).split('\n').length,
+    kind: 'darkRules' as const,
+  }));
+}
+
+const findings = [...files.flatMap(inspect), ...STYLESHEETS.flatMap(rawColours), ...STYLESHEETS.flatMap(darkRules)];
+const counts: Counts = {
+  uncheckedFiles: 0,
+  anys: 0,
+  casts: 0,
+  longFiles: 0,
+  markupLogic: 0,
+  rawColours: 0,
+  darkRules: 0,
+};
 for (const f of findings) counts[f.kind]++;
 const raw: unknown = fs.existsSync(BUDGET) ? JSON.parse(fs.readFileSync(BUDGET, 'utf8')) : {};
 const saved = (k: Kind) => {
@@ -89,6 +111,7 @@ const budget: Counts = {
   longFiles: saved('longFiles'),
   markupLogic: saved('markupLogic'),
   rawColours: saved('rawColours'),
+  darkRules: saved('darkRules'),
 };
 const keys = KINDS;
 
