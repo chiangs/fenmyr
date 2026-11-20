@@ -294,5 +294,19 @@ assert.deepStrictEqual(
   withDraft({ text: 't', pasted: [{ id: 'p1', text: long }] }),
   'a pasted text saves and reads back unchanged',
 );
+// a hand-written board file with no card or tray list must not leave an undefined key, which would overwrite the empty
+// lists openBoard starts from when it spreads the board over its defaults
+const bare = parseBoard({ id: 'b2', name: 'Hand-written' });
+assert(bare && !('cards' in bare) && !('tray' in bare), 'a board with no lists has no cards or tray key');
+assert.deepStrictEqual(
+  { cards: [], tray: [], ...bare }.cards,
+  [],
+  'the default empty card list survives the board being spread over it',
+);
+const notLists = parseBoard({ id: 'b3', cards: 'x', tray: { a: 1 } });
+assert(notLists && !('cards' in notLists) && !('tray' in notLists), 'a list that is not a list is left out, not kept');
+const kept2 = parseBoard({ id: 'b4', cards: [{ id: 'n', type: 'note', text: 'hi' }], tray: [] });
+assert.strictEqual(kept2?.cards?.length, 1, 'a board with a card list keeps it');
+assert.deepStrictEqual(kept2?.tray, [], 'and an empty tray list stays an empty list');
 
 console.log('MODEL OK');
