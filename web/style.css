@@ -1329,6 +1329,8 @@ body.dark .col-chip { background: rgb(from var(--hilite) r g b / .05); }
 .cur-colors .rand { background: conic-gradient(var(--set-rand-1), var(--set-rand-2), var(--set-rand-3), var(--set-rand-4), var(--set-rand-1), var(--set-rand-1)); }
 .cur-prev { height: 76px; margin: 0 0 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--board, var(--html-bg)); background-image: radial-gradient(var(--dot) 1.3px, transparent 1.6px); background-size: 18px 18px; position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(var(--sh), calc(.08 * var(--sh-k))); }
 .cur-prev .mcur { position: absolute; left: 40%; top: 18px; opacity: 1; }
+.cur-prev.shaped, .cur-prev.off { background-image: none; }
+.cur-prev.shaped::before { content: ''; position: absolute; inset: 0; background: var(--dot); -webkit-mask-image: var(--gm); mask-image: var(--gm); -webkit-mask-size: 26px 26px; mask-size: 26px 26px; }
 /* the wheel, used for a UI color */
 .cpop.tint { position: fixed; z-index: 140; }
 .cpop .cp-title { display: none; font: 700 13px/1 var(--font); margin: 0 0 12px; }

@@ -5,7 +5,7 @@ import { closestTo, htmlIn } from '../ui/dom.ts';
 import { GRID_SHAPES, type GridShape, gridGlyph, gridLook, gridName, isGridShape } from './gridLook.ts';
 import { applyView } from './view.ts';
 
-// ---------- the grid's shape: plain dots, or a tiny repeating shape in the dot color, or none ----------
+// the board's grid and the cursor preview in Settings are painted the same way, from the same look, so they cannot disagree
 function paint(el: HTMLElement, shape: GridShape) {
   const { visible, mask } = gridLook(shape);
   el.classList.toggle('off', !visible);
@@ -31,6 +31,8 @@ function fillPicker(box: HTMLElement) {
 export function applyGridShape() {
   const shape = settings.gridShape;
   paint(grid, shape);
+  const preview = document.getElementById('curPrev');
+  if (preview) paint(preview, shape);
   applyView();
   const box = $('gridShapes');
   if (!box) return;

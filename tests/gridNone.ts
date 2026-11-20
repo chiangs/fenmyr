@@ -1,6 +1,7 @@
 // Grid shape is the one setting for how the board's grid looks, and None is one of its values, so there is no Dot grid switch to
-// disagree with it. Each of the seven options is picked through the real picker, and the board's grid and the saved setting
-// must say the same thing. An old save with the grid switched off opens with None, and the Grid shape row ends "On the board".
+// disagree with it. Each of the seven options is picked through the real picker, and the board's grid, the cursor preview and
+// the saved setting must all say the same thing. An old save with the grid switched off opens with None, and the Grid shape
+// row ends "On the board", directly above the cursor preview it now drives.
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { launch } from './support/launch.ts';
@@ -10,18 +11,24 @@ const NAMES = ['None', 'Dots', 'Crosses', 'Squares', 'Cloudberries', 'Berries', 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'butter', text: 'A note' },
   board = { id: 'b', name: 'B', cards: [note], links: [], tray: [], view: { x: 300, y: 200, z: 1 } };
 
-// how the board's grid, the picker and the saved setting each show the shape
+// how the board's grid, the preview behind "Your cursor", the picker and the saved setting each show the shape
 const read = (page: Page) =>
   page.evaluate(() => {
-    const grid = document.getElementById('grid');
-    if (!grid) throw new Error('the board grid is missing');
+    const grid = document.getElementById('grid'),
+      preview = document.getElementById('curPrev');
+    if (!grid || !preview) throw new Error('the board grid or the preview is missing');
     const board = getComputedStyle(grid),
+      dots = getComputedStyle(preview),
+      shape = getComputedStyle(preview, '::before'),
       saved = JSON.parse(localStorage.getItem('fenmyr:settings') || '{}');
     const buttons = [...document.querySelectorAll<HTMLElement>('#gridShapes button')];
     return {
       boardDisplay: board.display,
       boardMask: board.maskImage,
       boardVar: grid.style.getPropertyValue('--gm'),
+      previewDots: dots.backgroundImage,
+      previewMask: shape.maskImage,
+      previewVar: preview.style.getPropertyValue('--gm'),
       picked: buttons.filter(b => b.classList.contains('on')).map(b => b.dataset.gshape),
       glyphs: Object.fromEntries(
         buttons.map(b => [b.dataset.gshape, b.querySelector('i')?.style.getPropertyValue('--gm') ?? '']),
@@ -53,12 +60,19 @@ try {
     assert.strictEqual(s.savedGrid, false, `${id}: nothing is saved for a separate grid switch`);
     if (id === 'none') {
       assert.strictEqual(s.boardDisplay, 'none', 'none: the board draws no grid');
+      assert.strictEqual(s.previewDots, 'none', 'none: the preview has no dots');
+      assert.strictEqual(s.previewMask, 'none', 'none: and no shapes');
     } else if (id === 'dot') {
       assert.notStrictEqual(s.boardDisplay, 'none', 'dot: the board draws its grid');
       assert.strictEqual(s.boardMask, 'none', 'dot: as plain dots, with no mask');
+      assert.match(s.previewDots, /radial-gradient/, 'dot: the preview draws plain dots');
+      assert.strictEqual(s.previewMask, 'none', 'dot: with no mask');
     } else {
       assert.notStrictEqual(s.boardDisplay, 'none', `${id}: the board draws its grid`);
       assert.match(s.boardMask, /^url\(/, `${id}: through a mask`);
+      assert.strictEqual(s.previewDots, 'none', `${id}: the preview draws no plain dots`);
+      assert.strictEqual(s.previewMask, s.boardMask, `${id}: the preview masks the board's own shape`);
+      assert.strictEqual(s.previewVar, s.boardVar, `${id}: from the same mask value`);
       assert.strictEqual(s.glyphs[id], s.boardVar, `${id}: and its button draws that shape too`);
     }
   }
