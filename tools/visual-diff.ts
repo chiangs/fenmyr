@@ -19,7 +19,7 @@ const STRAY_PIXELS = 60;
 // scaled card edges land a pixel apart from run to run at this zoom; same code measured 900 to 1,600, a layout change 268,000
 const STRAY_PIXELS_SCALED: Record<string, number> = { 'zoom-out.png': 3000 };
 const CHANNEL_TOLERANCE = 2;
-const TABS = ['general', 'appearance', 'myra', 'connections', 'board', 'layout', 'about'];
+const TABS = ['general', 'appearance', 'layout', 'board', 'myra', 'connections', 'about'];
 
 const center = async (page: Page, sel: string) => {
   const r = await page.locator(sel).first().boundingBox();

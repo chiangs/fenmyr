@@ -17,7 +17,7 @@ try {
   const tabs = await page.$$eval('#setTabs button', bs => bs.map(b => b.textContent));
   assert.deepStrictEqual(
     tabs,
-    ['General', 'Appearance', 'Myra', 'Connections', 'Board', 'Layout', 'About'],
+    ['General', 'Appearance', 'Layout', 'Board', 'Myra', 'Connections', 'About'],
     'the seven tabs, Appearance second',
   );
 
