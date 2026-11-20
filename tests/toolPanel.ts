@@ -194,6 +194,23 @@ async function everyOpener(what: string) {
 }
 await check('Shapes, Templates, the stamps and Customise toolbar open left of the panel', () => everyOpener('a board'));
 
+await check('every stamp wraps into rows: no tab scrolls sideways or up and down in a full-height window', async () => {
+  await page.click('#tools [data-add="stamp"]');
+  await page.click('#wsMid');
+  for (const tab of ['myra', 'moving', 'emoji']) {
+    await page.click(`#stampPick [data-tab="${tab}"]`);
+    const g = await page.$eval('#spGrid', el => ({
+      sw: el.scrollWidth,
+      cw: el.clientWidth,
+      sh: el.scrollHeight,
+      ch: el.clientHeight,
+    }));
+    assert.ok(g.sw <= g.cw, `${tab}: the grid is ${g.sw} px wide in ${g.cw} px`);
+    assert.ok(g.sh <= g.ch, `${tab}: the grid is ${g.sh} px tall in ${g.ch} px`);
+  }
+  await putDown(page);
+});
+
 await check('drawing’s card sits left of the panel, level with its top', async () => {
   await page.click('#tools [data-add="draw"]');
   await page.waitForTimeout(300);

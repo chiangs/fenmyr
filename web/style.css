@@ -17,7 +17,9 @@
   /* card colours and the shades used on and around cards; #251 turns these into per-theme tokens */
   --due-soon: #ffd98a; --due-soon-ink: #5a3a05; --due-over: #ff9d8f; --due-over-ink: #5b1409;
 }
-* { box-sizing: border-box; }
+/* thin bars everywhere: scrollbar-width is not inherited, so it goes on every element; this rule has no specificity,
+   so the places that hide the bar (.side, the phone dock, .dv-tools) still win */
+* { box-sizing: border-box; scrollbar-width: thin; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: color-mix(in oklab, var(--ink-faint) 8%, var(--snow)); color: var(--ink); font-family: var(--font); -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none; }
 button { font: inherit; color: inherit; }
 kbd { font: 500 11px/1 var(--font); padding: 3px 6px; border-radius: 6px; background: var(--snow); border: 1px solid color-mix(in oklab, var(--on-accent) 8%, var(--snow)); }
@@ -616,8 +618,8 @@ body.dark .ws-mid:hover { background: var(--ws-bg-4); }
 .sp-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 .sp-tabs button { flex: 1; padding: 8px 6px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: none; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: pointer; }
 .sp-tabs button.on { background: var(--blush); color: var(--ink); }
-.sp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; max-height: 260px; overflow: auto; }
-.sp-grid button { aspect-ratio: 1; border: 0; border-radius: 16px; corner-shape: squircle; background: none; display: grid; place-items: center; font-size: 28px; line-height: 1; cursor: pointer; }
+.sp-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; max-height: calc(100vh - 140px); overflow: hidden auto; }
+.sp-grid button { aspect-ratio: 1; padding: 0; border: 0; border-radius: 16px; corner-shape: squircle; background: none; display: grid; place-items: center; font-size: 28px; line-height: 1; cursor: pointer; }
 .sp-grid button:hover { background: var(--blush); }
 /* a stamp on the board: a little sticker with a white edge */
 .card.stamp > .frame { display: none; }
@@ -921,7 +923,7 @@ body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite);
 @keyframes mc-dot { 50% { transform: translateY(-4px); opacity: .5; } }
 .mc-form { display: flex; align-items: flex-end; gap: 8px; margin: 8px 10px 10px; padding: 6px 6px 6px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: color-mix(in oklab, var(--snow) 4%, var(--surface-2)); }
 .mc-form { flex-direction: column; align-items: stretch; gap: 2px; }
-.mc-form textarea { min-width: 0; border: 0; background: none; resize: none; outline: none; font: 400 14px/1.4 var(--font); color: var(--ink); field-sizing: content; max-height: min(calc(6lh + 12px), calc(100vh / 3)); padding: 6px 0; scrollbar-width: thin; user-select: text; -webkit-user-select: text; }
+.mc-form textarea { min-width: 0; border: 0; background: none; resize: none; outline: none; font: 400 14px/1.4 var(--font); color: var(--ink); field-sizing: content; max-height: min(calc(6lh + 12px), calc(100vh / 3)); padding: 6px 0; user-select: text; -webkit-user-select: text; }
 .mc-form textarea:placeholder-shown { max-height: calc(1lh + 12px); overflow: hidden; }
 /* a mask reads only alpha, so any solid colour stands for shown */
 .mc-form textarea.fade-top { mask-image: linear-gradient(transparent, var(--ink) 1lh); }
@@ -1233,7 +1235,7 @@ body.picturing :is(.plan-preview, .screen-hints, .piece-pick) { visibility: hidd
 /* design thinking templates: a little menu above the toolbar */
 .tplpick { position: fixed; transform: translateY(6px); z-index: 22; width: 270px; display: grid; gap: 2px; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .18s, transform .25s; }
 .tplpick { max-height: calc(100vh - 130px - var(--mode-h, 0px)); overflow: hidden; display: flex; flex-direction: column; gap: 0; }
-.tplpick .tp-list { display: grid; gap: 2px; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.tplpick .tp-list { display: grid; gap: 2px; min-height: 0; overflow: auto; }
 .tplpick .tp-list [hidden] { display: none; }
 .tplpick .tp-none { padding: 14px 10px; font: 500 12.5px/1.4 var(--font); color: var(--ink-soft); text-align: center; }
 /* the search box sits at the bottom of the menu, right above the toolbar button */
@@ -1372,7 +1374,7 @@ body.exporting #rh { display: none !important; }
 
 /* ---------- layers ---------- */
 .ly-count { font: 600 10.5px/1 var(--font); color: var(--ink-faint); margin-left: 4px; letter-spacing: 0; }
-.layers { display: flex; flex-direction: column; gap: 1px; max-height: min(42vh, 380px); overflow: auto; margin: 0 -4px; padding: 0 4px; scrollbar-width: thin; }
+.layers { display: flex; flex-direction: column; gap: 1px; max-height: min(42vh, 380px); overflow: auto; margin: 0 -4px; padding: 0 4px; }
 .ly { position: relative; display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 6px 0 calc(2px + var(--d) * 16px); border-radius: 9px; cursor: default; font-size: 13px; color: var(--ink); user-select: none; -webkit-user-select: none; }
 .ly:hover { background: var(--au-bg-2); }
 .ly.on { background: var(--blush); }
@@ -1675,7 +1677,7 @@ body.dark .dt-myra { background: var(--dt-bg-3); color: var(--dt-ink-2); }
 .dp-search, .dp-link input { width: 100%; height: 36px; padding: 0 12px; border: 0; border-radius: 14px; corner-shape: squircle; background: var(--dp-bg); font: 500 13.5px/1 var(--font); color: var(--ink); outline: none; }
 .dp-search:focus, .dp-link input:focus { box-shadow: 0 0 0 2px var(--pink-deep); background: var(--snow); }
 .dp-note { margin: 8px 4px 2px; padding: 0 6px; font: 500 12.5px/1.4 var(--font); color: var(--ink-soft); }
-.dp-scroll { max-height: 340px; overflow-y: auto; margin-top: 4px; scrollbar-width: thin; }
+.dp-scroll { max-height: 340px; overflow-y: auto; margin-top: 4px; }
 .dp-font, .dp-use { font-size: 15px; } .dp-font[hidden], .dp-use[hidden] { display: none; }
 /* colors */
 .dp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 4px 8px 6px; }
@@ -1886,7 +1888,7 @@ body.dark .vd-pp { background: var(--clean-ink) !important; color: var(--vd-ink)
 
 /* your toolbar: a little panel above the toolbar to show, hide and reorder tools */
 .tools > button[hidden] { display: none; }
-.tbe-list { display: grid; gap: 2px; max-height: 380px; overflow-y: auto; scrollbar-width: thin; }
+.tbe-list { display: grid; gap: 2px; max-height: 380px; overflow-y: auto; }
 .tbe-row { display: grid; grid-template-columns: 16px 28px 1fr auto; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 16px; corner-shape: squircle; cursor: grab; }
 .tbe-row:hover { background: var(--dp-bg); } .tbe-row.drag { opacity: .45; } .tbe-row.off .tbe-ic, .tbe-row.off .tbe-name { opacity: .4; }
 .tbe-grip { color: var(--ink-faint); font-size: 11px; letter-spacing: -2px; }
@@ -2371,7 +2373,7 @@ body.dark .m-pill { --m-base: 0 8px 26px rgba(0, 0, 0, .31); }
 .sb-skdash[data-skst="dot"] .sb-skrow:first-child { display: none; }   /* dots only need the gap */
 .sb-stroke .sbc-top > span { width: 46px; flex: none; }
 .cp-quick .cpq-more { display: block; width: auto; height: auto; margin: 2px 0 0; padding: 4px 0; border-radius: 0; background: none; box-shadow: none; font: 700 11.5px/1 var(--font); color: var(--accent-text); cursor: pointer; } .cp-quick .cpq-more:hover { transform: none; text-decoration: underline; }
-.cp-quick.rows { max-height: 260px; overflow-y: auto; scrollbar-width: thin; }
+.cp-quick.rows { max-height: 260px; overflow-y: auto; }
 #cpReset[hidden] { display: none !important; }
 /* line styles: straight, wavy, zigzag, loopy */
 .sb-squig { gap: 10px; }
@@ -3098,7 +3100,7 @@ body.dark .piece-pick .pk-tabs [aria-pressed="true"] { background: var(--surface
 .piece-pick .pk-search svg { width: 15px; height: 15px; flex: none; }
 .piece-pick .pk-search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; font: 500 13px/1.2 var(--font); color: var(--ink); }
 .piece-pick .pk-search:focus-within { box-shadow: inset 0 0 0 1.5px var(--pink-deep); }
-.piece-pick .pk-grid { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; padding: 0 2px 4px; }
+.piece-pick .pk-grid { flex: 1; min-height: 0; overflow: auto; padding: 0 2px 4px; }
 .piece-pick .pk-group[hidden], .piece-pick .pk-grid [hidden] { display: none; }
 .piece-pick .pk-h { margin: 0; padding: 10px 4px 6px; font: 600 10.5px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
 .piece-pick .pk-cells { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 4px; }
