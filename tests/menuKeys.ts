@@ -101,17 +101,19 @@ try {
   await page.evaluate(() => window.__fenmyr.selectOnly(['note']));
   await page.focus('#zoom');
   await press('Enter');
-  assert.strictEqual((await focus()).item?.startsWith('Zoom in'), true, 'the zoom menu opens on its first item');
+  assert.strictEqual((await focus()).item?.startsWith('50%'), true, 'the zoom menu opens on its first item');
   assert.strictEqual(await expanded('#zoom'), 'true', 'and its button says so');
   await press('ArrowDown');
   const x = await page.evaluate(() => window.__fenmyr.curBoard()?.cards.find(c => c.id === 'note')?.x);
   assert.strictEqual(x, 40, 'Down moves in the menu, not the selected note');
-  assert.strictEqual((await focus()).item?.startsWith('Zoom out'), true, 'Down moves to Zoom out');
+  assert.strictEqual((await focus()).item?.startsWith('100%'), true, 'Down moves to 100%');
+  await press('ArrowDown');
+  assert.strictEqual((await focus()).item?.startsWith('200%'), true, 'and Down again to 200%');
   await press('Enter');
   assert.deepStrictEqual(await focus(), { menu: false, item: null, on: 'zoom' }, 'Enter runs it, back on the button');
   assert.ok(
     (await page.evaluate(() => document.getElementById('zoom')?.textContent ?? '')) !== '100%',
-    'and the board zoomed out',
+    'and the board zoomed in',
   );
   await press('Enter');
   await press('Escape');

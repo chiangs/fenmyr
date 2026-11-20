@@ -116,7 +116,7 @@ try {
   assert.ok(below.t >= btn.b, 'under the widget');
   assert.ok(below.l >= 0 && below.r <= 1440 && below.b <= 900, 'inside the window');
   assert.ok(Math.abs(below.r - btn.r) < 3, 'with its right edge level with the button’s');
-  await page.click('#rowMenu [data-i="5"]');
+  await page.click('#rowMenu [data-i="0"]');
   await page.waitForTimeout(700);
   assert.strictEqual(await page.textContent('#zoom'), '50%', 'its 50% choice zooms');
 

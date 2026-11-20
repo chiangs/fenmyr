@@ -127,15 +127,15 @@ export function init14() {
     e.stopPropagation();
     const b = $('zoom').getBoundingClientRect();
     boardMenu({ clientX: b.left, clientY: b.bottom }, [
-      { label: 'Zoom in  ⌘+', run: () => zoomStep(1) },
-      { label: 'Zoom out  ⌘−', run: () => zoomStep(-1) },
-      { label: 'Zoom to 100%  ⌘0', run: () => zoomTo(1) },
-      { label: 'Zoom to fit  ⇧1', run: zoomFit },
-      '-',
       ...[0.5, 1, 2].map(z => ({
         label: `${z * 100}%${Math.abs(session.view.z - z) < 0.01 ? '  ✓' : ''}`,
         run: () => zoomTo(z),
       })),
+      '-',
+      { label: 'Zoom in  ⌘+', run: () => zoomStep(1) },
+      { label: 'Zoom out  ⌘−', run: () => zoomStep(-1) },
+      { label: 'Zoom to 100%  ⌘0', run: () => zoomTo(1) },
+      { label: 'Zoom to fit  ⇧1', run: zoomFit },
     ]);
     const m = $('rowMenu');
     if (m) {
