@@ -23,6 +23,7 @@ const TABLE: Table = [
   { id: 'vnote', label: 'Vault note', key: 'Alt+N', icon: 'notebook', needs: 'vault' },
   { id: 'doc', label: 'Doc', key: 'D', icon: 'doc' },
   { id: 'todo', label: 'Checklist', key: 'C', icon: 'checklist' },
+  { id: 'tpl', label: 'Templates', key: '⌥T', icon: 'templates' },
 
   'structure',
   { id: 'title', label: 'Big title', key: 'T', icon: 'title' },
@@ -40,7 +41,6 @@ const TABLE: Table = [
   'draw',
   { id: 'shape', label: 'Shapes', key: 'S', icon: 'shapes' },
   { id: 'stamp', label: 'Stamps', key: 'E', icon: 'stamp' },
-  { id: 'tpl', label: 'Templates', icon: 'templates' },
   { id: 'pen', label: 'Pen', key: '⇧P', icon: 'pen' },
   { id: 'draw', label: 'Draw', key: 'P', icon: 'draw' },
 ];

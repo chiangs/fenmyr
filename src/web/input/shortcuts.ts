@@ -26,7 +26,7 @@ import { addCard, drawVec, endVec, refit, vec, vecCard } from '../tools/penEdit.
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { startScreen } from '../tools/screenTool.ts';
 import { closeColor } from '../ui/colorPicker.ts';
-import { clickIn, isTyping } from '../ui/dom.ts';
+import { clickIn, closestTo, isTyping } from '../ui/dom.ts';
 import { toPointer } from '../ui/toolbar.ts';
 import { closePicker, pickerFor } from '../wireframe/piecePick.ts';
 import { makeSection } from '../wireframe/sections.ts';
@@ -227,6 +227,22 @@ export function init20() {
       setFocus(false);
       selectOnly([]);
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      return;
+    }
+    // Alt+T opens Templates: T is Big title, and Alt is where a tool's second key lives (Alt+N). By code, as Option+T
+    // types †. The picker puts the cursor in its search, so from there the same key has to close it.
+    if (
+      e.altKey &&
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !e.shiftKey &&
+      e.code === 'KeyT' &&
+      !homeAt &&
+      !$('capture').classList.contains('on') &&
+      (!typing || closestTo(e.target, '#tplPick'))
+    ) {
+      e.preventDefault();
+      clickIn($('tools'), '[data-add="tpl"]');
       return;
     }
     if (typing || homeAt || $('capture').classList.contains('on')) return; // never fire board shortcuts while quick capture is open
