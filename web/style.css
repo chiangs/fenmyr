@@ -697,7 +697,13 @@ body.dark .ws-mid:hover { background: var(--ws-bg-4); }
 .set-head h2 { margin: 0; font: 800 24px/1 var(--font); letter-spacing: -.03em; }
 .set-body { overflow: auto; padding: 6px 26px 24px; flex: 1; }
 .set-panel { height: min(600px, calc(100vh - 60px)); }
-.set-tabs { align-self: flex-start; max-width: calc(100% - 52px); overflow-x: auto; margin: 8px 26px 4px; }   /* a window too narrow for the tabs scrolls them instead of pushing About out of the panel */
+/* The tab strip sits in Settings' scrolling body, so it and the rows share one box and end at the same edge, and the reserved gutter keeps that edge from moving between tabs with a scrollbar and without. Licences shares .set-body and has no strip. */
+#settings .set-head { padding-bottom: 14px; }
+#settings .set-body { scrollbar-gutter: stable; padding-top: 0; }
+/* sticky, with an opaque band around the pill, so rows scrolling under it don't show at its corners or between it and the rows */
+.set-tabs-band { position: sticky; top: 0; z-index: 3; padding-bottom: 10px; background: var(--m-set-panel-bg); }
+.set-tabs { overflow-x: auto; }   /* a window too narrow for the tabs scrolls them instead of pushing About out of the panel */
+.set-tabs button { flex: 1 1 auto; }
 .set-body section.tab-off { display: none !important; }
 .set-body section { padding: 14px 0; border-bottom: 1px solid var(--set-line); }
 .set-body section:last-child { border-bottom: 0; }
@@ -2656,6 +2662,7 @@ body.following-caelestia .mc-msg.me { background: color-mix(in srgb, var(--panel
 /* following Caelestia: Settings and the setup tour are the panel colour, and what sits in them is tonal like the sidebar: segmented buttons, inputs and
    toggles take the scheme's outline colour, the chosen option and switched-on toggles take its accent, and the About cards (tour, feedback, maker, updates) all share one tonal colour */
 body.following-caelestia .set-panel, body.following-caelestia .ob-panel { background: var(--panel) !important; color: var(--ink); }
+body.following-caelestia .set-tabs-band { background: var(--panel); }
 body.following-caelestia .set-body section { border-color: color-mix(in srgb, var(--panel) 78%, var(--dot)); }
 body.following-caelestia .seg { background: color-mix(in srgb, var(--panel) 78%, var(--dot)) !important; }
 body.following-caelestia .seg button { color: var(--ink-soft); }
