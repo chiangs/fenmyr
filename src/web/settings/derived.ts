@@ -1,6 +1,7 @@
 // Area colours written as mixes of the core tokens, so a theme that sets the core ones sets these too.
 // tools/themes-css.ts writes them into web/themes.css as one block on <body>, where the theme's variables apply.
 // Seeded by tools/colour-derive.ts; change an expression here, not in the CSS.
+
 import { MODE_DERIVED } from './derivedModes.ts';
 
 export const DERIVED: Record<string, string | [light: string, dark: string]> = {
