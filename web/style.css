@@ -82,6 +82,7 @@ svg.brand-mark.ico .ico-r { display: none; } svg.brand-mark.ico .ico-d { display
 /* ---------- cards ---------- */
 /* the colour name in the corner of a note, in the themes that print it. It sits on the frame, which no other effect uses, and out of the flow, so the card size and the export do not change */
 .card.note > .frame::after { content: var(--colour-name, none); display: var(--colour-label, none); position: absolute; right: 14px; bottom: 10px; font: 600 10px/1 var(--font); letter-spacing: .02em; color: var(--card-ink); pointer-events: none; }
+body.no-colour-names .card.note > .frame::after { display: none; }   /* Settings > Appearance > Accessibility turns the names a theme prints off */
 .card.c-white { --card-ink: var(--card-white-ink); --card-soft: var(--card-white-soft); --card-faint: var(--card-white-faint); --card-link: var(--card-white-link); }
 .card.c-pink { --card-ink: var(--card-pink-ink); --card-soft: var(--card-pink-soft); --card-faint: var(--card-pink-faint); --card-link: var(--card-pink-link); }
 .card.c-butter { --card-ink: var(--card-butter-ink); --card-soft: var(--card-butter-soft); --card-faint: var(--card-butter-faint); --card-link: var(--card-butter-link); }
@@ -696,7 +697,7 @@ body.dark .ws-mid:hover { background: var(--ws-bg-4); }
 .set-head h2 { margin: 0; font: 800 24px/1 var(--font); letter-spacing: -.03em; }
 .set-body { overflow: auto; padding: 6px 26px 24px; flex: 1; }
 .set-panel { height: min(600px, calc(100vh - 60px)); }
-.set-tabs { align-self: flex-start; margin: 8px 26px 4px; }
+.set-tabs { align-self: flex-start; max-width: calc(100% - 52px); overflow-x: auto; margin: 8px 26px 4px; }   /* a window too narrow for the tabs scrolls them instead of pushing About out of the panel */
 .set-body section.tab-off { display: none !important; }
 .set-body section { padding: 14px 0; border-bottom: 1px solid var(--set-line); }
 .set-body section:last-child { border-bottom: 0; }

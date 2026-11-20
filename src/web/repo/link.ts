@@ -283,7 +283,7 @@ export function linkRepo(first: Project, then?: () => unknown) {
       case 'openHelpers':
         d.remove();
         $('gearBtn').click();
-        return setTab('helpers');
+        return setTab('connections');
       case 'back': {
         const repo = live().repo;
         return repo ? check(repo.path) : show({ kind: 'start' });

@@ -168,10 +168,15 @@ export function setTab(t: string) {
   for (const sec of htmlIn($('settings'), '.set-body section[data-tab]'))
     sec.classList.toggle('tab-off', sec.dataset.tab !== t);
   child($('settings'), '.set-body').scrollTop = 0;
-  if (t === 'helpers') {
+  // what a tab shows is drawn when it opens, however it was reached
+  if (t === 'connections') {
     showUsage();
-    if (Fenmyr.native) renderGitSetup();
+    if (Fenmyr.native) {
+      renderGitSetup();
+      renderVaults();
+    }
   }
+  if (t === 'layout') renderTbList();
 }
 
 // panel heights: drag the little bar at the bottom of your boards list, Layers or Unsorted (double-click it to go back to automatic). Layers always keeps at least one row showing
@@ -313,11 +318,7 @@ export function init28() {
 
   $('setTabs').onclick = e => {
     const b = closestTo(e.target, '[data-tab]');
-    if (b) {
-      setTab(b.dataset.tab ?? 'general');
-      if (b.dataset.tab === 'toolbar') renderTbList();
-      if (b.dataset.tab === 'vaults') renderVaults();
-    }
+    if (b) setTab(b.dataset.tab ?? 'general');
   };
 
   setTab('general');

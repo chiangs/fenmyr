@@ -58,6 +58,8 @@ async function open(env: Record<string, string>) {
   await page.getByText('Skip setup').click();
   await page.waitForTimeout(1000);
   await page.keyboard.press('Escape');
+  // the theme and Follow Caelestia are on the Appearance tab, which `look` reads whether Settings is open or not
+  await page.evaluate(() => document.querySelector<HTMLElement>('#setTabs [data-tab="appearance"]')?.click());
   return { app, page, errors };
 }
 const look = (page: Page) =>

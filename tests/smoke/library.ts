@@ -327,7 +327,7 @@ async function vaultTasks(t: Smoke) {
       text = (sel: string) => document.querySelector(sel)?.textContent ?? '';
     click('#gearBtn');
     await wait(400);
-    click('#setTabs [data-tab="vaults"]');
+    click('#setTabs [data-tab="connections"]');
     await wait(1200);
     const steps = document.querySelectorAll('.vr-steps li').length,
       unused = text('.vrow .vr-use').includes('Not used by anything yet'),

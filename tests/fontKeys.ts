@@ -118,7 +118,7 @@ try {
 
   await check('Esc on a row in Settings → Default font gives the keyboard back to its button', async () => {
     await page.click('#gearBtn');
-    await page.click('#setTabs [data-tab="board"]');
+    await page.click('#setTabs [data-tab="appearance"]');
     await openFonts('#defaultFontBtn');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');

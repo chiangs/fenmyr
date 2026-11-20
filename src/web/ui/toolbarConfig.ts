@@ -98,8 +98,7 @@ export function renderTbList() {
 
 const openToolbarSettings = () => {
   $('gearBtn').click();
-  setTab('toolbar');
-  renderTbList();
+  setTab('layout');
 };
 
 const idsOf = (bs: readonly HTMLElement[]) => bs.map(b => b.dataset.add ?? '');

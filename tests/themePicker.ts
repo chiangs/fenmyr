@@ -12,6 +12,7 @@ const bg = (id: string) => THEMES.find(t => t.id === id)?.tokens.bg;
 let l = await launch({ boards: [board], open: 'b' });
 let { page } = l;
 await page.click('#gearBtn');
+await page.click('#setTabs [data-tab="appearance"]');
 
 const state = () =>
   page.evaluate(() => ({
@@ -100,6 +101,7 @@ l = await launch({
 });
 page = l.page;
 await page.click('#gearBtn');
+await page.click('#setTabs [data-tab="appearance"]');
 s = await state();
 assert.deepStrictEqual(s.checked, ['default', 'default'], 'an unknown name shows Default as chosen');
 assert.deepStrictEqual(s.classes, [], 'and uses it');

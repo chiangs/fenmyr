@@ -220,8 +220,7 @@ async function vaultAccessDialog({
       if (id === 'vaGo') {
         done(null);
         $('gearBtn').click();
-        setTab('vaults');
-        renderVaults();
+        setTab('connections');
       }
       if (e.target === d || id === 'vaNo') done(null);
       if (id === 'vaOk') done({ follow, grants: mine.filter(g => g.folders.length) });
