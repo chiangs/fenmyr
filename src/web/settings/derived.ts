@@ -6,6 +6,9 @@ import { MODE_DERIVED } from './derivedModes.ts';
 
 export const DERIVED: Record<string, string | [light: string, dark: string]> = {
   ...MODE_DERIVED,
+  // the theme's own ink, which a card's ink replaces inside the card; a dark panel inside a light card reads these
+  '--ink-page': 'var(--ink)',
+  '--ink-soft-page': 'var(--ink-soft)',
   '--anim-shadow-2': 'color-mix(in oklch, var(--accent-text) 44%, var(--accent-wash))',
   '--au-bg-2': [
     'color-mix(in oklab, var(--dot) 20%, var(--surface))',

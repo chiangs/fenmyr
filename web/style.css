@@ -847,10 +847,12 @@ body.dark .cp-fields input, body.dark .capture input { background: var(--surface
 body.dark .card > .frame { box-shadow: 0 10px 30px rgb(from var(--shade) r g b / .35); }
 body.dark .card.c-white > .frame, body.dark .card.link > .frame, body.dark .card.doc > .frame, body.dark .card.canvas > .frame, body.dark .card.audio > .frame, body.dark .card.swatch > .frame, body.dark .card.image > .frame { background: var(--dark-snow) !important; }
 /* these frames are Snow in dark, which is light in some themes, so the words on them are Snow's */
-body.dark .card:is(.c-white, .link, .doc, .canvas, .swatch, .font):not(.audio, .image) { --ink: var(--card-white-ink); --ink-soft: var(--card-white-soft); --ink-faint: var(--card-white-faint); color: var(--ink); }
+body.dark .card:is(.link, .doc, .canvas, .swatch, .font, .audio) { --ink: var(--card-white-ink); --ink-soft: var(--card-white-soft); --ink-faint: var(--card-white-faint); color: var(--ink); }
+/* the audio card's transcript and buttons sit on dark panels, so they keep the theme's own ink */
+body.dark .card.audio :is(.au-tx, .au-acts button) { --ink: var(--ink-page); --ink-soft: var(--ink-soft-page); color: var(--ink); }
+body.dark .card:is(.note, .todo, .vnote) { --ink: var(--card-ink); --ink-soft: var(--card-soft); --ink-faint: var(--card-faint); }
 body.dark .card:is(.note, .todo) .body { color: var(--card-ink); }
 body.dark .card:is(.note, .todo) .nname:empty::before, body.dark .card:is(.note, .todo) .text:empty::before { color: rgb(from var(--card-ink) r g b / .45); }
-body.dark .card.shape .text { color: var(--on-pastel); }
 body.dark .coll-head { color: var(--vn-bg); }
 body.dark .coll-frame { background: color-mix(in srgb, var(--cframe) 16%, var(--kb-bg)); }
 body.dark .card.link .meta span, body.dark .au-time { color: var(--ink-soft); }

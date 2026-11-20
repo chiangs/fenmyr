@@ -380,6 +380,8 @@ body {
   --m-upbar-bg: var(--snow);
   --m-upbar-ink: var(--ink);
   --m-ws-mid-ink: var(--ink);
+  --ink-page: var(--ink);
+  --ink-soft-page: var(--ink-soft);
   --anim-shadow-2: color-mix(in oklch, var(--accent-text) 44%, var(--accent-wash));
   --au-bg-2: color-mix(in oklab, var(--dot) 20%, var(--surface));
   --au-bg-3: var(--on-accent);
