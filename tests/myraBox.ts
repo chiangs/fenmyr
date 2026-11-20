@@ -1,4 +1,4 @@
-// Myra's box in the bottom bar and the chat that opens from it: joined to zoom, clear of the tools, her hop
+// Myra's box in the bottom bar and the chat that opens from it: over her box, clear of the tools, her hop
 // into its header, her lines rising from the box, her name cut short, fitting the board around the chat, a phone's sheet.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
@@ -95,10 +95,11 @@ const flight = async () => {
   return between;
 };
 
-await check('her box is 200 px wide and one piece with zoom', async () => {
-  const { mPill, zoom } = await edges(['mPill', 'zoom']);
-  assert.ok(mPill && zoom, 'her box and zoom are up');
-  near(mPill.l, zoom.r, 'her box’s left, on zoom’s right');
+await check('her box is 200 px wide and the whole bar', async () => {
+  const { mPill, dock } = await edges(['mPill', 'dock']);
+  assert.ok(mPill && dock, 'her box and the bar are up');
+  near(mPill.l, dock.l, 'her box’s left, on the bar’s');
+  near(mPill.r, dock.r, 'her box’s right, on the bar’s');
   near(mPill.r - mPill.l, 200, 'her box’s width');
 });
 
@@ -109,7 +110,7 @@ await check('she has one box to ask her in', async () => {
   assert.strictEqual(inputs, 1);
 });
 
-await check('at 1440 px her chat opens joined to zoom, over her box, and the tools still respond', async () => {
+await check('at 1440 px her chat opens over her box, and the tools still respond', async () => {
   await setChat(true);
   const { mChat, mPill, dock } = await edges(['mChat', 'mPill', 'dock']);
   await page.click('#tools [data-add="note"]');
@@ -154,7 +155,7 @@ for (const [w, h] of [
     await setChat(false);
     await size(1440);
     assert.ok(mChat && tools && mPill && closed.tools, 'her chat, her box and the tools are up');
-    assert.strictEqual(place, 'joined', 'the chat joins zoom');
+    assert.strictEqual(place, 'joined', 'the chat joins her box');
     near(mChat.l, mPill.l, 'the chat’s left, on her box’s');
     near(mChat.r - mChat.l, Math.min(400, w - 14 - mPill.l), 'the chat’s width');
     assert.ok(mChat.r - mChat.l >= 320, `the chat is ${mChat.r - mChat.l} px wide`);
@@ -271,7 +272,7 @@ await check('at 400 px, the narrowest it opens on a computer, her chat’s hint 
   await size(1440);
   await inSettings(() => page.fill('#myraNameIn', ''));
   assert.ok(input && mChat, 'her chat and its input are up');
-  assert.strictEqual(input.place, 'joined', 'the chat joins zoom');
+  assert.strictEqual(input.place, 'joined', 'the chat joins her box');
   near(mChat.r - mChat.l, 400, 'the chat’s width');
   assert.match(input.hint, /^Ask Bartholomew…(?!…)/, 'the hint has her name cut short, with one ellipsis');
   assert.strictEqual(Math.round(input.lines), 1, 'lines the hint takes');
@@ -305,16 +306,6 @@ await check('a picture dropped on her open chat lands on the board, clear of the
   assert.ok(pic && mChat, 'the picture and her chat are up');
   assert.ok(!overlaps(pic, mChat), `the picture ${JSON.stringify(pic)} is under the chat ${JSON.stringify(mChat)}`);
   assert.ok(pic.l >= 0 && pic.t >= 0 && pic.r <= 1440 && pic.b <= 900, `the picture ${JSON.stringify(pic)} shows`);
-});
-
-await check('joined to zoom, her chat’s corner on it is square, so no notch shows', async () => {
-  await setChat(true);
-  const filled = await page.evaluate(() => {
-    const r = document.getElementById('mChat')?.getBoundingClientRect();
-    return !!r && !!document.elementFromPoint(r.left + 1, r.bottom - 1)?.closest('#mChat');
-  });
-  await setChat(false);
-  assert.ok(filled, 'the chat fills its bottom-left corner');
 });
 
 for (const hurry of [false, true]) {

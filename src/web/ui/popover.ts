@@ -118,6 +118,17 @@ export function openLeftOfPanel(popup: HTMLElement, button: Element) {
   popup.style.top = `${Math.round(at.y)}px`;
 }
 
+/** Opens a popup under `button` with their right edges level, or above it when the window has no room below. It is
+ *  held by its right edge because a menu's words can still grow once it is shown (⌘ becomes Ctrl), and it grows left. */
+export function openBelow(popup: HTMLElement, button: Element) {
+  const b = button.getBoundingClientRect(),
+    h = popup.offsetHeight,
+    fits = b.bottom + 8 + h <= innerHeight - EDGE;
+  popup.style.left = 'auto';
+  popup.style.right = `${Math.round(innerWidth - b.right)}px`;
+  popup.style.top = `${Math.round(fits ? b.bottom + 8 : Math.max(EDGE, b.top - 8 - h))}px`;
+}
+
 export function showDialog(html: string, id?: string) {
   const wrap = document.createElement('div');
   if (id) wrap.id = id;

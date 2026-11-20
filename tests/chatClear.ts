@@ -1,6 +1,6 @@
-// With the Wireframe panel gone, Unsorted has the right column, and a long Unsorted ran under the open chat. While
-// the chat sits over the board below the column, the column ends 12 px above the chat's top, so Unsorted shrinks and
-// its list scrolls to the last idea; when the chat closes, Unsorted is full height again.
+// Unsorted and then Zoom have the right column, and a long Unsorted ran under the open chat. While the chat sits over
+// the board below the column, the column (which ends with Zoom) ends 12 px above the chat's top, so Unsorted shrinks
+// and its list scrolls to the last idea; when the chat closes, Unsorted is full height again.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -29,7 +29,11 @@ const rects = () =>
         ? { l: Math.round(b.left), t: Math.round(b.top), r: Math.round(b.right), b: Math.round(b.bottom) }
         : null;
     };
-    return { tray: r(document.getElementById('tray')), chat: r(document.getElementById('mChat')) };
+    return {
+      tray: r(document.getElementById('tray')),
+      zoom: r(document.querySelector('.box[data-box="zoom"]')),
+      chat: r(document.getElementById('mChat')),
+    };
   });
 
 try {
@@ -40,12 +44,13 @@ try {
   await page.click('#mPill');
   await settle(page, 800);
   const open = await rects();
-  assert.ok(open.tray && open.chat && closed.tray, 'Unsorted and the chat are on screen');
+  assert.ok(open.tray && open.zoom && open.chat && closed.zoom, 'Unsorted, Zoom and the chat are on screen');
   assert.ok(
-    open.chat.l < open.tray.r && open.chat.r > open.tray.l && open.chat.t < closed.tray.b,
+    open.chat.l < open.tray.r && open.chat.r > open.tray.l && open.chat.t < closed.zoom.b,
     `the open chat sits under the right column: ${JSON.stringify({ closed, open })}`,
   );
-  assert.strictEqual(open.chat.t - open.tray.b, 12, 'Unsorted ends 12 px above the open chat');
+  assert.strictEqual(open.chat.t - open.zoom.b, 12, 'the column, ending in Zoom, ends 12 px above the open chat');
+  assert.strictEqual(open.zoom.t - open.tray.b, 10, 'and Unsorted is what shrank, still 10 px above Zoom');
   const last = await page.evaluate(() => {
     const list = document.getElementById('trayList'),
       items = list?.querySelectorAll('.tray-item, [data-id]');

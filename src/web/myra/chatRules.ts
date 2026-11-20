@@ -9,7 +9,7 @@ export type Rect = { l: number; t: number; r: number; b: number };
 /** What chatWindow measures before placing the chat. */
 export type Geometry = {
   view: { w: number; h: number };
-  /** The bottom bar: zoom, then her box. */
+  /** The bottom bar, which holds her box. */
   bar: Rect;
   box: Rect;
   /** How far find's bar over the bottom bar lifts what sits at its height, its height and gap, or 0 while it is down. */
@@ -24,7 +24,7 @@ export type Geometry = {
 };
 
 export type Placement =
-  /** Left edge on her box's left, which is zoom's right edge, bottom on the bar's bottom: it covers her box. */
+  /** Left edge on her box's left, bottom on the bar's bottom: it covers her box. */
   | { kind: 'joined'; chat: Rect }
   /** Too little room right of her box's left, or find's bar is up, which reaches under a joined chat: from the bar's
    *  left to the window's right, above the bar and find's bar. */

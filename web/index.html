@@ -20,7 +20,12 @@
 </div>
 <div class="win-drag" id="winDrag"></div>
 
-<aside class="side side-r" id="sideR" aria-label="Right widgets"></aside>
+<aside class="side side-r" id="sideR" aria-label="Right widgets">
+  <!-- the zoom widget: a card like the others that you can move; the percentage opens the zoom menu -->
+  <section class="box" data-box="zoom">
+    <header><div class="label">Zoom</div><button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button></header>
+  </section>
+</aside>
 <aside class="side" id="side">
   <section class="box" data-box="boards">
     <header><div class="brand" id="brand" title="Home: all projects"><svg class="brand-mark" data-ico="fenmyr-mark" width="28" height="28"></svg><span>Fenmyr</span></div><button class="mini gear" id="gearBtn" aria-label="Settings" data-tip="Settings"><svg data-ico="settings" width="17" height="17"></svg></button><button class="mini" title="Minimise">–</button></header>
@@ -72,9 +77,8 @@
     <button type="button" class="fb-b" id="scX" title="Close (Esc)" aria-label="Put the tool down"><svg data-ico="close" width="16" height="16"></svg></button>
   </div>
 </div>
-<!-- the bottom bar: zoom, then Myra, centred -->
+<!-- the bottom bar: Myra, centred -->
 <div class="dock" id="dock">
-  <button class="zoom" id="zoom" title="Zoom" aria-haspopup="menu">100%</button>
 <!-- Myra: her box, her chat, her bubble -->
   <div class="myra" id="myra">
     <!-- Myra's chat window -->
@@ -343,6 +347,7 @@
         <label class="set-row"><div><b>Layers</b><small>Everything on the board, top first. Rename, hide, lock and restack</small></div><input type="checkbox" class="tgl" data-set="wLayers"></label>
         <label class="set-row"><div><b>Board colours</b><small>The colours you've saved for this board</small></div><input type="checkbox" class="tgl" data-set="wColors"></label>
         <label class="set-row"><div><b>Unsorted</b><small>Ideas waiting for a spot. ⌘K still saves there when this is off.</small></div><input type="checkbox" class="tgl" data-set="wTray"></label>
+        <label class="set-row"><div><b>Zoom</b><small>The zoom percentage and its menu. The zoom keys and ⌘ + scroll still work when this is off.</small></div><input type="checkbox" class="tgl" data-set="wZoom"></label>
         <div class="set-row"><div><b>Arrange them</b><small>Drag a widget by its title to any spot on either side.</small></div><button class="set-btn" id="wgReset">Reset layout</button></div>
       </section>
       <section data-tab="board"><h3>The board</h3>

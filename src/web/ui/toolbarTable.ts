@@ -29,6 +29,7 @@ const TABLE: Table = [
   { id: 'coll', label: 'Collection', key: 'G', icon: 'collection' },
   { id: 'canvas', label: 'Canvas', icon: 'canvas', aria: 'Canvas (a board inside this one)' },
   { id: 'frame', label: 'Wireframe', key: 'W', icon: 'screen', toggle: true },
+  { id: 'tpl', label: 'Templates', key: '⌥T', icon: 'templates' },
 
   'media',
   { id: 'link', label: 'Link', key: 'L', icon: 'link' },
@@ -40,7 +41,6 @@ const TABLE: Table = [
   'draw',
   { id: 'shape', label: 'Shapes', key: 'S', icon: 'shapes' },
   { id: 'stamp', label: 'Stamps', key: 'E', icon: 'stamp' },
-  { id: 'tpl', label: 'Templates', icon: 'templates' },
   { id: 'pen', label: 'Pen', key: '⇧P', icon: 'pen' },
   { id: 'draw', label: 'Draw', key: 'P', icon: 'draw' },
 ];

@@ -16,6 +16,8 @@
 //   way to them.
 // - The tools panel: the bottom bar is centred, so her joined chat opens from the middle of the window and the board
 //   beside it is narrower; the cards a library or new-board reply lays out land in other places.
+// - Zoom leaves the bottom bar: her box is the whole bar, so her joined chat opens 32 px further left and the board
+//   beside it is wider; those cards land in other places again.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';

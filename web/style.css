@@ -158,8 +158,8 @@ body.dark .card .chip:hover { background: color-mix(in srgb, var(--panel, var(--
 .tools button:hover { background: var(--blush); }
 .tools .ic { flex: none; color: var(--ink-soft); }
 .tools button:hover .ic { color: var(--ink); }
-/* zoom, beside Myra's box: one width for every zoom, so the bar it centres in never shifts */
-.zoom { flex: none; width: 64px; padding: 0; font-size: 12px; color: var(--ink-soft); text-align: center; }
+/* the zoom widget: a card like the others, with the percentage as a button in its header, one width at every zoom so the card never shifts */
+.zoom { flex: none; width: 64px; height: 24px; padding: 0; border-radius: 8px; background: var(--blush); color: var(--ink-soft); text-align: center; }
 button.zoom { font-family: inherit; font-size: 12px; font-variant-numeric: tabular-nums; }
 
 /* ---------- unsorted tray ---------- */
@@ -434,20 +434,16 @@ html.native .home-in { padding-top: 40px; }
 .tools button.on { background: var(--blush); }
 .tools button.on .ic { color: var(--ink); }
 
-/* ---------- the bottom bar: zoom + Myra ----------
-   Centred on the window as one piece, with no transform, which would hold her fixed chat and timer: left and right
-   leave it an even width to centre in, and it is an even width itself (zoom 64, her box 200), so it starts on a whole
-   pixel and its text stays crisp. Zoom sits left of her box, as her chat opens joined to the box's left edge and
-   would cover it on the right. It sits above the widgets (z 20), so what rises from it can cover them. What opens over
-   it (the tools' pickers, quick capture, a colour card's wheel) sits at body level in #overBar, above it. */
+/* ---------- the bottom bar: Myra ----------
+   Centred on the window, with no transform, which would hold her fixed chat and timer: left and right leave it an even
+   width to centre in, and it is an even width itself (her box, 200), so it starts on a whole pixel and its text stays
+   crisp. It sits above the widgets (z 20), so what rises from it can cover them. What opens over it (the tools'
+   pickers, quick capture, a colour card's wheel) sits at body level in #overBar, above it. */
 body { --bar-b: 18px; }
 .dock { position: fixed; left: 0; right: calc(100vw - 2 * round(down, 50vw, 1px)); bottom: var(--bar-b); width: max-content; margin-inline: auto; z-index: 21; display: flex; align-items: flex-end; }
-.dock .zoom { height: 50px; border-radius: var(--pill-r); background: var(--snow); box-shadow: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); }
 .dock .myra { position: relative; left: auto; bottom: auto; transform: none; }
-/* her box: one piece with zoom, as wide whatever her name */
+/* her box: as wide whatever her name */
 .dock .m-pill { width: 200px; border: 0; text-align: start; }
-body:not(.proto, .phone) .dock .zoom { border-start-end-radius: 0; border-end-end-radius: 0; }
-body:not(:has(.stage.at-home)) .dock .m-pill { border-start-start-radius: 0; border-end-start-radius: 0; }
 /* a joined chat covers her box, and its input is where the box was; she flies on over it into the header */
 .myra.chat:has(> .m-chat[data-place="joined"]) .m-pill { visibility: hidden; }
 .myra.chat .goo-slot { visibility: visible; }
@@ -562,12 +558,12 @@ html.native .dv-bar { padding-top: 14px; }
 .dv-body { min-height: 60vh; outline: none; font: 400 16px/1.7 var(--font); color: var(--ink); white-space: pre-wrap; user-select: text; -webkit-user-select: text; cursor: text; }
 .dv-body:empty::before { content: attr(data-ph); color: var(--ink-faint); }
 /* with a doc open, the tools step aside but Myra's bubble (and its Undo) still shows on top */
-body:has(.stage.doc-open) .tools, body:has(.stage.doc-open) .mode-card, body:has(.stage.doc-open) .dock .zoom, .stage.doc-open .modebar, .stage.doc-open .selbar, body:has(.stage.doc-open) .dock .m-pill, body:has(.stage.doc-open) .shapepick { opacity: 0; pointer-events: none; }
+body:has(.stage.doc-open) .tools, body:has(.stage.doc-open) .mode-card, .stage.doc-open .modebar, .stage.doc-open .selbar, body:has(.stage.doc-open) .dock .m-pill, body:has(.stage.doc-open) .shapepick { opacity: 0; pointer-events: none; }
 /* and presses where the bar was reach the doc; her bubble and chat set their own, and her timer still takes them */
 body:has(.stage.doc-open) :is(.dock, .dock #myra) { pointer-events: none; }
 body:has(.stage.doc-open) .dock .timer-chip { pointer-events: auto; }
 /* on the All projects pages the board tools hide; Myra stays to help organize */
-body:has(.stage.at-home) .tools, body:has(.stage.at-home) .dock .zoom, .stage.at-home .selbar, body:has(.stage.at-home) .shapepick { display: none; }
+body:has(.stage.at-home) .tools, body:has(.stage.at-home) .box[data-box="zoom"], .stage.at-home .selbar, body:has(.stage.at-home) .shapepick { display: none; }
 .sub-boards { margin-left: 16px; padding-left: 8px; border-left: 1.5px dashed var(--sub-line); display: flex; flex-direction: column; gap: 1px; }
 .sub-boards .board-row { font-size: 13px; }
 /* full-page docs: keep the bar clear of the floating boxes on the left */
@@ -814,7 +810,7 @@ body.dark { --sh: 0, 0, 0; --sh-k: 2.2;   /* dark mode: plain dark shadows, not 
 
   }
 body.dark, body.dark .stage { background: var(--body-bg); }
-body.dark .box, body.dark .tools, body.dark .dock .zoom, body.dark .tray, body.dark .selbar, body.dark .find-bar, body.dark .drawbar, body.dark .cpop, body.dark .capture, body.dark .shapepick, body.dark .wheel-stamps,
+body.dark .box, body.dark .tools, body.dark .tray, body.dark .selbar, body.dark .find-bar, body.dark .drawbar, body.dark .cpop, body.dark .capture, body.dark .shapepick, body.dark .wheel-stamps,
 body.dark .stamp-pick, body.dark .row-menu, body.dark .cover-menu, body.dark .set-panel, body.dark .docview, body.dark .tile, body.dark .tile.folder .paper, body.dark .tile.project .mf,
 body.dark .tray-item, body.dark .ghost, body.dark kbd, body.dark .home-back { background: var(--surface) !important; color: var(--ink); }
 body.dark .box { background: rgb(from var(--pn-dark-box) r g b / .96) !important; }
@@ -866,8 +862,6 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .m-chat { position: fixed; left: var(--chat-l); top: var(--chat-t); width: var(--chat-w); height: var(--chat-h); display: flex; flex-direction: column; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); color: var(--ink);
   box-shadow: 0 20px 50px rgba(var(--sh), calc(.24 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); opacity: 0; pointer-events: none; transform: translateY(10px) scale(.97); transform-origin: 0 100%; transition: opacity .18s, transform .28s cubic-bezier(.2, .9, .3, 1.2); }
 .m-chat[data-place="wide"] { transform-origin: 50% 100%; }
-/* square where it meets the tools, so no notch shows between them */
-.m-chat[data-place="joined"] { border-end-start-radius: 0; }
 .myra.chat .m-chat { opacity: 1; pointer-events: auto; transform: none; }
 .myra.chat .m-bubble { display: none; }
 .mc-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px 16px; border-bottom: 1px solid rgb(from var(--ink) r g b / .07); }
@@ -1289,9 +1283,9 @@ body.dark .ws-mid:hover { background: var(--ws-bg-4); }
 /* ---------- your colors ---------- */
 html, body { background: var(--board, var(--html-bg)); }
 body.dark, body.dark .stage { background: var(--board, var(--body-bg)); }
-body.tint-panels .box, body.tint-panels .tools, body.tint-panels .dock .zoom, body.tint-panels .tray, body.tint-panels .selbar, body.tint-panels .find-bar, body.tint-panels .drawbar, body.tint-panels .capture,
+body.tint-panels .box, body.tint-panels .tools, body.tint-panels .tray, body.tint-panels .selbar, body.tint-panels .find-bar, body.tint-panels .drawbar, body.tint-panels .capture,
 body.tint-panels .shapepick, body.tint-panels .tplpick, body.tint-panels .wheel-stamps, body.tint-panels .stamp-pick, body.tint-panels .row-menu, body.tint-panels .m-pill, body.tint-panels .m-chat, body.tint-panels .m-bubble { background: var(--panel) !important; }
-body.tint-panels.panel-dark .box, body.tint-panels.panel-dark .tools, body.tint-panels.panel-dark .dock .zoom, body.tint-panels.panel-dark .tray, body.tint-panels.panel-dark .find-bar, body.tint-panels.panel-dark .m-pill { color: color-mix(in oklab, var(--on-accent) 8%, var(--snow)); }
+body.tint-panels.panel-dark .box, body.tint-panels.panel-dark .tools, body.tint-panels.panel-dark .tray, body.tint-panels.panel-dark .find-bar, body.tint-panels.panel-dark .m-pill { color: color-mix(in oklab, var(--on-accent) 8%, var(--snow)); }
 /* a dark board in light mode (or a light one in dark mode): the words that sit right on the board follow it */
 body.board-dark #boardName, body.board-dark .card.title .text, body.board-dark .crumbs, body.board-dark .saved { color: color-mix(in oklab, var(--ink-faint) 12%, var(--snow)); }
 body.board-light #boardName, body.board-light .card.title .text, body.board-light .crumbs { color: var(--on-pastel); }
@@ -1459,7 +1453,7 @@ body.phone .hub { display: grid; grid-template-columns: repeat(5, 1fr); align-it
 .hub canvas { width: 30px; height: 26px; image-rendering: pixelated; }
 .hub-n { position: absolute; top: 3px; right: calc(50% - 22px); min-width: 17px; height: 17px; padding: 0 4px; border-radius: 134px; corner-shape: squircle; background: var(--accent-soft); color: var(--ink); font: 700 10px/17px var(--font); }
 .hub-n:empty { display: none; }
-body.phone .tools:not(.in-sheet), body.phone .dock .zoom { display: none; }
+body.phone .tools:not(.in-sheet) { display: none; }
 /* what's selected (or the pen) takes over the bottom bar */
 body.phone .dock.ctx .hub, body.phone .dock:has(.drawbar:not([hidden])) .hub { display: none; }
 body.phone .dock .selbar, body.phone .dock .drawbar { width: 100%; height: var(--hub-h); overflow-x: auto; scrollbar-width: none; border-radius: 32px; corner-shape: squircle; padding: 6px 8px; justify-content: flex-start; }
@@ -1952,8 +1946,7 @@ body.dark .wg-slot.on { background: rgb(from var(--anim-shadow-2) r g b / .18); 
 
 /* the zoom % is a button: click it for the zoom menu */
 button.zoom { border: 0; corner-shape: squircle; font: 600 12px/1 var(--font); cursor: pointer; transition: background .12s, color .12s; }
-button.zoom:hover, button.zoom:focus-visible { background: color-mix(in oklab, var(--ink) 5%, var(--snow)); color: var(--ink); outline: none; }
-body.dark button.zoom:is(:hover, :focus-visible) { background: color-mix(in oklab, var(--ink) 6%, var(--surface)) !important; }
+button.zoom:hover, button.zoom:focus-visible { background: color-mix(in oklab, var(--ink) 8%, var(--blush)); color: var(--ink); outline: none; }
 
 
 /* quick hover labels for small icon buttons outside the toolbar (the Settings gear) */
@@ -2311,9 +2304,9 @@ body[data-tb="s"] .tools { --tb-w: 34px; --tb-h: 32px; }
 body[data-tb="s"] #tools svg[viewBox="0 0 24 24"], body[data-tb="s"] .tools .ic { width: 17px !important; height: 17px !important; }
 body[data-tb="l"] .tools { --tb-w: 48px; --tb-h: 46px; }
 body[data-tb="l"] #tools svg[viewBox="0 0 24 24"], body[data-tb="l"] .tools .ic { width: 24px !important; height: 24px !important; }
-/* Myra's box and zoom beside it are as tall at every icon size: small 46, medium 50, large 58 */
-body[data-tb="s"] :is(.m-pill, .dock .zoom) { height: 46px; }
-body[data-tb="l"] :is(.m-pill, .dock .zoom) { height: 58px; }
+/* Myra's box is as tall as the tool buttons at every icon size: small 46, medium 50, large 58 */
+body[data-tb="s"] .m-pill { height: 46px; }
+body[data-tb="l"] .m-pill { height: 58px; }
 /* Myra's button: no outline ring (it made her look taller than the toolbar), the toolbar's own shadow, plus a soft cloudberry-amber glow that breathes and a tiny wobble
    every few seconds. Glows and transforms never change the box, so she stays exactly the toolbar's height. Calm mode and reduced motion keep the glow still. */
 .m-pill { --m-base: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); --m-glow: var(--butter-deep, #f0b04a); transform-origin: 50% 60%;
@@ -2325,7 +2318,6 @@ body.dark .m-pill { --m-base: 0 8px 26px rgba(0, 0, 0, .31); }
   50% { box-shadow: var(--m-base), 0 0 20px 2px color-mix(in srgb, var(--m-glow) 48%, transparent); } }
 @keyframes m-wobble { 0%, 86%, 100% { transform: none; } 89% { transform: rotate(-.9deg); } 92% { transform: rotate(.8deg); } 95% { transform: rotate(-.4deg); } 97.5% { transform: rotate(.2deg); } }
 @media (prefers-reduced-motion: reduce) { .m-pill { animation: none; } }
-body[data-tb="l"] .dock .zoom { font-size: 15px; }
 .tools .tb-over { display: none !important; }
 /* ··· is always the last cell */
 .tools .tb-more { order: 1; }

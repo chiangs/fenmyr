@@ -1,4 +1,4 @@
-// The bottom bar (zoom, then Myra's box) and the tools panel, where they sit and what they do: on top of what they
+// The bottom bar (Myra's box) and the tools panel, where they sit and what they do: on top of what they
 // meet, hidden for clean mode, export, a doc and Home as each needs, pictures dropped on them landing on the board,
 // the wheel over them panning, their place in Tab order, and a phone's strips leaving the bar when the window widens.
 import assert from 'node:assert';
@@ -30,7 +30,6 @@ const bar = () =>
     return {
       dock: part(document.getElementById('dock')),
       tools: part(document.getElementById('tools')),
-      zoom: part(document.getElementById('zoom')),
       firstTool: part(document.querySelector('#tools [data-add="pointer"]')),
       pill: part(document.getElementById('mPill')),
       leftWidgets: Math.max(...panels.map(p => p.getBoundingClientRect().right)),
@@ -65,12 +64,13 @@ const focusedIn = () =>
     return a.closest('#home, #side, #sideR, #cards, #stampWheel')?.id || a.id || a.className;
   });
 
-await check('zoom and Myra’s box sit in one row, joined, 18 px over the window’s bottom', async () => {
+await check('Myra’s box is the whole bar, 18 px over the window’s bottom and centred', async () => {
   const b = await bar();
-  assert.ok(b.zoom && b.pill && b.dock, 'the bar is up');
-  near(b.zoom.b, b.h - 18, 'zoom’s bottom');
+  assert.ok(b.pill && b.dock, 'the bar is up');
   near(b.pill.b, b.h - 18, 'her box’s bottom');
-  near(b.pill.l, b.zoom.r, 'her box’s left, on zoom’s right');
+  near(b.dock.l, b.pill.l, 'the bar starts where her box does');
+  near(b.dock.r, b.pill.r, 'and ends where it ends');
+  near((b.dock.l + b.dock.r) / 2, b.w / 2, 'the middle of the bar, on the window’s');
 });
 await check('the bar starts right of the left widgets', async () => {
   const b = await bar();
@@ -238,7 +238,7 @@ await check('what is being placed shows over the bar', async () => {
 });
 
 await check(
-  'Tab reaches the tools after the left widgets, then zoom and Myra’s box without opening her chat; Enter opens it, Esc returns to the box',
+  'Tab reaches the tools after the left widgets, then Myra’s box without opening her chat; Enter opens it, Esc returns to the box',
   async () => {
     if (await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat')))
       await page.click('#mcClose');
@@ -247,8 +247,6 @@ await check(
     await page.keyboard.press('Shift+Tab');
     const before = await focusedIn();
     await page.focus('#tools [data-add="draw"]');
-    await page.keyboard.press('Tab');
-    const zoom = await focusedIn();
     await page.keyboard.press('Tab');
     const box = await focusedIn();
     const expanded = await page.getAttribute('#mPill', 'aria-expanded');
@@ -260,8 +258,8 @@ await check(
     const after = await focusedIn();
     await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
     assert.deepStrictEqual(
-      [before, zoom, box, expanded, opened, back, after],
-      ['side', 'zoom', 'mPill', 'false', 'mcInput', 'mPill', 'cards'],
+      [before, box, expanded, opened, back, after],
+      ['side', 'mPill', 'false', 'mcInput', 'mPill', 'cards'],
     );
   },
 );
