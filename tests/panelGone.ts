@@ -64,21 +64,26 @@ try {
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
   await settle(page);
 
-  await run('a layout, settings, boxes and folds naming the panel load with Unsorted alone on the right', async () => {
-    const s = await page.evaluate(() => ({
-      panel: !!document.getElementById('design'),
-      right: [...(document.getElementById('sideR')?.children ?? [])].map(e => e.id),
-      left: [...(document.getElementById('side')?.children ?? [])].map(
-        e => (e instanceof HTMLElement && e.dataset.box) || e.id,
-      ),
-      unsorted: !!document.getElementById('tray')?.checkVisibility(),
-    }));
-    assert.deepStrictEqual(
-      s,
-      { panel: false, right: ['tray'], left: ['boards', 'layers', 'colors'], unsorted: true },
-      'no panel, and Unsorted alone and showing on the right',
-    );
-  });
+  await run(
+    'a layout, settings, boxes and folds naming the panel load with Unsorted and Zoom on the right',
+    async () => {
+      const s = await page.evaluate(() => ({
+        panel: !!document.getElementById('design'),
+        right: [...(document.getElementById('sideR')?.children ?? [])].map(
+          e => (e instanceof HTMLElement && e.dataset.box) || e.id,
+        ),
+        left: [...(document.getElementById('side')?.children ?? [])].map(
+          e => (e instanceof HTMLElement && e.dataset.box) || e.id,
+        ),
+        unsorted: !!document.getElementById('tray')?.checkVisibility(),
+      }));
+      assert.deepStrictEqual(
+        s,
+        { panel: false, right: ['tray', 'zoom'], left: ['boards', 'layers', 'colors'], unsorted: true },
+        'no panel, and Unsorted showing on the right with Zoom under it',
+      );
+    },
+  );
 
   await run('a toolbar order saved before the Wireframe button gets it after Canvas', async () => {
     assert.strictEqual(
@@ -198,9 +203,15 @@ try {
       left: [...(document.getElementById('side')?.children ?? [])].map(
         e => (e instanceof HTMLElement && e.dataset.box) || e.id,
       ),
-      right: document.getElementById('sideR')?.children.length,
+      right: [...(document.getElementById('sideR')?.children ?? [])].map(e =>
+        e instanceof HTMLElement ? e.dataset.box : '',
+      ),
     }));
-    assert.deepStrictEqual(s, { left: ['boards', 'layers', 'tray', 'colors'], right: 0 });
+    assert.deepStrictEqual(
+      s,
+      { left: ['boards', 'layers', 'tray', 'colors'], right: ['zoom'] },
+      'Zoom is alone on the right',
+    );
   });
   assert.deepStrictEqual(left.errors, [], 'no errors on the page');
 } finally {

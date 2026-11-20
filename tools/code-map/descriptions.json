@@ -547,6 +547,7 @@
     "tests/voice.ts": "Asks the real Myra tricky questions so a person can read her answers.",
     "tests/wfTools.ts": "The Wireframe button and the mode bar's Box, Text and Icon: lighting, names, keyboard, placing on a bare board, R and X, and the button tucked in ···.",
     "tests/zoom.ts": "Tests zoom steps, pinch, reset and the zoom menu.",
+    "tests/zoomWidget.ts": "The zoom widget: under Unsorted by default, dragged to the other column and back, its menu inside the window, hidden at Home and on a phone, and Myra centred alone in the bottom bar.",
     "tools/budget.ts": "Counts untyped files, any, casts, long files and markup logic, and fails if any rises.",
     "tools/build.ts": "Bundles the host and the renderer with esbuild.",
     "tools/check-names.ts": "Fails on undeclared names in modules that skip type checking.",

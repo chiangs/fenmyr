@@ -37,6 +37,7 @@ const DEFAULTS = {
   wLayers: true,
   wColors: true,
   wTray: true,
+  wZoom: true,
   myra: 'golden',
   greet: true,
   grid: true,
