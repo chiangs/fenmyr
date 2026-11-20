@@ -251,7 +251,7 @@
       <p>How cards feel when you make them.</p>
       <div class="set-row"><div><b>New note colour</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="obNotes"></div></div>
       <label class="set-row"><div><b>Loose, tilted cards</b><small>Off makes every card sit straight</small></div><input type="checkbox" class="tgl" data-set="tilt"></label>
-      <label class="set-row"><div><b>Snap to the dots</b><small>Cards line up with the grid</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
+      <label class="set-row"><div><b>Snap to the grid</b><small>Cards line up with the grid</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
     </section>
     <section class="ob-step" data-step="5">
       <canvas id="obGoo2" width="64" height="56"></canvas>
@@ -301,10 +301,10 @@
       </section>
       <section data-tab="appearance"><h3>On the board</h3>
         <div class="set-row"><div><b>Default font</b><small>For board text and docs without their own font. Menus and panels don't change.</small></div><button class="set-btn set-font" id="defaultFontBtn" data-sbfont="default" type="button"></button></div>
-        <div class="set-row grid-shape-row"><div><b>Grid shape</b><small>Dots, small shapes or none</small></div><div class="grid-shapes" id="gridShapes"></div></div>
         <div class="set-row"><div><b>New note colour</b><small>What a fresh note starts as</small></div><div class="myra-colors" id="noteColors"></div></div>
         <label class="set-row"><div><b>Loose, tilted cards</b><small>Off makes every card sit straight</small></div><input type="checkbox" class="tgl" data-set="tilt"></label>
         <label class="set-row"><div><b>Moving stamps and wiggles</b><small>Turn off for a calmer board</small></div><input type="checkbox" class="tgl" data-set="motion"></label>
+        <div class="set-row grid-shape-row"><div><b>Grid shape</b><small>Dots, small shapes or none</small></div><div class="grid-shapes" id="gridShapes"></div></div>
       </section>
       <section data-tab="appearance"><h3>Your cursor</h3>
         <div class="cur-prev" id="curPrev"><div class="mcur show demo"></div></div>
@@ -377,7 +377,7 @@
       </section>
       <section data-tab="board"><h3>Working on the board</h3>
         <label class="set-row"><div><b>Double-click to add a note</b><small>Double-click an empty spot for a new note.</small></div><input type="checkbox" class="tgl" data-set="dblNote"></label>
-        <label class="set-row"><div><b>Snap to the dots</b><small>Cards line up with the grid when you drop them</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
+        <label class="set-row"><div><b>Snap to the grid</b><small>Cards line up with the grid when you drop them</small></div><input type="checkbox" class="tgl" data-set="snap"></label>
         <label class="set-row"><div><b>Shortcut hints</b><small>The key list in the bottom corner</small></div><input type="checkbox" class="tgl" data-set="keys"></label>
       </section>
       <section data-tab="general"><h3>Your boards</h3>

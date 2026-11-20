@@ -1,6 +1,6 @@
 // Grid shape is the one setting for how the board's grid looks, and None is one of its values, so there is no Dot grid switch to
 // disagree with it. Each of the seven options is picked through the real picker, and the board's grid and the saved setting
-// must say the same thing. An old save with the grid switched off opens with None.
+// must say the same thing. An old save with the grid switched off opens with None, and the Grid shape row ends "On the board".
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { launch } from './support/launch.ts';
@@ -63,6 +63,35 @@ try {
     }
   }
   assert.deepStrictEqual(l.errors, [], 'no page errors');
+
+  // the row ends its section and sits right above the cursor preview
+  const where = await page.evaluate(() => {
+    const sections = [...document.querySelectorAll('#settings .set-body section[data-tab="appearance"]')],
+      at = sections.findIndex(s => s.querySelector('h3')?.textContent === 'On the board'),
+      rows = [...(sections[at]?.querySelectorAll(':scope > .set-row') ?? [])],
+      label = (row?: Element) => row?.querySelector('b')?.textContent ?? null;
+    return {
+      last: label(rows.at(-1)),
+      lastHasPicker: !!rows.at(-1)?.querySelector('#gridShapes'),
+      count: rows.filter(r => r.querySelector('#gridShapes')).length,
+      next: sections[at + 1]?.querySelector('h3')?.textContent ?? null,
+      preview: sections[at + 1]?.querySelector('h3 + *')?.id ?? null,
+    };
+  });
+  assert.strictEqual(where.last, 'Grid shape', 'Grid shape is the last row of On the board');
+  assert.strictEqual(where.lastHasPicker, true, 'and it holds the picker');
+  assert.strictEqual(where.count, 1, 'the picker is in one row only');
+  assert.strictEqual(where.next, 'Your cursor', 'the next section is Your cursor');
+  assert.strictEqual(where.preview, 'curPrev', 'and the preview is the first thing in it');
+
+  // the snap row no longer talks about dots, which may not be drawn
+  await page.click('#setTabs [data-tab="board"]');
+  const snap = await page.evaluate(() => ({
+    row: document.querySelector('#settings [data-set="snap"]')?.closest('label')?.querySelector('b')?.textContent,
+    stale: document.body.innerHTML.includes('Snap to the dots'),
+  }));
+  assert.strictEqual(snap.row, 'Snap to the grid', 'the Board tab says Snap to the grid');
+  assert.strictEqual(snap.stale, false, 'and nothing else still says Snap to the dots');
 } finally {
   await l.close();
 }
