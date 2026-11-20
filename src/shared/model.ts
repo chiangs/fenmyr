@@ -301,15 +301,18 @@ function readCard(x: unknown): Card | null {
 // A board file read from disk.
 export function parseBoard(raw: unknown): StoredBoard | null {
   if (!isRecord(raw) || typeof raw.id !== 'string') return null;
-  const cards = (x: unknown) => (Array.isArray(x) ? x.map(readCard).filter(c => c !== null) : undefined);
+  const cards = (x: unknown[]) => x.map(readCard).filter(c => c !== null);
   const proto = raw.kind === 'prototype' ? readProto(raw.proto) : null;
   const board: StoredBoard = {
     ...raw,
     id: raw.id,
-    cards: cards(raw.cards),
-    tray: cards(raw.tray),
     ...(proto ? { kind: 'prototype', proto } : { kind: undefined, proto: undefined }),
   };
+  // a missing list is left out, not set to undefined: openBoard spreads the board over its empty lists, and an undefined key would replace them
+  if (Array.isArray(raw.cards)) board.cards = cards(raw.cards);
+  else delete board.cards;
+  if (Array.isArray(raw.tray)) board.tray = cards(raw.tray);
+  else delete board.tray;
   const access = readGrants(raw.vaultAccess);
   if (access) board.vaultAccess = access;
   else delete board.vaultAccess;
