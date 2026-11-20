@@ -15,6 +15,7 @@ import { PRESETS } from '../ui/palette.ts';
 import { renderTbList } from '../ui/toolbarConfig.ts';
 import { renderVaults } from '../vault/vaults.ts';
 import { caelestiaFor, themeFor } from './activeTheme.ts';
+import { boardsSaved } from './boardsSaved.ts';
 import { myCur, paintCursor } from './cursor.ts';
 import { accentOver } from './derive.ts';
 import { applyPanelH, fitSides, heightGrip, panelMin } from './panelHeights.ts';
@@ -262,8 +263,7 @@ export function init28() {
     if (session.sel.size) selectOnly([]);
     checkUpdate();
     showUsage();
-    $('boardCount').textContent =
-      `${appState.boardList.length} board${appState.boardList.length === 1 ? '' : 's'}, kept on this computer. They never leave your computer.`;
+    $('boardCount').textContent = boardsSaved(appState.boardList.length, appState.projects.filter(p => p.repo).length);
     showConnections(true);
     $('settings').classList.add('on');
   };
