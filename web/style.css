@@ -104,7 +104,7 @@ body.dark .card.sel::after { box-shadow: 0 0 0 3px rgb(from var(--dark-ring) r g
 .card .knob { position: absolute; right: -9px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--snow); border: 2px solid var(--ink-faint); cursor: crosshair; opacity: 0; transition: opacity .15s; }
 .card:hover .knob { opacity: 1; }
 .card .knob:hover { border-color: var(--select); }
-.card .tag { position: absolute; top: -12px; left: 14px; padding: 1px 10px 3px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); font: 700 15px/1.2 var(--hand); box-shadow: 0 3px 8px rgba(var(--sh), calc(.12 * var(--sh-k))); rotate: -3deg; white-space: nowrap; }
+.card .tag { position: absolute; top: -12px; left: 14px; padding: 1px 10px 3px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-tag-bg); color: var(--m-tag-ink); font: 700 15px/1.2 var(--hand); box-shadow: 0 3px 8px rgba(var(--sh), calc(.12 * var(--sh-k))); rotate: -3deg; white-space: nowrap; }
 .card.dim { opacity: .14; }
 
 /* note */
@@ -838,7 +838,7 @@ body.dark .tray-item, body.dark .ghost, body.dark kbd, body.dark .home-back { ba
 body.dark .box { background: rgb(from var(--pn-dark-box) r g b / .96) !important; }
 body.dark .board-row:hover, body.dark .node-head:hover, body.dark .brand:hover, body.dark .pal:hover, body.dark .home-row, body.dark .dv-btn, body.dark .tile-art, body.dark .seg,
 body.dark .card.canvas .cv-prev, body.dark .au-tx, body.dark .tile.folder .tile-art .back, body.dark .tile.folder .tile-art .tab { background: var(--surface-2) !important; }
-body.dark .tile.folder .tile-art .front, body.dark .seg button.on, body.dark .au-acts button, body.dark .card .tag, body.dark .crumbs button:hover, body.dark .home-crumbs button:hover { background: var(--dark-line) !important; color: var(--ink); }
+body.dark .tile.folder .tile-art .front, body.dark .seg button.on, body.dark .au-acts button, body.dark .crumbs button:hover, body.dark .home-crumbs button:hover { background: var(--dark-line) !important; color: var(--ink); }
 body.dark .home { background-color: var(--pn-dark-home); }
 body.dark .settings { background: rgb(from var(--shade) r g b / .45); }
 body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: var(--set-dark-line); }

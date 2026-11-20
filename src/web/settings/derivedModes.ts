@@ -15,6 +15,9 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-ob-primary-ink': ['var(--ink-inverse)', 'var(--au-bg-3)'],
   '--m-sb-tipbub-bg': ['var(--ink)', 'var(--sb-bg-3)'],
   '--m-sb-tipbub-ink': ['color-mix(in oklab, var(--accent-wash) 8%, var(--surface))', 'var(--sb-ink-3)'],
+  // a note's label: dark in dark mode, with the theme's white on it. Inside a note --ink is the note's own dark ink, so the label can't read --ink there
+  '--m-tag-bg': ['var(--snow)', 'var(--dark-line)'],
+  '--m-tag-ink': ['currentcolor', 'var(--hilite)'],
   '--m-ub-yes-bg': ['var(--ink)', 'var(--clean-ink)'],
   '--m-upbar-bg': ['var(--snow)', 'var(--clean-bg-2)'],
   '--m-upbar-ink': ['var(--ink)', 'var(--clean-ink)'],
