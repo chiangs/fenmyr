@@ -154,6 +154,7 @@
     "src/web/icons.ts": "The icon facade: ask for a Myra icon by name and get the drawing from the generated pack.",
     "src/web/input/keyed.ts": "Remembers the button the keyboard moved focus to, until the next pointer press.",
     "src/web/input/shortcuts.ts": "The keyboard shortcuts for the whole board.",
+    "src/web/input/keymap.ts": "The keyboard shortcuts that are not a toolbar tool’s, in groups, for Settings → Board, and the letters that put a tool in hand.",
     "src/web/input/touch.ts": "Touch: one finger pans, two fingers pinch to zoom, press and hold for the menu.",
     "src/web/library/boardWrites.ts": "Changes a board whether or not it is open, one change at a time, and holds the boards an open leaves and opens.",
     "src/web/library/confirmDelete.ts": "The “delete?” question, shared by boards, folders and projects.",
@@ -608,6 +609,7 @@
     "src/web/settings/boardsSaved.ts": "The sentence on Settings, General about where boards are kept: on this computer, sent to Claude when you ask Myra, and in a linked repo when a project has one.",
     "src/web/settings/derivedModes.ts": "The area colours that differ between light and dark, as expressions of the core tokens, which style.css reads instead of a body.dark rule.",
     "tests/boardLists.ts": "A board file written by hand with no card list and no tray opens as an empty board instead of failing to load.",
-    "tests/boardsSaved.ts": "Settings, General says boards are kept on this computer and that asking Myra sends the board to Claude, and mentions a repo only when a project is linked to one."
+    "tests/boardsSaved.ts": "Settings, General says boards are kept on this computer and that asking Myra sends the board to Claude, and mentions a repo only when a project is linked to one.",
+    "src/web/settings/shortcutList.ts": "The Keyboard shortcuts list in Settings → Board: a block per group with its entries, each a description and its keys in a keycap."
   }
 }

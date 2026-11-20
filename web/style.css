@@ -1904,9 +1904,14 @@ body.dark .vd-pp { background: var(--clean-ink) !important; color: var(--vd-ink)
 .tbe-grip { color: var(--ink-faint); font-size: 11px; letter-spacing: -2px; }
 .tbe-ic { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: var(--dp-bg); color: var(--ink); } .tbe-ic svg { width: 17px; height: 17px; }
 .tbe-name { font-weight: 600; }
-.tbe-key { text-align: right; white-space: nowrap; }
+.tbe-key, .sk-key { text-align: right; white-space: nowrap; }
 /* The one style for a shortcut shown beside a setting, on a <kbd>: the tool list in Settings → Layout now, the Board shortcut list next. A hairline and soft ink so it reads as a hint, not a button, in every theme. A column of them goes in a fixed-width cell with text-align: right (.tbe-key), so the keys end at one edge. */
 .keycap { display: inline-block; padding: 2px 5px; border: 1px solid color-mix(in oklab, var(--ink) 14%, transparent); border-radius: 5px; background: transparent; font: 500 11px/1 var(--font); color: var(--ink-soft); }
+/* Settings → Board → Keyboard shortcuts: a heading (and note) for each group, then a row per shortcut with its keys at the right edge, in the .sk-key cell that .tbe-key shares */
+.sk-group { margin-top: 12px; }
+.sk-head { margin: 0 0 2px; font: 600 12.5px/1.3 var(--font); }
+.sk-note { margin: 0 0 2px; font: 400 12.5px/1.4 var(--font); color: var(--ink-soft); }
+.sk-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 4px 0; font: 400 13px/1.35 var(--font); }
 body.dark .tbe-row:hover, body.dark .tbe-ic { background: rgb(from var(--hilite) r g b / .06); }
 
 /* Wide / Phone: which shape to record */

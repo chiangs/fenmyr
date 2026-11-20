@@ -20,6 +20,7 @@ import { myCur, paintCursor } from './cursor.ts';
 import { accentOver } from './derive.ts';
 import { applyPanelH, fitSides, heightGrip, panelMin } from './panelHeights.ts';
 import { settings } from './settings.ts';
+import { renderShortcutList } from './shortcutList.ts';
 import { CARD_VAR_NAMES, CSS_VARS, cardVars, type Mode } from './themes.ts';
 import { applySettings } from './widgets.ts';
 
@@ -178,6 +179,7 @@ export function setTab(t: string) {
     }
   }
   if (t === 'layout') renderTbList();
+  if (t === 'board') renderShortcutList();
 }
 
 // panel heights: drag the little bar at the bottom of your boards list, Layers or Unsorted (double-click it to go back to automatic). Layers always keeps at least one row showing
