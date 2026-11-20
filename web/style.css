@@ -849,7 +849,7 @@ body.dark .card.c-white > .frame, body.dark .card.link > .frame, body.dark .card
 /* these frames are Snow in dark, which is light in some themes, so the words on them are Snow's */
 body.dark .card:is(.link, .doc, .canvas, .swatch, .font, .audio) { --ink: var(--card-white-ink); --ink-soft: var(--card-white-soft); --ink-faint: var(--card-white-faint); color: var(--ink); }
 /* the audio card's transcript and buttons sit on dark panels, so they keep the theme's own ink */
-body.dark .card.audio :is(.au-tx, .au-acts button) { --ink: var(--ink-page); --ink-soft: var(--ink-soft-page); color: var(--ink); }
+.card.audio :is(.au-tx, .au-acts button) { --ink: var(--ink-page); --ink-soft: var(--ink-soft-page); color: var(--ink); }
 body.dark .card:is(.note, .todo, .vnote) { --ink: var(--card-ink); --ink-soft: var(--card-soft); --ink-faint: var(--card-faint); }
 body.dark .card:is(.note, .todo) .body { color: var(--card-ink); }
 body.dark .card:is(.note, .todo) .nname:empty::before, body.dark .card:is(.note, .todo) .text:empty::before { color: rgb(from var(--card-ink) r g b / .45); }
