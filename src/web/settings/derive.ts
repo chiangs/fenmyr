@@ -1,7 +1,7 @@
 // Fills in the tokens a theme doesn't choose. A theme sets what someone picked: its board and panel, its ink, its accent
 // and the seven card fills. Everything else is worked out from those by rules, so the contrast the theme promises holds
 // for the derived colours too: text and status colours are moved in lightness until they read, and the rest are mixes.
-import { mixHex, readableShade, solidOklch } from '../ui/color.ts';
+import { bestInk, contrast, mixHex, readableShade, solidOklch } from '../ui/color.ts';
 import type { Mode, Target, Tokens } from './themes.ts';
 
 export const TEXT: Record<Target, number> = { aa: 4.5, aaa: 7 };
@@ -18,6 +18,9 @@ export type Chosen = Pick<
   // a card that doesn't use the card ink, like Default dark's Snow, which is dark with light text
   inks?: Record<string, string>;
 };
+
+// a card's quieter text and its placeholders: its own ink eased towards its fill, so they read on that card whichever theme it is in
+export const quiet = (ink: string, fill: string) => ({ soft: mixHex(ink, fill, 0.2), faint: mixHex(ink, fill, 0.5) });
 
 export function derive(mode: Mode, target: Target, c: Chosen): Tokens {
   const text = TEXT[target],
@@ -51,10 +54,22 @@ export function derive(mode: Mode, target: Target, c: Chosen): Tokens {
     shade: '#000000',
     // a link in a note is the accent, moved until it reads on that card's own fill
     cards: Object.fromEntries(
-      Object.entries(c.fills).map(([key, fill]) => [
-        key,
-        { fill, ink: c.inks?.[key] ?? c.cardInk, link: readableShade(c.accent, [fill], text) },
-      ]),
+      Object.entries(c.fills).map(([key, fill]) => {
+        const ink = c.inks?.[key] ?? c.cardInk;
+        return [key, { fill, ink, ...quiet(ink, fill), link: readableShade(c.accent, [fill], text) }];
+      }),
     ),
+  };
+}
+
+// An accent someone picked over a theme gets its text colours the way the theme's own do, so the promise holds wherever
+// it can: the theme's ink, or its panel or white, whichever reads best on it. `reads` is false when none reaches the
+// target, and Settings says so.
+export function accentOver(t: Tokens, target: Target, accent: string) {
+  const onAccent = bestInk(accent, [t.ink, t.inkInverse, t.snow]);
+  return {
+    onAccent,
+    accentText: readableShade(accent, [t.panel, t.bg], TEXT[target]),
+    reads: contrast(onAccent, accent) >= TEXT[target],
   };
 }

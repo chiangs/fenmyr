@@ -1,7 +1,7 @@
 // Every colour theme keeps its promise: AA or AAA contrast for text, focus and card text, and card colours that stay
 // apart for every kind of colour blindness. Gaps a theme is known to have are recorded, and must still be real.
 import assert from 'node:assert';
-import { DERIVED } from '../src/web/settings/derived.ts';
+import { accentOver, TEXT } from '../src/web/settings/derive.ts';
 import { checksOf, THEMES } from '../src/web/settings/themes.ts';
 import { apart, bestInk, contrast, readableShade } from '../src/web/ui/color.ts';
 
@@ -41,7 +41,22 @@ assert.deepStrictEqual(problems, [], 'every theme keeps its promise');
 // two tables have to agree is the link on a dark Snow note, which is the accent tint
 const dark = THEMES.find(t => t.id === 'default-dark')?.tokens;
 assert.ok(dark, 'the dark Default theme is in the table');
-assert.strictEqual(DERIVED['--link-on-dark'], 'var(--accent-tint)', '--link-on-dark is the accent tint');
 assert.strictEqual(dark.accentTint, dark.cards.white?.link, 'a link on a dark Snow note matches the accent tint');
+
+// an accent someone picked over a theme gets text that reads on it, or Settings is told it can't
+for (const t of THEMES) {
+  for (const accent of ['#c4502a', '#ffd400', '#2a6f4f', '#f0f0f0']) {
+    const over = accentOver(t.tokens, t.target, accent);
+    assert(
+      !over.reads || contrast(over.onAccent, accent) >= TEXT[t.target],
+      `${t.id}: text on ${accent} reads or is flagged`,
+    );
+    assert(
+      contrast(over.accentText, t.tokens.panel) >= TEXT[t.target],
+      `${t.id}: ${accent} as text reads on the panel`,
+    );
+  }
+  assert(accentOver(t.tokens, t.target, t.tokens.accent).reads, `${t.id}: its own accent reads`);
+}
 
 console.log(`THEMES OK (${THEMES.length} themes)`);

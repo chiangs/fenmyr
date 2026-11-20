@@ -4,7 +4,7 @@ import { COLL, parentOf } from '../cards/collection.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { wireLinkInput } from '../cards/links.ts';
 import { spEmbed } from '../cards/spotify.ts';
-import { COLORS, find } from '../core/base.ts';
+import { COLORS, colorLabel, find } from '../core/base.ts';
 import { cardsEl } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { dueChip } from '../features/due.ts';
@@ -145,6 +145,9 @@ export function paintCard(el: HTMLElement, c: Card, pop?: boolean) {
   const named = c.color && COLORS[c.color] ? c.color : '';
   el.style.setProperty('--fill', named ? `var(--card-${named})` : 'var(--snow)');
   el.classList.add(`c-${named || 'white'}`);
+  // the colour's name, which a theme that prints it on the card (--colour-label) draws from here
+  if (named) el.style.setProperty('--colour-name', JSON.stringify(colorLabel(named)));
+  else el.style.removeProperty('--colour-name');
   if (c.type === 'swatch') el.style.setProperty('--hex', c.hex);
   el.style.setProperty('--fs', String(fsMul(c)));
   el.classList.toggle('has-font', !!c.font && SIZED.includes(c.type));

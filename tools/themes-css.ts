@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DERIVED } from '../src/web/settings/derived.ts';
-import { CSS_VARS, THEMES, type Theme, themeClass } from '../src/web/settings/themes.ts';
+import { CSS_VARS, cardVars, LABEL_VAR, THEMES, type Theme, themeClass } from '../src/web/settings/themes.ts';
 
 const FILE = path.resolve(import.meta.dirname, '..', 'web', 'themes.css');
 
@@ -21,9 +21,9 @@ function selectorOf(t: Theme) {
 
 function blockOf(t: Theme) {
   const lines = Object.entries(CSS_VARS).map(([key, name]) => `  ${name}: ${Reflect.get(t.tokens, key)};`);
-  for (const [key, card] of Object.entries(t.tokens.cards)) lines.push(`  --card-${key}: ${card.fill};`);
-  // one link colour for every card; the table keeps one per card because a dark Snow card needs its own
-  lines.push(`  --card-link: ${t.tokens.cards.butter?.link};`);
+  lines.push(`  ${LABEL_VAR}: ${t.labels ? 'block' : 'none'};`);
+  for (const [key, card] of Object.entries(t.tokens.cards))
+    lines.push(...cardVars(key, card).map(([n, v]) => `  ${n}: ${v};`));
   return `${selectorOf(t)} {\n${lines.join('\n')}\n}`;
 }
 
