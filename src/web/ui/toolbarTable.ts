@@ -20,7 +20,7 @@ const TABLE: Table = [
   'write',
   { id: 'pointer', label: 'Select', key: 'V', icon: 'select', lit: true },
   { id: 'note', label: 'Note', key: 'N', icon: 'note' },
-  { id: 'vnote', label: 'Vault note', key: 'Alt+N', icon: 'notebook', needs: 'vault' },
+  { id: 'vnote', label: 'Vault note', key: '⌥N', icon: 'notebook', needs: 'vault' },
   { id: 'doc', label: 'Doc', key: 'D', icon: 'doc' },
   { id: 'todo', label: 'Checklist', key: 'C', icon: 'checklist' },
 
