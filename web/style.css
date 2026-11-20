@@ -449,7 +449,8 @@ body { --bar-b: 18px; }
 .myra.chat .goo-slot { visibility: visible; }
 /* Myra's bubble rises over find's bar by --mode-h, which float.ts sets on body */
 .dock .m-bubble { position: absolute; right: 0; bottom: calc(100% + 12px + var(--mode-h, 0px)); margin: 0; width: max-content; }
-.selbar.paused { opacity: 0; pointer-events: none; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content */
+.selbar { transition: opacity .2s ease-out; }
+.selbar.paused { opacity: 0; pointer-events: none; transition-duration: .1s; }   /* during a drag, resize, pan or zoom it fades where it is, keeping focus and its content; out quickly, so it clears the gesture, and back in slower */
 .selbar :focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
 .selbar .sb-ic { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; }
 .selbar .sb-ic svg { width: 18px; height: 18px; }
