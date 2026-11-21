@@ -1,0 +1,51 @@
+name: Stress
+# Runs the tests with every transition and animation starting LAG ms late, to find the ones that wait a fixed time for
+# motion. It fails files on purpose, so it is never a gate: no pull_request or push trigger.
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+env:
+  LAG: '50'
+
+jobs:
+  stress:
+    name: Stress ${{ matrix.part }}/${{ strategy.job-total }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45   # ci.yml gives a part 15; the delay slows it (part 4 took 12 minutes alone on a fast machine)
+    container:
+      image: archlinux:latest
+      options: --shm-size=1g   # Chromium shares big messages through /dev/shm; Docker's default 64 MB is far below any desktop's
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
+    steps:
+      - name: Install packages
+        run: |
+          pacman -Syu --noconfirm --needed git nodejs npm electron fontconfig ttf-dejavu nss alsa-lib gtk3 libxss libxtst at-spi2-core libdrm mesa
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Trust the checkout (the container runs as a different user)
+        run: git config --global --add safe.directory "$PWD"
+      - name: Dependencies
+        run: npm ci --no-audit --no-fund && node node_modules/electron/install.js
+      - name: Build
+        run: npm run build
+      - name: Tests with every transition and animation starting late
+        continue-on-error: true   # report-only until the count of failing files is 0 (#375)
+        shell: bash   # with pipefail, so a failing run still shows as failed through tee
+        run: |
+          node tools/run-tests.ts --shard ${{ matrix.part }}/${{ strategy.job-total }} --lag "$LAG" 2>&1 | tee stress.log
+      - name: List the failing files in the summary
+        run: |
+          result=$(grep -E '^Passed [0-9]+, failed [0-9]+' stress.log) || {
+            echo "::error title=No result::The tests did not finish, so there is no count for this part"
+            exit 1
+          }
+          {
+            echo "### Part ${{ matrix.part }}/${{ strategy.job-total }}, ${LAG} ms late: ${result}"
+            grep -E '^  tests/' stress.log | sed -E 's/^  (.*)$/- `\1`/' || true
+          } >> "$GITHUB_STEP_SUMMARY"

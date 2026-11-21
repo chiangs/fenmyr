@@ -11,6 +11,13 @@ export const HEADLESS = ['--ozone-platform=headless', `--ozone-override-screen-s
 export const MOUSE =
   '--blink-settings=primaryPointerType=4,availablePointerTypes=4,primaryHoverType=2,availableHoverTypes=2';
 
+function parseMotionDelay(text: string | undefined): number {
+  if (text === undefined) return 0;
+  if (!/^\d+$/.test(text)) throw new Error(`FENMYR_MOTION_DELAY takes whole milliseconds such as 250, not "${text}"`);
+  return Number(text);
+}
+const MOTION_DELAY_MS = parseMotionDelay(process.env.FENMYR_MOTION_DELAY);
+
 const QUIET = { greet: false, autoUpdate: false, caelestia: false, motion: false, tilt: false };
 
 export type Board = { id: string; name: string; [key: string]: unknown };
@@ -75,6 +82,14 @@ export async function launch({
       for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);
     } catch {}
   }, store);
+  if (MOTION_DELAY_MS > 0)
+    await app.context().addInitScript(ms => {
+      addEventListener('DOMContentLoaded', () => {
+        const style = document.createElement('style');
+        style.textContent = `*, *::before, *::after { transition-delay: ${ms}ms !important; animation-delay: ${ms}ms !important; }`;
+        document.head.append(style);
+      });
+    }, MOTION_DELAY_MS);
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
   await settle(page);

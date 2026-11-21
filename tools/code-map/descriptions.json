@@ -446,6 +446,7 @@
     "tests/modeRoom.ts": "What sits around find's bar keeps clear of it or to its place: Myra's reply, chat and timer, on a short window too, and the tools' pickers.",
     "tests/model.ts": "Checks library and board files keep what they had and prototype fields are validated.",
     "tests/moreHeld.ts": "With a tool tucked into ··· in hand, ··· reads as pressed and the tool's row in its menu as checked, in Chromium's accessibility tree.",
+    "tests/motionDelay.ts": "run-tests.ts hands the tests FENMYR_MOTION_DELAY only with --lag, and a bad --lag or a bad FENMYR_MOTION_DELAY stops with a message saying what to write.",
     "tests/myraBox.ts": "Myra's box in the bottom bar in the real app: where her chat opens from it, her bubble rising from it, fitting the board around the open chat, and a phone's sheet.",
     "tests/offerKept.ts": "Checks Myra’s prototype offer is kept until its board is made, and that her bubble’s buttons never build on another board.",
     "tests/offerRead.ts": "Checks Myra’s prototype offer as read from her reply and from the board file, a bad one dropping alone.",
