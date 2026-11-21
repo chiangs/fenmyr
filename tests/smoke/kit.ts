@@ -37,6 +37,7 @@ export function installPageKit() {
       const end = Date.now() + ms;
       while (!document.querySelector(sel)) {
         if (Date.now() > end) throw new Error(`no ${sel} after ${ms} ms`);
+        // sleeps on purpose: the poll interval of a wait that ends when the element is there
         await wait(25);
       }
     },

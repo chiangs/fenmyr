@@ -108,6 +108,7 @@ export async function launch({
     }, MOTION_DELAY_MS);
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
+  // sleeps on purpose: the app fits the board 400 ms after it opens, and nothing in the page says when that is over
   await settle(page);
   await still(page);
   const close = async () => {
@@ -120,6 +121,7 @@ export async function launch({
 const STARTUP_TIMERS_MS = 900;
 
 export async function settle(page: Page, ms = STARTUP_TIMERS_MS) {
+  // sleeps on purpose: the sleep behind every settle(page, ms) call, which the budget counts at the call
   await page.waitForTimeout(ms);
   await page.waitForFunction(
     () => {

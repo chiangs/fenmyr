@@ -58,8 +58,9 @@ A new test goes in a new file in `tests/` with its line in `tools/code-map/descr
 - **Reading a computed colour in a test.** `getComputedStyle` returns `oklab(...)`, `oklch(...)` or `color(srgb ...)` for
   a `color-mix()` or `rgb(from ...)`, so do not parse numbers out of it. Call `installPaint(page)` from
   `tests/support/paint.ts`, then `window.__paint(css)` inside `page.evaluate`, which returns `[r, g, b, a]`.
-- **Measuring after a state change.** Turn transitions off (`*{transition:none!important}`) before measuring a colour
-  that a class change has just moved, or it is measured half-way through the fade.
+- **Measuring after a state change.** Read after `still(page)`, or take the box with `rect(page, selector)`
+  (`tests/support/settled.ts`), which wait for animations that have not started yet. A sleep does not: `node
+  tools/run-tests.ts --lag 50 <test>` starts every transition 50 ms late and shows it.
 - **Worktrees need `node_modules`.** Symlink the main checkout's `node_modules` or run `npm ci`. Without it
   `tools/build.ts` stops at the `esbuild.wasm` copy and tests see a half-built app.
 - **Shared scratch.** Logs named `perf.log`, `visual.log` or `test.log` get mixed when agents share a folder. Keep

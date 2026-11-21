@@ -1,14 +1,27 @@
 // Counts what the codebase is paying down and fails when any count goes up:
 // files that skip type checking, `any`, `as` casts, files over the line limit, logic inside markup templates,
 // raw colours in the stylesheet that should come from a variable, and `body.dark` rules, which a theme's token set
-// should make unnecessary: a token that is one colour in light and another in dark replaces the pair of rules.
+// should make unnecessary: a token that is one colour in light and another in dark replaces the pair of rules. Tests are
+// also counted for fixed sleeps (tools/sleeps.ts), which should wait on the page's state instead, and for a marker that
+// excuses a sleep without saying why.
 // Lower the budget after paying some down: node tools/budget.ts --write
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+import { findSleeps, MARKER } from './sleeps.ts';
 
-const KINDS = ['uncheckedFiles', 'anys', 'casts', 'longFiles', 'markupLogic', 'rawColours', 'darkRules'] as const;
+const KINDS = [
+  'uncheckedFiles',
+  'anys',
+  'casts',
+  'longFiles',
+  'markupLogic',
+  'rawColours',
+  'darkRules',
+  'fixedSleeps',
+  'unexplainedSleeps',
+] as const;
 type Kind = (typeof KINDS)[number];
 type Counts = Record<Kind, number>;
 type Finding = { file: string; line: number; kind: Kind };
@@ -52,6 +65,11 @@ function inspect(file: string): Finding[] {
     ts.forEachChild(node, visit);
   };
   visit(sf);
+  if (file.startsWith('tests/')) {
+    const { sleeps, bareMarkers } = findSleeps(sf);
+    for (const s of sleeps) found.push({ file, line: s.line, kind: 'fixedSleeps' });
+    for (const line of bareMarkers) found.push({ file, line, kind: 'unexplainedSleeps' });
+  }
   return found;
 }
 
@@ -97,6 +115,8 @@ const counts: Counts = {
   markupLogic: 0,
   rawColours: 0,
   darkRules: 0,
+  fixedSleeps: 0,
+  unexplainedSleeps: 0,
 };
 for (const f of findings) counts[f.kind]++;
 const raw: unknown = fs.existsSync(BUDGET) ? JSON.parse(fs.readFileSync(BUDGET, 'utf8')) : {};
@@ -112,6 +132,8 @@ const budget: Counts = {
   markupLogic: saved('markupLogic'),
   rawColours: saved('rawColours'),
   darkRules: saved('darkRules'),
+  fixedSleeps: saved('fixedSleeps'),
+  unexplainedSleeps: saved('unexplainedSleeps'),
 };
 const keys = KINDS;
 
@@ -123,10 +145,38 @@ if (process.argv.includes('--write')) {
 }
 const over = keys.filter(k => counts[k] > budget[k]);
 const under = keys.filter(k => counts[k] < budget[k]);
-for (const k of keys) console.log(`${k.padEnd(15)} ${String(counts[k]).padStart(5)} / ${budget[k]}`);
-for (const k of over) for (const f of findings.filter(x => x.kind === k)) console.log(`  ${k}: ${f.file}:${f.line}`);
+for (const k of keys) console.log(`${k.padEnd(17)} ${String(counts[k]).padStart(5)} / ${budget[k]}`);
+// a thousand sleeps are listed under the one that was added, so show those in the files this branch touched
+function touchedFiles(): Set<string> {
+  const git = (...args: string[]) => {
+    try {
+      return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split(
+        '\n',
+      );
+    } catch {
+      return [];
+    }
+  };
+  return new Set([
+    ...git('diff', '--name-only', 'HEAD'),
+    ...git('ls-files', '-o', '--exclude-standard'),
+    ...git('diff', '--name-only', 'origin/main...HEAD'),
+  ]);
+}
+const touched = over.includes('fixedSleeps') ? touchedFiles() : new Set<string>();
+for (const k of over) {
+  const all = findings.filter(x => x.kind === k);
+  const mine = k === 'fixedSleeps' ? all.filter(x => touched.has(x.file)) : [];
+  for (const f of mine.length ? mine : all) console.log(`  ${k}: ${f.file}:${f.line}`);
+}
 if (under.length) console.log(`Paid down ${under.join(', ')}: run node tools/budget.ts --write to lower the budget.`);
 if (over.length) {
   console.log(`OVER BUDGET: ${over.join(', ')}`);
+  if (over.includes('fixedSleeps'))
+    console.log(
+      `A new fixed sleep: wait on the page instead (still() and rect() in tests/support/settled.ts, or waitForFunction). ` +
+        `A sleep that is the point of the test takes "// ${MARKER}: <why>" on the line above it.`,
+    );
+  if (over.includes('unexplainedSleeps')) console.log(`A "// ${MARKER}" comment needs its reason after the colon.`);
   process.exit(1);
 }
