@@ -1,11 +1,13 @@
 // The CI ledger, from saved gh output: what a log's first attempt failed on, which reruns passed on the same commit, the table and its summary.
 import assert from 'node:assert';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseRuns } from '../tools/flakes-gh.ts';
 import { buildLedger, createdSince, isRerun, renderLedger } from '../tools/flakes-ledger.ts';
 import { type Failure, parseLog } from '../tools/flakes-log.ts';
 
+const ROOT = path.resolve(import.meta.dirname, '..');
 const FIXTURES = path.join(import.meta.dirname, 'fixtures', 'flakes');
 const read = (...parts: string[]) => fs.readFileSync(path.join(FIXTURES, ...parts), 'utf8');
 const log = (id: number) => parseLog(read('logs', `${id}.txt`));
@@ -147,5 +149,11 @@ assert.strictEqual(
   expected,
   `the table is as saved in ${path.join('tests', 'fixtures', 'flakes', 'table.txt')}`,
 );
+
+const usage = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'flakes.ts'), '--days', 'soon'], {
+  encoding: 'utf8',
+});
+assert.strictEqual(usage.status, 1, 'a bad --days stops before asking GitHub anything');
+assert.match(usage.stderr, /--days takes a whole number of days/, 'and says what it takes');
 
 console.log('FLAKES OK');

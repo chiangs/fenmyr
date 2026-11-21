@@ -7,6 +7,7 @@ import { type Failure, parseLog } from './flakes-log.ts';
 
 const FIELDS = 'databaseId,headSha,headBranch,event,createdAt,attempt,conclusion';
 const PARALLEL = 5;
+const RUN_LIMIT = 1000;
 const MAX_LOG_BYTES = 256 * 1024 * 1024;
 
 const exec = promisify(execFile);
@@ -49,9 +50,22 @@ export function parseRuns(json: string): Run[] {
 // --created takes a date, so this is the day the window starts on; the exact cut is made on the runs afterwards
 export async function listRuns(since: Date): Promise<Run[]> {
   const created = `>=${since.toISOString().slice(0, 10)}`;
-  return parseRuns(
-    await gh(['run', 'list', '--workflow', 'CI', '--created', created, '--limit', '1000', '--json', FIELDS]),
-  );
+  const args = [
+    'run',
+    'list',
+    '--workflow',
+    'CI',
+    '--created',
+    created,
+    '--limit',
+    String(RUN_LIMIT),
+    '--json',
+    FIELDS,
+  ];
+  const runs = parseRuns(await gh(args));
+  if (runs.length >= RUN_LIMIT)
+    console.error(`gh stopped at ${RUN_LIMIT} runs, so the oldest in this window are missing`);
+  return runs;
 }
 
 // The run list shows only the last attempt, so attempt 1's failure has to be asked for by number.
