@@ -3,7 +3,8 @@
 // the panel so nothing shows between it and the rows, and in a window too narrow for all seven it scrolls sideways instead
 // of running out of the panel. Every miss is listed together, so one run says which tabs are off.
 import assert from 'node:assert';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { rect, still } from './support/settled.ts';
 
 const TABS = ['general', 'appearance', 'layout', 'board', 'myra', 'connections', 'about'];
 const NAMES = ['General', 'Appearance', 'Layout', 'Board', 'Myra', 'Connections', 'About'];
@@ -22,23 +23,19 @@ try {
   const same = (a: number, b: number) => Math.abs(a - b) <= EDGE;
   const openTab = async (tab: string) => {
     await page.click(`#setTabs [data-tab="${tab}"]`);
-    await page.waitForTimeout(100);
+    await still(page);
   };
 
   await page.click('#gearBtn');
-  // the panel eases in over 300 ms, and a box read before that ends is a little smaller than its final size. Clicking a tab
-  // waits for the panel to hold still, but a slow runner can pass that check before the transition has started, so the test
-  // waits for the panel's own animations to be over
-  await page.waitForFunction(() => {
-    const panel = document.querySelector('#settings.on .set-panel');
-    return !!panel && panel.getAnimations().length === 0;
-  });
+  // the panel eases in, and a box read before that ends is a little smaller than its final size
+  await still(page);
   const names = await page.$$eval('#setTabs button', bs => bs.map(b => b.textContent));
   expect(names.join(', ') === NAMES.join(', '), `the tabs read ${names.join(', ')}, not ${NAMES.join(', ')}`);
 
   // the strip's, the first visible row's and the first visible section's edges, and how far the body has scrolled
-  const measure = () =>
-    page.evaluate(() => {
+  const measure = async () => {
+    await still(page);
+    return page.evaluate(() => {
       const first = (selector: string) =>
         [...document.querySelectorAll<HTMLElement>(selector)].find(e => e.checkVisibility());
       const edges = (e: Element | null | undefined) => {
@@ -58,6 +55,7 @@ try {
         stripScrolls: strip ? strip.scrollWidth - strip.clientWidth : NaN,
       };
     });
+  };
 
   const rowEnds: string[] = [];
   const rowEdge: number[] = [];
@@ -90,7 +88,6 @@ try {
     const body = document.querySelector('#settings .set-body');
     if (body) body.scrollTop = 400;
   });
-  await page.waitForTimeout(100);
   const scrolled = await measure();
   expect(scrolled.scrolled > 300, `Appearance scrolled to ${scrolled.scrolled}, not 400, so the strip was not tested`);
   expect(
@@ -99,29 +96,34 @@ try {
   );
 
   // and what is under its corners and just below it answers for the strip, not for a row scrolling past
-  const holes = await page.evaluate(() => {
-    const strip = document.querySelector<HTMLElement>('#setTabs');
+  const strip = await rect(page, '#setTabs');
+  const holes = await page.evaluate(r => {
+    const tabs = document.querySelector<HTMLElement>('#setTabs');
     const body = document.querySelector<HTMLElement>('#settings .set-body');
-    const band = body && strip ? [...body.children].find(c => c.contains(strip)) : undefined;
-    const r = strip?.getBoundingClientRect();
-    if (!band || !r) return ['everywhere: the strip is not at the top of the body'];
-    const below = r.bottom + 1;
+    const band = body && tabs ? [...body.children].find(c => c.contains(tabs)) : undefined;
+    if (!band) return ['everywhere: the strip is not at the top of the body'];
+    const left = r.x,
+      right = r.x + r.width,
+      top = r.y,
+      bottom = r.y + r.height;
+    const below = bottom + 1;
     const at = [
-      ['top left', r.left + 0.5, r.top + 0.5],
-      ['top right', r.right - 0.5, r.top + 0.5],
-      ['bottom left', r.left + 0.5, r.bottom - 0.5],
-      ['bottom right', r.right - 0.5, r.bottom - 0.5],
-      ['just below, left', r.left + 0.5, below],
-      ['just below, middle', (r.left + r.right) / 2, below],
-      ['just below, right', r.right - 0.5, below],
+      ['top left', left + 0.5, top + 0.5],
+      ['top right', right - 0.5, top + 0.5],
+      ['bottom left', left + 0.5, bottom - 0.5],
+      ['bottom right', right - 0.5, bottom - 0.5],
+      ['just below, left', left + 0.5, below],
+      ['just below, middle', (left + right) / 2, below],
+      ['just below, right', right - 0.5, below],
     ] as const;
     return at.filter(([, x, y]) => !band.contains(document.elementFromPoint(x, y))).map(([name]) => name);
-  });
+  }, strip);
   expect(holes.length === 0, `scrolled, a row shows through at the strip's ${holes.join(', ')}`);
 
   // the band is the colour of the panel in light, dark and on a Caelestia desktop, or it shows as a stripe
-  const colours = () =>
-    page.evaluate(() => {
+  const colours = async () => {
+    await still(page);
+    return page.evaluate(() => {
       const strip = document.querySelector<HTMLElement>('#setTabs');
       const body = document.querySelector<HTMLElement>('#settings .set-body');
       const band = body && strip ? [...body.children].find(c => c.contains(strip)) : undefined;
@@ -131,6 +133,7 @@ try {
         panel: panel ? getComputedStyle(panel).backgroundColor : 'no panel',
       };
     });
+  };
   const checkBand = async (where: string) => {
     const c = await colours();
     expect(
@@ -140,7 +143,6 @@ try {
   };
   await checkBand('light');
   await page.click('#settings [data-seg="theme"] [data-v="dark"]');
-  await page.waitForTimeout(150);
   await checkBand('dark');
   // the desktop's own panel colour is what Following Caelestia puts on the body
   await page.evaluate(() => {
@@ -156,7 +158,7 @@ try {
 
   // a window too narrow for the seven tabs: the strip scrolls, and neither the panel nor the body spills sideways
   await l.app.evaluate(({ BrowserWindow }, w) => BrowserWindow.getAllWindows()[0]?.setSize(w, 900), 420);
-  await settle(page, 600);
+  await page.waitForFunction(() => innerWidth === 420);
   for (const tab of ['general', 'appearance', 'about']) {
     await openTab(tab);
     const m = await measure();
