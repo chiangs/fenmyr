@@ -68,8 +68,6 @@ for (const t of THEMES) {
         b.classList.toggle('dark', dark === 'dark');
         for (const c of [...b.classList].filter(x => x.startsWith('theme-'))) b.classList.remove(c);
         if (cls) b.classList.add(cls);
-        const probe = document.createElement('i');
-        b.appendChild(probe);
         const out: Record<string, number[] | null> = {};
         for (const name of vars ?? []) {
           // a variable only an element defines (a card's own fill) isn't there on <body>, so there is nothing to look at
@@ -77,10 +75,14 @@ for (const t of THEMES) {
             out[name] = null;
             continue;
           }
+          // under `run-tests.ts --lag` a colour change on a styled element is a transition that holds the old colour
+          // for the delay, so each variable is read on a new element
+          const probe = document.createElement('i');
+          b.appendChild(probe);
           probe.style.color = `var(${name})`;
           out[name] = window.__paint(getComputedStyle(probe).color).slice(0, 3);
+          probe.remove();
         }
-        probe.remove();
         return out;
       },
       [t.mode, theme === 'default' ? '' : `theme-${theme}`, names] as const,
