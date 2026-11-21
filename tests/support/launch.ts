@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { _electron, type ElectronApplication, type Page } from 'playwright';
 import { installClock } from './clock.ts';
+import { still } from './settled.ts';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREEN = { width: 1440, height: 900 };
@@ -108,6 +109,7 @@ export async function launch({
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
   await settle(page);
+  await still(page);
   const close = async () => {
     await app.close();
     if (!kept) fs.rmSync(data, { recursive: true, force: true });
