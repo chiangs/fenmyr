@@ -7,6 +7,7 @@ import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { TOOLBAR } from '../src/web/ui/toolbarTable.ts';
 import { launch, settle } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 // the toolbar order a person saved before the Wireframe button existed
 const OLD_ORDER = ['pointer', 'note', 'vnote', 'doc', 'todo', 'title', 'coll', 'canvas', 'link', 'image', 'audio'];
@@ -14,14 +15,18 @@ const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: '
 const board = { id: 'b', name: 'Upgrade', cards: [note], links: [], tray: [], view: { x: 300, y: 200, z: 1 } };
 
 // the tour's wireframe step, reached by Continue from the start
+const coachSays = (page: Page) => page.evaluate(() => document.getElementById('coachText')?.textContent ?? '');
 const toWireframeStep = async (page: Page) => {
   await page.evaluate(() => window.__fenmyr.startTour());
-  await settle(page, 300);
+  await page.waitForFunction(() => !!document.getElementById('coachText')?.textContent);
+  await still(page);
   for (let i = 0; i < 12; i++) {
+    const said = await coachSays(page);
     // settles once there, as the ring slides to its target
-    if (/Wireframes start here/.test((await page.textContent('#coachText')) ?? '')) return settle(page, 600);
+    if (/Wireframes start here/.test(said)) return still(page);
     await page.click('#coachNext');
-    await page.waitForTimeout(250);
+    await page.waitForFunction(said => document.getElementById('coachText')?.textContent !== said, said);
+    await still(page);
   }
   throw new Error('the tour has no wireframe step');
 };
@@ -96,7 +101,8 @@ try {
 
   await run('Settings → Widgets has no Wireframe row, and the next save forgets wDesign', async () => {
     await page.click('#gearBtn');
-    await settle(page, 300);
+    await page.waitForFunction(() => !!document.querySelector('#settings.on'));
+    await still(page);
     const rows = await page.evaluate(() =>
       [...document.querySelectorAll('#settings [data-set^="w"]')].map(i => i.getAttribute('data-set')),
     );
@@ -106,30 +112,37 @@ try {
     await page.evaluate(() => window.__fenmyr.applyToolbar());
     await page.click('#tools [data-add="note"]');
     await page.keyboard.press('Escape');
-    await settle(page, 300);
+    await still(page);
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('fenmyr:settings') ?? '{}'));
     assert.ok(saved && typeof saved === 'object' && !('wDesign' in saved), 'wDesign is not saved again');
   });
 
   await run('Ctrl+\\ hides every panel and brings them back, with no panel to hide', async () => {
     await page.keyboard.press('Control+Backslash');
-    await settle(page, 400);
+    await page.waitForFunction(() => document.body.classList.contains('clean'));
+    await still(page);
     const hidden = await page.evaluate(() => ({
       clean: document.body.classList.contains('clean'),
       unsorted: getComputedStyle(document.getElementById('sideR') ?? document.body).visibility,
     }));
     assert.deepStrictEqual(hidden, { clean: true, unsorted: 'hidden' }, 'just the board');
     await page.keyboard.press('Control+Backslash');
-    await settle(page, 400);
+    await page.waitForFunction(() => !document.body.classList.contains('clean'));
+    await still(page);
     assert.ok(!(await page.evaluate(() => document.body.classList.contains('clean'))), 'and back');
   });
 
   await run("the update bar centres between the board's name and Unsorted", async () => {
+    await page.evaluate(() => {
+      const bar = document.getElementById('upBar');
+      if (!bar) return;
+      bar.hidden = false;
+      dispatchEvent(new Event('resize'));
+    });
+    await still(page);
     const r = await page.evaluate(() => {
       const bar = document.getElementById('upBar');
       if (!bar) return null;
-      bar.hidden = false;
-      dispatchEvent(new Event('resize'));
       const b = bar.getBoundingClientRect(),
         top = document.querySelector('.top')?.getBoundingClientRect(),
         tray = document.getElementById('tray')?.getBoundingClientRect(),
@@ -144,8 +157,9 @@ try {
     await toWireframeStep(page);
     assert.ok(await ringOn(page, '#tools [data-add="frame"]'), 'the ring sits on the Wireframe button');
     assert.strictEqual(await page.textContent('#coachTry'), 'Try it: press W and drag on the board.');
+    const said = await coachSays(page);
     await page.click('#coachNext');
-    await page.waitForTimeout(250);
+    await page.waitForFunction(said => document.getElementById('coachText')?.textContent !== said, said);
   });
 
   await run("the tour's wireframe step finishes when a screen is added", async () => {
@@ -178,7 +192,8 @@ try {
   await run("the tour's wireframe step rings ··· where the button is tucked", async () => {
     const page = tucked.page;
     await tucked.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1000, 560));
-    await settle(page, 500);
+    await page.waitForFunction(() => innerWidth === 1000 && innerHeight === 560);
+    await still(page);
     assert.ok(
       await page.evaluate(() => document.querySelector('#tools [data-add="frame"]')?.classList.contains('tb-over')),
       'the button is tucked',
