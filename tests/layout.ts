@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { launch } from './support/launch.ts';
 import { freshRepo, openPrototype } from './support/prototype.ts';
+import { still } from './support/settled.ts';
 
 const { work, repo } = freshRepo('fenmyr-layout-');
 const note = { id: 'n1', type: 'note', x: 40, y: 40, w: 220, h: 120, text: 'People miss the promo field' };
@@ -40,8 +41,11 @@ const barIn = () =>
       shown: !!dock?.checkVisibility(),
     };
   });
-const resize = (w: number) =>
-  l.app.evaluate(({ BrowserWindow }, w) => BrowserWindow.getAllWindows()[0]?.setSize(w, 900), w);
+const resize = async (w: number) => {
+  await l.app.evaluate(({ BrowserWindow }, w) => BrowserWindow.getAllWindows()[0]?.setSize(w, 900), w);
+  await page.waitForFunction(w => innerWidth === w, w);
+  await still(page);
+};
 
 try {
   await openPrototype(page, repo);
@@ -53,7 +57,12 @@ try {
   });
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'pb');
-  await page.waitForTimeout(800);
+  await page.waitForFunction(
+    () =>
+      document.querySelector('#prGit .pg-branch') &&
+      /export function App/.test(document.querySelector('.pc-text')?.textContent ?? ''),
+  );
+  await still(page);
   let s = await state();
   assert.doesNotMatch(s.git, /isn’t linked/, 'starting the app on a prototype board finds its repo straight away');
   assert.deepStrictEqual(
@@ -77,14 +86,14 @@ try {
   );
   await page.click('.box[data-box="layers"] .mini');
   await page.evaluate(() => window.__fenmyr.openBoard('plain'));
-  await page.waitForTimeout(300);
+  await still(page);
   assert.deepStrictEqual(
     await folded(),
     { boards: false, layers: false, colors: false },
     'other boards keep their own',
   );
   await page.evaluate(() => window.__fenmyr.openBoard('pb'));
-  await page.waitForTimeout(300);
+  await still(page);
   assert.deepStrictEqual(
     await folded(),
     { boards: false, layers: false, colors: true },
@@ -125,17 +134,19 @@ try {
     'the code pane lists the prototype’s code: not Fenmyr’s wiring, nor a styles.css holding only Tailwind',
   );
   await page.click('.pc-file:has-text("Values")');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => /no controls yet/.test(document.querySelector('.pc-text')?.textContent ?? ''));
   assert.match((await state()).code, /no controls yet/, 'Values stands in for tweaks.json');
   await page.click('.pc-all');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() =>
+    [...document.querySelectorAll('.pc-file')].some(b => b.textContent === 'index.html'),
+  );
   assert.ok((await bar()).tabs.includes('index.html'), 'All files shows the wiring too');
   const src = path.join(repo, 'prototypes', 'checkout-flow', 'src');
   fs.writeFileSync(path.join(src, 'styles.css'), '@import "tailwindcss";\n@theme { --color-brand: #f60; }\n');
   fs.mkdirSync(path.join(src, 'components'));
   fs.writeFileSync(path.join(src, 'components', 'PromoField.tsx'), 'export const PromoField = () => null;\n');
   await page.click('.pc-all');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => document.getElementById('pr-code')?.classList.contains('pc-many'));
   assert.deepStrictEqual(
     await bar(),
     { tabs: ['App.tsx', 'components/PromoField.tsx', 'styles.css', 'Values'], dropdown: true },
@@ -148,7 +159,7 @@ try {
     await page.mouse.down();
     await page.mouse.move(div.x + 3 + dx, div.y + 200, { steps: 5 });
     await page.mouse.up();
-    await page.waitForTimeout(300);
+    await still(page);
   };
   await drag(-300);
   assert.strictEqual((await bar()).dropdown, false, 'a wider code column has room for the tabs again');
@@ -165,6 +176,7 @@ try {
     'Copy sits right of All/Fewer files, each with an icon',
   );
   await page.click('.pc-pick');
+  await still(page);
   assert.ok(
     ((await page.locator('.pc-menu').boundingBox())?.width ?? 0) >= 260,
     'the file menu is wide enough for a component’s name',
@@ -175,12 +187,12 @@ try {
     'the dropdown is Fenmyr’s own menu, files grouped by folder',
   );
   await page.click('.pc-menu [data-file="src/components/PromoField.tsx"]');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => /PromoField/.test(document.querySelector('.pc-text')?.textContent ?? ''));
   assert.match((await state()).code, /PromoField/, 'picking from it shows the file');
   assert.strictEqual(await page.locator('.pc-menu').count(), 0, 'and closes it');
   assert.strictEqual(await page.textContent('.pc-pick'), 'components/PromoField.tsx', 'the picker names the file');
   await page.click('.pc-copy');
-  await page.waitForTimeout(200);
+  await page.waitForFunction(() => /Copied/.test(document.querySelector('.pc-copy')?.textContent ?? ''));
   assert.strictEqual(
     await l.app.evaluate(({ clipboard }) => clipboard.readText()),
     'export const PromoField = () => null;\n',
@@ -208,9 +220,12 @@ try {
     'the file button fills the bar, and scrolling the code leaves the bar in view',
   );
 
-  const panes = await page.evaluate(() => {
+  await page.evaluate(() => {
     document.body.classList.add('dark', 'following-caelestia');
     document.body.style.setProperty('--panel', 'rgb(16, 20, 30)');
+  });
+  await still(page);
+  const panes = await page.evaluate(() => {
     const bg = (sel: string) => getComputedStyle(document.querySelector(sel) ?? document.body).backgroundColor;
     const out = [bg('[data-p="code"]'), bg('#prChat')];
     document.body.classList.remove('dark', 'following-caelestia');
@@ -256,31 +271,47 @@ try {
   const codeWidth = () =>
     page.evaluate(() => document.querySelector('[data-p="code"]')?.getBoundingClientRect().width ?? 0);
   const open = await codeWidth();
-  await page.click('[data-fold="code"]');
-  await page.waitForTimeout(90);
-  const midway = await codeWidth();
+  // The slide is read a fifth of the way along its transition, where the page is held: a delay in its start moves
+  // nothing. The click and the read share one task, as the app ends the slide by a timer of its own after 240 ms.
+  const midway = await page.evaluate(() => {
+    const code = document.querySelector('[data-p="code"]');
+    document.querySelector<HTMLElement>('[data-fold="code"]')?.click();
+    // the transition begins at the next style recalculation, which reading a box forces
+    code?.getBoundingClientRect();
+    for (const a of code?.getAnimations() ?? []) {
+      const timing = a.effect?.getComputedTiming();
+      a.pause();
+      a.currentTime = Number(timing?.delay) + Number(timing?.duration) * 0.2;
+    }
+    return code?.getBoundingClientRect().width ?? 0;
+  });
   assert.ok(midway < open && midway > 40, `with motion on, the column slides shut (${open} → ${midway} px midway)`);
-  await page.waitForTimeout(400);
+  await page.waitForFunction(
+    () => document.querySelector('[data-p="code"].folded') && !document.querySelector('.pr-animating'),
+  );
+  await still(page);
   s = await state();
   assert.deepStrictEqual(s.folded, ['code'], 'the code column folds to a strip');
   assert.deepStrictEqual(s.stage, s.slot, 'and the canvas follows its column');
   assert.strictEqual((await arrows())['open code'], 'caret-left', 'its strip’s arrow points back to open it');
   await page.click('[data-open="code"]');
-  await page.waitForTimeout(400);
+  await page.waitForFunction(
+    () => !document.querySelector('[data-p="code"].folded') && !document.querySelector('.pr-animating'),
+  );
+  await still(page);
   assert.ok(Math.abs((await codeWidth()) - open) < 2, 'and opening it slides it back to its width');
   await page.evaluate(() => document.body.classList.add('calm'));
 
   await resize(1200);
-  await page.waitForTimeout(500);
   assert.deepStrictEqual((await state()).folded, ['canvas'], 'a narrower window folds the canvas first');
   assert.ok(!(await barIn()).shown, 'and the bottom bar goes with it');
   await resize(760);
-  await page.waitForTimeout(500);
   assert.deepStrictEqual((await state()).folded, ['canvas', 'code'], 'then the code');
   await resize(1440);
 
   await page.evaluate(() => window.__fenmyr.openBoard('plain'));
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => document.getElementById('mChat')?.parentElement?.id === 'myra');
+  await still(page);
   s = await state();
   assert.ok(
     !s.proto && s.docked === 'myra' && !s.chatOpen,
