@@ -1,0 +1,30 @@
+Tests 2/4	UNKNOWN STEP	﻿2026-11-21T00:16:29.7734954Z Current runner version: '2.338.2'
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:16:29.7762475Z ##[group]Runner Image Provisioner
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:27:53.2303415Z ##[group]tests/settingsFrame.ts: Checks Settings' tab strip: the seven tabs in order, its right edge on the rows' on every tab, at the top of the body when scrolled, and scrolling in a narrow window.
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2604348Z node:internal/modules/run_main:111
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2605005Z     triggerUncaughtException(
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2605542Z     ^
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2605784Z 
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2606016Z AssertionError [ERR_ASSERTION]: the tab strip
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2606502Z + actual - expected
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2606766Z 
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2607032Z + [
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2608171Z +   'rows end in different places on different tabs: general 961.3670654296875, appearance 964, layout 964, board 964, myra 964, connections 964, about 964'
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2608941Z + ]
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2609208Z - []
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2609430Z 
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2612016Z     at file:///__w/fenmyr/fenmyr/tests/settingsFrame.ts:177:10 {
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2614792Z   generatedMessage: false,
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2615232Z   code: 'ERR_ASSERTION',
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2615589Z   actual: [
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2616505Z     'rows end in different places on different tabs: general 961.3670654296875, appearance 964, layout 964, board 964, myra 964, connections 964, about 964'
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2617667Z   ],
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2617938Z   expected: [],
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2618267Z   operator: 'deepStrictEqual',
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2618628Z   diff: 'simple'
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2618920Z }
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2619076Z 
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2619178Z Node.js v26.13.1
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2799763Z ##[endgroup]
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2800054Z tests/settingsFrame.ts failed (exit 1) in 7.0s
+Tests 2/4	UNKNOWN STEP	2026-11-21T00:28:00.2821922Z ##[error]tests/settingsFrame.ts: Checks Settings' tab strip: the seven tabs in order, its right edge on the rows' on every tab, at the top of the body when scrolled, and scrolling in a narrow window.

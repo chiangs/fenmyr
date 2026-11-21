@@ -1,0 +1,23 @@
+install	Install from a fresh clone, run the installed copy, uninstall	﻿2026-11-21T00:33:54.7265863Z ##[group]Run # each part's output goes to a file; on failure its last lines become annotations, so they're readable without the full log
+install	Install from a fresh clone, run the installed copy, uninstall	2026-11-21T00:33:54.7266618Z ^[[36;1m# each part's output goes to a file; on failure its last lines become annotations, so they're readable without the full log^[[0m
+install	Install from a fresh clone, run the installed copy, uninstall	2026-11-21T00:33:56.6247046Z { "repo": "/home/tester/fenmyr", "electron": "/usr/sbin/electron", "commit": "e391f050941eb3b9eccd0ad44c29df442ae12bc0" }
+install	Install from a fresh clone, run the installed copy, uninstall	2026-11-21T00:33:56.6452786Z ##[notice]electron44 44.11.2-1 
+install	Install from a fresh clone, run the installed copy, uninstall	2026-11-21T00:34:40.7219718Z ##[error]npm warn deprecated rimraf@2.6.3: Rimraf versions prior to v4 are no longer supported
+install	Install from a fresh clone, run the installed copy, uninstall	npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+install	Install from a fresh clone, run the installed copy, uninstall	npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+install	Install from a fresh clone, run the installed copy, uninstall	npm warn deprecated boolean@3.2.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+install	Install from a fresh clone, run the installed copy, uninstall	
+install	Install from a fresh clone, run the installed copy, uninstall	added 338 packages in 6s
+install	Install from a fresh clone, run the installed copy, uninstall	page.evaluate: Error: no input #vpQ
+install	Install from a fresh clone, run the installed copy, uninstall	    at Object.input (eval at evaluate (:311:30), <anonymous>:12:51)
+install	Install from a fresh clone, run the installed copy, uninstall	    at add (eval at evaluate (:311:30), <anonymous>:14:21)
+install	Install from a fresh clone, run the installed copy, uninstall	    at eval (eval at evaluate (:311:30), <anonymous>:33:11)
+install	Install from a fresh clone, run the installed copy, uninstall	    at async <anonymous>:337:30
+install	Install from a fresh clone, run the installed copy, uninstall	    at vaults (/home/tester/fenmyr/tests/smoke/library.ts:62:26)
+install	Install from a fresh clone, run the installed copy, uninstall	    at library (/home/tester/fenmyr/tests/smoke/library.ts:8:9)
+install	Install from a fresh clone, run the installed copy, uninstall	    at async file:///home/tester/fenmyr/tests/smoke.ts:108:3 {
+install	Install from a fresh clone, run the installed copy, uninstall	  log: []
+install	Install from a fresh clone, run the installed copy, uninstall	}
+install	Install from a fresh clone, run the installed copy, uninstall	::error title=Smoke test crashed::page.evaluate: Error: no input #vpQ%0A    at Object.input (eval at evaluate (:311:30), <anonymous>:12:51)%0A    at add (eval at evaluate (:311:30), <anonymous>:14:21)%0A    at eval (eval at evaluate (:311:30), <anonymous>:33:11)%0A    at async <anonymous>:337:30%0A    at vaults (/home/tester/fenmyr/tests/smoke/library.ts:62:26)%0A    at library (/home/tester/fenmyr/tests/smoke/library.ts:8:9)%0A    at async file:///home/tester/fenmyr/tests/smoke.ts:108:3
+install	Install from a fresh clone, run the installed copy, uninstall	2026-11-21T00:34:40.7246185Z ##[error]Process completed with exit code 1.
+

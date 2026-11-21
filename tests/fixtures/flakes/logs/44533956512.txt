@@ -1,0 +1,44 @@
+Tests 2/4	UNKNOWN STEP	﻿2026-11-19T13:29:34.1317209Z Current runner version: '2.338.2'
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:29:34.1341315Z ##[group]Runner Image Provisioner
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:38:35.5424335Z ##[group]tests/protoHopPath.ts: Checks Myra’s hop into a prototype’s header stays below the window’s top, leaves quickly and settles within about 0.75 s when far, starts where Home showed her, and that she answers a click there.
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9588802Z FAILED with a frame held back as she takes off, her hop is still as quick: Expected values to be strictly equal:
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9591623Z + actual - expected
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9592098Z 
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9592459Z + 'she first moves 124 ms after the switch'
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9593403Z - ''
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9593629Z 
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9602522Z node:internal/modules/run_main:111
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9603193Z     triggerUncaughtException(
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9603693Z     ^
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9603936Z 
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9604145Z AssertionError [ERR_ASSERTION]: every check passes
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9606870Z + actual - expected
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9607197Z 
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9607372Z + [
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9608216Z +   'with a frame held back as she takes off, her hop is still as quick: Expected values to be strictly equal:\n' +
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9609132Z +     '+ actual - expected\n' +
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9609561Z +     '\n' +
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9609982Z +     "+ 'she first moves 124 ms after the switch'\n" +
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9610510Z +     "- ''\n"
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9610828Z + ]
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9611124Z - []
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9611301Z 
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9611606Z     at file:///__w/fenmyr/fenmyr/tests/protoHopPath.ts:347:10 {
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9612614Z   generatedMessage: false,
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9613035Z   code: 'ERR_ASSERTION',
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9613407Z   actual: [
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9614352Z     'with a frame held back as she takes off, her hop is still as quick: Expected values to be strictly equal:\n' +
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9615220Z       '+ actual - expected\n' +
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9615627Z       '\n' +
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9616013Z       "+ 'she first moves 124 ms after the switch'\n" +
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9616666Z       "- ''\n"
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9616989Z   ],
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9617282Z   expected: [],
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9617637Z   operator: 'deepStrictEqual',
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9618050Z   diff: 'simple'
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9618374Z }
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9618531Z 
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9618669Z Node.js v26.13.1
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9820809Z ##[endgroup]
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9821098Z tests/protoHopPath.ts failed (exit 1) in 64.4s
+Tests 2/4	UNKNOWN STEP	2026-11-19T13:39:39.9840271Z ##[error]tests/protoHopPath.ts: Checks Myra’s hop into a prototype’s header stays below the window’s top, leaves quickly and settles within about 0.75 s when far, starts where Home showed her, and that she answers a click there.
