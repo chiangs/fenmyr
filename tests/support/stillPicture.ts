@@ -1,7 +1,7 @@
-// The app hides what is only for the person looking (a plan's preview, the hints, the picker) by a class for the picture,
-// and gives that two frames and 100 ms. A transition delay the tests add to every element puts that change later than
-// the picture, so the stand-in host takes each picture once the page's finite animations have ended, as a real one
-// with no delay already has. Install it after any wrapper of the test's own, so that wrapper reads what the picture shows.
+// The app hides what is only for the person looking (a plan's preview, the hints, the picker) with a class while a
+// picture is taken, and waits two frames and 100 ms for that to show. A transition delay the tests add to every element
+// puts the change after the picture, so the host waits here for the page's finite animations to end before it captures.
+// Install it after a wrapper of the test's own, so that wrapper reads what the picture will show.
 import type { ElectronApplication } from 'playwright';
 
 export async function pictureWhenStill(app: ElectronApplication): Promise<void> {
