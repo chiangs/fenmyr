@@ -26,6 +26,13 @@ try {
   };
 
   await page.click('#gearBtn');
+  // the panel eases in over 300 ms, and a box read before that ends is a little smaller than its final size. Clicking a tab
+  // waits for the panel to hold still, but a slow runner can pass that check before the transition has started, so the test
+  // waits for the panel's own animations to be over
+  await page.waitForFunction(() => {
+    const panel = document.querySelector('#settings.on .set-panel');
+    return !!panel && panel.getAnimations().length === 0;
+  });
   const names = await page.$$eval('#setTabs button', bs => bs.map(b => b.textContent));
   expect(names.join(', ') === NAMES.join(', '), `the tabs read ${names.join(', ')}, not ${NAMES.join(', ')}`);
 
