@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import type { Page } from 'playwright';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
 const board = (ideas: number) => ({
@@ -19,11 +20,21 @@ const board = (ideas: number) => ({
   view: { x: 300, y: 200, z: 1 },
 });
 
-const rect = (page: Page, sel: string) =>
-  page.evaluate(s => {
+const rect = async (page: Page, sel: string) => {
+  await still(page);
+  return page.evaluate(s => {
     const r = document.querySelector(s)?.getBoundingClientRect();
     return r ? { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height } : null;
   }, sel);
+};
+// the glide the zoom menu and the keyboard start ends when the board stops moving
+const glided = (page: Page, text: string) =>
+  page.waitForFunction(
+    t =>
+      document.getElementById('zoom')?.textContent === t &&
+      !document.getElementById('stage')?.classList.contains('moving'),
+    text,
+  );
 const kids = (page: Page, id: string) =>
   page.evaluate(
     i =>
@@ -62,7 +73,7 @@ const drag = async (page: Page, drop: boolean) => {
     await page.keyboard.press('Escape');
     await page.mouse.up();
   }
-  await page.waitForTimeout(300);
+  await still(page);
 };
 
 const resize = async (l: Awaited<ReturnType<typeof launch>>, w: number, h: number) => {
@@ -70,7 +81,8 @@ const resize = async (l: Awaited<ReturnType<typeof launch>>, w: number, h: numbe
     ({ BrowserWindow }, [ww, hh]) => BrowserWindow.getAllWindows()[0]?.setSize(ww ?? 0, hh ?? 0),
     [w, h],
   );
-  await settle(l.page, 600);
+  await l.page.waitForFunction(s => innerWidth === s.w && innerHeight === s.h, { w, h });
+  await still(l.page);
 };
 
 const l = await launch({ boards: [board(2)], open: 'b' });
@@ -117,7 +129,7 @@ try {
   assert.ok(below.l >= 0 && below.r <= 1440 && below.b <= 900, 'inside the window');
   assert.ok(Math.abs(below.r - btn.r) < 3, 'with its right edge level with the button’s');
   await page.click('#rowMenu [data-i="0"]');
-  await page.waitForTimeout(700);
+  await glided(page, '50%');
   assert.strictEqual(await page.textContent('#zoom'), '50%', 'its 50% choice zooms');
 
   await drag(page, false);
@@ -146,14 +158,15 @@ try {
   await page.click('#setTabs [data-tab="layout"]');
   await page.click('#wgReset');
   await page.click('#setClose');
-  await page.waitForTimeout(300);
+  await still(page);
   assert.deepStrictEqual(await kids(page, 'sideR'), ['tray', 'zoom'], 'Reset layout puts it back under Unsorted');
 
   await page.click('#homeBtn');
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => document.getElementById('stage')?.classList.contains('at-home'));
+  await still(page);
   assert.strictEqual(await shown(page), false, 'at Home, where there is nothing to zoom, it is hidden');
   await page.click('#brand');
-  await page.waitForTimeout(300);
+  await still(page);
 
   await resize(l, 600, 900);
   assert.strictEqual(await shown(page), false, 'on a phone the widget is not shown: pinch zooms');
@@ -216,11 +229,15 @@ try {
   await p.click('#setTabs [data-tab="layout"]');
   await p.click('[data-set="wZoom"]');
   await p.click('#setClose');
-  await p.waitForTimeout(300);
+  await still(p);
   assert.strictEqual(await shown(p), false, 'its switch in Settings → Widgets hides it');
   await p.mouse.click(900, 650);
   await p.keyboard.press('Control+=');
-  await p.waitForTimeout(700);
+  await p.waitForFunction(
+    () =>
+      document.getElementById('zoom')?.textContent !== '100%' &&
+      !document.getElementById('stage')?.classList.contains('moving'),
+  );
   assert.notStrictEqual(await p.textContent('#zoom'), '100%', 'and the keyboard still zooms');
   assert.deepStrictEqual(moved.errors, [], 'no errors on the page');
   console.log('zoomWidget: ok');
