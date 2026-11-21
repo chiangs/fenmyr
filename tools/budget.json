@@ -5,5 +5,7 @@
   "longFiles": 0,
   "markupLogic": 0,
   "rawColours": 0,
-  "darkRules": 315
+  "darkRules": 315,
+  "fixedSleeps": 1212,
+  "unexplainedSleeps": 0
 }

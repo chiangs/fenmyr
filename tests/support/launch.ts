@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { _electron, type ElectronApplication, type Page } from 'playwright';
 import { installClock } from './clock.ts';
+import { still } from './settled.ts';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREEN = { width: 1440, height: 900 };
@@ -107,7 +108,9 @@ export async function launch({
     }, MOTION_DELAY_MS);
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
+  // sleeps on purpose: the app fits the board 400 ms after it opens, and nothing in the page says when that is over
   await settle(page);
+  await still(page);
   const close = async () => {
     await app.close();
     if (!kept) fs.rmSync(data, { recursive: true, force: true });
@@ -118,6 +121,7 @@ export async function launch({
 const STARTUP_TIMERS_MS = 900;
 
 export async function settle(page: Page, ms = STARTUP_TIMERS_MS) {
+  // sleeps on purpose: it is the wait every settle(page, ms) call asks for, and the budget counts each of those calls
   await page.waitForTimeout(ms);
   await page.waitForFunction(
     () => {
