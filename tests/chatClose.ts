@@ -7,6 +7,11 @@ import { openBar } from './support/bar.ts';
 import { rect, still } from './support/settled.ts';
 
 const { page, frames, view, check, done } = await openBar();
+// The lag knob also delays style changes that have no transition, and the app focuses the chat's input as it opens,
+// so the chat is shown at once: focus() on a box still held hidden does nothing.
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 // her chat is up when it has the class and is drawn; a closing chat stays drawn until its fade ends
 const chatIs = (open: boolean) =>
@@ -181,17 +186,11 @@ await check('focus moved to her box only focuses it; Space opens the chat, caret
   await still(page);
   assert.ok(!(await isOpen()), 'still closed');
   assert.strictEqual(await page.getAttribute('#mPill', 'aria-expanded'), 'false');
-  // the app focuses the input as the chat opens, and focus() on a box a transition delay still holds hidden does
-  // nothing, so the open chat shows at once here, as it does without a delay
-  const shown = await page.addStyleTag({
-    content: '.myra.chat .m-chat, .myra.chat .m-chat * { transition-delay: 0s !important; }',
-  });
   await page.keyboard.press('Space');
   await chatIs(true);
   await still(page);
   assert.ok(await isOpen(), 'open');
   assert.strictEqual(await active(), 'mcInput');
-  await shown.evaluate(tag => (tag instanceof Element ? tag.remove() : undefined));
 });
 
 await check('Shift+Tab straight after a close skips the fading chat', async () => {

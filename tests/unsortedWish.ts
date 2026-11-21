@@ -22,9 +22,12 @@ const l = await launch({
   settings: { panelH: { tray: 560 } },
 });
 const { page, app } = l;
-// the column fits Unsorted by measuring what overflows, and the list's own size transition, held back by a delay,
-// shows it a stale size each time, so the fit never settles; the list's transition still runs
-await page.addStyleTag({ content: '#trayList { transition-delay: 0s !important; }' });
+// The lag knob also delays style changes that have no transition. The column fits Unsorted by measuring what
+// overflows, and a delayed size of its list shows it a stale one each time, so the fit never settles; and the chat is
+// shown at once, since the app focuses its input as it opens.
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *, #trayList';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const height = async () => Math.round((await rect(page, '#tray')).height);
 const size = async (width: number, h: number) => {
   await app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.width, s.h), { width, h });
@@ -39,9 +42,6 @@ try {
   await page.click('#mPill');
   await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
   await still(page);
-  // the app focuses the input as the chat opens, but while a transition delay holds the chat hidden that does
-  // nothing, and Esc needs the focus
-  await page.focus('#mcInput');
   const open = await height();
   assert.ok(open < dragged, `the open chat trims Unsorted: ${open} px, from ${dragged} px`);
   await page.keyboard.press('Escape');

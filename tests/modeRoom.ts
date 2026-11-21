@@ -5,6 +5,11 @@ import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
 
 const { l, page, frames, check, done } = await openBar();
+// The lag knob also delays style changes that have no transition, and Ctrl+F focuses the chat's input as it opens,
+// so the chat is shown at once: focus() on a box still held hidden does nothing.
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const boxes = () =>
   page.evaluate(() => {
     const box = (id: string) => {
@@ -97,9 +102,6 @@ await check('with drawing up, its card beside the tools lifts neither the timer 
 await page.keyboard.press('Control+f');
 await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
 await still();
-// Ctrl+F opens her chat on /find and focuses its input, but while a transition delay holds the chat hidden that does
-// nothing
-await page.focus('#mcInput');
 await page.keyboard.type('a');
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.getElementById('findBar')?.checkVisibility());

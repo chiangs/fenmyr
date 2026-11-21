@@ -6,9 +6,11 @@ import * as hop from './support/flight.ts';
 import { still } from './support/settled.ts';
 
 const { l, page, frames, check, done } = await openBar();
-// her hop sets her slot's transform every frame, and a transition delay on the slot shows each pose that late and
-// starts again at the next, so she would not seem to move; the timing under test is the hop's own
-await page.addStyleTag({ content: '#gooSlot { transition-delay: 0s !important; }' });
+// The lag knob also delays style changes that have no transition. Her hop sets her slot's transform every frame, so a
+// delay on the slot shows each pose that late and starts again at the next, and she would not seem to move.
+const CHANGES_AT_ONCE = '#gooSlot';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const size = async (w: number, h = 900) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
   await page.waitForFunction(([w, h]) => innerWidth === w && innerHeight === h, [w, h]);

@@ -29,9 +29,11 @@ const l = await launch({
 });
 const { page } = l;
 const standIn = buildStandIn(l);
-// the app ends a column's slide with a timer set to its 240 ms, and sizes the pane when that timer fires, so a
-// transition delay on the column would put the timer ahead of the slide; the slide itself still runs
-await page.addStyleTag({ content: '.pr-pane { transition-delay: 0s !important; }' });
+// The lag knob also delays style changes that have no transition. The app ends a column's slide with a timer set to its
+// 240 ms and sizes the pane when that timer fires, so a delay on the column would put the timer ahead of the slide.
+const CHANGES_AT_ONCE = '.pr-pane';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 
 const head = () =>
   page.evaluate(() => {

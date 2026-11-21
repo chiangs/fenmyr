@@ -22,6 +22,11 @@ const l = await launch({
   open: 'b',
 });
 const { page } = l;
+// The lag knob also delays style changes that have no transition, and the app focuses the chat's input as it opens,
+// so the chat is shown at once: focus() on a box still held hidden does nothing.
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const rects = () =>
   page.evaluate(() => {
     const r = (el: Element | null | undefined) => {
@@ -46,9 +51,6 @@ try {
   await page.click('#mPill');
   await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
   await still(page);
-  // the app focuses the input as the chat opens, but while a transition delay holds the chat hidden that does
-  // nothing, and Esc needs the focus
-  await page.focus('#mcInput');
   const open = await rects();
   assert.ok(open.tray && open.zoom && open.chat && closed.zoom, 'Unsorted, Zoom and the chat are on screen');
   assert.ok(

@@ -28,6 +28,11 @@ const met: string[] = [];
 for (const settings of [{ tbSize: 'l' }, { tbSize: 'l', panelH: { tray: 560 } }]) {
   const l = await launch({ boards: [board], open: 'b', settings });
   const { page, app } = l;
+  // The lag knob also delays style changes that have no transition, and the app focuses the chat's input as it opens,
+  // so the chat is shown at once: focus() on a box still held hidden does nothing.
+  const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
+  if (process.env.FENMYR_MOTION_DELAY)
+    await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
   const chatIs = (open: boolean) =>
     page.waitForFunction(open => {
       const chat = document.getElementById('mChat');
@@ -54,9 +59,6 @@ for (const settings of [{ tbSize: 'l' }, { tbSize: 'l', panelH: { tray: 560 } }]
       await page.click('#mPill');
       await chatIs(true);
       await still(page);
-      // the app focuses the input as the chat opens, but while a transition delay holds the chat hidden that does
-      // nothing, and Esc needs the focus
-      await page.focus('#mcInput');
       assert.ok(
         await page.evaluate(() => !!document.getElementById('sideR')?.style.bottom),
         `${at}: the open chat lifts the column`,

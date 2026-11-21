@@ -14,11 +14,9 @@ const untilWritten = async (page: Page, written: () => unknown, ms: number) => {
   const deadline = Date.now() + ms;
   while (Date.now() < deadline && !written()) await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
 };
-// Her chat is up once it is drawn, and her input takes focus only then.
 const chatUp = async (page: Page) => {
   await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
   await still(page);
-  await page.focus('#mcInput');
 };
 
 const RUNNING_ONLY = ['count', 'starting', 'saving', 'pct', 'camErr', 'camRest', 'loading', 'cropEdit'];
@@ -190,6 +188,12 @@ try {
     }
   };
   const chips = (page: typeof pp.page) => page.locator('#mcSees .mcs-chip.paste .mcs-t').allTextContents();
+  // The lag knob also delays style changes that have no transition, and the app focuses the chat's input as it opens,
+  // so the chat is shown at once: focus() on a box still held hidden does nothing.
+  if (process.env.FENMYR_MOTION_DELAY)
+    await pp.page.addStyleTag({
+      content: '#myra.chat #mChat, #myra.chat #mChat * { transition-delay: 0s !important; }',
+    });
   await pp.page.click('#mPill');
   await chatUp(pp.page);
   await pasteIntoChat(pp.page, PASTED);
