@@ -12,7 +12,7 @@ import { freshRepo, openPrototype } from './support/prototype.ts';
 const LOCAL = 'Locally saved';
 const LINKED = 'Local files linked to a remote repo';
 const NOTE =
-  'Note: Using Myra when powered by Claude or non locally run AI or when linking prototyping boards to a remote repo requires information about your boards, projects, folders to be sent along.';
+  "Note: Using Myra when she's powered by Claude or another AI that doesn't run on this computer, or linking prototyping boards to a remote repo, sends information about your boards, projects and folders along.";
 
 // the line itself, with and without a linked project
 for (const linked of [0, 1, 3]) {
