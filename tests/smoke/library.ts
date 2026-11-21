@@ -67,7 +67,7 @@ async function vaults(t: Smoke) {
     M.board.vaultAccess = [{ vault: v.id, folders: [''], ai: false, write: false, writeTo: 'Myra' }];
     const tool0 = !T.el('[data-add="vnote"]').hidden;
     M.openVaultPicker();
-    await T.wait(500);
+    await T.waitFor('#vaultPick .vp-row');
     const names = T.all('#vaultPick .vp-row b')
       .map(b => b.textContent)
       .sort();
@@ -90,7 +90,7 @@ async function vaults(t: Smoke) {
       };
     // flip to the back, ask for the full text: shown, but never stored on the card
     M.openVaultPicker();
-    await T.wait(400);
+    await T.waitFor('#vpQ');
     await add('long');
     const lc = M.board.cards.find(x => x.type === 'vnote' && x.title === 'Long');
     if (lc?.type !== 'vnote') throw new Error('the long note was not added');

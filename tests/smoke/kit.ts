@@ -4,6 +4,7 @@ import type { ElectronApplication, Page } from 'playwright';
 // check that breaks says where instead of failing on null.
 type PageKit = {
   wait(ms: number): Promise<void>;
+  waitFor(sel: string, ms?: number): Promise<void>;
   el(sel: string): HTMLElement;
   input(sel: string): HTMLInputElement;
   field(sel: string): HTMLInputElement | HTMLTextAreaElement;
@@ -29,8 +30,16 @@ export function installPageKit() {
     if (!(e instanceof HTMLElement)) throw new Error(`no ${sel}`);
     return e;
   };
+  const wait = (ms: number) => new Promise<void>(res => setTimeout(res, ms));
   window.__t = {
-    wait: ms => new Promise(res => setTimeout(res, ms)),
+    wait,
+    waitFor: async (sel, ms = 10000) => {
+      const end = Date.now() + ms;
+      while (!document.querySelector(sel)) {
+        if (Date.now() > end) throw new Error(`no ${sel} after ${ms} ms`);
+        await wait(25);
+      }
+    },
     el,
     input: sel => {
       const e = document.querySelector(sel);
