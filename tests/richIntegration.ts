@@ -6,7 +6,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { parse, serialise } from '../src/web/richtext/dialect.ts';
+import { calm } from './support/calm.ts';
 import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const PACKING = 'Packing:\n- **tent** and pegs\n- stove\nAsk *Sam* about the car';
 const PACKED = 'Packing:\n- **tent** and pegs\n- stove\n- sleeping bag\nAsk *Sam* about the car';
@@ -185,8 +187,17 @@ const clipboard = () =>
 const copy = async (ids: string[]) => {
   await page.keyboard.press('Escape');
   await page.evaluate(ids => window.__fenmyr.selectOnly(ids), ids);
+  await page.evaluate(() => navigator.clipboard.writeText(''));
   await page.keyboard.press('Control+c');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(async () => {
+    try {
+      for (const item of await navigator.clipboard.read())
+        if (item.types.includes('text/plain') && (await (await item.getType('text/plain')).text()) !== '') return true;
+    } catch {
+      // a read that lands while the copy is still writing throws, and the next poll reads again
+    }
+    return false;
+  });
   return clipboard();
 };
 let clip = await copy(['packing', 'plain']);
@@ -213,9 +224,12 @@ assert.deepStrictEqual(
   'I-2: and, for other apps, HTML with the list and emphasis drawn from the markers',
 );
 const pasted = await page.evaluate(() => window.__fenmyr.newNote(0, 300));
-await page.waitForTimeout(150);
+await page.waitForFunction(id => window.__fenmyr.editing === id && document.activeElement?.matches('.text'), pasted);
 await page.keyboard.press('Control+v');
-await page.waitForTimeout(200);
+await page.waitForFunction(
+  id => !!window.__fenmyr.board.cards.find(c => c.id === id && c.type === 'note')?.text,
+  pasted,
+);
 assert.deepStrictEqual(
   (await stored(pasted))?.text,
   `${PACKED}\nCall the plumber`,
@@ -231,13 +245,20 @@ assert.deepStrictEqual(
 const open = async (id: string) => {
   await page.evaluate(id => window.__fenmyr.openBoard(id), id);
   await page.waitForFunction(id => window.__fenmyr.curBoard()?.id === id, id);
+  // a board reopens at the view it was last saved with, which depends on when its save ran, and a card under the side
+  // panel can't be clicked
+  await page.evaluate(() => {
+    Object.assign(window.__fenmyr.view, { x: 400, y: 140, z: 1 });
+    window.__fenmyr.applyView();
+  });
+  await calm(page);
 };
 const richTexts = () =>
   page.evaluate(() => window.__fenmyr.board.cards.flatMap(c => (c.type === 'note' && c.rich ? [c.text] : [])));
 await copy(['packing']);
 await open('other');
 await page.keyboard.press('Control+v');
-await page.waitForTimeout(300);
+await page.waitForFunction(() => window.__fenmyr.board.cards.some(c => c.type === 'note' && c.rich));
 assert.deepStrictEqual(await richTexts(), [PACKED], 'C3: a rich note copied onto another board stays rich');
 await page.evaluate(async () => {
   const H = window.__fenmyr;
@@ -251,8 +272,10 @@ assert.deepStrictEqual(l.errors, []);
 
 const editBody = async (id: string) => {
   await page.keyboard.press('Escape');
+  await calm(page);
   await page.locator(`#cards [data-id="${id}"] .text`).click();
-  await page.waitForTimeout(450);
+  await page.waitForFunction(id => window.__fenmyr.sel.includes(id), id);
+  await still(page);
   await page.locator(`#cards [data-id="${id}"] .text`).dblclick();
   await page.waitForFunction(id => window.__fenmyr.editing === id && document.activeElement?.matches('.text'), id);
 };
@@ -273,8 +296,9 @@ const caretAfter = (id: string, word: string) =>
   );
 const blur = async () => {
   await page.mouse.click(1380, 860);
-  await page.waitForTimeout(150);
+  await page.waitForFunction(() => window.__fenmyr.editing === null);
   await page.evaluate(() => window.__fenmyr.renderAll());
+  await still(page);
 };
 
 await editBody('big');
@@ -330,10 +354,11 @@ assert.deepStrictEqual(l.errors, []);
 
 await page.keyboard.press('Escape');
 await page.click('#tools [data-add="tpl"]');
-await page.waitForTimeout(300);
+await still(page);
 await page.click('[data-starter="Workshop planning"]');
 await page.waitForFunction(() => window.__fenmyr.curBoard()?.name === 'Workshop planning');
-await page.waitForTimeout(800);
+await page.waitForFunction(() => document.querySelectorAll('#cards ol > li').length >= 4);
+await calm(page);
 const starter = await page.evaluate(() =>
   window.__fenmyr.board.cards.flatMap(c => {
     if (c.type !== 'note' || !c.rich) return [];

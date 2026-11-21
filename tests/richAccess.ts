@@ -1,7 +1,9 @@
 // Rich notes with a keyboard and a screen reader, in the real app. Roles, names and pressed states are read from
 // Chromium's own accessibility tree, which is what a screen reader gets.
 import assert from 'node:assert';
+import { calm } from './support/calm.ts';
 import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const GUIDE = 'https://example.org/guide';
 const note = (id: string, x: number, text: string, more = {}) => ({
@@ -91,14 +93,15 @@ const pressed = (k: string) =>
 const keys = async (...list: string[]) => {
   for (const k of list) {
     await page.keyboard.press(k);
-    await page.waitForTimeout(60);
+    await still(page);
   }
 };
 async function edit(id: string) {
   await page.keyboard.press('Escape');
   const body = page.locator(`#cards [data-id="${id}"] .text`);
   await body.click();
-  await page.waitForTimeout(450);
+  await page.waitForFunction(id => window.__fenmyr.sel.includes(id), id);
+  await still(page);
   await body.dblclick();
   await page.waitForFunction(id => window.__fenmyr.editing === id, id);
   await page.waitForFunction(() => document.querySelector('#selbar.typing [data-ts="bold"]')?.checkVisibility());
@@ -122,7 +125,7 @@ assert.deepStrictEqual(
   'while typed in, the body is a named multi-line text field',
 );
 await page.hover('#selbar [data-fmt="bullets"]');
-await page.waitForTimeout(350);
+await still(page);
 const BUTTONS = [
   'ts="bold"',
   'ts="italic"',
@@ -259,13 +262,16 @@ await l.app.evaluate(({ shell }) => {
     seen.push(url);
   };
 });
-const opened = () => l.app.evaluate(() => Reflect.get(globalThis, '__opened'));
+const opened = () => l.app.evaluate((): string[] => Reflect.get(globalThis, '__opened'));
+const frame = () => page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
 const url = page.url();
 await page.locator('#cards [data-id="read"] .text a').focus();
 await keys('Enter');
 await page.locator('#cards [data-id="mail"] .text a').focus();
 await keys('Enter');
-await page.waitForTimeout(300);
+// the host opens a link a moment after the key
+const deadline = Date.now() + 10_000;
+while ((await opened()).length < 2 && Date.now() < deadline) await frame();
 assert.deepStrictEqual(
   [await opened(), page.url()],
   [[GUIDE, 'mailto:me@example.org'], url],
@@ -281,8 +287,10 @@ await page.evaluate(() => {
   Object.assign(window.__fenmyr.view, { x: 0, y: 0, z: 1 });
   window.__fenmyr.applyView();
 });
+await calm(page);
 assert.ok(!(await onScreen(FAR)), 'the far note starts out of sight');
 await keys('Tab');
+await calm(page);
 assert.ok(
   (await page.evaluate(FAR => document.activeElement === document.querySelector(FAR), FAR)) && (await onScreen(FAR)),
   'Tab to a link out of sight brings its note into view',
@@ -293,7 +301,7 @@ await page.evaluate(() => {
 });
 const before = await view();
 await page.locator('#cards [data-id="read"] .text a').click();
-await page.waitForTimeout(800);
+await calm(page);
 assert.deepStrictEqual(
   await view(),
   before,
