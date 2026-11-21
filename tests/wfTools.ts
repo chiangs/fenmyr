@@ -3,7 +3,8 @@
 // mode bar's Box, Text and Icon place each on a board with no screen, by pointer or keyboard; R and X light their tool.
 import assert from 'node:assert';
 import { TOOLBAR } from '../src/web/ui/toolbarTable.ts';
-import { launch, settle } from './support/launch.ts';
+import { type Launched, launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
 const bare = { id: 'b', name: 'Bare', cards: [note], links: [], tray: [], view: { x: 300, y: 200, z: 1 } };
@@ -11,6 +12,11 @@ const l = await launch({ boards: [bare], open: 'b' });
 const { page } = l;
 const EMPTY = { x: 900, y: 450 };
 
+const resize = async (on: Launched, w: number, h: number) => {
+  await on.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
+  await on.page.waitForFunction(s => innerWidth === s.w && innerHeight === s.h, { w, h });
+  await still(on.page);
+};
 const frames = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 const key = async (k: string) => {
   await page.keyboard.press(k);
@@ -32,6 +38,7 @@ const tools = () =>
     };
   });
 const DOWN = { row: false, lit: [], button: false };
+const pickerOpen = () => page.waitForFunction(() => !document.getElementById('piecePick')?.hidden);
 const newest = () =>
   page.evaluate(() => {
     const c = window.__fenmyr.curBoard()?.cards.at(-1);
@@ -51,7 +58,7 @@ const check = async (name: string, run: () => Promise<void>) => {
   await page.keyboard.press('Escape');
   await page.evaluate(() => window.__fenmyr.selectOnly([]));
   await blur();
-  await settle(page, 150);
+  await still(page);
 };
 
 try {
@@ -108,7 +115,7 @@ try {
       await key('Enter');
       assert.deepStrictEqual(await tools(), { row: true, lit: ['box'], button: true }, 'Tab to Box and Enter takes it');
       await key('Enter');
-      await settle(page, 200);
+      await still(page);
       const box = await page.evaluate(() => {
         const c = window.__fenmyr.curBoard()?.cards.at(-1),
           v = window.__fenmyr.view,
@@ -131,7 +138,8 @@ try {
       for (let i = 0; i < 7; i++) await key('Tab');
       await key('Enter');
       await key('Enter');
-      await settle(page, 300);
+      await pickerOpen();
+      await still(page);
       assert.strictEqual((await newest())?.name, 'star', 'Tab to Icon and Enter twice lands a star');
       assert.strictEqual(
         await page.evaluate(() => document.getElementById('piecePick')?.getAttribute('aria-label')),
@@ -143,7 +151,7 @@ try {
       await blur();
       await key('r');
       await key('Enter');
-      await settle(page, 200);
+      await still(page);
       assert.deepStrictEqual(
         await newest().then(c => c && { type: c.type, w: c.w }),
         { type: 'box', w: 160 },
@@ -159,7 +167,7 @@ try {
     assert.deepStrictEqual(await tools(), { row: true, lit: ['box'], button: true }, 'Box is lit');
     const n = await count();
     await page.mouse.click(EMPTY.x, EMPTY.y);
-    await settle(page, 200);
+    await still(page);
     assert.strictEqual(await count(), n + 1, 'a click adds one card');
     const c = await newest();
     assert.deepStrictEqual(
@@ -176,11 +184,11 @@ try {
     await frames();
     assert.deepStrictEqual(await tools(), { row: true, lit: ['text'], button: true }, 'Text is lit');
     await page.mouse.click(EMPTY.x, EMPTY.y + 120);
-    await settle(page, 200);
+    await still(page);
     assert.strictEqual((await newest())?.type, 'text', 'a text lands');
     await page.keyboard.type('Hello');
     await page.keyboard.press('Escape');
-    await settle(page, 200);
+    await still(page);
     assert.strictEqual(
       await page.evaluate(() => {
         const c = window.__fenmyr.curBoard()?.cards.at(-1);
@@ -197,7 +205,8 @@ try {
     await frames();
     assert.deepStrictEqual(await tools(), { row: true, lit: ['icon'], button: true }, 'Icon is lit');
     await page.mouse.click(EMPTY.x, EMPTY.y + 200);
-    await settle(page, 300);
+    await pickerOpen();
+    await still(page);
     const c = await newest();
     assert.deepStrictEqual(c && { type: c.type, name: c.name, onFrame: c.onFrame }, {
       type: 'icon',
@@ -211,7 +220,8 @@ try {
     assert.deepStrictEqual(picker, { open: true, name: 'Change icon' }, 'the picker opens to choose its glyph');
     await page.keyboard.type('heart');
     await page.keyboard.press('Enter');
-    await settle(page, 300);
+    await page.waitForFunction(() => document.getElementById('piecePick')?.hidden);
+    await still(page);
     assert.strictEqual((await newest())?.name, 'heart', 'Enter gives it the first match');
     assert.ok(await page.evaluate(() => document.getElementById('piecePick')?.hidden), 'and the picker closes');
   });
@@ -240,9 +250,9 @@ try {
     '··· lights while a tool tucked in it is in hand, as drawing is with large icons at 1280 × 560',
     async () => {
       await iconSize('l');
-      await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 560));
-      await settle(page, 500);
+      await resize(l, 1280, 560);
       await key('p');
+      await still(page);
       const drawing = await page.evaluate(() => {
         const more = document.getElementById('tbMore'),
           draw = document.querySelector('#tools [data-add="draw"]');
@@ -255,9 +265,9 @@ try {
       assert.ok(drawing.on, 'Draw is on and tucked');
       assert.notStrictEqual(drawing.more, drawing.rest, '··· is lit while drawing');
       await key('Escape');
-      await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1440, 900));
+      await resize(l, 1440, 900);
       await iconSize('m');
-      await settle(page, 500);
+      await still(page);
     },
   );
 
@@ -272,8 +282,10 @@ try {
 const order = [...TOOLBAR.tools.map(t => t.id).filter(id => id !== 'frame'), 'frame'];
 const own = await launch({ boards: [bare], open: 'b', settings: { toolbar: { order, hidden: [] } } });
 try {
-  await own.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 560));
-  await settle(own.page, 500);
+  await resize(own, 1280, 560);
+  await own.page.waitForFunction(() =>
+    document.querySelector('#tools [data-add="frame"]')?.classList.contains('tb-over'),
+  );
   assert.ok(
     await own.page.evaluate(() => document.querySelector('#tools [data-add="frame"]')?.classList.contains('tb-over')),
     'the button is tucked',
