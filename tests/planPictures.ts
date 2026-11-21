@@ -3,7 +3,10 @@
 // card, as an image or a PDF, is taken while the preview is hidden. The preview shows again after each.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
-import { launch, settle } from './support/launch.ts';
+import { calm } from './support/calm.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
+import { pictureWhenStill } from './support/stillPicture.ts';
 
 const board = replyBoard('pictures', 'pictures');
 board.cards.push({ id: 'f1', type: 'frame', x: 1300, y: 400, w: 390, h: 600, r: 0, color: 'white', name: 'Login' });
@@ -30,6 +33,8 @@ const OVER = {
     ...notes(5, i => ({ x: 1800, y: 400 + i * 160 })),
   ],
 };
+const planned = (n: number) =>
+  page.waitForFunction(n => document.querySelectorAll('#planPreview .pp-box').length === n, n);
 const shown = () =>
   page.evaluate(() => getComputedStyle(document.getElementById('planPreview') ?? document.body).visibility);
 // the screen high in the window, clear of her reply over her box, which Cancel takes away, with the chat closed, once
@@ -39,7 +44,7 @@ async function look() {
     Object.assign(window.__fenmyr.view, { x: -640, y: -220, z: 0.8 });
     window.__fenmyr.applyView();
   });
-  await settle(page, 1000);
+  await calm(page);
   const r = await page.locator('#cards .card[data-id="f1"]').boundingBox();
   assert(r, 'the screen is on screen');
   return { x: r.x, y: r.y, w: r.width, h: r.height };
@@ -72,7 +77,7 @@ const differing = (a: string, b: string) =>
 
 await check('a build’s picture of a screen with planned cards over it is the same as with no plan', async () => {
   await page.evaluate(r => window.__fenmyr.answerMyra(r, 'q'), OVER);
-  await settle(page, 800);
+  await planned(OVER.add.length);
   const r = await look(),
     over = await page.evaluate(
       r =>
@@ -83,19 +88,21 @@ await check('a build’s picture of a screen with planned cards over it is the s
       r,
     );
   assert.strictEqual(over, 6, 'six boxes are over the screen');
+  await pictureWhenStill(app);
   const waiting = await capture(r);
+  await still(page);
   assert.strictEqual(await shown(), 'visible', 'the preview shows again after');
   await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('#mActs button')].find(b => b.textContent === 'Cancel')?.click(),
   );
-  await settle(page, 400);
+  await planned(0);
   assert.strictEqual(await page.locator('#planPreview .pp-box').count(), 0, 'the plan is cancelled');
   assert.strictEqual(await differing(waiting, await capture(await look())), 0, 'no pixel differs');
 });
 
 await check('every export is taken while the preview is hidden', async () => {
   await page.evaluate(r => window.__fenmyr.answerMyra(r, 'q'), OVER);
-  await settle(page, 800);
+  await planned(OVER.add.length);
   await look();
   // At the moment the host takes each picture it reads how the preview shows; the save dialog is cancelled.
   await app.evaluate(({ BrowserWindow, dialog }) => {
@@ -119,6 +126,7 @@ await check('every export is taken while the preview is hidden', async () => {
     });
     Reflect.set(dialog, 'showSaveDialog', async () => ({ canceled: true, filePath: '' }));
   });
+  await pictureWhenStill(app);
   const empty = await page.evaluate(() => {
       for (let y = 120; y < 800; y += 20)
         for (let x = 300; x < 1100; x += 20) if (document.elementFromPoint(x, y)?.id === 'stage') return { x, y };
@@ -137,7 +145,7 @@ await check('every export is taken while the preview is hidden', async () => {
     // An export zooms the board to fit until its picture is taken, over a second on a slow machine, and the next
     // right-click must land on the board as it was.
     await page.waitForFunction(() => !document.body.classList.contains('exporting'));
-    await settle(page, 300);
+    await calm(page);
   }
   assert.deepStrictEqual(await app.evaluate(() => Reflect.get(globalThis, 'seenAtCapture')), [
     'hidden',
@@ -145,6 +153,7 @@ await check('every export is taken while the preview is hidden', async () => {
     'hidden',
     'hidden',
   ]);
+  await still(page);
   assert.strictEqual(await shown(), 'visible', 'and it shows again after');
 });
 

@@ -3,7 +3,10 @@
 // The grid is one stop for Tab in both views. With the eraser in hand or Space held, a press on Add pieces is a press
 // on the board. Add pieces reads clearly on every fill the bar offers, light and dark.
 import assert from 'node:assert';
-import { launch, settle } from './support/launch.ts';
+import { calm } from './support/calm.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
+import { pictureWhenStill } from './support/stillPicture.ts';
 
 const screen = (id: string, x: number, name: string) => ({
   id,
@@ -80,15 +83,14 @@ const contrast = () =>
   });
 
 try {
-  await settle(page, 800);
   await page.evaluate(() => {
     Object.assign(window.__fenmyr.view, { x: 300, y: 60, z: 0.6 });
     window.__fenmyr.applyView();
   });
-  await settle(page, 400);
+  await calm(page);
 
   await page.click('#screenHints [data-hint="one"]');
-  await settle(page, 300);
+  await calm(page);
   const whileOpen = await hints();
   await page.keyboard.press('Escape');
   await frames();
@@ -99,7 +101,7 @@ try {
   );
 
   await page.click('#screenHints [data-hint="one"]');
-  await settle(page, 300);
+  await calm(page);
   await app.evaluate(({ BrowserWindow }) => {
     const wc = BrowserWindow.getAllWindows()[0]?.webContents;
     if (!wc) return;
@@ -115,9 +117,11 @@ try {
       return capturePage(rect);
     });
   });
+  await pictureWhenStill(app);
   const two = await page.locator('#cards [data-id="two"]').boundingBox();
   if (!two) throw new Error('no screen two');
   await page.evaluate(r => window.Fenmyr.captureArea(r), { x: two.x, y: two.y, w: two.width, h: 400 });
+  await still(page);
   const after = await page.evaluate(() =>
     ['screenHints', 'piecePick'].map(id => getComputedStyle(document.getElementById(id) ?? document.body).visibility),
   );
@@ -147,28 +151,28 @@ try {
     'Tab from the search lands on the grid, the arrows move in it, and Tab or Shift+Tab leaves it in one press',
   );
   await page.click('#piecePick [data-pk-close]');
-  await settle(page, 250);
+  await still(page);
 
   await page.keyboard.press('p');
-  await settle(page, 200);
+  await still(page);
   await page.click('#drawbar [data-pen="eraser"]');
-  await settle(page, 200);
+  await still(page);
   const hint = await middle('#screenHints [data-hint="two"]');
   await page.mouse.click(hint.x, hint.y);
-  await settle(page, 300);
+  await still(page);
   const erasing = await open();
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
-  await settle(page, 300);
+  await still(page);
   const v0 = await view();
   await page.mouse.move(hint.x, hint.y);
   await page.keyboard.down('Space');
-  await settle(page, 100);
+  await still(page);
   await page.mouse.down();
   await page.mouse.move(hint.x + 150, hint.y + 80, { steps: 10 });
   await page.mouse.up();
   await page.keyboard.up('Space');
-  await settle(page, 300);
+  await calm(page);
   const v1 = await view();
   assert.deepStrictEqual(
     [erasing, Math.round(v1.x - v0.x), Math.round(v1.y - v0.y)],
@@ -179,7 +183,7 @@ try {
   await page.evaluate(() => window.__fenmyr.selectOnly(['two']));
   // away from the hint, so it is read as it rests rather than under the pointer
   await page.mouse.move(700, 880);
-  await settle(page, 300);
+  await still(page);
   const fills = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('#selbar [data-bfill]')].map(b => b.dataset.bfill ?? ''),
   );
@@ -188,7 +192,7 @@ try {
     await page.evaluate(dark => document.body.classList.toggle('dark', dark), theme === 'dark');
     for (const f of fills) {
       await page.evaluate(f => document.querySelector<HTMLElement>(`#selbar [data-bfill="${f}"]`)?.click(), f);
-      await settle(page, 150);
+      await still(page);
       const c = await contrast();
       if (c < 4.5) low.push(`${theme} ${f}: ${c}`);
     }

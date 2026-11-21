@@ -5,7 +5,8 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
 import { nounOf } from '../src/shared/cardTypes.ts';
-import { launch, settle } from './support/launch.ts';
+import { calm } from './support/calm.ts';
+import { launch } from './support/launch.ts';
 import { freshRepo, openPrototype } from './support/prototype.ts';
 
 assert.strictEqual(nounOf({ type: 'frame' }, 2), 'screens', 'two frames are called screens');
@@ -31,7 +32,7 @@ const fresh = async (id: string, z = 0.25) => {
     },
     [id, z] as const,
   );
-  await settle(page, 400);
+  await calm(page);
 };
 const tool = async () => {
   await frames();
@@ -83,7 +84,7 @@ const at = async (fx: number, fy: number) => {
 const click = async (fx: number, fy: number) => {
   const p = await at(fx, fy);
   await page.mouse.click(p.x, p.y);
-  await settle(page, 300);
+  await calm(page);
 };
 const drag = async (fx: number, fy: number, dx: number, dy: number) => {
   const p = await at(fx, fy);
@@ -93,7 +94,7 @@ const drag = async (fx: number, fy: number, dx: number, dy: number) => {
   const during = await tool();
   await page.mouse.move(p.x + dx, p.y + dy, { steps: 4 });
   await page.mouse.up();
-  await settle(page, 300);
+  await calm(page);
   return during;
 };
 const key = async (k: string) => {
@@ -145,6 +146,7 @@ try {
     'iPhone then iPad keeps the tool in hand with iPad lit',
   );
   await page.hover('#screenbar [data-dev="Watch"]');
+  await calm(page);
   assert.ok(
     await page.evaluate(
       () => getComputedStyle(document.getElementById('ghost') ?? document.body).visibility === 'hidden',
@@ -276,7 +278,6 @@ try {
   }
   await key('Escape');
   assert.strictEqual(await count(), kept, 'and adds nothing');
-
   await page.evaluate(() => document.getElementById('mBubble')?.classList.remove('on'));
   await key('w');
   await click(0.3, 0.75);
@@ -290,9 +291,9 @@ try {
   await page.mouse.up();
   await key('w');
   await key('Enter');
-  await settle(page, 600);
+  await calm(page);
   await page.keyboard.press('Control+z');
-  await settle(page, 300);
+  await calm(page);
   assert.deepStrictEqual(
     { n: await count(), last: (await last())?.type },
     { n: kept + 2, last: 'box' },
@@ -348,7 +349,7 @@ try {
   await key('Escape');
   await openPrototype(page, repo);
   await page.waitForFunction(() => window.__fenmyr.curBoard()?.kind === 'prototype');
-  await settle(page, 500);
+  await calm(page);
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await key('w');
   await key('Enter');
@@ -356,14 +357,15 @@ try {
 
   await page.evaluate(() => window.__fenmyr.openBoard('first'));
   await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(390, 844));
-  await settle(page, 600);
+  await page.waitForFunction(() => innerWidth === 390 && document.body.classList.contains('phone'));
+  await calm(page);
   await page.evaluate(() => {
     Object.assign(window.__fenmyr.view, { x: 0, y: 0, z: 0.2 });
     window.__fenmyr.applyView();
   });
   await page.click('[data-sheet="add"]');
   await page.click('#shBody [data-add="frame"]');
-  await settle(page, 300);
+  await calm(page);
   const sheet = await page.evaluate(() => ({
     sheetOpen: !!document.getElementById('sheet')?.classList.contains('on'),
     inDock: document.getElementById('screenbar')?.closest('#dock') !== null,
@@ -376,7 +378,7 @@ try {
   );
   const tap = await at(0.5, 0.4);
   await page.mouse.click(tap.x, tap.y);
-  await settle(page, 300);
+  await calm(page);
   const centre = await page.evaluate(() => {
     const c = window.__fenmyr.curBoard()?.cards.at(-1),
       v = window.__fenmyr.view,
