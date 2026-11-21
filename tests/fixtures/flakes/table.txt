@@ -1,0 +1,27 @@
+run          created     event              branch                     attempts  last attempt  same commit passed
+44844589049  2026-11-21  pull_request       settings-frame-settle      2         success       yes, on the rerun
+  install job: page.evaluate: Error: no input #vpQ
+44842706165  2026-11-21  pull_request       board-shortcuts            2         failure       no
+  settingsFrame: AssertionError [ERR_ASSERTION]: the tab strip | + actual - expected
+44574277480  2026-11-19  pull_request       fix/proto-hop-slow-frames  2         success       yes, on the rerun
+  install job: failed checks: deleteCurrent.nextDown
+44533956512  2026-11-19  pull_request       feat/tools-panel-modebars  2         success       yes, on the rerun
+  protoHopPath: AssertionError [ERR_ASSERTION]: every check passes | + actual - expected
+43974954420  2026-11-16  pull_request       feat/myra-chat-8a          2         success       yes, on the rerun
+  link: name: 'TimeoutError' | }
+43888404670  2026-11-16  workflow_dispatch  feat/myra-chat-7l          3         failure       yes, in another run
+  buildExplain: AssertionError [ERR_ASSERTION]: a press cut off by a quit is offered again | + actual - expec…
+  buildChecksQueue: AssertionError [ERR_ASSERTION]: the check its board began on opening ends, and its block …
+  visual job: VISUAL CHANGED: 17 of 51 states differ from origin/main unexpectedly, 4 as listed in tools/visu…
+43709534045  2026-11-15  workflow_dispatch  feat/myra-chat-7g          2         failure       no
+  test job: TypeError: terminated
+42672774908  2026-11-09  pull_request       feat/myra-chat             2         failure       no
+  no failure found in attempt 1's log
+
+Reruns: 8 of 12 runs.
+Proven flakes: 4, where the last attempt of the same run passed on the same commit.
+Passed on the same commit in another run only: 1.
+Proven, by what failed on attempt 1:
+  install job   2
+  link          1
+  protoHopPath  1

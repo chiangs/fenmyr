@@ -1,0 +1,17 @@
+Tests 3/4	UNKNOWN STEP	﻿2026-11-16T22:57:48.1743630Z Current runner version: '2.338.2'
+Tests 3/4	UNKNOWN STEP	2026-11-16T22:57:48.1771363Z ##[group]Runner Image Provisioner
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:14.3621556Z ##[group]tests/link.ts: Tests linking a project to a repo, who commits, and unlinking.
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4606064Z node:internal/modules/run_main:111
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4606438Z     triggerUncaughtException(
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4606672Z     ^
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4606767Z 
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4606887Z page.waitForFunction: Timeout 30000ms exceeded.
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4607161Z     at /__w/fenmyr/fenmyr/tests/link.ts:192:14 {
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4607390Z   log: [],
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4607549Z   name: 'TimeoutError'
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4607720Z }
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4607806Z 
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4608152Z Node.js v26.13.1
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4734224Z ##[endgroup]
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4734448Z tests/link.ts failed (exit 1) in 37.1s
+Tests 3/4	UNKNOWN STEP	2026-11-16T23:02:51.4751024Z ##[error]tests/link.ts: Tests linking a project to a repo, who commits, and unlinking.

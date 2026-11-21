@@ -1,0 +1,54 @@
+visual	Visual check against the base branch	﻿2026-11-16T14:42:17.5692026Z ##[group]Run VISUAL_OUT=/tmp/visual node tools/visual-diff.ts "origin/$BASE"
+visual	Visual check against the base branch	2026-11-16T14:42:17.5692606Z ^[[36;1mVISUAL_OUT=/tmp/visual node tools/visual-diff.ts "origin/$BASE"^[[0m
+visual	Visual check against the base branch	2026-11-16T14:46:28.2495511Z same  zoom-out             0 px
+visual	Visual check against the base branch	2026-11-16T14:46:28.3195334Z VISUAL CHANGED: 17 of 51 states differ from origin/main unexpectedly, 4 as listed in tools/visual-expected.json. Screenshots in /tmp/visual
+visual	Visual check against the base branch	2026-11-16T14:46:28.3440918Z ##[error]Process completed with exit code 1.
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:25.1863282Z ##[group]tests/buildExplain.ts: Checks that Explain the code under the newest build runs Claude Code able only to read, lands her answer in the prototype's chat wherever the person is, and is spent by one press, after a restart too.
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3403930Z node:internal/modules/run_main:111
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3405126Z     triggerUncaughtException(
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3405682Z     ^
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3405825Z 
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3406083Z AssertionError [ERR_ASSERTION]: a press cut off by a quit is offered again
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3406586Z + actual - expected
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3406707Z 
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3406778Z   [
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3406925Z     [
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3407108Z       'Undo this build',
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3407299Z -     'Explain the code',
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3407498Z       'Commit'
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3407653Z     ]
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3407798Z   ]
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3407898Z 
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3408040Z     at file:///__w/fenmyr/fenmyr/tests/buildExplain.ts:151:10 {
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3408329Z   generatedMessage: false,
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3408534Z   code: 'ERR_ASSERTION',
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3408737Z   actual: [ [ 'Undo this build', 'Commit' ] ],
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3409025Z   expected: [ [ 'Undo this build', 'Explain the code', 'Commit' ] ],
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3409302Z   operator: 'deepStrictEqual',
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3409497Z   diff: 'simple'
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3409657Z }
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3409742Z 
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3409808Z Node.js v26.13.1
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3544568Z ##[endgroup]
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3544920Z tests/buildExplain.ts failed (exit 1) in 15.2s
+Tests 4/4	UNKNOWN STEP	2026-11-16T14:43:40.3563663Z ##[error]tests/buildExplain.ts: Checks that Explain the code under the newest build runs Claude Code able only to read, lands her answer in the prototype's chat wherever the person is, and is spent by one press, after a restart too.
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:42:35.2865078Z ##[group]tests/buildChecksQueue.ts: Checks that a build that landed elsewhere is checked when its board opens, an older one never is, a waiting build starts once the one before is checked, and Fix the errors waits its turn.
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2024990Z node:internal/modules/run_main:111
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2025499Z     triggerUncaughtException(
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2025808Z     ^
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2025910Z 
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2030502Z AssertionError [ERR_ASSERTION]: the check its board began on opening ends, and its block stops saying it is being checked: [{"head":"Built in 1 s","lines":["No cards to read","src/App.tsx +1 −13","Preview runs · no errors"],"marks":["done","done","done"],"buttons":[]},{"head":"Built in 1 s","lines":["No cards to read","src/App.tsx +1 −1"],"marks":["done","done"],"buttons":[]},{"head":"Built in 1 s","lines":["No cards to read","src/App.tsx +1 −1","Preview runs · no errors"],"marks":["done","done","done"],"buttons":[]},{"head":"Built in 1 s","lines":["No cards to read","src/App.tsx +1 −1","Preview not checked yet"],"marks":["done","done","wait"],"buttons":[]},{"head":"Built in 1 s","lines":["No cards to read","src/App.tsx +1 −1","Preview runs · no errors"],"marks":["done","done","done"],"buttons":[]}] ["Writing it now.","Built in 1 sNo cards to readsrc/App.tsx +1 −13Preview runs · no errors","Elsewhere.","Writing it now.","Built in 1 sNo cards to readsrc/App.tsx +1 −1","Writing it now.","Built in 1 sNo cards to readsrc/App.tsx +1 −1Preview runs · no errors","Older.","Newer.","Writing it now.","Built in 1 sNo cards to readsrc/App.tsx +1 −1Preview not checked yet","Overtaken.","Writing it now.","Built in 1 sNo cards to readsrc/App.tsx +1 −1Preview runs · no errors","Overtakes."]
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2034134Z     at until (file:///__w/fenmyr/fenmyr/tests/buildChecksQueue.ts:49:10)
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2034594Z     at async file:///__w/fenmyr/fenmyr/tests/buildChecksQueue.ts:140:3 {
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2034991Z   generatedMessage: false,
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2035321Z   code: 'ERR_ASSERTION',
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2035672Z   actual: undefined,
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2036008Z   expected: undefined,
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2036288Z   operator: 'fail',
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2036603Z   diff: 'simple'
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2036864Z }
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2037000Z 
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2037180Z Node.js v26.13.1
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2097706Z ##[endgroup]
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2098398Z tests/buildChecksQueue.ts failed (exit 1) in 45.9s
+Tests 1/4	UNKNOWN STEP	2026-11-16T14:43:21.2114488Z ##[error]tests/buildChecksQueue.ts: Checks that a build that landed elsewhere is checked when its board opens, an older one never is, a waiting build starts once the one before is checked, and Fix the errors waits its turn.

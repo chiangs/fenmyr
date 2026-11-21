@@ -1,0 +1,110 @@
+[
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "createdAt": "2026-11-21T11:30:13Z",
+    "databaseId": 44899401130,
+    "event": "push",
+    "headBranch": "main",
+    "headSha": "12804e6d2704027186208bd4d86d9953270e7f59"
+  },
+  {
+    "attempt": 2,
+    "conclusion": "success",
+    "createdAt": "2026-11-21T00:33:17Z",
+    "databaseId": 44844589049,
+    "event": "pull_request",
+    "headBranch": "settings-frame-settle",
+    "headSha": "986553a3b74bc3db78f56d5c4369cac246bb23a4"
+  },
+  {
+    "attempt": 2,
+    "conclusion": "failure",
+    "createdAt": "2026-11-21T00:16:26Z",
+    "databaseId": 44842706165,
+    "event": "pull_request",
+    "headBranch": "board-shortcuts",
+    "headSha": "e051b83dc18c108280feef7785f970dae83ee82d"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "failure",
+    "createdAt": "2026-11-20T22:58:20Z",
+    "databaseId": 44833210561,
+    "event": "push",
+    "headBranch": "main",
+    "headSha": "c7e033be9ccd75970b0cc68475be5c86d7a6eed0"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "cancelled",
+    "createdAt": "2026-11-20T08:34:46Z",
+    "databaseId": 44703667073,
+    "event": "pull_request",
+    "headBranch": "claude/exciting-faraday-ex6j6e",
+    "headSha": "fa2c991a701cbdc0669a108e18ce0f652b1ad3d4"
+  },
+  {
+    "attempt": 2,
+    "conclusion": "success",
+    "createdAt": "2026-11-19T17:10:28Z",
+    "databaseId": 44574277480,
+    "event": "pull_request",
+    "headBranch": "fix/proto-hop-slow-frames",
+    "headSha": "e691bac5615f7b0888d6d9dcdfb02ff1c8d36b0d"
+  },
+  {
+    "attempt": 2,
+    "conclusion": "success",
+    "createdAt": "2026-11-19T13:29:31Z",
+    "databaseId": 44533956512,
+    "event": "pull_request",
+    "headBranch": "feat/tools-panel-modebars",
+    "headSha": "6cabec7b183572878ddfe5eb89956bb60c682702"
+  },
+  {
+    "attempt": 2,
+    "conclusion": "success",
+    "createdAt": "2026-11-16T22:57:45Z",
+    "databaseId": 43974954420,
+    "event": "pull_request",
+    "headBranch": "feat/myra-chat-8a",
+    "headSha": "0516dde3b8f5cc7edaf90a25684218db5770c533"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "createdAt": "2026-11-16T15:11:34Z",
+    "databaseId": 43893721071,
+    "event": "pull_request",
+    "headBranch": "feat/myra-chat-7l",
+    "headSha": "0e795fd601964e3427939449c18d2939444bdb64"
+  },
+  {
+    "attempt": 3,
+    "conclusion": "failure",
+    "createdAt": "2026-11-16T14:41:35Z",
+    "databaseId": 43888404670,
+    "event": "workflow_dispatch",
+    "headBranch": "feat/myra-chat-7l",
+    "headSha": "0e795fd601964e3427939449c18d2939444bdb64"
+  },
+  {
+    "attempt": 2,
+    "conclusion": "failure",
+    "createdAt": "2026-11-15T11:33:53Z",
+    "databaseId": 43709534045,
+    "event": "workflow_dispatch",
+    "headBranch": "feat/myra-chat-7g",
+    "headSha": "a4f783c7213664aaa9556b56f469af93e4e078e4"
+  },
+  {
+    "attempt": 2,
+    "conclusion": "failure",
+    "createdAt": "2026-11-09T18:17:41Z",
+    "databaseId": 42672774908,
+    "event": "pull_request",
+    "headBranch": "feat/myra-chat",
+    "headSha": "e3ea70480c5a855f8461254e09efdccfbb5a5c86"
+  }
+]

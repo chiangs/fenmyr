@@ -1,0 +1,16 @@
+test	Dependencies	﻿2026-11-15T11:34:27.1616920Z ##[group]Run npm ci --no-audit --no-fund && node node_modules/electron/install.js
+test	Dependencies	2026-11-15T11:34:27.1617364Z ^[[36;1mnpm ci --no-audit --no-fund && node node_modules/electron/install.js^[[0m
+test	Dependencies	2026-11-15T11:34:31.8563718Z npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+test	Dependencies	2026-11-15T11:34:32.2392299Z TypeError: terminated
+test	Dependencies	2026-11-15T11:34:32.2392705Z     at Fetch.onAborted (node:internal/deps/undici/undici:15214:53)
+test	Dependencies	2026-11-15T11:34:32.2392996Z     at Fetch.emit (node:events:514:20)
+test	Dependencies	2026-11-15T11:34:32.2393248Z     at Fetch.terminate (node:internal/deps/undici/undici:14330:14)
+test	Dependencies	2026-11-15T11:34:32.2393603Z     at Object.onResponseError (node:internal/deps/undici/undici:15355:42)
+test	Dependencies	2026-11-15T11:34:32.2393961Z     at Request.onResponseError (node:internal/deps/undici/undici:5605:48)
+test	Dependencies	2026-11-15T11:34:32.2394301Z     at Object.errorRequest (node:internal/deps/undici/undici:2497:17)
+test	Dependencies	2026-11-15T11:34:32.2394602Z     at Object.abort (node:internal/deps/undici/undici:9500:14)
+test	Dependencies	2026-11-15T11:34:32.2394922Z     at ClientHttp2Stream.onError (node:internal/deps/undici/undici:9825:13)
+test	Dependencies	2026-11-15T11:34:32.2395231Z     at ClientHttp2Stream.emit (node:events:514:20)
+test	Dependencies	2026-11-15T11:34:32.2395490Z     at emitErrorNT (node:internal/streams/destroy:170:8)
+test	Dependencies	2026-11-15T11:34:32.2452786Z ##[error]Process completed with exit code 1.
+
