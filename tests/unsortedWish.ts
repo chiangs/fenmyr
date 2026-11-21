@@ -1,7 +1,8 @@
 // A height dragged for Unsorted is a wish the column trims to fit. Opening the chat or shrinking the window trims it;
 // closing the chat or making the window bigger again brings back the height that was dragged.
 import assert from 'node:assert';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { rect, still } from './support/settled.ts';
 
 const tray = Array.from({ length: 12 }, (_, i) => ({
   id: `t${i}`,
@@ -21,11 +22,14 @@ const l = await launch({
   settings: { panelH: { tray: 560 } },
 });
 const { page, app } = l;
-const height = () =>
-  page.evaluate(() => Math.round(document.getElementById('tray')?.getBoundingClientRect().height ?? 0));
+// the column fits Unsorted by measuring what overflows, and the list's own size transition, held back by a delay,
+// shows it a stale size each time, so the fit never settles; the list's transition still runs
+await page.addStyleTag({ content: '#trayList { transition-delay: 0s !important; }' });
+const height = async () => Math.round((await rect(page, '#tray')).height);
 const size = async (width: number, h: number) => {
   await app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.width, s.h), { width, h });
-  await settle(page, 600);
+  await page.waitForFunction(([w, h]) => innerWidth === w && innerHeight === h, [width, h]);
+  await still(page);
 };
 
 try {
@@ -33,11 +37,15 @@ try {
   await size(1100, 900);
   const dragged = await height();
   await page.click('#mPill');
-  await settle(page, 800);
+  await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
+  await still(page);
+  // the app focuses the input as the chat opens, but while a transition delay holds the chat hidden that does
+  // nothing, and Esc needs the focus
+  await page.focus('#mcInput');
   const open = await height();
   assert.ok(open < dragged, `the open chat trims Unsorted: ${open} px, from ${dragged} px`);
   await page.keyboard.press('Escape');
-  await settle(page, 600);
+  await page.waitForFunction(() => !document.getElementById('myra')?.classList.contains('chat'));
   assert.strictEqual(await height(), dragged, 'closing the chat brings back the dragged height');
 
   await size(1440, 640);

@@ -2,7 +2,8 @@
 // the panel comes or goes as the chat opens and closes; large icons make some tuck. Below about 750 px Unsorted can't
 // shrink enough and the chat still meets it; there the chat is on top.
 import assert from 'node:assert';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const tray = Array.from({ length: 12 }, (_, i) => ({
   id: `t${i}`,
@@ -27,6 +28,14 @@ const met: string[] = [];
 for (const settings of [{ tbSize: 'l' }, { tbSize: 'l', panelH: { tray: 560 } }]) {
   const l = await launch({ boards: [board], open: 'b', settings });
   const { page, app } = l;
+  const chatIs = (open: boolean) =>
+    page.waitForFunction(open => {
+      const chat = document.getElementById('mChat');
+      return (
+        document.getElementById('myra')?.classList.contains('chat') === open &&
+        !!chat?.checkVisibility({ visibilityProperty: true }) === open
+      );
+    }, open);
   const tucked = () =>
     page.evaluate(() =>
       [...document.querySelectorAll<HTMLElement>('#tools > [data-add].tb-over')].map(b => b.dataset.add).join(' '),
@@ -38,11 +47,16 @@ for (const settings of [{ tbSize: 'l' }, { tbSize: 'l', panelH: { tray: 560 } }]
         width,
         height,
       });
-      await settle(page, 700);
+      await page.waitForFunction(([w, h]) => innerWidth === w && innerHeight === h, [width, height]);
+      await still(page);
       const closed = await tucked();
       assert.ok(closed, `${at}: some tools tuck`);
       await page.click('#mPill');
-      await settle(page, 700);
+      await chatIs(true);
+      await still(page);
+      // the app focuses the input as the chat opens, but while a transition delay holds the chat hidden that does
+      // nothing, and Esc needs the focus
+      await page.focus('#mcInput');
       assert.ok(
         await page.evaluate(() => !!document.getElementById('sideR')?.style.bottom),
         `${at}: the open chat lifts the column`,
@@ -63,7 +77,8 @@ for (const settings of [{ tbSize: 'l' }, { tbSize: 'l', panelH: { tray: 560 } }]
         assert.strictEqual(top, 'chat', `${at}: where the chat meets Unsorted, the chat is on top`);
       }
       await page.keyboard.press('Escape');
-      await settle(page, 600);
+      await chatIs(false);
+      await still(page);
       assert.strictEqual(await tucked(), closed, `${at}: and again once it closes`);
     }
     assert.deepStrictEqual(l.errors, [], 'no errors on the page');

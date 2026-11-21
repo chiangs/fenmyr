@@ -3,9 +3,23 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import type { Page } from 'playwright';
 import { everyOfflineCard } from './fixtures/boards.ts';
 import { launch } from './support/launch.ts';
 import { pasteIntoChat } from './support/paste.ts';
+import { still } from './support/settled.ts';
+
+// Waits for the host to write a file, a frame at a time, for at most `ms`.
+const untilWritten = async (page: Page, written: () => unknown, ms: number) => {
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline && !written()) await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
+};
+// Her chat is up once it is drawn, and her input takes focus only then.
+const chatUp = async (page: Page) => {
+  await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
+  await still(page);
+  await page.focus('#mcInput');
+};
 
 const RUNNING_ONLY = ['count', 'starting', 'saving', 'pct', 'camErr', 'camRest', 'loading', 'cropEdit'];
 const l = await launch({ boards: [everyOfflineCard()], open: 'every' });
@@ -60,9 +74,7 @@ const said = (id: string): string[] => {
   const chat = typeof b === 'object' && b !== null && 'chat' in b && Array.isArray(b.chat) ? b.chat : [];
   return chat.map(m => (typeof m === 'object' && m !== null && 'text' in m ? String(m.text) : ''));
 };
-const deadline = Date.now() + 5000;
-while (Date.now() < deadline && !(said('proto').includes('I built two screens.') && said('plain').length === 0))
-  await p.page.waitForTimeout(100);
+await untilWritten(p.page, () => said('proto').includes('I built two screens.') && said('plain').length === 0, 5000);
 const proto = said('proto'),
   plain = said('plain');
 await p.close();
@@ -113,8 +125,7 @@ try {
     const b = JSON.parse(fs.readFileSync(file, 'utf8'));
     return b.chat.find((m: { text: string }) => m.text === 'Saved with me.')?.acts?.[0];
   };
-  const until = Date.now() + 5000;
-  while (Date.now() < until && !savedNext()) await a.page.waitForTimeout(100);
+  await untilWritten(a.page, savedNext, 5000);
   assert.deepStrictEqual(savedNext(), { kind: 'next', text: 'Sort them' }, 'a reply’s next step is written to disk');
   await a.close();
   a = await launch({ open: 'acts', data });
@@ -180,15 +191,16 @@ try {
   };
   const chips = (page: typeof pp.page) => page.locator('#mcSees .mcs-chip.paste .mcs-t').allTextContents();
   await pp.page.click('#mPill');
+  await chatUp(pp.page);
   await pasteIntoChat(pp.page, PASTED);
-  const until = Date.now() + 6000;
-  while (Date.now() < until && !stored()) await pp.page.waitForTimeout(100);
+  await untilWritten(pp.page, stored, 6000);
   assert.deepStrictEqual(
     stored()?.pasted?.map((x: { text: string }) => x.text),
     [PASTED],
     'the file holds the paste',
   );
   await pp.page.keyboard.press('Escape');
+  await pp.page.waitForFunction(() => !document.getElementById('myra')?.classList.contains('chat'));
   assert.strictEqual(
     await pp.page.locator('#mDraft').textContent(),
     'Draft · pasted text',

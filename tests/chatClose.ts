@@ -4,16 +4,30 @@
 // height is remembered; a closed chat with text shows a draft line.
 import assert from 'node:assert';
 import { openBar } from './support/bar.ts';
+import { rect, still } from './support/settled.ts';
 
 const { page, frames, view, check, done } = await openBar();
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
+// her chat is up when it has the class and is drawn; a closing chat stays drawn until its fade ends
+const chatIs = (open: boolean) =>
+  page.waitForFunction(
+    open =>
+      !!document.getElementById('myra')?.classList.contains('chat') === open &&
+      !!document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }) === open,
+    open,
+  );
 const open = async () => {
   if (!(await isOpen())) await page.click('#mPill');
-  await page.waitForTimeout(400);
+  await chatIs(true);
+  await still(page);
+};
+const shut = async () => {
+  await chatIs(false);
+  await still(page);
 };
 const fold = async () => {
   if (await isOpen()) await page.click('#mcClose');
-  await page.waitForTimeout(400);
+  await shut();
 };
 const active = () => page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName);
 // a point on empty board, clear of the chat, the cards, the widgets and the bars
@@ -29,7 +43,7 @@ const cardSpot = (id: string) =>
     const r = document.querySelector(`#cards [data-id="${id}"]`)?.getBoundingClientRect();
     return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null;
   }, id);
-const chatHeight = () => page.evaluate(() => document.getElementById('mChat')?.getBoundingClientRect().height ?? 0);
+const chatHeight = async () => (await rect(page, '#mChat')).height;
 
 await view(0, 0);
 
@@ -41,7 +55,7 @@ await check('the chat is a region named for her', async () => {
 await check('the fold button closes the chat and hands focus to her box, which does not reopen it', async () => {
   await open();
   await page.click('#mcClose');
-  await page.waitForTimeout(400);
+  await shut();
   assert.ok(!(await isOpen()), 'closed');
   assert.strictEqual(await active(), 'mPill', 'focus is on her box');
 });
@@ -58,7 +72,7 @@ await check('a click on empty board closes the chat once a double-click can no l
   const at = await emptySpot();
   assert.ok(at, 'there is empty board');
   await page.mouse.click(at.x, at.y);
-  await page.waitForTimeout(700);
+  await shut();
   assert.ok(!(await isOpen()));
 });
 
@@ -69,11 +83,13 @@ await check('a double-click on empty board makes a note and leaves the chat open
   const count = () => page.evaluate(() => window.__fenmyr.curBoard()?.cards.length ?? 0),
     before = await count();
   await page.mouse.dblclick(at.x, at.y);
+  await page.waitForFunction(n => (window.__fenmyr.curBoard()?.cards.length ?? 0) > n, before);
+  // sleeps on purpose: a close the first click scheduled would fire 500 ms after it, and the check is that none does
   await page.waitForTimeout(700);
   const added = (await count()) - before;
   assert.deepStrictEqual({ open: await isOpen(), added }, { open: true, added: 1 });
   await page.keyboard.press('Control+z');
-  await page.waitForTimeout(200);
+  await frames();
 });
 
 await check('a click on a card selects it and leaves the chat open', async () => {
@@ -115,7 +131,7 @@ await check('a click that closes a menu leaves the chat open', async () => {
   assert.ok(card, 'the picture is on screen');
   await page.mouse.click(card.x, card.y, { button: 'right' });
   await page.waitForSelector('#rowMenu');
-  await page.waitForTimeout(100); // the menu starts listening for presses outside it a tick after it opens
+  await frames(); // the menu starts listening for presses outside it a tick after it opens
   const at = await emptySpot();
   assert.ok(at, 'there is empty board');
   await page.mouse.click(at.x, at.y);
@@ -153,7 +169,7 @@ await check('Esc with focus outside the chat leaves it open; Esc inside closes i
   assert.ok(await isOpen(), 'open after Esc on the board');
   await page.focus('#mcNew');
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(400);
+  await shut();
   assert.ok(!(await isOpen()), 'closed after Esc on a header button');
   assert.strictEqual(await active(), 'mPill', 'focus is on her box');
 });
@@ -162,13 +178,20 @@ await check('focus moved to her box only focuses it; Space opens the chat, caret
   await fold();
   await page.focus('#tools [data-add="note"]');
   await page.evaluate(() => document.getElementById('mPill')?.focus());
-  await page.waitForTimeout(400);
+  await still(page);
   assert.ok(!(await isOpen()), 'still closed');
   assert.strictEqual(await page.getAttribute('#mPill', 'aria-expanded'), 'false');
+  // the app focuses the input as the chat opens, and focus() on a box a transition delay still holds hidden does
+  // nothing, so the open chat shows at once here, as it does without a delay
+  const shown = await page.addStyleTag({
+    content: '.myra.chat .m-chat, .myra.chat .m-chat * { transition-delay: 0s !important; }',
+  });
   await page.keyboard.press('Space');
-  await page.waitForTimeout(400);
+  await chatIs(true);
+  await still(page);
   assert.ok(await isOpen(), 'open');
   assert.strictEqual(await active(), 'mcInput');
+  await shown.evaluate(tag => (tag instanceof Element ? tag.remove() : undefined));
 });
 
 await check('Shift+Tab straight after a close skips the fading chat', async () => {
@@ -183,7 +206,7 @@ await check('a closed chat with text shows a draft line in her box, and keeps th
   await open();
   await page.fill('#mcInput', 'one\ntwo\nthree');
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(400);
+  await shut();
   const box = await page.evaluate(() => ({
     draft: document.getElementById('mDraft')?.checkVisibility() ? document.getElementById('mDraft')?.textContent : null,
     ask: !!document.querySelector('#mPill .m-ask')?.checkVisibility(),
