@@ -21,7 +21,6 @@ askStandIn(l);
 const { page } = l;
 const frames = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
-// her chat is up when it has the class and is drawn; a closing chat stays drawn until its fade ends
 const chatIs = (open: boolean) =>
   page.waitForFunction(
     open =>

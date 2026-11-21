@@ -26,8 +26,6 @@ const boxes = () =>
       find: box('findBar'),
     };
   });
-// the chat grows into place and the reply rises, so both are measured once they are still. Not still() from
-// support/settled.ts: a timer's countdown is a transition that runs for the whole timer, and is left out here.
 const moving = () =>
   page.waitForFunction(
     () =>
@@ -41,6 +39,8 @@ const moving = () =>
         );
       }),
   );
+// the chat grows into place and the reply rises, so both are measured once they are still. Not still() from
+// support/settled.ts: a timer's countdown is a transition that runs for the whole timer, and is left out here.
 const still = async () => {
   await frames();
   await moving();

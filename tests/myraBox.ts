@@ -11,7 +11,7 @@ const { l, page, frames, check, done } = await openBar();
 const CHANGES_AT_ONCE = '#gooSlot';
 if (process.env.FENMYR_MOTION_DELAY)
   await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
-// Opening and closing her chat over and over makes her dizzy, and a dizzy box is moving, so the next click waits for it.
+// opening and closing her chat over and over makes her dizzy, which would land in the middle of other checks
 await page.evaluate(() => window.__fenmyr.dizzyAuto(false));
 const size = async (w: number, h = 900) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
@@ -33,7 +33,6 @@ const setChat = async (open: boolean) => {
   );
   await still(page);
 };
-// she is back in her box once her hop home has landed
 const home = async () => {
   await page.waitForFunction(() => {
     const transform = document.getElementById('gooSlot')?.style.transform;
@@ -115,8 +114,8 @@ const lively = (v: 'lively' | 'calm' | 'calmest') =>
   inSettings(() => page.click(`[data-seg="myraCalm"] [data-v="${v}"]`));
 // opening the chat, the frames she spends between her box and its header
 const flight = async () => {
-  // not page.click: it waits for her box to stop wobbling after her last landing, up to a second, and the hop is timed
-  // from the click
+  // not page.click: Playwright waits for her box to stop wobbling (every 8 s, for just over a second), and the hop is
+  // timed from the click
   const { before, after, between } = await hop.flight(page, () =>
       page.evaluate(() => document.getElementById('mPill')?.click()),
     ),

@@ -19,7 +19,6 @@ const {
   check,
   done,
 } = await openBar();
-// where the bar, a card and the turn dot are once nothing is moving
 const shape = async (id = '') => {
   await still(page);
   return shapeNow(id);

@@ -9,7 +9,6 @@ import { launch } from './support/launch.ts';
 import { pasteIntoChat } from './support/paste.ts';
 import { still } from './support/settled.ts';
 
-// Waits for the host to write a file, a frame at a time, for at most `ms`.
 const untilWritten = async (page: Page, written: () => unknown, ms: number) => {
   const deadline = Date.now() + ms;
   while (Date.now() < deadline && !written()) await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));

@@ -13,7 +13,6 @@ const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
 if (process.env.FENMYR_MOTION_DELAY)
   await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
-// her chat is up when it has the class and is drawn; a closing chat stays drawn until its fade ends
 const chatIs = (open: boolean) =>
   page.waitForFunction(
     open =>
