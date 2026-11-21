@@ -611,10 +611,10 @@
     "web/sw.js": "Keeps a copy of the app so the website version opens offline.",
     "tests/cardInk.ts": "The words on every colour of note, and on a doc, read on the card in every theme, so a light Snow card in Lantern has dark text.",
     "tests/colourLabels.ts": "Clear and Lantern print a note's colour name on it and no other theme does, and the label doesn't change the note's size.",
-    "src/web/settings/boardsSaved.ts": "The sentence on Settings, General about where boards are kept: on this computer, sent to Claude when you ask Myra, and in a linked repo when a project has one.",
+    "src/web/settings/boardsSaved.ts": "The bold line on Settings, General: the board count, then Locally saved or, when a project is linked to a repo, Local files linked to a remote repo.",
     "src/web/settings/derivedModes.ts": "The area colours that differ between light and dark, as expressions of the core tokens, which style.css reads instead of a body.dark rule.",
     "tests/boardLists.ts": "A board file written by hand with no card list and no tray opens as an empty board instead of failing to load.",
-    "tests/boardsSaved.ts": "Settings, General says boards are kept on this computer and that asking Myra sends the board to Claude, and mentions a repo only when a project is linked to one.",
+    "tests/boardsSaved.ts": "Settings, General shows the board count with Locally saved, or Local files linked to a remote repo once a project is linked, and a note under it that Myra and a repo send information along.",
     "src/web/settings/shortcutList.ts": "The Keyboard shortcuts list in Settings → Board: a block per group with its entries, each a description and its keys in a keycap."
   }
 }
