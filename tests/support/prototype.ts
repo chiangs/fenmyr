@@ -41,3 +41,10 @@ export async function openPrototype(page: Page, repo: string) {
     await window.__fenmyr.openBoard('pb');
   }, repo);
 }
+
+// the host's notice of a board found on disk lands in the open prototype's chat, which then isn't empty for her tilt
+export async function ignoreNewBoards(page: Page) {
+  const quiet = () => Object.defineProperty(window, '__boardsChanged', { get: () => async () => {}, set: () => {} });
+  await page.addInitScript(quiet);
+  await page.evaluate(quiet);
+}

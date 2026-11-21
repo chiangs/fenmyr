@@ -4,14 +4,16 @@
 // chat.
 import assert from 'node:assert';
 import type { Edges } from './support/bar.ts';
+import { FRAME, skip, thawed, tick } from './support/clock.ts';
 import * as hop from './support/flight.ts';
 import { launch, settle } from './support/launch.ts';
-import { freshRepo, openPrototype } from './support/prototype.ts';
+import { freshRepo, ignoreNewBoards, openPrototype } from './support/prototype.ts';
 
 const { repo } = freshRepo('fenmyr-proto-path-');
 const note = { id: 'n1', type: 'note', x: 40, y: 40, w: 220, h: 120, text: 'A note' };
-const l = await launch({ boards: [{ id: 'one', name: 'One', cards: [note], links: [], tray: [] }] });
+const l = await launch({ boards: [{ id: 'one', name: 'One', cards: [note], links: [], tray: [] }], clock: true });
 const { page } = l;
+await ignoreNewBoards(page);
 
 const open = (id: string) => page.evaluate(id => window.__fenmyr.openBoard(id), id);
 const failed: string[] = [];
@@ -28,19 +30,26 @@ const check = async (name: string, run: () => Promise<void>) => {
     chat = await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
   if (board !== 'one') await open('one');
   else if (chat) await page.click('#mcClose');
-  await page.waitForTimeout(1000);
+  await skip(page, 1000);
   await page.evaluate(() => {
     window.__fenmyr.playAnim('love', false);
     window.__fenmyr.stopAnim();
   });
 };
-const size = async (w: number, h: number) => {
-  await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
-  await settle(page, 400);
-};
+const size = (w: number, h: number) =>
+  thawed(page, async () => {
+    await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
+    await settle(page, 400);
+  });
+const reload = (id: string) =>
+  thawed(page, async () => {
+    await page.reload();
+    await page.waitForFunction(id => window.__fenmyr?.curBoard()?.id === id, id);
+    await settle(page);
+  });
 const perch = async () => {
   await page.click('#mPill');
-  await page.waitForTimeout(1300);
+  await skip(page, 1300);
 };
 const spot = async () => {
   const { mcPerch } = await hop.edges(page, ['mcPerch']);
@@ -49,38 +58,32 @@ const spot = async () => {
 };
 const centre = (f: hop.Frame) => ({ x: f.l + f.w / 2, y: f.t + f.h / 2 });
 const apart = (a: hop.Frame, b: hop.Frame) => Math.hypot(centre(a).x - centre(b).x, centre(a).y - centre(b).y);
-// Her time in the air as her frames bound it: at least from her first frame in the air to her last, at most from her
-// last frame on the ground before them to her first after. A long frame as she takes off or lands widens the bounds and
-// never moves them off her real time. Timed by her frames in the air alone, such a frame cut her time short. Frames so
-// slow that watching ends before she lands leave no upper bound.
-const inAir = (frames: hop.Frame[]) => {
+// each end of her time in the air is known to a frame, and a held frame hides as much of it as it took
+// her hop onto the open chat takes 0.92 s, a little longer than the hops into a header
+const NEAR = 1000;
+const keeps480 = (frames: hop.Frame[], held = 0) => {
   const first = frames.findIndex(f => f.air),
     last = frames.findLastIndex(f => f.air),
     before = frames[first - 1],
     a = frames[first],
     b = frames[last],
     after = frames[last + 1];
-  assert.ok(a && b, 'she is in the air');
-  return { least: b.ms - a.ms, most: before && after ? after.ms - before.ms : Number.POSITIVE_INFINITY };
+  assert.ok(a && b && before && after, 'she is in the air, with a frame on the ground either side');
+  const least = b.ms - a.ms,
+    most = after.ms - before.ms,
+    slack = 2 * FRAME + held;
+  assert.ok(
+    least <= 480 && most >= 480 && most - least <= slack,
+    `she is in the air for ${least} to ${most} ms, not 480 (${held} ms of it held back)`,
+  );
 };
-// How soon she gets going, how far she is within her first 150 ms in the air, and when she is at rest, from her frames.
-// Her first frame in the header is the switch. She is at rest after her last frame more than 1 px from where she ends,
-// in place or in size, which a squash on landing counts in. That frame's time is what is used, so a frame dropped on a
-// busy runner cannot make her look slower than she is. The same goes for her first movement: her wind-up is 70 ms and
-// the limit 100, which a slow frame or two between the switch and her first move can use up, so the time a frame takes
-// beyond one at 60 Hz is not counted, unless the frame is under one and a half of them, which is ordinary jitter.
-const FRAME = 1000 / 60;
-const slowBy = (run: hop.Frame[]) =>
-  run.slice(1).reduce((sum, f, i) => {
-    const gap = f.ms - (run[i]?.ms ?? f.ms);
-    return gap > FRAME * 1.5 ? sum + gap - FRAME : sum;
-  }, 0);
-const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.flight>>) => {
+const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.exactFlight>>) => {
   assert.ok(before, 'she shows before the switch');
   const gone = (f: { l: number; t: number }, q: Edges) => Math.hypot(f.l - q.l, f.t - q.t),
     switched = frames.find(f => f.home === 'mcPerch'),
     moved = frames.find(f => gone(f, before) > 3),
     air = frames.find(f => f.air),
+    // her landing squash shows in her size before it shows in where she is
     off = frames.findLastIndex(
       f => gone(f, after) > 1 || Math.abs(f.w - (after.r - after.l)) > 1 || Math.abs(f.h - (after.b - after.t)) > 1,
     ),
@@ -92,15 +95,12 @@ const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.flight>>)
     way = (f: hop.Frame) => ((f.l - before.l) * line.x + (f.t - before.t) * line.y) / (line.x ** 2 + line.y ** 2),
     upTo = frames.findLast(f => f.ms <= air.ms + 150),
     next = frames.find(f => f.ms > air.ms + 150),
-    // Between the frames either side of the 150 ms mark, so which frame falls just short of it doesn't tip the result.
-    // A frame held back across the mark leaves only the frame after it to go by.
-    stalled = upTo && next && next.ms - upTo.ms > 40,
     covered =
-      upTo && next && !stalled
+      upTo && next
         ? way(upTo) + ((way(next) - way(upTo)) * (air.ms + 150 - upTo.ms)) / (next.ms - upTo.ms)
         : way(next ?? upTo ?? air);
   return {
-    moves: moved.ms - switched.ms - slowBy(frames.slice(frames.indexOf(switched), frames.indexOf(moved) + 1)),
+    moves: moved.ms - switched.ms,
     covered,
     rest: rest.ms - switched.ms,
     held: Math.max(...frames.slice(1).map((f, i) => f.ms - (frames[i]?.ms ?? 0))),
@@ -108,51 +108,38 @@ const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.flight>>)
 };
 // at least a third of the way in her first 150 ms in the air, and at rest by 0.75 s and a frame or two; every claim
 // that fails is named
-const quick = (f: Awaited<ReturnType<typeof hop.flight>>, held = 0) => {
+const quick = (f: Awaited<ReturnType<typeof hop.exactFlight>>, held = 0) => {
   const p = pace(f),
     missed = [
-      p.moves > 100 && `she first moves ${p.moves.toFixed(0)} ms after the switch`,
+      p.moves > 100 && `she first moves ${p.moves} ms after the switch`,
       p.covered < 1 / 3 && `she is ${(p.covered * 100).toFixed(0)}% of the way after 150 ms in the air`,
-      p.rest > 800 && `she is at rest ${p.rest.toFixed(0)} ms after the switch`,
-      p.held < held && `her longest frame is ${p.held.toFixed(0)} ms, not the ${held} ms held back`,
+      p.rest > 800 && `she is at rest ${p.rest} ms after the switch`,
+      p.held < held && `her longest frame is ${p.held} ms, not the ${held} ms held back`,
     ].filter(Boolean);
-  assert.strictEqual(missed.join('; '), '');
+  assert.ok(missed.length === 0, missed.join('; '));
 };
-const keeps480 = (frames: hop.Frame[]) => {
-  const { least, most } = inAir(frames);
-  assert.ok(least <= 480 && most >= 480, `she is in the air for ${Math.round(least)} to ${Math.round(most)} ms`);
+// one frame takes `ms` to draw, as on a busy runner: the clock jumps, so what was due in between runs once
+const holdFrame = async (pose: 'crouch' | 'air', ms: number, after = 0) => {
+  const mark = pose === 'air' ? 'rotate' : 'scale',
+    posed = () => page.evaluate(m => !!document.getElementById('gooSlot')?.style.transform.includes(m), mark);
+  for (let frames = 0; !(await posed()); frames++) {
+    assert.ok(frames < 100, `her slot never shows ${mark}`);
+    await tick(page, FRAME);
+  }
+  await tick(page, Math.ceil(after / FRAME) * FRAME);
+  await page.clock.fastForward(ms);
 };
-// A slow runner busy as she hops: the main thread is held for `ms` in the first frame at least `after` ms into her
-// crouch, or into her time in the air.
-const holdFrame = (pose: 'crouch' | 'air', ms: number, after = 0) =>
-  page.evaluate(
-    ({ pose, ms, after }) => {
-      const raf = window.requestAnimationFrame.bind(window),
-        slot = document.getElementById('gooSlot'),
-        mark = pose === 'air' ? 'rotate' : 'scale';
-      let since: number | null = null,
-        held = false;
-      // every callback asked for before the hold runs through here, so only the first to get there holds
-      window.requestAnimationFrame = cb =>
-        raf(ts => {
-          cb(ts);
-          if (held || !slot?.style.transform.includes(mark)) return;
-          since ??= ts;
-          if (ts - since < after) return;
-          held = true;
-          window.requestAnimationFrame = raf;
-          const until = performance.now() + ms;
-          while (performance.now() < until);
-        });
-    },
-    { pose, ms, after },
-  );
+const held = (pose: 'crouch' | 'air', ms: number, after = 0) =>
+  hop.exactFlight(page, async () => {
+    await open('pb');
+    await holdFrame(pose, ms, after);
+  });
 const myraCalm = async (v: 'lively' | 'calmest') => {
   await page.click('#gearBtn');
   await page.click('#setTabs [data-tab="myra"]');
   await page.click(`[data-seg="myraCalm"] [data-v="${v}"]`);
   await page.click('#setClose');
-  await page.waitForTimeout(300);
+  await skip(page, 300);
 };
 
 try {
@@ -176,7 +163,7 @@ try {
   }, repo);
   await size(1920, 1080);
   await open('one');
-  await page.waitForTimeout(1000);
+  await skip(page, 1000);
   await page.evaluate(() => {
     window.__fenmyr.playAnim('love', false);
     window.__fenmyr.stopAnim();
@@ -191,31 +178,27 @@ try {
         [1440, 900],
       ] as const) {
         await size(w, h);
-        await page.reload();
-        await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'one');
-        await settle(page);
+        await reload('one');
         await perch();
-        const f = await hop.flight(page, () => open('pb')),
+        const f = await hop.exactFlight(page, () => open('pb')),
           top = Math.min(...f.frames.map(fr => fr.t));
         assert.ok(f.between > 5, `at ${w}x${h} she hops, between her perch and the header in ${f.between} frames`);
         assert.ok(top >= 0, `at ${w}x${h} her top reaches ${top.toFixed(1)} px`);
         await open('one');
-        await page.waitForTimeout(900);
+        await skip(page, 900);
       }
     } finally {
       await page.evaluate(() => localStorage.removeItem('fenmyr:chatH'));
       await size(1920, 1080);
       await open('one');
-      await page.reload();
-      await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'one');
-      await settle(page);
+      await reload('one');
     }
   });
 
   await check(
     'across a 1920 px window she gets going within 100 ms, covers a third of the way in her first 150 ms in the air, and is at rest by 0.75 s, and she tilts once landed',
     async () => {
-      const f = await hop.flight(page, () => open('pb'));
+      const f = await hop.exactFlight(page, () => open('pb'));
       quick(f);
       const tilt = f.frames.findIndex(fr => fr.anim === 'curious'),
         landed = f.frames.findLastIndex(fr => fr.air);
@@ -224,39 +207,44 @@ try {
   );
 
   await check('with a frame held back as she takes off, her hop is still as quick', async () => {
-    await holdFrame('air', 100);
-    quick(await hop.flight(page, () => open('pb')), 90);
+    quick(await held('air', 100), 100);
   });
 
   await check('with a frame held back as she crouches, it is not counted against her first movement', async () => {
-    await holdFrame('crouch', 120);
-    const p = pace(await hop.flight(page, () => open('pb')));
-    assert.ok(p.held >= 110, `a frame of ${p.held.toFixed(0)} ms was held back, not 120`);
-    assert.ok(p.moves <= 100, `she first moves ${p.moves.toFixed(0)} ms after the switch`);
+    const p = pace(await held('crouch', 120)),
+      ownTime = p.moves - (p.held - FRAME);
+    assert.ok(p.held >= 120, `a frame of ${p.held} ms was held back, not 120`);
+    assert.ok(ownTime <= 100, `she first moves ${ownTime} ms after the switch, in her own time`);
   });
 
   await check('with a frame held back as she comes in to land, her hop is still as quick', async () => {
-    await holdFrame('air', 200, 380);
-    quick(await hop.flight(page, () => open('pb')), 190);
+    quick(await held('air', 200, 380), 200);
   });
 
   await check('her hop onto the open chat keeps its 480 ms in the air', async () => {
-    keeps480((await hop.flight(page, () => page.click('#mPill'))).frames);
+    keeps480((await hop.exactFlight(page, () => page.click('#mPill'), NEAR)).frames);
   });
 
   await check('with a frame held back as she crouches, her hop onto the open chat still keeps its 480 ms', async () => {
-    await holdFrame('crouch', 250);
-    keeps480((await hop.flight(page, () => page.click('#mPill'))).frames);
+    const f = await hop.exactFlight(
+      page,
+      async () => {
+        await page.click('#mPill');
+        await holdFrame('crouch', 250);
+      },
+      NEAR,
+    );
+    keeps480(f.frames, 250);
   });
 
   await check('from Home she hops from where Home showed her, with no jump', async () => {
     await size(1440, 900);
     try {
       await page.evaluate(() => window.__fenmyr.openHome('folder:pf'));
-      await page.waitForTimeout(900);
+      await skip(page, 900);
       const seen = (await hop.edges(page, ['gooSlot'])).gooSlot;
       assert.ok(seen, 'she shows at Home');
-      const f = await hop.flight(page, () => page.locator('.tile.board', { hasText: 'Checkout flow' }).click()),
+      const f = await hop.exactFlight(page, () => page.locator('.tile.board', { hasText: 'Checkout flow' }).click()),
         first = f.frames.find(fr => fr.home === 'mcPerch'),
         // on the ground, from frame to frame; in the air her speed is checked above
         jumps = f.frames.flatMap((b, i) => {
@@ -276,7 +264,7 @@ try {
 
   await check('a click on her in the docked header starts an animation', async () => {
     await open('pb');
-    await page.waitForTimeout(1500);
+    await skip(page, 1500);
     await page.evaluate(() => {
       window.__fenmyr.playAnim('love', false);
       window.__fenmyr.stopAnim();
@@ -290,7 +278,7 @@ try {
 
   await check('when a timer ends on a prototype board, she wiggles in the docked header', async () => {
     await open('pb');
-    await page.waitForTimeout(1500);
+    await skip(page, 1500);
     // what the end of a timer does to her box
     const names = await page.evaluate(() => {
       const myra = document.getElementById('myra');
@@ -305,24 +293,28 @@ try {
   await check('back in her box after a prototype seen on a phone, a click on her opens the chat', async () => {
     await perch();
     await open('pb');
-    await page.waitForTimeout(1300);
+    await skip(page, 1300);
     await size(600, 900);
     await open('one');
-    await page.waitForTimeout(600);
+    await skip(page, 600);
     await size(1920, 1080);
     await page.click('#gooSlot');
-    await page.waitForTimeout(300);
+    await skip(page, 300);
     const chat = await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
     assert.ok(chat, 'the chat opens');
   });
 
   // the second opens while she is still in the air, and late enough that a tilt left from the first would come first
   const twice = () =>
-    hop.flight(page, async () => {
-      await open('pb');
-      await page.waitForTimeout(500);
-      await open('pb2');
-    });
+    hop.exactFlight(
+      page,
+      async () => {
+        await open('pb');
+        await tick(page, 500);
+        await open('pb2');
+      },
+      1600,
+    );
   await check('opening a second prototype mid-hop, she sits on its header at once', async () => {
     const f = await twice(),
       there = await spot(),
@@ -343,7 +335,7 @@ try {
   await check('with her set to calmest, she tilts her head once she has faded in', async () => {
     await myraCalm('calmest');
     try {
-      const f = await hop.flight(page, () => open('pb')),
+      const f = await hop.exactFlight(page, () => open('pb')),
         tilt = f.frames.findIndex(fr => fr.anim === 'curious'),
         faded = f.frames.findLastIndex(fr => fr.opacity < 1);
       assert.ok(tilt >= 0 && faded >= 0, 'she fades in and tilts her head');

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { _electron, type ElectronApplication, type Page } from 'playwright';
+import { installClock } from './clock.ts';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREEN = { width: 1440, height: 900 };
@@ -17,6 +18,14 @@ function parseMotionDelay(text: string | undefined): number {
   return Number(text);
 }
 const MOTION_DELAY_MS = parseMotionDelay(process.env.FENMYR_MOTION_DELAY);
+
+function parseCpuSlow(text: string | undefined): number {
+  if (text === undefined) return 1;
+  if (!/^\d+(\.\d+)?$/.test(text) || Number(text) < 1)
+    throw new Error(`FENMYR_CPU_SLOW takes a rate of 1 or more such as 8, not "${text}"`);
+  return Number(text);
+}
+const CPU_SLOW = parseCpuSlow(process.env.FENMYR_CPU_SLOW);
 
 const QUIET = { greet: false, autoUpdate: false, caelestia: false, motion: false, tilt: false };
 
@@ -40,6 +49,8 @@ type Options = {
   // a stand-in Claude Code where the real one usually lives, so asking Myra takes the same path on a machine without
   // it; a test that asks replaces the bridge's ask itself
   claude?: boolean;
+  // page time driven by the test: see clock.ts
+  clock?: boolean;
 };
 
 export async function launch({
@@ -51,6 +62,7 @@ export async function launch({
   env = {},
   data: kept,
   claude = false,
+  clock = false,
 }: Options = {}): Promise<Launched> {
   const data = kept ?? fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-h-'));
   const boardsDir = path.join(data, 'fenmyr', 'boards');
@@ -66,6 +78,8 @@ export async function launch({
     env: { ...process.env, ...env, XDG_DATA_HOME: data, HOME: data },
   });
   const page = await app.firstWindow();
+  if (CPU_SLOW > 1)
+    await (await app.context().newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: CPU_SLOW });
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.waitForFunction(() => window.__fenmyr?.curBoard());
@@ -82,6 +96,7 @@ export async function launch({
       for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v);
     } catch {}
   }, store);
+  if (clock) await installClock(app.context());
   if (MOTION_DELAY_MS > 0)
     await app.context().addInitScript(ms => {
       addEventListener('DOMContentLoaded', () => {

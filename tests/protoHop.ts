@@ -3,15 +3,17 @@
 // Calm, Calmest and reduced motion; and no hop between prototypes, on a phone, or as Fenmyr starts on a prototype.
 import assert from 'node:assert';
 import type { Edges } from './support/bar.ts';
+import { FRAME, skip, thawed, tick } from './support/clock.ts';
 import * as hop from './support/flight.ts';
 import { launch, settle } from './support/launch.ts';
-import { freshRepo, openPrototype } from './support/prototype.ts';
+import { freshRepo, ignoreNewBoards, openPrototype } from './support/prototype.ts';
 
 const { repo } = freshRepo('fenmyr-proto-hop-');
 const note = { id: 'n1', type: 'note', x: 40, y: 40, w: 220, h: 120, text: 'A note' };
 // no board named to open, so opening Fenmyr again goes back to the board last open
-const l = await launch({ boards: [{ id: 'one', name: 'One', cards: [note], links: [], tray: [] }] });
+const l = await launch({ boards: [{ id: 'one', name: 'One', cards: [note], links: [], tray: [] }], clock: true });
 const { page } = l;
+await ignoreNewBoards(page);
 
 const open = (id: string) => page.evaluate(id => window.__fenmyr.openBoard(id), id);
 const failed: string[] = [];
@@ -27,12 +29,13 @@ const check = async (name: string, run: () => Promise<void>) => {
     chat = await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
   if (board !== 'one') await open('one');
   else if (chat) await page.click('#mcClose');
-  if (board !== 'one' || chat) await page.waitForTimeout(1000);
+  if (board !== 'one' || chat) await skip(page, 1000);
 };
-const size = async (w: number, h: number) => {
-  await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
-  await settle(page, 400);
-};
+const size = (w: number, h: number) =>
+  thawed(page, async () => {
+    await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
+    await settle(page, 400);
+  });
 type Spot = { l: number; t: number };
 const near = (a: Spot, b: Spot, px: number) => Math.hypot(a.l - b.l, a.t - b.t) <= px;
 const inside = (a: Edges, b: Edges) => a.l >= b.l - 1 && a.t >= b.t - 1 && a.r <= b.r + 1 && a.b <= b.b + 1;
@@ -46,7 +49,7 @@ const myraCalm = async (v: 'lively' | 'calm' | 'calmest') => {
   await page.click('#setTabs [data-tab="myra"]');
   await page.click(`[data-seg="myraCalm"] [data-v="${v}"]`);
   await page.click('#setClose');
-  await page.waitForTimeout(300);
+  await skip(page, 300);
 };
 
 try {
@@ -75,13 +78,11 @@ try {
   }, repo);
   await size(1920, 1080);
   await open('one');
-  await settle(page);
+  await thawed(page, () => settle(page));
   const home = (await hop.edges(page, ['gooSlot'])).gooSlot;
   assert.ok(home, 'she shows in her box');
 
-  // She leaves the header for her box in one hop, from where she is, drawn above what is on the board. `inAir`: she is
-  // still in the air from her last hop, and moves on between the time she is read and the time she is sent back.
-  const away = () => hop.flight(page, () => open('one'));
+  const away = (watch?: number) => hop.exactFlight(page, () => open('one'), watch);
   const back = async (inAir = false) => {
     const rest = inAir ? await headerSpot() : null,
       f = await away(),
@@ -89,29 +90,29 @@ try {
       first = there[0];
     assert.ok(first && f.before, 'she moves into her box from the header');
     if (rest) assert.ok(!near(f.before, rest, 100), 'she is on her way to the header');
-    assert.ok(
-      near(first, f.before, inAir ? 120 : 8),
-      `her first frame in her box is not where she left: ${JSON.stringify(first)}`,
-    );
+    assert.ok(near(first, f.before, 8), `her first frame in her box is not where she left: ${JSON.stringify(first)}`);
     assert.ok(f.between > 5, `she is between the header and her box in ${f.between} frames`);
     const covered = there.filter(fr => !fr.onTop).length;
     assert.strictEqual(covered, 0, `something is drawn over her in ${covered} frames`);
     assert.ok(near(f.after, home, 1), 'she lands on her box');
   };
-  // Calm, Calmest and reduced motion: she fades out where she was and in at her box, with no hop
+  // Calm, Calmest and reduced motion: she fades out where she was and in at her box, with no hop. Her fades are 120 ms
+  // each, so she is watched for 300.
+  const FADE = 300;
   const fadesBack = async () => {
-    const f = await away(),
+    const f = await away(FADE),
       first = f.frames.find(fr => fr.home === 'mPill');
     assert.ok(first && f.before && near(first, f.before, 1), `she fades out in the header: ${JSON.stringify(first)}`);
     assert.strictEqual(f.between, 0, `she is between the header and her box in ${f.between} frames`);
+    assert.ok(!f.frames.some(fr => fr.air), 'she does not hop');
     assert.ok(
       f.frames.some(fr => fr.opacity < 0.5),
       'she fades',
     );
     assert.ok(near(f.after, home, 1), 'she ends on her box');
   };
-  const hopIn = async (id: string) => {
-    const f = await hop.flight(page, () => open(id)),
+  const hopIn = async (id: string, watch?: number) => {
+    const f = await hop.exactFlight(page, () => open(id), watch),
       first = f.frames.find(fr => fr.home === 'mcPerch');
     assert.ok(first, 'she moves into the header');
     return { ...f, first, spot: await headerSpot() };
@@ -123,7 +124,7 @@ try {
       window.__fenmyr.stopAnim();
     });
     let early = '';
-    const f = await hop.flight(page, async () => {
+    const f = await hop.exactFlight(page, async () => {
       await open('pb');
       early = await page.evaluate(() => window.__fenmyr.lastAnimName());
     });
@@ -140,7 +141,7 @@ try {
 
   await check('from her perch on the open chat, she hops into the docked chat’s header', async () => {
     await page.click('#mPill');
-    await page.waitForTimeout(1300);
+    await skip(page, 1300);
     const perch = (await hop.edges(page, ['gooSlot'])).gooSlot;
     assert.ok(perch && !near(perch, home, 20), 'she is perched on the open chat');
     const f = await hopIn('pb');
@@ -169,9 +170,10 @@ try {
   });
 
   const fadesIn = async () => {
-    const f = await hopIn('pb');
+    const f = await hopIn('pb', FADE);
     assert.ok(near(f.first, home, 1), `she fades out in her box: ${JSON.stringify(f.first)}`);
     assert.strictEqual(f.between, 0, `she is between her box and the header in ${f.between} frames`);
+    assert.ok(!f.frames.some(fr => fr.air), 'she does not hop');
     assert.ok(
       f.frames.some(fr => fr.opacity < 0.5),
       'she fades',
@@ -200,8 +202,8 @@ try {
 
   await check('from one prototype to another she stays on the header, with no hop', async () => {
     await open('pb');
-    await page.waitForTimeout(1300);
-    const f = await hop.flight(page, () => open('pb2'));
+    await skip(page, 1300);
+    const f = await hop.exactFlight(page, () => open('pb2'));
     assert.ok(f.before && !near(f.before, f.after, 20), 'the second prototype’s narrower chat moves the header’s spot');
     assert.strictEqual(f.between, 0, `she is between the two spots in ${f.between} frames`);
     assert.ok(inside(f.after, await headerSpot()), 'she sits on the header’s spot');
@@ -210,20 +212,20 @@ try {
 
   await check('leaving a prototype while she is in the air, she hops to her box from where she is', async () => {
     await open('pb');
-    await page.waitForTimeout(300);
+    await tick(page, 300);
     await back(true);
   });
 
   await check('on a phone she is in the docked chat’s header from the first frame, with no hop', async () => {
     await size(600, 900);
     try {
-      const f = await hop.flight(page, () => open('pb')),
+      const f = await hop.exactFlight(page, () => open('pb')),
         there = f.frames.filter(fr => fr.home === 'mcPerch'),
         moved = there.filter(fr => !near(fr, f.after, 1)).length;
       assert.ok(there.length > 0, 'she is in the header');
       assert.strictEqual(moved, 0, `she moves in ${moved} of ${there.length} frames`);
       // her box is hidden on a phone, so leaving shows no hop or fade of her either
-      const seen = await page.evaluate(
+      const watch = page.evaluate(
         () =>
           new Promise<{ frames: number; moving: number }>(done => {
             const slot = document.getElementById('gooSlot');
@@ -236,9 +238,11 @@ try {
               else done({ frames, moving });
             };
             requestAnimationFrame(tick);
-            void window.__fenmyr.openBoard('one');
           }),
       );
+      await open('one');
+      await tick(page, 91 * FRAME);
+      const seen = await watch;
       assert.strictEqual(seen.moving, 0, `she hops or fades in ${seen.moving} of ${seen.frames} frames on a phone`);
     } finally {
       await size(1920, 1080);
@@ -247,10 +251,12 @@ try {
 
   await check('opening Fenmyr on a prototype board, she is in the header from the first frame', async () => {
     await open('pb');
-    await page.waitForTimeout(1300);
-    await page.reload();
-    await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'pb');
-    const f = await hop.flight(page, async () => {}),
+    await skip(page, 1300);
+    await thawed(page, async () => {
+      await page.reload();
+      await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'pb');
+    });
+    const f = await hop.exactFlight(page, async () => {}),
       moved = f.frames.filter(fr => !near(fr, f.after, 1)).length;
     assert.strictEqual(moved, 0, `she moves in ${moved} frames`);
     assert.ok(inside(f.after, await headerSpot()), 'she sits on the header’s spot');

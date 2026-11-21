@@ -2,6 +2,7 @@
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import type { Edges } from './bar.ts';
+import { FRAME, onFrame, tick } from './clock.ts';
 
 // ms: since sampling began, by the frame that drew her pose. onTop: she is what shows at her centre. home: the id of
 // the element her slot sits in. air: she is in the air, stretched along her path. anim: the last of her animations to
@@ -31,12 +32,12 @@ export const edges = (page: Page, ids: string[]) =>
     return out;
   }, ids);
 
-// every frame for 1.6 s from `trigger`; `between` counts the frames more than 3 px from both where she started, unless
-// she was hidden there, as on a phone, and where she ended
-export async function flight(page: Page, trigger: () => Promise<unknown>) {
+// every frame for `watch` ms from `trigger`; `between` counts the frames more than 3 px from both where she started,
+// unless she was hidden there, as on a phone, and where she ended
+export async function flight(page: Page, trigger: () => Promise<unknown>, watch = 1600) {
   const before = (await edges(page, ['gooSlot'])).gooSlot;
   const frames = page.evaluate(
-    () =>
+    watch =>
       new Promise<Frame[]>(done => {
         const slot = document.getElementById('gooSlot'),
           seen: Frame[] = [],
@@ -63,11 +64,12 @@ export async function flight(page: Page, trigger: () => Promise<unknown>) {
             });
           }
           drawn = now;
-          if (performance.now() - t0 < 1600) requestAnimationFrame(tick);
+          if (performance.now() - t0 < watch) requestAnimationFrame(tick);
           else done(seen);
         };
         requestAnimationFrame(tick);
       }),
+    watch,
   );
   await trigger();
   const seen = await frames,
@@ -75,4 +77,19 @@ export async function flight(page: Page, trigger: () => Promise<unknown>) {
   assert.ok(after, 'her slot shows once she has moved');
   const off = (f: Frame, q?: Edges | null) => !q || Math.hypot(f.l - q.l, f.t - q.t) > 3;
   return { before, after, frames: seen, between: seen.filter(f => off(f, before) && off(f, after)).length };
+}
+
+// `flight` on a frozen clock (clock.ts), so her frames come FRAME apart from the switch and each frame's pose is hers
+// at its `ms` exactly. `trigger` may move the clock itself, to open a second board mid-hop or to hold a frame back
+// with `fastForward`. A hop into or out of a prototype's header lands within 0.87 s, so that is watched by default.
+export async function exactFlight(page: Page, trigger: () => Promise<unknown>, watch = 900) {
+  await onFrame(page);
+  return flight(
+    page,
+    async () => {
+      await trigger();
+      await tick(page, watch + 2 * FRAME);
+    },
+    watch,
+  );
 }
