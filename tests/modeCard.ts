@@ -6,8 +6,9 @@
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { type Edges, near, openBar } from './support/bar.ts';
-import { launch, settle } from './support/launch.ts';
+import { type Launched, launch } from './support/launch.ts';
 import { freshRepo, openPrototype } from './support/prototype.ts';
+import { still } from './support/settled.ts';
 
 type Geo = Awaited<ReturnType<typeof geo>>;
 // what shows, in window pixels: hidden, see-through and zero-sized things are null
@@ -64,34 +65,32 @@ function besidePanel(g: Geo, card: Edges | null, what: string) {
     assert.ok(!overlaps(card, e), `${what} ${show(card)} meets ${name} ${show(e)}`);
 }
 
-const { l, page, frames, view, select, barUp, check, done } = await openBar();
-const size = async (w: number, h: number) => {
-  await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
-  await settle(page, 300);
+const { l, page, view, select, barUp, check, done } = await openBar();
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *, #modebar, #modeCard';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
+const size = async (w: number, h: number, on: Launched = l) => {
+  await on.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
+  await on.page.waitForFunction(s => innerWidth === s.w && innerHeight === s.h, { w, h });
+  await still(on.page);
 };
-const blur = () =>
-  page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
 const key = async (k: string) => {
-  await blur();
+  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.keyboard.press(k);
-  await frames();
+  await still(page);
 };
 const openFind = async () => {
   await page.keyboard.press('Control+f');
   await page.keyboard.type('a');
   await page.keyboard.press('Enter');
   // it slides in, so it is measured once it is still
-  await page.waitForFunction(() => {
-    const bar = document.getElementById('findBar');
-    return bar?.checkVisibility() && !bar.getAnimations().length;
-  });
-  await frames();
+  await page.waitForFunction(() => document.getElementById('findBar')?.checkVisibility());
+  await still(page);
 };
-const still = () => page.waitForTimeout(450);
 const setChat = async (open: boolean) => {
   const now = await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
   if (now !== open) await page.click(open ? '#mPill' : '#mcClose');
-  await still();
+  await still(page);
 };
 const stopAll = async () => {
   await setChat(false);
@@ -99,7 +98,6 @@ const stopAll = async () => {
   await key('Escape');
   await key('Escape');
   await page.evaluate(() => window.__fenmyr.selectOnly([]));
-  await frames();
 };
 // her chat opening and closing never meets what is up, nor moves it
 const chatKeepsClear = (w: number, which: 'draw' | 'wire' | 'find', what: string) =>
@@ -189,7 +187,7 @@ await size(1100, 900);
 await check('with her chat open, the Wireframe column coming up moves the chat clear of it', async () => {
   await setChat(true);
   await page.click('#tools [data-add="frame"]');
-  await still();
+  await still(page);
   const g = await geo(page);
   assert.ok(g.chat && g.wire, 'her chat and the column are up');
   assert.ok(!overlaps(g.chat, g.wire), `her chat ${show(g.chat)} meets the column ${show(g.wire)}`);
@@ -214,7 +212,7 @@ await stopAll();
 await check('the size bubble over the knob shows whole, over drawing’s card', async () => {
   await key('p');
   await page.keyboard.press(']');
-  await page.waitForTimeout(250);
+  await still(page);
   const bub = await page.evaluate(() => {
     const b = document.getElementById('dbsBub'),
       r = b?.getBoundingClientRect();
@@ -269,9 +267,9 @@ await check('the Pieces picker keeps clear of the Wireframe column', async () =>
   await view(g0.panel.l - 700, 90, 0.5);
   await select(['scr']);
   await page.evaluate(() => document.querySelector<HTMLElement>('#selbar [data-pieces]')?.click());
-  await settle(page, 400);
+  await still(page);
   await key('w');
-  await settle(page, 300);
+  await still(page);
   const { pick, wire } = await geo(page);
   assert.ok(pick && wire, 'the picker and the column are up');
   assert.ok(!overlaps(pick, wire), `the picker ${show(pick)} meets the column ${show(wire)}`);
@@ -295,10 +293,10 @@ for (const [k, mode] of [
     await check(`the ${mode} card and the ${id} picker never share the left of the panel`, async () => {
       await key(k);
       await page.click(`#tools [data-add="${tool}"]`);
-      await page.waitForTimeout(300);
+      await still(page);
       assert.deepStrictEqual((await geo(page)).slot, [id], 'only the picker shows there');
       await key('Escape');
-      await page.waitForTimeout(250);
+      await still(page);
       assert.deepStrictEqual((await geo(page)).slot, [], 'and the mode is over once it closes');
     });
   // a right-click puts a tool being placed down, as it always has, and leaves drawing on
@@ -306,10 +304,10 @@ for (const [k, mode] of [
   await check(`the ${mode} card and the panel’s own menu never share the left of the panel`, async () => {
     await key(k);
     await page.click('#tools [data-add="link"]', { button: 'right' });
-    await page.waitForTimeout(250);
+    await still(page);
     assert.deepStrictEqual((await geo(page)).slot, ['rowMenu'], 'only the menu shows there');
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(250);
+    await still(page);
     assert.deepStrictEqual((await geo(page)).slot, after, 'once it closes');
   });
   await stopAll();
@@ -318,10 +316,10 @@ for (const [k, mode] of [
 await check('clean mode and an open doc hide drawing’s card', async () => {
   await key('p');
   await page.keyboard.press('Control+Backslash');
-  await page.waitForTimeout(400);
+  await still(page);
   const clean = (await geo(page)).draw;
   await page.keyboard.press('Control+Backslash');
-  await page.waitForTimeout(400);
+  await still(page);
   await key('Escape');
   await page.evaluate(() => {
     const b = window.__fenmyr.board;
@@ -332,7 +330,7 @@ await check('clean mode and an open doc hide drawing’s card', async () => {
   await page.locator('.card[data-id="doc"]').dblclick();
   await page.waitForFunction(() => document.getElementById('stage')?.classList.contains('doc-open'));
   await key('p');
-  await page.waitForTimeout(300);
+  await still(page);
   const doc = (await geo(page)).draw;
   await key('Escape');
   await key('Escape');
@@ -345,7 +343,7 @@ await check(
   async () => {
     await openPrototype(page, freshRepo('mode-card-').repo);
     await page.waitForFunction(() => document.body.classList.contains('proto'));
-    await settle(page, 1500);
+    await still(page);
     await key('p');
     const g = await geo(page),
       on = await page.evaluate(() => {
@@ -374,18 +372,17 @@ const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: '
 const big = await launch({ boards: [bare], open: 'b', settings: { tbSize: 'l' } });
 try {
   const bp = big.page;
-  await big.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1280, 560));
-  await settle(bp, 500);
+  await size(1280, 560, big);
   await bp.keyboard.press('p');
-  await bp.waitForTimeout(200);
+  await still(bp);
   const g = await geo(bp);
   try {
     besidePanel(g, g.draw, 'drawing’s card with large icons in a short window');
     await bp.click('#tbMore');
-    await bp.waitForTimeout(250);
+    await still(bp);
     assert.deepStrictEqual((await geo(bp)).slot, ['rowMenu'], 'with ··· open only its menu shows left of the panel');
     await bp.keyboard.press('Escape');
-    await bp.waitForTimeout(250);
+    await still(bp);
     assert.deepStrictEqual((await geo(bp)).slot, ['drawbar'], 'the card is back once ··· closes');
   } catch (e) {
     failed.push(`large icons: ${e instanceof Error ? e.message : String(e)}`);

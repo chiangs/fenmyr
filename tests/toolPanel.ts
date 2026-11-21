@@ -5,14 +5,16 @@ import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { PANEL, TOOLBAR } from '../src/web/ui/toolbarTable.ts';
 import { near, openBar } from './support/bar.ts';
-import { type Launched, launch, settle } from './support/launch.ts';
+import { type Launched, launch } from './support/launch.ts';
 import { freshRepo, openPrototype } from './support/prototype.ts';
+import { still } from './support/settled.ts';
 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
 const bare = { id: 'b', name: 'Bare', cards: [note], links: [], tray: [], view: { x: 300, y: 200, z: 1 } };
 const sizer = (l: Launched) => async (w: number, h: number) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
-  await settle(l.page, 500);
+  await l.page.waitForFunction(s => innerWidth === s.w && innerHeight === s.h, { w, h });
+  await still(l.page);
 };
 // the panel, the bottom bar, zoom, Unsorted and the board's pane, in window pixels
 const geo = (page: Page) =>
@@ -71,10 +73,14 @@ const shownIds = (page: Page) =>
   page.$$eval('#tools > [data-add]', bs =>
     bs.filter(b => !b.hasAttribute('hidden')).map(b => b.getAttribute('data-add') ?? ''),
   );
+const clickThenStill = async (page: Page, selector: string, button: 'left' | 'right' = 'left') => {
+  await page.click(selector, { button });
+  await still(page);
+};
 const putDown = async (page: Page) => {
   await page.keyboard.press('Escape');
   await page.mouse.click(700, 500);
-  await page.waitForTimeout(250);
+  await still(page);
 };
 // each group starts a row, in the panel's first column, and only those buttons are marked
 async function groupsStartRows(page: Page, what: string) {
@@ -125,7 +131,7 @@ await check('the panel sits over Unsorted, as wide as its content, at the widget
 await check('the panel stays put as the chat opens, a tool is picked and the window’s height changes', async () => {
   const before = (await geo(page)).tools;
   await page.click('#mPill');
-  await page.waitForTimeout(500);
+  await still(page);
   const chat = (await geo(page)).tools;
   await page.click('#mcClose');
   await page.click('#tools [data-add="note"]');
@@ -155,7 +161,7 @@ await check('a tooltip in the panel’s last column ends inside the window', asy
   });
   assert.ok(last, 'a tool sits in the last column');
   await page.hover(`#tools [data-add="${last}"]`);
-  await page.waitForTimeout(350);
+  await still(page);
   const tip = await page.evaluate(id => {
     const b = document.querySelector(`#tools [data-add="${id}"]`);
     if (!b) return null;
@@ -171,23 +177,18 @@ await check('a tooltip in the panel’s last column ends inside the window', asy
 });
 
 async function everyOpener(what: string) {
-  await page.click('#tools [data-add="shape"]');
-  await page.waitForTimeout(300);
+  await clickThenStill(page, '#tools [data-add="shape"]');
   leftOfPanel(await opened(page, '#shapePick', '#tools [data-add="shape"]'), `${what}: Shapes`);
   await putDown(page);
-  await page.click('#tools [data-add="tpl"]');
-  await page.waitForTimeout(300);
+  await clickThenStill(page, '#tools [data-add="tpl"]');
   leftOfPanel(await opened(page, '#tplPick', '#tools [data-add="tpl"]'), `${what}: Templates`);
   await putDown(page);
-  await page.click('#tools [data-add="stamp"]');
-  await page.waitForTimeout(300);
+  await clickThenStill(page, '#tools [data-add="stamp"]');
   leftOfPanel(await opened(page, '#stampWheel', '#tools [data-add="stamp"]'), `${what}: the stamp wheel`);
-  await page.click('#wsMid');
-  await page.waitForTimeout(300);
+  await clickThenStill(page, '#wsMid');
   leftOfPanel(await opened(page, '#stampPick', '#tools [data-add="stamp"]'), `${what}: every stamp`);
   await putDown(page);
-  await page.click('#tools [data-add="link"]', { button: 'right' });
-  await page.waitForTimeout(200);
+  await clickThenStill(page, '#tools [data-add="link"]', 'right');
   leftOfPanel(await opened(page, '#rowMenu', '#tools [data-add="link"]'), `${what}: Customise toolbar`);
   assert.strictEqual(await page.textContent('#rowMenu'), 'Customise toolbar…', `${what}: the panel’s own menu`);
   await putDown(page);
@@ -212,8 +213,7 @@ await check('every stamp wraps into rows: no tab scrolls sideways or up and down
 });
 
 await check('drawing’s card sits left of the panel, level with its top', async () => {
-  await page.click('#tools [data-add="draw"]');
-  await page.waitForTimeout(300);
+  await clickThenStill(page, '#tools [data-add="draw"]');
   const g = await geo(page),
     card = await page.evaluate(() => document.getElementById('modeCard')?.getBoundingClientRect().toJSON());
   await page.keyboard.press('Escape');
@@ -225,7 +225,7 @@ await check('drawing’s card sits left of the panel, level with its top', async
 
 await check('the open chat leaves zoom showing', async () => {
   await page.click('#mPill');
-  await page.waitForTimeout(500);
+  await still(page);
   const seen = await page.evaluate(() => {
     const z = document.getElementById('zoom')?.getBoundingClientRect(),
       c = document.getElementById('mChat')?.getBoundingClientRect();
@@ -240,7 +240,7 @@ await check('the open chat leaves zoom showing', async () => {
 await check('reaching under the tools, her open chat keeps below them', async () => {
   await size(1100, 700);
   await page.click('#mPill');
-  await page.waitForTimeout(500);
+  await still(page);
   const g = await geo(page),
     chat = await page.evaluate(() => document.getElementById('mChat')?.getBoundingClientRect().toJSON());
   await page.click('#mcClose');
@@ -254,8 +254,7 @@ await check(
   async () => {
     const before = (await geo(page)).tools;
     await size(600, 900);
-    await page.click('#hub [data-sheet="add"]');
-    await page.waitForTimeout(300);
+    await clickThenStill(page, '#hub [data-sheet="add"]');
     const phone = await page.evaluate(() => ({
       zoom: !!document.getElementById('zoom')?.checkVisibility(),
       sheet: document.getElementById('tools')?.parentElement?.id,
@@ -283,17 +282,17 @@ await check('Just the board has no button, and Ctrl+\\ hides the panel and bring
   // a count, as an element handle in a failed assertion's message takes the whole connection with it
   const button = await page.locator('#cleanBtn').count();
   await page.keyboard.press('Control+Backslash');
-  await page.waitForTimeout(400);
+  await still(page);
   const hidden = await shown();
   await page.keyboard.press('Control+Backslash');
-  await page.waitForTimeout(400);
+  await still(page);
   assert.deepStrictEqual([button, hidden, await shown()], [0, false, true]);
 });
 
 await check('on a prototype board the panel sits at the board pane’s top right, the bar centred under it', async () => {
   await openPrototype(page, freshRepo('tool-panel-').repo);
   await page.waitForFunction(() => document.body.classList.contains('proto'));
-  await settle(page, 1500);
+  await still(page);
   const g = await geo(page);
   assert.ok(g.tools && g.dock && g.pane, 'the panel, the bar and the board pane are up');
   near(g.tools.r, g.pane.r - 14, 'the panel’s right edge');
@@ -349,22 +348,22 @@ try {
   });
   await bigCheck('··· and a tool tucked into it open left of the panel', async () => {
     await bp.click('#tbMore');
-    await bp.waitForTimeout(200);
+    await still(bp);
     leftOfPanel(await opened(bp, '#rowMenu', '#tbMore'), '···');
     await bp.locator('#rowMenu button', { hasText: 'Shapes' }).click();
-    await bp.waitForTimeout(300);
+    await still(bp);
     leftOfPanel(await opened(bp, '#shapePick', '#tbMore'), 'Shapes from ···');
     await putDown(bp);
   });
   await openPrototype(bp, freshRepo('tool-panel-big-').repo);
-  await settle(bp, 1500);
+  await still(bp);
   await bigCheck('on a prototype board ··· and a tool tucked into it open left of the panel', async () => {
     assert.ok((await tucked(bp)).includes('shape'), 'Shapes is tucked');
     await bp.click('#tbMore');
-    await bp.waitForTimeout(200);
+    await still(bp);
     leftOfPanel(await opened(bp, '#rowMenu', '#tbMore'), '···');
     await bp.locator('#rowMenu button', { hasText: 'Shapes' }).click();
-    await bp.waitForTimeout(300);
+    await still(bp);
     leftOfPanel(await opened(bp, '#shapePick', '#tbMore'), 'Shapes from ···');
   });
   failed.push(...big.errors);

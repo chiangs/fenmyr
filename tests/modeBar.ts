@@ -4,9 +4,12 @@
 // the tools and the bottom bar stay as they were.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
-import { settle } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const { l, page, frames, view, select, shape, check, done } = await openBar();
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const seen = (sel: string) => page.evaluate(sel => !!document.querySelector(sel)?.checkVisibility(), sel);
 const text = (sel: string) => page.evaluate(sel => document.querySelector(sel)?.textContent?.trim() ?? '', sel);
 const inks = () => page.evaluate(() => window.__fenmyr.curBoard()?.cards.filter(c => c.type === 'ink').length ?? 0);
@@ -74,7 +77,7 @@ assert.strictEqual(f.selected.length, 1, 'and selects the match it was on');
 await page.click('#mPill');
 await page.fill('#mcInput', 'a draft');
 await page.keyboard.press('Control+f');
-await page.waitForTimeout(200);
+await still(page);
 f = await findState();
 assert.ok(f.shown && f.focus === 'fbQ', 'with a draft in Myra’s box, Ctrl+F opens the find bar on its own');
 assert.strictEqual(
@@ -162,7 +165,8 @@ const sitsAbove = async (width: number) => {
 };
 const setWidth = async (w: number) => {
   await l.app.evaluate(({ BrowserWindow }, w) => BrowserWindow.getAllWindows()[0]?.setSize(w, 900), w);
-  await settle(page, 300);
+  await page.waitForFunction(w => innerWidth === w, w);
+  await still(page);
 };
 const [width0] = await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.getSize() ?? [0]);
 
@@ -247,7 +251,7 @@ await check('Myra’s chat keeps clear of the find bar', async () => {
   await openFind('a');
   await page.click('#mPill');
   await page.waitForFunction(() => document.getElementById('myra')?.classList.contains('chat'));
-  await page.waitForTimeout(400);
+  await still(page);
   const clear = await page.evaluate(() => {
     const c = document.getElementById('mChat')?.getBoundingClientRect(),
       f = document.getElementById('findBar')?.getBoundingClientRect();
@@ -271,8 +275,7 @@ await check('a selection’s bar keeps above the find bar', async () => {
 await stopAll();
 await select([]);
 
-await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(600, 900));
-await settle(page);
+await setWidth(600);
 await page.evaluate(() => window.__fenmyr.selectOnly([]));
 await page.keyboard.press('p');
 await frames();

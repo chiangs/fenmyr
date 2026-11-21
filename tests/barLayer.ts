@@ -2,7 +2,8 @@
 // card's wheel and quick capture open over it; a tall Unsorted list keeps the bar clear of it; what is being placed
 // stays under a menu; and with a doc open, presses where the bar was reach the doc.
 import assert from 'node:assert';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const at = (id: string, type: string, x: number, y: number, w: number, h: number, more = {}) => ({
   id,
@@ -38,25 +39,25 @@ const l = await launch({ boards: [board], open: 'layer' });
 const { page } = l;
 const size = async (w: number, h: number) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
-  await settle(page, 400);
+  await page.waitForFunction(s => innerWidth === s.w && innerHeight === s.h, { w, h });
+  await still(page);
 };
-const still = () => page.waitForTimeout(450);
 const view = async () => {
   await page.evaluate(() => {
     Object.assign(window.__fenmyr.view, { x: 0, y: 0, z: 1 });
     window.__fenmyr.applyView();
   });
-  await still();
+  await still(page);
 };
 const chatOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 const setChat = async (open: boolean) => {
   if ((await chatOpen()) !== open) await page.click(open ? '#mPill' : '#mcClose');
-  await still();
+  await still(page);
 };
 const closeAll = async () => {
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
-  await still();
+  await still(page);
 };
 // the id of the element that shows where `top` and `under` meet: `top` when it is on top
 const onTopWhereMeets = (top: string, under: string) =>
@@ -102,7 +103,7 @@ for (const [tool, picker] of [
     await setChat(true);
     await page.click(`#tools [data-add="${tool}"]`);
     if (picker === '#stampPick') await page.click('#wsMid');
-    await still();
+    await still(page);
     const top = await onTopWhereMeets(picker, '#mChat');
     await closeAll();
     assert.strictEqual(top, picker);
@@ -118,7 +119,7 @@ await check('with Myra’s chat open, a colour card’s wheel opens over it', as
     window.__fenmyr.applyView();
   });
   await page.locator('.card[data-id="sw"]').dblclick();
-  await still();
+  await still(page);
   const top = await onTopWhereMeets('#cpop', '#mChat');
   await closeAll();
   assert.strictEqual(top, '#cpop');
@@ -128,7 +129,7 @@ await check('on a short window, quick capture opens over Myra’s open chat', as
   await size(1200, 640);
   await setChat(true);
   await page.keyboard.press('Control+k');
-  await still();
+  await still(page);
   const top = await onTopWhereMeets('#capture', '#mChat');
   await closeAll();
   await size(1440, 900);
@@ -157,10 +158,11 @@ await check('at 1100 × 760 a tall Unsorted list keeps the bar 14 px clear of th
 await check('what is being placed shows under the zoom menu', async () => {
   await page.click('#tools [data-add="note"]');
   await page.click('#zoom');
+  await still(page);
   const menu = await page.locator('#rowMenu').boundingBox();
   assert.ok(menu, 'the zoom menu is up');
   await page.mouse.move(menu.x + 10, menu.y + 10);
-  await still();
+  await still(page);
   // the ghost lets presses through, so for a moment it takes them, to see what is on top
   const top = await page.evaluate(() => {
     const g = document.getElementById('ghost');
@@ -179,7 +181,7 @@ await check('with a doc open, a press where the bar was reaches the doc', async 
   await view();
   await page.locator('.card[data-id="doc"]').dblclick();
   await page.waitForFunction(() => document.getElementById('stage')?.classList.contains('doc-open'));
-  await still();
+  await still(page);
   // where the hidden tools were, and where her hidden box was
   const hits = await page.evaluate(() => {
     const v = document.getElementById('docview')?.getBoundingClientRect();
