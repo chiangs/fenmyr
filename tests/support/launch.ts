@@ -18,6 +18,14 @@ function parseMotionDelay(text: string | undefined): number {
 }
 const MOTION_DELAY_MS = parseMotionDelay(process.env.FENMYR_MOTION_DELAY);
 
+function parseCpuSlow(text: string | undefined): number {
+  if (text === undefined) return 1;
+  if (!/^\d+(\.\d+)?$/.test(text) || Number(text) < 1)
+    throw new Error(`FENMYR_CPU_SLOW takes a rate of 1 or more such as 8, not "${text}"`);
+  return Number(text);
+}
+const CPU_SLOW = parseCpuSlow(process.env.FENMYR_CPU_SLOW);
+
 const QUIET = { greet: false, autoUpdate: false, caelestia: false, motion: false, tilt: false };
 
 export type Board = { id: string; name: string; [key: string]: unknown };
@@ -66,6 +74,8 @@ export async function launch({
     env: { ...process.env, ...env, XDG_DATA_HOME: data, HOME: data },
   });
   const page = await app.firstWindow();
+  if (CPU_SLOW > 1)
+    await (await app.context().newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: CPU_SLOW });
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.waitForFunction(() => window.__fenmyr?.curBoard());
