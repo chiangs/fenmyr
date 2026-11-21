@@ -3,12 +3,30 @@
 // the wheel over them panning, their place in Tab order, and a phone's strips leaving the bar when the window widens.
 import assert from 'node:assert';
 import { near, openBar } from './support/bar.ts';
-import { settle } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const { l, page, frames, view, check, done } = await openBar();
+// --lag delays every visibility change. The app means two of them to be at once: her input shows as the chat opens, for
+// the focus it gives it, and the bar and tools hide as an export starts, which waits 150 ms for them to go.
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({
+    content:
+      '#myra.chat #mChat, #myra.chat #mChat *, body.exporting #dock, body.exporting #tools { transition-delay: 0s !important; }',
+  });
 const size = async (w: number, h = 900) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
-  await settle(page, 400);
+  await page.waitForFunction(s => innerWidth === s.w && innerHeight === s.h, { w, h });
+  await still(page);
+};
+const chat = async (open: boolean) => {
+  await page.click(open ? '#mPill' : '#mcClose');
+  await page.waitForFunction(o => !!document.getElementById('myra')?.classList.contains('chat') === o, open);
+  await still(page);
+};
+const home = async (open: boolean) => {
+  await page.click(open ? '#homeBtn' : '#homeClose');
+  await page.waitForFunction(o => !!document.getElementById('stage')?.classList.contains('at-home') === o, open);
+  await still(page);
 };
 // the bar's parts, whether each shows, and whether a press at its middle reaches it
 const bar = () =>
@@ -92,10 +110,10 @@ await size(1440);
 
 await check('clean mode hides the bar, and it comes back', async () => {
   await page.keyboard.press('Control+Backslash');
-  await page.waitForTimeout(400);
+  await still(page);
   const hidden = await bar();
   await page.keyboard.press('Control+Backslash');
-  await page.waitForTimeout(400);
+  await still(page);
   const back = await bar();
   assert.ok(!hidden.dock?.shown && !hidden.firstTool?.hit && !hidden.pill?.hit, 'hidden and out of reach');
   assert.ok(back.dock?.shown && back.firstTool?.hit, 'back and in reach');
@@ -119,7 +137,7 @@ await check('an exported picture leaves the bar and the tools out', async () => 
   await page.mouse.click(700, 400, { button: 'right' });
   await page.locator('#rowMenu button', { hasText: 'Export board as image' }).click();
   await page.waitForFunction(() => document.body.dataset.barInExport !== undefined);
-  await settle(page, 300);
+  await still(page);
   const [during, after] = await page.evaluate(() => [
     document.body.dataset.barInExport,
     !!document.getElementById('dock')?.checkVisibility({ visibilityProperty: true }),
@@ -128,11 +146,9 @@ await check('an exported picture leaves the bar and the tools out', async () => 
 });
 
 await check('at Home the tools hide and Myra’s box stays', async () => {
-  await page.click('#homeBtn');
-  await page.waitForTimeout(400);
+  await home(true);
   const b = await bar();
-  await page.click('#homeClose');
-  await page.waitForTimeout(400);
+  await home(false);
   assert.ok(!b.tools?.shown && b.pill?.shown && b.pill.hit, 'no tools, her box in reach');
 });
 
@@ -145,20 +161,17 @@ await check('a picture dropped on the tools or Myra’s box lands on the board',
   }
 });
 await check('a picture dropped on Myra’s open chat lands on the board', async () => {
-  await page.click('#mPill');
-  await page.waitForTimeout(400);
+  await chat(true);
   const before = await cardCount();
   await dropPicture('#mcList');
   await page.waitForFunction(n => window.__fenmyr.board.cards.length > n, before, { timeout: 3000 });
-  await page.click('#mcClose');
-  await page.waitForTimeout(400);
+  await chat(false);
 });
 
 await check('Myra’s open chat never meets a right widget: the column ends above it', async () => {
   // narrow enough that her joined chat reaches under the right column, tall enough for Unsorted above it
   await size(1100, 1080);
-  await page.click('#mPill');
-  await page.waitForTimeout(400);
+  await chat(true);
   const seen = await page.evaluate(() => {
     const chat = document.getElementById('mChat')?.getBoundingClientRect(),
       widgets = [...(document.getElementById('sideR')?.children ?? [])]
@@ -173,8 +186,7 @@ await check('Myra’s open chat never meets a right widget: the column ends abov
       ),
     };
   });
-  await page.click('#mcClose');
-  await page.waitForTimeout(400);
+  await chat(false);
   await size(1440);
   assert.ok(seen && seen.widgets > 0, `a right widget shows: ${JSON.stringify(seen)}`);
   assert.ok(seen.below, 'the open chat sits below the right column');
@@ -188,22 +200,20 @@ await check('the wheel over the tools or Myra’s box pans the board', async () 
     assert.ok(box, `${at} is up`);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.wheel(0, 120);
-    await page.waitForTimeout(150);
+    await page.waitForFunction(() => window.__fenmyr.view.y === -120);
     assert.strictEqual((await viewNow()).y, -120, `the wheel over ${at} pans`);
   }
 });
 await check('the wheel over Myra’s open chat leaves the board still', async () => {
-  await page.click('#mPill');
-  await page.waitForTimeout(400);
+  await chat(true);
   await view(0, 0);
   const box = await page.locator('#mcList').boundingBox();
   assert.ok(box, 'her chat is open');
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, 120);
-  await page.waitForTimeout(150);
+  await still(page);
   const y = (await viewNow()).y;
-  await page.click('#mcClose');
-  await page.waitForTimeout(400);
+  await chat(false);
   assert.strictEqual(y, 0);
 });
 
@@ -240,9 +250,7 @@ await check('what is being placed shows over the bar', async () => {
 await check(
   'Tab reaches the tools after the left widgets, then Myra’s box without opening her chat; Enter opens it, Esc returns to the box',
   async () => {
-    if (await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat')))
-      await page.click('#mcClose');
-    await page.waitForTimeout(400);
+    if (await page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'))) await chat(false);
     await page.focus('#tools [data-add="pointer"]');
     await page.keyboard.press('Shift+Tab');
     const before = await focusedIn();
@@ -282,25 +290,26 @@ await check('with a doc open the tools and Myra’s box hide, and her chat shows
   await view(0, 0);
   await page.locator('.card[data-id="doc"]').dblclick();
   await page.waitForFunction(() => document.getElementById('stage')?.classList.contains('doc-open'));
-  await page.waitForTimeout(500);
+  await still(page);
   const b = await bar();
   assert.ok(!b.tools?.shown && !b.firstTool?.hit, 'the tools are hidden and out of reach');
   assert.ok(!b.pill?.shown && !b.pill?.hit, 'her box is hidden and out of reach');
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.keyboard.press('m');
-  await page.waitForTimeout(500);
-  const chat = await page.evaluate(() => {
+  await page.waitForFunction(() => document.getElementById('myra')?.classList.contains('chat'));
+  await still(page);
+  const hit = await page.evaluate(() => {
     const el = document.getElementById('mcList'),
       r = el?.getBoundingClientRect();
     if (!r || !document.getElementById('stage')?.classList.contains('doc-open')) return 'the doc closed';
-    const hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
-    return hit?.closest('#mChat') ? 'chat' : (hit?.className ?? 'nothing');
+    const at = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+    return at?.closest('#mChat') ? 'chat' : (at?.className ?? 'nothing');
   });
-  assert.strictEqual(chat, 'chat');
+  assert.strictEqual(hit, 'chat');
 });
 await page.keyboard.press('Escape');
 await page.keyboard.press('Escape');
-await page.waitForTimeout(400);
+await still(page);
 
 await check('on a phone the selection and mode strips join the bar, and leave it when the window widens', async () => {
   const wide = await bar();
