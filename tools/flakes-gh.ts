@@ -1,5 +1,3 @@
-// The only code that asks GitHub: it runs gh, and reads what comes back, which is unknown until it is checked here,
-// into the values flakes-ledger.ts works on.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { Run } from './flakes-ledger.ts';
@@ -33,8 +31,6 @@ export function parseRuns(json: string): Run[] {
   if (!Array.isArray(raw)) throw new Error('gh run list: the reply is not a list');
   return raw.map((item: unknown): Run => {
     if (!isRecord(item)) throw new Error(`gh run list: a run is not an object: ${JSON.stringify(item).slice(0, 160)}`);
-    // gh leaves this empty, or null, until the latest attempt has ended
-    const conclusion = item.conclusion;
     return {
       id: whole(item, 'databaseId'),
       sha: text(item, 'headSha'),
@@ -42,34 +38,21 @@ export function parseRuns(json: string): Run[] {
       event: text(item, 'event'),
       created: text(item, 'createdAt'),
       attempts: whole(item, 'attempt'),
-      conclusion: typeof conclusion === 'string' ? conclusion : '',
+      // gh leaves the conclusion empty until the latest attempt has ended
+      conclusion: text(item, 'conclusion') || 'running',
     };
   });
 }
 
-// --created takes a date, so this is the day the window starts on; the exact cut is made on the runs afterwards
 export async function listRuns(since: Date): Promise<Run[]> {
-  const created = `>=${since.toISOString().slice(0, 10)}`;
-  const args = [
-    'run',
-    'list',
-    '--workflow',
-    'CI',
-    '--created',
-    created,
-    '--limit',
-    String(RUN_LIMIT),
-    '--json',
-    FIELDS,
-  ];
-  const runs = parseRuns(await gh(args));
+  const window = ['--workflow', 'CI', '--created', `>=${since.toISOString()}`, '--limit', String(RUN_LIMIT)];
+  const runs = parseRuns(await gh(['run', 'list', ...window, '--json', FIELDS]));
   if (runs.length >= RUN_LIMIT)
     console.error(`gh stopped at ${RUN_LIMIT} runs, so the oldest in this window are missing`);
   return runs;
 }
 
-// The run list shows only the last attempt, so attempt 1's failure has to be asked for by number.
-// A log that cannot be read is said on stderr and counts as nothing found, so one expired log does not hide the rest.
+// The run list shows only the last attempt.
 export async function readFirstAttempts(ids: number[]): Promise<Map<number, Failure[]>> {
   const found = new Map<number, Failure[]>();
   const queue = [...ids];
@@ -78,8 +61,8 @@ export async function readFirstAttempts(ids: number[]): Promise<Map<number, Fail
       try {
         found.set(id, parseLog(await gh(['run', 'view', String(id), '--attempt', '1', '--log-failed'])));
       } catch (error) {
-        console.error(`run ${id}: could not read attempt 1's log: ${error instanceof Error ? error.message : error}`);
-        found.set(id, []);
+        const message = error instanceof Error ? error.message : String(error);
+        found.set(id, [{ kind: 'unread', message: message.replace(/\s+/g, ' ') }]);
       }
     }
   };

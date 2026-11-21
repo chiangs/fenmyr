@@ -1,8 +1,5 @@
-// How often CI needed a rerun, and why: every run with more than one attempt, what failed on its first attempt, and
-// whether the same commit then passed. It only reads, through gh.
-//   node tools/flakes.ts [--days n]     runs created in the last n days (7 by default)
 import { listRuns, readFirstAttempts } from './flakes-gh.ts';
-import { buildLedger, createdSince, isRerun, renderLedger } from './flakes-ledger.ts';
+import { buildLedger, isRerun, renderLedger } from './flakes-ledger.ts';
 
 const DEFAULT_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -22,10 +19,10 @@ function parseDays(args: string[]): number {
 try {
   const days = parseDays(process.argv.slice(2));
   const since = new Date(Date.now() - days * DAY_MS);
-  const runs = createdSince(await listRuns(since), since);
-  const firstAttempt = await readFirstAttempts(runs.filter(isRerun).map(r => r.id));
+  const runs = await listRuns(since);
+  const firstAttemptFailures = await readFirstAttempts(runs.filter(isRerun).map(r => r.id));
   console.log(`CI runs created since ${since.toISOString().slice(0, 16)}Z (${days} days)\n`);
-  console.log(renderLedger(buildLedger({ runs, firstAttempt })));
+  console.log(renderLedger(buildLedger({ runs, firstAttemptFailures })));
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);

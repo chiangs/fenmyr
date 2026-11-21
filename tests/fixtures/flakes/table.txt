@@ -15,8 +15,10 @@ run          created     event              branch                     attempts 
   visual job: VISUAL CHANGED: 17 of 51 states differ from origin/main unexpectedly, 4 as listed in tools/visu…
 43709534045  2026-11-15  workflow_dispatch  feat/myra-chat-7g          2         failure       no
   test job: TypeError: terminated
+42672774908  2026-11-09  pull_request       feat/myra-chat             2         failure       no
+  no failure found in attempt 1's log
 
-Reruns: 7 of 11 runs.
+Reruns: 8 of 12 runs.
 Proven flakes: 4, where the last attempt of the same run passed on the same commit.
 Passed on the same commit in another run only: 1.
 Proven, by what failed on attempt 1:

@@ -1,10 +1,9 @@
-// The CI ledger, from saved gh output: what a log's first attempt failed on, which reruns passed on the same commit, the table and its summary.
 import assert from 'node:assert';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseRuns } from '../tools/flakes-gh.ts';
-import { buildLedger, createdSince, isRerun, renderLedger } from '../tools/flakes-ledger.ts';
+import { buildLedger, isRerun, type Run, renderLedger } from '../tools/flakes-ledger.ts';
 import { type Failure, parseLog } from '../tools/flakes-log.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -28,19 +27,21 @@ assert.throws(
   /databaseId is not a whole number/,
 );
 assert.throws(() => parseRuns(JSON.stringify([{ ...whole, attempt: '2' }])), /attempt is not a whole number/);
+assert.throws(
+  () => parseRuns(JSON.stringify([whole])),
+  /conclusion is not text/,
+  'a run without a conclusion is refused',
+);
 assert.strictEqual(
-  parseRuns(JSON.stringify([{ ...whole, conclusion: null }]))[0]?.conclusion,
-  '',
-  'no conclusion yet is empty',
+  parseRuns(JSON.stringify([{ ...whole, conclusion: '' }]))[0]?.conclusion,
+  'running',
+  'gh leaves the conclusion empty until the latest attempt ends',
 );
 
-// 9 Nov, a week and more before the others: out of an eight-day window ending on the 21st
-const now = new Date('2026-11-21T12:00:00Z');
-const runs = createdSince(all, new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000));
-assert.strictEqual(runs.length, 11, 'a run created before the window is left out');
+const runs = all;
 assert.deepStrictEqual(
   runs.filter(isRerun).map(r => r.id),
-  [44844589049, 44842706165, 44574277480, 44533956512, 43974954420, 43888404670, 43709534045],
+  [44844589049, 44842706165, 44574277480, 44533956512, 43974954420, 43888404670, 43709534045, 42672774908],
   'the reruns are the runs on a second attempt or later',
 );
 
@@ -82,11 +83,11 @@ assert.deepStrictEqual(
   [{ kind: 'job', job: 'test', message: 'TypeError: terminated' }],
   'a job that failed before any test ran is named, with its first error',
 );
-assert.deepStrictEqual(log(42672774908), [], 'a log that is gone gives no failure rather than an error');
+assert.deepStrictEqual(log(42672774908), [], 'an empty log gives no failure');
 
 const several = log(43888404670);
 assert.deepStrictEqual(
-  several.map(f => (f.kind === 'test' ? `${f.job} ${f.file}` : `${f.job} job`)),
+  several.flatMap(f => (f.kind === 'test' ? [`${f.job} ${f.file}`] : f.kind === 'job' ? [`${f.job} job`] : [])),
   ['Tests 4/4 tests/buildExplain.ts', 'Tests 1/4 tests/buildChecksQueue.ts', 'visual job'],
   'one log can name two tests in two jobs and a failed job beside them',
 );
@@ -95,14 +96,13 @@ assert.strictEqual(queue?.message.length, 300, 'a message is cut at 300 characte
 const visual = several.find(f => f.kind === 'job');
 assert.match(visual?.message ?? '', /^VISUAL CHANGED: 17 of 51 states differ/, 'the visual job says what changed');
 
-// the saved logs do not reach these edges of the message search, so a few lines are made up in gh's format
-const gh = (job: string, text: string) => `${job}\tUNKNOWN STEP\t2026-11-21T00:00:00.0000000Z ${text}`;
-const failedLine = (job: string) => gh(job, 'tests/x.ts failed (exit 1) in 1.0s');
-const filler = (job: string, n: number) => Array.from({ length: n }, (_, i) => gh(job, `line ${i}`));
+const madeUp = (job: string, text: string) => `${job}\tUNKNOWN STEP\t2026-11-21T00:00:00.0000000Z ${text}`;
+const failedLine = (job: string) => madeUp(job, 'tests/x.ts failed (exit 1) in 1.0s');
+const filler = (job: string, n: number) => Array.from({ length: n }, (_, i) => madeUp(job, `line ${i}`));
 const said = (...lines: string[]) => parseLog(lines.join('\n'))[0]?.message;
-const err = (job: string) => gh(job, 'locator.click: Timeout 5000ms exceeded.');
+const err = (job: string) => madeUp(job, 'locator.click: Timeout 5000ms exceeded.');
 assert.strictEqual(
-  said(err('A'), gh('A', '    at file:///x.ts:1:1'), failedLine('A')),
+  said(err('A'), madeUp('A', '    at file:///x.ts:1:1'), failedLine('A')),
   'locator.click: Timeout 5000ms exceeded.',
 );
 assert.strictEqual(
@@ -112,21 +112,28 @@ assert.strictEqual(
 );
 assert.strictEqual(said(err('A'), ...filler('A', 60), failedLine('A')), '', 'and no further than that');
 assert.strictEqual(said(err('B'), failedLine('A')), '', 'and only in the failing test’s own job');
+const jobSays = (...lines: string[]) => parseLog(lines.map(l => madeUp('build', l)).join('\n'))[0]?.message;
+assert.strictEqual(
+  jobSays('##[error]npm warn deprecated rimraf@2.6.3', '##[error]Process completed with exit code 1.'),
+  'Process completed with exit code 1.',
+  'a job with nothing that says why ends on the runner’s own last error line, not on stderr wrapped as one',
+);
 
-const firstAttempt = new Map<number, Failure[]>(runs.filter(isRerun).map(r => [r.id, log(r.id)]));
-const ledger = buildLedger({ runs, firstAttempt });
-assert.strictEqual(ledger.runs, 11, 'the ledger counts every run in the window');
-assert.strictEqual(ledger.reruns.length, 7, 'seven runs needed a rerun');
+const firstAttemptFailures = new Map<number, Failure[]>(runs.filter(isRerun).map(r => [r.id, log(r.id)]));
+const ledger = buildLedger({ runs, firstAttemptFailures });
+assert.strictEqual(ledger.runs, 12, 'the ledger counts every run it is given');
+assert.strictEqual(ledger.reruns.length, 8, 'eight runs needed a rerun');
 assert.deepStrictEqual(
   Object.fromEntries(ledger.reruns.map(r => [r.run.id, r.passed])),
   {
-    44844589049: 'rerun',
+    44844589049: 'on the rerun',
     44842706165: 'no',
-    44533956512: 'rerun',
-    43974954420: 'rerun',
-    43888404670: 'other run',
-    44574277480: 'rerun',
+    44533956512: 'on the rerun',
+    43974954420: 'on the rerun',
+    43888404670: 'in another run',
+    44574277480: 'on the rerun',
     43709534045: 'no',
+    42672774908: 'no',
   },
   'a rerun is proven when its last attempt passed; one that failed again but passed in a later run on the same commit is not',
 );
@@ -140,6 +147,27 @@ assert.deepStrictEqual(
     { label: 'protoHopPath', count: 1 },
   ],
   'the proven are counted by what failed on attempt 1, most first, and a run that failed again counts for nothing',
+);
+
+// a log gh could not give is its own line, and counts as its own label, not as nothing found
+const lone: Run = {
+  id: 1,
+  sha: 'a',
+  branch: 'b',
+  event: 'push',
+  created: '2026-11-21T00:00:00Z',
+  attempts: 2,
+  conclusion: 'success',
+};
+const unread = buildLedger({
+  runs: [lone],
+  firstAttemptFailures: new Map<number, Failure[]>([[1, [{ kind: 'unread', message: 'gh: HTTP 410' }]]]),
+});
+assert.deepStrictEqual(unread.byTest, [{ label: 'log not read', count: 1 }]);
+assert.match(renderLedger(unread), /^ {2}log not read: gh: HTTP 410$/m);
+assert.match(
+  renderLedger(buildLedger({ runs: [lone], firstAttemptFailures: new Map() })),
+  /no failure found in attempt 1's log/,
 );
 
 const table = renderLedger(ledger);

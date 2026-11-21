@@ -1,5 +1,3 @@
-// The CI ledger over values already read from GitHub: which runs needed a rerun, what failed on their first attempt,
-// whether the same commit then passed, and the table that says so. Nothing here touches gh.
 import type { Failure } from './flakes-log.ts';
 
 export type Run = {
@@ -8,15 +6,11 @@ export type Run = {
   branch: string;
   event: string;
   created: string;
-  // the number of the latest attempt, so more than 1 means someone reran it
   attempts: number;
-  // how the latest attempt ended; empty while it runs
   conclusion: string;
 };
 
-// rerun: the last attempt of the same run passed, always on the same commit. This is what the plan counts as proven.
-// other run: it failed again, but a later run on the same commit passed.
-export type Passed = 'rerun' | 'other run' | 'no';
+export type Passed = 'on the rerun' | 'in another run' | 'no';
 export type Rerun = { run: Run; failures: Failure[]; passed: Passed };
 export type Count = { label: string; count: number };
 export type Ledger = {
@@ -28,30 +22,36 @@ export type Ledger = {
 };
 export type Input = {
   runs: Run[];
-  // what failed on attempt 1 of each rerun, by run id
-  firstAttempt: ReadonlyMap<number, Failure[]>;
+  firstAttemptFailures: ReadonlyMap<number, Failure[]>;
 };
 
 export const isRerun = (run: Run) => run.attempts > 1;
 
-export const createdSince = (runs: Run[], since: Date) => runs.filter(r => Date.parse(r.created) >= since.getTime());
-
 const NONE_FOUND = 'no failure found';
 
 function passedOn(run: Run, runs: Run[]): Passed {
-  if (run.conclusion === 'success') return 'rerun';
+  if (run.conclusion === 'success') return 'on the rerun';
   const later = runs.some(
-    o =>
-      o.sha === run.sha &&
-      o.conclusion === 'success' &&
-      Date.parse(o.created) > Date.parse(run.created) &&
-      o.id !== run.id,
+    other =>
+      other.sha === run.sha && other.conclusion === 'success' && Date.parse(other.created) > Date.parse(run.created),
   );
-  return later ? 'other run' : 'no';
+  return later ? 'in another run' : 'no';
 }
 
-const labelOf = (f: Failure) =>
-  f.kind === 'test' ? f.file.replace(/^tests\//, '').replace(/\.ts$/, '') : `${f.job} job`;
+function labelOf(failure: Failure): string {
+  switch (failure.kind) {
+    case 'test':
+      return failure.file.replace(/^tests\//, '').replace(/\.ts$/, '');
+    case 'job':
+      return `${failure.job} job`;
+    case 'unread':
+      return 'log not read';
+    default: {
+      const never: never = failure;
+      throw new Error(`unknown failure ${JSON.stringify(never)}`);
+    }
+  }
+}
 
 function countBy(reruns: Rerun[]): Count[] {
   const counts = new Map<string, number>();
@@ -63,24 +63,26 @@ function countBy(reruns: Rerun[]): Count[] {
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
-export function buildLedger({ runs, firstAttempt }: Input): Ledger {
+export function buildLedger({ runs, firstAttemptFailures }: Input): Ledger {
   const reruns = runs
     .filter(isRerun)
     .sort((a, b) => Date.parse(b.created) - Date.parse(a.created) || b.id - a.id)
-    .map((run): Rerun => ({ run, failures: firstAttempt.get(run.id) ?? [], passed: passedOn(run, runs) }));
-  const proven = reruns.filter(r => r.passed === 'rerun');
+    .map((run): Rerun => ({ run, failures: firstAttemptFailures.get(run.id) ?? [], passed: passedOn(run, runs) }));
+  // issue #375 counts a flake as proven only when the run's own last attempt passed; a pass in another run on the
+  // same commit is counted apart
+  const proven = reruns.filter(r => r.passed === 'on the rerun');
   return {
     runs: runs.length,
     reruns,
     proven: proven.length,
-    elsewhere: reruns.filter(r => r.passed === 'other run').length,
+    elsewhere: reruns.filter(r => r.passed === 'in another run').length,
     byTest: countBy(proven),
   };
 }
 
 const WIDTH = 110;
 const cut = (text: string) => (text.length > WIDTH ? `${text.slice(0, WIDTH - 1)}…` : text);
-const VERDICT: Record<Passed, string> = { rerun: 'yes, on the rerun', 'other run': 'yes, in another run', no: 'no' };
+const verdict = (passed: Passed) => (passed === 'no' ? passed : `yes, ${passed}`);
 
 function table(rows: string[][]): string[] {
   const widths = (rows[0] ?? []).map((_, c) => Math.max(...rows.map(r => (r[c] ?? '').length)));
@@ -95,8 +97,8 @@ export function renderLedger(ledger: Ledger): string {
     run.event,
     run.branch,
     String(run.attempts),
-    run.conclusion || 'running',
-    VERDICT[passed],
+    run.conclusion,
+    verdict(passed),
   ]);
   const lines = table([head, ...rows]);
   const out = [lines[0] ?? ''];
