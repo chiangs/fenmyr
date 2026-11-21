@@ -82,7 +82,7 @@ try {
   const home = (await hop.edges(page, ['gooSlot'])).gooSlot;
   assert.ok(home, 'she shows in her box');
 
-  const away = () => hop.exactFlight(page, () => open('one'));
+  const away = (watch?: number) => hop.exactFlight(page, () => open('one'), watch);
   const back = async (inAir = false) => {
     const rest = inAir ? await headerSpot() : null,
       f = await away(),
@@ -96,20 +96,23 @@ try {
     assert.strictEqual(covered, 0, `something is drawn over her in ${covered} frames`);
     assert.ok(near(f.after, home, 1), 'she lands on her box');
   };
-  // Calm, Calmest and reduced motion: she fades out where she was and in at her box, with no hop
+  // Calm, Calmest and reduced motion: she fades out where she was and in at her box, with no hop. Her fades are 120 ms
+  // each, so she is watched for 300.
+  const FADE = 300;
   const fadesBack = async () => {
-    const f = await away(),
+    const f = await away(FADE),
       first = f.frames.find(fr => fr.home === 'mPill');
     assert.ok(first && f.before && near(first, f.before, 1), `she fades out in the header: ${JSON.stringify(first)}`);
     assert.strictEqual(f.between, 0, `she is between the header and her box in ${f.between} frames`);
+    assert.ok(!f.frames.some(fr => fr.air), 'she does not hop');
     assert.ok(
       f.frames.some(fr => fr.opacity < 0.5),
       'she fades',
     );
     assert.ok(near(f.after, home, 1), 'she ends on her box');
   };
-  const hopIn = async (id: string) => {
-    const f = await hop.exactFlight(page, () => open(id)),
+  const hopIn = async (id: string, watch?: number) => {
+    const f = await hop.exactFlight(page, () => open(id), watch),
       first = f.frames.find(fr => fr.home === 'mcPerch');
     assert.ok(first, 'she moves into the header');
     return { ...f, first, spot: await headerSpot() };
@@ -167,9 +170,10 @@ try {
   });
 
   const fadesIn = async () => {
-    const f = await hopIn('pb');
+    const f = await hopIn('pb', FADE);
     assert.ok(near(f.first, home, 1), `she fades out in her box: ${JSON.stringify(f.first)}`);
     assert.strictEqual(f.between, 0, `she is between her box and the header in ${f.between} frames`);
+    assert.ok(!f.frames.some(fr => fr.air), 'she does not hop');
     assert.ok(
       f.frames.some(fr => fr.opacity < 0.5),
       'she fades',

@@ -59,6 +59,8 @@ const spot = async () => {
 const centre = (f: hop.Frame) => ({ x: f.l + f.w / 2, y: f.t + f.h / 2 });
 const apart = (a: hop.Frame, b: hop.Frame) => Math.hypot(centre(a).x - centre(b).x, centre(a).y - centre(b).y);
 // each end of her time in the air is known to a frame, and a held frame hides as much of it as it took
+// her hop onto the open chat takes 0.92 s, a little longer than the hops into a header
+const NEAR = 1000;
 const keeps480 = (frames: hop.Frame[], held = 0) => {
   const first = frames.findIndex(f => f.air),
     last = frames.findLastIndex(f => f.air),
@@ -220,14 +222,18 @@ try {
   });
 
   await check('her hop onto the open chat keeps its 480 ms in the air', async () => {
-    keeps480((await hop.exactFlight(page, () => page.click('#mPill'))).frames);
+    keeps480((await hop.exactFlight(page, () => page.click('#mPill'), NEAR)).frames);
   });
 
   await check('with a frame held back as she crouches, her hop onto the open chat still keeps its 480 ms', async () => {
-    const f = await hop.exactFlight(page, async () => {
-      await page.click('#mPill');
-      await holdFrame('crouch', 250);
-    });
+    const f = await hop.exactFlight(
+      page,
+      async () => {
+        await page.click('#mPill');
+        await holdFrame('crouch', 250);
+      },
+      NEAR,
+    );
     keeps480(f.frames, 250);
   });
 

@@ -81,8 +81,8 @@ export async function flight(page: Page, trigger: () => Promise<unknown>, watch 
 
 // `flight` on a frozen clock (clock.ts), so her frames come FRAME apart from the switch and each frame's pose is hers
 // at its `ms` exactly. `trigger` may move the clock itself, to open a second board mid-hop or to hold a frame back
-// with `fastForward`. She lands within 0.9 s.
-export async function exactFlight(page: Page, trigger: () => Promise<unknown>, watch = 1000) {
+// with `fastForward`. A hop into or out of a prototype's header lands within 0.87 s, so that is watched by default.
+export async function exactFlight(page: Page, trigger: () => Promise<unknown>, watch = 900) {
   await onFrame(page);
   return flight(
     page,
