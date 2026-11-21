@@ -60,6 +60,9 @@ export function panelChecks(page: Page, k: Kit): Record<string, Check> {
   const findAlpha = async () => {
     await k.reset();
     await k.press(k.chord('find'));
+    // the chat's input takes focus only once it shows, which a transition delay puts after the key's own focus()
+    await page.waitForFunction(() => document.getElementById('mcInput')?.checkVisibility({ visibilityProperty: true }));
+    await page.focus('#mcInput');
     await page.keyboard.type('alpha');
     await k.press(k.chord('findNext'), 400);
     assert.strictEqual(await findCount(), '1 of 2', 'the find bar is open on the first of two matches');
