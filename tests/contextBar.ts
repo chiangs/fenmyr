@@ -3,7 +3,6 @@
 // during a drag, resize, pan or zoom.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
-import { settle } from './support/launch.ts';
 import { still } from './support/settled.ts';
 
 const {
@@ -276,7 +275,8 @@ await check('an upright connector by the left widgets has its bar on its other s
 await page.keyboard.press('Escape');
 
 await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(600, 900));
-await settle(l.page);
+await page.waitForFunction(() => innerWidth === 600 && innerHeight === 900);
+await still(page);
 await view(100, 300);
 await select(['note']);
 await still(page);

@@ -6,7 +6,7 @@
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { TOOLBAR } from '../src/web/ui/toolbarTable.ts';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
 import { still } from './support/settled.ts';
 
 // the toolbar order a person saved before the Wireframe button existed
@@ -67,7 +67,7 @@ try {
   });
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
-  await settle(page);
+  await still(page);
 
   await run(
     'a layout, settings, boxes and folds naming the panel load with Unsorted and Zoom on the right',
