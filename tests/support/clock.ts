@@ -1,8 +1,5 @@
-// Page time that a test drives itself, for motion that is the subject of the test (Myra's hop is a pure function of
-// requestAnimationFrame's time). Playwright's fake clock installed before the page's scripts run owns timers, rAF,
-// Date and performance.now; it runs in real time until `freeze` stops it, and then moves only when a test calls `tick`.
-// What the clock does not own is made to follow it: CSS transitions are off, her pill's idle wobble is off, and the
-// Web Animations the page starts (her fades) are stepped by the clock's frames rather than the document's timeline.
+// Playwright's fake clock owns timers, requestAnimationFrame, Date and performance.now, but not CSS transitions, CSS
+// animations or Web Animations, so installClock turns them off or steps them by the clock's frames.
 import type { BrowserContext, Page } from 'playwright';
 
 // the fake clock's rAF fires every 16 ms, not every 16.7
@@ -50,21 +47,20 @@ export async function installClock(context: BrowserContext) {
   }, STILL);
 }
 
-// Runs the clock on to a whole frame, so the next frame is a whole FRAME after what a test does next
 export async function onFrame(page: Page) {
   const at = await page.evaluate(() => performance.now());
   if (at % FRAME) await page.clock.runFor(FRAME - (at % FRAME));
 }
 
-// Stops the clock. Pausing goes forward from the page's own time, which runs ahead of the wall clock once a test has
-// driven it.
+// pauseAt only jumps forward, from the page's own time, which a test's runFor calls take ahead of the wall clock; 5 s is
+// clear of the page's real-time sync, and what was due in it runs once
 async function freeze(page: Page) {
   const now = await page.evaluate(() => Date.now());
   await page.clock.pauseAt(now + 5000);
   await onFrame(page);
 }
 
-// For what needs real frames, such as resizing the window, reloading, or `settle`: time runs for `work`, then stops
+// A frozen clock holds back the page's timers and frames, which a resize, a reload and `settle` all wait on
 export async function thawed<T>(page: Page, work: () => Promise<T>) {
   await page.clock.resume();
   try {
@@ -76,9 +72,8 @@ export async function thawed<T>(page: Page, work: () => Promise<T>) {
 
 export const tick = (page: Page, ms: number) => page.clock.runFor(ms);
 
-// A wait that is not the subject of the test. A frame costs about 30 ms of real time, so the clock jumps, which runs
-// what was due once, in one frame, and then runs on a few frames for what that sets off, such as a timer that tries
-// again 40 ms later.
+// fastForward runs what was due once, in one frame, and a few frames then run for what that sets off, such as a timer
+// that tries again 40 ms later
 const SETTLE = 6 * FRAME;
 export async function skip(page: Page, ms: number) {
   await page.clock.fastForward(ms - SETTLE);

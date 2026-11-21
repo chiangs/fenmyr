@@ -79,9 +79,9 @@ export async function flight(page: Page, trigger: () => Promise<unknown>, watch 
   return { before, after, frames: seen, between: seen.filter(f => off(f, before) && off(f, after)).length };
 }
 
-// `flight` on a frozen clock (clock.ts). Her frames come FRAME apart from the switch, whatever the machine does, so each
-// frame's pose is hers at its `ms` exactly. `trigger` may move the clock itself, to open a second board mid-hop or to
-// hold a frame back with `fastForward`; what is left of the time watched is run after it. She lands within 0.9 s.
+// `flight` on a frozen clock (clock.ts), so her frames come FRAME apart from the switch and each frame's pose is hers
+// at its `ms` exactly. `trigger` may move the clock itself, to open a second board mid-hop or to hold a frame back
+// with `fastForward`. She lands within 0.9 s.
 export async function exactFlight(page: Page, trigger: () => Promise<unknown>, watch = 1000) {
   await onFrame(page);
   return flight(

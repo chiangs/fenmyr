@@ -36,7 +36,6 @@ const check = async (name: string, run: () => Promise<void>) => {
     window.__fenmyr.stopAnim();
   });
 };
-// what needs real frames runs with the clock thawed: resizing the window, and reloading the page
 const size = (w: number, h: number) =>
   thawed(page, async () => {
     await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
@@ -59,9 +58,7 @@ const spot = async () => {
 };
 const centre = (f: hop.Frame) => ({ x: f.l + f.w / 2, y: f.t + f.h / 2 });
 const apart = (a: hop.Frame, b: hop.Frame) => Math.hypot(centre(a).x - centre(b).x, centre(a).y - centre(b).y);
-// Her frames are FRAME apart and each is her pose at its `ms`, so her time in the air is bounded to a frame either way:
-// at least from her first frame in the air to her last, at most from her last frame on the ground before them to her
-// first after. A frame held back by `held` ms hides that much of it, and widens the bounds by as much.
+// each end of her time in the air is known to a frame, and a held frame hides as much of it as it took
 const keeps480 = (frames: hop.Frame[], held = 0) => {
   const first = frames.findIndex(f => f.air),
     last = frames.findLastIndex(f => f.air),
@@ -71,21 +68,20 @@ const keeps480 = (frames: hop.Frame[], held = 0) => {
     after = frames[last + 1];
   assert.ok(a && b && before && after, 'she is in the air, with a frame on the ground either side');
   const least = b.ms - a.ms,
-    most = after.ms - before.ms;
+    most = after.ms - before.ms,
+    slack = 2 * FRAME + held;
   assert.ok(
-    least <= 480 && most >= 480 && most - least <= 2 * FRAME + held,
+    least <= 480 && most >= 480 && most - least <= slack,
     `she is in the air for ${least} to ${most} ms, not 480 (${held} ms of it held back)`,
   );
 };
-// How soon she gets going, how far she is within her first 150 ms in the air, and when she is at rest, from her frames.
-// Her first frame in the header is the switch. She is at rest after her last frame more than 1 px from where she ends,
-// in place or in size, which a squash on landing counts in.
 const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.exactFlight>>) => {
   assert.ok(before, 'she shows before the switch');
   const gone = (f: { l: number; t: number }, q: Edges) => Math.hypot(f.l - q.l, f.t - q.t),
     switched = frames.find(f => f.home === 'mcPerch'),
     moved = frames.find(f => gone(f, before) > 3),
     air = frames.find(f => f.air),
+    // her landing squash shows in her size before it shows in where she is
     off = frames.findLastIndex(
       f => gone(f, after) > 1 || Math.abs(f.w - (after.r - after.l)) > 1 || Math.abs(f.h - (after.b - after.t)) > 1,
     ),
@@ -97,7 +93,6 @@ const pace = ({ before, after, frames }: Awaited<ReturnType<typeof hop.exactFlig
     way = (f: hop.Frame) => ((f.l - before.l) * line.x + (f.t - before.t) * line.y) / (line.x ** 2 + line.y ** 2),
     upTo = frames.findLast(f => f.ms <= air.ms + 150),
     next = frames.find(f => f.ms > air.ms + 150),
-    // between the frames either side of the 150 ms mark, so which frame falls just short of it doesn't tip the result
     covered =
       upTo && next
         ? way(upTo) + ((way(next) - way(upTo)) * (air.ms + 150 - upTo.ms)) / (next.ms - upTo.ms)
@@ -119,10 +114,9 @@ const quick = (f: Awaited<ReturnType<typeof hop.exactFlight>>, held = 0) => {
       p.rest > 800 && `she is at rest ${p.rest} ms after the switch`,
       p.held < held && `her longest frame is ${p.held} ms, not the ${held} ms held back`,
     ].filter(Boolean);
-  assert.strictEqual(missed.join('; '), '');
+  assert.ok(missed.length === 0, missed.join('; '));
 };
-// A slow runner busy as she hops: one frame takes `ms` to draw, the first at least `after` ms into her crouch, or into
-// her time in the air. The clock jumps by `ms`, so what was due in between runs once, in that frame.
+// one frame takes `ms` to draw, as on a busy runner: the clock jumps, so what was due in between runs once
 const holdFrame = async (pose: 'crouch' | 'air', ms: number, after = 0) => {
   const mark = pose === 'air' ? 'rotate' : 'scale',
     posed = () => page.evaluate(m => !!document.getElementById('gooSlot')?.style.transform.includes(m), mark);
@@ -216,10 +210,9 @@ try {
 
   await check('with a frame held back as she crouches, it is not counted against her first movement', async () => {
     const p = pace(await held('crouch', 120)),
-      // her own time to her first movement leaves out what the held frame took beyond one at 60 Hz
-      own = p.moves - (p.held - FRAME);
+      ownTime = p.moves - (p.held - FRAME);
     assert.ok(p.held >= 120, `a frame of ${p.held} ms was held back, not 120`);
-    assert.ok(own <= 100, `she first moves ${own} ms after the switch, in her own time`);
+    assert.ok(ownTime <= 100, `she first moves ${ownTime} ms after the switch, in her own time`);
   });
 
   await check('with a frame held back as she comes in to land, her hop is still as quick', async () => {

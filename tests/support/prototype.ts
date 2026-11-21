@@ -42,9 +42,7 @@ export async function openPrototype(page: Page, repo: string) {
   }, repo);
 }
 
-// The host tells the page of a board it finds on disk whenever its watcher fires, and Myra says so in the open board's
-// chat. A test that makes a second prototype can have that arrive while a prototype is open, which keeps the chat from
-// being empty. The boards such a test makes are listed with refreshBoards, so the notice is not wanted.
+// the host's notice of a board found on disk lands in the open prototype's chat, which then isn't empty for her tilt
 export async function ignoreNewBoards(page: Page) {
   const quiet = () => Object.defineProperty(window, '__boardsChanged', { get: () => async () => {}, set: () => {} });
   await page.addInitScript(quiet);

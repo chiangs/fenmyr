@@ -31,7 +31,6 @@ const check = async (name: string, run: () => Promise<void>) => {
   else if (chat) await page.click('#mcClose');
   if (board !== 'one' || chat) await skip(page, 1000);
 };
-// what needs real frames runs with the clock thawed: resizing the window, settling and reloading the page
 const size = (w: number, h: number) =>
   thawed(page, async () => {
     await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
@@ -83,8 +82,6 @@ try {
   const home = (await hop.edges(page, ['gooSlot'])).gooSlot;
   assert.ok(home, 'she shows in her box');
 
-  // She leaves the header for her box in one hop, from where she is, drawn above what is on the board. `inAir`: she is
-  // still in the air from her last hop.
   const away = () => hop.exactFlight(page, () => open('one'));
   const back = async (inAir = false) => {
     const rest = inAir ? await headerSpot() : null,
