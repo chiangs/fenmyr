@@ -121,7 +121,7 @@ export async function launch({
 const STARTUP_TIMERS_MS = 900;
 
 export async function settle(page: Page, ms = STARTUP_TIMERS_MS) {
-  // sleeps on purpose: the sleep behind every settle(page, ms) call, which the budget counts at the call
+  // sleeps on purpose: it is the wait every settle(page, ms) call asks for, and the budget counts each of those calls
   await page.waitForTimeout(ms);
   await page.waitForFunction(
     () => {

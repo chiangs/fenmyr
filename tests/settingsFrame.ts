@@ -27,7 +27,6 @@ try {
   };
 
   await page.click('#gearBtn');
-  // the panel eases in, and a box read before that ends is a little smaller than its final size
   await still(page);
   const names = await page.$$eval('#setTabs button', bs => bs.map(b => b.textContent));
   expect(names.join(', ') === NAMES.join(', '), `the tabs read ${names.join(', ')}, not ${NAMES.join(', ')}`);

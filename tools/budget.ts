@@ -146,7 +146,7 @@ if (process.argv.includes('--write')) {
 const over = keys.filter(k => counts[k] > budget[k]);
 const under = keys.filter(k => counts[k] < budget[k]);
 for (const k of keys) console.log(`${k.padEnd(17)} ${String(counts[k]).padStart(5)} / ${budget[k]}`);
-// a thousand sleeps are listed under the one that was added, so show those in the files this branch touched
+// a new sleep is one among a thousand old ones, so list the ones in the files this branch touches
 function touchedFiles(): Set<string> {
   const git = (...args: string[]) => {
     try {

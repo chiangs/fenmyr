@@ -1,9 +1,7 @@
 // Finds the fixed sleeps in a test file, for the budget. A test that sleeps a fixed time assumes the page has finished
-// moving by then, and a loaded runner breaks that; waiting on state (tests/support/settled.ts) does not. Four ways to
-// write one are counted: `waitForTimeout(...)`, `T.wait(...)` in the smoke test's page code, a promise that resolves from
-// a `setTimeout` (also through a helper declared in the same file, counted at each call), and `settle(page, ms)`, which
-// sleeps `ms` before it checks anything. A sleep that is the point of the test, such as a debounce or a timeout under
-// test, is left out by this comment on the line directly above it, with the reason after the colon:
+// moving by then, and a loaded runner breaks that; waiting on state (tests/support/settled.ts) does not. A sleep that is
+// the point of the test, such as a debounce or a timeout under test, is left out by this comment on the line directly
+// above it, with the reason after the colon:
 //   // sleeps on purpose: the chat saves 600 ms after the last key
 import ts from 'typescript';
 
@@ -19,15 +17,13 @@ const isName = (n: ts.Node | undefined, name: string): boolean => !!n && ts.isId
 const isFunction = (n: ts.Node | undefined): n is ts.ArrowFunction | ts.FunctionExpression =>
   !!n && (ts.isArrowFunction(n) || ts.isFunctionExpression(n));
 
-// the expression a function gives back, when that is all it does
 function returned(body: ts.ConciseBody | undefined): ts.Node | undefined {
   if (!body || !ts.isBlock(body)) return body;
   const only = body.statements.length === 1 ? body.statements[0] : undefined;
   return only && ts.isReturnStatement(only) ? only.expression : undefined;
 }
 
-// `new Promise(done => setTimeout(done, n))`, or the callback `() => done()`. A promise that hands over a value late,
-// such as a stub of a slow fetch, is not a sleep.
+// A promise that hands over a value late, such as a stub of a slow fetch, is not a sleep.
 function isSleepPromise(n: ts.Node | undefined): boolean {
   if (!n || !ts.isNewExpression(n) || !isName(n.expression, 'Promise')) return false;
   const executor = n.arguments?.[0];
@@ -50,7 +46,7 @@ function isSleepPromise(n: ts.Node | undefined): boolean {
   return sleeps;
 }
 
-// `const wait = ms => new Promise(...)`: its calls are the sleeps, so its body is not counted again
+// its calls are the sleeps, so its body is not counted again
 function helper(n: ts.Node): { name: string; body: ts.Node } | null {
   const named =
     ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && isFunction(n.initializer)

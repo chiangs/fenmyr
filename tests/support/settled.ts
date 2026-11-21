@@ -1,7 +1,6 @@
-// Waits for the page to stop moving, so a test reads a box or a colour that is final. A sleep guesses how long motion
-// takes and how late it starts; a loaded runner breaks both guesses, and FENMYR_MOTION_DELAY (node tools/run-tests.ts
-// --lag 50) breaks them on purpose. `still(page)` waits on the page's own animations and transitions instead, and
-// `rect(page, selector)` is `still` followed by the element's box.
+// A test reads a box or a colour only once the page has stopped moving. A sleep guesses how long motion takes and how
+// late it starts; a loaded runner breaks both guesses, and FENMYR_MOTION_DELAY (node tools/run-tests.ts --lag 50)
+// breaks them on purpose.
 import type { Page } from 'playwright';
 
 type Motion = { target: string; kind: 'transition' | 'animation'; property: string };
@@ -42,7 +41,7 @@ function describeUnsettled({ moving, fontsLoaded }: Settled): string {
 
 // Runs in the page, so it can't use anything from this file. Settled means two frames in a row with no finite animation
 // or transition running or waiting out its delay: one that ends can start the next from its transitionend, so a
-// single empty look is not enough. An infinite animation (Myra's idle) never ends and is not waited for.
+// single empty look is not enough.
 async function untilStill(timeout: number): Promise<unknown> {
   const frame = () => new Promise<void>(done => requestAnimationFrame(() => done()));
   const name = (e: Element, pseudo: string | null) =>

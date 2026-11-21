@@ -1,6 +1,4 @@
-// still() and rect() on a real page, with boxes that move on their own transitions and animations. Each case reads a
-// width straight after the call, so a wait that returns early shows as a width part-way to its end. Every miss is
-// listed together, so one run says which cases fail.
+// Each case reads a width straight after the call, so a wait that returns early shows as a width part-way to its end.
 import assert from 'node:assert';
 import { launch } from './support/launch.ts';
 import { rect, still } from './support/settled.ts';
