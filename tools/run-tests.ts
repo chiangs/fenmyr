@@ -1,7 +1,8 @@
 // Runs every test in tests/, or the ones named, each as its own node process, one at a time, and keeps going past a
-// failure. `--shard 2/4` runs the second of four parts, balanced on the seconds each test last took in CI.
-//   node tools/run-tests.ts [--shard i/n] [name ...]    run them
-//   node tools/run-tests.ts --list [--shard i/n]         print the files a run would take, one per line
+// failure. `--shard 2/4` runs the second of four parts, balanced on the seconds each test last took in CI. `--lag 50`
+// starts every CSS transition and animation 50 ms late, so a test that waits a fixed time for motion fails.
+//   node tools/run-tests.ts [--shard i/n] [--lag ms] [name ...]    run them
+//   node tools/run-tests.ts --list [--shard i/n]                   print the files a run would take, one per line
 //   gh run view <id> --log | node tools/run-tests.ts --write-times    refresh tools/test-times.json from a run's log
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -16,7 +17,7 @@ const RESULT = /(tests\/[\w.-]+\.ts) passed in ([\d.]+)s/g;
 
 type Shard = { index: number; count: number };
 type Mode =
-  | { kind: 'run'; shard: Shard | null; names: string[] }
+  | { kind: 'run'; shard: Shard | null; lag: number | null; names: string[] }
   | { kind: 'list'; shard: Shard | null }
   | { kind: 'write-times' };
 type Load = { seconds: number; tests: string[] };
@@ -29,8 +30,14 @@ function parseShard(text: string | undefined): Shard {
   return { index, count };
 }
 
+function parseLag(text: string | undefined): number {
+  if (!/^\d+$/.test(text ?? '')) throw new Error(`--lag takes whole milliseconds such as 250, not ${text}`);
+  return Number(text);
+}
+
 function parseArgs(args: string[]): Mode {
   let shard: Shard | null = null,
+    lag: number | null = null,
     list = false;
   const names: string[] = [],
     rest = [...args];
@@ -39,10 +46,12 @@ function parseArgs(args: string[]): Mode {
     if (arg === '--list') list = true;
     else if (arg === '--shard') shard = parseShard(rest.shift());
     else if (arg.startsWith('--shard=')) shard = parseShard(arg.slice('--shard='.length));
+    else if (arg === '--lag') lag = parseLag(rest.shift());
+    else if (arg.startsWith('--lag=')) lag = parseLag(arg.slice('--lag='.length));
     else if (arg.startsWith('--')) throw new Error(`unknown option ${arg}`);
     else names.push(arg);
   }
-  return list ? { kind: 'list', shard } : { kind: 'run', shard, names };
+  return list ? { kind: 'list', shard } : { kind: 'run', shard, lag, names };
 }
 
 const allTests = () =>
@@ -84,7 +93,8 @@ function pick(tests: string[], names: string[]): string[] {
   return [...new Set(wanted)];
 }
 
-function run(tests: string[]) {
+function run(tests: string[], lag: number | null) {
+  const env = lag === null ? process.env : { ...process.env, FENMYR_MOTION_DELAY: String(lag) };
   const inActions = process.env.GITHUB_ACTIONS === 'true';
   const descriptions = readDescriptions().files;
   const failed: string[] = [];
@@ -93,7 +103,7 @@ function run(tests: string[]) {
     const title = `${file}: ${descriptions[file] ?? 'no description'}`;
     console.log(inActions ? `::group::${title}` : `\n${title}`);
     const begin = performance.now();
-    const r = spawnSync(process.execPath, [file], { cwd: ROOT, stdio: 'inherit' });
+    const r = spawnSync(process.execPath, [file], { cwd: ROOT, env, stdio: 'inherit' });
     const seconds = ((performance.now() - begin) / 1000).toFixed(1);
     if (inActions) console.log('::endgroup::');
     const outcome = r.status === 0 ? 'passed' : `failed (${r.error?.message ?? r.signal ?? `exit ${r.status}`})`;
@@ -129,7 +139,7 @@ switch (mode.kind) {
     break;
   case 'run': {
     const tests = mode.names.length ? pick(allTests(), mode.names) : allTests();
-    run(mode.shard ? shardOf(tests, mode.shard) : tests);
+    run(mode.shard ? shardOf(tests, mode.shard) : tests, mode.lag);
     break;
   }
   default: {
