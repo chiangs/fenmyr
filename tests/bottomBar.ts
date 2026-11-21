@@ -6,13 +6,9 @@ import { near, openBar } from './support/bar.ts';
 import { still } from './support/settled.ts';
 
 const { l, page, frames, view, check, done } = await openBar();
-// --lag delays every visibility change. The app means two of them to be at once: her input shows as the chat opens, for
-// the focus it gives it, and the bar and tools hide as an export starts, which waits 150 ms for them to go.
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *, body.exporting #dock, body.exporting #tools';
 if (process.env.FENMYR_MOTION_DELAY)
-  await page.addStyleTag({
-    content:
-      '#myra.chat #mChat, #myra.chat #mChat *, body.exporting #dock, body.exporting #tools { transition-delay: 0s !important; }',
-  });
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const size = async (w: number, h = 900) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
   await page.waitForFunction(s => innerWidth === s.w && innerHeight === s.h, { w, h });

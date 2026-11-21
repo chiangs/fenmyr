@@ -27,7 +27,6 @@ const rect = async (page: Page, sel: string) => {
     return r ? { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height } : null;
   }, sel);
 };
-// the glide the zoom menu and the keyboard start ends when the board stops moving
 const glided = (page: Page, text: string) =>
   page.waitForFunction(
     t =>

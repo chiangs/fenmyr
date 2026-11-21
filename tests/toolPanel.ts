@@ -73,8 +73,7 @@ const shownIds = (page: Page) =>
   page.$$eval('#tools > [data-add]', bs =>
     bs.filter(b => !b.hasAttribute('hidden')).map(b => b.getAttribute('data-add') ?? ''),
   );
-// a click that opens something is read once what it opened has stopped moving
-const click = async (page: Page, selector: string, button: 'left' | 'right' = 'left') => {
+const clickThenStill = async (page: Page, selector: string, button: 'left' | 'right' = 'left') => {
   await page.click(selector, { button });
   await still(page);
 };
@@ -178,18 +177,18 @@ await check('a tooltip in the panel’s last column ends inside the window', asy
 });
 
 async function everyOpener(what: string) {
-  await click(page, '#tools [data-add="shape"]');
+  await clickThenStill(page, '#tools [data-add="shape"]');
   leftOfPanel(await opened(page, '#shapePick', '#tools [data-add="shape"]'), `${what}: Shapes`);
   await putDown(page);
-  await click(page, '#tools [data-add="tpl"]');
+  await clickThenStill(page, '#tools [data-add="tpl"]');
   leftOfPanel(await opened(page, '#tplPick', '#tools [data-add="tpl"]'), `${what}: Templates`);
   await putDown(page);
-  await click(page, '#tools [data-add="stamp"]');
+  await clickThenStill(page, '#tools [data-add="stamp"]');
   leftOfPanel(await opened(page, '#stampWheel', '#tools [data-add="stamp"]'), `${what}: the stamp wheel`);
-  await click(page, '#wsMid');
+  await clickThenStill(page, '#wsMid');
   leftOfPanel(await opened(page, '#stampPick', '#tools [data-add="stamp"]'), `${what}: every stamp`);
   await putDown(page);
-  await click(page, '#tools [data-add="link"]', 'right');
+  await clickThenStill(page, '#tools [data-add="link"]', 'right');
   leftOfPanel(await opened(page, '#rowMenu', '#tools [data-add="link"]'), `${what}: Customise toolbar`);
   assert.strictEqual(await page.textContent('#rowMenu'), 'Customise toolbar…', `${what}: the panel’s own menu`);
   await putDown(page);
@@ -214,7 +213,7 @@ await check('every stamp wraps into rows: no tab scrolls sideways or up and down
 });
 
 await check('drawing’s card sits left of the panel, level with its top', async () => {
-  await click(page, '#tools [data-add="draw"]');
+  await clickThenStill(page, '#tools [data-add="draw"]');
   const g = await geo(page),
     card = await page.evaluate(() => document.getElementById('modeCard')?.getBoundingClientRect().toJSON());
   await page.keyboard.press('Escape');
@@ -255,7 +254,7 @@ await check(
   async () => {
     const before = (await geo(page)).tools;
     await size(600, 900);
-    await click(page, '#hub [data-sheet="add"]');
+    await clickThenStill(page, '#hub [data-sheet="add"]');
     const phone = await page.evaluate(() => ({
       zoom: !!document.getElementById('zoom')?.checkVisibility(),
       sheet: document.getElementById('tools')?.parentElement?.id,

@@ -7,10 +7,9 @@ import { type Edges, near, openBar } from './support/bar.ts';
 import { still } from './support/settled.ts';
 
 const { l, page, frames, view, select, shape, check, done } = await openBar();
-// --lag delays every visibility change, so her input is hidden when the app focuses it as the chat opens; the app
-// means it to show at once
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
 if (process.env.FENMYR_MOTION_DELAY)
-  await page.addStyleTag({ content: '#myra.chat #mChat, #myra.chat #mChat * { transition-delay: 0s !important; }' });
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const seen = (sel: string) => page.evaluate(sel => !!document.querySelector(sel)?.checkVisibility(), sel);
 const text = (sel: string) => page.evaluate(sel => document.querySelector(sel)?.textContent?.trim() ?? '', sel);
 const inks = () => page.evaluate(() => window.__fenmyr.curBoard()?.cards.filter(c => c.type === 'ink').length ?? 0);

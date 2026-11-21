@@ -66,11 +66,9 @@ function besidePanel(g: Geo, card: Edges | null, what: string) {
 }
 
 const { l, page, view, select, barUp, check, done } = await openBar();
-// --lag delays style changes with no transition too, which the app measures at once: her input, the bars' places
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *, #modebar, #modeCard';
 if (process.env.FENMYR_MOTION_DELAY)
-  await page.addStyleTag({
-    content: '#myra.chat #mChat, #myra.chat #mChat *, #modebar, #modeCard { transition-delay: 0s !important; }',
-  });
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const size = async (w: number, h: number, on: Launched = l) => {
   await on.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
   await on.page.waitForFunction(s => innerWidth === s.w && innerHeight === s.h, { w, h });

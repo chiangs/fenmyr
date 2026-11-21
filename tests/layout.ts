@@ -270,21 +270,19 @@ try {
   await page.evaluate(() => document.body.classList.remove('calm'));
   const codeWidth = () =>
     page.evaluate(() => document.querySelector('[data-p="code"]')?.getBoundingClientRect().width ?? 0);
+  const codeWidthAtFoldProgress = (progress: number) =>
+    page.evaluate(progress => {
+      const code = document.querySelector('[data-p="code"]');
+      document.querySelector<HTMLElement>('[data-fold="code"]')?.click();
+      for (const a of code?.getAnimations() ?? []) {
+        const timing = a.effect?.getComputedTiming();
+        a.pause();
+        a.currentTime = Number(timing?.delay) + Number(timing?.duration) * progress;
+      }
+      return code?.getBoundingClientRect().width ?? 0;
+    }, progress);
   const open = await codeWidth();
-  // The slide is read a fifth of the way along its transition, where the page is held: a delay in its start moves
-  // nothing. The click and the read share one task, as the app ends the slide by a timer of its own after 240 ms.
-  const midway = await page.evaluate(() => {
-    const code = document.querySelector('[data-p="code"]');
-    document.querySelector<HTMLElement>('[data-fold="code"]')?.click();
-    // the transition begins at the next style recalculation, which reading a box forces
-    code?.getBoundingClientRect();
-    for (const a of code?.getAnimations() ?? []) {
-      const timing = a.effect?.getComputedTiming();
-      a.pause();
-      a.currentTime = Number(timing?.delay) + Number(timing?.duration) * 0.2;
-    }
-    return code?.getBoundingClientRect().width ?? 0;
-  });
+  const midway = await codeWidthAtFoldProgress(0.2);
   assert.ok(midway < open && midway > 40, `with motion on, the column slides shut (${open} → ${midway} px midway)`);
   await page.waitForFunction(
     () => document.querySelector('[data-p="code"].folded') && !document.querySelector('.pr-animating'),
