@@ -2,7 +2,8 @@
 // open, a heart dragged out of the grid rides the pointer as the heart, not the screen, and lands as one.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const l = await launch({ boards: [wireframeBoard()], open: 'wire' });
 const { page } = l;
@@ -12,17 +13,16 @@ const kinds = () =>
   );
 
 try {
-  await settle(page, 800);
   await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
-  await settle(page, 250);
+  await still(page);
   await page.click('#selbar [data-pieces]');
   await page.click('#piecePick [data-pk-view="icons"]');
   await page.fill('#pkSearch', 'heart');
-  await page.waitForTimeout(80);
+  await page.locator('#pkGrid [data-pk-icon="heart"]').waitFor();
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.mouse.move(900, 300);
   await page.keyboard.press('w');
-  await settle(page, 200);
+  await still(page);
   const held = await page.evaluate(() => ({
     ghost: document.getElementById('ghost')?.className,
     picker: !document.getElementById('piecePick')?.hidden,
@@ -50,7 +50,8 @@ try {
     'the heart rides the pointer in place of the screen',
   );
   await page.mouse.up();
-  await settle(page, 300);
+  await page.waitForFunction(n => (window.__fenmyr.curBoard()?.cards.length ?? 0) > n, before.length);
+  await still(page);
   const now = await kinds();
   assert.deepStrictEqual(now.slice(before.length), ['icon heart'], 'and lands as a heart, with no screen');
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');
