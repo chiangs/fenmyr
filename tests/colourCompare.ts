@@ -9,10 +9,14 @@ import path from 'node:path';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-compare-')),
   tool = path.join(import.meta.dirname, '..', 'tools', 'colour-compare.ts');
+// the tool reads each value on one reused probe, which `run-tests.ts --lag` holds at its old colour, so it would call a
+// false pair the same
+const env = { ...process.env };
+delete env.FENMYR_MOTION_DELAY;
 const compare = (pairs: string[][]) => {
   const file = path.join(dir, 'pairs.json');
   fs.writeFileSync(file, JSON.stringify(pairs));
-  return spawnSync('node', [tool, file], { encoding: 'utf8' });
+  return spawnSync('node', [tool, file], { encoding: 'utf8', env });
 };
 
 const same = compare([
@@ -59,7 +63,7 @@ assert.strictEqual(
 const near = (tolerance: string, after: string) => {
   const file = path.join(dir, 'near.json');
   fs.writeFileSync(file, JSON.stringify([['background', '#f4f0ed', after, '#2e2922']]));
-  return spawnSync('node', [tool, file, '--tolerance', tolerance], { encoding: 'utf8' });
+  return spawnSync('node', [tool, file, '--tolerance', tolerance], { encoding: 'utf8', env });
 };
 assert.strictEqual(near('0.02', 'var(--surface-2)').status, 0, 'the same colour passes');
 assert.strictEqual(

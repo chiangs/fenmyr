@@ -7,8 +7,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { replyBoard } from './fixtures/boards.ts';
 import { buildStandIn } from './support/buildStandIn.ts';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
+import { still } from './support/settled.ts';
 
 const { work, repo } = freshRepo('fenmyr-build-access-');
 fs.mkdirSync(path.join(repo, 'prototypes'));
@@ -23,10 +24,10 @@ const l = await launch({
 const { page } = l;
 const standIn = buildStandIn(l);
 
-const until = async (check: () => Promise<boolean>, what: string) => {
-  for (let end = Date.now() + 20000; Date.now() < end; await page.waitForTimeout(100)) if (await check()) return;
-  assert.fail(what);
-};
+const until = (check: () => unknown, what: string) =>
+  page
+    .waitForFunction(check, undefined, { timeout: 20000 })
+    .catch(e => assert.fail(`${what}: ${e instanceof Error ? e.message : e}`));
 // what the status line shows, and what its live region holds besides
 const status = () =>
   page.evaluate(() => {
@@ -60,11 +61,11 @@ try {
     await window.__fenmyr.refreshBoards();
     await window.__fenmyr.openBoard('pb');
   }, repo);
-  await settle(page, 600);
+  await still(page);
 
   standIn.next({ files: { 'src/a.tsx': 'a\n', 'src/b.tsx': 'b\n' }, pause: true, reply: 'Two files.' });
   await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'Writing it now.', build: { request: 'Two.' } }, 'Two.'));
-  await until(() => page.evaluate(() => !!document.querySelector('#mcList .m-bar')), 'the block shows its bar');
+  await until(() => !!document.querySelector('#mcList .m-bar'), 'the block shows its bar');
   const moving = await page.evaluate(() => {
     const bar = document.querySelector('#mcList .m-bar');
     return bar ? getComputedStyle(bar, '::after').animationName : '';
@@ -73,10 +74,7 @@ try {
 
   standIn.release();
   await until(
-    () =>
-      page.evaluate(() =>
-        [...document.querySelectorAll('#mcList .mc-msg')].some(m => m.firstChild?.textContent === 'Two files.'),
-      ),
+    () => [...document.querySelectorAll('#mcList .mc-msg')].some(m => m.firstChild?.textContent === 'Two files.'),
     'the build lands',
   );
   const heard = await status();
@@ -84,14 +82,16 @@ try {
   assert.equal(heard.shows, 'Ready', 'and the status line still reads as it did');
   assert.equal(heard.clipped, 'inset(50%)', 'with the words for the screen reader out of sight');
 
-  const backgrounds = () =>
-    page.evaluate(() => {
+  const backgrounds = async () => {
+    await still(page);
+    return page.evaluate(() => {
       const bg = (el: Element | null | undefined) => (el ? getComputedStyle(el).backgroundColor : '');
       const hers = [...document.querySelectorAll('#mcList .mc-msg.myra')].find(
         m => m.firstChild?.textContent === 'Two files.',
       );
       return { block: bg(document.querySelector('#mcList .mc-msg.bare')), line: bg(hers) };
     });
+  };
   const plain = await backgrounds();
   await page.evaluate(() => {
     // the scheme's colours, as the app sets them when it follows Caelestia
