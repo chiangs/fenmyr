@@ -548,6 +548,7 @@
     "tests/toolKeys.ts": "Alt+T opens Templates and closes it again, and does nothing while typing, in quick capture or with another modifier; plain T is still Big title.",
     "tests/scrollbars.ts": "Every scrollbar is thin: no rule asks for the wide default, and real bars on plain boxes, the app's scrolling classes and a textarea measure the same as a thin one.",
     "tests/toolPanel.ts": "The tools as a panel at the top right and the bottom bar centred: where each sits, popups opening left of the panel, tucking by rows, group rows, and Just the board.",
+    "tests/toolKeyColumn.ts": "Settings → Layout: each tool's key in a right-aligned keycap left of its switch, spelled as its tooltip spells it, in one column that ends at one edge, empty for a tool with none, never wrapping.",
     "tests/toolbarTable.ts": "The toolbar table: tools in line order, groups, mistakes named, the tuck order and the panel's rows read from small tables, and in the real app a button, Settings row and ··· name for every row.",
     "tests/typeFields.ts": "Tests the number fields in Type ▾ and Fill’s Opacity: a typed number lands once, whole, within each end, and a blank one changes nothing.",
     "tests/update.ts": "Tests that the updater compares what is installed with GitHub.",

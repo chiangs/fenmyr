@@ -87,11 +87,14 @@ export function renderTbList() {
     .map(k => {
       const b = toolButton(k);
       if (!b) return '';
-      const off = hidden.has(k) ? ' off' : '',
+      const key = esc(TOOLBAR.tool(k)?.key ?? ''),
+        off = hidden.has(k) ? ' off' : '',
         icon = iconOf(b),
         name = esc(nameOf(b)),
+        keycap = key ? `<kbd class="keycap">${key}</kbd>` : '',
         checked = hidden.has(k) ? '' : 'checked';
-      return `<div class="tbe-row${off}" draggable="true" data-tb="${k}"><span class="tbe-grip">⋮⋮</span><span class="tbe-ic">${icon}</span><span class="tbe-name">${name}</span><input type="checkbox" class="tgl" ${checked} aria-label="Show ${name}"></div>`;
+      // a hidden tool's key stays as it is: its shortcut still works
+      return `<div class="tbe-row${off}" draggable="true" data-tb="${k}"><span class="tbe-grip">⋮⋮</span><span class="tbe-ic">${icon}</span><span class="tbe-name">${name}</span><span class="tbe-key">${keycap}</span><input type="checkbox" class="tgl" ${checked} aria-label="Show ${name}"></div>`;
     })
     .join('');
 }

@@ -20,7 +20,7 @@ const TABLE: Table = [
   'write',
   { id: 'pointer', label: 'Select', key: 'V', icon: 'select', lit: true },
   { id: 'note', label: 'Note', key: 'N', icon: 'note' },
-  { id: 'vnote', label: 'Vault note', key: 'Alt+N', icon: 'notebook', needs: 'vault' },
+  { id: 'vnote', label: 'Vault note', key: '⌥N', icon: 'notebook', needs: 'vault' },
   { id: 'doc', label: 'Doc', key: 'D', icon: 'doc' },
   { id: 'todo', label: 'Checklist', key: 'C', icon: 'checklist' },
 
@@ -51,7 +51,7 @@ type ToolLine = {
   id: string;
   /** Its name in the tooltip, Settings → Toolbar and the ··· menu. */
   label: string;
-  /** The shortcut the tooltip shows after the name, in Mac symbols (⇧V). Windows and Linux spell them out. */
+  /** The shortcut the tooltip and Settings → Layout show, in Mac symbols (⇧V, ⌥N). Windows and Linux spell them out. */
   key?: string;
   /** A name from the icon pack. */
   icon: string;
