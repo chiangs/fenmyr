@@ -1,7 +1,8 @@
 // With the screen tool in hand, the screen riding the pointer passes under the Wireframe row, so Box, Text, Icon and
 // × stay in view as the pointer comes down to them. Other tools' ghosts still ride over the bottom bar.
 import assert from 'node:assert';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
 const l = await launch({
@@ -32,7 +33,7 @@ const onTop = (points: { x: number; y: number }[]) =>
 try {
   await page.mouse.move(700, 120);
   await page.keyboard.press('w');
-  await settle(page, 200);
+  await still(page);
   const tools = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('#screenbar [data-wft], #scX')].map(b => {
       const r = b.getBoundingClientRect();
@@ -42,14 +43,14 @@ try {
   assert.strictEqual(tools.length, 4, 'the row has Box, Text, Icon and ×');
   const first = tools[0] ?? { x: 0, y: 0 };
   await page.mouse.move(first.x - 40, first.y - 60);
-  await settle(page, 150);
+  await still(page);
   assert.ok(
     await page.evaluate(() => getComputedStyle(document.getElementById('ghost') ?? document.body).display !== 'none'),
     'the screen rides the pointer just above the row',
   );
   assert.deepStrictEqual(await onTop(tools), ['row', 'row', 'row', 'row'], 'and the row’s tools show over it');
   await page.keyboard.press('Escape');
-  await settle(page, 150);
+  await still(page);
 
   const noteTool = await page.evaluate(() => {
     const r = document.querySelector('#tools [data-add="note"]')?.getBoundingClientRect();
@@ -57,7 +58,7 @@ try {
   });
   await page.mouse.click(noteTool.x, noteTool.y);
   await page.mouse.move(noteTool.x + 1, noteTool.y);
-  await settle(page, 150);
+  await still(page);
   assert.deepStrictEqual(
     await onTop([{ x: noteTool.x + 30, y: noteTool.y + 4 }]),
     ['ghost'],

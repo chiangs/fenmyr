@@ -4,7 +4,8 @@
 // and the screen still shows.
 import assert from 'node:assert';
 import fs from 'node:fs';
-import { launch, settle } from './support/launch.ts';
+import { calm } from './support/calm.ts';
+import { launch } from './support/launch.ts';
 import { freshRepo, openPrototype } from './support/prototype.ts';
 
 const board = (id: string, w: number, h: number, device: string, radius: number) => ({
@@ -23,7 +24,11 @@ const { page, app } = l;
 
 const size = async (w: number, h: number) => {
   await app.evaluate(({ BrowserWindow }, [w = 0, h = 0]) => BrowserWindow.getAllWindows()[0]?.setSize(w, h), [w, h]);
-  await settle(page, 700);
+  await page.waitForFunction(
+    ([w = 0, h = 0]) => innerWidth === w && innerHeight === h && document.body.classList.contains('phone') === w <= 700,
+    [w, h],
+  );
+  await calm(page);
 };
 const view = () => page.evaluate(() => ({ ...window.__fenmyr.view }));
 // the bar's controls that answer a click at their middle and those that don't, and how much of the screen shows
@@ -61,17 +66,17 @@ const openOn = async (id: string, z: number, x: number, y: number) => {
     },
     [id, z, x, y] as const,
   );
-  await settle(page, 500);
+  await calm(page);
   const before = await look();
   await page.evaluate(() => document.querySelector<HTMLElement>('#selbar [data-pieces]')?.click());
-  await settle(page, 450);
+  await calm(page);
   return before;
 };
 // a click on a cell, then where the new piece is: its middle on the board under the header, and clear of the picker
 const pick = async (name: string) => {
   const before = await page.evaluate(() => (window.__fenmyr.curBoard()?.cards ?? []).map(c => c.id));
   await page.evaluate(n => document.querySelector<HTMLElement>(`#pkGrid [data-pk-piece="${n}"]`)?.click(), name);
-  await settle(page, 600);
+  await calm(page);
   return page.evaluate(before => {
     const made = (window.__fenmyr.curBoard()?.cards ?? []).filter(c => !before.includes(c.id)),
       rs = made.flatMap(c => document.querySelector(`#cards [data-id="${c.id}"]`)?.getBoundingClientRect() ?? []),
@@ -91,7 +96,6 @@ const pick = async (name: string) => {
 };
 
 try {
-  await settle(page, 800);
   for (const [w, h] of [
     [1280, 800],
     [800, 800],
@@ -175,7 +179,8 @@ try {
     await window.__fenmyr.openBoard('pb');
     if (s) window.__fenmyr.curBoard()?.cards.push({ ...s, x: 40, y: 40 });
   });
-  await settle(page, 800);
+  await page.waitForFunction(() => !document.querySelector('.pr-animating'));
+  await calm(page);
   const before = await openOn('pb', 0.5, 40, 40),
     after = await look(),
     inPane = await page.evaluate(() => {

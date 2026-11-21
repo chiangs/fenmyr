@@ -15,6 +15,7 @@ import { BOARD, kit } from './support/keyKit.ts';
 import { launch } from './support/launch.ts';
 import { noteChecks } from './support/noteKeyChecks.ts';
 import { drawBox, dropText, panelChecks } from './support/panelKeyChecks.ts';
+import { still } from './support/settled.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const MAC_SYMBOL = /[⌃⌥⇧⌘]/,
@@ -116,7 +117,8 @@ try {
     await k.reset();
     await page.click('#gearBtn');
     await page.click('#setTabs [data-tab="board"]');
-    await page.waitForTimeout(200);
+    await page.waitForFunction(() => document.getElementById('setKeys')?.checkVisibility());
+    await still(page);
     const shown = await page.evaluate(() => {
       const keys = document.getElementById('setKeys'),
         section = keys?.closest('section'),
@@ -210,7 +212,7 @@ try {
       'the Wireframe subsection shows R and X',
     );
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(150);
+    await still(page);
     // the keys it shows, pressed: R then a drag draws a Box, X then a click drops a Text card
     const [box, text] = wire?.rows ?? [];
     assert.ok(box && text, 'the Wireframe subsection has two rows');

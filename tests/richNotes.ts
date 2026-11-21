@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const OLD_TEXT = '- not a list\n**not bold** & <b>2 * 3</b>';
 const old = { id: 'old', type: 'note', x: -300, y: 0, w: 220, h: 140, r: 0, color: 'butter', text: OLD_TEXT };
@@ -22,23 +23,32 @@ const putClip = (page: Page, html: string | null, plain: string) =>
     },
     [html, plain] as const,
   );
+const cards = (page: Page) => page.evaluate(() => JSON.stringify(window.__fenmyr.board.cards));
+// A paste, an undo or a copy is finished a moment after its key, so it is waited for by what it does to the cards.
+const changes = async (page: Page, act: () => Promise<unknown>) => {
+  const before = await cards(page);
+  await act();
+  await page.waitForFunction(before => JSON.stringify(window.__fenmyr.board.cards) !== before, before);
+  await still(page);
+};
 const paste = async (page: Page, html: string | null, plain: string, keys = 'Control+v') => {
   await putClip(page, html, plain);
-  await page.keyboard.press(keys);
-  await page.waitForTimeout(150);
+  await changes(page, () => page.keyboard.press(keys));
 };
+const typing = (page: Page, id: string) =>
+  page.waitForFunction(id => window.__fenmyr.editing === id && document.activeElement?.matches('.text'), id);
 const newNote = async (page: Page, cardsAcross: number, cardsDown: number) => {
   const id = await page.evaluate(([x, y]) => window.__fenmyr.newNote(x, y), [
     cardsAcross * 260,
     cardsDown * 200,
   ] as const);
-  await page.waitForTimeout(150);
+  await typing(page, id);
   return id;
 };
 const editBody = async (page: Page, id: string) => {
   await page.locator(`#cards [data-id="${id}"] .text`).dblclick();
+  await typing(page, id);
   await page.keyboard.press('Control+End');
-  await page.waitForTimeout(150);
 };
 // Clicks bare board to end the edit. The note's bar floats over the board, so no one point is always clear of it.
 const stopEditing = async (page: Page) => {
@@ -52,11 +62,12 @@ const stopEditing = async (page: Page) => {
     return spots.find(([x, y]) => document.elementFromPoint(x, y)?.id === 'stage') ?? spots[0];
   });
   await page.mouse.click(x, y);
-  await page.waitForTimeout(150);
+  await page.waitForFunction(() => window.__fenmyr.editing === null);
+  await still(page);
 };
 const redraw = async (page: Page) => {
   await page.evaluate(() => window.__fenmyr.renderAll());
-  await page.waitForTimeout(100);
+  await still(page);
 };
 const note = (page: Page, id: string) =>
   page.evaluate(id => {
@@ -103,11 +114,9 @@ await paste(
   'milk full fat\neggs\nfree range',
 );
 assert.deepStrictEqual(await stored(page, shopping), { text: SHOPPING, rich: true }, 'a pasted list makes a rich note');
-await page.keyboard.press('Control+z');
-await page.waitForTimeout(150);
+await changes(page, () => page.keyboard.press('Control+z'));
 assert.strictEqual((await note(page, shopping)).text, 'Shopping:', 'undo takes the paste back out');
-await page.keyboard.press('Control+Shift+z');
-await page.waitForTimeout(150);
+await changes(page, () => page.keyboard.press('Control+Shift+z'));
 assert.strictEqual((await note(page, shopping)).text, SHOPPING, 'and redo puts it back');
 await stopEditing(page);
 await redraw(page);
@@ -119,9 +128,12 @@ assert.deepStrictEqual(
 );
 
 await page.keyboard.press('Control+f');
+// the chat's input can take focus only once it shows, which a transition delay put after the key's own focus()
+await still(page);
+await page.focus('#mcInput');
 await page.keyboard.type('fat');
 await page.keyboard.press('Enter');
-await page.waitForTimeout(300);
+await page.waitForFunction(() => /\d+ of \d+|No matches/.test(document.getElementById('fbCount')?.textContent ?? ''));
 assert.strictEqual(await page.locator('#fbCount').textContent(), '1 of 1', 'find finds a word inside bold');
 await page.keyboard.press('Escape');
 await stopEditing(page);
@@ -142,8 +154,7 @@ assert.strictEqual(
   'Shopping:\n• milk full fat\n• eggs\n  • free range ',
   'copied cards put the words on the clipboard without markers',
 );
-await page.keyboard.press('Control+d');
-await page.waitForTimeout(200);
+await changes(page, () => page.keyboard.press('Control+d'));
 const copy = await page.evaluate(() => window.__fenmyr.sel[0] ?? '');
 assert.notStrictEqual(copy, shopping, 'Ctrl+D makes a copy');
 assert.deepStrictEqual(await stored(page, copy), { text: shoppingNow, rich: true }, 'that keeps the formatting');
@@ -218,8 +229,7 @@ assert.deepStrictEqual(
 await stopEditing(page);
 const menu = await newNote(page, 2, -1);
 await putClip(page, null, '- one\n- two');
-await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.webContents.paste());
-await page.waitForTimeout(150);
+await changes(page, () => l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.webContents.paste()));
 assert.deepStrictEqual(
   await stored(page, menu),
   { text: '- one\n- two', rich: true },

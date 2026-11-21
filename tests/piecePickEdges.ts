@@ -4,7 +4,9 @@
 // empty-screen hint ignores a double-click, names its screen, and stays out of an export.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
-import { launch, settle } from './support/launch.ts';
+import { calm } from './support/calm.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const l = await launch({ boards: [wireframeBoard()], open: 'wire' });
 const { page, app } = l;
@@ -24,25 +26,24 @@ const setView = async (x: number, y: number, z: number) => {
     },
     { x, y, z },
   );
-  await settle(page, 400);
+  await calm(page);
 };
 const openOn = async (id: string) => {
   await page.evaluate(i => window.__fenmyr.selectOnly([i]), id);
-  await settle(page, 250);
+  await still(page);
   if (!(await open())) await page.click('#selbar [data-pieces]');
-  await settle(page, 250);
+  await calm(page);
 };
 const centre = async (sel: string) => {
   const b = await page.locator(sel).boundingBox();
   if (!b) throw new Error(`no ${sel}`);
   return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
 };
+const frame = () => page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
 const blur = () =>
   page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
 
 try {
-  await settle(page, 800);
-
   await openOn('signin');
   const video = await centre('#pkGrid [data-pk-piece="Video"]');
   let n = await count();
@@ -52,7 +53,7 @@ try {
   await page.keyboard.press('Escape');
   const mid = { ...(await inHand()), open: await open() };
   await page.mouse.up();
-  await settle(page, 300);
+  await still(page);
   assert.deepStrictEqual(
     [mid, (await count()) - n],
     [{ ghost: 'ghost', dragging: false, open: true }, 0],
@@ -71,16 +72,15 @@ try {
     const cell = await centre('#pkGrid [data-pk-piece="Card"]'),
       before = await page.evaluate(() => ({ ...window.__fenmyr.view }));
     await page.mouse.click(cell.x, cell.y);
-    await page.waitForTimeout(60);
     const after = await page.evaluate(() => ({ ...window.__fenmyr.view }));
     moved = after.x !== before.x || after.y !== before.y;
     if (!moved) {
-      await settle(page, 400);
+      await calm(page);
       continue;
     }
     n = await count();
     await page.mouse.click(cell.x, cell.y);
-    await settle(page, 400);
+    await calm(page);
     second = (await count()) - n;
   }
   assert.ok(moved, 'a pick brought its piece into view');
@@ -94,13 +94,13 @@ try {
   await setView(300, 110, 0.3);
   await blur();
   await page.keyboard.press('w');
-  await settle(page, 250);
+  await still(page);
   const alone = await page.locator('#modeCard').boundingBox();
   await page.keyboard.press('Escape');
   await openOn('signin');
   await blur();
   await page.keyboard.press('w');
-  await settle(page, 250);
+  await still(page);
   const beside = await page.locator('#modeCard').boundingBox();
   assert.ok(
     (await open()) && alone && beside && Math.abs(alone.x - beside.x) < 1,
@@ -117,7 +117,7 @@ try {
   });
   if (!head) throw new Error('no head0');
   await page.mouse.click(head.x, head.y);
-  await settle(page, 250);
+  await still(page);
   await page.keyboard.press('Escape');
   assert.deepStrictEqual(
     await page.evaluate(() => [
@@ -139,15 +139,16 @@ try {
   );
   n = await count();
   await page.mouse.dblclick(hint.x, hint.y);
-  await settle(page, 400);
+  await still(page);
   assert.deepStrictEqual(
     [(await count()) - n, await open()],
     [0, true],
     'a double-click on Add pieces makes no note, and the picker stays open',
   );
+  await page.evaluate(() => document.body.classList.add('exporting'));
+  await still(page);
   assert.deepStrictEqual(
     await page.evaluate(() => {
-      document.body.classList.add('exporting');
       const seen = ['#screenHints', '#piecePick'].map(
         s => document.querySelector(s)?.checkVisibility({ visibilityProperty: true }) ?? null,
       );
@@ -160,14 +161,15 @@ try {
 
   await page.keyboard.press('Escape');
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(390, 844));
-  await settle(page, 600);
+  await page.waitForFunction(() => innerWidth === 390 && document.body.classList.contains('phone'));
+  await still(page);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
   await setView(20, 80, 0.4);
   await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
-  await settle(page, 300);
+  await still(page);
   await page.click('#dock #selbar [data-pieces]');
-  await settle(page, 300);
+  await calm(page);
   assert.notStrictEqual(
     await page.evaluate(() => document.activeElement?.id),
     'pkSearch',
@@ -182,10 +184,10 @@ try {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [cell] });
   for (let i = 1; i <= 15; i++) {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: cell.x, y: cell.y - i * 8 }] });
-    await page.waitForTimeout(16);
+    await frame();
   }
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await settle(page, 300);
+  await still(page);
   assert.deepStrictEqual(
     await inHand(),
     { ghost: 'ghost', dragging: false },
