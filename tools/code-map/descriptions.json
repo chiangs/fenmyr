@@ -154,6 +154,7 @@
     "src/web/icons.ts": "The icon facade: ask for a Myra icon by name and get the drawing from the generated pack.",
     "src/web/input/keyed.ts": "Remembers the button the keyboard moved focus to, until the next pointer press.",
     "src/web/input/shortcuts.ts": "The keyboard shortcuts for the whole board.",
+    "src/web/input/keymap.ts": "The keyboard shortcuts that are not a toolbar tool’s, in groups, for Settings → Board, and the letters that put a tool in hand.",
     "src/web/input/touch.ts": "Touch: one finger pans, two fingers pinch to zoom, press and hold for the menu.",
     "src/web/library/boardWrites.ts": "Changes a board whether or not it is open, one change at a time, and holds the boards an open leaves and opens.",
     "src/web/library/confirmDelete.ts": "The “delete?” question, shared by boards, folders and projects.",
@@ -538,6 +539,10 @@
     "tests/support/buildStandIn.ts": "A stand-in Claude Code for builds, told before each one which files to write, where to wait and whether to fail, which counts what it wrote and logs Myra’s prompts.",
     "tests/support/flight.ts": "Samples where Myra’s slot is every frame while she hops into a chat’s header, for the hop tests.",
     "tests/support/launch.ts": "Starts the app headless with a throwaway data folder for tests.",
+    "tests/support/keyChecks.ts": "Behaviour checks for the shortcuts that move the view or select, arrange or change cards: press the listed keys on a real board and assert what changed.",
+    "tests/support/keyKit.ts": "A three-card board for the shortcut tests, the chord to press for a listed shortcut, and what puts the board back between checks.",
+    "tests/support/noteKeyChecks.ts": "Behaviour checks for the shortcuts that style text or work a list, on selected cards and inside a note being typed in.",
+    "tests/support/panelKeyChecks.ts": "Behaviour checks for the shortcuts that open, close or step through a panel or a view, and the Box and Text key checks the Board list is proved with.",
     "tests/support/paste.ts": "Pastes text into Myra’s input as a clipboard event, for tests and the visual states.",
     "tests/support/paint.ts": "Installs window.__paint, which turns any computed colour into the pixel it paints, so tests can read oklab() and color() results as numbers.",
     "tests/support/prototype.ts": "Makes a fresh repo and opens a prototype board in it, for tests.",
@@ -549,6 +554,7 @@
     "tests/scrollbars.ts": "Every scrollbar is thin: no rule asks for the wide default, and real bars on plain boxes, the app's scrolling classes and a textarea measure the same as a thin one.",
     "tests/toolPanel.ts": "The tools as a panel at the top right and the bottom bar centred: where each sits, popups opening left of the panel, tucking by rows, group rows, and Just the board.",
     "tests/toolKeyColumn.ts": "Settings → Layout: each tool's key in a right-aligned keycap left of its switch, spelled as its tooltip spells it, in one column that ends at one edge, empty for a tool with none, never wrapping.",
+    "tests/keymap.ts": "The shortcut list in Settings → Board: a check that presses every shortcut's keys, the handler and tables agreeing on tool letters, and the list shown in groups with R and X under Wireframe.",
     "tests/toolbarTable.ts": "The toolbar table: tools in line order, groups, mistakes named, the tuck order and the panel's rows read from small tables, and in the real app a button, Settings row and ··· name for every row.",
     "tests/typeFields.ts": "Tests the number fields in Type ▾ and Fill’s Opacity: a typed number lands once, whole, within each end, and a blank one changes nothing.",
     "tests/update.ts": "Tests that the updater compares what is installed with GitHub.",
@@ -608,6 +614,7 @@
     "src/web/settings/boardsSaved.ts": "The sentence on Settings, General about where boards are kept: on this computer, sent to Claude when you ask Myra, and in a linked repo when a project has one.",
     "src/web/settings/derivedModes.ts": "The area colours that differ between light and dark, as expressions of the core tokens, which style.css reads instead of a body.dark rule.",
     "tests/boardLists.ts": "A board file written by hand with no card list and no tray opens as an empty board instead of failing to load.",
-    "tests/boardsSaved.ts": "Settings, General says boards are kept on this computer and that asking Myra sends the board to Claude, and mentions a repo only when a project is linked to one."
+    "tests/boardsSaved.ts": "Settings, General says boards are kept on this computer and that asking Myra sends the board to Claude, and mentions a repo only when a project is linked to one.",
+    "src/web/settings/shortcutList.ts": "The Keyboard shortcuts list in Settings → Board: a block per group with its entries, each a description and its keys in a keycap."
   }
 }

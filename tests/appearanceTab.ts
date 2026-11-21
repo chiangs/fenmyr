@@ -44,6 +44,7 @@ try {
       'Git and GitHub': 'connections',
       'Obsidian vaults': 'connections',
       'Working on the board': 'board',
+      'Keyboard shortcuts': 'board',
       Toolbar: 'layout',
       Widgets: 'layout',
     },
