@@ -21,8 +21,18 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-ly-n-bg': ['var(--snow)', 'var(--pn-dark-ink)'],
   '--m-ly-on-bg': ['var(--blush)', 'rgb(from var(--lf-shadow) r g b / .22)'],
   '--m-ob-primary-ink': ['var(--ink-inverse)', 'var(--au-bg-3)'],
+  '--m-sb-pop-bg': ['var(--panel, var(--snow))', 'var(--sb-bg-8)'],
+  '--m-sb-pop-shadow': [
+    '0 16px 40px rgb(from var(--sb-shadow-2) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05)',
+    '0 16px 40px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .1)',
+  ],
+  '--m-sb-style-on-bg': ['var(--ink)', 'var(--sb-bg-3)'],
   '--m-sb-tipbub-bg': ['var(--ink)', 'var(--sb-bg-3)'],
   '--m-sb-tipbub-ink': ['color-mix(in oklab, var(--accent-wash) 8%, var(--surface))', 'var(--sb-ink-3)'],
+  '--m-selbar-shadow': [
+    'inset 0 1px 0 rgb(from var(--hilite) r g b / .95), inset 0 0 0 1px rgb(from var(--hilite) r g b / .6), 0 10px 30px rgb(from var(--sec-shadow) r g b / .16)',
+    'inset 0 1px 0 rgb(from var(--hilite) r g b / .16), inset 0 0 0 1px rgb(from var(--hilite) r g b / .08), 0 10px 30px rgb(from var(--shade) r g b / .35)',
+  ],
   '--m-set-panel-bg': ['var(--snow)', 'var(--surface)'],
   // a note's label: dark in dark mode, with the theme's white on it. Inside a note --ink is the note's own dark ink, so the label can't read --ink there
   '--m-tag-bg': ['var(--snow)', 'var(--dark-line)'],

@@ -64,8 +64,29 @@ const STEPS: Step[] = [
     probes: [{ name: 'selected row', selector: ON_ROW, props: BG }],
   },
   {
+    name: 'selection bar',
+    run: idle,
+    probes: [
+      { name: 'bar', selector: '#selbar', props: [...BG, 'box-shadow'] },
+      { name: 'pill', selector: '#selbar .sb-ic', props: BG },
+      { name: 'dropdown button', selector: '#selbar .sb-poptrig', props: BG },
+      { name: 'style button on', selector: '#selbar .sb-sizes.sb-style button.on', props: [...BG, 'color'] },
+    ],
+  },
+  {
+    name: 'selection bar, dropdown open',
+    run: async page => {
+      await page.locator('#selbar .sb-poptrig').first().click();
+    },
+    probes: [
+      { name: 'dropdown', selector: '#selbar .sb-popw.open > .sb-pop', props: [...BG, 'box-shadow'] },
+      { name: 'open button', selector: '#selbar .sb-popw.open > .sb-poptrig', props: BG },
+    ],
+  },
+  {
     name: 'drawing size',
     run: async page => {
+      await page.keyboard.press('Escape');
       await idle(page);
       // a field may hold focus at start, and would take the P
       await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
