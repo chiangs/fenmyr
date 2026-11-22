@@ -14,7 +14,7 @@ import type { Page } from 'playwright';
 import { everyOfflineCard } from '../tests/fixtures/boards.ts';
 import { launch } from '../tests/support/launch.ts';
 import { parseRules } from './dark-css.ts';
-import { diff, frames, LOOKS, prepare } from './dark-look.ts';
+import { diff, frames, LOOKS, type Look, prepare } from './dark-look.ts';
 
 declare global {
   interface Window {
@@ -177,14 +177,11 @@ function parseFilters(args: string[]) {
   return { css, only };
 }
 
-async function snapshot(out: string, args: string[]) {
-  const { css, only } = parseFilters(args);
-  const targets = targetsOf(fs.readFileSync(css, 'utf8'), only);
+async function sweepLook(look: Look, targets: Target[], seen: Map<string, number>) {
   const values: Record<string, string> = {};
-  const seen = new Map<string, number>(targets.map(t => [t.id, 0]));
-  for (const look of LOOKS) {
-    const board = everyOfflineCard();
-    const app = await launch({ boards: [board], open: board.id, settings: look.settings });
+  const board = everyOfflineCard();
+  const app = await launch({ boards: [board], open: board.id, settings: look.settings });
+  try {
     await prepare(app.page);
     await app.page.evaluate(() => {
       window.__sweepPaint = v =>
@@ -202,7 +199,27 @@ async function snapshot(out: string, args: string[]) {
         if (k.endsWith(' | elements')) seen.set(id, Math.max(seen.get(id) ?? 0, Number(v)));
       }
     }
+  } finally {
     await app.close();
+  }
+  return values;
+}
+
+async function snapshot(out: string, args: string[]) {
+  const { css, only } = parseFilters(args);
+  const targets = targetsOf(fs.readFileSync(css, 'utf8'), only);
+  const values: Record<string, string> = {};
+  const seen = new Map<string, number>(targets.map(t => [t.id, 0]));
+  for (const look of LOOKS) {
+    // a scene that times out is retried on a fresh launch: the app, not the stylesheet, was slow
+    for (let attempt = 1; ; attempt++) {
+      try {
+        Object.assign(values, await sweepLook(look, targets, seen));
+        break;
+      } catch (error) {
+        if (attempt === 3) throw error;
+      }
+    }
   }
   fs.writeFileSync(out, `${JSON.stringify(values, null, 1)}\n`);
   const blind = [...seen].filter(([, n]) => n === 0).map(([id]) => id);

@@ -3,7 +3,8 @@
 // only touches a rule it can do whole and safely: one selector, every declaration with a single-selector twin, no raw
 // colour, no CSS-wide keyword, and no variable that an element redefines (a token resolves at <body>, so `--ink` inside a
 // card, or `--fill`, would read the wrong thing). Everything else is listed with its reason and left for a hand fold.
-//   node tools/dark-fold.ts plan  [--status clean,check] [--area name] [--lines a-b,c] [--skip n,m] [--sweep all.json]
+//   node tools/dark-fold.ts plan  [--status clean,check] [--area name] [--lines a-b,c] [--skip n,m] [--sweep all.json] [--dead n,m]
+//   (--dead cuts those rules without a token, for a rule `verify` showed dead: a rival always wins over it)
 //   (--sweep leaves out the rules whose element the sweep snapshot never found, which nothing could prove)
 //   node tools/dark-fold.ts apply [same options] --manifest out.json   then: node tools/themes-css.ts, node tools/budget.ts --write
 //   node tools/dark-fold.ts mutate manifest.json    sets every new token to red in web/themes.css (node tools/themes-css.ts undoes it)
@@ -20,7 +21,7 @@ const CSS = path.join(ROOT, 'web', 'style.css');
 const THEMES = path.join(ROOT, 'web', 'themes.css');
 const TOKENS = path.join(ROOT, 'src', 'web', 'settings', 'derivedModes.ts');
 
-type Fold = { prop: string; lightLine: number; light: string; dark: string; token: string };
+type Fold = { prop: string; lightLine: number; lightSel: string; light: string; dark: string; token: string };
 type Plan = { rule: Rule; selector: string; folds: Fold[] };
 type Skip = { line: number; selector: string; why: string };
 type Manifest = { folded: { id: string; tokens: string[] }[]; skipped: Skip[] };
@@ -88,8 +89,14 @@ function nameOf(selector: string, prop: string): string {
   return `--m-${slug}-${ABBR[prop] ?? prop}`;
 }
 
-type Picks = { area: string; only: Set<string>; pick: (line: number) => boolean; seen?: Set<string> };
-function planOf(rules: Rule[], found: Finding[], { only, pick, seen }: Picks) {
+type Picks = {
+  area: string;
+  only: Set<string>;
+  pick: (line: number) => boolean;
+  seen?: Set<string>;
+  dead: Set<number>;
+};
+function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead }: Picks) {
   const cards = cardClasses();
   const guard: Guard = {
     scoped: scopedVars(rules),
@@ -104,6 +111,11 @@ function planOf(rules: Rule[], found: Finding[], { only, pick, seen }: Picks) {
     const no = (why: string) => skipped.push({ line: rule.line, selector, why });
     const folds: Fold[] = [];
     let why = '';
+    // a rule `verify` showed dead goes without a token: the light rule keeps its own value
+    if (dead.has(rule.line)) {
+      plans.push({ rule, selector, folds });
+      continue;
+    }
     for (const f of fs) {
       if (seen && !seen.has(`@${rule.line} ${f.selector}`)) {
         why = 'no scene of the sweep shows its element';
@@ -125,6 +137,7 @@ function planOf(rules: Rule[], found: Finding[], { only, pick, seen }: Picks) {
       folds.push({
         prop: f.decl.prop,
         lightLine: f.twin.line,
+        lightSel: twinRule?.selectors[0] ?? '',
         light: twinDecl.value,
         dark: f.decl.value,
         token: nameOf(f.selector, f.decl.prop),
@@ -136,14 +149,17 @@ function planOf(rules: Rule[], found: Finding[], { only, pick, seen }: Picks) {
   return { plans, skipped };
 }
 
-// where the rule that starts on `line` begins and where its braces open and close
-function blockAt(css: string, line: number) {
+// where the rule whose first selector is `selector` on `line` begins, and where its braces open and close; the rule may
+// share its line with others
+function blockAt(css: string, line: number, selector: string) {
   const lineStart =
     css
       .split('\n')
       .slice(0, line - 1)
       .join('\n').length + (line > 1 ? 1 : 0);
-  const open = css.indexOf('{', lineStart);
+  const at = css.indexOf(selector, lineStart);
+  const start = at < 0 ? lineStart : at;
+  const open = css.indexOf('{', start);
   let depth = 1;
   let close = open + 1;
   while (close < css.length && depth) {
@@ -151,7 +167,7 @@ function blockAt(css: string, line: number) {
     else if (css[close] === '}') depth--;
     close++;
   }
-  return { lineStart, open, close };
+  return { lineStart, start, open, close };
 }
 
 const regexEscape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -159,6 +175,18 @@ const existingTokens = () =>
   new Set([...fs.readFileSync(TOKENS, 'utf8').matchAll(/'(--m-[\w-]+)'/g)].map(m => m[1] ?? ''));
 
 type Edit = { from: number; to: number; text: string };
+// the edit that removes a rule and the space around it, whether it has its line to itself or not
+function cutRule(blank: string, text: string, r: { lineStart: number; start: number; close: number }): Edit {
+  const before = blank.slice(r.lineStart, r.start);
+  const after = text.slice(r.close).match(/^[ \t]*/)?.[0] ?? '';
+  const endsLine = /^\r?\n|^$/.test(text.slice(r.close + after.length, r.close + after.length + 1));
+  if (!before.trim() && endsLine) return { from: r.lineStart, to: r.close + after.length + 1, text: '' };
+  if (!before.trim()) return { from: r.start, to: r.close + after.length, text: '' };
+  const gap = before.match(/[ \t]*$/)?.[0].length ?? 0;
+  return endsLine
+    ? { from: r.start - gap, to: r.close + after.length, text: '' }
+    : { from: r.start, to: r.close + after.length, text: '' };
+}
 function apply(plans: Plan[]) {
   const text = fs.readFileSync(CSS, 'utf8');
   const blank = text.replace(/\/\*[\s\S]*?\*\//g, c => c.replace(/[^\n]/g, ' '));
@@ -170,12 +198,12 @@ function apply(plans: Plan[]) {
   for (const p of plans) {
     const mine: Edit[] = [];
     const used: string[] = [];
-    const dark = blockAt(blank, p.rule.line);
-    const prelude = blank.slice(dark.lineStart, dark.open).replace(/\s+/g, ' ').trim();
-    let why = prelude === p.selector.replace(/\s+/g, ' ') ? '' : 'the rule shares its line with another';
+    const dark = blockAt(blank, p.rule.line, p.rule.selectors[0] ?? '');
+    const prelude = blank.slice(dark.start, dark.open).replace(/\s+/g, ' ').trim();
+    let why = prelude === p.selector.replace(/\s+/g, ' ') ? '' : 'could not find the rule where the survey said';
     for (const f of p.folds) {
       if (why) break;
-      const light = blockAt(blank, f.lightLine);
+      const light = blockAt(blank, f.lightLine, f.lightSel);
       const body = blank.slice(light.open, light.close);
       const re = new RegExp(`(?:^|[{;\\s])${regexEscape(f.prop)}\\s*:\\s*(${regexEscape(f.light)})`, 'g');
       const hit = [...body.matchAll(re)].at(-1);
@@ -195,8 +223,7 @@ function apply(plans: Plan[]) {
       failed.push({ line: p.rule.line, selector: p.selector, why });
       continue;
     }
-    const rest = text.slice(dark.close).match(/^[ \t]*\n/)?.[0] ?? '';
-    edits.push(...mine, { from: dark.lineStart, to: dark.close + rest.length, text: '' });
+    edits.push(...mine, cutRule(blank, text, dark));
     names.set(p.rule.line, used);
   }
   edits.sort((a, b) => b.from - a.from);
@@ -262,6 +289,7 @@ function parseArgs(args: string[]): Picks & { manifest: string } {
     pick: line => !skip.has(line) && (!ranges.length || ranges.some(([a = 0, b = a]) => line >= a && line <= b)),
     manifest: opt('--manifest'),
     seen: opt('--sweep') ? seenIn(opt('--sweep')) : undefined,
+    dead: new Set(opt('--dead').split(',').filter(Boolean).map(Number)),
   };
 }
 
@@ -282,7 +310,8 @@ function verify(beforeFile: string, mutantFile: string, manifestFile: string) {
   const mutant: Record<string, string> = JSON.parse(fs.readFileSync(mutantFile, 'utf8'));
   const manifest: Manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   let bad = 0;
-  for (const { id } of manifest.folded) {
+  // a rule cut with no token has nothing to be live
+  for (const { id } of manifest.folded.filter(f => f.tokens.length)) {
     const say = (look: string) => {
       const keys = Object.keys(before).filter(k => k.startsWith(`${look} | `) && k.includes(` | ${id.split(' ')[0]} `));
       return { keys: keys.length, changed: keys.filter(k => before[k] !== mutant[k]).length };
