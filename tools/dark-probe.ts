@@ -22,8 +22,11 @@ const LOOKS: Look[] = [
   { name: 'lantern', settings: { theme: 'dark', darkTheme: 'lantern' } },
 ];
 
-// what to read: the first element the selector finds, or its pseudo-element
-type Probe = { name: string; selector: string; pseudo?: string; props: string[] };
+// what to read: the first element the selector finds, or its pseudo-element. Two odd cases:
+// `as` reads a custom property through a throwaway child that uses it (`box-shadow: var(--m-base)`), for a value only an
+// animation consumes; `at` samples the painted pixel that far across the element (0 to 1), for the parts getComputedStyle
+// can't reach, like a range input's track.
+type Probe = { name: string; selector: string; pseudo?: string; props: string[]; as?: string; at?: number };
 type Step = { name: string; run: (page: Page) => Promise<void>; probes: Probe[] };
 
 const corner = (page: Page) => page.evaluate(() => ({ x: innerWidth - 1, y: innerHeight - 1 }));
@@ -135,6 +138,58 @@ const STEPS: Step[] = [
       { name: 'done button', selector: '.db-done', props: [...BG, 'color'] },
     ],
   },
+  {
+    name: 'selected card and the parts of the page that are always there',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => window.__fenmyr.selectOnly(['a']));
+      await idle(page);
+    },
+    probes: [
+      { name: 'selection ring', selector: '#cards [data-id="a"]', pseudo: '::after', props: ['box-shadow'] },
+      { name: 'switch knob', selector: '#settings .tgl:not(:checked)', pseudo: '::after', props: BG },
+      { name: 'switch knob on', selector: '#settings .tgl:checked', pseudo: '::after', props: BG },
+      { name: 'gear tip', selector: '#gearBtn', pseudo: '::after', props: BG },
+      { name: 'update bar', selector: '#upBar', props: [...BG, 'box-shadow'] },
+      { name: 'show panels key', selector: '#cleanBack kbd', props: BG },
+      { name: 'pieces picker', selector: '#piecePick', props: [...BG, 'box-shadow'] },
+      { name: 'Myra button glow base', selector: '#mPill', as: 'box-shadow: var(--m-base)', props: ['box-shadow'] },
+      { name: 'birthday month', selector: '#obBdMonth', props: [...BG, 'color'] },
+      { name: 'spotify body', selector: '#cards [data-id="sp"] .body', props: BG },
+      {
+        name: 'section shine',
+        selector: '#cards [data-id="sc"] .sec-glass',
+        pseudo: '::before',
+        props: ['background-image', 'height'],
+      },
+    ],
+  },
+  {
+    name: 'what is new, one line',
+    run: async page => {
+      await page.evaluate(() => {
+        const list = document.getElementById('newsList');
+        if (list) list.innerHTML = '<li><b>A line</b><small>What changed</small></li>';
+      });
+    },
+    probes: [{ name: 'line', selector: '#newsList li', props: BG }],
+  },
+  {
+    name: 'spacing popover',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => window.__fenmyr.selectOnly(['a']));
+      await page.locator('#selbar [data-pop="spacing"]').click();
+    },
+    probes: [
+      {
+        name: 'slider track',
+        selector: '#selbar [data-sp="lh"]',
+        at: 0.85,
+        props: ['pixel'],
+      },
+    ],
+  },
 ];
 
 const note = (id: string, x: number) => ({ id, type: 'note', x, y: 100, w: 200, h: 100, r: 0, text: id });
@@ -160,6 +215,19 @@ const BOARD = {
       desc: 'A page',
     },
     { ...at, id: 'sc', type: 'section', x: 860, y: 300, w: 400, h: 240, name: 'Plan' },
+    {
+      ...at,
+      id: 'sp',
+      type: 'spotify',
+      x: 100,
+      y: 560,
+      w: 300,
+      h: 200,
+      title: 'Song',
+      url: 'https://open.spotify.com/track/abc',
+      kind: 'track',
+      sid: 'abc',
+    },
   ],
   links: [],
   tray: [],
@@ -167,17 +235,44 @@ const BOARD = {
 
 // the colours as the pixels they paint, so oklab(), color(srgb …) and rgb() compare as the one colour they are
 const MISSING = '(no element)';
+async function pixel(page: Page, selector: string, at: number) {
+  const spot = await page.evaluate(
+    ({ selector, at }) => {
+      const r = document.querySelector(selector)?.getBoundingClientRect();
+      return r ? { x: Math.floor(r.left + r.width * at), y: Math.floor(r.top + r.height / 2) } : null;
+    },
+    { selector, at },
+  );
+  if (!spot) return MISSING;
+  const png = await page.screenshot({ clip: { ...spot, width: 1, height: 1 } });
+  const [r, g, b, a] = await page.evaluate(async bytes => {
+    const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)]));
+    const ctx = new OffscreenCanvas(1, 1).getContext('2d');
+    ctx?.drawImage(bitmap, 0, 0);
+    return Array.from(ctx?.getImageData(0, 0, 1, 1).data ?? []);
+  }, Array.from(png));
+  return `rgba(${r}, ${g}, ${b}, ${Math.round(((a ?? 0) / 255) * 1000) / 1000})`;
+}
+
 async function read(page: Page, probe: Probe) {
-  return page.evaluate(({ selector, pseudo, props }) => {
+  if (probe.at !== undefined) return [await pixel(page, probe.selector, probe.at)];
+  return page.evaluate(({ selector, pseudo, props, as }) => {
     const el = document.querySelector(selector);
     if (!el) return props.map(() => '(no element)');
-    const style = getComputedStyle(el, pseudo);
+    const kid = as ? document.createElement('div') : null;
+    if (kid) {
+      kid.style.cssText = as ?? '';
+      el.appendChild(kid);
+    }
+    const style = getComputedStyle(kid ?? el, pseudo);
     const painted = (v: string) =>
       v.replace(/(?:oklch|oklab|lab|lch|hsla?|hwb|color)\((?:[^()]|\([^()]*\))*\)/g, c => {
         const [r, g, b, a] = window.__paint(c);
         return `rgba(${r}, ${g}, ${b}, ${Math.round(a * 1000) / 1000})`;
       });
-    return props.map(p => painted(style.getPropertyValue(p)));
+    const values = props.map(p => painted(style.getPropertyValue(p)));
+    kid?.remove();
+    return values;
   }, probe);
 }
 
