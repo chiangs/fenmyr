@@ -101,6 +101,7 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-set-btn-hot-bg': ['var(--ink)', 'var(--set-light-ink)'],
   '--m-set-btn-hot-ink': ['var(--ink-inverse)', 'var(--set-dark-ink)'],
   '--m-set-feedback-bg': ['var(--set-feedback)', 'rgb(from var(--set-feedback-dark) r g b / .14)'],
+  '--m-set-input-bg': ['rgb(from var(--shade) r g b / .05)', 'rgb(from var(--hilite) r g b / .08)'],
   '--m-set-panel-bg': ['var(--snow)', 'var(--surface)'],
   '--m-settings-bg': ['rgb(from var(--set-scrim) r g b / .18)', 'rgb(from var(--shade) r g b / .45)'],
   '--m-sh-panel-bg': ['var(--snow)', 'var(--sh-bg-6)'],
@@ -112,6 +113,11 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-tag-ink': ['currentcolor', 'var(--hilite)'],
   '--m-tgl-checked-bg': ['var(--mint-deep)', 'var(--mint-deep, var(--set-toggle-on))'],
   '--m-tgl-knob': ['var(--snow)', 'var(--set-dark-knob)'],
+  '--m-tile-cover-btn-bg': ['rgb(from var(--hilite) r g b / .92)', 'var(--surface-2)'],
+  '--m-tile-cover-btn-shadow': [
+    '0 4px 12px rgb(from var(--shade) r g b / .12)',
+    '0 4px 12px rgb(from var(--shade) r g b / .35)',
+  ],
   '--m-tilt-pop-bg': ['var(--panel, var(--snow))', 'var(--dbs-bg)'],
   '--m-tilt-pop-shadow': [
     '0 16px 40px rgb(from var(--dbs-shadow) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05)',

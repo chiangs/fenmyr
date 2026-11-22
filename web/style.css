@@ -418,8 +418,7 @@ body.dark .home-back:hover { background: var(--pn-light-ink); color: var(--pn-da
 .tile.project .tile-art.peekboard { padding: 0; background: var(--snow) !important; }
 .tile.project .tile-art.peekboard svg { position: absolute; inset: 0; }
 .tile.project .tile-art .chips { position: absolute; left: 12px; bottom: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 5px; }
-.tile .cover-btn { position: absolute; top: 18px; right: 18px; z-index: 3; display: none; padding: 7px 11px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--hilite) r g b / .92); box-shadow: 0 4px 12px rgb(from var(--shade) r g b / .12); font: 600 11.5px/1 var(--font); color: var(--ink); cursor: pointer; }
-body.dark .tile .cover-btn { color: var(--ink); }
+.tile .cover-btn { position: absolute; top: 18px; right: 18px; z-index: 3; display: none; padding: 7px 11px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-tile-cover-btn-bg); box-shadow: var(--m-tile-cover-btn-shadow); font: 600 11.5px/1 var(--font); color: var(--ink); cursor: pointer; }
 .tile:hover .cover-btn { display: block; }
 .cover-menu { position: absolute; top: 50px; right: 18px; z-index: 4; display: flex; flex-direction: column; padding: 5px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 12px 30px rgba(var(--sh), calc(.22 * var(--sh-k))); }
 .cover-menu button { padding: 9px 12px; border: 0; border-radius: 14px; corner-shape: squircle; background: none; text-align: left; font: 600 12px/1 var(--font); color: var(--ink); cursor: pointer; white-space: nowrap; }
@@ -844,7 +843,6 @@ body.dark .tile.folder .tile-art .front, body.dark .seg button.on, body.dark .au
 body.dark .home { background-color: var(--pn-dark-home); }
 body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: var(--set-dark-line); }
 body.dark .pill-btn, body.dark .tile.add { border-color: var(--pn-dark-add-edge); }
-body.dark .tile .cover-btn { background: var(--surface-2); box-shadow: 0 4px 12px rgb(from var(--shade) r g b / .35); }
 body.dark .cp-fields input, body.dark .capture input { background: var(--surface-2); color: var(--ink); border-color: var(--cp-line-2); }
 /* cards: white cards turn dark; pastel cards stay pastel with dark words */
 body.dark .card > .frame { box-shadow: 0 10px 30px rgb(from var(--shade) r g b / .35); }
@@ -1294,7 +1292,7 @@ body.board-light #boardName, body.board-light .card.title .text, body.board-ligh
 .col-chip:hover { transform: translateY(-2px); }
 .col-chip i { width: 34px; height: 34px; border-radius: 15px; corner-shape: squircle; background: var(--chip, var(--snow)); box-shadow: inset 0 0 0 1px rgb(from var(--shade) r g b / .1), 0 3px 8px rgba(var(--sh), calc(.12 * var(--sh-k))); }
 .set-input { width: 170px; padding: 9px 12px; border-radius: 16px; corner-shape: squircle; border: 1.5px solid var(--set-input-edge); background: var(--set-input); font: 600 13.5px/1 var(--font); color: var(--ink); outline: none; }
-.set-input:focus { border-color: var(--accent-soft); } body.dark .set-input { background: rgb(from var(--hilite) r g b / .05); border-color: var(--set-dark-input-edge); }
+.set-input:focus { border-color: var(--accent-soft); } body.dark .set-input { border-color: var(--set-dark-input-edge); }
 .cur-colors .rand { background: conic-gradient(var(--set-rand-1), var(--set-rand-2), var(--set-rand-3), var(--set-rand-4), var(--set-rand-1), var(--set-rand-1)); }
 .cur-prev { height: 76px; margin: 0 0 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--board, var(--html-bg)); background-image: radial-gradient(var(--dot) 1.3px, transparent 1.6px); background-size: 18px 18px; position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(var(--sh), calc(.08 * var(--sh-k))); }
 .cur-prev .mcur { position: absolute; left: 40%; top: 18px; opacity: 1; }
@@ -1527,7 +1525,6 @@ body.phone .dock .drawbar .db-tool { width: 46px; height: 46px; } body.phone .do
 body.phone .dock .drawbar .db-colors button { width: 28px; height: 28px; } body.phone .dock .drawbar .db-done { height: 44px; padding: 0 18px; font-size: 14px; }
 /* the action bar's icons are the toolbar's icons: same size, same soft ink, same hover and "on" states */
 .selbar .sb-ic { width: 40px; height: 38px; border-radius: var(--pill-r); corner-shape: squircle; color: var(--ink-soft); }
-body.dark .selbar .sb-ic { color: var(--sb-ink-5); }
 .selbar .sb-ic svg { width: 19px; height: 19px; }
 .selbar .sb-ic:hover, .selbar .sb-ic.on { color: var(--ink); background: var(--blush); }
 body.dark .selbar .sb-ic:hover, body.dark .selbar .sb-ic.on { color: var(--hilite); }/* phone: hub, action bar and pen bar all use the same 22px icons */
@@ -2363,8 +2360,8 @@ body[data-tb="l"] .m-pill { height: 58px; }
 /* Calmest: Myra in soft, muted colors */
 /* her character hidden: the pill shows just her name */
 body.myra-hidden :is(#goo, #coachGoo, #hubGoo) { display: none !important; }
-.set-input { width: 150px; padding: 9px 12px; border: 0; border-radius: 16px; corner-shape: squircle; background: rgb(from var(--shade) r g b / .05); font: 600 13px/1 var(--font); color: var(--ink); outline: none; }
-.set-input:focus { box-shadow: inset 0 0 0 2px var(--select); } body.dark .set-input { background: rgb(from var(--hilite) r g b / .08); }
+.set-input { width: 150px; padding: 9px 12px; border: 0; border-radius: 16px; corner-shape: squircle; background: var(--m-set-input-bg); font: 600 13px/1 var(--font); color: var(--ink); outline: none; }
+.set-input:focus { box-shadow: inset 0 0 0 2px var(--select); }
 body.myra-calm :is(#goo, .m-pill, #mPill).hopping, body.myra-calm #goo.hopping, body.myra-calm .m-pill { animation: none !important; }
 /* the height grip under Layers, Wireframe and Unsorted */
 .rz-grip { position: relative; height: 12px; margin: 2px auto -4px; cursor: ns-resize; flex: none; }

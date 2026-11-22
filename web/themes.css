@@ -429,6 +429,7 @@ body {
   --m-set-btn-hot-bg: var(--ink);
   --m-set-btn-hot-ink: var(--ink-inverse);
   --m-set-feedback-bg: var(--set-feedback);
+  --m-set-input-bg: rgb(from var(--shade) r g b / .05);
   --m-set-panel-bg: var(--snow);
   --m-settings-bg: rgb(from var(--set-scrim) r g b / .18);
   --m-sh-panel-bg: var(--snow);
@@ -439,6 +440,8 @@ body {
   --m-tag-ink: currentcolor;
   --m-tgl-checked-bg: var(--mint-deep);
   --m-tgl-knob: var(--snow);
+  --m-tile-cover-btn-bg: rgb(from var(--hilite) r g b / .92);
+  --m-tile-cover-btn-shadow: 0 4px 12px rgb(from var(--shade) r g b / .12);
   --m-tilt-pop-bg: var(--panel, var(--snow));
   --m-tilt-pop-shadow: 0 16px 40px rgb(from var(--dbs-shadow) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05);
   --m-timer-chip-bg: var(--snow);
@@ -690,6 +693,7 @@ body.dark {
   --m-set-btn-hot-bg: var(--set-light-ink);
   --m-set-btn-hot-ink: var(--set-dark-ink);
   --m-set-feedback-bg: rgb(from var(--set-feedback-dark) r g b / .14);
+  --m-set-input-bg: rgb(from var(--hilite) r g b / .08);
   --m-set-panel-bg: var(--surface);
   --m-settings-bg: rgb(from var(--shade) r g b / .45);
   --m-sh-panel-bg: var(--sh-bg-6);
@@ -700,6 +704,8 @@ body.dark {
   --m-tag-ink: var(--hilite);
   --m-tgl-checked-bg: var(--mint-deep, var(--set-toggle-on));
   --m-tgl-knob: var(--set-dark-knob);
+  --m-tile-cover-btn-bg: var(--surface-2);
+  --m-tile-cover-btn-shadow: 0 4px 12px rgb(from var(--shade) r g b / .35);
   --m-tilt-pop-bg: var(--dbs-bg);
   --m-tilt-pop-shadow: 0 16px 40px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .1);
   --m-timer-chip-bg: rgb(from var(--clean-bg-2) r g b / .97);
