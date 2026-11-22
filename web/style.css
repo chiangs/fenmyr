@@ -98,8 +98,7 @@ body.no-colour-names .card.note > .frame::after { display: none; }   /* Settings
 .card.dragging { rotate: 0deg; z-index: 50; }
 .card.dragging .frame { box-shadow: 0 24px 50px rgba(var(--sh), calc(.22 * var(--sh-k))); }
 .card.sel::after { content: ""; position: absolute; inset: -9px; border: 2.5px solid var(--select); border-radius: 32px; corner-shape: squircle; pointer-events: none;
-  box-shadow: 0 0 0 3px rgb(from var(--hilite) r g b / .9), inset 0 0 0 2px rgb(from var(--hilite) r g b / .9), 0 4px 14px rgb(from var(--select) r g b / .18); }   /* a sturdy frame that clears the cards' hand-cut edges */
-body.dark .card.sel::after { box-shadow: 0 0 0 3px rgb(from var(--dark-ring) r g b / .85), inset 0 0 0 2px rgb(from var(--dark-ring) r g b / .85), 0 4px 14px rgb(from var(--select) r g b / .25); }
+  box-shadow: var(--m-card-sel-ring); }   /* a sturdy frame that clears the cards' hand-cut edges */
 .card .handle { position: absolute; right: -15px; bottom: -15px; width: 14px; height: 14px; border-radius: 4px; background: var(--snow); border: 2.5px solid var(--select); box-shadow: 0 1px 4px rgb(from var(--select) r g b / .3); cursor: nwse-resize; opacity: 0; }
 .card.sel .handle { opacity: 1; }
 .card .knob { position: absolute; right: -9px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--snow); border: 2px solid var(--ink-faint); cursor: crosshair; opacity: 0; transition: opacity .15s; }
@@ -715,11 +714,10 @@ label.set-row { cursor: pointer; }
 .set-row.at-top { align-items: flex-start; }
 .set-row.at-top small { margin-top: 1.4em; }   /* one blank line of its own text between the bold line and the note */
 .tgl { appearance: none; -webkit-appearance: none; flex: none; width: 40px; height: 24px; border-radius: var(--pill-r); corner-shape: squircle; background: color-mix(in oklab, var(--ink-faint) 32%, var(--surface)); position: relative; cursor: pointer; transition: background .2s; margin: 0; }
-.tgl::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--snow); box-shadow: 0 1px 3px rgb(from var(--shade) r g b / .2); transition: transform .2s cubic-bezier(.2, .9, .3, 1.3); }
-body.dark .tgl::after { background: var(--set-dark-knob); }
+.tgl::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--m-tgl-knob); box-shadow: 0 1px 3px rgb(from var(--shade) r g b / .2); transition: transform .2s cubic-bezier(.2, .9, .3, 1.3); }
 .tgl:checked { background: var(--mint-deep); }
 body.dark .tgl:checked { background: var(--mint-deep, var(--set-toggle-on)); }
-.tgl:checked::after { transform: translateX(16px); }
+.tgl:checked::after { background: var(--snow); transform: translateX(16px); }
 .myra-colors { display: flex; gap: 6px; flex: none; }
 .myra-colors button { width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer; box-shadow: inset 0 -3px 0 rgb(from var(--shade) r g b / .15); }
 .myra-colors button.on { box-shadow: 0 0 0 2px var(--snow), 0 0 0 4px var(--ink); }
@@ -1169,7 +1167,6 @@ body.dark .coach-try.yay { background: var(--coach-bg-4); }
 body.dark .m-acts button.next { background: var(--chat-bg-10); border-color: var(--chat-bg-3); color: var(--chat-ink-5); }
 .m-acts button.next::before { content: "↳ "; opacity: .6; }
 .m-acts button.next:hover { background: color-mix(in oklab, var(--accent-text) 12%, var(--snow)); }
-body.dark .tgl:checked::after { background: var(--snow); }
 
 /* the tour, always at the top of Settings */
 .set-start { display: flex; align-items: center; gap: 12px; padding: 14px 16px !important; border-radius: var(--pill-r); corner-shape: squircle; background: var(--blush); border: 0 !important; margin-bottom: 6px; }
@@ -1297,13 +1294,12 @@ body.dark .usage { background: rgb(from var(--hilite) r g b / .05); }
 .news h2 { margin: 0; font: 800 26px/1.15 var(--font); color: var(--ink); }
 .news .nw-v { margin: 4px 0 16px; font: 600 12.5px/1 var(--font); color: var(--ink-soft); }
 .news .nw-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; text-align: left; }
-.news .nw-list li { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--news-bg); }
+.news .nw-list li { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-news-li-bg); }
 .news .nw-e { flex: none; width: 34px; height: 34px; border-radius: 16px; corner-shape: squircle; display: grid; place-items: center; background: var(--snow); color: var(--ink); box-shadow: 0 1px 4px rgba(var(--sh), calc(.1 * var(--sh-k))); }
 body.dark .news .nw-e { background: var(--surface-2); }
 .news .nw-e svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .news .nw-list b { display: block; font: 700 14px/1.3 var(--font); color: var(--ink); }
 .news .nw-list small { display: block; margin-top: 2px; font: 500 12.5px/1.45 var(--font); color: var(--ink-soft); }
-body.dark .news .nw-list li { background: rgb(from var(--hilite) r g b / .05); }
 /* templates menu, what's new and the usage card in dark mode */
 body.dark .tplpick { background: var(--surface); box-shadow: 0 10px 28px rgb(from var(--shade) r g b / .45); }
 body.dark .news .ob-panel { background: var(--surface); }
@@ -1794,12 +1790,11 @@ body.clean #side, body.clean #tray, body.clean #tools, body.clean #dock, body.cl
 body.clean .clean-back { opacity: .45; visibility: visible; pointer-events: auto; translate: -50% 0; transition-delay: .25s; }
 body.clean .clean-back:hover { opacity: 1; transition-delay: 0s; }
 body.dark .clean-back { background: rgb(from var(--clean-bg-2) r g b / .94); color: var(--clean-ink); box-shadow: 0 8px 24px rgb(from var(--shade) r g b / .4), 0 0 0 1px rgb(from var(--hilite) r g b / .06); }
-body.dark .clean-back kbd { background: rgb(from var(--hilite) r g b / .1); }
 body.exporting .clean-back { display: none; }
 
 /* the update bar: quiet, at the top of the board, never in the way */
 .upbar {
-position: absolute; z-index: 12; top: 16px; left: 50%; translate: -50% 0; display: flex; align-items: center; gap: 4px; padding: 5px 5px 5px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-upbar-bg); color: var(--m-upbar-ink); font: 600 13px/1 var(--font); white-space: nowrap; box-shadow: 0 10px 28px rgba(var(--sh), calc(.16 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.07 * var(--sh-k))); animation: ubIn .45s cubic-bezier(.3, 1.4, .5, 1);
+position: absolute; z-index: 12; top: 16px; left: 50%; translate: -50% 0; display: flex; align-items: center; gap: 4px; padding: 5px 5px 5px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-upbar-bg); color: var(--m-upbar-ink); font: 600 13px/1 var(--font); white-space: nowrap; box-shadow: var(--m-upbar-shadow); animation: ubIn .45s cubic-bezier(.3, 1.4, .5, 1);
 }
 .upbar[hidden] { display: none; }
 @keyframes ubIn { from { opacity: 0; translate: -50% -10px; } }
@@ -1815,7 +1810,6 @@ body.dark .ub-go { background: var(--clean-ink); }
 .ub-x { width: 28px; height: 28px; background: none; color: var(--ink-soft); font-size: 17px; line-height: 1; }
 .ub-x:hover { background: rgb(from var(--accent-deep) r g b / .08); color: var(--ink); }
 .upbar.busy .ub-link, .upbar.busy .ub-x { display: none; }
-body.dark .upbar { box-shadow: 0 10px 28px rgb(from var(--shade) r g b / .45), 0 0 0 1px rgb(from var(--hilite) r g b / .07); }
 body.dark .ub-go { color: var(--vd-ink); }
 body.dark .ub-link, body.dark .ub-x { color: var(--ub-ink); }
 body.clean .upbar, body.exporting .upbar, .stage.doc-open .upbar { display: none; }
@@ -1917,8 +1911,7 @@ body.dark .tbe-row:hover, body.dark .tbe-ic { background: rgb(from var(--hilite)
 .vd-start { white-space: nowrap; } .vd-file { display: grid; place-items: center; white-space: nowrap; }
 
 /* Spotify cards: a slim grab bar, then Spotify's own player. Not selected = a clear shield, so dragging never presses play */
-.card.spotify .body { display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: inherit; background: var(--snow); }
-body.dark .card.spotify .body { background: var(--dark-raised); }
+.card.spotify .body { display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: inherit; background: var(--m-sp-body-bg); }
 .sp-head { flex: none; height: 28px; display: flex; align-items: center; gap: 7px; padding: 0 11px; font: 600 12px/1 var(--font); color: var(--ink-soft); cursor: grab; }
 .sp-head span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sp-wrap { position: relative; flex: 1; min-height: 0; margin: 0 6px 6px; border-radius: 16px; corner-shape: squircle; overflow: hidden; background: color-mix(in oklab, var(--on-accent) 8%, var(--snow)); }
@@ -1986,9 +1979,8 @@ button.zoom:hover, button.zoom:focus-visible { background: color-mix(in oklab, v
 /* quick hover labels for small icon buttons outside the toolbar (the Settings gear) */
 .box header .gear[data-tip] { position: relative; }
 .box header .gear[data-tip]::after {
-content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 8px); translate: -50% -3px; padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: color-mix(in oklab, var(--accent-wash) 8%, var(--surface)); font: 600 11px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s, translate .15s; z-index: 30;
+content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 8px); translate: -50% -3px; padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-gear-tip-bg); color: color-mix(in oklab, var(--accent-wash) 8%, var(--surface)); font: 600 11px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s, translate .15s; z-index: 30;
 }
-body.dark .box header .gear[data-tip]::after { background: var(--pn-dark-tip); }
 .box header .gear[data-tip]:hover::after, .box header .gear[data-tip]:focus-visible::after { opacity: 1; translate: -50% 0; transition-delay: .25s; }
 .box header .gear { padding: 0; }   /* no default button padding, so the gear sits dead center in its hover square */
 
@@ -2037,7 +2029,7 @@ body:has(.stage.doc-open) #sideR { z-index: 0; }
   box-shadow: inset 0 1.5px 0 var(--hilite), inset 0 0 0 2px rgb(from var(--hilite) r g b / .85), inset 0 -18px 40px rgb(from var(--hilite) r g b / .3), 0 0 0 1px rgb(from var(--sec-edge) r g b / .12), 0 18px 50px rgb(from var(--sec-shadow) r g b / .14); }
 /* a little shine across the top, like light on glass */
 .card.section .sec-glass::before { content: ""; position: absolute; left: 5%; right: 5%; top: 6px; height: 18%; border-radius: 40px 40px 60% 60% / 40px 40px 100% 100%;
-  background: linear-gradient(180deg, rgb(from var(--hilite) r g b / .45), rgb(from var(--hilite) r g b / 0)); pointer-events: none; }
+  background: var(--m-sec-shine); pointer-events: none; }
 .card.section .sec-name {
 position: absolute; left: 22px; top: 16px; top: auto; bottom: calc(100% - 50px); transform-origin: 0 100%; scale: var(--secz, 1); transition: scale .15s ease; display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px 7px; border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--hilite) r g b / .78); box-shadow: 0 2px 8px rgb(from var(--sec-shadow) r g b / .1), inset 0 0 0 1px rgb(from var(--hilite) r g b / .9); font: 700 14px/1.1 var(--font); color: var(--ink); white-space: nowrap;
 }
@@ -2050,7 +2042,6 @@ position: absolute; left: 22px; top: 16px; top: auto; bottom: calc(100% - 50px);
 .card.section .rot-h { display: none !important; }
 body.dark .card.section .sec-glass { background: linear-gradient(150deg, color-mix(in srgb, var(--fill) 16%, rgb(from var(--hilite) r g b / .1)), color-mix(in srgb, var(--fill) 8%, rgb(from var(--hilite) r g b / .03)));
   box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .28), inset 0 0 0 1.5px rgb(from var(--hilite) r g b / .14), 0 18px 50px rgb(from var(--shade) r g b / .3); }
-body.dark .card.section .sec-glass::before { background: linear-gradient(180deg, rgb(from var(--hilite) r g b / .05), rgb(from var(--hilite) r g b / 0)); height: 18%; }
 body.dark .card.section .sec-name { background: rgb(from var(--hilite) r g b / .1); box-shadow: inset 0 0 0 1px rgb(from var(--hilite) r g b / .16); }
 .sb-glass { background: linear-gradient(150deg, rgb(from var(--hilite) r g b / .9), rgb(from var(--sb-bg-6) r g b / .7)) !important; box-shadow: inset 0 0 0 1px rgb(from var(--sb-shadow) r g b / .35); }
 .card.section > .frame { display: none; }   /* no paper behind the glass */
@@ -2194,8 +2185,7 @@ body.dark .sb-glass { background: rgb(from var(--sb-shadow) r g b / .2) !importa
 body.dark .selbar .sb-style button.on { color: var(--sb-ink-3); }
 .selbar .sb-font svg { width: 10px !important; height: 10px !important; }
 .selbar .sb-font svg path { stroke-width: 1.6; }
-.selbar { --pill: rgba(128, 110, 92, .075); }
-body.dark .selbar { --pill: rgba(255, 255, 255, .09); }
+.selbar { --pill: var(--m-selbar-pill); }
 .selbar .sb-ic.on { color: var(--sb-on); }
 .selbar [data-sb="hidename"], .selbar [data-sb="hidehex"] { color: var(--sb-ink); }
 .selbar [data-sb="hidename"].on, .selbar [data-sb="hidehex"].on { background: var(--blush); color: var(--sb-on); }
@@ -2205,12 +2195,11 @@ body.dark .selbar { --pill: rgba(255, 255, 255, .09); }
 .sbc-top { display: flex; align-items: center; gap: 10px; font: 700 12.5px/1 var(--font); color: var(--ink); }
 /* a soft custom slider: thin rounded track that fills as you go, and a round white knob */
 .sbc-top input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 22px; background: none; cursor: pointer; --p: 50%; }
-.sbc-top input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: linear-gradient(90deg, var(--select) var(--p), rgb(from var(--shade) r g b / .1) var(--p)); }
+.sbc-top input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: linear-gradient(90deg, var(--select) var(--p), var(--m-sbc-track-rest) var(--p)); }
 .sbc-top input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: var(--snow); box-shadow: 0 1px 4px rgb(from var(--shade) r g b / .25), 0 0 0 1px rgb(from var(--shade) r g b / .06); cursor: grab; }
 /* line heights that differ: no value on the slider until one is chosen */
 .sbc-top input[type=range].sb-mixed { --p: 0% !important; } .sbc-top input[type=range].sb-mixed::-webkit-slider-thumb { opacity: 0; }
 .sbc-top input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.1); }
-body.dark .sbc-top input[type=range]::-webkit-slider-runnable-track { background: linear-gradient(90deg, var(--select) var(--p), rgb(from var(--hilite) r g b / .14) var(--p)); }
 .sbc-top input[type=number] { width: 54px; padding: 7px 8px; border: 0; border-radius: 9px; background: rgb(from var(--shade) r g b / .05); font: 700 13px/1 var(--font); color: var(--ink); text-align: right; outline: none; -moz-appearance: textfield; }
 .sbc-top input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 .sbc-top input[type=number]:focus { box-shadow: inset 0 0 0 2px var(--select); }
@@ -2342,10 +2331,9 @@ body[data-tb="s"] .m-pill { height: 46px; }
 body[data-tb="l"] .m-pill { height: 58px; }
 /* Myra's button: no outline ring (it made her look taller than the toolbar), the toolbar's own shadow, plus a soft cloudberry-amber glow that breathes and a tiny wobble
    every few seconds. Glows and transforms never change the box, so she stays exactly the toolbar's height. Calm mode and reduced motion keep the glow still. */
-.m-pill { --m-base: 0 8px 26px rgba(var(--sh), calc(.14 * var(--sh-k))); --m-glow: var(--butter-deep, #f0b04a); transform-origin: 50% 60%;
+.m-pill { --m-base: var(--m-pill-base); --m-glow: var(--butter-deep, #f0b04a); transform-origin: 50% 60%;
   box-shadow: var(--m-base), 0 0 16px 1px color-mix(in srgb, var(--m-glow) 44%, transparent);
   animation: m-glow 3.6s ease-in-out infinite, m-wobble 8s ease-in-out infinite; }
-body.dark .m-pill { --m-base: 0 8px 26px rgba(0, 0, 0, .31); }
 @keyframes m-glow {
   0%, 100% { box-shadow: var(--m-base), 0 0 14px 1px color-mix(in srgb, var(--m-glow) 36%, transparent); }
   50% { box-shadow: var(--m-base), 0 0 20px 2px color-mix(in srgb, var(--m-glow) 48%, transparent); } }
@@ -2807,10 +2795,10 @@ body.myra-calm .m-pill.glow-red, body.myra-calm .m-pill.glow-green { animation: 
 
 /* birthday inputs: month and day, nothing else */
 .bd-pick { display: inline-flex; align-items: center; gap: 6px; }
-.bd-pick select { font: 500 13px/1.2 var(--font); padding: 7px 9px; border: 0; border-radius: 11px; corner-shape: squircle; background: color-mix(in oklab, var(--on-accent) 4%, var(--snow)); color: var(--ink); cursor: pointer; }
+.bd-pick select { font: 500 13px/1.2 var(--font); padding: 7px 9px; border: 0; border-radius: 11px; corner-shape: squircle; background: var(--m-bd-select-bg); color: var(--ink); cursor: pointer; }
 .bd-clear { width: 26px; height: 26px; border: 0; border-radius: 9px; background: none; color: var(--ink-soft); cursor: pointer; font: 600 16px/1 var(--font); }
 .bd-clear:hover { background: var(--blush); color: var(--ink); }
-body.dark .bd-pick select, body.tint-panels .bd-pick select { background: rgb(from var(--hilite) r g b / .08); color: inherit; }
+body.tint-panels .bd-pick select { background: rgb(from var(--hilite) r g b / .08); color: inherit; }
 .ob-field small { color: var(--ink-faint); font-weight: 500; }
 
 /* the birthday note's Myra spins (her moving party stamp) */
@@ -3092,8 +3080,7 @@ body:is(.calm, .myra-calm) .m-bar::after { animation: none; transform: translate
 }
 
 /* ---------- the Pieces picker: docked beside the screen it adds to; on a phone, above the bottom bar ---------- */
-.piece-pick { position: fixed; z-index: 30; width: 292px; height: 480px; display: flex; flex-direction: column; padding: 8px; border-radius: 20px; corner-shape: squircle; background: var(--snow); box-shadow: 0 12px 32px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); font: 500 13px/1.2 var(--font); color: var(--ink); transition: opacity .15s; }
-body.dark .piece-pick { background: var(--surface); }
+.piece-pick { position: fixed; z-index: 30; width: 292px; height: 480px; display: flex; flex-direction: column; padding: 8px; border-radius: 20px; corner-shape: squircle; background: var(--m-piece-pick-bg); box-shadow: var(--m-piece-pick-shadow); font: 500 13px/1.2 var(--font); color: var(--ink); transition: opacity .15s; }
 .piece-pick[hidden] { display: none; }
 .piece-pick.paused { opacity: 0; pointer-events: none; }
 .piece-pick .pk-head { display: flex; align-items: center; gap: 6px; }
@@ -3135,7 +3122,6 @@ body.dark .piece-pick .pk-th .tl { fill: var(--surface); }
 .piece-pick .pk-none p { margin: 0 0 10px; }
 .piece-pick .pk-more { padding: 7px 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: color-mix(in oklab, var(--ink-faint) 12%, var(--snow)); font: 600 12px/1.2 var(--font); color: var(--ink); cursor: pointer; }
 .piece-pick .pk-more:hover { background: var(--blush); }
-body.dark .piece-pick { box-shadow: 0 12px 32px rgb(from var(--shade) r g b / .45); }
 body.dark .piece-pick :is(.pk-tabs, .pk-search, .pk-more) { background: rgb(from var(--hilite) r g b / .08); }
 body.dark .piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-x):hover { background: var(--ob-line); }
 
