@@ -96,7 +96,7 @@ function nameOf(selector: string, prop: string): string {
   return `--m-${slug}-${ABBR[prop] ?? prop}`;
 }
 
-// what the light rules say for a selector that has no twin: among the rules above the dark one that name every element it
+// what the light rules say for a selector that has no twin: among the rules that name every element it
 // names (and no more state), the one that wins; else the property's initial value
 const INITIAL: Record<string, string> = {
   background: 'transparent',
@@ -153,7 +153,7 @@ function appliedLight(light: Rule[], rule: Rule, selector: string, prop: string)
   const states = withAncestors(statesOf(own));
   const found: { value: string; important: boolean; spec: number; order: number }[] = [];
   for (const l of light) {
-    if (l.ctx !== rule.ctx || l.order > rule.order) continue;
+    if (l.ctx !== rule.ctx) continue;
     const d = l.decls.find(x => x.prop === prop);
     const related = l.decls.some(x => RELATED[prop]?.includes(x.prop));
     for (const s of l.selectors) {
