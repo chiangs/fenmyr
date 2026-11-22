@@ -822,8 +822,7 @@ body:has(#rowMenu.left-of-panel, .left-of-panel.on) .mode-card { visibility: hid
 .m-pill { background: var(--snow); color: var(--ink); box-shadow: 0 12px 30px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
 .m-bubble { background: var(--snow); color: var(--ink); box-shadow: 0 12px 30px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
 .m-bubble small { color: var(--m-m-bubble-small-ink); }
-.m-acts button { border-color: var(--ink); background: var(--ink); color: var(--surface); }
-body.dark .m-acts button { border-color: var(--hilite); background: var(--snow); }
+.m-acts button { border-color: var(--m-m-acts-button-line); background: var(--m-m-acts-button-bg); color: var(--surface); }
 .m-acts button.ghost { background: none; color: var(--ink); }
 body.dark .m-acts button.ghost { background: none; color: var(--hilite); }
 
@@ -898,13 +897,11 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-list { flex: 1; overflow: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 8px; user-select: text; -webkit-user-select: text; }
 .mc-msg { max-width: 82%; padding: 9px 13px 10px; border-radius: 24px; corner-shape: squircle; font: 400 13.5px/1.45 var(--font); white-space: pre-wrap; word-break: break-word; animation: mc-in .25s cubic-bezier(.2, .9, .3, 1.2); }
 /* her messages share the class of her own figure (.myra), whose placement must not follow them out of the dock */
-.mc-msg.myra { align-self: flex-start; background: color-mix(in oklab, var(--snow) 4%, var(--surface-2)); border-bottom-left-radius: 6px; position: relative; left: auto; bottom: auto; transform: none; z-index: 2; }
-.mc-msg.me { align-self: flex-end; background: color-mix(in oklab, var(--accent-tint) 32%, var(--ink-inverse)); border-bottom-right-radius: 6px; }
-body.dark .mc-msg.me { background: var(--chat-bg-3); }
+.mc-msg.myra { align-self: flex-start; background: var(--m-mc-msg-myra-bg); border-bottom-left-radius: 6px; position: relative; left: auto; bottom: auto; transform: none; z-index: 2; }
+.mc-msg.me { align-self: flex-end; background: var(--m-mc-msg-me-bg); border-bottom-right-radius: 6px; }
 .mc-msg code { padding: 0 4px; border-radius: 5px; background: color-mix(in oklab, var(--ink) 8%, transparent); font: 500 .9em/1.3 ui-monospace, monospace; overflow-wrap: anywhere; }
 .mc-msg .m-acts { margin-top: 8px; }
-.mc-msg .m-acts button { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-body.dark .mc-msg .m-acts button { background: var(--snow); border-color: var(--hilite); }
+.mc-msg .m-acts button { background: var(--m-m-acts-button-bg); color: var(--paper); border-color: var(--m-m-acts-button-line); }
 .mc-msg .m-acts button.ghost { background: none; color: var(--ink); }
 body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite); }
 .mc-msg.typing { display: flex; gap: 4px; padding: 13px 14px; }
@@ -917,7 +914,7 @@ body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite);
 .mc-ideas button:hover { border-color: var(--accent-soft); background: var(--blush); }
 @keyframes mc-in { from { opacity: 0; transform: translateY(6px); } }
 @keyframes mc-dot { 50% { transform: translateY(-4px); opacity: .5; } }
-.mc-form { display: flex; align-items: flex-end; gap: 8px; margin: 8px 10px 10px; padding: 6px 6px 6px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: color-mix(in oklab, var(--snow) 4%, var(--surface-2)); }
+.mc-form { display: flex; align-items: flex-end; gap: 8px; margin: 8px 10px 10px; padding: 6px 6px 6px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-mc-msg-myra-bg); }
 .mc-form { flex-direction: column; align-items: stretch; gap: 2px; }
 .mc-form textarea { min-width: 0; border: 0; background: none; resize: none; outline: none; font: 400 14px/1.4 var(--font); color: var(--ink); field-sizing: content; max-height: min(calc(6lh + 12px), calc(100vh / 3)); padding: 6px 0; user-select: text; -webkit-user-select: text; }
 .mc-form textarea:placeholder-shown { max-height: calc(1lh + 12px); overflow: hidden; }
@@ -940,7 +937,6 @@ body.proto .m-chat.writing .mc-grip { display: none; }
 /* a touch screen has no Ctrl key, so Send is the way */
 @media (pointer: coarse) { .mc-hint { display: none; } .mc-expand { margin-left: auto; } }
 body.dark .m-chat { background: rgb(from var(--chat-bg-6) r g b / .98); box-shadow: 0 20px 50px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .06); }
-body.dark .mc-msg.myra, body.dark .mc-form { background: var(--chat-bg-7); }
 body.dark .mc-msg.me { color: var(--hilite); }
 body.dark .mc-msg .m-acts button { color: var(--chat-ink); }
 .au-dot.wait { animation: none; background: var(--ink-faint); }
@@ -2034,17 +2030,15 @@ body.exporting .card .rot-h { display: none !important; }
 .tilt-pop.on { opacity: 1; visibility: visible; transform: none; }
 .tp-in { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; font: 700 13px/1 var(--font); color: var(--ink); }
 .tp-in span { margin-right: auto; }
-.tp-in input { width: 70px; padding: 8px 10px; border: 0; border-radius: 14px; corner-shape: squircle; background: rgb(from var(--shade) r g b / .05); font: 700 15px/1 var(--font); color: var(--ink); text-align: right; outline: none; }
+.tp-in input { width: 70px; padding: 8px 10px; border: 0; border-radius: 14px; corner-shape: squircle; background: var(--m-tp-in-input-bg); font: 700 15px/1 var(--font); color: var(--ink); text-align: right; outline: none; }
 .tp-in input:focus { box-shadow: inset 0 0 0 2px var(--select); }
 .tp-in b { margin-left: -4px; color: var(--ink-soft); }
 .tp-chips { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.tp-chips button { padding: 7px 0; border: 0; border-radius: 8px; background: rgb(from var(--shade) r g b / .04); font: 600 11px/1 var(--font); color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
+.tp-chips button { padding: 7px 0; border: 0; border-radius: 8px; background: var(--m-tp-chips-button-bg); font: 600 11px/1 var(--font); color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
 .tp-chips button:hover { background: var(--blush, var(--tp-bg)); } .tp-chips button.on { background: var(--select); color: var(--snow); }
-body.dark .tp-chips button.on { background: var(--select); color: var(--hilite); }
+.tp-chips button.on { color: var(--m-tp-chips-button-on-ink); }
 .tp-chips button[data-deg^="-"] { color: var(--ink-soft); }
 /* the tilt popover in dark mode */
-body.dark .tp-in input { background: rgb(from var(--hilite) r g b / .08); }
-body.dark .tp-chips button { background: rgb(from var(--hilite) r g b / .07); }
 body.dark .tp-chips button:hover { background: rgb(from var(--hilite) r g b / .14); }
 body.dark .sb-tilt:hover { background: rgb(from var(--hilite) r g b / .1); }
 /* the angle keeps one width (so the bar doesn't change size as you turn things) */
@@ -2055,12 +2049,10 @@ body.dark .sb-tilt:hover { background: rgb(from var(--hilite) r g b / .1); }
 .card.section .sec-glass { cursor: crosshair; } .card.section.sel .sec-glass { cursor: move; }
 .tp-row { display: flex; align-items: center; gap: 8px; padding: 0 0 10px; }
 .tp-row .tp-in { flex: 1; padding: 4px 0 0 6px; }
-.tp-reset { display: inline-flex; align-items: center; gap: 5px; padding: 8px 11px; border: 0; border-radius: 14px; corner-shape: squircle; background: rgb(from var(--shade) r g b / .05); font: 700 12px/1 var(--font); color: var(--ink); cursor: pointer; }
-body.dark .tp-reset { color: var(--ink); }
+.tp-reset { display: inline-flex; align-items: center; gap: 5px; padding: 8px 11px; border: 0; border-radius: 14px; corner-shape: squircle; background: var(--m-tp-in-input-bg); font: 700 12px/1 var(--font); color: var(--ink); cursor: pointer; }
 .tp-reset svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.tp-reset:hover { background: var(--blush, var(--tp-bg)); }
+.tp-reset:hover { background: var(--m-tp-reset-hover-bg); }
 .tp-reset.on { background: rgb(from var(--shade) r g b / .05); color: var(--ink-soft); }   /* already straight */
-body.dark .tp-reset { background: rgb(from var(--hilite) r g b / .08); } body.dark .tp-reset:hover { background: rgb(from var(--hilite) r g b / .14); }
 /* video controls grow with the video: everything is sized from the card's width (cqi), with a comfortable minimum */
 .card.video .body { container-type: inline-size; }
 .card.video .vd-bar { height: clamp(50px, 15cqi, 104px); gap: clamp(8px, 2.6cqi, 18px); padding: 0 clamp(10px, 3cqi, 22px); }

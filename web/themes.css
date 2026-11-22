@@ -402,7 +402,11 @@ body {
   --m-ly-hover-bg: var(--au-bg-2);
   --m-ly-n-bg: var(--snow);
   --m-ly-on-bg: var(--blush);
+  --m-m-acts-button-bg: var(--ink);
+  --m-m-acts-button-line: var(--ink);
   --m-m-bubble-small-ink: var(--pink-deep);
+  --m-mc-msg-me-bg: color-mix(in oklab, var(--accent-tint) 32%, var(--ink-inverse));
+  --m-mc-msg-myra-bg: color-mix(in oklab, var(--snow) 4%, var(--surface-2));
   --m-news-li-bg: var(--news-bg);
   --m-news-ob-panel-bg: var(--m-ob-panel-bg);
   --m-ob-field-input-bg: var(--surface-2);
@@ -458,6 +462,10 @@ body {
   --m-timer-chip-ink: var(--ink);
   --m-tools-button-after-bg: var(--ink);
   --m-tools-button-after-ink: var(--ink-inverse);
+  --m-tp-chips-button-bg: rgb(from var(--shade) r g b / .04);
+  --m-tp-chips-button-on-ink: var(--snow);
+  --m-tp-in-input-bg: rgb(from var(--shade) r g b / .05);
+  --m-tp-reset-hover-bg: var(--blush, var(--tp-bg));
   --m-tplpick-button-hover-bg: var(--blush);
   --m-tplpick-button-hover-tp-e-bg: var(--snow);
   --m-tplpick-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k)));
@@ -676,7 +684,11 @@ body.dark {
   --m-ly-hover-bg: rgb(from var(--hilite) r g b / .05);
   --m-ly-n-bg: var(--pn-dark-ink);
   --m-ly-on-bg: rgb(from var(--lf-shadow) r g b / .22);
+  --m-m-acts-button-bg: var(--snow);
+  --m-m-acts-button-line: var(--hilite);
   --m-m-bubble-small-ink: var(--chat-ink-2);
+  --m-mc-msg-me-bg: var(--chat-bg-3);
+  --m-mc-msg-myra-bg: var(--chat-bg-7);
   --m-news-li-bg: rgb(from var(--hilite) r g b / .05);
   --m-news-ob-panel-bg: var(--surface);
   --m-ob-field-input-bg: var(--ob-bg-4);
@@ -732,6 +744,10 @@ body.dark {
   --m-timer-chip-ink: var(--hilite);
   --m-tools-button-after-bg: var(--sb-bg);
   --m-tools-button-after-ink: var(--sb-ink-2);
+  --m-tp-chips-button-bg: rgb(from var(--hilite) r g b / .07);
+  --m-tp-chips-button-on-ink: var(--hilite);
+  --m-tp-in-input-bg: rgb(from var(--hilite) r g b / .08);
+  --m-tp-reset-hover-bg: rgb(from var(--hilite) r g b / .14);
   --m-tplpick-button-hover-bg: var(--surface-2);
   --m-tplpick-button-hover-tp-e-bg: var(--ob-line);
   --m-tplpick-shadow: 0 10px 28px rgb(from var(--shade) r g b / .45);

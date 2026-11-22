@@ -72,11 +72,29 @@ const SELECTED = (id: string) => async (page: Page) => {
   await page.evaluate(card => window.__fenmyr.selectOnly([card]), id);
   await page.mouse.move(1439, 899);
 };
+// a popover opened from the selection bar (or from the document toolbar), with its card selected
+const OPEN = (card: string, trigger: string) => async (page: Page) => {
+  await page.keyboard.press('Escape');
+  await SELECTED(card)(page);
+  // a trigger the bar folds away (the More button on a narrow bar) is skipped: that scene just shows what is open
+  await page
+    .locator(`#selbar ${trigger}`)
+    .first()
+    .click({ timeout: 1500 })
+    .catch(() => undefined);
+};
+const pops = (card: string, names: string[]) =>
+  names.map(name => ({ name: `${card} ${name}`, run: OPEN(card, `[data-pop="${name}"]`) }));
+const DOC_POPS = ['style', 'font', 'color', 'hl', 'align', 'link', 'more'];
 const SCENES: { name: string; run: (page: Page) => Promise<void> }[] = [
   { name: 'board', run: SELECTED('note') },
   { name: 'text', run: SELECTED('text') },
   { name: 'shape', run: SELECTED('shape') },
   { name: 'todo', run: SELECTED('todo') },
+  ...pops('note', ['tags', 'due', 'size', 'color', 'more']),
+  { name: 'note tilt', run: OPEN('note', '.sb-tilt') },
+  ...pops('text', ['type', 'tfill', 'place', 'stroke', 'more']),
+  ...pops('box', ['fill', 'stroke', 'corners', 'place']),
   { name: 'settings', run: page => page.locator('#gearBtn').click() },
   {
     name: 'chat',
@@ -93,6 +111,16 @@ const SCENES: { name: string; run: (page: Page) => Promise<void> }[] = [
       await page.waitForSelector('.dv-prose', { timeout: 8000 });
     },
   },
+  ...DOC_POPS.map(name => ({
+    name: `doc ${name}`,
+    run: async (page: Page) => {
+      await page
+        .locator(`.dt-b[data-pop="${name}"]`)
+        .first()
+        .click({ timeout: 1500 })
+        .catch(() => undefined);
+    },
+  })),
   {
     name: 'prototype',
     run: async page => {
@@ -188,7 +216,35 @@ function parseFilters(args: string[]) {
 
 async function sweepLook(look: Look, targets: Target[], seen: Map<string, number>) {
   const values: Record<string, string> = {};
-  const board = everyOfflineCard();
+  // a chat with a line each way, and buttons under hers, for the rules about Myra's messages
+  const local = (ms: number) => {
+    const t = new Date(Date.now() + ms);
+    const two = (n: number) => String(n).padStart(2, '0');
+    return `${t.getFullYear()}-${two(t.getMonth() + 1)}-${two(t.getDate())}T${two(t.getHours())}:${two(t.getMinutes())}`;
+  };
+  const base = everyOfflineCard();
+  const dueNote = (id: string, x: number, due: string) => ({ ...base.cards[1], id, x, y: 900, due });
+  const board = {
+    ...base,
+    cards: [
+      ...base.cards,
+      dueNote('due-later', 0, local(40 * 864e5)),
+      dueNote('due-soon', 260, local(36e5)),
+      dueNote('due-over', 520, local(-864e5)),
+    ],
+    chat: [
+      { who: 'me', text: 'What should this board show?', t: 1 },
+      {
+        who: 'myra',
+        text: 'A first screen, I think.',
+        t: 2,
+        acts: [
+          { kind: 'next', text: 'Find onboarding screens' },
+          { kind: 'source', card: 'note' },
+        ],
+      },
+    ],
+  };
   const app = await launch({ boards: [board], open: board.id, settings: look.settings });
   try {
     await prepare(app.page);
