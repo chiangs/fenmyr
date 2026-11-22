@@ -11,9 +11,10 @@
 // track's pseudo-element, a state a scene doesn't set up); leave those out with --lines or --match.
 import fs from 'node:fs';
 import type { Page } from 'playwright';
+import { everyOfflineCard } from '../tests/fixtures/boards.ts';
 import { launch } from '../tests/support/launch.ts';
 import { parseRules } from './dark-css.ts';
-import { BOARD, diff, frames, LOOKS, prepare } from './dark-look.ts';
+import { diff, frames, LOOKS, type Look, prepare } from './dark-look.ts';
 
 declare global {
   interface Window {
@@ -64,21 +65,38 @@ function targetsOf(css: string, only: (line: number, selector: string) => boolea
   });
 }
 
-// scenes build on each other: the board, then Settings over it, then Myra's chat
+// a board with every card the app can make offline, and scenes that build on each other: the board with a note selected,
+// then other cards selected, Settings over it, Myra's chat, a Doc open, and the home screen
+const SELECTED = (id: string) => async (page: Page) => {
+  await page.evaluate(card => window.__fenmyr.selectOnly([card]), id);
+  await page.mouse.move(1439, 899);
+};
 const SCENES: { name: string; run: (page: Page) => Promise<void> }[] = [
-  {
-    name: 'board',
-    run: async page => {
-      await page.evaluate(() => window.__fenmyr.selectOnly(['a']));
-      await page.mouse.move(1439, 899);
-    },
-  },
+  { name: 'board', run: SELECTED('note') },
+  { name: 'text', run: SELECTED('text') },
+  { name: 'shape', run: SELECTED('shape') },
+  { name: 'todo', run: SELECTED('todo') },
   { name: 'settings', run: page => page.locator('#gearBtn').click() },
   {
     name: 'chat',
     run: async page => {
       await page.keyboard.press('Escape');
       await page.locator('#mPill').click();
+    },
+  },
+  {
+    name: 'doc',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await page.locator('#cards [data-id="doc"]').dblclick();
+      await page.waitForSelector('.dv-prose', { timeout: 8000 });
+    },
+  },
+  {
+    name: 'home',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await page.locator('#brand').click();
     },
   },
 ];
@@ -159,13 +177,11 @@ function parseFilters(args: string[]) {
   return { css, only };
 }
 
-async function snapshot(out: string, args: string[]) {
-  const { css, only } = parseFilters(args);
-  const targets = targetsOf(fs.readFileSync(css, 'utf8'), only);
+async function sweepLook(look: Look, targets: Target[], seen: Map<string, number>) {
   const values: Record<string, string> = {};
-  const seen = new Map<string, number>(targets.map(t => [t.id, 0]));
-  for (const look of LOOKS) {
-    const app = await launch({ boards: [BOARD], open: 'p', settings: look.settings });
+  const board = everyOfflineCard();
+  const app = await launch({ boards: [board], open: board.id, settings: look.settings });
+  try {
     await prepare(app.page);
     await app.page.evaluate(() => {
       window.__sweepPaint = v =>
@@ -183,7 +199,27 @@ async function snapshot(out: string, args: string[]) {
         if (k.endsWith(' | elements')) seen.set(id, Math.max(seen.get(id) ?? 0, Number(v)));
       }
     }
+  } finally {
     await app.close();
+  }
+  return values;
+}
+
+async function snapshot(out: string, args: string[]) {
+  const { css, only } = parseFilters(args);
+  const targets = targetsOf(fs.readFileSync(css, 'utf8'), only);
+  const values: Record<string, string> = {};
+  const seen = new Map<string, number>(targets.map(t => [t.id, 0]));
+  for (const look of LOOKS) {
+    // a scene that times out is retried on a fresh launch: the app, not the stylesheet, was slow
+    for (let attempt = 1; ; attempt++) {
+      try {
+        Object.assign(values, await sweepLook(look, targets, seen));
+        break;
+      } catch (error) {
+        if (attempt === 3) throw error;
+      }
+    }
   }
   fs.writeFileSync(out, `${JSON.stringify(values, null, 1)}\n`);
   const blind = [...seen].filter(([, n]) => n === 0).map(([id]) => id);
