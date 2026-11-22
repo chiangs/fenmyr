@@ -98,6 +98,7 @@ export async function launch({
     } catch {}
   }, store);
   if (clock) await installClock(app.context());
+  // A change with no transition is delayed too, so a test that measures one at once cancels the delay for those elements (CHANGES_AT_ONCE in tests/modeBar.ts).
   if (MOTION_DELAY_MS > 0)
     await app.context().addInitScript(ms => {
       addEventListener('DOMContentLoaded', () => {
