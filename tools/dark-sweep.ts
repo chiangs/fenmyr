@@ -72,11 +72,29 @@ const SELECTED = (id: string) => async (page: Page) => {
   await page.evaluate(card => window.__fenmyr.selectOnly([card]), id);
   await page.mouse.move(1439, 899);
 };
+// a popover opened from the selection bar (or from the document toolbar), with its card selected
+const OPEN = (card: string, trigger: string) => async (page: Page) => {
+  await page.keyboard.press('Escape');
+  await SELECTED(card)(page);
+  // a trigger the bar folds away (the More button on a narrow bar) is skipped: that scene just shows what is open
+  await page
+    .locator(`#selbar ${trigger}`)
+    .first()
+    .click({ timeout: 1500 })
+    .catch(() => undefined);
+};
+const pops = (card: string, names: string[]) =>
+  names.map(name => ({ name: `${card} ${name}`, run: OPEN(card, `[data-pop="${name}"]`) }));
+const DOC_POPS = ['style', 'font', 'color', 'hl', 'align', 'link', 'more'];
 const SCENES: { name: string; run: (page: Page) => Promise<void> }[] = [
   { name: 'board', run: SELECTED('note') },
   { name: 'text', run: SELECTED('text') },
   { name: 'shape', run: SELECTED('shape') },
   { name: 'todo', run: SELECTED('todo') },
+  ...pops('note', ['tags', 'due', 'size', 'color', 'more']),
+  { name: 'note tilt', run: OPEN('note', '.sb-tilt') },
+  ...pops('text', ['type', 'tfill', 'place', 'stroke', 'more']),
+  ...pops('box', ['fill', 'stroke', 'corners', 'place']),
   { name: 'settings', run: page => page.locator('#gearBtn').click() },
   {
     name: 'chat',
@@ -93,6 +111,16 @@ const SCENES: { name: string; run: (page: Page) => Promise<void> }[] = [
       await page.waitForSelector('.dv-prose', { timeout: 8000 });
     },
   },
+  ...DOC_POPS.map(name => ({
+    name: `doc ${name}`,
+    run: async (page: Page) => {
+      await page
+        .locator(`.dt-b[data-pop="${name}"]`)
+        .first()
+        .click({ timeout: 1500 })
+        .catch(() => undefined);
+    },
+  })),
   {
     name: 'prototype',
     run: async page => {
