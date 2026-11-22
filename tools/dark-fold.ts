@@ -3,7 +3,8 @@
 // only touches a rule it can do whole and safely: one selector, every declaration with a single-selector twin, no raw
 // colour, no CSS-wide keyword, and no variable that an element redefines (a token resolves at <body>, so `--ink` inside a
 // card, or `--fill`, would read the wrong thing). Everything else is listed with its reason and left for a hand fold.
-//   node tools/dark-fold.ts plan  [--status clean,check] [--area name] [--lines a-b,c] [--skip n,m] [--sweep all.json] [--dead n,m]
+//   node tools/dark-fold.ts plan  [--status clean,check] [--area name] [--lines a-b,c] [--skip n,m] [--sweep all.json] [--dead n,m] [--cut line:prop,…]
+//   (--cut takes one declaration out of a rule that stays, for one that was dead only until its rival was folded)
 //   (--dead cuts those rules without a token, for a rule `verify` showed dead: a rival always wins over it)
 //   (--sweep leaves out the rules whose element the sweep snapshot never found, which nothing could prove)
 //   node tools/dark-fold.ts apply [same options] --manifest out.json   then: node tools/themes-css.ts, node tools/budget.ts --write
@@ -24,6 +25,8 @@ const TOKENS = path.join(ROOT, 'src', 'web', 'settings', 'derivedModes.ts');
 type Fold = { prop: string; lightLine: number; lightSel: string; light: string; dark: string; token: string };
 type Plan = { rule: Rule; selector: string; folds: Fold[] };
 type Skip = { line: number; selector: string; why: string };
+// one declaration to take out of a dark rule that stays: it was dead only because another dark rule won over it
+type Cut = { line: number; prop: string };
 type Manifest = { folded: { id: string; tokens: string[] }[]; skipped: Skip[] };
 
 const ROOTISH = /^(:root|html|body)(\.[\w-]+)*$/;
@@ -90,6 +93,7 @@ function nameOf(selector: string, prop: string): string {
 }
 
 type Picks = {
+  cuts: Cut[];
   area: string;
   only: Set<string>;
   pick: (line: number) => boolean;
@@ -187,8 +191,9 @@ function cutRule(blank: string, text: string, r: { lineStart: number; start: num
     ? { from: r.start - gap, to: r.close + after.length, text: '' }
     : { from: r.start, to: r.close + after.length, text: '' };
 }
-function apply(plans: Plan[]) {
+function apply(plans: Plan[], cuts: Cut[]) {
   const text = fs.readFileSync(CSS, 'utf8');
+  const rules = parseRules(text);
   const blank = text.replace(/\/\*[\s\S]*?\*\//g, c => c.replace(/[^\n]/g, ' '));
   const taken = existingTokens();
   const tokens = new Map<string, [string, string]>();
@@ -225,6 +230,18 @@ function apply(plans: Plan[]) {
     }
     edits.push(...mine, cutRule(blank, text, dark));
     names.set(p.rule.line, used);
+  }
+  for (const c of cuts) {
+    const rule = rules.find(r => r.line === c.line && r.selectors.some(s => /body\.dark/.test(s)));
+    const at = rule ? blockAt(blank, c.line, rule.selectors[0] ?? '') : null;
+    const body = at ? blank.slice(at.open, at.close) : '';
+    const hit = at && new RegExp(`(?:^|[{;\\s])(${regexEscape(c.prop)}\\s*:[^;}]*;?)[ \\t]*`).exec(body);
+    if (!at || !hit) {
+      failed.push({ line: c.line, selector: rule?.selectors.join(', ') ?? '', why: `could not find ${c.prop} to cut` });
+      continue;
+    }
+    const from = at.open + hit.index + hit[0].indexOf(hit[1] ?? '');
+    edits.push({ from, to: at.open + hit.index + hit[0].length, text: '' });
   }
   edits.sort((a, b) => b.from - a.from);
   let out = text;
@@ -289,6 +306,10 @@ function parseArgs(args: string[]): Picks & { manifest: string } {
     pick: line => !skip.has(line) && (!ranges.length || ranges.some(([a = 0, b = a]) => line >= a && line <= b)),
     manifest: opt('--manifest'),
     seen: opt('--sweep') ? seenIn(opt('--sweep')) : undefined,
+    cuts: opt('--cut')
+      .split(',')
+      .filter(Boolean)
+      .map(c => ({ line: Number(c.split(':')[0]), prop: c.split(':')[1] ?? '' })),
     dead: new Set(opt('--dead').split(',').filter(Boolean).map(Number)),
   };
 }
@@ -345,7 +366,7 @@ if (command === 'plan' || command === 'apply') {
   for (const s of skipped) console.log(`SKIP @${s.line} ${s.selector.slice(0, 70)}: ${s.why}`);
   console.log(`${plans.length} rules foldable, ${skipped.length} left for a hand fold`);
   if (command === 'apply') {
-    const { tokens, failed, names } = apply(plans);
+    const { tokens, failed, names } = apply(plans, picks.cuts);
     addTokens(tokens);
     for (const s of failed) console.log(`FAILED @${s.line} ${s.selector}: ${s.why}`);
     const out: Manifest = {
