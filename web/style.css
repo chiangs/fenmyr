@@ -822,8 +822,7 @@ body:has(#rowMenu.left-of-panel, .left-of-panel.on) .mode-card { visibility: hid
 .m-pill { background: var(--snow); color: var(--ink); box-shadow: 0 12px 30px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
 .m-bubble { background: var(--snow); color: var(--ink); box-shadow: 0 12px 30px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k))); }
 .m-bubble small { color: var(--m-m-bubble-small-ink); }
-.m-acts button { border-color: var(--ink); background: var(--ink); color: var(--surface); }
-body.dark .m-acts button { border-color: var(--hilite); background: var(--snow); }
+.m-acts button { border-color: var(--m-m-acts-button-line); background: var(--m-m-acts-button-bg); color: var(--surface); }
 .m-acts button.ghost { background: none; color: var(--ink); }
 body.dark .m-acts button.ghost { background: none; color: var(--hilite); }
 
@@ -898,13 +897,11 @@ body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: 
 .mc-list { flex: 1; overflow: auto; padding: 14px 14px 6px; display: flex; flex-direction: column; gap: 8px; user-select: text; -webkit-user-select: text; }
 .mc-msg { max-width: 82%; padding: 9px 13px 10px; border-radius: 24px; corner-shape: squircle; font: 400 13.5px/1.45 var(--font); white-space: pre-wrap; word-break: break-word; animation: mc-in .25s cubic-bezier(.2, .9, .3, 1.2); }
 /* her messages share the class of her own figure (.myra), whose placement must not follow them out of the dock */
-.mc-msg.myra { align-self: flex-start; background: color-mix(in oklab, var(--snow) 4%, var(--surface-2)); border-bottom-left-radius: 6px; position: relative; left: auto; bottom: auto; transform: none; z-index: 2; }
-.mc-msg.me { align-self: flex-end; background: color-mix(in oklab, var(--accent-tint) 32%, var(--ink-inverse)); border-bottom-right-radius: 6px; }
-body.dark .mc-msg.me { background: var(--chat-bg-3); }
+.mc-msg.myra { align-self: flex-start; background: var(--m-mc-msg-myra-bg); border-bottom-left-radius: 6px; position: relative; left: auto; bottom: auto; transform: none; z-index: 2; }
+.mc-msg.me { align-self: flex-end; background: var(--m-mc-msg-me-bg); border-bottom-right-radius: 6px; }
 .mc-msg code { padding: 0 4px; border-radius: 5px; background: color-mix(in oklab, var(--ink) 8%, transparent); font: 500 .9em/1.3 ui-monospace, monospace; overflow-wrap: anywhere; }
 .mc-msg .m-acts { margin-top: 8px; }
-.mc-msg .m-acts button { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-body.dark .mc-msg .m-acts button { background: var(--snow); border-color: var(--hilite); }
+.mc-msg .m-acts button { background: var(--m-m-acts-button-bg); color: var(--paper); border-color: var(--m-m-acts-button-line); }
 .mc-msg .m-acts button.ghost { background: none; color: var(--ink); }
 body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite); }
 .mc-msg.typing { display: flex; gap: 4px; padding: 13px 14px; }
@@ -917,7 +914,7 @@ body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite);
 .mc-ideas button:hover { border-color: var(--accent-soft); background: var(--blush); }
 @keyframes mc-in { from { opacity: 0; transform: translateY(6px); } }
 @keyframes mc-dot { 50% { transform: translateY(-4px); opacity: .5; } }
-.mc-form { display: flex; align-items: flex-end; gap: 8px; margin: 8px 10px 10px; padding: 6px 6px 6px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: color-mix(in oklab, var(--snow) 4%, var(--surface-2)); }
+.mc-form { display: flex; align-items: flex-end; gap: 8px; margin: 8px 10px 10px; padding: 6px 6px 6px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-mc-msg-myra-bg); }
 .mc-form { flex-direction: column; align-items: stretch; gap: 2px; }
 .mc-form textarea { min-width: 0; border: 0; background: none; resize: none; outline: none; font: 400 14px/1.4 var(--font); color: var(--ink); field-sizing: content; max-height: min(calc(6lh + 12px), calc(100vh / 3)); padding: 6px 0; user-select: text; -webkit-user-select: text; }
 .mc-form textarea:placeholder-shown { max-height: calc(1lh + 12px); overflow: hidden; }
@@ -940,7 +937,6 @@ body.proto .m-chat.writing .mc-grip { display: none; }
 /* a touch screen has no Ctrl key, so Send is the way */
 @media (pointer: coarse) { .mc-hint { display: none; } .mc-expand { margin-left: auto; } }
 body.dark .m-chat { background: rgb(from var(--chat-bg-6) r g b / .98); box-shadow: 0 20px 50px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .06); }
-body.dark .mc-msg.myra, body.dark .mc-form { background: var(--chat-bg-7); }
 body.dark .mc-msg.me { color: var(--hilite); }
 body.dark .mc-msg .m-acts button { color: var(--chat-ink); }
 .au-dot.wait { animation: none; background: var(--ink-faint); }
