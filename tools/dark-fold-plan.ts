@@ -194,7 +194,8 @@ export type Picks = {
   only: Set<string>;
   pick: (line: number) => boolean;
   seen?: Set<string>;
-  dead: Set<number>;
+  // rules to cut with no token: `all`, a line, or `line:text` for one rule of a shared line
+  dead: Set<string>;
 };
 export function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead }: Picks) {
   const cards = cardClasses();
@@ -212,7 +213,12 @@ export function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead
     const folds: (Fold & { viaTwin: boolean })[] = [];
     let why = '';
     // a rule `verify` showed dead goes without a token: the light rule keeps its own value
-    if (dead.has(rule.line)) {
+    const named = [...dead].some(
+      d =>
+        d === String(rule.line) ||
+        (d.startsWith(`${rule.line}:`) && selector.includes(d.slice(String(rule.line).length + 1))),
+    );
+    if (named || (dead.has('all') && rule.selectors.every(sel => !seen || seen.has(`@${rule.line} ${sel}`)))) {
       plans.push({ rule, selector, folds, mode: 'twin' });
       continue;
     }

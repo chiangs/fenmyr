@@ -5,7 +5,9 @@
 // card, or `--fill`, would read the wrong thing). Everything else is listed with its reason and left for a hand fold.
 //   node tools/dark-fold.ts plan  [--status clean,check] [--area name] [--lines a-b,c] [--skip n,m] [--sweep all.json] [--dead n,m] [--cut line:prop,…]
 //   (--cut takes one declaration out of a rule that stays, for one that was dead only until its rival was folded)
-//   (--dead cuts those rules without a token, for a rule `verify` showed dead: a rival always wins over it)
+//   (--dead cuts those rules without a token, for a rule `verify` showed dead: a rival always wins over it. `--dead all`
+//   cuts every rule the sweep sees, to find the dead ones: a rule whose values the sweep then shows unchanged is dead.
+//   `--dead 863:.tile.project` names one rule of a shared line)
 //   (--sweep leaves out the rules whose element the sweep snapshot never found, which nothing could prove)
 //   node tools/dark-fold.ts apply [same options] --manifest out.json   then: node tools/themes-css.ts, node tools/budget.ts --write
 //   node tools/dark-fold.ts mutate manifest.json    sets every new token to red in web/themes.css (node tools/themes-css.ts undoes it)
@@ -189,7 +191,7 @@ function parseArgs(args: string[]): Picks & { manifest: string } {
       .split(',')
       .filter(Boolean)
       .map(c => ({ line: Number(c.split(':')[0]), prop: c.split(':')[1] ?? '' })),
-    dead: new Set(opt('--dead').split(',').filter(Boolean).map(Number)),
+    dead: new Set(opt('--dead').split(',').filter(Boolean)),
   };
 }
 
