@@ -196,8 +196,10 @@ export type Picks = {
   seen?: Set<string>;
   // rules to cut with no token: `all`, a line, or `line:text` for one rule of a shared line
   dead: Set<string>;
+  // plan only the rules `dead` names
+  deadOnly?: boolean;
 };
-export function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead }: Picks) {
+export function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead, deadOnly }: Picks) {
   const cards = cardClasses();
   const guard: Guard = {
     scoped: scopedVars(rules),
@@ -216,9 +218,11 @@ export function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead
     const named = [...dead].some(
       d =>
         d === String(rule.line) ||
-        (d.startsWith(`${rule.line}:`) && selector.includes(d.slice(String(rule.line).length + 1))),
+        (d.startsWith(`${rule.line}:`) && selector === d.slice(String(rule.line).length + 1)),
     );
-    if (named || (dead.has('all') && rule.selectors.every(sel => !seen || seen.has(`@${rule.line} ${sel}`)))) {
+    const isDead = named || (dead.has('all') && rule.selectors.every(sel => !seen || seen.has(`@${rule.line} ${sel}`)));
+    if (deadOnly && !isDead) continue;
+    if (isDead) {
       plans.push({ rule, selector, folds, mode: 'twin' });
       continue;
     }
