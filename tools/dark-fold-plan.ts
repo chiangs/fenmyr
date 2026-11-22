@@ -109,12 +109,44 @@ const INITIAL: Record<string, string> = {
   filter: 'none',
 };
 // properties a shorthand also sets: a light rule that sets one of these may be what the dark rule overrides
+// inherited properties: with no light rule they take their parent's value, which a token can say by being the initial
+// (guaranteed-invalid) custom property, since `color: var(--m-x)` with no valid value then computes as `unset`
+const INHERITED = new Set(['color', 'fill', 'stroke', 'caret-color', 'text-shadow']);
 const RELATED: Record<string, string[]> = {
   'border-color': ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'],
   'background-color': ['background'],
   'background-image': ['background'],
   background: ['background-color', 'background-image'],
 };
+// the colour a shorthand sets: `border: 1.5px solid X` sets border-color X, `background: X` sets background-color X
+const STYLES = /^(none|hidden|dotted|dashed|solid|double|groove|ridge|inset|outset)$/;
+const WIDTH = /^(thin|medium|thick|-?[\d.]+[a-z%]*)$/;
+function tokens(value: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of value.trim()) {
+    if (ch === '(') depth++;
+    if (ch === ')') depth--;
+    if (/\s/.test(ch) && !depth) {
+      if (cur) out.push(cur);
+      cur = '';
+    } else cur += ch;
+  }
+  return cur ? [...out, cur] : out;
+}
+function colourOf(prop: string, shorthand: string, value: string): string | null {
+  const parts = tokens(value);
+  if (prop === 'border-color' && shorthand === 'border') {
+    const rest = parts.filter(t => !STYLES.test(t) && !WIDTH.test(t));
+    return rest.length === 0 ? 'currentcolor' : rest.length === 1 ? (rest[0] ?? null) : null;
+  }
+  if (prop === 'background-color' && shorthand === 'background') {
+    if (value.trim() === 'none') return 'transparent';
+    return parts.length === 1 && !/^(url|[\w-]*gradient)/.test(value) ? (parts[0] ?? null) : null;
+  }
+  return null;
+}
 function appliedLight(light: Rule[], rule: Rule, selector: string, prop: string) {
   const own = norm(selector.replace(/^body\.dark /, ''));
   const mine = shapeOf(own);
@@ -134,8 +166,14 @@ function appliedLight(light: Rule[], rule: Rule, selector: string, prop: string)
         )
       )
         continue;
-      if (related) return null;
-      if (d) found.push({ value: d.value, important: d.important, spec: specificity(s), order: l.order });
+      const at = { spec: specificity(s), order: l.order };
+      if (related) {
+        // a shorthand in the light rule: take the colour out of it, or leave the rule to a hand fold
+        const sh = l.decls.find(x => RELATED[prop]?.includes(x.prop));
+        const value = sh && colourOf(prop, sh.prop, sh.value);
+        if (!sh || !value) return 'related' as const;
+        found.push({ value, important: sh.important, ...at });
+      } else if (d) found.push({ value: d.value, important: d.important, ...at });
     }
   }
   const win = found.reduce<(typeof found)[number] | undefined>(
@@ -145,11 +183,9 @@ function appliedLight(light: Rule[], rule: Rule, selector: string, prop: string)
         : m,
     undefined,
   );
-  return win
-    ? { value: win.value, important: win.important }
-    : INITIAL[prop]
-      ? { value: INITIAL[prop], important: false }
-      : null;
+  if (win) return { value: win.value, important: win.important };
+  if (INITIAL[prop]) return { value: INITIAL[prop], important: false };
+  return INHERITED.has(prop) ? { value: 'initial', important: false } : null;
 }
 
 export type Picks = {
@@ -209,11 +245,15 @@ export function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead
           };
       } else {
         const a = appliedLight(light, rule, f.selector, f.decl.prop);
-        if (!a) why = `no light value for ${f.decl.prop}`;
+        if (a === 'related') why = `a shorthand sets ${f.decl.prop} in the light rules`;
+        else if (!a) why = `no light value for ${f.decl.prop}`;
         else if (a.important !== f.decl.important) why = `${f.decl.prop}: !important differs from the light value`;
         else from = { light: a.value, line: 0, sel: '', viaTwin: false };
       }
-      if (!why && from) why = whyNot(from.light, f.selector, guard) || whyNot(f.decl.value, f.selector, guard);
+      if (!why && from)
+        why =
+          (from.light === 'initial' ? '' : whyNot(from.light, f.selector, guard)) ||
+          whyNot(f.decl.value, f.selector, guard);
       if (why || !from) break;
       folds.push({
         prop: f.decl.prop,
