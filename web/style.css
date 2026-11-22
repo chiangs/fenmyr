@@ -845,7 +845,7 @@ body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: var(--s
 body.dark .pill-btn, body.dark .tile.add { border-color: var(--pn-dark-add-edge); }
 body.dark .cp-fields input, body.dark .capture input { background: var(--surface-2); color: var(--ink); border-color: var(--cp-line-2); }
 /* cards: white cards turn dark; pastel cards stay pastel with dark words */
-body.dark .card > .frame { box-shadow: 0 10px 30px rgb(from var(--shade) r g b / .35); }
+.card > .frame { box-shadow: var(--m-card-frame-shadow); }
 body.dark .card.c-white > .frame, body.dark .card.link > .frame, body.dark .card.doc > .frame, body.dark .card.canvas > .frame, body.dark .card.audio > .frame, body.dark .card.swatch > .frame, body.dark .card.image > .frame { background: var(--dark-snow) !important; }
 /* these frames are Snow in dark, which is light in some themes, so the words on them are Snow's */
 body.dark .card:is(.link, .doc, .canvas, .swatch, .font, .audio) { --ink: var(--card-white-ink); --ink-soft: var(--card-white-soft); --ink-faint: var(--card-white-faint); color: var(--ink); }
@@ -1277,7 +1277,7 @@ body.dark .news .nw-e { background: var(--surface-2); }
 .news .nw-list b { display: block; font: 700 14px/1.3 var(--font); color: var(--ink); }
 .news .nw-list small { display: block; margin-top: 2px; font: 500 12.5px/1.45 var(--font); color: var(--ink-soft); }
 /* templates menu, what's new and the usage card in dark mode */
-body.dark .news .ob-panel { background: var(--surface); }
+.news .ob-panel { background: var(--m-news-ob-panel-bg); }
 /* ---------- your colors ---------- */
 html, body { background: var(--board, var(--html-bg)); }
 body.dark, body.dark .stage { background: var(--board, var(--body-bg)); }
@@ -1505,7 +1505,7 @@ body.dark .sh-tabs button.on { color: var(--hilite); }
 .sh-body .pal { padding: 12px 10px; font-size: 15px; }
 /* dark */
 body.dark.phone .top, body.dark .hub { background: rgb(from var(--pn-dark-top) r g b / .94); }
- body.dark .sh-grab i { background: var(--sh-bg-2); }
+ .sh-grab i { background: var(--m-sh-grab-i-bg); }
 body.dark .sh-tabs, body.dark .sh-x { background: rgb(from var(--hilite) r g b / .07); color: var(--coll-ink); } body.dark .sh-tabs button.on { background: var(--sh-bg-3); }
 body.dark .sh-body .tools.in-sheet button { background: rgb(from var(--hilite) r g b / .05); }
 body.phone .sheet.on { pointer-events: auto; }
@@ -2390,7 +2390,7 @@ body.dark .rz-grip:hover > svg path, body.dark .rz-grip.on > svg path { fill: va
 .sb-cases button { flex-direction: column; gap: 3px !important; padding: 7px 2px !important; }
 .sb-cases button b { font: 700 14px/1 var(--font); } .sb-cases button small { font: 600 9.5px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
 .sb-cases button.on { background: var(--blush) !important; } body.dark .sb-cases button.on { background: rgb(from var(--hilite) r g b / .14) !important; }
-.sb-cases button.on, .sb-cases button.on b { color: var(--ink) !important; } body.dark .sb-cases button.on, body.dark .sb-cases button.on b { color: var(--hilite) !important; }
+.sb-cases button.on, .sb-cases button.on b { color: var(--ink) !important; } .sb-cases button.on, .sb-cases button.on b { color: var(--m-sb-cases-button-on-ink) !important; }
 /* the selection bar (and anything that opens from it, like dropdowns inside ···) sits above Myra's pill */
 .dock .selbar, .dock .modebar { position: relative; z-index: 6; } .dock .myra { z-index: 2; } .dock .selbar .sb-popw.open { z-index: 10; }
 .set-feedback { background: var(--m-set-feedback-bg); } .set-feedback .sf-ic { font-size: 24px; flex: none; }
@@ -2549,8 +2549,8 @@ body.dark svg.ico .ico-d { color: var(--ink); }
 .tdlg input[type="checkbox"]:not(.tgl) { padding: 0; width: auto; border: 0; }
 .tdlg input.tgl { border-width: 0; padding: 0; }
 /* a Snow vault note turns dark in dark mode, like a regular note: light words and light tints on it */
-body.dark .sb-dots button[data-c="white"] { box-shadow: inset 0 0 0 1px rgb(from var(--hilite) r g b / .3); }
-body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px var(--hilite), 0 0 0 3.5px var(--select), inset 0 0 0 1px rgb(from var(--hilite) r g b / .3); }
+.sb-dots button[data-c="white"] { box-shadow: var(--m-sb-dots-button-shadow); }
+.sb-dots button[data-c="white"].on { box-shadow: var(--m-sb-dots-button-on-shadow); }
 
 /* "Myra sees": what goes with the next message. A chip that goes is solid with ×; one that doesn't is dashed with +.
    It shows two rows and a glimpse of a third, so many vaults scroll instead of pushing the chat down */
@@ -2700,7 +2700,7 @@ body[data-tb="s"] .find-bar { height: 46px; } body[data-tb="l"] .find-bar { heig
 .fb-b:disabled { opacity: .35; cursor: default; }
 .fb-sep { width: 1px; height: 22px; margin: 0 2px; background: rgb(from var(--shade) r g b / .1); }
 body.dark .find-bar .fb-field, body.tint-panels .find-bar .fb-field { background: rgb(from var(--hilite) r g b / .08); }
-body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
+.find-bar .fb-sep { background: var(--m-find-bar-fb-sep-bg); }
 /* the card you are on gets a ring (the ones that don't match fade, as in Focus mode) */
 .card.find-cur { outline: 2.5px solid var(--select); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
@@ -2784,7 +2784,7 @@ body.dark .card .due.over { background: var(--due-over); color: var(--due-over-i
 .sb-due { display: grid; gap: 10px; width: 250px; padding: 2px; white-space: normal; }
 .sb-due .sd-row { display: flex; gap: 8px; } .sb-due label { display: grid; gap: 3px; flex: 1; font: 600 11px/1 var(--font); color: var(--ink-soft); }
 .sb-due input { font: 600 13px/1 var(--font); padding: 8px 9px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgb(from var(--shade) r g b / .05); color: var(--ink); min-width: 0; } body.dark .sb-due input { background: rgb(from var(--hilite) r g b / .08); color-scheme: dark; }
-.sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgb(from var(--shade) r g b / .05); color: var(--ink); } body.dark .sb-due .sd-chips button { background: rgb(from var(--hilite) r g b / .08); }
+.sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgb(from var(--shade) r g b / .05); color: var(--ink); } .sb-due .sd-chips button { background: var(--m-sb-due-sd-chips-button-bg); }
 
 /* the clear (×) button on search and text fields: one floating button (see the top of app.js); the fields leave room for it */
 .clr-btn { position: fixed; z-index: 2147482000; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--m-clr-btn-bg); color: var(--m-clr-btn-ink); cursor: pointer; }
@@ -3075,8 +3075,8 @@ body.dark .piece-pick .pk-th .tl { fill: var(--surface); }
 .piece-pick .pk-none p { margin: 0 0 10px; }
 .piece-pick .pk-more { padding: 7px 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: color-mix(in oklab, var(--ink-faint) 12%, var(--snow)); font: 600 12px/1.2 var(--font); color: var(--ink); cursor: pointer; }
 .piece-pick .pk-more:hover { background: var(--blush); }
-body.dark .piece-pick :is(.pk-tabs, .pk-search, .pk-more) { background: rgb(from var(--hilite) r g b / .08); }
-body.dark .piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-x):hover { background: var(--ob-line); }
+.piece-pick :is(.pk-tabs, .pk-search, .pk-more) { background: var(--m-piece-pick-bg-2); }
+.piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-x):hover { background: var(--m-piece-pick-hover-bg); }
 
 /* ---------- an empty screen's hint: one size on screen at any zoom, centred in the screen ---------- */
 .screen-hints { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; }
