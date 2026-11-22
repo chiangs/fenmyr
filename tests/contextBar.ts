@@ -3,17 +3,34 @@
 // during a drag, resize, pan or zoom.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
-import { settle } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
-const { l, page, frames, still, view, select, selectWire, barUp, cardOf, focused, shape, check, done } =
-  await openBar();
+const {
+  l,
+  page,
+  frames,
+  view,
+  select,
+  selectWire,
+  barUp,
+  cardOf,
+  focused,
+  shape: shapeNow,
+  check,
+  done,
+} = await openBar();
+const shape = async (id = '') => {
+  await still(page);
+  return shapeNow(id);
+};
 const barText = () =>
   page.evaluate(() => [...document.querySelectorAll('#selbar.on > *')].map(e => e.textContent?.trim() ?? ''));
 
 await view(300, 300);
 const body = page.locator('#cards [data-id="note"] .text');
 await body.click();
-await page.waitForTimeout(450);
+await barUp();
+await still(page);
 await body.dblclick();
 await page.waitForFunction(() => window.__fenmyr.editing === 'note');
 await page.waitForFunction(() => document.querySelector('#selbar.typing [data-fmt="bullets"]')?.checkVisibility());
@@ -158,8 +175,14 @@ const gestures: [string, (x: number, y: number) => Promise<void>, () => Promise<
     async () => {
       await page.mouse.move(800, 700);
       await page.keyboard.down('Control');
-      await page.mouse.wheel(0, -120);
-      await frames();
+      // a notch keeps the view moving for 300 ms, and a delayed fade can take longer than that to begin, so the
+      // notches go on, one way and back, until the bar has faded out
+      for (let notch = 0; notch < 60; notch++) {
+        await page.mouse.wheel(0, notch % 2 ? 120 : -120);
+        await frames();
+        if (!(await page.evaluate(() => document.getElementById('selbar')?.checkVisibility({ opacityProperty: true }))))
+          break;
+      }
     },
     () => page.keyboard.up('Control'),
   ],
@@ -168,11 +191,13 @@ for (const [name, start, end] of gestures)
   await check(`the bar fades out for a ${name} and back in over the note`, async () => {
     await view(500, 400);
     await select(['note']);
+    await barUp();
+    await still(page);
     const watch = await watchBar();
     await start(500, 400);
     await barGone();
     await end();
-    await still();
+    await still(page);
     await barUp();
     const seen = (await stopWatching(watch)).map(s => s.opacity),
       out = seen.slice(0, seen.indexOf(0)),
@@ -196,9 +221,10 @@ await check('pressing a note, its bar stays where it came up when the button is 
   const watch = await watchBar();
   await page.mouse.move((card.l + card.r) / 2, (card.t + card.b) / 2);
   await page.mouse.down();
-  await page.waitForTimeout(300);
+  await barUp();
+  await still(page);
   await page.mouse.up();
-  await page.waitForTimeout(300);
+  await still(page);
   const tops = (await stopWatching(watch)).filter(s => s.shown).map(s => s.top);
   assert.ok(tops.length > 10, 'the bar came up');
   assert.deepStrictEqual([...new Set(tops.map(Math.round))].length, 1, `it moved: ${[...new Set(tops)].join(' ')}`);
@@ -248,9 +274,11 @@ await check('an upright connector by the left widgets has its bar on its other s
 await page.keyboard.press('Escape');
 
 await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(600, 900));
-await settle(l.page);
+await page.waitForFunction(() => innerWidth === 600 && innerHeight === 900);
+await still(page);
 await view(100, 300);
 await select(['note']);
+await still(page);
 const strip = await page.evaluate(() => {
   const bar = document.getElementById('selbar')?.getBoundingClientRect(),
     hub = document.getElementById('hub');

@@ -4,16 +4,21 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import { launch } from './support/launch.ts';
 import { freshRepo, openPrototype } from './support/prototype.ts';
+import { rect, still } from './support/settled.ts';
 
 const { work, repo } = freshRepo('fenmyr-proto-chat-');
 const note = { id: 'n1', type: 'note', x: 40, y: 40, w: 220, h: 120, text: 'People miss the promo field' };
 const l = await launch({ boards: [{ id: 'plain', name: 'Plain', cards: [note], links: [], tray: [] }], open: 'plain' });
 const { page } = l;
+const inputHeight = async () => {
+  await still(page);
+  return page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0);
+};
 
 try {
   await openPrototype(page, repo);
   await page.waitForFunction(() => window.__fenmyr?.curBoard()?.id === 'pb');
-  await page.waitForTimeout(800);
+  await still(page);
 
   const places = await page.evaluate(() => {
     const r = (s: string) => document.querySelector(s)?.getBoundingClientRect();
@@ -37,7 +42,8 @@ try {
   );
 
   await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'A reply for the chat.', next: ['Build it'] }, 'hello'));
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => document.getElementById('mcList')?.textContent?.includes('A reply for the chat.'));
+  await still(page);
   assert.match(
     await page.evaluate(() => document.getElementById('mcList')?.textContent ?? ''),
     /A reply for the chat\./,
@@ -57,6 +63,11 @@ try {
   await page.fill('#mcInput', '/timer 25 write the intro');
   await page.keyboard.press('Control+Enter');
   await page.waitForSelector('#timerChip:not([hidden])');
+  // the chip's countdown bar is a transition that runs for the whole timer, so the page is not still while it counts
+  await page.waitForFunction(() => {
+    const chip = document.getElementById('timerChip');
+    return !!chip && getComputedStyle(chip).opacity === '1' && chip.getAnimations().length === 0;
+  });
   const covered = await page.evaluate(() => {
     const t = document.getElementById('timerChip')?.getBoundingClientRect(),
       c = document.getElementById('prChat')?.getBoundingClientRect();
@@ -70,22 +81,18 @@ try {
     1,
     'the input’s handle is the panels’ height grip',
   );
-  const box = await page.locator('#prChat .mc-grip').boundingBox();
-  if (!box) throw new Error('no grip');
-  const before = await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0);
+  const box = await rect(page, '#prChat .mc-grip');
+  const before = await inputHeight();
   await page.mouse.move(box.x + box.width / 2, box.y + 5);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2, box.y - 115, { steps: 5 });
   await page.mouse.up();
-  const after = await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0);
+  const after = await inputHeight();
   assert.ok(after >= before + 100, `dragging the handle makes the input taller (${before} to ${after})`);
   await page.dblclick('#prChat .mc-grip');
-  assert.strictEqual(
-    await page.evaluate(() => document.getElementById('mcInput')?.offsetHeight ?? 0),
-    before,
-    'and a double-click puts it back',
-  );
+  assert.strictEqual(await inputHeight(), before, 'and a double-click puts it back');
   await page.fill('#mcInput', Array.from({ length: 12 }, (_, i) => `line ${i + 1}`).join('\n'));
+  await still(page);
   const long = await page.evaluate(() => ({
     h: document.getElementById('mcInput')?.offsetHeight ?? 0,
     count: document.getElementById('mcLines')?.hidden === false ? document.getElementById('mcLines')?.textContent : '',
@@ -109,7 +116,11 @@ try {
       .getElementById('mcInput')
       ?.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
   });
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(n => {
+    const b = window.__fenmyr.curBoard(),
+      img = b?.cards.find(c => c.type === 'image');
+    return (b?.cards.length ?? 0) > n && !!img && window.__fenmyr.sel.includes(img.id);
+  }, cards);
   const pasted = await page.evaluate(() => {
     const b = window.__fenmyr.curBoard();
     const img = b?.cards.find(c => c.type === 'image');

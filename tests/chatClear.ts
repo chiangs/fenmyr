@@ -2,7 +2,8 @@
 // the board below the column, the column (which ends with Zoom) ends 12 px above the chat's top, so Unsorted shrinks
 // and its list scrolls to the last idea; when the chat closes, Unsorted is full height again.
 import assert from 'node:assert';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
 const tray = Array.from({ length: 12 }, (_, i) => ({
@@ -21,6 +22,11 @@ const l = await launch({
   open: 'b',
 });
 const { page } = l;
+// The lag knob also delays style changes that have no transition, and the app focuses the chat's input as it opens,
+// so the chat is shown at once: focus() on a box still held hidden does nothing.
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const rects = () =>
   page.evaluate(() => {
     const r = (el: Element | null | undefined) => {
@@ -39,10 +45,12 @@ const rects = () =>
 try {
   // narrow enough that her joined chat reaches under the right column, tall enough for Unsorted above it
   await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1100, 1080));
-  await settle(page, 500);
+  await page.waitForFunction(() => innerWidth === 1100 && innerHeight === 1080);
+  await still(page);
   const closed = await rects();
   await page.click('#mPill');
-  await settle(page, 800);
+  await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
+  await still(page);
   const open = await rects();
   assert.ok(open.tray && open.zoom && open.chat && closed.zoom, 'Unsorted, Zoom and the chat are on screen');
   assert.ok(
@@ -64,7 +72,8 @@ try {
   assert.ok(last && last.bottom <= last.trayBottom, `its last idea scrolls into view: ${JSON.stringify(last)}`);
 
   await page.keyboard.press('Escape');
-  await settle(page, 600);
+  await page.waitForFunction(() => !document.getElementById('myra')?.classList.contains('chat'));
+  await still(page);
   assert.ok(!(await page.evaluate(() => document.getElementById('myra')?.classList.contains('chat'))), 'chat closed');
   assert.deepStrictEqual(await rects().then(r => r.tray), closed.tray, 'closed, Unsorted is full height again');
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');

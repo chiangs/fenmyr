@@ -3,9 +3,13 @@
 // her reply clears both, drawing's card lifts neither, and the tools' pickers still open left of the tools.
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
-import { settle } from './support/launch.ts';
 
 const { l, page, frames, check, done } = await openBar();
+// The lag knob also delays style changes that have no transition, and Ctrl+F focuses the chat's input as it opens,
+// so the chat is shown at once: focus() on a box still held hidden does nothing.
+const CHANGES_AT_ONCE = '#myra.chat #mChat, #myra.chat #mChat *';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 const boxes = () =>
   page.evaluate(() => {
     const box = (id: string) => {
@@ -22,19 +26,36 @@ const boxes = () =>
       find: box('findBar'),
     };
   });
-// the chat grows into place and the reply rises, so both are measured once they are still
+const moving = () =>
+  page.waitForFunction(
+    () =>
+      !document.getAnimations().some(a => {
+        const effect = a.effect;
+        const target = effect instanceof KeyframeEffect ? effect.target : null;
+        return (
+          a.playState === 'running' &&
+          Number.isFinite(effect?.getComputedTiming().endTime) &&
+          !target?.closest('#timerChip')
+        );
+      }),
+  );
+// the chat grows into place and the reply rises, so both are measured once they are still. Not still() from
+// support/settled.ts: a timer's countdown is a transition that runs for the whole timer, and is left out here.
 const still = async () => {
   await frames();
-  await page.waitForTimeout(450);
+  await moving();
+  await frames();
+  await moving();
 };
 const chatOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 const setChat = async (open: boolean) => {
   if ((await chatOpen()) !== open) await page.click(open ? '#mPill' : '#mcClose');
+  await page.waitForFunction(open => document.getElementById('myra')?.classList.contains('chat') === open, open);
   await still();
 };
 const setHeight = async (h: number) => {
   await l.app.evaluate(({ BrowserWindow }, h) => BrowserWindow.getAllWindows()[0]?.setSize(1440, h), h);
-  await settle(page, 300);
+  await page.waitForFunction(h => innerHeight === h, h);
   await still();
 };
 const overlaps = (a: Edges | null, b: Edges | null) => !!a && !!b && a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
@@ -79,6 +100,8 @@ await check('with drawing up, its card beside the tools lifts neither the timer 
 });
 
 await page.keyboard.press('Control+f');
+await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
+await still();
 await page.keyboard.type('a');
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.getElementById('findBar')?.checkVisibility());

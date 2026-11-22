@@ -3,18 +3,42 @@
 import assert from 'node:assert';
 import { type Edges, near, openBar } from './support/bar.ts';
 import * as hop from './support/flight.ts';
-import { settle } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
-const { l, page, check, done } = await openBar();
+const { l, page, frames, check, done } = await openBar();
+// The lag knob also delays style changes that have no transition. Her hop sets her slot's transform every frame, so a
+// delay on the slot shows each pose that late and starts again at the next, and she would not seem to move.
+const CHANGES_AT_ONCE = '#gooSlot';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
+// opening and closing her chat over and over makes her dizzy, which would land in the middle of other checks
+await page.evaluate(() => window.__fenmyr.dizzyAuto(false));
 const size = async (w: number, h = 900) => {
   await l.app.evaluate(({ BrowserWindow }, s) => BrowserWindow.getAllWindows()[0]?.setSize(s.w, s.h), { w, h });
-  await settle(page, 400);
+  await page.waitForFunction(([w, h]) => innerWidth === w && innerHeight === h, [w, h]);
+  await still(page);
 };
-const edges = (ids: string[]) => hop.edges(page, ids);
+const edges = async (ids: string[]) => {
+  await still(page);
+  return hop.edges(page, ids);
+};
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 const setChat = async (open: boolean) => {
   if ((await isOpen()) !== open) await page.click(open ? '#mPill' : '#mcClose');
-  await page.waitForTimeout(450);
+  await page.waitForFunction(
+    open =>
+      !!document.getElementById('myra')?.classList.contains('chat') === open &&
+      !!document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }) === open,
+    open,
+  );
+  await still(page);
+};
+const home = async () => {
+  await page.waitForFunction(() => {
+    const transform = document.getElementById('gooSlot')?.style.transform;
+    return transform === '' || transform === 'translate(0px, 0px)';
+  });
+  await still(page);
 };
 const overlaps = (a: Edges, b: Edges) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
 // fits the board to these cards (all of them by default), then where they sit on screen together
@@ -23,7 +47,10 @@ const fitAll = async (ids?: string[]) => {
     const M = window.__fenmyr;
     M.fit(M.board.cards.filter(c => !ids || ids.includes(c.id)));
   }, ids);
-  await page.waitForTimeout(700);
+  // the view glides to the fit, and the board is moving until it has
+  await frames();
+  await page.waitForFunction(() => !document.getElementById('stage')?.classList.contains('moving'));
+  await still(page);
   return page.evaluate(ids => {
     const rs = [...document.querySelectorAll<HTMLElement>('#cards .card')]
       .filter(c => !ids || ids.includes(c.dataset.id ?? ''))
@@ -41,7 +68,7 @@ await check('with the chat closed, her lines show in a bubble rising from her bo
   await setChat(false);
   await page.evaluate(() => window.__fenmyr.applyMyra({ say: 'A short line.' }, 'hi'));
   await page.waitForFunction(() => document.getElementById('mBubble')?.classList.contains('on'));
-  await page.waitForTimeout(450);
+  await still(page);
   const { mBubble, mPill } = await edges(['mBubble', 'mPill']);
   assert.ok(mBubble && mPill, 'the bubble and her box are up');
   near(mBubble.b, mPill.t - 12, 'the bubble’s bottom');
@@ -60,7 +87,8 @@ await check('with the chat open, fitting the board keeps the cards out from unde
 await check('on a phone her chat is a sheet 8 px from both sides, its header as it was', async () => {
   await size(600);
   await page.click('[data-hub="myra"]');
-  await page.waitForTimeout(450);
+  await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
+  await still(page);
   const { mChat, mcPerch } = await edges(['mChat', 'mcPerch']),
     head = await page.evaluate(() => document.querySelector('#mChat .mc-head')?.getBoundingClientRect().height);
   await page.click('#mcClose');
@@ -79,16 +107,21 @@ const inSettings = async (change: () => Promise<void>) => {
   await page.click('#setTabs [data-tab="myra"]');
   await change();
   await page.click('#setClose');
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => !document.querySelector('#settings.on'));
+  await still(page);
 };
 const lively = (v: 'lively' | 'calm' | 'calmest') =>
   inSettings(() => page.click(`[data-seg="myraCalm"] [data-v="${v}"]`));
 // opening the chat, the frames she spends between her box and its header
 const flight = async () => {
-  const { before, after, between } = await hop.flight(page, () => page.click('#mPill')),
+  // not page.click: Playwright waits for her box to stop wobbling (every 8 s, for just over a second), and the hop is
+  // timed from the click
+  const { before, after, between } = await hop.flight(page, () =>
+      page.evaluate(() => document.getElementById('mPill')?.click()),
+    ),
     { mcPerch } = await edges(['mcPerch']);
   await setChat(false);
-  await page.waitForTimeout(900);
+  await home();
   assert.ok(before && mcPerch, 'her slot and the header’s spot are up');
   near(after.l, mcPerch.l, 'where she lands, left');
   near(after.t, mcPerch.t, 'where she lands, top');
@@ -128,8 +161,9 @@ await check('at 1440 px her chat opens over her box, and the tools still respond
 });
 
 // the tools left showing, how many are tucked into ···, and whether ··· shows
-const toolRow = () =>
-  page.evaluate(() => {
+const toolRow = async () => {
+  await still(page);
+  return page.evaluate(() => {
     const tools = [...document.querySelectorAll<HTMLElement>('#tools > [data-add]')].filter(b => !b.hidden),
       shown = tools
         .filter(b => !b.classList.contains('tb-over'))
@@ -139,6 +173,7 @@ const toolRow = () =>
         });
     return { shown, tucked: tools.length - shown.length, more: !document.getElementById('tbMore')?.hidden };
   });
+};
 for (const [w, h] of [
   [1280, 800],
   [1366, 768],
@@ -193,6 +228,7 @@ for (const w of [1100, 1280]) {
   await check(`at ${w} px, drawing with her chat open, drawing’s card keeps clear of the chat`, async () => {
     await size(w, 800);
     await page.keyboard.press('p');
+    await still(page);
     await setChat(true);
     const { mChat, modeCard } = await edges(['mChat', 'modeCard']),
       colours = await page.locator('#dbColors > *').count(),
@@ -211,7 +247,7 @@ for (const w of [1100, 1280]) {
 }
 
 // the checks above close her chat as they end, and she hops back into her box before a hop from it is timed
-await page.waitForTimeout(900);
+await home();
 await check('she hops from her box into the chat’s header', async () => {
   const between = await flight();
   assert.ok(between > 5, `she is between her box and the header in ${between} frames`);
@@ -295,7 +331,11 @@ await check('a picture dropped on her open chat lands on the board, clear of the
     list?.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true, ...at }));
   });
   await page.waitForFunction(n => window.__fenmyr.board.cards.length > n, before);
-  await page.waitForTimeout(800);
+  await page.waitForFunction(() => {
+    const id = window.__fenmyr.board.cards.at(-1)?.id;
+    return !!document.querySelector(`#cards .card[data-id="${id}"]`);
+  });
+  await still(page);
   const pic = await page.evaluate(() => {
     const id = window.__fenmyr.board.cards.at(-1)?.id,
       r = document.querySelector(`#cards .card[data-id="${id}"]`)?.getBoundingClientRect();

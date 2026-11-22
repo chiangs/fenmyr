@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { launch } from './support/launch.ts';
 import { freshRepo, openPrototype } from './support/prototype.ts';
+import { rect, still } from './support/settled.ts';
 
 const { work, repo } = freshRepo('fenmyr-dock-git-');
 const git = (cwd: string, ...a: string[]) => execFileSync('git', ['-C', cwd, ...a]).toString();
@@ -18,12 +19,13 @@ const until = async (check: () => Promise<boolean>, what: string) => {
   const end = Date.now() + 15000;
   while (Date.now() < end) {
     if (await check()) return;
-    await page.waitForTimeout(200);
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
   }
   assert.fail(`${what}: ${await lastMyra()}`);
 };
-const bar = () =>
-  page.evaluate(() => {
+const bar = async () => {
+  await still(page);
+  return page.evaluate(() => {
     const g = document.getElementById('prGit'),
       box = (el: Element | null | undefined) => el?.getBoundingClientRect() ?? null,
       inChat = !!g?.closest('#mChat');
@@ -47,6 +49,7 @@ const bar = () =>
       colour: g ? getComputedStyle(g).backgroundColor : '',
     };
   });
+};
 // More's heading in brackets, then its buttons
 const more = async () => {
   await page.click('#prGit [data-git="more"]');
@@ -85,8 +88,8 @@ try {
   );
   assert.strictEqual(b.colour, 'rgba(0, 0, 0, 0)', 'the chat’s own colour shows through the bar');
 
-  const divider = await page.locator('.pr-div[data-d="chat"]').boundingBox();
-  assert.ok(divider, 'the chat’s divider is up');
+  const divider = await rect(page, '.pr-div[data-d="chat"]');
+  assert.ok(divider.width > 0, 'the chat’s divider is up');
   await page.mouse.move(divider.x + 3, divider.y + 200);
   await page.mouse.down();
   await page.mouse.move(divider.x + 200, divider.y + 200, { steps: 4 });
@@ -118,12 +121,10 @@ try {
     /\/acme$/,
     'with its path under its name',
   );
-  const menu = await page.locator('#rowMenu').boundingBox(),
-    btn = await page.locator('#prGit [data-git="more"]').boundingBox();
+  const menu = await rect(page, '#rowMenu'),
+    btn = await rect(page, '#prGit [data-git="more"]');
   assert.ok(
-    menu &&
-      btn &&
-      menu.y + menu.height <= btn.y &&
+    menu.y + menu.height <= btn.y &&
       btn.y - (menu.y + menu.height) <= 10 &&
       Math.abs(menu.x + menu.width - (btn.x + btn.width)) <= 1,
     'it opens over the thread, ending just above its button, flush with its right edge',
@@ -174,7 +175,7 @@ try {
     await window.__fenmyr.refreshBoards();
     await window.__fenmyr.openBoard('pb');
   }, repo);
-  await page.waitForTimeout(600);
+  await until(async () => (await bar()).branch === 'main', 'the bar reads the repo again');
   assert.deepStrictEqual(
     (await more()).at(-1),
     'Open ann/acme on GitHub',
@@ -188,9 +189,10 @@ try {
   assert.ok((await bar()).shown, 'and comes back with the thread');
 
   await page.evaluate(() => window.__fenmyr.openBoard('plain'));
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => !document.body.classList.contains('proto'));
+  await still(page);
   await page.click('#mPill');
-  await page.waitForTimeout(400);
+  await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
   b = await bar();
   assert.ok(b.inChat && !b.shown, 'an ordinary board’s chat has no git bar');
 

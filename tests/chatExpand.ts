@@ -4,6 +4,7 @@
 import assert from 'node:assert';
 import { askStandIn } from './support/askStandIn.ts';
 import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const card = (id: string) => ({ id, type: 'note', x: 0, y: 0, w: 220, h: 140, r: 0, color: 'butter', text: id });
 const boards = ['one', 'two'].map(id => ({
@@ -20,9 +21,21 @@ askStandIn(l);
 const { page } = l;
 const frames = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 const isOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
+const chatIs = (open: boolean) =>
+  page.waitForFunction(
+    open =>
+      !!document.getElementById('myra')?.classList.contains('chat') === open &&
+      !!document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }) === open,
+    open,
+  );
 const open = async () => {
   if (!(await isOpen())) await page.click('#mPill');
-  await page.waitForTimeout(400);
+  await chatIs(true);
+  await still(page);
+};
+const shut = async () => {
+  await chatIs(false);
+  await still(page);
 };
 const writing = () => page.evaluate(() => !!document.getElementById('mChat')?.classList.contains('writing'));
 const caret = () =>
@@ -37,11 +50,13 @@ const caret = () =>
       focus: document.activeElement === box,
     };
   });
-const sizes = () =>
-  page.evaluate(() => {
+const sizes = async () => {
+  await still(page);
+  return page.evaluate(() => {
     const h = (id: string) => document.getElementById(id)?.getBoundingClientRect().height ?? 0;
     return { input: h('mcInput'), chat: h('mChat') };
   });
+};
 const visible = (sel: string) => page.evaluate(sel => !!document.querySelector(sel)?.checkVisibility(), sel);
 const select = (start: number, end: number, dir: 'forward' | 'backward' | 'none') =>
   page.evaluate(
@@ -139,7 +154,7 @@ await check('Esc shrinks first, then closes, and keeps the draft', async () => {
   assert.strictEqual((await caret())?.value, draft);
   assert.strictEqual(await active(), 'mcInput', 'focus is in the text');
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(400);
+  await shut();
   assert.ok(!(await isOpen()), 'the second Esc closes');
   assert.strictEqual(await page.textContent('#mDraft'), 'Draft · 3 lines');
   await open();
@@ -195,7 +210,7 @@ await check('closing the chat ends Expand', async () => {
   await page.fill('#mcInput', draft);
   await page.click('#mcExpand');
   await page.click('#mcClose');
-  await page.waitForTimeout(400);
+  await shut();
   assert.ok(!(await isOpen()));
   assert.ok(!(await writing()), 'not in Expand');
   await open();

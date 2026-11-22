@@ -10,8 +10,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { replyBoard } from './fixtures/boards.ts';
 import { buildStandIn } from './support/buildStandIn.ts';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
+import { rect, still } from './support/settled.ts';
 
 const { work, repo } = freshRepo('fenmyr-dock-fit-');
 const git = (...args: string[]) =>
@@ -28,6 +29,11 @@ const l = await launch({
 });
 const { page } = l;
 const standIn = buildStandIn(l);
+// The lag knob also delays style changes that have no transition. The app ends a column's slide with a timer set to its
+// 240 ms and sizes the pane when that timer fires, so a delay on the column would put the timer ahead of the slide.
+const CHANGES_AT_ONCE = '.pr-pane';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 
 const head = () =>
   page.evaluate(() => {
@@ -49,7 +55,7 @@ const until = async (check: () => Promise<boolean> | boolean, what: string, ms =
   const end = Date.now() + ms;
   while (Date.now() < end) {
     if (await check()) return;
-    await page.waitForTimeout(100);
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
   }
   assert.fail(`${what}: ${JSON.stringify(await head())}`);
 };
@@ -60,7 +66,7 @@ const land = async (request: string, files: Record<string, string>) => {
     () => page.evaluate(t => !!document.getElementById('mcList')?.textContent?.includes(t), `Done: ${request}`),
     `the build “${request}” lands`,
   );
-  await settle(page, 600);
+  await still(page);
 };
 const part = (n: string) => [`src/${n}.tsx`, `export const ${n} = () => <p>${n}</p>;\n`];
 
@@ -87,11 +93,12 @@ try {
   }, repo);
   git('add', '-A');
   git('commit', '-qm', 'start');
-  await settle(page, 1500);
+  await page.waitForFunction(() => window.__fenmyr.curBoard()?.id === 'pb' && document.getElementById('pr-code'));
+  await still(page);
 
   await land('Three files.', Object.fromEntries(['App', 'Form', 'Total'].map(part)));
-  const d = await page.locator('.pr-div[data-d="code"]').boundingBox();
-  assert.ok(d, 'the code column has a divider');
+  const d = await rect(page, '.pr-div[data-d="code"]');
+  assert.ok(d.width > 0, 'the code column has a divider');
   const x = d.x + d.width / 2,
     y = d.y + 300;
   await page.mouse.move(x, y);
@@ -114,6 +121,7 @@ try {
 
   await page.click('[data-fold="code"]');
   await until(async () => (await head()).folded, 'the code column folds');
+  await still(page);
   await land('Five parts.', Object.fromEntries(['Form', 'Total', 'Receipt', 'Coupon', 'Basket'].map(part)));
   await page.click('#mcChanges');
   await until(async () => !(await head()).folded, 'a click unfolds the code column');
@@ -137,6 +145,7 @@ try {
       real = f.protoFiles,
       all = () => document.querySelector<HTMLElement>('#pr-code .pc-all')?.click();
     // each draw waits for its files, so the pane starts a second draw while the counter's click waits on the first
+    // sleeps on purpose: the stub holds each draw's files for 300 ms, which is the slow load under test
     f.protoFiles = o => new Promise(r => setTimeout(r, 300)).then(() => real(o));
     setTimeout(() => {
       f.protoFiles = real;
@@ -151,7 +160,10 @@ try {
   await l.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]?.setSize(1000, 900));
   await until(async () => (await head()).folded, 'a 1000 px window has no room for the code column');
   await page.click('#mcChanges');
-  await settle(page, 600);
+  await page.waitForFunction(
+    () => document.getElementById('mcStatusSay')?.textContent === 'Widen the window to see the code',
+  );
+  await still(page);
   h = await head();
   assert.ok(h.folded && !h.menu, 'the click can’t open it');
   assert.strictEqual(

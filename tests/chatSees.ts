@@ -11,7 +11,8 @@ import path from 'node:path';
 import { capture, chipsOf, NO_FLIPS, type SeesInput, toggle } from '../src/web/myra/sees.ts';
 import { contrast } from '../src/web/ui/color.ts';
 import { replyBoard } from './fixtures/boards.ts';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
+import { still } from './support/settled.ts';
 
 const input = (more: Partial<SeesInput> = {}): SeesInput => ({
   sel: [],
@@ -110,7 +111,8 @@ const strip = (sel: string) => `#mcSees ${sel}`;
 const status = () => page.textContent('#mcStatus');
 
 await page.click('#mPill');
-await settle(page, 300);
+await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
+await still(page);
 
 await check('the board chip is always there and cannot be removed', async () => {
   assert.strictEqual(await page.locator(strip('[data-chip="board"]')).count(), 1);
@@ -161,8 +163,9 @@ await check('× on the selection leaves the cards out of that message and keeps 
   // hovered, it turns to full ink
   await page.mouse.move(1, 1);
   for (const dark of [false, true]) {
-    const [ink, ground] = await page.evaluate(dark => {
-      document.body.classList.toggle('dark', dark);
+    await page.evaluate(dark => document.body.classList.toggle('dark', dark), dark);
+    await still(page);
+    const [ink, ground] = await page.evaluate(() => {
       const t = document.querySelector('#mcSees [data-chip="sel"] .mcs-t'),
         hex = (c: string) =>
           `#${(c.match(/\d+(\.\d+)?/g) ?? [])
@@ -171,10 +174,9 @@ await check('× on the selection leaves the cards out of that message and keeps 
             .join('')}`;
       let el = t instanceof Element ? t : null;
       while (el && /rgba\(.*, 0\)|transparent/.test(getComputedStyle(el).backgroundColor)) el = el.parentElement;
-      const out = [hex(t ? getComputedStyle(t).color : ''), hex(el ? getComputedStyle(el).backgroundColor : '')];
-      document.body.classList.remove('dark');
-      return out;
-    }, dark);
+      return [hex(t ? getComputedStyle(t).color : ''), hex(el ? getComputedStyle(el).backgroundColor : '')];
+    });
+    await page.evaluate(() => document.body.classList.remove('dark'));
     assert.ok(
       contrast(ink ?? '', ground ?? '') >= 4.5,
       `${dark ? 'dark' : 'light'}: the left-out selection chip reads at 4.5:1 (${ink} on ${ground})`,
@@ -249,7 +251,7 @@ await check('a queued question keeps the chips it was sent with', async () => {
     document.querySelector<HTMLElement>('#mcSees [data-chip="vault"]')?.click();
     const two = M.ask('queued two');
     const all: Sent[] = Reflect.get(window, 'sent');
-    while (!all.some(s => s.q.endsWith('slow zero'))) await new Promise(r => setTimeout(r, 20));
+    while (!all.some(s => s.q.endsWith('slow zero'))) await new Promise(r => requestAnimationFrame(r));
     Reflect.get(window, 'release')();
     await Promise.all([zero, one, two]);
     return Object.fromEntries(all.slice(-2).map(s => [s.q.split(' ').at(-1), s]));

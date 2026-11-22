@@ -9,8 +9,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { replyBoard } from './fixtures/boards.ts';
 import { buildStandIn } from './support/buildStandIn.ts';
-import { launch, settle } from './support/launch.ts';
+import { launch } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
+import { rect, still } from './support/settled.ts';
 
 const { work, repo } = freshRepo('fenmyr-dock-changes-');
 const git = (...args: string[]) =>
@@ -30,6 +31,11 @@ const l = await launch({
 });
 const { page } = l;
 const standIn = buildStandIn(l);
+// The lag knob also delays style changes that have no transition. The app ends a column's slide with a timer set to its
+// 240 ms and sizes the pane when that timer fires, so a delay on the column would put the timer ahead of the slide.
+const CHANGES_AT_ONCE = '.pr-pane';
+if (process.env.FENMYR_MOTION_DELAY)
+  await page.addStyleTag({ content: `${CHANGES_AT_ONCE} { transition-delay: 0s !important; }` });
 
 const head = () =>
   page.evaluate(() => {
@@ -60,7 +66,7 @@ const until = async (check: () => Promise<boolean> | boolean, what: string, ms =
   const end = Date.now() + ms;
   while (Date.now() < end) {
     if (await check()) return;
-    await page.waitForTimeout(100);
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
   }
   assert.fail(`${what}: ${JSON.stringify(await head())}`);
 };
@@ -71,13 +77,14 @@ const build = (request: string, files: Record<string, string>, hold = false) => 
 };
 const landed = async (request: string) => {
   await until(async () => !!(await has(`Done: ${request}`)), `the build “${request}” lands`);
-  await settle(page, 600);
+  await still(page);
 };
 const tapUnder = (text: string, label: string) =>
   page.locator('#mcList .mc-msg.myra', { hasText: text }).locator('.m-acts button', { hasText: label }).click();
 const foldCode = async () => {
   await page.click('[data-fold="code"]');
   await until(async () => (await head()).folded, 'the code column folds');
+  await still(page);
 };
 
 try {
@@ -104,7 +111,8 @@ try {
   }, repo);
   git('add', '-A');
   git('commit', '-qm', 'start');
-  await settle(page, 1500);
+  await until(async () => (await head()).git !== '', 'the git bar reads the repo');
+  await still(page);
   assert.strictEqual((await head()).counter, null, 'before the first build there is no counter');
 
   await build(
@@ -135,10 +143,11 @@ try {
   );
 
   await page.evaluate(() => window.__fenmyr.openBoard('one'));
-  await settle(page, 400);
+  await still(page);
   assert.strictEqual((await head()).counter, null, 'an ordinary board’s chat has no counter');
   await page.evaluate(() => window.__fenmyr.openBoard('pb'));
-  await settle(page, 800);
+  await until(async () => (await head()).dots.length === 2, 'the code pane draws the changed files');
+  await still(page);
   assert.ok(!(await head()).tabs, 'at the code column’s first width its files don’t fit as tabs');
   await foldCode();
   await page.click('#mcChanges');
@@ -151,8 +160,8 @@ try {
   assert.ok(h.pick, 'as does the picker, which shows a changed file');
   await page.keyboard.press('Escape');
 
-  const d = await page.locator('.pr-div[data-d="code"]').boundingBox();
-  assert.ok(d, 'the code column has a divider');
+  const d = await rect(page, '.pr-div[data-d="code"]');
+  assert.ok(d.width > 0, 'the code column has a divider');
   await page.mouse.move(d.x + d.width / 2, d.y + 200);
   await page.mouse.down();
   await page.mouse.move(d.x - 300, d.y + 200, { steps: 4 });
@@ -172,13 +181,19 @@ try {
 
   await foldCode();
   // the second click lands a frame into the column's slide, as an impatient double click does
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     const counter = document.getElementById('mcChanges');
+    const sliding = () =>
+      document.getAnimations().some(a => {
+        const timing = a.effect?.getComputedTiming();
+        return !!timing && Number.isFinite(timing.endTime) && Number(timing.localTime) > (timing.delay ?? 0);
+      });
     counter?.click();
-    setTimeout(() => counter?.click(), 16);
+    for (let frame = 0; frame < 120 && !sliding(); frame++) await new Promise(r => requestAnimationFrame(r));
+    counter?.click();
   });
   await until(async () => (await head()).focusIn === 'tabs', 'a double click lands on the tab too');
-  await settle(page, 400);
+  await still(page);
   assert.ok(!(await page.$('.pc-menu')), 'with no picker left open from the second click');
 
   await tapUnder('Done: Make the form.', 'Commit');
@@ -194,6 +209,7 @@ try {
   assert.deepStrictEqual(h.dots, [], 'and the code pane shows no dots');
   standIn.release();
   await landed('Change the words.');
+  await until(async () => (await head()).counter === '1 change', 'that build counts its one file');
   assert.strictEqual((await head()).counter, '1 change', 'once that build lands it counts its one file');
 
   await tapUnder('Done: Change the words.', 'Undo this build');
@@ -207,6 +223,7 @@ try {
 
   await build('Say hi.', { 'src/App.tsx': 'export function App() { return <p>Hi</p>; }\n' });
   await landed('Say hi.');
+  await until(async () => (await head()).counter === '1 change', 'a build after the Undo is counted');
   assert.strictEqual((await head()).counter, '1 change', 'a build after the Undo is counted');
   await page.evaluate(() => document.getElementById('clearChats')?.click());
   await until(async () => (await head()).counter === null, 'Clear all chats takes the build it counted');
