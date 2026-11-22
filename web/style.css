@@ -839,7 +839,7 @@ body.dark .box { background: rgb(from var(--pn-dark-box) r g b / .96) !important
 body.dark .board-row:hover, body.dark .node-head:hover, body.dark .brand:hover, body.dark .pal:hover, body.dark .home-row, body.dark .dv-btn, body.dark .tile-art, body.dark .seg,
 body.dark .card.canvas .cv-prev, body.dark .au-tx, body.dark .tile.folder .tile-art .back, body.dark .tile.folder .tile-art .tab { background: var(--surface-2) !important; }
 body.dark .tile.folder .tile-art .front, body.dark .seg button.on, body.dark .au-acts button, body.dark .crumbs button:hover, body.dark .home-crumbs button:hover { background: var(--dark-line) !important; color: var(--ink); }
-body.dark .home { background-color: var(--pn-dark-home); }
+.home { background-color: var(--m-home-bg); }
 body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: var(--set-dark-line); }
 body.dark .pill-btn, body.dark .tile.add { border-color: var(--pn-dark-add-edge); }
 body.dark .cp-fields input, body.dark .capture input { background: var(--surface-2); color: var(--ink); border-color: var(--cp-line-2); }
@@ -937,7 +937,7 @@ body.proto .m-chat.writing .mc-grip { display: none; }
 /* a touch screen has no Ctrl key, so Send is the way */
 @media (pointer: coarse) { .mc-hint { display: none; } .mc-expand { margin-left: auto; } }
 body.dark .m-chat { background: rgb(from var(--chat-bg-6) r g b / .98); box-shadow: 0 20px 50px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .06); }
-body.dark .mc-msg.me { color: var(--hilite); }
+.mc-msg.me { color: var(--m-mc-msg-me-ink); }
 body.dark .mc-msg .m-acts button { color: var(--chat-ink); }
 .au-dot.wait { animation: none; background: var(--ink-faint); }
 .au-count.soft { font-size: 16px; font-weight: 700; color: var(--ink-soft); }
@@ -1124,8 +1124,8 @@ body.dark .ob-dots i { background: var(--ob-line); }
 .ob-skip:hover { color: var(--ink); background: var(--blush); }
 .ob-step .conns { margin-bottom: 6px; }
 .set-btns { display: flex; gap: 6px; flex: none; }
-body.dark .ob-field input { border-color: var(--ob-line); }
-body.dark .ob-primary { border-color: var(--coll-ink); }
+.ob-field input { border-color: var(--m-ob-field-input-line); }
+.ob-primary { border-color: var(--m-ob-primary-line); }
 /* ---------- the tour ---------- */
 .coach { position: fixed; inset: 0; z-index: 94; pointer-events: none; display: none; }
 .coach.on { display: block; }
@@ -2419,7 +2419,7 @@ svg.ico.ico.ico.ico .t2 { fill: var(--ico-tint2) !important; fill-opacity: var(-
 /* tuned so the outline keeps strong contrast against the tint (at least 4:1) and the tint stands out from the background */
 body.dark { --ico-tint2: #7fcf5f; --ico-tint-op: .55; }
 /* in dark mode the outline of a duotone icon uses the brightest text color, so it never blends into the tint */
-body.dark svg.ico .ico-d { color: var(--ink); }
+svg.ico .ico-d { color: var(--m-svg-ico-ico-d-ink); }
 @media (prefers-contrast: more) { :root { --ico-tint-op: .7; } body.dark { --ico-tint-op: .7; } }
 /* a toolbar button with no tip text (the zoom %) shows no empty tooltip */
 .tools button:not([data-tip])::after { content: none; display: none; }
@@ -2705,7 +2705,7 @@ body.dark .find-bar .fb-field, body.tint-panels .find-bar .fb-field { background
 .timer-chip button { flex: none; width: 22px; height: 22px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--ink-soft); cursor: pointer; }
 .timer-chip button:hover { background: var(--blush); color: var(--ink); }
 .timer-chip::after { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--left, 1) * 100%); background: var(--pink-deep, var(--dt-shadow)); transition: width 1s linear; }
- body.dark .timer-chip b { color: var(--hilite); }
+ .timer-chip b { color: var(--m-mc-msg-me-ink); }
 body.tint-panels .timer-chip { background: var(--panel) !important; } body.tint-panels.panel-dark .timer-chip { color: color-mix(in oklab, var(--on-accent) 8%, var(--snow)); }
 /* the timer sits over find's bar and her reply over the timer; with the chat open the timer sits over its middle */
 .dock .myra.timing .m-bubble { bottom: calc(100% + 52px + var(--mode-h, 0px)); }
