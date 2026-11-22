@@ -14,7 +14,19 @@
 // catch a token that is dead because a rival always wins (verify names it; delete that dark rule and leave the light one).
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseRules, type Rule, readMarkup } from './dark-css.ts';
+import {
+  implied,
+  norm,
+  parseRules,
+  pseudoElement,
+  type Rule,
+  readMarkup,
+  shapeOf,
+  specificity,
+  statesOf,
+  subsetOf,
+  withAncestors,
+} from './dark-css.ts';
 import { byRule, type Finding, statusOf, survey } from './dark-survey.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -22,8 +34,17 @@ const CSS = path.join(ROOT, 'web', 'style.css');
 const THEMES = path.join(ROOT, 'web', 'themes.css');
 const TOKENS = path.join(ROOT, 'src', 'web', 'settings', 'derivedModes.ts');
 
-type Fold = { prop: string; lightLine: number; lightSel: string; light: string; dark: string; token: string };
-type Plan = { rule: Rule; selector: string; folds: Fold[] };
+type Fold = {
+  prop: string;
+  lightLine: number;
+  lightSel: string;
+  light: string;
+  dark: string;
+  token: string;
+  important: boolean;
+};
+// twin: each declaration's light twin reads the token. add: a rule with no twin of its own becomes a light rule that reads them
+type Plan = { rule: Rule; selector: string; folds: Fold[]; mode: 'twin' | 'add' };
 type Skip = { line: number; selector: string; why: string };
 // one declaration to take out of a dark rule that stays: it was dead only because another dark rule won over it
 type Cut = { line: number; prop: string };
@@ -92,6 +113,62 @@ function nameOf(selector: string, prop: string): string {
   return `--m-${slug}-${ABBR[prop] ?? prop}`;
 }
 
+// what the light rules say for a selector that has no twin: among the rules above the dark one that name every element it
+// names (and no more state), the one that wins; else the property's initial value
+const INITIAL: Record<string, string> = {
+  background: 'transparent',
+  'background-color': 'transparent',
+  'background-image': 'none',
+  'box-shadow': 'none',
+  'border-color': 'currentcolor',
+  stroke: 'none',
+  opacity: '1',
+  filter: 'none',
+};
+// properties a shorthand also sets: a light rule that sets one of these may be what the dark rule overrides
+const RELATED: Record<string, string[]> = {
+  'border-color': ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'],
+  'background-color': ['background'],
+  'background-image': ['background'],
+  background: ['background-color', 'background-image'],
+};
+function appliedLight(light: Rule[], rule: Rule, selector: string, prop: string) {
+  const own = norm(selector.replace(/^body\.dark /, ''));
+  const mine = shapeOf(own);
+  const states = withAncestors(statesOf(own));
+  const found: { value: string; important: boolean; spec: number; order: number }[] = [];
+  for (const l of light) {
+    if (l.ctx !== rule.ctx || l.order > rule.order) continue;
+    const d = l.decls.find(x => x.prop === prop);
+    const related = l.decls.some(x => RELATED[prop]?.includes(x.prop));
+    for (const s of l.selectors) {
+      const shape = shapeOf(s);
+      if (
+        !(
+          implied(shape, mine) &&
+          pseudoElement(shape.subject) === pseudoElement(mine.subject) &&
+          subsetOf(statesOf(s), states)
+        )
+      )
+        continue;
+      if (related) return null;
+      if (d) found.push({ value: d.value, important: d.important, spec: specificity(s), order: l.order });
+    }
+  }
+  const win = found.reduce<(typeof found)[number] | undefined>(
+    (m, c) =>
+      !m || (c.important !== m.important ? c.important : c.spec !== m.spec ? c.spec > m.spec : c.order > m.order)
+        ? c
+        : m,
+    undefined,
+  );
+  return win
+    ? { value: win.value, important: win.important }
+    : INITIAL[prop]
+      ? { value: INITIAL[prop], important: false }
+      : null;
+}
+
 type Picks = {
   cuts: Cut[];
   area: string;
@@ -113,11 +190,11 @@ function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead }: Pic
     if (!pick(rule.line) || !only.has(statusOf(fs))) continue;
     const selector = rule.selectors.join(', ');
     const no = (why: string) => skipped.push({ line: rule.line, selector, why });
-    const folds: Fold[] = [];
+    const folds: (Fold & { viaTwin: boolean })[] = [];
     let why = '';
     // a rule `verify` showed dead goes without a token: the light rule keeps its own value
     if (dead.has(rule.line)) {
-      plans.push({ rule, selector, folds });
+      plans.push({ rule, selector, folds, mode: 'twin' });
       continue;
     }
     for (const f of fs) {
@@ -131,24 +208,49 @@ function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead }: Pic
         break;
       }
       if (f.dead || f.same) continue;
+      if (f.decl.prop.startsWith('--') || /--card-/.test(f.decl.value)) {
+        why = 'it sets a card ink variable or a custom property';
+        break;
+      }
       const twinRule = f.twin && light.find(r => r.line === f.twin?.line);
       const twinDecl = twinRule?.decls.find(d => d.prop === f.decl.prop);
-      if (f.kind !== 'twin' || !f.twin || !twinRule || !twinDecl) why = `${f.decl.prop} has no twin of its own`;
-      else if (twinRule.selectors.length !== 1) why = `the light rule at ${twinRule.line} has more than one selector`;
-      else if (twinDecl.important !== f.decl.important) why = `${f.decl.prop}: !important differs from the light rule`;
-      else why = whyNot(twinDecl.value, f.selector, guard) || whyNot(f.decl.value, f.selector, guard);
-      if (why || !f.twin || !twinDecl) break;
+      let from: { light: string; line: number; sel: string; viaTwin: boolean } | undefined;
+      if (f.kind === 'twin' && f.twin && twinRule && twinDecl) {
+        if (twinDecl.important !== f.decl.important) why = `${f.decl.prop}: !important differs from the light rule`;
+        else
+          from = {
+            light: twinDecl.value,
+            line: f.twin.line,
+            sel: twinRule.selectors[0] ?? '',
+            viaTwin: twinRule.selectors.length === 1,
+          };
+      } else {
+        const a = appliedLight(light, rule, f.selector, f.decl.prop);
+        if (!a) why = `no light value for ${f.decl.prop}`;
+        else if (a.important !== f.decl.important) why = `${f.decl.prop}: !important differs from the light value`;
+        else from = { light: a.value, line: 0, sel: '', viaTwin: false };
+      }
+      if (!why && from) why = whyNot(from.light, f.selector, guard) || whyNot(f.decl.value, f.selector, guard);
+      if (why || !from) break;
       folds.push({
         prop: f.decl.prop,
-        lightLine: f.twin.line,
-        lightSel: twinRule?.selectors[0] ?? '',
-        light: twinDecl.value,
+        lightLine: from.line,
+        lightSel: from.sel,
+        light: from.light,
         dark: f.decl.value,
         token: nameOf(f.selector, f.decl.prop),
+        important: f.decl.important,
+        viaTwin: from.viaTwin,
       });
     }
+    // one light rule can only say one thing per declaration
+    const differ = folds.find(f => folds.some(g => g.prop === f.prop && g.light !== f.light));
+    if (!why && differ) why = `the selectors disagree on the light ${differ.prop}`;
+    const mode = folds.every(f => f.viaTwin) ? 'twin' : 'add';
+    if (!why && mode === 'add' && !rule.selectors.every(sel => sel.startsWith('body.dark ')))
+      why = 'a compound selector';
     if (why) no(why);
-    else plans.push({ rule, selector, folds });
+    else plans.push({ rule, selector, folds: folds.map(({ viaTwin: _, ...f }) => f), mode });
   }
   return { plans, skipped };
 }
@@ -206,29 +308,38 @@ function apply(plans: Plan[], cuts: Cut[]) {
     const dark = blockAt(blank, p.rule.line, p.rule.selectors[0] ?? '');
     const prelude = blank.slice(dark.start, dark.open).replace(/\s+/g, ' ').trim();
     let why = prelude === p.selector.replace(/\s+/g, ' ') ? '' : 'could not find the rule where the survey said';
-    for (const f of p.folds) {
-      if (why) break;
-      const light = blockAt(blank, f.lightLine, f.lightSel);
-      const body = blank.slice(light.open, light.close);
-      const re = new RegExp(`(?:^|[{;\\s])${regexEscape(f.prop)}\\s*:\\s*(${regexEscape(f.light)})`, 'g');
-      const hit = [...body.matchAll(re)].at(-1);
-      if (!hit) {
-        why = `could not find ${f.prop} in the light rule`;
-        break;
-      }
+    const tokenFor = (f: Fold) => {
       const reuse = [...tokens].find(([, v]) => v[0] === f.light && v[1] === f.dark)?.[0];
       let name = reuse ?? f.token;
       for (let n = 2; !reuse && (tokens.has(name) || taken.has(name)); n++) name = `${f.token}-${n}`;
       tokens.set(name, [f.light, f.dark]);
       used.push(name);
-      const from = light.open + (hit.index ?? 0) + hit[0].length - f.light.length;
-      mine.push({ from, to: from + f.light.length, text: `var(${name})` });
-    }
+      return name;
+    };
+    if (p.mode === 'add') {
+      // no twin to edit: the dark rule becomes a light rule that reads the tokens, where the dark rule was
+      const decls = [...new Set(p.folds.map(f => `${f.prop}: var(${tokenFor(f)})${f.important ? ' !important' : ''}`))];
+      const own = p.rule.selectors.map(sel => sel.replace(/^body\.dark /, '')).join(', ');
+      if (!why) mine.push({ from: dark.start, to: dark.close, text: `${own} { ${decls.join('; ')}; }` });
+    } else
+      for (const f of p.folds) {
+        if (why) break;
+        const light = blockAt(blank, f.lightLine, f.lightSel);
+        const body = blank.slice(light.open, light.close);
+        const re = new RegExp(`(?:^|[{;\\s])${regexEscape(f.prop)}\\s*:\\s*(${regexEscape(f.light)})`, 'g');
+        const hit = [...body.matchAll(re)].at(-1);
+        if (!hit) {
+          why = `could not find ${f.prop} in the light rule`;
+          break;
+        }
+        const from = light.open + (hit.index ?? 0) + hit[0].length - f.light.length;
+        mine.push({ from, to: from + f.light.length, text: `var(${tokenFor(f)})` });
+      }
     if (why) {
       failed.push({ line: p.rule.line, selector: p.selector, why });
       continue;
     }
-    edits.push(...mine, cutRule(blank, text, dark));
+    edits.push(...mine, ...(p.mode === 'add' ? [] : [cutRule(blank, text, dark)]));
     names.set(p.rule.line, used);
   }
   for (const c of cuts) {
