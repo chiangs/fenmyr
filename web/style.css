@@ -746,7 +746,6 @@ body.calm .card.stamp .st img, body.calm .sp-grid img, body.calm .ws-ring img { 
 .au-live { width: 100%; height: 34px; display: block; }
 .au-row { display: flex; align-items: center; gap: 10px; }
 .au-play { width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; background: var(--ink); color: var(--ink-inverse); font-size: 11px; cursor: pointer; display: grid; place-items: center; padding-left: 2px; }
-body.dark .au-play { background: var(--coll-ink); }
 .au-play.on { padding-left: 0; }
 .au-wave { flex: 1; height: 30px; display: flex; align-items: center; gap: 2px; cursor: pointer; }
 .au-wave i { flex: 1; min-width: 2px; border-radius: 2px; background: var(--ink-faint); }
@@ -855,7 +854,6 @@ body.dark .settings { background: rgb(from var(--shade) r g b / .45); }
 body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: var(--set-dark-line); }
 body.dark .pill-btn, body.dark .tile.add { border-color: var(--pn-dark-add-edge); }
 body.dark .tile .cover-btn { background: var(--surface-2); box-shadow: 0 4px 12px rgb(from var(--shade) r g b / .35); }
-body.dark .dv-back, body.dark .db-done { background: var(--dv-light-ink); color: var(--dv-dark-ink); }
 body.dark .cp-fields input, body.dark .capture input { background: var(--surface-2); color: var(--ink); border-color: var(--cp-line-2); }
 /* cards: white cards turn dark; pastel cards stay pastel with dark words */
 body.dark .card > .frame { box-shadow: 0 10px 30px rgb(from var(--shade) r g b / .35); }
@@ -869,7 +867,6 @@ body.dark .card:is(.note, .todo) .body { color: var(--card-ink); }
 body.dark .card:is(.note, .todo) .nname:empty::before, body.dark .card:is(.note, .todo) .text:empty::before { color: rgb(from var(--card-ink) r g b / .45); }
 body.dark .coll-head { color: var(--vn-bg); }
 body.dark .coll-frame { background: color-mix(in srgb, var(--cframe) 16%, var(--kb-bg)); }
-body.dark .card.link .meta span, body.dark .au-time { color: var(--ink-soft); }
 body.dark .wires path.w { stroke: var(--wires-ink); }
 /* Myra's chat goes dark with the room */
 body.dark .m-pill, body.dark .m-bubble { background: rgb(from var(--chat-bg-4) r g b / .97); color: var(--hilite); box-shadow: 0 12px 30px rgb(from var(--shade) r g b / .45), 0 0 0 1px rgb(from var(--hilite) r g b / .06); }
@@ -1261,7 +1258,6 @@ body.following-caelestia .tplpick .tp-search { background: color-mix(in srgb, va
 .tplpick button:hover { background: var(--blush); }
 body.dark .tplpick button:hover { background: var(--surface-2); }
 .tplpick .tp-e { flex: none; width: 34px; height: 34px; border-radius: 16px; corner-shape: squircle; display: grid; place-items: center; background: var(--surface-2); color: var(--ink); }
-body.dark .tplpick .tp-e { background: var(--surface-2); }
 .tplpick button:hover .tp-e { background: var(--snow); }
 body.dark .tplpick button:hover .tp-e { background: var(--ob-line); }
 .tplpick .tp-e svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
@@ -2045,7 +2041,6 @@ body:has(.stage.doc-open) #sideR { z-index: 0; }
 .card.section .sec-name {
 position: absolute; left: 22px; top: 16px; top: auto; bottom: calc(100% - 50px); transform-origin: 0 100%; scale: var(--secz, 1); transition: scale .15s ease; display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px 7px; border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--hilite) r g b / .78); box-shadow: 0 2px 8px rgb(from var(--sec-shadow) r g b / .1), inset 0 0 0 1px rgb(from var(--hilite) r g b / .9); font: 700 14px/1.1 var(--font); color: var(--ink); white-space: nowrap;
 }
-body.dark .card.section .sec-name { color: var(--ink); }
 .card.section .sec-name::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--fill) 40%, var(--pink-deep)); }
 .card.section .sec-name .text { outline: none; min-width: 1ch; }
 .card.section.sel::after { border-radius: 65px; corner-shape: squircle; }
@@ -2088,12 +2083,10 @@ body.exporting .card .rot-h { display: none !important; }
 .tp-in { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; font: 700 13px/1 var(--font); color: var(--ink); }
 .tp-in span { margin-right: auto; }
 .tp-in input { width: 70px; padding: 8px 10px; border: 0; border-radius: 14px; corner-shape: squircle; background: rgb(from var(--shade) r g b / .05); font: 700 15px/1 var(--font); color: var(--ink); text-align: right; outline: none; }
-body.dark .tp-in input { color: var(--ink); }
 .tp-in input:focus { box-shadow: inset 0 0 0 2px var(--select); }
 .tp-in b { margin-left: -4px; color: var(--ink-soft); }
 .tp-chips { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .tp-chips button { padding: 7px 0; border: 0; border-radius: 8px; background: rgb(from var(--shade) r g b / .04); font: 600 11px/1 var(--font); color: var(--ink); cursor: pointer; font-variant-numeric: tabular-nums; }
-body.dark .tp-chips button { color: var(--ink); }
 .tp-chips button:hover { background: var(--blush, var(--tp-bg)); } .tp-chips button.on { background: var(--select); color: var(--snow); }
 body.dark .tp-chips button.on { background: var(--select); color: var(--hilite); }
 .tp-chips button[data-deg^="-"] { color: var(--ink-soft); }
@@ -2511,7 +2504,6 @@ body.dark svg.ico .ico-d { color: var(--ink); }
 .tdlg-row { display: grid; gap: 6px; font: 600 12px/1 var(--font); color: var(--ink-soft); }
 .tdlg-row .seg { justify-self: start; }
 .tdlg-btns { display: flex; justify-content: flex-end; gap: 8px; }
-body.dark .tdlg .seg { background: rgb(from var(--hilite) r g b / .08); }
 .rl-body { display: grid; gap: 14px; }
 .rl-rows { display: grid; gap: 8px; }
 .rl-row { display: grid; grid-template-columns: 96px 1fr; gap: 10px; font: 500 12.5px/1.35 var(--font); color: var(--ink-soft); }

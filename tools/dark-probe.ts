@@ -84,6 +84,43 @@ const STEPS: Step[] = [
     ],
   },
   {
+    name: 'cards',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await idle(page);
+    },
+    probes: [
+      { name: 'audio play', selector: '#cards [data-id="au"] .au-play', props: [...BG, 'color'] },
+      { name: 'audio time', selector: '#cards [data-id="au"] .au-time', props: ['color'] },
+      { name: 'link meta', selector: '#cards [data-id="lk"] .meta span', props: ['color'] },
+      { name: 'section name', selector: '#cards [data-id="sc"] .sec-name', props: [...BG, 'color'] },
+    ],
+  },
+  {
+    name: 'tilt popover',
+    run: async page => {
+      await page.evaluate(() => window.__fenmyr.selectOnly(['a']));
+      await page.locator('#selbar .sb-tilt').first().click();
+    },
+    probes: [
+      { name: 'angle field', selector: '.tp-in input', props: [...BG, 'color'] },
+      { name: 'chip', selector: '.tp-chips button', props: [...BG, 'color'] },
+    ],
+  },
+  {
+    name: 'tilt popover, hovering a chip',
+    run: hover('.tp-chips button'),
+    probes: [{ name: 'chip', selector: '.tp-chips button', props: [...BG, 'color'] }],
+  },
+  {
+    name: 'templates',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await page.keyboard.press('Alt+t');
+    },
+    probes: [{ name: 'icon', selector: '.tplpick .tp-e', props: BG }],
+  },
+  {
     name: 'drawing size',
     run: async page => {
       await page.keyboard.press('Escape');
@@ -95,12 +132,38 @@ const STEPS: Step[] = [
     probes: [
       { name: 'bubble', selector: '#dbSize .dbs-bub', props: [...BG, 'box-shadow'] },
       { name: 'track', selector: '#dbSize .dbs-track', pseudo: '::before', props: BG },
+      { name: 'done button', selector: '.db-done', props: [...BG, 'color'] },
     ],
   },
 ];
 
 const note = (id: string, x: number) => ({ id, type: 'note', x, y: 100, w: 200, h: 100, r: 0, text: id });
-const BOARD = { id: 'p', name: 'Probe', cards: [note('a', 100), note('b', 400), note('c', 700)], links: [], tray: [] };
+const at = { x: 0, y: 0, w: 0, h: 0, r: 0 };
+const BOARD = {
+  id: 'p',
+  name: 'Probe',
+  cards: [
+    note('a', 100),
+    note('b', 400),
+    note('c', 700),
+    { ...at, id: 'au', type: 'audio', x: 100, y: 300, w: 300, h: 170, dur: 12, title: 'Memo', text: 'hello there' },
+    {
+      ...at,
+      id: 'lk',
+      type: 'link',
+      x: 500,
+      y: 300,
+      w: 260,
+      h: 140,
+      url: 'https://example.com',
+      title: 'Example',
+      desc: 'A page',
+    },
+    { ...at, id: 'sc', type: 'section', x: 860, y: 300, w: 400, h: 240, name: 'Plan' },
+  ],
+  links: [],
+  tray: [],
+};
 
 // the colours as the pixels they paint, so oklab(), color(srgb …) and rgb() compare as the one colour they are
 const MISSING = '(no element)';
