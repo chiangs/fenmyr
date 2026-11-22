@@ -597,6 +597,8 @@
     "tools/code-map/types.ts": "The shape of code-map.json.",
     "tools/code-map/visible.ts": "Builds the circles and lines for the files view and the areas view, with the page’s filters applied.",
     "tools/colour-compare.ts": "Proves a colour conversion changed nothing: the running app computes the same colour from every old and new value, in light and dark.",
+    "tools/dark-survey.ts": "Lists the body.dark rules by area and says what can be done with each: delete it, fold it into a per-mode token, or leave it, with the rivals that would win.",
+    "tools/dark-css.ts": "Reads a stylesheet for the dark survey: rules in source order with specificity, selectors as the elements they name, and what the markup says about their classes.",
     "tools/dark-probe.ts": "Proves a stylesheet fold changed nothing: reads the colours the running app computes for the folded elements in every look and state, before and after, and compares them.",
     "tools/colour-rewrite.ts": "Rewrites the stylesheet from what the fitter found: matched uses take their core expression, redundant body.dark declarations go, and unused area tokens are removed.",
     "tools/themes-css.ts": "Writes web/themes.css from the theme table, one block of colour variables per theme, and fails in check:fast when the file is out of date.",
