@@ -149,6 +149,10 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-timer-chip-ink': ['var(--ink)', 'var(--hilite)'],
   '--m-tools-button-after-bg': ['var(--ink)', 'var(--sb-bg)'],
   '--m-tools-button-after-ink': ['var(--ink-inverse)', 'var(--sb-ink-2)'],
+  '--m-tp-chips-button-bg': ['rgb(from var(--shade) r g b / .04)', 'rgb(from var(--hilite) r g b / .07)'],
+  '--m-tp-chips-button-on-ink': ['var(--snow)', 'var(--hilite)'],
+  '--m-tp-in-input-bg': ['rgb(from var(--shade) r g b / .05)', 'rgb(from var(--hilite) r g b / .08)'],
+  '--m-tp-reset-hover-bg': ['var(--blush, var(--tp-bg))', 'rgb(from var(--hilite) r g b / .14)'],
   '--m-tplpick-button-hover-bg': ['var(--blush)', 'var(--surface-2)'],
   '--m-tplpick-button-hover-tp-e-bg': ['var(--snow)', 'var(--ob-line)'],
   '--m-tplpick-shadow': [

@@ -458,6 +458,10 @@ body {
   --m-timer-chip-ink: var(--ink);
   --m-tools-button-after-bg: var(--ink);
   --m-tools-button-after-ink: var(--ink-inverse);
+  --m-tp-chips-button-bg: rgb(from var(--shade) r g b / .04);
+  --m-tp-chips-button-on-ink: var(--snow);
+  --m-tp-in-input-bg: rgb(from var(--shade) r g b / .05);
+  --m-tp-reset-hover-bg: var(--blush, var(--tp-bg));
   --m-tplpick-button-hover-bg: var(--blush);
   --m-tplpick-button-hover-tp-e-bg: var(--snow);
   --m-tplpick-shadow: 0 10px 28px rgba(var(--sh), calc(.18 * var(--sh-k)));
@@ -732,6 +736,10 @@ body.dark {
   --m-timer-chip-ink: var(--hilite);
   --m-tools-button-after-bg: var(--sb-bg);
   --m-tools-button-after-ink: var(--sb-ink-2);
+  --m-tp-chips-button-bg: rgb(from var(--hilite) r g b / .07);
+  --m-tp-chips-button-on-ink: var(--hilite);
+  --m-tp-in-input-bg: rgb(from var(--hilite) r g b / .08);
+  --m-tp-reset-hover-bg: rgb(from var(--hilite) r g b / .14);
   --m-tplpick-button-hover-bg: var(--surface-2);
   --m-tplpick-button-hover-tp-e-bg: var(--ob-line);
   --m-tplpick-shadow: 0 10px 28px rgb(from var(--shade) r g b / .45);
