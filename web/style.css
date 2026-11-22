@@ -2145,8 +2145,8 @@ body.dark .tp-reset { background: rgb(from var(--hilite) r g b / .08); } body.da
 .sb-caret { width: 10px; height: 10px; fill: none; stroke: var(--ink-soft); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .sb-cur { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .12); }
 .sb-popw.open > .sb-poptrig { background: var(--blush); }
-.sb-pop { position: absolute; left: 50%; bottom: calc(100% + 14px); translate: -50% 0; z-index: 30; display: none; padding: 8px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--panel, var(--snow));
-  box-shadow: 0 16px 40px rgb(from var(--sb-shadow-2) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05); white-space: nowrap; }
+.sb-pop { position: absolute; left: 50%; bottom: calc(100% + 14px); translate: -50% 0; z-index: 30; display: none; padding: 8px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-sb-pop-bg);
+  box-shadow: var(--m-sb-pop-shadow); white-space: nowrap; }
 .sb-popw.open > .sb-pop { display: flex; animation: sbPop .18s cubic-bezier(.3, 1.4, .5, 1); }
 .sb-popw.down > .sb-pop { bottom: auto; top: calc(100% + 14px); }   /* no room above: it drops below the bar */
 @keyframes sbPop { from { opacity: 0; transform: translateY(6px) scale(.97); } }
@@ -2159,20 +2159,17 @@ body.dark .tp-reset { background: rgb(from var(--hilite) r g b / .08); } body.da
 .sb-morebody { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .sb-morebody .sb-sep { display: none; }
 .sb-morebody .sb-pop { bottom: auto; top: 50%; left: calc(100% + 12px); translate: 0 -50%; }   /* a dropdown inside the ··· menu opens to the side */
-body.dark .sb-pop { background: var(--sb-bg-8); box-shadow: 0 16px 40px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .1); }
 body.dark .sb-popw.open > .sb-poptrig, body.dark .sb-sizelist button.on { background: rgb(from var(--hilite) r g b / .12); }
 /* no divider lines: each control (or tight group, like B I U S) is its own soft pill */
 .selbar .sb-sep { display: none !important; }
 .selbar { --pill: rgba(128, 110, 92, .07); }
-body.dark .selbar { --pill: rgba(255, 255, 255, .08); }
 .selbar > .sb-ic, .selbar > .sb-txt, .selbar > .sb-popw > .sb-poptrig, .selbar > .sb-tilt, .selbar > .sb-sizes, .selbar > .sb-font,
 .selbar > .sb-g > .sb-ic, .selbar > .sb-g > .sb-txt, .selbar > .sb-g > .sb-popw > .sb-poptrig, .selbar > .sb-g > .sb-tilt, .selbar > .sb-g > .sb-sizes, .selbar > .sb-g > .sb-font { background: var(--pill); border-radius: var(--pill-r); corner-shape: squircle; }
 #selbar:not(.typing) .sb-typing { display: none; }
 .selbar .sb-sizes.sb-style { padding: 0 3px; gap: 0; }
 .selbar .sb-sizes.sb-style button { background: none; }
 .selbar .sb-sizes.sb-style button:hover { background: rgb(from var(--sb-bg-2) r g b / .1); }
-.selbar .sb-sizes.sb-style button.on { background: var(--ink); color: color-mix(in oklab, var(--accent-wash) 8%, var(--surface)); }
-body.dark .selbar .sb-sizes.sb-style button.on { background: var(--sb-bg-3); color: var(--sb-ink-3); }
+.selbar .sb-sizes.sb-style button.on { background: var(--m-sb-style-on-bg); color: color-mix(in oklab, var(--accent-wash) 8%, var(--surface)); }
 .selbar > .sb-ic:hover, .selbar > .sb-g > .sb-ic:hover, .selbar .sb-poptrig:hover, .selbar .sb-tilt:hover, .selbar .sb-font:hover { background: var(--blush); }
 .selbar .sb-ic:disabled { opacity: .35; cursor: default; }   /* e.g. the count, while the header is hidden */
 .selbar > .sb-g > .sb-ic:disabled:hover { background: var(--pill); color: var(--ink-soft); }
@@ -2181,10 +2178,10 @@ body.dark .selbar .sb-sizes.sb-style button.on { background: var(--sb-bg-3); col
 body.dark .sb-glass { background: rgb(from var(--sb-shadow) r g b / .2) !important; color: var(--ink) !important; box-shadow: inset 0 0 0 1px rgb(from var(--sb-shadow-3) r g b / .35) !important; }
 /* the selection bar itself is frosted glass (the pills inside stay as they are) */
 .selbar { background: rgb(from var(--hilite) r g b / .55); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .95), inset 0 0 0 1px rgb(from var(--hilite) r g b / .6), 0 10px 30px rgb(from var(--sec-shadow) r g b / .16); }
+  box-shadow: var(--m-selbar-shadow); }
 .selbar { --pill: rgba(255, 255, 255, .7); }
 .selbar .sb-sizes.sb-style button:hover { background: rgb(from var(--snow) r g b / .9); }
-body.dark .selbar { box-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .16), inset 0 0 0 1px rgb(from var(--hilite) r g b / .08), 0 10px 30px rgb(from var(--shade) r g b / .35); }   /* its background is the dark surface (body.dark .selbar, above) */
+/* in dark its background is the dark surface (body.dark .selbar, in the dark mode section) */
 /* ---------- one look for every selection bar: same icon size, color and line weight; same text size and color ---------- */
 .selbar { --sb-icon: 19px; --sb-ink: var(--ink-soft); --sb-on: var(--ink); --sb-text: 600 12.5px/1 var(--font); }
 .selbar svg:not(.sb-caret):not(.sb-dots3) { width: var(--sb-icon) !important; height: var(--sb-icon) !important; }

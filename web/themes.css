@@ -379,8 +379,12 @@ body {
   --m-ly-n-bg: var(--snow);
   --m-ly-on-bg: var(--blush);
   --m-ob-primary-ink: var(--ink-inverse);
+  --m-sb-pop-bg: var(--panel, var(--snow));
+  --m-sb-pop-shadow: 0 16px 40px rgb(from var(--sb-shadow-2) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05);
+  --m-sb-style-on-bg: var(--ink);
   --m-sb-tipbub-bg: var(--ink);
   --m-sb-tipbub-ink: color-mix(in oklab, var(--accent-wash) 8%, var(--surface));
+  --m-selbar-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .95), inset 0 0 0 1px rgb(from var(--hilite) r g b / .6), 0 10px 30px rgb(from var(--sec-shadow) r g b / .16);
   --m-set-panel-bg: var(--snow);
   --m-tag-bg: var(--snow);
   --m-tag-ink: currentcolor;
@@ -563,8 +567,12 @@ body.dark {
   --m-ly-n-bg: var(--pn-dark-ink);
   --m-ly-on-bg: rgb(from var(--lf-shadow) r g b / .22);
   --m-ob-primary-ink: var(--au-bg-3);
+  --m-sb-pop-bg: var(--sb-bg-8);
+  --m-sb-pop-shadow: 0 16px 40px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .1);
+  --m-sb-style-on-bg: var(--sb-bg-3);
   --m-sb-tipbub-bg: var(--sb-bg-3);
   --m-sb-tipbub-ink: var(--sb-ink-3);
+  --m-selbar-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .16), inset 0 0 0 1px rgb(from var(--hilite) r g b / .08), 0 10px 30px rgb(from var(--shade) r g b / .35);
   --m-set-panel-bg: var(--surface);
   --m-tag-bg: var(--dark-line);
   --m-tag-ink: var(--hilite);
