@@ -216,7 +216,35 @@ function parseFilters(args: string[]) {
 
 async function sweepLook(look: Look, targets: Target[], seen: Map<string, number>) {
   const values: Record<string, string> = {};
-  const board = everyOfflineCard();
+  // a chat with a line each way, and buttons under hers, for the rules about Myra's messages
+  const local = (ms: number) => {
+    const t = new Date(Date.now() + ms);
+    const two = (n: number) => String(n).padStart(2, '0');
+    return `${t.getFullYear()}-${two(t.getMonth() + 1)}-${two(t.getDate())}T${two(t.getHours())}:${two(t.getMinutes())}`;
+  };
+  const base = everyOfflineCard();
+  const dueNote = (id: string, x: number, due: string) => ({ ...base.cards[1], id, x, y: 900, due });
+  const board = {
+    ...base,
+    cards: [
+      ...base.cards,
+      dueNote('due-later', 0, local(40 * 864e5)),
+      dueNote('due-soon', 260, local(36e5)),
+      dueNote('due-over', 520, local(-864e5)),
+    ],
+    chat: [
+      { who: 'me', text: 'What should this board show?', t: 1 },
+      {
+        who: 'myra',
+        text: 'A first screen, I think.',
+        t: 2,
+        acts: [
+          { kind: 'next', text: 'Find onboarding screens' },
+          { kind: 'source', card: 'note' },
+        ],
+      },
+    ],
+  };
   const app = await launch({ boards: [board], open: board.id, settings: look.settings });
   try {
     await prepare(app.page);
