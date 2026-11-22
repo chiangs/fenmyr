@@ -34,7 +34,7 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 type Kind = 'twin' | 'no-twin' | 'dark-only-prop' | 'compound';
 type Rival = { line: number; selector: string; prop: string; tier: 'strict' | 'tag'; state: string };
 type Twin = { line: number; prop: string; value: string };
-type Finding = {
+export type Finding = {
   rule: Rule;
   selector: string;
   decl: Decl;
@@ -44,7 +44,7 @@ type Finding = {
   dead: boolean;
   same: boolean;
 };
-type Status = 'delete' | 'clean' | 'check' | 'blocked';
+export type Status = 'delete' | 'clean' | 'check' | 'blocked';
 
 // could the rule at `other` style the same element as `own`? strict: they share a class or id. tag: the other names only a tag or attribute.
 function competes(own: Shape, other: Shape, markup: Markup): 'strict' | 'tag' | null {
@@ -166,7 +166,7 @@ const cand = (role: Cand['role'], sel: string, rule: Rule, d: Decl, extra: Parti
   ...extra,
 });
 
-function survey(rules: Rule[], markup: Markup): Finding[] {
+export function survey(rules: Rule[], markup: Markup): Finding[] {
   const light = rules.filter(r => !r.selectors.every(s => DARK.test(s)));
   const found: Finding[] = [];
   for (const rule of rules) {
@@ -210,7 +210,7 @@ function survey(rules: Rule[], markup: Markup): Finding[] {
 }
 
 // a rule stops counting only when every declaration of every selector folds or goes
-function statusOf(fs: Finding[]): Status {
+export function statusOf(fs: Finding[]): Status {
   const live = fs.filter(f => !f.dead);
   if (!live.length) return 'delete';
   if (live.some(f => f.kind !== 'twin' || f.rivals.some(r => r.tier === 'strict'))) return 'blocked';
@@ -218,7 +218,7 @@ function statusOf(fs: Finding[]): Status {
   return live.some(f => f.rivals.length) ? 'check' : 'clean';
 }
 
-function byRule(found: Finding[]) {
+export function byRule(found: Finding[]) {
   const rules = new Map<Rule, Finding[]>();
   for (const f of found) rules.set(f.rule, [...(rules.get(f.rule) ?? []), f]);
   return rules;
@@ -268,12 +268,14 @@ function detail(found: Finding[], area: string, status: string) {
   }
 }
 
-const args = process.argv.slice(2);
-const option = (name: string) => (args.includes(name) ? (args[args.indexOf(name) + 1] ?? '') : undefined);
-const [area, status] = [option('--area'), option('--status')];
-const file =
-  args.find((a, i) => !a.startsWith('--') && !['--area', '--status'].includes(args[i - 1] ?? '')) ??
-  path.join(ROOT, 'web', 'style.css');
-const found = survey(parseRules(fs.readFileSync(file, 'utf8')), readMarkup(ROOT));
-if (area !== undefined || status !== undefined) detail(found, area ?? '', status ?? '');
-else table(found);
+if (import.meta.main) {
+  const args = process.argv.slice(2);
+  const option = (name: string) => (args.includes(name) ? (args[args.indexOf(name) + 1] ?? '') : undefined);
+  const [area, status] = [option('--area'), option('--status')];
+  const file =
+    args.find((a, i) => !a.startsWith('--') && !['--area', '--status'].includes(args[i - 1] ?? '')) ??
+    path.join(ROOT, 'web', 'style.css');
+  const found = survey(parseRules(fs.readFileSync(file, 'utf8')), readMarkup(ROOT));
+  if (area !== undefined || status !== undefined) detail(found, area ?? '', status ?? '');
+  else table(found);
+}
