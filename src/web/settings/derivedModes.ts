@@ -3,7 +3,13 @@
 // that sets those sets these too. tools/themes-css.ts writes them into web/themes.css with the rest of DERIVED.
 export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-au-play-fill': ['var(--ink-inverse)', 'var(--au-bg-3)'],
+  '--m-dbs-bub-bg': ['var(--snow)', 'var(--dbs-bg)'],
+  '--m-dbs-bub-shadow': [
+    '0 8px 24px rgba(var(--sh), calc(.2 * var(--sh-k)))',
+    '0 8px 24px rgb(from var(--shade) r g b / .45)',
+  ],
   '--m-dbs-knob-bg': ['var(--snow)', 'var(--coll-ink)'],
+  '--m-dbs-track-bg': ['var(--dbs-bg-2)', 'rgb(from var(--hilite) r g b / .1)'],
   '--m-dt-a-bg': ['var(--ink)', 'var(--coll-ink)'],
   '--m-dv-dl-ink': ['var(--ink)', 'var(--dv-light-ink)'],
   '--m-home-img': [
@@ -11,7 +17,9 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
     'radial-gradient(var(--pn-dark-home-dot) 1.2px, transparent 1.2px)',
   ],
   '--m-lic-item-bg': ['var(--blush)', 'var(--surface-2)'],
+  '--m-ly-hover-bg': ['var(--au-bg-2)', 'rgb(from var(--hilite) r g b / .05)'],
   '--m-ly-n-bg': ['var(--snow)', 'var(--pn-dark-ink)'],
+  '--m-ly-on-bg': ['var(--blush)', 'rgb(from var(--lf-shadow) r g b / .22)'],
   '--m-ob-primary-ink': ['var(--ink-inverse)', 'var(--au-bg-3)'],
   '--m-sb-tipbub-bg': ['var(--ink)', 'var(--sb-bg-3)'],
   '--m-sb-tipbub-ink': ['color-mix(in oklab, var(--accent-wash) 8%, var(--surface))', 'var(--sb-ink-3)'],

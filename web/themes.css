@@ -367,12 +367,17 @@ body.dark.theme-lantern {
 }
 body {
   --m-au-play-fill: var(--ink-inverse);
+  --m-dbs-bub-bg: var(--snow);
+  --m-dbs-bub-shadow: 0 8px 24px rgba(var(--sh), calc(.2 * var(--sh-k)));
   --m-dbs-knob-bg: var(--snow);
+  --m-dbs-track-bg: var(--dbs-bg-2);
   --m-dt-a-bg: var(--ink);
   --m-dv-dl-ink: var(--ink);
   --m-home-img: radial-gradient(var(--dot) 1.2px, transparent 1.2px);
   --m-lic-item-bg: var(--blush);
+  --m-ly-hover-bg: var(--au-bg-2);
   --m-ly-n-bg: var(--snow);
+  --m-ly-on-bg: var(--blush);
   --m-ob-primary-ink: var(--ink-inverse);
   --m-sb-tipbub-bg: var(--ink);
   --m-sb-tipbub-ink: color-mix(in oklab, var(--accent-wash) 8%, var(--surface));
@@ -546,12 +551,17 @@ body {
 }
 body.dark {
   --m-au-play-fill: var(--au-bg-3);
+  --m-dbs-bub-bg: var(--dbs-bg);
+  --m-dbs-bub-shadow: 0 8px 24px rgb(from var(--shade) r g b / .45);
   --m-dbs-knob-bg: var(--coll-ink);
+  --m-dbs-track-bg: rgb(from var(--hilite) r g b / .1);
   --m-dt-a-bg: var(--coll-ink);
   --m-dv-dl-ink: var(--dv-light-ink);
   --m-home-img: radial-gradient(var(--pn-dark-home-dot) 1.2px, transparent 1.2px);
   --m-lic-item-bg: var(--surface-2);
+  --m-ly-hover-bg: rgb(from var(--hilite) r g b / .05);
   --m-ly-n-bg: var(--pn-dark-ink);
+  --m-ly-on-bg: rgb(from var(--lf-shadow) r g b / .22);
   --m-ob-primary-ink: var(--au-bg-3);
   --m-sb-tipbub-bg: var(--sb-bg-3);
   --m-sb-tipbub-ink: var(--sb-ink-3);

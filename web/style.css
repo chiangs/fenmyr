@@ -1389,8 +1389,8 @@ body.exporting #rh { display: none !important; }
 .ly-count { font: 600 10.5px/1 var(--font); color: var(--ink-faint); margin-left: 4px; letter-spacing: 0; }
 .layers { display: flex; flex-direction: column; gap: 1px; max-height: min(42vh, 380px); overflow: auto; margin: 0 -4px; padding: 0 4px; }
 .ly { position: relative; display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 6px 0 calc(2px + var(--d) * 16px); border-radius: 9px; cursor: default; font-size: 13px; color: var(--ink); user-select: none; -webkit-user-select: none; }
-.ly:hover { background: var(--au-bg-2); }
-.ly.on { background: var(--blush); }
+.ly:hover { background: var(--m-ly-hover-bg); }
+.ly.on { background: var(--m-ly-on-bg); }
 .ly.on .ly-n { font-weight: 700; }
 .ly.parent > .ly-n { font-weight: 600; }
 .ly-tw { flex: none; width: 16px; height: 16px; display: grid; place-items: center; border: 0; padding: 0; background: none; color: var(--ink-faint); cursor: pointer; border-radius: 4px; }
@@ -1415,8 +1415,7 @@ body.exporting #rh { display: none !important; }
 .ly.drop-a::before { top: -1px; } .ly.drop-b::after { bottom: -1px; }
 .ly-empty { padding: 4px 8px 6px; font-size: 12px; line-height: 1.45; color: var(--ink-soft); }
 .box[data-box="layers"].min .ly-count { display: none; }
-body.dark .ly:hover { background: rgb(from var(--hilite) r g b / .05); }
-body.dark .ly.on { background: rgb(from var(--lf-shadow) r g b / .22); }/* on the board: hovering a layer outlines its piece; hidden pieces disappear; locked ones can't be grabbed */
+/* on the board: hovering a layer outlines its piece; hidden pieces disappear; locked ones can't be grabbed */
 .card.ly-hl { outline: 2px solid var(--select); outline-offset: 3px; }
 .card.ly-off { display: none !important; }
 .card.ly-lock, .card.ly-lock * { pointer-events: none !important; }
@@ -1427,20 +1426,17 @@ body.dark .ly.on { background: rgb(from var(--lf-shadow) r g b / .22); }/* on th
 .dbs-dot i, .dbs-bub i { display: block; border-radius: 50%; transition: width .08s, height .08s; }
 .dbs-dot i.er, .dbs-bub i.er { background: rgb(from var(--snow) r g b / .6) !important; box-shadow: inset 0 0 0 2px var(--ink); }
 .dbs-track { position: relative; width: 112px; height: 26px; cursor: pointer; touch-action: none; outline: none; }
-.dbs-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 6px; margin-top: -3px; border-radius: 134px; corner-shape: squircle; background: var(--dbs-bg-2); }
+.dbs-track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 6px; margin-top: -3px; border-radius: 134px; corner-shape: squircle; background: var(--m-dbs-track-bg); }
 .dbs-fill { position: absolute; left: 0; top: 50%; height: 6px; margin-top: -3px; border-radius: 134px; corner-shape: squircle; background: var(--accent-soft); }
 .dbs-knob { position: absolute; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--m-dbs-knob-bg); box-shadow: 0 1px 4px rgb(from color-mix(in oklab, var(--accent-text) 8%, var(--on-pastel)) r g b / .28), inset 0 0 0 2px var(--pink-deep); transition: scale .12s; }
 .dbs-track:hover .dbs-knob, .db-size.sizing .dbs-knob { scale: 1.12; }
 .dbs-track:focus-visible .dbs-knob { box-shadow: 0 0 0 3px rgb(from var(--select) r g b / .35), inset 0 0 0 2px var(--pink-deep); }
 .dbs-bub {
-position: absolute; left: 50%; bottom: 30px; translate: -50% 4px; min-width: 40px; min-height: 40px; padding: 10px; display: grid; place-items: center; border-radius: 24px; corner-shape: squircle; background: var(--snow); box-shadow: 0 8px 24px rgba(var(--sh), calc(.2 * var(--sh-k))); opacity: 0; pointer-events: none; transition: opacity .15s, translate .15s;
+position: absolute; left: 50%; bottom: 30px; translate: -50% 4px; min-width: 40px; min-height: 40px; padding: 10px; display: grid; place-items: center; border-radius: 24px; corner-shape: squircle; background: var(--m-dbs-bub-bg); box-shadow: var(--m-dbs-bub-shadow); opacity: 0; pointer-events: none; transition: opacity .15s, translate .15s;
 }
-body.dark .dbs-bub { background: var(--dbs-bg); }
 .dbs-bub::after { content: ""; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; margin-left: -5px; rotate: 45deg; background: inherit; border-radius: 2px; }
 .db-size.sizing .dbs-bub { opacity: 1; translate: -50% 0; }
 .dbs-val { min-width: 20px; font: 600 12px/1 var(--font); color: var(--ink-soft); font-variant-numeric: tabular-nums; text-align: right; }
-body.dark .dbs-track::before { background: rgb(from var(--hilite) r g b / .1); }
-body.dark .dbs-bub { box-shadow: 0 8px 24px rgb(from var(--shade) r g b / .45); }
 .db-size { position: relative; z-index: 2; }
 
 /* Myra points out the piece you picked in Layers */
