@@ -397,6 +397,7 @@ body {
   --m-dv-dl-ink: var(--ink);
   --m-find-bar-fb-sep-bg: rgb(from var(--shade) r g b / .1);
   --m-gear-tip-bg: var(--ink);
+  --m-home-bg: var(--bg, var(--pn-home));
   --m-home-img: radial-gradient(var(--dot) 1.2px, transparent 1.2px);
   --m-lic-item-bg: var(--blush);
   --m-ly-hover-bg: var(--au-bg-2);
@@ -411,9 +412,11 @@ body {
   --m-news-li-bg: var(--news-bg);
   --m-news-ob-panel-bg: var(--m-ob-panel-bg);
   --m-ob-field-input-bg: var(--surface-2);
+  --m-ob-field-input-line: var(--ob-line-2);
   --m-ob-panel-bg: var(--snow);
   --m-ob-primary-bg: var(--ink);
   --m-ob-primary-ink: var(--ink-inverse);
+  --m-ob-primary-line: var(--ink);
   --m-onboard-bg: rgb(from var(--onboard-bg) r g b / .55);
   --m-piece-pick-bg: var(--snow);
   --m-piece-pick-bg-2: color-mix(in oklab, var(--ink-faint) 12%, var(--snow));
@@ -681,6 +684,7 @@ body.dark {
   --m-dv-dl-ink: var(--dv-light-ink);
   --m-find-bar-fb-sep-bg: rgb(from var(--hilite) r g b / .14);
   --m-gear-tip-bg: var(--pn-dark-tip);
+  --m-home-bg: var(--pn-dark-home);
   --m-home-img: radial-gradient(var(--pn-dark-home-dot) 1.2px, transparent 1.2px);
   --m-lic-item-bg: var(--surface-2);
   --m-ly-hover-bg: rgb(from var(--hilite) r g b / .05);
@@ -695,9 +699,11 @@ body.dark {
   --m-news-li-bg: rgb(from var(--hilite) r g b / .05);
   --m-news-ob-panel-bg: var(--surface);
   --m-ob-field-input-bg: var(--ob-bg-4);
+  --m-ob-field-input-line: var(--ob-line);
   --m-ob-panel-bg: var(--surface);
   --m-ob-primary-bg: var(--coll-ink);
   --m-ob-primary-ink: var(--au-bg-3);
+  --m-ob-primary-line: var(--coll-ink);
   --m-onboard-bg: rgb(from var(--crop-shadow) r g b / .6);
   --m-piece-pick-bg: var(--surface);
   --m-piece-pick-bg-2: rgb(from var(--hilite) r g b / .08);

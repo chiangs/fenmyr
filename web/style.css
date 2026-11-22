@@ -839,7 +839,7 @@ body.dark .box { background: rgb(from var(--pn-dark-box) r g b / .96) !important
 body.dark .board-row:hover, body.dark .node-head:hover, body.dark .brand:hover, body.dark .pal:hover, body.dark .home-row, body.dark .dv-btn, body.dark .tile-art, body.dark .seg,
 body.dark .card.canvas .cv-prev, body.dark .au-tx, body.dark .tile.folder .tile-art .back, body.dark .tile.folder .tile-art .tab { background: var(--surface-2) !important; }
 body.dark .tile.folder .tile-art .front, body.dark .seg button.on, body.dark .au-acts button, body.dark .crumbs button:hover, body.dark .home-crumbs button:hover { background: var(--dark-line) !important; color: var(--ink); }
-body.dark .home { background-color: var(--pn-dark-home); }
+.home { background-color: var(--m-home-bg); }
 body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: var(--set-dark-line); }
 body.dark .pill-btn, body.dark .tile.add { border-color: var(--pn-dark-add-edge); }
 body.dark .cp-fields input, body.dark .capture input { background: var(--surface-2); color: var(--ink); border-color: var(--cp-line-2); }
@@ -1124,8 +1124,8 @@ body.dark .ob-dots i { background: var(--ob-line); }
 .ob-skip:hover { color: var(--ink); background: var(--blush); }
 .ob-step .conns { margin-bottom: 6px; }
 .set-btns { display: flex; gap: 6px; flex: none; }
-body.dark .ob-field input { border-color: var(--ob-line); }
-body.dark .ob-primary { border-color: var(--coll-ink); }
+.ob-field input { border-color: var(--m-ob-field-input-line); }
+.ob-primary { border-color: var(--m-ob-primary-line); }
 /* ---------- the tour ---------- */
 .coach { position: fixed; inset: 0; z-index: 94; pointer-events: none; display: none; }
 .coach.on { display: block; }

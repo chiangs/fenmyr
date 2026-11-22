@@ -54,6 +54,7 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-dv-dl-ink': ['var(--ink)', 'var(--dv-light-ink)'],
   '--m-find-bar-fb-sep-bg': ['rgb(from var(--shade) r g b / .1)', 'rgb(from var(--hilite) r g b / .14)'],
   '--m-gear-tip-bg': ['var(--ink)', 'var(--pn-dark-tip)'],
+  '--m-home-bg': ['var(--bg, var(--pn-home))', 'var(--pn-dark-home)'],
   '--m-home-img': [
     'radial-gradient(var(--dot) 1.2px, transparent 1.2px)',
     'radial-gradient(var(--pn-dark-home-dot) 1.2px, transparent 1.2px)',
@@ -71,9 +72,11 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-news-li-bg': ['var(--news-bg)', 'rgb(from var(--hilite) r g b / .05)'],
   '--m-news-ob-panel-bg': ['var(--m-ob-panel-bg)', 'var(--surface)'],
   '--m-ob-field-input-bg': ['var(--surface-2)', 'var(--ob-bg-4)'],
+  '--m-ob-field-input-line': ['var(--ob-line-2)', 'var(--ob-line)'],
   '--m-ob-panel-bg': ['var(--snow)', 'var(--surface)'],
   '--m-ob-primary-bg': ['var(--ink)', 'var(--coll-ink)'],
   '--m-ob-primary-ink': ['var(--ink-inverse)', 'var(--au-bg-3)'],
+  '--m-ob-primary-line': ['var(--ink)', 'var(--coll-ink)'],
   '--m-onboard-bg': ['rgb(from var(--onboard-bg) r g b / .55)', 'rgb(from var(--crop-shadow) r g b / .6)'],
   '--m-piece-pick-bg': ['var(--snow)', 'var(--surface)'],
   '--m-piece-pick-bg-2': [
