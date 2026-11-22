@@ -67,7 +67,7 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-m-acts-button-line': ['var(--ink)', 'var(--hilite)'],
   '--m-m-bubble-small-ink': ['var(--pink-deep)', 'var(--chat-ink-2)'],
   '--m-mc-msg-me-bg': ['color-mix(in oklab, var(--accent-tint) 32%, var(--ink-inverse))', 'var(--chat-bg-3)'],
-  '--m-mc-msg-me-ink': ['initial', 'var(--hilite)'],
+  '--m-mc-msg-me-ink': ['currentcolor', 'var(--hilite)'],
   '--m-mc-msg-myra-bg': ['color-mix(in oklab, var(--snow) 4%, var(--surface-2))', 'var(--chat-bg-7)'],
   '--m-news-li-bg': ['var(--news-bg)', 'rgb(from var(--hilite) r g b / .05)'],
   '--m-news-ob-panel-bg': ['var(--m-ob-panel-bg)', 'var(--surface)'],
@@ -138,7 +138,7 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-sm-sig-ink': ['color-mix(in oklab, var(--accent-soft) 76%, var(--ink))', 'var(--web-ink)'],
   '--m-sp-body-bg': ['var(--snow)', 'var(--dark-raised)'],
   '--m-su-icon-bg': ['var(--snow)', 'var(--su-bg)'],
-  '--m-svg-ico-ico-d-ink': ['initial', 'var(--ink)'],
+  '--m-svg-ico-ico-d-ink': ['currentcolor', 'var(--ink)'],
   // a note's label: dark in dark mode, with the theme's white on it. Inside a note --ink is the note's own dark ink, so the label can't read --ink there
   '--m-tag-bg': ['var(--snow)', 'var(--dark-line)'],
   '--m-tag-ink': ['currentcolor', 'var(--hilite)'],

@@ -407,7 +407,7 @@ body {
   --m-m-acts-button-line: var(--ink);
   --m-m-bubble-small-ink: var(--pink-deep);
   --m-mc-msg-me-bg: color-mix(in oklab, var(--accent-tint) 32%, var(--ink-inverse));
-  --m-mc-msg-me-ink: initial;
+  --m-mc-msg-me-ink: currentcolor;
   --m-mc-msg-myra-bg: color-mix(in oklab, var(--snow) 4%, var(--surface-2));
   --m-news-li-bg: var(--news-bg);
   --m-news-ob-panel-bg: var(--m-ob-panel-bg);
@@ -454,7 +454,7 @@ body {
   --m-sm-sig-ink: color-mix(in oklab, var(--accent-soft) 76%, var(--ink));
   --m-sp-body-bg: var(--snow);
   --m-su-icon-bg: var(--snow);
-  --m-svg-ico-ico-d-ink: initial;
+  --m-svg-ico-ico-d-ink: currentcolor;
   --m-tag-bg: var(--snow);
   --m-tag-ink: currentcolor;
   --m-tgl-checked-bg: var(--mint-deep);

@@ -109,9 +109,9 @@ const INITIAL: Record<string, string> = {
   filter: 'none',
 };
 // properties a shorthand also sets: a light rule that sets one of these may be what the dark rule overrides
-// inherited properties: with no light rule they take their parent's value, which a token can say by being the initial
-// (guaranteed-invalid) custom property, since `color: var(--m-x)` with no valid value then computes as `unset`
-const INHERITED = new Set(['color', 'fill', 'stroke', 'caret-color', 'text-shadow']);
+// `color` with no light rule takes its parent's colour, which a token can say as `currentcolor`: for `color` that is the
+// inherited value. (Other inherited properties, fill and stroke, read currentcolor as the element's colour, so they are left.)
+const INHERITED = new Set(['color']);
 const RELATED: Record<string, string[]> = {
   'border-color': ['border', 'border-top', 'border-right', 'border-bottom', 'border-left'],
   'background-color': ['background'],
@@ -185,7 +185,7 @@ function appliedLight(light: Rule[], rule: Rule, selector: string, prop: string)
   );
   if (win) return { value: win.value, important: win.important };
   if (INITIAL[prop]) return { value: INITIAL[prop], important: false };
-  return INHERITED.has(prop) ? { value: 'initial', important: false } : null;
+  return INHERITED.has(prop) ? { value: 'currentcolor', important: false } : null;
 }
 
 export type Picks = {
@@ -256,10 +256,7 @@ export function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead
         else if (a.important !== f.decl.important) why = `${f.decl.prop}: !important differs from the light value`;
         else from = { light: a.value, line: 0, sel: '', viaTwin: false };
       }
-      if (!why && from)
-        why =
-          (from.light === 'initial' ? '' : whyNot(from.light, f.selector, guard)) ||
-          whyNot(f.decl.value, f.selector, guard);
+      if (!why && from) why = whyNot(from.light, f.selector, guard) || whyNot(f.decl.value, f.selector, guard);
       if (why || !from) break;
       folds.push({
         prop: f.decl.prop,
