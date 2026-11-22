@@ -418,8 +418,7 @@ body.dark .home-back:hover { background: var(--pn-light-ink); color: var(--pn-da
 .tile.project .tile-art.peekboard { padding: 0; background: var(--snow) !important; }
 .tile.project .tile-art.peekboard svg { position: absolute; inset: 0; }
 .tile.project .tile-art .chips { position: absolute; left: 12px; bottom: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 5px; }
-.tile .cover-btn { position: absolute; top: 18px; right: 18px; z-index: 3; display: none; padding: 7px 11px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--hilite) r g b / .92); box-shadow: 0 4px 12px rgb(from var(--shade) r g b / .12); font: 600 11.5px/1 var(--font); color: var(--ink); cursor: pointer; }
-body.dark .tile .cover-btn { color: var(--ink); }
+.tile .cover-btn { position: absolute; top: 18px; right: 18px; z-index: 3; display: none; padding: 7px 11px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-tile-cover-btn-bg); box-shadow: var(--m-tile-cover-btn-shadow); font: 600 11.5px/1 var(--font); color: var(--ink); cursor: pointer; }
 .tile:hover .cover-btn { display: block; }
 .cover-menu { position: absolute; top: 50px; right: 18px; z-index: 4; display: flex; flex-direction: column; padding: 5px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 12px 30px rgba(var(--sh), calc(.22 * var(--sh-k))); }
 .cover-menu button { padding: 9px 12px; border: 0; border-radius: 14px; corner-shape: squircle; background: none; text-align: left; font: 600 12px/1 var(--font); color: var(--ink); cursor: pointer; white-space: nowrap; }
@@ -844,10 +843,9 @@ body.dark .tile.folder .tile-art .front, body.dark .seg button.on, body.dark .au
 body.dark .home { background-color: var(--pn-dark-home); }
 body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: var(--set-dark-line); }
 body.dark .pill-btn, body.dark .tile.add { border-color: var(--pn-dark-add-edge); }
-body.dark .tile .cover-btn { background: var(--surface-2); box-shadow: 0 4px 12px rgb(from var(--shade) r g b / .35); }
 body.dark .cp-fields input, body.dark .capture input { background: var(--surface-2); color: var(--ink); border-color: var(--cp-line-2); }
 /* cards: white cards turn dark; pastel cards stay pastel with dark words */
-body.dark .card > .frame { box-shadow: 0 10px 30px rgb(from var(--shade) r g b / .35); }
+.card > .frame { box-shadow: var(--m-card-frame-shadow); }
 body.dark .card.c-white > .frame, body.dark .card.link > .frame, body.dark .card.doc > .frame, body.dark .card.canvas > .frame, body.dark .card.audio > .frame, body.dark .card.swatch > .frame, body.dark .card.image > .frame { background: var(--dark-snow) !important; }
 /* these frames are Snow in dark, which is light in some themes, so the words on them are Snow's */
 body.dark .card:is(.link, .doc, .canvas, .swatch, .font, .audio) { --ink: var(--card-white-ink); --ink-soft: var(--card-white-soft); --ink-faint: var(--card-white-faint); color: var(--ink); }
@@ -1279,7 +1277,7 @@ body.dark .news .nw-e { background: var(--surface-2); }
 .news .nw-list b { display: block; font: 700 14px/1.3 var(--font); color: var(--ink); }
 .news .nw-list small { display: block; margin-top: 2px; font: 500 12.5px/1.45 var(--font); color: var(--ink-soft); }
 /* templates menu, what's new and the usage card in dark mode */
-body.dark .news .ob-panel { background: var(--surface); }
+.news .ob-panel { background: var(--m-news-ob-panel-bg); }
 /* ---------- your colors ---------- */
 html, body { background: var(--board, var(--html-bg)); }
 body.dark, body.dark .stage { background: var(--board, var(--body-bg)); }
@@ -1294,7 +1292,7 @@ body.board-light #boardName, body.board-light .card.title .text, body.board-ligh
 .col-chip:hover { transform: translateY(-2px); }
 .col-chip i { width: 34px; height: 34px; border-radius: 15px; corner-shape: squircle; background: var(--chip, var(--snow)); box-shadow: inset 0 0 0 1px rgb(from var(--shade) r g b / .1), 0 3px 8px rgba(var(--sh), calc(.12 * var(--sh-k))); }
 .set-input { width: 170px; padding: 9px 12px; border-radius: 16px; corner-shape: squircle; border: 1.5px solid var(--set-input-edge); background: var(--set-input); font: 600 13.5px/1 var(--font); color: var(--ink); outline: none; }
-.set-input:focus { border-color: var(--accent-soft); } body.dark .set-input { background: rgb(from var(--hilite) r g b / .05); border-color: var(--set-dark-input-edge); }
+.set-input:focus { border-color: var(--accent-soft); } body.dark .set-input { border-color: var(--set-dark-input-edge); }
 .cur-colors .rand { background: conic-gradient(var(--set-rand-1), var(--set-rand-2), var(--set-rand-3), var(--set-rand-4), var(--set-rand-1), var(--set-rand-1)); }
 .cur-prev { height: 76px; margin: 0 0 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--board, var(--html-bg)); background-image: radial-gradient(var(--dot) 1.3px, transparent 1.6px); background-size: 18px 18px; position: relative; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(var(--sh), calc(.08 * var(--sh-k))); }
 .cur-prev .mcur { position: absolute; left: 40%; top: 18px; opacity: 1; }
@@ -1507,7 +1505,7 @@ body.dark .sh-tabs button.on { color: var(--hilite); }
 .sh-body .pal { padding: 12px 10px; font-size: 15px; }
 /* dark */
 body.dark.phone .top, body.dark .hub { background: rgb(from var(--pn-dark-top) r g b / .94); }
- body.dark .sh-grab i { background: var(--sh-bg-2); }
+ .sh-grab i { background: var(--m-sh-grab-i-bg); }
 body.dark .sh-tabs, body.dark .sh-x { background: rgb(from var(--hilite) r g b / .07); color: var(--coll-ink); } body.dark .sh-tabs button.on { background: var(--sh-bg-3); }
 body.dark .sh-body .tools.in-sheet button { background: rgb(from var(--hilite) r g b / .05); }
 body.phone .sheet.on { pointer-events: auto; }
@@ -1527,7 +1525,6 @@ body.phone .dock .drawbar .db-tool { width: 46px; height: 46px; } body.phone .do
 body.phone .dock .drawbar .db-colors button { width: 28px; height: 28px; } body.phone .dock .drawbar .db-done { height: 44px; padding: 0 18px; font-size: 14px; }
 /* the action bar's icons are the toolbar's icons: same size, same soft ink, same hover and "on" states */
 .selbar .sb-ic { width: 40px; height: 38px; border-radius: var(--pill-r); corner-shape: squircle; color: var(--ink-soft); }
-body.dark .selbar .sb-ic { color: var(--sb-ink-5); }
 .selbar .sb-ic svg { width: 19px; height: 19px; }
 .selbar .sb-ic:hover, .selbar .sb-ic.on { color: var(--ink); background: var(--blush); }
 body.dark .selbar .sb-ic:hover, body.dark .selbar .sb-ic.on { color: var(--hilite); }/* phone: hub, action bar and pen bar all use the same 22px icons */
@@ -2363,8 +2360,8 @@ body[data-tb="l"] .m-pill { height: 58px; }
 /* Calmest: Myra in soft, muted colors */
 /* her character hidden: the pill shows just her name */
 body.myra-hidden :is(#goo, #coachGoo, #hubGoo) { display: none !important; }
-.set-input { width: 150px; padding: 9px 12px; border: 0; border-radius: 16px; corner-shape: squircle; background: rgb(from var(--shade) r g b / .05); font: 600 13px/1 var(--font); color: var(--ink); outline: none; }
-.set-input:focus { box-shadow: inset 0 0 0 2px var(--select); } body.dark .set-input { background: rgb(from var(--hilite) r g b / .08); }
+.set-input { width: 150px; padding: 9px 12px; border: 0; border-radius: 16px; corner-shape: squircle; background: var(--m-set-input-bg); font: 600 13px/1 var(--font); color: var(--ink); outline: none; }
+.set-input:focus { box-shadow: inset 0 0 0 2px var(--select); }
 body.myra-calm :is(#goo, .m-pill, #mPill).hopping, body.myra-calm #goo.hopping, body.myra-calm .m-pill { animation: none !important; }
 /* the height grip under Layers, Wireframe and Unsorted */
 .rz-grip { position: relative; height: 12px; margin: 2px auto -4px; cursor: ns-resize; flex: none; }
@@ -2393,7 +2390,7 @@ body.dark .rz-grip:hover > svg path, body.dark .rz-grip.on > svg path { fill: va
 .sb-cases button { flex-direction: column; gap: 3px !important; padding: 7px 2px !important; }
 .sb-cases button b { font: 700 14px/1 var(--font); } .sb-cases button small { font: 600 9.5px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
 .sb-cases button.on { background: var(--blush) !important; } body.dark .sb-cases button.on { background: rgb(from var(--hilite) r g b / .14) !important; }
-.sb-cases button.on, .sb-cases button.on b { color: var(--ink) !important; } body.dark .sb-cases button.on, body.dark .sb-cases button.on b { color: var(--hilite) !important; }
+.sb-cases button.on, .sb-cases button.on b { color: var(--ink) !important; } .sb-cases button.on, .sb-cases button.on b { color: var(--m-sb-cases-button-on-ink) !important; }
 /* the selection bar (and anything that opens from it, like dropdowns inside ···) sits above Myra's pill */
 .dock .selbar, .dock .modebar { position: relative; z-index: 6; } .dock .myra { z-index: 2; } .dock .selbar .sb-popw.open { z-index: 10; }
 .set-feedback { background: var(--m-set-feedback-bg); } .set-feedback .sf-ic { font-size: 24px; flex: none; }
@@ -2552,8 +2549,8 @@ body.dark svg.ico .ico-d { color: var(--ink); }
 .tdlg input[type="checkbox"]:not(.tgl) { padding: 0; width: auto; border: 0; }
 .tdlg input.tgl { border-width: 0; padding: 0; }
 /* a Snow vault note turns dark in dark mode, like a regular note: light words and light tints on it */
-body.dark .sb-dots button[data-c="white"] { box-shadow: inset 0 0 0 1px rgb(from var(--hilite) r g b / .3); }
-body.dark .sb-dots button[data-c="white"].on { box-shadow: 0 0 0 2px var(--hilite), 0 0 0 3.5px var(--select), inset 0 0 0 1px rgb(from var(--hilite) r g b / .3); }
+.sb-dots button[data-c="white"] { box-shadow: var(--m-sb-dots-button-shadow); }
+.sb-dots button[data-c="white"].on { box-shadow: var(--m-sb-dots-button-on-shadow); }
 
 /* "Myra sees": what goes with the next message. A chip that goes is solid with ×; one that doesn't is dashed with +.
    It shows two rows and a glimpse of a third, so many vaults scroll instead of pushing the chat down */
@@ -2703,7 +2700,7 @@ body[data-tb="s"] .find-bar { height: 46px; } body[data-tb="l"] .find-bar { heig
 .fb-b:disabled { opacity: .35; cursor: default; }
 .fb-sep { width: 1px; height: 22px; margin: 0 2px; background: rgb(from var(--shade) r g b / .1); }
 body.dark .find-bar .fb-field, body.tint-panels .find-bar .fb-field { background: rgb(from var(--hilite) r g b / .08); }
-body.dark .find-bar .fb-sep { background: rgb(from var(--hilite) r g b / .14); }
+.find-bar .fb-sep { background: var(--m-find-bar-fb-sep-bg); }
 /* the card you are on gets a ring (the ones that don't match fade, as in Focus mode) */
 .card.find-cur { outline: 2.5px solid var(--select); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .find-bar { animation: none; } }
@@ -2787,7 +2784,7 @@ body.dark .card .due.over { background: var(--due-over); color: var(--due-over-i
 .sb-due { display: grid; gap: 10px; width: 250px; padding: 2px; white-space: normal; }
 .sb-due .sd-row { display: flex; gap: 8px; } .sb-due label { display: grid; gap: 3px; flex: 1; font: 600 11px/1 var(--font); color: var(--ink-soft); }
 .sb-due input { font: 600 13px/1 var(--font); padding: 8px 9px; border: 0; border-radius: 10px; corner-shape: squircle; background: rgb(from var(--shade) r g b / .05); color: var(--ink); min-width: 0; } body.dark .sb-due input { background: rgb(from var(--hilite) r g b / .08); color-scheme: dark; }
-.sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgb(from var(--shade) r g b / .05); color: var(--ink); } body.dark .sb-due .sd-chips button { background: rgb(from var(--hilite) r g b / .08); }
+.sb-due .sd-chips { display: flex; flex-wrap: wrap; gap: 5px; } .sb-due .sd-chips button { font: 600 12px/1 var(--font); padding: 7px 10px; border-radius: 99px; background: rgb(from var(--shade) r g b / .05); color: var(--ink); } .sb-due .sd-chips button { background: var(--m-sb-due-sd-chips-button-bg); }
 
 /* the clear (×) button on search and text fields: one floating button (see the top of app.js); the fields leave room for it */
 .clr-btn { position: fixed; z-index: 2147482000; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; display: grid; place-items: center; background: var(--m-clr-btn-bg); color: var(--m-clr-btn-ink); cursor: pointer; }
@@ -3078,8 +3075,8 @@ body.dark .piece-pick .pk-th .tl { fill: var(--surface); }
 .piece-pick .pk-none p { margin: 0 0 10px; }
 .piece-pick .pk-more { padding: 7px 12px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: color-mix(in oklab, var(--ink-faint) 12%, var(--snow)); font: 600 12px/1.2 var(--font); color: var(--ink); cursor: pointer; }
 .piece-pick .pk-more:hover { background: var(--blush); }
-body.dark .piece-pick :is(.pk-tabs, .pk-search, .pk-more) { background: rgb(from var(--hilite) r g b / .08); }
-body.dark .piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-x):hover { background: var(--ob-line); }
+.piece-pick :is(.pk-tabs, .pk-search, .pk-more) { background: var(--m-piece-pick-bg-2); }
+.piece-pick :is(.pk-cell, .pk-icon, .pk-more, .pk-x):hover { background: var(--m-piece-pick-hover-bg); }
 
 /* ---------- an empty screen's hint: one size on screen at any zoom, centred in the screen ---------- */
 .screen-hints { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; }

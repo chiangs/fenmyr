@@ -13,6 +13,7 @@ import fs from 'node:fs';
 import type { Page } from 'playwright';
 import { everyOfflineCard } from '../tests/fixtures/boards.ts';
 import { launch } from '../tests/support/launch.ts';
+import { freshRepo, openPrototype } from '../tests/support/prototype.ts';
 import { parseRules } from './dark-css.ts';
 import { diff, frames, LOOKS, type Look, prepare } from './dark-look.ts';
 
@@ -93,10 +94,18 @@ const SCENES: { name: string; run: (page: Page) => Promise<void> }[] = [
     },
   },
   {
+    name: 'prototype',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await openPrototype(page, freshRepo('fenmyr-sweep-').repo);
+      await page.waitForSelector('#prGit', { timeout: 8000 });
+    },
+  },
+  {
     name: 'home',
     run: async page => {
       await page.keyboard.press('Escape');
-      await page.locator('#brand').click();
+      await page.locator('#homeBtn').click();
     },
   },
 ];

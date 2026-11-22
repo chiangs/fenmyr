@@ -177,7 +177,9 @@ export function survey(rules: Rule[], markup: Markup): Finding[] {
         found.push(f);
         if (kind === 'compound') continue;
         const own = norm(selector.replace(/^body\.dark /, ''));
-        const sameSel = light.filter(l => l.ctx === rule.ctx && l.selectors.some(s => norm(s) === own));
+        const all = light.filter(l => l.ctx === rule.ctx && l.selectors.some(s => norm(s) === own));
+        // the twin is the light rule just above the dark one, so two dark rules for one selector pair with their own
+        const sameSel = all.some(l => l.order < rule.order) ? all.filter(l => l.order < rule.order) : all;
         const exact = sameSel.filter(l => l.decls.some(d => d.prop === decl.prop)).at(-1);
         const near = exact ?? sameSel.at(-1);
         const sibling = exact

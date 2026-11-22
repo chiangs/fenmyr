@@ -3,7 +3,8 @@
 // only touches a rule it can do whole and safely: one selector, every declaration with a single-selector twin, no raw
 // colour, no CSS-wide keyword, and no variable that an element redefines (a token resolves at <body>, so `--ink` inside a
 // card, or `--fill`, would read the wrong thing). Everything else is listed with its reason and left for a hand fold.
-//   node tools/dark-fold.ts plan  [--status clean,check] [--area name] [--lines a-b,c] [--skip n,m] [--sweep all.json] [--dead n,m]
+//   node tools/dark-fold.ts plan  [--status clean,check] [--area name] [--lines a-b,c] [--skip n,m] [--sweep all.json] [--dead n,m] [--cut line:prop,…]
+//   (--cut takes one declaration out of a rule that stays, for one that was dead only until its rival was folded)
 //   (--dead cuts those rules without a token, for a rule `verify` showed dead: a rival always wins over it)
 //   (--sweep leaves out the rules whose element the sweep snapshot never found, which nothing could prove)
 //   node tools/dark-fold.ts apply [same options] --manifest out.json   then: node tools/themes-css.ts, node tools/budget.ts --write
@@ -13,141 +14,14 @@
 // catch a token that is dead because a rival always wins (verify names it; delete that dark rule and leave the light one).
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseRules, type Rule, readMarkup } from './dark-css.ts';
-import { byRule, type Finding, statusOf, survey } from './dark-survey.ts';
+import { parseRules, readMarkup } from './dark-css.ts';
+import { type Cut, type Fold, type Manifest, type Picks, type Plan, planOf, type Skip } from './dark-fold-plan.ts';
+import { survey } from './dark-survey.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const CSS = path.join(ROOT, 'web', 'style.css');
 const THEMES = path.join(ROOT, 'web', 'themes.css');
 const TOKENS = path.join(ROOT, 'src', 'web', 'settings', 'derivedModes.ts');
-
-type Fold = { prop: string; lightLine: number; lightSel: string; light: string; dark: string; token: string };
-type Plan = { rule: Rule; selector: string; folds: Fold[] };
-type Skip = { line: number; selector: string; why: string };
-type Manifest = { folded: { id: string; tokens: string[] }[]; skipped: Skip[] };
-
-const ROOTISH = /^(:root|html|body)(\.[\w-]+)*$/;
-// the variables an element can redefine: set by a rule below the root, by a style attribute or by script on an element
-function scopedVars(rules: Rule[]): Set<string> {
-  const out = new Set<string>();
-  for (const r of rules)
-    if (!r.selectors.every(s => ROOTISH.test(s))) for (const d of r.decls) if (d.prop.startsWith('--')) out.add(d.prop);
-  const scan = (file: string) => {
-    if (fs.statSync(file).isDirectory()) {
-      if (path.basename(file) !== 'settings') for (const f of fs.readdirSync(file)) scan(path.join(file, f));
-    } else if (file.endsWith('.ts')) {
-      const text = fs.readFileSync(file, 'utf8');
-      for (const m of text.matchAll(/setProperty\(\s*['"](--[\w-]+)/g)) out.add(m[1] ?? '');
-      for (const m of text.matchAll(/style=\\?"[^"]*?(--[\w-]+)\s*:/g)) out.add(m[1] ?? '');
-    }
-  };
-  scan(path.join(ROOT, 'src'));
-  return out;
-}
-
-const RAW = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?)\(\s*[\d.]/i;
-const KEYWORD = /^(inherit|initial|unset|revert|revert-layer)$/;
-// a card redefines the ink variables for what is inside it, so only a rule for something no card holds may read them
-const CARD_INK = new Set(['--ink', '--ink-soft', '--ink-faint']);
-function cardClasses(): Set<string> {
-  const out = new Set(['card']);
-  const scan = (file: string) => {
-    if (fs.statSync(file).isDirectory()) for (const f of fs.readdirSync(file)) scan(path.join(file, f));
-    else if (file.endsWith('.ts'))
-      for (const m of fs.readFileSync(file, 'utf8').matchAll(/class=\\?"([^"]*)"/g))
-        for (const c of (m[1] ?? '').replace(/\$\{[^}]*\}/g, ' ').split(/\s+/)) if (c) out.add(c);
-  };
-  for (const dir of ['canvas', 'cards']) scan(path.join(ROOT, 'src', 'web', dir));
-  return out;
-}
-type Guard = { scoped: Set<string>; inCard: (selector: string) => boolean };
-function whyNot(value: string, selector: string, { scoped, inCard }: Guard): string {
-  if (RAW.test(value)) return `a raw colour in "${value.slice(0, 50)}"`;
-  if (KEYWORD.test(value)) return `the value "${value}" can't be a token`;
-  const hit = [...value.matchAll(/var\((--[\w-]+)/g)]
-    .map(m => m[1] ?? '')
-    .find(v => scoped.has(v) && !(CARD_INK.has(v) && !inCard(selector)));
-  return hit ? `${hit} is redefined by an element` : '';
-}
-
-const ABBR: Record<string, string> = {
-  background: 'bg',
-  'background-color': 'bg',
-  'background-image': 'img',
-  color: 'ink',
-  'box-shadow': 'shadow',
-  'border-color': 'line',
-  'text-shadow': 'tshadow',
-};
-function nameOf(selector: string, prop: string): string {
-  const words = selector
-    .replace(/^body\.dark /, '')
-    .replace(/\[[^\]]*\]|:(?:not|is|where|has)\((?:[^()]|\([^()]*\))*\)/g, '')
-    .replace(/::?/g, ' ')
-    .match(/[a-zA-Z][\w-]*/g);
-  const slug = (words ?? ['x']).slice(-4).join('-').toLowerCase().replace(/-+/g, '-');
-  return `--m-${slug}-${ABBR[prop] ?? prop}`;
-}
-
-type Picks = {
-  area: string;
-  only: Set<string>;
-  pick: (line: number) => boolean;
-  seen?: Set<string>;
-  dead: Set<number>;
-};
-function planOf(rules: Rule[], found: Finding[], { only, pick, seen, dead }: Picks) {
-  const cards = cardClasses();
-  const guard: Guard = {
-    scoped: scopedVars(rules),
-    inCard: sel => (sel.match(/\.[\w-]+/g) ?? []).some(c => cards.has(c.slice(1))),
-  };
-  const light = rules.filter(r => !r.selectors.some(s => /body\.dark(?![\w-])/.test(s)));
-  const plans: Plan[] = [];
-  const skipped: Skip[] = [];
-  for (const [rule, fs] of byRule(found)) {
-    if (!pick(rule.line) || !only.has(statusOf(fs))) continue;
-    const selector = rule.selectors.join(', ');
-    const no = (why: string) => skipped.push({ line: rule.line, selector, why });
-    const folds: Fold[] = [];
-    let why = '';
-    // a rule `verify` showed dead goes without a token: the light rule keeps its own value
-    if (dead.has(rule.line)) {
-      plans.push({ rule, selector, folds });
-      continue;
-    }
-    for (const f of fs) {
-      if (seen && !seen.has(`@${rule.line} ${f.selector}`)) {
-        why = 'no scene of the sweep shows its element';
-        break;
-      }
-      // a declaration that never applies, or says what the light rule says, goes with the rule and needs no token
-      if (!f.selector.startsWith('body.dark ')) {
-        why = 'a compound selector';
-        break;
-      }
-      if (f.dead || f.same) continue;
-      const twinRule = f.twin && light.find(r => r.line === f.twin?.line);
-      const twinDecl = twinRule?.decls.find(d => d.prop === f.decl.prop);
-      if (f.kind !== 'twin' || !f.twin || !twinRule || !twinDecl) why = `${f.decl.prop} has no twin of its own`;
-      else if (twinRule.selectors.length !== 1) why = `the light rule at ${twinRule.line} has more than one selector`;
-      else if (twinDecl.important !== f.decl.important) why = `${f.decl.prop}: !important differs from the light rule`;
-      else why = whyNot(twinDecl.value, f.selector, guard) || whyNot(f.decl.value, f.selector, guard);
-      if (why || !f.twin || !twinDecl) break;
-      folds.push({
-        prop: f.decl.prop,
-        lightLine: f.twin.line,
-        lightSel: twinRule?.selectors[0] ?? '',
-        light: twinDecl.value,
-        dark: f.decl.value,
-        token: nameOf(f.selector, f.decl.prop),
-      });
-    }
-    if (why) no(why);
-    else plans.push({ rule, selector, folds });
-  }
-  return { plans, skipped };
-}
 
 // where the rule whose first selector is `selector` on `line` begins, and where its braces open and close; the rule may
 // share its line with others
@@ -187,8 +61,9 @@ function cutRule(blank: string, text: string, r: { lineStart: number; start: num
     ? { from: r.start - gap, to: r.close + after.length, text: '' }
     : { from: r.start, to: r.close + after.length, text: '' };
 }
-function apply(plans: Plan[]) {
+function apply(plans: Plan[], cuts: Cut[]) {
   const text = fs.readFileSync(CSS, 'utf8');
+  const rules = parseRules(text);
   const blank = text.replace(/\/\*[\s\S]*?\*\//g, c => c.replace(/[^\n]/g, ' '));
   const taken = existingTokens();
   const tokens = new Map<string, [string, string]>();
@@ -201,30 +76,51 @@ function apply(plans: Plan[]) {
     const dark = blockAt(blank, p.rule.line, p.rule.selectors[0] ?? '');
     const prelude = blank.slice(dark.start, dark.open).replace(/\s+/g, ' ').trim();
     let why = prelude === p.selector.replace(/\s+/g, ' ') ? '' : 'could not find the rule where the survey said';
-    for (const f of p.folds) {
-      if (why) break;
-      const light = blockAt(blank, f.lightLine, f.lightSel);
-      const body = blank.slice(light.open, light.close);
-      const re = new RegExp(`(?:^|[{;\\s])${regexEscape(f.prop)}\\s*:\\s*(${regexEscape(f.light)})`, 'g');
-      const hit = [...body.matchAll(re)].at(-1);
-      if (!hit) {
-        why = `could not find ${f.prop} in the light rule`;
-        break;
-      }
+    const tokenFor = (f: Fold) => {
       const reuse = [...tokens].find(([, v]) => v[0] === f.light && v[1] === f.dark)?.[0];
       let name = reuse ?? f.token;
       for (let n = 2; !reuse && (tokens.has(name) || taken.has(name)); n++) name = `${f.token}-${n}`;
       tokens.set(name, [f.light, f.dark]);
       used.push(name);
-      const from = light.open + (hit.index ?? 0) + hit[0].length - f.light.length;
-      mine.push({ from, to: from + f.light.length, text: `var(${name})` });
-    }
+      return name;
+    };
+    if (p.mode === 'add') {
+      // no twin to edit: the dark rule becomes a light rule that reads the tokens, where the dark rule was
+      const decls = [...new Set(p.folds.map(f => `${f.prop}: var(${tokenFor(f)})${f.important ? ' !important' : ''}`))];
+      const own = p.rule.selectors.map(sel => sel.replace(/^body\.dark /, '')).join(', ');
+      if (!why) mine.push({ from: dark.start, to: dark.close, text: `${own} { ${decls.join('; ')}; }` });
+    } else
+      for (const f of p.folds) {
+        if (why) break;
+        const light = blockAt(blank, f.lightLine, f.lightSel);
+        const body = blank.slice(light.open, light.close);
+        const re = new RegExp(`(?:^|[{;\\s])${regexEscape(f.prop)}\\s*:\\s*(${regexEscape(f.light)})`, 'g');
+        const hit = [...body.matchAll(re)].at(-1);
+        if (!hit) {
+          why = `could not find ${f.prop} in the light rule`;
+          break;
+        }
+        const from = light.open + (hit.index ?? 0) + hit[0].length - f.light.length;
+        mine.push({ from, to: from + f.light.length, text: `var(${tokenFor(f)})` });
+      }
     if (why) {
       failed.push({ line: p.rule.line, selector: p.selector, why });
       continue;
     }
-    edits.push(...mine, cutRule(blank, text, dark));
+    edits.push(...mine, ...(p.mode === 'add' ? [] : [cutRule(blank, text, dark)]));
     names.set(p.rule.line, used);
+  }
+  for (const c of cuts) {
+    const rule = rules.find(r => r.line === c.line && r.selectors.some(s => /body\.dark/.test(s)));
+    const at = rule ? blockAt(blank, c.line, rule.selectors[0] ?? '') : null;
+    const body = at ? blank.slice(at.open, at.close) : '';
+    const hit = at && new RegExp(`(?:^|[{;\\s])(${regexEscape(c.prop)}\\s*:[^;}]*;?)[ \\t]*`).exec(body);
+    if (!at || !hit) {
+      failed.push({ line: c.line, selector: rule?.selectors.join(', ') ?? '', why: `could not find ${c.prop} to cut` });
+      continue;
+    }
+    const from = at.open + hit.index + hit[0].indexOf(hit[1] ?? '');
+    edits.push({ from, to: at.open + hit.index + hit[0].length, text: '' });
   }
   edits.sort((a, b) => b.from - a.from);
   let out = text;
@@ -289,6 +185,10 @@ function parseArgs(args: string[]): Picks & { manifest: string } {
     pick: line => !skip.has(line) && (!ranges.length || ranges.some(([a = 0, b = a]) => line >= a && line <= b)),
     manifest: opt('--manifest'),
     seen: opt('--sweep') ? seenIn(opt('--sweep')) : undefined,
+    cuts: opt('--cut')
+      .split(',')
+      .filter(Boolean)
+      .map(c => ({ line: Number(c.split(':')[0]), prop: c.split(':')[1] ?? '' })),
     dead: new Set(opt('--dead').split(',').filter(Boolean).map(Number)),
   };
 }
@@ -345,7 +245,7 @@ if (command === 'plan' || command === 'apply') {
   for (const s of skipped) console.log(`SKIP @${s.line} ${s.selector.slice(0, 70)}: ${s.why}`);
   console.log(`${plans.length} rules foldable, ${skipped.length} left for a hand fold`);
   if (command === 'apply') {
-    const { tokens, failed, names } = apply(plans);
+    const { tokens, failed, names } = apply(plans, picks.cuts);
     addTokens(tokens);
     for (const s of failed) console.log(`FAILED @${s.line} ${s.selector}: ${s.why}`);
     const out: Manifest = {

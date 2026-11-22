@@ -600,6 +600,7 @@
     "tools/dark-survey.ts": "Lists the body.dark rules by area and says what can be done with each: delete it, fold it into a per-mode token, or leave it, with the rivals that would win.",
     "tools/dark-css.ts": "Reads a stylesheet for the dark survey: rules in source order with specificity, selectors as the elements they name, and what the markup says about their classes.",
     "tools/dark-probe.ts": "Proves a stylesheet fold changed nothing: reads the colours the running app computes for the folded elements in every look and state, before and after, and compares them.",
+    "tools/dark-fold-plan.ts": "Plans the dark-rule folds: which rules can fold, the light value and token for each, and why the others cannot.",
     "tools/dark-fold.ts": "Folds body.dark rules into per-mode tokens from the survey's twins, with guards for the hazards, and says which folded rules a sweep shows live.",
     "tools/dark-look.ts": "What the dark probe and sweep share: the six looks, the board they open, the page set-up, and the diff of two snapshots.",
     "tools/dark-sweep.ts": "Reads what every body.dark rule styles, element by element, in every look and forced hover or focus, before and after a fold, and lists the rules no scene reaches.",

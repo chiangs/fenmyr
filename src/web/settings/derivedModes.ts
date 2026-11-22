@@ -14,6 +14,10 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
     'color-mix(in srgb, var(--panel, var(--snow)) 56%, var(--pink-deep) 44%)',
     'color-mix(in srgb, var(--panel, var(--dark-raised)) 56%, var(--pink-deep) 44%)',
   ],
+  '--m-card-frame-shadow': [
+    '0 10px 30px rgba(var(--sh), calc(.10 * var(--sh-k))), 0 1px 3px rgb(from var(--shade) r g b / .04)',
+    '0 10px 30px rgb(from var(--shade) r g b / .35)',
+  ],
   '--m-card-section-sec-name-bg': ['rgb(from var(--hilite) r g b / .78)', 'rgb(from var(--hilite) r g b / .1)'],
   '--m-card-section-sec-name-shadow': [
     '0 2px 8px rgb(from var(--sec-shadow) r g b / .1), inset 0 0 0 1px rgb(from var(--hilite) r g b / .9)',
@@ -48,6 +52,7 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-dt-myra-ink': ['var(--ink-inverse)', 'var(--dt-ink-2)'],
   '--m-dv-dl-bg': ['var(--dv-btn)', 'rgb(from var(--hilite) r g b / .08)'],
   '--m-dv-dl-ink': ['var(--ink)', 'var(--dv-light-ink)'],
+  '--m-find-bar-fb-sep-bg': ['rgb(from var(--shade) r g b / .1)', 'rgb(from var(--hilite) r g b / .14)'],
   '--m-gear-tip-bg': ['var(--ink)', 'var(--pn-dark-tip)'],
   '--m-home-img': [
     'radial-gradient(var(--dot) 1.2px, transparent 1.2px)',
@@ -59,12 +64,18 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-ly-on-bg': ['var(--blush)', 'rgb(from var(--lf-shadow) r g b / .22)'],
   '--m-m-bubble-small-ink': ['var(--pink-deep)', 'var(--chat-ink-2)'],
   '--m-news-li-bg': ['var(--news-bg)', 'rgb(from var(--hilite) r g b / .05)'],
+  '--m-news-ob-panel-bg': ['var(--m-ob-panel-bg)', 'var(--surface)'],
   '--m-ob-field-input-bg': ['var(--surface-2)', 'var(--ob-bg-4)'],
   '--m-ob-panel-bg': ['var(--snow)', 'var(--surface)'],
   '--m-ob-primary-bg': ['var(--ink)', 'var(--coll-ink)'],
   '--m-ob-primary-ink': ['var(--ink-inverse)', 'var(--au-bg-3)'],
   '--m-onboard-bg': ['rgb(from var(--onboard-bg) r g b / .55)', 'rgb(from var(--crop-shadow) r g b / .6)'],
   '--m-piece-pick-bg': ['var(--snow)', 'var(--surface)'],
+  '--m-piece-pick-bg-2': [
+    'color-mix(in oklab, var(--ink-faint) 12%, var(--snow))',
+    'rgb(from var(--hilite) r g b / .08)',
+  ],
+  '--m-piece-pick-hover-bg': ['var(--blush)', 'var(--ob-line)'],
   '--m-piece-pick-pk-tabs-bg': ['var(--snow)', 'var(--surface-2)'],
   '--m-piece-pick-shadow': [
     '0 12px 32px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k)))',
@@ -76,6 +87,16 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   ],
   '--m-place-hint-ink': ['var(--ink-inverse)', 'var(--au-bg-3)'],
   '--m-rz-grip-svg-path-fill': ['rgb(from var(--rz-bg) r g b / .18)', 'rgb(from var(--hilite) r g b / .18)'],
+  '--m-sb-cases-button-on-ink': ['var(--ink)', 'var(--hilite)'],
+  '--m-sb-dots-button-on-shadow': [
+    '0 0 0 2px var(--snow), 0 0 0 3.5px var(--select)',
+    '0 0 0 2px var(--hilite), 0 0 0 3.5px var(--select), inset 0 0 0 1px rgb(from var(--hilite) r g b / .3)',
+  ],
+  '--m-sb-dots-button-shadow': [
+    'inset 0 0 0 1px rgb(from var(--shade) r g b / .12)',
+    'inset 0 0 0 1px rgb(from var(--hilite) r g b / .3)',
+  ],
+  '--m-sb-due-sd-chips-button-bg': ['rgb(from var(--shade) r g b / .05)', 'rgb(from var(--hilite) r g b / .08)'],
   '--m-sb-pop-bg': ['var(--panel, var(--snow))', 'var(--sb-bg-8)'],
   '--m-sb-pop-shadow': [
     '0 16px 40px rgb(from var(--sb-shadow-2) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05)',
@@ -101,8 +122,10 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-set-btn-hot-bg': ['var(--ink)', 'var(--set-light-ink)'],
   '--m-set-btn-hot-ink': ['var(--ink-inverse)', 'var(--set-dark-ink)'],
   '--m-set-feedback-bg': ['var(--set-feedback)', 'rgb(from var(--set-feedback-dark) r g b / .14)'],
+  '--m-set-input-bg': ['rgb(from var(--shade) r g b / .05)', 'rgb(from var(--hilite) r g b / .08)'],
   '--m-set-panel-bg': ['var(--snow)', 'var(--surface)'],
   '--m-settings-bg': ['rgb(from var(--set-scrim) r g b / .18)', 'rgb(from var(--shade) r g b / .45)'],
+  '--m-sh-grab-i-bg': ['color-mix(in oklab, var(--dot) 84%, var(--snow))', 'var(--sh-bg-2)'],
   '--m-sh-panel-bg': ['var(--snow)', 'var(--sh-bg-6)'],
   '--m-sm-sig-ink': ['color-mix(in oklab, var(--accent-soft) 76%, var(--ink))', 'var(--web-ink)'],
   '--m-sp-body-bg': ['var(--snow)', 'var(--dark-raised)'],
@@ -112,6 +135,11 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-tag-ink': ['currentcolor', 'var(--hilite)'],
   '--m-tgl-checked-bg': ['var(--mint-deep)', 'var(--mint-deep, var(--set-toggle-on))'],
   '--m-tgl-knob': ['var(--snow)', 'var(--set-dark-knob)'],
+  '--m-tile-cover-btn-bg': ['rgb(from var(--hilite) r g b / .92)', 'var(--surface-2)'],
+  '--m-tile-cover-btn-shadow': [
+    '0 4px 12px rgb(from var(--shade) r g b / .12)',
+    '0 4px 12px rgb(from var(--shade) r g b / .35)',
+  ],
   '--m-tilt-pop-bg': ['var(--panel, var(--snow))', 'var(--dbs-bg)'],
   '--m-tilt-pop-shadow': [
     '0 16px 40px rgb(from var(--dbs-shadow) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05)',
