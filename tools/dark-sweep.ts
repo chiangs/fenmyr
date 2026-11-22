@@ -11,9 +11,10 @@
 // track's pseudo-element, a state a scene doesn't set up); leave those out with --lines or --match.
 import fs from 'node:fs';
 import type { Page } from 'playwright';
+import { everyOfflineCard } from '../tests/fixtures/boards.ts';
 import { launch } from '../tests/support/launch.ts';
 import { parseRules } from './dark-css.ts';
-import { BOARD, diff, frames, LOOKS, prepare } from './dark-look.ts';
+import { diff, frames, LOOKS, prepare } from './dark-look.ts';
 
 declare global {
   interface Window {
@@ -64,21 +65,38 @@ function targetsOf(css: string, only: (line: number, selector: string) => boolea
   });
 }
 
-// scenes build on each other: the board, then Settings over it, then Myra's chat
+// a board with every card the app can make offline, and scenes that build on each other: the board with a note selected,
+// then other cards selected, Settings over it, Myra's chat, a Doc open, and the home screen
+const SELECTED = (id: string) => async (page: Page) => {
+  await page.evaluate(card => window.__fenmyr.selectOnly([card]), id);
+  await page.mouse.move(1439, 899);
+};
 const SCENES: { name: string; run: (page: Page) => Promise<void> }[] = [
-  {
-    name: 'board',
-    run: async page => {
-      await page.evaluate(() => window.__fenmyr.selectOnly(['a']));
-      await page.mouse.move(1439, 899);
-    },
-  },
+  { name: 'board', run: SELECTED('note') },
+  { name: 'text', run: SELECTED('text') },
+  { name: 'shape', run: SELECTED('shape') },
+  { name: 'todo', run: SELECTED('todo') },
   { name: 'settings', run: page => page.locator('#gearBtn').click() },
   {
     name: 'chat',
     run: async page => {
       await page.keyboard.press('Escape');
       await page.locator('#mPill').click();
+    },
+  },
+  {
+    name: 'doc',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await page.locator('#cards [data-id="doc"]').dblclick();
+      await page.waitForSelector('.dv-prose', { timeout: 8000 });
+    },
+  },
+  {
+    name: 'home',
+    run: async page => {
+      await page.keyboard.press('Escape');
+      await page.locator('#brand').click();
     },
   },
 ];
@@ -165,7 +183,8 @@ async function snapshot(out: string, args: string[]) {
   const values: Record<string, string> = {};
   const seen = new Map<string, number>(targets.map(t => [t.id, 0]));
   for (const look of LOOKS) {
-    const app = await launch({ boards: [BOARD], open: 'p', settings: look.settings });
+    const board = everyOfflineCard();
+    const app = await launch({ boards: [board], open: board.id, settings: look.settings });
     await prepare(app.page);
     await app.page.evaluate(() => {
       window.__sweepPaint = v =>
