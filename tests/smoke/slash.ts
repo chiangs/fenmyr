@@ -96,7 +96,7 @@ export async function slash(t: Smoke) {
     live: b4.count === '1 of 1' && b4.prevOff,
     none: b5.count === 'No matches' && b5.dim === 0,
     closes: !b6.shown && b6.dim === 0 && b6.cur === 0,
-    menu: menu === '#On this board,find,tag,tidy,due,fit,timer,#In this chat,birthday,animate,clear,help',
+    menu: menu === '#On this board,find,tag,tidy,due,fit,timer,template,#In this chat,birthday,animate,clear,help',
     closed,
     tidy: /Lined 4 notes/.test(said),
   });

@@ -147,6 +147,10 @@ export const PASTELS: Record<string, string> = {
 export const LABEL_VAR = '--colour-label';
 // the focus ring of a theme with `ring`: tools/themes-css.ts writes it, and tests/focusRing.ts holds every control to it
 export const RING = { width: '3px', offset: '2px' };
+// the class on <body> that turns that ring off: Settings, Appearance, Accessibility, Thicker focus ring
+export const RING_OFF = 'no-thick-focus';
+// and the one that lets a tilted card show its tilt in a theme that sits its cards straight
+export const STRAIGHT_OFF = 'no-straight';
 
 export const CARD_VAR_NAMES = Object.keys(PASTELS).flatMap(k =>
   cardVars(k, { fill: '', ink: '', soft: '', faint: '', link: '', deep: '' }).map(([name]) => name),

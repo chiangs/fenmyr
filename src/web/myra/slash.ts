@@ -1,4 +1,6 @@
+import { queryWords } from '../core/base.ts';
 import { session } from '../core/state.ts';
+import { matchesSearch, tagOf, templateEntries } from '../features/templateList.ts';
 import { timer } from '../features/timer.ts';
 import { closestTo, elementById, esc } from '../ui/dom.ts';
 import { ANIMS } from './anim.ts';
@@ -9,10 +11,11 @@ import { chatOpen, myraOpen } from './chatWindow.ts';
 import { helpText, SLASH, SLASH_GROUPS, type SlashEntry } from './greet.ts';
 import { reply } from './say.ts';
 
-// one row of the menu: a command to start, or ready-made words (a /timer preset, an /animate name)
+// one row of the menu: a command to start, or ready-made words (a /timer preset, an /animate name, a template). group:
+// the heading above the first of a run of ready-made rows that share one.
 type SlashRow = { key: string; title: string; desc: string } & (
   | { kind: 'cmd'; cmd: SlashEntry }
-  | { kind: 'fill'; fill: string }
+  | { kind: 'fill'; fill: string; group?: string }
 );
 
 const box = () => elementById('mcInput', HTMLTextAreaElement);
@@ -91,6 +94,25 @@ function rows(value: string): SlashRow[] {
         }),
       ),
     ];
+  // /template lists the picker's templates, and the words after it filter them as the picker's search does
+  const tpl = /^\/template(?: +(.*))?$/i.exec(value);
+  if (tpl) {
+    const words = queryWords(tpl[1]);
+    return templateEntries()
+      .filter(e => matchesSearch(words, e.name, e.line))
+      .map((e): SlashRow => {
+        const name = esc(e.name),
+          tag = esc(tagOf(e));
+        return {
+          kind: 'fill',
+          key: `${e.kind}:${e.key}`,
+          group: e.group,
+          title: `<b>${name} <i>${tag}</i></b>`,
+          desc: e.line,
+          fill: `/template ${e.name}`,
+        };
+      });
+  }
   const typed = /^\/(\w*)$/.exec(value)?.[1];
   if (typed === undefined) return [];
   // a stable sort, so the registry's order holds inside each group
@@ -103,11 +125,17 @@ function rows(value: string): SlashRow[] {
     });
 }
 
-// the group's name above its first command; ready-made rows have no group, so their list has no headers
+function groupOf(r: SlashRow | undefined) {
+  if (r?.kind === 'cmd') return SLASH_GROUPS[r.cmd.group];
+  return r?.kind === 'fill' ? r.group : undefined;
+}
+
+// the group's name above its first row; ready-made rows with no group, such as /timer's presets, have no headers
 function groupHead(r: SlashRow, prev: SlashRow | undefined) {
-  if (r.kind !== 'cmd' || (prev?.kind === 'cmd' && prev.cmd.group === r.cmd.group)) return '';
-  const label = SLASH_GROUPS[r.cmd.group];
-  return `<div class="slash-group">${label}</div>`;
+  const label = groupOf(r);
+  if (!label || label === groupOf(prev)) return '';
+  const text = esc(label);
+  return `<div class="slash-group">${text}</div>`;
 }
 
 function show() {

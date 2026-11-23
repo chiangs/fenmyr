@@ -252,7 +252,7 @@ body.theme-clear {
   --shade: #000000;
   --colour-label: block;
   --card-edge: inset 0 0 0 1.5px var(--border);
-  --straight: 0;
+  --straight: 1;
   --card-white: #ffffff;
   --card-white-ink: #14110e;
   --card-white-soft: #43413e;
@@ -400,7 +400,7 @@ body.dark.theme-lantern {
   --shade: #000000;
   --colour-label: block;
   --card-edge: inset 0 0 0 1.5px var(--border);
-  --straight: 0;
+  --straight: 1;
   --card-white: #d9dde2;
   --card-white-ink: #101214;
   --card-white-soft: #383b3d;
@@ -990,12 +990,16 @@ body.dark {
   --ws-bg: color-mix(in oklab, var(--snow) 88%, var(--select));
   --ws-bg-2: color-mix(in oklab, var(--snow) 80%, var(--select));
 }
-body.theme-clear :focus-visible,
-body.dark.theme-lantern :focus-visible {
+body.theme-clear:not(.no-thick-focus) :focus-visible,
+body.dark.theme-lantern:not(.no-thick-focus) :focus-visible {
   outline: 3px solid var(--select) !important;
   outline-offset: 2px !important;
 }
-body.theme-clear .card.sel::after,
-body.dark.theme-lantern .card.sel::after {
+body.theme-clear:not(.no-thick-focus) .card.sel::after,
+body.dark.theme-lantern:not(.no-thick-focus) .card.sel::after {
   border-width: 3px;
+}
+body.theme-clear:not(.no-straight),
+body.dark.theme-lantern:not(.no-straight) {
+  --straight: 0;
 }

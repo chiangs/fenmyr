@@ -219,4 +219,21 @@ const offer: Group = {
   ],
 };
 
-export const MYRA_GROUPS = { reply, sees, panels, offer, plan };
+// typing /template lists the picker's templates above her input; a checkout without the command lists nothing, so the
+// state is listed as meant
+const template: Group = {
+  states: [
+    [
+      'menu',
+      async page => {
+        await page.evaluate(() =>
+          document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
+        );
+        await page.click('#mPill');
+        await page.fill('#mcInput', '/template');
+      },
+    ],
+  ],
+};
+
+export const MYRA_GROUPS = { reply, sees, panels, offer, plan, template };
