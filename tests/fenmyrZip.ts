@@ -1,8 +1,7 @@
 // The Fenmyr zip through the host: what the two operations write and read on disk. A zip is written a piece at a time
 // and read back by the index at its end, so a video that holds the bytes of a zip header comes back whole. A zip with a
 // name that leads out of the media folder, or sits outside the three places, or is not ours, or is from a newer
-// Fenmyr, or holds a folder or project (not placed yet), is refused with nothing created. Cards that can't be kept
-// and videos that are not there are counted.
+// Fenmyr, is refused with nothing created. Cards that can't be kept and videos that are not there are counted.
 import assert from 'node:assert';
 import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
@@ -204,32 +203,11 @@ const refusals: [string, Uint8Array, string][] = [
   ['an empty file', new Uint8Array(0), REFUSALS.notZip],
   ['a zip with a damaged manifest', packZip({ 'fenmyr.json': text('{') }), REFUSALS.notZip],
   ['a newer format', zipOf({ ...manifestFor(['b1']), format: 2 }, { b1: board('b1') }), REFUSALS.newer],
-  [
-    'a folder zip',
-    zipOf(
-      {
-        ...manifestFor(['b1']),
-        root: { kind: 'folder', id: 'f1' },
-        folders: [{ id: 'f1', name: 'F', project: null, parent: null }],
-      },
-      { b1: board('b1') },
-    ),
-    REFUSALS.later,
-  ],
-  [
-    'a project zip',
-    zipOf(
-      { ...manifestFor(['b1']), root: { kind: 'project', id: 'p1' }, projects: [{ id: 'p1', name: 'P' }] },
-      { b1: board('b1') },
-    ),
-    REFUSALS.later,
-  ],
 ];
 for (const [what, bytes, words] of refusals) {
   assert.strictEqual(refused(await op('zipImport', { path: zipFile('refused.zip', bytes) })), words, what);
   nothing(what);
 }
-assert.match(REFUSALS.later, /Folder and project zips aren't supported yet/);
 // a truncated zip, and one whose video was changed after it was written, are not ours either
 const whole = fs.readFileSync(target);
 assert.strictEqual(

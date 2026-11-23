@@ -15,7 +15,6 @@ import {
 import {
   buildZip,
   FORMAT,
-  importable,
   jsonBytes,
   makeManifest,
   nameRefusal,
@@ -147,9 +146,6 @@ assert.deepStrictEqual(
 );
 const read = readManifest(JSON.parse(JSON.stringify(m)));
 assert.ok(read.ok && read.value.root.kind === 'board', 'a manifest reads back');
-assert.strictEqual(importable('board'), null);
-for (const kind of ['folder', 'project'] as const)
-  assert.strictEqual(importable(kind), 'later', `a ${kind} zip is read, and not placed yet`);
 
 // parseExport: what it accepts
 const one = zipOf(manifestFor(['b1']), { b1: board('b1', { cards: [card('c', 'note', { text: 'hi' })] }) });
@@ -349,10 +345,9 @@ assert.deepStrictEqual(
 );
 for (const bad of [null, 'x', 7, {}, { manifest: {}, boards: [] }, { manifest: { fenmyr: 'export', format: 9 } }])
   assert.strictEqual(readImport(bad), null, `a reply of ${JSON.stringify(bad)} is not an import`);
-assert.match(REFUSALS.later, /Folder and project zips aren't supported yet/);
 assert.deepStrictEqual(
   Object.keys(REFUSALS).sort(),
-  ['later', 'newer', 'notZip', 'tooBig', 'unsafe'],
+  ['newer', 'notZip', 'tooBig', 'unsafe'],
   'each way to be refused has its words',
 );
 

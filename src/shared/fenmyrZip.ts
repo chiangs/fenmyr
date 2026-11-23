@@ -36,32 +36,16 @@ export type Manifest = {
 // what was read from a zip: the boards after the checks, and what the checks dropped
 export type ImportResult = { manifest: Manifest; boards: StoredBoard[]; skipped: number; missing: number };
 
-export type Refusal = 'notZip' | 'newer' | 'unsafe' | 'later' | 'tooBig';
+export type Refusal = 'notZip' | 'newer' | 'unsafe' | 'tooBig';
 export const REFUSALS: Record<Refusal, string> = {
   notZip: "This isn't a Fenmyr zip.",
   newer: 'This zip is from a newer Fenmyr. Update Fenmyr to open it.',
   unsafe: "This zip has files in places it shouldn't, so I didn't open it.",
-  later: "Folder and project zips aren't supported yet.",
   tooBig: 'That zip is over 4 GB, which is more than I can open.',
 };
 type Verdict<T> = { ok: true; value: T } | { ok: false; refusal: Refusal };
 const yes = <T>(value: T): Verdict<T> => ({ ok: true, value });
 const no = (refusal: Refusal): Verdict<never> => ({ ok: false, refusal });
-
-// This build opens boards only; folder and project zips are read but not placed yet.
-export function importable(kind: RootKind): Refusal | null {
-  switch (kind) {
-    case 'board':
-      return null;
-    case 'folder':
-    case 'project':
-      return 'later';
-    default: {
-      const never: never = kind;
-      throw new Error(`unknown root ${String(never)}`);
-    }
-  }
-}
 
 const BOARD_FILE = /^boards\/([\p{L}\p{N}-]{1,64})\.json$/u;
 const PLAIN = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,127}$/u;

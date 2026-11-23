@@ -1,12 +1,4 @@
-import {
-  buildZip,
-  type ImportResult,
-  importable,
-  REFUSALS,
-  readImport,
-  readZip,
-  relinkMedia,
-} from '../../shared/fenmyrZip.ts';
+import { buildZip, type ImportResult, REFUSALS, readImport, readZip, relinkMedia } from '../../shared/fenmyrZip.ts';
 import type { Ops } from '../../shared/ops.ts';
 import { call } from '../hostCall.ts';
 
@@ -57,8 +49,6 @@ export const zipFallbacks: typeof zipOps = {
     });
     const read = readZip(new Uint8Array(bytes));
     if (!read.ok) throw new Error(REFUSALS[read.refusal]);
-    const later = importable(read.value.manifest.root.kind);
-    if (later) throw new Error(REFUSALS[later]);
     // its videos are not read here: their cards are kept, marked, and counted
     const linked = relinkMedia(read.value.boards, new Map());
     return { ...read.value, boards: linked.boards, missing: linked.missing };

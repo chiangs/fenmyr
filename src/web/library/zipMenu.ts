@@ -13,5 +13,9 @@ export function zipAction(a: string, kind: Kind, row: { id: string }): Promise<v
   if (a === 'zipOut') return exportZip(kind, row.id);
   if (a !== 'zipIn') return null;
   const folder = kind === 'folder' ? appState.folders.find(f => f.id === row.id) : undefined;
-  return importZip({ project: folder ? (folder.project ?? null) : row.id, folder: folder?.id ?? null });
+  return importZip(
+    { project: folder ? (folder.project ?? null) : row.id, folder: folder?.id ?? null },
+    undefined,
+    true,
+  );
 }
