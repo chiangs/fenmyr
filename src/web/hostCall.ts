@@ -3,6 +3,7 @@ import type { Ops } from '../shared/ops.ts';
 declare global {
   interface Window {
     fenmyrHost?: { platform?: string; post(msg: unknown): void };
+    fenmyrWindow?: { minimize(): void; maximize(): void; close(): void };
     __fenmyrReply?: (id: number, ok: boolean, value: unknown) => void;
   }
 }
