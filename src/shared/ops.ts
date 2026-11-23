@@ -1,5 +1,6 @@
 import type { AskFile } from './askFiles.ts';
 import type { BuildEvent } from './build.ts';
+import type { AppBuild } from './buildStamp.ts';
 
 type None = Record<string, never>;
 
@@ -168,6 +169,7 @@ export type Ops = {
   usage: { args: None; result: UsageSummary };
   resetUsage: { args: None; result: true };
   version: { args: None; result: string };
+  appBuild: { args: None; result: AppBuild };
   linkPreview: { args: { url: string }; result: LinkPreview };
   fetchImage: { args: { url: string }; result: string };
   ask: {

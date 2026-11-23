@@ -36,6 +36,7 @@
   "files": {
     ".claude/hooks/check.ts": "Runs the fast checks before Claude finishes and hands failures back once.",
     ".claude/hooks/typecheck.ts": "Type-checks after an edit to a TypeScript file and returns any errors.",
+    "src/host/appBuild.ts": "Reads the build stamp once as Fenmyr starts and answers with what this copy is: its version and commit, how it was installed and what it runs on.",
     "src/host/askFiles.ts": "Checks the files added to a message to Myra by their bytes and writes them where only that request’s Claude Code reads them.",
     "src/host/build.ts": "Starts a prototype build, one per repo, and reports its start, each file edited and how it ended, as events.",
     "src/host/claude.ts": "Runs Claude Code for Myra: asks, rewrites, image prices and fills, and finds the command if it is installed later.",
@@ -76,6 +77,7 @@
     "src/shared/replyUndo.ts": "Plans Undo under one of Myra’s replies from its record, and the same merge run forward to land a planned reply: what changes, and what the person changed since and keeps.",
     "src/shared/repos.ts": "Repo links: reading them safely, naming repos and spotting two projects that clash on one repo.",
     "src/web/app/news.ts": "The what’s-new card shown once the first time a new version opens.",
+    "src/web/app/newsItems.ts": "The what’s-new cards, one list per version, which the bridge also reads to name the newest version in a browser.",
     "src/web/app/onboarding.ts": "First run: set up with Myra, then an optional hands-on tour.",
     "src/web/app/start.ts": "Start-up: loads templates, vaults and boards, opens the first board, then greets and checks for updates.",
     "src/web/app/testHooks.ts": "Exposes the page’s inner workings as window.__fenmyr for the smoke tests.",

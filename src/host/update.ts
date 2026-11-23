@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { app } from 'electron';
+import type { AppInstall } from '../shared/buildStamp.ts';
 import type { UpdateInfo } from '../shared/ops.ts';
 import { download as fetchTo, get } from './net.ts';
 import P from './paths.ts';
@@ -40,6 +41,13 @@ function repoDir() {
   return dir && fs.existsSync(path.join(dir, '.git')) ? dir : null;
 }
 const appImage = () => process.env.APPIMAGE || null;
+// how this copy got here, from the same checks the updater makes
+export function installKind(): Exclude<AppInstall, 'web'> {
+  if (appImage()) return 'appimage';
+  if (installInfo()) return 'clone';
+  if (repoDir()) return 'checkout';
+  return process.platform === 'darwin' ? 'mac' : 'package';
+}
 
 async function git(args: string[], dir: string, timeout = 30) {
   const r = await run('git', ['-C', dir, ...args], timeout);

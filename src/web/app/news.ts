@@ -1,25 +1,9 @@
 import { $ } from '../core/dom.ts';
 import { esc } from '../ui/dom.ts';
+import { NEWS, type NewsItem } from './newsItems.ts';
 import { startTour } from './onboarding.ts';
 
 // ---------- what's new: a little card, once, the first time a new version opens ----------
-// what's new in Fenmyr: one card per version (each item: [icon name, title, a line about it])
-type NewsItem = [icon: string, title: string, line: string];
-const NEWS: Record<string, NewsItem[]> = {
-  '1.0.0': [
-    [
-      'myra-tool',
-      'Hello, I’m Myra',
-      'I’m a cloudberry who lives in your boards, and I help you sort, plan and build ✦',
-    ],
-    [
-      'palette',
-      'Nordic colours',
-      'Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch for your cards, with warm amber shadows.',
-    ],
-  ],
-};
-
 // the button on each version's card: try the headline thing
 const NEWS_TRY: Record<string, [label: string, run: () => void]> = { '1.0.0': ['Take the tour', () => startTour()] };
 
