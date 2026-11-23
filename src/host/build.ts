@@ -8,6 +8,7 @@ import { PROTO_DIR, splitBuildReply } from '../shared/repos.ts';
 import { claudeCode, quitting } from './claudeCode.ts';
 import type { CodeAgent } from './codeAgent.ts';
 import { status } from './git.ts';
+import { parseChoice } from './models.ts';
 import * as prompts from './prompts.ts';
 import { filesSince, installed, snapshot, undo } from './prototypes.ts';
 import { isRecord, text, type Untrusted } from './util.ts';
@@ -96,8 +97,9 @@ export function startBuild(
       packages: installed(s.root).join(', '),
       pictures: pictures.join('\n'),
     });
+    const model = await parseChoice(a.myraModel);
     const said = await agent(
-      { cwd: path.join(s.root, dir), prompt, readable: pictures.length ? [shots] : [], access: 'edit' },
+      { cwd: path.join(s.root, dir), prompt, readable: pictures.length ? [shots] : [], access: 'edit', model },
       file => send({ id, type: 'edit', file }),
     ).finally(() => fs.rmSync(shots, { recursive: true, force: true }));
     const files = await changed(),

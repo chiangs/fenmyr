@@ -2,6 +2,7 @@ import type { AskFile } from './askFiles.ts';
 import type { BuildEvent } from './build.ts';
 import type { AppBuild } from './buildStamp.ts';
 import type { ImportResult, Manifest } from './fenmyrZip.ts';
+import type { ModelChoice, ProviderModels } from './models.ts';
 import type { UpdateChannel } from './updateChannel.ts';
 
 type None = Record<string, never>;
@@ -189,14 +190,28 @@ export type Ops = {
       /** Pictures and text files added to this message; the host checks them against src/shared/askFiles.ts. */
       files?: AskFile[];
       plan?: PlanAsk;
+      /** Myra's model and effort for this call; without one, or one the provider doesn't list, Claude Code uses its own
+       *  default. The other calls to Claude Code take it too. */
+      myraModel?: ModelChoice;
     };
     result: string;
   };
-  rewrite: { args: { text: string; how: string; title: string; around: string }; result: string };
+  rewrite: {
+    args: { text: string; how: string; title: string; around: string; myraModel?: ModelChoice };
+    result: string;
+  };
   connections: { args: None; result: Connections };
-  higgsQuote: { args: { model?: string }; result: string };
-  higgsMake: { args: { model?: string; style?: string; images: (ImageJob & { aspect: string })[] }; result: string };
-  drawFill: { args: { style?: string; images: (ImageJob & { w: number; h: number })[] }; result: string };
+  models: { args: None; result: ProviderModels[] };
+  // model: the Higgsfield image model; myraModel: the one Claude Code runs on
+  higgsQuote: { args: { model?: string; myraModel?: ModelChoice }; result: string };
+  higgsMake: {
+    args: { model?: string; style?: string; images: (ImageJob & { aspect: string })[]; myraModel?: ModelChoice };
+    result: string;
+  };
+  drawFill: {
+    args: { style?: string; images: (ImageJob & { w: number; h: number })[]; myraModel?: ModelChoice };
+    result: string;
+  };
   export: {
     args: { x: number; y: number; w: number; h: number; name: string; pdf: boolean; scale: number };
     result: string;
@@ -272,6 +287,7 @@ export type Ops = {
       // the renderer's names for the build and its board, which its end repeats
       build: string;
       board: string;
+      myraModel?: ModelChoice;
     };
     result: { kind: 'started'; id: string } | { kind: 'busy' };
   };
@@ -281,7 +297,7 @@ export type Ops = {
   protoLastChange: { args: { root: string; dir: string }; result: { branch: string; when: number; subject: string } };
   // a short explanation, in Myra's words, of how the prototype's code works now, starting with these files (paths inside
   // its folder), from a Claude Code run that can only read
-  protoExplain: { args: { root: string; dir: string; files: string[] }; result: string };
+  protoExplain: { args: { root: string; dir: string; files: string[]; myraModel?: ModelChoice }; result: string };
   // busy, with nothing put back, while a build runs in the repo
   protoUndo: { args: { root: string; dir: string; snapshot: string }; result: { kind: 'undone' } | { kind: 'busy' } };
   // a file of an installed package, or null when there's none by that name

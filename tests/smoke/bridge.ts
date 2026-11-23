@@ -74,6 +74,7 @@ export async function bridge(t: Smoke) {
         'a4',
       );
     const conn = await Fenmyr.connections(),
+      models = await Fenmyr.models(),
       ask = await Fenmyr.ask('sort these', { cards: [], n: Infinity }, false, { mobbin: true, higgs: false }),
       usage2 = (await Fenmyr.usage()).today;
     // a real webm voice memo, recorded from a tone, goes through the WAV conversion
@@ -121,6 +122,7 @@ export async function bridge(t: Smoke) {
       docx,
       docPDF,
       conn,
+      models,
       ask,
       usage2,
       memoType: rec.mimeType,
@@ -164,6 +166,15 @@ export async function bridge(t: Smoke) {
     kanban: r.first.kanban,
   });
   t.check('connections', r.conn.mobbin === true && r.conn.higgsfield === false, r.conn);
+  // Claude Code alone, with its four models in the order the picker lists them, each at every effort level
+  const [claudeCode, ...otherProviders] = r.models;
+  t.checkAll('models', {
+    provider: claudeCode?.provider === 'claude-code' && claudeCode.name === 'Claude Code' && !otherProviders.length,
+    ids:
+      claudeCode?.models.map(m => m.id).join() ===
+      'claude-opus-5-5,claude-fable-5-2,claude-sonnet-5-5,claude-haiku-5-5',
+    efforts: !!claudeCode?.models.every(m => m.efforts.join() === 'low,medium,high,xhigh,max'),
+  });
   t.check('ask', typeof r.ask === 'string' && JSON.parse(r.ask).say === 'hi from fake claude', r.ask);
   t.check('usage', r.usage2.asks === 1 && r.usage2.tokensIn === 15, r.usage2);
   t.checkAll('prompt', {

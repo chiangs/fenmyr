@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import os from 'node:os';
+import type { ModelChoice } from '../shared/models.ts';
 import type {
   Chattiness,
   Connections,
@@ -12,6 +13,7 @@ import type {
   VaultTaskForMyra,
 } from '../shared/ops.ts';
 import { ASK_ROOT, parseFiles, writeFiles } from './askFiles.ts';
+import { modelArgs, parseChoice } from './models.ts';
 import P from './paths.ts';
 import * as prompts from './prompts.ts';
 import { isRecord, jsonSafe, readJSON, run, strings, text, type Untrusted } from './util.ts';
@@ -152,12 +154,12 @@ export const hookArgs = (more: Record<string, unknown> = {}) => [
 export const FOLDER_ONLY = { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true };
 
 // `cwd`: run there, with file tools kept inside it, so a request never reaches the folder that holds the boards
+type RunOptions = { need?: string; cwd?: string; model?: ModelChoice };
 async function runClaude(
   prompt: string,
   tools: string[],
   timeout: number,
-  need = 'I need Claude Code to do that.',
-  cwd?: string,
+  { need = 'I need Claude Code to do that.', cwd, model }: RunOptions = {},
 ) {
   const claude = await claudePath();
   if (!claude) throw new Error(need);
@@ -170,6 +172,7 @@ async function runClaude(
       'json',
       ...(cwd ? hookArgs({ permissions: FOLDER_ONLY }) : hookArgs()),
       ...(tools.length ? ['--allowedTools', tools.join(',')] : []),
+      ...modelArgs(model),
     ],
     timeout,
     {},
@@ -283,18 +286,20 @@ export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
     files: written?.files ?? [],
     plan: parsePlan(a.plan),
   });
+  const model = await parseChoice(a.myraModel);
   try {
-    return await runClaude(prompt, tools, 300, NEED, ASK_ROOT);
+    return await runClaude(prompt, tools, 300, { need: NEED, cwd: ASK_ROOT, model });
   } finally {
     if (written) fs.rmSync(written.dir, { recursive: true, force: true });
   }
 }
 export async function rewrite(a: Untrusted<Ops['rewrite']['args']>): Promise<string> {
   const words = { text: text(a.text), how: text(a.how), title: text(a.title), around: text(a.around) };
-  return (await runClaude(prompts.rewrite(words), [], 180, NEED)).trim();
+  const model = await parseChoice(a.myraModel);
+  return (await runClaude(prompts.rewrite(words), [], 180, { need: NEED, model })).trim();
 }
 // Higgsfield in two steps: the quote only looks up the price and balance, and generating is only called after the person taps yes
-export const higgsQuote = (a: Untrusted<Ops['higgsQuote']['args']>) =>
+export const higgsQuote = async (a: Untrusted<Ops['higgsQuote']['args']>) =>
   runClaude(
     prompts.higgsQuote({ model: text(a.model) }),
     [
@@ -303,8 +308,9 @@ export const higgsQuote = (a: Untrusted<Ops['higgsQuote']['args']>) =>
       'mcp__claude_ai_higgsfield__show_plans_and_credits',
     ],
     180,
+    { model: await parseChoice(a.myraModel) },
   );
-export const higgsMake = (a: Untrusted<Ops['higgsMake']['args']>) =>
+export const higgsMake = async (a: Untrusted<Ops['higgsMake']['args']>) =>
   runClaude(
     prompts.higgsMake({ model: text(a.model), style: text(a.style) }, jsonSafe(a.images || [])),
     [
@@ -315,10 +321,13 @@ export const higgsMake = (a: Untrusted<Ops['higgsMake']['args']>) =>
       'mcp__claude_ai_higgsfield__show_generation_by_ids',
     ],
     1200,
+    { model: await parseChoice(a.myraModel) },
   );
 // without Higgsfield, Claude can still draw simple flat illustrations as SVG, with no credits spent
-export const drawFill = (a: Untrusted<Ops['drawFill']['args']>) =>
-  runClaude(prompts.drawFill({ style: text(a.style) }, jsonSafe(a.images || [])), [], 600);
+export const drawFill = async (a: Untrusted<Ops['drawFill']['args']>) =>
+  runClaude(prompts.drawFill({ style: text(a.style) }, jsonSafe(a.images || [])), [], 600, {
+    model: await parseChoice(a.myraModel),
+  });
 
 export async function connections(): Promise<Connections> {
   const claude = await claudePath();

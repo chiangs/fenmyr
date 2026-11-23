@@ -5,6 +5,7 @@ import type { Ops } from '../shared/ops.ts';
 import { PROTO_DIR } from '../shared/repos.ts';
 import { claudeCode, quitting } from './claudeCode.ts';
 import { topLevel } from './git.ts';
+import { parseChoice } from './models.ts';
 import * as prompts from './prompts.ts';
 import { text, type Untrusted } from './util.ts';
 
@@ -22,8 +23,9 @@ export async function explainCode(a: Untrusted<Ops['protoExplain']['args']>) {
   if (files.some(f => !f || /\p{Cc}/u.test(f) || path.isAbsolute(f) || !path.resolve(base, f).startsWith(`${base}/`)))
     throw new Error("That file isn't part of this prototype.");
   if (!fs.existsSync(base)) throw new Error("This prototype's folder isn't there any more.");
+  const model = await parseChoice(a.myraModel);
   const said = await claudeCode(
-    { cwd: base, prompt: prompts.explainCode({ files }), readable: [], access: 'read' },
+    { cwd: base, prompt: prompts.explainCode({ files }), readable: [], access: 'read', model },
     () => {},
   ).catch((e: unknown) => {
     // no answer, so the window doesn't save the cut-off run as a failure, and the press is offered again next time
