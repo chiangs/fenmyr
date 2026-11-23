@@ -2,6 +2,7 @@ import { type ChildProcess, spawn } from 'node:child_process';
 import path from 'node:path';
 import { claudePath, FOLDER_ONLY, hookArgs, noteUsage } from './claude.ts';
 import type { CodeAgent } from './codeAgent.ts';
+import { modelArgs } from './models.ts';
 import { env, isRecord, text } from './util.ts';
 
 // Claude Code works in the prototype's folder with file tools only: no shell, no web, no other agents. Claude Code keeps
@@ -46,7 +47,7 @@ export function stopCodeAgents() {
 /** True once Fenmyr is quitting. A run cut off then didn't fail, so nothing is said of how it ended. */
 export const quitting = () => stopped;
 
-export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access }, edited) => {
+export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, model }, edited) => {
   const claude = await claudePath();
   if (!claude)
     throw new Error(
@@ -60,6 +61,7 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access }, e
     '--verbose',
     ...hookArgs({ permissions: FOLDER_ONLY }),
     ...ACCESS[access],
+    ...modelArgs(model),
   ];
   for (const d of readable) args.push('--add-dir', d);
   return new Promise((res, rej) => {
