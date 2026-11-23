@@ -87,15 +87,23 @@ export const dueChip = (c: Card) => {
   if (!hasDue(c) || !dueDate(c.due)) return '';
   const state = dueState(c.due),
     when = esc(dueText(c.due)),
-    clock = Icon('clock', { size: 12 });
-  return `<div class="due ${state}" title="Due ${when}">${clock}<span>${when}</span></div>`;
+    over = state === 'over',
+    // the red of an overdue chip is never the only cue: it also has its own icon and says so
+    icon = Icon(over ? 'warning' : 'clock', { size: 12 }),
+    word = over ? 'Overdue · ' : '',
+    title = over ? 'Overdue, was due' : 'Due';
+  return `<div class="due ${state}" title="${title} ${when}">${icon}<span>${word}${when}</span></div>`;
 };
 
 function dueChips() {
   cardsEl.querySelectorAll('.card .due').forEach(ch => {
     const holder = ch.closest('.card'),
       c = holder instanceof HTMLElement ? byId(holder.dataset.id ?? '') : undefined;
-    if (c) ch.className = `due ${dueState(c.due)}`;
+    if (!c) return;
+    const state = dueState(c.due);
+    // a chip that turns overdue changes its icon and words too, so it is drawn again
+    if (ch.classList.contains('over') !== (state === 'over')) ch.outerHTML = dueChip(c);
+    else ch.className = `due ${state}`;
   });
 }
 
