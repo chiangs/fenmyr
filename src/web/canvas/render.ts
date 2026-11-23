@@ -1,4 +1,4 @@
-import { typesWith } from '../../shared/cardTypes.ts';
+import { labelOf, typesWith } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { COLL, parentOf } from '../cards/collection.ts';
 import { layoutAll } from '../cards/kanban.ts';
@@ -149,6 +149,10 @@ export function paintCard(el: HTMLElement, c: Card, pop?: boolean) {
   // the colour's name, which a theme that prints it on the card (--colour-label) draws from here
   if (named) el.style.setProperty('--colour-name', JSON.stringify(colorLabel(named)));
   else el.style.removeProperty('--colour-name');
+  // the card's accessible name, in every theme: what it is and, when it has a colour, the colour's name, so a person who can't
+  // see the colour gets the cue the printed label gives
+  el.setAttribute('role', 'group');
+  el.setAttribute('aria-label', named ? `${labelOf(c.type)}, ${colorLabel(named)}` : labelOf(c.type));
   if (c.type === 'swatch') el.style.setProperty('--hex', c.hex);
   el.style.setProperty('--fs', String(fsMul(c)));
   el.classList.toggle('has-font', !!c.font && SIZED.includes(c.type));
