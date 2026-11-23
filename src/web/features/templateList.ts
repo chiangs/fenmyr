@@ -2,12 +2,16 @@ import type { Template } from '../../shared/ops.ts';
 import { fit } from '../canvas/handles.ts';
 import { FRAMEWORKS } from '../content/frameworks.ts';
 import { placeFramework, STARTERS } from '../content/placeFramework.ts';
+import { hasAll } from '../core/base.ts';
+import { $ } from '../core/dom.ts';
 import { session } from '../core/state.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { foldersIn } from '../library/tree.ts';
 import { newBoard, TEMPLATES } from '../model/boards.ts';
+import { reply, type SayAction } from '../myra/say.ts';
 import { startPrototypeHere } from '../repo/start.ts';
+import { clickIn } from '../ui/dom.ts';
 import { scope } from '../ui/toolbar.ts';
 import { myTpls, useTemplate } from './templates.ts';
 
@@ -95,4 +99,83 @@ export async function runTemplate(entry: TemplateEntry): Promise<void> {
       return unhandled;
     }
   }
+}
+
+// the picker's search and the slash menu's filter: every word has to be in the name or the line
+export const matchesSearch = (words: string[], name: string, line: string) =>
+  hasAll(words, `${name} ${line}`.toLowerCase());
+
+const TIERS: ((s: string, w: string) => boolean)[] = [
+  (s, w) => s === w,
+  (s, w) => s.startsWith(w),
+  (s, w) => s.includes(w),
+];
+const nameOf = (e: TemplateEntry) => e.name;
+// a saved template's key is a random id, which nobody types
+const keyOf = (e: TemplateEntry) => (e.kind === 'mine' ? '' : e.key);
+
+// Names are tried before keys. The first of exact, starts with and contains that finds anything gives its finds: one
+// runs, several are asked about.
+function matchTemplates(entries: TemplateEntry[], word: string): TemplateEntry[] {
+  const w = word.trim().toLowerCase();
+  for (const read of [nameOf, keyOf])
+    for (const tier of TIERS) {
+      const hit = entries.filter(e => tier(read(e).toLowerCase(), w));
+      if (hit.length) return hit;
+    }
+  return [];
+}
+
+// how many letters have to change to turn one word into the other
+function distance(a: string, b: string) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++)
+      row.push(
+        Math.min((prev[j] ?? 0) + 1, (row[j - 1] ?? 0) + 1, (prev[j - 1] ?? 0) + (a[i - 1] === b[j - 1] ? 0 : 1)),
+      );
+    prev = row;
+  }
+  return prev[b.length] ?? 0;
+}
+
+// names a typo or two away from what was typed, nearest first
+function closeNames(entries: TemplateEntry[], word: string): TemplateEntry[] {
+  const w = word.trim().toLowerCase(),
+    limit = Math.max(1, Math.floor(w.length / 3)),
+    away = (e: TemplateEntry) =>
+      Math.min(...[e.name, ...e.name.split(/\s+/), keyOf(e)].filter(Boolean).map(s => distance(s.toLowerCase(), w)));
+  return entries
+    .map(e => ({ e, d: away(e) }))
+    .filter(x => x.d <= limit)
+    .sort((a, b) => a.d - b.d)
+    .map(x => x.e);
+}
+
+const openPicker = () => {
+  if (!$('tplPick').classList.contains('on')) clickIn($('tools'), '[data-add="tpl"]');
+};
+
+// A click in the picker opens a board without a word, and so does this, so she says it. A template added to this board
+// already has its own line from placeFramework or useTemplate.
+async function addTemplate(e: TemplateEntry) {
+  await runTemplate(e);
+  if (e.opens === 'new' && e.kind !== 'prototype') reply(`I opened a new ${e.name} ✦`);
+}
+
+export function slashTemplate(arg: string) {
+  const word = arg.trim(),
+    entries = templateEntries(),
+    picker: SayAction = { label: 'Open the template picker', run: openPicker },
+    button = (e: TemplateEntry): SayAction => ({ label: e.name, run: () => addTemplate(e) });
+  if (!word) return reply('Say which one after /template, such as /template kanban ✦', 0, [picker]);
+  const hit = matchTemplates(entries, word),
+    [only] = hit;
+  if (only && hit.length === 1) return void addTemplate(only);
+  if (hit.length) return reply('Which one? ✦', 0, hit.slice(0, 5).map(button));
+  reply(`I don’t have a template called “${word}” ✦`, 0, [
+    ...closeNames(entries, word).slice(0, 3).map(button),
+    picker,
+  ]);
 }

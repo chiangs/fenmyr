@@ -13,7 +13,7 @@ import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { STARTERS, TPL_IC } from '../content/placeFramework.ts';
-import { hasAll, queryWords, uid } from '../core/base.ts';
+import { queryWords, uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
@@ -28,7 +28,7 @@ import { showDialog } from '../ui/popover.ts';
 import { scope } from '../ui/toolbar.ts';
 import { cardName } from './export.ts';
 import { instantiate, templateFrom } from './templateCards.ts';
-import { runTemplate, type TemplateEntry, tagOf, templateEntries } from './templateList.ts';
+import { matchesSearch, runTemplate, type TemplateEntry, tagOf, templateEntries } from './templateList.ts';
 
 // ---------- your own templates: save a selection (or the whole board); use it on a board or as a new one (Settings decides) ----------
 export let myTpls: Template[] = [];
@@ -273,12 +273,11 @@ export function filterTpl() {
       headHas = false;
       return;
     }
-    const txt = (
-        (el.querySelector('.tp-t b')?.textContent || '') +
-        ' ' +
-        (el.querySelector('.tp-t small')?.textContent || '')
-      ).toLowerCase(),
-      ok = hasAll(words, txt);
+    const ok = matchesSearch(
+      words,
+      el.querySelector('.tp-t b')?.textContent || '',
+      el.querySelector('.tp-t small')?.textContent || '',
+    );
     el.hidden = !ok;
     if (ok) {
       headHas = true;
