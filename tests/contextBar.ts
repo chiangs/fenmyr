@@ -96,6 +96,8 @@ const stopWatching = (h: Awaited<ReturnType<typeof watchBar>>) =>
     w.stop();
     return w.seen;
   });
+// frames of the bar to read after the button is let go, enough to see it move if it were going to
+const FRAMES_AFTER = 10;
 const barGone = () =>
   page.waitForFunction(() => !document.getElementById('selbar')?.checkVisibility({ opacityProperty: true }));
 
@@ -223,10 +225,21 @@ await check('pressing a note, its bar stays where it came up when the button is 
   await page.mouse.down();
   await barUp();
   await still(page);
+  const released = await watch.evaluate(w => w.seen.length);
   await page.mouse.up();
   await still(page);
-  const tops = (await stopWatching(watch)).filter(s => s.shown).map(s => s.top);
-  assert.ok(tops.length > 10, 'the bar came up');
+  // How many frames the page paints after the release depends on how fast it paints: the card's knob fades for 150 ms,
+  // a dozen frames or a few, and one stalled frame ends the wait for it early. So the test waits for the frames it
+  // reads, not for the time they take.
+  await page.waitForFunction(([w, from, n]) => w.seen.slice(from).filter(s => s.shown).length >= n, [
+    watch,
+    released,
+    FRAMES_AFTER,
+  ] as const);
+  const seen = await stopWatching(watch),
+    held = seen.slice(0, released).filter(s => s.shown),
+    tops = seen.filter(s => s.shown).map(s => s.top);
+  assert.ok(held.length > 0, 'the bar came up while the button was down');
   assert.deepStrictEqual([...new Set(tops.map(Math.round))].length, 1, `it moved: ${[...new Set(tops)].join(' ')}`);
   await above('note');
 });
