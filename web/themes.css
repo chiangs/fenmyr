@@ -543,6 +543,7 @@ body {
   --m-sh-panel-bg: var(--snow);
   --m-sh-tabs-button-on-bg: var(--snow);
   --m-sh-tabs-button-on-ink: var(--ink);
+  --m-popup-bg: var(--panel, var(--snow));
   --m-slash-menu-button-on-bg: rgb(from var(--shade) r g b / .06);
   --m-sm-sig-ink: color-mix(in oklab, var(--accent-soft) 76%, var(--ink));
   --m-sp-body-bg: var(--snow);
@@ -856,6 +857,7 @@ body.dark {
   --m-sh-panel-bg: var(--sh-bg-6);
   --m-sh-tabs-button-on-bg: var(--sh-bg-3);
   --m-sh-tabs-button-on-ink: var(--hilite);
+  --m-popup-bg: var(--surface);
   --m-slash-menu-button-on-bg: rgb(from var(--hilite) r g b / .1);
   --m-sm-sig-ink: var(--web-ink);
   --m-sp-body-bg: var(--dark-raised);

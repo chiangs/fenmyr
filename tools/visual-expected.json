@@ -47,6 +47,8 @@
   "reply-chat": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
   "sees-added": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
   "sees-chat": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
+  "popups-dark-dialog": "New state: the dialog that saves a template, in Default dark. The shared dialog had a white background in dark, with light words on it that could not be read; it now takes the dark surface the other panels use.",
+  "popups-dark-slash": "New state: typing / in Myra\u2019s chat in Default dark. The menu had a white background there, with light words on it that could not be read; it now takes the dark surface the other panels use.",
   "select-note": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
   "select-several": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
   "select-shape": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
