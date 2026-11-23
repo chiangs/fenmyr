@@ -1,5 +1,6 @@
 import type { Board, Folder, Project } from '../../shared/model.ts';
 import { fit } from '../canvas/handles.ts';
+import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { newBoard } from '../model/boards.ts';
@@ -56,9 +57,19 @@ export async function createFolder(at: Place, name = ''): Promise<Folder> {
   return f;
 }
 
-// What the person is left looking at. The three differ as the paths that make boards always did, and stay so until the
-// popup settles which is right: 'name' closes Home, opens the board and selects its name, 'board' does the same without
-// selecting the name, and 'cards' opens it with Home left as it was.
+// A new project's first folder. It is alone in its project, so it keeps its plain name: createFolder's names are unique
+// across every project, which would call the second project's "Boards 2".
+export async function createFirstFolder(project: Project): Promise<Folder> {
+  const f: Folder = { id: uid(), name: 'Boards', project: project.id, open: true };
+  appState.folders.push(f);
+  await saveLib();
+  await refreshBoards();
+  return f;
+}
+
+// What the person is left looking at. The three differ as the paths that make boards always did: 'name' closes Home,
+// opens the board and selects its name, 'board' does the same without selecting the name, and 'cards' opens it with
+// Home left as it was. The New project dialog is the one place that chose: 'name' for a blank board, 'board' for the rest.
 export type Open = 'name' | 'board' | 'cards';
 
 // A board's name is not made unique: two Untitled boards have always been allowed.
@@ -80,3 +91,10 @@ export async function createBoard(at: Place, { board = newBoard(), open }: { boa
   }
   return board;
 }
+
+// A board that arrives with cards. With no place it goes where the person is looking and leaves Home as it was, as the
+// picker's rows always did; a place comes from a caller that is taking the person there, so the board is shown.
+export const createWithCards = (board: Board, at?: Place) =>
+  createBoard(at ?? currentPlace(), { board, open: at ? 'board' : 'cards' });
+
+export const createExample = (at?: Place) => createWithCards(newBoard('My first board', 'My first board'), at);
