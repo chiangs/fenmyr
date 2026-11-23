@@ -72,6 +72,8 @@ type CardFields = {
     poster?: string;
     // recorded wide with flip on, so it plays back mirrored
     mirror?: boolean;
+    // the video was left out of the zip this came from
+    notIncluded?: true;
     vw?: number;
     vh?: number;
   };
@@ -102,6 +104,10 @@ type CardFields = {
     blocked?: boolean;
     missing?: boolean;
     props?: [string, string][];
+    // the note's text was left out of the zip this came from
+    notIncluded?: true;
+    // the zip this came from never carries the vault link, so there is nothing to read the note from again
+    unlinked?: true;
   };
   path: { pts: PathPoint[]; closed?: boolean; fill?: string; ow: number; oh: number };
   // a card this build can't read, as it was in the file: written back as it was, with this card's id and place and size
