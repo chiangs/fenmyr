@@ -48,8 +48,15 @@ export function setupVideo(c: VideoCard, el: HTMLElement) {
   const src = c.src;
   if (src) {
     let v = vids.get(c.id);
+    // a card of another board can have this id (a copy, or a zip's), and its player is for its own file
+    if (v && v.dataset.src !== src) {
+      v.pause();
+      vids.delete(c.id);
+      v = undefined;
+    }
     if (!v) {
       v = document.createElement('video');
+      v.dataset.src = src;
       v.className = 'vd-v';
       v.playsInline = true;
       v.preload = 'metadata';

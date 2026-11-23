@@ -18,15 +18,21 @@ const FILTERS: Record<string, { name: string; extensions: string[] }[]> = {
   docx: [{ name: 'Word document', extensions: ['docx'] }],
 };
 
-// answers with the file's name, or '' if they changed their mind
-async function saveAs(win: BrowserWindow, defaultName: string, ext: string, data: Buffer | (() => Promise<Buffer>)) {
+// the file they chose to save to, or '' if they changed their mind
+export async function pickSavePath(win: BrowserWindow, defaultName: string, ext: string) {
   const r = await dialog.showSaveDialog(win, {
     defaultPath: path.join(os.homedir(), defaultName),
     filters: FILTERS[ext] ?? [{ name: ext.toUpperCase(), extensions: [ext] }],
   });
-  if (r.canceled || !r.filePath) return '';
-  fs.writeFileSync(r.filePath, typeof data === 'function' ? await data() : data);
-  return path.basename(r.filePath);
+  return r.canceled || !r.filePath ? '' : r.filePath;
+}
+
+// answers with the file's name, or '' if they changed their mind
+async function saveAs(win: BrowserWindow, defaultName: string, ext: string, data: Buffer | (() => Promise<Buffer>)) {
+  const file = await pickSavePath(win, defaultName, ext);
+  if (!file) return '';
+  fs.writeFileSync(file, typeof data === 'function' ? await data() : data);
+  return path.basename(file);
 }
 
 // The DevTools protocol renders above screen resolution; with DevTools open it is taken, so this falls back to an ordinary capture.

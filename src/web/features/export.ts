@@ -11,6 +11,7 @@ import { $, boardLayers, stage } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
 import { endEdit } from '../edit/editing.ts';
+import { exportBoardZip } from '../library/zipExport.ts';
 import { DL } from '../myra/chat.ts';
 import { removeSelected } from '../myra/helpers.ts';
 import { chirp, say } from '../myra/say.ts';
@@ -281,6 +282,7 @@ export function init43() {
         ]),
         { label: 'Export board as image', run: () => exportCards(session.board.cards, session.board.name, false) },
         { label: 'Export board as PDF', run: () => exportCards(session.board.cards, session.board.name, true) },
+        { label: 'Export as zip…', run: () => exportBoardZip(session.board.id) },
       ]);
   };
   for (const el of boardLayers) el.addEventListener('contextmenu', onMenu);

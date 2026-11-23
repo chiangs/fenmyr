@@ -17,6 +17,7 @@ import { pxSrc } from '../tools/stamps.ts';
 import { esc } from '../ui/dom.ts';
 import { vnFull, vnMd } from '../vault/notes.ts';
 import { isLocalFont, useFont } from '../wireframe/tilt.ts';
+import { videoGone, whyGone } from './notIncluded.ts';
 import { skStyle } from './render.ts';
 
 // a piece of markup, or nothing
@@ -122,7 +123,7 @@ function videoCamera(c: CardOf<'video'>) {
 }
 
 function video(c: CardOf<'video'>) {
-  if (c.src) return videoPlayer(c);
+  if (c.src || c.notIncluded) return c.src ? videoPlayer(c) : videoGone(c);
   if (c.saving) {
     const pct = Math.round((c.pct || 0) * 100),
       title = esc(c.title || 'Video');
@@ -252,7 +253,7 @@ function image(c: CardOf<'image'>) {
 }
 
 function vnote(c: CardOf<'vnote'>) {
-  const gone = c.blocked || c.missing,
+  const gone = c.blocked || c.missing || c.notIncluded,
     back = c.side === 'back',
     full = vnFull.get(c.id),
     sm = c.props ?? [],
@@ -266,7 +267,7 @@ function vnote(c: CardOf<'vnote'>) {
     fullBtn = when(back && !gone, `<button class="vn-btn" data-act="vn-full">${fullLabel}</button>`),
     foot = `<div class="vn-foot">${fullBtn}<button class="vn-btn" data-act="vn-open" title="Open in Obsidian">${open}<span>Obsidian</span></button></div>`;
   if (gone) {
-    const why = c.missing ? 'I can’t find this note any more.' : 'Not available: this board isn’t allowed to read it.';
+    const why = whyGone(c);
     return `${head}<div class="vn-gone text">${why}</div>${foot}`;
   }
   if (!back) {

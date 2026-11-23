@@ -26,6 +26,7 @@ import { newPrototypingFolder } from '../repo/prototypes.ts';
 import { child, esc } from '../ui/dom.ts';
 import { keepOnScreen, removeOnOutsidePress } from '../ui/popover.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
+import { boardTree, renewed } from './boardTree.ts';
 import { changeBoard } from './boardWrites.ts';
 import { confirmDelete } from './confirmDelete.ts';
 import { renderCrumbs, where } from './crumbs.ts';
@@ -46,22 +47,14 @@ import {
   subFolders,
   tint,
 } from './tree.ts';
+import { zipAction, zipMenu } from './zipMenu.ts';
 
 // ---------- right-click in the left box: duplicate or delete a board, folder or project ----------
 // copying a board also copies the canvases inside it, so the copy doesn't share them
 async function copyBoard(id: string, into: { name?: string; parent?: string; folder?: string | null } = {}) {
-  const b = await Fenmyr.load(id);
-  if (!b) return null;
-  const c = JSON.parse(JSON.stringify(b));
-  c.id = uid();
-  Object.assign(c, into);
-  for (const k of c.cards)
-    if (k.type === 'canvas' && k.board) {
-      const kid = await copyBoard(k.board, { parent: c.id, folder: c.folder || null });
-      if (kid) k.board = kid.id;
-    }
-  await Fenmyr.save(c);
-  return c;
+  const copies = renewed((await boardTree(id, Fenmyr.load)).boards, id, into).boards;
+  for (const c of copies) await Fenmyr.save(c);
+  return copies[0] ?? null;
 }
 
 async function dropBoard(id: string) {
@@ -241,7 +234,8 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
     (kind !== 'project' ? '<button data-m="move">Move to…</button>' : '') +
     (kind === 'board' && obj.parent ? '<button data-m="out">Make it its own board</button>' : '') +
     (kind !== 'folder' && Fenmyr.native ? '<button data-m="vault">Vault access…</button>' : '') +
-    (kind === 'project' && Fenmyr.native ? repoItem : '');
+    (kind === 'project' && Fenmyr.native ? repoItem : '') +
+    zipMenu(kind);
   m.innerHTML = `${items}<button data-m="dup">Duplicate</button><span class="rm-sep"></span><button data-m="del" class="danger">Delete</button>`;
   document.body.appendChild(m);
   keepOnScreen(m);
@@ -255,6 +249,11 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
     if (a === 'dup') {
       m.remove();
       return duplicate(kind, obj);
+    }
+    const zipped = zipAction(a, kind, obj);
+    if (zipped) {
+      m.remove();
+      return zipped;
     }
     if ((a === 'repo' || a === 'protoFolder') && project) {
       m.remove();

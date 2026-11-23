@@ -1,6 +1,7 @@
 import type { AskFile } from './askFiles.ts';
 import type { BuildEvent } from './build.ts';
 import type { AppBuild } from './buildStamp.ts';
+import type { ImportResult, Manifest } from './fenmyrZip.ts';
 import type { UpdateChannel } from './updateChannel.ts';
 
 type None = Record<string, never>;
@@ -208,10 +209,16 @@ export type Ops = {
   mediaBegin: { args: { ext: string }; result: string };
   mediaChunk: { args: { name: string; data: string }; result: true };
   mediaEnd: { args: { name: string }; result: string };
+  // the stripped boards and the manifest that names them and their videos; the host asks where to save, streams the zip
+  // there, and answers with its path, or null when they changed their mind
+  zipExport: { args: { name: string; manifest: Manifest; boards: Board[] }; result: string | null };
+  // a Fenmyr zip, by path when one was dropped or by the open dialog when not; null when they changed their mind
+  zipImport: { args: { path?: string }; result: ImportResult | null };
   updateCheck: { args: { channel: UpdateChannel }; result: UpdateInfo };
   updatePrepare: { args: None; result: string };
   updateNow: { args: { channel: UpdateChannel }; result: 'updating' };
-  reveal: { args: None; result: true };
+  // a file or folder shown in the system's file manager: the boards folder when no path is given
+  reveal: { args: { path?: string }; result: true };
   openURL: { args: { url: string }; result: true };
   gitStatus: { args: { path: string }; result: GitStatus };
   gitInit: { args: { path: string }; result: GitStatus };
