@@ -18,6 +18,9 @@ const wanted = (theme: (typeof THEMES)[number]) => {
     String(Reflect.get(theme.tokens, key)),
   ]);
   vars.push([LABEL_VAR, theme.labels ? 'block' : 'none']);
+  // the page reports the edge with the border colour filled in
+  vars.push(['--card-edge', theme.outline ? `inset 0 0 0 1.5px ${theme.tokens.border}` : '0 0 0 0 transparent']);
+  vars.push(['--straight', theme.straight ? '0' : '1']);
   for (const [key, card] of Object.entries(theme.tokens.cards)) vars.push(...cardVars(key, card));
   return vars;
 };

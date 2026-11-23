@@ -22,6 +22,9 @@ function selectorOf(t: Theme) {
 function blockOf(t: Theme) {
   const lines = Object.entries(CSS_VARS).map(([key, name]) => `  ${name}: ${Reflect.get(t.tokens, key)};`);
   lines.push(`  ${LABEL_VAR}: ${t.labels ? 'block' : 'none'};`);
+  // the card's edge, drawn in the border colour inside its frame, and how far a card's tilt is let through (0 sits straight)
+  lines.push(`  --card-edge: ${t.outline ? 'inset 0 0 0 1.5px var(--border)' : '0 0 0 0 transparent'};`);
+  lines.push(`  --straight: ${t.straight ? 0 : 1};`);
   for (const [key, card] of Object.entries(t.tokens.cards))
     lines.push(...cardVars(key, card).map(([n, v]) => `  ${n}: ${v};`));
   return `${selectorOf(t)} {\n${lines.join('\n')}\n}`;
