@@ -6,7 +6,7 @@ import { parseLibrary } from '../../src/shared/model.ts';
 import type { BoardSummary } from '../../src/shared/ops.ts';
 
 const note = { id: 'n', type: 'note', x: 0, y: 0, w: 220, h: 120, r: 0, color: 'white', text: 'A note' };
-const boardIn = (id: string, folder?: string) => ({
+export const boardIn = (id: string, folder?: string) => ({
   id,
   name: id,
   folder,
@@ -30,13 +30,13 @@ const FOLDERS: Folder[] = [
 ];
 export const SEEDED = [boardIn('a', 'f1'), boardIn('b', 'f2'), boardIn('loose')];
 
-export async function seedLibrary(page: Page) {
+export async function seedLibrary(page: Page, more: Folder[] = []) {
   await page.evaluate(
     async ([projects, folders]) => {
       await window.Fenmyr.saveFolders({ projects, folders, order: {} });
       await window.__fenmyr.refreshBoards();
     },
-    [PROJECTS, FOLDERS] as const,
+    [PROJECTS, [...FOLDERS, ...more]] as const,
   );
 }
 

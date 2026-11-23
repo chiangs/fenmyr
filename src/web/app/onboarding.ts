@@ -1,4 +1,3 @@
-import { fit } from '../canvas/handles.ts';
 import { renderAll } from '../canvas/render.ts';
 import { renderTray } from '../canvas/tray.ts';
 import { renderWires } from '../canvas/wires.ts';
@@ -6,10 +5,8 @@ import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
+import { createBoard, currentPlace } from '../library/create.ts';
 import { closeHome, homeAt } from '../library/home.ts';
-import { openBoard } from '../library/openBoard.ts';
-import { refreshBoards } from '../library/rowMenu.ts';
-import { foldersIn } from '../library/tree.ts';
 import { newBoard } from '../model/boards.ts';
 import { ask, getApp } from '../myra/chat.ts';
 import { setChatText } from '../myra/chatInput.ts';
@@ -21,7 +18,6 @@ import { closeSettings } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { closestTo, elementById } from '../ui/dom.ts';
-import { scope } from '../ui/toolbar.ts';
 
 type Counts = { cards: number; tray: number; screens: number };
 type TourStep = {
@@ -298,14 +294,7 @@ export function init60() {
 
   $('addExample').onclick = async () => {
     closeSettings();
-    const b = newBoard('My first board', 'My first board'),
-      { f, p } = scope(),
-      into = f || (p && foldersIn(p.id)[0]);
-    if (into) b.folder = into.id;
-    await Fenmyr.save(b);
-    await openBoard(b.id);
-    fit(session.board.cards);
-    refreshBoards();
+    await createBoard(currentPlace(), { board: newBoard('My first board', 'My first board'), open: 'cards' });
   };
 
   $('redoTour').onclick = () => {

@@ -1,10 +1,9 @@
 import { addImages } from '../cards/spotify.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { appState, byId, session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
 import { boardFolder, createBoard, createFolder, createProject, currentPlace } from '../library/create.ts';
-import { homeAt } from '../library/home.ts';
 import { renameNewest } from '../library/rowMenu.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
@@ -48,22 +47,6 @@ function syncPointer() {
   p.classList.toggle('on', !toolInHand() && !pickerOpen());
 }
 
-// + Project / + Folder / + Board: the folder and board add into wherever you are: the folder you're in, or the project you're in
-export function scope() {
-  const at = homeAt;
-  const f = at
-    ? at.level === 'folder'
-      ? appState.folders.find(x => x.id === at.id)
-      : null
-    : appState.folders.find(x => x.id === session.board?.folder);
-  const p =
-    at?.level === 'project'
-      ? appState.projects.find(x => x.id === at.id)
-      : at?.level === 'all'
-        ? null
-        : f && appState.projects.find(x => x.id === f.project);
-  return { f, p };
-}
 export function init21() {
   {
     const mo = new MutationObserver(() => syncPointer());
