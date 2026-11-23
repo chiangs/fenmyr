@@ -1,14 +1,11 @@
 import type { StoredBoard } from '../../shared/model.ts';
 import { parseLibrary } from '../../shared/model.ts';
 import { renderAll } from '../canvas/render.ts';
-import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
-import { card, newBoard } from '../model/boards.ts';
+import { card } from '../model/boards.ts';
 import { chirp, say } from '../myra/say.ts';
 import { renderCrumbs } from './crumbs.ts';
-import { closeHome } from './home.ts';
-import { openBoard } from './openBoard.ts';
 import { refreshBoards } from './rowMenu.ts';
 import { boardsIn, looseBoards, moveBoard, orderKey, saveLib, topLevel } from './tree.ts';
 
@@ -227,15 +224,4 @@ export function inlineRename(el: HTMLElement, obj: { id: string; name: string },
     await (after ? after(v) : saveLib());
     refreshBoards();
   };
-}
-
-export async function newBoardIn(folderId: string | null) {
-  const b = newBoard();
-  b.folder = folderId;
-  await Fenmyr.save(b);
-  closeHome();
-  await openBoard(b.id);
-  $('boardName').focus();
-  const field = $('boardName');
-  if (field instanceof HTMLInputElement) field.select();
 }

@@ -1,18 +1,13 @@
 import type { Template } from '../../shared/ops.ts';
-import { fit } from '../canvas/handles.ts';
 import { FRAMEWORKS } from '../content/frameworks.ts';
 import { placeFramework, STARTERS } from '../content/placeFramework.ts';
 import { hasAll } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { session } from '../core/state.ts';
-import { openBoard } from '../library/openBoard.ts';
-import { refreshBoards } from '../library/rowMenu.ts';
-import { foldersIn } from '../library/tree.ts';
+import { createBoard, currentPlace } from '../library/create.ts';
 import { newBoard, TEMPLATES } from '../model/boards.ts';
 import { reply, type SayAction } from '../myra/say.ts';
 import { startPrototypeHere } from '../repo/start.ts';
 import { clickIn } from '../ui/dom.ts';
-import { scope } from '../ui/toolbar.ts';
 import { myTpls, useTemplate } from './templates.ts';
 
 // key: what the picker's data-* holds (a saved template's id), and what /template matches
@@ -78,17 +73,9 @@ export async function runTemplate(entry: TemplateEntry): Promise<void> {
       return startPrototypeHere();
     case 'framework':
       return placeFramework(entry.key);
-    case 'starter': {
-      const b = newBoard(entry.name, entry.name),
-        { f, p } = scope(),
-        into = f || (p && foldersIn(p.id)[0]);
-      if (into) b.folder = into.id;
-      await Fenmyr.save(b);
-      await openBoard(b.id);
-      fit(session.board.cards);
-      refreshBoards();
+    case 'starter':
+      await createBoard(currentPlace(), { board: newBoard(entry.name, entry.name), open: 'cards' });
       return;
-    }
     case 'mine': {
       const t = myTpls.find(x => x.id === entry.key);
       if (t) await useTemplate(t);

@@ -1,12 +1,10 @@
 import type { Card, Project } from '../../shared/model.ts';
 import { freshCopies } from '../canvas/clipboard.ts';
 import { appState, session } from '../core/state.ts';
-import { refreshBoards, uniqueName } from '../library/rowMenu.ts';
-import { makeProject, saveLib } from '../library/tree.ts';
+import { createProject, currentPlace } from '../library/create.ts';
 import { chirp } from '../myra/say.ts';
 import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
-import { scope } from '../ui/toolbar.ts';
 import { linkRepo } from './link.ts';
 import { newPrototypeIn, newPrototypingFolder, type Seed } from './prototypes.ts';
 
@@ -25,7 +23,7 @@ export const prototypeThis = (cards: Card[]) => startPrototypeHere(freshCopies(c
 
 // the project the person is in, or one they choose
 export function startPrototypeHere(seed?: Seed) {
-  const here = scope().p;
+  const here = appState.projects.find(x => x.id === currentPlace().project);
   if (here) {
     startPrototype(here, seed);
     return;
@@ -57,10 +55,7 @@ export function pickProject(then: (p: Project) => unknown) {
       const p = appState.projects.find(x => x.id === id);
       return p ? then(p) : undefined;
     }
-    const made = makeProject(uniqueName(appState.projects, 'New project'));
-    await saveLib();
-    await refreshBoards();
-    return then(made);
+    return then(await createProject());
   };
   d.onkeydown = e => {
     e.stopPropagation();
@@ -74,7 +69,7 @@ const TIPPED = 'fenmyr:prototypeTip';
 export function frameTip() {
   const b = session.board;
   if (b.kind === 'prototype' || b.cards.filter(c => c.type === 'frame').length < 2) return;
-  const where = scope().p?.id ?? 'none';
+  const where = currentPlace().project ?? 'none';
   let told: unknown = [];
   try {
     told = JSON.parse(localStorage.getItem(TIPPED) || '[]');

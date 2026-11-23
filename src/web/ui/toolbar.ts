@@ -1,15 +1,12 @@
 import { addImages } from '../cards/spotify.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
-import { appState, byId, session } from '../core/state.ts';
+import { byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
-import { closeHome, homeAt } from '../library/home.ts';
-import { openBoard } from '../library/openBoard.ts';
-import { refreshBoards, renameNewest, uniqueName } from '../library/rowMenu.ts';
-import { foldersIn, makeFolder, makeProject, saveLib } from '../library/tree.ts';
+import { boardFolder, createBoard, createFolder, createProject, currentPlace } from '../library/create.ts';
+import { renameNewest } from '../library/rowMenu.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
-import { newBoard } from '../model/boards.ts';
 import { renderDockHead } from '../proto/dockHead.ts';
 import { offerRename } from '../repo/codeFolder.ts';
 import { addBoardTo } from '../repo/prototypes.ts';
@@ -50,22 +47,6 @@ function syncPointer() {
   p.classList.toggle('on', !toolInHand() && !pickerOpen());
 }
 
-// + Project / + Folder / + Board: the folder and board add into wherever you are: the folder you're in, or the project you're in
-export function scope() {
-  const at = homeAt;
-  const f = at
-    ? at.level === 'folder'
-      ? appState.folders.find(x => x.id === at.id)
-      : null
-    : appState.folders.find(x => x.id === session.board?.folder);
-  const p =
-    at?.level === 'project'
-      ? appState.projects.find(x => x.id === at.id)
-      : at?.level === 'all'
-        ? null
-        : f && appState.projects.find(x => x.id === f.project);
-  return { f, p };
-}
 export function init21() {
   {
     const mo = new MutationObserver(() => syncPointer());
@@ -155,27 +136,17 @@ export function init21() {
   };
   nameField.onchange = () => offerRename(session.board);
 
-  $('newBoard').onclick = async () => {
-    const { f, p } = scope(),
-      into = f || (p && foldersIn(p.id)[0]);
-    if (into) return addBoardTo(into);
-    const b = newBoard();
-    await Fenmyr.save(b);
-    closeHome();
-    openBoard(b.id);
+  $('newBoard').onclick = () => {
+    const at = currentPlace(),
+      into = boardFolder(at);
+    return into ? addBoardTo(into) : createBoard(at, { open: 'board' });
   };
 
   $('newFolder').onclick = async () => {
-    const f = makeFolder(uniqueName(appState.folders, 'New folder'), scope().p?.id || null);
-    await saveLib();
-    await refreshBoards();
-    renameNewest('.node.folder', f);
+    renameNewest('.node.folder', await createFolder({ ...currentPlace(), folder: null }));
   };
 
   $('newProject').onclick = async () => {
-    const p = makeProject(uniqueName(appState.projects, 'New project'));
-    await saveLib();
-    await refreshBoards();
-    renameNewest('.node.project', p);
+    renameNewest('.node.project', await createProject());
   };
 }

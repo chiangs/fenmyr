@@ -8,7 +8,7 @@ const closeTplPick = () => {
 };
 
 import { typesWith } from '../../shared/cardTypes.ts';
-import { fit, placeInView } from '../canvas/handles.ts';
+import { placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
@@ -17,15 +17,12 @@ import { queryWords, uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
-import { openBoard } from '../library/openBoard.ts';
-import { refreshBoards } from '../library/rowMenu.ts';
-import { foldersIn } from '../library/tree.ts';
+import { createBoard, currentPlace } from '../library/create.ts';
 import { newBoard } from '../model/boards.ts';
 import { say } from '../myra/say.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
-import { scope } from '../ui/toolbar.ts';
 import { cardName } from './export.ts';
 import { instantiate, templateFrom } from './templateCards.ts';
 import { matchesSearch, runTemplate, type TemplateEntry, tagOf, templateEntries } from './templateList.ts';
@@ -158,15 +155,8 @@ async function deleteTemplate(t: Template) {
 export async function useTemplate(t: Template, as?: string) {
   const mode = as || t.mode || 'add';
   if (mode === 'new') {
-    const b = newBoard(t.name),
-      { f, p } = scope(),
-      into = f || (p && foldersIn(p.id)[0]);
-    if (into) b.folder = into.id;
-    Object.assign(b, instantiate(t, 0, 0));
-    await Fenmyr.save(b);
-    await openBoard(b.id);
-    fit(session.board.cards);
-    refreshBoards();
+    const board = Object.assign(newBoard(t.name), instantiate(t, 0, 0));
+    await createBoard(currentPlace(), { board, open: 'cards' });
     return session.board;
   }
   remember();

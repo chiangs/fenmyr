@@ -10,10 +10,11 @@ import { exitDraw } from '../tools/draw.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc } from '../ui/dom.ts';
 import { removeOnOutsidePress } from '../ui/popover.ts';
+import { createFolder, createProject } from './create.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
 import { draggable, dropZone, inlineRename, nestBoard } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
-import { refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
+import { refreshBoards, renameBoard, rowMenu } from './rowMenu.ts';
 import {
   boardsIn,
   boardsUnder,
@@ -22,8 +23,6 @@ import {
   hasParent,
   looseBoards,
   looseFolders,
-  makeFolder,
-  makeProject,
   moveBoard,
   putFolder,
   saveLib,
@@ -236,9 +235,7 @@ export function renderHome(): void {
       grid.appendChild(projectTile(pp));
     });
     add('New project', async () => {
-      const pp = makeProject(uniqueName(appState.projects, 'New project'));
-      await saveLib();
-      await refreshBoards();
+      const pp = await createProject();
       const t = [...grid.querySelectorAll('.tile.project')].pop();
       if (t) inlineRename(child(t, '.tile-meta b'), pp);
     });
@@ -259,9 +256,7 @@ export function renderHome(): void {
       grid.appendChild(folderTile(ff));
     });
     add('New folder', async () => {
-      const ff = makeFolder(uniqueName(appState.folders, 'New folder'), p.id);
-      await saveLib();
-      await refreshBoards();
+      const ff = await createFolder({ project: p.id, folder: null });
       const t = [...grid.querySelectorAll('.tile.folder')].pop();
       if (t) inlineRename(child(t, '.tile-meta b'), ff);
     });
@@ -282,10 +277,7 @@ export function renderHome(): void {
     else {
       add('New board', () => addBoardTo(f));
       add('New folder', async () => {
-        const ff = makeFolder(uniqueName(appState.folders, 'New folder'), f.project || null);
-        ff.parent = f.id;
-        await saveLib();
-        await refreshBoards();
+        const ff = await createFolder({ project: f.project || null, folder: f.id });
         const t = [...grid.querySelectorAll('.tile.folder')].pop();
         if (t) inlineRename(child(t, '.tile-meta b'), ff);
       });
