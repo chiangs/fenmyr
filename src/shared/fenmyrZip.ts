@@ -10,7 +10,7 @@ import { isRecord, parseBoard, type StoredBoard } from './model.ts';
 export const FORMAT = 1;
 const MANIFEST = 'fenmyr.json';
 // one board file or the manifest, once unpacked: more than a page can parse, and the bound on a zip bomb
-const JSON_LIMIT = 256 * 2 ** 20;
+export const JSON_LIMIT = 256 * 2 ** 20;
 
 const ROOT_KINDS = ['board', 'folder', 'project'] as const;
 export type RootKind = (typeof ROOT_KINDS)[number];
@@ -63,7 +63,6 @@ export function importable(kind: RootKind): Refusal | null {
   }
 }
 
-// ---------- names ----------
 const BOARD_FILE = /^boards\/([\p{L}\p{N}-]{1,64})\.json$/u;
 const PLAIN = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,127}$/u;
 const BOARD_ID = /^[\p{L}\p{N}-]{1,64}$/u;
@@ -77,8 +76,8 @@ const place = (name: string): 'manifest' | 'board' | 'media' | 'dir' | null => {
   if (name.startsWith('media/') && plainName(name.slice(6))) return 'media';
   return name === 'boards/' || name === 'media/' ? 'dir' : null;
 };
-const isJson = (name: string) => place(name) === 'manifest' || place(name) === 'board';
-const mediaNameOf = (name: string) => (place(name) === 'media' ? name.slice(6) : null);
+export const isJson = (name: string) => place(name) === 'manifest' || place(name) === 'board';
+export const mediaNameOf = (name: string) => (place(name) === 'media' ? name.slice(6) : null);
 
 // Before anything is read or written. A name that leads out of the folder is refused whatever the zip is; a zip with no
 // manifest is only not ours; one that is ours but holds a file outside the three places is refused.
@@ -88,7 +87,6 @@ export function nameRefusal(names: readonly string[]): Refusal | null {
   return names.every(n => place(n)) ? null : 'unsafe';
 }
 
-// ---------- the manifest ----------
 const text = (v: unknown, otherwise = '') => (typeof v === 'string' ? v : otherwise);
 const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
@@ -202,7 +200,6 @@ export function makeManifest(
   };
 }
 
-// ---------- reading what was unzipped ----------
 // names: every entry in the zip. json: the manifest and the board files, by name. Anything the checks drop is counted.
 export function parseExport(
   names: readonly string[],
@@ -266,17 +263,23 @@ export function relinkMedia(boards: StoredBoard[], copies: ReadonlyMap<string, s
   return { boards: out, missing };
 }
 
-// ---------- the whole zip, in memory: the browser's, and the tests' ----------
-export const packZip = (files: Readonly<Record<string, Uint8Array>>) => zipSync({ ...files });
+// The whole zip in memory, for the browser and the tests.
+// stored: the names kept uncompressed, as videos are
+export const packZip = (files: Readonly<Record<string, Uint8Array>>, stored: readonly string[] = []) =>
+  zipSync(
+    Object.fromEntries(
+      Object.entries(files).map(([name, data]) => [name, stored.includes(name) ? [data, { level: 0 }] : data]),
+    ),
+  );
 export const jsonBytes = (v: unknown) => strToU8(JSON.stringify(v));
 
 type Opened = { names: string[]; json: Record<string, Uint8Array>; media: Record<string, Uint8Array> };
 // Everything the checks need, and the videos when asked for. Throws on a file that isn't a zip.
-function openZip(zip: Uint8Array, withMedia = false): Opened {
+export function openZip(zip: Uint8Array, withMedia = false): Opened {
   const names: string[] = [],
     json: Record<string, Uint8Array> = {},
     media: Record<string, Uint8Array> = {};
-  // names are collected first and the extraction filter only looks, so no unsafe name is ever unpacked
+  // a name that leaves the folder is listed, so the checks can refuse the zip, but is never unpacked
   const all = unzipSync(zip, {
     filter: f => {
       names.push(f.name);
