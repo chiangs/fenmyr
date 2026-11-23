@@ -1,5 +1,12 @@
 import type { Card } from '../../shared/model.ts';
-import { boardsToMake, type MyraReply, type Wanted } from '../../shared/myraReply.ts';
+import {
+  boardsToMake,
+  type FolderWish,
+  foldersToMake,
+  type MyraReply,
+  projectsToMake,
+  type Wanted,
+} from '../../shared/myraReply.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { appState, session } from '../core/state.ts';
 import { buildTplPick, freeName, myTpls, saveAsTemplate } from '../features/templates.ts';
@@ -14,7 +21,7 @@ import { applyNewPrototype } from '../repo/myra.ts';
 import { animIntent, animName, playAnim } from './anim.ts';
 import type { HeldReply } from './applyTypes.ts';
 import { animAskedAt, timerAskedAt } from './chat.ts';
-import { makeBoards } from './makeInLibrary.ts';
+import { makeBoards, makeFolders, startProject } from './makeInLibrary.ts';
 import type { SayAction } from './say.ts';
 
 type Part<K extends keyof MyraReply> = NonNullable<MyraReply[K]>;
@@ -23,7 +30,7 @@ export type Effect =
   | { kind: 'stopTimer' }
   | { kind: 'timer'; secs: number; purpose: string }
   | { kind: 'animate'; name: string; asked: boolean }
-  | { kind: 'library'; projects: MyraReply['projects']; folders: MyraReply['folders'] }
+  | { kind: 'library'; projects: MyraReply['projects']; folders: MyraReply['folders']; make: Wanted<FolderWish> }
   | { kind: 'saveTemplate'; spec: Part<'saveTemplate'> }
   | { kind: 'editTemplate'; spec: Part<'editTemplate'> }
   | { kind: 'offerFill'; screens: number }
@@ -31,7 +38,8 @@ export type Effect =
   | { kind: 'build'; request: string; cards: readonly string[] }
   | { kind: 'git'; action: string; message: string | undefined }
   | { kind: 'install'; packages: string[] }
-  | { kind: 'boards'; wish: Wanted<string> };
+  | { kind: 'boards'; wish: Wanted<string> }
+  | { kind: 'newProject'; wish: Wanted<string> };
 
 // someone who just asked for a timer or an animation in words got it already; her own pick waits
 const askedLately = (at: number) => Date.now() - at <= 30000;
@@ -46,7 +54,8 @@ export function effectsOf({ reply: r, q, ctx }: HeldReply): Effect[] {
   const name = animName(r.animate),
     intent = animIntent(q);
   if (name && (name !== 'party' || intent === 'party')) out.push({ kind: 'animate', name, asked: !!intent });
-  if (r.folders || r.projects) out.push({ kind: 'library', projects: r.projects, folders: r.folders });
+  if (r.folders || r.projects?.rename)
+    out.push({ kind: 'library', projects: r.projects, folders: r.folders, make: foldersToMake(r) });
   if (r.saveTemplate) out.push({ kind: 'saveTemplate', spec: r.saveTemplate });
   if (r.editTemplate) out.push({ kind: 'editTemplate', spec: r.editTemplate });
   if (r.screens?.length) out.push({ kind: 'offerFill', screens: r.screens.length });
@@ -55,8 +64,10 @@ export function effectsOf({ reply: r, q, ctx }: HeldReply): Effect[] {
   if (r.git?.action) out.push({ kind: 'git', action: r.git.action, message: r.git.message });
   if (r.install?.packages?.length) out.push({ kind: 'install', packages: r.install.packages });
   // last, since each new board opens and the effects before it work on the board she was asked on
-  const boards = boardsToMake(r);
+  const boards = boardsToMake(r),
+    projects = projectsToMake(r);
   if (boards.items.length) out.push({ kind: 'boards', wish: boards });
+  if (projects.items.length) out.push({ kind: 'newProject', wish: projects });
   return out;
 }
 
@@ -94,7 +105,7 @@ async function runEffect(e: Effect, touched: readonly Card[], out: Out) {
         if (playAnim(e.name, false)) appState.aiAnimAt = Date.now();
       break;
     case 'library':
-      await sortLibrary(e.projects, e.folders);
+      await sortLibrary(e, out.told);
       break;
     case 'saveTemplate': {
       const o = e.spec,
@@ -130,6 +141,9 @@ async function runEffect(e: Effect, touched: readonly Card[], out: Out) {
       break;
     case 'boards':
       await makeBoards(e.wish, out.told);
+      break;
+    case 'newProject':
+      startProject(e.wish, out.told);
       break;
     default: {
       const unhandled: never = e;
@@ -169,6 +183,8 @@ function tried(e: Effect): string {
       const [only] = e.wish.items;
       return e.wish.items.length === 1 ? `make the board${named(only)}` : 'make the boards';
     }
+    case 'newProject':
+      return 'open the New project dialog';
     default: {
       const unhandled: never = e;
       return unhandled;
@@ -176,17 +192,13 @@ function tried(e: Effect): string {
   }
 }
 
-async function sortLibrary(pr: MyraReply['projects'], fo: MyraReply['folders']) {
+async function sortLibrary({ projects: pr, folders: fo, make }: Extract<Effect, { kind: 'library' }>, told: string[]) {
   await loadLib();
-  for (const n of pr?.create ?? []) makeProject(n);
   for (const o of pr?.rename ?? []) {
     const x = byName(appState.projects, o.from);
     if (x && o.to) x.name = String(o.to).trim();
   }
-  for (const o of fo?.create ?? []) {
-    const f = makeFolder(typeof o === 'string' ? o : o.name);
-    if (typeof o !== 'string' && o.project) f.project = makeProject(o.project).id;
-  }
+  await makeFolders(make, told);
   for (const o of fo?.rename ?? []) {
     const f = findFolder(o.from);
     if (f && o.to) f.name = String(o.to).trim();

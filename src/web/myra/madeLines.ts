@@ -41,9 +41,13 @@ export const projectTaken = ({ name, asked }: { name: string; asked: string }) =
     ? `There is already a project called “${asked}”, so I started the name at “${name}”.`
     : undefined;
 
-// the names after the one a form takes
-export const onePrototype = (rest: number) =>
-  `A prototype is made one at a time, so I did not make ${left(rest, 'other')}.`;
+export const noProject = (project: string, folder: string) =>
+  `There is no project called “${project}” yet, so I did not make the folder “${folder}”.`;
+
+// the names after the one a dialog or a form takes
+const oneAtATime = (what: string, rest: number) => `${what} one at a time, so I did not make ${left(rest, 'other')}.`;
+export const oneProject = (rest: number) => oneAtATime('The dialog starts projects', rest);
+export const onePrototype = (rest: number) => oneAtATime('A prototype is made', rest);
 
 export const cappedAt = (over: number) =>
   `I make up to ${MAX_MADE} at a time, so I did not make ${left(over, 'last')}.`;

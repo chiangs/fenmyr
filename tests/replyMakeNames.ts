@@ -70,6 +70,7 @@ assert.deepStrictEqual(
 const projects = (create: unknown) => projectsToMake(parseReply({ projects: { create } }));
 assert.deepStrictEqual(projects([' Garden ', 'garden', '', 'Shed']), { items: ['Garden', 'Shed'], over: 0 });
 assert.deepStrictEqual(projects('Garden').items, [], 'projects that are not a list are dropped');
+assert.deepStrictEqual(projects([null, 5, { name: 'x' }, 'Orchard']).items, ['Orchard'], 'a bad name drops alone');
 assert.deepStrictEqual(
   projectsToMake(parseReply({ projects: { rename: [{ from: 'a', to: 'b' }] } })).items,
   [],
@@ -110,4 +111,9 @@ assert.deepStrictEqual(
   'folders have the same cap',
 );
 assert.deepStrictEqual(folders(7).items, []);
+assert.deepStrictEqual(
+  folders([7, null, ['x'], { project: 'Shop' }, 'Keep']).items,
+  [{ name: 'Keep', project: '' }],
+  'a bad folder drops alone',
+);
 console.log('replyMakeNames: ok');

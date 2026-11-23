@@ -176,6 +176,24 @@ try {
     assert.ok(old.includes('On the old board'), 'the note is on the board it was asked on');
   });
 
+  await check(
+    'what else the reply does is done on the board she was asked on, before the new board opens',
+    async () => {
+      await startOn('a');
+      await answer({
+        say: 'Both.',
+        saveTemplate: { name: 'Kept note', ids: ['n'], mode: 'add' },
+        boards: { create: ['After'] },
+      });
+      await ask('save the note and make a board');
+      assert.strictEqual(await openName(), 'After');
+      const saved = await page.evaluate(async () =>
+        (await window.Fenmyr.templates()).find(t => t.name === 'Kept note'),
+      );
+      assert.strictEqual(saved?.cards.length, 1, 'the template has the note from the board she was asked on');
+    },
+  );
+
   await check('an answer for a board no longer open makes nothing, and she says she left it', async () => {
     await startOn('a');
     const before = await boardNames();

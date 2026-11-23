@@ -62,11 +62,12 @@ const reply = z.looseObject({
     z.looseObject({ name: txt, ids: opt(z.array(z.string())), fromNew: opt(z.boolean()), description: txt, mode: txt }),
   ),
   editTemplate: opt(z.looseObject({ name: txt, newName: txt, description: txt, mode: txt })),
-  projects: opt(z.looseObject({ create: list(words), rename: list(renamed) })),
+  projects: opt(z.looseObject({ create: list(opt(words)), rename: list(renamed) })),
   boards: opt(z.looseObject({ create: list(opt(words)) })),
   folders: opt(
     z.looseObject({
-      create: list(z.union([words, z.looseObject({ name: z.string(), project: txt })])),
+      // a bad entry drops alone, so one odd name doesn't cost her the others
+      create: list(opt(z.union([words, z.looseObject({ name: z.string(), project: txt })]))),
       rename: list(renamed),
       file: list(z.looseObject({ folder: z.string(), project: txt })),
       move: list(z.looseObject({ board: z.string(), folder: txt, project: txt })),
@@ -172,8 +173,8 @@ export const projectsToMake = (r: MyraReply) => namesOf(r.projects?.create);
 // project: the name of the project it goes in, or none for the one she is in
 export function foldersToMake(r: MyraReply): Wanted<FolderWish> {
   const wishes = (r.folders?.create ?? []).flatMap((o): FolderWish[] => {
-    const name = oneLine(typeof o === 'string' ? o : o.name);
-    return name ? [{ name, project: oneLine(typeof o === 'string' ? '' : o.project) }] : [];
+    const name = oneLine(typeof o === 'string' ? o : o?.name);
+    return name ? [{ name, project: oneLine(typeof o === 'string' ? '' : o?.project) }] : [];
   });
   return distinct(wishes, f => `${f.project}\n${f.name}`.toLowerCase());
 }
