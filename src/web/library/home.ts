@@ -10,7 +10,7 @@ import { exitDraw } from '../tools/draw.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc } from '../ui/dom.ts';
 import { removeOnOutsidePress } from '../ui/popover.ts';
-import { createProject, uniqueName } from './create.ts';
+import { createFolder, createProject } from './create.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
 import { draggable, dropZone, inlineRename, nestBoard } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
@@ -23,7 +23,6 @@ import {
   hasParent,
   looseBoards,
   looseFolders,
-  makeFolder,
   moveBoard,
   putFolder,
   saveLib,
@@ -257,9 +256,7 @@ export function renderHome(): void {
       grid.appendChild(folderTile(ff));
     });
     add('New folder', async () => {
-      const ff = makeFolder(uniqueName(appState.folders, 'New folder'), p.id);
-      await saveLib();
-      await refreshBoards();
+      const ff = await createFolder({ project: p.id, folder: null });
       const t = [...grid.querySelectorAll('.tile.folder')].pop();
       if (t) inlineRename(child(t, '.tile-meta b'), ff);
     });
@@ -280,10 +277,7 @@ export function renderHome(): void {
     else {
       add('New board', () => addBoardTo(f));
       add('New folder', async () => {
-        const ff = makeFolder(uniqueName(appState.folders, 'New folder'), f.project || null);
-        ff.parent = f.id;
-        await saveLib();
-        await refreshBoards();
+        const ff = await createFolder({ project: f.project || null, folder: f.id });
         const t = [...grid.querySelectorAll('.tile.folder')].pop();
         if (t) inlineRename(child(t, '.tile-meta b'), ff);
       });

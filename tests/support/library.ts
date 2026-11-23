@@ -69,13 +69,16 @@ export async function makes<K extends keyof Kinds>(
 }
 
 // Runs the button's own handler and waits for it to finish. A click can't say when the work behind it is done, and
-// something that must not happen can only be checked once it is.
-export const press = (page: Page, selector: string) =>
-  page.evaluate(async sel => {
-    const el = document.querySelector(sel);
-    if (el instanceof HTMLElement) await el.onclick?.call(el, new PointerEvent('click'));
-    else throw new Error(`nothing matches ${sel}`);
-  }, selector);
+// something that must not happen can only be checked once it is. `label` picks among buttons that share a selector.
+export const press = (page: Page, selector: string, label = '') =>
+  page.evaluate(
+    async ([sel, text]) => {
+      const el = [...document.querySelectorAll(sel)].find(e => e.textContent?.includes(text));
+      if (el instanceof HTMLElement) await el.onclick?.call(el, new PointerEvent('click'));
+      else throw new Error(`nothing matches ${sel} ${text}`);
+    },
+    [selector, label] as const,
+  );
 
 // What the person sees after: the open board, whether Home covers it, what has the keyboard, and any name being typed
 export const look = (page: Page) =>

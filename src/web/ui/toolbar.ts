@@ -3,11 +3,11 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
-import { createProject, uniqueName } from '../library/create.ts';
+import { createFolder, createProject, currentPlace } from '../library/create.ts';
 import { closeHome, homeAt } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
-import { refreshBoards, renameNewest } from '../library/rowMenu.ts';
-import { foldersIn, makeFolder, saveLib } from '../library/tree.ts';
+import { renameNewest } from '../library/rowMenu.ts';
+import { foldersIn } from '../library/tree.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
 import { newBoard } from '../model/boards.ts';
@@ -167,10 +167,7 @@ export function init21() {
   };
 
   $('newFolder').onclick = async () => {
-    const f = makeFolder(uniqueName(appState.folders, 'New folder'), scope().p?.id || null);
-    await saveLib();
-    await refreshBoards();
-    renameNewest('.node.folder', f);
+    renameNewest('.node.folder', await createFolder({ ...currentPlace(), folder: null }));
   };
 
   $('newProject').onclick = async () => {

@@ -3,22 +3,12 @@ import type { BoardSummary } from '../../shared/ops.ts';
 import { appState, session } from '../core/state.ts';
 import { addBoardTo } from '../repo/prototypes.ts';
 import { child } from '../ui/dom.ts';
-import { uniqueName } from './create.ts';
+import { createFolder } from './create.ts';
 import { closeHome } from './home.ts';
 import { draggable, dropZone, inlineRename, nestBoard, reorderZone } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
 import { type Kind, refreshBoards, renameBoard, renameNewest, rowMenu, type Thing } from './rowMenu.ts';
-import {
-  boardsIn,
-  foldersIn,
-  holdsBoard,
-  makeFolder,
-  moveBoard,
-  putFolder,
-  saveLib,
-  subFolders,
-  tint,
-} from './tree.ts';
+import { boardsIn, foldersIn, holdsBoard, moveBoard, putFolder, saveLib, subFolders, tint } from './tree.ts';
 
 let FBTN: { add: string; ren: string; del: string };
 export const FBTN_OF = (a: string) => (a === 'add' ? FBTN.add : a === 'ren' ? FBTN.ren : FBTN.del);
@@ -158,11 +148,8 @@ export function projectNode(p: Project): HTMLElement {
   child(wrap, '.node-head').onclick = async e => {
     const a = e.target instanceof Element ? e.target.closest<HTMLElement>('.f-btn')?.dataset.a : undefined;
     if (a === 'add') {
-      const f = makeFolder(uniqueName(appState.folders, 'New folder'), p.id);
       p.open = true;
-      await saveLib();
-      await refreshBoards();
-      return renameNewest('.node.folder', f);
+      return renameNewest('.node.folder', await createFolder({ project: p.id, folder: null }));
     }
     if (a === 'ren') return inlineRename(name, p);
     if (a === 'del') {
