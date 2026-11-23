@@ -7,6 +7,7 @@ import { myTpls } from '../features/templates.ts';
 import { foldersIn, looseFolders } from '../library/tree.ts';
 import { building, liveOf } from '../proto/buildSlot.ts';
 import { canonical } from '../richtext/dialect.ts';
+import { currentBuild } from '../settings/about.ts';
 import { settings } from '../settings/settings.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
 import { birthdayFacts } from './birthday.ts';
@@ -22,6 +23,7 @@ const saidIn = (m: ChatMsg) => {
 // what Myra sees: the cards (trimmed), where they are, which are selected, and what's in Unsorted. `selected`: the
 // cards a question was sent with, which may differ from what is selected when her turn comes.
 export function snapshot(selected: ReadonlySet<string> = session.sel) {
+  const build = currentBuild();
   const words = (c: Card) =>
     c.type === 'note' && c.rich ? canonical(c.text ?? '') : c.text || c.title || c.label || '';
   const brief = (c: Card) =>
@@ -78,6 +80,8 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
             building: building() || undefined,
           }
         : undefined,
+    // which Fenmyr this is, for "what version am I on?" and for writing up a bug
+    fenmyr: build ? { version: build.version, commit: build.short, changes: build.changes } : undefined,
     person: birthdayFacts(), // the slash commands, so she knows every one (the host puts them in her instructions)
     library: {
       projects: appState.projects.map(p => ({

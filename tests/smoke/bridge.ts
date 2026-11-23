@@ -162,6 +162,7 @@ export async function bridge(t: Smoke) {
     icons: asked.includes('Icons are names from this list'),
     board: asked.includes('"n":0'),
     higgsOff: asked.includes('Higgsfield is TURNED OFF'),
+    version: asked.includes('what version they are on'),
     mobbin: args.includes('mcp__claude_ai_Mobbin__search_screens'),
   });
   t.check('wav', wav === 'RIFF', wav);

@@ -1,14 +1,15 @@
 // What Settings → About says about the build, in the app. The version line comes from the stamp the build wrote, with
 // "+ changes" when files were modified, Copy details puts the whole text on the clipboard, the update line names the
-// installed version the same way on every kind of install, and a missing or damaged stamp shows the version alone
-// without a page error.
+// installed version the same way on every kind of install, a missing or damaged stamp shows the version alone
+// without a page error, and Myra is sent the version, the short commit and whether files had changed.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { detailsText, versionLine } from '../src/shared/buildStamp.ts';
-import { everyOfflineCard } from './fixtures/boards.ts';
+import { everyOfflineCard, replyBoard } from './fixtures/boards.ts';
+import { askStandIn } from './support/askStandIn.ts';
 import { launch, ROOT } from './support/launch.ts';
 import { still } from './support/settled.ts';
 
@@ -44,6 +45,25 @@ async function updatesSay(page: Page, answer: Record<string, unknown>) {
   await page.waitForFunction(() => !/Checking/.test(document.getElementById('suSub')?.textContent ?? ''));
   await still(page);
   return page.textContent('#suSub');
+}
+
+// what a stand-in Claude Code is given when someone asks Myra which version they are on
+async function promptFor(stamp: string) {
+  const asked = await launch({
+    boards: [replyBoard('ver', 'Version')],
+    open: 'ver',
+    claude: true,
+    env: { FENMYR_BUILD_STAMP: stamp },
+  });
+  try {
+    const { sentFor, send } = askStandIn(asked);
+    await asked.page.click('#mPill');
+    await still(asked.page);
+    await send('what version am I on?');
+    return (await sentFor('what version am I on?')).prompt;
+  } finally {
+    await asked.close();
+  }
 }
 
 const changed = stampFile(
@@ -119,6 +139,19 @@ for (const [name, stamp] of unusable) {
     await m.close();
   }
 }
+
+const told = await promptFor(changed);
+assert.ok(
+  told.includes(`"fenmyr":{"version":"${version}","commit":"a1b2c3d","changes":true}`),
+  'Myra is sent the version, the short commit and that files had changed',
+);
+assert.ok(told.includes('when they ask what version they are on'), 'and told what it is for');
+assert.ok(!told.includes('"channel"'), 'with no channel, which comes with the update channels');
+for (const [name, stamp] of unusable)
+  assert.ok(
+    (await promptFor(stamp)).includes(`"fenmyr":{"version":"${version}","commit":null,"changes":false}`),
+    `${name} stamp: Myra is sent the version alone`,
+  );
 
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log('APP BUILD OK');

@@ -14,6 +14,7 @@ export function loadBuild() {
   );
   return loading;
 }
+export const currentBuild = () => build;
 export const installedLine = () => (build ? versionLine(build) : '');
 
 export function initAbout() {
