@@ -263,4 +263,65 @@ const popupsDark: Group = {
   ],
 };
 
-export const MYRA_GROUPS = { reply, sees, panels, offer, plan, template, 'popups-dark': popupsDark };
+// The pill under her input, its open menu, and the Effort flyout beside it, with Sonnet 5.5 at Medium chosen so the menu
+// shows its tick and the Effort row has a level. A checkout without the picker has no pill: the steps leave the open
+// chat as it is, and the states are listed as meant.
+const SONNET = { provider: 'claude-code', id: 'claude-sonnet-5-5', effort: 'medium' };
+const openChat: Step = async page => {
+  await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
+  await page.click('#mPill');
+  await page.mouse.move(1, 1);
+};
+const modelPicker = (settings: Record<string, unknown>): Group => ({
+  settings: { ...settings, myraModel: SONNET },
+  states: [
+    ['pill', openChat],
+    [
+      'menu',
+      async page => {
+        const pill = page.locator('#mcModel');
+        if (await pill.count()) await pill.click();
+        await page.waitForSelector('#mcModelMenu', { timeout: 2000 }).catch(() => undefined);
+        await page.mouse.move(1, 1);
+      },
+    ],
+    [
+      'effort',
+      async page => {
+        const row = page.locator('#mcModelMenu .mm-effort');
+        if (await row.count()) await row.click();
+        await page.waitForSelector('.mc-modelfly', { timeout: 2000 }).catch(() => undefined);
+        await page.mouse.move(1, 1);
+      },
+    ],
+  ],
+});
+// the narrowest the chat is placed (CHAT.minW in src/web/myra/chatRules.ts), which no window gives on a desktop, so the
+// width is set the way the chat sets it
+const narrow: Group = {
+  settings: { myraModel: SONNET },
+  states: [
+    [
+      'pill',
+      async page => {
+        await openChat(page);
+        await page.evaluate(() => document.getElementById('myra')?.style.setProperty('--chat-w', '320px'));
+      },
+    ],
+  ],
+};
+
+export const MYRA_GROUPS = {
+  reply,
+  sees,
+  panels,
+  offer,
+  plan,
+  template,
+  'popups-dark': popupsDark,
+  'model-picker': modelPicker({}),
+  'model-picker-dark': modelPicker({ theme: 'dark' }),
+  'model-picker-clear': modelPicker({ theme: 'light', lightTheme: 'clear' }),
+  'model-picker-lantern': modelPicker({ theme: 'dark', darkTheme: 'lantern' }),
+  'model-picker-narrow': narrow,
+};
