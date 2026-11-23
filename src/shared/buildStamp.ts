@@ -1,4 +1,5 @@
 import { isRecord } from './model.ts';
+import { isPrerelease } from './version.ts';
 
 // What a build knows about itself: the commit it was made from, how it was installed and what it runs on. The host
 // answers with it (src/host/appBuild.ts), and every place that names the version reads the same line from here.
@@ -21,7 +22,6 @@ export type AppBuild = BuildStamp &
   };
 
 const NO_STAMP: BuildStamp = { commit: null, changes: false, builtAt: null };
-const PRERELEASE = /^\d+\.\d+\.\d+-/;
 
 // dist/build.json is written by tools/build.ts; a copy that lacks it, or whose file is damaged, has no commit to show
 export function readStamp(raw: unknown): BuildStamp {
@@ -35,7 +35,7 @@ export const appBuildOf = (version: string, stamp: BuildStamp, where: Where): Ap
   ...stamp,
   ...where,
   version,
-  prerelease: PRERELEASE.test(version),
+  prerelease: isPrerelease(version),
   short: stamp.commit?.slice(0, 7) ?? null,
 });
 

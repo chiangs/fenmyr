@@ -9,6 +9,7 @@ import path from 'node:path';
 import { app } from 'electron';
 import type { AppInstall } from '../shared/buildStamp.ts';
 import type { UpdateInfo } from '../shared/ops.ts';
+import { compareVersions } from '../shared/version.ts';
 import { download as fetchTo, get } from './net.ts';
 import P from './paths.ts';
 import { isRecord, readJSON, run, text, which } from './util.ts';
@@ -60,21 +61,7 @@ async function installedCommit(dir: string) {
   const commit = install ? text(install.commit) : '';
   return commit && (await git(['cat-file', '-e', `${commit}^{commit}`], dir)).ok ? commit : 'HEAD';
 }
-function newer(a: string, b: string) {
-  const parts = (v: string) =>
-    v
-      .replace(/^v/, '')
-      .split('.')
-      .map(n => Number.parseInt(n, 10) || 0);
-  const x = parts(a);
-  const y = parts(b);
-  for (let i = 0; i < Math.max(x.length, y.length); i++) {
-    const p = x[i] ?? 0;
-    const q = y[i] ?? 0;
-    if (p !== q) return p > q;
-  }
-  return false;
-}
+const newer = (a: string, b: string) => compareVersions(a, b) > 0;
 async function latestRelease(): Promise<Release | null> {
   try {
     const r = await get(releaseAPI, 30, { Accept: 'application/vnd.github+json', 'User-Agent': 'Fenmyr' });
