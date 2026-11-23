@@ -115,6 +115,26 @@ for (const t of THEMES.filter(x => ['clear-light', 'lantern-dark', 'midsummer-li
   }
   await app.close();
 }
+// the option turns it off: the same controls in Clear draw no thick ring, and a selected card's ring is its usual weight
+{
+  const t = THEMES.find(x => x.id === 'clear-light');
+  assert(t, 'Clear is a theme');
+  const app = await launch({ boards: [board], open: board.id, settings: { ...look(t), thickFocus: false } });
+  await app.page.evaluate(() => window.__fenmyr.selectOnly(['note']));
+  await still(app.page);
+  const thick = (await rings(app.page)).filter(f => f.style !== 'none' && f.width === RING.width);
+  const edge = await app.page.evaluate(() => {
+    const card = document.querySelector('#cards [data-id="note"]');
+    return card ? getComputedStyle(card, '::after').borderTopWidth : '';
+  });
+  assert.deepStrictEqual(
+    thick.map(f => f.control),
+    [],
+    'with Thicker focus ring off no control draws the thick ring',
+  );
+  assert.notStrictEqual(edge, RING.width, `and a selected card's ring is its usual weight (${edge})`);
+  await app.close();
+}
 assert(seen > 200, `a few hundred controls were looked at (${seen})`);
 assert.deepStrictEqual(failures.slice(0, 40), [], `${failures.length} controls without the ring`);
 console.log(`FOCUS RING OK (${seen} controls)`);
