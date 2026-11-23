@@ -7,7 +7,7 @@ import { createFolder } from './create.ts';
 import { closeHome } from './home.ts';
 import { draggable, dropZone, inlineRename, nestBoard, reorderZone } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
-import { type Kind, refreshBoards, renameBoard, renameNewest, rowMenu, type Thing } from './rowMenu.ts';
+import { type Kind, refreshBoards, renameBoard, renameNewFolder, rowMenu, type Thing } from './rowMenu.ts';
 import { boardsIn, foldersIn, holdsBoard, moveBoard, putFolder, saveLib, subFolders, tint } from './tree.ts';
 
 let FBTN: { add: string; ren: string; del: string };
@@ -149,7 +149,7 @@ export function projectNode(p: Project): HTMLElement {
     const a = e.target instanceof Element ? e.target.closest<HTMLElement>('.f-btn')?.dataset.a : undefined;
     if (a === 'add') {
       p.open = true;
-      return renameNewest('.node.folder', await createFolder({ project: p.id, folder: null }));
+      return renameNewFolder(await createFolder({ project: p.id, folder: null }));
     }
     if (a === 'ren') return inlineRename(name, p);
     if (a === 'del') {

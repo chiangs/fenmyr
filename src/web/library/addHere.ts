@@ -1,7 +1,7 @@
 import type { Folder, Project } from '../../shared/model.ts';
 import { type Added, addBoardTo } from '../repo/prototypes.ts';
 import { blankBoard, boardFolder, createBoard, createFolder, currentPlace } from './create.ts';
-import { renameNewest } from './rowMenu.ts';
+import { renameNewFolder } from './rowMenu.ts';
 
 // What + Board does, for the button and for /board, so the two cannot drift: a board in the folder the person is in (or
 // the project's first folder, or none) that opens, or a prototype when that folder holds prototypes.
@@ -19,6 +19,6 @@ export async function addBoardHere(name = ''): Promise<Added> {
 export async function addFolderHere(name = '', project?: Project): Promise<Folder> {
   const place = project ? { project: project.id, folder: null } : { ...currentPlace(), folder: null },
     f = await createFolder(place, name);
-  if (!name.trim()) renameNewest('.node.folder', f);
+  if (!name.trim()) renameNewFolder(f);
   return f;
 }
