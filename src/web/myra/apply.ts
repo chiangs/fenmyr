@@ -192,7 +192,7 @@ export async function applyHeld(turn: Turn, held: HeldReply, planned?: Planned):
     const leftAll = !!planned && !changed && left.length > 0,
       ran = await runEffects(effectsOf(held), touched),
       line = replyLine(held, touched, ran.acts),
-      said = [leftAll ? '' : line.text, ...ran.failed, leftLine(left)].filter(Boolean).join(' ');
+      said = [leftAll ? '' : line.text, ...ran.told, ...ran.failed, leftLine(left)].filter(Boolean).join(' ');
     later = ran.later;
     // Her line lands on whichever board is open now. An effect such as a new prototype may have opened another one,
     // and what this reply changed means nothing there.

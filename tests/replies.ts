@@ -16,6 +16,8 @@
 //   way to them.
 // - The tools panel: the bottom bar is centred, so her joined chat opens from the middle of the window and the board
 //   beside it is narrower; the cards a library or new-board reply lays out land in other places.
+// - The library: her projects.create opens the New project dialog instead of making a project, so the scenario makes
+//   Garden itself first; her folders.create makes a folder as /folder does and she says so after her words.
 // - Zoom leaves the bottom bar: her box is the whole bar, so her joined chat opens 32 px further left and the board
 //   beside it is wider; those cards land in other places again.
 import assert from 'node:assert';
@@ -210,10 +212,10 @@ await open(page, 'library');
 await page.evaluate(async () => {
   await window.__fenmyr.saveAsTemplate('Starter', ['n1', 'n2'], { mode: 'add' });
   await window.__fenmyr.saveAsTemplate('Old name', ['s1'], { mode: 'add' });
+  await window.__fenmyr.createProject('Garden');
   await window.__fenmyr.applyMyra(
     {
       say: 'Sorted.',
-      projects: { create: ['Garden'] },
       folders: {
         create: [{ name: 'Plans', project: 'Garden' }, 'Loose'],
         rename: [{ from: 'Loose', to: 'Odds' }],
