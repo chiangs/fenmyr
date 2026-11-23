@@ -18,7 +18,6 @@ export function loadBuild() {
 }
 export const currentBuild = () => build;
 export const installedLine = () => (build ? versionLine(build) : '');
-// the channel a clone install follows: the one chosen in Settings, or the default for this version
 export const currentChannel = () => channelFor(settings.updateChannel, build?.version ?? '');
 
 export function initAbout() {

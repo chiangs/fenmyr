@@ -7,7 +7,7 @@ import { myTpls } from '../features/templates.ts';
 import { foldersIn, looseFolders } from '../library/tree.ts';
 import { building, liveOf } from '../proto/buildSlot.ts';
 import { canonical } from '../richtext/dialect.ts';
-import { currentBuild } from '../settings/about.ts';
+import { currentBuild, currentChannel } from '../settings/about.ts';
 import { settings } from '../settings/settings.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
 import { birthdayFacts } from './birthday.ts';
@@ -81,7 +81,9 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
           }
         : undefined,
     // which Fenmyr this is, for "what version am I on?" and for writing up a bug
-    fenmyr: build ? { version: build.version, commit: build.short, changes: build.changes } : undefined,
+    fenmyr: build
+      ? { version: build.version, commit: build.short, changes: build.changes, channel: currentChannel() }
+      : undefined,
     person: birthdayFacts(), // the slash commands, so she knows every one (the host puts them in her instructions)
     library: {
       projects: appState.projects.map(p => ({
