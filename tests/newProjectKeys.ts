@@ -99,6 +99,40 @@ try {
     oneStart(keys);
   });
 
+  await check(
+    'while the project is being made the dialog holds: a click outside and Escape do not close it',
+    async () => {
+      await onBoard('a');
+      await open();
+      // the save waits until the test lets it go, so the dialog is caught in the middle of making the project
+      await page.evaluate(() => {
+        const save = Fenmyr.saveFolders;
+        Fenmyr.saveFolders = async (...args) => {
+          await new Promise<void>(go => Reflect.set(window, 'letGo', go));
+          Fenmyr.saveFolders = save;
+          return save(...args);
+        };
+      });
+      const m = await made(async () => {
+        await row('Blank board').click();
+        await page.waitForFunction(() => typeof Reflect.get(window, 'letGo') === 'function');
+        assert.ok(
+          await page.evaluate(() =>
+            [...document.querySelectorAll('#npDlg input, #npDlg button')].every(
+              el => (el instanceof HTMLInputElement || el instanceof HTMLButtonElement) && el.disabled,
+            ),
+          ),
+          'every control is disabled',
+        );
+        await page.mouse.click(4, 4);
+        await page.keyboard.press('Escape');
+        assert.ok(await shown(), 'a click outside and Escape left it open');
+        await page.evaluate(() => Reflect.get(window, 'letGo')());
+      });
+      oneStart(m);
+    },
+  );
+
   await check('the arrow keys move the choice, Enter makes it, from the name and from the search', async () => {
     await onBoard('a');
     await open();

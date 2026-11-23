@@ -61,7 +61,6 @@ const listHtml = (all: Row[]) =>
     })
     .join('');
 
-// The project, its first folder and the first board in it, started the way the row says
 async function begin(start: Start, name: string) {
   const p = await createProject(name),
     f = await createFirstFolder(p),
@@ -94,7 +93,7 @@ export function openNewProject(want = '') {
   const d = showDialog(
     `<div class="tdlg np" role="dialog" aria-modal="true" aria-labelledby="npTitle"><h3 id="npTitle">New project</h3>
     <label>Name<input id="npName" maxlength="${NAME_MAX}" value="${name}" autocomplete="off" spellcheck="false"></label>
-    <label>Start its first board from<input id="npSearch" placeholder="Search…" autocomplete="off" spellcheck="false" aria-controls="npList"></label>
+    <label>First board<input id="npSearch" placeholder="Search…" autocomplete="off" spellcheck="false" aria-controls="npList"></label>
     <div class="np-list" id="npList" role="listbox">${rows}<div class="np-none" hidden>Nothing matches</div></div>
     <div class="tdlg-btns"><button class="set-btn" id="npNo">Cancel</button></div></div>`,
     'npDlg',
@@ -133,8 +132,9 @@ export function openNewProject(want = '') {
     if (next !== undefined) select(next);
   };
 
-  // Once chosen, nothing in the dialog answers, so a second click or Enter cannot make a second project. The dialog
-  // stays until the board is open, and takes the clicks that would otherwise land on the page under it.
+  // Once chosen, the controls are disabled and a second choice is ignored, so a second click or Enter cannot make a
+  // second project. The dialog stays until the board is open, and takes the clicks that would otherwise land on the
+  // page under it.
   const choose = async (i: number) => {
     const row = all[i];
     if (!row || busy) return;
@@ -150,18 +150,17 @@ export function openNewProject(want = '') {
   };
 
   d.onclick = e => {
-    if (busy) return;
     const row = closestTo(e.target, '.np-row');
     if (row) return void choose(Number(row.dataset.i));
     // the second click of a double click on + Project lands on the backdrop, and is not meant to close what the first opened
-    if ((e.target === d && e.detail < 2) || closestTo(e.target, '#npNo')) d.remove();
+    const out = (e.target === d && e.detail < 2) || closestTo(e.target, '#npNo');
+    if (out && !busy) d.remove();
   };
   d.oninput = e => {
     if (e.target === searchIn) filter();
   };
   d.onkeydown = e => {
     e.stopPropagation();
-    if (busy) return;
     if (e.key === 'Escape') d.remove();
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
