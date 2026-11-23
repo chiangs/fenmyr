@@ -104,6 +104,8 @@ type CardFields = {
     props?: [string, string][];
   };
   path: { pts: PathPoint[]; closed?: boolean; fill?: string; ow: number; oh: number };
+  // a card this build can't read, as it was in the file: written back as it was, with this card's id and place and size
+  unknown: { original: Record<string, unknown> };
 };
 
 // Fields Myra and the selection bar can set on any kind of card, so they live here.
@@ -212,7 +214,13 @@ export type Board = BoardBase & BoardKind;
 // `rec` and `paused` stay: reopening a board finds an interrupted recording by them.
 const RUNNING_ONLY = ['count', 'starting', 'saving', 'pct', 'camErr', 'camRest', 'loading', 'cropEdit'];
 
-function storedCard<T extends object>(card: T): T {
+function storedCard(card: object): object {
+  // a placeholder goes back as it was read, with the id and the place and size it has now
+  const original = Reflect.get(card, 'original');
+  if (Reflect.get(card, 'type') === 'unknown' && isRecord(original)) {
+    const [id, x, y, w, h] = ['id', 'x', 'y', 'w', 'h'].map(k => Reflect.get(card, k));
+    return { ...original, id, x, y, w, h };
+  }
   if (!RUNNING_ONLY.some(k => k in card)) return card;
   const copy = { ...card };
   for (const k of RUNNING_ONLY) Reflect.deleteProperty(copy, k);
@@ -260,6 +268,7 @@ const isNum = (x: unknown) => typeof x === 'number' && Number.isFinite(x);
 function isCard(x: unknown): x is Card {
   if (!isRecord(x) || typeof x.id !== 'string' || !isCardType(x.type)) return false;
   if (![x.x, x.y, x.w, x.h].every(isNum)) return false;
+  if (x.type === 'unknown') return isRecord(x.original);
   if (x.type === 'swatch') return typeof x.hex === 'string';
   if (x.type === 'coll') return Array.isArray(x.kids) && x.kids.every(k => typeof k === 'string');
   return true;
@@ -282,20 +291,24 @@ export function readLinks(x: unknown): Link[] {
 }
 
 // Anything saved back after opening a board is all it keeps, so a card missing a number gets a default instead of being
-// dropped. Only a card with no id or an unknown type is left out, since it can't be shown.
+// dropped, and a card this build can't read (a type it doesn't know, or a shape that fails the check) is kept as a
+// placeholder that holds it as it was: storedCard writes it back. Only a card with no id can't be kept, since nothing could
+// address it.
 function readCard(x: unknown): Card | null {
-  if (!isRecord(x) || !isCardType(x.type)) return null;
-  const [width, height] = sizeOf(x.type),
+  if (!isRecord(x) || typeof x.id !== 'string') return null;
+  const type = isCardType(x.type) ? x.type : undefined,
+    [width, height] = sizeOf(type ?? 'unknown'),
+    num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback),
+    place = { x: num(x.x, 0), y: num(x.y, 0), w: num(x.w, width), h: num(x.h, height) },
     filled = {
       ...x,
-      x: isNum(x.x) ? x.x : 0,
-      y: isNum(x.y) ? x.y : 0,
-      w: isNum(x.w) ? x.w : width,
-      h: isNum(x.h) ? x.h : height,
+      ...place,
       ...(x.type === 'swatch' && typeof x.hex !== 'string' ? { hex: '#ffffff' } : {}),
       ...(x.type === 'coll' && !Array.isArray(x.kids) ? { kids: [] } : {}),
     };
-  return isCard(filled) ? filled : null;
+  // a placeholder that went through a copy or a move comes back as it was
+  if (type && isCard(filled)) return filled;
+  return { id: x.id, type: 'unknown', ...place, original: x };
 }
 
 // A board file read from disk.

@@ -104,6 +104,8 @@ const CARD_TYPES = {
     fromReading: true,
   },
   path: { label: 'Pen shape', anyFill: true, strokable: true, roundable: true },
+  // a card this build can't read, kept as it was so the next save writes it back: it can be moved, resized and deleted
+  unknown: { label: 'Unknown card', noRotate: true, noTilt: true, notInTemplates: true },
 } as const satisfies Record<string, Traits>;
 
 export type CardType = keyof typeof CARD_TYPES;

@@ -26,6 +26,11 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
   const build = currentBuild();
   const words = (c: Card) =>
     c.type === 'note' && c.rich ? canonical(c.text ?? '') : c.text || c.title || c.label || '';
+  // a card the app can't read is left out: she has nothing she could act on
+  const gone = new Set(
+    [...session.board.cards, ...session.board.tray].filter(c => c.type === 'unknown').map(c => c.id),
+  );
+  const shown = (cards: Card[]) => cards.filter(c => c.type !== 'unknown');
   const brief = (c: Card) =>
     c.type === 'vnote'
       ? { id: c.id, type: 'vnote', x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h) }
@@ -57,9 +62,9 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
     name: session.board.name,
     boardTags: session.board.tags || [],
     myTemplates: myTpls.map(t => t.name),
-    cards: session.board.cards.map(brief),
-    links: session.board.links.map(l => [l.a, l.b]),
-    unsorted: session.board.tray.map(brief),
+    cards: shown(session.board.cards).map(brief),
+    links: session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b)).map(l => [l.a, l.b]),
+    unsorted: shown(session.board.tray).map(brief),
     boardColors: session.board.palette,
     fontsOnThisComputer: FONTS.filter(f => !/^(\.|Apple |System|STIX|Noto Sans [A-Z][a-z]+ [A-Z])/.test(f)).slice(
       0,
