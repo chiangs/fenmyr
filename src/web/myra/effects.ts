@@ -1,5 +1,5 @@
 import type { Card } from '../../shared/model.ts';
-import type { MyraReply } from '../../shared/myraReply.ts';
+import { boardsToMake, type MyraReply, type Wanted } from '../../shared/myraReply.ts';
 import { offerFill, spotsIn } from '../cards/imageFill.ts';
 import { appState, session } from '../core/state.ts';
 import { buildTplPick, freeName, myTpls, saveAsTemplate } from '../features/templates.ts';
@@ -14,6 +14,7 @@ import { applyNewPrototype } from '../repo/myra.ts';
 import { animIntent, animName, playAnim } from './anim.ts';
 import type { HeldReply } from './applyTypes.ts';
 import { animAskedAt, timerAskedAt } from './chat.ts';
+import { makeBoards } from './makeInLibrary.ts';
 import type { SayAction } from './say.ts';
 
 type Part<K extends keyof MyraReply> = NonNullable<MyraReply[K]>;
@@ -29,7 +30,8 @@ export type Effect =
   | { kind: 'newPrototype'; want: Part<'newPrototype'> }
   | { kind: 'build'; request: string; cards: readonly string[] }
   | { kind: 'git'; action: string; message: string | undefined }
-  | { kind: 'install'; packages: string[] };
+  | { kind: 'install'; packages: string[] }
+  | { kind: 'boards'; wish: Wanted<string> };
 
 // someone who just asked for a timer or an animation in words got it already; her own pick waits
 const askedLately = (at: number) => Date.now() - at <= 30000;
@@ -52,27 +54,33 @@ export function effectsOf({ reply: r, q, ctx }: HeldReply): Effect[] {
   if (r.build?.request) out.push({ kind: 'build', request: r.build.request, cards: ctx.sees.sel });
   if (r.git?.action) out.push({ kind: 'git', action: r.git.action, message: r.git.message });
   if (r.install?.packages?.length) out.push({ kind: 'install', packages: r.install.packages });
+  // last, since each new board opens and the effects before it work on the board she was asked on
+  const boards = boardsToMake(r);
+  if (boards.items.length) out.push({ kind: 'boards', wish: boards });
   return out;
 }
 
-// Runs them in order, each on its own, so one that fails costs only itself. Returns the buttons they offer under her
-// line, a sentence for each that failed, naming what she tried in plain words rather than the system's error, and what
-// starts once her line is in: a build, whose block follows the line that says she's writing it or that it waits its
-// turn. `touched`: the cards the reply made, moved or edited, in the order it did so.
+// What effects hand back: the buttons they offer under her line, what she says of the library she has changed, and what
+// starts once her line is in.
+type Out = { acts: SayAction[]; told: string[]; later: (() => void)[] };
+
+// Runs them in order, each on its own, so one that fails costs only itself. Returns what they hand back, with a
+// sentence for each that failed, naming what she tried in plain words rather than the system's error. `later`: a build,
+// whose block follows the line that says she's writing it or that it waits its turn. `touched`: the cards the reply
+// made, moved or edited, in the order it did so.
 export async function runEffects(effects: readonly Effect[], touched: readonly Card[]) {
-  const acts: SayAction[] = [],
-    failed: string[] = [],
-    later: (() => void)[] = [];
+  const out: Out = { acts: [], told: [], later: [] },
+    failed: string[] = [];
   for (const e of effects)
     try {
-      await runEffect(e, touched, acts, later);
+      await runEffect(e, touched, out);
     } catch {
       failed.push(`I couldn’t ${tried(e)}.`);
     }
-  return { acts, failed, later };
+  return { ...out, failed };
 }
 
-async function runEffect(e: Effect, touched: readonly Card[], acts: SayAction[], later: (() => void)[]) {
+async function runEffect(e: Effect, touched: readonly Card[], out: Out) {
   switch (e.kind) {
     case 'stopTimer':
       if (timer && !askedLately(timerAskedAt)) stopTimer(false);
@@ -109,16 +117,19 @@ async function runEffect(e: Effect, touched: readonly Card[], acts: SayAction[],
       setTimeout(() => offerFill(spotsIn(session.board.cards.filter(c => c.type === 'frame').slice(-e.screens))), 1500);
       break;
     case 'newPrototype':
-      acts.push(...(await applyNewPrototype(e.want)));
+      out.acts.push(...(await applyNewPrototype(e.want)));
       break;
     case 'build':
-      later.push(() => void startBuild(e.request, e.cards));
+      out.later.push(() => void startBuild(e.request, e.cards));
       break;
     case 'git':
       gitAction(e.action, e.message);
       break;
     case 'install':
       askInstall(e.packages);
+      break;
+    case 'boards':
+      await makeBoards(e.wish, out.told);
       break;
     default: {
       const unhandled: never = e;
@@ -154,6 +165,10 @@ function tried(e: Effect): string {
       return 'ask about saving to the repo';
     case 'install':
       return 'ask about installing packages';
+    case 'boards': {
+      const [only] = e.wish.items;
+      return e.wish.items.length === 1 ? `make the board${named(only)}` : 'make the boards';
+    }
     default: {
       const unhandled: never = e;
       return unhandled;

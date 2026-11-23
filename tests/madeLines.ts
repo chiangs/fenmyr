@@ -6,8 +6,13 @@ import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const WORDING = 'src/web/myra/madeLines.ts';
-const PHRASES = ['I made the', 'holds prototypes, so I opened', 'There is already a project called'];
-const READERS = ['src/web/myra/slashMake.ts'];
+const PHRASES = [
+  'I made the',
+  'holds prototypes, so I opened',
+  'There is already a project called',
+  'so I did not make',
+];
+const READERS = ['src/web/myra/slashMake.ts', 'src/web/myra/makeInLibrary.ts'];
 
 const sources = (dir: string): string[] =>
   fs

@@ -1,4 +1,5 @@
 import type { Folder } from '../../shared/model.ts';
+import { MAX_MADE } from '../../shared/myraReply.ts';
 import { appState } from '../core/state.ts';
 
 // What she says once she has made something, for /project, /folder and /board and for her own replies, so one action
@@ -14,6 +15,8 @@ const quoted = (names: readonly string[]) => {
     last = all.pop();
   return all.length ? `${all.join(', ')} and ${last}` : (last ?? '');
 };
+
+const left = (n: number, which: string) => (n === 1 ? `the ${which} one` : `the ${which} ${n}`);
 
 export function folderMade(made: Folder, asked: string) {
   const project = appState.projects.find(p => p.id === made.project)?.name,
@@ -37,3 +40,10 @@ export const projectTaken = ({ name, asked }: { name: string; asked: string }) =
   asked && asked !== name
     ? `There is already a project called “${asked}”, so I started the name at “${name}”.`
     : undefined;
+
+// the names after the one a form takes
+export const onePrototype = (rest: number) =>
+  `A prototype is made one at a time, so I did not make ${left(rest, 'other')}.`;
+
+export const cappedAt = (over: number) =>
+  `I make up to ${MAX_MADE} at a time, so I did not make ${left(over, 'last')}.`;
