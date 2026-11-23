@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { replyBoard } from './fixtures/boards.ts';
+import { textIfThere } from './support/fileText.ts';
 import { launch, settle } from './support/launch.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-build-buttons-')));
@@ -147,7 +148,7 @@ try {
     'Commit then Not now keeps that build’s Undo and Explain the code, and only the Commit goes',
   );
   await tap('Undo this build');
-  await until(async () => fs.readFileSync(app, 'utf8').includes('Build 1'), 'Undo puts back the last build');
+  await until(async () => textIfThere(app)?.includes('Build 1') ?? false, 'Undo puts back the last build');
   assert.match(fs.readFileSync(app, 'utf8'), /Build 1/, 'and only the last build');
 
   await open('one');

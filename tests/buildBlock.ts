@@ -13,6 +13,7 @@ import path from 'node:path';
 import type { ChatMsg } from '../src/shared/chat.ts';
 import { replyBoard } from './fixtures/boards.ts';
 import { buildStandIn } from './support/buildStandIn.ts';
+import { textIfThere } from './support/fileText.ts';
 import { launch, settle } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
 
@@ -228,10 +229,7 @@ try {
   assert.deepStrictEqual(await last(), kept, 'after a restart the block reads the same');
   assert.deepStrictEqual(await buttonsUnder(explained), hers, 'and her buttons come back');
   await tap('Undo this build');
-  await until(
-    async () => fs.readFileSync(file('src/App.tsx'), 'utf8') === starter,
-    'Undo this build puts App.tsx back',
-  );
+  await until(async () => textIfThere(file('src/App.tsx')) === starter, 'Undo this build puts App.tsx back');
   await until(async () => !fs.existsSync(file('src/Form.tsx')), 'and takes Form.tsx away');
   assert.strictEqual(git('diff', '--cached', '--name-only').trim(), 'staged.txt', 'leaving what was staged');
   await until(async () => (await last())?.head.endsWith(' · undone') ?? false, 'and the block says it was undone');
@@ -304,7 +302,7 @@ try {
     'while the build before it, never undone, offers neither Undo this build nor Commit',
   );
   await tap('Undo this build');
-  await until(async () => fs.readFileSync(file('src/App.tsx'), 'utf8') === total, 'which puts App.tsx back');
+  await until(async () => textIfThere(file('src/App.tsx')) === total, 'which puts App.tsx back');
   await until(async () => (await last())?.buttons.length === 0, 'and goes');
   assert.match((await last())?.head ?? '', / · undone$/, 'as the block says');
   await back(3);
