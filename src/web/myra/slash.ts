@@ -158,6 +158,9 @@ function show() {
   menu.style.left = `${f.left}px`;
   menu.style.width = `${Math.max(260, f.width)}px`;
   menu.style.bottom = `${innerHeight - f.top + 6}px`;
+  // it grows upward from the box, so it is held to the room above the box and scrolls when it has more rows than that
+  menu.style.maxHeight = `${Math.max(120, f.top - 16)}px`;
+  menu.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
 }
 
 // the form changed size under an open menu
