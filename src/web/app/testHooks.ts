@@ -28,6 +28,7 @@ import { currentPose, timer, timerCheck } from '../features/timer.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import { createBoard, createExample, createFolder, createProject, currentPlace } from '../library/create.ts';
 import { openHome } from '../library/home.ts';
+import { openNewProject } from '../library/newProject.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, renameBoard } from '../library/rowMenu.ts';
 import { boardsIn, moveBoard, putFolder } from '../library/tree.ts';
@@ -197,6 +198,7 @@ const makeHooks = () => ({
   docEditor: liveEditor,
   docPrintHTML,
   openHome,
+  openNewProject,
   createProject,
   createFolder,
   createBoard,

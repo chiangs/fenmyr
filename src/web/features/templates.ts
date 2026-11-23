@@ -12,7 +12,6 @@ import { placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
-import { STARTERS, TPL_IC } from '../content/placeFramework.ts';
 import { queryWords, uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
@@ -25,7 +24,7 @@ import { esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { cardName } from './export.ts';
 import { instantiate, templateFrom } from './templateCards.ts';
-import { matchesSearch, runTemplate, type TemplateEntry, tagOf, templateEntries } from './templateList.ts';
+import { iconOf, matchesSearch, runTemplate, type TemplateEntry, tagOf, templateEntries } from './templateList.ts';
 
 // ---------- your own templates: save a selection (or the whole board); use it on a board or as a new one (Settings decides) ----------
 export let myTpls: Template[] = [];
@@ -179,23 +178,6 @@ export async function loadTemplates() {
   myTpls = await Fenmyr.templates().catch(() => []);
   buildTplPick();
 }
-
-const iconOf = (e: TemplateEntry) => {
-  switch (e.kind) {
-    case 'prototype':
-      return 'code';
-    case 'framework':
-      return TPL_IC[e.key] ?? '';
-    case 'starter':
-      return STARTERS[e.key]?.[1] ?? '';
-    case 'mine':
-      return 'templates';
-    default: {
-      const unhandled: never = e.kind;
-      return unhandled;
-    }
-  }
-};
 
 const tplRow = (e: TemplateEntry) => {
   const icon = Icon(iconOf(e)),

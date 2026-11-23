@@ -1,6 +1,6 @@
 import type { Template } from '../../shared/ops.ts';
 import { FRAMEWORKS } from '../content/frameworks.ts';
-import { placeFramework, STARTERS } from '../content/placeFramework.ts';
+import { placeFramework, STARTERS, TPL_IC } from '../content/placeFramework.ts';
 import { hasAll } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { createBoard, createWithCards, type Place } from '../library/create.ts';
@@ -65,6 +65,24 @@ export function templateEntries(): TemplateEntry[] {
   );
   return [...made, ...mine];
 }
+
+// the icon a row draws, by kind
+export const iconOf = (e: TemplateEntry) => {
+  switch (e.kind) {
+    case 'prototype':
+      return 'code';
+    case 'framework':
+      return TPL_IC[e.key] ?? '';
+    case 'starter':
+      return STARTERS[e.key]?.[1] ?? '';
+    case 'mine':
+      return 'templates';
+    default: {
+      const unhandled: never = e.kind;
+      return unhandled;
+    }
+  }
+};
 
 // What a click in the picker does, for each kind. With a place, each kind but the prototype makes a board there and
 // shows it, so the caller can take the person to a new project: a framework, which adds to the open board when there
