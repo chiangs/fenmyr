@@ -43,6 +43,7 @@ export async function bridge(t: Smoke) {
       folders = saved && Array.isArray(kept) ? kept.length : 0,
       fonts = (await Fenmyr.fonts()).length,
       version = await Fenmyr.version(),
+      build = await Fenmyr.appBuild(),
       usage = typeof (await Fenmyr.usage()).today.asks,
       speech = await Fenmyr.speechAuth();
     const unknown = await new Promise(res => {
@@ -107,6 +108,7 @@ export async function bridge(t: Smoke) {
       folders,
       fonts,
       version,
+      build,
       usage,
       speech,
       unknown,
@@ -137,6 +139,13 @@ export async function bridge(t: Smoke) {
     fonts: r.fonts,
   });
   t.check('big', r.bigOk, r.bigMs);
+  t.checkAll('appBuild', {
+    version: r.build.version === r.version,
+    install: r.build.install === (process.env.FENMYR_APP ? 'clone' : 'checkout'),
+    commit: /^[0-9a-f]{40}$/.test(r.build.commit ?? ''),
+    short: r.build.short === r.build.commit?.slice(0, 7),
+    system: r.build.platform === 'linux' && !!r.build.arch && !!r.build.electron && !!r.build.chrome,
+  });
   t.check('unknownOp', r.unknown === 'unknown op nope', r.unknown);
   t.check('range', r.range[0] === 206 && r.range[1] === 100, r.range);
   t.checkAll('first', {
@@ -153,6 +162,7 @@ export async function bridge(t: Smoke) {
     icons: asked.includes('Icons are names from this list'),
     board: asked.includes('"n":0'),
     higgsOff: asked.includes('Higgsfield is TURNED OFF'),
+    version: asked.includes('what version they are on'),
     mobbin: args.includes('mcp__claude_ai_Mobbin__search_screens'),
   });
   t.check('wav', wav === 'RIFF', wav);

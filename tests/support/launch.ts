@@ -28,6 +28,10 @@ function parseCpuSlow(text: string | undefined): number {
 }
 const CPU_SLOW = parseCpuSlow(process.env.FENMYR_CPU_SLOW);
 
+// The commit changes with every build, so a run names this one instead (FENMYR_BUILD_STAMP, read by src/host/appBuild.ts)
+// and About reads the same in every screenshot. A test of the stamp itself passes its own in env.
+const BUILD_STAMP = path.join(ROOT, 'tests/fixtures/buildStamp.json');
+
 const QUIET = { greet: false, autoUpdate: false, caelestia: false, motion: false, tilt: false };
 
 export type Board = { id: string; name: string; [key: string]: unknown };
@@ -76,7 +80,7 @@ export async function launch({
   const version = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).version;
   const app = await _electron.launch({
     args: [dir, '--no-sandbox', ...HEADLESS, ...flags],
-    env: { ...process.env, ...env, XDG_DATA_HOME: data, HOME: data },
+    env: { FENMYR_BUILD_STAMP: BUILD_STAMP, ...process.env, ...env, XDG_DATA_HOME: data, HOME: data },
   });
   const page = await app.firstWindow();
   if (CPU_SLOW > 1)

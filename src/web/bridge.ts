@@ -1,6 +1,8 @@
+import { appBuildOf, readStamp } from '../shared/buildStamp.ts';
 import type { Board, StoredBoard } from '../shared/model.ts';
 import { isRecord, parseBoard, storedBoard } from '../shared/model.ts';
 import type { Ops } from '../shared/ops.ts';
+import { NEWS } from './app/newsItems.ts';
 import { call, desktopOnly, native, picture, platform } from './hostCall.ts';
 import { repoFallbacks, repoOps } from './repo/hostOps.ts';
 
@@ -182,6 +184,16 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
     return true;
   },
   version: desktopOnly,
+  // a browser has no build of its own, so it counts as the newest version with news
+  async appBuild() {
+    return appBuildOf(Object.keys(NEWS).at(-1) ?? '', readStamp(null), {
+      install: 'web',
+      platform: 'web',
+      arch: null,
+      electron: null,
+      chrome: null,
+    });
+  },
   async fetchImage(url: string) {
     return url;
   },
@@ -331,6 +343,7 @@ const nativeApi = {
   usage: () => call('usage'),
   resetUsage: () => call('resetUsage'),
   version: () => call('version'),
+  appBuild: () => call('appBuild'),
   linkPreview: (url: string) => call('linkPreview', { url }),
   rewrite: (text: string, how: string, title: string, around: string) => call('rewrite', { text, how, title, around }),
   docPDF: (html: string, name: string, paper: 'a4' | 'letter') => call('docPDF', { html, name, paper }),

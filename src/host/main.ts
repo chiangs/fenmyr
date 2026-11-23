@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
+import { appBuild } from './appBuild.ts';
 import { startBuild, undoBuild, unlessBuilding } from './build.ts';
 import * as claude from './claude.ts';
 import { stopCodeAgents } from './claudeCode.ts';
@@ -230,6 +231,7 @@ const OPS = {
   usage: () => claude.usageSummary(),
   resetUsage: () => claude.resetUsage(),
   version: () => update.appVersion(),
+  appBuild: () => appBuild(),
   linkPreview: a => net.linkPreview(text(a.url)),
   fetchImage: async a => {
     const d = await net.fetchImage(text(a.url));
