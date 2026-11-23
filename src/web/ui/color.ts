@@ -172,6 +172,13 @@ export function readableShade(hex: string, against: string[], target: number) {
   return darker ? '#000000' : '#ffffff';
 }
 
+// The colour's own hue with its chroma pushed up by `boost`, then moved in lightness until it reads at `target` against
+// every one of `against`: a deeper shade of a pastel, for a mark that has to show on the panel.
+export function vividShade(hex: string, boost: number, against: string[], target: number) {
+  const [L, C, H] = oklchOf(hex);
+  return readableShade(hexOfOklch([L, C * boost, H]), against, target);
+}
+
 // whichever ink reads better on a fill
 export const bestInk = (fill: string, inks: string[]) =>
   inks.reduce((a, b) => (contrast(b, fill) > contrast(a, fill) ? b : a));

@@ -6,7 +6,8 @@
 import type { CaelestiaScheme } from '../../shared/ops.ts';
 import { bestInk, contrast, mixHex, readableShade } from '../ui/color.ts';
 import { type Chosen, derive, NON_TEXT, TEXT } from './derive.ts';
-import { checksOf, type Theme, type Tokens } from './themes.ts';
+import { checksOf } from './themeChecks.ts';
+import type { Theme, Tokens } from './themes.ts';
 
 // Caelestia's name for the colour each card key is made from; the first one it has is used
 const CARD_FROM: Record<string, string[]> = {
@@ -46,6 +47,7 @@ export function caelestiaTokens(scheme: CaelestiaScheme, theme: Theme): Tokens {
     chosen: Chosen = {
       bg,
       dot: pick('outlineVariant', 'outline') ?? base.dot,
+      border: pick('outlineVariant', 'outline') ?? base.border,
       panel,
       surface2: pick('surfaceContainerHigh') ?? mixHex(panel, ink, 0.06),
       ink,

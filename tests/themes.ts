@@ -1,8 +1,9 @@
 // Every colour theme keeps its promise: AA or AAA contrast for text, focus and card text, and card colours that stay
 // apart for every kind of colour blindness. Gaps a theme is known to have are recorded, and must still be real.
 import assert from 'node:assert';
-import { accentOver, TEXT } from '../src/web/settings/derive.ts';
-import { checksOf, THEMES } from '../src/web/settings/themes.ts';
+import { accentOver, NON_TEXT, TEXT } from '../src/web/settings/derive.ts';
+import { checksOf } from '../src/web/settings/themeChecks.ts';
+import { cardVars, THEMES } from '../src/web/settings/themes.ts';
 import { apart, bestInk, contrast, readableShade } from '../src/web/ui/color.ts';
 
 assert.strictEqual(Math.round(contrast('#000000', '#ffffff') * 10) / 10, 21, 'black on white is 21:1');
@@ -36,6 +37,26 @@ for (const t of THEMES) {
   }
 }
 assert.deepStrictEqual(problems, [], 'every theme keeps its promise');
+
+// the strong border is the decorative one where that already reads on the panel, and a stronger one where it doesn't; a
+// theme's pen is its ink, except Default dark's, which has always been a shade softer
+for (const t of THEMES) {
+  const { border, borderStrong, panel, ink, pen } = t.tokens,
+    need = NON_TEXT[t.target];
+  if (contrast(border, panel) >= need) assert.strictEqual(borderStrong, border, `${t.id}: a border that reads is kept`);
+  else assert.notStrictEqual(borderStrong, border, `${t.id}: a border that doesn't read is made stronger`);
+  if (!t.id.startsWith('default')) assert.strictEqual(pen, ink, `${t.id}: the pen is the ink`);
+}
+// every colour but Snow has a kanban dot, written as --k-<colour>
+for (const t of THEMES) {
+  const butter = t.tokens.cards.butter;
+  assert(butter, `${t.id}: has a Cloudberry card colour`);
+  assert.deepStrictEqual(
+    cardVars('butter', butter).filter(([n]) => n === '--k-butter'),
+    [['--k-butter', butter.deep]],
+    `${t.id}: Cloudberry has a kanban dot`,
+  );
+}
 
 // the core colours reach the page from web/themes.css, which tests/themesCss.ts checks against this table; the one place
 // two tables have to agree is the link on a dark Snow note, which is the accent tint
