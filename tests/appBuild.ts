@@ -1,7 +1,8 @@
 // What Settings → About says about the build, in the app. The version line comes from the stamp the build wrote, with
 // "+ changes" when files were modified, Copy details puts the whole text on the clipboard, the update line names the
-// installed version the same way on every kind of install, a missing or damaged stamp shows the version alone
-// without a page error, and Myra is sent the version, the short commit and whether files had changed.
+// installed version the same way on every kind of install, a missing or damaged stamp shows the version alone without
+// a page error, a run that names no stamp of its own gets the fixed one, and Myra is sent the version, the short
+// commit and whether files had changed.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -138,6 +139,19 @@ for (const [name, stamp] of unusable) {
   } finally {
     await m.close();
   }
+}
+
+// a run that names no stamp of its own gets the fixed one, so no screenshot or test shows the commit it ran on
+const fixed: unknown = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests/fixtures/buildStamp.json'), 'utf8'));
+const plain = await launch({ boards: [everyOfflineCard()], open: 'every' });
+try {
+  assert.strictEqual(
+    (await build(plain.page)).commit,
+    typeof fixed === 'object' && fixed !== null ? Reflect.get(fixed, 'commit') : undefined,
+    'a run with no stamp of its own gets the fixed one',
+  );
+} finally {
+  await plain.close();
 }
 
 const told = await promptFor(changed);
