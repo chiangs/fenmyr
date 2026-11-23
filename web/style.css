@@ -1253,7 +1253,8 @@ body:has(.stage.doc-open) .tplpick { opacity: 0; pointer-events: none; }
 /* Myra's how-to note: a little Myra next to the title */
 .card.note .nm-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .card.note .nm-head .nname { margin: 0; }
-.card.note .nmyra { flex: none; width: 30px; height: auto; image-rendering: pixelated; pointer-events: none; }
+/* her pictures are square; the ratio is stated so the head is as tall before the picture loads as after, since placeFramework measures a note's height as it places it */
+.card.note .nmyra { flex: none; width: 30px; height: auto; aspect-ratio: 1; image-rendering: pixelated; pointer-events: none; }
 
 /* Claude usage card in Settings → Helpers */
 .usage { display: grid; gap: 2px; padding: 12px 14px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-usage-bg); }
