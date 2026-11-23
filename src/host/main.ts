@@ -16,6 +16,7 @@ import { parseMacFonts } from './macFonts.ts';
 import * as net from './net.ts';
 import * as output from './output.ts';
 import P from './paths.ts';
+import { limitPermissions } from './permissions.ts';
 import * as prototypes from './prototypes.ts';
 import { fromAppPage } from './senderCheck.ts';
 import * as speech from './speech.ts';
@@ -366,10 +367,7 @@ app.whenReady().then(() => {
   setTimeout(() => storage.sweepMedia(), 3000);
   Menu.setApplicationMenu(process.platform === 'darwin' ? macMenu() : null);
   protocol.handle('fenmyrmedia', req => storage.serveMedia(req));
-  // the microphone for voice memos, the camera for video cards, and the clipboard for copy/paste between boards
-  const allowed = new Set(['media', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'notifications']);
-  session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(allowed.has(perm)));
-  session.defaultSession.setPermissionCheckHandler((_wc, perm) => allowed.has(perm));
+  limitPermissions(session.defaultSession);
   createWindow();
   theme.watch(s => send('caelestia', s));
   storage.watchBoards(() => send('boardsChanged', null));

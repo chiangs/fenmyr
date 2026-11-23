@@ -28,9 +28,13 @@ console.log('hello from the prototype');
 probe('media', () => fetch('fenmyrmedia://media/x.webm').then(r => r.text()));
 probe('file', () => fetch('file:///etc/hostname').then(r => r.text()));
 probe('parent', async () => parent.document.body.innerHTML);
+probe('microphone', () => navigator.mediaDevices.getUserMedia({ audio: true }));
+probe('camera', () => navigator.mediaDevices.getUserMedia({ video: true }));
+probe('clipboard', () => navigator.clipboard.readText());
 `;
 
-const l = await launch();
+// fake devices, so a refusal is the page's and not a missing microphone
+const l = await launch({ flags: ['--use-fake-device-for-media-stream'] });
 const { page } = l;
 const logText = () => page.evaluate(() => document.querySelector('.pv-log')?.textContent ?? '');
 const until = async (check: () => Promise<boolean>, what: string) => {
@@ -101,13 +105,13 @@ try {
     /sans-serif/,
     'the starter’s Tailwind stylesheet applies',
   );
-  await until(
-    async () => /parent:/.test(await logText()) && /media:/.test(await logText()) && /file:/.test(await logText()),
-    'every probe reports',
-  );
+  const probes = ['media', 'file', 'parent', 'microphone', 'camera', 'clipboard'];
+  await until(async () => {
+    const said = await logText();
+    return probes.every(what => new RegExp(`${what}:`).test(said));
+  }, 'every probe reports');
   const said = await logText();
-  for (const what of ['media', 'file', 'parent'])
-    assert.match(said, new RegExp(`${what}:blocked`), `the preview can’t read ${what}`);
+  for (const what of probes) assert.match(said, new RegExp(`${what}:blocked`), `the preview can’t reach ${what}`);
   assert.ok(
     await page.evaluate(
       () => document.querySelector('#pr-preview iframe')?.getAttribute('sandbox') === 'allow-scripts',
