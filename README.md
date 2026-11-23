@@ -165,6 +165,7 @@ The first memo downloads the speech model, about 140 MB, into `~/.local/share/fe
 | **L · I · A · Shift+V** | Link, image, voice memo, video |
 | **S · E · P · Shift+P** | Shapes, stamps, draw, the Pen |
 | **Alt+T** | Templates |
+| **O · Alt+C** | Colour, canvas |
 | **W · R · X** | Wireframe screen, box, text |
 | **M** | Ask Myra |
 | **Ctrl+Enter** | Send to Myra; Enter adds a line |
