@@ -1,5 +1,6 @@
 import type { UpdateInfo } from '../../shared/ops.ts';
 import { $, stage } from '../core/dom.ts';
+import { installedLine, loadBuild } from '../settings/about.ts';
 import { setTab } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
@@ -46,6 +47,7 @@ export async function checkUpdate(force = false) {
   } catch (_e) {
     updInfo = { error: true };
   }
+  await loadBuild();
   showUpdate();
 }
 
@@ -60,18 +62,18 @@ function showUpdate() {
   $('setUpdate').classList.toggle('ready', n > 0);
   $('suGo').hidden = !(n > 0);
   $('suTitle').textContent = n > 0 ? `A new Fenmyr is ready ✦` : 'Updates';
+  const have = installedLine();
+  const stay = 'Your boards and settings stay just as they are.';
   $('suSub').textContent =
     !u.repo && !u.release
       ? 'To get updates, run ./install.sh --update once in a terminal from your Fenmyr folder. After that it works from here.'
       : u.offline
         ? 'I couldn’t reach GitHub just now. I’ll try again later.'
-        : u.release
-          ? n > 0
-            ? `Version ${String(u.latest || '').replace(/^v/, '')} is ready (you have ${u.since}). Your boards and settings stay just as they are.`
-            : `You’re up to date (version ${u.since}).`
-          : n > 0
-            ? `${n} update${n > 1 ? 's' : ''} since your version${u.since ? ` from ${u.since}` : ''}. Your boards and settings stay just as they are.`
-            : `You’re up to date${u.since ? ` (version from ${u.since})` : ''}.`;
+        : n === 0
+          ? `You’re up to date${have ? ` (${have})` : ''}.`
+          : u.release
+            ? `Version ${String(u.latest || '').replace(/^v/, '')} is ready${have ? ` (you have ${have})` : ''}. ${stay}`
+            : `${n} update${n > 1 ? 's' : ''} since your version${have ? ` (${have})` : ''}. ${stay}`;
   const notes = u.notes.slice(0, 8);
   $('suNotes').hidden = !(n > 0 && notes.length);
   $('suNotes').innerHTML = notes
