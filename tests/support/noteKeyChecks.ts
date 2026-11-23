@@ -21,6 +21,11 @@ export function noteChecks(page: Page, k: Kit): Record<string, Check> {
       noteId,
       selector,
     ] as const);
+  const focused = () =>
+    page.evaluate(() => {
+      const e = document.activeElement;
+      return e?.matches('.nname') ? 'title' : e?.matches('.body > .text') ? 'words' : 'elsewhere';
+    });
   const nested = () => count(':is(ul, ol) :is(ul, ol) li');
   const items = (list: string) => count(`${list} li`);
   // a whole card's style, which Ctrl+B and the others set when cards are selected rather than a note being typed in
@@ -98,6 +103,17 @@ export function noteChecks(page: Page, k: Kit): Record<string, Check> {
       assert.strictEqual(await nested(), 1, 'the second item is indented');
       await k.press(k.chord('outdent'));
       assert.strictEqual(await nested(), 0, 'outdent brings it back out');
+    },
+    notePrevious: async () => {
+      await typing();
+      await k.press(k.chord('notePrevious'));
+      assert.strictEqual(await focused(), 'title', 'Shift+Tab in the words goes to the title');
+    },
+    noteNext: async () => {
+      await typing();
+      await k.press(k.chord('notePrevious'));
+      await k.press(k.chord('noteNext'));
+      assert.strictEqual(await focused(), 'words', 'Tab in the title goes back to the words');
     },
   };
 }

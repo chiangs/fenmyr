@@ -70,6 +70,8 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: 'link', keys: '⌘K', does: 'Add a link', group: 'note' },
   { id: 'indent', keys: 'Tab', does: 'Indent a list item', group: 'note' },
   { id: 'outdent', keys: '⇧Tab', does: 'Outdent a list item', group: 'note' },
+  { id: 'noteNext', keys: 'Tab', does: 'Go from the title to the words, then to the label', group: 'note' },
+  { id: 'notePrevious', keys: '⇧Tab', does: 'Go back from the label to the words, then to the title', group: 'note' },
 
   { id: 'capture', keys: '⌘K', does: 'Quick capture', group: 'app' },
   { id: 'find', keys: '⌘F', does: 'Find on the board', group: 'app' },
