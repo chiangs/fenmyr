@@ -222,7 +222,14 @@ async function sweepLook(look: Look, targets: Target[], seen: Map<string, number
     const two = (n: number) => String(n).padStart(2, '0');
     return `${t.getFullYear()}-${two(t.getMonth() + 1)}-${two(t.getDate())}T${two(t.getHours())}:${two(t.getMinutes())}`;
   };
-  const base = everyOfflineCard();
+  const every = everyOfflineCard();
+  // the same cards in a colour, since a rule for "every doc" or "every link" can matter only on a card that is not white
+  const tinted = every.cards
+    .filter(c =>
+      ['note', 'todo', 'doc', 'link', 'audio', 'canvas', 'swatch', 'image', 'font', 'vnote'].includes(c.type),
+    )
+    .map((c, i) => ({ ...c, id: `${c.id}-sky`, color: 'sky', x: c.x + 1400, y: c.y + i * 4 }));
+  const base = { ...every, cards: [...every.cards, ...tinted] };
   const dueNote = (id: string, x: number, due: string) => ({ ...base.cards[1], id, x, y: 900, due });
   const board = {
     ...base,
