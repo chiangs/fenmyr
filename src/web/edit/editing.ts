@@ -16,8 +16,8 @@ import { openVNote } from '../vault/notes.ts';
 import { keepEditedText } from './noteBody.ts';
 import { wireNoteKeys } from './noteKeys.ts';
 
-// note text boxes already listening for Shift+Tab to the name
-const wiredNameHop = new WeakSet<HTMLElement>();
+// note text boxes already listening for Tab and Shift+Tab to the label and the name
+const wiredHops = new WeakSet<HTMLElement>();
 // redrawing a body between edits would strand Chromium's undo history
 const drawnForTyping = new WeakSet<HTMLElement>();
 // a note's body reads as a text field only while it can be typed in
@@ -212,19 +212,21 @@ export function startEdit(id: string, target?: Element | null) {
   if (c.type === 'note') {
     wireTagTyping(c, t);
     wireNoteKeys(t);
-    if (!wiredNameHop.has(t)) {
-      wiredNameHop.add(t);
+    if (!wiredHops.has(t)) {
+      wiredHops.add(t);
+      // a note reads title, body, label from the top; a list item keeps Tab for indent because wireNoteKeys listens first
       t.addEventListener(
         'keydown',
         ev => {
-          if (ev.key === 'Tab' && ev.shiftKey && !c.myra) {
-            ev.preventDefault();
-            ev.stopImmediatePropagation();
-            t.onblur = null;
-            endEdit();
-            save();
-            startEdit(c.id, cardsEl.querySelector(`[data-id="${c.id}"] .nname`));
-          }
+          if (ev.key !== 'Tab' || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+          if (!ev.shiftKey && !c.tagText) return;
+          ev.preventDefault();
+          ev.stopImmediatePropagation();
+          t.onblur = null;
+          endEdit();
+          save();
+          if (ev.shiftKey) startEdit(c.id, cardsEl.querySelector(`[data-id="${c.id}"] .nname`));
+          else editTag(c);
         },
         true,
       );

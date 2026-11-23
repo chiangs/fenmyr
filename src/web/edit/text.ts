@@ -6,7 +6,7 @@ import { parentOf } from '../cards/collection.ts';
 import { save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
 import { cardEl } from '../ui/dom.ts';
-import { endEdit } from './editing.ts';
+import { endEdit, startEdit } from './editing.ts';
 
 // ---------- editing text ----------
 // notes and checklists fit their words, like auto-height in Figma: taller as you type, back down as you delete,
@@ -86,4 +86,13 @@ export function editTag(c: Card) {
       }
     },
   );
+  // Shift+Tab goes back up to a note's words; Tab leaves the card
+  if (c.type === 'note')
+    tag.addEventListener('keydown', ev => {
+      if (ev.key !== 'Tab' || !ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      tag.blur();
+      startEdit(c.id);
+    });
 }
