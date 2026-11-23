@@ -677,6 +677,7 @@
     "tests/cardInk.ts": "The words on every colour of note, and on a doc, read on the card in every theme, so a light Snow card in Lantern has dark text.",
     "tests/cardNames.ts": "A card's accessible name says what it is and its colour's name in every theme, so people who can't see the colour get the cue Clear and Lantern print on the card.",
     "tests/noteTabOrder.ts": "Tab and Shift+Tab walk a note's title, body and label in that order, keep a list item's Tab for indent, and leave the card at either end.",
+    "tests/noteNamelessStart.ts": "A double-click on the words of a note with no name types in the words; the empty name line shows only once the note is being typed in.",
     "tests/themeBoards.ts": "A board saved under Clear holds colour keys and no theme colour, and opens under every theme with that theme's own fill on each card.",
     "tests/colourLabels.ts": "Clear and Lantern print a note's colour name on it and no other theme does, and the label doesn't change the note's size.",
     "tests/cardExtras.ts": "Clear and Lantern draw a border-colour outline in every card and sit their cards straight, a stamp keeping its tilt; other themes are unchanged and the outline moves nothing.",
