@@ -5,6 +5,8 @@ import { plural } from './homeTiles.ts';
 
 // What there is to export, for the line at the top of the dialog and for which ticks it shows.
 export type Found = {
+  projects: number;
+  folders: number;
   boards: number;
   canvases: number;
   pictures: number;
@@ -56,6 +58,8 @@ export function askExport({ name, found, native, sizeFor }: Ask) {
       const o = options(),
         inner = found.canvases ? ` (${found.canvases} inside canvases)` : '',
         parts = [
+          found.projects && plural(found.projects, 'project'),
+          found.folders && plural(found.folders, 'folder'),
           `${plural(found.boards, 'board')}${inner}`,
           found.pictures && plural(found.pictures, 'picture'),
           found.memos && plural(found.memos, 'voice memo'),

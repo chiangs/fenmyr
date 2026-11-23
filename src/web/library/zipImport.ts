@@ -1,5 +1,5 @@
-// Open a Fenmyr zip as a new copy: every board in it gets a new id, so a zip opened twice makes two boards and nothing
-// of yours is replaced.
+// Open a Fenmyr zip as a new copy: every project, folder and board in it gets a new id, so a zip opened twice makes two
+// and nothing of yours is replaced.
 import type { ImportResult } from '../../shared/fenmyrZip.ts';
 import type { Folder } from '../../shared/model.ts';
 import { placeBoard } from '../../shared/placement.ts';
@@ -7,16 +7,16 @@ import { appState } from '../core/state.ts';
 import { say } from '../myra/say.ts';
 import { renewed } from './boardTree.ts';
 import { boardFolder, createBoard, currentPlace, type Place, uniqueName } from './create.ts';
+import { openHome } from './home.ts';
 import { plural } from './homeTiles.ts';
 import { boardsIn, looseBoards } from './tree.ts';
+import { landStructure } from './zipFolders.ts';
 
 const sentence = (n: number, noun: string, one: string, many: string) => `${plural(n, noun)} ${n === 1 ? one : many}`;
 
-function report(name: string, got: ImportResult, boards: number, orphaned: number) {
+function report(name: string, got: ImportResult, added: string, orphaned: number) {
   const { left } = got.manifest,
-    inside = boards - 1,
     videos = left.videos + got.missing,
-    added = inside ? ` with ${plural(inside, 'board')} inside it` : '',
     more = [
       left.chats && "The chats weren't in the zip.",
       left.vaultText > 0 && `The text of ${plural(left.vaultText, 'vault note')} wasn't in the zip.`,
@@ -40,21 +40,49 @@ async function land(got: ImportResult, at: Place, into: Folder | undefined) {
   delete top.view;
   for (const b of canvases) await Fenmyr.save(b);
   await createBoard(at, { board: { name, cards: [], links: [], tray: [], ...top }, open: 'board' });
-  say(report(name, got, made.boards.length, made.orphaned), 9000);
+  const inside = made.boards.length - 1;
+  say(report(name, got, inside ? ` with ${plural(inside, 'board')} inside it` : '', made.orphaned), 9000);
 }
 
-// A board lands where + Board would put it: in the folder, in a project's first folder, or on its own.
-export async function importZip(at: Place, file?: File) {
+async function landBoardZip(got: ImportResult, at: Place) {
   const into = boardFolder(at),
     verdict = into ? placeBoard(appState, {}, into) : null;
   if (verdict?.kind === 'blocked') return say(verdict.why, 5000);
+  await land(got, at, into);
+}
+
+async function landFolderZip(got: ImportResult, at: Place, picked: boolean) {
+  const landed = await landStructure(got, at, picked);
+  if (landed.kind === 'blocked') return say(landed.why, 5000);
+  const parts = [landed.folders && plural(landed.folders, 'folder'), landed.boards && plural(landed.boards, 'board')],
+    added = parts.some(Boolean) ? ` with ${parts.filter(Boolean).join(' and ')}` : '';
+  openHome(landed.home);
+  say(report(landed.name, got, added, landed.orphaned), 9000);
+}
+
+// A board lands where + Board would put it: in the folder, in a project's first folder, or on its own. A folder lands
+// where + Folder would put it: in the folder or project it was imported into (`picked`: the person chose that row's
+// menu), or at the top of the current project. A project is added as a new project.
+export async function importZip(at: Place, file?: File, picked = false) {
   let got: ImportResult | null;
   try {
     got = await Fenmyr.zipImport(file);
   } catch (e) {
     return say(e instanceof Error ? e.message : String(e), 6000);
   }
-  if (got) await land(got, at, into);
+  if (!got) return;
+  const kind = got.manifest.root.kind;
+  switch (kind) {
+    case 'board':
+      return landBoardZip(got, at);
+    case 'folder':
+    case 'project':
+      return landFolderZip(got, at, picked);
+    default: {
+      const never: never = kind;
+      throw new Error(`unknown root ${String(never)}`);
+    }
+  }
 }
 
 // a zip dropped anywhere on the window: on a board, on Home or in the sidebar

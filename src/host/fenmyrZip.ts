@@ -9,7 +9,6 @@ import { type BrowserWindow, dialog } from 'electron';
 import { Inflate, Zip, ZipDeflate, ZipPassThrough } from 'fflate';
 import {
   type ImportResult,
-  importable,
   isJson,
   JSON_LIMIT,
   jsonBytes,
@@ -288,9 +287,11 @@ export async function zipImport(
     if (unsafe) throw refuse(unsafe);
     const read = parseExport(names, await readJson(fh, entries, size));
     if (!read.ok) throw refuse(read.refusal);
-    const { manifest, boards, skipped } = read.value,
-      later = importable(manifest.root.kind);
-    if (later) throw refuse(later);
+    const { manifest, boards, skipped } = read.value;
+    // each video may say it holds up to 4 GB, so the sum is held to what a zip can hold before any is copied
+    const listed = new Set(manifest.media);
+    if (entries.reduce((n, e) => n + (listed.has(mediaNameOf(e.name) ?? '') ? e.usize : 0), 0) > ZIP_LIMIT)
+      throw refuse('tooBig');
     const linked = relinkMedia(boards, await copyMedia(fh, entries, manifest.media, size));
     return { manifest, boards: linked.boards, skipped, missing: linked.missing };
   } finally {

@@ -1,4 +1,4 @@
-import type { Board, Folder, Project } from '../../shared/model.ts';
+import type { Board, Folder } from '../../shared/model.ts';
 
 export type Kind = 'board' | 'folder' | 'project';
 // a row in the left box: a board, folder or project, each using the fields it has
@@ -12,7 +12,6 @@ export type Thing = {
   project?: string | null;
 };
 
-import { uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
@@ -26,10 +25,10 @@ import { newPrototypingFolder } from '../repo/prototypes.ts';
 import { child, esc } from '../ui/dom.ts';
 import { keepOnScreen, removeOnOutsidePress } from '../ui/popover.ts';
 import { editVaultAccess } from '../vault/vaults.ts';
-import { boardTree, renewed } from './boardTree.ts';
 import { changeBoard } from './boardWrites.ts';
 import { confirmDelete } from './confirmDelete.ts';
 import { renderCrumbs, where } from './crumbs.ts';
+import { duplicate } from './duplicate.ts';
 import { homeAt, renderHome } from './home.ts';
 import { dropZone, inlineRename, loadLib } from './nesting.ts';
 import { leaveForDelete } from './nextBoard.ts';
@@ -50,45 +49,11 @@ import {
 import { zipAction, zipMenu } from './zipMenu.ts';
 
 // ---------- right-click in the left box: duplicate or delete a board, folder or project ----------
-// copying a board also copies the canvases inside it, so the copy doesn't share them
-async function copyBoard(id: string, into: { name?: string; parent?: string; folder?: string | null } = {}) {
-  const copies = renewed((await boardTree(id, Fenmyr.load)).boards, id, into).boards;
-  for (const c of copies) await Fenmyr.save(c);
-  return copies[0] ?? null;
-}
-
 async function dropBoard(id: string) {
   for (const k of appState.boardList.filter(x => x.parent === id)) await dropBoard(k.id);
   dropWaiting(id);
   await Fenmyr.remove(id);
   dueForget(id);
-}
-
-async function duplicate(kind: Kind, obj: Thing) {
-  if (kind === 'board') {
-    const c = await copyBoard(obj.id, { name: `${obj.name} copy` });
-    await refreshBoards();
-    if (c) chirp(`Made “${c.name}” ✦`, 3500);
-    return;
-  }
-  // copy a folder, the folders inside it and all their boards
-  const copyFolder = async (f0: Folder, name: string, project: string | null, parent: string | null) => {
-    const f: Folder = { id: uid(), name, project, open: true };
-    if (parent) f.parent = parent;
-    appState.folders.push(f);
-    await saveLib();
-    for (const b of boardsIn(f0.id)) await copyBoard(b.id, { folder: f.id });
-    for (const x of subFolders(f0.id)) await copyFolder(x, x.name, project, f.id);
-  };
-  if (kind === 'folder') await copyFolder(obj, `${obj.name} copy`, obj.project || null, obj.parent || null);
-  if (kind === 'project') {
-    const p: Project = { id: uid(), name: `${obj.name} copy`, open: true, ...(obj.color ? { color: obj.color } : {}) };
-    appState.projects.push(p);
-    await saveLib();
-    for (const f0 of foldersIn(obj.id)) await copyFolder(f0, f0.name, p.id, null);
-  }
-  await refreshBoards();
-  chirp(`Made “${obj.name} copy” ✦`, 3500);
 }
 
 async function destroy(kind: Kind, obj: Thing) {

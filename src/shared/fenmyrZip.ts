@@ -3,8 +3,8 @@
 // the browser and the tests build and open it here, whole, with the same checks.
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 import type { AppBuild } from './buildStamp.ts';
-import { heldMedia, KEEP_ALL, mediaNameIn, stripBoard, without } from './fenmyrStrip.ts';
-import { isRecord, parseBoard, type StoredBoard } from './model.ts';
+import { heldMedia, KEEP_ALL, mediaNameIn, stripBoard, stripStructure, without } from './fenmyrStrip.ts';
+import { type Folder, isRecord, type Project, parseBoard, type StoredBoard } from './model.ts';
 
 // bumped only when the layout changes; a zip with a higher number is refused
 export const FORMAT = 1;
@@ -36,32 +36,16 @@ export type Manifest = {
 // what was read from a zip: the boards after the checks, and what the checks dropped
 export type ImportResult = { manifest: Manifest; boards: StoredBoard[]; skipped: number; missing: number };
 
-export type Refusal = 'notZip' | 'newer' | 'unsafe' | 'later' | 'tooBig';
+export type Refusal = 'notZip' | 'newer' | 'unsafe' | 'tooBig';
 export const REFUSALS: Record<Refusal, string> = {
   notZip: "This isn't a Fenmyr zip.",
   newer: 'This zip is from a newer Fenmyr. Update Fenmyr to open it.',
   unsafe: "This zip has files in places it shouldn't, so I didn't open it.",
-  later: "Folder and project zips aren't supported yet.",
   tooBig: 'That zip is over 4 GB, which is more than I can open.',
 };
 type Verdict<T> = { ok: true; value: T } | { ok: false; refusal: Refusal };
 const yes = <T>(value: T): Verdict<T> => ({ ok: true, value });
 const no = (refusal: Refusal): Verdict<never> => ({ ok: false, refusal });
-
-// This build opens boards only; folder and project zips are read but not placed yet.
-export function importable(kind: RootKind): Refusal | null {
-  switch (kind) {
-    case 'board':
-      return null;
-    case 'folder':
-    case 'project':
-      return 'later';
-    default: {
-      const never: never = kind;
-      throw new Error(`unknown root ${String(never)}`);
-    }
-  }
-}
 
 const BOARD_FILE = /^boards\/([\p{L}\p{N}-]{1,64})\.json$/u;
 const PLAIN = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,127}$/u;
@@ -91,30 +75,35 @@ const text = (v: unknown, otherwise = '') => (typeof v === 'string' ? v : otherw
 const count = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0);
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
-function readProject(x: unknown): ExportProject[] {
-  if (!isRecord(x) || typeof x.id !== 'string' || typeof x.name !== 'string') return [];
-  return [
-    {
-      id: x.id,
-      name: x.name,
-      ...(typeof x.color === 'string' ? { color: x.color } : {}),
-      ...(typeof x.cover === 'string' ? { cover: x.cover } : {}),
-    },
-  ];
+// A cover is a picture the app made: it goes into a CSS url(), so anything else in its place is not read.
+const COVER = /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+const coverOf = (v: unknown) => (typeof v === 'string' && COVER.test(v) ? { cover: v } : {});
+
+// Only what the manifest has room for is read, and what the table never lets go is cut first, so a zip made by hand
+// can't give a project a repo or vault grants, or a folder a prototype's kind.
+function readProject(raw: unknown): ExportProject[] {
+  const x = isRecord(raw) ? stripStructure('project', raw) : null;
+  if (!x || typeof x.id !== 'string' || typeof x.name !== 'string') return [];
+  return [{ id: x.id, name: x.name, ...(typeof x.color === 'string' ? { color: x.color } : {}), ...coverOf(x.cover) }];
 }
-function readFolder(x: unknown): ExportFolder[] {
-  if (!isRecord(x) || typeof x.id !== 'string' || typeof x.name !== 'string') return [];
+function readFolder(raw: unknown): ExportFolder[] {
+  const x = isRecord(raw) ? stripStructure('folder', raw) : null;
+  if (!x || typeof x.id !== 'string' || typeof x.name !== 'string') return [];
   const ref = (v: unknown) => (typeof v === 'string' ? v : null);
-  return [
-    {
-      id: x.id,
-      name: x.name,
-      project: ref(x.project),
-      parent: ref(x.parent),
-      ...(typeof x.cover === 'string' ? { cover: x.cover } : {}),
-    },
-  ];
+  return [{ id: x.id, name: x.name, project: ref(x.project), parent: ref(x.parent), ...coverOf(x.cover) }];
 }
+// projects and folders of the library, as the manifest carries them
+export const projectsOut = (ps: readonly Project[]) => ps.flatMap(readProject);
+export const foldersOut = (fs: readonly Folder[]) => fs.flatMap(readFolder);
+// one of each id: a manifest that lists an id twice would give the walk over its folders a loop
+const firstOfEach = <T extends { id: string }>(xs: T[]) => {
+  const seen = new Set<string>();
+  return xs.filter(x => {
+    if (seen.has(x.id)) return false;
+    seen.add(x.id);
+    return true;
+  });
+};
 
 // the root named in the manifest has to be one of the things it lists
 function rootListed(
@@ -151,8 +140,8 @@ export function readManifest(raw: unknown): Verdict<Manifest> {
   // every name is checked here, so nothing built from the manifest can leave the three places
   if (!boards.every(id => typeof id === 'string' && BOARD_ID.test(id)) || !media.every(plainName)) return no('notZip');
   const ids = boards.filter(id => typeof id === 'string'),
-    projects = list(raw.projects).flatMap(readProject),
-    folders = list(raw.folders).flatMap(readFolder);
+    projects = firstOfEach(list(raw.projects).flatMap(readProject)),
+    folders = firstOfEach(list(raw.folders).flatMap(readFolder));
   if (!rootListed(kind, root.id, ids, projects, folders)) return no('notZip');
   const left = isRecord(raw.left) ? raw.left : {};
   return yes({

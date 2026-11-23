@@ -1,6 +1,7 @@
+import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ElectronApplication, Page } from 'playwright';
+import type { ElectronApplication, Locator, Page } from 'playwright';
 import { still } from './settled.ts';
 import { dialogsAnswer, rec } from './zipKit.ts';
 
@@ -15,13 +16,16 @@ export const said = (page: Page, text: string) =>
 
 export const saidSaved = (page: Page, name: string) => said(page, `Saved “${name}” ✦`);
 
-// The export dialog for the board in the left box with this name, with what it says and the ticks it shows.
-export async function exportRow(page: Page, name: string) {
+// whatever Myra says next, so that a test of where something went fails on what she said and not on waiting for a line
+export const heard = async (page: Page) => {
+  await page.waitForFunction(() => !!document.getElementById('mSay')?.textContent);
+  return page.evaluate(() => document.getElementById('mSay')?.textContent ?? '');
+};
+
+// The export dialog for a row in the left box, with what it says and the ticks it shows.
+export async function exportFrom(page: Page, row: Locator) {
   await quiet(page);
-  await page
-    .locator('#boards .board-row', { hasText: new RegExp(`^${name}$`) })
-    .first()
-    .click({ button: 'right' });
+  await row.click({ button: 'right' });
   await page.locator('#rowMenu [data-m="zipOut"]').click();
   const dialog = page.locator('#zipExport');
   await dialog.waitFor();
@@ -38,6 +42,9 @@ export async function exportRow(page: Page, name: string) {
     cancel: () => dialog.locator('#zxNo').click(),
   };
 }
+// the board in the left box with this name
+export const exportRow = (page: Page, name: string) =>
+  exportFrom(page, page.locator('#boards .board-row', { hasText: new RegExp(`^${name}$`) }).first());
 
 // Home's button opens the zip the open dialog answers with, and says what it added.
 export async function importFromHome(app: ElectronApplication, page: Page, zip: string, name: string) {
@@ -47,7 +54,7 @@ export async function importFromHome(app: ElectronApplication, page: Page, zip: 
   await page.locator('#home.on').waitFor();
   await still(page);
   await page.locator('#homeImport').click();
-  await said(page, `I added “${name}”`);
+  assert.match(await heard(page), new RegExp(`^I added “${name}”`), `Myra says what came as ${name}`);
 }
 
 export const readBoards = (data: string): Record<string, unknown>[] => {

@@ -3,13 +3,13 @@ import { makeManifest } from '../../shared/fenmyrZip.ts';
 import type { StoredBoard } from '../../shared/model.ts';
 import type { Board } from '../../shared/ops.ts';
 import { saveNow } from '../core/history.ts';
-import { session } from '../core/state.ts';
 import { say } from '../myra/say.ts';
-import { boardTree } from './boardTree.ts';
+import type { Kind } from './rowMenu.ts';
 import { askExport, type Found } from './zipDialog.ts';
+import { type Gathered, gather } from './zipGather.ts';
 
-// Save a board, and the boards inside it, as a Fenmyr zip: what there is, what the person leaves in, then the host
-// writes it. Everything that comes out of the board is cut here, by the table in src/shared/fenmyrStrip.ts.
+// Save a board, a folder or a project, with the boards inside it, as a Fenmyr zip: what there is, what the person leaves
+// in, then the host writes it. Everything that comes out of a board is cut here, by the table in src/shared/fenmyrStrip.ts.
 const cardsOf = (b: StoredBoard) => [...(b.cards ?? []), ...(b.tray ?? [])];
 const hasChat = (b: StoredBoard) => !!(b.chat?.length || b.chats?.length);
 
@@ -24,11 +24,13 @@ async function mediaSize(name: string) {
   }
 }
 
-function survey(boards: StoredBoard[], videoBytes: number): Found {
+function survey({ boards, roots, projects, folders }: Gathered, videoBytes: number): Found {
   const cards = boards.flatMap(cardsOf);
   return {
+    projects: projects.length,
+    folders: folders.length,
     boards: boards.length,
-    canvases: boards.length - 1,
+    canvases: boards.length - roots,
     pictures: cards.filter(c => c.type === 'image' && c.src).length,
     memos: cards.filter(c => c.type === 'audio' && c.src).length,
     // a video bundled with the app goes as its address, so it isn't one of the videos that are going
@@ -45,17 +47,16 @@ function cut(boards: StoredBoard[], opts: ExportOptions) {
   return { boards: out, left };
 }
 
-export async function exportBoardZip(id: string) {
+export async function exportZip(kind: Kind, id: string) {
   // an edit still waiting to save is part of what is exported
-  if (session.board?.id === id) await saveNow();
-  const tree = await boardTree(id, Fenmyr.load),
-    root = tree.boards[0];
-  if (!root) return say("I couldn't read that board.", 4000);
-  const name = root.name || 'Untitled board',
+  await saveNow();
+  const tree = await gather(kind, id);
+  if (!tree) return say(`I couldn't read that ${kind}.`, 4000);
+  const { name } = tree,
     names = mediaUsed(tree.boards),
     sizes = Fenmyr.native ? await Promise.all(names.map(mediaSize)) : [],
     videoBytes = sizes.reduce((n, s) => n + s, 0),
-    found = survey(tree.boards, videoBytes),
+    found = survey(tree, videoBytes),
     json = (o: ExportOptions) => cut(tree.boards, o).boards.reduce((n, b) => n + JSON.stringify(b).length, 0),
     opts = await askExport({
       name,
@@ -67,8 +68,14 @@ export async function exportBoardZip(id: string) {
   const { boards, left } = cut(tree.boards, opts),
     media = opts.videos ? mediaUsed(boards) : [],
     manifest = makeManifest(
-      { kind: 'board', id },
-      { boards: boards.map(b => b.id), media, left: { ...left, missingCanvases: tree.missing } },
+      tree.root,
+      {
+        boards: boards.map(b => b.id),
+        media,
+        left: { ...left, missingCanvases: tree.missing },
+        projects: tree.projects,
+        folders: tree.folders,
+      },
       await Fenmyr.appBuild(),
     );
   try {
