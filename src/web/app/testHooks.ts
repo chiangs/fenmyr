@@ -64,6 +64,7 @@ import { PIECE_GROUPS } from '../wireframe/pieceGroups.ts';
 import { PIECES } from '../wireframe/pieces.ts';
 import { placePiece } from '../wireframe/placePiece.ts';
 import { restack } from '../wireframe/stack.ts';
+import { maybeNews } from './news.ts';
 import { openSetup, startTour } from './onboarding.ts';
 
 // a reply driven from a test goes with what the strip would send now
@@ -168,6 +169,7 @@ const makeHooks = () => ({
   restack,
   openSetup,
   startTour,
+  maybeNews,
   get board() {
     return session.board;
   },
