@@ -4,8 +4,9 @@ import { longText, pasteIntoChat } from '../tests/support/paste.ts';
 
 export type Step = (page: Page) => Promise<void>;
 // width: the window's, for the prototype screen at each of its layouts; proto: open a prototype board first; env: for
-// the app, such as a stand-in Claude Code first on PATH
+// the app, such as a stand-in Claude Code first on PATH; version: run the app as that version, such as a beta
 export type Group = {
+  version?: string;
   settings?: Record<string, unknown>;
   env?: Record<string, string>;
   board?: () => Board;
