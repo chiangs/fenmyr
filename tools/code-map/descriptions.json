@@ -595,6 +595,7 @@
     "tests/support/buildStandIn.ts": "A stand-in Claude Code for builds, told before each one which files to write, where to wait and whether to fail, which counts what it wrote and logs Myra’s prompts.",
     "tests/support/calm.ts": "calm() is still() for a board whose view has just moved, which also waits out the view's moving flag.",
     "tests/support/clock.ts": "Gives a test the page’s time to drive with Playwright’s fake clock, and makes transitions, Myra’s idle wobble and Web Animations follow it.",
+    "tests/support/fileText.ts": "A file’s text for a poll, null while the file is gone for the moment git or the host takes to write it again.",
     "tests/support/flight.ts": "Samples where Myra’s slot is every frame while she hops into a chat’s header, for the hop tests, on real time or on a frozen clock.",
     "tests/support/launch.ts": "Starts the app headless with a throwaway data folder for tests.",
     "tests/support/library.ts": "A small library of projects, folders and boards for the tests of creating them, with what the page saved of it and what the person is left looking at.",

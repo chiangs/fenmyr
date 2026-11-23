@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { textIfThere } from './support/fileText.ts';
 import { launch } from './support/launch.ts';
 import { fromGitMenu } from './support/prototype.ts';
 
@@ -207,7 +208,7 @@ try {
   );
 
   await page.locator('#mcList .m-acts button', { hasText: 'Undo this build' }).last().click();
-  await until(async () => fs.readFileSync(app, 'utf8') === starter, 'Undo puts the folder back');
+  await until(async () => textIfThere(app) === starter, 'Undo puts the folder back');
   assert.strictEqual(
     git('diff', '--cached', '--name-only').trim(),
     'staged.txt',

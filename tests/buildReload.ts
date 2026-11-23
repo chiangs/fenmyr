@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { replyBoard } from './fixtures/boards.ts';
 import { buildStandIn } from './support/buildStandIn.ts';
+import { textIfThere } from './support/fileText.ts';
 import { launch, settle } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
 
@@ -129,7 +130,7 @@ try {
 
   await page().locator('#mcList button', { hasText: 'Undo this build' }).last().click();
   await until(
-    () => fs.readFileSync(file('src/App.tsx'), 'utf8') === starter && !fs.existsSync(file('src/late.tsx')),
+    () => textIfThere(file('src/App.tsx')) === starter && !fs.existsSync(file('src/late.tsx')),
     'that Undo puts the folder back',
   );
   await until(async () => (await block()).head.endsWith('· undone'), 'and the block says so');

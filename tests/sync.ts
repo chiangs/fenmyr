@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { textIfThere } from './support/fileText.ts';
 import { launch } from './support/launch.ts';
 import { fromGitMenu } from './support/prototype.ts';
 
@@ -151,7 +152,7 @@ try {
   await fromGitMenu(page, 'Pull 1 from GitHub');
   await until(async () => (await myra()).split('changed both here and on GitHub').length === 3, 'the clash again');
   await tap('Take GitHub’s version');
-  await until(async () => /theirs/.test(fs.readFileSync(path.join(repo, app), 'utf8')), 'theirs is taken');
+  await until(async () => /theirs/.test(textIfThere(path.join(repo, app)) ?? ''), 'theirs is taken');
   assert.match(
     git(repo, 'for-each-ref', 'refs/fenmyr/before-pull'),
     /refs\/fenmyr\/before-pull\//,
