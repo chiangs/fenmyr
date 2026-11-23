@@ -11,7 +11,7 @@ import { stopPlacing } from '../tools/place.ts';
 import { child, esc } from '../ui/dom.ts';
 import { removeOnOutsidePress } from '../ui/popover.ts';
 import { createFolder, currentPlace } from './create.ts';
-import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
+import { ago, EMPTY_LINE, mini, miniCache, plural, tile } from './homeTiles.ts';
 import { draggable, dropZone, inlineRename, nestBoard } from './nesting.ts';
 import { openNewProject } from './newProject.ts';
 import { openBoard } from './openBoard.ts';
@@ -90,13 +90,20 @@ export function renderHome(): void {
   });
   $('home').classList.toggle('deep', level !== 'all');
   $('homeTitle').textContent = f ? f.name : p ? p.name : 'Your projects';
-  $('homeSub').textContent = f
+  const nothingHere = f
+    ? !subFolders(f.id).length && !boardsIn(f.id).length
+    : p
+      ? !foldersIn(p.id).length
+      : !appState.projects.length;
+  const missing = f ? (f.kind === 'prototyping' ? 'prototypes' : 'boards') : p ? 'folders' : 'projects';
+  const counts = f
     ? [subFolders(f.id).length ? plural(subFolders(f.id).length, 'folder') : '', plural(boardsIn(f.id).length, 'board')]
         .filter(Boolean)
         .join(' · ')
     : p
       ? plural(foldersIn(p.id).length, 'folder')
       : 'Every project, with its folders and boards inside.';
+  $('homeSub').textContent = nothingHere ? EMPTY_LINE[missing] : counts;
   const add = (label: string, run: () => unknown) => {
     const a = document.createElement('button');
     a.className = 'tile add';

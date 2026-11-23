@@ -8,6 +8,7 @@ import { appCopy } from '../tests/support/appCopy.ts';
 import { launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
 import { CHANNEL_GROUPS } from './visual-channels.ts';
+import { HOME_EMPTY_GROUPS } from './visual-homeempty.ts';
 import { type Group, MYRA_GROUPS, type Step } from './visual-myra.ts';
 import { NEW_PROJECT_GROUPS } from './visual-newproject.ts';
 import { openPrototype, PROTO_GROUPS, removeProtoFolders } from './visual-proto.ts';
@@ -179,6 +180,7 @@ const GROUPS: Record<string, Group> = {
   ...WIREFRAME_GROUPS,
   ...CHANNEL_GROUPS,
   ...NEW_PROJECT_GROUPS,
+  ...HOME_EMPTY_GROUPS,
 };
 
 async function shoot(dir: string, out: string) {
