@@ -17,6 +17,7 @@ import * as net from './net.ts';
 import * as output from './output.ts';
 import P from './paths.ts';
 import * as prototypes from './prototypes.ts';
+import { fromAppPage } from './senderCheck.ts';
 import * as speech from './speech.ts';
 import * as storage from './storage.ts';
 import * as theme from './theme.ts';
@@ -51,6 +52,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 let win: BrowserWindow | null = null;
+const appPage = () => path.join(app.getAppPath(), 'web', 'index.html');
 function theWindow() {
   if (!win) throw new Error('The window is not open');
   return win;
@@ -97,7 +99,7 @@ function createWindow() {
   if (maximized) w.maximize();
   w.once('ready-to-show', () => w.show());
   w.on('close', saveBounds);
-  w.loadFile(path.join(root, 'web', 'index.html'));
+  w.loadFile(appPage());
   const wc = w.webContents;
   // links on the board open in the browser, not inside the app
   wc.on('will-navigate', (e, url) => {
@@ -335,6 +337,7 @@ const dispatch = (op: keyof Ops, args: Record<string, unknown>): unknown => {
 };
 
 ipcMain.on('fenmyr', async (e, m: unknown) => {
+  if (!fromAppPage(e.senderFrame, win?.webContents.mainFrame, appPage(), 'fenmyr', m)) return;
   if (!isRecord(m) || typeof m.id !== 'number' || typeof m.op !== 'string') return;
   if (!isOp(m.op)) {
     reply(e.sender, m.id, false, `unknown op ${m.op}`);
@@ -346,8 +349,9 @@ ipcMain.on('fenmyr', async (e, m: unknown) => {
     reply(e.sender, m.id, false, err instanceof Error && err.message ? err.message : String(err));
   }
 });
-ipcMain.on('win', (_e, what: unknown) => {
+ipcMain.on('win', (e, what: unknown) => {
   if (!win) return;
+  if (!fromAppPage(e.senderFrame, win.webContents.mainFrame, appPage(), 'win', what)) return;
   if (what === 'minimize') win.minimize();
   else if (what === 'maximize') {
     if (win.isMaximized()) win.unmaximize();

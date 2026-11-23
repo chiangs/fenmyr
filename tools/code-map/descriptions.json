@@ -55,6 +55,7 @@
     "src/host/prompts.ts": "Everything Myra is told: her character, the rules, the board JSON she gets and the shape of her replies.",
     "src/host/protoStarter.ts": "The files a new prototype starts with, and the files every prototype in a repo shares.",
     "src/host/prototypes.ts": "A prototype’s own code folder under prototypes/ in its project’s repo: create, copy, find, rename, restore.",
+    "src/host/senderCheck.ts": "Lets the bridge answer only the app's own page in the window's main frame, and logs what it drops.",
     "src/host/speech.ts": "Turns voice memos into words with whisper.cpp on this computer, when it is installed.",
     "src/host/storage.ts": "Saves and loads boards and templates as files, with a cached summary for the library list.",
     "src/host/theme.ts": "Follows the Caelestia desktop theme by reading and watching its colour scheme file.",
