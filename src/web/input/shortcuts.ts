@@ -137,8 +137,9 @@ export function init20() {
         return;
       }
     }
-    if (penT && !session.editing && !e.metaKey && !e.ctrlKey) {
-      // the Pen: Enter or Esc finishes, Backspace takes back the last point
+    if (penT && !session.editing && !typing && !e.metaKey && !e.ctrlKey) {
+      // the Pen: Enter or Esc finishes, Backspace takes back the last point. Not in a text box, which these keys are
+      // for: preventDefault here would stop its Backspace deleting anything
       if (e.key === 'Enter' || e.key === 'Escape') {
         e.preventDefault();
         e.stopImmediatePropagation();

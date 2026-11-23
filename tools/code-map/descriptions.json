@@ -532,6 +532,7 @@
     "tests/smoke/look.ts": "Smoke checks for icons, default fonts, starter boards and layering.",
     "tests/smoke/myra.ts": "Smoke checks for Myra’s button, chat and idle behaviour.",
     "tests/smoke/panels.ts": "Smoke checks for licences, exports, and wireframe pieces from the Pieces picker.",
+    "tests/smoke/penTyping.ts": "Smoke checks that the Pen leaves Backspace, Delete, Enter and Esc to a text box and keeps them on the board.",
     "tests/smoke/pictures.ts": "Smoke checks that pictures never live inside a note.",
     "tests/smoke/reminders.ts": "Smoke checks for due dates and Myra’s greeting.",
     "tests/smoke/repoOps.ts": "Smoke checks for the repo and prototype bridge operations against a throwaway repo.",

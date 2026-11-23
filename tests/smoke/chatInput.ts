@@ -1,4 +1,5 @@
 import { freshChat, type Smoke } from './kit.ts';
+import { penTyping } from './penTyping.ts';
 
 // Myra's input: Enter adds a line and Ctrl+Enter sends; the slash menu takes Up, Down, Tab, Enter and Esc first; keys
 // an IME is composing with stay in the box; the box grows to six lines or a third of the window, then scrolls with a
@@ -16,6 +17,7 @@ export async function chatInput(t: Smoke) {
   await menuKeys(t);
   await ime(t);
   await pen(t);
+  await penTyping(t);
   await grows(t);
   await counts(t);
   await clears(t);
