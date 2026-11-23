@@ -3,14 +3,11 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
-import { createFolder, createProject, currentPlace } from '../library/create.ts';
-import { closeHome, homeAt } from '../library/home.ts';
-import { openBoard } from '../library/openBoard.ts';
+import { boardFolder, createBoard, createFolder, createProject, currentPlace } from '../library/create.ts';
+import { homeAt } from '../library/home.ts';
 import { renameNewest } from '../library/rowMenu.ts';
-import { foldersIn } from '../library/tree.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
-import { newBoard } from '../model/boards.ts';
 import { renderDockHead } from '../proto/dockHead.ts';
 import { offerRename } from '../repo/codeFolder.ts';
 import { addBoardTo } from '../repo/prototypes.ts';
@@ -156,14 +153,10 @@ export function init21() {
   };
   nameField.onchange = () => offerRename(session.board);
 
-  $('newBoard').onclick = async () => {
-    const { f, p } = scope(),
-      into = f || (p && foldersIn(p.id)[0]);
-    if (into) return addBoardTo(into);
-    const b = newBoard();
-    await Fenmyr.save(b);
-    closeHome();
-    openBoard(b.id);
+  $('newBoard').onclick = () => {
+    const at = currentPlace(),
+      into = boardFolder(at);
+    return into ? addBoardTo(into) : createBoard(at, { open: 'board' });
   };
 
   $('newFolder').onclick = async () => {

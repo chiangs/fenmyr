@@ -38,7 +38,7 @@ export function currentPlace(): Place {
 }
 
 // A board lives in a folder, so a place with only a project means that project's first folder, and none means loose.
-const boardFolder = (at: Place): Folder | undefined =>
+export const boardFolder = (at: Place): Folder | undefined =>
   appState.folders.find(f => f.id === at.folder) ?? (at.project ? foldersIn(at.project)[0] : undefined);
 
 export async function createProject(name = ''): Promise<Project> {

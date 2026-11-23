@@ -2,9 +2,8 @@ import type { Board, Card, Folder, Link, Project } from '../../shared/model.ts';
 import type { Proto } from '../../shared/repos.ts';
 import { selectOnly } from '../canvas/selection.ts';
 import { appState } from '../core/state.ts';
-import { uniqueName } from '../library/create.ts';
+import { createBoard, uniqueName } from '../library/create.ts';
 import { closeHome } from '../library/home.ts';
-import { newBoardIn } from '../library/nesting.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { makeFolder, saveLib } from '../library/tree.ts';
@@ -86,7 +85,10 @@ export async function adoptPrototypes(p: Project) {
 
 // What adding a board to a folder means: a prototype in a prototyping folder, which holds nothing else, and an
 // ordinary board everywhere else.
-export const addBoardTo = (f: Folder) => (f.kind === 'prototyping' ? newPrototypeIn(f) : newBoardIn(f.id));
+export const addBoardTo = (f: Folder) =>
+  f.kind === 'prototyping'
+    ? newPrototypeIn(f)
+    : createBoard({ project: f.project ?? null, folder: f.id }, { open: 'name' });
 
 // Name and stack, then createPrototype.
 export function newPrototypeIn(f: Folder, seed?: Seed) {

@@ -28,9 +28,15 @@ const stopTyping = async () => {
   await page.evaluate(() => window.__fenmyr.refreshBoards());
   await still(page);
 };
-// Back on a board with Home shut, as someone who is working on it
+// A row's buttons show while the mouse is over its head
+const plus = async (head: string) => {
+  await page.hover(head);
+  await page.click(`${head} [data-a="add"]`);
+};
+// Back on a board with Home shut and nothing holding the keyboard: the name field keeps it from board to board
 const onBoard = async (id: string) => {
   await page.evaluate(async b => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     await window.__fenmyr.openBoard(b);
     document.getElementById('homeClose')?.click();
   }, id);
@@ -132,13 +138,86 @@ try {
     await still(page);
     assert.strictEqual((await stored(page)).projects.find(p => p.id === 'p3')?.open, false, 'Empty is shut');
     const made = await makes(page, 'folder', async () => {
-      await page.click(`${row('Empty')} .node-head [data-a="add"]`);
+      await plus(`${row('Empty')} .node-head`);
       await page.waitForFunction(() => document.querySelector('[contenteditable="true"]'));
     });
     assert.deepStrictEqual([made.name, made.project], ['New folder 8', 'p3']);
     assert.deepStrictEqual((await look(page)).renaming, ['New folder 8']);
     await stopTyping();
     assert.strictEqual((await stored(page)).projects.find(p => p.id === 'p3')?.open, true, 'Empty is open now');
+  });
+
+  await check(
+    '+ Board makes a board in the folder you are in, or the project’s first, or none, and opens it',
+    async () => {
+      const opens = async (id: string) => {
+        await page.waitForFunction(b => window.__fenmyr.curBoard().id === b, id);
+        await still(page);
+        return look(page);
+      };
+      const fromBoard = async (at: string) => {
+        await onBoard(at);
+        return makes(page, 'board', () => press(page, '#newBoard'));
+      };
+      const fromHome = async (at: string) => {
+        await onBoard('a');
+        await home(at);
+        return makes(page, 'board', () => press(page, '#newBoard'));
+      };
+      let made = await fromBoard('a');
+      assert.deepStrictEqual([made.name, made.folder], ['Untitled board', 'f1'], 'from a board in Ideas');
+      let seen = await opens(made.id);
+      assert.deepStrictEqual(
+        [seen.board, seen.folder, seen.home, seen.nameSelected],
+        ['Untitled board', 'f1', false, true],
+        'it opens, with its name ready to type',
+      );
+
+      made = await fromHome('project:p2');
+      assert.strictEqual(made.folder, 'f2', 'a project’s Home: its first folder');
+      seen = await opens(made.id);
+      assert.deepStrictEqual([seen.home, seen.nameSelected], [false, true], 'Home closes; the name is ready');
+
+      made = await fromHome('folder:f3');
+      assert.strictEqual(made.folder, 'f3', 'a folder’s Home: that folder');
+      seen = await opens(made.id);
+      assert.deepStrictEqual([seen.home, seen.nameSelected], [false, true]);
+
+      made = await fromHome('project:p4');
+      assert.strictEqual(made.folder, null, 'a project with no folder: none');
+      seen = await opens(made.id);
+      assert.deepStrictEqual([seen.home, seen.nameFocused], [false, false], 'and its name is not selected');
+
+      made = await fromHome('all');
+      assert.strictEqual(made.folder, null, 'All projects: none');
+      seen = await opens(made.id);
+      assert.deepStrictEqual([seen.home, seen.nameFocused], [false, false], 'Home closes; the name is not selected');
+
+      made = await fromBoard('loose');
+      assert.strictEqual(made.folder, null, 'from a board in none');
+      seen = await opens(made.id);
+      assert.deepStrictEqual([seen.home, seen.nameFocused], [false, false]);
+    },
+  );
+
+  await check('the New board tile and a folder row’s + make a board in that folder, and open it', async () => {
+    await onBoard('a');
+    await home('folder:f3');
+    const tile = await makes(page, 'board', () => press(page, '#homeGrid .tile.add', 'New board'));
+    assert.strictEqual(tile.folder, 'f3');
+    await page.waitForFunction(b => window.__fenmyr.curBoard().id === b, tile.id);
+    await still(page);
+    const opened = await look(page);
+    assert.deepStrictEqual([opened.board, opened.home, opened.nameSelected], ['Untitled board', false, true]);
+
+    await onBoard('a');
+    const row = await makes(page, 'board', async () => {
+      await plus('#boards .node.folder:has(.fname:text-is("Ideas")) .node-head');
+      await page.waitForFunction(() => document.activeElement?.id === 'boardName');
+    });
+    assert.strictEqual(row.folder, 'f1');
+    await page.waitForFunction(b => window.__fenmyr.curBoard().id === b, row.id);
+    assert.deepStrictEqual([(await look(page)).home, (await look(page)).nameSelected], [false, true]);
   });
 
   await check('“A new project” in the project picker makes one, and goes on to link its repo', async () => {

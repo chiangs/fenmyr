@@ -16,11 +16,12 @@ const boardIn = (id: string, folder?: string) => ({
   view: { x: 300, y: 200, z: 1 },
 });
 
-// Shop (Ideas), Garden (Plants, Tools) and Empty; a board in Ideas, one in Plants, and one in no folder
+// Shop (Ideas), Garden (Plants, Tools), Empty and Bare (no folder); a board in Ideas, one in Plants, and one in no folder
 const PROJECTS: Project[] = [
   { id: 'p1', name: 'Shop', open: true },
   { id: 'p2', name: 'Garden', open: true },
   { id: 'p3', name: 'Empty', open: true },
+  { id: 'p4', name: 'Bare', open: true },
 ];
 const FOLDERS: Folder[] = [
   { id: 'f1', name: 'Ideas', project: 'p1', open: true },
