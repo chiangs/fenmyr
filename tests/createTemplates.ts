@@ -4,7 +4,7 @@
 import assert from 'node:assert';
 import type { Folder } from '../src/shared/model.ts';
 import { launch } from './support/launch.ts';
-import { boardIn, look, makes, SEEDED, seedLibrary, stored } from './support/library.ts';
+import { boardIn, look, makes, SEEDED, seedLibrary } from './support/library.ts';
 import { still } from './support/settled.ts';
 
 // Shop has a prototyping folder besides Ideas, with a board in it
@@ -120,21 +120,25 @@ try {
   });
 
   await check('one of Yours that opens a new board does the same, with its own cards', async () => {
+    const pick = () =>
+      page
+        .locator('#tplPick [data-mine]', { hasText: 'Client kickoff' })
+        .evaluate(row => row instanceof HTMLElement && row.click());
     await onBoard('a');
     await page.evaluate(() => window.__fenmyr.saveAsTemplate('Client kickoff', null, { desc: '', mode: 'new' }));
     const before = await cards();
-    const made = await makes(page, 'board', () =>
-      page
-        .locator('#tplPick [data-mine]', { hasText: 'Client kickoff' })
-        .evaluate(row => row instanceof HTMLElement && row.click()),
-    );
+    const made = await makes(page, 'board', pick);
     await opens(made.id);
     assert.deepStrictEqual([made.name, made.folder], ['Client kickoff', 'f1']);
     assert.strictEqual(await cards(), before, 'the cards the template saved');
-    assert.ok(
-      (await stored(page)).boards.some(b => b.name === 'a'),
-      'the board it came from is still there',
-    );
+    assert.deepStrictEqual((await look(page)).home, false);
+
+    await onBoard('a');
+    await home('folder:f3');
+    const fromHome = await makes(page, 'board', pick);
+    assert.strictEqual(fromHome.folder, 'f3', 'from a folder’s Home: that folder');
+    await opens(fromHome.id);
+    assert.strictEqual((await look(page)).home, true, 'and Home stays open');
   });
 
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');
