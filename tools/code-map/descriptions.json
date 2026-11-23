@@ -581,6 +581,8 @@
     "tests/toolbarTable.ts": "The toolbar table: tools in line order, groups, mistakes named, the tuck order and the panel's rows read from small tables, and in the real app a button, Settings row and ··· name for every row.",
     "tests/typeFields.ts": "Tests the number fields in Type ▾ and Fill’s Opacity: a typed number lands once, whole, within each end, and a blank one changes nothing.",
     "tests/update.ts": "Tests that the updater follows each channel against a stand-in GitHub: commits for Every change, release tags for Stable and Beta with a beta before its release, and the AppImage’s latest release.",
+    "tests/updateInstall.ts": "Tests install.sh --to: it checks the release name before any git command, checks the tag out detached, records its commit, and --update from a tag goes back to main.",
+    "tests/updateNow.ts": "Tests Update now on a clone: Stable and Beta refuse local changes, commits of its own and another branch, and start the installer with the release as an argument.",
     "tests/version.ts": "Tests that versions are read and ordered as semver does, a beta before its release and numbers as numbers, and that junk never wins.",
     "tests/versionLine.ts": "Tests the version line and Copy details text for a release, a beta, changed files and no commit, and that a damaged build stamp reads as no commit.",
     "tests/vault.ts": "Tests the vault module on its own: parsing and the privacy rules.",

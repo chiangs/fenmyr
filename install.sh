@@ -3,6 +3,7 @@
 # On a Mac it builds Fenmyr.app and puts it in Applications instead (packaging/install-mac.sh).
 #   ./install.sh            install (or reinstall) and open
 #   ./install.sh --update   get the newest version from GitHub first
+#   ./install.sh --update --to v1.1.0   move to that release instead (what Update now does on Stable and Beta)
 #   ./install.sh --yes      no questions: installs what's missing with pacman (Homebrew on a Mac) when it can
 #   ./install.sh --no-open  install without opening it
 # Your boards live in ~/.local/share/fenmyr and are never touched. To remove Fenmyr: ./uninstall.sh
@@ -13,11 +14,28 @@ LIB="$HOME/.local/lib/fenmyr"
 BIN="$HOME/.local/bin"
 APPS="$HOME/.local/share/applications"
 ELECTRON_VERSION="$(node -p "require('./package.json').devDependencies.electron" 2>/dev/null || sed -n 's/.*"electron": "\([0-9.]*\)".*/\1/p' package.json)"
-YES=0; OPEN=1; UPDATE=0
-for a in "$@"; do case "$a" in --update) UPDATE=1;; --yes|-y) YES=1;; --no-open) OPEN=0;; esac; done
+YES=0; OPEN=1; UPDATE=0; TO=""; PREV=""; NAMED=0
+for a in "$@"; do
+  case "$a" in --update) UPDATE=1;; --yes|-y) YES=1;; --no-open) OPEN=0;; esac
+  [ "$PREV" = --to ] && { TO="$a"; NAMED=1; }
+  PREV="$a"
+done
+[ "$PREV" = --to ] && { echo "  --to needs a release, such as --to v1.1.0. Nothing was changed."; exit 1; }
+if [ "$NAMED" = 1 ] && ! [[ "$TO" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+  echo "  \"$TO\" isn't a release, so nothing was changed. Releases look like v1.1.0 or v1.1.0-beta.2."; exit 1
+fi
 ask() { if [ "$YES" = 1 ]; then REPLY="${2:-y}"; else read -r -p "$1" REPLY || true; REPLY="${REPLY:-${2:-y}}"; fi; }
 
-if [ "$UPDATE" = 1 ]; then echo "  Getting the newest Fenmyr…"; git pull --ff-only; fi
+if [ -n "$TO" ]; then
+  echo "  Getting Fenmyr ${TO#v}…"
+  git fetch --tags origin
+  git checkout --quiet --detach "refs/tags/$TO"
+elif [ "$UPDATE" = 1 ]; then
+  echo "  Getting the newest Fenmyr…"
+  # a clone left at a release goes back to following main
+  git symbolic-ref --quiet HEAD >/dev/null || git checkout --quiet main
+  git pull --ff-only
+fi
 # after the pull, so an update runs the newest Mac installer
 if [ "$(uname)" = Darwin ]; then exec ./packaging/install-mac.sh "$@"; fi
 
