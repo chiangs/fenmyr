@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import { type BuildOptions, build } from 'esbuild';
+import { stamp } from './buildStamp.ts';
 
 const host: BuildOptions = {
   bundle: true,
@@ -10,6 +11,9 @@ const host: BuildOptions = {
   sourcemap: 'linked',
   logLevel: 'warning',
 };
+
+// taken before the bundling, so it describes the source that was bundled
+const built = stamp('.', process.env);
 
 await Promise.all([
   build({ ...host, entryPoints: ['src/host/main.ts'], outfile: 'dist/main.cjs' }),
@@ -25,6 +29,7 @@ await Promise.all([
     logLevel: 'warning',
   }),
 ]);
+fs.writeFileSync('dist/build.json', `${JSON.stringify(built, null, 2)}\n`);
 
 // Prototype previews bundle in the page with esbuild-wasm, and every React prototype runs on this one copy of React,
 // so a prototype needs no npm install to show.
