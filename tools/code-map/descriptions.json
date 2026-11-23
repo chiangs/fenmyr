@@ -52,6 +52,7 @@
     "src/host/output.ts": "Getting things out: a picture or PDF of part of the board, a Word file, a doc as a paged PDF.",
     "src/host/paths.ts": "Where Fenmyr keeps its files on disk.",
     "src/host/preload.ts": "The only door from the page to the host: posts an operation, receives the reply.",
+    "src/host/permissions.ts": "Gives the microphone, camera, clipboard and notifications to the app's own page and to no frame inside it.",
     "src/host/prompts.ts": "Everything Myra is told: her character, the rules, the board JSON she gets and the shape of her replies.",
     "src/host/protoStarter.ts": "The files a new prototype starts with, and the files every prototype in a repo shares.",
     "src/host/prototypes.ts": "A prototype’s own code folder under prototypes/ in its project’s repo: create, copy, find, rename, restore.",
