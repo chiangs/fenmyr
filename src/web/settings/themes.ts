@@ -47,6 +47,8 @@ export type Theme = {
   tokens: Tokens;
   // what the theme adds for people who can't rely on colour: Clear and Lantern print each note's colour name on it
   labels: boolean;
+  // a thicker focus ring on every control and on a selected card, for the themes made to be seen without relying on colour
+  ring: boolean;
   knownGaps: CheckId[];
 };
 
@@ -139,6 +141,8 @@ export const PASTELS: Record<string, string> = {
 };
 // whether a theme prints each note's colour name on it; style.css shows the label when this is not none
 export const LABEL_VAR = '--colour-label';
+// the focus ring of a theme with `ring`: tools/themes-css.ts writes it, and tests/focusRing.ts holds every control to it
+export const RING = { width: '3px', offset: '2px' };
 
 export const CARD_VAR_NAMES = Object.keys(PASTELS).flatMap(k =>
   cardVars(k, { fill: '', ink: '', soft: '', faint: '', link: '', deep: '' }).map(([name]) => name),
@@ -170,6 +174,7 @@ export const THEMES: Theme[] = [
     name: 'Default',
     mode: 'light',
     target: 'aa',
+    ring: false,
     tokens: {
       bg: '#faf7f2',
       dot: '#e4dccf',
@@ -199,6 +204,7 @@ export const THEMES: Theme[] = [
     name: 'Default',
     mode: 'dark',
     target: 'aa',
+    ring: false,
     tokens: {
       bg: '#12100d',
       dot: '#332d25',
@@ -238,6 +244,7 @@ export const THEMES: Theme[] = [
     name: 'Midsummer',
     mode: 'light',
     target: 'aa',
+    ring: false,
     tokens: derive('light', 'aa', {
       bg: '#f1f4ee',
       dot: '#cfd8c8',
@@ -268,6 +275,7 @@ export const THEMES: Theme[] = [
     name: 'Clear',
     mode: 'light',
     target: 'aaa',
+    ring: true,
     tokens: derive('light', 'aaa', {
       bg: '#f3f0e9',
       dot: '#cbc2b4',
@@ -298,6 +306,7 @@ export const THEMES: Theme[] = [
     name: 'Polar Night',
     mode: 'dark',
     target: 'aa',
+    ring: false,
     tokens: derive('dark', 'aa', {
       bg: '#0e1621',
       dot: '#23303e',
@@ -328,6 +337,7 @@ export const THEMES: Theme[] = [
     name: 'Lantern',
     mode: 'dark',
     target: 'aaa',
+    ring: true,
     tokens: derive('dark', 'aaa', {
       bg: '#141619',
       dot: '#3a3f46',

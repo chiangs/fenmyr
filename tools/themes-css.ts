@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DERIVED } from '../src/web/settings/derived.ts';
-import { CSS_VARS, cardVars, LABEL_VAR, THEMES, type Theme, themeClass } from '../src/web/settings/themes.ts';
+import { CSS_VARS, cardVars, LABEL_VAR, RING, THEMES, type Theme, themeClass } from '../src/web/settings/themes.ts';
 
 const FILE = path.resolve(import.meta.dirname, '..', 'web', 'themes.css');
 
@@ -37,8 +37,18 @@ const derivedBlock = () => {
   return `body {\n${light}\n}\nbody.dark {\n${dark}\n}`;
 };
 
+// The thicker focus ring of a theme that asks for one, on every control, over the stylesheet's own `outline: none`, and the
+// same weight on a selected card. It is written here, from the table, so no theme is named in style.css.
+const ringBlock = () => {
+  const on = THEMES.filter(t => t.ring).map(selectorOf);
+  const each = (suffix: string) => on.map(selector => `${selector} ${suffix}`).join(',\n');
+  return on.length
+    ? `${each(':focus-visible')} {\n  outline: ${RING.width} solid var(--select) !important;\n  outline-offset: ${RING.offset} !important;\n}\n${each('.card.sel::after')} {\n  border-width: ${RING.width};\n}`
+    : '';
+};
+
 const themesCss = () =>
-  `/* Written by tools/themes-css.ts from src/web/settings/themes.ts. Change the table, not this file. */\n${[...THEMES.map(blockOf), derivedBlock()].join('\n')}\n`;
+  `/* Written by tools/themes-css.ts from src/web/settings/themes.ts. Change the table, not this file. */\n${[...THEMES.map(blockOf), derivedBlock(), ringBlock()].filter(Boolean).join('\n')}\n`;
 
 if (process.argv[2] === '--check') {
   if (!fs.existsSync(FILE) || fs.readFileSync(FILE, 'utf8') !== themesCss()) {
