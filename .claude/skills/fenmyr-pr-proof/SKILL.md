@@ -13,6 +13,12 @@ needs a test that fails without the change.
 Compare against the branch the work stacks on, not always `origin/main`. For the Myra chat epic that is
 `origin/feat/myra-chat`. Fetch first, and say which base you used in the report.
 
+When the PR needs the work of an earlier PR it is a stack (CLAUDE.md has the rule). Base it on the earlier PR's branch, not
+on `main`, and rebase it there if it was made from `main`: a PR retargeted to another PR's branch without the rebase shows
+that PR's changes reversed in its diff. Run `gh extension install github/gh-stack` once, then
+`gh stack link <bottom PR> <next PR>`, and check with `gh pr view <number> --json baseRefName` that each PR's base is the
+branch below it. Prove each PR against its own base, as above. PRs that don't need each other stay on `main`.
+
 ## Gates, in this order
 
 1. `npm run check:fast` after every hand edit. Type check, lint, knip, budget, name and code-map checks.
