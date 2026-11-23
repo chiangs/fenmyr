@@ -1,6 +1,7 @@
 import type { AskFile } from './askFiles.ts';
 import type { BuildEvent } from './build.ts';
 import type { AppBuild } from './buildStamp.ts';
+import type { UpdateChannel } from './updateChannel.ts';
 
 type None = Record<string, never>;
 
@@ -89,11 +90,12 @@ export type CaelestiaScheme = { name: string; mode: 'dark' | 'light'; colours: R
 export type LinkPreview = { title: string; desc: string; image: string };
 export type Connections = { claude: boolean; mobbin: boolean; higgsfield: boolean };
 
-// empty when installed some other way: the page says how to update then
+// empty when installed some other way: the page says how to update then. Only an install made from a clone has a
+// channel; on Stable and Beta it also names the newest release that channel can see.
 export type UpdateInfo =
   | None
-  | { repo: true; offline: true; since: string }
-  | { repo: true; behind: number; since: string; notes: string[] }
+  | { repo: true; offline: true; since: string; channel?: UpdateChannel }
+  | { repo: true; behind: number; since: string; notes: string[]; channel?: UpdateChannel; latest?: string }
   | { release: true; offline: true; since: string }
   | { release: true; behind: number; since: string; latest: string; notes: string[]; preview?: true };
 
@@ -206,9 +208,9 @@ export type Ops = {
   mediaBegin: { args: { ext: string }; result: string };
   mediaChunk: { args: { name: string; data: string }; result: true };
   mediaEnd: { args: { name: string }; result: string };
-  updateCheck: { args: None; result: UpdateInfo };
+  updateCheck: { args: { channel: UpdateChannel }; result: UpdateInfo };
   updatePrepare: { args: None; result: string };
-  updateNow: { args: None; result: 'updating' };
+  updateNow: { args: { channel: UpdateChannel }; result: 'updating' };
   reveal: { args: None; result: true };
   openURL: { args: { url: string }; result: true };
   gitStatus: { args: { path: string }; result: GitStatus };

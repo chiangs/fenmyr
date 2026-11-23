@@ -1176,6 +1176,8 @@ body.web .conns { display: none; }
 .su-icon { width: 34px; height: 34px; border-radius: 50%; background: var(--m-su-icon-bg); display: grid; place-items: center; color: var(--ink); flex: none; }
 .set-update.ready .su-icon { color: var(--set-ready-ink); }
 .su-text { flex: 1; min-width: 0; display: grid; gap: 3px; } .su-text b { font: 700 14px/1.2 var(--font); color: var(--ink); } .su-text small { font: 500 12px/1.4 var(--font); color: var(--ink-soft); }
+.su-channel { margin: 6px 0 0 46px; padding-bottom: 0; }
+.su-channel[hidden] { display: none; }   /* .set-row's display would otherwise show it */
 .su-notes { margin: 12px 0 2px 46px; padding: 0; list-style: none; display: grid; gap: 6px; }
 .su-notes li { font: 500 13px/1.4 var(--font); color: var(--ink); } .su-notes li::before { content: "✦ "; color: var(--coach-ink); }
 .gear.has-update { position: relative; } .gear.has-update::after { content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--gear-bg); box-shadow: 0 0 0 2px var(--snow); }/* the person who made it */

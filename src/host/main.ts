@@ -253,9 +253,9 @@ const OPS = {
   mediaBegin: a => storage.mediaBegin(text(a.ext)),
   mediaChunk: a => storage.mediaChunk(text(a.name), text(a.data)),
   mediaEnd: a => storage.mediaEnd(text(a.name)),
-  updateCheck: () => update.check(),
+  updateCheck: a => update.check(update.channelOf(a.channel)),
   updatePrepare: () => update.prepare(),
-  updateNow: () => update.now(),
+  updateNow: a => update.now(update.channelOf(a.channel)),
   reveal: () => {
     shell.showItemInFolder(P.boardsDir);
     return true;

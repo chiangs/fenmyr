@@ -1,5 +1,6 @@
 // Updates, three ways depending on how Fenmyr was installed:
-//   from a git clone with install.sh:  check GitHub for new commits; "Update now" runs ./install.sh --update (pull, build, reinstall, reopen)
+//   from a git clone with install.sh:  check GitHub for a new release tag (Stable, Beta) or new commits (Every change);
+//                                      "Update now" runs ./install.sh --update (pull or check out the tag, build, reinstall, reopen)
 //   the AppImage:                      check GitHub Releases; download the new AppImage and swap it in when Fenmyr quits
 //   anything else (a distro package):  nothing to do here, the package manager updates it
 import { spawn } from 'node:child_process';
@@ -9,8 +10,11 @@ import path from 'node:path';
 import { app } from 'electron';
 import type { AppInstall } from '../shared/buildStamp.ts';
 import type { UpdateInfo } from '../shared/ops.ts';
+import { channelFor, isUpdateChannel, type UpdateChannel } from '../shared/updateChannel.ts';
+import { compareVersions } from '../shared/version.ts';
 import { download as fetchTo, get } from './net.ts';
 import P from './paths.ts';
+import { newestTag } from './updateTags.ts';
 import { isRecord, readJSON, run, text, which } from './util.ts';
 
 type Release = { tag_name: string; body: string; assets: { name: string; url: string }[] };
@@ -22,6 +26,8 @@ const releaseAPI = process.env.FENMYR_RELEASE_API || `https://api.github.com/rep
 const assetName = () => `Fenmyr-${process.arch === 'x64' ? 'x86_64' : process.arch}.AppImage`;
 const preview = () => process.env.FENMYR_PREVIEW_UPDATE === '1';
 export const appVersion = () => app.getVersion();
+// the page says which channel it is on; a call without a usable one gets what someone who never chose would
+export const channelOf = (x: unknown): UpdateChannel => (isUpdateChannel(x) ? x : channelFor(undefined, appVersion()));
 
 // install.sh writes install.json next to the app on Linux, and into Fenmyr.app/Contents/Resources on a Mac,
 // because there the app itself is packed into an archive
@@ -60,21 +66,7 @@ async function installedCommit(dir: string) {
   const commit = install ? text(install.commit) : '';
   return commit && (await git(['cat-file', '-e', `${commit}^{commit}`], dir)).ok ? commit : 'HEAD';
 }
-function newer(a: string, b: string) {
-  const parts = (v: string) =>
-    v
-      .replace(/^v/, '')
-      .split('.')
-      .map(n => Number.parseInt(n, 10) || 0);
-  const x = parts(a);
-  const y = parts(b);
-  for (let i = 0; i < Math.max(x.length, y.length); i++) {
-    const p = x[i] ?? 0;
-    const q = y[i] ?? 0;
-    if (p !== q) return p > q;
-  }
-  return false;
-}
+const newer = (a: string, b: string) => compareVersions(a, b) > 0;
 async function latestRelease(): Promise<Release | null> {
   try {
     const r = await get(releaseAPI, 30, { Accept: 'application/vnd.github+json', 'User-Agent': 'Fenmyr' });
@@ -91,7 +83,31 @@ async function latestRelease(): Promise<Release | null> {
   }
 }
 
-export async function check(): Promise<UpdateInfo> {
+// the lines added to WHATSNEW.md between two points in history: what the update brings
+async function notesBetween(dir: string, from: string, to: string) {
+  const diff = (await git(['diff', from, to, '--', 'WHATSNEW.md'], dir)).out;
+  return diff
+    .split('\n')
+    .filter(l => l.startsWith('+- '))
+    .map(l => l.slice(3));
+}
+// An install detached at a release has no upstream, so Every change follows origin/main from there. Anything else
+// keeps its branch's upstream, and with none there's nothing to compare with.
+async function upstream(dir: string) {
+  const detached = !(await git(['symbolic-ref', '--quiet', 'HEAD'], dir)).ok;
+  return installInfo() && detached ? 'origin/main' : '@{u}';
+}
+// Stable and Beta follow release tags. Running from a checkout with npm start has no channel and follows its own branch.
+const followsTags = (channel: UpdateChannel) => (installInfo() && channel !== 'main' ? channel : null);
+// Fetches the tags, then names the newest release the channel may see, and `update`, that release when this copy is
+// older than it. Null when GitHub can't be reached.
+async function releaseTag(dir: string, channel: Exclude<UpdateChannel, 'main'>) {
+  if (!(await git(['fetch', '--quiet', '--tags', 'origin'], dir, 40)).ok) return null;
+  const latest = newestTag((await git(['tag', '--list', 'v*'], dir)).out.split('\n'), channel);
+  return { latest, update: latest !== null && newer(latest, appVersion()) ? latest : null };
+}
+
+export async function check(channel: UpdateChannel): Promise<UpdateInfo> {
   if (preview())
     return {
       release: true,
@@ -105,15 +121,20 @@ export async function check(): Promise<UpdateInfo> {
   if (dir) {
     const base = await installedCommit(dir);
     const here = (await git(['log', '-1', '--format=%cs', base], dir)).out;
-    if (!(await git(['fetch', '--quiet', 'origin'], dir, 40)).ok) return { repo: true, offline: true, since: here };
-    const behind = Number.parseInt((await git(['rev-list', '--count', `${base}..@{u}`], dir)).out, 10) || 0;
-    // the friendly notes: lines added to WHATSNEW.md since this copy
-    const diff = (await git(['diff', base, '@{u}', '--', 'WHATSNEW.md'], dir)).out;
-    const notes = diff
-      .split('\n')
-      .filter(l => l.startsWith('+- '))
-      .map(l => l.slice(3));
-    return { repo: true, behind, since: here, notes };
+    const own = installInfo() ? { channel } : {};
+    const tags = followsTags(channel);
+    if (tags) {
+      const found = await releaseTag(dir, tags);
+      if (!found) return { repo: true, offline: true, since: here, ...own };
+      const { latest, update } = found;
+      const notes = update ? await notesBetween(dir, base, `refs/tags/${update}`) : [];
+      return { repo: true, behind: update ? 1 : 0, since: here, notes, ...own, ...(latest ? { latest } : {}) };
+    }
+    if (!(await git(['fetch', '--quiet', 'origin'], dir, 40)).ok)
+      return { repo: true, offline: true, since: here, ...own };
+    const head = await upstream(dir);
+    const behind = Number.parseInt((await git(['rev-list', '--count', `${base}..${head}`], dir)).out, 10) || 0;
+    return { repo: true, behind, since: here, notes: await notesBetween(dir, base, head), ...own };
   }
   if (!appImage()) return {}; // installed some other way: the page says how to update
   const r = await latestRelease();
@@ -182,17 +203,37 @@ export async function prepare() {
     );
   return download();
 }
-export async function now(): Promise<'updating'> {
+// Never touch someone's own work. Stable and Beta check out a tag, so they also refuse a clone that has commits GitHub
+// lacks or sits on another branch; Every change only pulls, and git refuses a pull that isn't a fast-forward.
+async function refuseUnsafe(dir: string, tags: boolean) {
+  if ((await git(['status', '--porcelain', '--untracked-files=no'], dir)).out)
+    throw new Error(
+      "Your Fenmyr folder has its own changes, so it wasn't updated. Run ./install.sh --update in a terminal to see them.",
+    );
+  if (!tags) {
+    if (!(await git(['merge-base', '--is-ancestor', 'HEAD', await upstream(dir)], dir)).ok)
+      throw new Error("This copy has diverged from GitHub, so it wasn't updated.");
+    return;
+  }
+  const ours = ['for-each-ref', '--count=1', '--format=%(refname)', '--contains', 'HEAD', 'refs/remotes/origin'];
+  if (!(await git(ours, dir)).out) throw new Error("Your Fenmyr folder has commits of its own, so it wasn't updated.");
+  const branch = await git(['symbolic-ref', '--short', '--quiet', 'HEAD'], dir);
+  if (branch.ok && branch.out !== 'main')
+    throw new Error(`Your Fenmyr folder is on the branch "${branch.out}". Switch it to main, or choose Every change.`);
+}
+export async function now(channel: UpdateChannel): Promise<'updating'> {
   if (preview()) throw new Error('This is a preview, so nothing changed.');
   const dir = repoDir();
   if (dir) {
-    // only a clean fast-forward: never touch someone's own changes
-    if ((await git(['status', '--porcelain', '--untracked-files=no'], dir)).out)
-      throw new Error(
-        "Your Fenmyr folder has its own changes, so it wasn't updated. Run ./install.sh --update in a terminal to see them.",
-      );
-    if (!(await git(['merge-base', '--is-ancestor', 'HEAD', '@{u}'], dir)).ok)
-      throw new Error("This copy has diverged from GitHub, so it wasn't updated.");
+    const tags = followsTags(channel);
+    await refuseUnsafe(dir, tags !== null);
+    let to: string | null = null;
+    if (tags) {
+      const found = await releaseTag(dir, tags);
+      if (!found) throw new Error("Couldn't reach GitHub.");
+      to = found.update;
+      if (!to) throw new Error('There is no newer release to update to.');
+    }
     const searchPath = [
       ...(process.env.PATH || '').split(':'),
       path.join(os.homedir(), '.local/bin'),
@@ -203,10 +244,12 @@ export async function now(): Promise<'updating'> {
     const getNode = process.platform === 'darwin' ? 'brew install node' : 'sudo pacman -S nodejs npm';
     if (!which('npm', searchPath))
       throw new Error(`Updating needs Node.js and npm. Install them (${getNode}), then try again.`);
-    // the installer pulls, builds, reinstalls and reopens the app; it runs on its own so it can close this one.
-    // An app opened from the desktop has a short PATH, so it gets the folders npm was found in.
+    // The installer pulls (or checks out the tag), builds, reinstalls and reopens the app; it runs on its own so it can
+    // close this one. The tag goes in as an argument, never inside the script. An app opened from the desktop has a
+    // short PATH, so it gets the folders npm was found in.
     const log = fs.openSync(P.updateLog, 'w');
-    spawn('/bin/bash', ['-c', 'cd "$0" && exec ./install.sh --update', dir], {
+    const script = to ? 'cd "$0" && exec ./install.sh --update --to "$1"' : 'cd "$0" && exec ./install.sh --update';
+    spawn('/bin/bash', ['-c', script, dir, ...(to ? [to] : [])], {
       detached: true,
       stdio: ['ignore', log, log],
       env: { ...process.env, PATH: searchPath.join(':') },

@@ -2,13 +2,14 @@
 // "+ changes" when files were modified, Copy details puts the whole text on the clipboard, the update line names the
 // installed version the same way on every kind of install, a missing or damaged stamp shows the version alone without
 // a page error, a run that names no stamp of its own gets the fixed one, and Myra is sent the version, the short
-// commit and whether files had changed.
+// commit, whether files had changed and which update channel the install is on.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { detailsText, versionLine } from '../src/shared/buildStamp.ts';
+import { channelFor } from '../src/shared/updateChannel.ts';
 import { everyOfflineCard, replyBoard } from './fixtures/boards.ts';
 import { askStandIn } from './support/askStandIn.ts';
 import { launch, ROOT } from './support/launch.ts';
@@ -23,6 +24,7 @@ const stampFile = (name: string, text: string) => {
 };
 const pkg: unknown = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 const version = typeof pkg === 'object' && pkg !== null ? String(Reflect.get(pkg, 'version')) : '';
+const channel = channelFor(undefined, version);
 
 // Every update check the page makes, whenever it makes it, is answered from the page's own variable instead of asking
 // git and GitHub, so what the Updates line says depends on nothing but the case being run.
@@ -156,15 +158,17 @@ try {
 
 const told = await promptFor(changed);
 assert.ok(
-  told.includes(`"fenmyr":{"version":"${version}","commit":"a1b2c3d","changes":true}`),
-  'Myra is sent the version, the short commit and that files had changed',
+  told.includes(`"fenmyr":{"version":"${version}","commit":"a1b2c3d","changes":true,"channel":"${channel}"}`),
+  'Myra is sent the version, the short commit, that files had changed and the channel',
 );
 assert.ok(told.includes('when they ask what version they are on'), 'and told what it is for');
-assert.ok(!told.includes('"channel"'), 'with no channel, which comes with the update channels');
+assert.ok(told.includes('which releases an install made from a clone follows'), 'and told what the channel means');
 for (const [name, stamp] of unusable)
   assert.ok(
-    (await promptFor(stamp)).includes(`"fenmyr":{"version":"${version}","commit":null,"changes":false}`),
-    `${name} stamp: Myra is sent the version alone`,
+    (await promptFor(stamp)).includes(
+      `"fenmyr":{"version":"${version}","commit":null,"changes":false,"channel":"${channel}"}`,
+    ),
+    `${name} stamp: Myra is sent the version and the channel, and no commit`,
   );
 
 fs.rmSync(tmp, { recursive: true, force: true });

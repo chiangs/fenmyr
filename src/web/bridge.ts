@@ -2,6 +2,7 @@ import { appBuildOf, readStamp } from '../shared/buildStamp.ts';
 import type { Board, StoredBoard } from '../shared/model.ts';
 import { isRecord, parseBoard, storedBoard } from '../shared/model.ts';
 import type { Ops } from '../shared/ops.ts';
+import type { UpdateChannel } from '../shared/updateChannel.ts';
 import { NEWS } from './app/newsItems.ts';
 import { call, desktopOnly, native, picture, platform } from './hostCall.ts';
 import { repoFallbacks, repoOps } from './repo/hostOps.ts';
@@ -365,8 +366,8 @@ const nativeApi = {
   exportRect: (o: Ops['export']['args']) => picture('export', o),
   fonts: () => call('fonts'),
   higgsQuote: (o?: Ops['higgsQuote']['args']) => call('higgsQuote', o ?? {}),
-  updateCheck: () => call('updateCheck'),
-  updateNow: () => call('updateNow'),
+  updateCheck: (channel: UpdateChannel) => call('updateCheck', { channel }),
+  updateNow: (channel: UpdateChannel) => call('updateNow', { channel }),
   updatePrepare: () => call('updatePrepare'),
   higgsMake: (o: Ops['higgsMake']['args']) => call('higgsMake', o),
   drawFill: (o: Ops['drawFill']['args']) => call('drawFill', o),
