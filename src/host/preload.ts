@@ -1,5 +1,5 @@
 // The page reaches the host only through window.fenmyrHost.post({id, op, args}); answers arrive as __fenmyrReply(id, ok, value).
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 declare global {
   interface Window {
@@ -51,6 +51,8 @@ const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'obj
 
 contextBridge.exposeInMainWorld('fenmyrHost', {
   platform: process.platform === 'darwin' ? 'mac' : 'linux',
+  // where a dropped file is on this computer; the page can't read that from the file itself
+  pathOf: (file: File) => webUtils.getPathForFile(file),
   post: async (msg: unknown) => {
     const audio = isRecord(msg) && msg.op === 'transcribe' && isRecord(msg.args) ? msg.args.audio : null;
     if (

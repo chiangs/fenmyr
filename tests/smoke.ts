@@ -26,6 +26,7 @@ import { repoOps } from './smoke/repoOps.ts';
 import { sender } from './smoke/sender.ts';
 import { commandsInPrompt, slash } from './smoke/slash.ts';
 import { timers } from './smoke/timers.ts';
+import { zipOps } from './smoke/zipOps.ts';
 import { HEADLESS, MOUSE } from './support/launch.ts';
 
 (async () => {
@@ -100,6 +101,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await page.evaluate(installPageKit);
   const t = makeSmoke({ app, page, data, out, errors });
   await bridge(t);
+  await zipOps(t);
   await sender(t);
   await askFiles(t);
   await repoOps(t);

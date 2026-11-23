@@ -9,6 +9,7 @@ import { startBuild, undoBuild, unlessBuilding } from './build.ts';
 import * as claude from './claude.ts';
 import { stopCodeAgents } from './claudeCode.ts';
 import { explainCode } from './explain.ts';
+import { zipExport, zipImport } from './fenmyrZip.ts';
 import * as gh from './gh.ts';
 import * as git from './git.ts';
 import { packageManager } from './install.ts';
@@ -259,8 +260,10 @@ const OPS = {
   updateCheck: a => update.check(update.channelOf(a.channel)),
   updatePrepare: () => update.prepare(),
   updateNow: a => update.now(update.channelOf(a.channel)),
-  reveal: () => {
-    shell.showItemInFolder(P.boardsDir);
+  zipExport: a => zipExport(theWindow(), a),
+  zipImport: a => zipImport(theWindow(), a),
+  reveal: a => {
+    shell.showItemInFolder(text(a.path) || P.boardsDir);
     return true;
   },
   openURL: a => {

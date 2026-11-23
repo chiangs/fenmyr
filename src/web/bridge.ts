@@ -5,6 +5,7 @@ import type { Ops } from '../shared/ops.ts';
 import type { UpdateChannel } from '../shared/updateChannel.ts';
 import { NEWS } from './app/newsItems.ts';
 import { call, desktopOnly, native, picture, platform } from './hostCall.ts';
+import { zipFallbacks, zipOps } from './library/zipOps.ts';
 import { repoFallbacks, repoOps } from './repo/hostOps.ts';
 
 type Progress = (share: number) => void;
@@ -135,6 +136,7 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
   },
   vaultUpdate: desktopOnly,
   ...repoFallbacks,
+  ...zipFallbacks,
   async vaultRemove() {
     return true;
   },
@@ -360,7 +362,7 @@ const nativeApi = {
   connections: () => call('connections'),
   fetchImage: (url: string) => call('fetchImage', { url }),
   openURL: (url: string) => call('openURL', { url }),
-  reveal: () => call('reveal'),
+  reveal: (path?: string) => call('reveal', path ? { path } : {}),
   transcribe: (audio: string) => call('transcribe', { audio }),
   speechAuth: () => call('speechAuth'),
   exportRect: (o: Ops['export']['args']) => picture('export', o),
@@ -372,6 +374,7 @@ const nativeApi = {
   higgsMake: (o: Ops['higgsMake']['args']) => call('higgsMake', o),
   drawFill: (o: Ops['drawFill']['args']) => call('drawFill', o),
   ...repoOps,
+  ...zipOps,
 };
 export type FenmyrApi = typeof nativeApi;
 const api: FenmyrApi = native ? nativeApi : Object.assign({ native: false, platform }, browser);

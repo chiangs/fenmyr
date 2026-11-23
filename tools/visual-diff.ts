@@ -72,6 +72,16 @@ const board: [string, Step][] = [
       await page.click('#homeBtn');
     },
   ],
+  // Home covers the board but not the left box: the open board's row, its menu, and the dialog that Export as zip opens
+  [
+    'export-dialog',
+    async page => {
+      await page.locator('#boards .board-row.on').first().click({ button: 'right' });
+      // a reference without the entry only has the menu open
+      const entry = page.locator('#rowMenu [data-m="zipOut"]');
+      if (await entry.count()) await entry.click();
+    },
+  ],
 ];
 // each new theme: the board, a selected card, Myra's chat open, and Settings with the picker
 const themeGroup = (name: string, mode: 'light' | 'dark'): Group => ({
