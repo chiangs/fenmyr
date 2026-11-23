@@ -642,6 +642,7 @@
     "web/sw.js": "Keeps a copy of the app so the website version opens offline.",
     "tests/cardInk.ts": "The words on every colour of note, and on a doc, read on the card in every theme, so a light Snow card in Lantern has dark text.",
     "tests/cardNames.ts": "A card's accessible name says what it is and its colour's name in every theme, so people who can't see the colour get the cue Clear and Lantern print on the card.",
+    "tests/themeBoards.ts": "A board saved under Clear holds colour keys and no theme colour, and opens under every theme with that theme's own fill on each card.",
     "tests/colourLabels.ts": "Clear and Lantern print a note's colour name on it and no other theme does, and the label doesn't change the note's size.",
     "src/web/settings/boardsSaved.ts": "The bold line on Settings, General: the board count, then Locally saved or, when a project is linked to a repo, Local files linked to a remote repo.",
     "src/web/settings/derivedModes.ts": "The area colours that differ between light and dark, as expressions of the core tokens, which style.css reads instead of a body.dark rule.",
