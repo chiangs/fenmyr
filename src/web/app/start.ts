@@ -12,7 +12,15 @@ import { loadVaults } from '../vault/vaults.ts';
 import { currentVersion, maybeNews, newsKey } from './news.ts';
 import { openSetup } from './onboarding.ts';
 import { checkUpdate } from './updates.ts';
+
+// the website version keeps a copy of itself so it still opens with no internet; the desktop app reads its files from disk
+function keepOfflineCopy() {
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost'))
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
 export function init64() {
+  keepOfflineCopy();
   // ---------- start ----------
   (async () => {
     loadTemplates();

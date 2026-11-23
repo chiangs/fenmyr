@@ -414,10 +414,6 @@
 <script src="icons/pack.js"></script>
 <script src="vendor/editor.js"></script>
 <script src="dist/app.js"></script>
-<script>
-  // the website version keeps a copy of itself so it still opens with no internet (the desktop app reads its files from disk)
-  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
-</script>
 <div class="rot-badge" id="rotBadge" aria-hidden="true"></div>
 <div class="tilt-pop" id="tiltPop" role="dialog" aria-label="Tilt"></div>
 </body>
