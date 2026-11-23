@@ -978,3 +978,12 @@ body.dark {
   --ws-bg: color-mix(in oklab, var(--snow) 88%, var(--select));
   --ws-bg-2: color-mix(in oklab, var(--snow) 80%, var(--select));
 }
+body.theme-clear :focus-visible,
+body.dark.theme-lantern :focus-visible {
+  outline: 3px solid var(--select) !important;
+  outline-offset: 2px !important;
+}
+body.theme-clear .card.sel::after,
+body.dark.theme-lantern .card.sel::after {
+  border-width: 3px;
+}
