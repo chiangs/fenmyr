@@ -73,6 +73,11 @@ export function webPage(url: string, title: string): WebPage | null {
   }
 }
 
+// What she names a board, folder or project: one line of at most `n` characters, with what an override could hide in
+// it gone. Nothing for a value that is not text.
+export const nameLine = (x: unknown, n: number) =>
+  typeof x === 'string' ? clip(x.replace(UNSAFE, ' ').replace(/\s+/g, ' ').trim(), n) : '';
+
 // at most `n` characters, the last an ellipsis when it was cut
 export function clip(s: string, n: number) {
   const chars = Array.from(s);
