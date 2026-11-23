@@ -2424,7 +2424,7 @@ svg.ico .ico-d { color: var(--m-svg-ico-ico-d-ink); }
 
 /* the template form */
 .tdlg-wrap { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; background: rgb(from var(--tdlg-bg) r g b / .28); }
-.tdlg { width: min(420px, calc(100vw - 32px)); padding: 22px; border-radius: 26px; corner-shape: squircle; background: var(--panel, var(--snow)); box-shadow: 0 18px 50px rgb(from var(--tdlg-bg) r g b / .28); display: grid; gap: 14px; color: var(--ink); }
+.tdlg { width: min(420px, calc(100vw - 32px)); padding: 22px; border-radius: 26px; corner-shape: squircle; background: var(--m-popup-bg); box-shadow: 0 18px 50px rgb(from var(--tdlg-bg) r g b / .28); display: grid; gap: 14px; color: var(--ink); }
 .tdlg h3 { margin: 0; font: 700 16px/1.2 var(--font); }
 .tdlg label { display: grid; gap: 6px; font: 600 12px/1 var(--font); color: var(--ink-soft); }
 .tdlg input { padding: 10px 12px; border-radius: 12px; corner-shape: squircle; border: 1.5px solid rgb(from var(--accent-deep) r g b / .25); background: transparent; font: 500 14px/1.2 var(--font); color: var(--ink); outline: none; }
@@ -2653,7 +2653,7 @@ body.tint-panels .place-hint { color: var(--panel); }
 body.dz-dragging, body.dz-dragging * { cursor: grabbing !important; }
 
 /* slash commands: the little list above Myra's box */
-.slash-menu { position: fixed; z-index: 9100; display: flex; flex-direction: column; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--panel, var(--snow)); color: var(--ink); box-shadow: 0 16px 40px rgb(from color-mix(in oklab, var(--accent-text) 8%, var(--on-pastel)) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05); }
+.slash-menu { position: fixed; z-index: 9100; display: flex; flex-direction: column; padding: 6px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-popup-bg); color: var(--ink); box-shadow: 0 16px 40px rgb(from color-mix(in oklab, var(--accent-text) 8%, var(--on-pastel)) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05); }
 .slash-menu[hidden] { display: none; }
 .slash-menu .slash-group { padding: 8px 10px 3px; font: 600 11px/1.2 var(--font); color: var(--ink-soft); }
 .slash-menu .slash-group:first-child { padding-top: 3px; }

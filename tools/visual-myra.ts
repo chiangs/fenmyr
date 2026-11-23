@@ -236,4 +236,31 @@ const template: Group = {
   ],
 };
 
-export const MYRA_GROUPS = { reply, sees, panels, offer, plan, template };
+// the slash menu and the shared dialog in dark: both had a white background there, with light words on it, so the states
+// are listed as meant
+const popupsDark: Group = {
+  settings: { theme: 'dark' },
+  states: [
+    [
+      'slash',
+      async page => {
+        await page.evaluate(() =>
+          document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
+        );
+        await page.click('#mPill');
+        await page.fill('#mcInput', '/');
+      },
+    ],
+    [
+      'dialog',
+      async page => {
+        await page.evaluate(() => {
+          void window.__fenmyr.saveWithDialog(null);
+        });
+        await page.waitForSelector('.tdlg h3');
+      },
+    ],
+  ],
+};
+
+export const MYRA_GROUPS = { reply, sees, panels, offer, plan, template, 'popups-dark': popupsDark };
