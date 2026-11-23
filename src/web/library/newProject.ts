@@ -82,13 +82,19 @@ async function begin(start: Start, name: string) {
   }
 }
 
-// `want` is a name to start from, such as the one /project was given; it is made unique like any other
-export function openNewProject(want = '') {
+type Opened = { name: string; asked: string };
+
+// `want` is a name to start from, such as the one /project was given; it is made unique like any other. Says the name the
+// dialog started with beside the one asked for, so a caller can say when they differ. Nothing when a project is already
+// being made, since that dialog is left as it is.
+export function openNewProject(want = ''): Opened | undefined {
   const before = document.getElementById('npDlg');
-  if (before?.classList.contains('busy')) return;
+  if (before?.classList.contains('busy')) return undefined;
   before?.remove();
   const all = rowsNow(),
-    name = esc(uniqueName(appState.projects, want.trim().slice(0, NAME_MAX) || 'New project')),
+    asked = want.trim().slice(0, NAME_MAX),
+    start = uniqueName(appState.projects, asked || 'New project'),
+    name = esc(start),
     rows = listHtml(all);
   const d = showDialog(
     `<div class="tdlg np" role="dialog" aria-modal="true" aria-labelledby="npTitle"><h3 id="npTitle">New project</h3>
@@ -174,4 +180,5 @@ export function openNewProject(want = '') {
   select(0);
   nameIn.focus();
   nameIn.select();
+  return { name: start, asked };
 }
