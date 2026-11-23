@@ -21,7 +21,7 @@ import { onDragMove } from './dragMove.ts';
 import { stepZoom, toWorld, viewSoon, zoomAt } from './handles.ts';
 import { clearStuckDrag } from './pointerKit.ts';
 import { onPress } from './press.ts';
-import { onRelease } from './release.ts';
+import { DOUBLE_TAP_MS, onRelease } from './release.ts';
 import { renderCard } from './render.ts';
 import { selectOnly } from './selection.ts';
 
@@ -62,6 +62,15 @@ export function init16() {
       endPen(true);
       return;
     } // a double-click finishes the line
+    // The empty name line shows while a note is typed in, and a double-click on it moves the typing there. Starting to
+    // type shifts the words down, so the event's own target is used, and clicks in the same gesture that started the
+    // typing are not taken for it.
+    const nameLine = closestTo(e.target, '.card.editing .nname:not([contenteditable="true"])');
+    if (nameLine && Date.now() - (appState.lastTap.t ?? 0) >= DOUBLE_TAP_MS) {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      startEdit(closestTo(nameLine, '.card')?.dataset.id ?? '', nameLine);
+      return;
+    }
     if (settings.dblNote === false) return; // only the setting turns this off
     const hitEl = document.elementFromPoint(e.clientX, e.clientY);
     if (
