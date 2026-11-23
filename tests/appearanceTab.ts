@@ -66,6 +66,8 @@ try {
     '#curPrev',
     '[data-set="fancyCursor"]',
     '[data-set="colourNames"]',
+    '[data-set="thickFocus"]',
+    '[data-set="straightCards"]',
     // what the Board tab used to hold about how the board looks
     '#defaultFontBtn',
     '[data-col="accent"]',
@@ -123,6 +125,22 @@ try {
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('fenmyr:settings') || '{}'));
   assert.strictEqual(saved.colourNames, false, 'and it is saved');
 
+  // the thicker focus ring and straight cards are options the same themes offer: on to begin with, each turned off on its
+  // own, and kept
+  const optionOf = (key: string) => page.locator(`[data-set="${key}"]`);
+  const bodyHas = (cls: string) => page.evaluate(c => document.body.classList.contains(c), cls);
+  for (const [key, off] of [
+    ['thickFocus', 'no-thick-focus'],
+    ['straightCards', 'no-straight'],
+  ] as const) {
+    assert.strictEqual(await optionOf(key).isChecked(), true, `${key} is on in Clear`);
+    assert.strictEqual(await bodyHas(off), false, `and ${off} is not set`);
+    await optionOf(key).click();
+    assert.strictEqual(await bodyHas(off), true, `turning ${key} off sets ${off}`);
+    const kept = await page.evaluate(() => JSON.parse(localStorage.getItem('fenmyr:settings') || '{}'));
+    assert.strictEqual(kept[key], false, `and ${key} is saved off`);
+  }
+
   // the other themes: only Lantern offers the section, and the choice follows you to it
   await page.click('#themeLight [data-v="midsummer"]');
   assert.strictEqual(await accessible(), false, 'Midsummer has no Accessibility section');
@@ -135,6 +153,9 @@ try {
   assert.strictEqual(await printed(), false, 'and Lantern prints no name');
   await page.click('[data-set="colourNames"]');
   assert.strictEqual(await printed(), true, 'turning it on again prints it in Lantern');
+  for (const key of ['thickFocus', 'straightCards'])
+    assert.strictEqual(await optionOf(key).isChecked(), false, `${key} is still off in Lantern`);
+  for (const key of ['thickFocus', 'straightCards']) await optionOf(key).click();
 
   // a theme that doesn't print names doesn't start to because the switch is on
   await page.click('#themeDark [data-v="default"]');

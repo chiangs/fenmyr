@@ -30,6 +30,10 @@ const DEFAULTS = {
   iconStyle: 'regular',
   // whether a theme that prints each note's colour name on it (Clear, Lantern) does; no other theme prints it
   colourNames: true,
+  // whether a theme with a thicker focus ring (Clear, Lantern) draws it, on every control and on a selected card
+  thickFocus: true,
+  // whether a theme that sits its cards straight (Clear, Lantern) does; a stamp keeps the tilt it was given
+  straightCards: true,
   winButtons: false,
   webAccess: false,
   caelestia: true,

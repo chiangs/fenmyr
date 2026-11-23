@@ -68,4 +68,16 @@ for (const t of THEMES) {
   assert.deepStrictEqual(seen.size, plain.size, `${t.id}: the outline doesn't change the card's size`);
   assert.deepStrictEqual(seen.words, plain.words, `${t.id}: or where its words sit`);
 }
+// Straight cards is an option: off, Clear shows the tilt a note was given, and a stamp is as it was
+{
+  const t = THEMES.find(x => x.id === 'clear-light');
+  assert(t, 'Clear is a theme');
+  const app = await launch({ boards: [board], open: 'b', settings: { ...look(t), tilt: true, straightCards: false } });
+  const rotate = await app.page.evaluate(() => {
+    const card = document.querySelector<HTMLElement>('#cards [data-id="n"]');
+    return card ? getComputedStyle(card).rotate : '';
+  });
+  assert(rotate !== 'none' && rotate !== '0deg', `with Straight cards off a tilted note keeps its tilt (${rotate})`);
+  await app.close();
+}
 console.log('CARD EXTRAS OK');
