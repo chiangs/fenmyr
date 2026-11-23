@@ -3,10 +3,11 @@ import type { BoardSummary } from '../../shared/ops.ts';
 import { appState, session } from '../core/state.ts';
 import { addBoardTo } from '../repo/prototypes.ts';
 import { child } from '../ui/dom.ts';
+import { uniqueName } from './create.ts';
 import { closeHome } from './home.ts';
 import { draggable, dropZone, inlineRename, nestBoard, reorderZone } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
-import { type Kind, refreshBoards, renameBoard, renameNewest, rowMenu, type Thing, uniqueName } from './rowMenu.ts';
+import { type Kind, refreshBoards, renameBoard, renameNewest, rowMenu, type Thing } from './rowMenu.ts';
 import {
   boardsIn,
   foldersIn,

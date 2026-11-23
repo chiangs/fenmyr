@@ -10,10 +10,11 @@ import { exitDraw } from '../tools/draw.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc } from '../ui/dom.ts';
 import { removeOnOutsidePress } from '../ui/popover.ts';
+import { uniqueName } from './create.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
 import { draggable, dropZone, inlineRename, nestBoard } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
-import { refreshBoards, renameBoard, rowMenu, uniqueName } from './rowMenu.ts';
+import { refreshBoards, renameBoard, rowMenu } from './rowMenu.ts';
 import {
   boardsIn,
   boardsUnder,

@@ -25,6 +25,7 @@ import { durText, parseTimer, timerRequest } from '../features/duration.ts';
 import { saveAsTemplate, saveWithDialog, useTemplate } from '../features/templates.ts';
 import { currentPose, timer, timerCheck } from '../features/timer.ts';
 import { changeBoard } from '../library/boardWrites.ts';
+import { createBoard, createFolder, createProject, currentPlace } from '../library/create.ts';
 import { openHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards, renameBoard } from '../library/rowMenu.ts';
@@ -193,6 +194,10 @@ const makeHooks = () => ({
   docEditor: liveEditor,
   docPrintHTML,
   openHome,
+  createProject,
+  createFolder,
+  createBoard,
+  currentPlace,
   get editing() {
     return session.editing;
   },

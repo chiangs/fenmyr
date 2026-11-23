@@ -3,10 +3,11 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
+import { createProject, uniqueName } from '../library/create.ts';
 import { closeHome, homeAt } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
-import { refreshBoards, renameNewest, uniqueName } from '../library/rowMenu.ts';
-import { foldersIn, makeFolder, makeProject, saveLib } from '../library/tree.ts';
+import { refreshBoards, renameNewest } from '../library/rowMenu.ts';
+import { foldersIn, makeFolder, saveLib } from '../library/tree.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
 import { newBoard } from '../model/boards.ts';
@@ -173,9 +174,6 @@ export function init21() {
   };
 
   $('newProject').onclick = async () => {
-    const p = makeProject(uniqueName(appState.projects, 'New project'));
-    await saveLib();
-    await refreshBoards();
-    renameNewest('.node.project', p);
+    renameNewest('.node.project', await createProject());
   };
 }

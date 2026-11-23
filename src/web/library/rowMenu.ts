@@ -36,7 +36,6 @@ import { boardRow, folderNode, initRowIcons, projectNode } from './sidebarRows.t
 import {
   boardsIn,
   boardsUnder,
-  byName,
   folderChain,
   foldersIn,
   looseBoards,
@@ -287,13 +286,6 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
   };
   removeOnOutsidePress(m);
 }
-export const uniqueName = (arr: { name: string }[], base: string) => {
-  let n = base,
-    k = 2;
-  while (byName(arr, n)) n = `${base} ${k++}`;
-  return n;
-};
-
 export function renameNewest(sel: string, obj: { id: string; name: string }) {
   const el = [...document.querySelectorAll(`#boards ${sel}`)].find(n => child(n, '.fname').textContent === obj.name);
   if (el) inlineRename(child(el, '.fname'), obj);
