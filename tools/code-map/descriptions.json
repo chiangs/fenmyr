@@ -506,6 +506,7 @@
     "tests/modeCard.ts": "Drawing's card and the Wireframe column left of the tools panel and find's bar over the bottom bar: where each sits, what keeps clear of them, and one thing at a time left of the panel.",
     "tests/modeRoom.ts": "What sits around find's bar keeps clear of it or to its place: Myra's reply, chat and timer, on a short window too, and the tools' pickers.",
     "tests/model.ts": "Checks library and board files keep what they had and prototype fields are validated.",
+    "tests/modelCall.ts": "Tests that Myra's saved model and effort go with every call that runs Claude Code and no other, run Claude Code with the matching flags, and are ignored when what is saved is not a model.",
     "tests/modelArgs.ts": "Tests that a chosen model and effort reach Claude Code's arguments on every call Myra makes, and that a choice the provider doesn't list passes none.",
     "tests/moreHeld.ts": "With a tool tucked into ··· in hand, ··· reads as pressed and the tool's row in its menu as checked, in Chromium's accessibility tree.",
     "tests/motionDelay.ts": "run-tests.ts hands the tests FENMYR_MOTION_DELAY only with --lag, and a bad --lag or a bad FENMYR_MOTION_DELAY stops with a message saying what to write.",

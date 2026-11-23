@@ -37,18 +37,21 @@ const files = [...prompt.matchAll(/^\\d\\. (\\S+) \\(a (picture|text file) they 
     { mode: 0o755 },
   );
 
-  async function sentFor(q: string): Promise<Sent> {
+  async function sentWhere(is: (s: Sent) => boolean, what: string): Promise<Sent> {
     for (let i = 0; i < 200; i++) {
       const lines = fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n') : [];
-      const hit = lines.map((s): Sent => JSON.parse(s)).find(s => s.q.endsWith(q));
+      const hit = lines.map((s): Sent => JSON.parse(s)).find(is);
       if (hit) return hit;
       await page.waitForTimeout(100);
     }
-    throw new Error(`not sent: ${q}`);
+    throw new Error(`not sent: ${what}`);
   }
+  const sentFor = (q: string) => sentWhere(s => s.q.endsWith(q), q);
+  // a run that is not a question, such as a rewrite, has no question to find it by: its prompt holds these words
+  const sentAbout = (words: string) => sentWhere(s => s.prompt.includes(words), words);
   async function send(q: string) {
     await page.fill('#mcInput', q);
     await page.click('.mc-send');
   }
-  return { sentFor, send, hold };
+  return { sentFor, sentAbout, send, hold };
 }

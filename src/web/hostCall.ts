@@ -1,4 +1,5 @@
 import type { Ops } from '../shared/ops.ts';
+import { settings } from './settings/settings.ts';
 
 declare global {
   interface Window {
@@ -23,11 +24,28 @@ window.__fenmyrReply = (id, ok, value) => {
   if (ok) (w.res as (v: unknown) => void)(value);
   else w.rej(new Error(String(value)));
 };
+// Every op that runs Claude Code takes Myra's chosen model. The record names each one, and the compiler fails when an
+// op gains a `myraModel` argument that isn't listed, so no call site passes the choice and none can forget it.
+// (an op with no arguments is typed with an index signature, which would match any name)
+type Names<K extends keyof Ops> = string extends keyof Ops[K]['args'] ? never : keyof Ops[K]['args'];
+type RunsClaude = { [K in keyof Ops]: 'myraModel' extends Names<K> ? K : never }[keyof Ops];
+const RUNS_CLAUDE: Record<RunsClaude, true> = {
+  ask: true,
+  rewrite: true,
+  drawFill: true,
+  higgsQuote: true,
+  higgsMake: true,
+  protoBuild: true,
+  protoExplain: true,
+};
+const runsClaude = (op: keyof Ops): op is RunsClaude => Object.hasOwn(RUNS_CLAUDE, op);
+
 export const call = <K extends keyof Ops>(op: K, args?: Ops[K]['args']) =>
   new Promise<Ops[K]['result']>((res, rej) => {
     const id = ++seq;
     waiting.set(id, { res, rej });
-    window.fenmyrHost?.post({ id, op, args: args ?? {} });
+    const myraModel = runsClaude(op) ? settings.myraModel : undefined;
+    window.fenmyrHost?.post({ id, op, args: myraModel ? { ...args, myraModel } : (args ?? {}) });
   });
 
 // The host takes a picture of the window: an export, or a build's picture of a wireframe screen. Every such op comes
