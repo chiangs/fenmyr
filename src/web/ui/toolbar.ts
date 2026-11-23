@@ -3,7 +3,8 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
-import { boardFolder, createBoard, createFolder, createProject, currentPlace } from '../library/create.ts';
+import { boardFolder, createBoard, createFolder, currentPlace } from '../library/create.ts';
+import { openNewProject } from '../library/newProject.ts';
 import { renameNewest } from '../library/rowMenu.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
@@ -146,7 +147,5 @@ export function init21() {
     renameNewest('.node.folder', await createFolder({ ...currentPlace(), folder: null }));
   };
 
-  $('newProject').onclick = async () => {
-    renameNewest('.node.project', await createProject());
-  };
+  $('newProject').onclick = () => openNewProject();
 }

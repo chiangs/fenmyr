@@ -153,7 +153,8 @@ export function openNewProject(want = '') {
     if (busy) return;
     const row = closestTo(e.target, '.np-row');
     if (row) return void choose(Number(row.dataset.i));
-    if (e.target === d || closestTo(e.target, '#npNo')) d.remove();
+    // the second click of a double click on + Project lands on the backdrop, and is not meant to close what the first opened
+    if ((e.target === d && e.detail < 2) || closestTo(e.target, '#npNo')) d.remove();
   };
   d.oninput = e => {
     if (e.target === searchIn) filter();

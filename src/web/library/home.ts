@@ -10,9 +10,10 @@ import { exitDraw } from '../tools/draw.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc } from '../ui/dom.ts';
 import { removeOnOutsidePress } from '../ui/popover.ts';
-import { createFolder, createProject } from './create.ts';
+import { createFolder } from './create.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
 import { draggable, dropZone, inlineRename, nestBoard } from './nesting.ts';
+import { openNewProject } from './newProject.ts';
 import { openBoard } from './openBoard.ts';
 import { refreshBoards, renameBoard, rowMenu } from './rowMenu.ts';
 import {
@@ -234,11 +235,7 @@ export function renderHome(): void {
     appState.projects.forEach(pp => {
       grid.appendChild(projectTile(pp));
     });
-    add('New project', async () => {
-      const pp = await createProject();
-      const t = [...grid.querySelectorAll('.tile.project')].pop();
-      if (t) inlineRename(child(t, '.tile-meta b'), pp);
-    });
+    add('New project', () => openNewProject());
     if (looseFolders().length) {
       section('Folders not in a project · drag onto a project to file');
       looseFolders().forEach(ff => {
