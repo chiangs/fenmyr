@@ -17,7 +17,7 @@ import { queryWords, uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
-import { createBoard, currentPlace } from '../library/create.ts';
+import { createWithCards, type Place } from '../library/create.ts';
 import { newBoard } from '../model/boards.ts';
 import { say } from '../myra/say.ts';
 import { stopPlacing } from '../tools/place.ts';
@@ -152,11 +152,11 @@ async function deleteTemplate(t: Template) {
   say(`Removed “${t.name}” from your templates ✦`, 3000);
 }
 
-export async function useTemplate(t: Template, as?: string) {
+// `at` only matters for a new board: adding to the open board has no place to choose
+export async function useTemplate(t: Template, as?: string, at?: Place) {
   const mode = as || t.mode || 'add';
   if (mode === 'new') {
-    const board = Object.assign(newBoard(t.name), instantiate(t, 0, 0));
-    await createBoard(currentPlace(), { board, open: 'cards' });
+    await createWithCards(Object.assign(newBoard(t.name), instantiate(t, 0, 0)), at);
     return session.board;
   }
   remember();

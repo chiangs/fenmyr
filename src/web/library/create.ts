@@ -80,3 +80,10 @@ export async function createBoard(at: Place, { board = newBoard(), open }: { boa
   }
   return board;
 }
+
+// A board that arrives with cards. With no place it goes where the person is looking and leaves Home as it was, as the
+// picker's rows always did; a place comes from a caller that is taking the person there, so the board is shown.
+export const createWithCards = (board: Board, at?: Place) =>
+  createBoard(at ?? currentPlace(), { board, open: at ? 'board' : 'cards' });
+
+export const createExample = (at?: Place) => createWithCards(newBoard('My first board', 'My first board'), at);
