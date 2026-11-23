@@ -18,51 +18,29 @@ import {
   readImport,
 } from '../src/shared/fenmyrZip.ts';
 import { launch } from './support/launch.ts';
-import { board, build, card, manifestFor, rec, text, zipOf } from './support/zipKit.ts';
+import {
+  board,
+  build,
+  card,
+  dialogAsked,
+  dialogsAnswer,
+  hostOp,
+  manifestFor,
+  rec,
+  text,
+  zipOf,
+} from './support/zipKit.ts';
 
 const l = await launch();
 const { page, app } = l;
 const out = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-zip-'));
+const op = (name: string, args: Record<string, unknown>) => hostOp(page, name, args),
+  answer = (saveAs: string | null, open: string | null) => dialogsAnswer(app, saveAs, open),
+  asked = () => dialogAsked(app);
 const mediaDir = path.join(l.data, 'fenmyr', 'media');
 const inMedia = () => fs.readdirSync(mediaDir).sort();
 
-// a host operation as the page posts it, with the reply or the refusal it gave
-async function op(name: string, args: Record<string, unknown>) {
-  const reply = await page.evaluate(
-    ([name, args]) =>
-      new Promise<{ ok: boolean; value: unknown }>(res => {
-        const id = 1_000_000 + Math.floor(Math.random() * 1_000_000),
-          before = window.__fenmyrReply;
-        window.__fenmyrReply = (i, ok, value) => {
-          if (i !== id) return before?.(i, ok, value);
-          window.__fenmyrReply = before;
-          res({ ok, value });
-        };
-        window.fenmyrHost?.post({ id, op: name, args });
-      }),
-    [name, args] as const,
-  );
-  return reply;
-}
-// the dialogs answer for the person: save to a file in out/, and open a file (or none)
-const answer = (saveAs: string | null, open: string | null) =>
-  app.evaluate(
-    ({ dialog }, [saveAs, open]) => {
-      dialog.showSaveDialog = async (...a: unknown[]) => {
-        const first = a.find(x => !!x && typeof x === 'object' && 'defaultPath' in x);
-        Reflect.set(
-          globalThis,
-          'asked',
-          first && typeof first === 'object' && 'defaultPath' in first ? first.defaultPath : '',
-        );
-        return saveAs ? { canceled: false, filePath: saveAs } : { canceled: true, filePath: '' };
-      };
-      dialog.showOpenDialog = async () =>
-        open ? { canceled: false, filePaths: [open] } : { canceled: true, filePaths: [] };
-    },
-    [saveAs, open] as const,
-  );
-const asked = () => app.evaluate(() => String(Reflect.get(globalThis, 'asked')));
+const sig = (a: number, b: number) => Buffer.from([0x50, 0x4b, a, b]);
 const zipFile = (name: string, bytes: Uint8Array) => {
   const f = path.join(out, name);
   fs.writeFileSync(f, bytes);
@@ -80,7 +58,6 @@ const refused = (r: { ok: boolean; value: unknown }) => {
 };
 
 // a video that holds what a zip is made of: the signatures of a local header, a data descriptor and the index
-const sig = (a: number, b: number) => Buffer.from([0x50, 0x4b, a, b]);
 const video = Buffer.concat([
   randomBytes(1 << 20),
   sig(7, 8),
@@ -100,7 +77,7 @@ const withVideo = (bytes: Uint8Array, name = 'old.mp4') =>
     [`media/${name}`]: bytes,
   });
 
-// ---------- a video goes out in pieces and comes back whole ----------
+// a video goes out in pieces and comes back whole
 const original = 'f3a2b1c0-0000-4000-8000-000000000000.mp4';
 fs.writeFileSync(path.join(mediaDir, original), video);
 fs.writeFileSync(path.join(mediaDir, 'unused.mp4'), 'x');
@@ -126,9 +103,18 @@ assert.deepStrictEqual(
 );
 assert.ok(Buffer.from(inside.media[original] ?? []).equals(video), 'the video in the zip is the video, byte for byte');
 assert.deepStrictEqual(rec(JSON.parse(Buffer.from(inside.json['fenmyr.json'] ?? []).toString())).media, [original]);
-// the video is stored, not deflated: the index says method 0 for it
+// the video is stored, not deflated: the index says method 0 for it, and 8 for the files that are deflated
 const raw = fs.readFileSync(target);
-assert.ok(raw.length > video.length && raw.length < video.length + 20_000, 'the video is stored as it is');
+const methodOf = (name: string) => {
+  for (let at = raw.indexOf(sig(1, 2)); at >= 0; at = raw.indexOf(sig(1, 2), at + 4))
+    if (raw.toString('utf8', at + 46, at + 46 + raw.readUInt16LE(at + 28)) === name) return raw.readUInt16LE(at + 10);
+  return -1;
+};
+assert.deepStrictEqual(
+  [`media/${original}`, 'fenmyr.json', 'boards/b1.json'].map(methodOf),
+  [0, 8, 8],
+  'the video is stored as it is, the JSON is deflated',
+);
 
 const first = imported(await op('zipImport', { path: target }));
 const copies = inMedia().filter(n => n !== original && n !== 'unused.mp4');
@@ -162,7 +148,7 @@ assert.strictEqual(
 );
 const before = inMedia();
 
-// ---------- a zip that leads out, or is not ours, makes nothing ----------
+// a zip that leads out, or is not ours, makes nothing
 const listed = (extra: Record<string, Uint8Array>) =>
   packZip({
     'fenmyr.json': jsonBytes(manifestFor(['b1'], ['old.mp4'])),
@@ -210,7 +196,7 @@ for (const name of ['../old.mp4', 'a/b.mp4', '/etc/x']) {
   nothing(name);
 }
 
-// ---------- the refusals, each with its words ----------
+// the refusals, each with its words
 const refusals: [string, Uint8Array, string][] = [
   ['a plain zip', packZip({ 'notes.txt': text('hi') }), REFUSALS.notZip],
   ['a plain zip that leaves the folder', packZip({ '../notes.txt': text('hi') }), REFUSALS.unsafe],
@@ -278,7 +264,7 @@ assert.strictEqual(refused(await op('zipImport', { path: huge })), REFUSALS.tooB
 fs.rmSync(huge);
 nothing('too big');
 
-// ---------- the parts that are not whole ----------
+// the parts that are not whole
 const odd = zipOf(manifestFor(['b1', 'b2']), {
   b1: {
     ...board('b1'),
@@ -310,7 +296,7 @@ const listedOnly = imported(
 assert.strictEqual(listedOnly.missing, 1, 'a video the manifest lists and the zip lacks');
 nothing('a listed video that is missing');
 
-// ---------- the export checks what it is given ----------
+// the export checks what it is given
 await answer(path.join(out, 'bad.zip'), null);
 const badArgs: [string, Record<string, unknown>][] = [
   ['no manifest', { name: 'x', boards: [board('b1')] }],

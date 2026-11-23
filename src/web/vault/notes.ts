@@ -153,7 +153,7 @@ const grantFor = (b: Board, vaultId: string, rel: string): VaultGrant | undefine
 
 // each card re-reads its note when the board opens. If the board may no longer read it (or it became private), the card forgets what it had shown
 export async function refreshVNotes(b = session.board) {
-  const cs = b.cards.filter(c => c.type === 'vnote');
+  const cs = b.cards.filter(c => c.type === 'vnote').filter(c => !c.unlinked);
   if (!cs.length) return;
   await loadVaults();
   let changed = false;
