@@ -647,6 +647,7 @@
     "src/web/settings/derivedModes.ts": "The area colours that differ between light and dark, as expressions of the core tokens, which style.css reads instead of a body.dark rule.",
     "tests/boardLists.ts": "A board file written by hand with no card list and no tray opens as an empty board instead of failing to load.",
     "tests/boardsSaved.ts": "Settings, General shows the board count with Locally saved, or Local files linked to a remote repo once a project is linked, and a note under it that Myra and a repo send information along.",
+    "tests/dueCues.ts": "An overdue chip has its own icon and says Overdue, so its red is not the only cue; a chip that turns overdue while the board is open gets both, and one that is not overdue keeps the clock.",
     "src/web/settings/shortcutList.ts": "The Keyboard shortcuts list in Settings → Board: a block per group with its entries, each a description and its keys in a keycap."
   }
 }
