@@ -17,17 +17,18 @@ Fenmyr is a free, open-source canvas for Linux. Put notes, pictures, links, chec
 - Card types for notes, titles, checklists, docs, collections, kanbans, links, images with crop, voice memos, videos, colours, shapes, stamps, drawings, the Pen, and curved connectors.
 - **Ctrl+K** drops an idea into Unsorted without losing your place, and **F** focuses on what you're working on.
 - Wireframes made of screens, boxes, text and icons, with ready-made elements and full layouts. Select a screen and choose Pieces; its search understands words like "dialog" or "FAQ".
-- Projects, folders and boards, with a home page for all of them.
+- Projects, folders and boards, with a home page for all of them. **+ Project** asks how its first board starts: blank, the example board or a template. Ask Myra for a project, and she opens the same box.
 - Light and dark mode, each with a choice of colour theme: Default, Midsummer or Clear for light, and Default, Polar Night or Lantern for dark. Clear and Lantern are made for accessibility. Or your [Caelestia](#follow-your-caelestia-theme) colours.
 - Undo, and export of any card or board as an image or PDF. Docs download as PDF or Word.
 - Card colours named Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch.
 
 **Myra**
 
-- Chat with her about your board. She can add, edit, sort and connect cards, make collections and folders, and suggest what to do next.
+- Chat with her about your board. She can add, edit, sort and connect cards, make collections, folders and boards, and suggest what to do next.
 - Ask her to explore fonts, and she puts type specimens on the board from your computer or Google Fonts.
 - Describe a flow, and she builds wireframe screens. Ask for a landing page, and she builds it in your colours and fonts.
 - Select words in a doc, and she rewrites them.
+- Type **/** in her chat for quick commands that need no thinking, such as `/find`, `/template`, `/project`, `/folder` and `/board`. `/project`, `/folder` and `/board` work like the **+ Project**, **+ Folder** and **+ Board** buttons. `/help` lists them all.
 
 **Optional helpers**, through the connections in your Claude account:
 
@@ -164,7 +165,7 @@ The first memo downloads the speech model, about 140 MB, into `~/.local/share/fe
 | **V** | Select |
 | **L · I · A · Shift+V** | Link, image, voice memo, video |
 | **S · E · P · Shift+P** | Shapes, stamps, draw, the Pen |
-| **Alt+T** | Templates |
+| **Alt+T** | Templates, or `/template` in Myra's chat |
 | **O · Alt+C** | Colour, canvas |
 | **W · R · X** | Wireframe screen, box, text |
 | **M** | Ask Myra |
