@@ -29,6 +29,8 @@
   --snow: #ffffff;
   --shade: #000000;
   --colour-label: none;
+  --card-edge: 0 0 0 0 transparent;
+  --straight: 1;
   --card-white: #ffffff;
   --card-white-ink: #3b342d;
   --card-white-soft: #625d57;
@@ -101,6 +103,8 @@ body.dark {
   --snow: #ffffff;
   --shade: #000000;
   --colour-label: none;
+  --card-edge: 0 0 0 0 transparent;
+  --straight: 1;
   --card-white: #38332d;
   --card-white-ink: #f6f2ec;
   --card-white-soft: #c6bcae;
@@ -173,6 +177,8 @@ body.theme-midsummer {
   --snow: #ffffff;
   --shade: #000000;
   --colour-label: none;
+  --card-edge: 0 0 0 0 transparent;
+  --straight: 1;
   --card-white: #ffffff;
   --card-white-ink: #24302a;
   --card-white-soft: #505955;
@@ -245,6 +251,8 @@ body.theme-clear {
   --snow: #ffffff;
   --shade: #000000;
   --colour-label: block;
+  --card-edge: inset 0 0 0 1.5px var(--border);
+  --straight: 0;
   --card-white: #ffffff;
   --card-white-ink: #14110e;
   --card-white-soft: #43413e;
@@ -317,6 +325,8 @@ body.dark.theme-polar-night {
   --snow: #ffffff;
   --shade: #000000;
   --colour-label: none;
+  --card-edge: 0 0 0 0 transparent;
+  --straight: 1;
   --card-white: #2b3644;
   --card-white-ink: #eef2f6;
   --card-white-soft: #c7ccd2;
@@ -389,6 +399,8 @@ body.dark.theme-lantern {
   --snow: #ffffff;
   --shade: #000000;
   --colour-label: block;
+  --card-edge: inset 0 0 0 1.5px var(--border);
+  --straight: 0;
   --card-white: #d9dde2;
   --card-white-ink: #101214;
   --card-white-soft: #383b3d;

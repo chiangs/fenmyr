@@ -89,13 +89,13 @@ body.no-colour-names .card.note > .frame::after { display: none; }   /* Settings
 .card.c-lilac { --card-ink: var(--card-lilac-ink); --card-soft: var(--card-lilac-soft); --card-faint: var(--card-lilac-faint); --card-link: var(--card-lilac-link); }
 .card.c-sky { --card-ink: var(--card-sky-ink); --card-soft: var(--card-sky-soft); --card-faint: var(--card-sky-faint); --card-link: var(--card-sky-link); }
 .card.c-peach { --card-ink: var(--card-peach-ink); --card-soft: var(--card-peach-soft); --card-faint: var(--card-peach-faint); --card-link: var(--card-peach-link); }
-.card { position: absolute; border-radius: 24px; corner-shape: squircle; --tilt: 0deg; rotate: var(--tilt); transition: rotate .25s ease, box-shadow .2s ease, opacity .3s ease; }
+.card { position: absolute; border-radius: 24px; corner-shape: squircle; --tilt: 0deg; rotate: calc(var(--tilt) * var(--straight, 1)); transition: rotate .25s ease, box-shadow .2s ease, opacity .3s ease; }
 .card .frame { position: absolute; inset: 0; border-radius: 24px; corner-shape: squircle; background: var(--fill, var(--snow)); box-shadow: 0 10px 30px rgba(var(--sh), calc(.10 * var(--sh-k))), 0 1px 3px rgb(from var(--shade) r g b / .04); }
 .card .body { position: relative; height: 100%; padding: 16px 18px; overflow: hidden; border-radius: 24px; corner-shape: squircle; }
 .card { z-index: 2; }
 /* hovering never changes the stacking: a card under the mouse popping to the top made send to back look broken */
 .card.dragging { rotate: 0deg; z-index: 50; }
-.card.dragging .frame { box-shadow: 0 24px 50px rgba(var(--sh), calc(.22 * var(--sh-k))); }
+.card.dragging .frame { box-shadow: var(--card-edge, 0 0 0 0 transparent), 0 24px 50px rgba(var(--sh), calc(.22 * var(--sh-k))); }
 .card.sel::after { content: ""; position: absolute; inset: -9px; border: 2.5px solid var(--select); border-radius: 32px; corner-shape: squircle; pointer-events: none;
   box-shadow: var(--m-card-sel-ring); }   /* a sturdy frame that clears the cards' hand-cut edges */
 .card .handle { position: absolute; right: -15px; bottom: -15px; width: 14px; height: 14px; border-radius: 4px; background: var(--snow); border: 2.5px solid var(--select); box-shadow: 0 1px 4px rgb(from var(--select) r g b / .3); cursor: nwse-resize; opacity: 0; }
@@ -843,7 +843,7 @@ body.dark .set-body section, body.dark .row-menu .rm-sep { border-color: var(--s
 body.dark .pill-btn, body.dark .tile.add { border-color: var(--pn-dark-add-edge); }
 body.dark .cp-fields input, body.dark .capture input { background: var(--surface-2); color: var(--ink); border-color: var(--cp-line-2); }
 /* cards: white cards turn dark; pastel cards stay pastel with dark words */
-.card > .frame { box-shadow: var(--m-card-frame-shadow); }
+.card > .frame { box-shadow: var(--card-edge, 0 0 0 0 transparent), var(--m-card-frame-shadow); }
 body.dark .card.c-white > .frame, body.dark .card.link > .frame, body.dark .card.doc > .frame, body.dark .card.canvas > .frame, body.dark .card.audio > .frame, body.dark .card.swatch > .frame, body.dark .card.image > .frame { background: var(--dark-snow) !important; }
 /* these frames are Snow in dark, which is light in some themes, so the words on them are Snow's */
 body.dark .card:is(.link, .doc, .canvas, .swatch, .font, .audio) { --ink: var(--card-white-ink); --ink-soft: var(--card-white-soft); --ink-faint: var(--card-white-faint); color: var(--ink); }

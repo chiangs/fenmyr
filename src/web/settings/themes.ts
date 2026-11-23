@@ -45,6 +45,10 @@ export type Theme = {
   mode: Mode;
   target: Target;
   tokens: Tokens;
+  // what a theme adds for people who can't rely on colour or fill: a 1.5 px outline in the border colour on every card, so its
+  // edge doesn't depend on its fill or shadow, and cards that sit straight (a stamp keeps the tilt it was given)
+  outline: boolean;
+  straight: boolean;
   // what the theme adds for people who can't rely on colour: Clear and Lantern print each note's colour name on it
   labels: boolean;
   // a thicker focus ring on every control and on a selected card, for the themes made to be seen without relying on colour
@@ -173,6 +177,8 @@ export const THEMES: Theme[] = [
     id: 'default-light',
     name: 'Default',
     mode: 'light',
+    outline: false,
+    straight: false,
     target: 'aa',
     ring: false,
     tokens: {
@@ -203,6 +209,8 @@ export const THEMES: Theme[] = [
     id: 'default-dark',
     name: 'Default',
     mode: 'dark',
+    outline: false,
+    straight: false,
     target: 'aa',
     ring: false,
     tokens: {
@@ -243,6 +251,8 @@ export const THEMES: Theme[] = [
     id: 'midsummer-light',
     name: 'Midsummer',
     mode: 'light',
+    outline: false,
+    straight: false,
     target: 'aa',
     ring: false,
     tokens: derive('light', 'aa', {
@@ -274,6 +284,8 @@ export const THEMES: Theme[] = [
     id: 'clear-light',
     name: 'Clear',
     mode: 'light',
+    outline: true,
+    straight: true,
     target: 'aaa',
     ring: true,
     tokens: derive('light', 'aaa', {
@@ -305,6 +317,8 @@ export const THEMES: Theme[] = [
     id: 'polar-night-dark',
     name: 'Polar Night',
     mode: 'dark',
+    outline: false,
+    straight: false,
     target: 'aa',
     ring: false,
     tokens: derive('dark', 'aa', {
@@ -336,6 +350,8 @@ export const THEMES: Theme[] = [
     id: 'lantern-dark',
     name: 'Lantern',
     mode: 'dark',
+    outline: true,
+    straight: true,
     target: 'aaa',
     ring: true,
     tokens: derive('dark', 'aaa', {
