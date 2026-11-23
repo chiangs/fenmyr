@@ -147,6 +147,7 @@
     "src/web/features/tagAdd.ts": "The × and + tag chips on a note, with the box that suggests board tags.",
     "src/web/features/tags.ts": "Tags on notes, kept apart from their words, with # autocomplete while typing.",
     "src/web/features/templateCards.ts": "Copies cards out into a template and back in with fresh ids.",
+    "src/web/features/templateList.ts": "The one list of templates the picker offers, and what choosing each kind does.",
     "src/web/features/templates.ts": "Your own templates: save a selection or board, use it on a board or as a new one.",
     "src/web/features/timer.ts": "Timers Myra runs, with a two-minute warning, kept across restarts.",
     "src/web/globals.d.ts": "Type declarations for globals the page relies on.",
