@@ -15,6 +15,7 @@ import { bdNow, dayKey, slashBirthday } from './birthday.ts';
 import { tidyNotes } from './chat.ts';
 import type { SayAction } from './say.ts';
 import { reply, say } from './say.ts';
+import { slashBoard, slashFolder, slashProject } from './slashMake.ts';
 
 type GreetContext = { why: string; firstToday: boolean; now: Date; name: string };
 type GreetLine = { text: string; acts?: SayAction[] } | null;
@@ -208,6 +209,30 @@ export function init33() {
         return templateEntries().map(e => e.name);
       },
       run: slashTemplate,
+    },
+    {
+      cmd: 'project',
+      group: 'make',
+      arg: '[name]',
+      desc: 'Start a project and choose how its first board begins',
+      ex: '/project Garden',
+      run: slashProject,
+    },
+    {
+      cmd: 'folder',
+      group: 'make',
+      arg: '[name]',
+      desc: 'Add a folder to this project',
+      ex: '/folder Ideas',
+      run: slashFolder,
+    },
+    {
+      cmd: 'board',
+      group: 'make',
+      arg: '[name]',
+      desc: 'Add a board to this folder and open it',
+      ex: '/board Backlog',
+      run: slashBoard,
     },
     {
       cmd: 'birthday',
