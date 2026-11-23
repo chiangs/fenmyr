@@ -10,7 +10,7 @@ import { exitDraw } from '../tools/draw.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { child, esc } from '../ui/dom.ts';
 import { removeOnOutsidePress } from '../ui/popover.ts';
-import { uniqueName } from './create.ts';
+import { createProject, uniqueName } from './create.ts';
 import { ago, mini, miniCache, plural, tile } from './homeTiles.ts';
 import { draggable, dropZone, inlineRename, nestBoard } from './nesting.ts';
 import { openBoard } from './openBoard.ts';
@@ -24,7 +24,6 @@ import {
   looseBoards,
   looseFolders,
   makeFolder,
-  makeProject,
   moveBoard,
   putFolder,
   saveLib,
@@ -237,9 +236,7 @@ export function renderHome(): void {
       grid.appendChild(projectTile(pp));
     });
     add('New project', async () => {
-      const pp = makeProject(uniqueName(appState.projects, 'New project'));
-      await saveLib();
-      await refreshBoards();
+      const pp = await createProject();
       const t = [...grid.querySelectorAll('.tile.project')].pop();
       if (t) inlineRename(child(t, '.tile-meta b'), pp);
     });

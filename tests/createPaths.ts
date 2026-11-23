@@ -1,6 +1,6 @@
-// + Project, + Folder and + Board, the tiles on Home and the + on a sidebar row: each makes what it always made, in the
-// place it always put it, and leaves the person looking at what it always left them looking at. These ran before the
-// one module made them, and must give the same answers after.
+// Every path that makes a project, folder or board by hand: the three buttons, the tiles on Home, the + on a sidebar row
+// and the project picker. Each makes what it always made, in the place it always put it, and leaves the person looking
+// at what it always left them looking at. These ran before the one module made them, and must give the same answers.
 import assert from 'node:assert';
 import { launch } from './support/launch.ts';
 import { look, makes, press, SEEDED, seedLibrary, stored } from './support/library.ts';
@@ -52,8 +52,21 @@ try {
     await stopTyping();
   });
 
+  await check('“A new project” in the project picker makes one, and goes on to link its repo', async () => {
+    await page.evaluate(() => window.__fenmyr.openBoard('loose'));
+    await page.evaluate(() => document.querySelector<HTMLElement>('#tplPick [data-prototype]')?.click());
+    await page.waitForSelector('.tdlg.sp');
+    const made = await makes(page, 'project', async () => {
+      await page.click('.tdlg.sp [data-project="new"]');
+      await page.waitForSelector('.tdlg.rl');
+    });
+    assert.strictEqual(made.name, 'New project 4');
+    assert.match((await page.textContent('.tdlg.rl h3')) ?? '', /Repo for “New project 4”/);
+    await page.keyboard.press('Escape');
+  });
+
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');
-  console.log('createButtons: ok');
+  console.log('createPaths: ok');
 } finally {
   await l.close();
 }

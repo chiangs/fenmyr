@@ -1,9 +1,7 @@
 import type { Card, Project } from '../../shared/model.ts';
 import { freshCopies } from '../canvas/clipboard.ts';
 import { appState, session } from '../core/state.ts';
-import { uniqueName } from '../library/create.ts';
-import { refreshBoards } from '../library/rowMenu.ts';
-import { makeProject, saveLib } from '../library/tree.ts';
+import { createProject } from '../library/create.ts';
 import { chirp } from '../myra/say.ts';
 import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
@@ -58,10 +56,7 @@ export function pickProject(then: (p: Project) => unknown) {
       const p = appState.projects.find(x => x.id === id);
       return p ? then(p) : undefined;
     }
-    const made = makeProject(uniqueName(appState.projects, 'New project'));
-    await saveLib();
-    await refreshBoards();
-    return then(made);
+    return then(await createProject());
   };
   d.onkeydown = e => {
     e.stopPropagation();

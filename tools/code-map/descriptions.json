@@ -438,7 +438,7 @@
     "tests/colourConvert.ts": "The colour converter: hex and rgba, token pairs, comments and custom properties left alone, unknown colours reported, and a second run finding nothing.",
     "tests/contextBar.ts": "The selection bar in the real app: what it kept (typing, crop, size fields following a drag, phone strip) and where it floats, and that it steps aside for gestures.",
     "tests/create.ts": "Checks the one module that makes projects, folders and boards: names nobody has, the place it is given, a board that opens only when asked, and where the open board is.",
-    "tests/createButtons.ts": "Checks + Project, + Folder and + Board, the tiles on Home and the + on a sidebar row: each ends where it did before the one module made them.",
+    "tests/createPaths.ts": "Checks each path that makes a project, folder or board by hand: the three buttons, Home’s tiles, a sidebar row’s +, the project picker. Each ends where it did before.",
     "tests/controls.ts": "Tests a prototype’s controls: drawn from tweaks.json, live changes and Keep these values.",
     "tests/dockChanges.ts": "Tests the changes counter: what it reads beside the git bar, opening the code pane on the changed files with their dots, and after a Commit, a build and Undo this build.",
     "tests/dockChangesFit.ts": "Tests the code pane the changes counter opens: tabs fitted with their dots, the picker after a fold, its menu’s keys, a redraw mid-click and a narrow window.",
