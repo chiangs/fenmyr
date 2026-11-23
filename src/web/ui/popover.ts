@@ -129,6 +129,29 @@ export function openBelow(popup: HTMLElement, button: Element) {
   popup.style.top = `${Math.round(fits ? b.bottom + 8 : Math.max(EDGE, b.top - 8 - h))}px`;
 }
 
+/** Opens a popup above `button` with their right edges level, or below it when the window has no room above. */
+export function openAbove(popup: HTMLElement, button: Element) {
+  const b = button.getBoundingClientRect(),
+    h = popup.offsetHeight,
+    fits = b.top - 8 - h >= EDGE;
+  popup.style.left = 'auto';
+  popup.style.right = `${Math.round(innerWidth - b.right)}px`;
+  popup.style.top = `${Math.round(fits ? b.top - 8 - h : b.bottom + 8)}px`;
+}
+
+/** Opens a fixed-position flyout beside `menu`: on its left when the window has room there, else its right, above or
+ *  below. Beside it the flyout's bottom edge is level with the menu's, so a menu opened up from the window's foot
+ *  doesn't have its flyout run off that foot. */
+export function openFlyout(flyout: HTMLElement, menu: HTMLElement) {
+  const m = menu.getBoundingClientRect(),
+    size = { w: flyout.offsetWidth, h: flyout.offsetHeight },
+    frame = { l: EDGE, t: EDGE, r: innerWidth - EDGE, b: innerHeight - EDGE },
+    at = place({ box: { l: m.left, t: m.top, r: m.right, b: m.bottom }, prefer: 'left' }, frame, size),
+    beside = at.side === 'left' || at.side === 'right';
+  flyout.style.left = `${Math.round(at.x)}px`;
+  flyout.style.top = `${Math.round(beside ? Math.max(EDGE, m.bottom - size.h) : at.y)}px`;
+}
+
 export function showDialog(html: string, id?: string) {
   const wrap = document.createElement('div');
   if (id) wrap.id = id;
