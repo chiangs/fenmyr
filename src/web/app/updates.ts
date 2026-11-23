@@ -1,6 +1,6 @@
 import type { UpdateInfo } from '../../shared/ops.ts';
 import { $, stage } from '../core/dom.ts';
-import { installedLine, loadBuild } from '../settings/about.ts';
+import { currentChannel, installedLine, loadBuild } from '../settings/about.ts';
 import { setTab } from '../settings/colors.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
@@ -41,13 +41,13 @@ export async function checkUpdate(force = false) {
   } catch (_e) {}
   if (!force && Date.now() - last < 15 * 60 * 1000 && updInfo) return showUpdate(); // at most every 15 minutes (it used to wait 20 hours, so an app left open never noticed)
   $('suSub').textContent = 'Checking for a new version…';
+  await loadBuild();
   try {
-    updInfo = await Fenmyr.updateCheck();
+    updInfo = await Fenmyr.updateCheck(currentChannel());
     localStorage.setItem('fenmyr:updChecked', String(Date.now()));
   } catch (_e) {
     updInfo = { error: true };
   }
-  await loadBuild();
   showUpdate();
 }
 
@@ -71,7 +71,7 @@ function showUpdate() {
         ? 'I couldn’t reach GitHub just now. I’ll try again later.'
         : n === 0
           ? `You’re up to date${have ? ` (${have})` : ''}.`
-          : u.release
+          : u.latest
             ? `Version ${String(u.latest || '').replace(/^v/, '')} is ready${have ? ` (you have ${have})` : ''}. ${stay}`
             : `${n} update${n > 1 ? 's' : ''} since your version${have ? ` (${have})` : ''}. ${stay}`;
   const notes = u.notes.slice(0, 8);
@@ -193,7 +193,7 @@ export function init59() {
     $('upBar').classList.add('busy');
     $('ubText').textContent = 'Getting the new version. Fenmyr will reopen in a moment';
     try {
-      await Fenmyr.updateNow();
+      await Fenmyr.updateNow(currentChannel());
     } catch (e) {
       $('ubText').textContent = messageOf(e);
       $('ubGo').textContent = 'Update now';
@@ -208,7 +208,7 @@ export function init59() {
     $('suSub').textContent =
       'Getting the new version and rebuilding. Fenmyr will close and reopen in about 30 seconds.';
     try {
-      await Fenmyr.updateNow();
+      await Fenmyr.updateNow(currentChannel());
     } catch (e) {
       button('suGo').disabled = false;
       $('suGo').textContent = 'Update now';
