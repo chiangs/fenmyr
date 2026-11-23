@@ -572,6 +572,7 @@
     "tests/sizeBarEdges.ts": "Checks a size dropdown ended by a press on another card or the bare board, by its own trigger or by a clamped value, and Enter inside ··· on a phone.",
     "tests/howToHeight.ts": "Myra’s how-to note comes out as tall when her picture hasn’t loaded as when it has, so the first one a page places matches the rest.",
     "tests/popupContrast.ts": "The slash menu and the shared dialog read in every look: their names, titles, labels and fields against their own background, in light and dark, in Default and each theme.",
+    "tests/slashMenuFit.ts": "The slash menu fits in a short window: below the top of the window and above its box, scrolling when it has more rows than room, with the row picked by the arrow keys always in view.",
     "tests/slashTemplate.ts": "Checks /template in Myra’s chat: its menu against the picker, matching by name and key, each kind doing what the picker does, no ask with thinking off, and one undo.",
     "tests/smoke.ts": "The end-to-end smoke test: opens the real app headless and drives it through each section.",
     "tests/smoke/animations.ts": "Smoke checks for /animate and Myra’s animations.",
