@@ -4,7 +4,6 @@
   --paper: #ffffff;
   --pink: #f6b45e;
   --mint-deep: #7fb86a; --lilac-deep: #a98ad6;
-  --k-pink: #e8796b; --k-butter: #f0b04a; --k-mint: #7fb86a; --k-lilac: #a98ad6; --k-sky: #6fa3d6; --k-peach: #c9b49a;
   --font: "Myra Mark", "Figtree", system-ui, -apple-system, sans-serif; --hand: "Myra Mark", "Shantell Sans", "Comic Sans MS", cursive;
   --side: 232px;
   --tools-t: 14px;   /* the tools panel's top, level with the widgets' tops */
@@ -859,7 +858,6 @@ body.dark .wires path.w { stroke: var(--wires-ink); }
 /* Myra's chat goes dark with the room */
 body.dark .m-pill, body.dark .m-bubble { background: rgb(from var(--chat-bg-4) r g b / .97); color: var(--hilite); box-shadow: 0 12px 30px rgb(from var(--shade) r g b / .45), 0 0 0 1px rgb(from var(--hilite) r g b / .06); }
 body.dark .m-acts button { color: var(--chat-ink); }
-body { --pen-ink: #3b342d; } body.dark { --pen-ink: #f0ebe4; }
 body.dark .tray-head b, body.dark .sb-dots button, body.dark .tile .mf { color: var(--sb-ink-4); }
 
 /* images keep their crop inside a window; while cropping, the outside dims and the box has corner handles */

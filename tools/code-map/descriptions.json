@@ -308,6 +308,7 @@
     "src/web/settings/derived.ts": "The area colours written as mixes of the core tokens, which web/themes.css puts on body so a theme that sets the core ones sets these too.",
     "src/web/settings/themePicker.ts": "The theme picker in Settings: radio rows for light and dark, each with the theme's name and a row of its colours, moved with the arrow keys.",
     "src/web/settings/themes.ts": "The colour themes (Default, Midsummer, Clear, Polar Night, Lantern): every core token for each mode, written to web/themes.css, the contrast each promises, and the checks that measure it.",
+    "src/web/settings/themeChecks.ts": "Every promise a colour theme makes, with the weakest pair that tests it: text, focus, borders, status colours, card text, kanban marks and card colours that stay apart.",
     "src/web/settings/widgets.ts": "Docks the widgets into the left and right sidebars and applies settings.",
     "src/web/tools/draw.ts": "The ink drawing tool: soft pen, marker and highlighter strokes.",
     "src/web/tools/drawn.ts": "What a box or screen drag makes when it lets go: a click makes the usual size, a drag the size drawn.",

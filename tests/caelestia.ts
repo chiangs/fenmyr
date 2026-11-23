@@ -7,7 +7,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { caelestiaTokens } from '../src/web/settings/caelestia.ts';
-import { checksOf, THEMES } from '../src/web/settings/themes.ts';
+import { checksOf } from '../src/web/settings/themeChecks.ts';
+import { THEMES } from '../src/web/settings/themes.ts';
 
 const fixtures = path.join(import.meta.dirname, 'fixtures/caelestia'),
   state = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-cae-'));
