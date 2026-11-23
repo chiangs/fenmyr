@@ -193,7 +193,11 @@ export function onPress(e: PointerEvent) {
     const id = el.dataset.id ?? '',
       c = byId(id);
     if (!c) return;
-    if (session.editing === id && !closestTo(e.target, '.handle, .knob')) return; // clicking inside text you're editing
+    if (session.editing === id && !closestTo(e.target, '.handle, .knob')) {
+      // the empty name line appears when typing starts, so a quick third click can land on it and must not take the keyboard
+      if (closestTo(e.target, '.nname:empty')) e.preventDefault();
+      return;
+    } // clicking inside text you're editing
     if (closestTo(e.target, 'input[type=checkbox], .link-in input')) return;
     if (closestTo(e.target, '[data-act]')) return;
     if (

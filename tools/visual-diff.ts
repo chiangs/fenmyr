@@ -9,6 +9,7 @@ import { launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
 import { CHANNEL_GROUPS } from './visual-channels.ts';
 import { type Group, MYRA_GROUPS, type Step } from './visual-myra.ts';
+import { NEW_PROJECT_GROUPS } from './visual-newproject.ts';
 import { openPrototype, PROTO_GROUPS, removeProtoFolders } from './visual-proto.ts';
 import { WIREFRAME_GROUPS } from './visual-wireframe.ts';
 
@@ -177,6 +178,7 @@ const GROUPS: Record<string, Group> = {
   ...MYRA_GROUPS,
   ...WIREFRAME_GROUPS,
   ...CHANNEL_GROUPS,
+  ...NEW_PROJECT_GROUPS,
 };
 
 async function shoot(dir: string, out: string) {

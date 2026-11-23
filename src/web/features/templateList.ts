@@ -1,9 +1,9 @@
 import type { Template } from '../../shared/ops.ts';
 import { FRAMEWORKS } from '../content/frameworks.ts';
-import { placeFramework, STARTERS } from '../content/placeFramework.ts';
+import { placeFramework, STARTERS, TPL_IC } from '../content/placeFramework.ts';
 import { hasAll } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
-import { createBoard, currentPlace } from '../library/create.ts';
+import { createBoard, createWithCards, type Place } from '../library/create.ts';
 import { newBoard, TEMPLATES } from '../model/boards.ts';
 import { reply, type SayAction } from '../myra/say.ts';
 import { startPrototypeHere } from '../repo/start.ts';
@@ -66,19 +66,42 @@ export function templateEntries(): TemplateEntry[] {
   return [...made, ...mine];
 }
 
-// what a click in the picker does, for each kind
-export async function runTemplate(entry: TemplateEntry): Promise<void> {
+// the icon a row draws, by kind
+export const iconOf = (e: TemplateEntry) => {
+  switch (e.kind) {
+    case 'prototype':
+      return 'code';
+    case 'framework':
+      return TPL_IC[e.key] ?? '';
+    case 'starter':
+      return STARTERS[e.key]?.[1] ?? '';
+    case 'mine':
+      return 'templates';
+    default: {
+      const unhandled: never = e.kind;
+      return unhandled;
+    }
+  }
+};
+
+// What a click in the picker does, for each kind. With a place, each kind but the prototype makes a board there and
+// shows it, so the caller can take the person to a new project: a framework, which adds to the open board when there
+// is no place, goes on a blank board.
+export async function runTemplate(entry: TemplateEntry, at?: Place): Promise<void> {
   switch (entry.kind) {
     case 'prototype':
       return startPrototypeHere();
     case 'framework':
+      if (!at) return placeFramework(entry.key);
+      // placeFramework fills the open board, so the new one is opened first
+      await createBoard(at, { board: newBoard(entry.name), open: 'board' });
       return placeFramework(entry.key);
     case 'starter':
-      await createBoard(currentPlace(), { board: newBoard(entry.name, entry.name), open: 'cards' });
+      await createWithCards(newBoard(entry.name, entry.name), at);
       return;
     case 'mine': {
       const t = myTpls.find(x => x.id === entry.key);
-      if (t) await useTemplate(t);
+      if (t) await useTemplate(t, at ? 'new' : undefined, at);
       return;
     }
     default: {

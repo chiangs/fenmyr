@@ -12,12 +12,11 @@ import { placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
-import { STARTERS, TPL_IC } from '../content/placeFramework.ts';
 import { queryWords, uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
-import { createBoard, currentPlace } from '../library/create.ts';
+import { createWithCards, type Place } from '../library/create.ts';
 import { newBoard } from '../model/boards.ts';
 import { say } from '../myra/say.ts';
 import { stopPlacing } from '../tools/place.ts';
@@ -25,7 +24,7 @@ import { esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { cardName } from './export.ts';
 import { instantiate, templateFrom } from './templateCards.ts';
-import { matchesSearch, runTemplate, type TemplateEntry, tagOf, templateEntries } from './templateList.ts';
+import { iconOf, matchesSearch, runTemplate, type TemplateEntry, tagOf, templateEntries } from './templateList.ts';
 
 // ---------- your own templates: save a selection (or the whole board); use it on a board or as a new one (Settings decides) ----------
 export let myTpls: Template[] = [];
@@ -152,11 +151,11 @@ async function deleteTemplate(t: Template) {
   say(`Removed “${t.name}” from your templates ✦`, 3000);
 }
 
-export async function useTemplate(t: Template, as?: string) {
+// `at` only matters for a new board: adding to the open board has no place to choose
+export async function useTemplate(t: Template, as?: string, at?: Place) {
   const mode = as || t.mode || 'add';
   if (mode === 'new') {
-    const board = Object.assign(newBoard(t.name), instantiate(t, 0, 0));
-    await createBoard(currentPlace(), { board, open: 'cards' });
+    await createWithCards(Object.assign(newBoard(t.name), instantiate(t, 0, 0)), at);
     return session.board;
   }
   remember();
@@ -179,23 +178,6 @@ export async function loadTemplates() {
   myTpls = await Fenmyr.templates().catch(() => []);
   buildTplPick();
 }
-
-const iconOf = (e: TemplateEntry) => {
-  switch (e.kind) {
-    case 'prototype':
-      return 'code';
-    case 'framework':
-      return TPL_IC[e.key] ?? '';
-    case 'starter':
-      return STARTERS[e.key]?.[1] ?? '';
-    case 'mine':
-      return 'templates';
-    default: {
-      const unhandled: never = e.kind;
-      return unhandled;
-    }
-  }
-};
 
 const tplRow = (e: TemplateEntry) => {
   const icon = Icon(iconOf(e)),

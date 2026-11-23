@@ -5,9 +5,8 @@ import { clamp } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
-import { createBoard, currentPlace } from '../library/create.ts';
+import { createExample } from '../library/create.ts';
 import { closeHome, homeAt } from '../library/home.ts';
-import { newBoard } from '../model/boards.ts';
 import { ask, getApp } from '../myra/chat.ts';
 import { setChatText } from '../myra/chatInput.ts';
 import { chatOpen, myraOpen } from '../myra/chatWindow.ts';
@@ -294,7 +293,7 @@ export function init60() {
 
   $('addExample').onclick = async () => {
     closeSettings();
-    await createBoard(currentPlace(), { board: newBoard('My first board', 'My first board'), open: 'cards' });
+    await createExample();
   };
 
   $('redoTour').onclick = () => {

@@ -88,6 +88,7 @@ export const look = (page: Page) =>
       field = document.activeElement,
       typing = field instanceof HTMLInputElement && field.id === 'boardName';
     return {
+      id: open.id,
       board: open.name,
       folder: open.folder ?? null,
       home: !!document.getElementById('home')?.classList.contains('on'),

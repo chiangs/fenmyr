@@ -149,6 +149,8 @@ export const MODE_DERIVED: Record<string, [light: string, dark: string]> = {
   '--m-sh-panel-bg': ['var(--snow)', 'var(--sh-bg-6)'],
   '--m-sh-tabs-button-on-bg': ['var(--snow)', 'var(--sh-bg-3)'],
   '--m-sh-tabs-button-on-ink': ['var(--ink)', 'var(--hilite)'],
+  // the surface of a popup with no dark rule of its own: the slash menu and the shared dialog
+  '--m-popup-bg': ['var(--panel, var(--snow))', 'var(--surface)'],
   '--m-slash-menu-button-on-bg': ['rgb(from var(--shade) r g b / .06)', 'rgb(from var(--hilite) r g b / .1)'],
   '--m-sm-sig-ink': ['color-mix(in oklab, var(--accent-soft) 76%, var(--ink))', 'var(--web-ink)'],
   '--m-sp-body-bg': ['var(--snow)', 'var(--dark-raised)'],

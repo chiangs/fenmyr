@@ -46,28 +46,57 @@ const onBoard = async (id: string) => {
 try {
   await seedLibrary(page);
 
-  await check('+ Project makes a project with no folder, and starts its name where the sidebar draws it', async () => {
-    const fromBoard = await makes(page, 'project', () => press(page, '#newProject'));
-    assert.strictEqual(fromBoard.name, 'New project');
-    assert.strictEqual((await stored(page)).folders.filter(f => f.project === fromBoard.id).length, 0, 'no folder');
-    const after = await look(page);
-    assert.deepStrictEqual([after.board, after.home], ['a', false], 'the open board stays');
-    // On a board the sidebar draws only this project, so the new one has no row to rename: it goes unrenamed
-    assert.deepStrictEqual(after.renaming, [], 'nothing to type into from a board');
+  // + Project used to make an empty project at once, and start its name where the sidebar draws it, which a board does not
+  // draw. It opens the New project dialog now (tests/newProjectButtons.ts); these two say what choosing a row leaves behind.
+  const choose = async (label: string) => {
+    await page.waitForSelector('#npDlg');
+    await page.click(`#npDlg .np-row:has-text("${label}")`);
+    await page.waitForSelector('#npDlg', { state: 'detached' });
+    await still(page);
+  };
 
-    await home('all');
-    const fromHome = await makes(page, 'project', () => press(page, '#newProject'));
-    assert.strictEqual(fromHome.name, 'New project 2', 'the next name nobody has');
-    assert.deepStrictEqual((await look(page)).renaming, ['New project 2'], 'its name is open for typing');
-    await stopTyping();
-  });
+  await check(
+    '+ Project opens the dialog, and its first row makes a project, a Boards folder and a board',
+    async () => {
+      const fromBoard = await makes(page, 'project', async () => {
+        await press(page, '#newProject');
+        assert.deepStrictEqual((await stored(page)).projects.length, 4, 'nothing is made until a row is chosen');
+        await choose('Blank board');
+      });
+      assert.strictEqual(fromBoard.name, 'New project');
+      const lib = await stored(page);
+      assert.deepStrictEqual(
+        lib.folders.filter(f => f.project === fromBoard.id).map(f => f.name),
+        ['Boards'],
+        'its first folder',
+      );
+      const after = await look(page);
+      assert.deepStrictEqual(
+        [after.home, after.nameSelected, after.renaming],
+        [false, true, []],
+        'it opens its blank board with the name selected, and nothing is renamed on a sidebar row',
+      );
+      const folder = lib.folders.find(f => f.project === fromBoard.id);
+      assert.strictEqual(lib.boards.find(b => b.id === after.id)?.folder, folder?.id, 'the board is in that folder');
 
-  await check('the New project tile on Home does the same, renaming on the tile', async () => {
+      await home('all');
+      const fromHome = await makes(page, 'project', async () => {
+        await press(page, '#newProject');
+        await choose('Blank board');
+      });
+      assert.strictEqual(fromHome.name, 'New project 2', 'the next name nobody has');
+      assert.deepStrictEqual([(await look(page)).home, (await look(page)).renaming], [false, []], 'Home closes');
+    },
+  );
+
+  await check('the New project tile on Home opens the dialog too', async () => {
     await home('all');
-    const made = await makes(page, 'project', () => press(page, '#homeGrid .tile.add'));
+    const made = await makes(page, 'project', async () => {
+      await press(page, '#homeGrid .tile.add');
+      await choose('Blank board');
+    });
     assert.strictEqual(made.name, 'New project 3');
-    assert.deepStrictEqual((await look(page)).renaming, ['New project 3'], 'the tile’s name is open for typing');
-    await stopTyping();
+    assert.deepStrictEqual([(await look(page)).home, (await look(page)).renaming], [false, []]);
   });
 
   await check('+ Folder makes a folder at the top of the project you are in, and opens its name', async () => {
