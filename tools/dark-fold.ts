@@ -7,7 +7,7 @@
 //   (--cut takes one declaration out of a rule that stays, for one that was dead only until its rival was folded)
 //   (--dead cuts those rules without a token, for a rule `verify` showed dead: a rival always wins over it. `--dead all`
 //   cuts every rule the sweep sees, to find the dead ones: a rule whose values the sweep then shows unchanged is dead.
-//   `--dead 863:.tile.project` names one rule of a shared line)
+//   `--dead "863:body.dark .tile.project .mf"` names one rule of a shared line; `--dead-only` plans nothing else)
 //   (--sweep leaves out the rules whose element the sweep snapshot never found, which nothing could prove)
 //   node tools/dark-fold.ts apply [same options] --manifest out.json   then: node tools/themes-css.ts, node tools/budget.ts --write
 //   node tools/dark-fold.ts mutate manifest.json    sets every new token to red in web/themes.css (node tools/themes-css.ts undoes it)
@@ -192,6 +192,7 @@ function parseArgs(args: string[]): Picks & { manifest: string } {
       .filter(Boolean)
       .map(c => ({ line: Number(c.split(':')[0]), prop: c.split(':')[1] ?? '' })),
     dead: new Set(opt('--dead').split(',').filter(Boolean)),
+    deadOnly: args.includes('--dead-only'),
   };
 }
 
