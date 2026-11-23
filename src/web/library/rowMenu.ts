@@ -250,9 +250,11 @@ export function rowMenu(e: MouseEvent, kind: Kind, obj: Thing, nameEl?: HTMLElem
   };
   removeOnOutsidePress(m);
 }
-export function renameNewest(sel: string, obj: { id: string; name: string }) {
-  const el = [...document.querySelectorAll(`#boards ${sel}`)].find(n => child(n, '.fname').textContent === obj.name);
-  if (el) inlineRename(child(el, '.fname'), obj);
+export function renameNewFolder(folder: { id: string; name: string }) {
+  const row = [...document.querySelectorAll('#boards .node.folder')].find(
+    n => child(n, '.fname').textContent === folder.name,
+  );
+  if (row) inlineRename(child(row, '.fname'), folder);
 }
 
 // A save rarely changes the sidebar. Rebuilding it only when its contents or order changed saves a repaint on every edit.

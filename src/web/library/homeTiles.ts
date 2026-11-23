@@ -78,6 +78,15 @@ export function tile(
 
 export const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
+// The line under the title of a level with nothing in it, which says how to fill it: the tile below, and the command that
+// does the same. A prototyping folder has no command of its own, since /board there opens the same form.
+export const EMPTY_LINE = {
+  projects: 'No projects yet. Choose New project to start one, or type /project in Myra’s chat.',
+  folders: 'No folders yet. Choose New folder to add one, or type /folder in Myra’s chat.',
+  boards: 'No boards yet. Choose New board to add one, or type /board in Myra’s chat.',
+  prototypes: 'No prototypes yet. Choose New prototype to start one.',
+};
+
 export const ago = (t: number) => {
   const s = Date.now() / 1000 - t,
     m = s / 60,

@@ -1,9 +1,13 @@
 import { queryWords } from '../core/base.ts';
 import { appState } from '../core/state.ts';
 import { iconOf, matchesSearch, runTemplate, type TemplateEntry, templateEntries } from '../features/templateList.ts';
+import { say } from '../myra/say.ts';
 import { child, closestTo, esc, htmlIn } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { createBoard, createExample, createFirstFolder, createProject, type Place, uniqueName } from './create.ts';
+import { loadLib } from './nesting.ts';
+import { refreshBoards } from './rowMenu.ts';
+import { boardsIn, foldersIn, saveLib } from './tree.ts';
 
 type Start = { kind: 'blank' } | { kind: 'example' } | { kind: 'template'; entry: TemplateEntry };
 type Row = { name: string; line: string; group: string; icon: string; start: Start };
@@ -82,6 +86,34 @@ async function begin(start: Start, name: string) {
   }
 }
 
+// A start that failed can leave a project, or a project and its Boards folder, with no board in them. The library is read
+// again from disk, so what only reached memory is gone, and what was saved is taken back. A saved board means only opening
+// it failed, so the project is kept. Says whether anything was left.
+async function takeBack(had: Set<string>): Promise<boolean> {
+  try {
+    await loadLib();
+    const made = appState.projects.filter(p => !had.has(p.id)),
+      folders = made.flatMap(p => foldersIn(p.id));
+    if (!made.length) return false;
+    if (folders.some(f => boardsIn(f.id).length)) return true;
+    appState.projects = appState.projects.filter(p => !made.includes(p));
+    appState.folders = appState.folders.filter(f => !folders.includes(f));
+    await saveLib();
+    return false;
+  } catch {
+    return true;
+  } finally {
+    await refreshBoards().catch(() => {});
+  }
+}
+
+const failure = (name: string, e: unknown, left: boolean) => {
+  const why = (e instanceof Error ? e.message : String(e)).replace(/\.$/, '');
+  return left
+    ? `Could not finish the project “${name}”: ${why}. What was made is still in All projects.`
+    : `Could not make the project “${name}”: ${why}. Nothing was kept, so you can try again.`;
+};
+
 type Opened = { name: string; asked: string };
 
 // `want` is a name to start from, such as the one /project was given; it is made unique like any other. Says the name the
@@ -148,8 +180,11 @@ export function openNewProject(want = ''): Opened | undefined {
     d.classList.add('busy');
     for (const el of d.querySelectorAll('input, button'))
       if (el instanceof HTMLInputElement || el instanceof HTMLButtonElement) el.disabled = true;
+    const had = new Set(appState.projects.map(p => p.id));
     try {
       await begin(row.start, nameIn.value);
+    } catch (e) {
+      say(failure(nameIn.value.trim() || 'New project', e, await takeBack(had)), 8000);
     } finally {
       d.remove();
     }
