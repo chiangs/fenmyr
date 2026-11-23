@@ -2,7 +2,7 @@ import type { Board, Card, Folder, Link, Project } from '../../shared/model.ts';
 import type { Proto } from '../../shared/repos.ts';
 import { selectOnly } from '../canvas/selection.ts';
 import { appState } from '../core/state.ts';
-import { createBoard, uniqueName } from '../library/create.ts';
+import { blankBoard, createBoard, uniqueName } from '../library/create.ts';
 import { closeHome } from '../library/home.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
@@ -83,19 +83,31 @@ export async function adoptPrototypes(p: Project) {
   chirp(`I found ${what} already in prototypes/ and gave each a board in “${f.name}” ✦`, 6000);
 }
 
-// What adding a board to a folder means: a prototype in a prototyping folder, which holds nothing else, and an
-// ordinary board everywhere else.
-export const addBoardTo = (f: Folder) =>
-  f.kind === 'prototyping'
-    ? newPrototypeIn(f)
-    : createBoard({ project: f.project ?? null, folder: f.id }, { open: 'name' });
+// What adding a board to a folder did: a board made and opened, or a prototype asked for. `asked` is false when the
+// project had no repo, so it was sent to link one first.
+export type Added =
+  | { kind: 'board'; board: Board; into: Folder | undefined }
+  | { kind: 'prototype'; into: Folder; asked: boolean };
 
-// Name and stack, then createPrototype.
-export function newPrototypeIn(f: Folder, seed?: Seed) {
+// What adding a board to a folder means: a prototype in a prototyping folder, which holds nothing else, and an
+// ordinary board everywhere else. A name that was given is the board's, so there is nothing left to type over; with
+// none, the new board's name is ready to be typed.
+export async function addBoardTo(f: Folder, name = ''): Promise<Added> {
+  if (f.kind === 'prototyping') return { kind: 'prototype', into: f, asked: newPrototypeIn(f, undefined, name) };
+  const given = name.trim(),
+    at = { project: f.project ?? null, folder: f.id },
+    board = await createBoard(at, { board: blankBoard(given), open: given ? 'board' : 'name' });
+  return { kind: 'board', board, into: f };
+}
+
+// Name and stack, then createPrototype. `want` is a name to start from. Says whether it asked: false when the project
+// has no repo, which it sends the person to link instead.
+export function newPrototypeIn(f: Folder, seed?: Seed, want = ''): boolean {
   const p = projectOf(f);
   if (!p?.repo) {
     if (p) linkRepo(p);
-    return chirp('This project needs a repo before it can hold prototypes ✦', 4000);
+    chirp('This project needs a repo before it can hold prototypes ✦', 4000);
+    return false;
   }
   const root = p.repo.path,
     title = esc(`New prototype in “${f.name}”`);
@@ -107,6 +119,7 @@ export function newPrototypeIn(f: Folder, seed?: Seed) {
     <div class="tdlg-btns"><button class="set-btn" id="npNo">Cancel</button><button class="set-btn hot" id="npOk">Create</button></div></div>`);
   let stack: 'react' | 'html' = 'react';
   const name = child(d, '#npName', HTMLInputElement);
+  name.value = want.trim();
   name.focus();
   const create = async () => {
     try {
@@ -130,4 +143,5 @@ export function newPrototypeIn(f: Folder, seed?: Seed) {
     if (e.key === 'Escape') d.remove();
     if (e.key === 'Enter') create();
   };
+  return true;
 }

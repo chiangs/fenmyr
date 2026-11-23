@@ -25,6 +25,7 @@ import { durText, parseTimer, timerRequest } from '../features/duration.ts';
 import { runTemplate, templateEntries } from '../features/templateList.ts';
 import { saveAsTemplate, saveWithDialog, useTemplate } from '../features/templates.ts';
 import { currentPose, timer, timerCheck } from '../features/timer.ts';
+import { addBoardHere, addFolderHere } from '../library/addHere.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import { createBoard, createExample, createFolder, createProject, currentPlace } from '../library/create.ts';
 import { openHome } from '../library/home.ts';
@@ -199,6 +200,8 @@ const makeHooks = () => ({
   docPrintHTML,
   openHome,
   openNewProject,
+  addBoardHere,
+  addFolderHere,
   createProject,
   createFolder,
   createBoard,

@@ -177,7 +177,7 @@ button.zoom { font-family: inherit; font-size: 12px; font-variant-numeric: tabul
 .tray-hint { margin: 8px 0 12px; font-size: 12px; line-height: 1.4; color: var(--ink-soft); }
 .tray-list { flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px; }
 .tray-item { padding: 10px 12px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--snow); box-shadow: 0 3px 10px rgba(var(--sh), calc(.10 * var(--sh-k))); font-size: 13px; line-height: 1.35; cursor: grab; rotate: var(--tilt, 0deg); word-break: break-word; }
-.tray-item img { width: 100%; border-radius: 8px; display: block; }
+.tray-item img { width: 100%; max-height: 140px; object-fit: cover; border-radius: 8px; display: block; }
 .tray-item:active { cursor: grabbing; }
 
 /* ---------- Myra ---------- */

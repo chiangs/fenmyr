@@ -72,6 +72,9 @@ export async function createFirstFolder(project: Project): Promise<Folder> {
 // Home left as it was. The New project dialog is the one place that chose: 'name' for a blank board, 'board' for the rest.
 export type Open = 'name' | 'board' | 'cards';
 
+// An empty board called what the person said, or Untitled board when they said nothing.
+export const blankBoard = (name = '') => newBoard(name.trim() || undefined);
+
 // A board's name is not made unique: two Untitled boards have always been allowed.
 export async function createBoard(at: Place, { board = newBoard(), open }: { board?: Board; open?: Open } = {}) {
   const into = boardFolder(at);

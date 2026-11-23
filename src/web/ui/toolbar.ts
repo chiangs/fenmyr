@@ -3,14 +3,12 @@ import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
 import { filterTpl } from '../features/templates.ts';
-import { boardFolder, createBoard, createFolder, currentPlace } from '../library/create.ts';
+import { addBoardHere, addFolderHere } from '../library/addHere.ts';
 import { openNewProject } from '../library/newProject.ts';
-import { renameNewest } from '../library/rowMenu.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
 import { renderDockHead } from '../proto/dockHead.ts';
 import { offerRename } from '../repo/codeFolder.ts';
-import { addBoardTo } from '../repo/prototypes.ts';
 import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { endPen, penT, startPen } from '../tools/pen.ts';
 import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
@@ -137,15 +135,9 @@ export function init21() {
   };
   nameField.onchange = () => offerRename(session.board);
 
-  $('newBoard').onclick = () => {
-    const at = currentPlace(),
-      into = boardFolder(at);
-    return into ? addBoardTo(into) : createBoard(at, { open: 'board' });
-  };
+  $('newBoard').onclick = () => addBoardHere();
 
-  $('newFolder').onclick = async () => {
-    renameNewest('.node.folder', await createFolder({ ...currentPlace(), folder: null }));
-  };
+  $('newFolder').onclick = () => addFolderHere();
 
   $('newProject').onclick = () => openNewProject();
 }
