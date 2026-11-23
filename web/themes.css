@@ -390,6 +390,7 @@ body {
   --m-dbs-bub-shadow: 0 8px 24px rgba(var(--sh), calc(.2 * var(--sh-k)));
   --m-dbs-knob-bg: var(--snow);
   --m-dbs-track-bg: var(--dbs-bg-2);
+  --m-dp-pdf-bg: var(--dp-bg);
   --m-dt-a-bg: var(--ink);
   --m-dt-b-ink: var(--ink-soft);
   --m-dt-myra-bg: var(--ink);
@@ -397,6 +398,8 @@ body {
   --m-dv-dl-bg: var(--dv-btn);
   --m-dv-dl-ink: var(--ink);
   --m-find-bar-fb-sep-bg: rgb(from var(--shade) r g b / .1);
+  --m-fname-bg: var(--snow);
+  --m-fname-ink: currentcolor;
   --m-gear-tip-bg: var(--ink);
   --m-home-bg: var(--bg, var(--pn-home));
   --m-home-img: radial-gradient(var(--dot) 1.2px, transparent 1.2px);
@@ -423,6 +426,7 @@ body {
   --m-piece-pick-bg: var(--snow);
   --m-piece-pick-bg-2: color-mix(in oklab, var(--ink-faint) 12%, var(--snow));
   --m-piece-pick-hover-bg: var(--blush);
+  --m-piece-pick-pk-cell-bg: color-mix(in oklab, var(--ink) 4%, transparent);
   --m-piece-pick-pk-tabs-bg: var(--snow);
   --m-piece-pick-pk-th-tl-fill: var(--snow);
   --m-piece-pick-shadow: 0 12px 32px rgba(var(--sh), calc(.2 * var(--sh-k))), 0 0 0 1px rgba(var(--sh), calc(.06 * var(--sh-k)));
@@ -435,7 +439,9 @@ body {
   --m-sb-due-sd-chips-button-bg: rgb(from var(--shade) r g b / .05);
   --m-sb-pop-bg: var(--panel, var(--snow));
   --m-sb-pop-shadow: 0 16px 40px rgb(from var(--sb-shadow-2) r g b / .2), 0 0 0 1px rgb(from var(--shade) r g b / .05);
+  --m-sb-sizes-button-on-i-bg: transparent;
   --m-sb-sprule-bg: rgb(from var(--shade) r g b / .06);
+  --m-sb-squig-sbc-chips-button-on-bg: var(--blush);
   --m-sb-stroke-sbc-chips-button-on-bg: var(--blush);
   --m-sb-stroke-sbc-chips-button-on-ink: var(--ink);
   --m-sb-style-on-bg: var(--ink);
@@ -443,6 +449,7 @@ body {
   --m-sb-tipbub-ink: color-mix(in oklab, var(--accent-wash) 8%, var(--surface));
   --m-sbc-track-rest: rgb(from var(--shade) r g b / .1);
   --m-sbz-f-input-bg: rgb(from var(--shade) r g b / .05);
+  --m-sbz-fontrow-bg: rgb(from var(--shade) r g b / .04);
   --m-sec-shine: linear-gradient(180deg, rgb(from var(--hilite) r g b / .45), rgb(from var(--hilite) r g b / 0));
   --m-selbar-pill: rgba(128, 110, 92, .075);
   --m-selbar-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .95), inset 0 0 0 1px rgb(from var(--hilite) r g b / .6), 0 10px 30px rgb(from var(--sec-shadow) r g b / .16);
@@ -456,6 +463,9 @@ body {
   --m-sh-body-tools-in-sheet-button-bg: var(--tl-bg);
   --m-sh-grab-i-bg: color-mix(in oklab, var(--dot) 84%, var(--snow));
   --m-sh-panel-bg: var(--snow);
+  --m-sh-tabs-button-on-bg: var(--snow);
+  --m-sh-tabs-button-on-ink: var(--ink);
+  --m-slash-menu-button-on-bg: rgb(from var(--shade) r g b / .06);
   --m-sm-sig-ink: color-mix(in oklab, var(--accent-soft) 76%, var(--ink));
   --m-sp-body-bg: var(--snow);
   --m-su-icon-bg: var(--snow);
@@ -495,15 +505,18 @@ body {
   --m-vd-txt-acts-button-bg: var(--vd-bg);
   --m-vd-txt-body-bg: var(--au-bg-2);
   --m-vr-chip-bg: rgb(from var(--clean-bg) r g b / .1);
+  --m-vr-chip-hover-bg: rgb(from var(--clean-bg) r g b / .18);
   --m-web-note-ink: var(--ink);
   --m-web-note-set-link-ink: var(--accent-text);
   --m-web-pill-bg: var(--blush);
   --m-web-pill-ink: var(--web-ink-2);
   --m-wg-slot-bg: rgb(from var(--wg-bg) r g b / .25);
+  --m-wg-slot-on-bg: rgb(from var(--wg-bg) r g b / .7);
   --m-ws-mid-bg: var(--ws-bg);
   --m-ws-mid-hover-bg: var(--ws-bg-2);
   --m-ws-mid-ink: var(--ink);
   --m-ws-mid-shadow: inset 0 0 0 1px rgb(from var(--select) r g b / .15);
+  --m-x-bg: rgb(from var(--shade) r g b / .08);
   --ink-page: var(--ink);
   --ink-soft-page: var(--ink-soft);
   --anim-shadow-2: color-mix(in oklch, var(--accent-text) 44%, var(--accent-wash));
@@ -690,6 +703,7 @@ body.dark {
   --m-dbs-bub-shadow: 0 8px 24px rgb(from var(--shade) r g b / .45);
   --m-dbs-knob-bg: var(--coll-ink);
   --m-dbs-track-bg: rgb(from var(--hilite) r g b / .1);
+  --m-dp-pdf-bg: rgb(from var(--hilite) r g b / .07);
   --m-dt-a-bg: var(--coll-ink);
   --m-dt-b-ink: var(--dt-ink);
   --m-dt-myra-bg: var(--dt-bg-3);
@@ -697,6 +711,8 @@ body.dark {
   --m-dv-dl-bg: rgb(from var(--hilite) r g b / .08);
   --m-dv-dl-ink: var(--dv-light-ink);
   --m-find-bar-fb-sep-bg: rgb(from var(--hilite) r g b / .14);
+  --m-fname-bg: var(--dark-line);
+  --m-fname-ink: var(--ink);
   --m-gear-tip-bg: var(--pn-dark-tip);
   --m-home-bg: var(--pn-dark-home);
   --m-home-img: radial-gradient(var(--pn-dark-home-dot) 1.2px, transparent 1.2px);
@@ -723,6 +739,7 @@ body.dark {
   --m-piece-pick-bg: var(--surface);
   --m-piece-pick-bg-2: rgb(from var(--hilite) r g b / .08);
   --m-piece-pick-hover-bg: var(--ob-line);
+  --m-piece-pick-pk-cell-bg: var(--surface-2);
   --m-piece-pick-pk-tabs-bg: var(--surface-2);
   --m-piece-pick-pk-th-tl-fill: var(--surface);
   --m-piece-pick-shadow: 0 12px 32px rgb(from var(--shade) r g b / .45);
@@ -735,7 +752,9 @@ body.dark {
   --m-sb-due-sd-chips-button-bg: rgb(from var(--hilite) r g b / .08);
   --m-sb-pop-bg: var(--sb-bg-8);
   --m-sb-pop-shadow: 0 16px 40px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .1);
+  --m-sb-sizes-button-on-i-bg: var(--sb-ink-2);
   --m-sb-sprule-bg: rgb(from var(--hilite) r g b / .1);
+  --m-sb-squig-sbc-chips-button-on-bg: rgb(from var(--hilite) r g b / .14);
   --m-sb-stroke-sbc-chips-button-on-bg: rgb(from var(--hilite) r g b / .14);
   --m-sb-stroke-sbc-chips-button-on-ink: var(--hilite);
   --m-sb-style-on-bg: var(--sb-bg-3);
@@ -743,6 +762,7 @@ body.dark {
   --m-sb-tipbub-ink: var(--sb-ink-3);
   --m-sbc-track-rest: rgb(from var(--hilite) r g b / .14);
   --m-sbz-f-input-bg: rgb(from var(--hilite) r g b / .08);
+  --m-sbz-fontrow-bg: rgb(from var(--hilite) r g b / .08);
   --m-sec-shine: linear-gradient(180deg, rgb(from var(--hilite) r g b / .05), rgb(from var(--hilite) r g b / 0));
   --m-selbar-pill: rgb(from var(--hilite) r g b / .09);
   --m-selbar-shadow: inset 0 1px 0 rgb(from var(--hilite) r g b / .16), inset 0 0 0 1px rgb(from var(--hilite) r g b / .08), 0 10px 30px rgb(from var(--shade) r g b / .35);
@@ -756,6 +776,9 @@ body.dark {
   --m-sh-body-tools-in-sheet-button-bg: rgb(from var(--hilite) r g b / .05);
   --m-sh-grab-i-bg: var(--sh-bg-2);
   --m-sh-panel-bg: var(--sh-bg-6);
+  --m-sh-tabs-button-on-bg: var(--sh-bg-3);
+  --m-sh-tabs-button-on-ink: var(--hilite);
+  --m-slash-menu-button-on-bg: rgb(from var(--hilite) r g b / .1);
   --m-sm-sig-ink: var(--web-ink);
   --m-sp-body-bg: var(--dark-raised);
   --m-su-icon-bg: var(--su-bg);
@@ -795,15 +818,18 @@ body.dark {
   --m-vd-txt-acts-button-bg: rgb(from var(--hilite) r g b / .08);
   --m-vd-txt-body-bg: rgb(from var(--hilite) r g b / .05);
   --m-vr-chip-bg: rgb(from var(--hilite) r g b / .08);
+  --m-vr-chip-hover-bg: rgb(from var(--hilite) r g b / .15);
   --m-web-note-ink: var(--web-ink);
   --m-web-note-set-link-ink: var(--set-link-on-dark);
   --m-web-pill-bg: var(--coach-bg-2);
   --m-web-pill-ink: var(--web-ink);
   --m-wg-slot-bg: rgb(from var(--hilite) r g b / .04);
+  --m-wg-slot-on-bg: rgb(from var(--anim-shadow-2) r g b / .18);
   --m-ws-mid-bg: var(--ws-bg-3);
   --m-ws-mid-hover-bg: var(--ws-bg-4);
   --m-ws-mid-ink: var(--ink);
   --m-ws-mid-shadow: inset 0 0 0 1px rgb(from var(--ws-shadow) r g b / .3);
+  --m-x-bg: rgb(from var(--hilite) r g b / .12);
   --au-bg-2: color-mix(in oklab, var(--ink) 52%, var(--snow));
   --bd-ink: color-mix(in oklab, var(--dot) 96%, var(--snow));
   --body-bg: color-mix(in oklab, var(--ink-faint) 28%, var(--shade));
