@@ -27,8 +27,7 @@ const MEDIA_URL = /^fenmyrmedia:\/\/media\/([^/?#]+)$/;
 export const heldMedia = (card: Record<string, unknown>) =>
   typeof card.src === 'string' && (MEDIA_URL.test(card.src) || card.src.startsWith('idbmedia:'));
 
-// One table, read by the export and by the tests. The structure rows (a project's repo and vault grants, a prototyping
-// folder) are for the folder and project exports, which build on the same format.
+// One table, read by the export and by the tests. The last three rows are for projects and folders.
 export const STRIP: readonly StripRule[] = [
   { from: 'board', fields: ['chatDraft'], keep: 'never', why: 'Words typed to Myra and not sent.' },
   { from: 'board', fields: ['vaultAccess'], keep: 'never', why: "It names this computer's vaults." },
@@ -92,6 +91,14 @@ export const KEPT = {
 
 export const without = (o: Record<string, unknown>, fields: readonly string[]) =>
   Object.fromEntries(Object.entries(o).filter(([k]) => !fields.includes(k)));
+
+// a project or folder without what the table never lets go: its repo, its vault grants, a prototyping folder's kind
+export const stripStructure = (from: 'project' | 'folder', o: Record<string, unknown>) =>
+  without(
+    o,
+    STRIP.filter(r => r.from === from).flatMap(r => r.fields),
+  );
+
 const has = (o: Record<string, unknown>, fields: readonly string[]) =>
   fields.some(f => o[f] !== undefined && !(Array.isArray(o[f]) && o[f].length === 0));
 const goes = (r: StripRule, o: ExportOptions) => r.keep === 'never' || !o[r.keep];

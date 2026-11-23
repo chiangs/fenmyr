@@ -636,6 +636,8 @@
     "tests/zipRoundTrip.ts": "Tests a board exported from its menu and opened again: every card, canvases two levels deep, a video that plays, a copy made twice, and the sweep keeping an imported video.",
     "tests/zipWaysIn.ts": "Tests the ways to open a Fenmyr zip: Home’s button, the folder and project menus, a prototyping folder refusing, and a zip dropped on a board, on Home and in the sidebar.",
     "tests/zipFormat.ts": "Tests the Fenmyr zip format with no app: the strip table, reading and refusing a set of files, and the videos on the way in.",
+    "tests/zipCap.ts": "Tests that a Fenmyr zip whose listed videos say they unpack to more than 4 GB between them is refused before any is copied, however small the zip is.",
+    "tests/zipStructure.ts": "Tests how a project and a folder are carried in a Fenmyr zip with no app: repo, vault grants and prototyping kind cut out and in, covers read only as pictures, an id read once.",
     "tools/budget.ts": "Counts untyped files, any, casts, long files, markup logic, raw colours, body.dark rules and fixed sleeps in tests, and fails if any rises.",
     "tools/build.ts": "Bundles the host and the renderer with esbuild.",
     "tools/buildStamp.ts": "Says which commit a build was made from and whether tracked files differed, for dist/build.json.",
