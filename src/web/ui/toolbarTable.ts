@@ -27,7 +27,7 @@ const TABLE: Table = [
   'structure',
   { id: 'title', label: 'Big title', key: 'T', icon: 'title' },
   { id: 'coll', label: 'Collection', key: 'G', icon: 'collection' },
-  { id: 'canvas', label: 'Canvas', icon: 'canvas', aria: 'Canvas (a board inside this one)' },
+  { id: 'canvas', label: 'Canvas', key: '⌥C', icon: 'canvas', aria: 'Canvas (a board inside this one)' },
   { id: 'frame', label: 'Wireframe', key: 'W', icon: 'screen', toggle: true },
   { id: 'tpl', label: 'Templates', key: '⌥T', icon: 'templates' },
 
@@ -36,7 +36,7 @@ const TABLE: Table = [
   { id: 'image', label: 'Image', key: 'I', icon: 'image' },
   { id: 'audio', label: 'Voice memo', key: 'A', icon: 'mic' },
   { id: 'video', label: 'Video', key: '⇧V', icon: 'video' },
-  { id: 'swatch', label: 'Colour', icon: 'palette' },
+  { id: 'swatch', label: 'Colour', key: 'O', icon: 'palette' },
 
   'draw',
   { id: 'shape', label: 'Shapes', key: 'S', icon: 'shapes' },

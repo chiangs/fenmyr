@@ -567,6 +567,7 @@
     "tests/theme.ts": "Tests following the Caelestia colour scheme.",
     "tests/themes.ts": "Every colour theme keeps its contrast and colour-blindness promise, and its known gaps are still real.",
     "tests/toolKeys.ts": "Alt+T opens Templates and closes it again, and does nothing while typing, in quick capture or with another modifier; plain T is still Big title.",
+    "tests/canvasColourKeys.ts": "Canvas has Alt+C and Colour has O: each puts its tool in hand with drawing down, a click drops its card, neither acts while typing or with another modifier, and no two tools share a key.",
     "tests/scrollbars.ts": "Every scrollbar is thin: no rule asks for the wide default, and real bars on plain boxes, the app's scrolling classes and a textarea measure the same as a thin one.",
     "tests/toolPanel.ts": "The tools as a panel at the top right and the bottom bar centred: where each sits, popups opening left of the panel, tucking by rows, group rows, and Just the board.",
     "tests/toolKeyColumn.ts": "Settings → Layout: each tool's key in a right-aligned keycap left of its switch, spelled as its tooltip spells it, in one column that ends at one edge, empty for a tool with none, never wrapping.",

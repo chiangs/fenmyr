@@ -327,6 +327,13 @@ export function init20() {
       });
       selectOnly(copies.map(c => c.id));
     }
+    // Alt+C is Canvas: every letter of its name is another tool's, so it takes its initial on Alt, as Alt+T does. By
+    // code, as Option+C types ç. Through the button, so it ends the Pen and drawing as picking it there does.
+    if (e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.code === 'KeyC') {
+      e.preventDefault();
+      clickIn($('tools'), '[data-add="canvas"]');
+      return;
+    }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
     // a letter that picks up another tool puts drawing down, as picking it from the toolbar does (Shift+V, video, is
@@ -339,6 +346,7 @@ export function init20() {
     if (k === 'g') startPlacing('coll');
     if (k === 'r') startPlacing('box');
     if (k === 'x') startPlacing('text');
+    if (k === 'o') startPlacing('swatch');
     if (k === 'w') startScreen();
     if (k === 'd') startPlacing('doc');
     if (k === 's') clickIn($('tools'), '[data-add="shape"]');
