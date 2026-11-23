@@ -4,8 +4,9 @@ import { longText, pasteIntoChat } from '../tests/support/paste.ts';
 
 export type Step = (page: Page) => Promise<void>;
 // width: the window's, for the prototype screen at each of its layouts; proto: open a prototype board first; env: for
-// the app, such as a stand-in Claude Code first on PATH
+// the app, such as a stand-in Claude Code first on PATH; version: run the app as that version, such as a beta
 export type Group = {
+  version?: string;
   settings?: Record<string, unknown>;
   env?: Record<string, string>;
   board?: () => Board;
@@ -218,4 +219,21 @@ const offer: Group = {
   ],
 };
 
-export const MYRA_GROUPS = { reply, sees, panels, offer, plan };
+// typing /template lists the picker's templates above her input; a checkout without the command lists nothing, so the
+// state is listed as meant
+const template: Group = {
+  states: [
+    [
+      'menu',
+      async page => {
+        await page.evaluate(() =>
+          document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null,
+        );
+        await page.click('#mPill');
+        await page.fill('#mcInput', '/template');
+      },
+    ],
+  ],
+};
+
+export const MYRA_GROUPS = { reply, sees, panels, offer, plan, template };

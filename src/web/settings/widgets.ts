@@ -11,6 +11,7 @@ import { applyTheme, themeFor } from './activeTheme.ts';
 import { applyColors, following } from './colors.ts';
 import { choiceOf, flagOn, MYRA_COLORS, myraColors, settings } from './settings.ts';
 import { paintThemePicker } from './themePicker.ts';
+import { RING_OFF, STRAIGHT_OFF } from './themes.ts';
 
 type Side = { left: string[]; right: string[] };
 
@@ -206,8 +207,11 @@ export function applySettings() {
   }
   document.body.classList.toggle('icons-duo', settings.iconStyle === 'duotone');
   document.body.classList.toggle('no-colour-names', !settings.colourNames);
+  document.body.classList.toggle(RING_OFF, !settings.thickFocus);
+  document.body.classList.toggle(STRAIGHT_OFF, !settings.straightCards);
   // the accessibility options are the ones the theme in use offers, so a theme without any has no section
-  $('setAccess').hidden = !themeFor(dark ? 'dark' : 'light')?.labels;
+  const offered = themeFor(dark ? 'dark' : 'light');
+  $('setAccess').hidden = !(offered?.labels || offered?.ring || offered?.straight);
   document.body.classList.toggle('dark', dark);
   applyTheme(dark ? 'dark' : 'light');
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';

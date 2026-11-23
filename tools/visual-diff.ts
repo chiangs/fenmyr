@@ -4,8 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import { everyOfflineCard, richNotes } from '../tests/fixtures/boards.ts';
+import { appCopy } from '../tests/support/appCopy.ts';
 import { launch, ROOT, settle } from '../tests/support/launch.ts';
 import { checkout } from '../tests/support/ref.ts';
+import { CHANNEL_GROUPS } from './visual-channels.ts';
 import { type Group, MYRA_GROUPS, type Step } from './visual-myra.ts';
 import { openPrototype, PROTO_GROUPS, removeProtoFolders } from './visual-proto.ts';
 import { WIREFRAME_GROUPS } from './visual-wireframe.ts';
@@ -164,13 +166,21 @@ const GROUPS: Record<string, Group> = {
   },
   ...MYRA_GROUPS,
   ...WIREFRAME_GROUPS,
+  ...CHANNEL_GROUPS,
 };
 
 async function shoot(dir: string, out: string) {
   fs.mkdirSync(out, { recursive: true });
   for (const [name, group] of Object.entries(GROUPS)) {
     const shown = (group.board ?? everyOfflineCard)();
-    const l = await launch({ dir, boards: [shown], open: shown.id, settings: group.settings, env: group.env });
+    const as = group.version ? appCopy(group.version, dir) : null;
+    const l = await launch({
+      dir: as?.dir ?? dir,
+      boards: [shown],
+      open: shown.id,
+      settings: group.settings,
+      env: group.env,
+    });
     const width = group.phone ? 600 : group.width;
     if (width) {
       await l.app.evaluate(({ BrowserWindow }, w) => {
@@ -191,6 +201,7 @@ async function shoot(dir: string, out: string) {
     }
     if (l.errors.length) throw new Error(`${name}: page errors in ${dir}: ${l.errors.join('; ')}`);
     await l.close();
+    as?.remove();
   }
 }
 

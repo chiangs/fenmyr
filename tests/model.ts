@@ -309,4 +309,45 @@ const kept2 = parseBoard({ id: 'b4', cards: [{ id: 'n', type: 'note', text: 'hi'
 assert.strictEqual(kept2?.cards?.length, 1, 'a board with a card list keeps it');
 assert.deepStrictEqual(kept2?.tray, [], 'and an empty tray list stays an empty list');
 
+// a card this build can't read is kept, as a placeholder that holds it, and is written back as it was read, apart from its id,
+// where it is and how big
+const alien = { id: 'a1', type: 'zorblax', x: 10, y: 20, w: 100, h: 50, glitter: { n: [1, 2] }, text: 'words' };
+const broken = { id: 'a2', type: 'coll', x: 1, y: 2, w: 3, h: 4, kids: [1, 2] };
+const unreadable = parseBoard({ id: 'b5', cards: [alien, broken, { type: 'note', text: 'no id' }], tray: [alien] });
+assert.deepStrictEqual(
+  unreadable?.cards?.map(c => [c.id, c.type]),
+  [
+    ['a1', 'unknown'],
+    ['a2', 'unknown'],
+  ],
+  'a card of an unknown type and one that fails the shape check are kept, and one with no id is not',
+);
+assert.deepStrictEqual(
+  unreadable?.tray?.map(c => c.type),
+  ['unknown'],
+  'and so is one in Unsorted',
+);
+const back = storedBoard(json(unreadable));
+assert.deepStrictEqual(back.cards?.[0], alien, 'a placeholder is written back as it was read');
+assert.deepStrictEqual(back.cards?.[1], broken, 'so is the one that failed the shape check');
+const first = unreadable?.cards?.[0];
+assert(first, 'the placeholder is there');
+const moved = storedBoard({ ...unreadable, cards: [{ ...first, x: 99, y: 98, w: 7, h: 6 }] });
+assert.deepStrictEqual(
+  moved.cards?.[0],
+  { ...alien, x: 99, y: 98, w: 7, h: 6 },
+  'moved or resized, it changes only there',
+);
+assert.deepStrictEqual(
+  storedBoard(json(parseBoard(json(storedBoard(json(unreadable)))))).cards?.[0],
+  alien,
+  'and a board saved and read again holds the same',
+);
+const wrapped = parseBoard(json({ id: 'b6', cards: unreadable?.cards }));
+assert.deepStrictEqual(
+  wrapped?.cards?.map(c => c.type),
+  ['unknown', 'unknown'],
+  'a placeholder read back from a copy is still one',
+);
+
 console.log('MODEL OK');

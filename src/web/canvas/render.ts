@@ -22,6 +22,7 @@ import { useFont } from '../wireframe/tilt.ts';
 import { styleWF, WF } from '../wireframe/wireframes.ts';
 import { inner } from './cardMarkup.ts';
 import { renderTray } from './tray.ts';
+import { unknownCard } from './unknownCard.ts';
 import { applyView } from './view.ts';
 import { renderWires } from './wires.ts';
 
@@ -197,7 +198,7 @@ export function paintCard(el: HTMLElement, c: Card, pop?: boolean) {
       if (!!tg === !!c.tagText) return el;
     }
   }
-  const body = inner(c),
+  const body = c.type === 'unknown' ? unknownCard(c) : inner(c),
     tagText = esc(c.tagText),
     label = c.tagText ? `<div class="tag">${tagText}</div>` : '',
     due = dueChip(c),

@@ -1,3 +1,4 @@
+import { compareVersions } from '../../shared/version.ts';
 import { $ } from '../core/dom.ts';
 import { esc } from '../ui/dom.ts';
 import { NEWS, type NewsItem } from './newsItems.ts';
@@ -22,17 +23,7 @@ export async function maybeNews() {
     localStorage.setItem(newsKey, v);
   } catch (_e) {}
   // everything new since the version you last saw (a small fix release has no card of its own)
-  const num = (x: string) =>
-      String(x || '0')
-        .replace(/^v/, '')
-        .split('.')
-        .map(n => +n || 0),
-    after = (x: string, y: string) => {
-      const a = num(x),
-        b = num(y);
-      for (let i = 0; i < 3; i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
-      return false;
-    };
+  const after = (x: string, y: string) => compareVersions(x, y) > 0;
   const items = Object.keys(NEWS)
     .filter(k => (!seen || after(k, seen)) && !after(k, v))
     .flatMap(k => NEWS[k] ?? []);

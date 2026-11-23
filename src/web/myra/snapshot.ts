@@ -7,7 +7,7 @@ import { myTpls } from '../features/templates.ts';
 import { foldersIn, looseFolders } from '../library/tree.ts';
 import { building, liveOf } from '../proto/buildSlot.ts';
 import { canonical } from '../richtext/dialect.ts';
-import { currentBuild } from '../settings/about.ts';
+import { currentBuild, currentChannel } from '../settings/about.ts';
 import { settings } from '../settings/settings.ts';
 import { FONTS } from '../wireframe/wireframes.ts';
 import { birthdayFacts } from './birthday.ts';
@@ -26,6 +26,11 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
   const build = currentBuild();
   const words = (c: Card) =>
     c.type === 'note' && c.rich ? canonical(c.text ?? '') : c.text || c.title || c.label || '';
+  // a card the app can't read is left out: she has nothing she could act on
+  const gone = new Set(
+    [...session.board.cards, ...session.board.tray].filter(c => c.type === 'unknown').map(c => c.id),
+  );
+  const shown = (cards: Card[]) => cards.filter(c => c.type !== 'unknown');
   const brief = (c: Card) =>
     c.type === 'vnote'
       ? { id: c.id, type: 'vnote', x: Math.round(c.x), y: Math.round(c.y), w: Math.round(c.w), h: Math.round(c.h) }
@@ -57,9 +62,9 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
     name: session.board.name,
     boardTags: session.board.tags || [],
     myTemplates: myTpls.map(t => t.name),
-    cards: session.board.cards.map(brief),
-    links: session.board.links.map(l => [l.a, l.b]),
-    unsorted: session.board.tray.map(brief),
+    cards: shown(session.board.cards).map(brief),
+    links: session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b)).map(l => [l.a, l.b]),
+    unsorted: shown(session.board.tray).map(brief),
     boardColors: session.board.palette,
     fontsOnThisComputer: FONTS.filter(f => !/^(\.|Apple |System|STIX|Noto Sans [A-Z][a-z]+ [A-Z])/.test(f)).slice(
       0,
@@ -81,7 +86,9 @@ export function snapshot(selected: ReadonlySet<string> = session.sel) {
           }
         : undefined,
     // which Fenmyr this is, for "what version am I on?" and for writing up a bug
-    fenmyr: build ? { version: build.version, commit: build.short, changes: build.changes } : undefined,
+    fenmyr: build
+      ? { version: build.version, commit: build.short, changes: build.changes, channel: currentChannel() }
+      : undefined,
     person: birthdayFacts(), // the slash commands, so she knows every one (the host puts them in her instructions)
     library: {
       projects: appState.projects.map(p => ({

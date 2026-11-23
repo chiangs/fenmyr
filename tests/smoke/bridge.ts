@@ -44,6 +44,7 @@ export async function bridge(t: Smoke) {
       fonts = (await Fenmyr.fonts()).length,
       version = await Fenmyr.version(),
       build = await Fenmyr.appBuild(),
+      update = await Fenmyr.updateCheck('stable'),
       usage = typeof (await Fenmyr.usage()).today.asks,
       speech = await Fenmyr.speechAuth();
     const unknown = await new Promise(res => {
@@ -109,6 +110,7 @@ export async function bridge(t: Smoke) {
       fonts,
       version,
       build,
+      update,
       usage,
       speech,
       unknown,
@@ -145,6 +147,13 @@ export async function bridge(t: Smoke) {
     commit: /^[0-9a-f]{40}$/.test(r.build.commit ?? ''),
     short: r.build.short === r.build.commit?.slice(0, 7),
     system: r.build.platform === 'linux' && !!r.build.arch && !!r.build.electron && !!r.build.chrome,
+  });
+  // a clone install answers for the channel it was asked about; a checkout has none
+  t.checkAll('updateCheck', {
+    channel: process.env.FENMYR_APP ? 'channel' in r.update && r.update.channel === 'stable' : !('channel' in r.update),
+    answer:
+      'offline' in r.update ||
+      ('behind' in r.update && typeof r.update.behind === 'number' && Array.isArray(r.update.notes)),
   });
   t.check('unknownOp', r.unknown === 'unknown op nope', r.unknown);
   t.check('range', r.range[0] === 206 && r.range[1] === 100, r.range);
