@@ -1733,8 +1733,9 @@ content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 8px); pa
 .pg-sw { flex: none; width: 26px; height: 32px; border-radius: 5px; box-shadow: inset 0 0 0 1px rgb(from var(--shade) r g b / .12); }
 .pg-light { background: var(--snow); } .pg-dark { background: var(--pg-bg); } .pg-auto { background: linear-gradient(135deg, var(--snow) 50%, var(--pg-bg) 50%); }
 
-/* just the board: panels tuck away, a faint pill brings them back */
-body.clean #side, body.clean #tray, body.clean #tools, body.clean #dock, body.clean #selbar, body.clean #modebar, body.clean #modeCard, body.clean #keys, body.clean .top { opacity: 0 !important; visibility: hidden; pointer-events: none !important; }
+/* just the board: panels tuck away, a faint pill brings them back. The selection bar stays, so a selected card can
+   still be changed without bringing the panels back. */
+body.clean #side, body.clean #tray, body.clean #tools, body.clean #dock, body.clean #modebar, body.clean #modeCard, body.clean #keys, body.clean .top { opacity: 0 !important; visibility: hidden; pointer-events: none !important; }
 .clean-back { position: fixed; z-index: 60; left: 50%; bottom: 22px; translate: -50% 12px; display: flex; align-items: center; gap: 8px; padding: 9px 12px 9px 15px; border: 0; border-radius: var(--pill-r); corner-shape: squircle;
   background: var(--m-clean-back-bg); color: var(--m-clean-back-ink); font: 600 13px/1 var(--font, "Figtree"), sans-serif; cursor: pointer; box-shadow: var(--m-clean-back-shadow);
   opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .3s, translate .35s cubic-bezier(.3, 1.4, .5, 1), visibility .3s; }

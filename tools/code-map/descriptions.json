@@ -394,6 +394,7 @@
     "tests/buildReload.ts": "Checks that after a reload mid-build Undo this build is turned away while the host writes, and that the build's end still lands with a working Undo.",
     "tests/buildUndo.ts": "Tests that Undo after a build puts back every file git sees and never touches a file git ignores.",
     "tests/capture.ts": "Quick capture in the real app: Enter to Unsorted, Shift+Enter to write on the board first, and the edge cases.",
+    "tests/cleanBar.ts": "Just the board (Ctrl+\\) keeps the selection bar: a selected card of any kind can still be changed from its bar while every panel is tucked away.",
     "tests/changes.ts": "Checks the record of a reply's changes, the change set and summary read from it, and Undo's plan, over hand-built boards.",
     "tests/chatAdd.ts": "Checks Add in Myra’s chat with a stand-in Claude Code: pictures, files and vault notes go with one message, limits and #private notes are refused.",
     "tests/chatButtons.ts": "Checks the buttons under Myra's replies: next steps in the chat and her bubble, and what a click does.",
