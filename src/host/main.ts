@@ -14,6 +14,7 @@ import * as gh from './gh.ts';
 import * as git from './git.ts';
 import { packageManager } from './install.ts';
 import { parseMacFonts } from './macFonts.ts';
+import { listModels } from './models.ts';
 import * as net from './net.ts';
 import * as output from './output.ts';
 import P from './paths.ts';
@@ -245,6 +246,7 @@ const OPS = {
   ask: a => claude.ask(a),
   rewrite: a => claude.rewrite(a),
   connections: () => claude.connections(),
+  models: () => listModels(),
   higgsQuote: a => claude.higgsQuote(a),
   higgsMake: a => claude.higgsMake(a),
   drawFill: a => claude.drawFill(a),

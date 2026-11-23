@@ -2,7 +2,7 @@ import type { AskFile } from './askFiles.ts';
 import type { BuildEvent } from './build.ts';
 import type { AppBuild } from './buildStamp.ts';
 import type { ImportResult, Manifest } from './fenmyrZip.ts';
-import type { ModelChoice } from './models.ts';
+import type { ModelChoice, ProviderModels } from './models.ts';
 import type { UpdateChannel } from './updateChannel.ts';
 
 type None = Record<string, never>;
@@ -201,6 +201,7 @@ export type Ops = {
     result: string;
   };
   connections: { args: None; result: Connections };
+  models: { args: None; result: ProviderModels[] };
   // model: the Higgsfield image model; myraModel: the one Claude Code runs on
   higgsQuote: { args: { model?: string; myraModel?: ModelChoice }; result: string };
   higgsMake: {

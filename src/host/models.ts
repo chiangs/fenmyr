@@ -1,4 +1,11 @@
-import { EFFORTS, type ModelChoice, type ModelEntry, type ProviderId, readModelChoice } from '../shared/models.ts';
+import {
+  EFFORTS,
+  type ModelChoice,
+  type ModelEntry,
+  type ProviderId,
+  type ProviderModels,
+  readModelChoice,
+} from '../shared/models.ts';
 
 // models is async because a local provider, such as Ollama, will ask its server which models it has
 type Provider = { id: ProviderId; name: string; models: () => Promise<ModelEntry[]> };
@@ -12,6 +19,9 @@ const CLAUDE: ModelEntry[] = [
   { id: 'claude-haiku-5-5', name: 'Haiku 5.5', efforts: EFFORTS },
 ];
 const PROVIDERS: Provider[] = [{ id: 'claude-code', name: 'Claude Code', models: async () => CLAUDE }];
+
+export const listModels = (): Promise<ProviderModels[]> =>
+  Promise.all(PROVIDERS.map(async p => ({ provider: p.id, name: p.name, models: await p.models() })));
 
 /** The choice sent with a call, if its provider still lists the model with that effort. Anything else is undefined,
  *  which passes no flags, so a model saved before it left the list never stops Myra answering. */

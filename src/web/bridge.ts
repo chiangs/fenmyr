@@ -175,6 +175,9 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
   async connections() {
     return { claude: false, mobbin: false, higgsfield: false, browser: true, web };
   },
+  async models() {
+    return [];
+  },
   async caelestia() {
     return null;
   },
@@ -360,6 +363,7 @@ const nativeApi = {
   saveMedia: (blob: Blob, onProgress?: Progress) => saveMediaNative(blob, onProgress),
   mediaURL: async (src: string) => src,
   connections: () => call('connections'),
+  models: () => call('models'),
   fetchImage: (url: string) => call('fetchImage', { url }),
   openURL: (url: string) => call('openURL', { url }),
   reveal: (path?: string) => call('reveal', path ? { path } : {}),
