@@ -21,7 +21,7 @@ import { selectOnly } from './selection.ts';
 import { renderTray, sendToTray } from './tray.ts';
 import { pinAt, renderWires } from './wires.ts';
 
-const DOUBLE_TAP_MS = 420;
+export const DOUBLE_TAP_MS = 420;
 
 // a screen sized by hand, alone or with others, is no longer the device it was made as
 function sizedByHand(c: Card | undefined, w0: number, h0: number) {
@@ -136,7 +136,7 @@ export function onRelease(e: PointerEvent) {
       const pid = under?.closest<HTMLElement>('.card')?.dataset.id || id;
       if (appState.lastTap.id === pid && now - (appState.lastTap.t ?? 0) < DOUBLE_TAP_MS) {
         clearTimeout(appState.lastTap.opening);
-        appState.lastTap = {};
+        appState.lastTap = { t: now }; // when typing started: a name line it opens is not the target of the clicks that follow
         if (session.sel.size > 1 && byId(pid)?.group && session.sel.has(pid)) {
           selectOnly([pid]);
           if (['text', 'note', 'title', 'todo'].includes(byId(pid)?.type ?? '')) startEdit(pid, under);
