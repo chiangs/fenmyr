@@ -6,6 +6,7 @@ import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { type DueItem, dueAnnounce, dueDate, dueHeld, dueJump, dueText, readIndex, slashDue } from '../features/due.ts';
 import { slashFind, slashTag } from '../features/find.ts';
+import { slashTemplate, templateEntries } from '../features/templateList.ts';
 import { slashTimer } from '../features/timer.ts';
 import { glideView, zoomFit } from '../panels/zoomMenu.ts';
 import { settings } from '../settings/settings.ts';
@@ -196,6 +197,17 @@ export function init33() {
       ex: ['/timer 25 write the intro', '/timer 2m10s tea', '/timer 1h30'],
       opts: ['15 break', '50 focus', '5 breather'],
       run: slashTimer,
+    },
+    {
+      cmd: 'template',
+      group: 'board',
+      arg: '<name>',
+      desc: 'Add a template, or start a board from one',
+      ex: '/template kanban',
+      get opts() {
+        return templateEntries().map(e => e.name);
+      },
+      run: slashTemplate,
     },
     {
       cmd: 'birthday',

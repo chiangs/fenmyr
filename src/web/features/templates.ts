@@ -12,24 +12,23 @@ import { fit, placeInView } from '../canvas/handles.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { layoutAll } from '../cards/kanban.ts';
-import { FRAMEWORKS } from '../content/frameworks.ts';
-import { placeFramework, STARTERS, TPL_IC } from '../content/placeFramework.ts';
-import { hasAll, queryWords, uid } from '../core/base.ts';
+import { STARTERS, TPL_IC } from '../content/placeFramework.ts';
+import { queryWords, uid } from '../core/base.ts';
 import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
 import { openBoard } from '../library/openBoard.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
 import { foldersIn } from '../library/tree.ts';
-import { newBoard, TEMPLATES } from '../model/boards.ts';
+import { newBoard } from '../model/boards.ts';
 import { say } from '../myra/say.ts';
-import { startPrototypeHere } from '../repo/start.ts';
 import { stopPlacing } from '../tools/place.ts';
 import { esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { scope } from '../ui/toolbar.ts';
 import { cardName } from './export.ts';
 import { instantiate, templateFrom } from './templateCards.ts';
+import { matchesSearch, runTemplate, type TemplateEntry, tagOf, templateEntries } from './templateList.ts';
 
 // ---------- your own templates: save a selection (or the whole board); use it on a board or as a new one (Settings decides) ----------
 export let myTpls: Template[] = [];
@@ -191,46 +190,46 @@ export async function loadTemplates() {
   buildTplPick();
 }
 
-// not a set of cards but a prototype: it goes through startPrototype, and its board starts with Myra's notes
-const PROTOTYPE = 'prototype';
-
-// grouped by what you're doing; frameworks add to this board, starters open a new one (tagged "New ↗")
-const TPL_GROUPS: [heading: string, keys: string[]][] = [
-  ['Think', ['empathy', 'journey', 'affinity', 'hmw', 'opportunity', 'matrix']],
-  ['Capture', ['Moodboard', 'Brain dump']],
-  ['Plan', ['OKRs and opportunities', 'Product kickoff', 'App plan', 'Workshop planning', 'kanban']],
-  ['Look back', ['retro']],
-  ['Build', [PROTOTYPE]],
-];
-
-const tplRow = (k: string) => {
-  if (k === PROTOTYPE) {
-    const icon = Icon('code');
-    return `<button data-prototype="1"><span class="tp-e">${icon}</span><span class="tp-t"><b>Prototype</b><small>A clickable prototype Myra codes from your wireframes and notes</small><em class="tp-k new">Opens a new prototype ↗</em></span></button>`;
+const iconOf = (e: TemplateEntry) => {
+  switch (e.kind) {
+    case 'prototype':
+      return 'code';
+    case 'framework':
+      return TPL_IC[e.key] ?? '';
+    case 'starter':
+      return STARTERS[e.key]?.[1] ?? '';
+    case 'mine':
+      return 'templates';
+    default: {
+      const unhandled: never = e.kind;
+      return unhandled;
+    }
   }
-  const F = FRAMEWORKS[k];
-  if (F) {
-    const icon = Icon(TPL_IC[k] ?? ''),
-      name = esc(F.name),
-      line = esc(F.line);
-    return `<button data-tpl="${k}"><span class="tp-e">${icon}</span><span class="tp-t"><b>${name}</b><small>${line}</small><em class="tp-k">Adds to this board</em></span></button>`;
-  }
-  const starter = STARTERS[k];
-  if (!TEMPLATES[k] || !starter) return '';
-  const key = esc(k),
-    icon = Icon(starter[1]),
-    line = esc(starter[0]);
-  return `<button data-starter="${key}"><span class="tp-e">${icon}</span><span class="tp-t"><b>${key}</b><small>${line}</small><em class="tp-k new">Opens a new board ↗</em></span></button>`;
 };
 
-const mineRow = (t: Template) => {
-  const nw = t.mode === 'new',
-    id = esc(t.id),
-    icon = Icon('templates'),
-    name = esc(t.name),
-    desc = esc(t.desc || `${t.cards.length} card${t.cards.length === 1 ? '' : 's'}`),
-    kind = nw ? ' new' : '',
-    how = nw ? 'Opens a new board ↗' : 'Adds to this board',
+const tplRow = (e: TemplateEntry) => {
+  const icon = Icon(iconOf(e)),
+    name = esc(e.name),
+    line = esc(e.line),
+    key = esc(e.key),
+    tag = tagOf(e),
+    kind = e.opens === 'new' ? ' new' : '',
+    data =
+      e.kind === 'prototype'
+        ? 'data-prototype="1"'
+        : e.kind === 'starter'
+          ? `data-starter="${key}"`
+          : `data-tpl="${key}"`;
+  return `<button ${data}><span class="tp-e">${icon}</span><span class="tp-t"><b>${name}</b><small>${line}</small><em class="tp-k${kind}">${tag}</em></span></button>`;
+};
+
+const mineRow = (e: TemplateEntry) => {
+  const id = esc(e.key),
+    icon = Icon(iconOf(e)),
+    name = esc(e.name),
+    desc = esc(e.line),
+    kind = e.opens === 'new' ? ' new' : '',
+    how = tagOf(e),
     edit = Icon('edit'),
     trash = Icon('trash');
   return `<button data-mine="${id}"><span class="tp-e">${icon}</span><span class="tp-t"><b>${name}</b><small>${desc}</small><em class="tp-k${kind}">${how}</em></span><span class="tp-x"><i data-tm="ren" title="Edit name, description and how it opens">${edit}</i><i data-tm="del" title="Delete">${trash}</i></span></button>`;
@@ -244,15 +243,14 @@ const searchBox = () => {
 export function buildTplPick() {
   const q = searchBox()?.value || '',
     searchIcon = Icon('search', { size: 16 }),
-    mine = myTpls.map(mineRow).join('');
+    rows = templateEntries()
+      .map((e, i, all) => {
+        const head = e.group === all[i - 1]?.group ? '' : `<div class="tp-h">${e.group}</div>`;
+        return head + (e.kind === 'mine' ? mineRow(e) : tplRow(e));
+      })
+      .join('');
   $('tplPick').innerHTML =
-    '<div class="tp-list">' +
-    TPL_GROUPS.map(([g, keys]) => {
-      const rows = keys.map(tplRow).join('');
-      return `<div class="tp-h">${g}</div>${rows}`;
-    }).join('') +
-    (myTpls.length ? `<div class="tp-h">Yours</div>${mine}` : '') +
-    '<div class="tp-none" hidden>No templates match</div></div>' +
+    `<div class="tp-list">${rows}<div class="tp-none" hidden>No templates match</div></div>` +
     `<label class="tp-search">${searchIcon}<input id="tpSearch" placeholder="Search templates…" autocomplete="off" spellcheck="false"></label>`;
   const box = searchBox();
   if (box) box.value = q;
@@ -275,12 +273,11 @@ export function filterTpl() {
       headHas = false;
       return;
     }
-    const txt = (
-        (el.querySelector('.tp-t b')?.textContent || '') +
-        ' ' +
-        (el.querySelector('.tp-t small')?.textContent || '')
-      ).toLowerCase(),
-      ok = hasAll(words, txt);
+    const ok = matchesSearch(
+      words,
+      el.querySelector('.tp-t b')?.textContent || '',
+      el.querySelector('.tp-t small')?.textContent || '',
+    );
     el.hidden = !ok;
     if (ok) {
       headHas = true;
@@ -305,25 +302,16 @@ export function init42() {
     }
   });
 
+  const run = async (kind: TemplateEntry['kind'], key: string | undefined) => {
+    const entry = templateEntries().find(x => x.kind === kind && x.key === key);
+    closeTplPick();
+    if (entry) await runTemplate(entry);
+  };
+
   $('tplPick').onclick = async e => {
-    if (closestTo(e.target, '[data-prototype]')) {
-      closeTplPick();
-      return startPrototypeHere();
-    }
+    if (closestTo(e.target, '[data-prototype]')) return run('prototype', 'prototype');
     const st = closestTo(e.target, '[data-starter]');
-    if (st) {
-      closeTplPick();
-      const name = st.dataset.starter ?? '',
-        b = newBoard(name, name),
-        { f, p } = scope(),
-        into = f || (p && foldersIn(p.id)[0]);
-      if (into) b.folder = into.id;
-      await Fenmyr.save(b);
-      await openBoard(b.id);
-      fit(session.board.cards);
-      refreshBoards();
-      return;
-    }
+    if (st) return run('starter', st.dataset.starter);
     const mine = closestTo(e.target, '[data-mine]');
     if (mine) {
       const t = myTpls.find(x => x.id === mine.dataset.mine),
@@ -349,12 +337,9 @@ export function init42() {
         }
         return;
       }
-      closeTplPick();
-      return useTemplate(t);
+      return run('mine', t.id);
     }
     const b = closestTo(e.target, '[data-tpl]');
-    if (!b) return;
-    closeTplPick();
-    placeFramework(b.dataset.tpl ?? '');
+    if (b) return run('framework', b.dataset.tpl);
   };
 }
