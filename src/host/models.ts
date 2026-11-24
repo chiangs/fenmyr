@@ -1,5 +1,6 @@
 import {
   EFFORTS,
+  listing,
   type ModelChoice,
   type ModelEntry,
   type ProviderId,
@@ -20,17 +21,22 @@ const CLAUDE: ModelEntry[] = [
 ];
 const PROVIDERS: Provider[] = [{ id: 'claude-code', name: 'Claude Code', models: async () => CLAUDE }];
 
-export const listModels = (): Promise<ProviderModels[]> =>
-  Promise.all(PROVIDERS.map(async p => ({ provider: p.id, name: p.name, models: await p.models() })));
+const listOf = async (p: Provider): Promise<ProviderModels> => ({
+  provider: p.id,
+  name: p.name,
+  models: await p.models(),
+});
 
-/** The choice sent with a call, if its provider still lists the model with that effort. Anything else is undefined,
- *  which passes no flags, so a model saved before it left the list never stops Myra answering. */
+export const listModels = (): Promise<ProviderModels[]> => Promise.all(PROVIDERS.map(listOf));
+
+/** The choice sent with a call, if its provider still lists the model with that effort (`listing`, the same check the
+ *  page makes). Anything else is undefined, which passes no flags, so a model saved before it left the list never stops
+ *  Myra answering. Only the choice's own provider is asked, since a local one needs its server. */
 export async function parseChoice(x: unknown): Promise<ModelChoice | undefined> {
   const choice = readModelChoice(x),
     provider = PROVIDERS.find(p => p.id === choice?.provider);
   if (!choice || !provider) return undefined;
-  const model = (await provider.models()).find(m => m.id === choice.id);
-  return model?.efforts.includes(choice.effort) ? choice : undefined;
+  return listing([await listOf(provider)], choice) === 'listed' ? choice : undefined;
 }
 
 /** Claude Code's arguments for a choice; none leaves Claude Code on its own default. */
