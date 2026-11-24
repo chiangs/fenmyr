@@ -56,6 +56,7 @@ People can set a default font for board text and docs. Menus and panels keep Fig
 ## Shape and space
 
 - Corners are squircles (`corner-shape: squircle`). Cards use 24 px, and buttons, tags and tooltips use `--pill-r` (12 px).
+- A tooltip is `data-tip` on the control, never `title`, which draws the browser's own. One rule in `web/style.css` gives it its look. `data-tip-at` places it: below the control by default, or `below-end`, `above` or `above-end`, where `-end` ends level with the control's right edge. A surface colours it with `--tip-bg` and `--tip-ink`, and `--tip-delay` sets the wait. Give the control an `aria-label`, since Chrome reads the tooltip's text into a button's name. `tests/tips.ts` shows each one whole.
 - Cards tilt up to 2° either way. Wireframe pieces, sections, screens and collections stay straight, as `src/shared/cardTypes.ts` records.
 - The floating panels on each side are `--side` wide (232 px).
 - Text stays sharp at every zoom step. Any new effect on cards must keep it sharp.

@@ -36,7 +36,7 @@ export function buildTools() {
     pop('link', DICON.link, 'Link · ⌘K', 'dt-fold f2'),
     tb('image', DICON.image, 'Add a picture', 'dt-fold f1'),
     pop('more', DICON.more, 'More: line spacing, tables, dividers…'),
-    `<button type="button" class="dt-myra dt-round" data-pop="myra" data-tip="Myra" aria-label="Ask Myra about your selection">${DICON.myra}</button>`,
+    `<button type="button" class="dt-myra dt-round" data-pop="myra" data-tip="Myra" data-tip-at="below-end" aria-label="Ask Myra about your selection">${DICON.myra}</button>`,
   ].join('');
   bubbleEl.innerHTML = [
     tb('bold', '<b>B</b>', 'Bold', 'dt-t'),

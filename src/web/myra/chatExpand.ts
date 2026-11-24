@@ -16,7 +16,7 @@ export function setExpanded(on: boolean, toBox = false) {
     { selectionStart: start, selectionEnd: end, selectionDirection: dir } = box;
   frame().classList.toggle('writing', on);
   btn.setAttribute('aria-pressed', String(on));
-  btn.title = on ? 'Shrink (Esc)' : 'Expand to write';
+  btn.dataset.tip = on ? 'Shrink (Esc)' : 'Expand to write';
   if (toBox) box.focus({ preventScroll: true });
   box.setSelectionRange(start, end, dir);
   replaceMenu();

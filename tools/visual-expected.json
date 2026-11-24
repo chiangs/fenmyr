@@ -56,7 +56,7 @@
   "offer-norepo": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",
   "panels-myra-chat": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",
   "panels-myra-draft": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
-  "panels-myra-expand": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",
+  "panels-myra-expand": "The pointer rests on Expand, which is pressed, so it now draws its shared tooltip, Shrink (Esc), above it: 1,818 px in a box 79 by 23 px. The base's native title tooltip never shows in a screenshot.",
   "phone-board": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
   "plan-board": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
   "plan-chat": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",

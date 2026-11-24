@@ -431,17 +431,25 @@ body.dark .home-back:hover { background: var(--pn-light-ink); color: var(--pn-da
 .keys { left: 22px; bottom: 16px; max-width: none; flex-wrap: nowrap; white-space: nowrap; gap: 10px; font-size: 11px; }
 
 
+/* One tooltip for every control with data-tip: its text floats up on hover or keyboard focus, after --tip-delay.
+   data-tip-at puts it below (the default), below-end, above or above-end, where -end ends level with the control's right
+   edge, so it never runs past the window's. --tip-bg and --tip-ink colour it, and a line break in the text starts a second
+   line. An ancestor with overflow hidden cuts it, which tests/tips.ts checks for each control. */
+:where([data-tip]) { position: relative; }
+[data-tip]::after { content: attr(data-tip); position: absolute; z-index: 30; left: 50%; top: calc(100% + 8px); translate: var(--tip-x, -50%) var(--tip-y, -3px); width: max-content; padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--tip-bg, var(--ink)); color: var(--tip-ink, var(--ink-inverse)); font: 600 11px/1 var(--font); text-align: start; white-space: pre-line; opacity: 0; pointer-events: none; transition: opacity .15s, translate .15s; }
+[data-tip*="\A"]::after { line-height: 1.3; }   /* a second line needs the room a single one doesn't */
+[data-tip]:is(:hover, :focus-visible)::after { opacity: 1; translate: var(--tip-x, -50%) 0; transition-delay: var(--tip-delay, .25s); }
+:is([data-tip-at$="end"], .tools .tb-end) { --tip-x: 0px; }
+:is([data-tip-at$="end"], .tools .tb-end)::after { left: auto; right: 0; }
+[data-tip-at^="above"] { --tip-y: 3px; }
+[data-tip-at^="above"]::after { top: auto; bottom: calc(100% + 8px); }
 /* the toolbar is icons only; its name floats up on hover */
 .tools { gap: 2px; }
 .tools button { position: relative; width: var(--tb-w); height: var(--tb-h); padding: 0; justify-content: center; }
 .tools .ic { width: 19px; height: 19px; }
-.tools button::after { content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 10px); transform: translate(-50%, -3px); padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-tools-button-after-bg); color: var(--m-tools-button-after-ink); font: 600 11px/1 var(--font); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; }
-.tools button:hover::after { opacity: 1; transform: translate(-50%, 0); }
+.tools { --tip-bg: var(--m-tools-button-after-bg); --tip-ink: var(--m-tools-button-after-ink); --tip-delay: 0s; }   /* the toolbar's names show at once */
 .tools .tb-start { grid-column: 1; margin-top: 11px; }
 .tools .tb-start::before { content: ''; position: absolute; left: 0; top: -7px; width: calc(var(--tools-w) - 12px); height: 1px; background: rgb(from var(--ink) r g b / .1); pointer-events: none; }
-/* a tooltip in the last column ends at its button's right edge, so it never runs past the window's */
-.tools .tb-end::after { left: auto; right: 0; transform: translate(0, -3px); }
-.tools .tb-end:hover::after { transform: none; }
 /* ··· lights too (syncMore) while a tool tucked in it is in hand, so drawing with Draw tucked still shows */
 .tools button.on { background: var(--blush); }
 .tools button.on .ic { color: var(--ink); }
@@ -1512,7 +1520,7 @@ body.phone .sheet { display: block; position: fixed; inset: 0; z-index: 70; poin
 .sh-body .tools.in-sheet.shown { position: static; display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 8px; width: auto; padding: 4px 0 6px; background: none; box-shadow: none; transform: none; border-radius: 0; }
 .sh-body .tools.in-sheet button { display: grid; justify-items: center; align-content: center; gap: 7px; width: auto; height: 78px; border-radius: 24px; corner-shape: squircle; background: var(--m-sh-body-tools-in-sheet-button-bg); }
 .sh-body .tools.in-sheet button .ic { width: 24px; height: 24px; }
-.sh-body .tools.in-sheet button::after { content: attr(data-name); position: static; display: block; transform: none !important; opacity: 1; padding: 0; background: none; box-shadow: none; color: var(--ink-soft); font: 600 11.5px/1 var(--font); white-space: nowrap; }
+.sh-body .tools.in-sheet button::after { content: attr(data-name); position: static; display: block; translate: none !important; opacity: 1; padding: 0; background: none; box-shadow: none; color: var(--ink-soft); font: 600 11.5px/1 var(--font); white-space: nowrap; }
 .sh-body .tools.in-sheet .sep, .sh-body .tools.in-sheet .t-sep { display: none; }
 /* the sheet keeps one grid of every tool, ··· first as it always came: the panel's group rows are for the panel */
 .sh-body .tools.in-sheet .tb-start { grid-column: auto; margin-top: 0; }
@@ -1711,11 +1719,8 @@ body.phone:has(.stage.doc-open) .dock { display: none; }   /* a doc takes the wh
 /* the toolbar's Myra: a round sparkle button that says "Myra" when you hover, so the whole toolbar fits on one row */
 .dt-myra.dt-round { position: relative; width: 32px; height: 32px; padding: 0; justify-content: center; margin-left: 4px; }
 .dt-myra.dt-round svg { width: 17px; height: 17px; }
-.dt-myra.dt-round::after {
-content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 8px); padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-dt-myra-bg); color: var(--ink-inverse); font: 600 11px/1 var(--font); white-space: nowrap; opacity: 0; transform: translateY(-3px); transition: opacity .15s, transform .15s; pointer-events: none; z-index: 5;
-}
-.dt-myra.dt-round:hover::after, .dt-myra.dt-round:focus-visible::after { opacity: 1; transform: none; }
-.dt-myra.dt-round.open::after { opacity: 0; }
+.dt-myra.dt-round { --tip-bg: var(--m-dt-myra-bg); }
+.dt-myra.dt-round.open::after { opacity: 0; }   /* her popover is open, so the name has done its job */
 /* a little tighter, so it all fits beside the board */
 .dv-tools .dt-sep { margin: 0 3px; }
 .dt-style .dt-lbl { width: 70px; } .dt-font .dt-lbl { width: 92px; }
@@ -1948,12 +1953,7 @@ button.zoom { border: 0; corner-shape: squircle; font: 600 12px/1 var(--font); c
 button.zoom:hover, button.zoom:focus-visible { background: color-mix(in oklab, var(--ink) 8%, var(--blush)); color: var(--ink); outline: none; }
 
 
-/* quick hover labels for small icon buttons outside the toolbar (the Settings gear) */
-.box header .gear[data-tip] { position: relative; }
-.box header .gear[data-tip]::after {
-content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 8px); translate: -50% -3px; padding: 6px 10px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--m-gear-tip-bg); color: color-mix(in oklab, var(--accent-wash) 8%, var(--surface)); font: 600 11px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s, translate .15s; z-index: 30;
-}
-.box header .gear[data-tip]:hover::after, .box header .gear[data-tip]:focus-visible::after { opacity: 1; translate: -50% 0; transition-delay: .25s; }
+.box header .gear[data-tip] { --tip-bg: var(--m-gear-tip-bg); --tip-ink: color-mix(in oklab, var(--accent-wash) 8%, var(--surface)); }
 .box header .gear { padding: 0; }   /* no default button padding, so the gear sits dead center in its hover square */
 
 /* flip: a round button in the top-left of the live camera */
@@ -1961,8 +1961,6 @@ content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 8px); t
 .vd-look button { position: relative; width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgb(from var(--shade) r g b / .45); color: var(--snow); cursor: pointer; transition: background .12s; }
 .vd-look button:hover { background: rgb(from var(--shade) r g b / .7); }
 .vd-look button.on { background: var(--snow); color: var(--vd-ink); }
-.vd-look button[data-tip]::after { content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 6px); translate: -50% -3px; padding: 5px 9px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--snow); font: 600 10.5px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s, translate .15s; }
-.vd-look button[data-tip]:hover::after { opacity: 1; translate: -50% 0; transition-delay: .2s; }
 .vd-look button { box-shadow: 0 2px 8px rgb(from var(--shade) r g b / .22); }
 
 /* the flip button keeps its own color on hover, just a touch softer */
@@ -1971,8 +1969,7 @@ content: attr(data-tip); position: absolute; left: 50%; top: calc(100% + 8px); t
 .vd-txb { width: 28px; height: 28px; display: grid; place-items: center; flex: none; border: 0; border-radius: 50%; background: none; color: var(--ink-soft); cursor: pointer; position: relative; }
 .vd-txb:hover { background: rgb(from color-mix(in oklab, var(--ink-faint) 12%, var(--snow)) r g b / .9); color: var(--ink); }
 .vd-txb.on { color: var(--accent-text); }
-.vd-txb[data-tip]::after { content: attr(data-tip); position: absolute; right: 0; bottom: calc(100% + 6px); padding: 5px 9px; border-radius: var(--pill-r); corner-shape: squircle; background: var(--ink); color: var(--snow); font: 600 10.5px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .15s; }
-.vd-txb[data-tip]:hover::after { opacity: 1; transition-delay: .25s; }
+.vd-look button[data-tip], .vd-txb[data-tip] { --tip-ink: var(--snow); }   /* on --ink, the shared tooltip's own background */
 .vd-txt { flex: none; height: 120px; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; background: var(--fill, var(--snow)); border-top: 1px solid rgb(from var(--accent-deep) r g b / .08); }
 .vd-txt-body { flex: 1; min-height: 0; overflow: auto; font: 400 12.5px/1.5 var(--font); color: var(--ink); padding: 8px 10px; border-radius: 14px; corner-shape: squircle; background: var(--m-vd-txt-body-bg); user-select: text; }
 .vd-txt-body.wait { color: var(--ink-soft); font-style: italic; }
@@ -2432,8 +2429,6 @@ body.dark { --ico-tint2: #7fcf5f; --ico-tint-op: .55; }
 /* in dark mode the outline of a duotone icon uses the brightest text color, so it never blends into the tint */
 svg.ico .ico-d { color: var(--m-svg-ico-ico-d-ink); }
 @media (prefers-contrast: more) { :root { --ico-tint-op: .7; } body.dark { --ico-tint-op: .7; } }
-/* a toolbar button with no tip text (the zoom %) shows no empty tooltip */
-.tools button:not([data-tip])::after { content: none; display: none; }
 /* the default font (Settings → Board): text on the board and in docs; panels and menus keep Myra's font */
 #world, .dv-title, .dv-body { --font: var(--board-font, "Myra Mark", "Figtree", system-ui, -apple-system, sans-serif); }
 #world { font-family: var(--font); }
