@@ -158,13 +158,17 @@ const board = {
   vaultAccess: [{ vault: 'v1', folders: [''], ai: false, write: false, writeTo: '' }],
 };
 
-const l = await launch({ boards: [board], data });
+// The Spotify card plays Spotify's own page in a frame, whose errors count as the app's, and the words checked here are drawn
+// outside it. The address never resolves, so that page never loads: a route set after launch is too late, as the board is
+// open by then.
+const l = await launch({
+  boards: [board],
+  open: 'b1',
+  data,
+  flags: ['--host-resolver-rules=MAP open.spotify.com ~NOTFOUND'],
+});
 try {
-  const { page, app } = l;
-  // The Spotify card plays Spotify's own page in a frame, whose errors would count as the app's, and the words checked here
-  // are drawn outside it. So the board opens only once that page is answered with nothing.
-  await app.context().route(/open\.spotify\.com/, r => r.fulfill({ status: 200, contentType: 'text/html', body: '' }));
-  await page.evaluate(() => window.__fenmyr.openBoard('b1'));
+  const { page } = l;
   await page.evaluate(() => window.__fenmyr.refreshVNotes());
   await page.waitForFunction(n => document.querySelectorAll('#cards .card').length === n, cards.length);
   await still(page);
