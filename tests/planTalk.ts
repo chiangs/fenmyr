@@ -1,14 +1,19 @@
 // Talking to Myra while a plan waits. A message goes to her with the plan and the notes she read for it; an answer
 // that changes the board replaces the plan, as a plan however small, words alone leave it waiting, and she can drop
 // it, or read it as a yes and have it land as held. A plain yes or no typed answers it with no request to Claude, and
-// an old button goes to her. Change the plan only puts them in her input. Just do it, clicked or typed, does Do it and
-// turns on Skip plans, which lands big changes at once until it is turned off.
+// an old button goes to her. Change the plan only puts them in her input. Skip plans, clicked or typed as "just do it",
+// does Do it and lands big changes at once until Fenmyr closes, leaving the Skip plans setting as it was.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { askStandIn } from './support/askStandIn.ts';
 import { launch, settle } from './support/launch.ts';
 
-const l = await launch({ boards: [replyBoard('talk', 'Talk')], open: 'talk', claude: true });
+const l = await launch({
+  boards: [replyBoard('talk', 'Talk')],
+  open: 'talk',
+  claude: true,
+  settings: { skipPlans: false },
+});
 const { page } = l;
 const { sentFor, send } = askStandIn(l);
 
@@ -34,7 +39,7 @@ const rows = () =>
     })),
   );
 const plans = async () => (await rows()).filter(r => r.text === LEAD);
-const WAITING = [':Do it', 'ghost:Change the plan', 'ghost:Cancel', 'ghost:Just do it'];
+const WAITING = [':Do it', 'ghost:Change the plan', 'ghost:Cancel', 'ghost:Skip plans'];
 const notes = (n: number) => Array.from({ length: n }, (_, i) => ({ type: 'note', text: `Idea ${i + 1}` }));
 const note = (rel: string, title: string) => ({
   vault: 'Notes',
@@ -210,23 +215,25 @@ await check('Change the plan puts them in her input, which says what writing the
 
 const skipping = () => page.evaluate(() => JSON.parse(localStorage.getItem('fenmyr:settings') ?? '{}').skipPlans);
 const skipBox = 'input[data-set="skipPlans"]';
+const SKIPPING =
+  'I’ll make big changes straight away until you close Fenmyr. Skip plans in Settings → Myra keeps it that way.';
 
-await check('Just do it does Do it and turns on Skip plans, so the next big change lands at once', async () => {
+await check('Skip plans does Do it and lands the next big change at once, leaving the setting off', async () => {
   await answer({ say: 'Never sent.' });
   const had = await ideas();
   await eleven();
-  await page.locator('#mcList .m-acts button:text-is("Just do it")').click();
+  await page.locator('#mcList .m-acts button:text-is("Skip plans")').click();
   await settle(page, 800);
   assert.strictEqual(await ideas(), had + 11, 'the plan landed');
   assert.strictEqual((await plans()).at(-1)?.head, 'Done');
-  assert(
-    (await rows()).some(
-      r => r.text === 'From now on I’ll make big changes straight away. Settings → Myra brings plans back.',
-    ),
-    'she says so',
+  const line = (await rows()).at(-1);
+  assert.deepStrictEqual(
+    [line?.text, line?.acts],
+    [SKIPPING, ['ghost:Bring plans back']],
+    'she says so, with a way back',
   );
-  assert.strictEqual(await skipping(), true, 'Skip plans is on');
-  assert.strictEqual(await page.locator(skipBox).isChecked(), true, 'and Settings shows it');
+  assert.strictEqual(await skipping(), false, 'the saved setting is still off');
+  assert.strictEqual(await page.locator(skipBox).isChecked(), false, 'and Settings shows it off');
   const shown = (await plans()).length;
   await eleven();
   await settle(page, 600);
@@ -235,28 +242,29 @@ await check('Just do it does Do it and turns on Skip plans, so the next big chan
   assert.strictEqual(JSON.parse(await sent()).length, 0, 'and nothing was asked');
 });
 
-await check('turning Skip plans off brings plans back, and a typed "just do it" turns it on again', async () => {
-  await page.evaluate(sel => document.querySelector<HTMLInputElement>(sel)?.click(), skipBox);
-  assert.strictEqual(await skipping(), false);
+await check('Bring plans back brings plans back, and a typed "just do it" skips them again', async () => {
+  await page.locator('#mcList .m-acts button:text-is("Bring plans back")').click();
+  assert.strictEqual((await rows()).at(-1)?.text, 'Plans are back. I’ll show you big changes first.');
   const had = await ideas();
   await eleven();
   assert.strictEqual((await plans()).at(-1)?.head, 'If you say yes', 'a big change waits again');
   await send('Just do it');
   await settle(page, 800);
   assert.strictEqual(await ideas(), had + 11, 'the plan landed');
-  assert.strictEqual(await skipping(), true, 'Skip plans is on');
+  assert.strictEqual((await rows()).at(-1)?.text, SKIPPING, 'with the same line');
+  assert.strictEqual(await skipping(), false, 'the saved setting is still off');
   assert.strictEqual(JSON.parse(await sent()).length, 0, 'with no request to Claude');
 });
 
 await check(
   'under Skip plans an answer that changes the board replaces a waiting plan by landing, and says so',
   async () => {
-    await page.evaluate(sel => document.querySelector<HTMLInputElement>(sel)?.click(), skipBox);
-    assert.strictEqual(await skipping(), false);
+    await page.locator('#mcList .m-acts button:text-is("Bring plans back")').click();
     const had = await ideas();
     await eleven();
+    assert.strictEqual((await plans()).at(-1)?.head, 'If you say yes', 'a plan waits');
     await page.evaluate(sel => document.querySelector<HTMLInputElement>(sel)?.click(), skipBox);
-    assert.strictEqual(await skipping(), true, 'Skip plans is turned on while it waits');
+    assert.strictEqual(await skipping(), true, 'Skip plans is turned on in Settings while it waits');
     await answer({ say: 'Two then.', add: notes(2) });
     await send('just two please');
     await settle(page, 800);

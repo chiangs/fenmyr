@@ -91,7 +91,7 @@ await check(
         text: LEAD,
         head: 'If you say yes',
         lines: ['+ 11 notes'],
-        acts: [':Do it', 'ghost:Change the plan', 'ghost:Cancel', 'ghost:Just do it'],
+        acts: [':Do it', 'ghost:Change the plan', 'ghost:Cancel', 'ghost:Skip plans'],
       },
       'her plan, numbered, with Do it, Change the plan and Cancel',
     );
