@@ -32,8 +32,8 @@ type CardFields = {
     capture?: Capture;
   };
   link: { url?: string; image?: string; loading?: boolean; draft?: string };
-  // autoName: the label follows the colour until someone names it
-  swatch: { hex: string; hideName?: boolean; hideHex?: boolean; autoName?: boolean };
+  // label: the colour's name; autoName: the name follows the colour until someone names it
+  swatch: { hex: string; label?: string; hideName?: boolean; hideHex?: boolean; autoName?: boolean };
   coll: {
     kids: string[];
     cols?: number;
@@ -131,7 +131,6 @@ type CardBase = {
   text?: string;
   title?: string;
   desc?: string;
-  label?: string;
   hex?: string;
   font?: string;
   // a named text size (s, l, xl) or the exact scale left by Shift-resizing
@@ -281,6 +280,9 @@ function isCard(x: unknown): x is Card {
 }
 
 export const isCardOf = <T extends CardType>(x: unknown, type: T): x is CardOf<T> => isCard(x) && x.type === type;
+
+// A colour's name. Another card's label pill is its tagText, so no other type has one to read.
+export const swatchName = (c: Card) => (c.type === 'swatch' ? c.label : undefined);
 
 // cards kept somewhere other than a board (a template), read the same way
 export const readCards = (x: unknown): Card[] => (Array.isArray(x) ? x.map(readCard).filter(c => c !== null) : []);

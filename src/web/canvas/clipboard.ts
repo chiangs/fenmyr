@@ -1,4 +1,4 @@
-import { type Card, isRecord, type Link, readCards, readLinks } from '../../shared/model.ts';
+import { type Card, isRecord, type Link, readCards, readLinks, swatchName } from '../../shared/model.ts';
 import { layoutAll } from '../cards/kanban.ts';
 import { copyOf as plainCopy, uid } from '../core/base.ts';
 import { stage } from '../core/dom.ts';
@@ -52,7 +52,7 @@ function gather(from: Card[]) {
 
 type Clip = { cards: Card[]; text: string };
 
-const wordsOf = (c: Card) => plainOf(c) || c.title || c.name || c.label || '';
+const wordsOf = (c: Card) => plainOf(c) || c.title || c.name || swatchName(c) || '';
 // Only a copy with a rich note in it carries HTML, so copying plain cards stays as it was.
 const clipHtml = (cards: Card[]) =>
   cards.some(c => c.type === 'note' && c.rich)

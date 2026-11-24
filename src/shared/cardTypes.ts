@@ -128,9 +128,10 @@ const words = (c: Named, k: string) => {
   return typeof v === 'string' ? v.trim() : '';
 };
 
-// what a person calls a card: its own words, else its kind
+// what a person calls a card: its own words, else its kind. Only a swatch has a name of its own to fall back on.
 export function cardName(c: Named) {
-  const own = ['name', 'title', 'text', 'label'].map(k => words(c, k)).find(w => w !== '');
+  const fields = c.type === 'swatch' ? ['name', 'title', 'text', 'label'] : ['name', 'title', 'text'],
+    own = fields.map(k => words(c, k)).find(w => w !== '');
   return (own?.split('\n')[0] ?? labelOf(c.type)).slice(0, 40);
 }
 

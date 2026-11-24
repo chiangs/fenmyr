@@ -1,6 +1,7 @@
 import { kindOf, MAX_FILES } from '../../shared/askFiles.ts';
 import { labelOf } from '../../shared/cardTypes.ts';
 import { DRAFT_MAX } from '../../shared/chat.ts';
+import { swatchName } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
@@ -43,7 +44,7 @@ const pastes = (added: readonly Added[]) => added.flatMap(a => (a.kind === 'past
 function oneLabel(): string | null {
   const one = session.sel.size === 1 ? session.board.cards.find(c => session.sel.has(c.id)) : undefined;
   if (!one) return null;
-  const words = String(one.name || one.text || one.title || one.label || '')
+  const words = String(one.name || one.text || one.title || swatchName(one) || '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, 34);

@@ -82,12 +82,11 @@ export function renderPalette() {
         const v = (name.textContent ?? '').trim();
         if (v) {
           p.name = v;
-          session.board.cards
-            .filter(c => c.type === 'swatch' && c.hex === p.hex)
-            .forEach(c => {
-              c.label = v;
-              renderCard(c);
-            });
+          for (const c of session.board.cards) {
+            if (c.type !== 'swatch' || c.hex !== p.hex) continue;
+            c.label = v;
+            renderCard(c);
+          }
         }
         renderPalette();
         save();

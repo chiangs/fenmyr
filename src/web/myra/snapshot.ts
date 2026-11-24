@@ -1,6 +1,6 @@
 import { buildLine } from '../../shared/build.ts';
 import type { ChatMsg } from '../../shared/chat.ts';
-import type { Card } from '../../shared/model.ts';
+import { type Card, swatchName } from '../../shared/model.ts';
 import { appState, session } from '../core/state.ts';
 import { hasDue } from '../features/due.ts';
 import { myTpls } from '../features/templates.ts';
@@ -25,7 +25,7 @@ const saidIn = (m: ChatMsg) => {
 export function snapshot(selected: ReadonlySet<string> = session.sel) {
   const build = currentBuild();
   const words = (c: Card) =>
-    c.type === 'note' && c.rich ? canonical(c.text ?? '') : c.text || c.title || c.label || '';
+    c.type === 'note' && c.rich ? canonical(c.text ?? '') : c.text || c.title || swatchName(c) || '';
   // a card the app can't read is left out: she has nothing she could act on
   const gone = new Set(
     [...session.board.cards, ...session.board.tray].filter(c => c.type === 'unknown').map(c => c.id),
