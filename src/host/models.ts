@@ -8,7 +8,10 @@ import {
   readModelChoice,
 } from '../shared/models.ts';
 
-// models is async because a local provider, such as Ollama, will ask its server which models it has
+// models is async because a local provider, such as Ollama, will ask its server which models it has. It must never
+// reject: a provider catches its own server errors and answers [], which `listing` reads as unknown, so a server that is
+// off neither stops a call nor costs anyone their saved choice. Claude's table can't fail, so nothing checks this until a
+// provider with a server arrives, and its tests should.
 type Provider = { id: ProviderId; name: string; models: () => Promise<ModelEntry[]> };
 
 // Claude Code has no command that lists its models, so the table is Fenmyr's. Each one took every effort level in
