@@ -78,6 +78,7 @@ Each rule names the check that enforces it.
 - **Markup templates hold values, not logic.** Compute every value into a named `const` first. Inside `${}` in a template that builds markup, use only a name or a chain of property reads: no ternaries, calls, `.map` or `.join`. Enforced by the budget's `markupLogic` count.
 - **One area per module, at most 400 lines.** Before writing a popover, menu, dialog, drag loop or colour helper, look for the shared one. Enforced by the budget's `longFiles` count.
 - **Card types live in one table.** Per-type facts go in `src/shared/cardTypes.ts`, not in new lists. Data from outside is parsed once where it enters: `src/shared/myraReply.ts` is the pattern.
+- **Find matches every word a card draws.** Per-type words go in `src/web/features/findText.ts`. Enforced by its `switch`, which fails `tsc` on a new card type, and by `tests/findCoverage.ts`, which fails when a card draws a word Find can't match. The test sees only the fields its example fills, so give a new text field a value in `EXAMPLES`. Nothing checks that step.
 - **No dead code.** knip and `noUnused*` fail on unused files, exports, dependencies, locals and parameters.
 - **Every source file has a one-line description.** Add it to `tools/code-map/descriptions.json` when you add a file, and remove it when you delete one. Enforced by `tools/code-map/check.ts`, part of `check:fast`.
 - **Comments say why.** Keep a comment only when it explains something the code can't show. No section banners and no comments that restate the code.

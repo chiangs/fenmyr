@@ -3,6 +3,7 @@ import type { CDPSession, Page } from 'playwright';
 import { bigBoard, everyOfflineCard } from './fixtures/boards.ts';
 import { launch, ROOT } from './support/launch.ts';
 import { build, checkout } from './support/ref.ts';
+import { still } from './support/settled.ts';
 
 type Metrics = {
   openMs: number;
@@ -10,6 +11,7 @@ type Metrics = {
   dragTaskMsPerMove: number;
   zoomTaskMsPerStep: number;
   editTaskMs: number;
+  findTaskMs: number;
   heapMB: number;
   appMB: number;
   mainMB: number;
@@ -128,6 +130,26 @@ async function measure(dir: string): Promise<Metrics> {
     )
   ).map(p => ({ type: p.type, mb: pssMB(p.pid, p.kb) }));
   const sum = (type?: string) => procs.filter(p => !type || p.type === type).reduce((n, p) => n + p.mb, 0);
+
+  // After the memory is read, so Find's work can't change it. The bar is opened outside the timing: that is the chat's work.
+  await page.keyboard.press('Control+f');
+  await page.waitForFunction(() => document.getElementById('mChat')?.checkVisibility({ visibilityProperty: true }));
+  await still(page);
+  await page.fill('#mcInput', '/find qqqq');
+  await page.press('#mcInput', 'Enter');
+  await page.waitForFunction(() => document.getElementById('findBar')?.checkVisibility());
+  const counted = () => page.evaluate(() => document.getElementById('fbCount')?.textContent ?? '');
+  let findTaskMs = 0;
+  // each query gives a different count from the one before, which is how the page says its answer is in. A hit then glides
+  // the board to it, a 260 ms animation that costs the same whatever Find matched, so it is waited out and not timed.
+  for (const q of ['idea', 'number 4', 'zq', 'list']) {
+    const was = await counted();
+    findTaskMs += await mainThread(cdp, async () => {
+      await page.fill('#fbQ', q);
+      await page.waitForFunction(was => document.getElementById('fbCount')?.textContent !== was, was);
+    });
+    await page.waitForFunction(() => !document.getElementById('stage')?.classList.contains('moving'));
+  }
   if (l.errors.length) throw new Error(`page errors: ${l.errors.join('; ')}`);
   await l.close();
   return {
@@ -136,6 +158,7 @@ async function measure(dir: string): Promise<Metrics> {
     dragTaskMsPerMove: dragTask / MOVES,
     zoomTaskMsPerStep: zoomTask / STEPS,
     editTaskMs,
+    findTaskMs,
     heapMB,
     appMB: sum(),
     mainMB: sum('Browser'),
@@ -154,6 +177,7 @@ const METRICS = [
   'dragTaskMsPerMove',
   'zoomTaskMsPerStep',
   'editTaskMs',
+  'findTaskMs',
   'heapMB',
   'appMB',
   'mainMB',
@@ -177,6 +201,7 @@ function summary(runs: Metrics[]): Record<keyof Metrics, Spread> {
     dragTaskMsPerMove: of('dragTaskMsPerMove'),
     zoomTaskMsPerStep: of('zoomTaskMsPerStep'),
     editTaskMs: of('editTaskMs'),
+    findTaskMs: of('findTaskMs'),
     heapMB: of('heapMB'),
     appMB: of('appMB'),
     mainMB: of('mainMB'),
