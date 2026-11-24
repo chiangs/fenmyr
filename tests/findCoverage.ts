@@ -158,9 +158,13 @@ const board = {
   vaultAccess: [{ vault: 'v1', folders: [''], ai: false, write: false, writeTo: '' }],
 };
 
-const l = await launch({ boards: [board], open: 'b1', data });
+const l = await launch({ boards: [board], data });
 try {
-  const { page } = l;
+  const { page, app } = l;
+  // The Spotify card plays Spotify's own page in a frame, whose errors would count as the app's, and the words checked here
+  // are drawn outside it. So the board opens only once that page is answered with nothing.
+  await app.context().route(/open\.spotify\.com/, r => r.fulfill({ status: 200, contentType: 'text/html', body: '' }));
+  await page.evaluate(() => window.__fenmyr.openBoard('b1'));
   await page.evaluate(() => window.__fenmyr.refreshVNotes());
   await page.waitForFunction(n => document.querySelectorAll('#cards .card').length === n, cards.length);
   await still(page);
