@@ -134,7 +134,7 @@ for (const yes of [
   'Do that',
 ])
   assert.strictEqual(answerOf(yes), 'do', `"${yes}" is Do it`);
-assert.strictEqual(answerOf('Just do it!'), 'just', '"just do it" is Just do it');
+assert.strictEqual(answerOf('Just do it!'), 'skip', '"just do it" is Skip plans');
 for (const no of ['no', 'Never mind', 'cancel.']) assert.strictEqual(answerOf(no), 'cancel', `"${no}" is Cancel`);
 for (const more of [
   'no, make it three groups',

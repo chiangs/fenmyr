@@ -261,7 +261,7 @@ await check('the preview goes whenever the plan stops waiting', async () => {
     ends: [string, () => Promise<unknown>][] = [
       ['Cancel', () => press('Cancel')],
       ['Do it', () => press('Do it')],
-      ['Just do it', () => press('Just do it')],
+      ['Skip plans', () => press('Skip plans')],
       [
         'a typed no',
         async () => {
@@ -285,9 +285,8 @@ await check('the preview goes whenever the plan stops waiting', async () => {
     await end();
     await settle(page, 600);
     assert.strictEqual(await shown(), 0, `${how} takes the preview away`);
-    // Just do it turns on Skip plans, so the next plan would land at once
-    if (how === 'Just do it')
-      await page.evaluate(() => document.querySelector<HTMLInputElement>('input[data-set="skipPlans"]')?.click());
+    // Skip plans lands the next plan at once, until plans are brought back
+    if (how === 'Skip plans') await press('Bring plans back');
   }
   await open('gone');
   await chat();

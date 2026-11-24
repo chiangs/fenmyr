@@ -1,7 +1,8 @@
 // A reply that would add, move or edit more than 10 cards, or remove any, waits in the chat as a plan. Do it lands that
-// same reply, with no second request to Claude, and Cancel leaves the board as it was. Anything else they write goes
-// to her with the plan. One plan waits at a time, in memory; its message keeps the steps, so the chat still shows what
-// she proposed once it stops waiting. While it waits, the board shows it as a preview (planPreview.ts).
+// same reply, with no second request to Claude, and Cancel leaves the board as it was. Skip plans lands it too, and
+// then lands big changes straight away until Fenmyr closes. Anything else they write goes to her with the plan. One
+// plan waits at a time, in memory; its message keeps the steps, so the chat still shows what she proposed once it stops
+// waiting. While it waits, the board shows it as a preview (planPreview.ts).
 import { answerOf, asksFirst, weigh } from '../../shared/askFirst.ts';
 import { type Step, summarySteps } from '../../shared/changeSummary.ts';
 import type { ChatAction, PlanEnd } from '../../shared/chat.ts';
@@ -9,8 +10,7 @@ import type { PlanAsk } from '../../shared/ops.ts';
 import { uid } from '../core/base.ts';
 import { boardRevision, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
-import { setFlag, settings } from '../settings/settings.ts';
-import { applySettings } from '../settings/widgets.ts';
+import { settings } from '../settings/settings.ts';
 import { textField } from '../ui/dom.ts';
 import type { Piece } from './acts.ts';
 import { applyHeld, asItWouldLand, type Planned, planHeld, planNewBoard, Turn } from './apply.ts';
@@ -18,21 +18,28 @@ import type { HeldReply, NoteUsed } from './applyTypes.ts';
 import { addMsg, chatKeep, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { noEmoji } from './replyText.ts';
-import { reply } from './say.ts';
+import { reply, type SayAction } from './say.ts';
 
 type PlanAct = Extract<ChatAction, { kind: 'plan' }>;
 // parts: the cards each step covers, in the order of act.steps
 type Waiting = { act: PlanAct; board: string; planned: Planned; parts: string[][] };
 
 let waiting: Waiting | null = null;
+// Skip plans from the button on a plan, which lasts until Fenmyr closes: it is never saved, so it is no setting. The
+// setting skips them for good, and this is the only place that asks whether either does.
+let skipped = false;
+const skipping = () => skipped || settings.skipPlans;
 // the step the pointer is on, whose part of the preview is lit
 let hot: number | null = null;
 // plans whose Do it is waiting its turn behind a reply still to come
 const landing = new Set<string>();
 
 const LEAD = 'Here’s my plan. Nothing changes until you say so.';
-const JUST = 'From now on I’ll make big changes straight away. Settings → Myra brings plans back.';
-const JUST_TIP = 'Do this, and make big changes straight away from now on';
+const SKIPPING =
+  'I’ll make big changes straight away until you close Fenmyr. Skip plans in Settings → Myra keeps it that way.';
+const SKIP_TIP = 'Do this, and make big changes straight away until Fenmyr closes';
+const BACK = 'Plans are back. I’ll show you big changes first.';
+const BACK_BUT = 'Skip plans is still on in Settings → Myra, so I’ll still make big changes straight away.';
 const FAILED =
   'Something went wrong part way, so I’ve put the board back as it was. The plan is still here if you want to try again.';
 
@@ -80,7 +87,7 @@ export async function settle(turn: Turn, held: HeldReply, about: string | null) 
   const planned = planHeld(held),
     { weight, steps } = outline(planned),
     changes = planned.record.cards.length + planned.record.links.length > 0 || held.template?.mode === 'new',
-    holds = changes && !settings.skipPlans && (w !== null || asksFirst(weight));
+    holds = changes && !skipping() && (w !== null || asksFirst(weight));
   if (w && (changes || held.reply.dropPlan)) end(w, !changes ? 'cancelled' : holds ? 'replaced' : 'superseded');
   if (holds) return hold(planned, steps);
   await applyHeld(turn, held);
@@ -134,14 +141,28 @@ async function land(turn: Turn, w: Waiting) {
   }
 }
 
-// Do it, and from now on big changes land straight away, as the Skip plans setting says.
-function justDoIt(w: Waiting) {
-  if (waiting !== w) return Promise.resolve();
-  setFlag('skipPlans', true);
-  applySettings();
-  const done = doIt(w);
-  reply(JUST, 9000);
-  return done;
+// Do it, and big changes land straight away until Fenmyr closes. The setting is left as it is. Her line comes once the
+// plan has landed, since landing draws the chat again, which would drop the button on a line said before it.
+async function skipPlans(w: Waiting) {
+  if (waiting !== w) return;
+  skipped = true;
+  await doIt(w);
+  reply(SKIPPING, 0, [bringBack()]);
+}
+
+// A line she says may still show in the bubble and in the chat, so its button acts once, however often it is pressed.
+function bringBack(): SayAction {
+  let used = false;
+  return {
+    label: 'Bring plans back',
+    ghost: true,
+    run: () => {
+      if (used) return;
+      used = true;
+      skipped = false;
+      reply(settings.skipPlans ? BACK_BUT : BACK);
+    },
+  };
 }
 
 // Nothing is sent: they write what to change, and it goes with the plan.
@@ -223,13 +244,14 @@ export function planPieces(a: PlanAct): Piece[] {
       { slot: 'reply', button: { label: 'Cancel', ghost: true, after: 'stay', run: () => end(w, 'cancelled') } },
       {
         slot: 'reply',
-        button: { label: 'Just do it', ghost: true, title: JUST_TIP, after: 'stay', run: () => justDoIt(w) },
+        button: { label: 'Skip plans', ghost: true, title: SKIP_TIP, after: 'stay', run: () => skipPlans(w) },
       },
     );
   return pieces;
 }
 
-// A typed yes, no or "just do it" while a plan waits answers it here, with no request to Claude. Null when it isn't one.
+// A typed yes, no or "just do it", which is Skip plans, while a plan waits answers it here, with no request to Claude.
+// Null when it isn't one.
 export function answerPlan(q: string): Promise<void> | null {
   const w = waiting,
     said = w && answerOf(q);
@@ -237,7 +259,7 @@ export function answerPlan(q: string): Promise<void> | null {
   if (!chatOpen()) myraOpen(true);
   addMsg('me', q);
   if (said === 'do') return doIt(w);
-  if (said === 'just') return justDoIt(w);
+  if (said === 'skip') return skipPlans(w);
   end(w, 'cancelled');
   return Promise.resolve();
 }
