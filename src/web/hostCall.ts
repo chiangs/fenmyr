@@ -40,12 +40,25 @@ const RUNS_CLAUDE: Record<RunsClaude, true> = {
 };
 const runsClaude = (op: keyof Ops): op is RunsClaude => Object.hasOwn(RUNS_CLAUDE, op);
 
+// Asked before each of those ops goes out. While it hands back a promise the op waits for it, so the choice it sends is
+// the one that check left, not a model the host has stopped listing. Set by modelPicker.ts, which this file can't import.
+let beforeClaude: () => Promise<void> | undefined = () => undefined;
+export const checkBeforeClaude = (check: typeof beforeClaude) => {
+  beforeClaude = check;
+};
+
 export const call = <K extends keyof Ops>(op: K, args?: Ops[K]['args']) =>
   new Promise<Ops[K]['result']>((res, rej) => {
     const id = ++seq;
     waiting.set(id, { res, rej });
-    const myraModel = runsClaude(op) ? settings.myraModel : undefined;
-    window.fenmyrHost?.post({ id, op, args: myraModel ? { ...args, myraModel } : (args ?? {}) });
+    const post = () => {
+      const myraModel = runsClaude(op) ? settings.myraModel : undefined;
+      window.fenmyrHost?.post({ id, op, args: myraModel ? { ...args, myraModel } : (args ?? {}) });
+    };
+    const held = runsClaude(op) ? beforeClaude() : undefined;
+    // a check that fails must not strand the call
+    if (held) void held.then(post, post);
+    else post();
   });
 
 // The host takes a picture of the window: an export, or a build's picture of a wireframe screen. Every such op comes

@@ -1,7 +1,7 @@
 // A saved model the host no longer lists, in the real app, through a stand-in Claude Code that records its arguments.
 // Myra clears the choice and says so once, in her own words, naming the model; she runs on Claude Code's default and
 // never picks another. An answer that says nothing about the model (none, an empty list, a provider with no models)
-// clears nothing.
+// clears nothing, and the check runs before a call to Claude Code goes out even when the chat was never opened.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { askStandIn, flagsOf } from './support/askStandIn.ts';
@@ -178,6 +178,38 @@ async function check(name: string, run: () => Promise<void>) {
     assert.deepStrictEqual(await t.ask('hello'), { model: 'claude-sonnet-5-5', effort: 'high' });
     assert.strictEqual(await page.locator('#mcList .mc-msg.myra', { hasText: 'couldn’t find' }).count(), 0);
   });
+  assert.deepStrictEqual(t.l.errors, [], 'no page errors');
+  await t.l.close();
+}
+
+{
+  const t = await start(SONNET);
+  const { page } = t;
+  await check(
+    'before a call goes out with the chat closed, an effort the model no longer lists is cleared',
+    async () => {
+      // the host's own list still has High, so a call that left with the choice would carry it
+      await t.answer('short');
+      await page.evaluate(
+        () => void window.Fenmyr.rewrite('Hello there, rewrite me', 'shorter', 'T', 'around').catch(() => undefined),
+      );
+      assert.deepStrictEqual(
+        flagsOf((await t.sentAbout('Hello there, rewrite me')).args),
+        NO_FLAGS,
+        'the rewrite left without the model',
+      );
+      assert.strictEqual(await t.saved(), null);
+      assert.deepStrictEqual(await t.said(), [lineFor('claude-sonnet-5-5')], 'she said so, in the chat she keeps');
+      assert.strictEqual(
+        await page.evaluate(() => document.getElementById('myra')?.classList.contains('chat')),
+        false,
+        'with the chat still closed',
+      );
+      await t.open();
+      assert.strictEqual(await t.shown(), 1, 'and it is there when the chat opens, once');
+      assert.strictEqual(await t.pill(), 'Claude Code default');
+    },
+  );
   assert.deepStrictEqual(t.l.errors, [], 'no page errors');
   await t.l.close();
 }
