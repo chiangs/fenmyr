@@ -1,4 +1,4 @@
-import type { Project } from '../../shared/model.ts';
+import type { Folder, Project } from '../../shared/model.ts';
 import type { FolderWish, MyraReply, Wanted } from '../../shared/myraReply.ts';
 import { appState, session } from '../core/state.ts';
 import { addBoardHere, addFolderHere } from '../library/addHere.ts';
@@ -75,15 +75,16 @@ function projectHere() {
   return appState.projects.find(p => p.id === id);
 }
 
-// The folder a name means. It is looked for in each project of `lookIn` in turn and then in the whole library, so two
-// projects that each have a "Boards" folder are not mixed up, and a name only one folder has is found wherever it is.
-function folderNamed(name: string, lookIn: readonly (Project | undefined)[]) {
+// The folder a name means. It is looked for in each project of `lookIn` in turn and, with `anywhere`, then in the whole
+// library, so two projects that each have a "Boards" folder are not mixed up and a name only one folder has is found
+// wherever it is.
+function folderNamed(name: string, lookIn: readonly (Project | undefined)[], anywhere: boolean) {
   for (const project of lookIn) {
     const there = project ? appState.folders.filter(f => f.project === project.id) : [],
       found = byName(there, name);
     if (found) return found;
   }
-  return findFolder(name);
+  return anywhere ? findFolder(name) : undefined;
 }
 
 // Her folders.file puts a folder that is there into the project she names, or takes it out of its project with none. It
@@ -97,7 +98,7 @@ export function fileFolders(files: NonNullable<Sorting['file']>, told: string[])
       told.push(noProject(project, folder));
       continue;
     }
-    const found = folderNamed(folder, [here]);
+    const found = folderNamed(folder, [here], true);
     if (!found) {
       told.push(noFolder(folder));
       continue;
@@ -106,11 +107,14 @@ export function fileFolders(files: NonNullable<Sorting['file']>, told: string[])
   }
 }
 
-// Her folders.move puts a board into a folder, or out of its folders with none. A folder that is not there is made the
-// way /folder makes one, in the project she names or else the one the person is in, and she says so. A project that is
-// not there is not made: that entry is left out with a line, and the other entries still apply.
+// Her folders.move puts a board into a folder, or out of its folders with none. With a project named, that is the only
+// project the folder is looked for in, and it is made there when it is not, so it may be numbered as /folder numbers it;
+// with none, it is the project the person is in and then the whole library, and a folder that is nowhere is made in the
+// project the person is in. A project that is not there is not made: that entry is left out with a line, and the other
+// entries still apply.
 export async function moveBoards(moves: NonNullable<Sorting['move']>, told: string[]) {
-  const here = projectHere();
+  const here = projectHere(),
+    made = new Map<string, Folder>();
   for (const { board, folder, project } of moves) {
     if (!appState.boardList.some(b => b.id === board)) continue;
     if (!folder) {
@@ -122,9 +126,12 @@ export async function moveBoards(moves: NonNullable<Sorting['move']>, told: stri
       told.push(noProject(project, folder));
       continue;
     }
-    let into = folderNamed(folder, [target, here]);
+    // a name that was numbered when it was made is not the name she gives the next board for it
+    const asked = `${target?.id}\n${folder.trim().toLowerCase()}`;
+    let into = made.get(asked) ?? folderNamed(folder, [target ?? here], !target);
     if (!into) {
       into = await createFolder({ project: (target ?? here)?.id ?? null, folder: null }, folder);
+      made.set(asked, into);
       told.push(folderMade(into, folder));
     }
     await moveBoard(board, into.id);
