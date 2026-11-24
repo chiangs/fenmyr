@@ -9,13 +9,17 @@ import { drawOn } from '../tools/draw.ts';
 import { placing } from '../tools/place.ts';
 import { lastAnim, playAnim } from './anim.ts';
 import { chatOpen } from './chatWindow.ts';
+import { react, wake } from './react.ts';
+import { working } from './status.ts';
 
 // when she last played by herself, and when she may next
 type IdleState = { last: number; next: number };
 
 // ---------- every now and then she animates by herself (lively about hourly, calm every few hours, calmest never; never more than once an hour) ----------
 const IDLE_KEY = 'fenmyr:idleAnim';
-const IDLE_SET = ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'];
+// sleepy isn't here: she dozes when no one has been around for a while (dozeCheck)
+const IDLE_SET = ['hop', 'wiggle', 'happy', 'love', 'dizzy'];
+const DOZE_MS = 15 * 60000;
 
 const idleGap = () => {
   const m = settings.myraCalm || 'lively',
@@ -96,10 +100,18 @@ export function init36() {
       ev,
       () => {
         appState.lastActive = Date.now();
+        wake();
       },
       { passive: true, capture: true },
     );
   });
 
   setInterval(idleCheck, 300000);
+  setInterval(dozeCheck, 60000);
+}
+
+/** After a long quiet spell with nothing running, she nods off until someone comes back. */
+export function dozeCheck() {
+  if (!session.board || working() || Date.now() - appState.lastActive < DOZE_MS) return '';
+  return react('longIdle');
 }

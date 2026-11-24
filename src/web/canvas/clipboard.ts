@@ -217,6 +217,6 @@ export function init22() {
     const r = copyCards();
     if (!r) return;
     putClip(e, r);
-    removeSelected();
+    removeSelected('cut');
   });
 }

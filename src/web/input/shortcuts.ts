@@ -297,7 +297,7 @@ export function init20() {
         writeClip(r).catch(() => {});
         if (e.key.toLowerCase() === 'x') {
           e.preventDefault();
-          removeSelected();
+          removeSelected('cut');
         }
       }
       return;

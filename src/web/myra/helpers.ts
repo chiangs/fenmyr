@@ -6,6 +6,7 @@ import { save } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { cardEl } from '../ui/dom.ts';
 import { GUIDE } from './chat.ts';
+import { react } from './react.ts';
 import { say } from './say.ts';
 import { paintStatus } from './status.ts';
 
@@ -65,9 +66,14 @@ export async function showConnections(force = false) {
   });
 }
 
-export function removeSelected() {
-  const gone = new Set(session.sel);
+// so many cards gone at once that she is startled; a cut isn't a loss, since they are on the clipboard
+const MANY_GONE = 5;
+
+export function removeSelected(how: 'delete' | 'cut' = 'delete') {
+  const gone = new Set(session.sel),
+    before = session.board.cards.length;
   session.board.cards = session.board.cards.filter(c => !gone.has(c.id));
+  if (how === 'delete' && before - session.board.cards.length >= MANY_GONE) react('manyDeleted');
   session.board.links = session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b));
   gone.forEach(id => {
     cardEl(id)?.remove();

@@ -96,7 +96,7 @@ async function idleAnimations(t: Smoke) {
   t.checkAll('idleAnim', {
     aliases: names === 'love|hop|party|',
     requests: requests === 'hop|||*',
-    plays: typeof idle.first === 'string' && ['hop', 'wiggle', 'happy', 'love', 'dizzy', 'sleepy'].includes(idle.first),
+    plays: typeof idle.first === 'string' && ['hop', 'wiggle', 'happy', 'love', 'dizzy'].includes(idle.first),
     once: idle.second === false,
     gap: idle.gapMin >= 59.9 && idle.gapMin <= 91,
     notOverTimer: overTimer === false,

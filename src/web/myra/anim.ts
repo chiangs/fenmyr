@@ -82,7 +82,11 @@ export const animName = (n: unknown) => {
   return ANIMS.some(a => a.name === k) ? k : ANIM_ALIAS[k] || '';
 };
 
-export function playAnim(name: string, say = true) {
+/** True while one of her animations, asked for or her own, is playing or held. */
+export const animating = () => animLive;
+
+// hold: the face stays until stopAnim, for one that lasts as long as something else, such as a doze
+export function playAnim(name: string, say = true, hold = false) {
   const a = ANIMS.find(x => x.name === animName(name));
   if (!a) return false;
   if (timerPose()) {
@@ -99,14 +103,7 @@ export function playAnim(name: string, say = true) {
     appState.animPose = a.pose;
     setPose(wantedPose());
   } else a.play?.();
-  animT = setTimeout(() => {
-    appState.animPose = null;
-    if (animLive) {
-      animLive = false;
-      liveOff();
-    }
-    setPose(wantedPose());
-  }, a.ms);
+  if (!hold) animT = setTimeout(stopAnim, a.ms);
   if (say) reply(`${a.line} ✦`, 5000);
   return true;
 }
