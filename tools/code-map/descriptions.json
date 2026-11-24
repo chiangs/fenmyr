@@ -450,6 +450,7 @@
     "tests/chatPaste.ts": "Paste chips in Myra’s input: a long paste is a chip whose full text reaches her as a file, with Open, Ctrl+Shift+V, its limits and Clear all chats.",
     "tests/chatRules.ts": "Checks where Myra’s chat sits, what board it leaves free, her input’s hint and what opens and closes the chat, for every case, in Node.",
     "tests/chatSees.ts": "Checks the “Myra sees” chips in Node and in the app: what each message is sent with, a queued question keeping its chips, and the header’s status line.",
+    "tests/chatSeesRoom.ts": "Checks the room in the “Myra sees” strip in the real app: 8 px below the chips, and with many chips a glimpse of a third row, scrolling, and the same room below the last row.",
     "tests/chatStarters.ts": "Checks the starters an empty chat offers for each kind of board, in Node.",
     "tests/codeMapBoundary.ts": "The renderer and host boundary: a clean graph, an import either way, a type-only one, shared code reaching out, and this repository staying clean.",
     "tests/codemap.ts": "Tests the code map: import extraction, cycles, descriptions check, JSON and Markdown output and the lookup command.",
