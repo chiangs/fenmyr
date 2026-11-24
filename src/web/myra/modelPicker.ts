@@ -1,11 +1,12 @@
 // The pill under Myra's input and the menu it opens: the model and effort her calls to Claude Code run on. The choice is
 // settings.myraModel, which src/web/hostCall.ts adds to every call that runs Claude Code.
 import {
+  DEFAULT_PROVIDER,
   EFFORTS,
   type Effort,
   listing,
-  type ModelChoice,
   type ModelEntry,
+  makeChoice,
   type ProviderId,
   type ProviderModels,
 } from '../../shared/models.ts';
@@ -20,8 +21,8 @@ import { closeOnOutsidePress, openAbove, openFlyout } from '../ui/popover.ts';
 import { reply } from './say.ts';
 
 const LEVELS: Record<Effort, string> = { low: 'Low', medium: 'Medium', high: 'High', xhigh: 'Extra', max: 'Max' };
-const RECOMMENDED: Effort = 'medium';
-const DEFAULT_TEXT = 'Claude Code default';
+const DEFAULT = 'Default';
+const FOLLOWS = 'Default follows your Claude Code settings.';
 
 type Listed = { provider: ProviderId; entry: ModelEntry };
 
@@ -30,6 +31,7 @@ let lists: ProviderModels[] = [];
 const listed = (): Listed[] => lists.flatMap(p => p.models.map(entry => ({ provider: p.provider, entry })));
 const isChosen = ({ provider, entry }: Listed) =>
   settings.myraModel?.provider === provider && settings.myraModel.id === entry.id;
+const hasModel = () => settings.myraModel?.id !== undefined;
 const chosen = () => listed().find(isChosen);
 
 const pill = () => $('mcModel');
@@ -41,68 +43,71 @@ const checkedIn = (el: HTMLElement) =>
 function showPill() {
   const choice = settings.myraModel,
     // a model the host no longer lists keeps its id as its name until the list says otherwise
-    name = chosen()?.entry.name ?? choice?.id,
-    level = choice ? LEVELS[choice.effort] : '',
-    text = choice ? `${name} ${level}` : DEFAULT_TEXT;
+    name = choice?.id === undefined ? undefined : (chosen()?.entry.name ?? choice.id),
+    level = choice?.effort ? LEVELS[choice.effort] : undefined,
+    text = [name ?? DEFAULT, level].filter(Boolean).join(' ');
   $('mcModelText').textContent = text;
-  pill().title = text;
+  pill().title = name === undefined || level === undefined ? `${text}\n${FOLLOWS}` : text;
 }
+
+// A row of either menu: a radio with its tick, its name and what ends it, which is a key or a note.
+function radioRow(attrs: string, on: boolean, name: string, end = '') {
+  const tick = on ? '✓' : '',
+    checked = String(on);
+  return `<button type="button" role="menuitemradio" aria-checked="${checked}" ${attrs}><span class="dm-ck">${tick}</span><span class="mm-name">${name}</span>${end}</button>`;
+}
+
+const keyHtml = (key: string) => `<span class="mm-key">${key}</span>`;
 
 function menuHtml() {
-  const now = chosen(),
-    models = listed()
-      .map((l, i) => {
-        const on = isChosen(l),
-          tick = on ? '✓' : '',
-          checked = String(on),
-          name = esc(l.entry.name),
-          key = i < 9 ? String(i + 1) : '';
-        return `<button type="button" role="menuitemradio" aria-checked="${checked}" data-model="${i}"><span class="dm-ck">${tick}</span><span class="mm-name">${name}</span><span class="mm-key">${key}</span></button>`;
-      })
+  const models = listed()
+      .map((l, i) => radioRow(`data-model="${i}"`, isChosen(l), esc(l.entry.name), keyHtml(i < 9 ? String(i + 1) : '')))
       .join(''),
-    level = now && settings.myraModel ? LEVELS[settings.myraModel.effort] : '',
-    off = String(!now),
-    tip = now ? '' : ' title="Choose a model first"',
+    off = radioRow('data-model="default"', !hasModel(), DEFAULT, keyHtml('0')),
+    level = settings.myraModel?.effort ? LEVELS[settings.myraModel.effort] : DEFAULT,
     caret = Icon('caret-right', { size: 10 });
-  return `${models}<span class="rm-sep" role="separator"></span><button type="button" role="menuitem" class="mm-effort" aria-haspopup="menu" aria-expanded="false" aria-disabled="${off}"${tip}><span class="dm-ck"></span><span class="mm-name">Effort</span><span class="mm-val">${level}</span>${caret}</button>`;
+  return `${off}${models}<span class="rm-sep" role="separator"></span><button type="button" role="menuitem" class="mm-effort" aria-haspopup="menu" aria-expanded="false"><span class="dm-ck"></span><span class="mm-name">Effort</span><span class="mm-val">${level}</span>${caret}</button>`;
 }
 
-function flyHtml(now: Listed, choice: ModelChoice) {
-  const levels = EFFORTS.filter(e => now.entry.efforts.includes(e))
-      .map(e => {
-        const on = e === choice.effort,
-          tick = on ? '✓' : '',
-          checked = String(on),
-          label = LEVELS[e],
-          note = e === RECOMMENDED ? '<span class="mm-note">Recommended</span>' : '';
-        return `<button type="button" role="menuitemradio" aria-checked="${checked}" data-effort="${e}"><span class="dm-ck">${tick}</span><span class="mm-name">${label}</span>${note}</button>`;
-      })
+// Default, then the levels the model lists. With no model, or one the host doesn't list, every level.
+function flyHtml(levels: readonly Effort[]) {
+  const now = settings.myraModel?.effort,
+    rows = EFFORTS.filter(e => levels.includes(e))
+      .map(e => radioRow(`data-effort="${e}"`, e === now, LEVELS[e]))
       .join(''),
+    off = radioRow('data-effort="default"', now === undefined, DEFAULT),
     who = esc(window.myraName || 'Myra'),
     help = `How long ${who} thinks before answering. Higher is slower and uses more of your plan.`;
-  return `<p id="mcModelHelp">${help}</p>${levels}`;
+  return `<p id="mcModelHelp">${help}</p>${off}${rows}`;
 }
-
-// The effort a model starts on: the one already saved if the model lists it, else Medium.
-const startEffort = (entry: ModelEntry, saved: Effort | undefined) =>
-  saved && entry.efforts.includes(saved) ? saved : entry.efforts.includes(RECOMMENDED) ? RECOMMENDED : entry.efforts[0];
 
 // menuKeys keeps the pill's aria-expanded, whichever way the menu goes
 function closeMenu() {
   menuEl()?.remove();
 }
 
-function choose(choice: ModelChoice) {
-  settings.myraModel = choice;
+// Each part is Default or set, and Default for both is no setting at all.
+function choose(provider: ProviderId, id: string | undefined, effort: Effort | undefined) {
+  const choice = makeChoice(provider, id, effort);
+  if (choice) settings.myraModel = choice;
+  else delete settings.myraModel;
   applySettings();
   showPill();
   closeMenu();
   pill().focus();
 }
 
-function pickModel({ provider, entry }: Listed) {
-  const effort = startEffort(entry, settings.myraModel?.effort);
-  if (effort) choose({ provider, id: entry.id, effort });
+// The effort stays as it is unless the model doesn't list it, and then it goes back to Default.
+function pickModel(model?: Listed) {
+  const effort = settings.myraModel?.effort,
+    kept = effort && (!model || model.entry.efforts.includes(effort)) ? effort : undefined;
+  choose(model?.provider ?? DEFAULT_PROVIDER, model?.entry.id, kept);
+}
+
+// the model stays whatever the host lists, so one it can't list yet is not lost by a change of effort
+function pickEffort(effort: Effort | undefined) {
+  const model = settings.myraModel;
+  choose(model?.provider ?? DEFAULT_PROVIDER, model?.id, effort);
 }
 
 function closeFly() {
@@ -118,15 +123,12 @@ function shield(e: KeyboardEvent) {
 }
 
 function openFly(m: HTMLElement, row: HTMLElement) {
-  const now = chosen(),
-    choice = settings.myraModel;
-  if (!now || !choice) return;
   if (flyEl()) return closeFly();
   const fly = document.createElement('section');
   fly.className = 'row-menu mc-modelfly';
   fly.setAttribute('aria-label', 'Effort');
   fly.setAttribute('aria-describedby', 'mcModelHelp');
-  fly.innerHTML = flyHtml(now, choice);
+  fly.innerHTML = flyHtml(chosen()?.entry.efforts ?? EFFORTS);
   m.appendChild(fly);
   openFlyout(fly, m);
   row.setAttribute('aria-expanded', 'true');
@@ -149,9 +151,9 @@ function onKey(e: KeyboardEvent, m: HTMLElement) {
   } else if (e.key === 'ArrowRight' && on instanceof HTMLElement && on.classList.contains('mm-effort')) {
     e.preventDefault();
     openFly(m, on);
-  } else if (/^[1-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+  } else if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
     const model = listed()[Number(e.key) - 1];
-    if (model) pickModel(model);
+    if (e.key === '0' || model) pickModel(model);
   }
   shield(e);
 }
@@ -160,10 +162,10 @@ function onClick(e: MouseEvent, m: HTMLElement) {
   const model = closestTo(e.target, '[data-model]'),
     level = closestTo(e.target, '[data-effort]'),
     row = closestTo(e.target, '.mm-effort', HTMLElement),
-    effort = EFFORTS.find(x => x === level?.dataset.effort),
     now = listed()[Number(model?.dataset.model)];
-  if (model && now) pickModel(now);
-  else if (effort && settings.myraModel) choose({ ...settings.myraModel, effort });
+  if (model?.dataset.model === 'default') pickModel();
+  else if (model && now) pickModel(now);
+  else if (level) pickEffort(EFFORTS.find(x => x === level.dataset.effort));
   else if (row) openFly(m, row);
 }
 

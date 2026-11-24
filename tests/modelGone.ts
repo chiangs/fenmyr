@@ -19,6 +19,9 @@ declare global {
 const GONE = { provider: 'claude-code', id: 'claude-gone-1', effort: 'high' };
 const SONNET = { provider: 'claude-code', id: 'claude-sonnet-5-5', effort: 'high' };
 const NO_FLAGS = { model: undefined, effort: undefined };
+// a part left out is Default: it is neither looked for in the host's list nor sent
+const MODEL_ONLY = { provider: 'claude-code', id: 'claude-sonnet-5-5' };
+const EFFORT_ONLY = { provider: 'claude-code', effort: 'high' };
 const lineFor = (id: string) =>
   `I couldn’t find ${id} any more, so I’m using Claude Code’s default until you pick another.`;
 
@@ -131,13 +134,13 @@ async function check(name: string, run: () => Promise<void>) {
     assert.deepStrictEqual(await t.said(), [lineFor('claude-gone-1')], 'her line names the saved id');
     assert.strictEqual(await t.shown(), 1, 'and is in the chat');
     assert.strictEqual(await t.saved(), null, 'the choice is gone from the saved settings');
-    assert.strictEqual(await t.pill(), 'Claude Code default');
+    assert.strictEqual(await t.pill(), 'Default');
   });
 
   await check('she runs on Claude Code’s default and says it once, however many messages follow', async () => {
     assert.deepStrictEqual(await t.ask('first'), NO_FLAGS, 'no --model and no --effort');
     assert.deepStrictEqual(await t.ask('second'), NO_FLAGS);
-    assert.strictEqual(await t.pill(), 'Claude Code default', 'she picked no other model');
+    assert.strictEqual(await t.pill(), 'Default', 'she picked no other model');
     assert.strictEqual(await t.shown(), 1, 'the line was not said again');
     await t.close();
     await t.open();
@@ -157,7 +160,7 @@ async function check(name: string, run: () => Promise<void>) {
     await page.reload();
     await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
     await t.open();
-    assert.strictEqual(await t.pill(), 'Claude Code default');
+    assert.strictEqual(await t.pill(), 'Default');
     assert.strictEqual(await t.saved(), null);
     assert.strictEqual((await t.said()).length, 1, 'still the one line');
     assert.deepStrictEqual(await t.ask('third'), NO_FLAGS);
@@ -207,9 +210,58 @@ async function check(name: string, run: () => Promise<void>) {
       );
       await t.open();
       assert.strictEqual(await t.shown(), 1, 'and it is there when the chat opens, once');
-      assert.strictEqual(await t.pill(), 'Claude Code default');
+      assert.strictEqual(await t.pill(), 'Default');
     },
   );
+  assert.deepStrictEqual(t.l.errors, [], 'no page errors');
+  await t.l.close();
+}
+
+{
+  const t = await start(EFFORT_ONLY);
+  await check('an effort alone has no model to be gone, so it is kept and sent on its own', async () => {
+    await t.open();
+    await t.answered();
+    assert.deepStrictEqual(await t.saved(), EFFORT_ONLY);
+    assert.strictEqual(await t.pill(), 'Default High');
+    assert.deepStrictEqual(await t.said(), []);
+    assert.deepStrictEqual(await t.ask('hello'), { model: undefined, effort: 'high' });
+  });
+  assert.deepStrictEqual(t.l.errors, [], 'no page errors');
+  await t.l.close();
+}
+
+{
+  const t = await start(MODEL_ONLY);
+  const { page } = t;
+  await check('a model alone is not cleared when the model stops listing an effort it never had', async () => {
+    await t.answer('short');
+    await page.evaluate(
+      () => void window.Fenmyr.rewrite('Hello there, rewrite me', 'shorter', 'T', 'around').catch(() => undefined),
+    );
+    assert.deepStrictEqual(
+      flagsOf((await t.sentAbout('Hello there, rewrite me')).args),
+      { model: 'claude-sonnet-5-5', effort: undefined },
+      'the rewrite left on the model alone',
+    );
+    assert.deepStrictEqual(await t.saved(), MODEL_ONLY);
+    assert.deepStrictEqual(await t.said(), []);
+  });
+  assert.deepStrictEqual(t.l.errors, [], 'no page errors');
+  await t.l.close();
+}
+
+{
+  const t = await start({ ...MODEL_ONLY, id: 'claude-gone-1' });
+  await check('a model alone that the host no longer lists is cleared and she says so', async () => {
+    await t.open();
+    await t.answered();
+    await t.l.page.locator('#mcList .mc-msg.myra', { hasText: 'couldn’t find' }).waitFor();
+    assert.deepStrictEqual(await t.said(), [lineFor('claude-gone-1')]);
+    assert.strictEqual(await t.saved(), null);
+    assert.strictEqual(await t.pill(), 'Default');
+    assert.deepStrictEqual(await t.ask('hello'), NO_FLAGS);
+  });
   assert.deepStrictEqual(t.l.errors, [], 'no page errors');
   await t.l.close();
 }

@@ -1,6 +1,6 @@
 // Myra's chosen model and effort, as each host call to Claude Code passes them on, with no window: a stand-in Claude Code
-// logs the arguments it was run with. A choice the provider doesn't list passes no flags, so Claude Code keeps its own
-// default and Myra still answers.
+// logs the arguments it was run with. A part the choice leaves out, which is Default, passes no flag for itself, and a
+// choice the provider doesn't list passes none at all, so Claude Code keeps its own settings and Myra still answers.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -9,7 +9,13 @@ import path from 'node:path';
 import type { CodeAgent } from '../src/host/codeAgent.ts';
 import { listModels, parseChoice } from '../src/host/models.ts';
 import type { BuildEvent } from '../src/shared/build.ts';
-import { listing, type ModelChoice, type ModelEntry, type ProviderModels } from '../src/shared/models.ts';
+import {
+  listing,
+  type ModelChoice,
+  type ModelEntry,
+  type ProviderModels,
+  readModelChoice,
+} from '../src/shared/models.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-model-args-')));
 // read as the host modules load: the stand-in is found at ~/.local/bin/claude, and usage is kept under XDG_DATA_HOME
@@ -50,11 +56,29 @@ assert.deepStrictEqual(
   { model: 'claude-sonnet-5-5', effort: 'high' },
   'a rewrite runs on the chosen model and effort',
 );
+// each part on its own: the other one is Default, so its flag is left off
+const modelOnly = { provider: 'claude-code', id: 'claude-sonnet-5-5' };
+const effortOnly = { provider: 'claude-code', effort: 'low' };
+assert.deepStrictEqual(
+  await flags(() => claude.rewrite({ text: 'Hi', myraModel: modelOnly })),
+  { model: 'claude-sonnet-5-5', effort: undefined },
+  'a model alone sends --model and no --effort',
+);
+assert.deepStrictEqual(
+  await flags(() => claude.rewrite({ text: 'Hi', myraModel: effortOnly })),
+  { model: undefined, effort: 'low' },
+  'an effort alone sends --effort and no --model',
+);
 const unlisted = {
   'no choice': undefined,
+  'neither a model nor an effort': { provider: 'claude-code' },
   'a model the provider does not list': { ...sonnet, id: 'claude-sonnet-4' },
+  'a model alone that the provider does not list': { ...modelOnly, id: 'claude-sonnet-4' },
   'another provider': { ...sonnet, provider: 'ollama' },
+  'an effort alone for another provider': { ...effortOnly, provider: 'ollama' },
   'an effort that is not a level': { ...sonnet, effort: 'ultra' },
+  'an effort alone that is not a level': { ...effortOnly, effort: 'ultra' },
+  'a model that is not a string, with an effort': { ...sonnet, id: 5 },
   'a choice that is not an object': 'claude-sonnet-5-5',
 };
 for (const [what, myraModel] of Object.entries(unlisted))
@@ -71,21 +95,47 @@ const hostList = await listModels();
 const claudeList = (models: ModelEntry[]): ProviderModels[] => [
   { provider: 'claude-code', name: 'Claude Code', models },
 ];
+const lowOnly = claudeList([{ id: pick.id, name: 'S', efforts: ['low'] }]);
+const idOnly: ModelChoice = { provider: 'claude-code', id: pick.id };
+const levelOnly: ModelChoice = { provider: 'claude-code', effort: 'max' };
 const standing: [string, ProviderModels[], ModelChoice, ReturnType<typeof listing>][] = [
   ['a model and effort it lists', hostList, pick, 'listed'],
   ['a model it does not list', hostList, { ...pick, id: 'claude-gone-1' }, 'gone'],
-  ['an effort the model does not list', claudeList([{ id: pick.id, name: 'S', efforts: ['low'] }]), pick, 'gone'],
+  ['an effort the model does not list', lowOnly, pick, 'gone'],
   ['a provider that lists no models', claudeList([]), pick, 'unknown'],
   ['no providers', [], pick, 'unknown'],
+  ['a model alone that it lists', hostList, idOnly, 'listed'],
+  ['a model alone that it does not list', hostList, { ...idOnly, id: 'claude-gone-1' }, 'gone'],
+  ['a model alone, whatever efforts it lists', lowOnly, idOnly, 'listed'],
+  ['an effort alone', hostList, levelOnly, 'listed'],
+  ['an effort alone, whatever models are listed', lowOnly, levelOnly, 'listed'],
+  ['an effort alone, with no providers to ask', [], levelOnly, 'unknown'],
 ];
 for (const [what, lists, choice, expected] of standing)
   assert.strictEqual(listing(lists, choice), expected, `${what} is ${expected}`);
-for (const choice of [pick, { ...pick, id: 'claude-gone-1' }])
+for (const choice of [pick, { ...pick, id: 'claude-gone-1' }, idOnly, { ...idOnly, id: 'claude-gone-1' }, levelOnly])
   assert.strictEqual(
     (await parseChoice(choice)) !== undefined,
     listing(hostList, choice) === 'listed',
-    `the host sends ${choice.id} exactly when the page's rule lists it`,
+    `the host sends ${JSON.stringify(choice)} exactly when the page's rule lists it`,
   );
+
+// a value read from storage or the bridge: a part left out is Default, and neither is no choice at all
+const read: [string, unknown, ModelChoice | undefined][] = [
+  [
+    'a model and effort',
+    { provider: 'claude-code', id: 'm', effort: 'high' },
+    { provider: 'claude-code', id: 'm', effort: 'high' },
+  ],
+  ['a model alone', { provider: 'claude-code', id: 'm' }, { provider: 'claude-code', id: 'm' }],
+  ['an effort alone', { provider: 'claude-code', effort: 'high' }, { provider: 'claude-code', effort: 'high' }],
+  ['neither', { provider: 'claude-code' }, undefined],
+  ['an unknown provider', { provider: 'ollama', id: 'm' }, undefined],
+  ['an id that is not a string', { provider: 'claude-code', id: 5 }, undefined],
+  ['an effort that is not a level', { provider: 'claude-code', id: 'm', effort: 'ultra' }, undefined],
+  ['an effort that is null', { provider: 'claude-code', id: 'm', effort: null }, undefined],
+];
+for (const [what, value, expected] of read) assert.deepStrictEqual(readModelChoice(value), expected, what);
 
 const haiku = { model: 'claude-haiku-5-5', effort: 'max' },
   myraModel = { provider: 'claude-code', id: haiku.model, effort: haiku.effort };
@@ -106,6 +156,11 @@ for (const access of ['edit', 'read'] as const) {
     await flags(() => claudeCode({ ...job, model: opus }, () => {})),
     { model: 'claude-opus-5-5', effort: 'xhigh' },
     `a code run with ${access} access runs on the job's model`,
+  );
+  assert.deepStrictEqual(
+    await flags(() => claudeCode({ ...job, model: { provider: 'claude-code', effort: 'low' } }, () => {})),
+    { model: undefined, effort: 'low' },
+    `and on its own model with the job's effort alone`,
   );
   assert.deepStrictEqual(await flags(() => claudeCode(job, () => {})), none, `and on the default without one`);
 }
