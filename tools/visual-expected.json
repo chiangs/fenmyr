@@ -47,7 +47,7 @@
   "model-picker-pill": "The “Myra sees” strip has 8 px below its chips where it had 2 px, so it is 6 px taller, and the empty chat's greeting and starters, which sit in the middle of the space under it, move down 3 px.",
   "modes-drawing": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
   "modes-find": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
-  "modes-find-chat": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",
+  "modes-find-chat": "Find now matches a vault note's properties, so “a” finds the Vault note by “draft” and Myra's reply and the bar say 12 cards where the base says 11; the reply is a digit wider and its words move with it.",
   "new-project-dark-dialog": "New state: the New project dialog in dark mode, on the panel colour with the first row chosen. + Project opens it and the base has no dialog, so the base shows the board alone.",
   "new-project-dialog": "New state: the New project dialog over the board in light mode, with its name selected and Blank board chosen. + Project opens it and the base has no dialog, so the base shows the board alone.",
   "new-project-phone-dialog": "New state: the New project dialog in a 600 px window, where it takes the width less 32 px. The base has no dialog, so it shows the board alone.",
