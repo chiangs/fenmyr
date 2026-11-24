@@ -75,7 +75,7 @@ function videoPlayer(c: CardOf<'video'>) {
       : when(c.needTx, '<div class="vd-txt-acts"><button data-act="vd-tx">✦ Write it out</button></div>'),
     transcript = when(c.txShown, `<div class="vd-txt"><div class="vd-txt-body${waiting}">${words}</div>${acts}</div>`);
   return (
-    `<div class="vd-stage"><video class="vd-v"></video><button class="vd-play" data-act="vd-play" aria-label="Play">${PLAY}</button></div><div class="vd-bar"><button class="vd-pp" data-act="vd-play" aria-label="Play or pause">${PLAY}</button><div class="vd-prog" data-act="vd-seek"><i></i></div><span class="vd-time">${time}</span><button class="vd-mute${muted}" data-act="vd-mute" aria-label="Sound">${SPK}</button><button class="vd-txb${hasText}" data-act="vd-tx" aria-label="Write it out" data-tip="Write it out">${captions}</button></div>` +
+    `<div class="vd-stage"><video class="vd-v"></video><button class="vd-play" data-act="vd-play" aria-label="Play">${PLAY}</button></div><div class="vd-bar"><button class="vd-pp" data-act="vd-play" aria-label="Play or pause">${PLAY}</button><div class="vd-prog" data-act="vd-seek"><i></i></div><span class="vd-time">${time}</span><button class="vd-mute${muted}" data-act="vd-mute" aria-label="Sound">${SPK}</button><button class="vd-txb${hasText}" data-act="vd-tx" aria-label="Write it out" data-tip="Write it out" data-tip-at="above-end">${captions}</button></div>` +
     transcript
   );
 }

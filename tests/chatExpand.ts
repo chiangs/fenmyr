@@ -104,7 +104,11 @@ await check('Expand and Shrink keep the draft and caret', async () => {
     'Expand to write',
     'the label does not change',
   );
-  assert.strictEqual(await page.getAttribute('#mcExpand', 'title'), 'Shrink (Esc)', 'the tip says what a press does');
+  assert.strictEqual(
+    await page.getAttribute('#mcExpand', 'data-tip'),
+    'Shrink (Esc)',
+    'the tip says what a press does',
+  );
   assert.deepStrictEqual(await caret(), before, 'draft, selection and focus are the same in Expand');
   const big = await sizes();
   assert.ok(big.input > small.input * 2, `the input grew from ${small.input} to ${big.input}`);
@@ -117,7 +121,7 @@ await check('Expand and Shrink keep the draft and caret', async () => {
   assert.ok(!(await writing()), 'Shrink returns');
   assert.strictEqual(await page.getAttribute('#mcExpand', 'aria-pressed'), 'false');
   assert.strictEqual(await page.getAttribute('#mcExpand', 'aria-label'), 'Expand to write');
-  assert.strictEqual(await page.getAttribute('#mcExpand', 'title'), 'Expand to write');
+  assert.strictEqual(await page.getAttribute('#mcExpand', 'data-tip'), 'Expand to write');
   assert.deepStrictEqual(await caret(), before, 'draft, selection and focus are the same after Shrink');
   assert.ok(await visible('#mcList'), 'the messages are back');
   await page.keyboard.press('Control+z');

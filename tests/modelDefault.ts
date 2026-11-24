@@ -17,7 +17,7 @@ const { page } = l;
 const { pillText, attr, count, saved, ask, openMenu, pickModel, pickEffort, press } = modelKit(l);
 
 const ticked = () => page.locator('#mcModelMenu [aria-checked="true"] .mm-name').allTextContents();
-const tip = () => attr('#mcModel', 'title');
+const tip = () => attr('#mcModel', 'data-tip');
 
 await page.click('#mPill');
 await page.waitForFunction(() => !!document.getElementById('myra')?.classList.contains('chat'));

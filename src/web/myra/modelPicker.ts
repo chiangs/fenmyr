@@ -47,7 +47,8 @@ function showPill() {
     level = choice?.effort ? LEVELS[choice.effort] : undefined,
     text = [name ?? DEFAULT, level].filter(Boolean).join(' ');
   $('mcModelText').textContent = text;
-  pill().title = name === undefined || level === undefined ? `${text}\n${FOLLOWS}` : text;
+  pill().ariaLabel = text;
+  pill().dataset.tip = name === undefined || level === undefined ? `${text}\n${FOLLOWS}` : text;
 }
 
 // A row of either menu: a radio with its tick, its name and what ends it, which is a key or a note.

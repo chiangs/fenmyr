@@ -84,7 +84,7 @@ const narrowChat = (on: boolean) =>
 
 await check('before a choice, the pill says Default and Claude Code keeps its own settings', async () => {
   assert.strictEqual(await pillText(), 'Default');
-  assert.strictEqual(await attr('#mcModel', 'title'), `Default\n${FOLLOWS}`, 'the tip says what Default follows');
+  assert.strictEqual(await attr('#mcModel', 'data-tip'), `Default\n${FOLLOWS}`, 'the tip says what Default follows');
   assert.strictEqual(await attr('#mcModel', 'aria-haspopup'), 'menu');
   assert.deepStrictEqual(await ask('first'), NO_FLAGS, 'a message sends neither --model nor --effort');
 });
@@ -146,7 +146,7 @@ await check(
     await pickModel('Sonnet 5.5');
     assert.strictEqual(await count('#mcModelMenu'), 0, 'picking closes the menu');
     assert.strictEqual(await pillText(), 'Sonnet 5.5');
-    assert.strictEqual(await attr('#mcModel', 'title'), `Sonnet 5.5\n${FOLLOWS}`);
+    assert.strictEqual(await attr('#mcModel', 'data-tip'), `Sonnet 5.5\n${FOLLOWS}`);
     assert.strictEqual((await focused()).id, 'mcModel', 'focus is back on the pill');
     assert.deepStrictEqual(await ask('second'), { model: 'claude-sonnet-5-5', effort: undefined });
   },
