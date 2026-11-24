@@ -1,5 +1,6 @@
 // What Myra is told about making boards, folders and projects: boards.create is in her reply format, and projects.create
-// is said to open a dialog the person finishes, so she never claims to have made the project.
+// is said to open a dialog the person finishes, so she never claims to have made the project. Filing and moving make no
+// project, and move's project is the one to look in first.
 import assert from 'node:assert';
 import { ask } from '../src/host/prompts.ts';
 import { MAX_MADE } from '../src/shared/myraReply.ts';
@@ -25,6 +26,8 @@ for (const has of [
   '"boards": {"create": ["board name"]}',
   '"projects": {"create": ["project name"]',
   '"folders": {"create": [{"name": "folder name", "project": "project name or null"}]',
+  '"file": [{"folder": "folder name", "project": "an existing project\'s name, or null to take it out of its project"}]',
+  '"move": [{"board": "board id", "folder": "folder name, or null to take it out of its folder", "project": "optional: an existing project\'s name, to look for the folder in first"}]',
 ])
   assert.ok(prompt.includes(has), `her reply format keeps ${has}`);
 
@@ -35,8 +38,14 @@ for (const says of [
   '"projects": {"create"} only opens the New project dialog',
   'nothing exists until they do, so say you have opened it, never that you made the project',
   'The app adds a line saying what it made',
+  'Moving a board into a folder that doesn\'t exist yet creates it, in the project you name in the move\'s "project"',
+  '"file" and "move" never make a project: one you name must already be in "library"',
+  'offer to start it; a yes leads to "projects": {"create"}',
+  "a folder that isn't there is left out, never made",
+  'and in "move" the project you name is looked in before that',
 ])
   assert.ok(library.includes(says), `she is told: ${says}`);
+assert.ok(!library.includes('creates the project'), 'filing a folder into a project is no longer said to make it');
 assert.ok(
   prompt.includes('("timer", "stopTimer", "animate", "boards", "folders", "projects"), just do it'),
   'she makes them herself rather than pointing at the slash commands that do the same',

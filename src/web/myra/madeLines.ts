@@ -44,6 +44,8 @@ export const projectTaken = ({ name, asked }: { name: string; asked: string }) =
 export const noProject = (project: string, folder: string) =>
   `There is no project called “${project}” yet, so I did not make the folder “${folder}”.`;
 
+export const noFolder = (folder: string) => `I could not find a folder called “${folder}”, so I did not move it.`;
+
 // the names after the one a dialog or a form takes
 const oneAtATime = (what: string, rest: number) => `${what} one at a time, so I did not make ${left(rest, 'other')}.`;
 export const oneProject = (rest: number) => oneAtATime('The dialog starts projects', rest);

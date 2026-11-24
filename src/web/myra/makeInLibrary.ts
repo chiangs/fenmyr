@@ -1,12 +1,15 @@
-import type { FolderWish, Wanted } from '../../shared/myraReply.ts';
-import { appState } from '../core/state.ts';
+import type { Project } from '../../shared/model.ts';
+import type { FolderWish, MyraReply, Wanted } from '../../shared/myraReply.ts';
+import { appState, session } from '../core/state.ts';
 import { addBoardHere, addFolderHere } from '../library/addHere.ts';
+import { createFolder, currentPlace } from '../library/create.ts';
 import { openNewProject } from '../library/newProject.ts';
-import { byName } from '../library/tree.ts';
+import { byName, findFolder, moveBoard, putFolder } from '../library/tree.ts';
 import {
   boardsMade,
   cappedAt,
   folderMade,
+  noFolder,
   noProject,
   oneProject,
   onePrototype,
@@ -14,8 +17,8 @@ import {
   prototypeAsked,
 } from './madeLines.ts';
 
-// What her reply makes in the library. Each is what the button or slash command makes, through the same function, and
-// `told` collects what she says of it, which joins her own words once the work is done.
+// What her reply makes in the library, and the folders and boards it sorts. Each is what the button or slash command
+// does, through the same function, and `told` collects what she says of it, which joins her own words once the work is done.
 
 // Her folders.create: what /folder makes, at the top of the project the person is in or of the one she names. A project
 // that does not exist is not made for it: a project is started in its dialog, which the person finishes.
@@ -62,4 +65,68 @@ export function startProject({ items, over }: Wanted<string>, told: string[]) {
     others = rest.length + over;
   if (taken) told.push(taken);
   if (others) told.push(oneProject(others));
+}
+
+type Sorting = NonNullable<MyraReply['folders']>;
+
+// The project the person is in: the one they are looking at, or else the one the open board's folder is in.
+function projectHere() {
+  const id = currentPlace().project ?? appState.folders.find(f => f.id === session.board?.folder)?.project;
+  return appState.projects.find(p => p.id === id);
+}
+
+// The folder a name means. It is looked for in each project of `lookIn` in turn and then in the whole library, so two
+// projects that each have a "Boards" folder are not mixed up, and a name only one folder has is found wherever it is.
+function folderNamed(name: string, lookIn: readonly (Project | undefined)[]) {
+  for (const project of lookIn) {
+    const there = project ? appState.folders.filter(f => f.project === project.id) : [],
+      found = byName(there, name);
+    if (found) return found;
+  }
+  return findFolder(name);
+}
+
+// Her folders.file puts a folder that is there into the project she names, or takes it out of its project with none. It
+// makes nothing: a project or folder that is not there is left out with a line, and the other entries still apply. The
+// project is where the folder goes, so it is not searched, or a folder of that name already in it would be the one found.
+export function fileFolders(files: NonNullable<Sorting['file']>, told: string[]) {
+  const here = projectHere();
+  for (const { folder, project } of files) {
+    const into = project ? byName(appState.projects, project) : undefined;
+    if (project && !into) {
+      told.push(noProject(project, folder));
+      continue;
+    }
+    const found = folderNamed(folder, [here]);
+    if (!found) {
+      told.push(noFolder(folder));
+      continue;
+    }
+    putFolder(found.id, null, into?.id ?? null);
+  }
+}
+
+// Her folders.move puts a board into a folder, or out of its folders with none. A folder that is not there is made the
+// way /folder makes one, in the project she names or else the one the person is in, and she says so. A project that is
+// not there is not made: that entry is left out with a line, and the other entries still apply.
+export async function moveBoards(moves: NonNullable<Sorting['move']>, told: string[]) {
+  const here = projectHere();
+  for (const { board, folder, project } of moves) {
+    if (!appState.boardList.some(b => b.id === board)) continue;
+    if (!folder) {
+      await moveBoard(board, null);
+      continue;
+    }
+    const target = project ? byName(appState.projects, project) : undefined;
+    if (project && !target) {
+      told.push(noProject(project, folder));
+      continue;
+    }
+    let into = folderNamed(folder, [target, here]);
+    if (!into) {
+      into = await createFolder({ project: (target ?? here)?.id ?? null, folder: null }, folder);
+      told.push(folderMade(into, folder));
+    }
+    await moveBoard(board, into.id);
+  }
 }

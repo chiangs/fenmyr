@@ -13,7 +13,7 @@ import { buildTplPick, freeName, myTpls, saveAsTemplate } from '../features/temp
 import { startTimer, stopTimer, timer } from '../features/timer.ts';
 import { loadLib } from '../library/nesting.ts';
 import { refreshBoards } from '../library/rowMenu.ts';
-import { byName, findFolder, makeFolder, makeProject, moveBoard, putFolder, saveLib } from '../library/tree.ts';
+import { byName, findFolder, saveLib } from '../library/tree.ts';
 import { startBuild } from '../proto/build.ts';
 import { gitAction } from '../proto/gitActions.ts';
 import { askInstall } from '../proto/install.ts';
@@ -21,7 +21,7 @@ import { applyNewPrototype } from '../repo/myra.ts';
 import { animIntent, animName, playAnim } from './anim.ts';
 import type { HeldReply } from './applyTypes.ts';
 import { animAskedAt, timerAskedAt } from './chat.ts';
-import { makeBoards, makeFolders, startProject } from './makeInLibrary.ts';
+import { fileFolders, makeBoards, makeFolders, moveBoards, startProject } from './makeInLibrary.ts';
 import type { SayAction } from './say.ts';
 
 type Part<K extends keyof MyraReply> = NonNullable<MyraReply[K]>;
@@ -203,16 +203,8 @@ async function sortLibrary({ projects: pr, folders: fo, make }: Extract<Effect, 
     const f = findFolder(o.from);
     if (f && o.to) f.name = String(o.to).trim();
   }
-  for (const o of fo?.file ?? []) {
-    const f = findFolder(o.folder) || makeFolder(o.folder);
-    putFolder(f.id, null, o.project ? makeProject(o.project).id : null);
-  }
-  for (const m of fo?.move ?? []) {
-    if (!appState.boardList.some(b => b.id === m.board)) continue;
-    const f = m.folder ? makeFolder(m.folder) : null;
-    if (f && m.project) putFolder(f.id, null, makeProject(m.project).id);
-    await moveBoard(m.board, f ? f.id : null);
-  }
+  fileFolders(fo?.file ?? [], told);
+  await moveBoards(fo?.move ?? [], told);
   for (const x of [...appState.projects, ...appState.folders]) x.open = true;
   await saveLib();
   await refreshBoards();
