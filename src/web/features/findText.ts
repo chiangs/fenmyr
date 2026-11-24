@@ -1,5 +1,6 @@
 import type { Card } from '../../shared/model.ts';
 import { captureTag } from '../proto/capture.ts';
+import { plainOf } from '../richtext/render.ts';
 import { dueChip } from './due.ts';
 
 // The words a piece of markup draws, so a chip or a tag is searched as it reads and not as it is built
@@ -51,9 +52,21 @@ function ownWords(c: Card): (string | undefined)[] {
   }
 }
 
+// A rich note's text is stored as markup, so it is read as the words it draws. Reading it means parsing it, and Find reads
+// every card on each keystroke, so the words are kept until the note's text changes.
+const drawn = new WeakMap<Card, { text: string | undefined; words: string }>();
+function textOf(c: Card) {
+  if (c.type !== 'note' || !c.rich) return c.text;
+  const kept = drawn.get(c);
+  if (kept && kept.text === c.text) return kept.words;
+  const words = plainOf(c);
+  drawn.set(c, { text: c.text, words });
+  return words;
+}
+
 // What every card holds, including the label pill on its edge, then what its type adds. Lower case, as the query is.
 export const findText = (c: Card) =>
-  [c.text, c.name, c.title, ...(c.tags ?? []).map(t => `#${t}`), c.tagText, ...ownWords(c)]
+  [textOf(c), c.name, c.title, ...(c.tags ?? []).map(t => `#${t}`), c.tagText, ...ownWords(c)]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();

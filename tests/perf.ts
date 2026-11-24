@@ -12,6 +12,7 @@ type Metrics = {
   zoomTaskMsPerStep: number;
   editTaskMs: number;
   findTaskMs: number;
+  findScriptMs: number;
   heapMB: number;
   appMB: number;
   mainMB: number;
@@ -26,10 +27,16 @@ async function metric(cdp: CDPSession, name: string) {
   return found.value;
 }
 
-async function mainThread(cdp: CDPSession, act: () => Promise<unknown>) {
-  const before = await metric(cdp, 'TaskDuration');
+// ScriptDuration is the part of TaskDuration spent in script. A find's task time is mostly style and paint for the cards it
+// dims, which hides what Find itself computes, so findScriptMs reads that part alone.
+async function mainThread(
+  cdp: CDPSession,
+  act: () => Promise<unknown>,
+  counter: 'TaskDuration' | 'ScriptDuration' = 'TaskDuration',
+) {
+  const before = await metric(cdp, counter);
   await act();
-  return ((await metric(cdp, 'TaskDuration')) - before) * 1000;
+  return ((await metric(cdp, counter)) - before) * 1000;
 }
 
 // Memory per process as PSS: pages shared between Chromium's processes are split between them rather than counted in
@@ -139,15 +146,23 @@ async function measure(dir: string): Promise<Metrics> {
   await page.press('#mcInput', 'Enter');
   await page.waitForFunction(() => document.getElementById('findBar')?.checkVisibility());
   const counted = () => page.evaluate(() => document.getElementById('fbCount')?.textContent ?? '');
-  let findTaskMs = 0;
+  let findTaskMs = 0,
+    findScriptMs = 0;
   // each query gives a different count from the one before, which is how the page says its answer is in. A hit then glides
-  // the board to it, a 260 ms animation that costs the same whatever Find matched, so it is waited out and not timed.
+  // the board to it, a 260 ms animation that costs the same whatever Find matched, so it is waited out and not timed. The
+  // bar's first run, above, has read every card once, so these are the finds after it and not the first.
   for (const q of ['idea', 'number 4', 'zq', 'list']) {
     const was = await counted();
-    findTaskMs += await mainThread(cdp, async () => {
-      await page.fill('#fbQ', q);
-      await page.waitForFunction(was => document.getElementById('fbCount')?.textContent !== was, was);
-    });
+    findScriptMs += await mainThread(
+      cdp,
+      async () => {
+        findTaskMs += await mainThread(cdp, async () => {
+          await page.fill('#fbQ', q);
+          await page.waitForFunction(was => document.getElementById('fbCount')?.textContent !== was, was);
+        });
+      },
+      'ScriptDuration',
+    );
     await page.waitForFunction(() => !document.getElementById('stage')?.classList.contains('moving'));
   }
   if (l.errors.length) throw new Error(`page errors: ${l.errors.join('; ')}`);
@@ -159,6 +174,7 @@ async function measure(dir: string): Promise<Metrics> {
     zoomTaskMsPerStep: zoomTask / STEPS,
     editTaskMs,
     findTaskMs,
+    findScriptMs,
     heapMB,
     appMB: sum(),
     mainMB: sum('Browser'),
@@ -178,6 +194,7 @@ const METRICS = [
   'zoomTaskMsPerStep',
   'editTaskMs',
   'findTaskMs',
+  'findScriptMs',
   'heapMB',
   'appMB',
   'mainMB',
@@ -202,6 +219,7 @@ function summary(runs: Metrics[]): Record<keyof Metrics, Spread> {
     zoomTaskMsPerStep: of('zoomTaskMsPerStep'),
     editTaskMs: of('editTaskMs'),
     findTaskMs: of('findTaskMs'),
+    findScriptMs: of('findScriptMs'),
     heapMB: of('heapMB'),
     appMB: of('appMB'),
     mainMB: of('mainMB'),
