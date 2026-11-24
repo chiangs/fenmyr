@@ -32,7 +32,7 @@ const listOf = async (p: Provider): Promise<ProviderModels> => ({
 
 export const listModels = (): Promise<ProviderModels[]> => Promise.all(PROVIDERS.map(listOf));
 
-/** The choice sent with a call, if its provider still lists the model with that effort (`listing`, the same check the
+/** The choice sent with a call, if its provider still lists its model with that effort (`listing`, the same check the
  *  page makes). Anything else is undefined, which passes no flags, so a model saved before it left the list never stops
  *  Myra answering. Only the choice's own provider is asked, since a local one needs its server. */
 export async function parseChoice(x: unknown): Promise<ModelChoice | undefined> {
@@ -42,12 +42,16 @@ export async function parseChoice(x: unknown): Promise<ModelChoice | undefined> 
   return listing([await listOf(provider)], choice) === 'listed' ? choice : undefined;
 }
 
-/** Claude Code's arguments for a choice; none leaves Claude Code on its own default. */
+/** Claude Code's arguments for a choice. A part the choice leaves out sends no flag, so Claude Code keeps its own setting
+ *  for it, and no choice leaves it on its own for both. */
 export function modelArgs(choice: ModelChoice | undefined): string[] {
   if (!choice) return [];
   switch (choice.provider) {
     case 'claude-code':
-      return ['--model', choice.id, '--effort', choice.effort];
+      return [
+        ...(choice.id === undefined ? [] : ['--model', choice.id]),
+        ...(choice.effort ? ['--effort', choice.effort] : []),
+      ];
     default: {
       const unhandled: never = choice.provider;
       return unhandled;

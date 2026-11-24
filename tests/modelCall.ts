@@ -97,36 +97,45 @@ assert.deepStrictEqual(
   'no other call carries it',
 );
 
-// a later init script wins over the launch's own, which sets the settings at every load
-await l.app.context().addInitScript(() => {
-  try {
-    const myraModel = { provider: 'claude-code', id: 5, effort: 'high' };
-    localStorage.setItem('fenmyr:settings', JSON.stringify({ greet: false, myraModel }));
-  } catch {}
-});
-await l.app.evaluate(() => {
-  const seen: unknown = Reflect.get(globalThis, 'seen');
-  if (Array.isArray(seen)) seen.length = 0;
-});
-await page.reload();
-await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
-assert.deepStrictEqual(
-  flagsOf(await ask('a question from a saved value that is not a model')),
-  NO_FLAGS,
-  'a saved value that is not a model and effort leaves Claude Code on its own default',
-);
-await page.evaluate(() => window.Fenmyr.version());
-const kept: unknown = await l.app.evaluate(() => Reflect.get(globalThis, 'seen'));
-assert(Array.isArray(kept));
-assert.deepStrictEqual(
-  kept
-    .flatMap(m =>
-      typeof m === 'object' && m !== null && Reflect.get(m, 'op') === 'ask' ? [Reflect.get(m, 'args')] : [],
-    )
-    .map(a => Reflect.get(a, 'myraModel')),
-  [undefined],
-  'and the page does not send it, so the host is not the only check',
-);
+// Saved values read back after a reload. A part left out is Default and carries no flag, and a value that is not a
+// model and effort, or has neither, is left out by the page, so the host is not the only check. A later init script wins
+// over the launch's own, which sets the settings at every load.
+const provider = 'claude-code';
+const saved: [string, unknown, ReturnType<typeof flagsOf>, boolean][] = [
+  ['a model alone', { provider, id: 'claude-opus-5-5' }, { model: 'claude-opus-5-5', effort: undefined }, true],
+  ['an effort alone', { provider, effort: 'low' }, { model: undefined, effort: 'low' }, true],
+  ['neither a model nor an effort', { provider }, NO_FLAGS, false],
+  ['a value that is not a model', { provider, id: 5, effort: 'high' }, NO_FLAGS, false],
+];
+for (const [what, myraModel, flags, carried] of saved) {
+  await l.app.context().addInitScript(myraModel => {
+    try {
+      localStorage.setItem('fenmyr:settings', JSON.stringify({ greet: false, myraModel }));
+    } catch {}
+  }, myraModel);
+  await l.app.evaluate(() => {
+    const seen: unknown = Reflect.get(globalThis, 'seen');
+    if (Array.isArray(seen)) seen.length = 0;
+  });
+  await page.reload();
+  await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
+  assert.deepStrictEqual(
+    flagsOf(await ask(`a question from ${what}`)),
+    flags,
+    `${what}: the flags Claude Code ran with`,
+  );
+  await page.evaluate(() => window.Fenmyr.version());
+  const kept: unknown = await l.app.evaluate(() => Reflect.get(globalThis, 'seen'));
+  assert(Array.isArray(kept));
+  const asked = kept.flatMap(m =>
+    typeof m === 'object' && m !== null && Reflect.get(m, 'op') === 'ask' ? [Reflect.get(m, 'args')] : [],
+  );
+  assert.deepStrictEqual(
+    asked.map(a => Reflect.get(a, 'myraModel')),
+    [carried ? myraModel : undefined],
+    `${what}: the call ${carried ? 'carries it as saved' : 'carries nothing, so the host is not the only check'}`,
+  );
+}
 
 assert.deepStrictEqual(l.errors, [], 'no page errors');
 await l.close();

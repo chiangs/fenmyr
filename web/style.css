@@ -942,12 +942,10 @@ body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite);
 .mc-modelmenu { width: max-content; min-width: 190px; }
 .mc-modelmenu button { display: flex; align-items: center; gap: 6px; }
 .mm-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mm-key, .mm-val, .mm-note { flex: none; font: 500 11px/1 var(--font); color: var(--ink-faint); }
+.mm-key, .mm-val { flex: none; font: 500 11px/1 var(--font); color: var(--ink-faint); }
 .mm-val { color: var(--ink-soft); }
 .mc-modelmenu .rm-sep { background: color-mix(in oklab, var(--ink) 10%, transparent); }
 .mm-effort svg { flex: none; color: var(--ink-soft); }
-.mc-modelmenu button[aria-disabled="true"] { opacity: .45; cursor: default; }
-.mc-modelmenu button[aria-disabled="true"]:hover { background: none; }
 .mc-modelmenu button:focus-visible { background: var(--blush); outline: 2px solid var(--select); outline-offset: -2px; }
 .mc-modelfly { position: fixed; width: 236px; }
 .mc-modelfly p { margin: 4px 8px 6px; font: 400 12px/1.4 var(--font); color: var(--ink-soft); }

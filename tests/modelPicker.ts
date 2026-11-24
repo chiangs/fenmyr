@@ -3,8 +3,9 @@
 // carries it. The pill, the expand button and the send button stay on one line in a narrow chat.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
-import { askStandIn, flagsOf } from './support/askStandIn.ts';
+import { flagsOf } from './support/askStandIn.ts';
 import { launch } from './support/launch.ts';
+import { check, FOLLOWS, LEVELS, MODELS, modelKit, NO_FLAGS } from './support/modelKit.ts';
 import { rect, still } from './support/settled.ts';
 
 const l = await launch({
@@ -14,17 +15,8 @@ const l = await launch({
   settings: { chatKeep: 'board' },
 });
 const { page } = l;
-const { sentFor, sentAbout, send } = askStandIn(l);
+const { pillText, attr, count, names, ask, openMenu, pickModel, press, sentAbout } = modelKit(l);
 
-const MODELS = ['Opus 5.5', 'Fable 5.2', 'Sonnet 5.5', 'Haiku 5.5'];
-const LEVELS = ['Low', 'Medium', 'High', 'Extra', 'Max'];
-const NO_FLAGS = { model: undefined, effort: undefined };
-
-const pillText = () => page.evaluate(() => document.getElementById('mcModelText')?.textContent ?? null);
-const attr = (sel: string, name: string) =>
-  page.evaluate(([s, n]) => document.querySelector(s ?? '')?.getAttribute(n ?? '') ?? null, [sel, name]);
-const count = (sel: string) => page.locator(sel).count();
-const names = (sel: string) => page.locator(`${sel} .mm-name`).allTextContents();
 const chatOpen = () => page.evaluate(() => !!document.getElementById('myra')?.classList.contains('chat'));
 const focused = () =>
   page.evaluate(() => {
@@ -42,44 +34,11 @@ const focused = () =>
     };
   });
 
-async function ask(q: string) {
-  const before = await count('#mcList .mc-msg.myra');
-  await send(q);
-  const run = await sentFor(q);
-  await page.waitForFunction(
-    n =>
-      document.querySelectorAll('#mcList .mc-msg.myra').length > n && !document.querySelector('#mcList .mc-msg.typing'),
-    before,
-  );
-  return flagsOf(run.args);
-}
-async function openMenu() {
-  await page.click('#mcModel');
-  await page.waitForSelector('#mcModelMenu');
-  await still(page);
-}
-const pickModel = async (name: string) => {
-  await openMenu();
-  await page.locator('#mcModelMenu [role="menuitemradio"]', { hasText: name }).click();
-  await still(page);
-};
-const press = async (...keys: string[]) => {
-  for (const k of keys) await page.keyboard.press(k);
-};
 const within = (inner: { x: number; y: number; width: number; height: number }, outer: typeof inner, slack = 0.5) =>
   inner.x >= outer.x - slack &&
   inner.y >= outer.y - slack &&
   inner.x + inner.width <= outer.x + outer.width + slack &&
   inner.y + inner.height <= outer.y + outer.height + slack;
-
-async function check(name: string, run: () => Promise<void>) {
-  try {
-    await run();
-  } catch (e) {
-    console.error(`FAIL ${name}`);
-    throw e;
-  }
-}
 
 await page.click('#mPill');
 await page.waitForFunction(() => !!document.getElementById('myra')?.classList.contains('chat'));
@@ -123,63 +82,75 @@ const narrowChat = (on: boolean) =>
     else myra?.style.removeProperty('--chat-w');
   }, on);
 
-await check('before a choice, the pill says so and Claude Code keeps its own default', async () => {
-  assert.strictEqual(await pillText(), 'Claude Code default');
-  assert.strictEqual(await attr('#mcModel', 'title'), 'Claude Code default', 'the tip holds the whole text');
+await check('before a choice, the pill says Default and Claude Code keeps its own settings', async () => {
+  assert.strictEqual(await pillText(), 'Default');
+  assert.strictEqual(await attr('#mcModel', 'title'), `Default\n${FOLLOWS}`, 'the tip says what Default follows');
   assert.strictEqual(await attr('#mcModel', 'aria-haspopup'), 'menu');
   assert.deepStrictEqual(await ask('first'), NO_FLAGS, 'a message sends neither --model nor --effort');
 });
 
-await check('the widest pill text fits a 320 px chat, with the hint dropped rather than shown cut', async () => {
+await check('the pill at Default fits a 320 px chat, with the hint dropped rather than shown cut', async () => {
   assert((await rect(page, '#mcHint')).width > 0, 'the hint shows in a roomy chat');
   await narrowChat(true);
   assert.strictEqual((await rect(page, '#mChat')).width, 320);
-  const { cut, hint } = await fits('Claude Code default at 320 px');
+  const { cut, hint } = await fits('Default at 320 px');
   assert(!cut, 'the pill’s words are not cut');
   assert.strictEqual(hint, 0, 'the hint, which has no room whole, is gone');
   await narrowChat(false);
 });
 
-await check('the menu opens above the pill, level with its right edge, and lists the models', async () => {
+await check('the menu opens above the pill, level with its right edge, and lists Default and the models', async () => {
   await openMenu();
   assert.strictEqual(await attr('#mcModel', 'aria-expanded'), 'true');
-  assert.deepStrictEqual((await names('#mcModelMenu')).slice(0, 4), MODELS);
+  assert.deepStrictEqual((await names('#mcModelMenu')).slice(0, 5), ['Default', ...MODELS]);
   assert.deepStrictEqual(
     await page.locator('#mcModelMenu [data-model]').evaluateAll(rows => rows.map(r => r.getAttribute('role'))),
-    ['menuitemradio', 'menuitemradio', 'menuitemradio', 'menuitemradio'],
+    Array(5).fill('menuitemradio'),
   );
   assert.deepStrictEqual(
     await page.locator('#mcModelMenu .mm-key').allTextContents(),
-    ['1', '2', '3', '4'],
-    'each shows its key',
+    ['0', '1', '2', '3', '4'],
+    'each shows its key, Default’s is 0',
   );
-  assert.strictEqual(await count('#mcModelMenu [aria-checked="true"]'), 0, 'none is ticked before a choice');
+  assert.strictEqual(
+    await page.locator('#mcModelMenu [aria-checked="true"] .mm-name').textContent(),
+    'Default',
+    'Default is the one ticked before a choice',
+  );
+  assert.strictEqual(await count('#mcModelMenu [aria-checked="true"]'), 1, 'and only it');
   const [menu, pill] = await Promise.all([rect(page, '#mcModelMenu'), rect(page, '#mcModel')]);
   assert(menu.y + menu.height <= pill.y, 'above the pill');
   assert(Math.abs(menu.x + menu.width - (pill.x + pill.width)) <= 1, 'with the right edges level');
   assert((await focused()).inMenu, 'focus is in the menu, so its keys work');
 });
 
-await check('the Effort row is disabled, with a reason, until a model is chosen', async () => {
-  assert.strictEqual(await attr('#mcModelMenu .mm-effort', 'aria-disabled'), 'true');
-  assert.strictEqual(await attr('#mcModelMenu .mm-effort', 'title'), 'Choose a model first');
-  // Playwright waits for an enabled element, and one marked aria-disabled never is
-  await page.click('#mcModelMenu .mm-effort', { force: true });
-  assert.strictEqual(await count('.mc-modelfly'), 0, 'a click opens nothing');
-  await page.locator('#mcModelMenu .mm-effort').focus();
-  await press('ArrowRight');
-  assert.strictEqual(await count('.mc-modelfly'), 0, 'nor does Right arrow');
-  await press('Escape');
-});
+await check(
+  'the Effort row is enabled with no model, reads Default, and opens every level under a Default one',
+  async () => {
+    assert.strictEqual(await attr('#mcModelMenu .mm-effort', 'aria-disabled'), null, 'it is not marked disabled');
+    assert.strictEqual(await attr('#mcModelMenu .mm-effort', 'title'), null, 'and gives no reason why not');
+    assert.strictEqual(await page.locator('#mcModelMenu .mm-val').textContent(), 'Default');
+    await page.click('#mcModelMenu .mm-effort');
+    await page.waitForSelector('.mc-modelfly');
+    assert.deepStrictEqual(await names('.mc-modelfly'), ['Default', ...LEVELS], 'Default, then every level');
+    assert.strictEqual(await page.locator('.mc-modelfly [aria-checked="true"] .mm-name').textContent(), 'Default');
+    assert.strictEqual(await count('.mc-modelfly .mm-note'), 0, 'with no level marked Recommended');
+    await press('Escape', 'Escape');
+    assert.strictEqual(await count('#mcModelMenu'), 0);
+  },
+);
 
-await check('picking a model with the mouse starts it on Medium and Myra uses it', async () => {
-  await pickModel('Sonnet 5.5');
-  assert.strictEqual(await count('#mcModelMenu'), 0, 'picking closes the menu');
-  assert.strictEqual(await pillText(), 'Sonnet 5.5 Medium');
-  assert.strictEqual(await attr('#mcModel', 'title'), 'Sonnet 5.5 Medium');
-  assert.strictEqual((await focused()).id, 'mcModel', 'focus is back on the pill');
-  assert.deepStrictEqual(await ask('second'), { model: 'claude-sonnet-5-5', effort: 'medium' });
-});
+await check(
+  'picking a model alone sends --model and no --effort, and the pill says Default for the effort',
+  async () => {
+    await pickModel('Sonnet 5.5');
+    assert.strictEqual(await count('#mcModelMenu'), 0, 'picking closes the menu');
+    assert.strictEqual(await pillText(), 'Sonnet 5.5');
+    assert.strictEqual(await attr('#mcModel', 'title'), `Sonnet 5.5\n${FOLLOWS}`);
+    assert.strictEqual((await focused()).id, 'mcModel', 'focus is back on the pill');
+    assert.deepStrictEqual(await ask('second'), { model: 'claude-sonnet-5-5', effort: undefined });
+  },
+);
 
 await check('a rewrite after a pick carries the choice too', async () => {
   await page.evaluate(
@@ -187,16 +158,14 @@ await check('a rewrite after a pick carries the choice too', async () => {
   );
   assert.deepStrictEqual(flagsOf((await sentAbout('Hello there, rewrite me')).args), {
     model: 'claude-sonnet-5-5',
-    effort: 'medium',
+    effort: undefined,
   });
 });
 
-await check('the menu ticks the current model and the Effort row shows its level', async () => {
+await check('the menu ticks the current model and the Effort row reads Default for an effort not chosen', async () => {
   await openMenu();
   assert.strictEqual(await page.locator('#mcModelMenu [aria-checked="true"] .mm-name').textContent(), 'Sonnet 5.5');
-  assert.strictEqual(await attr('#mcModelMenu .mm-effort', 'aria-disabled'), 'false');
-  assert.strictEqual(await attr('#mcModelMenu .mm-effort', 'title'), null);
-  assert.strictEqual(await page.locator('#mcModelMenu .mm-val').textContent(), 'Medium');
+  assert.strictEqual(await page.locator('#mcModelMenu .mm-val').textContent(), 'Default');
   assert.strictEqual((await focused()).row, 'Sonnet 5.5', 'focus starts on the ticked model');
   await press('Escape');
 });
@@ -211,18 +180,17 @@ await check('the keyboard alone picks an effort: arrows, Right arrow and Enter',
   await page.waitForSelector('.mc-modelfly');
   await still(page);
   assert.strictEqual(await attr('#mcModelMenu .mm-effort', 'aria-expanded'), 'true');
-  assert.deepStrictEqual(await names('.mc-modelfly'), LEVELS, 'every level this model lists');
-  assert.deepStrictEqual(await page.locator('.mc-modelfly .mm-note').allTextContents(), ['Recommended']);
-  assert.strictEqual(
-    await page.locator('.mc-modelfly .mm-note').evaluate(n => n.parentElement?.querySelector('.mm-name')?.textContent),
-    'Medium',
+  assert.deepStrictEqual(
+    await names('.mc-modelfly'),
+    ['Default', ...LEVELS],
+    'Default, then every level this model lists',
   );
   assert.strictEqual(
     await page.locator('#mcModelHelp').textContent(),
     'How long Myra thinks before answering. Higher is slower and uses more of your plan.',
   );
-  assert.strictEqual(await page.locator('.mc-modelfly [aria-checked="true"] .mm-name').textContent(), 'Medium');
-  assert.strictEqual((await focused()).row, 'Medium', 'focus starts on the current level');
+  assert.strictEqual(await page.locator('.mc-modelfly [aria-checked="true"] .mm-name').textContent(), 'Default');
+  assert.strictEqual((await focused()).row, 'Default', 'focus starts on the current level, here Default');
   const [menu, fly] = await Promise.all([rect(page, '#mcModelMenu'), rect(page, '.mc-modelfly')]);
   assert(fly.x + fly.width <= menu.x, 'the flyout is beside the menu');
   assert(Math.abs(fly.y + fly.height - (menu.y + menu.height)) <= 1, 'with its foot level with the menu’s');
@@ -237,7 +205,7 @@ await check('the keyboard alone picks an effort: arrows, Right arrow and Enter',
   assert.strictEqual(await count('.mc-modelfly'), 0, 'so does Esc');
   assert.strictEqual(await count('#mcModelMenu'), 1, 'and leaves the menu open');
 
-  await press('ArrowRight', 'ArrowDown');
+  await press('ArrowRight', 'ArrowDown', 'ArrowDown', 'ArrowDown');
   assert.strictEqual((await focused()).row, 'High');
   await press('Enter');
   assert.strictEqual(await count('#mcModelMenu'), 0);
@@ -313,7 +281,7 @@ await check('the choice is saved and read back after a reload', async () => {
   assert.deepStrictEqual(await ask('fifth'), { model: 'claude-fable-5-2', effort: 'high' });
 });
 
-await check('a model whose levels differ: the effort carries over only when it is listed, else Medium', async () => {
+await check('a model whose levels differ: the effort carries over only when it is listed, else Default', async () => {
   await page.evaluate(() => {
     const all = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
     window.Fenmyr.models = async () => [
@@ -330,21 +298,21 @@ await check('a model whose levels differ: the effort carries over only when it i
   });
   // High is saved from before, and Model A does not list it
   await pickModel('Model A');
-  assert.strictEqual(await pillText(), 'Model A Medium', 'an effort it does not list becomes Medium');
+  assert.strictEqual(await pillText(), 'Model A', 'an effort it does not list goes back to Default');
   await openMenu();
   await press('ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowRight');
   await page.waitForSelector('.mc-modelfly');
-  assert.deepStrictEqual(await names('.mc-modelfly'), ['Low', 'Medium'], 'only the levels the model lists');
+  assert.deepStrictEqual(await names('.mc-modelfly'), ['Default', 'Low', 'Medium'], 'only the levels the model lists');
   await page.locator('.mc-modelfly [role="menuitemradio"]', { hasText: 'Low' }).click();
   assert.strictEqual(await pillText(), 'Model A Low', 'a click on a level picks it');
   await pickModel('Model C');
   assert.strictEqual(await pillText(), 'Model C Low', 'an effort it lists is kept');
   await pickModel('Model D');
-  assert.strictEqual(await pillText(), 'Model D Medium', 'Low is not listed, so Medium');
+  assert.strictEqual(await pillText(), 'Model D', 'Low is not listed, so Default');
   await openMenu();
   await page.click('#mcModelMenu .mm-effort');
   await page.waitForSelector('.mc-modelfly');
-  assert.deepStrictEqual(await names('.mc-modelfly'), ['Medium', 'High', 'Max']);
+  assert.deepStrictEqual(await names('.mc-modelfly'), ['Default', 'Medium', 'High', 'Max']);
   await press('Escape', 'Escape');
 });
 
