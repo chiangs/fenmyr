@@ -508,6 +508,7 @@
     "tests/modeRoom.ts": "What sits around find's bar keeps clear of it or to its place: Myra's reply, chat and timer, on a short window too, and the tools' pickers.",
     "tests/model.ts": "Checks library and board files keep what they had and prototype fields are validated.",
     "tests/modelGone.ts": "Tests that a saved model the host no longer lists is cleared with one line from Myra, when the chat opens or before a call to Claude Code goes out, and that an answer saying nothing clears nothing.",
+    "tests/modelLongName.ts": "Tests that a local model's long name is cut with an ellipsis in Myra's model pill and in a menu row at the narrowest chat, never wrapped, and that neither leaves its footer or the window.",
     "tests/modelPicker.ts": "Tests Myra's model picker in the app: the pill, the menu and its Effort flyout by mouse and keyboard, that the choice is saved, and that the footer holds at 320 px.",
     "tests/modelCall.ts": "Tests that Myra's saved model and effort go with every call that runs Claude Code and no other, run Claude Code with the matching flags, and are ignored when what is saved is not a model.",
     "tests/modelArgs.ts": "Tests that a chosen model and effort reach Claude Code's arguments on every call Myra makes, and that a choice the provider doesn't list passes none.",
