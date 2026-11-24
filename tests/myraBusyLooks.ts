@@ -125,26 +125,30 @@ try {
       [{ kind: 'rewriting' }, 'writing'],
       [{ kind: 'explaining', board: 'b', name: 'Board' }, 'explaining'],
     ] as const;
-    for (const [busy, want] of kinds) {
-      await page.evaluate(b => Reflect.set(window, 'job', window.__fenmyr.startJob(b)), busy);
-      await lookIs(want, `${busy.kind} gives her the ${want} look`);
-      await page.evaluate(() => {
-        const job: unknown = Reflect.get(window, 'job');
-        if (job && typeof job === 'object' && 'end' in job && typeof job.end === 'function') job.end();
+    // every job started here, ended whatever the check finds, so one left running doesn't change the checks after it
+    const endAll = () =>
+      page.evaluate(() => {
+        const jobs: unknown = Reflect.get(window, 'jobs');
+        if (Array.isArray(jobs))
+          for (const job of jobs)
+            if (job && typeof job === 'object' && 'end' in job && typeof job.end === 'function') job.end();
+        Reflect.set(window, 'jobs', []);
       });
-      await lookIs(null, `and none once ${busy.kind} ends`);
+    try {
+      for (const [busy, want] of kinds) {
+        await page.evaluate(b => Reflect.set(window, 'jobs', [window.__fenmyr.startJob(b)]), busy);
+        await lookIs(want, `${busy.kind} gives her the ${want} look`);
+        await endAll();
+        await lookIs(null, `and none once ${busy.kind} ends`);
+      }
+      await page.evaluate(() => {
+        const M = window.__fenmyr;
+        Reflect.set(window, 'jobs', [M.startJob({ kind: 'rewriting' }), M.startJob({ kind: 'pictures', n: 2 })]);
+      });
+      await lookIs('painting', 'the newest job gives her its look');
+    } finally {
+      await endAll();
     }
-    await page.evaluate(() => {
-      const M = window.__fenmyr;
-      Reflect.set(window, 'jobs', [M.startJob({ kind: 'rewriting' }), M.startJob({ kind: 'pictures', n: 2 })]);
-    });
-    await lookIs('painting', 'the newest job gives her its look');
-    await page.evaluate(() => {
-      const jobs: unknown = Reflect.get(window, 'jobs');
-      if (Array.isArray(jobs))
-        for (const job of jobs)
-          if (job && typeof job === 'object' && 'end' in job && typeof job.end === 'function') job.end();
-    });
     await lookIs(null, 'and none once both end');
   });
 
@@ -154,11 +158,15 @@ try {
         new Promise(ok => Reflect.set(window, 'answer', () => ok(JSON.stringify({ say: 'Here you go.' }))));
       void window.__fenmyr.ask('what next?');
     });
-    await lookIs('thinking', 'she thinks while the question is out');
-    await page.evaluate(() => {
-      const answer: unknown = Reflect.get(window, 'answer');
-      if (typeof answer === 'function') answer();
-    });
+    // answered whatever the check finds, so a question left out doesn't hold up the build after it
+    try {
+      await lookIs('thinking', 'she thinks while the question is out');
+    } finally {
+      await page.evaluate(() => {
+        const answer: unknown = Reflect.get(window, 'answer');
+        if (typeof answer === 'function') answer();
+      });
+    }
     await lookIs(null, 'and stops once her answer is in');
   });
 
