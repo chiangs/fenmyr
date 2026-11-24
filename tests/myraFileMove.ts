@@ -1,7 +1,8 @@
 // Her folders.file and folders.move work on what is there and make no project. A folder that is not there is not made by
 // file, and is made by move the way /folder makes one, with a line saying so; a project that is not there costs only its
 // own entry. A name is looked for in the project the person is in first, so two projects that each have a "Boards"
-// folder are not mixed up, and for move in the project she names before that.
+// folder are not mixed up. For move a project she names is the only one looked in, and the folder is made there when it
+// is not, numbered as /folder numbers it.
 import assert from 'node:assert';
 import type { Folder } from '../src/shared/model.ts';
 import { launch } from './support/launch.ts';
@@ -127,13 +128,42 @@ try {
     assert.strictEqual(await folderOf('loose'), 'fb1', 'and Shop’s when they are in Shop');
   });
 
-  await check('the project move names is looked in before the one the person is in', async () => {
+  await check('the project move names is the one looked in, not the one the person is in', async () => {
     await startOn('a');
     const before = await counts();
     await reply({ move: [{ board: 'loose', folder: 'Boards', project: 'garden' }] });
     assert.strictEqual(await folderOf('loose'), 'fb2');
     assert.deepStrictEqual(await counts(), before, 'nothing is made');
     assert.strictEqual(await lastLine(), 'myra: Sure.');
+  });
+
+  await check(
+    'with a project named, a folder only another project has is made in it, numbered, and told as made',
+    async () => {
+      await startOn('a');
+      const made = await makes(page, 'folder', () =>
+        reply({
+          move: [
+            { board: 'loose', folder: 'Tools', project: 'Shop' },
+            { board: 'a', folder: 'tools', project: 'Shop' },
+          ],
+        }),
+      );
+      assert.deepStrictEqual([made.name, made.project], ['Tools 2', 'p1'], 'in Shop, not Garden’s Tools');
+      assert.deepStrictEqual([await folderOf('loose'), await folderOf('a')], [made.id, made.id], 'one folder for both');
+      assert.strictEqual(await projectOf('f3'), 'p2', 'Garden’s Tools stays where it was');
+      assert.strictEqual(await lastLine(), 'myra: Sure. I made the folder “Tools 2” in “Shop”, as “Tools” was taken ✦');
+    },
+  );
+
+  await check('with a project named, the folder is not taken from the project the person is in', async () => {
+    await startOn('a');
+    const made = await makes(page, 'folder', () =>
+      reply({ move: [{ board: 'loose', folder: 'Ideas', project: 'Garden' }] }),
+    );
+    assert.deepStrictEqual([made.name, made.project], ['Ideas 2', 'p2'], 'in Garden, though Shop has an Ideas');
+    assert.strictEqual(await folderOf('loose'), made.id);
+    assert.strictEqual(await lastLine(), 'myra: Sure. I made the folder “Ideas 2” in “Garden”, as “Ideas” was taken ✦');
   });
 
   await check('a folder only one project has is found from anywhere, and nothing is made', async () => {
