@@ -11,6 +11,7 @@ const PHRASES = [
   'holds prototypes, so I opened',
   'There is already a project called',
   'There is no project called',
+  'I could not find a folder called',
   'so I did not make',
 ];
 const READERS = ['src/web/myra/slashMake.ts', 'src/web/myra/makeInLibrary.ts'];
