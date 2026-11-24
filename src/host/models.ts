@@ -1,5 +1,6 @@
 import {
   EFFORTS,
+  listing,
   type ModelChoice,
   type ModelEntry,
   type ProviderId,
@@ -7,7 +8,10 @@ import {
   readModelChoice,
 } from '../shared/models.ts';
 
-// models is async because a local provider, such as Ollama, will ask its server which models it has
+// models is async because a local provider, such as Ollama, will ask its server which models it has. It must never
+// reject: a provider catches its own server errors and answers [], which `listing` reads as unknown, so a server that is
+// off neither stops a call nor costs anyone their saved choice. Claude's table can't fail, so nothing checks this until a
+// provider with a server arrives, and its tests should.
 type Provider = { id: ProviderId; name: string; models: () => Promise<ModelEntry[]> };
 
 // Claude Code has no command that lists its models, so the table is Fenmyr's. Each one took every effort level in
@@ -20,17 +24,22 @@ const CLAUDE: ModelEntry[] = [
 ];
 const PROVIDERS: Provider[] = [{ id: 'claude-code', name: 'Claude Code', models: async () => CLAUDE }];
 
-export const listModels = (): Promise<ProviderModels[]> =>
-  Promise.all(PROVIDERS.map(async p => ({ provider: p.id, name: p.name, models: await p.models() })));
+const listOf = async (p: Provider): Promise<ProviderModels> => ({
+  provider: p.id,
+  name: p.name,
+  models: await p.models(),
+});
 
-/** The choice sent with a call, if its provider still lists the model with that effort. Anything else is undefined,
- *  which passes no flags, so a model saved before it left the list never stops Myra answering. */
+export const listModels = (): Promise<ProviderModels[]> => Promise.all(PROVIDERS.map(listOf));
+
+/** The choice sent with a call, if its provider still lists the model with that effort (`listing`, the same check the
+ *  page makes). Anything else is undefined, which passes no flags, so a model saved before it left the list never stops
+ *  Myra answering. Only the choice's own provider is asked, since a local one needs its server. */
 export async function parseChoice(x: unknown): Promise<ModelChoice | undefined> {
   const choice = readModelChoice(x),
     provider = PROVIDERS.find(p => p.id === choice?.provider);
   if (!choice || !provider) return undefined;
-  const model = (await provider.models()).find(m => m.id === choice.id);
-  return model?.efforts.includes(choice.effort) ? choice : undefined;
+  return listing([await listOf(provider)], choice) === 'listed' ? choice : undefined;
 }
 
 /** Claude Code's arguments for a choice; none leaves Claude Code on its own default. */

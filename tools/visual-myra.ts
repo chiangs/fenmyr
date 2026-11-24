@@ -272,7 +272,26 @@ const openChat: Step = async page => {
   await page.click('#mPill');
   await page.mouse.move(1, 1);
 };
-const modelPicker = (settings: Record<string, unknown>): Group => ({
+// a local model such as Ollama's, listed after the Claude ones as a provider will, and chosen: the pill and its row in the
+// open menu take as much of their width as they have and are cut with an ellipsis. Esc steps back out of a menu and its
+// flyout left open, and only while one is, since Esc in the chat alone closes the chat.
+const LOCAL = 'qwen3-coder-30b-a3b-instruct-q4_K_M';
+const longName: Step = async page => {
+  for (let i = 0; i < 2 && (await page.locator('#mcModelMenu').count()); i++) await page.keyboard.press('Escape');
+  await page.evaluate(id => {
+    const real = window.Fenmyr.models;
+    window.Fenmyr.models = async () =>
+      (await real()).map(p => ({ ...p, models: [...p.models, { id, name: id, efforts: ['low', 'medium', 'high'] }] }));
+  }, LOCAL);
+  const pill = page.locator('#mcModel');
+  if (!(await pill.count())) return;
+  await pill.click();
+  await page.locator('#mcModelMenu [data-model]', { hasText: LOCAL }).click();
+  await pill.click();
+  await page.waitForSelector('#mcModelMenu', { timeout: 2000 }).catch(() => undefined);
+  await page.mouse.move(1, 1);
+};
+const modelPicker = (settings: Record<string, unknown>, more: [string, Step][] = []): Group => ({
   settings: { ...settings, myraModel: SONNET },
   states: [
     ['pill', openChat],
@@ -294,6 +313,7 @@ const modelPicker = (settings: Record<string, unknown>): Group => ({
         await page.mouse.move(1, 1);
       },
     ],
+    ...more,
   ],
 });
 // the narrowest the chat is placed (CHAT.minW in src/web/myra/chatRules.ts), which no window gives on a desktop, so the
@@ -308,6 +328,7 @@ const narrow: Group = {
         await page.evaluate(() => document.getElementById('myra')?.style.setProperty('--chat-w', '320px'));
       },
     ],
+    ['long', longName],
   ],
 };
 
@@ -319,7 +340,7 @@ export const MYRA_GROUPS = {
   plan,
   template,
   'popups-dark': popupsDark,
-  'model-picker': modelPicker({}),
+  'model-picker': modelPicker({}, [['long', longName]]),
   'model-picker-dark': modelPicker({ theme: 'dark' }),
   'model-picker-clear': modelPicker({ theme: 'light', lightTheme: 'clear' }),
   'model-picker-lantern': modelPicker({ theme: 'dark', darkTheme: 'lantern' }),

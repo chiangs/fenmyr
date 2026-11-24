@@ -12,6 +12,10 @@ type Sent = {
   files: { name: string; kind: string; b64: string }[];
 };
 
+// the model and effort a run was given: what follows --model and --effort in its arguments
+const after = (args: string[], flag: string) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
+export const flagsOf = (args: string[]) => ({ model: after(args, '--model'), effort: after(args, '--effort') });
+
 export function askStandIn(l: Launched) {
   const { page } = l;
   const work = path.join(l.data, 'standin'),

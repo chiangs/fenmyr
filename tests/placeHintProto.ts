@@ -57,7 +57,7 @@ try {
   // a normal board: top centre of the window, as before
   await page.click('#tools [data-add="note"]');
   await page.waitForTimeout(400);
-  let s = await look(page);
+  const s = await look(page);
   assert.ok(s.shown && s.hint, 'the hint is shown on a normal board');
   assert.ok(
     Math.abs((s.hint.l + s.hint.r) / 2 - (s.window[0] ?? 0) / 2) <= 2,

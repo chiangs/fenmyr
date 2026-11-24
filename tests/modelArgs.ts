@@ -7,7 +7,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { CodeAgent } from '../src/host/codeAgent.ts';
+import { listModels, parseChoice } from '../src/host/models.ts';
 import type { BuildEvent } from '../src/shared/build.ts';
+import { listing, type ModelChoice, type ModelEntry, type ProviderModels } from '../src/shared/models.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-model-args-')));
 // read as the host modules load: the stand-in is found at ~/.local/bin/claude, and usage is kept under XDG_DATA_HOME
@@ -60,6 +62,29 @@ for (const [what, myraModel] of Object.entries(unlisted))
     await flags(() => claude.rewrite({ text: 'Hi', myraModel })),
     none,
     `${what} leaves Claude Code on its default`,
+  );
+
+// The one rule the page and the host share. The page clears a choice only when it is 'gone' and the host sends one only
+// when it is 'listed', so 'unknown' changes nothing on either side.
+const pick: ModelChoice = { provider: 'claude-code', id: 'claude-sonnet-5-5', effort: 'high' };
+const hostList = await listModels();
+const claudeList = (models: ModelEntry[]): ProviderModels[] => [
+  { provider: 'claude-code', name: 'Claude Code', models },
+];
+const standing: [string, ProviderModels[], ModelChoice, ReturnType<typeof listing>][] = [
+  ['a model and effort it lists', hostList, pick, 'listed'],
+  ['a model it does not list', hostList, { ...pick, id: 'claude-gone-1' }, 'gone'],
+  ['an effort the model does not list', claudeList([{ id: pick.id, name: 'S', efforts: ['low'] }]), pick, 'gone'],
+  ['a provider that lists no models', claudeList([]), pick, 'unknown'],
+  ['no providers', [], pick, 'unknown'],
+];
+for (const [what, lists, choice, expected] of standing)
+  assert.strictEqual(listing(lists, choice), expected, `${what} is ${expected}`);
+for (const choice of [pick, { ...pick, id: 'claude-gone-1' }])
+  assert.strictEqual(
+    (await parseChoice(choice)) !== undefined,
+    listing(hostList, choice) === 'listed',
+    `the host sends ${choice.id} exactly when the page's rule lists it`,
   );
 
 const haiku = { model: 'claude-haiku-5-5', effort: 'max' },

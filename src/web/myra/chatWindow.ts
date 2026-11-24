@@ -19,6 +19,7 @@ import {
   type Rect,
 } from './chatRules.ts';
 import { planWaits } from './heldPlan.ts';
+import { checkSavedModel } from './modelPicker.ts';
 import { keepPerch, perchGoo } from './perch.ts';
 import { initSees, pastesOf, renderSees, seenSelection } from './seesStrip.ts';
 
@@ -172,6 +173,7 @@ export function myraOpen(on: boolean, toBox = false) {
     renderChat();
     renderSees();
     $('mcInput').focus();
+    void checkSavedModel();
   }
   if (on !== was) perchGoo(on);
 }

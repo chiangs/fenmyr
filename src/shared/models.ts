@@ -15,3 +15,16 @@ export function readModelChoice(x: unknown): ModelChoice | undefined {
     effort = EFFORTS.find(e => e === x.effort);
   return provider && effort ? { provider, id: x.id, effort } : undefined;
 }
+
+/** Where a choice stands against what the providers list: still there, gone, or not known. A provider that lists no
+ *  models, as when a local server isn't running, says nothing about the model, and neither does an answer of no
+ *  providers at all, as when there is no host to ask. The host drops anything but 'listed'; the page clears only
+ *  'gone', so a server that is off for a while never costs someone their choice. */
+type Listing = 'listed' | 'gone' | 'unknown';
+export function listing(lists: readonly ProviderModels[], choice: ModelChoice): Listing {
+  if (!lists.length) return 'unknown';
+  const provider = lists.find(p => p.provider === choice.provider);
+  if (!provider) return 'gone';
+  if (!provider.models.length) return 'unknown';
+  return provider.models.find(m => m.id === choice.id)?.efforts.includes(choice.effort) ? 'listed' : 'gone';
+}
