@@ -189,6 +189,15 @@ for (const mode of ['light', 'dark']) {
 
   await check(`${mode}: the Settings gear's tooltip is below it, after a short wait`, async () => {
     await seen(`${mode}: the gear`, '#gearBtn', { at: 'below', surface: 'gear', delay: '0.25s', shot: `${mode}-gear` });
+    // with an update waiting the gear also wears a dot, which must not take the tooltip's place
+    await page.evaluate(() => document.getElementById('gearBtn')?.classList.add('has-update'));
+    await seen(`${mode}: the gear with an update`, '#gearBtn', { at: 'below', surface: 'gear', delay: '0.25s' });
+    const dot = await page.evaluate(() => {
+      const cs = getComputedStyle(document.getElementById('gearBtn') ?? document.body, '::before');
+      return [cs.content, cs.width, cs.height, cs.opacity];
+    });
+    assert.deepStrictEqual(dot, ['""', '8px', '8px', '1'], `${mode}: the update dot shows`);
+    await page.evaluate(() => document.getElementById('gearBtn')?.classList.remove('has-update'));
   });
 
   await check(`${mode}: a video's Flip is below its button, and Write it out above its own`, async () => {

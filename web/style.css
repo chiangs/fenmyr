@@ -1212,7 +1212,7 @@ body.web .conns { display: none; }
 .su-channel[hidden] { display: none; }   /* .set-row's display would otherwise show it */
 .su-notes { margin: 12px 0 2px 46px; padding: 0; list-style: none; display: grid; gap: 6px; }
 .su-notes li { font: 500 13px/1.4 var(--font); color: var(--ink); } .su-notes li::before { content: "✦ "; color: var(--coach-ink); }
-.gear.has-update { position: relative; } .gear.has-update::after { content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--gear-bg); box-shadow: 0 0 0 2px var(--snow); }/* the person who made it */
+.gear.has-update { position: relative; } .gear.has-update::before { content: ""; position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--gear-bg); box-shadow: 0 0 0 2px var(--snow); }/* the person who made it */
 .set-maker { text-align: center; padding: 22px 18px 20px !important; border-radius: var(--pill-r); corner-shape: squircle; background: var(--blush); border: 0 !important; margin: 6px 0; }
 .sm-sig { font: 700 22px/1 'Shantell Sans', cursive; color: var(--m-sm-sig-ink); }
 .sm-name { font: 800 26px/1.1 var(--font); color: var(--ink); margin: 6px 0 8px; letter-spacing: -.01em; }
