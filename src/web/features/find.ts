@@ -9,9 +9,10 @@ import { $ } from '../core/dom.ts';
 import { byId, session } from '../core/state.ts';
 import { setChatText } from '../myra/chatInput.ts';
 import { myraOpen } from '../myra/chatWindow.ts';
-import { glideTo, wordsOf } from '../myra/greet.ts';
+import { glideTo } from '../myra/greet.ts';
 import { reply } from '../myra/say.ts';
 import { floatModeBar } from '../selbar/float.ts';
+import { findText } from './findText.ts';
 import { applyDim } from './focus.ts';
 import { cleanTag } from './tags.ts';
 
@@ -20,12 +21,12 @@ const readingOrder = (a: Card, b: Card) => Math.round(a.y / 90) - Math.round(b.y
 function findRun(keep: boolean) {
   const words = queryWords(findField().value);
   find.hits = words.length
-    ? session.board.cards.filter(c => !c.hidden && hasAll(words, wordsOf(c))).sort(readingOrder)
+    ? session.board.cards.filter(c => !c.hidden && hasAll(words, findText(c))).sort(readingOrder)
     : [];
   find.i = keep && find.i < find.hits.length ? find.i : 0;
   find.cur = find.hits[find.i]?.id || null;
   find.set = find.hits.length ? new Set(find.hits.map(c => c.id)) : null;
-  const tray = words.length ? session.board.tray.filter(c => hasAll(words, wordsOf(c))).length : 0;
+  const tray = words.length ? session.board.tray.filter(c => hasAll(words, findText(c))).length : 0;
   $('fbCount').textContent = !words.length
     ? 'Type to find'
     : find.hits.length

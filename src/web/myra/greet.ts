@@ -93,20 +93,6 @@ export const helpText = (lead = 'Here is what I can do right here, no thinking n
     .join('\n') +
   '\nAsk me anything else in your own words ✦';
 
-export const wordsOf = (c: Card) =>
-  [
-    c.text,
-    c.name,
-    c.label,
-    c.title,
-    ...('items' in c ? (c.items ?? []) : []).map(i => (typeof i === 'string' ? i : i.t)),
-    ...(c.tags || []).map(t => `#${t}`),
-    String(('body' in c && c.body) || '').replace(/<[^>]+>/g, ' '),
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-
 export function glideTo(cs: Card[]) {
   const from = { ...session.view };
   fit(cs, 200, 1.2);
