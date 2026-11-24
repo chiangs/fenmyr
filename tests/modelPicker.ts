@@ -3,7 +3,7 @@
 // carries it. The pill, the expand button and the send button stay on one line in a narrow chat.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
-import { askStandIn } from './support/askStandIn.ts';
+import { askStandIn, flagsOf } from './support/askStandIn.ts';
 import { launch } from './support/launch.ts';
 import { rect, still } from './support/settled.ts';
 
@@ -20,8 +20,6 @@ const MODELS = ['Opus 5.5', 'Fable 5.2', 'Sonnet 5.5', 'Haiku 5.5'];
 const LEVELS = ['Low', 'Medium', 'High', 'Extra', 'Max'];
 const NO_FLAGS = { model: undefined, effort: undefined };
 
-const after = (args: string[], flag: string) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
-const flagsOf = (args: string[]) => ({ model: after(args, '--model'), effort: after(args, '--effort') });
 const pillText = () => page.evaluate(() => document.getElementById('mcModelText')?.textContent ?? null);
 const attr = (sel: string, name: string) =>
   page.evaluate(([s, n]) => document.querySelector(s ?? '')?.getAttribute(n ?? '') ?? null, [sel, name]);

@@ -3,17 +3,20 @@
 import {
   EFFORTS,
   type Effort,
+  listing,
   type ModelChoice,
   type ModelEntry,
   type ProviderId,
   type ProviderModels,
 } from '../../shared/models.ts';
 import { $ } from '../core/dom.ts';
+import { session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { applySettings } from '../settings/widgets.ts';
 import { closestTo, esc } from '../ui/dom.ts';
 import { menuKeys } from '../ui/menuKeys.ts';
 import { closeOnOutsidePress, openAbove, openFlyout } from '../ui/popover.ts';
+import { reply } from './say.ts';
 
 const LEVELS: Record<Effort, string> = { low: 'Low', medium: 'Medium', high: 'High', xhigh: 'Extra', max: 'Max' };
 const RECOMMENDED: Effort = 'medium';
@@ -182,6 +185,43 @@ async function openMenu() {
   m.addEventListener('keydown', e => onKey(e, m));
   m.addEventListener('click', e => onClick(e, m));
   checkedIn(m)?.focus();
+}
+
+// Whether this session has had an answer from the host to check the saved model against. An answer that says nothing
+// leaves it false, so the next chat open asks again.
+let verified = false;
+let asking: Promise<void> | undefined;
+
+async function verify() {
+  const choice = settings.myraModel;
+  if (!choice) return;
+  let answer: ProviderModels[] = [];
+  try {
+    answer = await Fenmyr.models();
+  } catch {
+    // nothing came back, so nothing is known about the model
+  }
+  const standing = listing(answer, choice);
+  if (standing === 'unknown') return;
+  verified = true;
+  lists = answer;
+  // a model picked from the menu while the host was answering is a fresh choice from a fresh list
+  if (standing === 'listed' || settings.myraModel !== choice) return showPill();
+  delete settings.myraModel;
+  applySettings();
+  showPill();
+  // Clearing the choice is what keeps this to one line. She picks no other model, since only the person chooses one.
+  reply(`I couldn’t find ${choice.id} any more, so I’m using Claude Code’s default until you pick another.`, 8000);
+}
+
+/** Checks the saved model against the host's list the first time a chat opens. One that is gone is cleared and Myra
+ *  says so once. Returns the check while it runs, and nothing once the session has been checked or there is no choice,
+ *  board or line to say it on. */
+export function checkSavedModel(): Promise<void> | undefined {
+  if (verified || !settings.myraModel || !session.board) return undefined;
+  return (asking ??= verify().finally(() => {
+    asking = undefined;
+  }));
 }
 
 export function initModelPicker() {
