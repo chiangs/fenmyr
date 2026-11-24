@@ -15,6 +15,7 @@ export const MYRA_COLORS: Record<string, GooColors> = {
 };
 
 import { isRecord } from '../../shared/model.ts';
+import { type ModelChoice, readModelChoice } from '../../shared/models.ts';
 import type { Chattiness } from '../../shared/ops.ts';
 import { isUpdateChannel, type UpdateChannel } from '../../shared/updateChannel.ts';
 import { type GridShape, isGridShape } from '../canvas/gridLook.ts';
@@ -99,6 +100,8 @@ export type Settings = Defaults & {
   birthday?: string;
   // the channel a clone install follows, once someone has chosen one; until then it depends on the version (channelFor)
   updateChannel?: UpdateChannel;
+  // the model and effort Myra's calls to Claude Code run on; unset leaves Claude Code on its own default
+  myraModel?: ModelChoice;
   layout?: { left: string[]; right: string[] } | null;
 };
 
@@ -135,6 +138,8 @@ function readSettings(raw: unknown): Settings {
   for (const k of ['name', 'micId', 'camId', 'birthday'] as const) if (typeof saved[k] === 'string') out[k] = saved[k];
   if (typeof saved.camFlip === 'boolean') out.camFlip = saved.camFlip;
   if (isUpdateChannel(saved.updateChannel)) out.updateChannel = saved.updateChannel;
+  const myraModel = readModelChoice(saved.myraModel);
+  if (myraModel) out.myraModel = myraModel;
   if (isRecord(saved.wireStyle)) {
     const { w, color } = saved.wireStyle;
     out.wireStyle = { ...(typeof w === 'number' ? { w } : {}), ...(typeof color === 'string' ? { color } : {}) };

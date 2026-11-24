@@ -1,7 +1,7 @@
 import { isRecord } from './model.ts';
 
 export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
-type Effort = (typeof EFFORTS)[number];
+export type Effort = (typeof EFFORTS)[number];
 const PROVIDERS = ['claude-code'] as const;
 export type ProviderId = (typeof PROVIDERS)[number];
 export type ModelChoice = { provider: ProviderId; id: string; effort: Effort };

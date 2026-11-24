@@ -925,11 +925,32 @@ body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite);
 .mc-form textarea.fade-top { mask-image: linear-gradient(transparent, var(--ink) 1lh); }
 .mc-form textarea::placeholder { color: var(--ink-faint); }
 .mc-send { width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; background: var(--accent-soft); color: var(--on-pastel); font: 700 15px/1 var(--font); cursor: pointer; }
-.mc-foot { display: flex; align-items: center; gap: 8px; }
+.mc-foot { display: flex; align-items: center; gap: 8px; container-type: inline-size; }
 .mc-lines { font: 600 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
-.mc-hint { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 500 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
+.mc-hint { flex: 1 1 0; min-width: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; font: 500 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
 .mc-expand { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--ink-soft); cursor: pointer; }
 .mc-expand:hover, .mc-expand:focus-visible { color: var(--ink); background: rgb(from var(--ink) r g b / .06); }
+/* the hint is the spacer, so it gives way first and the pill's words only cut off with an ellipsis once it is gone; a
+   footer too narrow to show the whole hint drops it, rather than showing it cut */
+@container (max-width: 319px) { .mc-hint { display: none; } }
+.mc-model { margin-left: auto; display: flex; align-items: center; gap: 4px; min-width: 0; height: 24px; padding: 0 8px 0 10px; border: 0; border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--ink) r g b / .06); color: var(--ink-soft); font: 500 11px/1 var(--font); cursor: pointer; }
+.mc-model span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-model svg { flex: none; }
+.mc-model:hover, .mc-model[aria-expanded="true"] { color: var(--ink); background: rgb(from var(--ink) r g b / .1); }
+.mc-model:focus-visible { outline: 2px solid var(--select); outline-offset: 1px; }
+/* the model menu is a .row-menu: a tick, the name, and the key that picks it; its Effort flyout opens beside it */
+.mc-modelmenu { width: max-content; min-width: 190px; }
+.mc-modelmenu button { display: flex; align-items: center; gap: 6px; }
+.mm-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-key, .mm-val, .mm-note { flex: none; font: 500 11px/1 var(--font); color: var(--ink-faint); }
+.mm-val { color: var(--ink-soft); }
+.mc-modelmenu .rm-sep { background: color-mix(in oklab, var(--ink) 10%, transparent); }
+.mm-effort svg { flex: none; color: var(--ink-soft); }
+.mc-modelmenu button[aria-disabled="true"] { opacity: .45; cursor: default; }
+.mc-modelmenu button[aria-disabled="true"]:hover { background: none; }
+.mc-modelmenu button:focus-visible { background: var(--blush); outline: 2px solid var(--select); outline-offset: -2px; }
+.mc-modelfly { position: fixed; width: 236px; }
+.mc-modelfly p { margin: 4px 8px 6px; font: 400 12px/1.4 var(--font); color: var(--ink-soft); }
 .mc-expand .in-writing, .m-chat.writing .mc-expand .in-small { display: none; }
 .m-chat.writing .mc-expand .in-writing { display: block; }
 /* Expand: the messages step aside and the one textarea fills the frame, so its text, caret and undo carry over */
@@ -938,7 +959,7 @@ body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite);
 .m-chat.writing .mc-form textarea, .m-chat.writing .mc-form textarea:placeholder-shown, body.proto .m-chat.writing #mcInput { flex: 1; height: auto; max-height: none; field-sizing: fixed; overflow-y: auto; }
 body.proto .m-chat.writing .mc-grip { display: none; }
 /* a touch screen has no Ctrl key, so Send is the way */
-@media (pointer: coarse) { .mc-hint { display: none; } .mc-expand { margin-left: auto; } }
+@media (pointer: coarse) { .mc-hint, .mm-key { display: none; } }
 body.dark .m-chat { background: rgb(from var(--chat-bg-6) r g b / .98); box-shadow: 0 20px 50px rgb(from var(--shade) r g b / .5), 0 0 0 1px rgb(from var(--hilite) r g b / .06); }
 .mc-msg.me { color: var(--m-mc-msg-me-ink); }
 body.dark .mc-msg .m-acts button { color: var(--chat-ink); }
