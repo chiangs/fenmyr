@@ -8,6 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { type CardType, isCardType, sizeOf } from '../src/shared/cardTypes.ts';
 import type { CardOf } from '../src/shared/model.ts';
+import { MARKS_OUTERMOST_FIRST } from '../src/web/richtext/doc.ts';
 import { launch } from './support/launch.ts';
 import { still } from './support/settled.ts';
 
@@ -82,8 +83,15 @@ const EXAMPLES = {
   unknown: { original: {} },
 } satisfies { [T in CardType]: Example<T> };
 
-// Other faces of a type: a link that hasn't loaded, one with only an address, and the back of a vault note
+// Other faces of a type: a link that hasn't loaded, one with only an address, the back of a vault note, and a rich note,
+// whose words have a mark inside one and a link whose address isn't drawn
 const VARIANTS: Variant[] = [
+  {
+    id: 'note-rich',
+    type: 'note',
+    rich: true,
+    text: 'fen**myr** <u>Zqunder</u> [Zqlabel](https://zqsite.example/page)\n- Zqpoint',
+  },
   { id: 'link-draft', type: 'link', draft: 'zqdraft.example/typed' },
   { id: 'link-bare', type: 'link', url: 'https://zqbare.example/page' },
   { id: 'vnote-back', type: 'vnote', vault: 'v1', path: 'Zqvaultnote.md', side: 'back' },
@@ -106,6 +114,8 @@ const WORDLESS: CardType[] = ['stamp', 'ink', 'icon', 'path', 'unknown'];
 // Where the words aren't one a person wrote: buttons and what they do, and the count a column or collection keeps (a count
 // would make "3" match every card that has one)
 const NOT_WORDS = 'button, [data-act], .kb-n';
+// What a note draws a mark or a link with: text split by one of these is still one word
+const MARKS = [...MARKS_OUTERMOST_FIRST.map(m => m.tag), 'a'];
 
 // A vault the board may read, with the one note the vault cards show
 const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-fc-'));
@@ -174,20 +184,47 @@ try {
   await still(page);
 
   // what each card draws, word by word: its text, minus the buttons and the app's own words, and what sits in its fields
-  const drawn = await page.evaluate(skip => {
-    return [...document.querySelectorAll<HTMLElement>('#cards .card')].map(card => {
-      const parts: string[] = [];
-      const walk = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
-      for (let n = walk.nextNode(); n; n = walk.nextNode())
-        if (!n.parentElement?.closest(skip)) parts.push(n.textContent ?? '');
-      // a link that hasn't loaded holds the address typed so far in a field
-      for (const f of card.querySelectorAll('input, textarea')) {
-        const typed = f instanceof HTMLTextAreaElement || (f instanceof HTMLInputElement && f.type === 'text');
-        if (typed && f.value) parts.push(f.value);
-      }
-      return { id: card.dataset.id ?? '', nodes: parts.map(p => p.trim()).filter(Boolean) };
-    });
-  }, NOT_WORDS);
+  const drawn = await page.evaluate(
+    ({ skip, marks }) => {
+      // two pieces of text are one word when only a mark drawn in the line lies between them, as in fen**myr**. A vault
+      // note's property name is an em too, but a flex item beside its value, and that is no mark.
+      const upFrom = (n: Node) => {
+        const up: Element[] = [];
+        for (let e = n.parentElement; e; e = e.parentElement) up.push(e);
+        return up;
+      };
+      const markBetween = (a: Node, b: Node) => {
+        const up = upFrom(a),
+          down = upFrom(b);
+        const between = [...up.filter(e => !down.includes(e)), ...down.filter(e => !up.includes(e))];
+        return (
+          between.length > 0 &&
+          between.every(e => marks.includes(e.localName) && getComputedStyle(e).display === 'inline')
+        );
+      };
+      return [...document.querySelectorAll<HTMLElement>('#cards .card')].map(card => {
+        const parts: string[] = [];
+        const walk = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+        let prev: Node | null = null;
+        for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+          if (n.parentElement?.closest(skip)) {
+            prev = null;
+            continue;
+          }
+          if (prev && markBetween(prev, n)) parts[parts.length - 1] += n.textContent ?? '';
+          else parts.push(n.textContent ?? '');
+          prev = n;
+        }
+        // a link that hasn't loaded holds the address typed so far in a field
+        for (const f of card.querySelectorAll('input, textarea')) {
+          const typed = f instanceof HTMLTextAreaElement || (f instanceof HTMLInputElement && f.type === 'text');
+          if (typed && f.value) parts.push(f.value);
+        }
+        return { id: card.dataset.id ?? '', nodes: parts.map(p => p.trim()).filter(Boolean) };
+      });
+    },
+    { skip: NOT_WORDS, marks: MARKS },
+  );
 
   const words = (nodes: string[]) => [
     ...new Set(
