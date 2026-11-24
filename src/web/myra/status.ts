@@ -1,5 +1,6 @@
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
+import type { BusyLook } from '../gooBusy.ts';
 import { settings } from '../settings/settings.ts';
 import { goo } from './goos.ts';
 
@@ -44,6 +45,16 @@ function busyLine(b: Busy): Line {
   }
 }
 
+// her look for each kind of work, which the newest job running gives her
+const LOOK: Record<Busy['kind'], BusyLook> = {
+  thinking: 'thinking',
+  reading: 'reading',
+  building: 'building',
+  explaining: 'explaining',
+  pictures: 'painting',
+  rewriting: 'writing',
+};
+
 // a build, an explanation and a rewrite can answer outside the open chat, so they show no typing dots there
 const answersInChat = (b: Busy) => b.kind !== 'building' && b.kind !== 'explaining' && b.kind !== 'rewriting';
 
@@ -71,6 +82,7 @@ const restText = () =>
 // in start order; the newest running job is the one the header names
 const jobs = new Map<symbol, Busy>();
 let posed = false;
+let looked: BusyLook | null = null;
 
 // a passing note, such as a build that ended on another board, said in place of the resting text
 const NOTE_MS = 8000;
@@ -106,7 +118,7 @@ export function noteHeard(text: string) {
   paintStatus();
 }
 
-/** The only writer of the header's status line, the typing dots and her thinking pose. */
+/** The only writer of the header's status line, the typing dots and her look while she works. */
 export function paintStatus() {
   const all = [...jobs.values()],
     top = all.at(-1),
@@ -114,8 +126,10 @@ export function paintStatus() {
     // that build's line follows
     shown = note && top?.kind === 'building' ? undefined : top,
     line = shown ? busyLine(shown) : { say: note || restText(), more: '' },
-    // a build and an explanation run in the background, so they show in the header without dots or the thinking pose
+    // a build and an explanation run in the background, so they show in the header without dots, and the rest of the
+    // app doesn't count them as her answering
     thinking = all.some(b => b.kind !== 'building' && b.kind !== 'explaining'),
+    look = top ? LOOK[top.kind] : null,
     typing = all.some(answersInChat),
     list = $('mcList'),
     dots = list.querySelector(':scope > .typing'),
@@ -136,7 +150,10 @@ export function paintStatus() {
   if (thinking !== posed) {
     posed = thinking;
     $('myra').classList.toggle('thinking', thinking);
-    goo.think(thinking);
+  }
+  if (look !== looked) {
+    looked = look;
+    goo.busy(look);
   }
   if (typing && !dots) {
     const d = document.createElement('div');
