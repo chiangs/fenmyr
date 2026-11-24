@@ -146,7 +146,11 @@ try {
   fs.mkdirSync(path.join(src, 'components'));
   fs.writeFileSync(path.join(src, 'components', 'PromoField.tsx'), 'export const PromoField = () => null;\n');
   await page.click('.pc-all');
-  await page.waitForFunction(() => document.getElementById('pr-code')?.classList.contains('pc-many'));
+  // All files is wide enough to be a dropdown already, so wait for the prototype's own list, not for the dropdown
+  await page.waitForFunction(() => {
+    const tabs = [...document.querySelectorAll('.pc-file')].map(b => b.textContent);
+    return tabs.includes('components/PromoField.tsx') && !tabs.includes('index.html');
+  });
   assert.deepStrictEqual(
     await bar(),
     { tabs: ['App.tsx', 'components/PromoField.tsx', 'styles.css', 'Values'], dropdown: true },
