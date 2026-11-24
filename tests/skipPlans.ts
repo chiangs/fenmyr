@@ -1,7 +1,9 @@
 // Skip plans, the button on Myra's plan, lasts until Fenmyr closes: it does the plan and lands later big changes at once,
 // through a new chat and another board, without turning on the saved Skip plans setting. Bring plans back, on her line
-// that says so, brings plans back once, and leaves the setting as it is. A reload, which is as close as a test comes to
-// closing Fenmyr, brings plans back too.
+// that says so, brings plans back once, and leaves the setting as it is. While plans are skipped, Settings → Myra shows
+// a line with its own Bring plans back, which is the way back once her line has gone with the chat that held it. The two
+// buttons act on one flag, so each leaves the other's place as it should be. A reload, which is as close as a test
+// comes to closing Fenmyr, brings plans back too.
 import assert from 'node:assert';
 import { replyBoard } from './fixtures/boards.ts';
 import { launch } from './support/launch.ts';
@@ -77,6 +79,33 @@ async function press(label: string, line?: string) {
   if (line === undefined) await still(page);
   else await moreOf(line, before);
 }
+// Settings → Myra, as the gear opens it; the chat is under it until it is closed again
+async function inSettings() {
+  await page.click('#gearBtn');
+  await page.click('#setTabs [data-tab="myra"]');
+  await still(page);
+}
+async function closeSettings() {
+  await page.click('#setClose');
+  await still(page);
+}
+const noteShown = () => page.locator('#skipNote').isVisible();
+// the line in Settings, read with Settings open: whether it shows and what it says
+async function noteInSettings() {
+  await inSettings();
+  const shown = await noteShown();
+  return {
+    shown,
+    text: shown ? await page.locator('#skipNote small').textContent() : null,
+    button: shown ? await page.locator('#skipBack').textContent() : null,
+  };
+}
+// a button of the chat pressed from the page, as Settings' being open leaves no way to reach it with the pointer
+const pressUnder = (label: string) =>
+  page.evaluate(label => {
+    const b = [...document.querySelectorAll<HTMLElement>('#mcList .m-acts button')].find(x => x.textContent === label);
+    b?.click();
+  }, label);
 // the plan Skip plans is on, waiting
 async function planWaits() {
   await eleven();
@@ -97,6 +126,11 @@ async function waits(why: string) {
 }
 
 await openChat();
+
+await check('on a fresh launch Settings → Myra shows no line about skipping', async () => {
+  assert.deepStrictEqual(await noteInSettings(), { shown: false, text: null, button: null });
+  await closeSettings();
+});
 
 await check('the plan offers Skip plans, not Just do it, and its tooltip says how long it lasts', async () => {
   await planWaits();
@@ -122,6 +156,22 @@ await check('the next big change lands with no plan, and the saved setting stays
   await lands('after Skip plans');
   assert.strictEqual(await saved(), false, 'skipPlans is false in the saved settings');
   assert.strictEqual(await settingOn(), false, 'and the toggle in Settings is off');
+});
+
+await check('while plans are skipped, Settings → Myra offers the way back, and its switch stays off', async () => {
+  assert.deepStrictEqual(await noteInSettings(), {
+    shown: true,
+    text: 'Skipped until Fenmyr closes',
+    button: 'Bring plans back',
+  });
+  const row = await page.locator('label.set-row:has(input[data-set="skipPlans"])').boundingBox(),
+    note = await page.locator('#skipNote').boundingBox();
+  assert(row && note, 'both are laid out');
+  assert(note.y >= row.y + row.height - 1 && note.y < row.y + row.height + 12, 'the line sits under the row');
+  assert(Math.abs(note.x - row.x) < 1 && Math.abs(note.width - row.width) < 1, 'and as wide as it');
+  assert.strictEqual(await settingOn(), false, 'the switch is off');
+  assert.strictEqual(await saved(), false, 'and so is the saved setting');
+  await closeSettings();
 });
 
 await check('Bring plans back brings plans back, once, for the big change after it', async () => {
@@ -152,13 +202,32 @@ await check('Skip plans lasts through a new chat and a change of board', async (
   await openChat();
 });
 
+await check('with her button gone, Settings still offers the way back, and it works', async () => {
+  assert.strictEqual(
+    await page.locator('#mcList .m-acts button:text-is("Bring plans back")').count(),
+    0,
+    'she has none',
+  );
+  assert.strictEqual((await noteInSettings()).shown, true, 'Settings has the line');
+  await page.click('#skipBack');
+  assert.strictEqual(await noteShown(), false, 'it goes at once, with Settings open');
+  await closeSettings();
+  assert.strictEqual(await saved(), false, 'the saved setting is untouched');
+  await waits('after the button in Settings');
+  await press('Cancel');
+});
+
 await check('a reload brings plans back too', async () => {
+  await planWaits();
+  await press('Skip plans', SKIPPING);
   await lands('before the reload');
   await page.reload();
   await page.waitForFunction(() => window.__fenmyr?.curBoard() && document.querySelector('#cards .card'));
   await still(page);
   await openChat();
   await waits('after the reload');
+  assert.strictEqual((await noteInSettings()).shown, false, 'and Settings has no line');
+  await closeSettings();
   await press('Cancel');
 });
 
@@ -171,10 +240,80 @@ await check('with Skip plans on in Settings too, Bring plans back leaves the set
   assert.strictEqual((await rows()).at(-1)?.text, BACK_BUT);
   assert.strictEqual(await saved(), true, 'the saved setting is untouched');
   assert.strictEqual(await settingOn(), true, 'and the toggle is still on');
+  assert.strictEqual((await noteInSettings()).shown, false, 'the setting alone is no reason for the line');
+  await closeSettings();
   await lands('on the setting alone');
   await toggleSetting();
   assert.strictEqual(await saved(), false);
   await waits('with the setting off again');
+  await press('Cancel');
+});
+
+await check('the button in Settings brings plans back, and the line goes with Settings open', async () => {
+  await planWaits();
+  await press('Skip plans', SKIPPING);
+  assert.strictEqual((await noteInSettings()).shown, true, 'Settings has the line');
+  await page.click('#skipBack');
+  await still(page);
+  assert.strictEqual(await noteShown(), false, 'it goes at once');
+  await closeSettings();
+  await waits('after the button in Settings');
+  await press('Cancel');
+});
+
+await check('the button in Settings leaves the switch as it was', async () => {
+  await planWaits();
+  await toggleSetting();
+  await press('Skip plans', SKIPPING);
+  assert.strictEqual((await noteInSettings()).shown, true, 'Settings has the line');
+  await page.click('#skipBack');
+  assert.strictEqual(await noteShown(), false, 'it goes');
+  assert.strictEqual(await settingOn(), true, 'the switch is still on');
+  assert.strictEqual(await saved(), true, 'and so is the saved setting');
+  await closeSettings();
+  await lands('on the setting alone');
+  await toggleSetting();
+  assert.strictEqual(await saved(), false);
+});
+
+await check(
+  'her Bring plans back also takes the line out of Settings, and each follows the flag in place',
+  async () => {
+    await planWaits();
+    await inSettings();
+    await pressUnder('Skip plans');
+    await page.locator('#skipNote').waitFor({ state: 'visible' });
+    await closeSettings();
+    await press('Bring plans back', BACK);
+    assert.strictEqual((await noteInSettings()).shown, false, 'the line is gone');
+    await closeSettings();
+    await planWaits();
+    await press('Skip plans', SKIPPING);
+    await inSettings();
+    assert.strictEqual(await noteShown(), true);
+    await pressUnder('Bring plans back');
+    await page.locator('#skipNote').waitFor({ state: 'hidden' });
+    await closeSettings();
+    await waits('after it');
+    await press('Cancel');
+  },
+);
+
+await check('once Settings has brought plans back, her old button does nothing', async () => {
+  await planWaits();
+  await press('Skip plans', SKIPPING);
+  await inSettings();
+  await page.click('#skipBack');
+  await closeSettings();
+  const lines = [await count(BACK), await count(BACK_BUT)];
+  await press('Bring plans back');
+  assert.deepStrictEqual([await count(BACK), await count(BACK_BUT)], lines, 'she says nothing');
+  assert.strictEqual(
+    await page.locator('#mcList .m-acts button:text-is("Bring plans back")').count(),
+    0,
+    'and it goes',
+  );
+  await waits('after it');
   await press('Cancel');
 });
 

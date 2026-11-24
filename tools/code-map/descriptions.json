@@ -596,7 +596,7 @@
     "tests/sizeBarEdges.ts": "Checks a size dropdown ended by a press on another card or the bare board, by its own trigger or by a clamped value, and Enter inside ··· on a phone.",
     "tests/howToHeight.ts": "Myra’s how-to note comes out as tall when her picture hasn’t loaded as when it has, so the first one a page places matches the rest.",
     "tests/popupContrast.ts": "The slash menu and the shared dialog read in every look: their names, titles, labels and fields against their own background, in light and dark, in Default and each theme.",
-    "tests/skipPlans.ts": "Checks Myra’s Skip plans button lasts until Fenmyr closes without turning on the saved setting, and that Bring plans back brings plans back once.",
+    "tests/skipPlans.ts": "Checks Myra’s Skip plans lasts until Fenmyr closes without turning on the setting, and that Bring plans back, on her line or in Settings, ends it.",
     "tests/slashMenuFit.ts": "The slash menu fits in a short window: below the top of the window and above its box, scrolling when it has more rows than room, with the row picked by the arrow keys always in view.",
     "tests/slashMake.ts": "Checks /project, /folder and /board in Myra’s chat: in the menu and /help, what each does with a name and without, and her line, in the new board’s chat for /board.",
     "tests/madeLines.ts": "Checks the words she says once she has made a project, folder or board are written only in madeLines.ts, which the slash commands and her replies both read.",

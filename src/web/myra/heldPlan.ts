@@ -8,6 +8,7 @@ import { type Step, summarySteps } from '../../shared/changeSummary.ts';
 import type { ChatAction, PlanEnd } from '../../shared/chat.ts';
 import type { PlanAsk } from '../../shared/ops.ts';
 import { uid } from '../core/base.ts';
+import { $ } from '../core/dom.ts';
 import { boardRevision, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
@@ -29,6 +30,14 @@ let waiting: Waiting | null = null;
 // setting skips them for good, and this is the only place that asks whether either does.
 let skipped = false;
 const skipping = () => skipped || settings.skipPlans;
+// The flag and the line in Settings → Myra that offers the way back change together, so they never disagree.
+function setSkipped(on: boolean) {
+  skipped = on;
+  $('skipNote').hidden = !on;
+}
+/** Settings' Bring plans back: plans are skipped no longer, unless the setting says so. Nothing is said in the chat,
+ *  since the line in Settings going is its answer. */
+export const bringPlansBack = () => setSkipped(false);
 // the step the pointer is on, whose part of the preview is lit
 let hot: number | null = null;
 // plans whose Do it is waiting its turn behind a reply still to come
@@ -145,21 +154,22 @@ async function land(turn: Turn, w: Waiting) {
 // plan has landed, since landing draws the chat again, which would drop the button on a line said before it.
 async function skipPlans(w: Waiting) {
   if (waiting !== w) return;
-  skipped = true;
+  setSkipped(true);
   await doIt(w);
-  reply(SKIPPING, 0, [bringBack()]);
+  reply(SKIPPING, 0, [backButton()]);
 }
 
 // A line she says may still show in the bubble and in the chat, so its button acts once, however often it is pressed.
-function bringBack(): SayAction {
+// Settings may have brought plans back by then, which leaves it nothing to do.
+function backButton(): SayAction {
   let used = false;
   return {
     label: 'Bring plans back',
     ghost: true,
     run: () => {
-      if (used) return;
+      if (used || !skipped) return;
       used = true;
-      skipped = false;
+      bringPlansBack();
       reply(settings.skipPlans ? BACK_BUT : BACK);
     },
   };
