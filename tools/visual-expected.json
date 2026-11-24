@@ -59,7 +59,7 @@
   "panels-myra-expand": "The pointer rests on Expand, which is pressed, so it now draws its shared tooltip, Shrink (Esc), above it: 1,818 px in a box 79 by 23 px. The base's native title tooltip never shows in a screenshot.",
   "phone-board": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
   "plan-board": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text.",
-  "plan-chat": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",
+  "plan-chat": "The plan's last button reads Skip plans where the base reads Just do it, so its label and its width change (450 px, all inside that button).",
   "plan-done": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",
   "polar-night-board": "The theme's own states: Lantern's Snow notes now have dark text, and the dark themes' area colours follow their core tokens instead of Default dark's browns, so the pixels move by design. The sidebar board row's dot is now the theme's own deep shade of its colour (item 4 of #356), 0.162 OKLab at the most for Lingonberry.",
   "polar-night-chat": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",
