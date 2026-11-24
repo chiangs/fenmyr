@@ -119,13 +119,13 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): { skipp
       text: o.type === 'font' ? o.sample || '' : o.text || '',
       color: o.color && COLOR_NAMES.includes(o.color) ? o.color : 'white',
       hex: o.hex,
-      label: o.label ?? undefined,
       items: o.items
         ? o.items.map(t => (typeof t === 'string' ? { t, done: false } : { t: t.t, done: t.done === true }))
         : undefined,
       tagText: o.tag ?? undefined,
       name: o.name,
     });
+    if (c.type === 'swatch' && o.label != null) c.label = o.label;
     if (c.type === 'note' && o.text) keepMyraText(c, o.text);
     if (c.type === 'note' && cleanTags(o.tags).length) c.tags = cleanTags(o.tags).map(existingTag);
     if (hasDue(c) && o.due && dueDate(o.due)) c.due = o.due;
@@ -250,7 +250,7 @@ function edit(c: Card, o: Edit) {
     else delete c.due;
   }
   if (o.hex && /^#[0-9a-f]{6}$/i.test(o.hex)) c.hex = o.hex.toLowerCase();
-  if (o.label != null) c.label = o.label;
+  if (o.label != null && c.type === 'swatch') c.label = o.label;
   if (o.bold !== undefined) c.bold = o.bold;
   if (o.italic !== undefined) c.italic = o.italic;
   if (o.under !== undefined) c.under = o.under;

@@ -1,4 +1,4 @@
-import type { Card, CardOf } from '../../shared/model.ts';
+import { type Card, type CardOf, swatchName } from '../../shared/model.ts';
 import { renderCard, TILTS } from '../canvas/render.ts';
 import { selectOnly } from '../canvas/selection.ts';
 import { applyView } from '../canvas/view.ts';
@@ -129,7 +129,7 @@ const KIND_NAMES: Record<string, string> = { image: 'Image', stamp: 'Stamp', sha
 export const cardName = (cs: Card[]) => {
   const one = cs.length === 1 ? cs[0] : undefined,
     name = one
-      ? one.name || plainOf(one) || one.title || one.label || KIND_NAMES[one.type] || 'Card'
+      ? one.name || plainOf(one) || one.title || swatchName(one) || KIND_NAMES[one.type] || 'Card'
       : `${session.board.name} – ${cs.length} cards`;
   return name.slice(0, 60).trim() || 'Card';
 };

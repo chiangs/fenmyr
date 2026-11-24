@@ -573,6 +573,7 @@
     "tests/replies.ts": "Pins what each kind of Myra reply does to the board, her chat, the library and templates.",
     "tests/reply.ts": "Checks a malformed reply from Myra loses only its bad fields.",
     "tests/replyActs.ts": "Checks what shows under a reply that changed the board in the real app: its summary, Show on board, and Undo with Ctrl+Z, a board reopened and her bubble.",
+    "tests/replyLabel.ts": "Checks a label in Myra’s reply renames a colour, whether she adds it or edits it, and lands on no other card, while her tag still sets a note’s own label.",
     "tests/replyPlan.ts": "Checks a big Myra reply waits as a plan with nothing saved, Do it lands it with no second request, Cancel leaves the board, and reading never plans.",
     "tests/replySources.ts": "Checks what Myra read and her next steps under a reply in the real app: note and page links, their order, and that they last through reopen and restart.",
     "tests/replyUndo.ts": "Checks a Myra reply is one undo step even with slow pictures, waits its turn, previews without changing anything, and shows in the open doc's editor.",
