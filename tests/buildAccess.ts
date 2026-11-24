@@ -77,8 +77,12 @@ try {
     () => [...document.querySelectorAll('#mcList .mc-msg')].some(m => m.firstChild?.textContent === 'Two files.'),
     'the build lands',
   );
+  // the block is drawn inside changeBoard, but the line is said once the board is written, which can come later
+  await until(
+    () => document.querySelector('#mcStatusSay .mc-heard')?.textContent === 'Checkout is built',
+    'a screen reader hears that the build ended',
+  );
   const heard = await status();
-  assert.equal(heard.heard, 'Checkout is built', 'a screen reader hears that the build ended');
   assert.equal(heard.shows, 'Ready', 'and the status line still reads as it did');
   assert.equal(heard.clipped, 'inset(50%)', 'with the words for the screen reader out of sight');
 
