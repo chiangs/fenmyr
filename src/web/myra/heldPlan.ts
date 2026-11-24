@@ -18,6 +18,7 @@ import { applyHeld, asItWouldLand, type Planned, planHeld, planNewBoard, Turn } 
 import type { HeldReply, NoteUsed } from './applyTypes.ts';
 import { addMsg, chatKeep, renderChat } from './chatLog.ts';
 import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
+import { react } from './react.ts';
 import { noEmoji } from './replyText.ts';
 import { reply, type SayAction } from './say.ts';
 
@@ -124,6 +125,12 @@ function end(w: Waiting, how: PlanEnd) {
   redraw();
 }
 
+// the person turned it down, by Cancel or a typed no; her own reply dropping it isn't theirs to sigh at
+function dismiss(w: Waiting) {
+  end(w, 'cancelled');
+  react('planDismissed');
+}
+
 // It stops waiting at once, so a second press finds nothing, and lands when its turn comes.
 function doIt(w: Waiting) {
   if (waiting !== w) return Promise.resolve();
@@ -142,6 +149,7 @@ async function land(turn: Turn, w: Waiting) {
   end(w, 'done');
   try {
     if ((await applyHeld(turn, w.planned.held, w.planned))?.leftAll) end(w, 'left');
+    else react('planDone');
   } catch {
     delete w.act.ended;
     if (session.board.id === w.board) waiting ??= w;
@@ -251,7 +259,7 @@ export function planPieces(a: PlanAct): Piece[] {
     pieces.push(
       { slot: 'reply', button: { label: 'Do it', after: 'stay', run: () => doIt(w) } },
       { slot: 'reply', button: { label: 'Change the plan', ghost: true, after: 'stay', run: changePlan } },
-      { slot: 'reply', button: { label: 'Cancel', ghost: true, after: 'stay', run: () => end(w, 'cancelled') } },
+      { slot: 'reply', button: { label: 'Cancel', ghost: true, after: 'stay', run: () => dismiss(w) } },
       {
         slot: 'reply',
         button: { label: 'Skip plans', ghost: true, title: SKIP_TIP, after: 'stay', run: () => skipPlans(w) },
@@ -270,7 +278,7 @@ export function answerPlan(q: string): Promise<void> | null {
   addMsg('me', q);
   if (said === 'do') return doIt(w);
   if (said === 'skip') return skipPlans(w);
-  end(w, 'cancelled');
+  dismiss(w);
   return Promise.resolve();
 }
 

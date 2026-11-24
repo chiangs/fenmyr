@@ -9,6 +9,7 @@ import { fitText } from '../edit/text.ts';
 import { audioAct } from '../media/devices.ts';
 import { videoAct } from '../media/video.ts';
 import { card } from '../model/boards.ts';
+import { react } from '../myra/react.ts';
 import { revealCards } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
 import { newNoteColor, snapTo } from '../settings/licenses.ts';
@@ -24,6 +25,9 @@ import { onPress } from './press.ts';
 import { DOUBLE_TAP_MS, onRelease } from './release.ts';
 import { renderCard } from './render.ts';
 import { selectOnly } from './selection.ts';
+
+// a list this long, ticked off, is a bigger moment than most
+const BIG_LIST = 10;
 
 let ctrlHeld = false;
 let wheelSum = 0;
@@ -151,6 +155,9 @@ export function init16() {
         item.done = t.checked;
         li.classList.toggle('done', item.done);
         save();
+        const items = c.items ?? [];
+        if (item.done && items.length >= 2 && items.every(i => i.done))
+          react(items.length >= BIG_LIST ? 'bigListDone' : 'listDone');
       } else if (t instanceof HTMLSpanElement && !t.isContentEditable) startEdit(c.id, t);
     }
   });

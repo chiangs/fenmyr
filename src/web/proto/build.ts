@@ -3,6 +3,7 @@ import type { Board, Card } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { appState, session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
+import { react } from '../myra/react.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { refreshPanes } from './buildButtons.ts';
@@ -156,9 +157,11 @@ const turnedAway = (r: Running, said: string) =>
 // How it ended lands in the build's own prototype whichever board is open, and the status line says it's building
 // until then.
 function land(r: Running, e: End, said?: string) {
-  const done = () => {
+  // wrote: its end reached its board, so she can react to how it went
+  const done = (wrote: boolean) => {
     freeSlot(r);
     r.job.end();
+    if (wrote) react(e.type === 'done' ? 'buildDone' : 'buildFailed');
   };
   landOn(r.board, r.name, e, done, b => {
     // the block is drawn from its record from here on
@@ -170,7 +173,7 @@ function land(r: Running, e: End, said?: string) {
 // Another board only hears how it ended, on the status line, by the board's name as it is then. name: the board's
 // name for a failure to write it. The next build waits until the open board's preview shows this one's code and has
 // been checked, so it is sent all the errors that code logged and not the code's before.
-function landOn(board: string, name: string, e: End, done: () => void, change: (b: Board) => boolean) {
+function landOn(board: string, name: string, e: End, done: (wrote: boolean) => void, change: (b: Board) => boolean) {
   // the board's name as it lands, which stays null when the board was deleted
   let landed: string | null = null;
   catchUp(
@@ -185,7 +188,7 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
       return true;
     }).then(
       () => {
-        done();
+        done(landed !== null);
         const open = session.board?.id === board,
           words = e.type === 'done' ? `${landed} is built` : `${landed}’s build stopped`;
         // the open board shows no note, since its block says how it went, but a screen reader hears it
@@ -194,7 +197,7 @@ function landOn(board: string, name: string, e: End, done: () => void, change: (
         return open ? refreshPanes().finally(checkNewest) : undefined;
       },
       (err: unknown) => {
-        done();
+        done(false);
         console.error('A build’s result could not be written to its board', err);
         noteStatus(`Couldn’t save ${landed ?? name}’s build to its chat`);
         if (session.board?.id === board) void checkNewest();

@@ -51,8 +51,9 @@ import { ask } from '../myra/chat.ts';
 import { draftBoards } from '../myra/chatDraft.ts';
 import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
 import { heldLists, planAsk, settle } from '../myra/heldPlan.ts';
-import { idleCheck, idleState } from '../myra/idle.ts';
+import { dozeCheck, idleCheck, idleState } from '../myra/idle.ts';
 import { perched, perchGoo } from '../myra/perch.ts';
+import { forgetReactions, lastReaction, react } from '../myra/react.ts';
 import { replyRecord } from '../myra/replyMemory.ts';
 import { nextBoards, peekSees } from '../myra/seesStrip.ts';
 import { snapshot } from '../myra/snapshot.ts';
@@ -136,6 +137,10 @@ const makeHooks = () => ({
   perched: () => perched,
   idleCheck,
   idleState,
+  dozeCheck,
+  react,
+  forgetReactions,
+  lastReaction: () => lastReaction,
   playAnim,
   animRequest,
   animName,

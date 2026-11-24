@@ -147,6 +147,9 @@ export function paintStatus() {
   } else if (!typing) dots?.remove();
 }
 
+/** True while any job runs, in the open chat or in the background. */
+export const working = () => jobs.size > 0;
+
 export function startJob(b: Busy): Job {
   const id = Symbol('job');
   jobs.set(id, b);

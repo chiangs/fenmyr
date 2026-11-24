@@ -24,6 +24,7 @@ import { answerPlan, dropPlan, planAsk, settle } from './heldPlan.ts';
 import { showConnections } from './helpers.ts';
 import { initPasted } from './pasted.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
+import { react } from './react.ts';
 import { parse } from './replyText.ts';
 import type { SayAction } from './say.ts';
 import { reply } from './say.ts';
@@ -280,6 +281,8 @@ async function answer(turn: Turn, asked: Asked) {
       );
     }
     reply(`Hmm, I couldn't reach Claude: ${why}`);
+    // after `finally` has ended the job, since she doesn't react while she is still answering
+    queueMicrotask(() => react('askFailed'));
     if (!reached) unsent();
   } finally {
     job.end();
