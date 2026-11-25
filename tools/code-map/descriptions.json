@@ -550,6 +550,7 @@
     "tests/pictureOpacity.ts": "A picture's own Opacity dropdown in the bar, and Fill's slider reading Mixed for boxes at different opacities, with an arrow nudging each from its own.",
     "tests/pieceBarFit.ts": "Checks the new Type, Font, Change icon and Colour controls fit the bar: nothing folds at 1280, the picker tucks away nothing it didn’t before, and on a phone they wait in ··· and open above the strip.",
     "tests/pieceFont.ts": "Checks fonts from the bar: one Font button for a wireframe text, a whole piece, a font card, or a title and a text; a screen’s Font row; the Use row for any Google font; hover previews; the keyboard.",
+    "tests/iconPaint.ts": "An icon's Stroke paints an outline around the glyph, a closed icon takes a fill from the bar, an open one is offered none, and changing to an open glyph leaves no fill showing.",
     "tests/pieceIcon.ts": "Checks Change icon swaps every selected icon through the picker as one step, the picker’s add mode is unchanged, an icon’s Colour and a box’s Opacity in Fill.",
     "tests/piecePick.ts": "Checks Pieces in the bar, the picker's headings, thumbnails and search, every piece landing in its screen, three picks in a row, undo per pick, and the Box and Text cells.",
     "tests/pieceType.ts": "Checks a wireframe text’s Type dropdown: size, weight, line height and alignment as one undo step, Myra’s change meanwhile as its own, and the keyboard and screen-reader names.",
