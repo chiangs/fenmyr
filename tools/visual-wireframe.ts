@@ -2,11 +2,15 @@ import type { Page } from 'playwright';
 import { wireframeBoard } from '../tests/fixtures/boards.ts';
 import type { Group, Step } from './visual-myra.ts';
 
-// Pieces for the Sign in screen. A base without the picker has no button, so its step does nothing there.
+// The picker open on the Sign in screen: selecting it opens the picker, and Pieces does on a base where it doesn't, or
+// on a phone. A base without the picker has no button, so its step does nothing there.
 const openPieces = async (page: Page) => {
   await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
   await page.waitForTimeout(150);
-  await page.evaluate(() => document.querySelector<HTMLElement>('#selbar [data-pieces]')?.click());
+  await page.evaluate(() => {
+    if (document.getElementById('piecePick')?.hidden)
+      document.querySelector<HTMLElement>('#selbar [data-pieces]')?.click();
+  });
   await page.mouse.move(5, 450);
 };
 const pieces: Step = async page => {
