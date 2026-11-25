@@ -115,3 +115,40 @@ export async function repoOps(t: Smoke) {
     capture: r.picture,
   });
 }
+
+// A built preview handed to the host comes back at an address of its own, which serves that page and nothing else. The
+// host keeps only the newest few, and refuses a page too big to hold.
+export async function previewPages(t: Smoke) {
+  const { app, page } = t;
+  const r = await page.evaluate(async () => {
+    const F = window.Fenmyr;
+    const first = await F.previewPage({ html: '<p>first</p>' });
+    const later = [];
+    for (let i = 0; i < 4; i++) later.push(await F.previewPage({ html: `<p>later ${i}</p>` }));
+    const tooBig = await F.previewPage({ html: 'x'.repeat(16 * 1024 * 1024 + 1) }).then(
+      () => '',
+      e => (e instanceof Error ? e.message : String(e)),
+    );
+    return { first: first.url, newest: later[3]?.url ?? '', tooBig };
+  });
+  const served = await app.evaluate(async ({ net }, urls) => {
+    const get = async (url: string) => {
+      const res = await net.fetch(url);
+      return { status: res.status, type: res.headers.get('content-type') ?? '', text: await res.text() };
+    };
+    return {
+      newest: await get(urls.newest),
+      dropped: await get(urls.first),
+      otherPath: await get(`${urls.newest}x.js`),
+      unknown: await get('fenmyrpreview://not-a-token/'),
+    };
+  }, r);
+  t.checkAll('previewPages', {
+    ownAddress: /^fenmyrpreview:\/\/[0-9a-f-]{36}\/$/.test(r.newest) && r.newest !== r.first,
+    served: served.newest.status === 200 && served.newest.text === '<p>later 3</p>',
+    asHTML: served.newest.type.startsWith('text/html'),
+    oldestDropped: served.dropped.status === 404,
+    nothingElse: served.otherPath.status === 404 && served.unknown.status === 404,
+    tooBig: /too big/.test(r.tooBig),
+  });
+}

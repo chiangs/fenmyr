@@ -87,6 +87,9 @@ try {
   });
   await until(async () => /hello from the prototype/.test(await logText()), 'the React prototype runs');
   const frame = page.frameLocator('#pr-preview iframe');
+  // A srcdoc frame would take on the app page's policy, so the preview loads from an origin of its own
+  const address = () => frame.locator('html').evaluate(() => document.URL);
+  assert.match(await address(), /^fenmyrpreview:\/\/[0-9a-f-]{36}\/$/, 'the React preview loads from fenmyrpreview:');
   assert.strictEqual(await frame.locator('button.count').textContent(), 'Count 0');
   assert.strictEqual(
     await frame.locator('button.count').evaluate(b => getComputedStyle(b).color),
@@ -272,6 +275,7 @@ try {
 
   await page.evaluate(() => window.__fenmyr.openBoard('hb'));
   await until(async () => /plain page ran/.test(await logText()), 'a plain HTML prototype runs its script');
+  assert.match(await address(), /^fenmyrpreview:\/\//, 'and loads from fenmyrpreview: too');
   assert.deepStrictEqual(l.errors, []);
   console.log('PREVIEW OK');
 } finally {
