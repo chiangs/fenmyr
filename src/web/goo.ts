@@ -1,9 +1,10 @@
+import { type BusyLook, busyEyes, busySway, drawBusy } from './gooBusy.ts';
 import { grid } from './gooPixels.ts';
 import { mix } from './gooShapes.ts';
 
 // Myra in pixels: a little cloudberry (a bumpy cluster of golden beads with a leafy crown, ink eyes and blush).
-// She breathes, blinks, glances around, hops when she does something, and wiggles while she's thinking.
-// The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, think, wiggle, pose, hat, lively, setColors, draw }.
+// She breathes, blinks, glances around, hops when she does something, and has a look of her own for each kind of work.
+// The art is Myra's own (see TRADEMARKS.md). The API is the one the app has always used: Goo(canvas, opts) → { hop, busy, room, wiggle, pose, hat, lively, setColors, draw }.
 
 export type Pixel = 'B' | 'S' | 's' | 'D' | 'd' | 'L' | 'l';
 export type GooColors = { B: string; S: string; D: string; L?: string; l?: string };
@@ -48,7 +49,12 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
       l: col.l || '#3f8f3c',
     }); // a color can bring its own leaves (a green Myra gets teal ones, so the crown still shows);
   let hopT = -9,
-    thinking = false,
+    // the work she is busy with, the one before it (whose prop is being put away) and when it changed
+    busy: BusyLook | null = null,
+    busyWas: BusyLook | null = null,
+    busyAt = -9,
+    // room for a prop; a narrow docked chat has none
+    room = true,
     look = 0,
     lookTo = 0,
     nextLook = 0,
@@ -56,6 +62,7 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     showOff = false,
     wiggleUntil = 0,
     hatOn = false; // pose: 'sleepy' | 'shook' | 'sigh' | 'happy' | 'love' | 'dizzy' | 'curious' | null; showOff: move even in calm mode (when someone asked her to)
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   // Calmest: her colors softened toward a gentle gray (kept light so she still reads as her color)
   const mutedCache = new Map<string, string>();
   const mute = (hex: string) => {
@@ -90,19 +97,23 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
       nextLook = t + 1.5 + Math.random() * 2.5;
     }
     look += (lookTo - look) * 0.2;
-    const calm = window.myraCalm && !showOff,
+    // calm and the system's reduced motion both keep her still, apart from blinking; a prop stays, still
+    const calm = (window.myraCalm || reduced.matches) && !showOff,
+      slid = calm ? 1 : Math.min(1, (t - busyAt) / 0.25),
       hp = t - hopT,
       lift = !calm && hp < 0.45 ? Math.sin((hp / 0.45) * Math.PI) * 3 : 0; // calm: she sits still (she still blinks)
     const sighPh = pose === 'sigh' ? Math.floor((t % 0.78) / 0.26) : 0; // the sigh runs normal, sigh, normal at 260 ms a frame, like her stamp
     // each face has its own motion: shook trembles, sleepy breathes slow and deep, and she deflates a little mid-sigh
     const wig =
-      (thinking || t * 1000 < wiggleUntil) && !calm
+      t * 1000 < wiggleUntil && !calm
         ? Math.sin(t * 14) * 0.6
-        : pose === 'shook' && !calm
-          ? Math.sin(t * 38) * 0.55
-          : pose === 'dizzy'
-            ? Math.sin(t * 5) * 0.8
-            : 0;
+        : busy && !pose
+          ? busySway(busy, t, calm)
+          : pose === 'shook' && !calm
+            ? Math.sin(t * 38) * 0.55
+            : pose === 'dizzy'
+              ? Math.sin(t * 5) * 0.8
+              : 0;
     const breathe = calm
       ? 0
       : pose === 'sleepy'
@@ -190,9 +201,10 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
         g.fillRect(ox + c * px, oy + 8.5 * px, px * 3, px * 0.9);
       });
     } else {
+      const e = busy ? busyEyes(busy, t, calm) : { dx: ex, dy: 0 };
       g.fillStyle = ink;
       [4, 11].forEach(c => {
-        g.fillRect(ox + (c + ex) * px, oy + (blink ? 8.5 : 8) * px, px, blink ? px * 0.4 : px * 2);
+        g.fillRect(ox + (c + e.dx) * px, oy + (blink ? 8.5 : 8 + e.dy) * px, px, blink ? px * 0.4 : px * 2);
       });
     }
     g.fillStyle = mute('#ff8fa8');
@@ -300,6 +312,11 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
       g.fillStyle = mute('#c8dcf0');
       g.fillRect(ox + 14.5 * px, oy + 8.5 * px, px * 2.5, px * 2.5);
     }
+    if (room) {
+      const paint = { g, t, ox, oy, px, mute, still: calm };
+      if (busy) drawBusy(busy, { ...paint, out: 1 - slid });
+      if (busyWas && slid < 1) drawBusy(busyWas, { ...paint, out: slid });
+    }
     if (hatOn) {
       // a party hat, tipped to one side: lilac with cream stripes and a pompom
       const u = Math.max(1, px * 1.25),
@@ -335,9 +352,18 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     hop() {
       hopT = performance.now() / 1000;
     },
-    think(on: boolean) {
-      thinking = on;
+    /** The work she is busy with, which gives her its look, or null when she isn't. */
+    busy(look: BusyLook | null) {
+      if (look === busy) return;
+      busyWas = busy;
+      busy = look;
+      busyAt = performance.now() / 1000;
     },
+    busyLook: () => busy,
+    room(on: boolean) {
+      room = on;
+    },
+    roomy: () => room,
     wiggle(ms: number) {
       wiggleUntil = performance.now() + ms;
     },
@@ -354,8 +380,9 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
       col = c;
       pal = null;
     },
-    draw() {
-      frame(performance.now());
+    // at: a time on performance.now()'s clock, for a frame that is the same every time it is drawn
+    draw(at = performance.now()) {
+      frame(at);
     },
   };
 }

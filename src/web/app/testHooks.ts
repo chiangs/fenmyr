@@ -49,6 +49,7 @@ import {
 } from '../myra/birthday.ts';
 import { ask } from '../myra/chat.ts';
 import { draftBoards } from '../myra/chatDraft.ts';
+import { goo } from '../myra/goos.ts';
 import { daily, greet, greeter, SLASH } from '../myra/greet.ts';
 import { heldLists, planAsk, settle } from '../myra/heldPlan.ts';
 import { dozeCheck, idleCheck, idleState } from '../myra/idle.ts';
@@ -57,6 +58,7 @@ import { forgetReactions, lastReaction, react } from '../myra/react.ts';
 import { replyRecord } from '../myra/replyMemory.ts';
 import { nextBoards, peekSees } from '../myra/seesStrip.ts';
 import { snapshot } from '../myra/snapshot.ts';
+import { startJob } from '../myra/status.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
 import { settings } from '../settings/settings.ts';
@@ -141,6 +143,10 @@ const makeHooks = () => ({
   react,
   forgetReactions,
   lastReaction: () => lastReaction,
+  // the look her sprite has while she works, whether there is room for its prop, and a job as the app starts one
+  busyLook: () => goo.busyLook(),
+  propRoom: () => goo.roomy(),
+  startJob,
   playAnim,
   animRequest,
   animName,

@@ -3,6 +3,7 @@ import { appState } from '../core/state.ts';
 import { liveOff, liveOn, pickAnim, playAnim } from './anim.ts';
 import { chatLog } from './chatLog.ts';
 import { boxRect, chatOpen, chatOverBoard } from './chatWindow.ts';
+import { goo } from './goos.ts';
 
 type Point = { x: number; y: number };
 // the slot Myra's canvas sits in, which she hops out of and back into
@@ -222,9 +223,15 @@ export function dockReset() {
   gooSlot.classList.remove('perched');
   gooRest();
   gooMove({ x: 0, y: 0 });
+  fitProps();
 }
 
 const docked = () => gooSlot.parentElement?.id === 'mcPerch';
+
+// a docked chat dragged narrower than this (it opens at about 320 px, and goes down to 280) has no room for the prop
+// she holds while she works, the first thing to go
+const NARROW = 300;
+const fitProps = () => goo.room(!(docked() && $('mChat').offsetWidth < NARROW));
 
 // where she is, to hop from when she is about to change homes: none on a phone, or when she isn't showing. She shows in
 // her box, or on a prototype board in the docked chat's header, where her box is hidden.
@@ -265,6 +272,7 @@ export function initPerch() {
   gooSlot = $('gooSlot');
   appState.toggleLog = [];
   appState.dizzyAuto = true;
+  new ResizeObserver(fitProps).observe($('mChat'));
 
   // click her in the chat and she does something: on her perch, or in a prototype board's docked header, where she
   // always sits. In her box a click opens the chat.
