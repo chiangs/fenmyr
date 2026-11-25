@@ -16,16 +16,18 @@ const SUBFRAME = 7000001,
 // the main frame go too, as the control: they must leave their mark, or a missing mark from the others proves nothing.
 export async function sender(t: Smoke) {
   const { app, page } = t;
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     window.__senderReplies = [];
     const was = window.__fenmyrReply;
     window.__fenmyrReply = (id, ok, value) => {
       window.__senderReplies.push(id);
       was?.(id, ok, value);
     };
+    // The app's own op gives an address the page's policy lets a frame load: a file: one it does not.
+    const { url } = await window.Fenmyr.previewPage({ html: '<p>subframe</p>' });
     const f = document.createElement('iframe');
     f.id = 'senderFrame';
-    f.src = 'favicon.png';
+    f.src = url;
     document.body.append(f);
     return new Promise<void>(res => f.addEventListener('load', () => res()));
   });
@@ -34,7 +36,7 @@ export async function sender(t: Smoke) {
       const win = BrowserWindow.getAllWindows()[0];
       if (!win) throw new Error('no window');
       const wc = win.webContents,
-        sub = wc.mainFrame.frames.find(f => f.url.endsWith('/favicon.png'));
+        sub = wc.mainFrame.frames.find(f => f.url.startsWith('fenmyrpreview:'));
       if (!sub) throw new Error('no subframe');
       const lookalike = { url: wc.mainFrame.url },
         logged: string[] = [],

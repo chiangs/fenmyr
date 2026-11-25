@@ -5,7 +5,28 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { everyOfflineCard } from './fixtures/boards.ts';
 import { launch } from './support/launch.ts';
+
+// A voice memo is stored as a data: URL and played from one, so media-src must allow it. It is silent and tiny: a 44-byte
+// header, then the samples.
+function silentWav(samples: number) {
+  const bytes = samples * 2,
+    head = Buffer.alloc(44);
+  head.write('RIFF', 0);
+  head.writeUInt32LE(36 + bytes, 4);
+  head.write('WAVEfmt ', 8);
+  head.writeUInt32LE(16, 16);
+  head.writeUInt16LE(1, 20);
+  head.writeUInt16LE(1, 22);
+  head.writeUInt32LE(8000, 24);
+  head.writeUInt32LE(16000, 28);
+  head.writeUInt16LE(2, 32);
+  head.writeUInt16LE(16, 34);
+  head.write('data', 36);
+  head.writeUInt32LE(bytes, 40);
+  return `data:audio/wav;base64,${Buffer.concat([head, Buffer.alloc(bytes)]).toString('base64')}`;
+}
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-policy-')));
 const repo = path.join(work, 'acme');
@@ -73,6 +94,46 @@ try {
     errors().some(e => e.includes('Content Security Policy')),
     `a violation in the app page is collected: ${JSON.stringify(errors())}`,
   );
+
+  // a voice memo plays: its data: URL is allowed as media
+  const card = everyOfflineCard().cards.find(c => c.type === 'audio');
+  assert.ok(card, 'the fixture has an audio card');
+  const memo = await launch({
+    boards: [
+      {
+        id: 'memo',
+        name: 'Memo',
+        cards: [{ ...card, x: 0, y: 0, src: silentWav(800), dur: 0.1 }],
+        links: [],
+        tray: [],
+        view: { x: 160, y: 140, z: 1 },
+      },
+    ],
+    open: 'memo',
+  });
+  try {
+    // The player is private to the app, so watch the element it makes: `playing` fires only once sound is being played.
+    const seen = await memo.page.evaluateHandle(() => {
+      const out = { playing: 0, failed: '' },
+        play = HTMLMediaElement.prototype.play;
+      HTMLMediaElement.prototype.play = function () {
+        this.addEventListener('playing', () => {
+          out.playing++;
+        });
+        this.addEventListener('error', () => {
+          out.failed = this.error?.message || 'error';
+        });
+        return play.call(this);
+      };
+      return out;
+    });
+    await memo.page.click('[data-id="audio"] .au-play');
+    await memo.page.waitForFunction(o => o.playing > 0 || o.failed, seen);
+    assert.deepStrictEqual(await seen.jsonValue(), { playing: 1, failed: '' }, 'the voice memo starts playing');
+    assert.deepStrictEqual(memo.errors, [], 'playing a voice memo breaks no policy');
+  } finally {
+    await memo.close();
+  }
   console.log('POLICY OK');
 } finally {
   await l.close();
