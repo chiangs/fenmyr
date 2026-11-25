@@ -1,5 +1,5 @@
-// The Wireframe row's Icon lands a star and opens the picker for its glyph. Placing it and picking the glyph are one
-// undo step, as the panel's Icon was: one Ctrl+Z takes the icon away, not just its glyph.
+// The Icon tool lands a star and opens the picker for its glyph. Placing it and picking the glyph are one undo step:
+// one Ctrl+Z takes the icon away, not just its glyph.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -15,11 +15,10 @@ const icons = () =>
   );
 
 try {
-  await page.click('#tools [data-add="frame"]');
-  await page.click('#screenbar [data-wft="icon"]');
+  await page.click('#tools [data-add="icon"]');
   await page.mouse.click(900, 650);
   await settle(page, 500);
-  assert.deepStrictEqual(await icons(), ['star'], 'the row’s Icon lands a star');
+  assert.deepStrictEqual(await icons(), ['star'], 'the Icon tool lands a star');
   assert.ok(await page.evaluate(() => !document.getElementById('piecePick')?.hidden), 'and the picker opens');
   await page.keyboard.type('heart');
   await page.keyboard.press('Enter');
@@ -35,7 +34,7 @@ try {
     'and leaves the board as it was',
   );
   assert.deepStrictEqual(l.errors, [], 'no errors on the page');
-  console.log('rowIconUndo: ok');
+  console.log('iconUndo: ok');
 } finally {
   await l.close();
 }

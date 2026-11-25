@@ -1,5 +1,5 @@
-// With the screen tool in hand, the screen riding the pointer passes under the Wireframe row, so Box, Text, Icon and
-// × stay in view as the pointer comes down to them. Other tools' ghosts still ride over the bottom bar.
+// With the screen tool in hand, the screen riding the pointer passes under the Wireframe row, so Box, Text and ×
+// stay in view as the pointer comes down to them. Other tools' ghosts still ride over the bottom bar.
 import assert from 'node:assert';
 import { launch } from './support/launch.ts';
 import { still } from './support/settled.ts';
@@ -40,7 +40,7 @@ try {
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     }),
   );
-  assert.strictEqual(tools.length, 4, 'the row has Box, Text, Icon and ×');
+  assert.strictEqual(tools.length, 3, 'the row has Box, Text and ×');
   const first = tools[0] ?? { x: 0, y: 0 };
   await page.mouse.move(first.x - 40, first.y - 60);
   await still(page);
@@ -48,7 +48,7 @@ try {
     await page.evaluate(() => getComputedStyle(document.getElementById('ghost') ?? document.body).display !== 'none'),
     'the screen rides the pointer just above the row',
   );
-  assert.deepStrictEqual(await onTop(tools), ['row', 'row', 'row', 'row'], 'and the row’s tools show over it');
+  assert.deepStrictEqual(await onTop(tools), ['row', 'row', 'row'], 'and the row’s tools show over it');
   await page.keyboard.press('Escape');
   await still(page);
 

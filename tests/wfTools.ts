@@ -1,6 +1,6 @@
 // The Wireframe button in the tools and the tools in the screen tool's mode bar, which take over the Wireframe
 // panel's tool buttons: the button puts the screen tool in hand and lights, and tucks into ··· with the others; the
-// mode bar's Box, Text and Icon place each on a board with no screen, by pointer or keyboard; R and X light their tool.
+// mode bar's Box and Text place each on a board with no screen, by pointer or keyboard; R and X light their tool.
 import assert from 'node:assert';
 import { TOOLBAR } from '../src/web/ui/toolbarTable.ts';
 import { type Launched, launch } from './support/launch.ts';
@@ -38,7 +38,6 @@ const tools = () =>
     };
   });
 const DOWN = { row: false, lit: [], button: false };
-const pickerOpen = () => page.waitForFunction(() => !document.getElementById('piecePick')?.hidden);
 const newest = () =>
   page.evaluate(() => {
     const c = window.__fenmyr.curBoard()?.cards.at(-1);
@@ -89,7 +88,7 @@ try {
     const names = await page.evaluate(() =>
       [...document.querySelectorAll('#screenbar [data-wft]')].map(b => b.getAttribute('aria-label')),
     );
-    assert.deepStrictEqual(names, ['Box · R', 'Text · X', 'Icon'], 'Box, Text and Icon, by name');
+    assert.deepStrictEqual(names, ['Box · R', 'Text · X'], 'Box and Text, by name');
     assert.strictEqual(await page.getAttribute('#screenbar', 'aria-label'), 'Wireframe', 'the row is named');
     await page.focus('#screenbar [data-dev="Watch"]');
     await key('Tab');
@@ -101,64 +100,47 @@ try {
     assert.deepStrictEqual(await tools(), { row: true, lit: ['box'], button: true }, 'Enter on Box puts it in hand');
   });
 
-  await check(
-    'the keyboard alone places a box and an icon from the Wireframe button, and R then Enter a box',
-    async () => {
-      const n = await count();
-      await page.focus('#tools [data-add="frame"]');
-      await key('Enter');
-      assert.ok(
-        await page.evaluate(() => document.activeElement?.matches('#screenbar [data-dev="iPhone"].on')),
-        'Enter on the Wireframe button takes the keyboard to the lit device',
-      );
-      for (let i = 0; i < 5; i++) await key('Tab');
-      await key('Enter');
-      assert.deepStrictEqual(await tools(), { row: true, lit: ['box'], button: true }, 'Tab to Box and Enter takes it');
-      await key('Enter');
-      await still(page);
-      const box = await page.evaluate(() => {
-        const c = window.__fenmyr.curBoard()?.cards.at(-1),
-          v = window.__fenmyr.view,
-          s = document.getElementById('stage')?.getBoundingClientRect();
-        return c && s
-          ? {
-              type: c.type,
-              w: c.w,
-              h: c.h,
-              centred:
-                Math.abs((c.x + c.w / 2) * v.z + v.x - s.width / 2) < 30 &&
-                Math.abs((c.y + c.h / 2) * v.z + v.y - s.height / 2) < 30,
-            }
-          : null;
-      });
-      assert.deepStrictEqual(box, { type: 'box', w: 160, h: 100, centred: true }, 'Enter again places it mid-view');
-      assert.strictEqual(await count(), n + 1, 'one box');
-      await page.focus('#tools [data-add="frame"]');
-      await key('Enter');
-      for (let i = 0; i < 7; i++) await key('Tab');
-      await key('Enter');
-      await key('Enter');
-      await pickerOpen();
-      await still(page);
-      assert.strictEqual((await newest())?.name, 'star', 'Tab to Icon and Enter twice lands a star');
-      assert.strictEqual(
-        await page.evaluate(() => document.getElementById('piecePick')?.getAttribute('aria-label')),
-        'Change icon',
-        'and opens the picker for its glyph',
-      );
-      await key('Escape');
-      await page.evaluate(() => window.__fenmyr.selectOnly([]));
-      await blur();
-      await key('r');
-      await key('Enter');
-      await still(page);
-      assert.deepStrictEqual(
-        await newest().then(c => c && { type: c.type, w: c.w }),
-        { type: 'box', w: 160 },
-        'R then Enter places a box',
-      );
-    },
-  );
+  await check('the keyboard alone places a box from the Wireframe button, and R then Enter a box', async () => {
+    const n = await count();
+    await page.focus('#tools [data-add="frame"]');
+    await key('Enter');
+    assert.ok(
+      await page.evaluate(() => document.activeElement?.matches('#screenbar [data-dev="iPhone"].on')),
+      'Enter on the Wireframe button takes the keyboard to the lit device',
+    );
+    for (let i = 0; i < 5; i++) await key('Tab');
+    await key('Enter');
+    assert.deepStrictEqual(await tools(), { row: true, lit: ['box'], button: true }, 'Tab to Box and Enter takes it');
+    await key('Enter');
+    await still(page);
+    const box = await page.evaluate(() => {
+      const c = window.__fenmyr.curBoard()?.cards.at(-1),
+        v = window.__fenmyr.view,
+        s = document.getElementById('stage')?.getBoundingClientRect();
+      return c && s
+        ? {
+            type: c.type,
+            w: c.w,
+            h: c.h,
+            centred:
+              Math.abs((c.x + c.w / 2) * v.z + v.x - s.width / 2) < 30 &&
+              Math.abs((c.y + c.h / 2) * v.z + v.y - s.height / 2) < 30,
+          }
+        : null;
+    });
+    assert.deepStrictEqual(box, { type: 'box', w: 160, h: 100, centred: true }, 'Enter again places it mid-view');
+    assert.strictEqual(await count(), n + 1, 'one box');
+    await page.evaluate(() => window.__fenmyr.selectOnly([]));
+    await blur();
+    await key('r');
+    await key('Enter');
+    await still(page);
+    assert.deepStrictEqual(
+      await newest().then(c => c && { type: c.type, w: c.w }),
+      { type: 'box', w: 160 },
+      'R then Enter places a box',
+    );
+  });
 
   await check("the mode bar's Box draws a box on the bare board, and the row stays while it is in hand", async () => {
     await page.click('#tools [data-add="frame"]');
@@ -197,33 +179,6 @@ try {
       'Hello',
       'and takes what is typed',
     );
-  });
-
-  await check("the mode bar's Icon lands a star on a board with no screen, then picks its glyph", async () => {
-    await page.click('#tools [data-add="frame"]');
-    await page.click('#screenbar [data-wft="icon"]');
-    await frames();
-    assert.deepStrictEqual(await tools(), { row: true, lit: ['icon'], button: true }, 'Icon is lit');
-    await page.mouse.click(EMPTY.x, EMPTY.y + 200);
-    await pickerOpen();
-    await still(page);
-    const c = await newest();
-    assert.deepStrictEqual(c && { type: c.type, name: c.name, onFrame: c.onFrame }, {
-      type: 'icon',
-      name: 'star',
-      onFrame: null,
-    });
-    const picker = await page.evaluate(() => {
-      const p = document.getElementById('piecePick');
-      return { open: !p?.hidden, name: p?.getAttribute('aria-label') };
-    });
-    assert.deepStrictEqual(picker, { open: true, name: 'Change icon' }, 'the picker opens to choose its glyph');
-    await page.keyboard.type('heart');
-    await page.keyboard.press('Enter');
-    await page.waitForFunction(() => document.getElementById('piecePick')?.hidden);
-    await still(page);
-    assert.strictEqual((await newest())?.name, 'heart', 'Enter gives it the first match');
-    assert.ok(await page.evaluate(() => document.getElementById('piecePick')?.hidden), 'and the picker closes');
   });
 
   await check('R and X light their tool in the mode bar, and Esc puts it down', async () => {

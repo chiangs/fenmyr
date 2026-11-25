@@ -43,6 +43,7 @@ const TABLE: Table = [
   { id: 'stamp', label: 'Stamps', key: 'E', icon: 'stamp' },
   { id: 'pen', label: 'Pen', key: '⇧P', icon: 'pen' },
   { id: 'draw', label: 'Draw', key: 'P', icon: 'draw' },
+  { id: 'icon', label: 'Icon', icon: 'star' },
 ];
 
 export const PANEL = { maxRows: 8 };

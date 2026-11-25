@@ -234,7 +234,7 @@ export function placeAt(w: Point) {
     save();
   }
   if (WF.includes(type)) fileIntoFrame([c]);
-  // the Wireframe row's Icon lands a star and asks for its glyph straight away
+  // the Icon tool lands a star and asks for its glyph straight away
   if (c.type === 'icon' && !more.name) toggleSwap([c.id], true);
   if (['note', 'todo', 'title', 'doc', 'canvas', 'text'].includes(type)) startEdit(c.id); // ready to type right away, so the first letters never act as shortcuts
   if (type === 'coll') startEdit(c.id);
