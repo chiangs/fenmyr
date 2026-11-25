@@ -31,9 +31,14 @@ const TEXT_FILLS = ['#27272a', '#ffffff', '#ff5a6e', '#f6b45e', '#f7b955', '#5fc
 
 const ANY_FILL = typesWith('anyFill'),
   TEXT_COLOUR = typesWith('textColour');
-// a box holding a picture has nothing to fill, nor has an open pen shape
+// a box holding a picture has nothing to fill, nor has an open pen shape or an open icon (an arrow)
 const fillable = (c: Card) =>
-  ANY_FILL.includes(c.type) && !(c.type === 'box' && c.src) && !(c.type === 'path' && !c.closed);
+  ANY_FILL.includes(c.type) &&
+  !(c.type === 'box' && c.src) &&
+  !(c.type === 'path' && !c.closed) &&
+  !(c.type === 'icon' && !iconClosed(c.name || 'star'));
+const takesFill = (c: Card): c is CardOf<'box' | 'frame' | 'path' | 'icon'> =>
+  c.type === 'box' || c.type === 'frame' || c.type === 'path' || c.type === 'icon';
 const isTextFill = (c: Card) => TEXT_COLOUR.includes(c.type);
 // an icon's colour has no hollow version, so No fill is left out wherever one is selected
 const colourTip = (cs: readonly Card[]) => (cs.every(c => c.type === 'icon') ? 'Colour' : 'Text colour');
@@ -46,7 +51,15 @@ function autoBorder(c: Card, was: string | null | undefined) {
 }
 
 const fillOf = (c: Card) =>
-  c.type === 'box' ? c.fill || '#e4e4e7' : c.type === 'frame' ? c.fill || '#ffffff' : c.type === 'path' ? c.fill : '';
+  c.type === 'box'
+    ? c.fill || '#e4e4e7'
+    : c.type === 'frame'
+      ? c.fill || '#ffffff'
+      : c.type === 'path'
+        ? c.fill
+        : c.type === 'icon'
+          ? c.fill || 'none'
+          : '';
 
 const dot = (attr: string, v: string, on: boolean) => {
   const cls = on ? 'on' : '';
@@ -160,8 +173,9 @@ function setFill(v: string, keep?: boolean) {
   const cs = selCards().filter(fillable);
   if (!cs.length) return;
   cs.forEach(c => {
-    if (v === 'none' && fillOf(c) !== 'none') autoBorder(c, fillOf(c));
-    if (c.type === 'box' || c.type === 'frame' || c.type === 'path') c.fill = v;
+    // an icon without its fill still shows its glyph, so it needs no border to stay seen
+    if (v === 'none' && c.type !== 'icon' && fillOf(c) !== 'none') autoBorder(c, fillOf(c));
+    if (takesFill(c)) c.fill = v;
     renderCard(c);
   });
   selectOnly(cs.map(c => c.id));
@@ -262,16 +276,16 @@ function initFill() {
         first = cs[0];
       if (!first) return;
       remember();
-      const was = cs.map(c => (c.type === 'box' || c.type === 'frame' || c.type === 'path' ? c.fill : undefined));
+      const was = cs.map(c => (takesFill(c) ? c.fill : undefined));
       openBarColor({
         title: 'Fill',
-        hex: fillOf(first) || '#ffffff',
+        hex: cssToHex(fillOf(first)) || '#ffffff',
         presets: ['#ffffff', '#e4e4e7', '#27272a', '#ffdcd8', '#ffe3bd', '#e0edd3', '#d9e7f3', '#ebe1f2', '#f6b45e'],
         apply: hex => setFill(hex, true),
         reset: () => {
           cs.forEach((c, i) => {
             const v = was[i];
-            if (c.type === 'box' || c.type === 'frame' || c.type === 'path') {
+            if (takesFill(c)) {
               if (v === undefined) delete c.fill;
               else c.fill = v;
             }

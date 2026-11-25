@@ -377,7 +377,7 @@ export function inner(c: Card): string {
     case 'font':
       return font(c);
     case 'icon':
-      return Icon(c.name || 'star', { cls: 'ci' });
+      return Icon(c.name || 'star', { cls: 'ci', fill: !!c.fill && c.fill !== 'none' });
     case 'text':
       return textCard('text tx', c.text || '');
     case 'coll':
