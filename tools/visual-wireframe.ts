@@ -20,10 +20,13 @@ const pieces: Step = async page => {
 };
 
 // The Sign in button's box with its Size ▾ open, or the whole button with Align ▾ open. A base without the dropdown
-// shows the selection alone.
+// shows the selection alone. The picker that selecting the screen opened would fold the dropdown into ···, so Esc
+// closes it first, after any dropdown still open.
 const openDropdown =
   (ids: string[], pop: string): Step =>
   async page => {
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
     await page.evaluate(i => window.__fenmyr.selectOnly(i), ids);
     await page.waitForTimeout(150);
     await page.evaluate(p => document.querySelector<HTMLElement>(`#selbar [data-pop="${p}"]`)?.click(), pop);
