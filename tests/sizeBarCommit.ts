@@ -48,7 +48,8 @@ board.cards.push(
     fill: '#ffffff',
   },
 );
-const l = await launch({ boards: [board], open: 'wire' });
+// the picker that selecting a screen opens would fold its device dropdown into ···, and this types in that dropdown
+const l = await launch({ boards: [board], open: 'wire', settings: { autoPieces: false } });
 const { page } = l;
 
 const card = (id: string) =>
