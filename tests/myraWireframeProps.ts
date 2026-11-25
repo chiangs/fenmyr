@@ -82,7 +82,11 @@ try {
       calmRest = await hammerRows(2000, true),
       calm = await hammerRows(225, true);
     assert.ok(rest.length && down.length, 'the hammer is drawn');
-    assert.ok((down[0] ?? 0) > (rest[0] ?? 0), `its head is lower mid-strike: from row ${rest[0]} to ${down[0]}`);
+    // the strike brings it down 3 cells, 9 px here, far past the quarter cell her idle bob moves it
+    assert.ok(
+      (down[0] ?? 0) - (rest[0] ?? 0) >= 6,
+      `its head is well down mid-strike: from row ${rest[0]} to ${down[0]}`,
+    );
     assert.deepStrictEqual(calm, calmRest, 'in calm mode it doesn’t move');
   });
 
