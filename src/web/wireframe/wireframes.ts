@@ -28,6 +28,9 @@ export function styleWF(c: Card, el: HTMLElement) {
   if (c.type === 'icon') {
     el.style.setProperty('--isz', `${Math.min(c.w, c.h)}px`);
     el.style.setProperty('--ic', c.color || '#27272a');
+    el.style.setProperty('--if', c.fill || 'none');
+    // the glyph is drawn in a 256 unit box, so a stroke in screen pixels is scaled by this
+    el.style.setProperty('--isk', String(256 / Math.min(c.w, c.h)));
   }
   if (c.type === 'frame') {
     el.style.setProperty('--fr-fill', c.fill === 'none' ? 'transparent' : c.fill || '#ffffff');

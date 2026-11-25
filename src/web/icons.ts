@@ -31,20 +31,22 @@ function readPack(): Record<string, IconEntry> {
 const ICONS = readPack();
 // a name nobody has drawn shows a neutral placeholder, with the name as its tooltip, so nothing is ever blank
 const entry = (name: string) => ICONS[name] ?? ICONS.missing;
-const inside = (name: string, title?: string) => {
+// fill: the glyph's enclosed area (its duotone tone layer) drawn under it, for an icon card given a fill colour
+const inside = (name: string, title?: string, fill?: boolean) => {
   const e = entry(name),
     tip = esc(title || name),
     label = !ICONS[name] || title ? `<title>${tip}</title>` : '',
+    area = fill && e?.t ? `<g class="ico-f">${e.t}</g>` : '',
     regular = e ? e.r : '',
     duotone = e ? (e.d ?? (e.t ?? '') + e.r) : '';
-  return `${label}<g class="ico-r">${regular}</g><g class="ico-d">${duotone}</g>`;
+  return `${label}${area}<g class="ico-r">${regular}</g><g class="ico-d">${duotone}</g>`;
 };
 // Icon('note', { cls: 'ic', size: 18, title: 'Note' }) → an <svg> string
 window.Icon = (name, o = {}) => {
   const cls = o.cls ? ` ${o.cls}` : '',
     size = o.size ? ` width="${o.size}" height="${o.size}"` : '',
     shown = esc(name),
-    content = inside(name, o.title);
+    content = inside(name, o.title, o.fill);
   return `<svg class="ico${cls}" viewBox="0 0 256 256" aria-hidden="true" data-ico="${shown}"${size}>${content}</svg>`;
 };
 // fills the empty <svg data-ico="note"> placeholders in the page (or in a part of it)
@@ -58,6 +60,8 @@ window.hydrateIcons = (root = document) => {
   }
 };
 window.iconKnown = name => !!ICONS[name];
+// open shapes (arrows, carets, check) have no tone layer, so nothing to fill
+window.iconClosed = name => !!ICONS[name]?.t;
 // for the picker: every name with the words people might search for
 window.iconList = () =>
   Object.entries(ICONS)
