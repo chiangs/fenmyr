@@ -3,7 +3,7 @@ import { settings } from './settings/settings.ts';
 
 declare global {
   interface Window {
-    fenmyrHost?: { platform?: string; post(msg: unknown): void; pathOf?(file: File): string };
+    fenmyrHost?: { platform?: string; test?: boolean; post(msg: unknown): void; pathOf?(file: File): string };
     fenmyrWindow?: { minimize(): void; maximize(): void; close(): void };
     __fenmyrReply?: (id: number, ok: boolean, value: unknown) => void;
   }

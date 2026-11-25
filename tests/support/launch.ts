@@ -7,6 +7,8 @@ import { still } from './settled.ts';
 
 export const ROOT = path.resolve(import.meta.dirname, '../..');
 const SCREEN = { width: 1440, height: 900 };
+// the app installs window.__fenmyr, the hooks the tests drive it with, only when launched with this
+export const TEST_RUN = '--fenmyr-test';
 export const HEADLESS = ['--ozone-platform=headless', `--ozone-override-screen-size=${SCREEN.width},${SCREEN.height}`];
 // Headless Chromium reports no mouse, so the app keeps its own cursor off. This tells it there is a mouse that hovers,
 // for tests that check that cursor. (Not on by default: the screenshots are taken without it.)
@@ -79,7 +81,7 @@ export async function launch({
   for (const b of boards) fs.writeFileSync(path.join(boardsDir, `${b.id}.json`), JSON.stringify(b));
   const version = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).version;
   const app = await _electron.launch({
-    args: [dir, '--no-sandbox', ...HEADLESS, ...flags],
+    args: [dir, '--no-sandbox', TEST_RUN, ...HEADLESS, ...flags],
     env: { FENMYR_BUILD_STAMP: BUILD_STAMP, ...process.env, ...env, XDG_DATA_HOME: data, HOME: data },
   });
   const page = await app.firstWindow();
