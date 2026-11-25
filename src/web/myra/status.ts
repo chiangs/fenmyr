@@ -1,6 +1,6 @@
 import { $ } from '../core/dom.ts';
 import { appState, session } from '../core/state.ts';
-import type { BusyLook } from '../gooBusy.ts';
+import type { BusyLook, HeldLook, Look } from '../gooBusy.ts';
 import { settings } from '../settings/settings.ts';
 import { goo } from './goos.ts';
 
@@ -82,7 +82,18 @@ const restText = () =>
 // in start order; the newest running job is the one the header names
 const jobs = new Map<symbol, Busy>();
 let posed = false;
-let looked: BusyLook | null = null;
+let looked: Look | null = null;
+// what the person has in hand, which she mirrors when no work gives her a look; the first in HELD that is held wins
+const held = new Set<HeldLook>();
+const HELD: HeldLook[] = ['palette', 'magnifier', 'clipboard'];
+
+/** The person has picked up (on) or put down a tool she keeps them company with. */
+export function hold(look: HeldLook, on: boolean) {
+  if (on === held.has(look)) return;
+  if (on) held.add(look);
+  else held.delete(look);
+  paintStatus();
+}
 
 // a passing note, such as a build that ended on another board, said in place of the resting text
 const NOTE_MS = 8000;
@@ -129,7 +140,7 @@ export function paintStatus() {
     // a build and an explanation run in the background, so they show in the header without dots, and the rest of the
     // app doesn't count them as her answering
     thinking = all.some(b => b.kind !== 'building' && b.kind !== 'explaining'),
-    look = top ? LOOK[top.kind] : null,
+    look = top ? LOOK[top.kind] : (HELD.find(h => held.has(h)) ?? null),
     typing = all.some(answersInChat),
     list = $('mcList'),
     dots = list.querySelector(':scope > .typing'),

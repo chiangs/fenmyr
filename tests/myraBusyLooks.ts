@@ -43,7 +43,17 @@ const pixels = (f: Frame) =>
     c.width = 64;
     c.height = 56;
     const goo = window.Goo(c, { headroom: 8, manual: true }),
-      LOOKS = ['thinking', 'reading', 'explaining', 'painting', 'writing', 'building'] as const,
+      LOOKS = [
+        'thinking',
+        'reading',
+        'explaining',
+        'painting',
+        'writing',
+        'building',
+        'palette',
+        'magnifier',
+        'clipboard',
+      ] as const,
       chosen = LOOKS.find(n => n === f.look) ?? null;
     goo.busy(chosen);
     if (f.away) goo.busy(null);
@@ -68,6 +78,9 @@ const PROP: Record<string, string> = {
   painting: '#7a4a2a',
   writing: '#4f6fcf',
   building: '#9aa3ad',
+  palette: '#d9b382',
+  magnifier: '#b8923a',
+  clipboard: '#a0703f',
 };
 
 try {

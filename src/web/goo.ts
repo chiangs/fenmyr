@@ -1,4 +1,4 @@
-import { type BusyLook, busyEyes, busySway, drawBusy } from './gooBusy.ts';
+import { busyEyes, busySway, drawBusy, type Look } from './gooBusy.ts';
 import { grid } from './gooPixels.ts';
 import { drawHat, drawPoseExtras } from './gooPoses.ts';
 import { mix } from './gooShapes.ts';
@@ -51,8 +51,8 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     }); // a color can bring its own leaves (a green Myra gets teal ones, so the crown still shows);
   let hopT = -9,
     // the work she is busy with, the one before it (whose prop is being put away) and when it changed
-    busy: BusyLook | null = null,
-    busyWas: BusyLook | null = null,
+    busy: Look | null = null,
+    busyWas: Look | null = null,
     busyAt = -9,
     // room for a prop; a narrow docked chat has none
     room = true,
@@ -202,7 +202,7 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
         g.fillRect(ox + c * px, oy + 8.5 * px, px * 3, px * 0.9);
       });
     } else {
-      const e = busy ? busyEyes(busy, t, calm) : { dx: ex, dy: 0 };
+      const e = (busy && busyEyes(busy, t, calm)) || { dx: ex, dy: 0 };
       g.fillStyle = ink;
       [4, 11].forEach(c => {
         g.fillRect(ox + (c + e.dx) * px, oy + (blink ? 8.5 : 8 + e.dy) * px, px, blink ? px * 0.4 : px * 2);
@@ -260,8 +260,8 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     hop() {
       hopT = performance.now() / 1000;
     },
-    /** The work she is busy with, which gives her its look, or null when she isn't. */
-    busy(look: BusyLook | null) {
+    /** Her look: the work she is busy with or what the person has in hand, or null for none. */
+    busy(look: Look | null) {
       if (look === busy) return;
       busyWas = busy;
       busy = look;

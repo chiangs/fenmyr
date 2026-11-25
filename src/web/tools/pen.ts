@@ -5,6 +5,7 @@ import { $, stage, world } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
+import { hold } from '../myra/status.ts';
 import { drawOn, exitDraw } from './draw.ts';
 import { addCard } from './penEdit.ts';
 import { stopPlacing } from './place.ts';
@@ -106,6 +107,7 @@ export function startPen() {
   svg.classList.add('pen-live');
   world.appendChild(svg);
   penT = { pts: [], down: null, hover: null, svg };
+  hold('palette', true);
   stage.classList.add('pen-mode');
   $('tools').querySelector('[data-add="pen"]')?.classList.add('on');
   drawPen();
@@ -115,6 +117,7 @@ export function endPen(keep = true, closed = false) {
   if (!penT) return;
   const p = penT;
   penT = null;
+  hold('palette', false);
   p.svg.remove();
   stage.classList.remove('pen-mode');
   $('tools').querySelector('[data-add="pen"]')?.classList.remove('on');

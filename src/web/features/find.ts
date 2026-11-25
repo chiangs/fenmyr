@@ -1,4 +1,5 @@
 import type { Card } from '../../shared/model.ts';
+import { hold } from '../myra/status.ts';
 import { elementById, textField } from '../ui/dom.ts';
 
 const findField = () => elementById('fbQ', HTMLInputElement);
@@ -51,6 +52,7 @@ function findStep(d: number) {
 
 function findOpen(query = '') {
   find.on = true;
+  hold('magnifier', true);
   myraOpen(false);
   selectOnly([]);
   $('findBar').hidden = false;
@@ -65,6 +67,7 @@ function findOpen(query = '') {
 
 export function findClose(keep?: boolean) {
   if (!find.on) return;
+  hold('magnifier', false);
   if (keep && find.cur && byId(find.cur)) selectOnly([find.cur]);
   find.on = false;
   find.set = find.cur = null;

@@ -9,6 +9,7 @@ import { byId, session } from '../core/state.ts';
 import { openDoc } from '../docs/editor.ts';
 import { editField, editTag, fitText } from '../edit/text.ts';
 import { wireTagTyping } from '../features/tags.ts';
+import { holdForEdit } from '../myra/held.ts';
 import { editHtmlOf } from '../richtext/render.ts';
 import { openColor } from '../ui/colorPicker.ts';
 import { cardEl, closestTo } from '../ui/dom.ts';
@@ -186,6 +187,7 @@ export function startEdit(id: string, target?: Element | null) {
   const t = field('.text');
   if (!t) return;
   session.editing = id;
+  holdForEdit(id);
   el.classList.add('editing');
   if (c.type === 'note' && !drawnForTyping.has(t)) {
     drawnForTyping.add(t);
@@ -251,5 +253,6 @@ export function endEdit() {
     }
   }
   session.editing = null;
+  holdForEdit(null);
   for (const f of editEnded) f(id);
 }
