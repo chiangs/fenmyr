@@ -92,8 +92,11 @@ try {
   });
 
   await check('the Pieces picker open on a screen gives her a ruler, put away when it closes', async () => {
+    // the picker may still be open on the screen that just landed, so this waits for it to move to the one selected
     await page.evaluate(() => window.__fenmyr.selectOnly(['empty']));
-    await page.waitForFunction(() => !document.getElementById('piecePick')?.hidden);
+    await page.waitForFunction(
+      () => document.querySelector('#selbar [data-pieces="empty"]')?.getAttribute('aria-expanded') === 'true',
+    );
     await lookIs('ruler', 'a ruler while the picker is open');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => document.getElementById('piecePick')?.hidden);
