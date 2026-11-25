@@ -331,6 +331,9 @@ function initFill() {
   });
 }
 
-export const fill = group({ on: every(fillable), html: boxFillHtml, init: initFill });
+const isIcon = (c: Card) => c.type === 'icon';
+export const fill = group({ on: every(c => fillable(c) && !isIcon(c)), html: boxFillHtml, init: initFill });
+// an icon reads Colour, Stroke, Fill, so its fill is drawn after the stroke; the handlers are the other Fill's
+export const iconFill = group({ on: every(c => fillable(c) && isIcon(c)), html: boxFillHtml });
 export const textColour = group({ on: every(isTextFill), html: textFillHtml, init: initTextFill });
 export const shapeFill = group({ on: ctx => only(ctx, 'shape'), html: shapeFillHtml, init: initShapeFill });

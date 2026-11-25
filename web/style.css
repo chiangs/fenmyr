@@ -2249,6 +2249,7 @@ body.dark .sb-weights button.on, body.dark .sb-talign button.on { background: va
 .sbz-fontrow b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-size: 13px; color: var(--ink); }
 .sbz-fontrow:hover { background: var(--blush) !important; }
 .sb-chicon { display: inline-flex; align-items: center; gap: 4px; }
+.selbar .sb-chicon { height: 38px; }   /* as tall as the other dropdown triggers (.sb-poptrig) */
 .sb-fsbox { display: grid; width: 230px; } .sb-fsbox .sb-sizelist { min-width: 0; }
 /* voice memos scale with their card: everything inside grows as the card gets wider (1 --u = 1px on a normal 290px card),
    the live waveform fills the free space, and the buttons sit at the bottom */
