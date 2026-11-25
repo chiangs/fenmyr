@@ -334,6 +334,12 @@ export function init20() {
       clickIn($('tools'), '[data-add="canvas"]');
       return;
     }
+    // Alt+I is Icon, on the same rule: I, C, O and N are Image, Checklist, Colour and Note. By code, as Option+I types ˆ.
+    if (e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey && e.code === 'KeyI') {
+      e.preventDefault();
+      clickIn($('tools'), '[data-add="icon"]');
+      return;
+    }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase();
     // a letter that picks up another tool puts drawing down, as picking it from the toolbar does (Shift+V, video, is

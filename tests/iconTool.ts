@@ -68,7 +68,8 @@ try {
       const el = document.querySelector('#tools [data-add="icon"]');
       return el && { after: el.previousElementSibling?.getAttribute('data-add'), name: el.getAttribute('aria-label') };
     });
-    assert.deepStrictEqual(b, { after: 'draw', name: 'Icon' }, 'the tool');
+    assert.strictEqual(b?.after, 'draw', 'the tool');
+    assert.ok(/^Icon · (Alt\+I|⌥I)$/.test(b?.name ?? ''), `named with its key (${b?.name})`);
   });
 
   await check('the Wireframe row has Box and Text, and no Icon', async () => {
