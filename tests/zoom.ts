@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron } from 'playwright';
 import { nearestEmptySpot } from '../src/web/canvas/emptySpot.ts';
-import { HEADLESS, TEST_RUN } from './support/launch.ts';
+import { collectPolicyViolations, HEADLESS, TEST_RUN } from './support/launch.ts';
 
 const size = { w: 100, h: 100 },
   centre = { x: 0, y: 0 };
@@ -26,6 +26,7 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
   const page = await app.firstWindow(),
     errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
+  collectPolicyViolations(page, errors);
   await page.waitForTimeout(2500);
   await page.getByText('Skip setup').click();
   await page.waitForTimeout(1500);

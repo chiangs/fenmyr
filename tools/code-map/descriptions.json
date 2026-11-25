@@ -581,6 +581,7 @@
     "tests/planSince.ts": "Checks Do it on cards the person changed since the plan, and that her line names what she left.",
     "tests/planSteps.ts": "Checks a waiting plan's steps say what Do it would do: a card only clicked into takes her change, and a card typed into is reworded in place, in the chat and her bubble.",
     "tests/planTalk.ts": "Checks talking to Myra while a plan waits: a message goes with the plan, her answer replaces, keeps or drops it, a typed yes or no answers it, and Skip plans lands later big changes at once.",
+    "tests/policy.ts": "Checks that a Content Security Policy violation in the app page fails a test, and one in a prototype preview does not.",
     "tests/popups.ts": "Checks popups close when you press outside them.",
     "tests/preview.ts": "Tests the preview: a React prototype running in a frame that can run scripts and nothing else.",
     "tests/protoChat.ts": "Tests Myra’s chat docked on a prototype board: her replies, the input’s grip and height, and pasted pictures.",
