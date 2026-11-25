@@ -562,6 +562,7 @@
     "tests/piecePickClose.ts": "Checks what closes the Pieces picker and what keeps it, the keyboard from F10 through its grid, and the bar folding clear of it.",
     "tests/piecePickDrag.ts": "Checks the Pieces picker's Icons view, a piece or icon dragged from it landing on a screen, on the bare board, or nowhere over the picker, and the picker staying open after a drop.",
     "tests/piecePickEdges.ts": "Checks the Pieces picker's edges: a finger scrolling its grid, Esc mid-drag, a click after a pick moved the view, the mode card, Esc on the board, and the hint's double-click, name and export.",
+    "tests/piecesAuto.ts": "Checks the Pieces picker opening beside a selected screen without taking the keyboard, Pieces turning that off and on across a restart, and a phone opening nothing.",
     "tests/piecePickNarrow.ts": "Checks the Pieces picker in narrow windows, on a phone and on a prototype board: picks landing in sight, the sheet across the bottom, and the bar staying reachable.",
     "tests/placeHintProto.ts": "The hint that opens when a tool is picked sits at the top centre of a normal board and, on a prototype board, at the top centre of the board pane below its header, and shows on screen.",
     "tests/placement.ts": "Tests every row of the rule for moving boards and folders.",
