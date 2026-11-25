@@ -3,7 +3,7 @@ import { renderWires, wireColor, wireW } from '../canvas/wires.ts';
 import { $ } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { linkById, session } from '../core/state.ts';
-import { settings } from '../settings/settings.ts';
+import { keepSettings, settings } from '../settings/settings.ts';
 import { closestTo } from '../ui/dom.ts';
 import { caret, closeSbPops, colourTrig, G, ICON, moreHtml, openBarColor, pop } from './barKit.ts';
 import { group } from './group.ts';
@@ -84,12 +84,6 @@ function wireBarHtml(lw: Link) {
     `${sep}<button class="sb-ic" data-wb="del" title="Delete">${del}</button>`
   );
 }
-
-const keepSettings = () => {
-  try {
-    localStorage.setItem('fenmyr:settings', JSON.stringify(settings));
-  } catch {}
-};
 
 function initWireBar(place: () => void) {
   $('selbar').addEventListener(

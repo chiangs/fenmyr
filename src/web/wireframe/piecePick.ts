@@ -48,7 +48,7 @@ const MAX_H = 480;
 const el = () => $('piecePick');
 const grid = () => $('pkGrid');
 const search = () => textField('pkSearch');
-const onPhone = () => document.body.classList.contains('phone');
+export const onPhone = () => document.body.classList.contains('phone');
 
 /** The screen the open picker adds to, or null while it is closed or swapping icons. */
 export const pickerScreen = () => (picker?.for.kind === 'add' ? picker.for.screen : null);
@@ -85,12 +85,12 @@ function showView(view: View) {
   filterGrid(grid(), queryWords(q.value));
 }
 
-/** Opens the picker on a screen, docked beside it, with the cursor in its search. */
-export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
+/** Opens the picker on a screen, docked beside it, with the cursor in its search unless `focus` is false. */
+export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint', focus = true) {
   const fresh = !picker || picker.for.kind === 'swap',
     view = picker?.for.kind === 'add' ? picker.view : 'pieces';
   picker = { for: { kind: 'add', screen: screen.id }, view, from, loose: [] };
-  show(fresh);
+  show(fresh, focus);
   showScreen(screen);
   setExpanded(true);
 }
@@ -99,10 +99,10 @@ export function openPicker(screen: CardOf<'frame'>, from: 'bar' | 'hint') {
 export function toggleSwap(ids: readonly string[], placed = false) {
   if (picker?.for.kind === 'swap' && picker.for.ids.join() === ids.join()) return closePicker();
   picker = { for: { kind: 'swap', ids, placed }, view: 'icons', from: 'bar', loose: [] };
-  show(true);
+  show(true, true);
 }
 
-function show(fresh: boolean) {
+function show(fresh: boolean, focus: boolean) {
   if (!picker) return;
   const swap = picker.for.kind === 'swap',
     p = el();
@@ -118,7 +118,7 @@ function show(fresh: boolean) {
   docked = '';
   syncPicker();
   // a phone would raise its keyboard over the picker
-  if (!onPhone()) search().focus({ preventScroll: true });
+  if (focus && !onPhone()) search().focus({ preventScroll: true });
 }
 
 // The bar is drawn again on the next frame; Pieces says at once whether the picker is open.
@@ -145,12 +145,6 @@ export function closePicker(back = false) {
   if (from === 'bar') return pieces()?.focus();
   // the hint, hidden while its screen's picker is open, is drawn again on the next frame
   requestAnimationFrame(() => (oneIn($('screenHints'), `[data-hint="${id}"]`) ?? pieces())?.focus());
-}
-
-/** Pieces in the bar: opens the picker on its screen, or closes it when it is already open there. */
-export function togglePicker(screen: CardOf<'frame'>) {
-  if (pickerScreen() === screen.id) closePicker();
-  else openPicker(screen, 'bar');
 }
 
 // Docks the picker beside what it acts on, or on a phone above the bottom bar, writing only when the place changed.

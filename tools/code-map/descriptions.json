@@ -379,6 +379,7 @@
     "src/web/wireframe/pieceGroups.ts": "The pieces and tools people add to a screen, in four groups, with the words a search finds each by.",
     "src/web/wireframe/pieceKit.ts": "What a piece is asked for, read safely from Myra’s replies.",
     "src/web/wireframe/pieceMore.ts": "More pieces: media, form fields, tabs, table, accordion and dialog.",
+    "src/web/wireframe/pieceAuto.ts": "Opens the Pieces picker beside a screen when it is selected, and Pieces in the bar turning that off and on.",
     "src/web/wireframe/piecePick.ts": "The Pieces picker: opening it on a screen, docking it beside, closing it, picks, and dragging a piece or icon from a grid.",
     "src/web/wireframe/pieceThumb.ts": "Draws each piece small from its own cards, for its cell in the Pieces picker.",
     "src/web/wireframe/pieceWeb.ts": "Website layout pieces: header, hero, features, pricing, footer and others.",
