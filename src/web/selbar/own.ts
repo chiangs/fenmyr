@@ -14,7 +14,8 @@ import { flipVNote, openVNote } from '../vault/notes.ts';
 import { btn, caret, closeSbPops, G, ICON, pop, redraw } from './barKit.ts';
 import { group, onBar, one, only } from './group.ts';
 
-const NO_LABEL = typesWith('noLabel');
+// wireframe pieces hide their label (`.card.wf .tag`), so they are offered none either
+const NO_LABEL = [...typesWith('noLabel'), ...typesWith('wireframe')];
 
 export const swatch = group({
   on: ctx => only(ctx, 'swatch'),

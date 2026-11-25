@@ -40,10 +40,10 @@ const NEW = [
 ];
 // what the bar tucked away with the picker open before this change, measured on the base
 const BEFORE: Record<string, string[]> = {
-  screen: ['Make a clickable prototype from these screens', 'Add a label', 'Corners', 'Fill', 'Stroke'],
-  box: ['Add a label', 'Corners'],
-  text: ['Add a label'],
-  spot: ['Add a label', 'Corners', 'Fill', 'Stroke'],
+  screen: ['Make a clickable prototype from these screens', 'Corners', 'Fill', 'Stroke'],
+  box: ['Corners'],
+  text: [],
+  spot: ['Corners', 'Fill', 'Stroke'],
   icon: [],
 };
 const SELECTIONS: Record<string, string[]> = {
