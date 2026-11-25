@@ -139,8 +139,8 @@ try {
     const s = await strip();
     assert.deepStrictEqual(
       s.shown,
-      ['Add pieces to this screen', 'Fill', 'Stroke', 'More', 'Delete'],
-      'the strip shows what it did, with Fill in the label’s place',
+      ['Add pieces to this screen', 'Stroke', 'Fill', 'More', 'Delete'],
+      'the strip shows what it did, Stroke now ahead of Fill, with Fill in the label’s place',
     );
     assert.ok(
       ['Change icon', 'Colour'].every(n => s.tucked.includes(n)),

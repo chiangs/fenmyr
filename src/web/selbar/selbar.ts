@@ -12,7 +12,7 @@ import { collColours, noteColours } from './colours.ts';
 import { type BarContext, barContext, barPaused, type SelBarContext } from './context.ts';
 import { corners } from './corners.ts';
 import { grouping, moreAndDelete, newSection, prototype, section, tilt } from './end.ts';
-import { fill, shapeFill, textColour } from './fill.ts';
+import { fill, iconFill, shapeFill, textColour } from './fill.ts';
 import { barRoom, floatBar, floatModeBar, floatModeCard } from './float.ts';
 import { initFontPop } from './fontPop.ts';
 import { group } from './group.ts';
@@ -113,6 +113,7 @@ const GROUPS = [
   opacity,
   textColour,
   stroke,
+  iconFill,
   corners,
   tilt,
   newSection,
