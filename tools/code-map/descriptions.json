@@ -508,6 +508,7 @@
     "tests/homeEmpty.ts": "Checks what each level of Home says when it is empty: no project, no folder, no board, no prototype. It names the tile and the slash command, and goes once something is added.",
     "tests/imageActions.ts": "An image card's right-click actions in the real app: download, copy, and replace from a file or the clipboard.",
     "tests/landPlan.ts": "Checks a planned Myra reply lands exactly as planned on an unchanged board, leaves what the person changed since with its collection, and lands nothing more twice.",
+    "tests/labelOffered.ts": "The selection bar offers Add a label only for cards that show it: wireframe pieces hide their label, so they aren’t offered one.",
     "tests/labelText.ts": "A note's label reads in every theme, with Follow Caelestia on and off: its text against its fill meets the theme's text promise.",
     "tests/layout.ts": "Tests the prototype board’s screen and that plain boards are untouched.",
     "tests/link.ts": "Tests linking a project to a repo, who commits, and unlinking.",
