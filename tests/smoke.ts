@@ -22,7 +22,7 @@ import { myra } from './smoke/myra.ts';
 import { panels } from './smoke/panels.ts';
 import { pictures } from './smoke/pictures.ts';
 import { reminders } from './smoke/reminders.ts';
-import { repoOps } from './smoke/repoOps.ts';
+import { previewPages, repoOps } from './smoke/repoOps.ts';
 import { sender } from './smoke/sender.ts';
 import { commandsInPrompt, slash } from './smoke/slash.ts';
 import { timers } from './smoke/timers.ts';
@@ -105,6 +105,7 @@ echo " [BLANK_AUDIO] hello from whisper"
   await sender(t);
   await askFiles(t);
   await repoOps(t);
+  await previewPages(t);
   await builder(t);
   await explainer(t);
   await look(t);

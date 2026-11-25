@@ -6,7 +6,7 @@ import { setChatText } from '../myra/chatInput.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { child, closestTo, esc, textField } from '../ui/dom.ts';
 import { checkNewest } from './buildCheck.ts';
-import { buildPreview } from './bundle.ts';
+import { type Built, buildPreview } from './bundle.ts';
 import { takeCapture } from './capture.ts';
 import { renderCode, showSource } from './code.ts';
 import { renderGitBar } from './gitbar.ts';
@@ -112,6 +112,17 @@ function showViewing(problem: string) {
   child(then, 'span').textContent = problem || words;
 }
 
+// The host keeps the built page and serves it to the frame from an origin of its own, so the app page's policy, which a
+// srcdoc frame would inherit, doesn't reach it.
+type Served = (Extract<Built, { kind: 'ok' }> & { url: string }) | Extract<Built, { kind: 'error' }>;
+const served = (built: Built): Promise<Served> =>
+  built.kind === 'error'
+    ? Promise.resolve(built)
+    : Fenmyr.previewPage({ html: built.html }).then(
+        ({ url }) => ({ ...built, url }),
+        (e: unknown) => ({ kind: 'error', message: e instanceof Error ? e.message : String(e) }),
+      );
+
 function refreshPreview() {
   drawn = draw(nextRender());
   return drawn;
@@ -130,11 +141,13 @@ async function draw(gen: number): Promise<Drawn | null> {
   showViewing('');
   const id = board.id;
   const files = then ? Object.keys(then) : await Fenmyr.protoFiles({ root, dir }).catch((): string[] => []);
-  const built = await buildPreview(
-    stack,
-    files,
-    file => (then ? Promise.resolve(then[file] ?? '') : Fenmyr.protoRead({ root, dir, file })),
-    file => Fenmyr.protoModule({ root, file }),
+  const built = await served(
+    await buildPreview(
+      stack,
+      files,
+      file => (then ? Promise.resolve(then[file] ?? '') : Fenmyr.protoRead({ root, dir, file })),
+      file => Fenmyr.protoModule({ root, file }),
+    ),
   );
   if (gen !== renders) return null;
   log.length = 0;
@@ -166,7 +179,7 @@ async function draw(gen: number): Promise<Drawn | null> {
     if (!f) return;
     // a fresh frame starts with the saved values, so it's given the ones moved but not yet kept
     f.onload = () => sendTweaks(f);
-    f.srcdoc = html;
+    f.src = built.url;
   });
   showLog();
   return { kind: 'ran', board: id, ran: running };

@@ -19,6 +19,7 @@ import * as net from './net.ts';
 import * as output from './output.ts';
 import P from './paths.ts';
 import { limitPermissions } from './permissions.ts';
+import { keepPage, PREVIEW_SCHEME, servePage } from './previewPages.ts';
 import * as prototypes from './prototypes.ts';
 import { fromAppPage } from './senderCheck.ts';
 import * as speech from './speech.ts';
@@ -52,6 +53,7 @@ protocol.registerSchemesAsPrivileged([
       // no bypassCSP: Fenmyr's own page sets no policy, and a prototype's preview must not get round its own
     },
   },
+  PREVIEW_SCHEME,
 ]);
 
 let win: BrowserWindow | null = null;
@@ -306,6 +308,7 @@ const OPS = {
     if (err) throw new Error(err);
     return true as const;
   },
+  previewPage: a => keepPage(text(a.html)),
   protoBuild: a => startBuild(a, e => send('protoBuild', e)),
   captureArea: async a => {
     const r = { x: Number(a.x) || 0, y: Number(a.y) || 0, width: Number(a.w) || 0, height: Number(a.h) || 0 };
@@ -374,6 +377,7 @@ app.whenReady().then(() => {
   setTimeout(() => storage.sweepMedia(), 3000);
   Menu.setApplicationMenu(process.platform === 'darwin' ? macMenu() : null);
   protocol.handle('fenmyrmedia', req => storage.serveMedia(req));
+  protocol.handle('fenmyrpreview', req => servePage(req));
   limitPermissions(session.defaultSession);
   createWindow();
   theme.watch(s => send('caelestia', s));

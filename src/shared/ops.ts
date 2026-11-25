@@ -270,6 +270,8 @@ export type Ops = {
   protoRead: { args: { root: string; dir: string; file: string }; result: string };
   // a built preview, saved as a page and opened in the person's browser
   previewOpen: { args: { html: string; name: string }; result: true };
+  // a built preview, kept to be served to the preview frame from an origin of its own, fenmyrpreview://
+  previewPage: { args: { html: string }; result: { url: string } };
   // Myra writing a prototype's code: answers with the build's id at once, and protoBuild events follow; busy when a
   // build is already running in the repo
   protoBuild: {
