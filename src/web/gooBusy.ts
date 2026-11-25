@@ -3,11 +3,12 @@
 
 export type BusyLook = 'thinking' | 'reading' | 'painting' | 'writing' | 'explaining' | 'building';
 // what she holds to keep the person company: a palette while they draw, a magnifying glass while they search, a
-// clipboard while they edit a list
-export type HeldLook = 'palette' | 'magnifier' | 'clipboard';
+// clipboard while they edit a list, a hammer while they add a wireframe's screen and a ruler while they fill one
+export type HeldLook = 'palette' | 'magnifier' | 'clipboard' | 'hammer' | 'ruler';
 export type Look = BusyLook | HeldLook;
 
-// t: seconds. out: 0 when the prop is fully out, 1 when it is put away. still: calm or reduced motion, so nothing moves
+// t: seconds. out: 0 when the prop is fully out, 1 when it is put away. still: calm or reduced motion, so nothing moves.
+// struck: seconds since her hammer last struck
 export type BusyPaint = {
   g: CanvasRenderingContext2D;
   t: number;
@@ -17,6 +18,7 @@ export type BusyPaint = {
   mute: (hex: string) => string;
   still: boolean;
   out: number;
+  struck: number;
 };
 
 // rows of pixels, each character a colour from `pal`, anything else left empty; x and y in her grid's cells
@@ -43,8 +45,11 @@ export function busyEyes(look: Look, t: number, still: boolean): { dx: number; d
       return { dx: 1, dy: -0.5 };
     case 'palette':
       return null;
+    case 'hammer':
+      return { dx: 1, dy: 0 };
     case 'reading':
     case 'magnifier':
+    case 'ruler':
     case 'explaining': {
       if (still) return { dx: 0, dy: 0.5 };
       // along a line left to right, then quickly back for the next
@@ -81,6 +86,10 @@ const LAPTOP_PAL = { L: '#9aa3ad', b: '#f6a63c' };
 const INK = '#3d2a1e';
 const PALETTE = ['.wwwwww.', 'wrrwbbww', 'wrrwbbww', 'wwwwwggw', '.ww..ggw', '.ww.wwww', '..wwww..'];
 const LENS = ['.RRRR.', 'R....R', 'R....R', 'R....R', 'R....R', '.RRRR.'];
+const HAMMER = ['HHHH', 'HHHH', '.w..', '.w..', '.w..', '.w..'];
+const HAMMER_PAL = { H: '#8a929c', w: '#b07a48' };
+// how long her hammer's strike takes, down and back up
+export const STRIKE_S = 0.45;
 const BOARD = ['...cc...', 'BBBccBBB', 'BPPPPPPB', 'BPPPPPPB', 'BPPPPPPB', 'BPPPPPPB'];
 const FRAMES = '#45302a';
 
@@ -205,6 +214,29 @@ export function drawBusy(look: Look, p: BusyPaint) {
         cell(p, i < ticked ? '#3f8f3c' : '#cdbba0', 5.3, y, 0.7, 0.7);
         cell(p, '#cdbba0', 6.4, y + 0.2, 4.4, 0.35);
       });
+      return;
+    }
+    case 'hammer': {
+      // a hammer raised at her side, brought down once as a screen lands, with a spark where it strikes
+      const k = !still && p.struck < STRIKE_S ? Math.sin((p.struck / STRIKE_S) * Math.PI) : 0,
+        bob = still ? 0 : Math.sin(t * 2.4) * 0.25;
+      sprite(p, HAMMER, HAMMER_PAL, 12.4, 5 + k * 3 + bob + drop);
+      if (k > 0.6) {
+        g.globalAlpha = k;
+        cell(p, '#fff3b0', 15.2, 7.6, 0.6, 0.6);
+        cell(p, '#fff3b0', 11.2, 7.6, 0.6, 0.6);
+        cell(p, '#fff3b0', 13.4, 6.6, 0.6, 0.6);
+        g.globalAlpha = 1;
+      }
+      return;
+    }
+    case 'ruler': {
+      // a steel ruler held across her front, slid along a little as she measures
+      const slide = still ? 0 : Math.sin(t * 1.4) * 0.5,
+        x = 0.6 + slide,
+        y = 12.2 + drop;
+      cell(p, '#d4d8de', x, y, 14.8, 1.3);
+      for (let i = 0; i <= 14; i++) cell(p, '#5a6270', x + 0.3 + i, y, 0.2, i % 5 === 0 ? 0.8 : 0.45);
       return;
     }
     default: {

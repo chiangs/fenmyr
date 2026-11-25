@@ -56,6 +56,8 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     busyAt = -9,
     // room for a prop; a narrow docked chat has none
     room = true,
+    // when her hammer last struck, on performance.now()'s clock in seconds
+    strikeAt = -9,
     look = 0,
     lookTo = 0,
     nextLook = 0,
@@ -235,8 +237,8 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
     const paint = { g, t, ox, oy, px, mute };
     if (pose) drawPoseExtras(pose, { ...paint, sighPh });
     if (room) {
-      if (busy) drawBusy(busy, { ...paint, still: calm, out: 1 - slid });
-      if (busyWas && slid < 1) drawBusy(busyWas, { ...paint, still: calm, out: slid });
+      if (busy) drawBusy(busy, { ...paint, still: calm, out: 1 - slid, struck: t - strikeAt });
+      if (busyWas && slid < 1) drawBusy(busyWas, { ...paint, still: calm, out: slid, struck: t - strikeAt });
     }
     if (hatOn) drawHat(paint);
     g.restore();
@@ -272,6 +274,10 @@ export function Goo(canvas: HTMLCanvasElement, opts: GooOptions = {}) {
       room = on;
     },
     roomy: () => room,
+    /** Brings her hammer down once, as a screen lands. */
+    strike() {
+      strikeAt = performance.now() / 1000;
+    },
     wiggle(ms: number) {
       wiggleUntil = performance.now() + ms;
     },

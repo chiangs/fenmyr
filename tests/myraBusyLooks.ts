@@ -53,6 +53,8 @@ const pixels = (f: Frame) =>
         'palette',
         'magnifier',
         'clipboard',
+        'hammer',
+        'ruler',
       ] as const,
       chosen = LOOKS.find(n => n === f.look) ?? null;
     goo.busy(chosen);
@@ -81,6 +83,8 @@ const PROP: Record<string, string> = {
   palette: '#d9b382',
   magnifier: '#b8923a',
   clipboard: '#a0703f',
+  hammer: '#8a929c',
+  ruler: '#d4d8de',
 };
 
 try {
@@ -97,10 +101,11 @@ try {
     const hex = PROP.building ?? '';
     const early = await pixels({ look: 'building', hex, ms: 60 }),
       full = await pixels({ look: 'building', hex, ms: 600 }),
-      leaving = await pixels({ look: 'building', hex, ms: 60, away: true }),
+      // far enough down that her breathing, which scales her by the clock, can't make it look fully up
+      leaving = await pixels({ look: 'building', hex, ms: 100, away: true }),
       gone = await pixels({ look: 'building', hex, ms: 600, away: true });
     assert.ok(early < full, `the laptop is partly up at first: ${early} of ${full}`);
-    assert.ok(leaving > 0 && leaving < full, `going down as she puts it away: ${leaving}`);
+    assert.ok(leaving > 0 && leaving < full, `going down as she puts it away: ${leaving} of ${full}`);
     assert.strictEqual(gone, 0, 'and gone once put away');
   });
 

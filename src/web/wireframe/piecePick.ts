@@ -8,6 +8,7 @@ import { $, stage } from '../core/dom.ts';
 import { joinLast, remember, save } from '../core/history.ts';
 import { appState, byId, session } from '../core/state.ts';
 import { homeAt } from '../library/home.ts';
+import { hold } from '../myra/status.ts';
 import { revealCards } from '../panels/zoomMenu.ts';
 import { focusBar, rebuildBar } from '../selbar/barKit.ts';
 import { gestureRuns } from '../selbar/context.ts';
@@ -111,6 +112,7 @@ function show(fresh: boolean) {
   p.setAttribute('aria-label', swap ? 'Change icon' : 'Pieces');
   showView(picker.view);
   p.hidden = false;
+  hold('ruler', true);
   // a fresh open starts at the top of the grid
   if (fresh) grid().scrollTop = 0;
   docked = '';
@@ -132,6 +134,7 @@ export function closePicker(back = false) {
     id = picker.for.kind === 'add' ? picker.for.screen : '';
   picker = null;
   el().hidden = true;
+  hold('ruler', false);
   setExpanded(false);
   endGridDrag();
   rebuildBar();

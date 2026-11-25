@@ -15,6 +15,7 @@ import { coolMic } from '../media/audio.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { camOn } from '../media/video.ts';
 import { card, newBoard } from '../model/boards.ts';
+import { hammerFor } from '../myra/held.ts';
 import { tip } from '../myra/say.ts';
 import { newNoteColor, snapTo } from '../settings/licenses.ts';
 import { openColor } from '../ui/colorPicker.ts';
@@ -108,6 +109,7 @@ export function startPlacing(type: string, extra: PlaceExtra = {}, quiet = false
   if (placing?.type === type && sameTool(placing.extra, extra)) return stopPlacing();
   stopPlacing();
   placing = { type, extra };
+  hammerFor(type === 'frame');
   selectOnly([]);
   const g = $('ghost'),
     [label, [w, h]] = PLACE[type] ?? ['', [160, 100]],
@@ -159,6 +161,7 @@ export function stopPlacing() {
   $('stampWheel').classList.remove('on');
   $('stampPick').classList.remove('on');
   placing = null;
+  hammerFor(false);
   $('ghost').className = 'ghost';
   $('placeHint').hidden = true;
   document.body.classList.remove('dz-dragging');

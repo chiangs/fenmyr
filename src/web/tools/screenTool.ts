@@ -4,6 +4,7 @@ import { $ } from '../core/dom.ts';
 import { remember } from '../core/history.ts';
 import { appState, session } from '../core/state.ts';
 import { keyedButton } from '../input/keyed.ts';
+import { strikeHammer } from '../myra/held.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { frameTip } from '../repo/start.ts';
 import { selCards } from '../selbar/selected.ts';
@@ -72,6 +73,7 @@ export function startScreen() {
 function land(c: Card) {
   remember();
   addCard(c);
+  strikeHammer();
   selectOnly([c.id]);
   frameTip();
 }
