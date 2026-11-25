@@ -85,15 +85,18 @@ const rectsIn = (id: string) =>
 
 // The open Pieces picker counts as a side column on the side it docked, or as a floor when it is a sheet across the
 // bottom, so the selection bar keeps clear of it. Given the bar's row, a side column counts only where the picker
-// reaches that row: docked top-aligned beside a screen taller than it, it leaves the bar under the screen the whole
-// width. The mode bar sits over the bottom bar, below it, and stays put.
+// comes within a gap of that row: docked top-aligned beside a screen taller than it, it leaves the bar under the screen
+// the whole width. The bar above a screen ends exactly a gap over the picker's top, and the page rounds the picker's
+// top to a 64th of a pixel, so a pixel of slack keeps the two from meeting by a rounding. The mode bar sits over the
+// bottom bar, below it, and stays put.
 function pickerColumn(placing?: HTMLElement, row?: Row): { l: number[]; r: number[]; b: number[] } {
   const p = document.getElementById('piecePick');
   if (!p || p === placing || placing?.id === 'modebar' || p.hidden || onPhone()) return { l: [], r: [], b: [] };
   const r = p.getBoundingClientRect(),
     s = stage.getBoundingClientRect(),
     side = p.dataset.dock === 'left' || p.dataset.dock === 'right',
-    reaches = !row || (r.top - s.top < row.b + GAP && r.bottom - s.top > row.t - GAP);
+    near = GAP - 1,
+    reaches = !row || (r.top - s.top < row.b + near && r.bottom - s.top > row.t - near);
   if (side && !reaches) return { l: [], r: [], b: [] };
   if (p.dataset.dock === 'left') return { l: [r.right - s.left + GAP], r: [], b: [] };
   if (p.dataset.dock === 'right') return { l: [], r: [r.left - s.left - GAP], b: [] };
