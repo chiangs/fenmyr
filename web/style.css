@@ -2329,11 +2329,10 @@ body[data-tb="l"] .m-pill { height: 58px; }
 /* the drawn outline for boxes and screens: inset by half the line so the whole line sits inside the shape */
 .card > .sk-svg { position: absolute; inset: calc(var(--skw, 0px) / 2); width: calc(100% - var(--skw, 0px)); height: calc(100% - var(--skw, 0px)); overflow: visible; pointer-events: none; z-index: 1; }
 .card > .sk-svg rect { fill: none; }
-.sb-skstyles { grid-template-columns: repeat(4, 1fr); }
+.sb-skstyles { grid-template-columns: repeat(3, 1fr); }
 .sb-skstyles button { flex-direction: column; gap: 6px !important; padding: 9px 4px !important; }
 .sks { display: block; width: 26px; height: 0; border-top: 2.5px solid currentColor; }
 .sks-dash { border-top-style: dashed; } .sks-dot { border-top: 0; height: 3px; background: radial-gradient(circle, currentColor 1.3px, transparent 1.6px) 0 50% / 6px 3px repeat-x; }
-.sks-none { border-top: 0; height: 2.5px; background: linear-gradient(90deg, var(--ink-faint), var(--ink-faint)); opacity: .5; }
 .sb-skdash { display: grid; gap: 8px; } .sb-skdash.off { display: none; }
 .sb-skdash[data-skst="dot"] .sb-skrow:first-child { display: none; }   /* dots only need the gap */
 .sb-stroke .sbc-top > span { width: 46px; flex: none; }
@@ -2363,9 +2362,11 @@ body[data-tb="l"] .m-pill { height: 58px; }
 /* No fill: hollow letters (the stroke draws them), and a crossed-out swatch in the menus */
 .card.no-fill .text, .card.no-fill .tx { -webkit-text-fill-color: transparent; }
 .sb-nofill, .sb-cur.sb-none { background: var(--snow) linear-gradient(135deg, transparent 45%, var(--rec) 45% 55%, transparent 55%) !important; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .14) !important; }
-.sb-tcur { display: grid; place-items: center; background: none !important; box-shadow: none !important; font: 800 15px/1 var(--font); font-style: normal; color: var(--c); -webkit-text-stroke: .6px rgb(from var(--shade) r g b / .15); }
-.sb-tcur.sb-icur { background: var(--c) !important; box-shadow: inset 0 0 0 1.5px rgb(from var(--shade) r g b / .12) !important; }
-.sb-tcur.sb-none { color: transparent; -webkit-text-stroke: 1.2px var(--ink); background: none !important; box-shadow: none !important; }
+.sb-tcur { background: var(--c); }
+/* No fill and No stroke are lit like the colours beside them */
+.sb-fills .sb-nofill.on { box-shadow: 0 0 0 2px var(--panel, var(--hilite)), 0 0 0 4px var(--select) !important; }
+/* the glyph that tells Fill, Colour and Stroke apart sits a little smaller than the dot beside it */
+.selbar .sb-poptrig svg.sb-glyph { width: 16px !important; height: 16px !important; }
 .card.frame.no-fill .fr-body { box-shadow: none; }
 .pen-live .pl-rdot { fill: var(--snow); stroke: var(--rec); }
 .stage.vec-mode, .stage.vec-mode .card { cursor: default; }

@@ -469,6 +469,7 @@
     "tests/themeAudit.ts": "Every theme reads as well as Default in the running app: text on the board, in Settings, chat, a doc and Home is measured, and none is under 3:1 where Default is not.",
     "tests/caelestia.ts": "Follow Caelestia on every theme: three recorded schemes keep each theme's promises, take the scheme's surfaces and cards, and fall back for cards that would blur.",
     "tests/greyMixes.ts": "Finds every color-mix(in oklch, …) and fails when a side is white, black or a warm grey in any theme or mode, since Chrome tints those pink.",
+    "tests/colourGlyphs.ts": "The selection bar's colour triggers on an icon, a title and a box each show a glyph for what they colour, No stroke takes a stroke off, and Default puts an icon's and a title's colour back.",
     "tests/colourFit.ts": "The colour fitter: a colour that is a core token, a mix of two, one that fits in light but not dark, and one that fits nothing.",
     "tests/colourConvert.ts": "The colour converter: hex and rgba, token pairs, comments and custom properties left alone, unknown colours reported, and a second run finding nothing.",
     "tests/contextBar.ts": "The selection bar in the real app: what it kept (typing, crop, size fields following a drag, phone strip) and where it floats, and that it steps aside for gestures.",
