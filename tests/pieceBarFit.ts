@@ -1,9 +1,9 @@
 // The new Type ▾, Font, Change icon and Colour fit the bar. At 1280 × 800 the bar for a text with a long font name, a
 // whole piece, a font card, an icon and a box folds nothing, and with the Pieces picker open it tucks away no control
-// it showed before them. On a phone at 390 px the strip for a text shows what it did, an icon's shows Colour where its
+// it showed before them. On a phone at 390 px the strip for a text shows what it did, an icon's shows Fill where its
 // label was, the other new controls wait in ···, and Type ▾ and Change icon opened from there sit above the strip,
-// inside the window. A font card's
-// strip folds nothing, whatever its font's name. Change icon opened from ··· closes ··· and says its picker is open.
+// inside the window. A font card's strip folds nothing, whatever its font's name. Change icon opened from ··· closes ···
+// and says its picker is open.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -139,10 +139,13 @@ try {
     const s = await strip();
     assert.deepStrictEqual(
       s.shown,
-      ['Add pieces to this screen', 'Colour', 'Stroke', 'More', 'Delete'],
-      'the strip shows what it did',
+      ['Add pieces to this screen', 'Fill', 'Stroke', 'More', 'Delete'],
+      'the strip shows what it did, with Fill in the label’s place',
     );
-    assert.ok(s.tucked.includes('Change icon'), `Change icon in ···: ${s.tucked}`);
+    assert.ok(
+      ['Change icon', 'Colour'].every(n => s.tucked.includes(n)),
+      `Change icon and Colour in ···: ${s.tucked}`,
+    );
     await page.click('#selbar [data-pop="more"]');
     await page.click('#selbar [data-chicon]');
     await page.waitForTimeout(300);
