@@ -80,10 +80,7 @@ const corner = (cs: Made[]) => ({ x: Math.min(...cs.map(c => c.x)), y: Math.min(
 
 try {
   await settle(page, 800);
-  await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
-  await settle(page, 250);
-  await page.click('#selbar [data-pieces]');
-  await settle(page, 250);
+  await openOn('signin');
 
   await page.click('#piecePick [data-pk-view="icons"]');
   await page.fill('#pkSearch', 'heart');

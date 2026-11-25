@@ -7,7 +7,8 @@ import { launch, settle } from './support/launch.ts';
 
 const board = wireframeBoard();
 board.cards.push({ id: 'ttl', type: 'title', x: 0, y: 1300, w: 320, h: 50, r: 0, color: 'white', text: 'A title' });
-const l = await launch({ boards: [board], open: 'wire' });
+// the picker that selecting a screen opens would fold its device dropdown into ···, and this reaches the Font row in it
+const l = await launch({ boards: [board], open: 'wire', settings: { autoPieces: false } });
 const { page } = l;
 // Google Fonts answers every name here; tests/fontUse.ts covers the names it turns away
 await l.app

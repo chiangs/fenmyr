@@ -69,10 +69,11 @@ try {
     );
     const placing = await page.evaluate(() => document.getElementById('stage')?.classList.contains('placing'));
     assert.strictEqual(await look(), 'hammer', 'still out for the strike as the screen lands');
-    if (!placing) await lookIs(null, 'and put away after it, with the tool put down');
+    // the new screen is selected, so the Pieces picker opens beside it and she swaps the hammer for her ruler
+    if (!placing) await lookIs('ruler', 'and put away after it, with the tool put down');
     else {
       await page.keyboard.press('Escape');
-      await lookIs(null, 'and put away with the tool');
+      await lookIs('ruler', 'and put away with the tool');
     }
   });
 
@@ -91,9 +92,11 @@ try {
   });
 
   await check('the Pieces picker open on a screen gives her a ruler, put away when it closes', async () => {
+    // the picker may still be open on the screen that just landed, so this waits for it to move to the one selected
     await page.evaluate(() => window.__fenmyr.selectOnly(['empty']));
-    await page.click('#selbar [data-pieces]');
-    await page.waitForFunction(() => !document.getElementById('piecePick')?.hidden);
+    await page.waitForFunction(
+      () => document.querySelector('#selbar [data-pieces="empty"]')?.getAttribute('aria-expanded') === 'true',
+    );
     await lookIs('ruler', 'a ruler while the picker is open');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => document.getElementById('piecePick')?.hidden);

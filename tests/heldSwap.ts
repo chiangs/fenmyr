@@ -15,7 +15,7 @@ const kinds = () =>
 try {
   await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
   await still(page);
-  await page.click('#selbar [data-pieces]');
+  await page.locator('#piecePick').waitFor();
   await page.click('#piecePick [data-pk-view="icons"]');
   await page.fill('#pkSearch', 'heart');
   await page.locator('#pkGrid [data-pk-icon="heart"]').waitFor();

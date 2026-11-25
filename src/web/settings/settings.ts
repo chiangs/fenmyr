@@ -68,6 +68,8 @@ const DEFAULTS = {
   mobbin: true,
   higgs: true,
   skipPlans: false,
+  // whether selecting a screen opens the Pieces picker beside it; Pieces turns it off by hiding the picker, and on again
+  autoPieces: true,
   chatKeep: 'board',
   chatMax: '60',
   cursor: '#f6b45e',
@@ -163,6 +165,12 @@ export function setChoice(k: string, v: string) {
   if (k === 'chat') {
     if (isChat(v)) settings.chat = v;
   } else if (isChoice(k)) settings[k] = v;
+}
+
+export function keepSettings() {
+  try {
+    localStorage.setItem('fenmyr:settings', JSON.stringify(settings));
+  } catch {}
 }
 
 export function init25() {

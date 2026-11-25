@@ -128,8 +128,9 @@ try {
   await settle(page, 300);
   assert.deepStrictEqual([await count(), await open()], [before, true], 'an undo of a pick keeps the picker');
 
-  await page.click('#piecePick [data-pk-close]');
+  // selecting the screen opens the picker by itself, so × closes it after, to open it from the keyboard
   await select(['signin']);
+  await page.click('#piecePick [data-pk-close]');
   await page.evaluate(() => (document.activeElement instanceof HTMLElement ? document.activeElement.blur() : null));
   await page.keyboard.press('F10');
   assert.strictEqual(await focus(), 'signin', 'F10 lands on Pieces, the bar’s first control');

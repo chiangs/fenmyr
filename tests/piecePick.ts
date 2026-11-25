@@ -1,6 +1,6 @@
-// Pieces in the bar opens a picker beside its screen. It shows for a screen or anything on one, holds every piece under
-// four headings with a thumbnail each, finds pieces by search, adds each into its screen under the lowest piece, and
-// stays open across picks. Each pick is its own undo step, and the Box and Text cells put R's and X's tools in hand.
+// Selecting a screen opens a picker beside it. Pieces, in the bar for a screen or anything on one, opens it too. It
+// holds every piece under four headings with a thumbnail each, finds pieces by search, adds each into its screen under
+// the lowest piece, and stays open across picks. Each pick is its own undo step, and the Box and Text cells put R's and X's tools in hand.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -98,12 +98,10 @@ try {
   }
 
   await select(['signin']);
-  await page.click('#selbar [data-pieces]');
-  await settle(page, 300);
   const opened = await picker(),
     screenBox = await toScreen(await card('signin'));
-  assert.ok(opened.open, 'Pieces opens the picker');
-  assert.strictEqual(opened.focus, 'pkSearch', 'with the cursor in its search');
+  assert.ok(opened.open, 'selecting a screen opens the picker');
+  assert.notStrictEqual(opened.focus, 'pkSearch', 'leaving the keyboard on the board');
   assert.ok(
     Math.abs((opened.rect?.left ?? 0) - (screenBox.r + 12)) < 1.5 &&
       Math.abs((opened.rect?.top ?? 0) - screenBox.t) < 1.5,

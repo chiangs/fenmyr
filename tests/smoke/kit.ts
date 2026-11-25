@@ -115,7 +115,8 @@ export const chatOpen = (t: Smoke, on: boolean) =>
 
 export const pose = (t: Smoke) => t.page.evaluate(() => window.__fenmyr.currentPose());
 
-// Pieces in the bar opens the picker on the newest screen, brought into view
+// The picker open on the newest screen, brought into view: selecting it opens the picker, and Pieces does when it was
+// closed while the screen stayed selected
 export async function openPicker(t: Smoke) {
   await t.page.evaluate(() => {
     const M = window.__fenmyr,
@@ -125,6 +126,6 @@ export async function openPicker(t: Smoke) {
     M.fit([f]);
   });
   await t.page.waitForTimeout(500);
-  await t.page.click('#selbar [data-pieces]');
-  await t.page.waitForTimeout(300);
+  if (await t.page.evaluate(() => window.__t.el('#piecePick').hidden)) await t.page.click('#selbar [data-pieces]');
+  await t.page.locator('#piecePick').waitFor();
 }

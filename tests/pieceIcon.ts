@@ -102,14 +102,13 @@ try {
     );
     await page.click('#selbar [data-chicon]');
     await settle(page, 200);
-    await select(['signin']);
+    await select(['font']);
     assert.strictEqual(await picker(), null, 'selecting something else closes the swap');
-    await page.click('#selbar [data-pieces]');
-    await settle(page, 200);
+    await select(['signin']);
     assert.deepStrictEqual(
       await picker(),
       { name: 'Pieces', tabs: true, search: 'Search pieces…' },
-      'Pieces opens the picker with its tabs, on Pieces',
+      'selecting a screen opens the picker with its tabs, on Pieces',
     );
   });
 

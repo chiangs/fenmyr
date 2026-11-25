@@ -12,10 +12,9 @@ import { freshRepo, openPrototype } from './support/prototype.ts';
 assert.strictEqual(nounOf({ type: 'frame' }, 2), 'screens', 'two frames are called screens');
 
 const far = { id: 'far', type: 'note', x: -4000, y: -4000, w: 220, h: 120, r: 0, color: 'white', text: 'far away' };
-const l = await launch({
-  boards: [{ id: 'wf', name: 'Wire', cards: [far], links: [], tray: [], view: { x: 0, y: 0, z: 0.25 } }],
-  open: 'wf',
-});
+// each screen placed is selected, and the Pieces picker it would open sits where the next one is placed
+const board = { id: 'wf', name: 'Wire', cards: [far], links: [], tray: [], view: { x: 0, y: 0, z: 0.25 } };
+const l = await launch({ boards: [board], open: 'wf', settings: { autoPieces: false } });
 const { page } = l;
 const { work, repo } = freshRepo('fenmyr-screen-');
 const frames = () => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));

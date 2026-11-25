@@ -2,11 +2,15 @@ import type { Page } from 'playwright';
 import { wireframeBoard } from '../tests/fixtures/boards.ts';
 import type { Group, Step } from './visual-myra.ts';
 
-// Pieces for the Sign in screen. A base without the picker has no button, so its step does nothing there.
+// The picker open on the Sign in screen: selecting it opens the picker, and Pieces does on a base where it doesn't, or
+// on a phone. A base without the picker has no button, so its step does nothing there.
 const openPieces = async (page: Page) => {
   await page.evaluate(() => window.__fenmyr.selectOnly(['signin']));
   await page.waitForTimeout(150);
-  await page.evaluate(() => document.querySelector<HTMLElement>('#selbar [data-pieces]')?.click());
+  await page.evaluate(() => {
+    if (document.getElementById('piecePick')?.hidden)
+      document.querySelector<HTMLElement>('#selbar [data-pieces]')?.click();
+  });
   await page.mouse.move(5, 450);
 };
 const pieces: Step = async page => {
@@ -16,10 +20,13 @@ const pieces: Step = async page => {
 };
 
 // The Sign in button's box with its Size ▾ open, or the whole button with Align ▾ open. A base without the dropdown
-// shows the selection alone.
+// shows the selection alone. The picker that selecting the screen opened would fold the dropdown into ···, so Esc
+// closes it first, after any dropdown still open.
 const openDropdown =
   (ids: string[], pop: string): Step =>
   async page => {
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
     await page.evaluate(i => window.__fenmyr.selectOnly(i), ids);
     await page.waitForTimeout(150);
     await page.evaluate(p => document.querySelector<HTMLElement>(`#selbar [data-pop="${p}"]`)?.click(), pop);

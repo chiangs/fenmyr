@@ -3,6 +3,7 @@ import type { Card } from '../../shared/model.ts';
 import { $ } from '../core/dom.ts';
 import { syncScreenBar } from '../tools/screenTool.ts';
 import { syncMore } from '../ui/toolbarConfig.ts';
+import { autoPieces } from '../wireframe/pieceAuto.ts';
 import { initPiecePick, syncPicker } from '../wireframe/piecePick.ts';
 import { initScreenHints } from '../wireframe/screenHint.ts';
 import { arrange } from './arrange.ts';
@@ -214,6 +215,7 @@ export function init56() {
   (function tick() {
     syncScreenBar();
     syncMore();
+    autoPieces();
     syncPicker();
     endVisit();
     placeSelbar();

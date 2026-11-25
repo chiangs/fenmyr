@@ -6,7 +6,8 @@ import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
 
-const l = await launch({ boards: [wireframeBoard()], open: 'wire' });
+// the picker that selecting a screen opens would fold the bar into ···, and this checks the bar's own controls
+const l = await launch({ boards: [wireframeBoard()], open: 'wire', settings: { autoPieces: false } });
 const { page } = l;
 
 type Shot = { x: number; y: number; w: number; h: number; radius?: number; device?: string; name?: string };
