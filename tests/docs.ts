@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron } from 'playwright';
-import { HEADLESS } from './support/launch.ts';
+import { HEADLESS, TEST_RUN } from './support/launch.ts';
 import { installPaint } from './support/paint.ts';
 
 type Node = { type: string; text?: string; marks?: Node[]; attrs?: Record<string, unknown>; content?: Node[] };
@@ -88,7 +88,7 @@ const DOC: Node = {
     out = path.join(data, 'out');
   fs.mkdirSync(out);
   const app = await electron.launch({
-    args: [path.join(import.meta.dirname, '..'), '--no-sandbox', ...HEADLESS],
+    args: [path.join(import.meta.dirname, '..'), '--no-sandbox', TEST_RUN, ...HEADLESS],
     env: { ...process.env, XDG_DATA_HOME: data, HOME: data, XDG_STATE_HOME: path.join(data, 'state') },
   });
   const page = await app.firstWindow();

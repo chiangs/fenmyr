@@ -51,6 +51,8 @@ const isRecord = (x: unknown): x is Record<string, unknown> => typeof x === 'obj
 
 contextBridge.exposeInMainWorld('fenmyrHost', {
   platform: process.platform === 'darwin' ? 'mac' : 'linux',
+  // set by the host from its own command line, and copied: the page can't change what its start-up code read
+  test: process.argv.includes('--fenmyr-test'),
   // where a dropped file is on this computer; the page can't read that from the file itself
   pathOf: (file: File) => webUtils.getPathForFile(file),
   post: async (msg: unknown) => {

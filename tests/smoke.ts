@@ -27,7 +27,7 @@ import { sender } from './smoke/sender.ts';
 import { commandsInPrompt, slash } from './smoke/slash.ts';
 import { timers } from './smoke/timers.ts';
 import { zipOps } from './smoke/zipOps.ts';
-import { HEADLESS, MOUSE } from './support/launch.ts';
+import { HEADLESS, MOUSE, TEST_RUN } from './support/launch.ts';
 
 (async () => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-smoke-')),
@@ -75,7 +75,7 @@ echo " [BLANK_AUDIO] hello from whisper"
         : undefined;
   const app = await electron.launch({
     ...(electronPath ? { executablePath: electronPath } : {}),
-    args: [dir, '--no-sandbox', ...HEADLESS, MOUSE],
+    args: [dir, '--no-sandbox', TEST_RUN, ...HEADLESS, MOUSE],
     env: { ...process.env, XDG_DATA_HOME: data, HOME: data, FENMYR_WHISPER_MODEL: path.join(data, 'model.bin') },
   });
   // save dialogs answer themselves: everything lands in out/

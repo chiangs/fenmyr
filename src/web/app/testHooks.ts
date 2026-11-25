@@ -234,5 +234,5 @@ const makeHooks = () => ({
 export type TestHooks = ReturnType<typeof makeHooks>;
 
 export function init65() {
-  window.__fenmyr = makeHooks();
+  if (window.fenmyrHost?.test) window.__fenmyr = makeHooks();
 }

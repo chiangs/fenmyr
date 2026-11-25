@@ -14,6 +14,8 @@ declare global {
   function iconList(): { name: string; kw: string }[];
   interface Window {
     __boardsChanged?: () => unknown;
+    // Only a launch with --fenmyr-test has it (testHooks.ts). Typed as always there because only the tests read it,
+    // and they always launch with the flag; the app's own code must not read it.
     __fenmyr: TestHooks;
     // set from the Myra setting: calm keeps her still, muted (calmest) also softens her colours
     myraCalm?: boolean;

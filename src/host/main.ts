@@ -96,6 +96,8 @@ function createWindow() {
       contextIsolation: true,
       sandbox: true,
       spellcheck: true,
+      // the test launcher passes --fenmyr-test; the renderer only sees switches given to it here
+      additionalArguments: process.argv.includes('--fenmyr-test') ? ['--fenmyr-test'] : [],
     },
   });
   win = w;

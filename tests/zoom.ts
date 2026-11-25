@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { _electron as electron } from 'playwright';
 import { nearestEmptySpot } from '../src/web/canvas/emptySpot.ts';
-import { HEADLESS } from './support/launch.ts';
+import { HEADLESS, TEST_RUN } from './support/launch.ts';
 
 const size = { w: 100, h: 100 },
   centre = { x: 0, y: 0 };
@@ -20,7 +20,7 @@ assert.deepStrictEqual(nearestEmptySpot(size, { x: 0, y: 90 }, [block]), { x: -5
 (async () => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-zoom-'));
   const app = await electron.launch({
-    args: [path.join(import.meta.dirname, '..'), '--no-sandbox', ...HEADLESS],
+    args: [path.join(import.meta.dirname, '..'), '--no-sandbox', TEST_RUN, ...HEADLESS],
     env: { ...process.env, XDG_DATA_HOME: data, HOME: data },
   });
   const page = await app.firstWindow(),
