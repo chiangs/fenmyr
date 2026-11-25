@@ -105,7 +105,7 @@ try {
   assert.ok(
     Math.abs((opened.rect?.left ?? 0) - (screenBox.r + 12)) < 1.5 &&
       Math.abs((opened.rect?.top ?? 0) - screenBox.t) < 1.5,
-    `docked 12 px right of its screen, level with its top: ${JSON.stringify({ picker: opened.rect, screenBox })}`,
+    `with no room on its left, docked 12 px right of its screen, level with its top: ${JSON.stringify({ picker: opened.rect, screenBox })}`,
   );
   const grid = await page.evaluate(() => ({
     heads: [...document.querySelectorAll('#pkGrid .pk-h')].map(h => h.textContent),

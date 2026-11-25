@@ -1,6 +1,7 @@
 // At 1280 × 800 the bar for a screen, a box, a text, an image spot, an icon and a whole piece, each on a screen, folds
-// nothing into ···. With the Pieces picker open the bar has less room: it tucks away the same controls as before the
-// size and align dropdowns came, and those two as well when they don't fit.
+// nothing into ···. With the Pieces picker open the bar has less room, as at this zoom the picker runs past the
+// screen's foot into the bar's row: it tucks away the same controls as before the size and align dropdowns came, and
+// those two as well when they don't fit. tests/pieceBarRow.ts has a screen taller than the picker, where none fold.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';

@@ -1,6 +1,6 @@
 // The new Type ▾, Font, Change icon and Colour fit the bar. At 1280 × 800 the bar for a text with a long font name, a
-// whole piece, a font card, an icon and a box folds nothing, and with the Pieces picker open it tucks away no control
-// it showed before them. On a phone at 390 px the strip for a text shows what it did, an icon's shows Fill where its
+// whole piece, a font card, an icon and a box folds nothing, and with the Pieces picker open (reaching the bar's row
+// at this zoom) it tucks away no control it showed before them. On a phone at 390 px the strip for a text shows what it did, an icon's shows Fill where its
 // label was, the other new controls wait in ···, and Type ▾ and Change icon opened from there sit above the strip,
 // inside the window. A font card's strip folds nothing, whatever its font's name. Change icon opened from ··· closes ···
 // and says its picker is open.

@@ -150,7 +150,7 @@ function drawCards(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'selection
   bar.dataset.key = key;
   keepFocus(bar, () => {
     bar.innerHTML = barHtml(ctx);
-    foldSelbar(bar, barRoom());
+    foldSelbar(bar, barRoom(bar, ctx));
   });
   snapSoon();
 }
@@ -161,7 +161,7 @@ function drawWire(bar: HTMLElement, ctx: Extract<BarContext, { kind: 'connector'
   bar.dataset.key = key;
   keepFocus(bar, () => {
     bar.innerHTML = barHtml(ctx);
-    foldSelbar(bar, barRoom());
+    foldSelbar(bar, barRoom(bar, ctx));
   });
 }
 

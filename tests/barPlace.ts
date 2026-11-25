@@ -71,7 +71,12 @@ const dock = (b: Box) => dockBeside(b, FRAME, PICKER, BOARD);
 assert.deepStrictEqual(
   dock(box(300, 100, 600, 700)),
   { x: 612, y: 100, w: 292, h: 480, side: 'right' },
-  'room on the right: 12 px right',
+  'room only on the right: 12 px right',
+);
+assert.deepStrictEqual(
+  dock(box(600, 100, 800, 700)),
+  { x: 296, y: 100, w: 292, h: 480, side: 'left' },
+  'room on both sides: 12 px left, leaving the right for the next screen',
 );
 assert.deepStrictEqual(
   dock(box(700, 100, 1000, 700)),
