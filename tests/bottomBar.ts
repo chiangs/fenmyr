@@ -250,7 +250,7 @@ await check(
     await page.focus('#tools [data-add="pointer"]');
     await page.keyboard.press('Shift+Tab');
     const before = await focusedIn();
-    await page.focus('#tools [data-add="draw"]');
+    await page.focus('#tools [data-add="icon"]');
     await page.keyboard.press('Tab');
     const box = await focusedIn();
     const expanded = await page.getAttribute('#mPill', 'aria-expanded');

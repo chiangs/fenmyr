@@ -1,7 +1,7 @@
 // The screen tool: W or the bottom bar's Wireframe button puts it in hand with a row of devices in the mode bar. A click
-// places the lit device's screen, a drag draws a Custom one, and keys, the row and Esc work it. The row's Box, Text and
-// Icon swap one tool for another. R and X still draw on the bare board, and on a phone the + sheet starts it and a tap
-// places a screen centred on the tap.
+// places the lit device's screen, a drag draws a Custom one, and keys, the row and Esc work it. The row's Box and Text
+// swap one tool for another. R and X still draw on the bare board, and on a phone the + sheet starts it and a tap places
+// a screen centred on the tap.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import { nounOf } from '../src/shared/cardTypes.ts';
@@ -48,7 +48,7 @@ const tool = async () => {
   });
 };
 const down = { inHand: false, ghost: '', row: false, lit: '' };
-// aria-pressed on the row's Box, Text and Icon, then on the bottom bar's Wireframe button
+// aria-pressed on the row's Box and Text, then on the bottom bar's Wireframe button
 const pressed = async () => {
   await frames();
   return page.evaluate(() =>
@@ -120,7 +120,7 @@ try {
     { inHand: true, ghost: '393px × 852px', row: true, lit: 'iPhone' },
     'W puts the screen tool in hand with iPhone lit',
   );
-  assert.strictEqual(await pressed(), 'false false false true', "only the bottom bar's Wireframe button is pressed");
+  assert.strictEqual(await pressed(), 'false false true', "only the bottom bar's Wireframe button is pressed");
   await click(0.4, 0.3);
   assert.deepStrictEqual(
     await last(),
@@ -167,10 +167,10 @@ try {
     'zoomed out, a press that slips a few pixels is still a click',
   );
   await key('r');
-  await page.click('#screenbar [data-wft="icon"]');
-  assert.strictEqual(await pressed(), 'false false true true', "R's box then the row's Icon swaps one for the other");
-  await page.click('#screenbar [data-wft="icon"]');
-  assert.deepStrictEqual({ ...(await tool()), ghost: '' }, down, "and the row's Icon again puts it down");
+  await page.click('#screenbar [data-wft="text"]');
+  assert.strictEqual(await pressed(), 'false true true', "R's box then the row's Text swaps one for the other");
+  await page.click('#screenbar [data-wft="text"]');
+  assert.deepStrictEqual({ ...(await tool()), ghost: '' }, down, "and the row's Text again puts it down");
   await page.keyboard.press('Escape');
 
   await fresh('keys');
@@ -314,7 +314,7 @@ try {
   );
   await key('r');
   await key('w');
-  assert.strictEqual(await pressed(), 'false false false true', "W puts out R's box, and the row's Box is not pressed");
+  assert.strictEqual(await pressed(), 'false false true', "W puts out R's box, and the row's Box is not pressed");
   await key('Escape');
   await key('r');
   await drag(0.3, 0.2, 100, 60);

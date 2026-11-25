@@ -4,7 +4,7 @@ type Traits = {
   size?: readonly [width: number, height: number];
   wordy?: boolean; // its words can drop into a doc
   fillable?: boolean; // the selection bar offers the note colours
-  anyFill?: boolean; // the selection bar offers a fill in any colour, unless it holds a picture or is an open line
+  anyFill?: boolean; // the selection bar offers a fill in any colour, unless it holds a picture or is an open line or icon
   sized?: boolean; // the selection bar offers a text size
   fontable?: boolean; // the selection bar offers a font
   strokable?: boolean; // can have an outline
@@ -92,7 +92,15 @@ const CARD_TYPES = {
     wireframe: true,
     noTilt: true,
   },
-  icon: { label: 'Icon', size: [28, 28], strokable: true, textColour: true, wireframe: true, noTilt: true },
+  icon: {
+    label: 'Icon',
+    size: [28, 28],
+    anyFill: true,
+    strokable: true,
+    textColour: true,
+    wireframe: true,
+    noTilt: true,
+  },
   font: { label: 'Font', size: [300, 210], fontable: true },
   vnote: {
     label: 'Vault note',

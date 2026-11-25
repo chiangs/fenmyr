@@ -23,9 +23,8 @@ const ORDER = Object.keys(DEVICES).filter(isDevice);
 // the smallest screen a drag draws, so a slip of the hand still makes one there is room to work in
 const MIN = 120;
 
-/** The wireframe tool in hand, which the Wireframe row lights: a device's screen, R's box, X's text, or an icon whose
- *  glyph is picked once it lands. An icon dragged from the picker already has one, and is not a tool. */
-type WfTool = { kind: 'screen'; device: Device } | { kind: 'box' } | { kind: 'text' } | { kind: 'icon' };
+/** The wireframe tool in hand, which the Wireframe row lights: a device's screen, R's box or X's text. */
+type WfTool = { kind: 'screen'; device: Device } | { kind: 'box' } | { kind: 'text' };
 
 function wfTool(): WfTool | null {
   const d = appState.drag;
@@ -38,8 +37,6 @@ function wfTool(): WfTool | null {
       return { kind: 'box' };
     case 'text':
       return { kind: 'text' };
-    case 'icon':
-      return placing.extra.name ? null : { kind: 'icon' };
     default:
       return null;
   }
@@ -116,7 +113,6 @@ function placeHeld(t: WfTool) {
       return finishDrawn({ kind: 'box' }, at, at);
     }
     case 'text':
-    case 'icon':
       startPlacing(t.kind);
       return placeAt(w);
     default: {
@@ -169,7 +165,7 @@ export function initScreenTool() {
     // Enter or Space on the lit chip or tool places it, so the keyboard alone can place each one
     if (t && e.detail === 0 && b?.classList.contains('on')) return placeHeld(t);
     if (isDevice(d)) hold(d);
-    if (tool === 'box' || tool === 'text' || tool === 'icon') startPlacing(tool);
+    if (tool === 'box' || tool === 'text') startPlacing(tool);
   };
   addEventListener('keydown', e => {
     const t = wfTool();

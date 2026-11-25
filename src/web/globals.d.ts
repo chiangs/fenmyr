@@ -7,9 +7,10 @@ import type { BirthdayDue, BirthdayLine } from './myra/birthday.ts';
 import type { Phone } from './platform/phone.ts';
 
 declare global {
-  function Icon(name: string, opts?: { size?: number; cls?: string; title?: string }): string;
+  function Icon(name: string, opts?: { size?: number; cls?: string; title?: string; fill?: boolean }): string;
   function hydrateIcons(root?: ParentNode): void;
   function iconKnown(name: string): boolean;
+  function iconClosed(name: string): boolean;
   function iconList(): { name: string; kw: string }[];
   interface Window {
     __boardsChanged?: () => unknown;

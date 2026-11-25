@@ -94,7 +94,7 @@ type CardFields = {
   section: { text?: string };
   box: { img?: string; src?: string; fill?: string; opacity?: number };
   text: { text?: string; size?: number; weight?: number };
-  icon: { name?: string };
+  icon: { name?: string; fill?: string };
   font: { font?: string; text?: string };
   vnote: {
     vault?: string;

@@ -1,8 +1,9 @@
 // The new Type ▾, Font, Change icon and Colour fit the bar. At 1280 × 800 the bar for a text with a long font name, a
 // whole piece, a font card, an icon and a box folds nothing, and with the Pieces picker open it tucks away no control
-// it showed before them. On a phone at 390 px the strip for a text and an icon shows what it did, the new controls
-// wait in ···, and Type ▾ and Change icon opened from there sit above the strip, inside the window. A font card's
-// strip folds nothing, whatever its font's name. Change icon opened from ··· closes ··· and says its picker is open.
+// it showed before them. On a phone at 390 px the strip for a text shows what it did, an icon's shows Fill where its
+// label was, the other new controls wait in ···, and Type ▾ and Change icon opened from there sit above the strip,
+// inside the window. A font card's strip folds nothing, whatever its font's name. Change icon opened from ··· closes ···
+// and says its picker is open.
 import assert from 'node:assert';
 import { wireframeBoard } from './fixtures/boards.ts';
 import { launch, settle } from './support/launch.ts';
@@ -42,11 +43,11 @@ const NEW = [
 ];
 // what the bar tucked away with the picker open before this change, measured on the base
 const BEFORE: Record<string, string[] | null> = {
-  text: ['Add a label'],
+  text: [],
   piece: ['Create section · Ctrl+Alt+G', 'Ungroup · Ctrl+Shift+G', 'Stroke'],
   font: null,
   icon: [],
-  box: ['Add a label', 'Corners'],
+  box: ['Corners'],
 };
 const SELECTIONS: Record<string, string[]> = { text: ['ftext'], piece, font: ['font'], icon: ['ficon'], box: ['fbox'] };
 
@@ -138,8 +139,8 @@ try {
     const s = await strip();
     assert.deepStrictEqual(
       s.shown,
-      ['Add pieces to this screen', 'Add a label', 'Stroke', 'More', 'Delete'],
-      'the strip shows what it did',
+      ['Add pieces to this screen', 'Fill', 'Stroke', 'More', 'Delete'],
+      'the strip shows what it did, with Fill in the label’s place',
     );
     assert.ok(
       ['Change icon', 'Colour'].every(n => s.tucked.includes(n)),

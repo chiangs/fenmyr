@@ -1089,7 +1089,11 @@ body.dark .conn button:hover, body.dark .dv-back, body.dark .db-done, body.dark 
 .card.box { background: none; padding: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; border-radius: 0; flex: initial; }
 body.dark .card.box { background: none !important; }
 .card.icon .body { display: grid; place-items: center; }
-.card.icon svg.ci { width: var(--isz, 24px); height: var(--isz, 24px); color: var(--ic, var(--wf-ink)); }
+.card.icon svg.ci { width: var(--isz, 24px); height: var(--isz, 24px); color: var(--ic, var(--wf-ink)); overflow: visible; }
+/* Phosphor's lines are filled outlines, so a stroke is drawn behind each one (twice the width, half of it covered) and can't change the line weight; specific enough to beat the svg.ico rules */
+.card.icon.has-stroke svg.ci.ico .ico-r :is(path, circle, rect, ellipse, polygon, polyline, line) { stroke: var(--sk) !important; stroke-width: calc(var(--skw) * 2 * var(--isk, 1)) !important; stroke-linejoin: round; paint-order: stroke; }
+/* a fill is the glyph's tone layer at full strength */
+.card.icon svg.ci.ico .ico-f path.t { fill: var(--if) !important; fill-opacity: 1; }
 /* rotation: wireframe things turn freely; a little handle sits above the selection */
 .card.wf { rotate: var(--rot, 0deg) !important; }
 .card.wf .rot-h { position: absolute; left: 50%; top: -30px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--snow); border: 2px solid var(--select); cursor: grab; display: none; z-index: 3; }
