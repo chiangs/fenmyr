@@ -25,7 +25,8 @@ board.cards.push(
   on('ficon', 'icon', 40, 460, 28, 28, { name: 'star' }),
 );
 const piece = board.cards.filter(c => 'group' in c && c.group === 'go').map(c => c.id);
-const l = await launch({ boards: [board], open: 'wire' });
+// selecting a screen would open the picker by itself, and the bar is measured first without it
+const l = await launch({ boards: [board], open: 'wire', settings: { autoPieces: false } });
 const { page, app } = l;
 
 // and those 8d brought, which fold first too

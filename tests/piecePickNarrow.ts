@@ -67,6 +67,9 @@ const openOn = async (id: string, z: number, x: number, y: number) => {
     [id, z, x, y] as const,
   );
   await calm(page);
+  // selecting the screen opened the picker by itself, and the bar is measured before it opens
+  await page.evaluate(() => document.querySelector<HTMLElement>('#piecePick:not([hidden]) [data-pk-close]')?.click());
+  await calm(page);
   const before = await look();
   await page.evaluate(() => document.querySelector<HTMLElement>('#selbar [data-pieces]')?.click());
   await calm(page);

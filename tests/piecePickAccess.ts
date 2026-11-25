@@ -181,6 +181,9 @@ try {
   );
 
   await page.evaluate(() => window.__fenmyr.selectOnly(['two']));
+  await still(page);
+  // the picker that selecting it opened hides its hint
+  await page.keyboard.press('Escape');
   // away from the hint, so it is read as it rests rather than under the pointer
   await page.mouse.move(700, 880);
   await still(page);

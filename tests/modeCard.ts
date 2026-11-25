@@ -266,7 +266,6 @@ await check('the Pieces picker keeps clear of the Wireframe column', async () =>
   // the screen just left of where the column opens, so the picker beside it would reach under the column
   await view(g0.panel.l - 700, 90, 0.5);
   await select(['scr']);
-  await page.evaluate(() => document.querySelector<HTMLElement>('#selbar [data-pieces]')?.click());
   await still(page);
   await key('w');
   await still(page);
