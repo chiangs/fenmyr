@@ -20,6 +20,8 @@ try {
       'palette',
       'magnifier',
       'clipboard',
+      'hammer',
+      'ruler',
     ] as const;
     const POSES = ['sleepy', 'shook', 'sigh', 'happy', 'love', 'dizzy', 'curious'] as const;
     const COLS: [name: string, ms: number][] = [

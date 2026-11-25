@@ -46,6 +46,10 @@ function mirrored(main: ReturnType<typeof Goo>, head: ReturnType<typeof Goo>): R
       main.hat(on);
       head.hat(on);
     },
+    strike() {
+      main.strike();
+      head.strike();
+    },
     setColors(c) {
       main.setColors(c);
       head.setColors(c);

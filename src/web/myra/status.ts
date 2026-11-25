@@ -85,7 +85,7 @@ let posed = false;
 let looked: Look | null = null;
 // what the person has in hand, which she mirrors when no work gives her a look; the first in HELD that is held wins
 const held = new Set<HeldLook>();
-const HELD: HeldLook[] = ['palette', 'magnifier', 'clipboard'];
+const HELD: HeldLook[] = ['palette', 'magnifier', 'hammer', 'ruler', 'clipboard'];
 
 /** The person has picked up (on) or put down a tool she keeps them company with. */
 export function hold(look: HeldLook, on: boolean) {
