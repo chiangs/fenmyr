@@ -1,7 +1,11 @@
-// What Myra looks like while she is busy: where her eyes go and the prop she holds for each kind of work, drawn in
-// pixels with her as her party hat is. A prop slides in from below as the work starts and away as it ends.
+// What Myra looks like while she is busy, or while the person has something in hand: where her eyes go and the prop
+// she holds, drawn in pixels with her as her party hat is. A prop slides in from below as it starts and away as it ends.
 
 export type BusyLook = 'thinking' | 'reading' | 'painting' | 'writing' | 'explaining' | 'building';
+// what she holds to keep the person company: a palette while they draw, a magnifying glass while they search, a
+// clipboard while they edit a list
+export type HeldLook = 'palette' | 'magnifier' | 'clipboard';
+export type Look = BusyLook | HeldLook;
 
 // t: seconds. out: 0 when the prop is fully out, 1 when it is put away. still: calm or reduced motion, so nothing moves
 export type BusyPaint = {
@@ -32,12 +36,15 @@ const cell = (p: BusyPaint, hex: string, x: number, y: number, w: number, h: num
   p.g.fillRect(p.ox + x * p.px, p.oy + y * p.px, w * p.px, h * p.px);
 };
 
-/** Where her eyes go for a look, in cells from where they rest. */
-export function busyEyes(look: BusyLook, t: number, still: boolean): { dx: number; dy: number } {
+/** Where her eyes go for a look, in cells from where they rest, or null when they glance around as usual. */
+export function busyEyes(look: Look, t: number, still: boolean): { dx: number; dy: number } | null {
   switch (look) {
     case 'thinking':
       return { dx: 1, dy: -0.5 };
+    case 'palette':
+      return null;
     case 'reading':
+    case 'magnifier':
     case 'explaining': {
       if (still) return { dx: 0, dy: 0.5 };
       // along a line left to right, then quickly back for the next
@@ -50,6 +57,7 @@ export function busyEyes(look: BusyLook, t: number, still: boolean): { dx: numbe
     case 'writing':
       return { dx: 0.5, dy: 0.5 };
     case 'building':
+    case 'clipboard':
       return { dx: 0, dy: 0.5 };
     default: {
       const never: never = look;
@@ -59,7 +67,7 @@ export function busyEyes(look: BusyLook, t: number, still: boolean): { dx: numbe
 }
 
 /** Her sway for a look, in cells: a slow lean while she thinks, so a long wait reads as working, not fidgeting. */
-export const busySway = (look: BusyLook | null, t: number, still: boolean) =>
+export const busySway = (look: Look | null, t: number, still: boolean) =>
   look === 'thinking' && !still ? Math.sin(t * 2.2) * 0.35 : 0;
 
 const BOOK = ['WWWWddWWWW', 'WgggddgggW', 'WWWWddWWWW', 'WgggddgggW', 'CCCCCCCCCC'];
@@ -71,10 +79,13 @@ const PENCIL_PAL = { p: '#f4a3b5', b: '#4f6fcf', w: '#e8c79a', k: '#3a3a3a' };
 const LAPTOP = ['.LLLLLLLL.', 'LLLLLLLLLL', 'LLLLbbLLLL', 'LLLLLLLLLL'];
 const LAPTOP_PAL = { L: '#9aa3ad', b: '#f6a63c' };
 const INK = '#3d2a1e';
+const PALETTE = ['.wwwwww.', 'wrrwbbww', 'wrrwbbww', 'wwwwwggw', '.ww..ggw', '.ww.wwww', '..wwww..'];
+const LENS = ['.RRRR.', 'R....R', 'R....R', 'R....R', 'R....R', '.RRRR.'];
+const BOARD = ['...cc...', 'BBBccBBB', 'BPPPPPPB', 'BPPPPPPB', 'BPPPPPPB', 'BPPPPPPB'];
 const FRAMES = '#45302a';
 
 /** Draws the prop and the little extras for a look, over her face and body. */
-export function drawBusy(look: BusyLook, p: BusyPaint) {
+export function drawBusy(look: Look, p: BusyPaint) {
   const { g, t, still } = p,
     drop = p.out * 6;
   switch (look) {
@@ -162,6 +173,38 @@ export function drawBusy(look: BusyLook, p: BusyPaint) {
           cell(p, i % 2 ? '#5b7bd5' : '#7cc95e', 4.5 + i * 3.2, 9.6 - ph * 5, 0.6, 0.6);
         });
       g.globalAlpha = 1;
+      return;
+    }
+    case 'palette': {
+      // a painter's palette at her side, its paints catching the light now and then
+      const bob = still ? 0 : Math.sin(t * 2) * 0.3;
+      sprite(p, PALETTE, { w: '#d9b382', r: '#e5586d', b: '#5b7bd5', g: '#7cc95e' }, -2.6, 9.4 + bob + drop);
+      if (p.out > 0 || still) return;
+      g.globalAlpha = Math.max(0, Math.sin(t * 3));
+      cell(p, '#ffffff', -1.4, 10.4 + bob, 0.6, 0.6);
+      g.globalAlpha = 1;
+      return;
+    }
+    case 'magnifier': {
+      // a magnifying glass over her right eye, its handle down to the side
+      const bob = still ? 0 : Math.sin(t * 1.6) * 0.3;
+      g.globalAlpha = (1 - p.out) * 0.3;
+      cell(p, '#dff1ff', 10.5, 7 + bob, 4, 4);
+      g.globalAlpha = 1 - p.out;
+      sprite(p, LENS, { R: '#b8923a' }, 9.5, 6 + bob);
+      sprite(p, ['HH.', '.HH', '..H'], { H: '#6b4a2e' }, 14.5, 11.5 + bob);
+      g.globalAlpha = 1;
+      return;
+    }
+    case 'clipboard': {
+      // a clipboard held up in front of her, its list ticked off line by line
+      sprite(p, BOARD, { B: '#a0703f', c: '#c9ccd4', P: '#fffaf0' }, 4, 9.2 + drop);
+      const ticked = still ? 2 : Math.floor((t / 0.8) % 4);
+      [0, 1, 2].forEach(i => {
+        const y = 10.9 + i * 1.1 + drop;
+        cell(p, i < ticked ? '#3f8f3c' : '#cdbba0', 5.3, y, 0.7, 0.7);
+        cell(p, '#cdbba0', 6.4, y + 0.2, 4.4, 0.35);
+      });
       return;
     }
     default: {

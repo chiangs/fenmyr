@@ -1,5 +1,5 @@
-// Draws Myra's sprite in each busy look and each pose as one sheet, so new art can be looked at and reviewed: the
-// visual diff hides every canvas, since she moves. Each row is a look or a pose at three moments, then still (calm) and
+// Draws Myra's sprite in each look (busy, or holding what the person holds) and each pose as one sheet, so new art
+// can be looked at and reviewed: the visual diff hides every canvas, since she moves. Each row is a look or a pose at three moments, then still (calm) and
 // with no room for a prop. Writes the PNG to the path given, or myra-sheet.png.
 //   node tools/myra-sheet.ts [out.png]
 import fs from 'node:fs';
@@ -10,7 +10,17 @@ const l = await launch();
 try {
   const png = await l.page.evaluate(() => {
     type Sprite = ReturnType<typeof window.Goo>;
-    const LOOKS = ['thinking', 'reading', 'explaining', 'painting', 'writing', 'building'] as const;
+    const LOOKS = [
+      'thinking',
+      'reading',
+      'explaining',
+      'painting',
+      'writing',
+      'building',
+      'palette',
+      'magnifier',
+      'clipboard',
+    ] as const;
     const POSES = ['sleepy', 'shook', 'sigh', 'happy', 'love', 'dizzy', 'curious'] as const;
     const COLS: [name: string, ms: number][] = [
       ['0.2 s', 200],
@@ -42,8 +52,8 @@ try {
     COLS.forEach(([c], i) => {
       g.fillText(c, LABEL + i * W * SCALE + 8, 16);
     });
-    // a time just after a blink, so no column catches her eyes shut
-    const base = Math.ceil((performance.now() + 1000) / 3300) * 3300;
+    // a fixed time just after a blink, so no column catches her eyes shut and two runs draw the same sheet
+    const base = 3_300_000;
     rows.forEach(([name, set], r) => {
       const y = HEAD + r * H * SCALE;
       g.fillStyle = '#3d2a1e';

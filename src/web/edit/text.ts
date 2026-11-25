@@ -5,6 +5,7 @@ import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
 import { save } from '../core/history.ts';
 import { byId, session } from '../core/state.ts';
+import { holdForEdit } from '../myra/held.ts';
 import { cardEl } from '../ui/dom.ts';
 import { endEdit, startEdit } from './editing.ts';
 
@@ -35,6 +36,7 @@ export function fitText(c: Card | null | undefined) {
 // any words on a card can be edited: double-click the bit you want (text, list heading, a list item, the little label, a link's title or note)
 export function editField(el: HTMLElement, t: HTMLElement, set: (text: string) => void, done?: () => void) {
   session.editing = el.dataset.id ?? null;
+  holdForEdit(session.editing);
   el.classList.add('editing');
   t.contentEditable = 'true';
   t.focus();

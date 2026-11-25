@@ -7,6 +7,7 @@ import { $, stage, world } from '../core/dom.ts';
 import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { card } from '../model/boards.ts';
+import { hold } from '../myra/status.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
 import { INKS, inkPath, PEN_SIZE, penW } from './ink.ts';
 import { stopPlacing } from './place.ts';
@@ -114,6 +115,7 @@ export function enterDraw() {
   selectOnly([]);
   session.selWire = null;
   drawOn = true;
+  hold('palette', true);
   $('drawbar').hidden = false;
   renderDrawbar();
   if (!liveSvg) {
@@ -129,6 +131,7 @@ export function enterDraw() {
 
 export function exitDraw() {
   drawOn = false;
+  hold('palette', false);
   stroke = null;
   erasing = false;
   $('drawbar').hidden = true;
