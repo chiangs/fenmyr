@@ -8,7 +8,7 @@ import path from 'node:path';
 import { _electron as electron, type Page } from 'playwright';
 import { caelestiaTokens } from '../src/web/settings/caelestia.ts';
 import { THEMES } from '../src/web/settings/themes.ts';
-import { HEADLESS } from './support/launch.ts';
+import { collectPolicyViolations, HEADLESS } from './support/launch.ts';
 
 const scheme = (mode: string, surface: string, primary: string) => ({
   name: 'dynamic',
@@ -54,6 +54,7 @@ async function open(env: Record<string, string>) {
   const page = await app.firstWindow(),
     errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
+  collectPolicyViolations(page, errors);
   await page.waitForTimeout(2500);
   await page.getByText('Skip setup').click();
   await page.waitForTimeout(1000);

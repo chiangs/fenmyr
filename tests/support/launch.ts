@@ -34,6 +34,21 @@ const CPU_SLOW = parseCpuSlow(process.env.FENMYR_CPU_SLOW);
 // and About reads the same in every screenshot. A test of the stamp itself passes its own in env.
 const BUILD_STAMP = path.join(ROOT, 'tests/fixtures/buildStamp.json');
 
+// Chromium logs every Content Security Policy violation as a console error, so a test learns of one there. A
+// prototype's preview frame loads from fenmyrpreview: with a policy of its own (src/web/proto/bundle.ts), and a prototype
+// that breaks its own policy is that prototype's business, so only messages from the app's page count.
+export function collectPolicyViolations(page: Page, errors: string[]) {
+  page.on('console', m => {
+    const text = m.text();
+    if (
+      m.type() === 'error' &&
+      text.includes('Content Security Policy') &&
+      !m.location().url.startsWith('fenmyrpreview:')
+    )
+      errors.push(text);
+  });
+}
+
 const QUIET = { greet: false, autoUpdate: false, caelestia: false, motion: false, tilt: false };
 
 export type Board = { id: string; name: string; [key: string]: unknown };
@@ -89,6 +104,7 @@ export async function launch({
     await (await app.context().newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: CPU_SLOW });
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
+  collectPolicyViolations(page, errors);
   await page.waitForFunction(() => window.__fenmyr?.curBoard());
   await page.waitForTimeout(500);
   const store = {
