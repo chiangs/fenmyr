@@ -306,6 +306,8 @@ export const icons: IconEntry[] = [
   ['crop', 'crop', 'trim cut'],
   ['open', 'arrow-square-out', 'external open link out'],
   ['caret-down', 'caret-down', 'arrow chevron open menu'],
+  ['fill', 'paint-bucket', 'fill colour bucket'],
+  ['text-colour', 'text-a-underline', 'letter colour'],
   ['corners', 'frame-corners', 'corner radius round'],
   ['file-pdf', 'file-pdf', 'download pdf'],
   ['file-word', 'file-doc', 'download word docx'],

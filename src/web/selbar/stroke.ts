@@ -6,7 +6,7 @@ import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { closestTo, htmlIn } from '../ui/dom.ts';
-import { caret, closeSbPops, G, markOnce, openBarColor, pct, pop, syncPair } from './barKit.ts';
+import { closeSbPops, colourTrig, G, markOnce, openBarColor, pct, pop, syncPair } from './barKit.ts';
 import { every, group } from './group.ts';
 import { selCards } from './selected.ts';
 
@@ -17,7 +17,6 @@ const DASHES: [string, string][] = [
   ['solid', 'Solid'],
   ['dash', 'Dashed'],
   ['dot', 'Dotted'],
-  ['none', 'None'],
 ];
 
 const lineSlider = (k: string, label: string, v: number, max: number) => {
@@ -29,7 +28,7 @@ const lineSlider = (k: string, label: string, v: number, max: number) => {
 function dashHtml(f: Card, w: number) {
   const st = skStyle(f),
     chips = DASHES.map(([k, t]) => {
-      const cls = (k === 'none' ? !w : w && st === k) ? 'on' : '';
+      const cls = w && st === k ? 'on' : '';
       return `<button data-skd="${k}" class="${cls}"><span class="sks sks-${k}"></span>${t}</button>`;
     }).join(''),
     off = w && st !== 'solid' ? '' : ' off',
@@ -65,14 +64,15 @@ function strokeHtml(stk: Card[], f: Card) {
     dash = noDash ? '' : dashHtml(f, w),
     p = pct(w, 0, max),
     none = w ? '' : ' none',
-    CARET = caret();
+    noneOn = w ? '' : 'on',
+    trig = colourTrig('pen', `<i class="sb-cur sb-skcur${none}" style="--c:${col}"></i>`);
   return G(
     2,
     pop(
       'stroke',
-      `<i class="sb-cur sb-skcur${none}" style="--c:${col}"></i>${CARET}`,
+      trig,
       `<div class="sb-corners sb-stroke"><div class="sbc-top"><span>Stroke</span><input type="range" min="0" max="${max}" step="0.5" value="${w}" style="--p:${p}" data-skw><input type="number" min="0" max="${max}" step="0.5" value="${w}" data-skn aria-label="Stroke width"><b class="sb-unit">px</b></div>
-          <div class="sb-dots sb-fills">${dots}<button class="sb-anycolor" data-skwheel="1" title="Any colour"></button></div>
+          <div class="sb-dots sb-fills"><button data-skc="none" title="No stroke" class="sb-nofill ${noneOn}"></button>${dots}<button class="sb-anycolor" data-skwheel="1" title="Any colour"></button></div>
           ${dash}</div>`,
       'Stroke',
     ),
@@ -90,10 +90,10 @@ function syncPop(f: Card) {
     cur.classList.toggle('none', !on);
   }
   htmlIn(bar, '[data-skc]').forEach(b => {
-    b.classList.toggle('on', on && (f.stroke || '').toLowerCase() === b.dataset.skc);
+    b.classList.toggle('on', b.dataset.skc === 'none' ? !on : on && (f.stroke || '').toLowerCase() === b.dataset.skc);
   });
   htmlIn(bar, '[data-skd]').forEach(b => {
-    b.classList.toggle('on', b.dataset.skd === 'none' ? !on : on && b.dataset.skd === skStyle(f));
+    b.classList.toggle('on', on && b.dataset.skd === skStyle(f));
   });
   const dash = htmlIn(bar, '.sb-skdash')[0];
   if (dash) {
@@ -171,8 +171,8 @@ function initStroke(place: () => void) {
       if (!color && !dash && !wheel) return;
       e.stopImmediatePropagation();
       if (color || dash) markOnce('sk'); // one undo per visit to the dropdown
-      if (color) return setStroke({ color });
-      if (dash) return setStroke(dash === 'none' ? { none: true } : { dash });
+      if (color) return setStroke(color === 'none' ? { none: true } : { color });
+      if (dash) return setStroke({ dash });
       const cs = selCards().filter(k => canStroke(k));
       remember();
       const was = cs.map(k => ({ stroke: k.stroke, sw: k.sw, sdash: k.sdash }));

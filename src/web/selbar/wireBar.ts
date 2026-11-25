@@ -5,7 +5,7 @@ import { save } from '../core/history.ts';
 import { linkById, session } from '../core/state.ts';
 import { settings } from '../settings/settings.ts';
 import { closestTo } from '../ui/dom.ts';
-import { caret, closeSbPops, G, ICON, moreHtml, openBarColor, pop } from './barKit.ts';
+import { caret, closeSbPops, colourTrig, G, ICON, moreHtml, openBarColor, pop } from './barKit.ts';
 import { group } from './group.ts';
 
 const WCOL = [
@@ -49,13 +49,9 @@ function wireBarHtml(lw: Link) {
     }).join(''),
     dots = `${colours}<button data-wb="colcustom" title="Pick another colour…" class="sb-wcustom"></button>`;
   const curCls = cw ? '' : ' sb-wdef',
-    curStyle = cw ? `background:${cw}` : '';
-  const colorTrig = pop(
-    'wcol',
-    `<i class="sb-cur${curCls}" style="${curStyle}"></i>${CARET}`,
-    `<div class="sb-dots">${dots}</div>`,
-    'Line colour',
-  );
+    curStyle = cw ? `background:${cw}` : '',
+    trig = colourTrig('pen', `<i class="sb-cur${curCls}" style="${curStyle}"></i>`);
+  const colorTrig = pop('wcol', trig, `<div class="sb-dots">${dots}</div>`, 'Line colour');
   const weights = WEIGHTS.map(([n, t]) => {
     const cls = ww === n ? 'on' : '',
       line = wline(n);

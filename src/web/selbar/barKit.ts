@@ -75,6 +75,13 @@ export const btn = (a: string, icon: string, tip: string, on?: boolean, disabled
 
 export const caret = () => Icon('caret-down', { cls: 'sb-caret' });
 
+// Fill, Colour and Stroke all show a dot of their colour, so a glyph before it says which one this is. It takes the
+// caret's place: with both, the wider triggers fold Fill off a phone's strip.
+export const colourTrig = (glyph: string, dot: string) => {
+  const g = Icon(glyph, { cls: 'sb-glyph' });
+  return `${g}${dot}`;
+};
+
 // how far each key moves a slider, in its steps, as the browser moves one: Home and End go all the way, as the values
 // are clamped to the slider's range
 export const SLIDER_KEYS: Readonly<Record<string, number>> = {

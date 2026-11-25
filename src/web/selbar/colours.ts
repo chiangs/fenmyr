@@ -2,7 +2,7 @@ import { typesWith } from '../../shared/cardTypes.ts';
 import { COLL } from '../cards/collection.ts';
 import { COLOR_NAMES, COLORS, colorLabel } from '../core/base.ts';
 import { remember } from '../core/history.ts';
-import { btn, caret, G, pop, redraw, SEP } from './barKit.ts';
+import { btn, colourTrig, G, pop, redraw, SEP } from './barKit.ts';
 import { group, onBar, only, some } from './group.ts';
 
 const FILLABLE = typesWith('fillable');
@@ -10,14 +10,10 @@ const FILLABLE = typesWith('fillable');
 // a chip shows the colour the card gets in the theme that is on, so it follows a theme change
 const chipBg = (n: string | undefined) => (n && COLORS[n] ? `var(--card-${n})` : '');
 
+// a card's colour is the colour of its body, so it takes Fill's glyph
 export const colorPop = (cur: string, dots: string) => {
-  const CARET = caret();
-  return pop(
-    'color',
-    `<i class="sb-cur" style="background:${cur}"></i>${CARET}`,
-    `<div class="sb-dots">${dots}</div>`,
-    'Colour',
-  );
+  const trig = colourTrig('fill', `<i class="sb-cur" style="background:${cur}"></i>`);
+  return pop('color', trig, `<div class="sb-dots">${dots}</div>`, 'Colour');
 };
 
 export const colorDot = (attr: string, n: string, bg: string, on: boolean) => {

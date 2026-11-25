@@ -8,7 +8,7 @@ import { $ } from '../core/dom.ts';
 import { remember, save } from '../core/history.ts';
 import { cssToHex } from '../ui/color.ts';
 import { cardEl, closestTo, htmlIn } from '../ui/dom.ts';
-import { caret, closeSbPops, FOLD_PIECE, G, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
+import { closeSbPops, colourTrig, FOLD_PIECE, G, marks, openBarColor, pop, rebuildBar } from './barKit.ts';
 import { every, group, only } from './group.ts';
 import { opacityHtml } from './opacity.ts';
 import { selCards } from './selected.ts';
@@ -76,41 +76,51 @@ function boxFillHtml(cs: [Card, ...Card[]]) {
     noneOn = none ? 'on' : '',
     dots = BOX_FILLS.map(v => dot('bfill', v, cur.toLowerCase() === v)).join(''),
     opacity = opacityHtml(cs),
-    CARET = caret();
+    trig = colourTrig('fill', `<i class="sb-cur${noneCls}" style="background:${bg}"></i>`);
   return G(
     2,
     pop(
       'fill',
-      `<i class="sb-cur${noneCls}" style="background:${bg}"></i>${CARET}`,
+      trig,
       `<div class="sb-fillbox"><div class="sb-dots sb-fills"><button data-bfill="none" title="No fill" class="sb-nofill ${noneOn}"></button>${dots}<button class="sb-anycolor" data-bfwheel="1" title="Any colour"></button></div>${opacity}</div>`,
       'Fill',
     ),
   );
 }
 
-// the colour of titles' and wireframe text's letters, with No fill (hollow letters), and of icons, shown as a dot
+// the colour a new card of its kind has: an icon's and wireframe text's is set (tools/place.ts), a title has none of
+// its own and follows the theme
+const defaultOf = (c: Card) => (c.type === 'title' ? '' : '#27272a');
+const colourOf = (c: Card) => (c.type === 'title' ? c.tc || '' : c.color || '#27272a');
+const allDefault = (cs: readonly Card[]) => cs.every(c => colourOf(c) === defaultOf(c));
+// the trigger's dot: the colour, or the theme's ink for a title that follows it (No fill crosses it out instead)
+const dotColour = (v: string) => (v && v !== 'none' ? v : 'var(--ink)');
+
+// the colour of titles' and wireframe text's letters, with No fill (hollow letters), and of icons
 function textFillHtml(cs: [Card, ...Card[]]) {
   const f = cs[0],
     icons = cs.some(c => c.type === 'icon'),
     tip = colourTip(cs),
-    cur = f.type === 'title' ? f.tc || '' : f.color || '#27272a',
+    cur = colourOf(f),
     none = cur === 'none',
     noneCls = none ? ' sb-none' : '',
-    iconCls = tip === 'Colour' ? ' sb-icur' : '',
-    letter = tip === 'Colour' ? '' : 'A',
-    c = cur && !none ? cur : 'var(--ink)',
+    c = dotColour(cur),
     noneOn = none ? 'on' : '',
     noFill = icons ? '' : `<button data-tf="none" title="No fill" class="sb-nofill ${noneOn}"></button>`,
+    // Default looks like a connector's Default, half light and half dark, so it stands apart from the colours
+    defOn = allDefault(cs) ? 'on' : '',
+    def = `<button data-tf="default" title="Default" class="sb-wdef ${defOn}"></button>`,
     dots = TEXT_FILLS.map(v => dot('tf', v, cur.toLowerCase() === v)).join(''),
-    CARET = caret(),
+    glyph = tip === 'Colour' ? 'drop' : 'text-colour',
+    trig = colourTrig(glyph, `<i class="sb-cur sb-tcur${noneCls}" style="--c:${c}"></i>`),
     // an icon's colour came with Change icon, so like it, it folds before the controls the bar had before them
     fold = tip === 'Colour' ? FOLD_PIECE : 2;
   return G(
     fold,
     pop(
       'tfill',
-      `<i class="sb-cur sb-tcur${noneCls}${iconCls}" style="--c:${c}">${letter}</i>${CARET}`,
-      `<div class="sb-dots sb-fills">${noFill}${dots}<button class="sb-anycolor" data-tfwheel="1" title="Any colour"></button></div>`,
+      trig,
+      `<div class="sb-dots sb-fills">${noFill}${def}${dots}<button class="sb-anycolor" data-tfwheel="1" title="Any colour"></button></div>`,
       tip,
       tip,
     ),
@@ -134,38 +144,43 @@ function shapeFillHtml(one: CardOf<'shape'>) {
     anyCls = named ? '' : 'on',
     anyStyle = named ? '' : ` style="--any:${fill}"`,
     anyValue = named ? '#f6b45e' : fill,
-    CARET = caret();
+    trig = colourTrig('fill', `<i class="sb-cur" style="background:${cur}"></i>`);
   const picker = pop(
     'color',
-    `<i class="sb-cur" style="background:${cur}"></i>${CARET}`,
+    trig,
     `<div class="sb-dots">${noFill}${dots}<label class="sf-any ${anyCls}" title="Any colour"${anyStyle}><input type="color" data-sfany value="${anyValue}"></label></div>`,
     'Colour',
   );
   return G(2, `${picker}<span class="sb-sep"></span>`);
 }
 
+// v is a colour, 'none' for hollow letters, or 'default' for the colour each card's kind starts with
 function setTextFill(v: string) {
-  const cs = selCards().filter(isTextFill);
-  if (!cs.length) return;
+  const cs = selCards().filter(isTextFill),
+    first = cs[0];
+  if (!first) return;
   cs.forEach(c => {
     const el = cardEl(c.id)?.querySelector(c.type === 'title' ? '.text' : '.tx'),
-      had = c.type === 'title' ? c.tc : c.color;
-    if (v === 'none' && had !== 'none') autoBorder(c, had && had !== 'none' ? had : el && getComputedStyle(el).color);
+      had = c.type === 'title' ? c.tc : c.color,
+      to = v === 'default' ? defaultOf(c) : v;
+    if (to === 'none' && had !== 'none') autoBorder(c, had && had !== 'none' ? had : el && getComputedStyle(el).color);
     if (c.type === 'title') {
-      if (v === '') delete c.tc;
-      else c.tc = v;
-    } else c.color = v;
+      if (to === '') delete c.tc;
+      else c.tc = to;
+    } else c.color = to;
     renderCard(c);
   });
   selectOnly(cs.map(c => c.id));
   save();
-  const t = htmlIn($('selbar'), '.sb-tcur')[0];
+  const t = htmlIn($('selbar'), '.sb-tcur')[0],
+    cur = colourOf(first),
+    def = allDefault(cs);
   if (t) {
-    t.classList.toggle('sb-none', v === 'none');
-    t.style.setProperty('--c', v && v !== 'none' ? v : 'var(--ink)');
+    t.classList.toggle('sb-none', cur === 'none');
+    t.style.setProperty('--c', dotColour(cur));
   }
   htmlIn($('selbar'), '[data-tf]').forEach(b => {
-    b.classList.toggle('on', b.dataset.tf === v);
+    b.classList.toggle('on', b.dataset.tf === 'default' ? def : b.dataset.tf === cur.toLowerCase());
   });
 }
 
