@@ -8,6 +8,9 @@ import { chatOverBoard, setModeBar } from '../myra/chatWindow.ts';
 import { type BarContext, findContext } from './context.ts';
 import { type Anchor, type Box, GAP, place } from './place.ts';
 
+/** The stage pixels a bar spans from top to bottom. */
+type Row = { t: number; b: number };
+
 // the turn dot stands this far above a selection on screen, at any zoom
 const TURN_DOT = 42;
 
@@ -81,12 +84,17 @@ const rectsIn = (id: string) =>
     .filter(r => r.width && r.height);
 
 // The open Pieces picker counts as a side column on the side it docked, or as a floor when it is a sheet across the
-// bottom, so the selection bar keeps clear of it. The mode bar sits over the bottom bar, below it, and stays put.
-function pickerColumn(placing?: HTMLElement): { l: number[]; r: number[]; b: number[] } {
+// bottom, so the selection bar keeps clear of it. Given the bar's row, a side column counts only where the picker
+// reaches that row: docked top-aligned beside a screen taller than it, it leaves the bar under the screen the whole
+// width. The mode bar sits over the bottom bar, below it, and stays put.
+function pickerColumn(placing?: HTMLElement, row?: Row): { l: number[]; r: number[]; b: number[] } {
   const p = document.getElementById('piecePick');
   if (!p || p === placing || placing?.id === 'modebar' || p.hidden || onPhone()) return { l: [], r: [], b: [] };
   const r = p.getBoundingClientRect(),
-    s = stage.getBoundingClientRect();
+    s = stage.getBoundingClientRect(),
+    side = p.dataset.dock === 'left' || p.dataset.dock === 'right',
+    reaches = !row || (r.top - s.top < row.b + GAP && r.bottom - s.top > row.t - GAP);
+  if (side && !reaches) return { l: [], r: [], b: [] };
   if (p.dataset.dock === 'left') return { l: [r.right - s.left + GAP], r: [], b: [] };
   if (p.dataset.dock === 'right') return { l: [], r: [r.left - s.left - GAP], b: [] };
   return { l: [], r: [], b: [r.top - s.top - GAP] };
@@ -97,9 +105,9 @@ function pickerColumn(placing?: HTMLElement): { l: number[]; r: number[]; b: num
 // (unless that is the bar being placed). A bar the tools and the card leave too little board for beside them goes under
 // them instead, as on a narrow prototype board. Read from the screen, so moved widgets, a folded tray and a prototype's
 // narrower board all count.
-function readFrame(placing?: HTMLElement): Box {
+function readFrame(placing?: HTMLElement, row?: Row): Box {
   const s = stage.getBoundingClientRect(),
-    picker = pickerColumn(placing),
+    picker = pickerColumn(placing, row),
     head = [document.querySelector('.top'), document.getElementById('saved')]
       .filter(el => el?.checkVisibility())
       .map(el => el?.getBoundingClientRect().bottom ?? 0),
@@ -142,6 +150,20 @@ export function dockFrame(docking: HTMLElement): Box {
   );
 }
 
+// a row no picker reaches
+const NO_ROW: Row = { t: Infinity, b: -Infinity };
+
+// The bar's row, from where it goes when the picker docked beside a screen is left out. Beside a selection the bar sits
+// above or below it, so the row holds once the picker narrows the room. None without such a picker, so the bar reads
+// the frame once a frame.
+function barRow(bar: HTMLElement, anchor: Anchor): Row | undefined {
+  const p = document.getElementById('piecePick');
+  if (!p || p.hidden || (p.dataset.dock !== 'left' && p.dataset.dock !== 'right')) return undefined;
+  const h = bar.offsetHeight,
+    at = place(anchor, readFrame(bar, NO_ROW), { w: bar.offsetWidth, h });
+  return { t: at.y, b: at.y + h };
+}
+
 const writeData = (el: HTMLElement, key: 'side' | 'stuck', value: string) => {
   if (el.dataset[key] !== value) el.dataset[key] = value;
 };
@@ -162,7 +184,7 @@ export function floatBar(bar: HTMLElement, ctx: BarContext | null, paused: boole
   }
   const anchor = ctx && anchorFor(ctx);
   if (!anchor) return;
-  const p = place(anchor, readFrame(bar), { w: bar.offsetWidth, h: bar.offsetHeight }),
+  const p = place(anchor, readFrame(bar, barRow(bar, anchor)), { w: bar.offsetWidth, h: bar.offsetHeight }),
     at = `${snap(p.x)}px ${snap(p.y)}px`;
   if (bar.style.translate !== at) bar.style.translate = at;
   writeData(bar, 'side', p.side);
@@ -207,10 +229,11 @@ export function floatModeBar() {
   setModeBar(lift);
 }
 
-/** How wide the bar may grow before groups tuck into ···: the free view, or on a phone the strip beside Myra. */
-export function barRoom() {
+/** How wide the bar may grow before groups tuck into ···: the free view on the bar's row, or on a phone the strip
+ *  beside Myra. */
+export function barRoom(bar: HTMLElement, ctx: BarContext) {
   if (!onPhone()) {
-    const f = readFrame();
+    const f = readFrame(undefined, barRow(bar, anchorFor(ctx)));
     return f.r - f.l;
   }
   const s = stage.getBoundingClientRect(),
