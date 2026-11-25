@@ -96,5 +96,10 @@
   "settings-myra": "The tabs are reordered (General, Appearance, Layout, Board, Myra, Connections, About) and the tab strip now fills the panel's content width, inside the scrolling body, so its right edge lines up with the rows.",
   "template-menu": "The model pill reads Default where the base reads Claude Code default, so the pill is narrower and the send hint beside it moves right by the difference.",
   "wireframe-dark-pieces": "Mixes of the wireframe ink and of ink with transparent or white are written in oklab instead of oklch, which tinted them slightly pink; the changed pixels are the pieces' hairlines and shadows, by at most 0.085 OKLab on a few pixels. The dark-mix change adds up to 0.025 on the same pieces.",
+  "wireframe-icon": "A selected wireframe piece's selection bar no longer offers Add a label, since wireframe pieces never show one (#443), so the bar is one button shorter.",
+  "wireframe-phone-pieces": "A selected wireframe piece's selection bar no longer offers Add a label, since wireframe pieces never show one (#443), so the bar is one button shorter.",
+  "wireframe-screen": "A selected wireframe piece's selection bar no longer offers Add a label, since wireframe pieces never show one (#443), so the bar is one button shorter.",
+  "wireframe-size": "A selected wireframe piece's selection bar no longer offers Add a label, since wireframe pieces never show one (#443), so the bar is one button shorter.",
+  "wireframe-text": "A selected wireframe piece's selection bar no longer offers Add a label, since wireframe pieces never show one (#443), so the bar is one button shorter.",
   "zoom-in": "Vault notes and note tags take the card's own ink (#3b342d) instead of the shared on-pastel (#3f3a34); the largest change is 0.022 OKLab on the Vault note's text."
 }
