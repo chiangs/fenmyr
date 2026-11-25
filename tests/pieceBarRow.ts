@@ -1,6 +1,6 @@
 // The Pieces picker docked beside a screen narrows the selection bar only where it reaches the bar's row. At 1280 × 800
 // with an iPhone screen taller than the picker, docked on its left or, with no room there, on its right, the bar under it
-// shows every control with nothing in ···, clear of the picker. Zoomed out, the picker runs past the screen's foot into the bar's row, and the bar still folds to keep clear.
+// shows every control with nothing in ···, clear of the picker, and so does the bar above a short screen. Zoomed out, the picker runs past the screen's foot into the bar's row, and the bar still folds to keep clear.
 import assert from 'node:assert';
 import type { Page } from 'playwright';
 import { wireframeBoard } from './fixtures/boards.ts';
@@ -27,12 +27,15 @@ const apart = async () => {
     b = await rect(page, '#piecePick');
   return a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
 };
-const at = async (z: number, id: string) => {
-  await page.evaluate(z => {
-    window.__fenmyr.selectOnly([]);
-    Object.assign(window.__fenmyr.view, { x: 300, y: 110, z });
-    window.__fenmyr.applyView();
-  }, z);
+const at = async (z: number, id: string, y = 110) => {
+  await page.evaluate(
+    ([z, y]) => {
+      window.__fenmyr.selectOnly([]);
+      Object.assign(window.__fenmyr.view, { x: 300, y, z });
+      window.__fenmyr.applyView();
+    },
+    [z, y],
+  );
   // the picker docks once the view has stopped moving
   await page.waitForFunction(() => !document.getElementById('stage')?.classList.contains('moving'));
   await page.evaluate(i => window.__fenmyr.selectOnly([i]), id);
@@ -62,6 +65,25 @@ try {
     );
     assert.ok(await apart(), `and stays clear of the picker on its ${side}`);
   }
+
+  // With room above a short screen the bar sits there, 12 px over the screen's top, and the picker, level with that top,
+  // starts a gap under it. The view is off a whole pixel, so the page rounds the picker's top down a hair, as it does at
+  // most zooms.
+  await at(0.3, 'signin', 200.3);
+  const above = await bar(page),
+    side = await page.evaluate(() => document.getElementById('selbar')?.dataset.side);
+  assert.strictEqual(side, 'above', 'the bar sits above the short screen');
+  const [b, p] = [await rect(page, '#selbar'), await rect(page, '#piecePick')];
+  assert.ok(
+    Math.abs(p.y - (b.y + b.height + 12)) < 1,
+    `the picker starts a gap under the bar: ${b.y + b.height}, ${p.y}`,
+  );
+  assert.deepStrictEqual(
+    [want.filter(n => !above.shown.includes(n)), above.tucked],
+    [[], []],
+    `above a screen with the picker beside it, the bar shows every control and folds nothing: ${above.shown}`,
+  );
+  assert.ok(await apart(), 'and stays clear of the picker');
 
   await at(0.3, 'signin');
   const short = await bar(page);
