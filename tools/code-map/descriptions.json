@@ -506,6 +506,7 @@
     "tests/gridNone.ts": "Tests Grid shape as the one setting for the grid: None and each shape through the picker, the board, the cursor preview and the saved setting, and the row’s place in Settings.",
     "tests/heldSwap.ts": "With the screen tool held and the Pieces picker open, a heart dragged from the grid swaps the tool in hand and lands as a heart.",
     "tests/homeEmpty.ts": "Checks what each level of Home says when it is empty: no project, no folder, no board, no prototype. It names the tile and the slash command, and goes once something is added.",
+    "tests/iconTool.ts": "The Icon tool in the main toolbar after Draw, not the Wireframe row: a click lands a star and opens the picker, on a screen it joins it, Enter twice places one, and a saved toolbar order gets it too.",
     "tests/imageActions.ts": "An image card's right-click actions in the real app: download, copy, and replace from a file or the clipboard.",
     "tests/landPlan.ts": "Checks a planned Myra reply lands exactly as planned on an unchanged board, leaves what the person changed since with its collection, and lands nothing more twice.",
     "tests/labelOffered.ts": "The selection bar offers Add a label only for cards that show it: wireframe pieces hide their label, so they aren’t offered one.",
