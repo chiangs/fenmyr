@@ -980,7 +980,8 @@ body.dark .mc-msg .m-acts button { color: var(--chat-ink); }
 .mc-head .mc-ic { flex: none; color: var(--ink); }
 .mc-perch { flex: none; display: grid; place-items: center; }
 /* Myra herself in the header where she doesn't sit there (on a phone); her icon stands in only when she is turned off */
-#mcGoo { display: none; width: 34px; height: 32px; image-rendering: pixelated; }
+/* two of her pixels a cell, spilling 3 px past each side so the header keeps the icon's 28 px */
+#mcGoo { display: none; width: 34px; height: 32px; margin: -2px -3px; image-rendering: pixelated; }
 body.phone:not(.myra-hidden, .proto) #mcGoo { display: block; }
 body.phone:not(.myra-hidden, .proto) .mc-perch .mc-ic { display: none; }
 body:not(.phone) .mc-perch { width: 40px; height: 35px; }
