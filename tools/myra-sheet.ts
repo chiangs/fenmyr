@@ -42,8 +42,8 @@ try {
     COLS.forEach(([c], i) => {
       g.fillText(c, LABEL + i * W * SCALE + 8, 16);
     });
-    // a time just after a blink, so no column catches her eyes shut
-    const base = Math.ceil((performance.now() + 1000) / 3300) * 3300;
+    // a fixed time just after a blink, so no column catches her eyes shut and two runs draw the same sheet
+    const base = 3_300_000;
     rows.forEach(([name, set], r) => {
       const y = HEAD + r * H * SCALE;
       g.fillStyle = '#3d2a1e';

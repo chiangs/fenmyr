@@ -167,6 +167,7 @@
     "src/web/globals.d.ts": "Type declarations for globals the page relies on.",
     "src/web/goo.ts": "Myra drawn in pixels: a cloudberry that breathes, blinks, glances around and wears a look while she works.",
     "src/web/gooPixels.ts": "The pixel map of Myra’s body, shine, seams and leaves.",
+    "src/web/gooPoses.ts": "The extras each of Myra’s poses draws around her face, and her party hat, in pixels.",
     "src/web/gooBusy.ts": "Myra’s look for each kind of work: where her eyes go and the prop she holds, drawn in pixels with her.",
     "src/web/gooShapes.ts": "Myra’s silhouette and colour mixing for her bead texture.",
     "src/web/hostCall.ts": "How the page calls the host, with a fallback outside the desktop app.",
