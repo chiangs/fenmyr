@@ -61,10 +61,11 @@ export function place({ box, prefer }: Anchor, frame: Box, size: Size): Placemen
 }
 
 /** Where the Pieces picker docks, and how big it is. Beside its screen when the free view keeps at least the picker's
- *  width of board beside it: 12 px right when there is room there, else 12 px left, else against the free view's edge
- *  on the side with more room, covering part of the screen, top-aligned with the screen and kept inside. A narrower
- *  free view gets it as a sheet across its bottom, at most half its height, as on a phone. A sheet is never narrower
- *  than the picker while the board has room: it then reaches over the widgets beside the free view. */
+ *  width of board beside it: 12 px left when there is room there, as screens are built left to right and the next one
+ *  goes on the right, else 12 px right, else against the free view's edge on the side with more room, covering part of
+ *  the screen, top-aligned with the screen and kept inside. A narrower free view gets it as a sheet across its bottom,
+ *  at most half its height, as on a phone. A sheet is never narrower than the picker while the board has room: it then
+ *  reaches over the widgets beside the free view. */
 export function dockBeside(
   screen: Box,
   frame: Box,
@@ -82,8 +83,8 @@ export function dockBeside(
     right = screen.r + GAP,
     left = screen.l - GAP - size.w,
     dock = (x: number, side: 'right' | 'left' | 'edge') => ({ x, y, ...size, side });
-  if (inside(right)) return dock(right, 'right');
   if (inside(left)) return dock(left, 'left');
+  if (inside(right)) return dock(right, 'right');
   const far = frame.r - screen.r >= screen.l - frame.l ? frame.r - size.w : frame.l;
   return dock(slide(far, frame.l, frame.r - size.w), 'edge');
 }
