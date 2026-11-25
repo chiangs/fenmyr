@@ -7,11 +7,12 @@ import { addBoardHere, addFolderHere } from '../library/addHere.ts';
 import { openNewProject } from '../library/newProject.ts';
 import { readyToRecord } from '../media/devices.ts';
 import { fillVideo } from '../media/videoFile.ts';
+import { centerWorld } from '../panels/zoomMenu.ts';
 import { renderDockHead } from '../proto/dockHead.ts';
 import { offerRename } from '../repo/codeFolder.ts';
 import { drawOn, enterDraw, exitDraw } from '../tools/draw.ts';
 import { endPen, penT, startPen } from '../tools/pen.ts';
-import { placing, startPlacing, stopPlacing } from '../tools/place.ts';
+import { placeAt, placing, startPlacing, stopPlacing } from '../tools/place.ts';
 import { focusScreenBar, startScreen, wfToolOn } from '../tools/screenTool.ts';
 import { renderWheel } from '../tools/stamps.ts';
 import { openVaultPicker } from '../vault/ask.ts';
@@ -111,6 +112,10 @@ export function init21() {
       if (e.detail === 0) focusScreenBar();
       return;
     }
+    // Enter or Space on the lit Icon places one mid-view, as the Wireframe row's tools do, so the keyboard alone can
+    // place an icon
+    if (t === 'icon' && e.detail === 0 && placing?.type === 'icon' && !placing.extra.name)
+      return placeAt(centerWorld());
     if (t === 'audio') return readyToRecord().then(ok => ok && startPlacing('audio'));
     startPlacing(t);
   };

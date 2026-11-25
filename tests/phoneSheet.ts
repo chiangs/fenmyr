@@ -1,7 +1,7 @@
 // On a phone the + sheet loses its Wireframe tab: its tabs are Basics and Colours, and Basics holds the Wireframe
-// button. Choosing it closes the sheet and shows the Wireframe row in the dock, so a tap places a screen, and Box,
-// Text and Icon in the row place each on the bare board, as the panel's tab did. The strip's Pieces opens the picker,
-// and a pick lands in the screen.
+// button. Choosing it closes the sheet and shows the Wireframe row in the dock, so a tap places a screen, and Box and
+// Text in the row place each on the bare board, as the panel's tab did. Basics' Icon lands a star on the bare board.
+// The strip's Pieces opens the picker, and a pick lands in the screen.
 import assert from 'node:assert';
 import { launch, settle } from './support/launch.ts';
 
@@ -112,10 +112,12 @@ try {
       assert.deepStrictEqual(c && { type: c.type, onFrame: c.onFrame }, { type, onFrame: null }, `a ${type} lands`);
     });
 
-  await check("the row's Icon lands a star on the bare board, and a tap in the picker gives it its glyph", async () => {
-    await wireframe();
-    await page.click('#screenbar [data-wft="icon"]');
-    await frames();
+  await check("Basics' Icon lands a star on the bare board, and a tap in the picker gives it its glyph", async () => {
+    await page.click('[data-sheet="add"]');
+    await page.click('#shTabs [data-t="0"]');
+    await page.click('#shBody [data-add="icon"]');
+    // choosing it closes the sheet, so the tap lands on the board
+    await page.waitForFunction(() => !document.getElementById('sheet')?.classList.contains('on'));
     await tap(0.5, 0.75);
     const c = await newest();
     assert.deepStrictEqual(c && { type: c.type, name: c.name, onFrame: c.onFrame }, {
