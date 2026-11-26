@@ -10,7 +10,7 @@ import { aiGrants } from '../vault/ask.ts';
 import { vaultById } from '../vault/vaults.ts';
 import { chatLog, renderChat } from './chatLog.ts';
 import { pastedLabel } from './chatRules.ts';
-import { renderHint } from './chatWindow.ts';
+import { chatOpen, renderHint } from './chatWindow.ts';
 import {
   type Added,
   addTo,
@@ -23,6 +23,7 @@ import {
   type SeesInput,
   toggle,
 } from './sees.ts';
+import { type Estimate, estimateNext } from './seesEstimate.ts';
 
 // The "Myra sees" strip under the chat's header: what goes with the next message, and × or + to change it for that
 // message only.
@@ -136,9 +137,12 @@ function viewOf(c: Exclude<Chip, { kind: 'board' }>, order: readonly string[]): 
 
 const myraName = () => window.myraName || 'Myra';
 
+const BOARD = 'Board',
+  BOARD_TIP = 'The board always goes with your message';
+
 function chipHTML(c: Chip, order: readonly string[]): string {
   if (c.kind === 'board')
-    return '<span class="mcs-chip board" data-chip="board" title="The board always goes with your message">Board</span>';
+    return `<span class="mcs-chip board" role="group" tabindex="0" data-chip="board" data-tip="${BOARD_TIP}" data-tip-at="below" aria-label="${BOARD_TIP}"><span class="mcs-t">${BOARD}</span></span>`;
   const v = viewOf(c, order),
     kind = v.kind,
     key = esc(v.key),
@@ -161,6 +165,49 @@ const ADD_TIP = 'Add pictures, files or a vault note to the next message',
 
 let drawn = '';
 
+// The board chip's tooltip is fixed to the window, since the strip scrolls and would cut it off, so it is placed from the
+// chip's box, which is measured when the chip is pointed at or focused.
+function placeTip(chip: HTMLElement) {
+  const r = chip.getBoundingClientRect();
+  chip.style.setProperty('--tip-top', `${r.bottom + 8}px`);
+  chip.style.setProperty('--tip-cx', `${r.left + r.width / 2}px`);
+}
+
+// What the board chip says of the next message: its tooltip, its name for a screen reader and, for a board that
+// wouldn't go whole, a label that says so. No estimate is the chip as it is drawn.
+function showEstimate(est?: Estimate) {
+  const chip = $('mcSees').querySelector<HTMLElement>('.mcs-chip.board');
+  if (!chip) return;
+  const tip = [BOARD_TIP, ...(est?.lines ?? [])].join('\n'),
+    trimmed = !!est?.trimmed;
+  chip.dataset.tip = tip;
+  chip.ariaLabel = tip;
+  placeTip(chip);
+  chip.classList.toggle('trimmed', trimmed);
+  const label = chip.querySelector('.mcs-t');
+  if (label) label.textContent = trimmed ? `${BOARD} · trimmed` : BOARD;
+}
+
+// the last estimate, which a strip drawn again shows until the next one is in, so the chip doesn't flash back
+let known: { board: string; est: Estimate } | undefined;
+let waiting: number | undefined;
+
+// Working the estimate out walks the whole board, so it waits until the page is idle and never runs while the chat is
+// closed, where nothing shows it.
+function planEstimate() {
+  if (waiting !== undefined) cancelIdleCallback(waiting);
+  waiting = chatOpen()
+    ? requestIdleCallback(() => {
+        waiting = undefined;
+        const b = session.board;
+        if (!b || !chatOpen()) return;
+        const { sel, added } = peekSees();
+        known = { board: b.id, est: estimateNext(sel, added) };
+        showEstimate(known.est);
+      })
+    : undefined;
+}
+
 /** Draws the strip from the board, the selection, the vaults and the web as they are now. */
 export function renderSees() {
   const el = $('mcSees');
@@ -172,9 +219,12 @@ export function renderSees() {
       .join(''),
     add = Fenmyr.native ? ADD : '',
     html = `<span class="mcs-lead" data-mname="{name} sees">${lead}</span>${chips}${add}`;
+  // the board can change with the chips as they are, so the estimate is worked out again whenever the strip is asked for
+  planEstimate();
   if (html === drawn) return;
   drawn = html;
   el.innerHTML = html;
+  if (known && known.board === session.board?.id && chatOpen()) showEstimate(known.est);
   renderHint();
   // the empty chat's starters fit what goes with the next message. Earlier chats shows none, and drawing it again would
   // lose the reader's place.
@@ -270,6 +320,11 @@ export function takeSees(): Sees {
 }
 
 export function initSees() {
+  for (const type of ['pointerover', 'focusin'])
+    $('mcSees').addEventListener(type, e => {
+      const chip = closestTo(e.target, '.mcs-chip.board', HTMLElement);
+      if (chip) placeTip(chip);
+    });
   $('mcSees').addEventListener('click', e => {
     const key = closestTo(e.target, '[data-flip]')?.dataset.flip;
     if (!key || !session.board) return;

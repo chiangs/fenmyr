@@ -2569,6 +2569,13 @@ svg.ico .ico-d { color: var(--m-svg-ico-ico-d-ink); }
 .mcs-lead { max-width: 8em; margin-right: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-soft); }
 .mcs-chip { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; height: 24px; padding: 0 3px 0 9px; border: 1px solid rgb(from var(--ink) r g b / .16); border-radius: var(--pill-r); corner-shape: squircle; background: rgb(from var(--ink) r g b / .05); color: var(--ink); font: inherit; }
 .mcs-chip.board { padding-right: 9px; }
+/* The strip scrolls, so an absolute tooltip in it would be cut off and would stretch what it scrolls. This one is fixed to
+   the window, 8 px below the chip and centred on it from the place seesStrip.ts measures when the chip is pointed at or
+   focused, and kept 8 px inside the window, so its centre stays 168 px from either edge, half its widest, 320 px with
+   padding, and the 8. Anchoring it to the chip with anchor() would do without the script, but makes every layout
+   with the chat open about 10% slower. */
+.mcs-chip.board::after { position: fixed; top: var(--tip-top, 0px); left: clamp(168px, var(--tip-cx, 0px), calc(100vw - 168px)); max-width: 300px; }
+.mcs-chip.board.trimmed { border-color: rgb(from var(--accent-text) r g b / .5); color: var(--accent-text); }
 .mcs-chip.sel { border-color: var(--select); background: rgb(from var(--select) r g b / .12); }
 .mcs-chip.out { border-style: dashed; border-color: currentColor; background: none; color: var(--ink-soft); cursor: pointer; }
 .mcs-chip.sel.out { border-color: var(--select); }

@@ -117,8 +117,8 @@ export function readContextUse(x: unknown): ContextUse | undefined {
   };
 }
 
-const num = (n: number) => n.toLocaleString('en-GB');
-const counted = (n: number, one: string, many = `${one}s`) => `${num(n)} ${n === 1 ? one : many}`;
+export const num = (n: number) => n.toLocaleString('en-GB');
+export const counted = (n: number, one: string, many = `${one}s`) => `${num(n)} ${n === 1 ? one : many}`;
 const joined = (words: string[]) =>
   words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : (words[0] ?? '');
 

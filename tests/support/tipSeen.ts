@@ -56,9 +56,12 @@ function readTip([selector, want]: [string, Colours]): Tip | null {
     height = (px(cs.height) + (own ? 0 : padY)) * k;
   const [tx = '0px', ty = '0px'] = cs.translate === 'none' ? [] : cs.translate.split(' ');
   const move = (t: string, size: number) => (t.endsWith('%') ? (px(t) / 100) * size : px(t) * k);
+  // a fixed tooltip, as one in a scrolling strip is, is placed from the window and not from its control
+  const fixed = cs.position === 'fixed';
+  const [x0, y0, scale] = fixed ? [0, 0, 1] : [at.left + host.clientLeft * k, at.top + host.clientTop * k, k];
   const tip = {
-    x: at.left + (host.clientLeft + px(cs.left)) * k + move(tx, width),
-    y: at.top + (host.clientTop + px(cs.top)) * k + move(ty, height),
+    x: x0 + px(cs.left) * scale + move(tx, width),
+    y: y0 + px(cs.top) * scale + move(ty, height),
     width,
     height,
   };
@@ -68,22 +71,26 @@ function readTip([selector, want]: [string, Colours]): Tip | null {
     s.overflowY !== 'visible' ||
     s.clipPath !== 'none' ||
     /\b(paint|strict|content)\b/.test(s.contain);
-  const holds = (s: CSSStyleDeclaration) =>
-    s.position !== 'static' ||
+  // what makes a box the containing block of a fixed one, not only of an absolute one
+  const holdsFixed = (s: CSSStyleDeclaration) =>
     s.transform !== 'none' ||
     s.filter !== 'none' ||
     s.perspective !== 'none' ||
     s.containerType !== 'normal' ||
     /\b(layout|paint|strict|content)\b/.test(s.contain);
+  const holds = (s: CSSStyleDeclaration) => s.position !== 'static' || holdsFixed(s);
+  const above = (e: HTMLElement, holding: (s: CSSStyleDeclaration) => boolean): HTMLElement | null => {
+    for (let a = e.parentElement; a; a = a.parentElement) if (holding(getComputedStyle(a))) return a;
+    return null;
+  };
   const blockOf = (e: HTMLElement): HTMLElement | null => {
     const where = getComputedStyle(e).position;
     if (where === 'fixed') return null;
-    if (where !== 'absolute') return e.parentElement;
-    for (let a = e.parentElement; a; a = a.parentElement) if (holds(getComputedStyle(a))) return a;
-    return null;
+    return where === 'absolute' ? above(e, holds) : e.parentElement;
   };
   const clippedBy: string[] = [];
-  for (let a: HTMLElement | null = host; a; a = blockOf(a)) {
+  // a fixed tooltip is cut by nothing between its control and the window, unless a box there holds fixed ones
+  for (let a: HTMLElement | null = fixed ? above(host, holdsFixed) : host; a; a = blockOf(a)) {
     if (!cuts(getComputedStyle(a))) continue;
     const r = a.getBoundingClientRect(),
       s = a.offsetWidth ? r.width / a.offsetWidth : 1,
