@@ -199,10 +199,21 @@ try {
     [...document.querySelectorAll('#mcList .mc-msg')].some(m => m.firstChild?.textContent === 'Built it.'),
   );
   // the record is on disk with what the host sent, which is the window of a model nobody chose
-  await page.waitForFunction(async () => {
-    const b = await window.Fenmyr.load('pb');
-    return b?.chat?.some(m => m.acts?.some(a => a.kind === 'build' && a.request === 'Build the lot.' && a.start?.use));
-  });
+  // waitForFunction doesn't await its predicate, so the load's answer is kept on the page and polled
+  await page.waitForFunction(
+    () => {
+      void window.Fenmyr.load('pb').then(b =>
+        Reflect.set(
+          window,
+          'stored',
+          !!b?.chat?.some(m => m.acts?.some(a => a.kind === 'build' && a.request === 'Build the lot.' && a.start?.use)),
+        ),
+      );
+      return Reflect.get(window, 'stored') === true;
+    },
+    undefined,
+    { polling: 100 },
+  );
   const stored: { chat?: { acts?: { kind: string; request?: string; start?: { use?: ContextUse } }[] }[] } = JSON.parse(
     fs.readFileSync(path.join(l.data, 'fenmyr', 'boards', 'pb.json'), 'utf8'),
   );
