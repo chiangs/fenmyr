@@ -64,13 +64,21 @@ export function load(id: string): Board | null {
   const j = readJSON(path.join(P.boardsDir, `${safe(id)}.json`));
   return isBoard(j) ? j : null;
 }
+// The board files the watcher has seen, kept up to date by Fenmyr's own saves and removals, so the watcher speaks up
+// only for boards that came or went from outside. null until it watches.
+let known: Set<string> | null = null;
+
 export function save(board: unknown): true {
   if (!isRecord(board)) throw new Error('bad board');
-  writeAtomic(path.join(P.boardsDir, `${safe(board.id)}.json`), jsonSafe(board));
+  const file = `${safe(board.id)}.json`;
+  writeAtomic(path.join(P.boardsDir, file), jsonSafe(board));
+  known?.add(file);
   return true;
 }
 export function remove(id: string): true {
-  fs.rmSync(path.join(P.boardsDir, `${safe(id)}.json`), { force: true });
+  const file = `${safe(id)}.json`;
+  fs.rmSync(path.join(P.boardsDir, file), { force: true });
+  known?.delete(file);
   return true;
 }
 export function templates(): Template[] {
@@ -103,20 +111,21 @@ export function saveFolders(f: unknown): true {
 export function watchBoards(onChange: () => void) {
   const names = () => {
     try {
-      return jsonFiles(P.boardsDir).sort().join('\n');
+      return new Set(jsonFiles(P.boardsDir));
     } catch {
-      return '';
+      return new Set<string>();
     }
   };
-  let known = names(),
-    tick: NodeJS.Timeout | undefined;
+  known = names();
+  let tick: NodeJS.Timeout | undefined;
   try {
     fs.watch(P.boardsDir, () => {
       clearTimeout(tick);
-      // our own saves rewrite files too, so only speak up when boards come or go
+      // only when boards come or go from outside: a board Fenmyr itself adds, as a zip's are, is in `known` already
       tick = setTimeout(() => {
-        const now = names();
-        if (now !== known) {
+        const now = names(),
+          was = known ?? new Set();
+        if (now.size !== was.size || [...now].some(f => !was.has(f))) {
           known = now;
           onChange();
         }
