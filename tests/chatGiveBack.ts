@@ -70,7 +70,8 @@ function rig(l: Launched) {
   const pending = () => page.evaluate(() => Reflect.get(window, 'gates').length);
   const send = async (words: string) => {
     await page.fill('#mcInput', words);
-    await page.click('.mc-send');
+    // by the key: the button is Stop while an earlier ask is out
+    await page.press('#mcInput', 'Control+Enter');
   };
   const paste = (lines: number) => pasteIntoChat(page, longText(lines));
   const open = async () => {
@@ -123,7 +124,7 @@ const four = [80, 81, 82, 83],
   await check('pasted texts that would not fit the draft with the words are left out', async () => {
     await pasteIntoChat(page, 'p'.repeat(60_000));
     await page.fill('#mcInput', 'w'.repeat(30_000));
-    await page.click('.mc-send');
+    await page.press('#mcInput', 'Control+Enter');
     await r.until(async () => (await r.pending()) === 3, 'in flight');
     await pasteIntoChat(page, 'q'.repeat(20_000));
     await r.settle(2, 'refuse');

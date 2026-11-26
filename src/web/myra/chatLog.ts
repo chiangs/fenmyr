@@ -10,6 +10,7 @@ import { type Act, storedOf } from './acts.ts';
 import { renderGreeting } from './emptyChat.ts';
 import { drawActs } from './replyView.ts';
 import { paintStatus } from './status.ts';
+import { paintSend } from './stop.ts';
 
 // earlier chats: when chats are saved with the board, New chat puts the current one away (the last 10 are kept) and Earlier chats brings one back
 const CHATS_KEPT = 10;
@@ -144,6 +145,13 @@ function withCode(d: HTMLElement, text: string) {
     else if (piece) line.append(piece);
 }
 
+// the small word under a question that was stopped before she answered
+function stoppedMark(d: HTMLElement) {
+  const mark = d.appendChild(document.createElement('small'));
+  mark.className = 'mc-stopped';
+  mark.textContent = 'Stopped';
+}
+
 // A message with no words, such as a build's block, is only its parts, so it draws as a card, not a speech bubble.
 function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   const d = document.createElement('div'),
@@ -155,7 +163,17 @@ function msgEl(m: ChatMsg, acts: readonly Act[] = m.acts ?? []) {
   d.appendChild(parts);
   partsOf.set(m, parts);
   drawActs(parts, m, acts);
+  if (m.stopped) stoppedMark(d);
   return d;
+}
+
+/** Marks the person's line as stopped, in the chat showing it and in the one kept with the board. */
+export function markStopped(m: ChatMsg) {
+  if (m.stopped) return;
+  m.stopped = true;
+  const d = partsOf.get(m)?.parentElement;
+  if (d?.isConnected) stoppedMark(d);
+  if (chatKeep() === 'board') save();
 }
 
 /** Moves keyboard focus onto a line of the open chat, as when the button that had it has gone. */
@@ -180,6 +198,7 @@ export function redrawMsgs(msgs: Iterable<ChatMsg>) {
 }
 
 export function renderChat() {
+  paintSend();
   $('mcHist').hidden = !(keepsHistory() && ((session.board.chats || []).length || appState.histOpen));
   $('mcHist').classList.toggle('on', appState.histOpen);
   if (appState.histOpen && keepsHistory()) return renderHistory();

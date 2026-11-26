@@ -124,6 +124,25 @@ export function panelChecks(page: Page, k: Kit): Record<string, Check> {
       await k.press(k.chord('myra'), 400);
       assert.ok(await k.has('#myra', 'chat'), 'ask Myra opens her chat');
     },
+    stop: async () => {
+      await k.reset();
+      // work for the open board, as a question to Claude is: the send button is Stop until the key ends it
+      await page.evaluate(() => {
+        const f = window.__fenmyr;
+        f.addStoppable({
+          board: f.board.id,
+          stop: () => {
+            document.body.dataset.stopped = 'yes';
+          },
+        });
+      });
+      assert.ok(await k.has('#mcSend', 'stop'), 'the send button is Stop while she works');
+      await k.press(k.chord('stop'));
+      assert.strictEqual(await page.evaluate(() => document.body.dataset.stopped), 'yes', 'the key stops the work');
+      assert.ok(!(await k.has('#mcSend', 'stop')), 'and the button is Send again');
+      // her line of it is a bubble over her box, which would hide the board behind it
+      await page.evaluate(() => document.getElementById('mBubble')?.classList.remove('on'));
+    },
     escape: async () => {
       await k.reset();
       await k.select('a');
