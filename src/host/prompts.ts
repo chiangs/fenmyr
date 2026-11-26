@@ -317,7 +317,7 @@ ${a.request}
 
 WHAT THE PROTOTYPE IS FOR: ${a.purpose || 'not said'}
 
-THE CARDS ON THE BOARD (the ones selected, or all of them):
+THE CARDS ON THE BOARD (the ones selected, or all of them, the most important first; a wireframe screen has "size", and each piece on it has "onFrame", the screen's id, and "at", its place and size in px inside that screen):
 ${a.cards || 'none'}${cardsLeftOut(a.left ?? 0)}
 
 PICTURES OF THEM (read each file to see the sketch, screenshot or wireframe; build what they show):

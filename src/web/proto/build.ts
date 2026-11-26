@@ -1,4 +1,5 @@
 import { type BuildEvent, readBuildEvent } from '../../shared/build.ts';
+import { rankCards } from '../../shared/contextFit.ts';
 import type { Board, Card } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { appState, session } from '../core/state.ts';
@@ -32,13 +33,27 @@ import { beforeBuild } from './sync.ts';
 // her explanation follows, and the code, the preview and the git bar catch up.
 type End = Extract<BuildEvent, { type: 'done' | 'error' }>;
 
-// what the builder reads from the board: the selected cards, or all of them, without positions or styling
-const brief = (c: Card) =>
-  Object.fromEntries(
+const round = Math.round;
+
+// A screen's pieces mean little without where they sit, and a picture of the screen can't be taken when it isn't in
+// view, so each screen sends its size and each piece its place and size inside it, in px.
+function layout(c: Card, screens: ReadonlyMap<string, Card>) {
+  if (c.type === 'frame') return { size: { w: round(c.w), h: round(c.h) } };
+  const screen = c.onFrame ? screens.get(c.onFrame) : undefined;
+  if (!screen) return {};
+  return { at: { x: round(c.x - screen.x), y: round(c.y - screen.y), w: round(c.w), h: round(c.h) } };
+}
+
+// what the builder reads from the board: the selected cards, or all of them, without positions or styling, but for a
+// wireframe's layout
+const brief = (c: Card, screens: ReadonlyMap<string, Card>) => ({
+  ...Object.fromEntries(
     Object.entries(c).filter(
       ([k, v]) => !['x', 'y', 'w', 'h', 'r', 'rot', 'color'].includes(k) && v !== '' && v != null,
     ),
-  );
+  ),
+  ...layout(c, screens),
+});
 
 // `cards`: the selection the request was sent with, or all of them when it was empty; null reads the selection now;
 // `brought`: the cards a new prototype brought, and none when it brought none. `synced`: the repo was checked against
@@ -56,7 +71,8 @@ export async function startBuild(
   if (!synced && !building()) return beforeBuild(b, request, () => startBuild(request, cards, true));
   const sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
     picked = b.cards.filter(c => sel.has(c.id));
-  const chosen = (picked.length || (cards && 'brought' in cards) ? picked : b.cards).slice(0, 80);
+  const ranked = rankCards(picked.length || (cards && 'brought' in cards) ? picked : b.cards, sel, b.links),
+    screens = new Map(b.cards.filter(c => c.type === 'frame').map(c => [c.id, c]));
   const { dir, stack, purpose = '', device = '' } = b.proto,
     build = uid();
   const w: Waiting = {
@@ -64,7 +80,7 @@ export async function startBuild(
     board: b.id,
     root,
     request,
-    cards: chosen.length,
+    cards: ranked.length,
     args: {
       root,
       dir,
@@ -72,11 +88,11 @@ export async function startBuild(
       request,
       purpose,
       device,
-      cards: chosen.map(c => ({ id: c.id, text: JSON.stringify(brief(c)) })),
+      cards: ranked.map(c => ({ id: c.id, text: JSON.stringify(brief(c, screens)) })),
       build,
       board: b.id,
     },
-    pictures: picturesOf(chosen),
+    pictures: picturesOf(ranked),
     waited: waitsTurn(),
   };
   if (w.waited) noteHeard(waitsWords(b.name));
@@ -144,10 +160,7 @@ async function pump() {
     const started = await Fenmyr.protoBuild({
       ...w.args,
       errors,
-      pictures: await w.pictures,
-      unseen: [],
-      tooBig: [],
-      over: [],
+      ...(await w.pictures),
     });
     if (started.kind === 'started') {
       r.id = started.id;

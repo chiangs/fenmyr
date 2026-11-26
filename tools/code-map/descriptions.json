@@ -435,6 +435,7 @@
     "tests/buildQuit.ts": "Tests that quitting Fenmyr during a build stops Claude Code, so nothing is written after.",
     "tests/buildRace.ts": "Tests that a build asked for while another starts waits its turn and then runs, and that one asked for while the host writes a build this window didn't start waits for its end.",
     "tests/buildReload.ts": "Checks that after a reload mid-build Undo this build is turned away while the host writes, and that the build's end still lands with a working Undo.",
+    "tests/buildSent.ts": "Checks that a whole-board build sends every card in reading order, each wireframe screen with its size and each piece with its place in it, and a picture of a screen only when it is in view.",
     "tests/buildUndo.ts": "Tests that Undo after a build puts back every file git sees and never touches a file git ignores.",
     "tests/capture.ts": "Quick capture in the real app: Enter to Unsorted, Shift+Enter to write on the board first, and the edge cases.",
     "tests/cleanBar.ts": "Just the board (Ctrl+\\) keeps the selection bar: a selected card of any kind can still be changed from its bar while every panel is tucked away.",
