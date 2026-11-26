@@ -165,6 +165,39 @@ for (const dir of ['../escape', 'prototypes/../../etc', 'prototypes/a/b', 'src/a
 const strayProto = json(parseBoard({ id: 'b3', name: 'Plain', proto: { dir: 'prototypes/x', stack: 'react' } }));
 assert.ok(!('proto' in strayProto), 'a code folder without the prototype kind is dropped');
 
+// a doc card keeps the role that makes it a prototype board's own rules or design, and its Ignore switch, and a board
+// saved before them opens as it was
+const withDocs = (...docs: Record<string, unknown>[]) => ({
+  id: 'b4',
+  name: 'Guides',
+  cards: docs.map((d, i) => ({ id: `d${i}`, type: 'doc', x: 0, y: i * 100, w: 240, h: 52, body: 'Words', ...d })),
+  links: [],
+  tray: [],
+});
+const docsOf = (...docs: Record<string, unknown>[]) => json(parseBoard(withDocs(...docs))?.cards);
+const guided = [{ role: 'rules', ignoreRepo: true }, { role: 'design' }, {}];
+assert.deepStrictEqual(
+  docsOf(...guided),
+  json(withDocs(...guided).cards),
+  'a role and the Ignore switch save back as they were, and a doc without them is unchanged',
+);
+const odd = docsOf(
+  { role: 'colours', ignoreRepo: true },
+  { role: 'rules', ignoreRepo: 'yes' },
+  { role: 'design', ignoreRepo: false },
+  { role: 7, ignoreRepo: 1 },
+);
+assert.deepStrictEqual(
+  odd.map((c: Record<string, unknown>) => [c.type, c.body, 'role' in c, 'ignoreRepo' in c]),
+  [
+    ['doc', 'Words', false, true],
+    ['doc', 'Words', true, false],
+    ['doc', 'Words', true, false],
+    ['doc', 'Words', false, false],
+  ],
+  'a role that is neither word and a switch that is not true are each dropped alone, and the doc still opens',
+);
+
 const acme = { id: 'a', name: 'Acme', repo: { path: '/code/acme' } },
   none = { id: 'c', name: 'None' };
 const clash = (self: string, root: string) => repoClash([acme, none], self, root)?.name;

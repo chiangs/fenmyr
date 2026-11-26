@@ -67,7 +67,19 @@ export function fitRanked<T>(items: readonly T[], room: number, cost: (t: T) => 
   return { kept, left };
 }
 
-const PART_KINDS = ['request', 'cards', 'pictures', 'errors', 'design', 'myra', 'board', 'chat', 'files'] as const;
+const PART_KINDS = [
+  'request',
+  'cards',
+  'pictures',
+  'errors',
+  'design',
+  'myra',
+  'boardRules',
+  'boardDesign',
+  'board',
+  'chat',
+  'files',
+] as const;
 export type PartKind = (typeof PART_KINDS)[number];
 /** cut: a text part sent shorter than it is, as a long design.md can be on a small window. */
 export type Part = { kind: PartKind; tokens: number; count?: number; cut?: true };
@@ -130,16 +142,23 @@ export function shareWords(u: ContextUse): string {
   return used > 0 && percent === 0 ? 'under 1% of the context' : `about ${num(percent)}% of the context`;
 }
 
-/** What was read from the board, as a list: the cards, their pictures, then the two files about the design. */
+/** What was read from the board, as a list: the cards, their pictures, the two files about the design, then the board's
+ *  own rules and design. */
 export function readList(u: ContextUse): string {
   const words: string[] = [],
     cards = u.parts.find(p => p.kind === 'cards')?.count,
     pictures = u.parts.find(p => p.kind === 'pictures')?.count;
   if (cards) words.push(counted(cards, 'card'));
   if (pictures) words.push(counted(pictures, 'picture'));
-  for (const kind of ['design', 'myra'] as const) {
+  const texts = [
+    ['design', 'design.md'],
+    ['myra', 'myra.md'],
+    ['boardRules', 'this board’s rules'],
+    ['boardDesign', 'this board’s design'],
+  ] as const;
+  for (const [kind, name] of texts) {
     const part = u.parts.find(p => p.kind === kind);
-    if (part && part.count !== 0) words.push(`${kind}.md`);
+    if (part && part.count !== 0) words.push(name);
   }
   return joined(words);
 }
@@ -152,6 +171,8 @@ const TEXT_NAMES: Record<PartKind, string> = {
   errors: 'The preview errors',
   design: 'design.md',
   myra: 'myra.md',
+  boardRules: 'This board’s rules text',
+  boardDesign: 'This board’s design text',
   board: 'The board',
   chat: 'The chat so far',
   files: 'The added files',
@@ -199,6 +220,10 @@ export function partWords(p: Part): string {
       return `design.md · ${cost}`;
     case 'myra':
       return `myra.md · ${cost}`;
+    case 'boardRules':
+      return `This board’s rules · ${cost}`;
+    case 'boardDesign':
+      return `This board’s design · ${cost}`;
     case 'board':
       return `The board · ${cost}`;
     case 'chat':

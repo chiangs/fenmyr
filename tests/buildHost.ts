@@ -146,6 +146,29 @@ assert(
 );
 assert.match(prompts[0] ?? '', /PICTURES OF THEM[^\n]*\n\S+1\.png \(image logo\)\n/, 'and the picture');
 
+// the board's own rules and design are read where they enter too: a damaged one is no text and the other still goes
+await build(reads, repo, {
+  guides: { rules: { text: 7, ignoreRepo: 'yes' }, design: { text: 'Square corners.', ignoreRepo: true } },
+});
+assert.match(
+  prompts.at(-1) ?? '',
+  /DESIGN \(prototypes\/design\.md[^\n]*\nnot used for this prototype: its own design below takes its place\n\nTHIS PROTOTYPE'S OWN DESIGN [^\n]*\nSquare corners\.\n\nHOW TO WORK HERE [^\n]*\nnothing yet\n\nTHIS PROTOTYPE'S OWN RULES [^\n]*\nnone$/,
+  'the design with Ignore on takes the place of the repo’s, and the damaged rules are none, the repo’s kept',
+);
+const [guided] = await build(reads, repo, { guides: { rules: { text: 'Never use gradients.', ignoreRepo: false } } });
+assert(guided?.type === 'start' && guided.use, 'a build with guides starts with its use');
+assert.deepStrictEqual(
+  guided.use.parts.filter(p => p.kind.startsWith('board')).map(p => p.kind),
+  ['boardRules'],
+  'only the rules that held words are a part',
+);
+assert.match(
+  prompts.at(-1) ?? '',
+  /DESIGN \(prototypes\/design\.md[^\n]*\nnone yet\n\nTHIS PROTOTYPE'S OWN DESIGN [^\n]*\nnone\n\nHOW TO WORK HERE [^\n]*\nnothing yet\n\nTHIS PROTOTYPE'S OWN RULES [^\n]*\nNever use gradients\.$/,
+  'the rules come after the repo’s, with no design of the board’s own',
+);
+assert.match(prompts[0] ?? '', /THIS PROTOTYPE'S OWN RULES [^\n]*\nnone$/, 'a build sent no guides at all says none');
+
 const fails: CodeAgent = async ({ cwd }, edited) => {
   fs.appendFileSync(path.join(cwd, 'src/App.tsx'), 'f\n');
   edited('src/App.tsx');

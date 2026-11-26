@@ -119,6 +119,16 @@ const CARD_TYPES = {
 export type CardType = keyof typeof CARD_TYPES;
 export const isCardType = (x: unknown): x is CardType => typeof x === 'string' && Object.hasOwn(CARD_TYPES, x);
 
+// A doc card is a prototype board's own rules or design (see guides.ts) when it has one of these roles, and ignoreRepo is
+// a switch that is there only when on.
+const GUIDE_ROLES = ['rules', 'design'] as const;
+export type GuideRole = (typeof GUIDE_ROLES)[number];
+const keeps = (key: string, value: unknown) =>
+  key === 'role' ? GUIDE_ROLES.some(r => r === value) : key !== 'ignoreRepo' || value === true;
+/** A doc card as read from a file, without a role that is neither word or an Ignore switch that isn't on. */
+export const guideFields = (doc: Record<string, unknown>) =>
+  Object.fromEntries(Object.entries(doc).filter(([key, value]) => keeps(key, value)));
+
 const DEFAULT_SIZE = [220, 140] as const;
 const traits = (type: string): Partial<Traits> =>
   Object.hasOwn(CARD_TYPES, type) ? Reflect.get(CARD_TYPES, type) : {};

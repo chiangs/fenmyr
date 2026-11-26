@@ -1,14 +1,21 @@
 // What a build is sent from the board follows the model's window, with no window or host: on a 1M window 300 cards of
 // 500 characters all go where a fixed 30,000-character cap kept a fraction of them, on a small one the cards keep their
 // ranked order and a card too big for what is left is skipped while a smaller one after it goes in, and design.md, myra.md,
-// the preview's errors and the request are cut to a share of the room and marked cut. At most twenty pictures are
+// the preview's errors and the request are cut to a share of the room and marked cut. A prototype's own rules and
+// design share their document's share with the repo's text: the board's is cut first and wins, the repo's gets what is
+// left, and with Ignore on the repo's text is not used at all. At most twenty pictures are
 // sent, those past that and those that don't fit are named, and what the window said of the pictures it couldn't take
 // passes through. The cards are always one valid JSON array, and the parts never add up to more than the room.
 import assert from 'node:assert';
 import { type Fitted, fitBuild, type Sent, TEXT_SHARE } from '../src/host/buildFit.ts';
 import { MAX_PICTURES, PICTURE_TOKENS, roomOf, tokensOf, usedTokens } from '../src/shared/contextFit.ts';
+import type { BoardGuides } from '../src/shared/guides.ts';
 import { isRecord } from '../src/shared/model.ts';
 
+const noGuides: BoardGuides = {
+  rules: { text: '', ignoreRepo: false },
+  design: { text: '', ignoreRepo: false },
+};
 const blank: Sent = {
   request: '',
   purpose: '',
@@ -16,6 +23,7 @@ const blank: Sent = {
   errors: '',
   design: '',
   myra: '',
+  guides: noGuides,
   cards: [],
   pictures: [],
   unseen: [],
@@ -93,6 +101,118 @@ assert.deepStrictEqual(
 assert.equal(texts.request.length, Math.floor(room / 4), 'the request takes a quarter');
 assert.equal(part(texts, 'request')?.cut, true, 'and says so when it is cut');
 assert(usedTokens(texts.use) <= roomOf(SMALL), 'the texts and the cards stay inside the room');
+
+// the board's own rules and design add to the repo's text: both are kept, each as its own part
+const adds = fitBuild(
+  {
+    ...blank,
+    design: 'repo design',
+    myra: 'repo rules',
+    guides: {
+      rules: { text: 'board rules', ignoreRepo: false },
+      design: { text: 'board design!', ignoreRepo: false },
+    },
+  },
+  SMALL,
+);
+assert.deepStrictEqual(
+  [adds.design, adds.myra, adds.boardDesign, adds.boardRules],
+  ['repo design', 'repo rules', 'board design!', 'board rules'],
+  'the repo’s text and the board’s are both kept, whole',
+);
+assert.deepStrictEqual(adds.ignoreRepo, { rules: false, design: false }, 'and neither switch is on');
+assert.deepStrictEqual(
+  part(adds, 'boardRules'),
+  { kind: 'boardRules', tokens: tokensOf(11) },
+  'the board’s rules are a part',
+);
+assert.deepStrictEqual(
+  part(adds, 'boardDesign'),
+  { kind: 'boardDesign', tokens: tokensOf(13) },
+  'and its design is another',
+);
+assert.deepStrictEqual(part(adds, 'myra'), { kind: 'myra', tokens: tokensOf(10) }, 'myra.md is still one');
+assert.equal(part(adds, 'design')?.cut, undefined, 'and nothing is cut');
+
+// with Ignore on for a document its repo text isn't used, whatever it held, and the other document is unaffected
+const ignored = fitBuild(
+  {
+    ...blank,
+    design: 'repo design',
+    myra: 'repo rules',
+    guides: {
+      rules: { text: 'board rules', ignoreRepo: true },
+      design: { text: 'board design', ignoreRepo: false },
+    },
+  },
+  SMALL,
+);
+assert.deepStrictEqual([ignored.myra, ignored.boardRules], ['', 'board rules'], 'only the board’s rules are sent');
+assert.equal(part(ignored, 'myra'), undefined, 'and myra.md is not a part');
+assert.deepStrictEqual(ignored.ignoreRepo, { rules: true, design: false }, 'the switch is passed on, for the prompt');
+assert.deepStrictEqual(
+  [ignored.design, ignored.boardDesign],
+  ['repo design', 'board design'],
+  'design has a switch of its own, which is off',
+);
+assert.equal(
+  fitBuild({ ...blank, myra: 'repo rules', guides: { ...noGuides, rules: { text: '', ignoreRepo: true } } }, SMALL)
+    .myra,
+  '',
+  'Ignore with no words of the board’s own still leaves the repo’s out',
+);
+
+// a board text past the share is cut to it and wins: the repo's text for that document has nothing left, and says so
+const capped = fitBuild(
+  {
+    ...blank,
+    design: 'repo design',
+    myra: 'repo rules',
+    guides: { ...noGuides, rules: { text: 'b'.repeat(each + 500), ignoreRepo: false } },
+  },
+  SMALL,
+);
+assert.equal(capped.boardRules.length, each, 'the board’s rules are cut to the share');
+assert.deepStrictEqual(
+  part(capped, 'boardRules'),
+  { kind: 'boardRules', tokens: tokensOf(each), cut: true },
+  'and marked cut',
+);
+assert.equal(capped.myra, '', 'the repo’s rules are dropped, because nothing is left of the share');
+assert.deepStrictEqual(
+  part(capped, 'myra'),
+  { kind: 'myra', tokens: 0, count: 0, cut: true },
+  'and listed with no words, cut, so it isn’t dropped without a word',
+);
+assert.equal(capped.design, 'repo design', 'the share is the document’s own: the design is not touched');
+assert(usedTokens(capped.use) <= roomOf(SMALL), 'inside the room');
+
+// a board text that leaves room: the repo's text is cut to what is left of the share
+const roomy = fitBuild(
+  {
+    ...blank,
+    myra: 'r'.repeat(5_000),
+    guides: { ...noGuides, rules: { text: 'b'.repeat(400), ignoreRepo: false } },
+  },
+  SMALL,
+);
+assert.equal(roomy.boardRules.length, 400, 'the board’s rules go whole');
+assert.equal(part(roomy, 'boardRules')?.cut, undefined, 'and are not cut');
+assert.equal(roomy.myra.length, each - 400, 'the repo’s rules get what is left of the share');
+assert.deepStrictEqual(
+  part(roomy, 'myra'),
+  { kind: 'myra', tokens: tokensOf(each - 400), cut: true },
+  'and are marked cut',
+);
+const exact = fitBuild(
+  { ...blank, myra: 'r', guides: { ...noGuides, rules: { text: 'b'.repeat(each), ignoreRepo: false } } },
+  SMALL,
+);
+assert.deepStrictEqual(
+  [exact.boardRules.length, part(exact, 'boardRules')?.cut, exact.myra],
+  [each, undefined, ''],
+  'a board text of exactly the share is not cut, and leaves the repo’s none',
+);
 
 // what the texts take comes off what the cards may have
 const crowded = fitBuild({ ...blank, design: 'd'.repeat(10_000), cards: [card('a', 6_000), card('b', 6_000)] }, SMALL);
@@ -180,6 +300,10 @@ const everything: Sent = {
   errors: 'e'.repeat(9_000),
   design: 'd'.repeat(90_000),
   myra: 'm'.repeat(90_000),
+  guides: {
+    rules: { text: 'g'.repeat(90_000), ignoreRepo: false },
+    design: { text: 'h'.repeat(90_000), ignoreRepo: false },
+  },
   cards: [card('a', 300), card('b', 30_000), card('c', 700), card('d', 70_000), card('e', 40)],
   pictures: pictures(30),
 };
