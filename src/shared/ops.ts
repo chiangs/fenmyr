@@ -2,6 +2,7 @@ import type { AskFile } from './askFiles.ts';
 import type { BuildEvent } from './build.ts';
 import type { AppBuild } from './buildStamp.ts';
 import type { ImportResult, Manifest } from './fenmyrZip.ts';
+import type { BoardGuides } from './guides.ts';
 import type { ModelChoice, ProviderModels } from './models.ts';
 import type { UpdateChannel } from './updateChannel.ts';
 
@@ -285,6 +286,9 @@ export type Ops = {
       // ranked, most worth keeping first, each as the builder reads it, in JSON; the host keeps as many as the model's
       // window has room for
       cards: { id: string; text: string }[];
+      // the board's own rules and design from its doc cards: they add to the repo's myra.md and design.md and win where
+      // they differ, or replace the repo's text when ignoreRepo is on
+      guides: BoardGuides;
       errors: string;
       // what the sketches, screenshots and wireframes look like, as data: URLs, ranked as the cards are; id: the card's
       pictures: { id: string; name: string; data: string }[];

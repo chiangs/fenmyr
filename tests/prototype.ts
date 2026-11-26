@@ -148,6 +148,28 @@ try {
   assert.match(await said(), /hold only prototype boards/, 'a plain board can’t go into a prototyping folder');
   assert.strictEqual(boardFile('plainboard').folder, 'fa');
 
+  // the board's own rules and design are doc cards, so they travel with it
+  await page.evaluate(async id => {
+    const saved = await window.Fenmyr.load(id);
+    if (!saved) throw new Error('The prototype is not saved.');
+    await window.Fenmyr.save({
+      ...saved,
+      cards: [
+        {
+          id: 'g1',
+          type: 'doc',
+          x: 0,
+          y: 0,
+          w: 240,
+          h: 52,
+          body: 'Never use gradients.',
+          role: 'rules',
+          ignoreRepo: true,
+        },
+        { id: 'g2', type: 'doc', x: 300, y: 0, w: 240, h: 52, body: 'Square corners.', role: 'design' },
+      ],
+    });
+  }, first.id);
   await page.evaluate(id => window.__fenmyr.moveBoard(id, 'pl'), first.id);
   await page.waitForTimeout(800);
   assert.match(await said(), /Copied it to “Lioness”\. The original stays/);
@@ -163,6 +185,14 @@ try {
     stack: 'react',
     copied: { from: 'Acme', files: 6 },
   });
+  assert.deepStrictEqual(
+    copy.cards.map((c: Record<string, unknown>) => [c.id, c.role, c.ignoreRepo]),
+    [
+      ['g1', 'rules', true],
+      ['g2', 'design', undefined],
+    ],
+    'its own rules and design come with it, each with its role, and the Ignore switch where it was on',
+  );
   assert.ok(
     fs.existsSync(path.join(lionRepo, 'prototypes/checkout-flow/src/App.tsx')),
     'its code is copied into Lioness’s repo',

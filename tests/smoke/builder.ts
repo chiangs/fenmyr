@@ -4,8 +4,9 @@ import { readBuildEvent } from '../../src/shared/build.ts';
 import type { Smoke } from './kit.ts';
 
 // A build through the bridge, with the stand-in Claude Code rewriting the starter's App.tsx as one line: the page gets
-// the snapshot as it starts, then the file with its lines added and removed, and the next steps, as it ends. While it
-// runs, a commit, a pull, taking GitHub's version and Undo this build in its repo answer busy.
+// the snapshot as it starts, with the board's own rules and design among what the builder was given, then the file with
+// its lines added and removed, and the next steps, as it ends. While it runs, a commit, a pull, taking GitHub's version
+// and Undo this build in its repo answer busy.
 export async function builder(t: Smoke) {
   const repo = path.join(t.data, 'smoke-build');
   fs.mkdirSync(repo, { recursive: true });
@@ -36,6 +37,10 @@ export async function builder(t: Smoke) {
         purpose: '',
         device: '',
         cards: [],
+        guides: {
+          rules: { text: 'Never use gradients.', ignoreRepo: true },
+          design: { text: 'Square corners.', ignoreRepo: false },
+        },
         errors: '',
         pictures: [],
         unseen: [],
@@ -67,6 +72,11 @@ export async function builder(t: Smoke) {
     started: JSON.stringify(r.answer) === JSON.stringify({ kind: 'started', id }) && start?.id === id,
     busy: JSON.stringify(r.refused) === '["busy","busy","busy","busy"]',
     startSnapshot: start?.type === 'start' && /^[0-9a-f]{40}$/.test(start.snapshot),
+    // the board's own words reach the builder, and arrive in the start's list of what it was given
+    guides:
+      start?.type === 'start' &&
+      JSON.stringify(start.use?.parts.map(p => p.kind).filter(k => k === 'boardRules' || k === 'boardDesign')) ===
+        '["boardDesign","boardRules"]',
     edit: edit?.type === 'edit' && edit.file === 'src/App.tsx',
     done: done?.type === 'done' && !more.length,
     sameSnapshot: start?.type === 'start' && done?.type === 'done' && done.snapshot === start.snapshot,

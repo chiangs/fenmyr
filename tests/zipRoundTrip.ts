@@ -1,8 +1,8 @@
 // A board exported from its menu and opened again. Everything it holds comes back but the ids and the video's name: notes,
-// links, Unsorted, tags, a palette, a background, a picture, a voice memo and a video, and the video plays. Two levels of
-// canvases come back remapped and open; one used twice is in the zip once; one whose board is gone keeps its card and
-// is counted. A video bundled with the app stays a reference. Opened twice, it is two boards and two videos, and a
-// video is not swept away after.
+// links, Unsorted, tags, a palette, a background, a picture, a voice memo and a video, and the video plays. A doc that is
+// a prototype's own rules or design keeps its role and Ignore switch. Two levels of canvases come back remapped and open;
+// one used twice is in the zip once; one whose board is gone keeps its card and is counted. A video bundled with the app
+// stays a reference. Opened twice, it is two boards and two videos, and a video is not swept away after.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -42,6 +42,8 @@ const roadmap = mk('r1', 'Roadmap', {
     card('c1', 'canvas', { text: 'Plans', board: 'r2' }),
     card('c2', 'canvas', { text: 'Plans', board: 'r2' }),
     card('c3', 'canvas', { text: 'Lost', board: 'nowhere' }),
+    card('g1', 'doc', { text: 'Rules', body: 'Never use gradients.', role: 'rules', ignoreRepo: true }),
+    card('g2', 'doc', { text: 'Design', body: 'Square corners.', role: 'design' }),
   ],
   links: [{ id: 'l1', a: 'n1', b: 'lk' }],
   tray: [card('tn', 'note', { text: 'In Unsorted' }), card('tc', 'canvas', { text: 'Deep', board: 'r3' })],
@@ -107,6 +109,17 @@ assert.ok(
   Array.isArray(inZip.cards) && inZip.cards.some(c => rec(c).id === 'c3'),
   'a canvas whose board is gone keeps its card',
 );
+assert.deepStrictEqual(
+  (Array.isArray(inZip.cards) ? inZip.cards : [])
+    .map(rec)
+    .filter(c => c.type === 'doc')
+    .map(c => [c.id, c.role, c.ignoreRepo]),
+  [
+    ['g1', 'rules', true],
+    ['g2', 'design', undefined],
+  ],
+  'a doc keeps its role and Ignore switch in the zip',
+);
 assert.ok(zip.media[video]?.length, 'the video is in the zip');
 assert.strictEqual(
   rec(JSON.parse(Buffer.from(zip.json['boards/r3.json'] ?? []).toString())).proto,
@@ -139,6 +152,17 @@ assert.deepStrictEqual(
   'both cards point at the same canvas, and the lost one has no board',
 );
 assert.deepStrictEqual(canvasIds(kid), [['p2', deeper.id]], 'a canvas inside a canvas');
+assert.deepStrictEqual(
+  (Array.isArray(root.cards) ? root.cards : [])
+    .map(rec)
+    .filter(c => c.type === 'doc')
+    .map(c => [c.id, c.body, c.role, c.ignoreRepo]),
+  [
+    ['g1', 'Never use gradients.', 'rules', true],
+    ['g2', 'Square corners.', 'design', undefined],
+  ],
+  'a prototype’s own rules and design come in with their role, and the Ignore switch where it was on',
+);
 assert.deepStrictEqual([kid.parent, deeper.parent], [root.id, kid.id], 'each is under the board that holds it');
 assert.strictEqual(root.parent, undefined, 'the board is a board of its own');
 assert.strictEqual(deeper.kind, undefined, 'a prototype came in as an ordinary board');

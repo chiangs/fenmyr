@@ -1,5 +1,6 @@
 import { type BuildEvent, readBuildEvent } from '../../shared/build.ts';
 import { rankCards } from '../../shared/contextFit.ts';
+import { guidesOf, isGuide } from '../../shared/guides.ts';
 import type { Board } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { appState, session } from '../core/state.ts';
@@ -48,9 +49,11 @@ export async function startBuild(
   if (b?.kind !== 'prototype' || !root) return;
   // pulling under a build that runs or waits would change its files
   if (!synced && !building()) return beforeBuild(b, request, () => startBuild(request, cards, true));
-  const sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
-    picked = b.cards.filter(c => sel.has(c.id));
-  const ranked = rankCards(picked.length || (cards && 'brought' in cards) ? picked : b.cards, sel, b.links),
+  // the board's own rules and design go as guides, so the builder isn't given them again among the cards
+  const about = b.cards.filter(c => !isGuide(c)),
+    sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
+    picked = about.filter(c => sel.has(c.id));
+  const ranked = rankCards(picked.length || (cards && 'brought' in cards) ? picked : about, sel, b.links),
     screens = screensOf(b.cards);
   const { dir, stack, purpose = '', device = '' } = b.proto,
     build = uid();
@@ -68,6 +71,7 @@ export async function startBuild(
       purpose,
       device,
       cards: ranked.map(c => ({ id: c.id, text: JSON.stringify(brief(c, screens)) })),
+      guides: guidesOf(b.cards),
       build,
       board: b.id,
     },

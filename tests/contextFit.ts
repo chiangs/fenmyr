@@ -241,6 +241,21 @@ assert.equal(
   '',
   'other parts are not about the board',
 );
+assert.equal(
+  readList(only(part('boardDesign', undefined), part('boardRules', undefined), part('myra'), part('design'))),
+  'design.md, myra.md, this board’s rules and this board’s design',
+  'the board’s own rules and design follow the repo’s files, rules first',
+);
+assert.equal(
+  readList(only(part('cards', 1), part('boardRules'))),
+  '1 card and this board’s rules',
+  'with no repo file, they read alone',
+);
+assert.equal(
+  readList(only(part('boardRules', 0), part('boardDesign', 0))),
+  '',
+  'a board text with nothing in it is not listed',
+);
 assert.equal(readList(only()), '', 'no parts, no list');
 assert.equal(readList(only(part('cards', 1_200))), '1,200 cards', 'numbers are grouped');
 
@@ -302,6 +317,8 @@ const words: [Part, string][] = [
   [{ kind: 'pictures', tokens: 4_784, count: 1 }, '1 picture · about 4,784 tokens'],
   [{ kind: 'design', tokens: 800 }, 'design.md · about 800 tokens'],
   [{ kind: 'myra', tokens: 300 }, 'myra.md · about 300 tokens'],
+  [{ kind: 'boardRules', tokens: 250 }, 'This board’s rules · about 250 tokens'],
+  [{ kind: 'boardDesign', tokens: 1 }, 'This board’s design · about 1 token'],
   [{ kind: 'errors', tokens: 60 }, 'Preview errors · about 60 tokens'],
   [{ kind: 'board', tokens: 2_000 }, 'The board · about 2,000 tokens'],
   [{ kind: 'chat', tokens: 1 }, 'The chat so far · about 1 token'],
@@ -319,6 +336,26 @@ assert.deepEqual(
   'two shortened text parts in one line',
 );
 assert.deepEqual(readContextUse(cutDesign)?.parts, cutDesign.parts, 'cut survives a board file');
+// the board's own texts are parts a board file keeps, and a cut one says so
+const guided: ContextUse = {
+  ...empty,
+  parts: [
+    { kind: 'boardRules', tokens: 40, cut: true },
+    { kind: 'boardDesign', tokens: 30 },
+    { kind: 'myra', tokens: 0, count: 0, cut: true },
+  ],
+};
+assert.deepEqual(readContextUse(JSON.parse(JSON.stringify(guided))), guided, 'the board’s rules and design read back');
+assert.deepEqual(
+  leftWords(guided),
+  ['This board’s rules text and myra.md were shortened to fit'],
+  'a cut board text and a repo file cut to nothing are each named',
+);
+assert.deepEqual(
+  leftWords({ ...empty, parts: [{ kind: 'boardDesign', tokens: 9, cut: true }] }),
+  ['This board’s design text was shortened to fit'],
+  'one reads in the singular',
+);
 assert.deepEqual(
   readContextUse({ ...cutDesign, parts: [{ kind: 'design', tokens: 10, cut: 'yes' }] })?.parts,
   [{ kind: 'design', tokens: 10 }],

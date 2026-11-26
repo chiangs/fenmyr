@@ -282,8 +282,18 @@ Rules: keep their meaning, facts, names and numbers (never invent new facts). Ke
 const cardsLeftOut = (n: number) =>
   n > 0 ? `\n(${n} more ${n === 1 ? 'card was' : 'cards were'} left out to fit the model's context.)` : '';
 
+// what a repo document says when the board ignores its text, and its own takes the place
+const NOT_USED = {
+  design: 'not used for this prototype: its own design below takes its place',
+  rules: 'not used for this prototype: its own rules below take their place',
+};
+// a repo document as the builder reads it: its text, or why it has none
+const repoDocument = (text: string, ignored: boolean, own: keyof typeof NOT_USED, none: string) =>
+  ignored ? NOT_USED[own] : text || none;
+
 // What Claude Code is told when Myra builds or changes a prototype. Everything about the person's board arrives as data.
-// left: how many cards didn't fit.
+// left: how many cards didn't fit. design and myra: the repo's files, empty when the board ignores them; boardDesign and
+// boardRules: the board's own words for each, which win where they differ.
 export const buildPrototype = (a: {
   request: string;
   stack: 'react' | 'html';
@@ -294,6 +304,9 @@ export const buildPrototype = (a: {
   errors: string;
   design: string;
   myra: string;
+  boardDesign: string;
+  boardRules: string;
+  ignoreRepo: { rules: boolean; design: boolean };
   packages: string;
   pictures: string;
 }) => `${PERSONA}
@@ -305,7 +318,7 @@ Rules:
 - Change only what the request needs, and keep everything else as it is.
 - Make it look finished: the real words from the cards, sensible spacing, readable type. It is shown at a ${a.device || 'phone'} width.
 - Build only the product itself. The preview is exactly what its users would see, so add nothing that talks about the prototype: no hints or instructions ("Click the field to see…"), no captions naming states or screens, no titles like "Prototype" or "Demo", no notes to the person. Explain things in your reply instead. A way to reach a state the request asks to see (an error, an empty list) is a control, never on-screen text.
-- Follow DESIGN and HOW TO WORK HERE below wherever they say something.
+- Follow DESIGN and HOW TO WORK HERE below wherever they say something, and this prototype's own design and rules after each: where they differ, this prototype's own win.
 - If the preview showed errors, fix them as part of this change.
 - Controls (React only): put the controls the request names in src/tweaks.json as {"key": {"kind": "choice" | "number" | "text" | "colour" | "toggle", "label": "Shown name", "value": starting value, "options": [...] for a choice, "min", "max", "step", "unit" for a number}}. A colour's value is a CSS colour, written as hsl() (for example "hsl(243 80% 68%)"); the person may switch it to rgb() or hex, so use it as it is, in a style or a CSS variable, and never take it apart. Read them with const tweaks = useTweaks() from src/tweaks.ts and give each its own named const before the return. A control of any other kind is {"kind": "custom", "label": "...", "value": ...} with its own component in src/knobs/ that renders only when inFenmyr() is true and calls setTweak(key, value). Never change src/tweaks.ts.
 When you are done, reply with two to four short sentences as Myra, in the first person and in British English: what you built or changed and why, naming the cards that shaped it. No code in the reply. Then end with two lines. First, one that links the code to the cards: CARDS: followed by each file you created or changed, as its path inside this folder, =, and the ids of the cards it came from (the "id" of each in THE CARDS ON THE BOARD), files separated by semicolons, for example CARDS: src/App.tsx=k2j9a,p0q1z; src/components/Field.tsx=k2j9a. Write CARDS: none when no card shaped the change. Last, one that offers what could come next: NEXT: followed by up to three things the person might ask for next, each a few words as they would type them, separated by |, for example NEXT: Add a total | Show a receipt. Write NEXT: none when nothing obvious comes next.
@@ -327,10 +340,16 @@ ERRORS THE PREVIEW SHOWED:
 ${a.errors || 'none'}
 
 DESIGN (prototypes/design.md, shared by every prototype in the repo):
-${a.design || 'none yet'}
+${repoDocument(a.design, a.ignoreRepo.design, 'design', 'none yet')}
+
+THIS PROTOTYPE'S OWN DESIGN (from its board; where it differs from DESIGN, this wins):
+${a.boardDesign || 'none'}
 
 HOW TO WORK HERE (prototypes/myra.md):
-${a.myra || 'nothing yet'}`;
+${repoDocument(a.myra, a.ignoreRepo.rules, 'rules', 'nothing yet')}
+
+THIS PROTOTYPE'S OWN RULES (from its board; where they differ from HOW TO WORK HERE, these win):
+${a.boardRules || 'none'}`;
 
 // What Claude Code is told when the person asks Myra to explain a prototype's code after a build. The run can only
 // read, and its answer lands in the prototype's chat as her line, for someone who may not read code.

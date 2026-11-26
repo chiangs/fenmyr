@@ -1,7 +1,9 @@
 // What a whole-board build sends the builder of a board with a wireframe screen and 100 notes: every note, since the
 // page no longer cuts the cards at 80, in reading order rather than the board file's order, the screen with its size and
 // each piece on it with its place and size inside the screen. A picture of the screen is taken when it is in view and
-// left out of the prompt when it is not, though its layout is sent either way.
+// left out of the prompt when it is not, though its layout is sent either way. A board's own rules and design doc cards
+// are not among the cards: each goes after the repo's file for its document, and the repo's rules are left out of the
+// prompt when the card's Ignore is on.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -17,7 +19,8 @@ const { repo } = freshRepo('fenmyr-build-sent-');
 const git = (...args: string[]) =>
   execFileSync('git', ['-C', repo, '-c', 'user.name=T', '-c', 'user.email=t@e.st', ...args]).toString();
 fs.mkdirSync(path.join(repo, 'prototypes'));
-fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), 'x\n');
+fs.writeFileSync(path.join(repo, 'prototypes', 'design.md'), 'REPO DESIGN TEXT\n');
+fs.writeFileSync(path.join(repo, 'prototypes', 'myra.md'), 'REPO RULES TEXT\n');
 
 const l = await launch({ claude: true });
 const standIn = buildStandIn(l);
@@ -72,6 +75,18 @@ try {
       text,
     });
     const cards: Card[] = [
+      {
+        id: 'rules',
+        type: 'doc',
+        x: 0,
+        y: -900,
+        w: 240,
+        h: 52,
+        body: 'Never use gradients.',
+        role: 'rules',
+        ignoreRepo: true,
+      },
+      { id: 'look', type: 'doc', x: 300, y: -900, w: 240, h: 52, body: 'Square corners.', role: 'design' },
       note('n0', -2000, 9000, 'Lowest'),
       {
         id: 'scr',
@@ -139,6 +154,29 @@ try {
   assert.deepStrictEqual(out.card('pay')?.at, { x: 24, y: 300, w: 160, h: 100 }, 'and so does the next');
   assert.deepStrictEqual(out.card('scr')?.size, { w: 393, h: 852 }, 'the screen carries its size');
   assert.strictEqual(out.pictures, 'none', 'a screen out of view sends no picture');
+  assert(!ids.includes('rules') && !ids.includes('look'), 'the rules and design docs are not among the cards');
+  const own = (heading: string) => first.split(`${heading}\n`)[1]?.split('\n\n')[0];
+  assert.strictEqual(
+    own("THIS PROTOTYPE'S OWN RULES (from its board; where they differ from HOW TO WORK HERE, these win):"),
+    'Never use gradients.',
+    'the board’s rules are in the prompt',
+  );
+  assert.strictEqual(
+    own("THIS PROTOTYPE'S OWN DESIGN (from its board; where it differs from DESIGN, this wins):"),
+    'Square corners.',
+    'and its design',
+  );
+  assert.strictEqual(
+    own('HOW TO WORK HERE (prototypes/myra.md):'),
+    'not used for this prototype: its own rules below take their place',
+    'with Ignore on, the repo’s rules are replaced by a line saying so',
+  );
+  assert(!first.includes('REPO RULES TEXT'), 'and none of their text is sent');
+  assert.strictEqual(
+    own('DESIGN (prototypes/design.md, shared by every prototype in the repo):'),
+    'REPO DESIGN TEXT',
+    'the repo’s design stays, the design doc adding to it',
+  );
 
   await look(-700);
   assert(await screenInView(), 'the screen is in view');

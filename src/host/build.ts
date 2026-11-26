@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { BuildEvent } from '../shared/build.ts';
 import { windowOf } from '../shared/contextFit.ts';
+import { readBoardGuides } from '../shared/guides.ts';
 import type { Ops } from '../shared/ops.ts';
 import { PROTO_DIR, splitBuildReply } from '../shared/repos.ts';
 import { fitBuild } from './buildFit.ts';
@@ -115,6 +116,7 @@ export function startBuild(
         errors: text(a.errors),
         design: shared(protos, 'design.md'),
         myra: shared(protos, 'myra.md'),
+        guides: readBoardGuides(a.guides),
         cards: cardsOf(a.cards),
         pictures: picturesOf(a.pictures),
         unseen: strings(a.unseen),
@@ -144,6 +146,9 @@ export function startBuild(
       errors: fit.errors,
       design: fit.design,
       myra: fit.myra,
+      boardDesign: fit.boardDesign,
+      boardRules: fit.boardRules,
+      ignoreRepo: fit.ignoreRepo,
       packages: installed(s.root).join(', '),
       pictures: pictures.join('\n'),
     });

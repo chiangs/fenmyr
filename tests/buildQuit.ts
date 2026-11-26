@@ -64,6 +64,7 @@ try {
       purpose: '',
       device: '',
       cards: [],
+      guides: { rules: { text: '', ignoreRepo: false }, design: { text: '', ignoreRepo: false } },
       errors: '',
       pictures: [],
       unseen: [],

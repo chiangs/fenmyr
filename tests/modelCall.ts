@@ -65,6 +65,7 @@ await page.evaluate(async () => {
     purpose: 'p',
     device: 'phone',
     cards: [],
+    guides: { rules: { text: '', ignoreRepo: false }, design: { text: '', ignoreRepo: false } },
     errors: '',
     pictures: [],
     unseen: [],

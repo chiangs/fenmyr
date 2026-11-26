@@ -1,4 +1,4 @@
-import { type CardType, isCardType, sizeOf } from './cardTypes.ts';
+import { type CardType, type GuideRole, guideFields, isCardType, sizeOf } from './cardTypes.ts';
 import { type ChatDraft, type ChatMsg, readChats, readDraft, readMsgs, type SavedChat } from './chat.ts';
 import { type Capture, type Proto, readProto, readRepoLink } from './repos.ts';
 
@@ -46,7 +46,7 @@ type CardFields = {
     colNames?: string[];
     colLimit?: number[];
   };
-  doc: { doc?: unknown; body?: string };
+  doc: { doc?: unknown; body?: string; role?: GuideRole; ignoreRepo?: true };
   canvas: { text?: string; board?: string };
   // squig: a line's style (straight, wavy, zigzag, loopy); waves, round and wobble shape it; lw: its width
   shape: {
@@ -309,7 +309,7 @@ function readCard(x: unknown): Card | null {
     num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback),
     place = { x: num(x.x, 0), y: num(x.y, 0), w: num(x.w, width), h: num(x.h, height) },
     filled = {
-      ...x,
+      ...(x.type === 'doc' ? guideFields(x) : x),
       ...place,
       ...(x.type === 'swatch' && typeof x.hex !== 'string' ? { hex: '#ffffff' } : {}),
       ...(x.type === 'coll' && !Array.isArray(x.kids) ? { kids: [] } : {}),
