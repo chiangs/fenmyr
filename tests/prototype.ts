@@ -280,12 +280,12 @@ try {
     window.__fenmyr.setGreet(false, 'normal');
   });
   assert.strictEqual(await chat(), before, 'her start-up hello never piles up in a prototype board’s chat');
-  await page.click('[data-fold="code"]');
-  await page.waitForTimeout(400);
+  // the board's column is too narrow here for Myra's notes, so a new prototype folds the code column, which has
+  // nothing in it yet, to give the board room (tests/welcomeFit.ts)
   assert.strictEqual(
     await page.evaluate(() => getComputedStyle(document.getElementById('pr-code') ?? document.body).display),
     'none',
-    'a folded code column hides its body, scrollbars and all',
+    'a new prototype opens with the code column folded, its body hidden, scrollbars and all',
   );
   await page.click('[data-open="code"]');
   await page.evaluate(() =>

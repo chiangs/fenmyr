@@ -11,9 +11,31 @@ type DocCard = CardOf<'doc'>;
 
 // The band between a prototype's rules or design doc and its words: what the doc is for, the switch that leaves the
 // repo's own file out, and a way to reach that file. A doc with no role has no band.
-const FILES: Record<GuideRole, { noun: string; verb: string; file: string }> = {
-  rules: { noun: 'rules', verb: 'are', file: 'prototypes/myra.md' },
-  design: { noun: 'design', verb: 'is', file: 'prototypes/design.md' },
+const FILES: Record<GuideRole, { noun: string; file: string }> = {
+  rules: { noun: 'rules', file: 'prototypes/myra.md' },
+  design: { noun: 'design', file: 'prototypes/design.md' },
+};
+
+// what the hint says: this adds to the repo's file, this is all the builder gets because the switch leaves the repo's
+// out, or this is all it gets because the project has no repo
+type HintState = 'adding' | 'ignoring' | 'noRepo';
+const HINTS: Record<GuideRole, Record<HintState, string>> = {
+  rules: {
+    adding:
+      'Rules for this prototype only, such as “buttons are full width on phones”. They’re added to the repo’s rules in prototypes/myra.md, and win where the two differ.',
+    ignoring:
+      'Only these rules go to the builder. The repo’s rules in prototypes/myra.md are ignored for this prototype.',
+    noRepo:
+      'Rules for this prototype, such as “buttons are full width on phones”. Its project has no repo, so these are the only rules the builder gets.',
+  },
+  design: {
+    adding:
+      'Design for this prototype only: colours, fonts, spacing, components. It’s added to the repo’s design in prototypes/design.md, and wins where the two differ.',
+    ignoring:
+      'Only this design goes to the builder. The repo’s design in prototypes/design.md is ignored for this prototype.',
+    noRepo:
+      'Design for this prototype: colours, fonts, spacing, components. Its project has no repo, so this is the only design the builder gets.',
+  },
 };
 
 const bandEl = () => elementById('dvGuide', HTMLElement);
@@ -22,11 +44,8 @@ let shown: DocCard | null = null;
 const repoPath = (root: string, role: GuideRole) => `${root}/${FILES[role].file}`;
 
 function hintOf(c: DocCard, role: GuideRole, root: string | null) {
-  const { noun, verb, file } = FILES[role];
-  if (!root) return `This prototype’s project has no repo, so there are no repo ${noun} to add to.`;
-  if (c.ignoreRepo)
-    return `Only this goes to the builder for this prototype. The repo’s ${noun} in ${file} ${verb} ignored.`;
-  return `Only what’s different for this prototype. It adds to the repo’s ${noun} in ${file}, and where the two differ, this wins.`;
+  if (!root) return HINTS[role].noRepo;
+  return HINTS[role][c.ignoreRepo ? 'ignoring' : 'adding'];
 }
 
 /** Draws the band for the doc that is opening, or takes it away for none, or for a doc with no role. */

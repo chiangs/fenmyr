@@ -184,10 +184,12 @@ export const viewSoon = () => {
     });
 };
 
+export const MIN_ZOOM = 0.15;
+
 export function zoomAt(cx: number, cy: number, z: number, soon = false) {
   const r = stage.getBoundingClientRect(),
     p = toWorld(cx, cy);
-  session.view.z = clamp(z, 0.15, 3);
+  session.view.z = clamp(z, MIN_ZOOM, 3);
   session.view.x = cx - r.left - p.x * session.view.z;
   session.view.y = cy - r.top - p.y * session.view.z;
   if (soon) viewSoon();
