@@ -41,7 +41,7 @@ import { HEADLESS, MOUSE, TEST_RUN } from './support/launch.ts';
     `#!/bin/sh
 if [ "$1" = mcp ]; then echo "claude.ai Mobbin: https://mobbin - ✓ Connected"; echo "claude.ai higgsfield: https://h - ! Needs authentication"; exit 0; fi
 case "$*" in *'--tools Read,Glob,Grep'*)
-  printf '%s' "$2" > "${data}/explain-prompt.txt"; pwd > "${data}/explain-cwd.txt"; shift 2; echo "$@" > "${data}/explain-args.txt"
+  cat > "${data}/explain-prompt.txt"; pwd > "${data}/explain-cwd.txt"; shift; echo "$@" > "${data}/explain-args.txt"
   printf '%s\\n' '{"type":"result","is_error":false,"result":"I read \`src/App.tsx\`. It shows the heading.\\nNext: change the words in it."}'
   exit 0;;
 *stream-json*)
@@ -50,7 +50,7 @@ case "$*" in *'--tools Read,Glob,Grep'*)
   printf '%s\\n' '{"type":"result","is_error":false,"result":"I built it.\\nNEXT: Add a total | Show a receipt\\nCARDS: none"}'
   exit 0;;
 esac
-printf '%s' "$2" > "${data}/prompt.txt"; echo "$@" > "${data}/args.txt"; pwd > "${data}/cwd.txt"; rm -rf "${data}/seen"; cp -r . "${data}/seen"
+cat > "${data}/prompt.txt"; echo "$@" > "${data}/args.txt"; pwd > "${data}/cwd.txt"; rm -rf "${data}/seen"; cp -r . "${data}/seen"
 echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"hi from fake claude\\"}","usage":{"input_tokens":10,"cache_read_input_tokens":5,"output_tokens":3},"total_cost_usd":0.01}'
 `,
     { mode: 0o755 },

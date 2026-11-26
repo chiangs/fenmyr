@@ -22,9 +22,10 @@ const git = (dir: string, ...args: string[]) =>
 fs.writeFileSync(
   path.join(bin, 'claude'),
   `#!/bin/sh
+prompt=$(cat)
 case "$*" in
   *stream-json*)
-    case "$*" in *'Wait for go.'*) i=0; while [ ! -e "${path.join(work, 'go')}" ] && [ $i -lt 600 ]; do sleep 0.1; i=$((i+1)); done ;; esac
+    case "$prompt" in *'Wait for go.'*) i=0; while [ ! -e "${path.join(work, 'go')}" ] && [ $i -lt 600 ]; do sleep 0.1; i=$((i+1)); done ;; esac
     echo '{"type":"result","is_error":false,"result":"I made the change."}' ;;
   *) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"ok\\"}"}' ;;
 esac

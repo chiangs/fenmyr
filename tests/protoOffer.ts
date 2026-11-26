@@ -64,8 +64,8 @@ fs.writeFileSync(
   path.join(data, '.local/bin/claude'),
   `#!${process.execPath}
 const fs = require('node:fs');
-const [flag, prompt = ''] = process.argv.slice(2);
-if (flag !== '-p') process.exit(0);
+if (process.argv[2] !== '-p') process.exit(0);
+const prompt = fs.readFileSync(0, 'utf8');
 const log = (file, entry) => fs.appendFileSync(file, JSON.stringify(entry) + '\\n');
 const result = text => console.log(JSON.stringify({ type: 'result', is_error: false, result: text }));
 if (process.argv.includes('stream-json')) {

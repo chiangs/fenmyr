@@ -27,14 +27,14 @@ export function askStandIn(l: Launched) {
     `#!${process.execPath}
 const fs = require('node:fs');
 if (process.argv[2] !== '-p') process.exit(0);
-const prompt = process.argv[3] ?? '';
+const prompt = fs.readFileSync(0, 'utf8');
 const q = (/The person asked you: (.*)/.exec(prompt) ?? [])[1] ?? '';
 const files = [...prompt.matchAll(/^\\d\\. (\\S+) \\(a (picture|text file) they called "([^"]*)"\\)$/gm)].map(m => ({
   name: m[3], kind: m[2], b64: fs.readFileSync(m[1]).toString('base64'),
 }));
 (async () => {
   while (q.includes('slow') && fs.existsSync(${JSON.stringify(hold)})) await new Promise(r => setTimeout(r, 50));
-  fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({ q, prompt, args: process.argv.slice(4), cwd: process.cwd(), files }) + '\\n');
+  fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({ q, prompt, args: process.argv.slice(3), cwd: process.cwd(), files }) + '\\n');
   console.log(JSON.stringify({ type: 'result', is_error: false, result: JSON.stringify({ say: 'ok' }) }));
 })();
 `,

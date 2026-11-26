@@ -38,8 +38,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const say = j => console.log(JSON.stringify(j));
 if (process.argv[2] !== '-p') process.exit(0);
+const prompt = fs.readFileSync(0, 'utf8');
 if (process.argv.includes('--tools')) {
-  fs.appendFileSync(${JSON.stringify(explained)}, JSON.stringify({ prompt: process.argv[3], args: process.argv.slice(4), cwd: process.cwd() }) + '\\n');
+  fs.appendFileSync(${JSON.stringify(explained)}, JSON.stringify({ prompt, args: process.argv.slice(3), cwd: process.cwd() }) + '\\n');
   const told = fs.existsSync(${JSON.stringify(explaining)}) ? JSON.parse(fs.readFileSync(${JSON.stringify(explaining)}, 'utf8')) : {};
   const app = process.ppid;
   (async () => {
@@ -50,14 +51,14 @@ if (process.argv.includes('--tools')) {
     say({ type: 'result', is_error: !!told.fail, result: told.fail ?? told.reply ?? 'I read the code.' });
   })();
 } else if (!process.argv.includes('stream-json')) {
-  fs.appendFileSync(${JSON.stringify(asks)}, JSON.stringify(process.argv[3] ?? '') + '\\n');
+  fs.appendFileSync(${JSON.stringify(asks)}, JSON.stringify(prompt) + '\\n');
   const told = fs.existsSync(${JSON.stringify(answer)}) ? JSON.parse(fs.readFileSync(${JSON.stringify(answer)}, 'utf8')) : null;
   setTimeout(
     () => say({ type: 'result', is_error: false, result: JSON.stringify(told ? told.reply : { say: 'ok' }) }),
     told ? told.ms : 0,
   );
 } else {
-  fs.appendFileSync(${JSON.stringify(builds)}, JSON.stringify(process.argv[3] ?? '') + '\\n');
+  fs.appendFileSync(${JSON.stringify(builds)}, JSON.stringify(prompt) + '\\n');
   const s = JSON.parse(fs.readFileSync(${JSON.stringify(script)}, 'utf8'));
   // an app that doesn't stop Claude Code as it quits, such as one from before builds were stopped, would otherwise wait
   // on this stand-in for ever: it leaves once that app has gone
@@ -119,7 +120,7 @@ if (process.argv.includes('--tools')) {
       if (e.hold) fs.writeFileSync(held, '');
     },
     explained: () => fs.rmSync(held, { force: true }),
-    // every run that could only read: its prompt, its arguments after the prompt and the folder it ran in
+    // every run that could only read: its prompt, its arguments after -p and the folder it ran in
     explains: (): { prompt: string; args: string[]; cwd: string }[] =>
       fs.existsSync(explained)
         ? fs
