@@ -26,6 +26,7 @@ import {
   type Waiting,
   waitsTurn,
 } from './buildSlot.ts';
+import { offerGuides } from './guideOffer.ts';
 import { picturesOf } from './pictures.ts';
 import { previewErrors } from './preview.ts';
 import { beforeBuild } from './sync.ts';
@@ -174,6 +175,7 @@ function land(r: Running, e: End, said?: string) {
     freeSlot(r);
     r.job.end();
     if (wrote) react(e.type === 'done' ? 'buildDone' : 'buildFailed');
+    if (wrote && e.type === 'done' && session.board?.id === r.board) offerGuides();
   };
   landOn(r.board, r.name, e, done, b => {
     // the block is drawn from its record from here on

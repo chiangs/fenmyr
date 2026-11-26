@@ -1,3 +1,4 @@
+import { sizeOf } from '../../shared/cardTypes.ts';
 import type { Card } from '../../shared/model.ts';
 import { applyView } from '../canvas/view.ts';
 import { clamp } from '../core/base.ts';
@@ -50,6 +51,14 @@ I only write inside this prototype’s folder, and I’ll show you which files I
 
 const topOf = (i: number) => HEIGHTS.slice(0, i).reduce((y, h) => y + h + GAP, 0);
 
+// The prototype's own rules and design, as two doc cards with nothing in them yet, one under the other. They start below
+// the welcome notes, and the offer to add them to a board made before they existed puts them wherever there is room.
+const DOC_H = sizeOf('doc')[1];
+export const guideCards = (x: number, y: number): Card[] => [
+  card('doc', { x, y, w: W, r: -0.5, text: 'This prototype’s rules', role: 'rules' }),
+  card('doc', { x, y: y + DOC_H + GAP, w: W, r: 0.5, text: 'This prototype’s design', role: 'design' }),
+];
+
 export function prototypeWelcome(): Card[] {
   const note = (i: number, name: string, text: string, color: string, r: number, tagText = '') =>
     card('note', {
@@ -68,6 +77,7 @@ export function prototypeWelcome(): Card[] {
     note(1, 'The more I know, the less I guess', WHAT_I_NEED, 'sky', 0.5),
     note(2, 'Start small, then steer', HOW_WE_WORK, 'mint', 1),
     card('stamp', { x: LEFT - 34, y: STAMP_TOP, w: 56, h: 56, src: 'stamps/myra-bounce.gif', r: -4 }),
+    ...guideCards(LEFT, topOf(HEIGHTS.length)),
   ];
 }
 
