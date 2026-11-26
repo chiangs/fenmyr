@@ -2575,6 +2575,7 @@ svg.ico .ico-d { color: var(--m-svg-ico-ico-d-ink); }
    padding, and the 8. Anchoring it to the chip with anchor() would do without the script, but makes every layout
    with the chat open about 10% slower. */
 .mcs-chip.board::after { position: fixed; top: var(--tip-top, 0px); left: clamp(168px, var(--tip-cx, 0px), calc(100vw - 168px)); max-width: 300px; }
+.mcs-chip.board.trimmed { border-color: rgb(from var(--accent-text) r g b / .5); color: var(--accent-text); }
 .mcs-chip.sel { border-color: var(--select); background: rgb(from var(--select) r g b / .12); }
 .mcs-chip.out { border-style: dashed; border-color: currentColor; background: none; color: var(--ink-soft); cursor: pointer; }
 .mcs-chip.sel.out { border-color: var(--select); }
