@@ -1,8 +1,14 @@
 import { type AskFile, textFile } from '../../shared/askFiles.ts';
+import { GUIDE_ROLES, type GuideRole } from '../../shared/cardTypes.ts';
+import type { BoardGuides } from '../../shared/guides.ts';
 
 // What goes with the person's next message to Myra, as chips, and what a message was sent with. No DOM, so Node tests it.
 
-/** What the app offers for the next message, read by the strip. */
+/** What a prototype board sends a build besides its cards: whether its project has a repo, whose prototypes/myra.md and
+ *  design.md go with every build, and the board's own words for each. */
+export type GuideInput = { repo: boolean; board: BoardGuides };
+
+/** What the app offers for the next message, read by the strip. guides: null unless the board is a prototype. */
 export type SeesInput = {
   sel: readonly string[];
   /** The label for a single selected card, such as "Note · “Buy milk”". */
@@ -12,6 +18,7 @@ export type SeesInput = {
   web: boolean;
   /** What the person added to the next message. */
   added: readonly Added[];
+  guides: GuideInput | null;
 };
 
 /** A picture or text file (as a data: URL), a vault note, or a long paste, added to one message. */
@@ -20,9 +27,12 @@ export type Added =
   | { kind: 'note'; id: string; vault: string; rel: string; title: string }
   | { kind: 'paste'; id: string; text: string };
 
-/** One chip in the strip. `on`: it goes with the next message. The board always goes, so it has no `on`. */
+/** One chip in the strip. `on`: it goes with the next message. The board always goes, so it has no `on`. A guide chip
+ *  says what a build is sent, not the next message, so it isn't one the person can change: `from` the repo's file or the
+ *  board's own, and `ignored` for a repo file the board leaves out. */
 export type Chip =
   | { kind: 'board' }
+  | { kind: 'guide'; role: GuideRole; from: 'repo' | 'board'; ignored: boolean }
   | { kind: 'selection'; key: string; label: string; on: boolean }
   | { kind: 'vault'; key: string; vault: string; name: string; on: boolean }
   | { kind: 'web'; key: string; on: boolean }
@@ -37,7 +47,7 @@ export const NO_FLIPS: Flips = new Set();
 
 // The selection and the web go unless left out. A vault is read only when the person adds it, because searching every
 // vault adds up to 12,000 characters to each question.
-const ON_BY_DEFAULT: { [K in Exclude<Chip['kind'], 'board' | 'added'>]: boolean } = {
+const ON_BY_DEFAULT: { [K in Exclude<Chip['kind'], 'board' | 'guide' | 'added'>]: boolean } = {
   selection: true,
   vault: false,
   web: true,
@@ -46,9 +56,26 @@ const ON_BY_DEFAULT: { [K in Exclude<Chip['kind'], 'board' | 'added'>]: boolean 
 // The key holds the ids, so a different selection goes along again by itself.
 const selKey = (ids: readonly string[]) => `sel:${[...ids].sort().join(',')}`;
 
+const guide = (role: GuideRole, from: 'repo' | 'board', ignored: boolean): Chip => ({
+  kind: 'guide',
+  role,
+  from,
+  ignored,
+});
+
+/** The rules, then the design, each as the repo's file and then the board's own: the repo's when the project has a repo,
+ *  struck when the board ignores it, and the board's when it has words. */
+export const guideChips = (g: GuideInput | null): Chip[] =>
+  g
+    ? GUIDE_ROLES.flatMap(role => [
+        ...(g.repo ? [guide(role, 'repo', g.board[role].ignoreRepo)] : []),
+        ...(g.board[role].text ? [guide(role, 'board', false)] : []),
+      ])
+    : [];
+
 export function chipsOf(i: SeesInput, flips: Flips): Chip[] {
   const on = (kind: keyof typeof ON_BY_DEFAULT, key: string) => ON_BY_DEFAULT[kind] !== flips.has(key);
-  const chips: Chip[] = [{ kind: 'board' }];
+  const chips: Chip[] = [{ kind: 'board' }, ...guideChips(i.guides)];
   if (i.sel.length) {
     const key = selKey(i.sel);
     chips.push({ kind: 'selection', key, label: i.one ?? `${i.sel.length} cards`, on: on('selection', key) });
@@ -73,6 +100,7 @@ export function capture(i: SeesInput, flips: Flips): Sees {
   for (const c of chipsOf(i, flips))
     switch (c.kind) {
       case 'board':
+      case 'guide':
         break;
       case 'selection':
         if (c.on) out.sel = i.sel;

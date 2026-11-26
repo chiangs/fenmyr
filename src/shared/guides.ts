@@ -9,12 +9,16 @@ export type BoardGuides = Record<GuideRole, BoardGuide>;
 /** A doc card that is the board's own rules or design, not one of the cards the build is about. */
 export const isGuide = (c: Card) => c.type === 'doc' && c.role !== undefined;
 
-const guideOf = (cards: readonly Card[], role: GuideRole): BoardGuide => {
-  const docs = rankCards(
+/** The doc cards of one role in reading order. */
+export const guideDocs = (cards: readonly Card[], role: GuideRole) =>
+  rankCards(
     cards.flatMap(c => (c.type === 'doc' && c.role === role ? [c] : [])),
     new Set(),
     [],
   );
+
+const guideOf = (cards: readonly Card[], role: GuideRole): BoardGuide => {
+  const docs = guideDocs(cards, role);
   return {
     text: docs
       .map(c => (c.body ?? '').trim())

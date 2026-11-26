@@ -71,9 +71,10 @@ try {
   await page.evaluate(() => window.__fenmyr.selectOnly(['c1']));
   await page.keyboard.press('Shift');
   await settle(page, 200);
+  // the Board chip, the repo's two files a build is sent, then the selection
   assert.deepStrictEqual(
     await sees(),
-    ['Board', 'Note · “Checkout: total first”'],
+    ['Board', 'Repo rules', 'Repo design', 'Note · “Checkout: total first”'],
     'selecting a card changes what she sees',
   );
   assert.deepStrictEqual(

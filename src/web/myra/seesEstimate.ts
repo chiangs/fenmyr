@@ -1,11 +1,13 @@
 import { kindOf } from '../../shared/askFiles.ts';
 import type { BuildRecord } from '../../shared/build.ts';
+import { GUIDE_ROLES, type GuideRole } from '../../shared/cardTypes.ts';
 import {
   type ContextUse,
   counted,
   MAX_PICTURES,
   num,
   type Part,
+  type PartKind,
   PICTURE_TOKENS,
   roomOf,
   shareWords,
@@ -13,6 +15,7 @@ import {
   usedTokens,
   windowOf,
 } from '../../shared/contextFit.ts';
+import { guidesOf, isGuide } from '../../shared/guides.ts';
 import { session } from '../core/state.ts';
 import { brief, screensOf } from '../proto/brief.ts';
 import { hasPicture } from '../proto/pictures.ts';
@@ -55,13 +58,21 @@ function cutWords(shortened: number, left: number) {
   return `${counted(shortened, 'card')} would be shortened and ${num(left)} left out`;
 }
 
-// What a build from these cards would read, as a build sends it: each card's brief, the pictures a build takes, and
-// design.md and myra.md as the board's newest build was sent them. The request and the preview's errors aren't known
-// yet.
+// the parts a build records for the repo's file and for the board's own words, for each document
+const PARTS: Record<GuideRole, { repo: PartKind; board: PartKind }> = {
+  rules: { repo: 'myra', board: 'boardRules' },
+  design: { repo: 'design', board: 'boardDesign' },
+};
+
+// What a build from these cards would read, as a build sends it: each card's brief, the pictures a build takes, the
+// board's own rules and design as they are now, and design.md and myra.md as the board's newest build was sent them,
+// unless the board ignores one. The board's rules and design cards are not among the cards, since a build is given their
+// words as those parts. The request and the preview's errors aren't known yet.
 function buildUse(sel: ReadonlySet<string>, window: number): ContextUse {
   const b = session.board,
-    picked = b.cards.filter(c => sel.has(c.id)),
-    cards = picked.length ? picked : b.cards,
+    about = b.cards.filter(c => !isGuide(c)),
+    picked = about.filter(c => sel.has(c.id)),
+    cards = picked.length ? picked : about,
     screens = screensOf(b.cards),
     pictures = Math.min(MAX_PICTURES, cards.filter(hasPicture).length),
     // the same charge the host makes for a card: its text and a comma
@@ -70,9 +81,13 @@ function buildUse(sel: ReadonlySet<string>, window: number): ContextUse {
       ?.start?.use;
   const parts: Part[] = [{ kind: 'cards', tokens: cardTokens, count: cards.length }];
   if (pictures) parts.push({ kind: 'pictures', tokens: pictures * PICTURE_TOKENS, count: pictures });
-  for (const kind of ['design', 'myra'] as const) {
-    const tokens = before?.parts.find(p => p.kind === kind)?.tokens;
-    if (tokens) parts.push({ kind, tokens });
+  const guides = guidesOf(b.cards);
+  for (const role of GUIDE_ROLES) {
+    const { repo, board } = PARTS[role],
+      tokens = guides[role].ignoreRepo ? 0 : before?.parts.find(p => p.kind === repo)?.tokens,
+      words = guides[role].text.length;
+    if (tokens) parts.push({ kind: repo, tokens });
+    if (words) parts.push({ kind: board, tokens: tokensOf(words) });
   }
   return { window, parts, left: [], pictures: [], shortened: [], unseen: [], tooBig: [] };
 }
