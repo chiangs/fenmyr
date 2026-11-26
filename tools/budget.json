@@ -7,5 +7,6 @@
   "rawColours": 0,
   "darkRules": 152,
   "fixedSleeps": 958,
-  "unexplainedSleeps": 0
+  "unexplainedSleeps": 0,
+  "asyncWaits": 0
 }

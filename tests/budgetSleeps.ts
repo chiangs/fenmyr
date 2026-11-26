@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import ts from 'typescript';
+import { findAsyncWaits } from '../tools/asyncWaits.ts';
 import { findSleeps, MARKER, type SleepStyle } from '../tools/sleeps.ts';
 
 const find = (...lines: string[]) =>
@@ -52,5 +53,31 @@ for (const bare of [`// ${MARKER}`, `// ${MARKER}:`, `  //${MARKER}:   `]) {
   assert.deepStrictEqual(found.bareMarkers, [1], `a marker with no reason: "${bare}"`);
   assert.strictEqual(found.sleeps.length, 1, `and it excuses nothing: "${bare}"`);
 }
+
+const asyncWaits = (...lines: string[]) =>
+  findAsyncWaits(ts.createSourceFile('x.ts', lines.join('\n'), ts.ScriptTarget.Latest, true));
+assert.deepStrictEqual(
+  asyncWaits(
+    'await page.waitForFunction(async () => (await read()) === 1);',
+    'await l.page.waitForFunction(async function () { return true; }, undefined, { polling: 100 });',
+    'await page.waitForFunction(',
+    '  async id => !!(await read(id)),',
+    '  pasted,',
+    ');',
+  ),
+  [1, 2, 3],
+  'an async predicate is counted at its call, however it is written',
+);
+assert.deepStrictEqual(
+  asyncWaits(
+    'await page.waitForFunction(() => window.ready);',
+    'await page.waitForFunction(id => !!document.getElementById(id), pasted);',
+    'await page.waitForFunction(function () { return true; });',
+    'await page.evaluate(async () => await read());',
+    'await page.waitForFunction(() => { void (async () => { await read(); })(); return Reflect.get(window, "ok"); }, undefined, { polling: 100 });',
+  ),
+  [],
+  'a sync predicate is not counted, nor an async call that is not waitForFunction, nor an async function inside a sync predicate',
+);
 
 console.log('budgetSleeps: ok');
