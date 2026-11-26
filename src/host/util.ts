@@ -57,7 +57,8 @@ export const pathDirs = () =>
 export const env = () => ({ ...process.env, PATH: pathDirs().join(':') });
 
 // collects what the program prints and stops it after `timeout` seconds; `input` is what it reads on stdin, which is
-// /dev/null without it
+// /dev/null without it. `signal` stops it at once when it aborts, and a program that is stopped before it starts never
+// does; it ends as it does when it closes.
 export function run(
   cmd: string,
   args: string[],
@@ -65,11 +66,14 @@ export function run(
   extraEnv: Record<string, string> = {},
   cwd = P.support,
   input?: string,
+  signal?: AbortSignal,
 ): Promise<RunResult> {
   return new Promise(resolve => {
     const out: Buffer[] = [],
       err: Buffer[] = [];
     let p: ChildProcessByStdio<Writable | null, Readable, Readable>;
+    if (signal?.aborted)
+      return resolve({ code: -1, out: Buffer.alloc(0), err: Buffer.from('Stopped before it began.') });
     try {
       fs.mkdirSync(cwd, { recursive: true }); // the folder we run in has to exist (a fresh install, or a test)
     } catch {}
@@ -86,15 +90,21 @@ export function run(
     // EPIPE, and a stream error nobody listens to would crash the host.
     p.stdin?.on('error', () => {});
     p.stdin?.end(input);
-    const killer = setTimeout(() => p.kill('SIGTERM'), timeout * 1000);
+    const stop = () => p.kill('SIGTERM');
+    const killer = setTimeout(stop, timeout * 1000);
+    signal?.addEventListener('abort', stop, { once: true });
+    const ended = () => {
+      clearTimeout(killer);
+      signal?.removeEventListener('abort', stop);
+    };
     p.stdout.on('data', (d: Buffer) => out.push(d));
     p.stderr.on('data', (d: Buffer) => err.push(d));
     p.on('error', e => {
-      clearTimeout(killer);
+      ended();
       resolve({ code: -1, out: Buffer.concat(out), err: Buffer.from(e.message) });
     });
     p.on('close', code => {
-      clearTimeout(killer);
+      ended();
       resolve({ code, out: Buffer.concat(out), err: Buffer.concat(err) });
     });
   });

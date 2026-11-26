@@ -191,12 +191,16 @@ export type Ops = {
       /** Pictures and text files added to this message; the host checks them against src/shared/askFiles.ts. */
       files?: AskFile[];
       plan?: PlanAsk;
+      /** Made by the window, so askStop can name this ask. Without one it can't be stopped. */
+      id?: string;
       /** Myra's model and effort for this call; without one, or one the provider doesn't list, Claude Code uses its own
        *  default. The other calls to Claude Code take it too. */
       myraModel?: ModelChoice;
     };
     result: string;
   };
+  // kills the Claude Code running the ask with this id; false when none is running. That ask still ends, with an error
+  askStop: { args: { id: string }; result: boolean };
   rewrite: {
     args: { text: string; how: string; title: string; around: string; myraModel?: ModelChoice };
     result: string;
@@ -304,6 +308,9 @@ export type Ops = {
     };
     result: { kind: 'started'; id: string } | { kind: 'busy' };
   };
+  // kills the Claude Code of the build with this id (the one protoBuild answered); false when none is running. The build
+  // ends with an error event that says the person stopped it, with the files it had changed
+  protoBuildStop: { args: { id: string }; result: boolean };
   // part of the window as a PNG data: URL, for a wireframe's picture
   captureArea: { args: { x: number; y: number; w: number; h: number }; result: string };
   // when: seconds since 1970 of the last commit touching it, 0 when it has none

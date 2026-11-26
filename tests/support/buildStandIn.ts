@@ -26,7 +26,9 @@ export function writeBuildStandIn(file: string, work: string) {
     answer = path.join(work, 'answer.json'),
     explained = path.join(work, 'explains.log'),
     explaining = path.join(work, 'explain.json'),
-    held = path.join(work, 'explain-held');
+    held = path.join(work, 'explain-held'),
+    askPid = path.join(work, 'ask.pid'),
+    buildPid = path.join(work, 'build.pid');
   // the nth wait goes on once gate-n exists, so a release that comes before its wait isn't lost
   const gate = (n: number) => path.join(work, `gate-${n}`);
   fs.mkdirSync(work, { recursive: true });
@@ -52,6 +54,7 @@ if (process.argv.includes('--tools')) {
   })();
 } else if (!process.argv.includes('stream-json')) {
   fs.appendFileSync(${JSON.stringify(asks)}, JSON.stringify(prompt) + '\\n');
+  fs.writeFileSync(${JSON.stringify(askPid)}, String(process.pid));
   const told = fs.existsSync(${JSON.stringify(answer)}) ? JSON.parse(fs.readFileSync(${JSON.stringify(answer)}, 'utf8')) : null;
   setTimeout(
     () => say({ type: 'result', is_error: false, result: JSON.stringify(told ? told.reply : { say: 'ok' }) }),
@@ -59,6 +62,7 @@ if (process.argv.includes('--tools')) {
   );
 } else {
   fs.appendFileSync(${JSON.stringify(builds)}, JSON.stringify(prompt) + '\\n');
+  fs.writeFileSync(${JSON.stringify(buildPid)}, String(process.pid));
   const s = JSON.parse(fs.readFileSync(${JSON.stringify(script)}, 'utf8'));
   // an app that doesn't stop Claude Code as it quits, such as one from before builds were stopped, would otherwise wait
   // on this stand-in for ever: it leaves once that app has gone
@@ -107,6 +111,11 @@ if (process.argv.includes('--tools')) {
     release: () => fs.writeFileSync(gate(++released), ''),
     // her reply to every question from now on, as Myra's JSON, given `ms` after she is asked
     answer: (reply: Record<string, unknown>, ms = 0) => fs.writeFileSync(answer, JSON.stringify({ reply, ms })),
+    // the process id of the last question's or build's Claude Code, or 0 before one has run
+    pid(kind: 'ask' | 'build') {
+      const f = kind === 'ask' ? askPid : buildPid;
+      return fs.existsSync(f) ? Number(fs.readFileSync(f, 'utf8')) : 0;
+    },
     // how many files this build has reported so far
     wrote: () => (fs.existsSync(wrote) ? Number(fs.readFileSync(wrote, 'utf8')) : 0),
     // every question's prompt, oldest first
@@ -131,6 +140,15 @@ if (process.argv.includes('--tools')) {
         : [],
   };
 }
+
+/** Whether the process is still running. One that has ended but not been reaped still has a /proc entry, in state Z. */
+export const alive = (pid: number) => {
+  try {
+    return !/\) [ZX] /.test(fs.readFileSync(`/proc/${pid}/stat`, 'utf8'));
+  } catch {
+    return false;
+  }
+};
 
 /** The stand-in where the app launched with `claude: true` finds Claude Code. */
 export const buildStandIn = (l: Launched) =>
