@@ -66,7 +66,8 @@ export function fitRanked<T>(items: readonly T[], room: number, cost: (t: T) => 
 
 const PART_KINDS = ['request', 'cards', 'pictures', 'errors', 'design', 'myra', 'board', 'chat', 'files'] as const;
 export type PartKind = (typeof PART_KINDS)[number];
-export type Part = { kind: PartKind; tokens: number; count?: number };
+/** cut: a text part sent shorter than it is, as a long design.md can be on a small window. */
+export type Part = { kind: PartKind; tokens: number; count?: number; cut?: true };
 /** What one build or question was sent, against the window it had. Ids are card ids. left: cards left out to fit;
  *  pictures: cards whose picture was left out to fit; shortened: cards sent with their words cut short; unseen:
  *  wireframe screens that weren’t in view, so no picture could be taken; tooBig: pictures too big to send. */
@@ -91,8 +92,9 @@ function readPart(x: unknown): Part[] {
   if (!isRecord(x) || !isCount(x.tokens)) return [];
   const kind = PART_KINDS.find(k => k === x.kind);
   if (!kind) return [];
-  if (x.count === undefined) return [{ kind, tokens: x.tokens }];
-  return isCount(x.count) ? [{ kind, tokens: x.tokens, count: x.count }] : [];
+  const cut: { cut?: true } = x.cut === true ? { cut: true } : {};
+  if (x.count === undefined) return [{ kind, tokens: x.tokens, ...cut }];
+  return isCount(x.count) ? [{ kind, tokens: x.tokens, count: x.count, ...cut }] : [];
 }
 
 /** A use from a board file: undefined without a window or its parts. A part that is damaged drops alone, so one odd
@@ -137,6 +139,19 @@ export function readList(u: ContextUse): string {
   return joined(words);
 }
 
+// what a text part is called in a line about it being shortened
+const TEXT_NAMES: Record<PartKind, string> = {
+  request: 'The request',
+  cards: 'The cards',
+  pictures: 'The pictures',
+  errors: 'The preview errors',
+  design: 'design.md',
+  myra: 'myra.md',
+  board: 'The board',
+  chat: 'The chat so far',
+  files: 'The added files',
+};
+
 /** One line for each thing that was given up to fit, so a cut is never silent. */
 export function leftWords(u: ContextUse): string[] {
   const lines: string[] = [],
@@ -154,10 +169,12 @@ export function leftWords(u: ContextUse): string[] {
   }
   if (short) lines.push(`${counted(short, 'card')} ${short === 1 ? 'was' : 'were'} shortened to fit`);
   if (unseen) {
-    const tail = unseen === 1 ? 'wasn’t in view, so it went' : 'weren’t in view, so they went';
+    const tail = unseen === 1 ? 'wasn’t in view, so its layout went' : 'weren’t in view, so their layouts went';
     lines.push(`${counted(unseen, 'screen')} ${tail} without a picture`);
   }
   if (tooBig) lines.push(`${counted(tooBig, 'picture')} ${tooBig === 1 ? 'was' : 'were'} too big to send`);
+  const cutText = u.parts.filter(p => p.cut).map(p => TEXT_NAMES[p.kind]);
+  if (cutText.length) lines.push(`${joined(cutText)} ${cutText.length === 1 ? 'was' : 'were'} shortened to fit`);
   return lines;
 }
 

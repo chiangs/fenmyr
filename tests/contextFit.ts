@@ -259,12 +259,12 @@ assert.deepEqual(
 );
 assert.deepEqual(
   leftWords({ ...empty, unseen: ofIds(1) }),
-  ['1 screen wasn’t in view, so it went without a picture'],
+  ['1 screen wasn’t in view, so its layout went without a picture'],
   'one screen unseen',
 );
 assert.deepEqual(
   leftWords({ ...empty, unseen: ofIds(2) }),
-  ['2 screens weren’t in view, so they went without a picture'],
+  ['2 screens weren’t in view, so their layouts went without a picture'],
   'some screens unseen',
 );
 assert.deepEqual(leftWords({ ...empty, tooBig: ofIds(1) }), ['1 picture was too big to send'], 'one picture too big');
@@ -278,7 +278,7 @@ assert.deepEqual(
   [
     '1 picture and 2 cards were left out to fit',
     '1 card was shortened to fit',
-    '2 screens weren’t in view, so they went without a picture',
+    '2 screens weren’t in view, so their layouts went without a picture',
     '1 picture was too big to send',
   ],
   'every case at once is one line each, in order',
@@ -300,4 +300,18 @@ const words: [Part, string][] = [
   [{ kind: 'pictures', tokens: 40 }, 'Pictures · about 40 tokens'],
 ];
 for (const [p, expected] of words) assert.equal(partWords(p), expected, `${p.kind} reads in words`);
+// a text part sent shorter than it is says so, and keeps saying so from a board file
+const cutDesign: ContextUse = { ...empty, parts: [{ kind: 'design', tokens: 10, cut: true }] };
+assert.deepEqual(leftWords(cutDesign), ['design.md was shortened to fit'], 'one shortened text part');
+assert.deepEqual(
+  leftWords({ ...empty, parts: [{ kind: 'errors', tokens: 5, cut: true }, ...cutDesign.parts] }),
+  ['The preview errors and design.md were shortened to fit'],
+  'two shortened text parts in one line',
+);
+assert.deepEqual(readContextUse(cutDesign)?.parts, cutDesign.parts, 'cut survives a board file');
+assert.deepEqual(
+  readContextUse({ ...cutDesign, parts: [{ kind: 'design', tokens: 10, cut: 'yes' }] })?.parts,
+  [{ kind: 'design', tokens: 10 }],
+  'a cut that is not true reads as not cut',
+);
 console.log('CONTEXT FIT OK');
