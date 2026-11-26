@@ -1,12 +1,13 @@
 import { type BuildEvent, readBuildEvent } from '../../shared/build.ts';
 import { rankCards } from '../../shared/contextFit.ts';
-import type { Board, Card } from '../../shared/model.ts';
+import type { Board } from '../../shared/model.ts';
 import { uid } from '../core/base.ts';
 import { appState, session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import { react } from '../myra/react.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { rootOf } from '../repo/codeFolder.ts';
+import { brief, screensOf } from './brief.ts';
 import { refreshPanes } from './buildButtons.ts';
 import { checkComing, checkNewest } from './buildCheck.ts';
 import { asked, ended, endedLost, newestErrors, redrawBlock, redrawNewest, started } from './buildRecord.ts';
@@ -33,28 +34,6 @@ import { beforeBuild } from './sync.ts';
 // her explanation follows, and the code, the preview and the git bar catch up.
 type End = Extract<BuildEvent, { type: 'done' | 'error' }>;
 
-const round = Math.round;
-
-// A screen's pieces mean little without where they sit, and a picture of the screen can't be taken when it isn't in
-// view, so each screen sends its size and each piece its place and size inside it, in px.
-function layout(c: Card, screens: ReadonlyMap<string, Card>) {
-  if (c.type === 'frame') return { size: { w: round(c.w), h: round(c.h) } };
-  const screen = c.onFrame ? screens.get(c.onFrame) : undefined;
-  if (!screen) return {};
-  return { at: { x: round(c.x - screen.x), y: round(c.y - screen.y), w: round(c.w), h: round(c.h) } };
-}
-
-// what the builder reads from the board: the selected cards, or all of them, without positions or styling, but for a
-// wireframe's layout
-const brief = (c: Card, screens: ReadonlyMap<string, Card>) => ({
-  ...Object.fromEntries(
-    Object.entries(c).filter(
-      ([k, v]) => !['x', 'y', 'w', 'h', 'r', 'rot', 'color'].includes(k) && v !== '' && v != null,
-    ),
-  ),
-  ...layout(c, screens),
-});
-
 // `cards`: the selection the request was sent with, or all of them when it was empty; null reads the selection now;
 // `brought`: the cards a new prototype brought, and none when it brought none. `synced`: the repo was checked against
 // GitHub just now (beforeBuild), so this is the go-ahead. The request waits its turn, so what its build needs from the
@@ -72,7 +51,7 @@ export async function startBuild(
   const sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
     picked = b.cards.filter(c => sel.has(c.id));
   const ranked = rankCards(picked.length || (cards && 'brought' in cards) ? picked : b.cards, sel, b.links),
-    screens = new Map(b.cards.filter(c => c.type === 'frame').map(c => [c.id, c]));
+    screens = screensOf(b.cards);
   const { dir, stack, purpose = '', device = '' } = b.proto,
     build = uid();
   const w: Waiting = {

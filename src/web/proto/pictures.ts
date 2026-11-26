@@ -52,7 +52,7 @@ async function screen(c: Card) {
   return Fenmyr.captureArea({ x: r.left, y: r.top, w: r.width, h: r.height });
 }
 
-const hasPicture = (c: Card) => (c.type === 'image' ? !!c.src : c.type === 'ink' || c.type === 'frame');
+export const hasPicture = (c: Card) => (c.type === 'image' ? !!c.src : c.type === 'ink' || c.type === 'frame');
 
 const pictureOf = (c: Card) =>
   c.type === 'image' && c.src ? imageOf(c.src) : c.type === 'ink' ? drawing(c) : c.type === 'frame' ? screen(c) : null;
