@@ -5,7 +5,7 @@ import path from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain, Menu, protocol, session, shell, type WebContents } from 'electron';
 import type { HostEvents, Ops } from '../shared/ops.ts';
 import { appBuild } from './appBuild.ts';
-import { startBuild, undoBuild, unlessBuilding } from './build.ts';
+import { startBuild, stopBuild, undoBuild, unlessBuilding } from './build.ts';
 import * as claude from './claude.ts';
 import { stopCodeAgents } from './claudeCode.ts';
 import { explainCode } from './explain.ts';
@@ -248,6 +248,7 @@ const OPS = {
     return d;
   },
   ask: a => claude.ask(a),
+  askStop: a => claude.askStop(text(a.id)),
   rewrite: a => claude.rewrite(a),
   connections: () => claude.connections(),
   models: () => listModels(),
@@ -310,6 +311,7 @@ const OPS = {
   },
   previewPage: a => keepPage(text(a.html)),
   protoBuild: a => startBuild(a, e => send('protoBuild', e)),
+  protoBuildStop: a => stopBuild(text(a.id)),
   captureArea: async a => {
     const r = { x: Number(a.x) || 0, y: Number(a.y) || 0, width: Number(a.w) || 0, height: Number(a.h) || 0 };
     if (r.width < 4 || r.height < 4) throw new Error('Nothing to capture there.');

@@ -294,6 +294,10 @@ const browser: Omit<FenmyrApi, 'native' | 'platform'> = {
     } catch (_e) {}
     return { title: host, desc: url, image: '' };
   },
+  // the pretend Myra answers on her own, so there is nothing running to stop
+  async askStop() {
+    return false;
+  },
   // a pretend Myra for the browser: she still tidies things up so the canvas can be tried without the app
   async ask(prompt: string, sent: Ops['ask']['args']['board']) {
     await new Promise(r => setTimeout(r, 900));
@@ -360,6 +364,7 @@ const nativeApi = {
     confirmed = false,
     opts: Partial<Ops['ask']['args']> = {},
   ) => call('ask', { prompt, board, confirmed, ...opts }),
+  askStop: (id: string) => call('askStop', { id }),
   saveMedia: (blob: Blob, onProgress?: Progress) => saveMediaNative(blob, onProgress),
   mediaURL: async (src: string) => src,
   connections: () => call('connections'),

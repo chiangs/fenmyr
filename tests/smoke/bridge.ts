@@ -76,7 +76,9 @@ export async function bridge(t: Smoke) {
     const conn = await Fenmyr.connections(),
       models = await Fenmyr.models(),
       ask = await Fenmyr.ask('sort these', { cards: [], n: Infinity }, false, { mobbin: true, higgs: false }),
-      usage2 = (await Fenmyr.usage()).today;
+      usage2 = (await Fenmyr.usage()).today,
+      // nothing is running under these ids, so there is nothing to stop
+      stopNone = [await Fenmyr.askStop('none'), await Fenmyr.protoBuildStop('none')];
     // a real webm voice memo, recorded from a tone, goes through the WAV conversion
     const ac = new AudioContext(),
       osc = ac.createOscillator(),
@@ -125,6 +127,7 @@ export async function bridge(t: Smoke) {
       models,
       ask,
       usage2,
+      stopNone,
       memoType: rec.mimeType,
       speech2,
       transcribe,
@@ -177,6 +180,7 @@ export async function bridge(t: Smoke) {
   });
   t.check('ask', typeof r.ask === 'string' && JSON.parse(r.ask).say === 'hi from fake claude', r.ask);
   t.check('usage', r.usage2.asks === 1 && r.usage2.tokensIn === 15, r.usage2);
+  t.check('stopNone', JSON.stringify(r.stopNone) === '[false,false]', r.stopNone);
   t.checkAll('prompt', {
     question: asked.includes('The person asked you: sort these'),
     icons: asked.includes('Icons are names from this list'),
