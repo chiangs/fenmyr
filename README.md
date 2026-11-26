@@ -1,6 +1,5 @@
 <p align="center">
   <img src="assets/icon.png" width="128" alt="Fenmyr's icon">
-  <!-- 🎞 Optional: Myra waving (assets/readme/myra.gif, rendered from her sprite) beside or in place of the icon. -->
 </p>
 
 <h1 align="center">Fenmyr</h1>
@@ -19,6 +18,8 @@ A canvas for growing ideas, from the first note to a working prototype, with Myr
 <!-- 📸 S1: replace this cover with a <picture> holding assets/readme/hero-light.png and hero-dark.png. -->
 <p align="center"><img src="assets/readme-cover.jpg" width="760" alt="A Fenmyr board with notes in several colours, a checklist and Myra in the corner"></p>
 
+<img src="assets/readme/myra-hello.png" align="right" width="102" alt="Myra, a pixel cloudberry, hops and beams">
+
 Fenmyr is a free, open-source canvas for Linux and the Mac. Spread notes, pictures, links, checklists, docs and wireframes across an endless board, then ask Myra, a pixel cloudberry who thinks with Claude Code on your computer, to sort, plan and build. When an idea is ready, a prototype board turns its cards into a working app, kept in your own git repo.
 
 Your boards are plain files on your computer. Fenmyr needs no account, and its AI is optional: it runs only when you ask.
@@ -27,9 +28,7 @@ Your boards are plain files on your computer. Fenmyr needs no account, and its A
 
 ## Why Fenmyr
 
-<!-- ✦ Optional: a small cloudberry mark from Fenmyr's icon set beside each heading below (assets/readme/mark-*.svg). -->
-
-### From idea to prototype
+### <img src="assets/readme/prototype.svg" width="22" height="22" alt=""> From idea to prototype
 
 <!-- 📸 S2: a prototype board with the preview at a phone width and the code pane open. 🎞 Better: a 5–8 s GIF of Point opening the code behind a button. -->
 
@@ -40,7 +39,7 @@ Make a board into a prototype board, and Myra builds a working React and Tailwin
 - **Keep what works.** Every build can be undone. A capture puts a picture of the preview on the board, tied to the commit it shows.
 - **Git, explained.** The code lives in your project's own repo, under `prototypes/`. The git bar commits, pushes and pulls, and a project can link to a GitHub repo or make one. Myra explains each git step in plain words, and waits for your yes before she installs a package, commits, pushes or pulls.
 
-### Myra shows her work
+### <img src="assets/readme/myra.svg" width="22" height="22" alt=""> Myra shows her work
 
 <!-- 📸 S3: a reply showing what changed with its Undo, the "Myra sees" strip, and a dashed plan on the board behind. -->
 
@@ -51,7 +50,7 @@ Myra reads your board and answers in the chat beside it.
 - After a reply she lists what changed, with **Show on board** and one **Undo** for the whole reply. The notes and pages she read come back as links.
 - Type **/** for commands that need no AI at all: `/find`, `/tag`, `/tidy`, `/due`, `/timer`, `/template`, `/board` and more.
 
-### Yours, on your computer
+### <img src="assets/readme/local.svg" width="22" height="22" alt=""> Yours, on your computer
 
 - Each board is one JSON file under `~/.local/share/fenmyr`. There's no account and no Fenmyr cloud.
 - Switch Myra's thinking off, and the canvas works with no AI and no internet.
@@ -59,11 +58,11 @@ Myra reads your board and answers in the chat beside it.
 - Export a board, a folder or a whole project as a zip, and open it on another computer.
 - When Myra builds, Claude Code works in the prototype's folder with file tools only: no shell and no web. Besides that folder, it reads only what the build hands it, such as pictures of the cards.
 
-### Made for the Linux desktop
+### <img src="assets/readme/linux.svg" width="22" height="22" alt=""> Made for the Linux desktop
 
 Fenmyr is built for Arch and CachyOS on Wayland, and runs on Hyprland, KDE Plasma, GNOME, Sway and niri. The board fills a window with no title bar, so your compositor's tiling works as it does for any other window. On the [Caelestia](docs/caelestia.md) shell it takes on your desktop's colours and changes with them. It runs on the Mac too.
 
-### Accessible by design
+### <img src="assets/readme/access.svg" width="22" height="22" alt=""> Accessible by design
 
 <!-- 📸 S4: the same small board in all six themes, as a 3×2 grid. 📸 S5: a close-up in Clear with colour names, outlined cards and the focus ring. -->
 
@@ -71,7 +70,7 @@ Fenmyr is built for Arch and CachyOS on Wayland, and runs on Hyprland, KDE Plasm
 - Clear and Lantern hold AAA contrast and outline every card. They also print each note's colour name, sit cards straight and thicken the focus ring, and each of those has a switch under Settings → Appearance → Accessibility.
 - Cards are named by their colour for screen readers, and F10 takes the keyboard to the bar over the selection. Every shortcut is listed in [Keyboard shortcuts](docs/shortcuts.md).
 
-### Built to last
+### <img src="assets/readme/built.svg" width="22" height="22" alt=""> Built to last
 
 Each of Fenmyr's rules comes with the check that enforces it.
 
@@ -222,13 +221,14 @@ Run `npm run check:fast` before each commit. [CONTRIBUTING.md](CONTRIBUTING.md) 
 
 ## Support Fenmyr
 
+<img src="assets/readme/myra-love.png" align="right" width="102" alt="Myra with heart eyes, hearts floating up">
+
 Fenmyr is free and made in spare hours. If it helps you think, you can help it grow:
 
 - **[Sponsor on GitHub](https://github.com/sponsors/chiangs)**
 - Star the repository, so others find it.
 - Try the beta and report what breaks.
 
-<!-- 🎞 Optional: Myra holding a cloudberry (assets/readme/myra-support.gif). -->
 
 ## Credits
 
@@ -242,4 +242,4 @@ The code is open source under the [MIT License](LICENSE). The names **Fenmyr** a
 
 ---
 
-<p align="center">Made with care by Stephen Chiang. Where ideas thrive.</p>
+<p align="center"><img src="assets/readme/mark.svg" width="28" height="28" alt=""><br>Made with care by Stephen Chiang. Where ideas thrive.</p>
