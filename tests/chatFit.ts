@@ -72,7 +72,7 @@ const { page } = l;
 const { sentFor } = askStandIn(l);
 
 type Sent = {
-  cards: { id: string; text: string; selected?: true }[];
+  cards: { id: string; text: string; selected?: true; cut?: true }[];
   unsorted: unknown[];
   cutToFit?: { left: number; shortened: number };
 };
@@ -129,6 +129,10 @@ assert(
   shortened.cards.every(c => c.text.length === 300),
   'each of them cut to 300 characters',
 );
+assert(
+  shortened.cards.every(c => c.cut === true),
+  'and marked cut, so she never writes back the start of its words as the whole',
+);
 assert.deepStrictEqual(shortened.cutToFit, { left: 0, shortened: 120 }, 'and she is told how many');
 assert.deepStrictEqual(
   await boxes(),
@@ -167,6 +171,15 @@ assert.deepStrictEqual(
 await page.evaluate(() => window.__fenmyr.selectOnly([]));
 await pressSelect();
 assert.deepStrictEqual(await selected(), medium.map(c => c.id).toSorted(), 'with its button');
+
+// a selected card always goes whole, so selecting a long card is how to send it whole
+await page.evaluate(() => window.__fenmyr.selectOnly(['n5']));
+await ask('one whole');
+const oneWhole = await sentBoard('one whole');
+const five = oneWhole.cards.find(c => c.id === 'n5');
+assert.strictEqual(five?.text.length, LONG, 'the selected long card went whole');
+assert.strictEqual(five?.cut, undefined, 'and is not marked cut');
+assert.deepStrictEqual(oneWhole.cutToFit, { left: 0, shortened: 119 }, 'while the other 119 were shortened');
 
 // a board too big even then: the selected card, last in the board and lowest on it, still goes
 await open('huge');

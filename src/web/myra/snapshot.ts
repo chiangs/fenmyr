@@ -57,6 +57,8 @@ export const brief = (c: Card, selected: ReadonlySet<string>, cut: boolean) =>
         hex: c.hex,
         url: 'url' in c ? c.url : undefined,
         selected: selected.has(c.id) || undefined,
+        // she sees only the start of its words, so she must never write them back whole: that would delete the rest
+        cut: (cut && isLong(c)) || undefined,
       };
 
 /** short: the cards whose words go cut short. drop: the cards left out, and the links that touch them. */

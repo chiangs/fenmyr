@@ -86,7 +86,9 @@ export type ContextUse = {
 
 export const usedTokens = (u: ContextUse) => u.parts.reduce((sum, p) => sum + p.tokens, 0);
 
-const MAX_IDS = 200;
+// A board file keeps every card a trimmed reply names, so the box after a reload names what it named live. The cap only
+// stops a damaged file from holding without end.
+export const MAX_IDS = 5_000;
 const isCount = (x: unknown): x is number => typeof x === 'number' && Number.isInteger(x) && x >= 0;
 const idsOf = (x: unknown) =>
   (Array.isArray(x) ? x : []).filter((s): s is string => typeof s === 'string').slice(0, MAX_IDS);
