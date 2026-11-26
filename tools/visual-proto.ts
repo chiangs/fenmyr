@@ -62,8 +62,9 @@ const seeded =
     if (made) await reopen(page);
   };
 
-// The prototype with its own rules and design: a rules card that says Ignore, so Repo rules is struck, and a design card
-// that doesn't, so all four of the strip's chips for a build's documents show. The cards are saved with the board, and a
+// The prototype with its own rules and design: a rules card that says Ignore and has no words, so its chip is "Repo rules
+// · ignored", dashed, and a design card with words, so its chip is "Repo + board design", a button. These are the two
+// longest chips the strip draws, so the strip is as full as the guides make it. The cards are saved with the board, and a
 // checkout that doesn't know them shows them as docs and the strip as it always was.
 const doc = (id: string, x: number, text: string, more: Partial<CardOf<'doc'>>): CardOf<'doc'> => ({
   id,
@@ -76,7 +77,7 @@ const doc = (id: string, x: number, text: string, more: Partial<CardOf<'doc'>>):
   ...more,
 });
 const guideCards = [
-  doc('gr', 0, 'Rules', { body: 'Use British English.', role: 'rules', ignoreRepo: true }),
+  doc('gr', 0, 'Rules', { role: 'rules', ignoreRepo: true }),
   doc('gd', 300, 'Design', { body: 'Square corners.', role: 'design' }),
 ];
 const guided: Step = async page => {

@@ -2590,7 +2590,7 @@ svg.ico .ico-d { color: var(--m-svg-ico-ico-d-ink); }
 .mcs-chip.out { border-style: dashed; border-color: currentColor; background: none; color: var(--ink-soft); cursor: pointer; }
 .mcs-chip.sel.out { border-color: var(--select); }
 .mcs-chip.out:hover { color: var(--ink); }
-/* a guide chip says what a build is sent: a repo file the board leaves out is dashed like a chip that is out, but offers no click, and the board's own open their card */
+/* a guide chip says where a document a build is sent comes from: one that only says the repo's file is ignored is dashed like a chip that is out, but offers no click, and one with the board's words opens their card */
 .mcs-chip.guide.out { cursor: default; }
 .mcs-chip.guide.out:hover { color: var(--ink-soft); }
 button.mcs-chip.guide { cursor: pointer; }

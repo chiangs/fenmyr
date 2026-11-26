@@ -127,8 +127,12 @@ const change = (edit: { add?: CardOf<'doc'>[]; ignore?: string[]; words?: Record
       }),
     edit,
   );
+// the strip has drawn n chips that say the repo's file is ignored, whether or not the board's own words replace it
 const ignored = (n: number) =>
-  page.waitForFunction(n => document.querySelectorAll('#mcSees .mcs-chip.guide.out').length === n, n);
+  page.waitForFunction(
+    n => document.querySelectorAll('#mcSees .mcs-chip.guide[data-tip*="is ignored"]').length === n,
+    n,
+  );
 
 await check('the rules card counts as its words and not as a card, whatever is selected', async () => {
   await page.waitForFunction(() =>

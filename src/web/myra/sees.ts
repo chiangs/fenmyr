@@ -27,12 +27,18 @@ export type Added =
   | { kind: 'note'; id: string; vault: string; rel: string; title: string }
   | { kind: 'paste'; id: string; text: string };
 
+/** Where the repo's file for a document stands: sent with a build, left out because the board's card says Ignore, or
+ *  there is no repo to send it from. */
+type GuideRepo = 'sent' | 'ignored' | 'none';
+
 /** One chip in the strip. `on`: it goes with the next message. The board always goes, so it has no `on`. A guide chip
- *  says what a build is sent, not the next message, so it isn't one the person can change: `from` the repo's file or the
- *  board's own, and `ignored` for a repo file the board leaves out. */
+ *  says where one document a build is sent comes from, not what the next message goes with, so it isn't one the person
+ *  can change: the repo's file (`repo`), the board's own words (`board`), or both. A document with neither has no chip,
+ *  which is why a chip with no repo has board words. */
 export type Chip =
   | { kind: 'board' }
-  | { kind: 'guide'; role: GuideRole; from: 'repo' | 'board'; ignored: boolean }
+  | { kind: 'guide'; role: GuideRole; repo: Exclude<GuideRepo, 'none'>; board: boolean }
+  | { kind: 'guide'; role: GuideRole; repo: 'none'; board: true }
   | { kind: 'selection'; key: string; label: string; on: boolean }
   | { kind: 'vault'; key: string; vault: string; name: string; on: boolean }
   | { kind: 'web'; key: string; on: boolean }
@@ -56,22 +62,15 @@ const ON_BY_DEFAULT: { [K in Exclude<Chip['kind'], 'board' | 'guide' | 'added'>]
 // The key holds the ids, so a different selection goes along again by itself.
 const selKey = (ids: readonly string[]) => `sel:${[...ids].sort().join(',')}`;
 
-const guide = (role: GuideRole, from: 'repo' | 'board', ignored: boolean): Chip => ({
-  kind: 'guide',
-  role,
-  from,
-  ignored,
-});
+function guideChip(g: GuideInput, role: GuideRole): Chip[] {
+  const { text, ignoreRepo } = g.board[role],
+    board = text !== '';
+  if (!g.repo) return board ? [{ kind: 'guide', role, repo: 'none', board }] : [];
+  return [{ kind: 'guide', role, repo: ignoreRepo ? 'ignored' : 'sent', board }];
+}
 
-/** The rules, then the design, each as the repo's file and then the board's own: the repo's when the project has a repo,
- *  struck when the board ignores it, and the board's when it has words. */
-export const guideChips = (g: GuideInput | null): Chip[] =>
-  g
-    ? GUIDE_ROLES.flatMap(role => [
-        ...(g.repo ? [guide(role, 'repo', g.board[role].ignoreRepo)] : []),
-        ...(g.board[role].text ? [guide(role, 'board', false)] : []),
-      ])
-    : [];
+/** The rules, then the design, each as one chip that says where its text comes from, if it has any. */
+export const guideChips = (g: GuideInput | null): Chip[] => (g ? GUIDE_ROLES.flatMap(role => guideChip(g, role)) : []);
 
 export function chipsOf(i: SeesInput, flips: Flips): Chip[] {
   const on = (kind: keyof typeof ON_BY_DEFAULT, key: string) => ON_BY_DEFAULT[kind] !== flips.has(key);
