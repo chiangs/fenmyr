@@ -246,6 +246,16 @@ export function openColumn(p: Foldable) {
   return new Promise<void>(done => setTimeout(done, slides ? MOVE_MS : 0));
 }
 
+// A column folded by something other than its arrow, such as a new prototype's board taking the code column's room.
+// The board has only just opened, so it folds at once.
+export function foldColumn(p: Foldable) {
+  const l = layout();
+  if (l.closed.includes(p)) return;
+  l.closed.push(p);
+  remember();
+  place();
+}
+
 /** Whether the window is too narrow for a column the person left open, so it stays folded. */
 export const crowdedOut = (p: Foldable) => !layout().closed.includes(p) && fit(layout(), innerWidth).includes(p);
 

@@ -3,7 +3,8 @@ import type { Group, Step } from './visual-myra.ts';
 
 // A new prototype board with its rules and design cards, and the doc view of its rules. A checkout from before the
 // cards makes a new prototype with Myra's notes only, so each step that needs a card leaves the screen as it is there.
-// The Code column is folded to give the board room, and Myra's bouncing stamp is taken off so no frame of it is caught.
+// The board opens with every card in view, folding the code column for room, and Myra's bouncing stamp is taken off so
+// no frame of it is caught.
 const newPrototype: Step = async page => {
   await page.evaluate(() =>
     document.querySelector<HTMLElement>('#boards .node.folder.proto .node-head [data-a="add"]')?.click(),
@@ -11,14 +12,10 @@ const newPrototype: Step = async page => {
   await page.fill('#npName', 'Guides');
   await page.click('#npOk');
   await page.waitForFunction(() => window.__fenmyr.curBoard()?.name === 'Guides');
-  await page.click('[data-fold="code"]');
   await page.evaluate(() => {
     const H = window.__fenmyr;
     H.board.cards = H.board.cards.filter(c => c.type !== 'stamp');
     H.renderAll();
-    // the third note and the two cards under it, from the right of the widgets
-    Object.assign(H.view, { x: 160, y: -408, z: 0.6 });
-    H.applyView();
   });
 };
 
