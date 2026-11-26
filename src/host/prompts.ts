@@ -277,13 +277,20 @@ ${around.slice(0, 1500)}
 
 Rules: keep their meaning, facts, names and numbers (never invent new facts). Keep their voice unless they asked to change it. Keep roughly the same shape (one paragraph stays one paragraph; a list stays a list, one item per line starting with "- "). Reply with ONLY the rewritten text: no quotes around it, no intro, no explanation, no markdown headings.`;
 
+// said after the cards when some were left out to fit the model's window, so the builder knows the board has more than
+// it was shown
+const cardsLeftOut = (n: number) =>
+  n > 0 ? `\n(${n} more ${n === 1 ? 'card was' : 'cards were'} left out to fit the model's context.)` : '';
+
 // What Claude Code is told when Myra builds or changes a prototype. Everything about the person's board arrives as data.
+// left: how many cards didn't fit.
 export const buildPrototype = (a: {
   request: string;
   stack: 'react' | 'html';
   purpose: string;
   device: string;
   cards: string;
+  left?: number;
   errors: string;
   design: string;
   myra: string;
@@ -311,7 +318,7 @@ ${a.request}
 WHAT THE PROTOTYPE IS FOR: ${a.purpose || 'not said'}
 
 THE CARDS ON THE BOARD (the ones selected, or all of them):
-${a.cards || 'none'}
+${a.cards || 'none'}${cardsLeftOut(a.left ?? 0)}
 
 PICTURES OF THEM (read each file to see the sketch, screenshot or wireframe; build what they show):
 ${a.pictures || 'none'}

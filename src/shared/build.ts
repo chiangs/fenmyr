@@ -1,3 +1,4 @@
+import { type ContextUse, readContextUse } from './contextFit.ts';
 import { isRecord } from './model.ts';
 import { readSources, type Sources } from './repos.ts';
 
@@ -7,10 +8,11 @@ export type FileDiff =
   | { kind: 'binary'; path: string };
 
 /** The host's protoBuild events, in order: start once the folder is saved, one edit per file tool call (a file can
- *  repeat), then done or error. The end repeats the renderer's names for the build and its board, so it lands in a
- *  window that didn't start it, such as one reloaded while it ran. */
+ *  repeat), then done or error. The start says what the builder was sent from the board and what was left out to fit
+ *  the model's window (use). The end repeats the renderer's names for the build and its board, so it lands in a window
+ *  that didn't start it, such as one reloaded while it ran. */
 export type BuildEvent =
-  | { id: string; type: 'start'; snapshot: string }
+  | { id: string; type: 'start'; snapshot: string; use?: ContextUse }
   | { id: string; type: 'edit'; file: string }
   | {
       id: string;
@@ -68,8 +70,9 @@ const nextOf = (x: unknown) =>
 // One reader per type. The mapped type makes a type without a reader fail the type check.
 const READ: { [K in BuildEvent['type']]: (x: Fields, id: string) => Extract<BuildEvent, { type: K }> | null } = {
   start: (x, id) => {
-    const snapshot = snapshotOf(x.snapshot);
-    return snapshot ? { id, type: 'start', snapshot } : null;
+    const snapshot = snapshotOf(x.snapshot),
+      use = readContextUse(x.use);
+    return snapshot ? { id, type: 'start', snapshot, ...(use ? { use } : {}) } : null;
   },
   edit: (x, id) => (typeof x.file === 'string' ? { id, type: 'edit', file: x.file } : null),
   done: (x, id) => {

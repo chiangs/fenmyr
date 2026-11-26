@@ -58,15 +58,24 @@ export async function startBuild(
     picked = b.cards.filter(c => sel.has(c.id));
   const chosen = (picked.length || (cards && 'brought' in cards) ? picked : b.cards).slice(0, 80);
   const { dir, stack, purpose = '', device = '' } = b.proto,
-    build = uid(),
-    briefs = JSON.stringify(chosen.map(brief));
+    build = uid();
   const w: Waiting = {
     build,
     board: b.id,
     root,
     request,
     cards: chosen.length,
-    args: { root, dir, stack, request, purpose, device, cards: briefs, build, board: b.id },
+    args: {
+      root,
+      dir,
+      stack,
+      request,
+      purpose,
+      device,
+      cards: chosen.map(c => ({ id: c.id, text: JSON.stringify(brief(c)) })),
+      build,
+      board: b.id,
+    },
     pictures: picturesOf(chosen),
     waited: waitsTurn(),
   };
@@ -132,7 +141,14 @@ async function pump() {
     redrawNewest(r);
     // The preview belongs to the open board. A board that is closed has only the errors its newest build's check kept.
     const errors = session.board?.id === w.board ? previewErrors() : await keptErrors(w.board);
-    const started = await Fenmyr.protoBuild({ ...w.args, errors, pictures: await w.pictures });
+    const started = await Fenmyr.protoBuild({
+      ...w.args,
+      errors,
+      pictures: await w.pictures,
+      unseen: [],
+      tooBig: [],
+      over: [],
+    });
     if (started.kind === 'started') {
       r.id = started.id;
       return;

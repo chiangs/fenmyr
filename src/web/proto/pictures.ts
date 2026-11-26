@@ -3,7 +3,7 @@ import { cardEl } from '../ui/dom.ts';
 
 // What the builder sees of the cards, not just their words: image cards as they are, drawings drawn out, and wireframe
 // screens captured as they look on the canvas. At most six, each small enough to send.
-type Picture = { name: string; data: string };
+type Picture = { id: string; name: string; data: string };
 const MAX_BYTES = 3_000_000;
 
 const asData = (blob: Blob) =>
@@ -56,7 +56,7 @@ export async function picturesOf(cards: Card[]): Promise<Picture[]> {
   for (const c of cards) {
     if (out.length >= 6) break;
     const data = await Promise.resolve(pictureOf(c)).catch(() => null);
-    if (data && data.length < MAX_BYTES) out.push({ name: `${c.type} ${c.name || c.text || c.id}`, data });
+    if (data && data.length < MAX_BYTES) out.push({ id: c.id, name: `${c.type} ${c.name || c.text || c.id}`, data });
   }
   return out;
 }

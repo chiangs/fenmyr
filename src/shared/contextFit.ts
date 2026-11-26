@@ -8,6 +8,9 @@ export const CHARS_PER_TOKEN = 2.5;
 export const PICTURE_TOKENS = 4_784;
 /** Assumed when the model isn't known, as with Claude Code's own default. */
 export const UNKNOWN_WINDOW = 200_000;
+/** The most pictures one build sends, however big the window: each is a file the builder opens, and every one has to
+ *  cross from the window to the host first. */
+export const MAX_PICTURES = 20;
 /** What Fenmyr sends from the board may fill this share. The rest is Claude Code's and Myra's instructions, the files a
  *  build reads, and the answer. */
 export const BOARD_SHARE = 0.25;
