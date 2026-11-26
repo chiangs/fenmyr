@@ -2927,11 +2927,11 @@ body.pr-dragging #pr-preview iframe { pointer-events: none; }
 body.calm .pc-mark { animation: none; }
 @media (prefers-reduced-motion: reduce) { .pc-mark { animation: none; } }
 body.proto .stage { left: var(--slot-l); top: var(--slot-t); width: var(--slot-w); height: var(--slot-h); right: auto; bottom: auto; }
-/* The board's column is narrow, so a doc on a prototype board opens beside it, over the preview and the code, and Full page takes the window. It slides out of sight, so it's hidden once it's out of the way. The stage stands above the panes for it, as it fills only its own column. */
+/* The board's column is narrow, so a doc on a prototype board opens beside it, over the preview, the code and the chat, and Full page takes the window. It slides out of sight, so it's hidden once it's out of the way. The stage stands above the panes for it, as it fills only its own column. */
 body.proto .stage { z-index: 6; }
-body.proto .docview { position: fixed; top: var(--slot-t); bottom: 0; right: auto; left: calc(var(--slot-l) + var(--slot-w) + 6px); width: min(680px, calc(100vw - var(--slot-l) - var(--slot-w) - 6px)); visibility: hidden; transition: transform .35s cubic-bezier(.2, .8, .3, 1), width .35s cubic-bezier(.2, .8, .3, 1), visibility 0s linear .35s; }
+body.proto .docview { position: fixed; top: var(--slot-t); bottom: 0; right: 0; left: calc(var(--slot-l) + var(--slot-w) + 6px); width: auto; visibility: hidden; transition: transform .35s cubic-bezier(.2, .8, .3, 1), left .35s cubic-bezier(.2, .8, .3, 1), visibility 0s linear .35s; }
 body.proto .docview.on { visibility: visible; transition-delay: 0s; }
-body.proto .docview.wide { top: 0; left: 0; width: 100vw; }
+body.proto .docview.wide { top: 0; left: 0; }
 body.proto.proto-canvas-folded .stage, body.proto.proto-canvas-folded .side, body.proto.proto-canvas-folded .tools, body.proto.proto-canvas-folded .mode-card, body.proto.proto-canvas-folded .dock { display: none; }
 /* one column of widgets beside the board, clear of the toolbar; it holds both sides' widgets, so it can scroll */
 body.proto .side { left: calc(var(--slot-l) + 14px); top: calc(var(--slot-t) + 14px); bottom: 84px; scrollbar-width: thin; }
