@@ -30,10 +30,11 @@ export type Running = {
 
 type Args = Ops['protoBuild']['args'];
 /** A request waiting its turn, with everything its build needs from its board, read while that board was open, since
- *  it may start on another. args: what the host is sent, but for the preview's errors, which are read when it starts. */
+ *  it may start on another. args: what the host is sent, but for the preview's errors, which are read when it starts, and
+ *  the pictures with the cards whose picture wasn't sent, which the pictures promise settles with. */
 export type Waiting = Pick<Running, 'build' | 'board' | 'root' | 'request' | 'cards'> & {
-  args: Omit<Args, 'errors' | 'pictures'>;
-  pictures: Promise<Args['pictures']>;
+  args: Omit<Args, 'errors' | 'pictures' | 'unseen' | 'tooBig' | 'over'>;
+  pictures: Promise<Pick<Args, 'pictures' | 'unseen' | 'tooBig' | 'over'>>;
   // it waited behind another build or a check, so a screen reader hears when it starts
   waited: boolean;
 };

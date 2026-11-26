@@ -9,7 +9,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { CodeAgent } from '../src/host/codeAgent.ts';
+import type { Untrusted } from '../src/host/util.ts';
 import { type BuildEvent, type FileDiff, readBuildEvent } from '../src/shared/build.ts';
+import type { Ops } from '../src/shared/ops.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-build-host-')));
 // the host keeps its own files under XDG_DATA_HOME, read when its modules load
@@ -29,15 +31,15 @@ fs.writeFileSync(path.join(src, 'old.ts'), 'x\ny\n');
 git('add', '-A');
 git('commit', '-qm', 'Start');
 
-// one build run to its end, with every event it sent
-function build(agent: CodeAgent, root = repo) {
+// one build run to its end, with every event it sent; `more` is what the window sends beside the request
+function build(agent: CodeAgent, root = repo, more: Untrusted<Ops['protoBuild']['args']> = {}) {
   const events: BuildEvent[] = [],
     all = Promise.withResolvers<BuildEvent[]>();
   const send = (e: BuildEvent) => {
     events.push(e);
     if (e.type === 'done' || e.type === 'error') all.resolve(events);
   };
-  if (startBuild({ root, dir, stack: 'react', request: 'Add a total' }, send, agent).kind === 'busy')
+  if (startBuild({ ...more, root, dir, stack: 'react', request: 'Add a total' }, send, agent).kind === 'busy')
     all.reject(new Error('The repo was busy.'));
   return all.promise;
 }
@@ -63,6 +65,17 @@ assert.deepStrictEqual(
   'a build starts, reports each edit, then ends',
 );
 assert(start?.type === 'start' && done?.type === 'done');
+assert.equal(
+  start.use?.window,
+  200_000,
+  'the start says what the builder was sent, on the window assumed with no model',
+);
+assert.deepStrictEqual(
+  start.use?.parts.find(p => p.kind === 'cards'),
+  { kind: 'cards', tokens: 0, count: 0 },
+  'with a cards part, even for no cards',
+);
+assert.deepStrictEqual(readBuildEvent(JSON.parse(JSON.stringify(start))), start, 'and the renderer’s parse keeps it');
 assert(
   git('for-each-ref', '--format=%(objectname)', 'refs/fenmyr/snapshots/').split('\n').includes(start.snapshot),
   'the start carries the snapshot kept under refs/fenmyr/snapshots/',
@@ -88,6 +101,50 @@ assert.deepStrictEqual(
   done,
   'the renderer’s parse keeps everything the host sends',
 );
+
+// the cards and pictures are read where they enter: a damaged entry drops alone, and what the window can't hold is said
+const prompts: string[] = [];
+const reads: CodeAgent = async job => {
+  prompts.push(job.prompt);
+  return 'Read.';
+};
+const big = { id: 'big', text: JSON.stringify({ id: 'big', text: 'x'.repeat(130_000) }) };
+const sent = await build(reads, repo, {
+  cards: [
+    { id: 'n1', text: '{"id":"n1","text":"Total first"}' },
+    big,
+    { id: 'n2' },
+    'n3',
+    { id: 4, text: 'x' },
+    { id: 'n5', text: '{"id":"n5"}' },
+  ],
+  pictures: [
+    { id: 'n1', name: 'image logo', data: `data:image/png;base64,${PNG.toString('base64')}` },
+    { id: 'n5', name: 'sketch', data: 'not a data url' },
+    { id: 'n6', name: 'sketch' },
+  ],
+  unseen: ['s1', 3],
+  tooBig: ['t1'],
+  over: ['o1'],
+});
+const [kept] = sent;
+assert(kept?.type === 'start' && kept.use, 'a build with cards starts with its use');
+assert.deepStrictEqual(kept.use.left, ['big'], 'the card too big for the window is left out, by its id');
+assert.deepStrictEqual(
+  [kept.use.parts.find(p => p.kind === 'cards')?.count, kept.use.parts.find(p => p.kind === 'pictures')?.count],
+  [2, 1],
+  'a damaged card or picture drops alone, so two cards and one picture were sent',
+);
+assert.deepStrictEqual(
+  [kept.use.pictures, kept.use.unseen, kept.use.tooBig],
+  [['o1'], ['s1'], ['t1']],
+  'what the window couldn’t take a picture of is kept, and only as ids',
+);
+assert(
+  prompts[0]?.includes('{"id":"n1","text":"Total first"},\n{"id":"n5"}]\n(1 more card was left out to fit'),
+  'the builder gets the cards that fit, and is told how many it was not given',
+);
+assert.match(prompts[0] ?? '', /PICTURES OF THEM[^\n]*\n\S+1\.png \(image logo\)\n/, 'and the picture');
 
 const fails: CodeAgent = async ({ cwd }, edited) => {
   fs.appendFileSync(path.join(cwd, 'src/App.tsx'), 'f\n');

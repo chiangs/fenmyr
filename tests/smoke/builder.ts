@@ -35,9 +35,12 @@ export async function builder(t: Smoke) {
         request: 'Say it was built',
         purpose: '',
         device: '',
-        cards: '[]',
+        cards: [],
         errors: '',
         pictures: [],
+        unseen: [],
+        tooBig: [],
+        over: [],
         build: '',
         board: '',
       });

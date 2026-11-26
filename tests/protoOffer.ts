@@ -252,7 +252,7 @@ try {
     await tap('Start and build');
     await until(() => lines(builds).length === n + 1, 'the build starts');
     const prompt = lines(builds).at(-1)?.prompt ?? '';
-    assert.match(prompt, /THE CARDS ON THE BOARD \(the ones selected, or all of them\):\n\[\]\n/, 'with no cards');
+    assert.match(prompt, /THE CARDS ON THE BOARD \(the ones selected, or all of them[^)]*\):\nnone\n/, 'with no cards');
     assert.ok(!prompt.includes('A new prototype? Exciting!'), 'not even her welcome notes');
     await until(async () => !!(await lineOf('I built it.')), 'the build lands');
   });

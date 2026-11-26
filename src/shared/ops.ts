@@ -282,10 +282,17 @@ export type Ops = {
       request: string;
       purpose: string;
       device: string;
-      cards: string;
+      // ranked, most worth keeping first, each as the builder reads it, in JSON; the host keeps as many as the model's
+      // window has room for
+      cards: { id: string; text: string }[];
       errors: string;
-      // what the sketches, screenshots and wireframes look like, as data: URLs
-      pictures: { name: string; data: string }[];
+      // what the sketches, screenshots and wireframes look like, as data: URLs, ranked as the cards are; id: the card's
+      pictures: { id: string; name: string; data: string }[];
+      // card ids: screens out of view, so no picture was taken; pictures too big to send; and cards past the most
+      // pictures a build takes, whose picture wasn't
+      unseen: string[];
+      tooBig: string[];
+      over: string[];
       // the renderer's names for the build and its board, which its end repeats
       build: string;
       board: string;

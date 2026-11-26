@@ -63,9 +63,12 @@ try {
       request: 'Build it',
       purpose: '',
       device: '',
-      cards: '[]',
+      cards: [],
       errors: '',
       pictures: [],
+      unseen: [],
+      tooBig: [],
+      over: [],
       build: '',
       board: '',
     });

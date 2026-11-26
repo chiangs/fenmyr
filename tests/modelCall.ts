@@ -64,9 +64,12 @@ await page.evaluate(async () => {
     request: 'r',
     purpose: 'p',
     device: 'phone',
-    cards: '',
+    cards: [],
     errors: '',
     pictures: [],
+    unseen: [],
+    tooBig: [],
+    over: [],
     build: 'b',
     board: 'b',
   }).catch(none);

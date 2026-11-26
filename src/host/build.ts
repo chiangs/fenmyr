@@ -3,23 +3,53 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { BuildEvent } from '../shared/build.ts';
+import { windowOf } from '../shared/contextFit.ts';
 import type { Ops } from '../shared/ops.ts';
 import { PROTO_DIR, splitBuildReply } from '../shared/repos.ts';
+import { fitBuild } from './buildFit.ts';
 import { claudeCode, quitting } from './claudeCode.ts';
 import type { CodeAgent } from './codeAgent.ts';
 import { status } from './git.ts';
-import { parseChoice } from './models.ts';
+import { listModels, parseChoice } from './models.ts';
 import * as prompts from './prompts.ts';
 import { filesSince, installed, snapshot, undo } from './prototypes.ts';
-import { isRecord, text, type Untrusted } from './util.ts';
+import { isRecord, strings, text, type Untrusted } from './util.ts';
 
+// A stray huge file must not be read whole. This is only the edge of what is read: fitBuild makes the real cut, by what
+// the model's window has room for.
+const MAX_SHARED = 2_000_000;
 const shared = (repo: string, name: string) => {
   try {
-    return fs.readFileSync(path.join(repo, name), 'utf8').slice(0, 20_000);
+    const fd = fs.openSync(path.join(repo, name), 'r');
+    try {
+      const size = Math.min(fs.fstatSync(fd).size, MAX_SHARED),
+        buf = Buffer.alloc(size);
+      return buf.toString('utf8', 0, fs.readSync(fd, buf, 0, size, 0));
+    } finally {
+      fs.closeSync(fd);
+    }
   } catch {
     return '';
   }
 };
+
+// the cards and pictures a window sent, each parsed where it enters: a damaged one drops alone, so one odd entry doesn't
+// cost the build the others
+const cardsOf = (x: unknown) =>
+  (Array.isArray(x) ? x : []).flatMap(c =>
+    isRecord(c) && typeof c.id === 'string' && typeof c.text === 'string' ? [{ id: c.id, text: c.text }] : [],
+  );
+const DATA_URL = /^data:image\/(png|jpeg|webp|gif);base64,(.+)$/;
+const picturesOf = (x: unknown) =>
+  (Array.isArray(x) ? x : []).flatMap(p =>
+    isRecord(p) &&
+    typeof p.id === 'string' &&
+    typeof p.name === 'string' &&
+    typeof p.data === 'string' &&
+    DATA_URL.test(p.data)
+      ? [{ id: p.id, name: p.name, data: p.data }]
+      : [],
+  );
 
 // changed paths outside the prototype's folder, so a change Myra made there can't go unnoticed
 const outside = async (repo: string, dir: string) => {
@@ -74,30 +104,49 @@ export function startBuild(
     const before = new Set(await outside(s.root, dir));
     const snap = await snapshot(s.root, dir);
     saved = { repo: s.root, snapshot: snap };
-    send({ id, type: 'start', snapshot: snap });
+    // the window decides how much of the board the builder is sent, and the start says what that was
+    const model = await parseChoice(a.myraModel);
+    const protos = path.join(s.root, 'prototypes');
+    const fit = fitBuild(
+      {
+        request: text(a.request),
+        purpose: text(a.purpose),
+        device: text(a.device),
+        errors: text(a.errors),
+        design: shared(protos, 'design.md'),
+        myra: shared(protos, 'myra.md'),
+        cards: cardsOf(a.cards),
+        pictures: picturesOf(a.pictures),
+        unseen: strings(a.unseen),
+        tooBig: strings(a.tooBig),
+        over: strings(a.over),
+      },
+      windowOf(await listModels(), model),
+    );
+    send({ id, type: 'start', snapshot: snap, use: fit.use });
     // the cards' pictures, saved where only this build reads them
     const shots = path.join(os.tmpdir(), `fenmyr-build-${id}`);
-    const pictures = (Array.isArray(a.pictures) ? a.pictures : []).slice(0, 8).flatMap((p, i) => {
-      const m = isRecord(p) ? text(p.data).match(/^data:image\/(png|jpeg|webp|gif);base64,(.+)$/) : null;
+    const pictures = fit.pictures.flatMap((p, i) => {
+      const m = p.data.match(DATA_URL);
       if (!m?.[2]) return [];
       fs.mkdirSync(shots, { recursive: true });
       const f = path.join(shots, `${i + 1}.${m[1] === 'jpeg' ? 'jpg' : m[1]}`);
       fs.writeFileSync(f, Buffer.from(m[2], 'base64'));
-      return [`${f} (${text(isRecord(p) ? p.name : '').slice(0, 80) || 'a picture'})`];
+      return [`${f} (${p.name.slice(0, 80) || 'a picture'})`];
     });
     const prompt = prompts.buildPrototype({
-      request: text(a.request).slice(0, 8000),
+      request: fit.request,
       stack: a.stack === 'html' ? 'html' : 'react',
-      purpose: text(a.purpose).slice(0, 500),
-      device: text(a.device).slice(0, 20),
-      cards: text(a.cards).slice(0, 30_000),
-      errors: text(a.errors).slice(0, 4000),
-      design: shared(path.join(s.root, 'prototypes'), 'design.md'),
-      myra: shared(path.join(s.root, 'prototypes'), 'myra.md'),
+      purpose: fit.purpose,
+      device: fit.device,
+      cards: fit.cards,
+      left: fit.use.left.length,
+      errors: fit.errors,
+      design: fit.design,
+      myra: fit.myra,
       packages: installed(s.root).join(', '),
       pictures: pictures.join('\n'),
     });
-    const model = await parseChoice(a.myraModel);
     const said = await agent(
       { cwd: path.join(s.root, dir), prompt, readable: pictures.length ? [shots] : [], access: 'edit', model },
       file => send({ id, type: 'edit', file }),

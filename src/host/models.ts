@@ -15,12 +15,12 @@ import {
 type Provider = { id: ProviderId; name: string; models: () => Promise<ModelEntry[]> };
 
 // Claude Code has no command that lists its models, so the table is Fenmyr's. Each one took every effort level in
-// Claude Code 2.1.330.
+// Claude Code 2.1.330, and the context windows are those in Anthropic's models overview.
 const CLAUDE: ModelEntry[] = [
-  { id: 'claude-opus-5-5', name: 'Opus 5.5', efforts: EFFORTS },
-  { id: 'claude-fable-5-2', name: 'Fable 5.2', efforts: EFFORTS },
-  { id: 'claude-sonnet-5-5', name: 'Sonnet 5.5', efforts: EFFORTS },
-  { id: 'claude-haiku-5-5', name: 'Haiku 5.5', efforts: EFFORTS },
+  { id: 'claude-opus-5-5', name: 'Opus 5.5', efforts: EFFORTS, context: 1_000_000 },
+  { id: 'claude-fable-5-2', name: 'Fable 5.2', efforts: EFFORTS, context: 1_000_000 },
+  { id: 'claude-sonnet-5-5', name: 'Sonnet 5.5', efforts: EFFORTS, context: 1_000_000 },
+  { id: 'claude-haiku-5-5', name: 'Haiku 5.5', efforts: EFFORTS, context: 1_000_000 },
 ];
 const PROVIDERS: Provider[] = [{ id: 'claude-code', name: 'Claude Code', models: async () => CLAUDE }];
 
