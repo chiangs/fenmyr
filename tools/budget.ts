@@ -2,13 +2,15 @@
 // files that skip type checking, `any`, `as` casts, files over the line limit, logic inside markup templates,
 // raw colours in the stylesheet that should come from a variable, and `body.dark` rules, which a theme's token set
 // should make unnecessary: a token that is one colour in light and another in dark replaces the pair of rules. Tests are
-// also counted for fixed sleeps (tools/sleeps.ts), which should wait on the page's state instead, and for a marker that
-// excuses a sleep without saying why.
+// also counted for fixed sleeps (tools/sleeps.ts), which should wait on the page's state instead, for a marker that
+// excuses a sleep without saying why, and for an async predicate given to waitForFunction (tools/asyncWaits.ts), which
+// Playwright doesn't await, so the wait ends at once.
 // Lower the budget after paying some down: node tools/budget.ts --write
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+import { findAsyncWaits } from './asyncWaits.ts';
 import { findSleeps, MARKER } from './sleeps.ts';
 
 const KINDS = [
@@ -21,6 +23,7 @@ const KINDS = [
   'darkRules',
   'fixedSleeps',
   'unexplainedSleeps',
+  'asyncWaits',
 ] as const;
 type Kind = (typeof KINDS)[number];
 type Counts = Record<Kind, number>;
@@ -69,6 +72,7 @@ function inspect(file: string): Finding[] {
     const { sleeps, bareMarkers } = findSleeps(sf);
     for (const s of sleeps) found.push({ file, line: s.line, kind: 'fixedSleeps' });
     for (const line of bareMarkers) found.push({ file, line, kind: 'unexplainedSleeps' });
+    for (const line of findAsyncWaits(sf)) found.push({ file, line, kind: 'asyncWaits' });
   }
   return found;
 }
@@ -117,6 +121,7 @@ const counts: Counts = {
   darkRules: 0,
   fixedSleeps: 0,
   unexplainedSleeps: 0,
+  asyncWaits: 0,
 };
 for (const f of findings) counts[f.kind]++;
 const raw: unknown = fs.existsSync(BUDGET) ? JSON.parse(fs.readFileSync(BUDGET, 'utf8')) : {};
@@ -134,6 +139,7 @@ const budget: Counts = {
   darkRules: saved('darkRules'),
   fixedSleeps: saved('fixedSleeps'),
   unexplainedSleeps: saved('unexplainedSleeps'),
+  asyncWaits: saved('asyncWaits'),
 };
 const keys = KINDS;
 
@@ -178,5 +184,10 @@ if (over.length) {
         `A sleep that is the point of the test takes "// ${MARKER}: <why>" on the line above it.`,
     );
   if (over.includes('unexplainedSleeps')) console.log(`A "// ${MARKER}" comment needs its reason after the colon.`);
+  if (over.includes('asyncWaits'))
+    console.log(
+      "waitForFunction doesn't await its predicate, so an async one ends the wait at once: " +
+        'poll a sync predicate that keeps the answer on the page.',
+    );
   process.exit(1);
 }

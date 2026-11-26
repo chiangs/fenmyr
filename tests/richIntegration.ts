@@ -188,16 +188,25 @@ const copy = async (ids: string[]) => {
   await page.keyboard.press('Escape');
   await page.evaluate(ids => window.__fenmyr.selectOnly(ids), ids);
   await page.evaluate(() => navigator.clipboard.writeText(''));
+  await page.evaluate(() => Reflect.set(window, 'copied', false));
   await page.keyboard.press('Control+c');
-  await page.waitForFunction(async () => {
-    try {
-      for (const item of await navigator.clipboard.read())
-        if (item.types.includes('text/plain') && (await (await item.getType('text/plain')).text()) !== '') return true;
-    } catch {
-      // a read that lands while the copy is still writing throws, and the next poll reads again
-    }
-    return false;
-  });
+  // waitForFunction doesn't await its predicate, so each poll starts a read and the next one looks at its answer
+  await page.waitForFunction(
+    () => {
+      void (async () => {
+        try {
+          for (const item of await navigator.clipboard.read())
+            if (item.types.includes('text/plain') && (await (await item.getType('text/plain')).text()) !== '')
+              Reflect.set(window, 'copied', true);
+        } catch {
+          // a read that lands while the copy is still writing throws, and the next poll reads again
+        }
+      })();
+      return Reflect.get(window, 'copied') === true;
+    },
+    undefined,
+    { polling: 100 },
+  );
   return clipboard();
 };
 let clip = await copy(['packing', 'plain']);
