@@ -10,6 +10,9 @@ export type FileDiff =
 /** What a build that the person stopped says as it ends, in the error event. The window tells it from a failure by it. */
 export const STOPPED_BY_YOU = 'You stopped this build.';
 
+/** True for the end of a build that the person stopped, as against one that failed or finished. */
+export const wasStopped = (e: BuildEvent) => e.type === 'error' && e.text === STOPPED_BY_YOU;
+
 /** The host's protoBuild events, in order: start once the folder is saved, one edit per file tool call (a file can
  *  repeat), then done or error. The start says what the builder was sent from the board and what was left out to fit
  *  the model's window (use). The end repeats the renderer's names for the build and its board, so it lands in a window

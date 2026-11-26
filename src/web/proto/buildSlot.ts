@@ -27,13 +27,17 @@ export type Running = {
   // the paths its edits named, first seen first, each once
   files: string[];
   job: Job;
+  // takes it off the list of what Stop ends, as soon as it has ended
+  off: () => void;
+  // Stop was pressed on it: the host's answer to protoBuild kills it by its id, or, if the host turned it away, drops it
+  stopped: boolean;
 };
 
 type Args = Ops['protoBuild']['args'];
 /** A request waiting its turn, with everything its build needs from its board, read while that board was open, since
  *  it may start on another. args: what the host is sent, but for the preview's errors, which are read when it starts, and
  *  the pictures with the cards whose picture wasn't sent, which the pictures promise settles with. */
-export type Waiting = Pick<Running, 'build' | 'board' | 'root' | 'request' | 'cards'> & {
+export type Waiting = Pick<Running, 'build' | 'board' | 'root' | 'request' | 'cards' | 'off'> & {
   args: Omit<Args, 'errors' | 'pictures' | 'unseen' | 'tooBig' | 'over'>;
   pictures: Promise<Pick<Args, 'pictures' | 'unseen' | 'tooBig' | 'over'>>;
   // it waited behind another build or a check, so a screen reader hears when it starts
@@ -88,13 +92,16 @@ export const firstWaiting = () => queue[0]?.build ?? null;
 /** Takes a board's waiting requests off the queue, or every one when no board is named, as when the board or the chats
  *  that showed them are gone and they can no longer be seen or cancelled. */
 export function dropWaiting(board?: string) {
-  for (let i = queue.length - 1; i >= 0; i--) if (!board || queue[i]?.board === board) queue.splice(i, 1);
+  for (let i = queue.length - 1; i >= 0; i--) {
+    if (board && queue[i]?.board !== board) continue;
+    queue.splice(i, 1)[0]?.off();
+  }
 }
 
 /** Takes a waiting request off the queue. False when it isn't waiting, as one that has started isn't. */
 export function cancel(build: string) {
   const i = queue.findIndex(w => w.build === build);
-  if (i >= 0) queue.splice(i, 1);
+  if (i >= 0) queue.splice(i, 1)[0]?.off();
   return i >= 0;
 }
 
