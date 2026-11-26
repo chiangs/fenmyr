@@ -1,4 +1,7 @@
 import { type BuildRecord, buildHead, buildState, fileLines } from '../../shared/build.ts';
+import { type ContextUse, leftWords, partWords, readList, shareWords } from '../../shared/contextFit.ts';
+import { fit } from '../canvas/handles.ts';
+import { selectOnly } from '../canvas/selection.ts';
 import { session } from '../core/state.ts';
 import type { Button, Mark, Piece } from '../myra/acts.ts';
 import { noteHeard } from '../myra/status.ts';
@@ -9,23 +12,60 @@ import { cancel, liveOf } from './buildSlot.ts';
 import { sourceButton } from './sources.ts';
 
 // A build's block in its prototype's chat, drawn from its record and, while it waits or runs here, how far it has got:
-// the head, a moving bar while it runs, how many cards it read, a line per file, how its preview check went, and the
-// cards its code came from.
+// the head, a moving bar while it runs, what the builder was given and how much of the model's context that took, a
+// line for each thing left out to fit, a line per file, how its preview check went, and the cards its code came from.
 const MAX_FROM = 4;
 
+// a record from before builds kept what they were sent, or one that hasn't started, only knows how many cards it read
 const cardsRead = (n: number) => (n ? `Read ${n} ${n === 1 ? 'card' : 'cards'}` : 'No cards to read');
+
+function readWords(u: ContextUse) {
+  const list = readList(u) || 'no cards';
+  return `Read ${list} · ${shareWords(u)}`;
+}
+
+// what each part took, then the window it was against
+function partsTip(u: ContextUse) {
+  const window = u.window.toLocaleString('en-GB');
+  return [...u.parts.map(partWords), `Of a ${window}-token context`].join('\n');
+}
+
+// The cards the builder wasn't given whole or with their picture, that are still on the board, in a block of the open
+// board, since a click selects them there. Pressing it takes nothing away from the block.
+function leftOutButton(a: BuildRecord): Piece[] {
+  const use = a.start?.use,
+    b = session.board;
+  if (!use || b?.id !== a.board) return [];
+  const ids = new Set([...use.left, ...use.pictures, ...use.unseen, ...use.tooBig, ...use.shortened]),
+    here = b.cards.filter(c => ids.has(c.id));
+  if (!here.length) return [];
+  const run = () => {
+    selectOnly(here.map(c => c.id));
+    fit(here);
+  };
+  return [{ slot: 'other', button: { label: 'Select these cards', ghost: true, after: 'stay', run } }];
+}
 
 // A function declaration: VIEW in myra/acts.ts reads it while the modules of the import cycle load.
 export function buildPieces(a: BuildRecord): Piece[] {
+  return [...phasePieces(a), ...leftOutButton(a)];
+}
+
+function phasePieces(a: BuildRecord): Piece[] {
   const s = buildState(a, liveOf(a.build)),
-    files = fileLines(s);
-  // the first line is always there, so a block with no files yet still draws (a box with no lines draws nothing)
+    files = fileLines(s),
+    use = a.start?.use,
+    left = use ? leftWords(use) : [];
+  // The first line is always there, so a block with no files yet still draws (a box with no lines draws nothing). The
+  // lines of what was left out follow it, each marked, and a phase that marks nothing marks them and the first line.
+  const bad = left.map((): Mark => 'bad');
   const box = (lines: readonly string[], marks?: readonly Mark[], busy?: true): Piece => ({
     slot: 'summary',
     cls: 'build',
     head: buildHead(s, !!a.undone),
-    lines: [cardsRead(a.cards), ...lines],
-    ...(marks ? { marks: ['done', ...marks] } : {}),
+    lines: [use ? readWords(use) : cardsRead(a.cards), ...left, ...lines],
+    ...(marks || left.length ? { marks: ['done', ...bad, ...(marks ?? [])] } : {}),
+    ...(use ? { tips: [partsTip(use)] } : {}),
     ...(busy ? { busy } : {}),
   });
   switch (s.phase) {
