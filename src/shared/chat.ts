@@ -2,6 +2,7 @@
 import { MAX_FILES } from './askFiles.ts';
 import { type BuildRecord, readBuildRecord } from './build.ts';
 import type { ChangeSet } from './changes.ts';
+import { type ContextUse, readContextUse } from './contextFit.ts';
 import { DEVICES, type Proto } from './repos.ts';
 
 // A button that is saved with its message, so it comes back when the chat or the board opens again. Buttons that only
@@ -34,7 +35,10 @@ export type ChatAction =
   | { kind: 'plan'; plan: string; steps: string[]; ended?: PlanEnd }
   // Her offer of a prototype board for a request that needs code, kept so it still works when the chat or the app opens
   // again. Its buttons show while `board`, where the cards it is made from are, is open.
-  | { kind: 'offer'; board: string; offer: ProtoOffer };
+  | { kind: 'offer'; board: string; offer: ProtoOffer }
+  // what a reply's board was trimmed of to fit the model's window, kept so its box and its Select these cards come back
+  // with the chat. Only a reply whose board was trimmed has one.
+  | { kind: 'context'; use: ContextUse };
 
 export type PlanEnd = 'done' | 'left' | 'cancelled' | 'replaced' | 'superseded';
 const ENDS: readonly PlanEnd[] = ['done', 'left', 'cancelled', 'replaced', 'superseded'];
@@ -278,6 +282,10 @@ const READ: { [K in ChatAction['kind']]: (x: Fields) => Extract<ChatAction, { ki
   offer: x => {
     const offer = readOffer(x.offer);
     return typeof x.board === 'string' && offer ? { kind: 'offer', board: x.board, offer } : null;
+  },
+  context: x => {
+    const use = readContextUse(x.use);
+    return use ? { kind: 'context', use } : null;
   },
 };
 

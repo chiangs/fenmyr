@@ -28,6 +28,8 @@ type Listed = { provider: ProviderId; entry: ModelEntry };
 
 // the host's last answer, asked for again each time the menu opens
 let lists: ProviderModels[] = [];
+// what a question reads the chosen model's context window from, so the board it sends fits
+export const modelLists = () => lists;
 const listed = (): Listed[] => lists.flatMap(p => p.models.map(entry => ({ provider: p.provider, entry })));
 const isChosen = ({ provider, entry }: Listed) =>
   settings.myraModel?.provider === provider && settings.myraModel.id === entry.id;

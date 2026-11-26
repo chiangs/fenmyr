@@ -1,3 +1,4 @@
+import type { ContextUse } from '../../shared/contextFit.ts';
 import type { Card, Link } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
 import type { NoteProps, Template } from '../../shared/ops.ts';
@@ -19,8 +20,16 @@ export type NoteUsed = {
   text: string;
 };
 // `web`: the web was on for this request, so pages she says she read can be real. `sees`: what the question was sent
-// with, so a button that asks it again sends the same.
-export type Picked = { asked: boolean; used: NoteUsed[]; tasks?: VaultTasksUsed | null; web?: boolean; sees: Sees };
+// with, so a button that asks it again sends the same. `use`: how much of the model's window the board took, and what
+// was left out of it to fit.
+export type Picked = {
+  asked: boolean;
+  used: NoteUsed[];
+  tasks?: VaultTasksUsed | null;
+  web?: boolean;
+  sees: Sees;
+  use?: ContextUse;
+};
 
 // a picture she fetched, sized for its card
 export type Picture = {

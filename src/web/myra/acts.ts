@@ -1,4 +1,6 @@
 import { type ChatAction, clip, type ReadNote, type WebPage } from '../../shared/chat.ts';
+import { leftWords } from '../../shared/contextFit.ts';
+import { session } from '../core/state.ts';
 import { buildPieces } from '../proto/buildBlock.ts';
 import { buildUndoButton, commitButton, explainButton } from '../proto/buildButtons.ts';
 import { sourceButton } from '../proto/sources.ts';
@@ -6,6 +8,7 @@ import { offerPieces } from '../repo/offer.ts';
 import { openNote } from '../vault/notes.ts';
 import { ask } from './chat.ts';
 import { planPieces } from './heldPlan.ts';
+import { leftOutButton } from './leftOut.ts';
 import { changesPieces } from './replyUndo.ts';
 import type { SayAction } from './say.ts';
 
@@ -78,6 +81,17 @@ function readPieces({ notes, pages }: { notes: readonly ReadNote[]; pages: reado
   return pieces;
 }
 
+// A reply whose board was trimmed to fit: what was cut, as lines to look at, and a way to see which cards. Her chat lives
+// with its board, so the cards are the open board's.
+function contextPieces({ use }: Extract<ChatAction, { kind: 'context' }>): Piece[] {
+  const lines = leftWords(use);
+  const head = 'Not all of the board fitted';
+  return [
+    { slot: 'summary', head, lines, marks: lines.map((): Mark => 'bad'), cls: 'context' },
+    ...leftOutButton(use, session.board.id),
+  ];
+}
+
 // One view per stored kind; a kind without one fails the type check. A view gives nothing when it has nothing to show
 // now: its card is gone, its prototype isn't the open board, or a newer build's Undo is in the chat.
 const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) => Piece[] } = {
@@ -91,6 +105,7 @@ const VIEW: { [K in ChatAction['kind']]: (a: Extract<ChatAction, { kind: K }>) =
   read: readPieces,
   plan: planPieces,
   offer: offerPieces,
+  context: contextPieces,
 };
 
 const viewOf = <K extends ChatAction['kind']>(k: K, a: Extract<ChatAction, { kind: K }>) => VIEW[k](a);

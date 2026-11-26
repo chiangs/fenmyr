@@ -1,4 +1,5 @@
 import { NOT_SENT } from '../../shared/askFiles.ts';
+import { windowOf } from '../../shared/contextFit.ts';
 import { renderCard } from '../canvas/render.ts';
 import { renderWires } from '../canvas/wires.ts';
 import { parentOf } from '../cards/collection.ts';
@@ -14,6 +15,7 @@ import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { holdReply, Turn } from './apply.ts';
 import type { Picked } from './applyTypes.ts';
+import { fitBoard } from './boardFit.ts';
 import { clearedCount, initDraft } from './chatDraft.ts';
 import { initExpand, setExpanded } from './chatExpand.ts';
 import { initChatInput, setChatText } from './chatInput.ts';
@@ -22,6 +24,7 @@ import { chatOpen, myraOpen, renderHint } from './chatWindow.ts';
 import { giveBack } from './giveBack.ts';
 import { answerPlan, dropPlan, planAsk, settle } from './heldPlan.ts';
 import { showConnections } from './helpers.ts';
+import { modelLists } from './modelPicker.ts';
 import { initPasted } from './pasted.ts';
 import { initPerch, wonderIfEmpty } from './perch.ts';
 import { react } from './react.ts';
@@ -32,7 +35,6 @@ import { askFilesOf, type Sees } from './sees.ts';
 import { initSeesAdd } from './seesAdd.ts';
 import { takeSees } from './seesStrip.ts';
 import { initSlashMenu, slash } from './slash.ts';
-import { snapshot } from './snapshot.ts';
 import { initStatus, noteSignIn, paintStatus, startJob } from './status.ts';
 
 // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
@@ -237,6 +239,8 @@ async function answer(turn: Turn, asked: Asked) {
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
   let reached = false;
   try {
+    const { board, use } = fitBoard(new Set(sees.sel), windowOf(modelLists(), settings.myraModel));
+    ctx.use = use;
     const raw = await Fenmyr.ask(
       (window.myraName && window.myraName !== 'Myra'
         ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) `
@@ -245,7 +249,7 @@ async function answer(turn: Turn, asked: Asked) {
         (did.filter(Boolean).length
           ? ` (The app has already done this for them: ${did.filter(Boolean).join('; ')}. Do not claim you cannot. Answer in a short line.)`
           : ''),
-      snapshot(new Set(sees.sel)),
+      board,
       confirmed,
       {
         mobbin: settings.mobbin,
