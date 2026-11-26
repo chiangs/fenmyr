@@ -73,6 +73,10 @@ type Options = {
   claude?: boolean;
   // page time driven by the test: see clock.ts
   clock?: boolean;
+  // Myra's offer of a rules and design card after a build (src/web/proto/guideOffer.ts), which every other test with a
+  // finished build would otherwise see as a line in the chat and a write of the board; without it, '*' marks every board
+  // as offered already
+  guidesOffer?: boolean;
 };
 
 export async function launch({
@@ -85,6 +89,7 @@ export async function launch({
   data: kept,
   claude = false,
   clock = false,
+  guidesOffer = false,
 }: Options = {}): Promise<Launched> {
   const data = kept ?? fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-h-'));
   const boardsDir = path.join(data, 'fenmyr', 'boards');
@@ -112,6 +117,7 @@ export async function launch({
     'fenmyr:newsSeen': version,
     'fenmyr:settings': JSON.stringify({ ...QUIET, ...settings }),
     ...(open ? { 'fenmyr:last': open } : {}),
+    ...(guidesOffer ? {} : { 'fenmyr:guidesOffered': JSON.stringify(['*']) }),
   };
   await app.context().addInitScript(s => {
     // it runs in every frame, and a prototype's sandboxed preview has no storage

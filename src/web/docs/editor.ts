@@ -19,6 +19,7 @@ import { save } from '../core/history.ts';
 import { session } from '../core/state.ts';
 import { useFont } from '../wireframe/tilt.ts';
 import { docHTML, fontsIn } from './docText.ts';
+import { initGuideBand, showGuide } from './guideBand.ts';
 import { hidePop, showPop } from './menus.ts';
 import { buildTools, paintTools } from './toolbar.ts';
 
@@ -174,6 +175,7 @@ export function openDoc(c: DocCard) {
   docCard = c;
   titleField().value = c.text || '';
   $('dvWhere').textContent = `${session.board.name} › ${c.text || 'Untitled'}`;
+  showGuide(c);
   $('docview').classList.add('on');
   stage.classList.add('doc-open');
   selectOnly([]);
@@ -197,6 +199,7 @@ export function closeDoc() {
   bubbleEl.style.display = 'none';
   const c = docCard;
   docCard = null;
+  showGuide(null);
   $('docview').classList.remove('on', 'wide');
   stage.classList.remove('doc-open');
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -221,6 +224,7 @@ export function applyDocPage() {
 }
 export function init53() {
   bubbleEl = $('dvBubble');
+  initGuideBand();
 
   DICON = {
     left: Icon('text-left'),

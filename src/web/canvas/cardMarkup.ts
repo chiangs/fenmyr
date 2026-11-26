@@ -17,6 +17,7 @@ import { pxSrc } from '../tools/stamps.ts';
 import { esc } from '../ui/dom.ts';
 import { vnFull, vnMd } from '../vault/notes.ts';
 import { isLocalFont, useFont } from '../wireframe/tilt.ts';
+import { docPill } from './docPill.ts';
 import { videoGone, whyGone } from './notIncluded.ts';
 import { skStyle } from './render.ts';
 
@@ -344,11 +345,10 @@ export function inner(c: Card): string {
     case 'note':
       return note(c);
     case 'doc':
+      return docPill(c);
     case 'canvas': {
       const text = esc(c.text);
-      return c.type === 'doc'
-        ? `<div class="pill">${CIC.doc}<span class="text">${text}</span></div>`
-        : `<div class="cv-head">${CIC.canvas}<span class="text">${text}</span></div><div class="cv-prev"><em>empty canvas</em></div>`;
+      return `<div class="cv-head">${CIC.canvas}<span class="text">${text}</span></div><div class="cv-prev"><em>empty canvas</em></div>`;
     }
     case 'shape':
       return shapeSVG(c) + textCard('text', c.text || '');

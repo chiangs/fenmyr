@@ -138,17 +138,21 @@ try {
   );
   assert.deepStrictEqual(
     await page.evaluate(() =>
-      (window.__fenmyr.curBoard()?.cards ?? []).map(c =>
-        c.type === 'note' ? [c.name, c.tagText ?? ''] : [c.type, c.type === 'stamp' ? (c.src ?? '') : ''],
-      ),
+      (window.__fenmyr.curBoard()?.cards ?? []).map(c => {
+        if (c.type === 'note') return [c.name, c.tagText ?? ''];
+        if (c.type === 'doc') return [c.type, c.role ?? ''];
+        return [c.type, c.type === 'stamp' ? (c.src ?? '') : ''];
+      }),
     ),
     [
       ['A new prototype? Exciting!', 'Welcome!'],
       ['The more I know, the less I guess', ''],
       ['Start small, then steer', ''],
       ['stamp', 'stamps/myra-bounce.gif'],
+      ['doc', 'rules'],
+      ['doc', 'design'],
     ],
-    'it starts with Myra’s three notes on how to begin, and her bouncing on the first',
+    'it starts with Myra’s three notes on how to begin, and her bouncing on the first, and its own rules and design',
   );
   assert.ok(
     await page.evaluate(() => {
