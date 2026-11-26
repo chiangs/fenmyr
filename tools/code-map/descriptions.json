@@ -788,6 +788,7 @@
     "tools/make-icon.ts": "Draws the app icon and the browser tab icon.",
     "tools/metrics.ts": "Counts files and lines of code per area of the project.",
     "tools/notices.ts": "Writes the third-party notices and the licences list.",
+    "tools/shortcuts-doc.ts": "Writes docs/shortcuts.md from the toolbar table and the keymap, and fails in check:fast when the page is out of date.",
     "tools/sleeps.ts": "Finds the fixed sleeps in a test file for the budget: waitForTimeout, T.wait, a promise on setTimeout and settle(page, ms), minus those marked as the point of the test.",
     "tools/run-tests.ts": "Runs every test in tests/ or the ones named, each alone and past failures, and one CI shard of them balanced on recorded times.",
     "tools/visual-channels.ts": "The visual states for Settings → About with the Channel row, on a release and on a beta, with the update check answered as a clone install answers it.",

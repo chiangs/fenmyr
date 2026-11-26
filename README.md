@@ -1,44 +1,121 @@
-<p align="center"><img src="assets/icon.png" width="140" alt="Fenmyr"></p>
+<p align="center">
+  <img src="assets/icon.png" width="128" alt="Fenmyr's icon">
+  <!-- 🎞 Optional: Myra waving (assets/readme/myra.gif, rendered from her sprite) beside or in place of the icon. -->
+</p>
 
 <h1 align="center">Fenmyr</h1>
+
 <p align="center"><b>Where ideas thrive.</b><br>
-A canvas for ideas, with Myra the cloudberry to help.</p>
-<p align="center"><img src="assets/readme-cover.jpg" width="760" alt="A Fenmyr board: notes in cloudberry, lingonberry, fjord, moss and heather, a checklist, two color swatches, and Myra in the corner"></p>
+A canvas for growing ideas, from the first note to a working prototype, with Myra the cloudberry to help.</p>
 
----
+<p align="center">
+  <a href="https://github.com/chiangs/fenmyr/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/chiangs/fenmyr?include_prereleases&label=release"></a>
+  <a href="https://github.com/chiangs/fenmyr/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/chiangs/fenmyr/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue"></a>
+  <img alt="Linux and macOS" src="https://img.shields.io/badge/platform-Linux%20%C2%B7%20macOS-lightgrey">
+  <a href="https://github.com/sponsors/chiangs"><img alt="Sponsor Fenmyr" src="https://img.shields.io/badge/sponsor-%E2%99%A5-ea4aaa?logo=githubsponsors&logoColor=white"></a>
+</p>
 
-Fenmyr is a free, open-source canvas for Linux. Put notes, pictures, links, checklists and colours on an endless board, arrange them your way, and ask Myra to sort, plan, explore and build. Myra is a pixel cloudberry who thinks with Claude Code on your computer. Fenmyr is made for Arch and CachyOS on Wayland, and works on Hyprland, KDE Plasma, GNOME, Sway and niri.
+<!-- 📸 S1: replace this cover with a <picture> holding assets/readme/hero-light.png and hero-dark.png. -->
+<p align="center"><img src="assets/readme-cover.jpg" width="760" alt="A Fenmyr board with notes in several colours, a checklist and Myra in the corner"></p>
 
-## What's inside
+Fenmyr is a free, open-source canvas for Linux and the Mac. Spread notes, pictures, links, checklists, docs and wireframes across an endless board, then ask Myra, a pixel cloudberry who thinks with Claude Code on your computer, to sort, plan and build. When an idea is ready, a prototype board turns its cards into a working app, kept in your own git repo.
 
-**The canvas**
+Your boards are plain files on your computer. Fenmyr needs no account, and its AI is optional: it runs only when you ask.
 
-- An endless board. Pan with two fingers and pinch to zoom. Cards tilt slightly, or sit straight if you prefer.
-- Card types for notes, titles, checklists, docs, collections, kanbans, links, images with crop, voice memos, videos, colours, shapes, stamps, drawings, the Pen, and curved connectors.
-- **Ctrl+K** drops an idea into Unsorted without losing your place, and **F** focuses on what you're working on.
-- Wireframes made of screens, boxes, text and icons, with ready-made elements and full layouts. Select a screen and choose Pieces; its search understands words like "dialog" or "FAQ".
-- Projects, folders and boards, with a home page for all of them. **+ Project** asks how its first board starts: blank, the example board or a template. Ask Myra for a project, and she opens the same box.
-- Light and dark mode, each with a choice of colour theme: Default, Midsummer or Clear for light, and Default, Polar Night or Lantern for dark. Clear and Lantern are made for accessibility. Or your [Caelestia](#follow-your-caelestia-theme) colours.
-- Undo, and export of any card or board as an image or PDF. Docs download as PDF or Word.
-- Card colours named Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather and Birch.
+**[Why Fenmyr](#why-fenmyr)** · **[Features](#features)** · **[Install](#install)** · **[Updates and the beta](#updates-and-the-beta)** · **[Connect Claude Code](#connect-claude-code)** · **[Your data](#your-data)** · **[Docs](#documentation)** · **[Contributing](#contributing)** · **[Support](#support-fenmyr)**
+
+## Why Fenmyr
+
+<!-- ✦ Optional: a small cloudberry mark from Fenmyr's icon set beside each heading below (assets/readme/mark-*.svg). -->
+
+### From idea to prototype
+
+<!-- 📸 S2: a prototype board with the preview at a phone width and the code pane open. 🎞 Better: a 5–8 s GIF of Point opening the code behind a button. -->
+
+Make a board into a prototype board, and Myra builds a working React and Tailwind app from its cards through Claude Code. Each prototype board keeps its own rules and design cards, and every build reads them.
+
+- **See it run.** The preview sits beside the board at any device width. Controls above it change the prototype's values live.
+- **Read the code.** The code pane lists every file and marks what the last build changed. **Point** at anything in the preview to open the line that draws it, and code links back to the cards it came from.
+- **Keep what works.** Every build can be undone. A capture puts a picture of the preview on the board, tied to the commit it shows.
+- **Git, explained.** The code lives in your project's own repo, under `prototypes/`. The git bar commits, pushes and pulls, and a project can link to a GitHub repo or make one. Myra explains each git step in plain words, and waits for your yes before she installs a package, commits, pushes or pulls.
+
+### Myra shows her work
+
+<!-- 📸 S3: a reply showing what changed with its Undo, the "Myra sees" strip, and a dashed plan on the board behind. -->
+
+Myra reads your board and answers in the chat beside it.
+
+- **Myra sees** shows what she will read, and **+ Add** hands her pictures, text files or vault notes.
+- Before she changes more than ten cards, or removes any, she draws her plan on the board in dashed lines and waits.
+- After a reply she lists what changed, with **Show on board** and one **Undo** for the whole reply. The notes and pages she read come back as links.
+- Type **/** for commands that need no AI at all: `/find`, `/tag`, `/tidy`, `/due`, `/timer`, `/template`, `/board` and more.
+
+### Yours, on your computer
+
+- Each board is one JSON file under `~/.local/share/fenmyr`. There's no account and no Fenmyr cloud.
+- Switch Myra's thinking off, and the canvas works with no AI and no internet.
+- Connect an Obsidian vault read-only, and choose which projects and boards may read it. Folders you put off-limits and `#private` notes are never read.
+- Export a board, a folder or a whole project as a zip, and open it on another computer.
+- When Myra builds, Claude Code works in the prototype's folder with file tools only: no shell and no web. Besides that folder, it reads only what the build hands it, such as pictures of the cards.
+
+### Made for the Linux desktop
+
+Fenmyr is built for Arch and CachyOS on Wayland, and runs on Hyprland, KDE Plasma, GNOME, Sway and niri. The board fills a window with no title bar, so your compositor's tiling works as it does for any other window. On the [Caelestia](docs/caelestia.md) shell it takes on your desktop's colours and changes with them. It runs on the Mac too.
+
+### Accessible by design
+
+<!-- 📸 S4: the same small board in all six themes, as a 3×2 grid. 📸 S5: a close-up in Clear with colour names, outlined cards and the focus ring. -->
+
+- Six themes, three for each mode: Default, Midsummer and Clear for light, and Default, Polar Night and Lantern for dark.
+- Clear and Lantern hold AAA contrast and outline every card. They also print each note's colour name, sit cards straight and thicken the focus ring, and each of those has a switch under Settings → Appearance → Accessibility.
+- Cards are named by their colour for screen readers, and F10 takes the keyboard to the bar over the selection. Every shortcut is listed in [Keyboard shortcuts](docs/shortcuts.md).
+
+### Built to last
+
+Each of Fenmyr's rules comes with the check that enforces it.
+
+- **Strict TypeScript.** No `any`. Data from disk, the network and other processes is checked where it enters.
+- **One bridge.** The canvas and the host meet only through a typed contract, and a check fails if either imports the other.
+- **A budget that only goes down.** Casts, long files, raw colours and fixed sleeps in tests are counted, and CI fails if a count rises.
+- **Tests that wait on the page.** About 280 headless Electron test files run on every pull request, and a nightly run delays every animation to catch a test that guesses at timing.
+- **Proof, not promises.** Every pull request compares the app's screens pixel by pixel with the base branch. A benchmark times opening, dragging, zooming and editing a 500-card board, and measures memory, against `main`.
+
+[![Fenmyr's code map: every source file as a circle, larger when more files connect to it](https://code-map.fenmyr.com/preview.svg)](https://code-map.fenmyr.com/)
+
+The [code map](https://code-map.fenmyr.com/) shows every source file and every import, with a line on what each file is for. It's rebuilt on every merge.
+
+## Features
+
+**On the board**
+
+- Notes with formatting, links, tags and due dates; titles, checklists, docs, collections, kanbans, sections, and canvases (a board inside a board).
+- Links with previews, images with crop, voice memos written out on your computer, videos, colours, shapes, stamps, drawing, the Pen and curved connectors.
+- Wireframes: press **W** and pick a device for a screen, then add parts from the **Pieces** picker beside it.
+- **Ctrl+K** drops an idea into Unsorted without losing your place, **Ctrl+F** finds anything a card shows, and **F** focuses on what you're working on.
+- Templates (**Alt+T**), including Kanban, OKRs and opportunities, Product kickoff and Workshop planning, and your own.
+- Projects, folders and boards, with a home page for each. **+ Project** asks whether its first board starts blank, as the example board or from a template.
+- Export any card or board as an image or PDF, and docs as PDF or Word.
+
+**The layout**
+
+- The tools sit in a panel at the top right, and the bottom bar holds zoom and Ask Myra.
+- A bar floats over whatever you select, with what you can do to it.
+- Widgets for layers, board colours, Unsorted and zoom, placed on either side. Settings → Layout → Widgets turns each on or off.
 
 **Myra**
 
-- Chat with her about your board. She can add, edit, sort and connect cards, make collections, folders and boards, and suggest what to do next.
-- Ask her to explore fonts, and she puts type specimens on the board from your computer or Google Fonts.
-- Describe a flow, and she builds wireframe screens. Ask for a landing page, and she builds it in your colours and fonts.
-- Select words in a doc, and she rewrites them.
-- Type **/** in her chat for quick commands that need no thinking, such as `/find`, `/template`, `/project`, `/folder` and `/board`. `/project`, `/folder` and `/board` work like the **+ Project**, **+ Folder** and **+ Board** buttons. `/help` lists them all.
-
-**Optional helpers**, through the connections in your Claude account:
-
-- **Mobbin** finds real app screens for inspiration.
-- **Higgsfield** fills image spots with generated pictures. It costs credits, so Myra always shows the price and your balance and waits for your yes. You can't turn that check off.
-- Without Higgsfield, Myra can draw simple illustrations for free or leave labelled placeholders.
+- She adds, edits, sorts and connects cards, and makes collections, boards, folders and projects from plain words.
+- She explores fonts with type specimens from your computer or Google Fonts, sketches a flow you describe as wireframe screens, and builds a landing page in your colours and fonts.
+- She rewrites the words you select in a doc, sets timers, and reminds you of due dates, even for notes on other boards.
+- You choose her model and effort, how chatty she is, and how much she moves.
+- Optional helpers through your Claude account: web search, **Mobbin** for real app screens, and **Higgsfield** for generated pictures. Higgsfield costs credits, so Myra always shows the price and your balance and waits for your yes, and that check can't be turned off.
 
 ## Install
 
-### From the code (recommended on Arch / CachyOS)
+You need **Node.js 22.18 or newer** to install from the code (the installer offers to install it), and **[Claude Code](#connect-claude-code)** for Myra and prototyping.
+
+**From the code** (recommended on Arch and CachyOS, and on a Mac):
 
 ```bash
 git clone https://github.com/chiangs/fenmyr.git
@@ -46,240 +123,122 @@ cd fenmyr
 ./install.sh
 ```
 
-The installer does the following:
+On Linux this puts Fenmyr in `~/.local/lib/fenmyr` with an entry in your app launcher. On a Mac it builds `Fenmyr.app` and puts it in Applications, so macOS opens it with no warning. The first time, Myra walks you through setup and a short tour.
 
-1. Finds Electron. It uses Arch's `electron` package and offers to install it. On other distros, or if you say no, it downloads a private copy.
-2. Builds Fenmyr, which needs Node.js and npm. It offers to install them with pacman.
-3. Puts Fenmyr in `~/.local/lib/fenmyr`, the `fenmyr` command in `~/.local/bin`, and an entry in your app launcher.
-4. Opens Fenmyr. The first time, Myra walks you through setup and a short tour.
-
-Fenmyr then checks for new versions on its own. When one is ready, a dot shows on the ⚙, and Settings lists what's new with an **Update now** button. That button pulls from GitHub, rebuilds, reinstalls and reopens, and it doesn't touch your boards. To update from a terminal, run `./install.sh --update`.
-
-The installer builds Fenmyr, so it also needs Node.js and npm (it offers to `sudo pacman -S nodejs npm` if they're missing).
-
-Installer options: `--update` (pull first), `--yes` (no questions), `--no-open`.
-
-### AppImage
-
-**[⬇ Download the latest AppImage](https://github.com/chiangs/fenmyr/releases/latest)** (`Fenmyr-x86_64.AppImage`)
+**AppImage** (any x86-64 Linux, needs FUSE 2): **[download the latest](https://github.com/chiangs/fenmyr/releases/latest)**, then:
 
 ```bash
 chmod +x Fenmyr-x86_64.AppImage
 ./Fenmyr-x86_64.AppImage
 ```
 
-AppImages need FUSE 2 (`sudo pacman -S fuse2` on Arch). The AppImage updates itself from GitHub Releases. Say yes once, and new versions install when you quit. To add it to your app launcher, use [Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) or AppImageLauncher, or keep it in `~/Applications`.
+[Installing Fenmyr](docs/install.md) has the installer's options, a downloaded `.dmg`, and uninstalling.
 
-### Mac
+## Updates and the beta
 
-Fenmyr isn't signed with a paid Apple Developer ID, so macOS treats a downloaded copy with suspicion. A copy you build on your own Mac isn't marked as downloaded, so it opens without any warning. That's the recommended way.
+Fenmyr checks for new versions on its own. When one is ready, a dot shows on the ⚙, and Settings → About lists what's new with **Update now**, which rebuilds and reopens without touching your boards.
 
-#### Build it on your Mac (recommended)
+An install from the code chooses its channel in **Settings → About → Channel**:
 
-```bash
-xcode-select --install    # once, if you don't have Apple's command line tools yet
-git clone https://github.com/chiangs/fenmyr.git
-cd fenmyr
-./install.sh
-```
+| Channel | What you get |
+|---|---|
+| **Stable** | Tested releases |
+| **Beta** | New things early, with some rough edges. Stable releases come too |
+| **Every change** | Each change as it's merged into `main`. For people working on Fenmyr |
 
-The installer does the following:
+An AppImage follows Stable only. A copy from a `.dmg` doesn't update.
 
-1. Checks for Node.js 22.18 or newer, and offers to install it with Homebrew (`brew install node`).
-2. Builds `Fenmyr.app` for your Mac, whether it's Apple Silicon or Intel. The first build takes a few minutes, since it downloads Electron and the build tools.
-3. Puts it in `/Applications`, or in `~/Applications` if you can't write to `/Applications`.
-4. Opens it.
+### Try the beta
 
-Updates work as on Linux: **Update now** in Settings, or `./install.sh --update` in a terminal. The options are the same: `--update`, `--yes`, `--no-open`.
+1. [Install from the code](#install).
+2. Choose **Beta** in Settings → About → Channel, then **Update now**.
+3. Found something? [Report it](https://github.com/chiangs/fenmyr/issues/new/choose), and paste in what **Copy details** in Settings → About gives you.
 
-#### A downloaded .dmg
-
-If someone sent you a `.dmg` (one is made by the **Mac build** in the Actions tab), drag Fenmyr to Applications. The first time you open it, macOS says it can't check Fenmyr for malicious software, or that Fenmyr is damaged. It isn't. That's how macOS treats any app that isn't signed with a paid Apple Developer ID. To open it, do one of these once:
-
-- Open it, close the warning, then go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. On macOS 14 and earlier you can instead right-click Fenmyr in Applications and choose **Open**, then **Open** again.
-- Or, in Terminal, run `xattr -cr /Applications/Fenmyr.app`. This also fixes the "damaged" message.
-
-A copy from a `.dmg` doesn't update itself. To get updates, install it from the code as described above.
-
-### Uninstall
-
-```bash
-./uninstall.sh            # removes the app, then asks before touching your boards
-./uninstall.sh --purge    # also deletes your boards and settings
-```
-
-It removes everything `install.sh` added, any `~/Applications/Fenmyr*.AppImage`, and `Fenmyr.app` from `/Applications` or `~/Applications` on a Mac. Electron from pacman stays, since other apps may use it. To remove it, run `sudo pacman -Rs electron`.
+Going back to Stable keeps the beta you have until a newer stable release arrives. A card that an older Fenmyr can't read is kept as it is when you save.
 
 ## Connect Claude Code
 
 Myra thinks with [Claude Code](https://docs.claude.com/en/docs/claude-code) on your computer. Without it, the canvas still works, but Myra can't do the AI parts.
 
-1. Install it: `curl -fsSL https://claude.ai/install.sh | bash` (or see the [setup guide](https://docs.claude.com/en/docs/claude-code/setup)).
+1. Install it: `curl -fsSL https://claude.ai/install.sh | bash`, or see the [setup guide](https://docs.claude.com/en/docs/claude-code/setup).
 2. Run `claude` once in a terminal and sign in with your Claude account.
-3. In Fenmyr, open ⚙ → **Helpers**. Claude Code shows **ready** as soon as Fenmyr finds it, with no restart.
+3. In Fenmyr, open Settings → Connections. Claude Code shows **ready** as soon as Fenmyr finds it.
 
-Fenmyr looks for `claude` in `~/.local/bin`, `~/.claude/local`, `/usr/bin`, `/usr/local/bin`, npm / nvm / volta / bun folders, and finally asks your login shell (bash, zsh or fish).
+Myra's requests run with your Claude Code hooks off, so hooks meant for your own sessions don't fire while she thinks. Skills, plugins, connectors and your sign-in work as usual.
 
-**Hooks.** Myra's requests always run with your Claude Code hooks off, so hooks meant for your own sessions don't fire while she thinks. Skills, plugins, connectors and your login work as usual.
+**More connections**, all in Settings → Connections:
 
-**The web.** This is off by default. Turn on **Settings → Helpers → Let Myra search the web**, and she can look things up and read public pages, including public GitHub repositories. Her searches can include words from your board.
+- **The web** is off until you switch on **Let Myra search the web**. Her searches can include words from your board.
+- **Git and GitHub** are for prototyping. Fenmyr uses `git` and the `gh` command, so it never holds a GitHub token itself.
+- **Obsidian vaults** connect read-only, in three steps: connect, give access, allow AI reading.
+- **Mobbin and Higgsfield** are connectors in your Claude account. Add them at [claude.ai/settings/connectors](https://claude.ai/settings/connectors).
+- **Voice memos written out**: install [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`yay -S whisper.cpp`). The first memo downloads a speech model of about 140 MB. Set `FENMYR_WHISPER_SIZE=tiny|base|small|medium` for another size, or `FENMYR_WHISPER_MODEL` to a model you have. Without it, memos still record and play.
 
-**Mobbin and Higgsfield** are connectors in your Claude account. Add them at [claude.ai/settings/connectors](https://claude.ai/settings/connectors).
+## Your data
 
-## Voice memos written out (optional)
+- Boards are JSON files in `~/.local/share/fenmyr/boards`, with folders in `folders.json`, videos in `media/` and your templates in `templates/`. Back them up or copy them like any other files. App settings live in `~/.config/Fenmyr`.
+- A prototype's code lives in its project's git repo, under `prototypes/`. It reaches GitHub only when you push.
+- Myra thinks only when you ask her something or start a build. Then the board and your words go to Claude Code on your computer, the same as asking Claude yourself.
+- Chats are kept the way you choose in Settings → Myra: on each board, until you quit, or not at all. Prototype boards always keep theirs.
+- Linux has no per-app camera and microphone prompt. A voice memo or video card turns them on when you add or use it, and only Fenmyr's own window can use the microphone, clipboard and notifications.
+- Chromium's spell check fetches its dictionary from Google once, then works offline.
 
-Fenmyr writes out voice memos on your computer with [whisper.cpp](https://github.com/ggml-org/whisper.cpp):
+<details>
+<summary><b>Keep a history of your boards with git</b></summary>
+
+The Fenmyr folder can be a git repository of its own, on your computer only. Run this once:
 
 ```bash
-yay -S whisper.cpp      # or build it yourself; Fenmyr looks for whisper-cli
+cd ~/.local/share/fenmyr
+printf 'whisper/\npending-update/\nwindow.json\nusage.json\nupdate.log\n*.tmp\n' > .gitignore
+git init && git add -A && git commit -m "My boards"
 ```
 
-The first memo downloads the speech model, about 140 MB, into `~/.local/share/fenmyr/whisper`. To use a different size, set `FENMYR_WHISPER_SIZE=tiny|base|small|medium`, or point `FENMYR_WHISPER_MODEL` at a model file you already have. Without whisper.cpp, memos still record and play.
+Then commit now and then. For a backup off your computer, add a private remote, since boards can hold your notes and pictures. Pictures are saved inside each board's file, so boards with many large pictures make a big repository; you may also want to ignore `media/`, which holds videos. To keep boards in step between computers, a synced folder such as Syncthing or Nextcloud suits better than git.
 
-## Your stuff
+</details>
 
-- Each board is one JSON file in `~/.local/share/fenmyr/boards`, with your folders in `folders.json` and your videos in `media/`. You can back them up or copy them like any other files. Fenmyr itself needs no account and uses no cloud.
-- App settings (your name, theme, the tour) live in `~/.config/Fenmyr`.
-- **Keep a history of your boards.** You can turn the Fenmyr folder into a git repository to keep every version. This works entirely on your computer. Run this once:
-  ```
-  cd ~/.local/share/fenmyr
-  printf 'whisper/\nwindow.json\nusage.json\n*.tmp\n' > .gitignore
-  git init && git add -A && git commit -m "My boards"
-  ```
-  Then commit now and then. For a backup off your computer, add a private remote and push, because boards can hold your notes and pictures.
-
-  Pictures are saved inside each board's file, so boards with many large pictures make a big repository. You may also want to ignore `media/`, which holds videos. To keep boards in step between computers, a synced folder such as Syncthing or Nextcloud suits better than git.
-- Myra only thinks when you ask her something. Then the board and your question go to Claude Code on your computer, the same as asking Claude yourself.
-- Switch Myra's thinking off in Settings, and the canvas works with no AI and no internet. Chromium's spell check fetches its dictionary from Google once, then works offline.
-- Fenmyr can use your camera and microphone without asking each time, because Linux has no per-app prompt. A voice memo or video card turns them on when you add or use it.
-- Chats are kept the way you choose: on each board, until you quit, or not at all.
-
-## Shortcuts
+## Documentation
 
 | | |
 |---|---|
-| **Ctrl+K** | Quick capture into Unsorted (while you type in a note, it makes a link) |
-| **Ctrl+F** | Find on the board: opens Myra's chat with `/find` ready (works without AI); the find bar then lets you edit the search and step through matches (Enter, Shift+Enter, Esc) |
-| **double-click** | New note |
-| **N · C · T · D · G** | Note, checklist, title, doc, collection |
-| **V** | Select |
-| **L · I · A · Shift+V** | Link, image, voice memo, video |
-| **S · E · P · Shift+P** | Shapes, stamps, draw, the Pen |
-| **Alt+T** | Templates, or `/template` in Myra's chat |
-| **O · Alt+C · Alt+I** | Colour, canvas, icon |
-| **W · R · X** | Wireframe screen, box, text |
-| **M** | Ask Myra |
-| **Ctrl+Enter** | Send to Myra; Enter adds a line |
-| **F** | Focus on the selection |
-| **0** | Fit the whole board |
-| **Ctrl + scroll** | Zoom in even steps (…90 · 100 · 110 · 125…%). A touchpad pinch zooms smoothly |
-| **Ctrl + / Ctrl −** | Zoom in / out, the same steps |
-| **Shift+1** | Zoom to fit |
-| **Ctrl+0** | Back to 100% |
-| **click the zoom %** | Zoom menu: 50 / 100 / 200%, then in, out, 100%, fit. The Zoom widget starts under Unsorted: drag it by its title to the other side, or switch it off in Settings → Widgets |
-| **Ctrl+] / Ctrl+[** | Bring forward / send backward (add Shift: all the way) |
-| **Alt + drag** | Drag a copy |
-| **Ctrl+Z / Ctrl+Shift+Z** | Undo / redo |
-| **Ctrl+G / Ctrl+Shift+G** | Group / ungroup, so things move together |
-| **Ctrl+C / Ctrl+X / Ctrl+V** | Copy, cut and paste cards, even onto another board |
-| **Ctrl+\\** | Just the board (hide the panels) |
-| **space + drag** | Pan |
-| **Ctrl+,** | Settings |
-| **Ctrl+Q · F11** | Quit · full screen |
+| [Keyboard shortcuts](docs/shortcuts.md) | Every key, written from the app's own tables |
+| [Installing Fenmyr](docs/install.md) | Every way in, the installer's options, updates and uninstalling |
+| [Follow your Caelestia theme](docs/caelestia.md) | What Fenmyr takes from Caelestia, and what it follows |
+| [Troubleshooting](docs/troubleshooting.md) | NVIDIA, Wayland and X11, Claude Code not found, updates |
+| [What's new](WHATSNEW.md) | Each version's changes |
+| [Contributing](CONTRIBUTING.md) | How the code is laid out and how to change it |
+| [Design](DESIGN.md) | The visual and copy rules |
 
-### Formatting a note
+## Contributing
 
-While you type in a note, you can format single words and make lists. The formatting stays when you save, undo, copy or reopen the board, and notes you wrote before stay as they were.
+Fenmyr is TypeScript on Electron: `src/web/` draws the canvas and `src/host/` owns files, programs and the network. To run it from a checkout:
 
-| | |
-|---|---|
-| **Ctrl+B · Ctrl+I · Ctrl+U** | Bold, italic, underline: the selected words, or what you type next |
-| **Ctrl+Shift+X** | Strikethrough |
-| **Ctrl+\\** | Clear the formatting |
-| **Ctrl+Shift+8 · Ctrl+Shift+7** | Make the line a bulleted or numbered list, or back into a plain line |
-| **- or 1. and a space** | Start a list at the start of a line. Backspace straight after gives back what you typed |
-| **Enter · Shift+Enter** | A new item · a new line in the same item. Enter on an empty item ends the list |
-| **Tab · Shift+Tab** | Nest an item one level deeper, three at most · bring it back |
-| **Ctrl+Shift+V** | Paste as plain text |
-| **Ctrl+K** | Link the selected words, or add a link where you type. Inside a link, change its address or remove it |
-| **F10** | Move to the bar's formatting buttons. Tab moves between them, Enter or Space presses one, and Esc goes back to the note |
-| `**word**` · `*word*` · `~~word~~` | Bold, italic or strikethrough, as you type the last mark |
-| `[words](https://…)` | A link, as you type the last bracket |
+```bash
+npm ci && node node_modules/electron/install.js && npm start
+```
 
-Pasting keeps the lists, bold, italic, underline, strikethrough and links from web pages, Obsidian, Markdown files and PDFs. Click a link in a note, or press Enter on it, to open it in your browser. The bar's B, I, U and S buttons format the selected words while you type, and the whole card when it is only selected. When you copy note cards, other apps get their formatting too. Myra can write and edit formatted notes.
+Run `npm run check:fast` before each commit. [CONTRIBUTING.md](CONTRIBUTING.md) explains the rest. Bugs and ideas are welcome through the [issue forms](https://github.com/chiangs/fenmyr/issues/new/choose).
 
-## The window
+## Support Fenmyr
 
-The board fills the window, with no title bar. Move and resize it the way your compositor does. For close, minimise and maximise buttons, switch on **Settings → General → Window buttons**. Three small dots appear at the top left, with a strip beside them to drag the window by.
+Fenmyr is free and made in spare hours. If it helps you think, you can help it grow:
 
-## Follow your Caelestia theme
+- **[Sponsor on GitHub](https://github.com/sponsors/chiangs)**
+- Star the repository, so others find it.
+- Try the beta and report what breaks.
 
-If you use the [Caelestia](https://github.com/caelestia-dots/shell) Hyprland shell, Fenmyr can take on your desktop's colours and change with them.
+<!-- 🎞 Optional: Myra holding a cloudberry (assets/readme/myra-support.gif). -->
 
-This is on by default when Caelestia is installed. The switch is **Follow Caelestia**, under *Look* in Settings → General, and it only appears with Caelestia. While it's on, the Theme buttons and Settings → Board → Colours are dimmed, because Caelestia decides them. The light and dark theme pickers stay usable: the theme you pick is what Caelestia's colours are put on. Switch it off, and your own colours and theme come back.
+## Credits
 
-This is what changes:
+Fenmyr began as a fork of [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) 1.7.3 by [Jessa Wolfe](https://jessa.art), an open-source planning canvas for the Mac (MIT), in October 2026. Thank you, Jessa. Mochiboard's name, its character Mochi, its stamps, art and music are hers, and Fenmyr doesn't use them.
 
-| In Fenmyr | Comes from Caelestia's |
-|---|---|
-| Board background | `surface` |
-| Grid dots | `outlineVariant` |
-| Panels (sidebar, tray, toolbar, menus) | `surfaceContainer` |
-| Second surface (inputs, wells, hovered rows) | `surfaceContainerHigh` |
-| Text, and quiet text | `onSurface`, `onSurfaceVariant` |
-| Accent (buttons, selection, highlights) | `primary`, with `onPrimary` for text on it |
-| Focus ring | `secondary` |
-| Card colours: Snow, Cloudberry, Lingonberry, Moss, Fjord, Heather, Birch | `surfaceContainerHighest`, `yellow`, `pink` or `red`, `green`, `sky` or `blue`, `mauve` or `lavender`, `peach` or `rosewater` |
-| Light or dark | the scheme's mode |
+Icons are [Phosphor Icons](https://phosphoricons.com) (MIT), plus Fenmyr's own cloudberry icons. Fonts are Figtree and Shantell Sans (OFL). Voice memos are written out by [whisper.cpp](https://github.com/ggml-org/whisper.cpp).
 
-The theme you pick for that mode (Settings → General → Look) is what these go on, and it supplies anything Caelestia doesn't. Every colour is held to the contrast that theme promises: one that falls short is moved in lightness until it reads, and if that can't be done the theme's own is used, so Clear and Lantern keep their AAA contrast. If Caelestia's card colours would look alike to someone with colour blindness, all seven cards use the theme's instead, so a board's colours stay consistent. The cursor, switches and Myra keep their own colours.
+## Licence
 
-These Caelestia actions restyle it within about a second, with no restart:
-
-| Caelestia | Fenmyr |
-|---|---|
-| **Scheme** | New colours |
-| **Variant** | New shades of the same scheme |
-| **Light / Dark** | Switches mode too (the easiest way to see it working) |
-| **Wallpaper / Random** | New colours only with the **dynamic** scheme, which takes them from the wallpaper. A named scheme like gruvbox keeps its colours. |
-
-Changing between two dark schemes mostly shows in the accent, panels and dots, since most dark backgrounds are close to black. A board with its own background keeps it, and the rest still follows.
-
-Fenmyr reads `~/.local/state/caelestia/scheme.json`, so there's nothing to set up.
-
-## Troubleshooting
-
-- **Blank or flickering window on NVIDIA.** Put extra Electron flags in `~/.config/fenmyr-flags.conf`, one per line, e.g. `--disable-gpu-compositing` or `--ozone-platform=x11`.
-- **Force Wayland or X11.** The launcher passes `--ozone-platform-hint=auto` (Wayland when available). Add `--ozone-platform=wayland` or `--ozone-platform=x11` to the flags file to choose.
-- **Camera or microphone not found.** Fenmyr uses the same camera and microphone as your browser (PipeWire). Check `pavucontrol` or your sound settings, and that nothing else holds the camera.
-- **Myra says she needs Claude Code** even though it's installed: run `which claude` in a terminal and make sure that folder is one of the places listed above, or symlink it into `~/.local/bin`.
-- **Follow Caelestia doesn't change anything.** Check that the switch is on (Settings → General → Follow Caelestia), then switch Caelestia to Light: the board should turn light within a second. If it doesn't, press F12 in Fenmyr and run `Fenmyr.caelestia().then(s => console.log(s && s.name, s && s.mode, '|', document.body.className))` in the Console. You should see your scheme's name and `following-caelestia`; if the name is missing, check that `~/.local/state/caelestia/scheme.json` exists.
-- **Developer tools.** Press F12 or Ctrl+Shift+I.
-
-## How it's built
-
-Fenmyr has two layers, written in TypeScript, that talk through one channel:
-
-- `src/web/` and `web/` hold the canvas.
-- `src/host/` is the Electron host. It saves boards, fetches link previews, exports images and PDFs, writes out voice memos, and runs `claude -p` so Myra can think.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) to change or extend it. [DESIGN.md](DESIGN.md) holds the visual and copy rules.
-
-[![Fenmyr's code map: every source file as a circle, larger when more files connect to it](https://code-map.fenmyr.com/preview.svg)](https://code-map.fenmyr.com/)
-
-The [code map](https://code-map.fenmyr.com/) shows every source file as a circle and every import as a line, with a line on what each file and area is for. It is rebuilt on every merge to `main`. From a checkout, `node tools/code-map/query.ts <file>` says what a file is for, what it imports and what imports it.
-
-To run the app from the code without installing, run `npm ci && node node_modules/electron/install.js && npm start`.
-
-Icons are [Phosphor Icons](https://phosphoricons.com) (MIT), plus Fenmyr's own cloudberry icons. Fonts are Figtree and Shantell Sans (OFL).
-
-## Where Fenmyr came from
-
-Fenmyr's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by [Jessa Wolfe](https://jessa.art), an open-source planning canvas for the Mac (MIT). Thank you, Jessa. Mochiboard's name, its character Mochi, its stamps, art and music are hers, and Fenmyr doesn't use them.
-
-## License
-
-The code is open source under the [MIT License](LICENSE). The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons, the stamps, the logo and the app icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Fenmyr also includes software made by others, including Mochiboard, Electron, Phosphor Icons, Figtree, Shantell Sans and the libraries inside the docs editor. Each is listed with its license in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licenses**.
+The code is open source under the [MIT License](LICENSE). The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons, the stamps, the logo and the app icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Fenmyr also includes software made by others. Each is listed with its licence in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under Settings → About → **View licences**.
 
 ---
 
