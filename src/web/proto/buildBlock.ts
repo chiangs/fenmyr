@@ -1,9 +1,8 @@
 import { type BuildRecord, buildHead, buildState, fileLines } from '../../shared/build.ts';
 import { type ContextUse, leftWords, partWords, readList, shareWords } from '../../shared/contextFit.ts';
-import { fit } from '../canvas/handles.ts';
-import { selectOnly } from '../canvas/selection.ts';
 import { session } from '../core/state.ts';
 import type { Button, Mark, Piece } from '../myra/acts.ts';
+import { leftOutButton } from '../myra/leftOut.ts';
 import { noteHeard } from '../myra/status.ts';
 import { fixButton, stoppedUndo } from './buildButtons.ts';
 import { checkShown } from './buildCheck.ts';
@@ -30,25 +29,9 @@ function partsTip(u: ContextUse) {
   return [...u.parts.map(partWords), `Of a ${window}-token context`].join('\n');
 }
 
-// The cards the builder wasn't given whole or with their picture, that are still on the board, in a block of the open
-// board, since a click selects them there. Pressing it takes nothing away from the block.
-function leftOutButton(a: BuildRecord): Piece[] {
-  const use = a.start?.use,
-    b = session.board;
-  if (!use || b?.id !== a.board) return [];
-  const ids = new Set([...use.left, ...use.pictures, ...use.unseen, ...use.tooBig, ...use.shortened]),
-    here = b.cards.filter(c => ids.has(c.id));
-  if (!here.length) return [];
-  const run = () => {
-    selectOnly(here.map(c => c.id));
-    fit(here);
-  };
-  return [{ slot: 'other', button: { label: 'Select these cards', ghost: true, after: 'stay', run } }];
-}
-
 // A function declaration: VIEW in myra/acts.ts reads it while the modules of the import cycle load.
 export function buildPieces(a: BuildRecord): Piece[] {
-  return [...phasePieces(a), ...leftOutButton(a)];
+  return [...phasePieces(a), ...(a.start?.use ? leftOutButton(a.start.use, a.board) : [])];
 }
 
 function phasePieces(a: BuildRecord): Piece[] {

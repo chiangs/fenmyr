@@ -1,3 +1,4 @@
+import { leftWords } from '../../shared/contextFit.ts';
 import type { Card } from '../../shared/model.ts';
 import { offerOf, webPagesOf } from '../../shared/myraReply.ts';
 import { session } from '../core/state.ts';
@@ -57,7 +58,10 @@ export function replyLine(
   const used = (notes.length ? notes : ctx.used).map(n => ({ vault: n.vaultId, rel: n.rel, title: n.title })),
     pages = ctx.web ? webPagesOf(r) : [];
   if (used.length || pages.length) acts.push({ kind: 'read', notes: used, pages });
+  // last, so it isn't a button the guessed next steps give way to; a board that fitted has nothing to say
+  const trimmed = ctx.use && leftWords(ctx.use).length ? ctx.use : null;
+  if (trimmed) acts.push({ kind: 'context', use: trimmed });
   const said = (r.say && noEmoji(r.say)) || (touched.length ? `Done! I touched ${touched.length} cards.` : 'Done!');
-  const lasting = next.length || used.length || pages.length;
+  const lasting = next.length || used.length || pages.length || !!trimmed;
   return { text: said + looked, ms: r.confirm || offer ? 0 : lasting ? 16000 : 9000, acts };
 }

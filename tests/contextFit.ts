@@ -9,6 +9,7 @@ import {
   type ContextUse,
   fitRanked,
   leftWords,
+  MAX_IDS,
   type Part,
   type PartKind,
   PICTURE_TOKENS,
@@ -185,8 +186,17 @@ assert.deepEqual(
   [],
   'a list that is not a list reads as empty',
 );
-const many = Array.from({ length: 250 }, (_, i) => `c${i}`);
-assert.equal(readContextUse({ window: 10, parts: [], tooBig: many })?.tooBig.length, 200, 'a list is capped at 200');
+const many = Array.from({ length: MAX_IDS + 50 }, (_, i) => `c${i}`);
+assert.equal(
+  readContextUse({ window: 10, parts: [], left: many.slice(0, 299) })?.left.length,
+  299,
+  'a trimmed reply that named 299 cards still names 299 from the board file',
+);
+assert.equal(
+  readContextUse({ window: 10, parts: [], tooBig: many })?.tooBig.length,
+  MAX_IDS,
+  'a damaged list is capped',
+);
 assert.equal(readContextUse({ window: 0, parts: [] }), undefined, 'a window of 0 is no use');
 assert.equal(readContextUse({ window: 1.5, parts: [] }), undefined, 'and so is one that is not whole');
 assert.equal(readContextUse({ window: '10', parts: [] }), undefined, 'or one that is not a number');
