@@ -71,7 +71,11 @@ try {
   await page.evaluate(() => window.__fenmyr.selectOnly(['c1']));
   await page.keyboard.press('Shift');
   await settle(page, 200);
-  assert.deepStrictEqual(await sees(), ['Note · “Checkout: total first”'], 'selecting a card changes what she sees');
+  assert.deepStrictEqual(
+    await sees(),
+    ['Board', 'Note · “Checkout: total first”'],
+    'selecting a card changes what she sees',
+  );
   assert.deepStrictEqual(
     await reader(),
     { reading: true, scrollTop: 600, onBack: true },
