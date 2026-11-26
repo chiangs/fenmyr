@@ -1,7 +1,7 @@
 // A build's block says what the builder was given and what that took of the model's context. Part one, from a record
 // as the chat keeps it: the first line lists what was read and the share of the context it took, and holds what each
 // part cost, and the window, in a tooltip a keyboard reaches; a line follows for each thing left out to fit, marked as
-// something to look at; and Select what was left out selects those cards on the board. A record from before reads how
+// something to look at; and Select these cards selects those cards on the board. A record from before reads how
 // many cards it read, as it did. Part two, live: a whole-board build through the stand-in builder keeps the same on its
 // record, against the window of a model nobody chose.
 import assert from 'node:assert';
@@ -167,7 +167,7 @@ try {
   );
   assert(first.focusable, 'the keyboard reaches that line');
   assert.strictEqual(first.described, first.tip, 'and a screen reader hears the same');
-  assert.deepStrictEqual(first.buttons, ['Select what was left out'], 'the block offers to select what was left out');
+  assert.deepStrictEqual(first.buttons, ['Select these cards'], 'the block offers to select what was left out');
   assert.deepStrictEqual(old.lines.slice(0, 1), ['Read 4 cards'], 'a record without it reads how many cards it read');
   assert.strictEqual(old.tip, '', 'with no tooltip');
   assert.deepStrictEqual(old.buttons, [], 'and nothing to select');
@@ -185,9 +185,9 @@ try {
   });
 
   await page.evaluate(() => window.__fenmyr.selectOnly(['n1']));
-  await page.locator('#mcList button', { hasText: 'Select what was left out' }).click();
-  assert.deepStrictEqual(await selected(), ['n3', 'n4', 'scr'], 'Select what was left out selects exactly those cards');
-  assert.deepStrictEqual((await blocks())[0]?.buttons, ['Select what was left out'], 'and the block keeps its button');
+  await page.locator('#mcList button', { hasText: 'Select these cards' }).click();
+  assert.deepStrictEqual(await selected(), ['n3', 'n4', 'scr'], 'Select these cards selects exactly those cards');
+  assert.deepStrictEqual((await blocks())[0]?.buttons, ['Select these cards'], 'and the block keeps its button');
 
   // a whole-board build, nothing selected, through the stand-in builder
   await page.evaluate(() => window.__fenmyr.selectOnly([]));

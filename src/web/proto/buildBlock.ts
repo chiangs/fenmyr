@@ -43,7 +43,7 @@ function leftOutButton(a: BuildRecord): Piece[] {
     selectOnly(here.map(c => c.id));
     fit(here);
   };
-  return [{ slot: 'other', button: { label: 'Select what was left out', after: 'stay', run } }];
+  return [{ slot: 'other', button: { label: 'Select these cards', ghost: true, after: 'stay', run } }];
 }
 
 // A function declaration: VIEW in myra/acts.ts reads it while the modules of the import cycle load.
