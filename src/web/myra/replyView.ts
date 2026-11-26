@@ -31,10 +31,19 @@ function summaryEl(p: Extract<Piece, { slot: 'summary' }>) {
   const { hover } = p;
   p.lines.forEach((line, i) => {
     const li = list.appendChild(document.createElement('li')),
-      mark = p.marks?.[i];
+      mark = p.marks?.[i],
+      tip = p.tips?.[i];
     li.textContent = line;
     li.classList.toggle('dim', !!p.dim?.has(i));
     if (mark) li.dataset.mark = mark;
+    if (tip) {
+      // Tab reaches it, since the tooltip shows on focus as well as hover, and a screen reader hears it as the
+      // line's description
+      li.dataset.tip = tip;
+      li.dataset.tipAt = 'above';
+      li.tabIndex = 0;
+      li.setAttribute('aria-description', tip);
+    }
     if (!hover) return;
     li.onmouseenter = () => hover(i);
     li.onmouseleave = () => hover(null);

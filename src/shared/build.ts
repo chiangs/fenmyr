@@ -1,4 +1,4 @@
-import { type ContextUse, readContextUse } from './contextFit.ts';
+import { type ContextUse, leftWords, readContextUse } from './contextFit.ts';
 import { isRecord } from './model.ts';
 import { readSources, type Sources } from './repos.ts';
 
@@ -125,9 +125,9 @@ type BuildEnd =
   | { kind: 'failed'; at: number; files: FileDiff[] };
 
 /** One build, as its prototype's chat keeps it, on the message that shows its block. It is written when the build is
- *  asked for. start: when the host had saved the folder (renderer clock) and the snapshot it took, written together.
- *  end: how it ended. Neither says "running": that lives only in memory, so a start with no end that isn't running
- *  here was cut off by Fenmyr closing. */
+ *  asked for. start: when the host had saved the folder (renderer clock), the snapshot it took and what the builder was
+ *  sent against the model's window, written together. end: how it ended. Neither says "running": that lives only in
+ *  memory, so a start with no end that isn't running here was cut off by Fenmyr closing. */
 export type BuildRecord = {
   kind: 'build';
   board: string;
@@ -136,7 +136,7 @@ export type BuildRecord = {
   request: string;
   // how many cards the builder read
   cards: number;
-  start?: { at: number; snapshot: string };
+  start?: { at: number; snapshot: string; use?: ContextUse };
   end?: BuildEnd;
   undone?: true;
 };
@@ -185,6 +185,7 @@ export function readBuildRecord(x: Fields): BuildRecord | null {
   if (typeof x.board !== 'string' || typeof x.build !== 'string') return null;
   const start = isRecord(x.start) ? x.start : {},
     snapshot = snapshotOf(start.snapshot),
+    use = readContextUse(start.use),
     end = readEnd(x.end);
   return {
     kind: 'build',
@@ -192,7 +193,7 @@ export function readBuildRecord(x: Fields): BuildRecord | null {
     build: x.build,
     request: typeof x.request === 'string' ? x.request.slice(0, MAX_REQUEST) : '',
     cards: isCount(x.cards) ? x.cards : 0,
-    ...(snapshot && isTime(start.at) ? { start: { at: start.at, snapshot } } : {}),
+    ...(snapshot && isTime(start.at) ? { start: { at: start.at, snapshot, ...(use ? { use } : {}) } } : {}),
     ...(end ? { end } : {}),
     ...(x.undone === true ? { undone: true } : {}),
   };
@@ -300,7 +301,8 @@ export function fileLines(s: BuildState): string[] {
 const LINE_FILES = 10;
 
 /** A block in one line, for Myra's snapshot of the chat, whose block has no words of its own: "Built in 48 s:
- *  src/App.tsx +3 −1, src/Form.tsx +24 −0", and after ten files "and 40 more", then how its preview check went. */
+ *  src/App.tsx +3 −1, src/Form.tsx +24 −0", and after ten files "and 40 more", then how its preview check went, then
+ *  what the builder was left without, so she can say why it missed something. */
 export function buildLine(a: BuildRecord, live: BuildLive | null) {
   const s = buildState(a, live),
     head = buildHead(s, !!a.undone),
@@ -308,6 +310,7 @@ export function buildLine(a: BuildRecord, live: BuildLive | null) {
     more = files.length - LINE_FILES,
     named = more > 0 ? [...files.slice(0, LINE_FILES), `and ${more} more`] : files,
     line = named.length ? `${head}: ${named.join(', ')}` : head,
-    check = s.phase === 'built' && s.end.check ? checkLine(s.end.check) : '';
-  return check ? `${line}. ${check}` : line;
+    check = s.phase === 'built' && s.end.check ? checkLine(s.end.check) : '',
+    left = a.start?.use ? leftWords(a.start.use).join('; ') : '';
+  return [line, check, left].filter(Boolean).join('. ');
 }

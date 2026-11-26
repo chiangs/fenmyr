@@ -17,6 +17,10 @@ import { textIfThere } from './support/fileText.ts';
 import { launch, settle } from './support/launch.ts';
 import { freshRepo } from './support/prototype.ts';
 
+// the first line of a block that read two cards: the host sends design.md and myra.md with them, and the 2 cards and
+// the 2 files take under 1% of the window
+const READ = 'Read 2 cards, design.md and myra.md · under 1% of the context';
+
 const { work, repo } = freshRepo('fenmyr-build-block-');
 const git = (...args: string[]) =>
   execFileSync('git', ['-C', repo, '-c', 'user.name=T', '-c', 'user.email=t@e.st', ...args]).toString();
@@ -162,10 +166,7 @@ try {
     reply: `${explained}\nCARDS: src/App.tsx=n1; src/Form.tsx=n1\nNEXT: Add a coupon field | Show the total in bold`,
   });
   await build('Make the checkout form.', ['A chip on the wrong line']);
-  await until(
-    async () => (await last())?.lines.join('|') === 'Read 2 cards|src/App.tsx',
-    'it grows a line for App.tsx',
-  );
+  await until(async () => (await last())?.lines.join('|') === `${READ}|src/App.tsx`, 'it grows a line for App.tsx');
   const b = await last();
   assert.strictEqual(b?.head, 'Building…', 'while Claude Code writes');
   assert.ok(b?.bar, 'with a moving bar');
@@ -175,7 +176,7 @@ try {
   const before = written();
   standIn.release();
   await until(
-    async () => (await last())?.lines.join('|') === 'Read 2 cards|src/App.tsx|src/Form.tsx',
+    async () => (await last())?.lines.join('|') === `${READ}|src/App.tsx|src/Form.tsx`,
     'then a line for Form.tsx',
   );
   assert.deepStrictEqual((await last())?.marks, ['done', 'done', 'now'], 'the newest marked, the others done');
@@ -187,7 +188,7 @@ try {
   const built = await last();
   assert.deepStrictEqual(
     built?.lines,
-    ['Read 2 cards', `src/App.tsx +1 −${starterLines}`, 'src/Form.tsx +3 −0', 'Checking the preview'],
+    [READ, `src/App.tsx +1 −${starterLines}`, 'src/Form.tsx +3 −0', 'Checking the preview'],
     'with the lines each file gained and lost, and its preview being checked',
   );
   assert.ok(!built?.bar, 'and no bar');
@@ -322,7 +323,7 @@ try {
   await until(async () => /^Preview runs/.test((await last())?.lines.at(-1) ?? ''), 'its preview is checked');
   assert.deepStrictEqual(
     (await last())?.lines,
-    ['Read 2 cards', 'src/Clear.tsx +1 −0', 'Preview runs · no errors'],
+    [READ, 'src/Clear.tsx +1 −0', 'Preview runs · no errors'],
     'with what it wrote, and how its preview ran',
   );
   assert.deepStrictEqual(l.errors, []);

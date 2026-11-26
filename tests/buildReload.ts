@@ -120,7 +120,12 @@ try {
   assert.match(built.head, /^Built in \d+ s$/, 'the block reads that it was built');
   assert.deepStrictEqual(
     built.lines,
-    ['No cards to read', `src/App.tsx +1 −${starterLines}`, 'src/late.tsx +1 −0', 'Preview runs · no errors'],
+    [
+      'Read design.md and myra.md · under 1% of the context',
+      `src/App.tsx +1 −${starterLines}`,
+      'src/late.tsx +1 −0',
+      'Preview runs · no errors',
+    ],
     'with what it changed, and how its preview ran',
   );
   assert.deepStrictEqual(built.buttons, [], 'and no Undo of its own once her line has one');

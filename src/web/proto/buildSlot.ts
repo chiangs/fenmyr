@@ -1,4 +1,5 @@
 import type { BuildLive } from '../../shared/build.ts';
+import type { ContextUse } from '../../shared/contextFit.ts';
 import type { Ops } from '../../shared/ops.ts';
 import type { Job } from '../myra/status.ts';
 
@@ -19,8 +20,8 @@ export type Running = {
   // when it was asked of the host, and the host's id once protoBuild answers
   asked: number;
   id: string | null;
-  // when the host had saved the folder, and the snapshot it took
-  start: { at: number; snapshot: string } | null;
+  // when the host had saved the folder, the snapshot it took, and what the builder was sent against the model's window
+  start: { at: number; snapshot: string; use?: ContextUse } | null;
   // the board's build before this one, which stays the one to undo if this one changes nothing
   was: string | undefined;
   // the paths its edits named, first seen first, each once

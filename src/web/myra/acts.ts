@@ -28,7 +28,8 @@ export type Mark = 'done' | 'now' | 'wait' | 'bad';
 // A box of lines under her words: what a reply changed, a plan's numbered steps, or a build's. cls: its kind, for the
 // look. dim: the lines that no longer apply. hover: told which line the pointer is on, or null when it leaves them.
 // plan: the waiting plan whose steps these are, so they can be reworded where they show. busy: a moving bar under the
-// head, for work with no known end. marks: one per line, in order.
+// head, for work with no known end. marks: one per line, in order. tips: one per line, in order, shown on hover and
+// focus, its lines on separate lines of the tooltip.
 export type Piece =
   | {
       slot: 'summary';
@@ -41,6 +42,7 @@ export type Piece =
       plan?: string;
       busy?: boolean;
       marks?: readonly Mark[];
+      tips?: readonly (string | undefined)[];
     }
   | { slot: 'sources'; head: string; links: readonly Button[] }
   | { slot: Row; button: Button };

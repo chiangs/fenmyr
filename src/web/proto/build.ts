@@ -250,7 +250,7 @@ export function buildEvent(data: unknown) {
     return void pump();
   }
   if (e.type === 'start') {
-    r.start = { at: Date.now(), snapshot: e.snapshot };
+    r.start = { at: Date.now(), snapshot: e.snapshot, ...(e.use ? { use: e.use } : {}) };
     return void changeBoard(r.board, b => {
       // the status line names the board as it is called now, renamed while closed or not
       r.name = b.name;
