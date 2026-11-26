@@ -24,6 +24,7 @@ import {
   toggle,
 } from './sees.ts';
 import { type Estimate, estimateNext } from './seesEstimate.ts';
+import { guideHTML, guideInput, guideKey, initGuides } from './seesGuides.ts';
 
 // The "Myra sees" strip under the chat's header: what goes with the next message, and × or + to change it for that
 // message only.
@@ -55,13 +56,14 @@ function oneLabel(): string | null {
 
 function seesInput(): SeesInput {
   const b = session.board;
-  if (!b) return { sel: [], one: null, vaults: [], web: false, added: [] };
+  if (!b) return { sel: [], one: null, vaults: [], web: false, added: [], guides: null };
   return {
     sel: b.cards.filter(c => session.sel.has(c.id)).map(c => c.id),
     one: oneLabel(),
     vaults: Fenmyr.native ? aiGrants(b).map(g => ({ vault: g.vault, name: vaultById(g.vault)?.name ?? 'Vault' })) : [],
     web: !!settings.webAccess,
     added: nextNow().added,
+    guides: guideInput(),
   };
 }
 
@@ -76,7 +78,7 @@ type View = {
   read?: string;
 };
 
-function viewOf(c: Exclude<Chip, { kind: 'board' }>, order: readonly string[]): View {
+function viewOf(c: Exclude<Chip, { kind: 'board' | 'guide' }>, order: readonly string[]): View {
   switch (c.kind) {
     case 'selection':
       return {
@@ -143,6 +145,7 @@ const BOARD = 'Board',
 function chipHTML(c: Chip, order: readonly string[]): string {
   if (c.kind === 'board')
     return `<span class="mcs-chip board" role="group" tabindex="0" data-chip="board" data-tip="${BOARD_TIP}" data-tip-at="below" aria-label="${BOARD_TIP}"><span class="mcs-t">${BOARD}</span></span>`;
+  if (c.kind === 'guide') return guideHTML(c);
   const v = viewOf(c, order),
     kind = v.kind,
     key = esc(v.key),
@@ -164,9 +167,11 @@ const ADD_TIP = 'Add pictures, files or a vault note to the next message',
   ADD = `<button type="button" class="mcs-add" title="${ADD_TIP}" aria-label="${ADD_TIP}" aria-haspopup="menu">+ Add</button>`;
 
 let drawn = '';
+// what the strip last read of the board's own rules and design, so a change to them is told from one to anything else
+let drawnGuides = '';
 
-// The board chip's tooltip is fixed to the window, since the strip scrolls and would cut it off, so it is placed from the
-// chip's box, which is measured when the chip is pointed at or focused.
+// The board chip's tooltip, and the guide chips', are fixed to the window, since the strip scrolls and would cut them off,
+// so each is placed from its chip's box, which is measured when the chip is pointed at or focused.
 function placeTip(chip: HTMLElement) {
   const r = chip.getBoundingClientRect();
   chip.style.setProperty('--tip-top', `${r.bottom + 8}px`);
@@ -214,13 +219,15 @@ export function renderSees() {
   if (!el) return;
   const lead = esc(`${myraName()} sees`),
     order = pastesOf(session.board?.id ?? '').map(p => p.id),
-    chips = chipsOf(seesInput(), nextNow().flips)
+    input = seesInput(),
+    chips = chipsOf(input, nextNow().flips)
       .map(c => chipHTML(c, order))
       .join(''),
     add = Fenmyr.native ? ADD : '',
     html = `<span class="mcs-lead" data-mname="{name} sees">${lead}</span>${chips}${add}`;
   // the board can change with the chips as they are, so the estimate is worked out again whenever the strip is asked for
   planEstimate();
+  drawnGuides = guideKey(input.guides);
   if (html === drawn) return;
   drawn = html;
   el.innerHTML = html;
@@ -229,6 +236,13 @@ export function renderSees() {
   // the empty chat's starters fit what goes with the next message. Earlier chats shows none, and drawing it again would
   // lose the reader's place.
   if (!chatLog().length && !appState.histOpen) renderChat();
+}
+
+/** The board was saved, as it is after each change, a doc card's words and Ignore switch among them. Draws the strip
+ *  again, and works the estimate out again, only when what it reads of the board's own rules and design has changed, so
+ *  typing elsewhere costs a look at the doc cards and not a new strip. */
+export function guidesSaved() {
+  if (chatOpen() && drawnGuides !== guideKey(guideInput())) renderSees();
 }
 
 /** How many selected cards go with the next message. */
@@ -322,9 +336,10 @@ export function takeSees(): Sees {
 export function initSees() {
   for (const type of ['pointerover', 'focusin'])
     $('mcSees').addEventListener(type, e => {
-      const chip = closestTo(e.target, '.mcs-chip.board', HTMLElement);
+      const chip = closestTo(e.target, '.mcs-chip[data-tip]', HTMLElement);
       if (chip) placeTip(chip);
     });
+  initGuides();
   $('mcSees').addEventListener('click', e => {
     const key = closestTo(e.target, '[data-flip]')?.dataset.flip;
     if (!key || !session.board) return;

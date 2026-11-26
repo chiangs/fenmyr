@@ -10,6 +10,7 @@ import { refreshBoardsAfterSave } from '../library/rowMenu.ts';
 import { freeOf } from '../myra/chatRules.ts';
 import { chatOverBoard } from '../myra/chatWindow.ts';
 import { say } from '../myra/say.ts';
+import { guidesSaved } from '../myra/seesStrip.ts';
 import { layersSoon } from '../panels/layers.ts';
 import { cardEl } from '../ui/dom.ts';
 import { renderPalette } from '../ui/palette.ts';
@@ -110,6 +111,8 @@ export const boardRevision = () => revision;
 
 export function save() {
   revision++;
+  // the strip under the chat names the board's own rules and design, which every change to the board passes through here
+  guidesSaved();
   if (!appState.drag && session.board) {
     layoutAll();
     cleanNumbers();
@@ -139,6 +142,7 @@ async function writeBoard() {
 export async function saveNow() {
   if (!session.board) return;
   revision++;
+  guidesSaved();
   clearTimeout(appState.saveT);
   await writeBoard();
 }

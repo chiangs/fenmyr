@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import type { Page } from 'playwright';
 import type { ChatMsg } from '../src/shared/chat.ts';
+import type { CardOf } from '../src/shared/model.ts';
 import {
   BUILD,
   builtChat,
@@ -61,6 +62,34 @@ const seeded =
     if (made) await reopen(page);
   };
 
+// The prototype with its own rules and design: a rules card that says Ignore and has no words, so its chip is "Repo rules
+// · ignored", dashed, and a design card with words, so its chip is "Repo + board design", a button. These are the two
+// longest chips the strip draws, so the strip is as full as the guides make it. The cards are saved with the board, and a
+// checkout that doesn't know them shows them as docs and the strip as it always was.
+const doc = (id: string, x: number, text: string, more: Partial<CardOf<'doc'>>): CardOf<'doc'> => ({
+  id,
+  type: 'doc',
+  x,
+  y: 0,
+  w: 240,
+  h: 52,
+  text,
+  ...more,
+});
+const guideCards = [
+  doc('gr', 0, 'Rules', { role: 'rules', ignoreRepo: true }),
+  doc('gd', 300, 'Design', { body: 'Square corners.', role: 'design' }),
+];
+const guided: Step = async page => {
+  const made = await page.evaluate(async cards => {
+    const b = window.__fenmyr.curBoard();
+    if (b?.kind !== 'prototype') return false;
+    await window.Fenmyr.save({ ...b, cards });
+    return true;
+  }, guideCards);
+  if (made) await reopen(page);
+};
+
 // A build partway through: the stand-in has reported writing App.tsx and waits. It writes back what was there, so the
 // code and the preview stay as they were. Waiting on its count works on a checkout that draws no block.
 const building: Step = async page => {
@@ -108,6 +137,8 @@ export const PROTO_GROUPS: Record<string, Group> = {
       ['queued', queued],
     ],
   },
+  'proto-guides': { proto: true, width: 1200, states: [['strip', guided]] },
+  'proto-guides-dark': { proto: true, width: 1200, settings: { theme: 'dark' }, states: [['strip', guided]] },
   'proto-build-dark': { proto: true, width: 1200, settings: { theme: 'dark' }, states: [['built', seeded(builtChat)]] },
 };
 

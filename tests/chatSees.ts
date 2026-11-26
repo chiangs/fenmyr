@@ -20,6 +20,7 @@ const input = (more: Partial<SeesInput> = {}): SeesInput => ({
   vaults: [{ vault: 'v1', name: 'Garden' }],
   web: true,
   added: [],
+  guides: null,
   ...more,
 });
 const kinds = (i: SeesInput, flips = NO_FLIPS) =>

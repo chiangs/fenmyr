@@ -13,7 +13,7 @@ import { launch, settle } from './support/launch.ts';
 
 const pic = { kind: 'file' as const, id: 'f1', name: 'dot.png', data: 'data:image/png;base64,AA==' },
   note = { kind: 'note' as const, id: 'n1', vault: 'v', rel: 'a.md', title: 'A' };
-const input: SeesInput = { sel: [], one: null, vaults: [], web: false, added: [pic, note] };
+const input: SeesInput = { sel: [], one: null, vaults: [], web: false, added: [pic, note], guides: null };
 assert.deepStrictEqual(
   chipsOf(input, NO_FLIPS).map(c => c.kind),
   ['board', 'added', 'added'],
