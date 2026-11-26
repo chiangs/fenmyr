@@ -69,7 +69,7 @@ export type PartKind = (typeof PART_KINDS)[number];
 export type Part = { kind: PartKind; tokens: number; count?: number };
 /** What one build or question was sent, against the window it had. Ids are card ids. left: cards left out to fit;
  *  pictures: cards whose picture was left out to fit; shortened: cards sent with their words cut short; unseen:
- *  wireframe screens that weren't in view, so no picture could be taken; tooBig: pictures too big to send. */
+ *  wireframe screens that weren’t in view, so no picture could be taken; tooBig: pictures too big to send. */
 export type ContextUse = {
   window: number;
   parts: Part[];
@@ -154,7 +154,7 @@ export function leftWords(u: ContextUse): string[] {
   }
   if (short) lines.push(`${counted(short, 'card')} ${short === 1 ? 'was' : 'were'} shortened to fit`);
   if (unseen) {
-    const tail = unseen === 1 ? "wasn't in view, so it went" : "weren't in view, so they went";
+    const tail = unseen === 1 ? 'wasn’t in view, so it went' : 'weren’t in view, so they went';
     lines.push(`${counted(unseen, 'screen')} ${tail} without a picture`);
   }
   if (tooBig) lines.push(`${counted(tooBig, 'picture')} ${tooBig === 1 ? 'was' : 'were'} too big to send`);

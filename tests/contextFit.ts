@@ -259,12 +259,12 @@ assert.deepEqual(
 );
 assert.deepEqual(
   leftWords({ ...empty, unseen: ofIds(1) }),
-  ["1 screen wasn't in view, so it went without a picture"],
+  ['1 screen wasn’t in view, so it went without a picture'],
   'one screen unseen',
 );
 assert.deepEqual(
   leftWords({ ...empty, unseen: ofIds(2) }),
-  ["2 screens weren't in view, so they went without a picture"],
+  ['2 screens weren’t in view, so they went without a picture'],
   'some screens unseen',
 );
 assert.deepEqual(leftWords({ ...empty, tooBig: ofIds(1) }), ['1 picture was too big to send'], 'one picture too big');
@@ -278,7 +278,7 @@ assert.deepEqual(
   [
     '1 picture and 2 cards were left out to fit',
     '1 card was shortened to fit',
-    "2 screens weren't in view, so they went without a picture",
+    '2 screens weren’t in view, so they went without a picture',
     '1 picture was too big to send',
   ],
   'every case at once is one line each, in order',
