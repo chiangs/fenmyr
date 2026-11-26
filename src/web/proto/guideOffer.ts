@@ -11,6 +11,8 @@ import { guideCards } from './welcome.ts';
 // Prototypes made before they came with rules and design cards: after a build, Myra offers the two cards once per
 // board, as she offers wireframes once (frameTip). Any answer, or none, has been the offer.
 const OFFERED = 'fenmyr:guidesOffered';
+// stored in place of a board's id, it stands for all of them: no board is offered the cards
+const EVERY_BOARD = '*';
 
 function offeredBoards(): string[] {
   try {
@@ -37,7 +39,7 @@ export function offerGuides() {
   // a quiet Myra says nothing, so the offer waits for a time she can make it
   if (b.kind !== 'prototype' || b.cards.some(isGuide) || settings.chat === 'quiet') return;
   const seen = offeredBoards();
-  if (seen.includes(b.id)) return;
+  if (seen.includes(b.id) || seen.includes(EVERY_BOARD)) return;
   try {
     localStorage.setItem(OFFERED, JSON.stringify([...seen, b.id]));
   } catch {}

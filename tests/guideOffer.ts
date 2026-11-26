@@ -12,7 +12,7 @@ import { freshRepo } from './support/prototype.ts';
 import { still } from './support/settled.ts';
 
 const { work, repo } = freshRepo('fenmyr-guide-offer-');
-const l = await launch({ claude: true });
+const l = await launch({ claude: true, guidesOffer: true });
 const standIn = buildStandIn(l);
 const { page } = l;
 
