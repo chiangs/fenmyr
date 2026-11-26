@@ -24,9 +24,10 @@ execFileSync('git', ['init', '-q', '--bare', '-b', 'main', github]);
 fs.writeFileSync(
   path.join(bin, 'claude'),
   `#!/bin/sh
+prompt=$(cat)
 case "$*" in
   *stream-json*)
-    case "$2" in
+    case "$prompt" in
       *Pay\\ now*) title='Pay now' ;;
       *) title='Checkout' ;;
     esac
@@ -34,7 +35,7 @@ case "$*" in
     printf '%s\\n' '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'"$PWD"'/src/App.tsx"}}]}}'
     printf '%s\\n' '{"type":"result","is_error":false,"result":"I built the checkout from your note.\\nCARDS: src/App.tsx=n1"}' ;;
   *)
-    case "$2" in
+    case "$prompt" in
       *Pay\\ now*) req='Change the heading to Pay now' ;;
       *) req='Build the checkout screen from the selected note' ;;
     esac

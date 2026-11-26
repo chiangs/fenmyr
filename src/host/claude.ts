@@ -163,11 +163,11 @@ async function runClaude(
 ) {
   const claude = await claudePath();
   if (!claude) throw new Error(need);
+  // the prompt goes on stdin: one command-line argument can't pass 128 KiB on Linux
   const r = await run(
     claude,
     [
       '-p',
-      prompt,
       '--output-format',
       'json',
       ...(cwd ? hookArgs({ permissions: FOLDER_ONLY }) : hookArgs()),
@@ -177,6 +177,7 @@ async function runClaude(
     timeout,
     {},
     cwd,
+    prompt,
   );
   const { text, isError } = claudeResult(r.out);
   // a failed answer (not signed in, no plan…) comes back as an error, not as words for Myra to read

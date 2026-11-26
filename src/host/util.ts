@@ -2,7 +2,7 @@ import { type ChildProcessByStdio, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { Readable } from 'node:stream';
+import type { Readable, Writable } from 'node:stream';
 import P from './paths.ts';
 
 export type Untrusted<T> = { readonly [K in keyof T]?: unknown };
@@ -56,26 +56,36 @@ export const pathDirs = () =>
   ].filter(Boolean);
 export const env = () => ({ ...process.env, PATH: pathDirs().join(':') });
 
-// collects what the program prints and stops it after `timeout` seconds
+// collects what the program prints and stops it after `timeout` seconds; `input` is what it reads on stdin, which is
+// /dev/null without it
 export function run(
   cmd: string,
   args: string[],
   timeout: number,
   extraEnv: Record<string, string> = {},
   cwd = P.support,
+  input?: string,
 ): Promise<RunResult> {
   return new Promise(resolve => {
     const out: Buffer[] = [],
       err: Buffer[] = [];
-    let p: ChildProcessByStdio<null, Readable, Readable>;
+    let p: ChildProcessByStdio<Writable | null, Readable, Readable>;
     try {
       fs.mkdirSync(cwd, { recursive: true }); // the folder we run in has to exist (a fresh install, or a test)
     } catch {}
     try {
-      p = spawn(cmd, args, { cwd, env: { ...env(), ...extraEnv }, stdio: ['ignore', 'pipe', 'pipe'] });
+      const opts = { cwd, env: { ...env(), ...extraEnv } };
+      p =
+        input === undefined
+          ? spawn(cmd, args, { ...opts, stdio: ['ignore', 'pipe', 'pipe'] })
+          : spawn(cmd, args, { ...opts, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (e) {
       return resolve({ code: -1, out: Buffer.alloc(0), err: Buffer.from(e instanceof Error ? e.message : String(e)) });
     }
+    // A program that exits without reading its input (a test's stand-in, or an old Claude Code) fails the write with
+    // EPIPE, and a stream error nobody listens to would crash the host.
+    p.stdin?.on('error', () => {});
+    p.stdin?.end(input);
     const killer = setTimeout(() => p.kill('SIGTERM'), timeout * 1000);
     p.stdout.on('data', (d: Buffer) => out.push(d));
     p.stderr.on('data', (d: Buffer) => err.push(d));

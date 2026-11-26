@@ -30,17 +30,21 @@ fs.mkdirSync(bin);
 fs.writeFileSync(
   path.join(bin, 'claude'),
   `#!/bin/sh
+prompt=$(cat)
 case "$*" in
   *stream-json*)
-    printf '%s' "$2" > ${work}/prompt.txt; printf '%s\\n' "$@" > ${work}/args.txt
+    printf '%s' "$prompt" > ${work}/prompt.txt; printf '%s\\n' "$@" > ${work}/args.txt
     seen=''; for a in "$@"; do [ "$seen" = 1 ] && ls "$a" > ${work}/pictures.txt && echo "$a" > ${work}/picture-dir.txt; seen=''; [ "$a" = --add-dir ] && seen=1; done
     echo 'export function App() { return <h1>Built by Myra</h1>; }' > src/App.tsx
-    case "$2" in *OUTSIDE*) echo stray > ../../stray.txt ;; esac
-    case "$2" in *SLOW*) sleep 3 ;; esac
+    case "$prompt" in *OUTSIDE*) echo stray > ../../stray.txt ;; esac
+    case "$prompt" in *SLOW*) sleep 3 ;; esac
     echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'"$PWD"'/src/App.tsx"}}]}}'
     printf '%s\\n' '{"type":"result","is_error":false,"result":"I built the heading from your Checkout note.\\nCARDS: src/App.tsx=n1"}' ;;
-  *BUILD-ALL*) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"On it.\\", \\"build\\": {\\"request\\": \\"Build every card.\\"}}"}' ;;
-  *) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"ok\\"}"}' ;;
+  *)
+    case "$prompt" in
+      *BUILD-ALL*) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"On it.\\", \\"build\\": {\\"request\\": \\"Build every card.\\"}}"}' ;;
+      *) echo '{"type":"result","is_error":false,"result":"{\\"say\\": \\"ok\\"}"}' ;;
+    esac ;;
 esac
 `,
   { mode: 0o755 },

@@ -90,8 +90,8 @@ fs.writeFileSync(
   path.join(bin, 'claude'),
   `#!${process.execPath}
 const fs = require('node:fs');
-const prompt = process.argv[3] ?? '';
 if (process.argv[2] !== '-p') process.exit(0);
+const prompt = fs.readFileSync(0, 'utf8');
 fs.writeFileSync(${JSON.stringify(sent)}, prompt);
 const replies = ${JSON.stringify(REPLIES)};
 const key = Object.keys(replies).find(k => prompt.includes('The person asked you: ' + k));

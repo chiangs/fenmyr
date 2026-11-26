@@ -55,7 +55,6 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, mod
     );
   const args = [
     '-p',
-    prompt,
     '--output-format',
     'stream-json',
     '--verbose',
@@ -65,8 +64,12 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, mod
   ];
   for (const d of readable) args.push('--add-dir', d);
   return new Promise((res, rej) => {
-    const p = spawn(claude, args, { cwd, env: env(), stdio: ['ignore', 'pipe', 'pipe'] });
+    const p = spawn(claude, args, { cwd, env: env(), stdio: ['pipe', 'pipe', 'pipe'] });
     running.add(p);
+    // The prompt goes on stdin: one command-line argument can't pass 128 KiB on Linux. A Claude Code that exits without
+    // reading it fails the write with EPIPE, and a stream error nobody listens to would crash the host.
+    p.stdin.on('error', () => {});
+    p.stdin.end(prompt);
     let buf = '',
       said = '',
       failed = '',
