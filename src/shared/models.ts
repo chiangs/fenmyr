@@ -13,7 +13,8 @@ export type ModelChoice = { provider: ProviderId } & (
   | { id: string; effort?: Effort }
   | { id?: undefined; effort: Effort }
 );
-export type ModelEntry = { id: string; name: string; efforts: readonly Effort[]; note?: string };
+/** `context` is the model's context window in tokens. A model that doesn't say is treated as unknown. */
+export type ModelEntry = { id: string; name: string; efforts: readonly Effort[]; note?: string; context?: number };
 export type ProviderModels = { provider: ProviderId; name: string; models: ModelEntry[] };
 
 export function makeChoice(provider: ProviderId, id?: string, effort?: Effort): ModelChoice | undefined {

@@ -78,6 +78,7 @@
     "src/shared/changeSummary.ts": "The words for what a Myra reply changed (“Changed on the board”), what a plan she landed left alone, and what her Undo put back.",
     "src/shared/changes.ts": "The record of what one Myra reply changed, card by card, and the change set read from it.",
     "src/shared/chat.ts": "Myra's chat messages as a board stores them, with the buttons that are kept as data, and their reader.",
+    "src/shared/contextFit.ts": "How much of a model’s context window a board may fill, how its cards are ranked to fit, how a use of it reads from a board file, and the words that say what was sent and what was left out.",
     "src/shared/model.ts": "The types for boards, cards, links, views and vault grants that the whole app shares.",
     "src/shared/models.ts": "The types for choosing Myra's model and effort, and the shape check for a choice from the page or storage.",
     "src/shared/myraReply.ts": "Checks Myra’s reply field by field, so one bad field is dropped and the rest still applies.",
@@ -784,6 +785,7 @@
     "src/web/settings/derivedModes.ts": "The area colours that differ between light and dark, as expressions of the core tokens, which style.css reads instead of a body.dark rule.",
     "tests/boardLists.ts": "A board file written by hand with no card list and no tray opens as an empty board instead of failing to load.",
     "tests/boardsSaved.ts": "Settings, General shows the board count with Locally saved, or Local files linked to a remote repo once a project is linked, and a note under it that Myra and a repo send information along.",
+    "tests/contextFit.ts": "Tests that what Myra is sent from a board follows the model’s window, is cut in ranked order, and says every cut in words.",
     "tests/dueCues.ts": "An overdue chip has its own icon and says Overdue, so its red is not the only cue; a chip that turns overdue while the board is open gets both, and one that is not overdue keeps the clock.",
     "src/web/settings/shortcutList.ts": "The Keyboard shortcuts list in Settings → Board: a block per group with its entries, each a description and its keys in a keycap."
   }
