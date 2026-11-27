@@ -35,7 +35,7 @@ CLAUDE.md says how to [add a test](CLAUDE.md#add-a-test) and why each branch is 
 - **Wait on the page, never on the clock.** Read a box or a colour after `still(page)`, or take it with `rect(page, selector)`, both from `tests/support/settled.ts`. A fixed sleep counts against the budget, and one that is the point of the test, such as a debounce, needs a `// sleeps on purpose: <why>` comment.
 - **Try the lag run.** `node tools/run-tests.ts --lag 50 <test>` starts every transition 50 ms late, so a test that guesses at timing fails on your machine before it flakes in CI.
 
-**A change people can see** runs `npm run visual`, which compares 40 states pixel by pixel with `origin/main`. Each state your change is meant to alter goes in `tools/visual-expected.json` with a reason, which the reviewer reads; anything else that moved is a mistake to fix.
+**A change people can see** runs `npm run visual`, which compares 129 states pixel by pixel with `origin/main`. Each state your change is meant to alter goes in `tools/visual-expected.json` with a reason, which the reviewer reads; anything else that moved is a mistake to fix. Once the change is on `main`, its entries no longer match a difference, and the next run lists them as stale: remove them then, so the file never excuses a change nobody meant.
 
 ## The code map
 
