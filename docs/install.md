@@ -7,7 +7,7 @@ The [README](../README.md#install) has the short version. This page has every wa
 - **Linux**. Fenmyr is made for Arch and CachyOS on Wayland, and runs on Hyprland, KDE Plasma, GNOME, Sway and niri. Or a **Mac**, Apple Silicon or Intel.
 - **Node.js 22.18 or newer** and npm, to install from the code. The installer offers to install them with pacman, or with Homebrew on a Mac.
 - **FUSE 2** for the AppImage, which is built for x86-64 (`sudo pacman -S fuse2` on Arch).
-- **[Claude Code](https://docs.claude.com/en/docs/claude-code)**, signed in, for Myra and prototyping. Without it, the canvas works and Myra's AI parts don't. See [Connect Claude Code](../README.md#connect-claude-code).
+- **[Claude Code](https://docs.claude.com/en/docs/claude-code)**, signed in, for Myra and prototyping. Without it, the canvas works and Myra's AI parts don't. See [Connections](../README.md#connections).
 
 ## From the code (Linux)
 

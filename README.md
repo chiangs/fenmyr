@@ -28,7 +28,7 @@ Fenmyr is a free, open-source canvas for Linux and the Mac. Spread notes, pictur
 
 Your boards are plain files on your computer. Fenmyr needs no account, and its AI is optional: it runs only when you ask.
 
-**[Why Fenmyr](#why-fenmyr)** · **[Features](#features)** · **[Install](#install)** · **[Updates and the beta](#updates-and-the-beta)** · **[Connect Claude Code](#connect-claude-code)** · **[Your data](#your-data)** · **[Docs](#documentation)** · **[Contributing](#contributing)** · **[Support](#support-fenmyr)**
+**[Why Fenmyr](#why-fenmyr)** · **[Features](#features)** · **[Install](#install)** · **[Updates and the beta](#updates-and-the-beta)** · **[Connections](#connections)** · **[Settings](#settings)** · **[Your data](#your-data)** · **[Docs](#documentation)** · **[Contributing](#contributing)** · **[Support](#support-fenmyr)**
 
 ## Why Fenmyr
 
@@ -122,7 +122,7 @@ The [code map](https://code-map.fenmyr.com/) shows every source file and every i
 
 ## Install
 
-You need **Node.js 22.18 or newer** to install from the code (the installer offers to install it), and **[Claude Code](#connect-claude-code)** for Myra and prototyping.
+You need **Node.js 22.18 or newer** to install from the code (the installer offers to install it), and **[Claude Code](#connections)** for Myra and prototyping.
 
 **From the code** (recommended on Arch and CachyOS, and on a Mac):
 
@@ -165,29 +165,54 @@ An AppImage follows Stable only. A copy from a `.dmg` doesn't update.
 
 Going back to Stable keeps the beta you have until a newer stable release arrives. A card that an older Fenmyr can't read is kept as it is when you save.
 
-## Connect Claude Code
+## Connections
 
-Myra thinks with [Claude Code](https://docs.claude.com/en/docs/claude-code) on your computer. Without it, the canvas still works, but Myra can't do the AI parts.
+Everything Fenmyr connects to is in **Settings → Connections**.
+
+**Claude Code.** Myra thinks with [Claude Code](https://docs.claude.com/en/docs/claude-code) on your computer. Without it, the canvas still works, but Myra can't do the AI parts.
 
 1. Install it: `curl -fsSL https://claude.ai/install.sh | bash`, or see the [setup guide](https://docs.claude.com/en/docs/claude-code/setup).
 2. Run `claude` once in a terminal and sign in with your Claude account.
-3. In Fenmyr, open Settings → Connections. Claude Code shows **ready** as soon as Fenmyr finds it.
+3. Open Settings → Connections. Under Myra's helpers, Claude Code shows **ready** as soon as Fenmyr finds it.
 
-Myra's requests run with your Claude Code hooks off, so hooks meant for your own sessions don't fire while she thinks. Skills, plugins, connectors and your sign-in work as usual.
+**Claude usage** counts Myra's share of your Claude use, today, over the last 7 days and since you started, with a link to your plan's limits. Myra's requests run with your Claude Code hooks off, so hooks meant for your own sessions don't fire while she thinks. Skills, plugins, connectors and your sign-in work as usual.
 
-**More connections**, all in Settings → Connections:
+**Myra's helpers** list Claude Code, Mobbin and Higgsfield, each marked **ready** once Fenmyr finds it, and the helpers have switches:
 
-- **The web** is off until you switch on **Let Myra search the web**. Her searches can include words from your board.
-- **Git and GitHub** are for prototyping. Fenmyr uses `git` and the `gh` command, so it never holds a GitHub token itself.
-- **Obsidian vaults** connect read-only, in three steps: connect, give access, allow AI reading.
-- **Mobbin and Higgsfield** are connectors in your Claude account. Add them at [claude.ai/settings/connectors](https://claude.ai/settings/connectors).
-- **Voice memos written out**: install [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`yay -S whisper.cpp`). The first memo downloads a speech model of about 140 MB. Set `FENMYR_WHISPER_SIZE=tiny|base|small|medium` for another size, or `FENMYR_WHISPER_MODEL` to a model you have. Without it, memos still record and play.
+- **Let Myra search the web** is off until you turn it on. She can then look things up and read public pages, including public GitHub repositories, and her searches can include words from your board.
+- **Let Myra use Mobbin** finds real app screens for inspiration, and **Let Myra use Higgsfield** generates pictures. Both are on, but work only once you add them as connectors in your Claude account at [claude.ai/settings/connectors](https://claude.ai/settings/connectors). Higgsfield costs credits, so Myra always asks first, and that check can't be turned off.
+
+**Git and GitHub** are for prototyping, and are set up once for your computer. Each step checks itself and offers the one thing to do. Fenmyr uses `git` and the `gh` command, so it never holds a GitHub token itself.
+
+**Obsidian vaults** connect read-only, in three steps:
+
+1. **Connect a vault.**
+2. **Give access.** Each project or board chooses which folders it may read, with **Give access…** on the vault, or by right-clicking a project or board and choosing **Vault access**.
+3. **Allow AI reading**, if you want it, in the same dialog. Then add the vault under **Myra sees** in her chat for the messages where she should look.
+
+Folders you mark off-limits, and any note tagged `#private`, are never read.
+
+**Voice memos written out** need [whisper.cpp](https://github.com/ggml-org/whisper.cpp) (`yay -S whisper.cpp`), which runs on your computer. The first memo downloads a speech model of about 140 MB. Set `FENMYR_WHISPER_SIZE=tiny|base|small|medium` for another size, or `FENMYR_WHISPER_MODEL` to a model you have. Without it, memos still record and play.
+
+## Settings
+
+Open Settings with **Ctrl+,** or the ⚙ in the Boards panel.
+
+| Tab | What's there |
+|---|---|
+| **General** | Your name, where your boards are saved, and your camera and microphone |
+| **Appearance** | Light or dark and a theme for each, Follow Caelestia, your own colours, icon style and window buttons; the default font, new note colour, tilted cards, motion and grid; your cursor; and the Accessibility switches, with a theme that offers them |
+| **Layout** | The tools panel (icon size, which tools show, their order) and the widgets |
+| **Board** | Double-click for a new note, and every keyboard shortcut |
+| **Myra** | Her name, colour and character, how lively and chatty she is, emojis, how chats are kept, her thinking on or off, and plans |
+| **Connections** | Claude usage, Myra's helpers, Git and GitHub, and Obsidian vaults |
+| **About** | The version and **Copy details**, updates and the channel, the tour and the example board, feedback, and licences |
 
 ## Your data
 
 - Boards are JSON files in `~/.local/share/fenmyr/boards`, with folders in `folders.json`, videos in `media/` and your templates in `templates/`. Back them up or copy them like any other files. App settings live in `~/.config/Fenmyr`.
 - A prototype's code lives in its project's git repo, under `prototypes/`. It reaches GitHub only when you push.
-- Myra thinks only when you ask her something or start a build. Then the board and your words go to Claude Code on your computer, the same as asking Claude yourself.
+- Myra thinks only when you ask her something or start a build. Then Claude Code on your computer sends the board and your words to Claude, Anthropic's cloud service, the same as when you ask Claude yourself. A vault's notes go along only when AI reading is allowed and you've added the vault under **Myra sees**, and only the notes that board may read.
 - Chats are kept the way you choose in Settings → Myra: on each board, until you quit, or not at all. Prototype boards always keep theirs.
 - Linux has no per-app camera and microphone prompt. A voice memo or video card turns them on when you add or use it, and only Fenmyr's own window can use the microphone, clipboard and notifications.
 - Chromium's spell check fetches its dictionary from Google once, then works offline.
