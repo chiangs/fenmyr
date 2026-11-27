@@ -98,7 +98,7 @@ function screen(s: Step): string {
       return githubScreen(s);
     case 'noGitHub': {
       const buttons = BACK + button('openHelpers', 'Open Settings', 'hot');
-      return `<p class="set-note">Set up GitHub first, in Settings → Helpers. It takes a few minutes, once per computer.</p><div class="tdlg-btns">${buttons}</div>`;
+      return `<p class="set-note">Set up GitHub first, in Settings → Connections → Git and GitHub. It takes a few minutes, once per computer.</p><div class="tdlg-btns">${buttons}</div>`;
     }
     case 'gone': {
       const path = esc(s.path),

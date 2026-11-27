@@ -185,13 +185,13 @@ const firstLine = (err: string) => {
 
 const plain = (err: string) =>
   /author identity unknown|tell me who you are/i.test(err)
-    ? 'Git doesn’t know who is committing. Add your name and email in Settings → Helpers → Git and GitHub.'
+    ? 'Git doesn’t know who is committing. Add your name and email in Settings → Connections → Git and GitHub.'
     : /conflict/i.test(err)
       ? 'Git found changes that clash with these. Pull first, then sort out the files it lists.'
       : /rejected|non-fast-forward|fetch first/i.test(err)
         ? 'GitHub has commits this computer doesn’t have yet. Pull first, then push again.'
         : /authentication|could not read username|permission denied|403/i.test(err)
-          ? 'GitHub didn’t accept the sign-in. Sign in again in Settings → Helpers.'
+          ? 'GitHub didn’t accept the sign-in. Sign in again in Settings → Connections → Git and GitHub.'
           : /src refspec .* does not match/i.test(err)
             ? 'There’s nothing to push yet. Commit this prototype first, then push.'
             : firstLine(err) || 'Git couldn’t do that.';

@@ -26,7 +26,7 @@ const obsLink = (v: Vault, rel: string) =>
 export function openNote(vaultId: string, rel: string) {
   const v = vaultById(vaultId);
   if (!v) {
-    say('That vault isn’t connected any more. You can connect it again in Settings → Vaults ✦', 4000);
+    say('That vault isn’t connected any more. You can connect it again in Settings → Connections ✦', 4000);
     return;
   }
   Fenmyr.openURL(obsLink(v, rel));

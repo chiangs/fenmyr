@@ -39,7 +39,8 @@ const ALIGNS: readonly (readonly [TextAlign, string])[] = [
 ];
 // what a text shows without its own value, as `styleWF` draws it
 const DEF = { size: 18, weight: 500, lh: 1.3, align: 'left' } as const;
-// at least what the Wireframe panel let a text keep, which had no ends of its own
+// wide enough for any size or line height a text was given in the Wireframe panel, which is gone but set no limits,
+// so a board made then still reads its values
 const SIZE = { min: 1, max: 1000 },
   LH = { min: 0.5, max: 4, step: 0.05 };
 

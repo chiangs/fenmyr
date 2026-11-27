@@ -263,7 +263,7 @@ function boardFontPop(btn: Element, list: Card[], back: string) {
   pop.onmouseleave = restore;
 }
 
-// Settings → Board → Default font: the same list as the font picker, applied to every board
+// Settings → Appearance → Default font: the same list as the font picker, applied to every board
 function defaultFontPop(btn: Element) {
   const cur = (settings.defaultFont || '').trim(),
     row = fontRow(cur),

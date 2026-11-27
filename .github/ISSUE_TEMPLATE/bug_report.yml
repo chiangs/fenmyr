@@ -44,7 +44,7 @@ body:
         - Wireframes
         - Prototypes
         - Vaults (Obsidian)
-        - Export (image, PDF, Word)
+        - Export and import (image, PDF, Word, zip)
         - Voice memos and video
         - Settings, colours and themes
         - Installing and updating
@@ -63,12 +63,26 @@ body:
         - Running from a checkout (npm start)
     validations:
       required: true
-  - type: input
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Update channel
+      description: Settings → About → Channel shows it for an install from the code. An AppImage always follows Stable.
+      options:
+        - Stable
+        - Beta
+        - Every change
+        - None (a .dmg, or running from a checkout)
+        - Not sure
+  - type: textarea
     id: version
     attributes:
-      label: Fenmyr version
-      description: Settings → Updates shows the version, or the date of your copy.
-      placeholder: 1.0.0, or "version from Nov 6"
+      label: Fenmyr version and build
+      description: In Settings → About → Copy details, then paste it here. It says the version, the commit Fenmyr was built from, and how it was installed.
+      placeholder: |
+        Fenmyr 1.1.0-beta.1 (Beta)
+        Commit 1a2b3c4
+      render: text
   - type: input
     id: system
     attributes:

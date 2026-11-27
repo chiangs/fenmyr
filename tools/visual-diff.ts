@@ -23,7 +23,7 @@ const HIDDEN_TIMED_BUBBLE = '#mBubble { visibility: hidden !important; }';
 const STRAY_PIXELS = 60;
 // scaled card edges land a pixel apart from run to run at this zoom; same code measured 900 to 1,600, a layout change 268,000
 // A new prototype board opens fitted at a fractional zoom (53%), and in CI its states come out 91 to 95 px apart between
-// two builds of the same code (the runs of #528 and #531), while a run here gives 0. The cause isn't proven; a layout
+// two builds of the same code (the runs of #528 and #531), while a run here gives 0. #533 is finding why; a layout
 // change there is thousands of pixels, so 200 still catches one.
 const GUIDES_STATES = ['board', 'board-ignored', 'rules', 'rules-ignored'].flatMap(s => [
   `guides-${s}.png`,

@@ -1,5 +1,5 @@
 // The font picker's "Use …" row: it reads as one run of text, and a typed name lands only once Google Fonts sends it.
-// A name Google lacks, or a network that's down, leaves the card and Settings → Default font as they were, and the
+// A name Google lacks, or a network that's down, leaves the card and Settings → Appearance → Default font as they were, and the
 // picker says why. A name typed in lower case lands with Google's capitals, and a font that failed loads once the
 // network is back. Google Fonts is stubbed, so the test never reaches it.
 import assert from 'node:assert';
@@ -171,7 +171,7 @@ try {
     assert.ok(await loaded('Rubik Dirt'), 'and loads now the network is back');
   });
 
-  await check('Settings → Default font takes only a font Google sends', async () => {
+  await check('Settings → Appearance → Default font takes only a font Google sends', async () => {
     await page.click('#gearBtn');
     await page.click('#setTabs [data-tab="appearance"]');
     const shown = () => page.textContent('#defaultFontBtn');

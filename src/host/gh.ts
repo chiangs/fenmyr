@@ -98,7 +98,8 @@ export async function asAccount(account: string) {
   if (!gh) throw new Error("gh isn't installed yet.");
   const r = await run(gh, ['auth', 'token', '--hostname', 'github.com', '--user', account], 30);
   const token = r.out.toString('utf8').trim();
-  if (r.code !== 0 || !token) throw new Error(`Sign in to GitHub as ${account} again in Settings → Helpers.`);
+  if (r.code !== 0 || !token)
+    throw new Error(`Sign in to GitHub as ${account} again in Settings → Connections → Git and GitHub.`);
   return { gh, env: { GH_TOKEN: token } };
 }
 

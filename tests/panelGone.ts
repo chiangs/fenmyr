@@ -99,7 +99,7 @@ try {
     );
   });
 
-  await run('Settings → Widgets has no Wireframe row, and the next save forgets wDesign', async () => {
+  await run('Settings → Layout → Widgets has no Wireframe row, and the next save forgets wDesign', async () => {
     await page.click('#gearBtn');
     await page.waitForFunction(() => !!document.querySelector('#settings.on'));
     await still(page);

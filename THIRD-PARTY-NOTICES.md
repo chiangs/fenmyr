@@ -111,7 +111,7 @@ SOFTWARE.
 
 ## Electron 44.9.1
 
-Electron includes Chromium and Node.js, which use many open-source licenses (BSD-style, MIT, Apache 2.0 and others). Their full texts ship with Electron as LICENSES.chromium.html, next to the Electron program; Settings → About → Licenses can open it.
+Electron includes Chromium and Node.js, which use many open-source licenses (BSD-style, MIT, Apache 2.0 and others). Their full texts ship with Electron as LICENSES.chromium.html, next to the Electron program; Settings → About → View licences can open it.
 
 ```
 Copyright (c) Electron contributors

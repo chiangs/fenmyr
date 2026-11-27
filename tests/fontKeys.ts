@@ -116,18 +116,21 @@ try {
     assert.ok((await shown()) <= 400, `a search shows no more than 400 at once: ${await shown()}`);
   });
 
-  await check('Esc on a row in Settings → Default font gives the keyboard back to its button', async () => {
-    await page.click('#gearBtn');
-    await page.click('#setTabs [data-tab="appearance"]');
-    await openFonts('#defaultFontBtn');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(100);
-    assert.ok(!(await pickerOpen()), 'Esc closes the picker');
-    assert.strictEqual(await focused(), 'defaultFontBtn', 'with the keyboard back on Default font');
-    assert.ok(await page.isVisible('#setClose'), 'and Settings still open');
-    await page.click('#setClose');
-  });
+  await check(
+    'Esc on a row in Settings → Appearance → Default font gives the keyboard back to its button',
+    async () => {
+      await page.click('#gearBtn');
+      await page.click('#setTabs [data-tab="appearance"]');
+      await openFonts('#defaultFontBtn');
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(100);
+      assert.ok(!(await pickerOpen()), 'Esc closes the picker');
+      assert.strictEqual(await focused(), 'defaultFontBtn', 'with the keyboard back on Default font');
+      assert.ok(await page.isVisible('#setClose'), 'and Settings still open');
+      await page.click('#setClose');
+    },
+  );
 
   for (const f of failed) console.log(`FAILED ${f}`);
   assert.deepStrictEqual(failed, [], 'every check passes');

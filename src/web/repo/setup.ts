@@ -4,7 +4,7 @@ import { chirp } from '../myra/say.ts';
 import { child, closestTo, esc } from '../ui/dom.ts';
 import { installCommand } from './install.ts';
 
-// Settings → Helpers → Git and GitHub: each step checks itself, says what's missing, and offers the one thing to do.
+// Settings → Connections → Git and GitHub: each step checks itself, says what's missing, and offers the one thing to do.
 type Found = { setup: GitSetup; gh: GhState; gitCmd: string | null; ghCmd: string | null };
 let found: Found | null = null;
 // GitHub's one-time code while a sign-in waits for the person to approve it
