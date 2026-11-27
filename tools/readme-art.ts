@@ -40,15 +40,15 @@ const CLIPS: Clip[] = [
   { file: 'myra-love.png', seconds: 4, steps: [{ at: 0, pose: 'love' }] },
 ];
 
-// outline: no tint. On GitHub's dark page a tint that fills most of the shape turns it into a blob, so those icons
-// keep only their lines; a small or open tint, as on the rocket and the eye, still reads.
+// outline: no tint. On GitHub's dark page a tint muddies a small icon into a blob, so the heading icons keep only their
+// lines. The berry keeps its tint, since it is the logo.
 const ICONS: { file: string; phosphor?: string; custom?: string; outline?: true }[] = [
   { file: 'mark.svg', custom: 'fenmyr-mark' },
-  { file: 'prototype.svg', phosphor: 'rocket-launch' },
+  { file: 'prototype.svg', phosphor: 'rocket-launch', outline: true },
   { file: 'myra.svg', custom: 'myra-chat', outline: true },
   { file: 'local.svg', phosphor: 'lock-key', outline: true },
   { file: 'linux.svg', phosphor: 'linux-logo', outline: true },
-  { file: 'access.svg', phosphor: 'eye' },
+  { file: 'access.svg', phosphor: 'eye', outline: true },
   { file: 'built.svg', phosphor: 'shield-check', outline: true },
 ];
 
