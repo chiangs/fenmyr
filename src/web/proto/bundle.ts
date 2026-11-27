@@ -9,9 +9,10 @@ type Reader = (file: string) => Promise<string>;
 // a file of an installed package in prototypes/node_modules, or null when there's none by that name
 type ModuleReader = (file: string) => Promise<string | null>;
 
-// what the page may reach: nothing of Fenmyr's, no local files, and the open web over https
+// what the page may reach: nothing of Fenmyr's, no local files, and the open web over https. A form's submit event runs,
+// since the frame allows forms, but the submission has nowhere to go.
 const POLICY =
-  "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https:; img-src https: data: blob:; font-src https: data:; connect-src https:; media-src https: data: blob:";
+  "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https:; img-src https: data: blob:; font-src https: data:; connect-src https:; media-src https: data: blob:; form-action 'none'";
 const REACT = new Set(['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime']);
 const EXTS = ['', '.tsx', '.ts', '.jsx', '.js', '.css', '.json', '/index.tsx', '/index.ts', '/index.jsx', '/index.js'];
 const LOADERS: Record<string, esbuild.Loader> = {

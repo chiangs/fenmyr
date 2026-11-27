@@ -1,6 +1,6 @@
 // Runs inside the preview frame, first, and sends what happens there to the preview pane: that the page's scripts have
-// run, errors, console lines and, while pointing, the element clicked. It's turned into text with toString(), so it
-// uses nothing from outside itself.
+// run, errors, console lines and, while pointing, the element clicked, and it stops a form the page doesn't handle. It's
+// turned into text with toString(), so it uses nothing from outside itself.
 export function previewBridge() {
   // so a prototype's custom controls know they're in Fenmyr's preview
   Reflect.set(globalThis, '__fenmyr', true);
@@ -29,6 +29,13 @@ export function previewBridge() {
       was(...args);
     };
   }
+  // The policy refuses every form submission, but one aimed at another site would still leave the frame on an error page,
+  // so a form the page's own handlers left alone is cancelled here. method="dialog" goes nowhere: it closes its dialog.
+  addEventListener('submit', e => {
+    if (e.defaultPrevented || !(e.target instanceof HTMLFormElement)) return;
+    const method = e.submitter?.getAttribute('formmethod') ?? e.target.getAttribute('method');
+    if (method?.toLowerCase() !== 'dialog') e.preventDefault();
+  });
   let pointing = false;
   let lit: HTMLElement | null = null;
   const light = (el: HTMLElement | null) => {

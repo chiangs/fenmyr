@@ -12,8 +12,9 @@ import { renderCode, showSource } from './code.ts';
 import { renderGitBar } from './gitbar.ts';
 import { loadKnobs, sendTweaks, tweakFromFrame } from './knobs.ts';
 
-// The preview pane: the prototype running in a frame that may run scripts and nothing else, at a device's width or any
-// width dragged to, scaled down to fit when the pane is narrower. What happens inside comes back as a log.
+// The preview pane: the prototype running in a frame that may run scripts and submit forms, and nothing else, at a
+// device's width or any width dragged to, scaled down to fit when the pane is narrower. What happens inside comes back
+// as a log.
 type Device = NonNullable<Proto['device']>;
 type Line = { kind: 'error' | 'log' | 'warn'; text: string };
 const WIDTHS: Record<Device, number> = { phone: 390, tablet: 820, desktop: 1280 };
@@ -301,7 +302,7 @@ export async function renderPreview(b: Board) {
     return `<button data-dev="${d}">${label}</button>`;
   }).join('');
   const camera = Icon('camera', { size: 15 });
-  el.innerHTML = `<div class="pv-bar"><div class="seg pv-dev">${devices}</div><span class="pv-w"></span><button class="pv-btn pv-ic" data-pv="capture" title="Put a capture of the preview on the board">${camera}</button><button class="pv-btn" data-pv="point" title="Click something in the preview to point Myra at it">Point</button><button class="pv-btn" data-pv="refresh">Refresh</button><button class="pv-btn" data-pv="open">Open in browser</button></div><div class="pv-then" hidden><span></span><button class="pv-btn" data-pv="latest">Back to latest</button></div><div class="pv-knobs" hidden></div><div class="pv-stage"><div class="pv-frame"><iframe sandbox="allow-scripts" title="Prototype preview"></iframe><div class="pv-handle" title="Drag to any width"></div></div><p class="pv-error" hidden></p></div><div class="pv-log"></div>`;
+  el.innerHTML = `<div class="pv-bar"><div class="seg pv-dev">${devices}</div><span class="pv-w"></span><button class="pv-btn pv-ic" data-pv="capture" title="Put a capture of the preview on the board">${camera}</button><button class="pv-btn" data-pv="point" title="Click something in the preview to point Myra at it">Point</button><button class="pv-btn" data-pv="refresh">Refresh</button><button class="pv-btn" data-pv="open">Open in browser</button></div><div class="pv-then" hidden><span></span><button class="pv-btn" data-pv="latest">Back to latest</button></div><div class="pv-knobs" hidden></div><div class="pv-stage"><div class="pv-frame"><iframe sandbox="allow-scripts allow-forms" title="Prototype preview"></iframe><div class="pv-handle" title="Drag to any width"></div></div><p class="pv-error" hidden></p></div><div class="pv-log"></div>`;
   el.onclick = e => {
     const dev = closestTo(e.target, '[data-dev]')?.dataset.dev,
       act = closestTo(e.target, '[data-pv]')?.dataset.pv;
