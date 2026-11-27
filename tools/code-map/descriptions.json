@@ -43,6 +43,7 @@
     "src/host/claude.ts": "Runs Claude Code for Myra: asks, rewrites, image prices and fills, and finds the command if it is installed later.",
     "src/host/claudeCode.ts": "Runs Claude Code in a prototype’s folder with file tools only, then checks nothing outside changed.",
     "src/host/codeAgent.ts": "The shape of one code-writing call: a folder, what to do, whether it may edit or only read, edits reported as they happen.",
+    "src/host/connectors.ts": "The connections Fenmyr uses and the tools each feature may call, which every call to Claude Code is offered and nothing more.",
     "src/host/explain.ts": "Explain the code: checks the prototype's folder and the build's files, then has Claude Code read them, without changing anything, and answer in Myra's words.",
     "src/host/fenmyrZip.ts": "Writes a Fenmyr zip to disk and opens one: the save and open dialogs, every name checked before anything is written, and the videos streamed in and out of the media folder.",
     "src/host/gh.ts": "Talks to GitHub through the gh command-line tool, so Fenmyr never holds a sign-in token.",
