@@ -936,6 +936,17 @@ body.dark .mc-msg .m-acts button.ghost { background: none; color: var(--hilite);
 .mc-form textarea.fade-top { mask-image: linear-gradient(transparent, var(--ink) 1lh); }
 .mc-form textarea::placeholder { color: var(--ink-faint); }
 .mc-send { width: 32px; height: 32px; flex: none; border: 0; border-radius: 50%; background: var(--accent-soft); color: var(--on-pastel); font: 700 15px/1 var(--font); cursor: pointer; }
+/* While she works the arrow turns into a filled square and the button stops her; both glyphs sit in one cell, and the one
+   that isn't shown is small and clear */
+.mc-send { display: grid; place-items: center; padding: 0; }
+.mc-send > span { grid-area: 1 / 1; transition: opacity .18s ease, transform .18s cubic-bezier(.2, .9, .3, 1.2); }
+.ms-stop { width: 12px; height: 12px; border-radius: 3px; background: currentcolor; opacity: 0; transform: scale(.3); }
+.mc-send.stop .ms-go { opacity: 0; transform: scale(.3); }
+.mc-send.stop .ms-stop { opacity: 1; transform: none; }
+body:is(.calm, .myra-calm) .mc-send > span { transition: none; }
+@media (prefers-reduced-motion: reduce) { .mc-send > span { transition: none; } }
+/* what a stopped question says under its words: the bubble's own ink, softened */
+.mc-stopped { display: block; margin-top: 3px; font: 500 11px/1.2 var(--font); color: color-mix(in oklab, currentcolor 78%, transparent); }
 .mc-foot { display: flex; align-items: center; gap: 8px; container-type: inline-size; }
 .mc-lines { font: 600 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }
 .mc-hint { flex: 1 1 0; min-width: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; font: 500 11px/1 var(--font); color: var(--ink-soft); white-space: nowrap; }

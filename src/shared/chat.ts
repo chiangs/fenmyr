@@ -101,8 +101,8 @@ export type StoredChangeSet = {
   skipped?: string[];
 };
 
-// who: 'me' or 'myra'; t: when it was said
-export type ChatMsg = { who: string; text: string; t: number; acts?: ChatAction[] };
+// who: 'me' or 'myra'; t: when it was said; stopped: the person stopped her before this question was answered
+export type ChatMsg = { who: string; text: string; t: number; acts?: ChatAction[]; stopped?: true };
 // an earlier chat, put away by New chat
 export type SavedChat = { id: string; title: string; t: number; msgs: ChatMsg[] };
 
@@ -307,6 +307,7 @@ export function readMsgs(x: unknown): ChatMsg[] {
       acts = Array.isArray(m.acts) ? m.acts.map(readAction).filter(a => a !== null) : [];
     // no key at all when none are left, so a board from before stored buttons saves back as it was
     if (acts.length) msg.acts = acts;
+    if (m.stopped === true) msg.stopped = true;
     return msg;
   });
 }

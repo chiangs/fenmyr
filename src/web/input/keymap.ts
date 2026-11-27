@@ -81,6 +81,7 @@ export const SHORTCUTS: readonly Shortcut[] = [
   { id: 'clean', keys: '⌘\\', does: 'Just the board: tuck every panel away', group: 'app' },
   { id: 'focus', keys: 'F', does: 'Focus on the selected cards', group: 'app' },
   { id: 'myra', keys: 'M', does: 'Ask Myra', group: 'app' },
+  { id: 'stop', keys: '⌘.', does: 'Stop Myra while she works', group: 'app' },
   { id: 'escape', keys: 'Esc', does: 'Close what is open, put down a tool, or clear the selection', group: 'app' },
 
   { id: 'box', keys: 'R', does: 'Box: drag on the board to draw one', group: 'wireframe', tool: true },

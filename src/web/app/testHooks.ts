@@ -59,6 +59,7 @@ import { replyRecord } from '../myra/replyMemory.ts';
 import { nextBoards, peekSees } from '../myra/seesStrip.ts';
 import { snapshot } from '../myra/snapshot.ts';
 import { startJob } from '../myra/status.ts';
+import { addStoppable } from '../myra/stop.ts';
 import { centerWorld } from '../panels/zoomMenu.ts';
 import { placeSelbar } from '../selbar/selbar.ts';
 import { settings } from '../settings/settings.ts';
@@ -147,6 +148,8 @@ const makeHooks = () => ({
   busyLook: () => goo.busyLook(),
   propRoom: () => goo.roomy(),
   startJob,
+  // work for a board that Stop ends, as a question or a build is
+  addStoppable,
   playAnim,
   animRequest,
   animName,
