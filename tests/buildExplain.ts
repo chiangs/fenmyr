@@ -203,11 +203,22 @@ try {
   // the runs cut off by the quit and the reload asked first
   await until(() => standIn.explains().length === 3, 'Claude Code is asked');
   const run = standIn.explains().at(-1);
-  const args = run?.args ?? [],
-    after = (flag: string) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
+  const value = (list: string[], flag: string) => (list.includes(flag) ? list[list.indexOf(flag) + 1] : undefined),
+    args = run?.args ?? [],
+    after = (flag: string) => value(args, flag);
   assert.strictEqual(after('--allowedTools'), 'Read,Glob,Grep', `it may only read: ${args.join(' ')}`);
   assert.strictEqual(after('--tools'), 'Read,Glob,Grep', 'its tools are the reading ones alone');
   assert(!args.includes('acceptEdits'), 'and it accepts no edits');
+  const built = standIn.buildArgs();
+  assert.strictEqual(built.length, 2, 'the two builds were told apart from the reading runs');
+  for (const b of built) {
+    assert.strictEqual(
+      value(b, '--tools'),
+      'Read,Write,Edit,MultiEdit,Glob,Grep',
+      `a build is offered the file tools and no other: ${b.join(' ')}`,
+    );
+    assert(b.includes('--strict-mcp-config'), `and no MCP servers: ${b.join(' ')}`);
+  }
   assert.strictEqual(run?.cwd, path.join(repo, dir), 'it runs in the prototype’s folder');
   assert.match(
     run?.prompt ?? '',
