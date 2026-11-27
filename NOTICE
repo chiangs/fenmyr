@@ -101,11 +101,13 @@ licensed under the EUPL. See TRADEMARKS.md.
   src/web/gooPixels.ts, src/web/gooPoses.ts, src/web/gooShapes.ts), her
   stickers (web/stamps/myra-*) and any art of her.
 - Fenmyr's and Myra's own art and illustrations: the stamp set (web/stamps/),
-  the README cover (assets/readme-cover.jpg), and the scripts that draw the
-  stickers, stamps, app icon and mark (assets/art/make_art.py,
-  assets/art/make_mark.py).
+  the README cover (assets/readme-cover.jpg), the README's pictures of Myra and
+  of the app (assets/readme/myra-*, assets/readme/board-* and
+  assets/readme/proto-built-*), and the scripts that draw the stickers,
+  stamps, app icon and mark (assets/art/make_art.py, assets/art/make_mark.py).
 - Their own icons: the cloudberry mark, the Myra tool and the chat icon
-  (tools/icons/custom.ts), and the cloudberry glyph font
+  (tools/icons/custom.ts, with the README's copies in assets/readme/mark.svg
+  and assets/readme/myra.svg), and the cloudberry glyph font
   (web/fonts/MyraMark.woff2).
 
 You may share unmodified copies of Fenmyr as Stephen Chiang publishes it, these

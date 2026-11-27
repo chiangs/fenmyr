@@ -15,7 +15,7 @@
     "lint": "biome check",
     "knip": "knip",
     "budget": "node tools/budget.ts",
-    "check:fast": "npm run typecheck && npm run lint && npm run knip && npm run budget && node tools/check-names.ts && node tools/code-map/check.ts && node tools/themes-css.ts --check && node tools/licence-check.ts",
+    "check:fast": "npm run typecheck && npm run lint && npm run knip && npm run budget && node tools/check-names.ts && node tools/code-map/check.ts && node tools/themes-css.ts --check && node tools/licence-check.ts && node tools/shortcuts-doc.ts --check",
     "test": "npm run build && node tools/run-tests.ts",
     "check": "npm run check:fast && npm test",
     "voice": "node tests/voice.ts",
