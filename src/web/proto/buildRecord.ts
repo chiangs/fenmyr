@@ -4,6 +4,7 @@ import {
   checkErrors,
   type FileDiff,
   type PreviewCheck,
+  wasStopped,
 } from '../../shared/build.ts';
 import { type ChatAction, type ChatMsg, MAX_EXPLAINED } from '../../shared/chat.ts';
 import type { Board } from '../../shared/model.ts';
@@ -150,10 +151,15 @@ const inWriteOrder = (files: FileDiff[], named: readonly string[]) => [
   ...files.filter(f => !named.includes(f.path)),
 ];
 
+// Her one line over what a build the person stopped had written, which carries its Undo. She said "Okay, I’ve stopped."
+// when Stop was pressed, and it isn't a failure.
+const KEPT = 'I’ve kept what I’d written so far.';
+
 /** Ended: how it ended goes on the record, then her line: her explanation with her next steps, or why it stopped,
  *  with Undo this build, and Commit after her explanation, when it changed files. said: her words for a failure, in
- *  place of "I couldn't finish that" and the reason. A block the chat no longer has, trimmed or cleared away, comes back
- *  first. Once the record has an end, nothing happens. */
+ *  place of "I couldn't finish that" and the reason. A build the person stopped has no failure line, and a line only
+ *  when it left files to undo. A block the chat no longer has, trimmed or cleared away, comes back first. Once the
+ *  record has an end, nothing happens. */
 export const ended =
   (r: Landing, e: Extract<BuildEvent, { type: 'done' | 'error' }>, at: number, said?: string): Change =>
   b => {
@@ -189,7 +195,8 @@ export const ended =
       added.push(line(e.text, [...undo, ...kept, ...e.next.map((text): ChatAction => ({ kind: 'next', text }))]));
     } else {
       found.a.end = { kind: 'failed', at, files };
-      added.push(line(said ?? `I couldn’t finish that. ${e.text}`, undo));
+      if (!wasStopped(e)) added.push(line(said ?? `I couldn’t finish that. ${e.text}`, undo));
+      else if (undo.length) added.push(line(KEPT, undo));
     }
     for (const m of added) if (m !== found.m) pushMsg(b, m);
     if (b === session.board) {
