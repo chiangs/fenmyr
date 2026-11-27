@@ -645,6 +645,7 @@
     "tests/screenTool.ts": "Tests the screen tool: W and the Wireframe button, the row’s devices, Box and Text, keys, a click, a drag, the default device, putting it down, R and X on the bare board, and a phone tap.",
     "tests/seesEstimate.ts": "Checks the Board chip’s estimate in the real app: the share of the context, a trimmed board, a selection or model changing it, a prototype’s build, and no work while the chat is closed.",
     "tests/seesGuideBuild.ts": "Checks the Board chip’s build estimate counts a prototype’s rules and design cards as their own words and not as cards, and leaves out the repo’s file for a document whose card says Ignore.",
+    "tests/settingsPaths.ts": "Checks that every Settings path in the code, tests, tools, docs, issue forms, skills and the newest WHATSNEW section names a real tab and a heading, row or button inside it.",
     "tests/setup.ts": "Tests the Git and GitHub setup screen with real git and a stand-in gh.",
     "tests/settingsFrame.ts": "Checks Settings' tab strip: the seven tabs in order, its right edge on the rows' on every tab, at the top of the body when scrolled, and scrolling in a narrow window.",
     "tests/sizeBarCommit.ts": "Checks that a value typed in a size dropdown is applied once when Enter closes it, and that a screen in a collection keeps its place, and so does what sits on it.",
