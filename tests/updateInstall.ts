@@ -39,6 +39,7 @@ fs.chmodSync(path.join(r.repo, 'install.sh'), 0o755);
 put('package.json', JSON.stringify({ version: '1.0.0', devDependencies: { electron: '1.0.0' } }));
 for (const file of [
   'LICENSE',
+  'NOTICE',
   'THIRD-PARTY-NOTICES.md',
   'dist/main.cjs',
   'assets/icon.png',

@@ -45,7 +45,7 @@ function readLicences() {
     note: text(i.note),
     text: text(i.text),
   }));
-  return { fenmyr: text(raw.fenmyr), items };
+  return { fenmyr: text(raw.fenmyr), fenmyrLicense: text(raw.fenmyrLicense), items };
 }
 
 // the host's theme, as it arrives from the bridge
@@ -104,10 +104,11 @@ async function openLicenses() {
   };
   const count = L.items.length,
     own = esc(L.fenmyr),
+    ownLicence = esc(L.fenmyrLicense),
     rows = L.items.map(row).join('');
   $('licBody').innerHTML =
-    `<p class="lic-intro">Fenmyr is open source under the MIT License. The name Fenmyr, its logo, Myra the cloudberry and her art are reserved by Stephen Chiang. It includes ${count} pieces of software made by others, each listed with its licence.</p>
-      <details class="lic-item lic-fenmyr" open><summary><b>Fenmyr</b><em>MIT</em></summary><pre>${own}</pre></details>` +
+    `<p class="lic-intro">Fenmyr is open source under the ${ownLicence}. The name Fenmyr, its logo, Myra the cloudberry and her art are reserved by Stephen Chiang. It includes ${count} pieces of software made by others, each listed with its licence.</p>
+      <details class="lic-item lic-fenmyr" open><summary><b>Fenmyr</b><em>${ownLicence}</em></summary><pre>${own}</pre></details>` +
     rows;
   $('licBody').dataset.done = '1';
   for (const b of htmlIn($('licBody'), '[data-url]')) b.onclick = () => Fenmyr.openURL(b.dataset.url ?? '');

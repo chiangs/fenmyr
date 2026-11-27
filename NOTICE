@@ -1,0 +1,133 @@
+Fenmyr
+Copyright (c) 2026 Stephen Chiang (Fenmyr)
+Licensed under the EUPL, version 1.2 (EUPL-1.2). The full text of the licence is
+in the file LICENSE.
+
+This file keeps the notices that go with the code: where the change of licence
+starts, the earlier MIT grant, Mochiboard's notice, what the EUPL does not
+cover, the law that governs the licence, and where the third-party licences
+are.
+
+
+The change from the MIT License to the EUPL-1.2
+-----------------------------------------------
+
+Fenmyr's code was released under the MIT License until pull request #524
+changed its licence to the EUPL-1.2. The repository as it stood at the last
+commit before that change, tagged mit-final, stays available under the MIT
+License, and that grant cannot be taken back. Fenmyr from that change on,
+including this copy, is licensed under the EUPL-1.2, apart from Mochiboard's
+code and the items listed under "What the EUPL does not cover".
+
+The MIT License that applied follows in full, as it was published: its
+copyright lines, its text, and the paragraph after it that limited what it
+covered. It is kept here as a record.
+
+MIT License
+
+Copyright (c) 2026 Jessa Wolfe (Mochiboard, the code Fenmyr is built on)
+Copyright (c) 2026 Stephen Chiang (Fenmyr)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+The MIT License above covers Myra's code. It does not cover the name "Myra",
+the Myra logo and app icon, Myra the cloudberry character, or Myra's art,
+illustrations and own icons. Those remain all rights reserved by Stephen Chiang.
+See TRADEMARKS.md.
+
+
+Mochiboard
+----------
+
+Fenmyr grew from Mochiboard (https://github.com/jessawolfe-ux/mochiboard) by
+Jessa Wolfe, released under the MIT License. Her code keeps its copyright
+notice and licence, which follow in full. It is not claimed as EUPL.
+Mochiboard's name, its character Mochi, its stamps, art and music are hers and
+are not part of Fenmyr.
+
+MIT License
+
+Copyright (c) 2026 Jessa Wolfe
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+What the EUPL does not cover
+----------------------------
+
+The EUPL covers Fenmyr's code. It does not cover the following, which remain
+all rights reserved by Stephen Chiang, and the files named here are not
+licensed under the EUPL. See TRADEMARKS.md.
+
+- The name "Fenmyr" for this app, and the Fenmyr logo and app icon:
+  assets/icon.png, web/favicon.png, tools/make-icon.ts, and the fenmyr-mark
+  icon in tools/icons/custom.ts.
+- The name "Myra" for the assistant, and Myra the cloudberry character in any
+  form: the code that draws her (src/web/goo.ts, src/web/gooBusy.ts,
+  src/web/gooPixels.ts, src/web/gooPoses.ts, src/web/gooShapes.ts), her
+  stickers (web/stamps/myra-*) and any art of her.
+- Fenmyr's and Myra's own art and illustrations: the stamp set (web/stamps/),
+  the README cover (assets/readme-cover.jpg), and the scripts that draw the
+  stickers, stamps, app icon and mark (assets/art/make_art.py,
+  assets/art/make_mark.py).
+- Their own icons: the cloudberry mark, the Myra tool and the chat icon
+  (tools/icons/custom.ts), and the cloudberry glyph font
+  (web/fonts/MyraMark.woff2).
+
+You may share unmodified copies of Fenmyr as Stephen Chiang publishes it, these
+items included: for example as a mirror, or as a package in a software
+distribution or app store. Changes made only to build or package it there,
+which change neither what the app does nor how it looks, still count as
+unmodified. A copy that changes more is your own version, and TRADEMARKS.md
+says what to do then.
+
+
+Applicable law
+--------------
+
+Stephen Chiang, the Licensor, lives outside the European Union. Under Article
+15 of the EUPL the licence is therefore governed by Belgian law, and under
+Article 14 disputes about it go to the competent court where the Licensor
+lives.
+
+
+Third-party software
+--------------------
+
+Fenmyr includes software made by others, such as Electron, Phosphor Icons,
+Figtree, Shantell Sans and the libraries inside the docs editor. Each keeps its
+own licence, listed in THIRD-PARTY-NOTICES.md.

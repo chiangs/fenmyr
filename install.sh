@@ -78,7 +78,7 @@ npm run build --silent
 # --- 3. the app itself ---
 pkill -f "lectron[^ ]* .*$LIB/app( |$)" 2>/dev/null && sleep 1 || true   # let the old one finish quitting before replacing it
 rm -rf "$LIB/app"; mkdir -p "$LIB/app/assets"
-cp -R dist web package.json LICENSE THIRD-PARTY-NOTICES.md "$LIB/app/"
+cp -R dist web package.json LICENSE NOTICE THIRD-PARTY-NOTICES.md "$LIB/app/"
 cp assets/icon.png "$LIB/app/assets/icon.png"
 # remember where this copy came from and which commit it is, so Settings → Update now can pull, reinstall and tell what's new
 COMMIT="$(git rev-parse HEAD 2>/dev/null || true)"

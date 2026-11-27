@@ -794,6 +794,7 @@
     "tools/icons.ts": "Builds the icon pack and the list of names Myra may use.",
     "tools/icons/custom.ts": "Myra’s own icon drawings.",
     "tools/icons/set.ts": "Maps each Myra icon name to a drawing in the current icon pack.",
+    "tools/licence-check.ts": "Fails when Fenmyr's own licence is named differently in package.json, LICENSE, NOTICE, the docs, About and the two generated notice files.",
     "tools/make-icon.ts": "Draws the app icon and the browser tab icon.",
     "tools/metrics.ts": "Counts files and lines of code per area of the project.",
     "tools/notices.ts": "Writes the third-party notices and the licences list.",
