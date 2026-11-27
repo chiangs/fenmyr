@@ -15,8 +15,12 @@ A canvas for growing ideas, from the first note to a working prototype, with Myr
   <a href="https://github.com/sponsors/chiangs"><img alt="Sponsor Fenmyr" src="https://img.shields.io/badge/sponsor-%E2%99%A5-ea4aaa?logo=githubsponsors&logoColor=white"></a>
 </p>
 
-<!-- 📸 S1: replace this cover with a <picture> holding assets/readme/hero-light.png and hero-dark.png. -->
-<p align="center"><img src="assets/readme-cover.jpg" width="760" alt="A Fenmyr board with notes in several colours, a checklist and Myra in the corner"></p>
+<p align="center"><b><a href="https://www.fenmyr.com">fenmyr.com</a></b> · <a href="https://github.com/chiangs/fenmyr/releases/latest">Download</a> · <a href="docs/install.md">Install</a> · <a href="docs/shortcuts.md">Shortcuts</a></p>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/board-dark.png">
+  <img src="assets/readme/board-light.png" alt="A Fenmyr board: Myra's how-to note, Raw ideas and Ripe collections, a This week kanban, Unsorted ideas on the right, the tools at the top right and the boards on the left">
+</picture>
 
 <img src="assets/readme/myra-hello.png" align="right" width="102" alt="Myra, a pixel cloudberry, hops and beams">
 
@@ -30,7 +34,12 @@ Your boards are plain files on your computer. Fenmyr needs no account, and its A
 
 ### <img src="assets/readme/prototype.svg" width="22" height="22" alt=""> From idea to prototype
 
-<!-- 📸 S2: a prototype board with the preview at a phone width and the code pane open. 🎞 Better: a 5–8 s GIF of Point opening the code behind a button. -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/proto-built-dark.png">
+  <img src="assets/readme/proto-built-light.png" alt="A prototype board: the board's cards, the preview at phone width, the code pane, and Myra's chat with a finished build, its files and Undo this build">
+</picture>
+
+<!-- 🎞 Later: a 5–8 s GIF of Point opening the code behind a button. -->
 
 Make a board into a prototype board, and Myra builds a working React and Tailwind app from its cards through Claude Code. Each prototype board keeps its own rules and design cards, and every build reads them.
 
@@ -247,4 +256,4 @@ The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons
 
 ---
 
-<p align="center"><img src="assets/readme/mark.svg" width="28" height="28" alt=""><br>Made with care by Stephen Chiang. Where ideas thrive.</p>
+<p align="center"><img src="assets/readme/mark.svg" width="28" height="28" alt=""><br>Made with care by Stephen Chiang. Where ideas thrive.<br><a href="https://www.fenmyr.com">fenmyr.com</a></p>

@@ -801,6 +801,7 @@
     "tools/shortcuts-doc.ts": "Writes docs/shortcuts.md from the toolbar table and the keymap, and fails in check:fast when the page is out of date.",
     "tools/sleeps.ts": "Finds the fixed sleeps in a test file for the budget: waitForTimeout, T.wait, a promise on setTimeout and settle(page, ms), minus those marked as the point of the test.",
     "tools/readme-art.ts": "Writes the README's art: Myra as looping animated PNGs drawn by her own sprite, and the heading icons in cloudberry colours.",
+    "tools/readme-shots.ts": "Takes the README's screenshots, the example board and a built prototype board in light and dark, scaled for GitHub.",
     "tools/run-tests.ts": "Runs every test in tests/ or the ones named, each alone and past failures, and one CI shard of them balanced on recorded times.",
     "tools/visual-channels.ts": "The visual states for Settings → About with the Channel row, on a release and on a beta, with the update check answered as a clone install answers it.",
     "tools/visual-diff.ts": "Screenshots 22 states here and on main, and fails on any changed pixel.",
