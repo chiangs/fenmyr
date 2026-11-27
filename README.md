@@ -277,9 +277,13 @@ Icons are [Phosphor Icons](https://phosphoricons.com) (MIT), plus Fenmyr's own c
 
 Fenmyr's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard) by [Jessa Wolfe](https://jessa.art), an open-source planning canvas for the Mac (MIT). Thank you, Jessa. Mochiboard's name, its character Mochi, its stamps, art and music are hers, and Fenmyr doesn't use them.
 
-## License
+## Licence
 
-The code is open source under the [MIT License](LICENSE). The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons, the stamps, the logo and the app icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Fenmyr also includes software made by others, including Mochiboard, Electron, Phosphor Icons, Figtree, Shantell Sans and the libraries inside the docs editor. Each is listed with its license in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licenses**.
+The code is open source under the [European Union Public Licence v. 1.2](LICENSE) (EUPL-1.2), and [NOTICE](NOTICE) keeps the notices that go with it. The EUPL is a copyleft licence: if you share the code, changed or not, or make a changed version available to others online, you must do it under the EUPL-1.2 and give them the source, so a derivative stays open. Its compatibility clause lets you use a licence it lists, such as the GPL v3, when you combine the code with code under that licence.
+
+Code published here before the change to the EUPL-1.2 was released under the MIT License. It stays available under the MIT License to anyone who received it then, and NOTICE has the MIT text.
+
+The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons, the stamps, the logo and the app icon are not part of the code licence. They are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Fenmyr also includes software made by others, including Mochiboard, Electron, Phosphor Icons, Figtree, Shantell Sans and the libraries inside the docs editor. Each is listed with its licence in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licences**.
 
 ---
 
