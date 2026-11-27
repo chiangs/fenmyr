@@ -6,21 +6,25 @@ import { modelArgs } from './models.ts';
 import { env, isRecord, text } from './util.ts';
 
 // Claude Code works in the prototype's folder with file tools only: no shell, no web, no other agents. Claude Code keeps
-// writes inside its working folder, and Fenmyr checks afterwards that nothing outside changed. A run that only reads
-// has the reading tools alone, with every other tool left out and turned down, and no MCP servers, whose tools could
-// write or reach the network. Each names its permission mode, so the person's own default, which may skip every
-// permission check, never applies.
+// writes inside its working folder, and Fenmyr checks afterwards that nothing outside changed. Each run is offered its
+// file tools alone, with every other tool left out and turned down, and no MCP servers, whose tools could write or
+// reach the network. A run that only reads has the reading tools. Each names its permission mode, so the person's own
+// default, which may skip every permission check, never applies.
 const READS = ['Read', 'Glob', 'Grep'];
+const FILES = ['Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep'];
 const EDITS = new Set(['Write', 'Edit', 'MultiEdit']);
 const NEVER = ['Bash', 'WebFetch', 'WebSearch', 'Task'];
 const ACCESS = {
   edit: [
     '--permission-mode',
     'acceptEdits',
+    '--tools',
+    FILES.join(','),
     '--allowedTools',
-    ['Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep'].join(','),
+    FILES.join(','),
     '--disallowedTools',
     NEVER.join(','),
+    '--strict-mcp-config',
   ],
   read: [
     '--permission-mode',
