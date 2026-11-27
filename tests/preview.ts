@@ -1,6 +1,6 @@
-// The preview: a React prototype bundled in the page and run in a frame that can run scripts and nothing else. It may
-// not read Fenmyr's media, local files or the page around it; its errors and console lines come back; pointing at an
-// element hands it to Myra; a package Fenmyr doesn't ship is explained.
+// The preview: a React prototype bundled in the page and run in a frame that can run scripts and submit forms, and
+// nothing else. It may not read Fenmyr's media, local files or the page around it; its errors and console lines come
+// back; pointing at an element hands it to Myra; a package Fenmyr doesn't ship is explained.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -117,9 +117,9 @@ try {
   for (const what of probes) assert.match(said, new RegExp(`${what}:blocked`), `the preview can’t reach ${what}`);
   assert.ok(
     await page.evaluate(
-      () => document.querySelector('#pr-preview iframe')?.getAttribute('sandbox') === 'allow-scripts',
+      () => document.querySelector('#pr-preview iframe')?.getAttribute('sandbox') === 'allow-scripts allow-forms',
     ),
-    'scripts are all the frame may run',
+    'scripts and forms are all the frame may run',
   );
 
   await page.fill('#mcInput', 'Fix this:');
