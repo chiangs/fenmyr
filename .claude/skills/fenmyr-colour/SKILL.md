@@ -48,6 +48,6 @@ CLAUDE.md has the rules and the commands. This is how the parts fit and how to c
 
 ## Adding a theme
 
-One entry in `THEMES` (`themes.ts`): the colours §2 of #251 gives, passed through `derive()`. Run `node tools/themes-css.ts`.
+One entry in `THEMES` (`themes.ts`): the colours the theme chooses (board, panel, ink, accent, focus and the seven card fills), passed through `derive()`, which works out the rest at the theme's target. Run `node tools/themes-css.ts`.
 `tests/themes.ts` checks its contrast and colour-blind separation, `tests/themesCss.ts` that the page computes it, and
 `tests/themeAudit.ts` that no text is left behind. Add its four states to `tools/visual-diff.ts`.

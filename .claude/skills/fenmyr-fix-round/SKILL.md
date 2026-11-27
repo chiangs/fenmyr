@@ -23,7 +23,7 @@ commits on the same branch, each finding fixed and proven. Use `fenmyr-pr-proof`
 2. Fix it with the smallest change that satisfies the stated requirement. If the report leaves a choice, pick one, say
    why, and keep the rule simple.
 3. Revert only the fix. Confirm the test fails and copy the failure line. Restore.
-4. One commit per finding where possible. Subject is a plain sentence ending in a full stop.
+4. One commit per finding where possible, written and signed off as CLAUDE.md's Commits rule says.
 
 Fix blockers first, then should-fix. Do nits only if cheap, and say which you skipped.
 
