@@ -6,8 +6,8 @@ The **brand** is different. These belong to Stephen Chiang and are **all rights 
 
 - The name **"Fenmyr"** for this app, and the Fenmyr logo and app icon (`assets/icon.png`, `web/favicon.png`, `tools/make-icon.ts`, and the `fenmyr-mark` icon in `tools/icons/custom.ts`)
 - The name **"Myra"** for the assistant, and **Myra**, the cloudberry character, in any form: the code that draws her (`src/web/goo.ts`, `src/web/gooBusy.ts`, `src/web/gooPixels.ts`, `src/web/gooPoses.ts`, `src/web/gooShapes.ts`), her stickers (`web/stamps/myra-*`), and any art of her
-- Fenmyr's and Myra's own art and illustrations: the stamp set (`web/stamps/`), the README cover (`assets/readme-cover.jpg`), and the scripts that draw the stickers, stamps, app icon and mark (`assets/art/make_art.py`, `assets/art/make_mark.py`)
-- Their own icons, which are the cloudberry mark, the Myra tool and the chat icon (`tools/icons/custom.ts`), and the cloudberry glyph font (`web/fonts/MyraMark.woff2`). The rest of the icons are Phosphor Icons (MIT), which keep their own licence, listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+- Fenmyr's and Myra's own art and illustrations: the stamp set (`web/stamps/`), the README cover (`assets/readme-cover.jpg`), the README's pictures of Myra and of the app (`assets/readme/myra-*`, `assets/readme/board-*` and `assets/readme/proto-built-*`), and the scripts that draw the stickers, stamps, app icon and mark (`assets/art/make_art.py`, `assets/art/make_mark.py`)
+- Their own icons, which are the cloudberry mark, the Myra tool and the chat icon (`tools/icons/custom.ts`, with the README's copies in `assets/readme/mark.svg` and `assets/readme/myra.svg`), and the cloudberry glyph font (`web/fonts/MyraMark.woff2`). The rest of the icons are Phosphor Icons (MIT), which keep their own licence, listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 The files named above are not licensed under the EUPL. You may still share unmodified copies of Fenmyr with them in, for example as a mirror or a package in a software distribution, as [NOTICE](NOTICE) explains.
 
