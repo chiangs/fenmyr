@@ -22,7 +22,17 @@ const HIDDEN_UPDATE_STATE = '#suSub, #upBar { visibility: hidden !important; }';
 const HIDDEN_TIMED_BUBBLE = '#mBubble { visibility: hidden !important; }';
 const STRAY_PIXELS = 60;
 // scaled card edges land a pixel apart from run to run at this zoom; same code measured 900 to 1,600, a layout change 268,000
-const STRAY_PIXELS_SCALED: Record<string, number> = { 'zoom-out.png': 3000 };
+// A new prototype board opens fitted at a fractional zoom (53%), and in CI its states come out 91 to 95 px apart between
+// two builds of the same code (the runs of #528 and #531), while a run here gives 0. The cause isn't proven; a layout
+// change there is thousands of pixels, so 200 still catches one.
+const GUIDES_STATES = ['board', 'board-ignored', 'rules', 'rules-ignored'].flatMap(s => [
+  `guides-${s}.png`,
+  `guides-dark-${s}.png`,
+]);
+const STRAY_PIXELS_SCALED: Record<string, number> = {
+  'zoom-out.png': 3000,
+  ...Object.fromEntries(GUIDES_STATES.map(f => [f, 200])),
+};
 const CHANNEL_TOLERANCE = 2;
 const TABS = ['general', 'appearance', 'layout', 'board', 'myra', 'connections', 'about'];
 

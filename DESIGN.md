@@ -8,6 +8,8 @@ Fenmyr looks like a Nordic bog in summer: snow-white paper, a soft birch dot gri
 
 ## Colour
 
+Fenmyr has six themes, three for each mode: Default, Midsummer and Clear for light, and Default, Polar Night and Lantern for dark. Each is one entry in `THEMES` in `src/web/settings/themes.ts`. The tables below show the Default theme.
+
 Card colours have names people see and keys the code and board files use. Always show the name in the UI, and never show the key.
 
 | Name | Key | Light | Dark |
@@ -20,16 +22,20 @@ Card colours have names people see and keys the code and board files use. Always
 | Heather | `lilac` | `#ece0ec` | `#cabbca` |
 | Birch | `peach` | `#f1ebe2` | `#cdc6bb` |
 
-They live in `src/web/settings/themes.ts`, and a card's fill is `var(--card-<key>)`. No two look alike for any kind of colour blindness, and dark mode dims them so they don't glare; `tests/themes.ts` checks both.
+Each theme sets its own seven fills. A card's fill is `var(--card-<key>)`, with `-ink`, `-soft`, `-faint` and `-link` for the text on it, and a deep shade, `--k-<key>`, for a kanban column's dot. No two look alike for any kind of colour blindness, and dark mode dims them so they don't glare; `tests/themes.ts` checks both in every theme.
 
 The interface takes every colour from a variable. Never write a new hex, `rgb()`/`rgba()` or `hsl()`/`hsla()` value into a rule:
 
 - **Use the token:** `color: var(--ink-soft)`.
-- **A shade or a transparency of a token** is made from it, so it changes with the theme: `color-mix(in oklch, var(--pink-deep) 20%, var(--paper))`, or `rgb(from var(--ink) r g b / .4)`. Mix in `oklab` whenever neither side is a saturated colour (white, black, a warm grey, `transparent`): Chrome drops the hue of a colour with chroma under about 0.02, and an `oklch` mix with no hue on either side paints pink; `tests/greyMixes.ts` checks it.
-- **A colour that's really new** becomes a token in the `:root` block (and its dark value in `body.dark`), with a name for what it's for, not what it looks like.
+- **A shade or a transparency of a token** is made from it, so it changes with the theme: `color-mix(in oklab, var(--ink) 40%, transparent)`, or `rgb(from var(--ink) r g b / .4)`. Mix in `oklab` whenever neither side is a saturated colour (white, black, a warm grey, `transparent`): Chrome drops the hue of a colour with chroma under about 0.02, and an `oklch` mix with no hue on either side paints pink; `tests/greyMixes.ts` checks it.
+- **A colour that's really new** becomes a token, with a name for what it's for, not what it looks like (see below for where).
 - **Token values are hex.** Work out lightness and contrast in OKLCH, which is perceptually even; HSL isn't, so two HSL colours with the same lightness can differ a lot in contrast.
 
-`npm run budget` counts raw colours in `web/style.css` and fails when the count rises. Every colour in the stylesheet is a token now. The core tokens are set per theme in `src/web/settings/themes.ts`, and `web/themes.css` is written from that table (`node tools/themes-css.ts`): a block of variables per theme, switched by the class on `<body>`. Don't define a core token in `style.css`. An area colour that is a mix of core tokens is written in `src/web/settings/derived.ts`, which `themes.css` puts on `<body>` too; a new one is a `color-mix()` of core tokens there, not a hex in `style.css`. #251 is moving the area tokens onto the core ones, so that a theme sets the core ones and the rest follow; `tools/colour-core.json` lists them for the tools.
+`npm run budget` counts raw colours in `web/style.css` and fails when the count rises; there are none. The colours come in three layers, and `web/themes.css` is written from all three by `node tools/themes-css.ts`, which `check:fast` checks:
+
+- **Core tokens**, set per theme in `THEMES` (`src/web/settings/themes.ts`): a block of variables per theme, switched by the class on `<body>`. A theme chooses its board, panel, ink, accent, focus and card fills, and `derive()` (`src/web/settings/derive.ts`) works out the rest, such as the borders, the status colours (`--danger`, `--warn`, `--ok` and `--on-status`) and each card's text and deep shade, moving them in lightness until they read at the contrast the theme promises. Don't define a core token in `style.css`.
+- **Area colours**, written in `src/web/settings/derived.ts` as mixes of core tokens, so a theme that sets the core sets these too. A new one is a `color-mix()` there, not a hex in `style.css`.
+- **Per-mode colours**, the `--m-` tokens in `src/web/settings/derivedModes.ts`, for an area colour that differs between light and dark. Each holds a light and a dark expression, which replaced a `body.dark` rule. 152 `body.dark` rules are still in `style.css`; #530 folds them, and the budget only lets the number fall.
 
 The main variables:
 
@@ -40,10 +46,23 @@ The main variables:
 | `--accent-text` | `#b15800` (dark mode `#e88a24`) | The accent as text: links, counts. Reads at 4.5:1; a custom accent gets its own shade |
 | `--on-accent` | `#3b342d` (dark mode `#1d1a16`) | Text on the accent fill |
 | `--dot` | `#e4dccf` | The grid dots |
-| `--select` | `#0090f5` | Selection handles and focus, the one cold colour |
+| `--select` | `#0090f5` | Selection handles and the focus ring, the one cold colour. It is each theme's `focus` colour, which Follow Caelestia takes from the desktop |
+| `--border`, `--border-strong` | `#e4dccf`, worked out | Dividers, and the edge of an input or a toggle, which reads at the theme's contrast |
+| `--danger`, `--warn`, `--ok` | `#e0455a`, `#e8a317`, `#3fae6a` | Status colours, with `--on-status` for text on them |
 | `--sh` | `150, 95, 35` | The shadow colour, warm amber in light mode |
 
-People can change the board, dots, panels and accent per light and dark mode, and Follow Caelestia can replace them. New UI must therefore read its colours from these variables and must work in dark mode (`body.dark`).
+People can change the board, dots, panels and accent per light and dark mode, and Follow Caelestia can replace them. New UI must therefore read its colours from these variables and must work in all six themes, light and dark.
+
+## Accessibility
+
+Clear and Lantern are made for accessibility. They hold AAA contrast, where the others hold AA, and they:
+
+- **outline every card**, so a card's edge doesn't depend on its fill;
+- **print each note's colour name** at its lower right, so colour isn't the only thing that tells notes apart;
+- **sit cards straight**, whatever tilt they were given;
+- **thicken the focus ring** around the control in use and a selected card.
+
+The last three have switches under Settings → Appearance → Accessibility, which shows only with a theme that offers them. Every card also has an accessible name that includes its colour name, in every theme.
 
 ## Type
 
@@ -57,7 +76,7 @@ People can set a default font for board text and docs. Menus and panels keep Fig
 
 - Corners are squircles (`corner-shape: squircle`). Cards use 24 px, and buttons, tags and tooltips use `--pill-r` (12 px).
 - A tooltip is `data-tip` on the control, never `title`, which draws the browser's own. One rule in `web/style.css` gives it its look. `data-tip-at` places it: below the control by default, or `below-end`, `above` or `above-end`, where `-end` ends level with the control's right edge. A surface colours it with `--tip-bg` and `--tip-ink`, and `--tip-delay` sets the wait. Give the control an `aria-label`, since Chrome reads the tooltip's text into a button's name. `tests/tips.ts` shows each one whole.
-- Cards tilt up to 2° either way. Wireframe pieces, sections, screens and collections stay straight, as `src/shared/cardTypes.ts` records.
+- Cards tilt up to 2° either way, unless Straight cards is on or Loose, tilted cards is off. Wireframe pieces, sections, screens and collections stay straight, as `src/shared/cardTypes.ts` records.
 - The floating panels on each side are `--side` wide (232 px).
 - Text stays sharp at every zoom step. Any new effect on cards must keep it sharp.
 
@@ -83,7 +102,7 @@ There are two voices, and each surface uses one of them.
 
 **The neutral voice** is for everything else: menus, tooltips, settings, buttons and error messages. It is short and plain, and it says what the control does. It doesn't say "I", and it doesn't try to be charming.
 
-- Good: "How big the tools at the bottom are."
+- Good: "How big the tools at the top right are."
 - Too much: "Pick how big your cute little tools should be ✦"
 
 Rules for both:

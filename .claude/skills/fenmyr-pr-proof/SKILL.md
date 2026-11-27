@@ -10,8 +10,8 @@ needs a test that fails without the change.
 
 ## Base
 
-Compare against the branch the work stacks on, not always `origin/main`. For the Myra chat epic that is
-`origin/feat/myra-chat`. Fetch first, and say which base you used in the report.
+Compare against `origin/main`, or against the branch the work stacks on when it stacks on another. Fetch first, and
+say which base you used in the report.
 
 ## Gates, in this order
 
@@ -21,7 +21,7 @@ Compare against the branch the work stacks on, not always `origin/main`. For the
    in `tools/visual-expected.json` with an accurate reason, and stale entries for changes already on the base must be
    removed.
 4. `node tests/perf.ts <base>` for any renderer path change. Run it through
-   `flock ~/.cache/fenmyr-epic/perf.lock node tests/perf.ts <base>` when other agents may be running perf, since runs
+   `flock ~/.cache/fenmyr/perf.lock node tests/perf.ts <base>` when other agents may be running perf, since runs
    share one machine and disturb each other.
 5. Screenshots of what you changed, in light and dark and at phone width, taken through `tests/support/launch.ts`
    (headless Electron, no display needed).

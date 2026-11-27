@@ -4,15 +4,11 @@ Fenmyr has two layers that talk through one small channel, and most changes touc
 
 ## How the canvas talks to the host
 
-`src/web/bridge.ts` sends `{id, op, args}` through `window.fenmyrHost.post`. In the app, `src/host/preload.ts` passes it to `src/host/main.ts`, which looks the op up in `OPS`. The answer goes back over IPC (`fenmyr-reply`), and preload.js hands it to the page's `__fenmyrReply(id, ok, value)`. No data is turned into script, so big boards and pictures pass through quickly. News the page didn't ask for (Caelestia's colours changed) arrives the same way as `__fenmyrEvent(name, data)`. In a plain browser, bridge.js uses localStorage and a pretend Myra instead.
+`src/web/bridge.ts` sends `{id, op, args}` through `window.fenmyrHost.post`. In the app, `src/host/preload.ts` passes it to `src/host/main.ts`, which looks the op up in `OPS`. The answer goes back over IPC (`fenmyr-reply`), and `preload.ts` hands it to the page's `__fenmyrReply(id, ok, value)`. No data is turned into script, so big boards and pictures pass through quickly. News the page didn't ask for (Caelestia's colours changed) arrives the same way as `__fenmyrEvent(name, data)`. In a plain browser, `bridge.ts` uses localStorage and a pretend Myra instead.
 
-**To add an ability that needs the computer**, such as a file, a program or the network:
+The host answers only the app's own page in the window's main frame. `src/host/senderCheck.ts` drops a message from anywhere else, such as a prototype's preview frame, and logs it, and the microphone, clipboard and notifications are given to that frame alone. A new op gets the same check without any work, but a test that calls the bridge from another frame gets no answer.
 
-1. Add the op's arguments and result to `src/shared/ops.ts`.
-2. Add the handler to `OPS` in `src/host/main.ts`, with the real work in a module next to it.
-3. Add a matching method to the `native` side of `window.Fenmyr` in `src/web/bridge.ts`, and a browser fallback.
-4. Call `Fenmyr.yourThing()` from `src/web/`.
-5. Add a check for it in `tests/smoke.ts`.
+**To add an ability that needs the computer**, such as a file, a program or the network, follow [Add a bridge operation](CLAUDE.md#add-a-bridge-operation) in CLAUDE.md, then call `Fenmyr.yourThing()` from `src/web/`.
 
 **To change only the canvas**, such as a card type, a tool, a setting or the look, edit `src/web/` or `web/`, run `npm run build`, then reload the window (F12 → Ctrl+R in DevTools), or work on it in a browser with `python3 -m http.server` in `web/`, where Myra is pretend.
 
@@ -34,6 +30,13 @@ npm test               # builds, then runs every test headless
 
 The smoke test uses a throwaway data folder and stand-in `claude` and `whisper-cli` programs, so it never touches your boards or spends Claude usage.
 
+CLAUDE.md says how to [add a test](CLAUDE.md#add-a-test) and why each branch is its own worktree (under Rules). Two habits keep tests steady:
+
+- **Wait on the page, never on the clock.** Read a box or a colour after `still(page)`, or take it with `rect(page, selector)`, both from `tests/support/settled.ts`. A fixed sleep counts against the budget, and one that is the point of the test, such as a debounce, needs a `// sleeps on purpose: <why>` comment.
+- **Try the lag run.** `node tools/run-tests.ts --lag 50 <test>` starts every transition 50 ms late, so a test that guesses at timing fails on your machine before it flakes in CI.
+
+**A change people can see** runs `npm run visual`, which compares 129 states pixel by pixel with `origin/main`. Each state your change is meant to alter goes in `tools/visual-expected.json` with a reason, which the reviewer reads; anything else that moved is a mistake to fix. Once the change is on `main`, its entries no longer match a difference, and the next run lists them as stale: remove them then, so the file never excuses a change nobody meant.
+
 ## The code map
 
 Every source file has a one-line description in `tools/code-map/descriptions.json`, and so does every area (a folder under `src/web/`, `host`, `shared`, `tests`, `tools`). Add one when you add a file, change it when the file's job changes, and remove it when you delete the file. `npm run check:fast` fails until they match.
@@ -42,17 +45,33 @@ The descriptions feed the [code map](https://code-map.fenmyr.com/), which is reb
 
 ## Releasing
 
-Nothing has been released yet, so Fenmyr stays at 1.0.0 until the first release. After that, bump the patch number for fixes and small changes, and the minor number for new features. Add an entry to `NEWS` in `src/web/app/news.ts` for anything people should hear about.
+Bump the patch number for fixes and small changes, and the minor number for new features. A beta carries a prerelease part, such as `1.1.0-beta.2`, and goes out as a GitHub prerelease, so `/releases/latest` and every AppImage stay on the last stable release while clones on Beta follow its tag. The steps, for a release or a beta, are in the header of `make-release.sh`: set `version` in `package.json`, add the version's section at the top of `WHATSNEW.md`, merge, then run `./make-release.sh` from `main` once HEAD is on GitHub (`--dry` prints the release command instead).
 
-1. Bump `version` in `package.json` and add a section at the top of `WHATSNEW.md` (lines starting with `- ` become the notes people see in the app).
-2. Commit and push.
-3. `./make-release.sh` builds the AppImage and publishes a GitHub Release (needs `gh auth login`). AppImage users get it through their update bar; git installs see the new commits.
+What's new reaches people three ways, so write for all three:
+
+- **The release notes** are the `- ` lines of the newest `##` section of `WHATSNEW.md`, and nothing else in the file.
+- **The update list** in Settings → About shows, for an install from the code, the `- ` lines added to `WHATSNEW.md` between the installed commit and the update. An edited line counts as added, so leave the lines of earlier versions as they were written.
+- **The what's-new card**, shown once when a version first opens, takes a few headline items from `NEWS` in `src/web/app/newsItems.ts`. Add a version's items there, each with an icon from the pack, for the changes worth a picture. `tests/updateChannel.ts` checks which versions show which items.
+
+## Prototypes
+
+A prototype is a folder of code in its project's own git repo, at `prototypes/<name>`, made by `src/host/prototypes.ts`. The first one in a repo also writes the files every prototype there shares, only where the repo lacks them (`src/host/protoStarter.ts`): a Vite and Tailwind set-up, and `design.md` and `myra.md`, the repo's design notes and the rules Myra follows. A prototype board can add its own rules and design cards on top (`src/shared/guides.ts`).
+
+A build (`src/host/build.ts`) sends the request, the cards it came from, their pictures, the rules and design, and any errors, fitted to the model's window by `buildFit.ts`. The builder is `codeAgent.ts`, a single shape any code-writing model can fill; today `claudeCode.ts` runs Claude Code in the prototype's folder with file tools only, no shell and no web, and checks afterwards that nothing outside the folder changed. The page bundles the result with esbuild-wasm (`src/web/proto/bundle.ts`) and shows it in a sandboxed frame on its own `fenmyrpreview:` origin.
+
+## The zip format
+
+`src/shared/fenmyrZip.ts` defines one format for a board, a folder or a project: a manifest, the board files and the media, so a zip never needs migrating. `src/shared/fenmyrStrip.ts` is the one table of what a zip leaves out. Some fields never go, because they only mean something on this computer or are private: an unsent draft to Myra, vault access, a prototype's code folder, a project's repo link. Others go only when ticked in the export dialog: chats, the text of vault notes, and videos, which start ticked. A zip is read the same way in the host and in the tests, and every name is checked before anything is written. Change a field's fate in the table, not in the code that reads it.
+
+## Themes and colours
+
+The core colours of each theme are one entry in `THEMES` in `src/web/settings/themes.ts`, and `node tools/themes-css.ts` writes `web/themes.css` from it; `check:fast` fails when the two disagree. [DESIGN.md](DESIGN.md) says how the tokens fit together, and the `fenmyr-colour` skill in `.claude/skills/` has the steps and the proof for adding a theme or changing a colour.
 
 ## Myra's art
 
 Everything Myra looks like is drawn in code:
 
-- `src/web/goo.ts`: Myra herself, live on the page (her pixels, colors, breathing, blinking, hopping).
+- `src/web/goo.ts`, with `gooPixels.ts`, `gooPoses.ts`, `gooBusy.ts` and `gooShapes.ts`: Myra herself, live on the page (her pixels, colours, breathing, blinking, hopping, her poses and the props she holds while she works).
 - `assets/art/make_art.py`: her stickers and animations, the pixel stamps and the app icon. Run `python3 assets/art/make_art.py` (needs Pillow). To add a stamp, write a `st_…` function, add it to `STAMP_SET`, and map its emoji in `PX` in `src/web/tools/stamps.ts`.
 - `assets/art/make_mark.py`: the little cloudberry that ✦ turns into (a one-glyph colour font). Needs fontTools and brotli.
 
@@ -72,9 +91,9 @@ If an AI tool helped write your change, you are still the one signing it off: ch
 
 ## Icons
 
-The app never names an icon pack directly. It asks for a Fenmyr icon name through `Icon('note')` (`src/web/icons.ts`), or marks a placeholder in the HTML with `<svg data-ico="note"></svg>`. `tools/icons/set.ts` says which icon of the current pack (Phosphor) draws each name and which names the wireframe picker offers; `tools/icons/custom.ts` holds Myra's own icons (the cloudberry mark, the Myra tool, chat). Run `npm run icons` after changing either: it builds `web/icons/pack.js` (both the Regular and the Duotone drawing of every icon) and `src/host/icon-names.tson` (the names Myra may use in wireframes).
+The app never names an icon pack directly. It asks for a Fenmyr icon name through `Icon('note')` (`src/web/icons.ts`), or marks a placeholder in the HTML with `<svg data-ico="note"></svg>`. `tools/icons/set.ts` says which icon of the current pack (Phosphor) draws each name and which names the wireframe picker offers; `tools/icons/custom.ts` holds Myra's own icons (the cloudberry mark, the Myra tool, chat). Run `npm run icons` after changing either: it builds `web/icons/pack.js` (both the Regular and the Duotone drawing of every icon) and `src/host/icon-names.json` (the names Myra may use in wireframes).
 
-To use another icon pack, add it as a dependency and change `pack` and the second column of `set.js`; nothing else in the app changes. A name with no icon shows a dashed placeholder, so old boards never break. Only the bottom bar (toolbar, selection bar, pen bar, shape picker) and Myra's chat header show Duotone; panels, wireframe pieces and icon cards always draw as plain outlines.
+To use another icon pack, add it as a dependency and change `pack` and the second column of `set.ts`; nothing else in the app changes. A name with no icon shows a dashed placeholder, so old boards never break. Duotone shows only in the tools panel, the bottom bar and Myra's chat header, and only when someone picks it in Settings → Appearance; panels, wireframe pieces and icon cards always draw as plain outlines.
 
 ## Adding a line to Myra's greeting
 
