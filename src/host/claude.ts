@@ -246,7 +246,7 @@ function parsePlan(x: unknown): PlanAsk | undefined {
       .map(s => s.slice(0, 200)),
   };
 }
-const NEED = 'I need Claude Code to think. Set it up (Settings → Helpers shows how), then try again.';
+const NEED = 'I need Claude Code to think. Set it up (Settings → Connections shows how), then try again.';
 // the asks that can be stopped, by the id the window gave them, for as long as they run
 const asking = new Map<string, AbortController>();
 /** Kills the Claude Code behind the ask with this id. False when none is running. The ask itself still ends, with an

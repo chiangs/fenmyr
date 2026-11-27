@@ -6,7 +6,7 @@ import { child, closestTo, esc } from '../ui/dom.ts';
 import { showDialog } from '../ui/popover.ts';
 import { editVaultAccess, USE_EVENT, vaultById } from './vaults.ts';
 
-// ---------- Settings → Vaults: who may read each vault, and the way in to change it ----------
+// ---------- Settings → Connections → Obsidian vaults: who may read each vault, and the way in to change it ----------
 type Reader = { kind: 'project' | 'board'; id: string; name: string; ai: boolean; follows: number };
 type Who = { kind: 'project' | 'board'; id: string; name: string; state: string };
 

@@ -1,4 +1,4 @@
-// Settings → Helpers → Git and GitHub, with real git and a stand-in gh that signs in once the test approves it.
+// Settings → Connections → Git and GitHub, with real git and a stand-in gh that signs in once the test approves it.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';

@@ -77,7 +77,7 @@ export function applyToolbar() {
   return order;
 }
 
-// Settings → Toolbar: the tool list (switches + drag to reorder) and the icon size
+// Settings → Layout → Toolbar: the tool list (switches + drag to reorder) and the icon size
 export function renderTbList() {
   const L = $('setTbList');
   if (!L) return;

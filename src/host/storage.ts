@@ -15,7 +15,7 @@ const jsonFiles = (dir: string) => fs.readdirSync(dir).filter(f => f.endsWith('.
 
 // boards with pictures can be many MB, so each board's summary is kept until its file changes (same size and time = same board)
 const summaries = new Map<string, { mtimeMs: number; size: number; row: BoardSummary }>();
-// which vaults a board may read on its own (only those with a folder ticked), for the list in Settings → Vaults
+// which vaults a board may read on its own (only those with a folder ticked), for the list in Settings → Connections → Obsidian vaults
 function grantSummary(raw: unknown): Pick<BoardSummary, 'vaultAccess'> {
   if (!Array.isArray(raw)) return {};
   const out: { vault: string; ai: boolean }[] = [];

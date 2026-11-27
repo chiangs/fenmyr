@@ -320,7 +320,7 @@ async function vaultTasks(t: Smoke) {
     nothing,
     noEmptyBoard: promptNow().includes('Do not build, fill or empty any board'),
   });
-  // Settings → Vaults: the three steps, who reads each vault (nothing yet, then a board with AI reading), and the Give access… list that opens the access dialog
+  // Settings → Connections → Obsidian vaults: the three steps, who reads each vault (nothing yet, then a board with AI reading), and the Give access… list that opens the access dialog
   const access = await page.evaluate(async () => {
     const wait = (ms: number) => new Promise(r => setTimeout(r, ms)),
       click = (sel: string) => document.querySelector<HTMLElement>(sel)?.click(),

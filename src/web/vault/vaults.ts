@@ -14,7 +14,7 @@ import { refreshVNotes } from './notes.ts';
 
 type AccessChoice = { follow: boolean; grants: VaultGrant[] };
 
-// sent when what reads a vault may have changed, so Settings → Vaults can repaint its "Read by" lines
+// sent when what reads a vault may have changed, so Settings → Connections → Obsidian vaults can repaint its "Read by" lines
 export const USE_EVENT = 'fenmyr:vault-use';
 
 // ---------- Obsidian vaults: connect folders here; a project or board is then granted what it may see (read-only) ----------

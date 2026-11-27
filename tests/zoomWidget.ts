@@ -229,7 +229,7 @@ try {
   await p.click('[data-set="wZoom"]');
   await p.click('#setClose');
   await still(p);
-  assert.strictEqual(await shown(p), false, 'its switch in Settings → Widgets hides it');
+  assert.strictEqual(await shown(p), false, 'its switch in Settings → Layout → Widgets hides it');
   await p.mouse.click(900, 650);
   await p.keyboard.press('Control+=');
   await p.waitForFunction(

@@ -191,7 +191,7 @@ export async function bridge(t: Smoke) {
   });
   t.check('wav', wav === 'RIFF', wav);
   t.check('transcribe', r.transcribe === 'hello from whisper', r.transcribe);
-  // Claude Code hooks are always off for Myra's calls; the web (search and public pages) is only on when Settings → Helpers says so
+  // Claude Code hooks are always off for Myra's calls; the web (search and public pages) is only on when Settings → Connections says so
   const runs = await page.evaluate(async () => {
     const argsAfter = async (fn: () => Promise<unknown>) => {
       await fn();

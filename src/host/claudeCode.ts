@@ -51,7 +51,7 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, mod
   const claude = await claudePath();
   if (!claude)
     throw new Error(
-      `I need Claude Code to ${access === 'read' ? 'read' : 'write'} code. Settings → Helpers shows how to set it up.`,
+      `I need Claude Code to ${access === 'read' ? 'read' : 'write'} code. Settings → Connections shows how to set it up.`,
     );
   const args = [
     '-p',

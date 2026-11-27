@@ -121,7 +121,7 @@ export async function openVaultPicker(use: NotePick = TO_BOARD) {
   $('vaultPick')?.remove();
   if (!gs.length) {
     say(
-      'This board can’t read any vault yet. Connect one in Settings → Vaults, then give this board or its project access (right-click → Vault access) ✦',
+      'This board can’t read any vault yet. Connect one in Settings → Connections, then give this board or its project access (right-click → Vault access) ✦',
       7000,
     );
     return;

@@ -60,7 +60,7 @@ export async function look(t: Smoke) {
     regular: ico.regular,
     duo: ico.duo,
   });
-  // Settings → Board → Default font: board text and docs change, the app's own panels don't, and choosing Myra's own puts it back
+  // Settings → Appearance → Default font: board text and docs change, the app's own panels don't, and choosing Myra's own puts it back
   const font = await page.evaluate(async () => {
     const T = window.__t,
       fam = (sel: string) => getComputedStyle(T.el(sel)).fontFamily;

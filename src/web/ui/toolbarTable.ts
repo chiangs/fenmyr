@@ -13,7 +13,7 @@
 //   Rows        PANEL.maxRows is the most rows the panel takes before tools tuck into ···. It also keeps to 45 % of
 //               the window's height.
 //
-// Settings → Toolbar lets each person reorder tools and switch them off on top of this, and Reset goes back to it. A
+// Settings → Layout → Toolbar lets each person reorder tools and switch them off on top of this, and Reset goes back to it. A
 // person's own order counts as "the panel" in the rules above. An id is what their saved order and the code call a tool,
 // so it never changes.
 const TABLE: Table = [
@@ -50,7 +50,7 @@ export const PANEL = { maxRows: 8 };
 
 type ToolLine = {
   id: string;
-  /** Its name in the tooltip, Settings → Toolbar and the ··· menu. */
+  /** Its name in the tooltip, Settings → Layout → Toolbar and the ··· menu. */
   label: string;
   /** The shortcut the tooltip and Settings → Layout show, in Mac symbols (⇧V, ⌥N). Windows and Linux spell them out. */
   key?: string;

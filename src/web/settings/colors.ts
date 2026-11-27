@@ -116,7 +116,7 @@ export function applyColors() {
   }
 }
 
-// Settings → Camera & microphone: the same choice the little menus on video and memo cards make
+// Settings → General → Camera & microphone: the same choice the little menus on video and memo cards make
 async function fillDevices() {
   let list: MediaDeviceInfo[] = [];
   try {
@@ -212,7 +212,7 @@ async function showUsage() {
   }Just Myra's share, counted on this computer. Your plan's limits cover everything you do with Claude.`;
 }
 export function init28() {
-  // Settings → General → Follow Caelestia: the desktop's Material You scheme (from the host, live) stands in for your own colors
+  // Settings → Appearance → Follow Caelestia: the desktop's Material You scheme (from the host, live) stands in for your own colors
   appState.cae = null;
 
   const nameIn = elementById('setName', HTMLInputElement);

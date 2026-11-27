@@ -24,7 +24,7 @@ The host answers only the app's own page in the window's main frame. `src/host/s
 npm ci && node node_modules/electron/install.js   # dependencies, then Electron's binary
 npm start              # run from the code
 npm test               # builds, then runs every test headless
-./install.sh           # install your changed copy (Settings → Update now pulls from the git remote)
+./install.sh           # install your changed copy (Update now, in Settings → About, pulls from the git remote)
 ./make-release.sh --dry             # build the AppImage into build/release/
 ```
 
