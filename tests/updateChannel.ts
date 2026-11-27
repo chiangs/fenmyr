@@ -186,15 +186,37 @@ try {
   await b.close();
   betaApp.remove();
 }
+// the card lists every version's news after the one last seen, up to the running version, and nothing newer
+const news = (p: Page, seen: string | null) =>
+  p.evaluate(async seen => {
+    if (seen) localStorage.setItem('fenmyr:newsSeen', seen);
+    else localStorage.removeItem('fenmyr:newsSeen');
+    document.getElementById('news')?.classList.remove('on');
+    await window.__fenmyr.maybeNews();
+    const on = document.getElementById('news')?.classList.contains('on') ?? false;
+    return { on, list: document.getElementById('newsList')?.textContent ?? '' };
+  }, seen);
 const release = await launch({ boards: [everyOfflineCard()], open: 'every' });
 try {
-  const shown = await release.page.evaluate(async () => {
-    localStorage.removeItem('fenmyr:newsSeen');
-    await window.__fenmyr.maybeNews();
-    return document.getElementById('news')?.classList.contains('on');
-  });
-  assert.strictEqual(shown, true, '1.0.0 shows its own card');
+  const fresh = await news(release.page, null);
+  assert.strictEqual(fresh.on, true, '1.0.0 shows its own card');
+  assert.ok(!fresh.list.includes('Prototypes'), 'and not the news of a later beta');
 } finally {
   await release.close();
+}
+const nextBeta = appCopy('1.1.0-beta.1');
+const n = await launch({ dir: nextBeta.dir, boards: [everyOfflineCard()], open: 'every' });
+try {
+  const fresh = await news(n.page, null);
+  assert.ok(fresh.on && fresh.list.includes('Prototypes'), 'a new install of the beta shows its news');
+  assert.ok(fresh.list.includes('Hello, I’m Myra'), 'after 1.0.0’s, since it never saw those');
+  const after = await news(n.page, '1.0.0');
+  assert.ok(after.on && after.list.includes('Six themes'), 'coming from 1.0.0 shows the beta’s news');
+  assert.ok(!after.list.includes('Hello, I’m Myra'), 'and not 1.0.0’s again');
+  assert.strictEqual((await news(n.page, '1.1.0-beta.1')).on, false, 'and once seen, it stays shut');
+  assert.deepStrictEqual(n.errors, [], 'no page errors');
+} finally {
+  await n.close();
+  nextBeta.remove();
 }
 console.log('UPDATE CHANNEL OK');
