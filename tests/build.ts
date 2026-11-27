@@ -170,16 +170,19 @@ try {
     settings = JSON.parse(args.find(a => a.startsWith('{')) ?? '{}'),
     mode = args.indexOf('--permission-mode');
   assert.deepStrictEqual(
-    args.slice(mode, mode + 6),
+    args.slice(mode, mode + 9),
     [
       '--permission-mode',
       'acceptEdits',
+      '--tools',
+      'Read,Write,Edit,MultiEdit,Glob,Grep',
       '--allowedTools',
       'Read,Write,Edit,MultiEdit,Glob,Grep',
       '--disallowedTools',
       'Bash,WebFetch,WebSearch,Task',
+      '--strict-mcp-config',
     ],
-    'the builder may edit with its file tools alone, named in the order it always had',
+    'the builder is offered its file tools alone and no MCP servers, and may edit with them',
   );
   assert.deepStrictEqual(
     settings.permissions,

@@ -5,7 +5,7 @@ import type { Launched } from './launch.ts';
 // A stand-in Claude Code for builds, told before each build what to do: the files it writes in the prototype's folder,
 // reported the way stream-json does, whether it waits for a release after each file but the last (`pause`) and before it
 // ends (`hold`), how many milliseconds more it takes to end (`ms`), and whether it ends with a failure instead of `reply`. It counts each file it has reported, and logs
-// each build's prompt. A run that can only read, as Explain the code's is, writes nothing and answers what it was last
+// each build's prompt and arguments. A run that can only read, as Explain the code's is, writes nothing and answers what it was last
 // told to. Any other question gets a short answer, or the one it was last told to give after the wait it was told, and
 // its prompt is logged too.
 type BuildScript = {
@@ -23,6 +23,7 @@ export function writeBuildStandIn(file: string, work: string) {
     wrote = path.join(work, 'wrote'),
     asks = path.join(work, 'asks.log'),
     builds = path.join(work, 'builds.log'),
+    builtWith = path.join(work, 'build-args.log'),
     answer = path.join(work, 'answer.json'),
     explained = path.join(work, 'explains.log'),
     explaining = path.join(work, 'explain.json'),
@@ -41,7 +42,7 @@ const path = require('node:path');
 const say = j => console.log(JSON.stringify(j));
 if (process.argv[2] !== '-p') process.exit(0);
 const prompt = fs.readFileSync(0, 'utf8');
-if (process.argv.includes('--tools')) {
+if (process.argv.join(' ').includes('--permission-mode default')) {
   fs.appendFileSync(${JSON.stringify(explained)}, JSON.stringify({ prompt, args: process.argv.slice(3), cwd: process.cwd() }) + '\\n');
   const told = fs.existsSync(${JSON.stringify(explaining)}) ? JSON.parse(fs.readFileSync(${JSON.stringify(explaining)}, 'utf8')) : {};
   const app = process.ppid;
@@ -62,6 +63,7 @@ if (process.argv.includes('--tools')) {
   );
 } else {
   fs.appendFileSync(${JSON.stringify(builds)}, JSON.stringify(prompt) + '\\n');
+  fs.appendFileSync(${JSON.stringify(builtWith)}, JSON.stringify(process.argv.slice(3)) + '\\n');
   fs.writeFileSync(${JSON.stringify(buildPid)}, String(process.pid));
   const s = JSON.parse(fs.readFileSync(${JSON.stringify(script)}, 'utf8'));
   // an app that doesn't stop Claude Code as it quits, such as one from before builds were stopped, would otherwise wait
@@ -122,8 +124,18 @@ if (process.argv.includes('--tools')) {
     asks: () => logged(asks),
     // every build's prompt, oldest first
     builds: () => logged(builds),
+    // every build's arguments after -p, oldest first
+    buildArgs: (): string[][] =>
+      fs.existsSync(builtWith)
+        ? fs
+            .readFileSync(builtWith, 'utf8')
+            .split('\n')
+            .filter(Boolean)
+            .map(l => JSON.parse(l))
+        : [],
     // What the next run that can only read answers, or how it fails, and whether it waits for `explained` first. Such a
-    // run is told apart by --tools, which only it is given.
+    // run is told apart by the permission mode it names, default, which a build never does. --tools can't tell them
+    // apart, since a build is given it too.
     explain(e: { reply?: string; fail?: string; hold?: boolean }) {
       fs.writeFileSync(explaining, JSON.stringify(e));
       if (e.hold) fs.writeFileSync(held, '');
