@@ -14,7 +14,7 @@ import { custom } from './icons/custom.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'assets', 'readme');
-const PHOSPHOR = path.join(ROOT, 'node_modules', '@phosphor-icons', 'core', 'assets', 'duotone');
+const PHOSPHOR = path.join(ROOT, 'node_modules', '@phosphor-icons', 'core', 'assets');
 
 // Mid-tones that read on GitHub's white page and on its near-black one alike.
 const INK = '#d4731a';
@@ -40,14 +40,16 @@ const CLIPS: Clip[] = [
   { file: 'myra-love.png', seconds: 4, steps: [{ at: 0, pose: 'love' }] },
 ];
 
-const ICONS: { file: string; phosphor?: string; custom?: string }[] = [
+// outline: no tint. On GitHub's dark page a tint that fills most of the shape turns it into a blob, so those icons
+// keep only their lines; a small or open tint, as on the rocket and the eye, still reads.
+const ICONS: { file: string; phosphor?: string; custom?: string; outline?: true }[] = [
   { file: 'mark.svg', custom: 'fenmyr-mark' },
   { file: 'prototype.svg', phosphor: 'rocket-launch' },
-  { file: 'myra.svg', custom: 'myra-chat' },
-  { file: 'local.svg', phosphor: 'lock-key' },
-  { file: 'linux.svg', phosphor: 'linux-logo' },
+  { file: 'myra.svg', custom: 'myra-chat', outline: true },
+  { file: 'local.svg', phosphor: 'lock-key', outline: true },
+  { file: 'linux.svg', phosphor: 'linux-logo', outline: true },
   { file: 'access.svg', phosphor: 'eye' },
-  { file: 'built.svg', phosphor: 'shield-check' },
+  { file: 'built.svg', phosphor: 'shield-check', outline: true },
 ];
 
 async function frames(clip: Clip): Promise<Buffer[]> {
@@ -148,9 +150,10 @@ function iconInner(icon: (typeof ICONS)[number]) {
   if (icon.custom) {
     const own = custom[icon.custom];
     if (!own) throw new Error(`no icon named ${icon.custom}`);
-    return own.d;
+    return icon.outline ? own.r : own.d;
   }
-  const svg = fs.readFileSync(path.join(PHOSPHOR, `${icon.phosphor}-duotone.svg`), 'utf8');
+  const file = icon.outline ? `regular/${icon.phosphor}.svg` : `duotone/${icon.phosphor}-duotone.svg`;
+  const svg = fs.readFileSync(path.join(PHOSPHOR, file), 'utf8');
   return svg
     .replace(/^[\s\S]*?<svg[^>]*>/, '')
     .replace(/<\/svg>\s*$/, '')
