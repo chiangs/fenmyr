@@ -103,6 +103,7 @@ On the selected cards, or the words selected in a note.
 | **Ctrl+\\** | **⌘\\** | Just the board: tuck every panel away |
 | **F** | **F** | Focus on the selected cards |
 | **M** | **M** | Ask Myra |
+| **Ctrl+.** | **⌘.** | Stop Myra while she works |
 | **Esc** | **Esc** | Close what is open, put down a tool, or clear the selection |
 
 ## Wireframe

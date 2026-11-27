@@ -65,11 +65,24 @@ const band = (): Promise<Band> =>
 const pillTag = (id: string) =>
   page.evaluate(id => document.querySelector(`#cards [data-id="${id}"] .pill .guide-tag`)?.textContent ?? null, id);
 
-const ADDS = (what: string, file: string) =>
-  `Only what’s different for this prototype. It adds to the repo’s ${what} in ${file}, and where the two differ, this wins.`;
-const IGNORES = (what: string, file: string, verb: string) =>
-  `Only this goes to the builder for this prototype. The repo’s ${what} in ${file} ${verb} ignored.`;
-const NO_REPO = (what: string) => `This prototype’s project has no repo, so there are no repo ${what} to add to.`;
+const HINT = {
+  rules: {
+    adding:
+      'Rules for this prototype only, such as “buttons are full width on phones”. They’re added to the repo’s rules in prototypes/myra.md, and win where the two differ.',
+    ignoring:
+      'Only these rules go to the builder. The repo’s rules in prototypes/myra.md are ignored for this prototype.',
+    noRepo:
+      'Rules for this prototype, such as “buttons are full width on phones”. Its project has no repo, so these are the only rules the builder gets.',
+  },
+  design: {
+    adding:
+      'Design for this prototype only: colours, fonts, spacing, components. It’s added to the repo’s design in prototypes/design.md, and wins where the two differ.',
+    ignoring:
+      'Only this design goes to the builder. The repo’s design in prototypes/design.md is ignored for this prototype.',
+    noRepo:
+      'Design for this prototype: colours, fonts, spacing, components. Its project has no repo, so this is the only design the builder gets.',
+  },
+};
 
 try {
   await page.evaluate(
@@ -159,7 +172,7 @@ try {
     adding,
     {
       shown: true,
-      hint: ADDS('rules', 'prototypes/myra.md'),
+      hint: HINT.rules.adding,
       label: 'Ignore the repo rules',
       on: false,
       button: {
@@ -201,7 +214,7 @@ try {
   await saved();
   assert.deepStrictEqual(
     [(await band()).hint, (await band()).on],
-    [IGNORES('rules', 'prototypes/myra.md', 'are'), true],
+    [HINT.rules.ignoring, true],
     'turning the switch on says only this goes to the builder',
   );
   assert.strictEqual(
@@ -213,11 +226,7 @@ try {
   assert.strictEqual(await pillTag(design), null, 'while Design, with a switch of its own, says nothing');
   await page.click('#dvIgnore');
   await saved();
-  assert.strictEqual(
-    (await band()).hint,
-    ADDS('rules', 'prototypes/myra.md'),
-    'turning it off brings the first hint back',
-  );
+  assert.strictEqual((await band()).hint, HINT.rules.adding, 'turning it off brings the first hint back');
   assert(
     !('ignoreRepo' in (boardFile(checkout).cards.find(c => c.id === rules) ?? { ignoreRepo: 1 })),
     'and removes the field from the file instead of saving false',
@@ -230,7 +239,7 @@ try {
   await open(rules);
   assert.deepStrictEqual(
     [(await band()).on, (await band()).hint],
-    [true, IGNORES('rules', 'prototypes/myra.md', 'are')],
+    [true, HINT.rules.ignoring],
     'and the doc opens again with the switch on',
   );
   await close();
@@ -239,17 +248,12 @@ try {
   await open(design);
   assert.deepStrictEqual(
     [(await band()).hint, (await band()).label, (await band()).on, (await band()).button?.tip],
-    [
-      ADDS('design', 'prototypes/design.md'),
-      'Ignore the repo design',
-      false,
-      `Show ${repo}/prototypes/design.md in its folder`,
-    ],
+    [HINT.design.adding, 'Ignore the repo design', false, `Show ${repo}/prototypes/design.md in its folder`],
     'Design names design.md, and its switch is off though Rules’ is on',
   );
   await page.click('#dvIgnore');
   await saved();
-  assert.strictEqual((await band()).hint, IGNORES('design', 'prototypes/design.md', 'is'), 'and turned on it says so');
+  assert.strictEqual((await band()).hint, HINT.design.ignoring, 'and turned on it says so');
   await close();
   assert.deepStrictEqual(
     boardFile(checkout)
@@ -285,7 +289,7 @@ try {
     await open(id);
     assert.deepStrictEqual(
       await band(),
-      { shown: true, hint: NO_REPO(what), label: '', on: null, button: null, between: true },
+      { shown: true, hint: HINT[what].noRepo, label: '', on: null, button: null, between: true },
       `a prototype with no repo says so about its ${what}, with no switch and no button`,
     );
     await close();

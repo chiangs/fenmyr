@@ -27,6 +27,7 @@ export const repoOps = {
   previewOpen: (o: Ops['previewOpen']['args']) => call('previewOpen', o),
   previewPage: (o: Ops['previewPage']['args']) => call('previewPage', o),
   protoBuild: (o: Ops['protoBuild']['args']) => call('protoBuild', o),
+  protoBuildStop: (id: string) => call('protoBuildStop', { id }),
   captureArea: (o: Ops['captureArea']['args']) => picture('captureArea', o),
   protoLastChange: (o: Ops['protoLastChange']['args']) => call('protoLastChange', o),
   protoUndo: (o: Ops['protoUndo']['args']) => call('protoUndo', o),
@@ -67,6 +68,8 @@ export const repoFallbacks: typeof repoOps = {
   previewOpen: desktopOnly,
   previewPage: desktopOnly,
   protoBuild: desktopOnly,
+  // a browser has no build to stop
+  protoBuildStop: async () => false,
   captureArea: desktopOnly,
   protoLastChange: desktopOnly,
   protoUndo: desktopOnly,

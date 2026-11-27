@@ -332,7 +332,39 @@ const narrow: Group = {
   ],
 };
 
+// A question that never comes back, so she is working on it for as long as the state is shown: the send button is Stop
+// with words typed in the box, then Ctrl+. stops her and the question is marked. A checkout without Stop shows the arrow
+// where the square is, and her working where she has stopped, so the states are listed as meant.
+const working: Step = async page => {
+  await page.evaluate(() => {
+    window.Fenmyr.connections = async () => ({ claude: true, mobbin: false, higgsfield: false });
+    window.Fenmyr.ask = () => new Promise(() => {});
+    window.Fenmyr.askStop = async () => true;
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
+  await page.click('#mPill');
+  await page.evaluate(() => {
+    void window.__fenmyr.ask('Group these by theme', false, undefined, true);
+  });
+  await page.fill('#mcInput', 'and name each group');
+  await page.mouse.move(1, 1);
+};
+const stopped: Step = async page => {
+  await page.focus('#mcInput');
+  await page.keyboard.press('Control+.');
+  await page.mouse.move(1, 1);
+};
+const stopping = (settings: Record<string, unknown>): Group => ({
+  settings,
+  states: [
+    ['working', working],
+    ['stopped', stopped],
+  ],
+});
+
 export const MYRA_GROUPS = {
+  stop: stopping({}),
+  'stop-dark': stopping({ theme: 'dark' }),
   reply,
   sees,
   panels,

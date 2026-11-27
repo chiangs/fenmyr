@@ -10,15 +10,20 @@ export async function panels(t: Smoke) {
   await placing(t);
 }
 
-// About → Licenses lists Myra's license and every third-party notice; Chromium's own file ships next to Electron
+// About → Licenses lists Fenmyr's notice and licence and every third-party notice; Chromium's own file ships next to Electron
 async function licences(t: Smoke) {
-  const items = await t.page.evaluate(async () => {
+  const { items, own } = await t.page.evaluate(async () => {
     const T = window.__t;
     T.click('#openLicenses');
     await T.wait(700);
     const items = T.all('#licBody .lic-item summary b').map(b => b.textContent ?? '');
+    const own = {
+      badge: T.text('#licBody .lic-fenmyr summary em'),
+      intro: T.text('#licBody .lic-intro'),
+      text: T.text('#licBody .lic-fenmyr pre'),
+    };
     T.click('#licClose');
-    return items;
+    return { items, own };
   });
   const exe = await t.app.evaluate(({ app }) => app.getPath('exe'));
   t.checkAll('licences', {
@@ -26,6 +31,10 @@ async function licences(t: Smoke) {
     mochiboard: items.includes('Mochiboard'),
     jszip: items.includes('jszip'),
     phosphor: items.includes('Phosphor Icons') && !items.includes('Lucide'),
+    ownBadge: own.badge === 'EUPL-1.2' && own.intro.startsWith('Fenmyr is open source under the EUPL-1.2.'),
+    noticeThenLicence:
+      own.text.startsWith('Fenmyr\nCopyright (c) 2026 Stephen Chiang') &&
+      own.text.indexOf('The change from the MIT License') < own.text.indexOf('EUROPEAN UNION PUBLIC LICENCE v. 1.2'),
     chromium: fs.existsSync(path.join(path.dirname(exe), 'LICENSES.chromium.html')),
   });
 }

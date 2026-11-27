@@ -30,6 +30,7 @@ const NAMED: Record<string, string> = {
   '−': 'Minus',
   '=': 'Equal',
   ',': 'Comma',
+  '.': 'Period',
   '\\': 'Backslash',
   '[': 'BracketLeft',
   ']': 'BracketRight',

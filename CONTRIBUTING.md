@@ -56,7 +56,15 @@ Everything Myra looks like is drawn in code:
 - `assets/art/make_art.py`: her stickers and animations, the pixel stamps and the app icon. Run `python3 assets/art/make_art.py` (needs Pillow). To add a stamp, write a `st_…` function, add it to `STAMP_SET`, and map its emoji in `PX` in `src/web/tools/stamps.ts`.
 - `assets/art/make_mark.py`: the little cloudberry that ✦ turns into (a one-glyph colour font). Needs fontTools and brotli.
 
-Fenmyr's name and Myra's character and art are reserved, as [TRADEMARKS.md](TRADEMARKS.md) explains. The code is MIT.
+Fenmyr's name and Myra's character and art are reserved, as [TRADEMARKS.md](TRADEMARKS.md) explains. The code is under the EUPL-1.2 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)).
+
+## Contributions
+
+Contributions are accepted under the EUPL-1.2, the licence of the code. Sign off each commit with `git commit -s`, which adds a `Signed-off-by` line with your name and email. That line says you agree to the [Developer Certificate of Origin](https://developercertificate.org), whose text is at that link, and that you offer the change under the EUPL-1.2. Unless a file says otherwise, the licence the DCO calls "the open source license indicated in the file" is the EUPL-1.2 in [LICENSE](LICENSE). Nothing checks the sign-off yet: the pull request template asks for it and the reviewer looks for it.
+
+The files [NOTICE](NOTICE) lists as reserved (Myra, the art, the logo and icon, and their own icons) are not under the EUPL, so pull requests that change them can't be accepted. Open an issue instead.
+
+If an AI tool helped write your change, you are still the one signing it off: check that you can offer the result under the EUPL-1.2, as the DCO asks, and say in the pull request that you used one.
 
 ## Third-party notices
 

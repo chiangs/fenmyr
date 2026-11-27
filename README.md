@@ -10,7 +10,7 @@ A canvas for growing ideas, from the first note to a working prototype, with Myr
 <p align="center">
   <a href="https://github.com/chiangs/fenmyr/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/chiangs/fenmyr?include_prereleases&label=release"></a>
   <a href="https://github.com/chiangs/fenmyr/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/chiangs/fenmyr/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue"></a>
+  <a href="LICENSE"><img alt="EUPL-1.2 licence" src="https://img.shields.io/badge/licence-EUPL--1.2-blue"></a>
   <img alt="Linux and macOS" src="https://img.shields.io/badge/platform-Linux%20%C2%B7%20macOS-lightgrey">
   <a href="https://github.com/sponsors/chiangs"><img alt="Sponsor Fenmyr" src="https://img.shields.io/badge/sponsor-%E2%99%A5-ea4aaa?logo=githubsponsors&logoColor=white"></a>
 </p>
@@ -48,6 +48,7 @@ Myra reads your board and answers in the chat beside it.
 - **Myra sees** shows what she will read, and **+ Add** hands her pictures, text files or vault notes.
 - Before she changes more than ten cards, or removes any, she draws her plan on the board in dashed lines and waits.
 - After a reply she lists what changed, with **Show on board** and one **Undo** for the whole reply. The notes and pages she read come back as links.
+- While she works, the send button turns into **Stop**, and **Ctrl+.** does the same. On a prototype board it also ends the build that's running and any waiting their turn.
 - Type **/** for commands that need no AI at all: `/find`, `/tag`, `/tidy`, `/due`, `/timer`, `/template`, `/board` and more.
 
 ### <img src="assets/readme/local.svg" width="22" height="22" alt=""> Yours, on your computer
@@ -217,7 +218,7 @@ Fenmyr is TypeScript on Electron: `src/web/` draws the canvas and `src/host/` ow
 npm ci && node node_modules/electron/install.js && npm start
 ```
 
-Run `npm run check:fast` before each commit. [CONTRIBUTING.md](CONTRIBUTING.md) explains the rest. Bugs and ideas are welcome through the [issue forms](https://github.com/chiangs/fenmyr/issues/new/choose).
+Run `npm run check:fast` before each commit, and sign each commit off with `git commit -s`: contributions are accepted under the EUPL-1.2 and the [Developer Certificate of Origin](https://developercertificate.org). [CONTRIBUTING.md](CONTRIBUTING.md) explains the rest. Bugs and ideas are welcome through the [issue forms](https://github.com/chiangs/fenmyr/issues/new/choose).
 
 ## Support Fenmyr
 
@@ -238,7 +239,11 @@ Icons are [Phosphor Icons](https://phosphoricons.com) (MIT), plus Fenmyr's own c
 
 ## Licence
 
-The code is open source under the [MIT License](LICENSE). The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons, the stamps, the logo and the app icon are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Fenmyr also includes software made by others. Each is listed with its licence in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under Settings → About → **View licences**.
+The code is open source under the [European Union Public Licence v. 1.2](LICENSE) (EUPL-1.2), and [NOTICE](NOTICE) keeps the notices that go with it. The EUPL is a copyleft licence: if you share the code, changed or not, or make a changed version available to others online, you must do it under the EUPL-1.2 or a later version of the EUPL and give them the source, so a derivative stays open. Its compatibility clause lets you use a licence it lists, such as the GPL v3, when you combine the code with code under that licence.
+
+Code published here before the change to the EUPL-1.2 was released under the MIT License. The repository as it stood at the last commit before the change, tagged `mit-final`, stays available under the MIT License. Fenmyr from the change on is under the EUPL-1.2, and NOTICE keeps the MIT text as a record.
+
+The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons, the stamps, the logo and the app icon are not part of the code licence. They are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Fenmyr also includes software made by others, including Mochiboard, Electron, Phosphor Icons, Figtree, Shantell Sans and the libraries inside the docs editor. Each is listed with its licence in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licences**.
 
 ---
 

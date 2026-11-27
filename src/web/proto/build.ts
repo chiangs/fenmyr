@@ -1,4 +1,4 @@
-import { type BuildEvent, readBuildEvent } from '../../shared/build.ts';
+import { type BuildEvent, readBuildEvent, wasStopped } from '../../shared/build.ts';
 import { rankCards } from '../../shared/contextFit.ts';
 import { guidesOf, isGuide } from '../../shared/guides.ts';
 import type { Board } from '../../shared/model.ts';
@@ -7,6 +7,7 @@ import { appState, session } from '../core/state.ts';
 import { changeBoard } from '../library/boardWrites.ts';
 import { react } from '../myra/react.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
+import { addStoppable } from '../myra/stop.ts';
 import { rootOf } from '../repo/codeFolder.ts';
 import { brief, screensOf } from './brief.ts';
 import { refreshPanes } from './buildButtons.ts';
@@ -14,6 +15,7 @@ import { checkComing, checkNewest } from './buildCheck.ts';
 import { asked, ended, endedLost, newestErrors, redrawBlock, redrawNewest, started } from './buildRecord.ts';
 import {
   building,
+  cancel,
   catchUp,
   caughtUp,
   claimSlot,
@@ -78,6 +80,8 @@ export async function startBuild(
     },
     pictures: picturesOf(ranked),
     waited: waitsTurn(),
+    // Stop ends it from now, whether it waits or runs, until it has ended whichever way
+    off: addStoppable({ board: b.id, stop: () => stopBuild(build) }),
   };
   if (w.waited) noteHeard(waitsWords(b.name));
   enqueue(w);
@@ -94,6 +98,19 @@ async function keptErrors(board: string) {
   return errors;
 }
 
+// What Stop does to one build. A waiting one is cancelled, as its Cancel button does. The running one is killed by the
+// host, which ends it as a failure that says the person stopped it, so its block keeps its files and its Undo. Until
+// the host has answered with its id there is nothing to name, so the kill follows the answer.
+function stopBuild(build: string) {
+  if (cancel(build)) return redrawBlock(build);
+  const r = runningBuild();
+  if (r?.build !== build) return;
+  r.stopped = true;
+  if (r.id) stopOnHost(r.id);
+}
+
+const stopOnHost = (id: string) => void Fenmyr.protoBuildStop(id).catch(() => {});
+
 // what a screen reader hears as a request waits its turn, the block showing it as waiting
 const waitsWords = (name: string) => `${name}’s build waits its turn`;
 
@@ -107,6 +124,7 @@ function nextWaiting() {
   for (let w = dequeue(); w; w = dequeue()) {
     const b = boardNow(w.board);
     if (b) return { w, name: b.name };
+    w.off();
   }
   return null;
 }
@@ -135,6 +153,8 @@ async function pump() {
     was: undefined,
     files: [],
     job: startJob({ kind: 'building', board: w.board, name, file: null }),
+    off: w.off,
+    stopped: false,
   });
   if (w.waited) noteHeard(`${name}’s build has started`);
   try {
@@ -148,15 +168,20 @@ async function pump() {
     });
     if (started.kind === 'started') {
       r.id = started.id;
+      if (r.stopped) stopOnHost(r.id);
       return;
     }
     // The host is still writing a build this window didn't start, as one left by an earlier window would be, so this
-    // waits again, first in line, until that build's end is heard.
+    // waits again, first in line, until that build's end is heard. Unless it was stopped meanwhile: it never started,
+    // so it reads not started, and the next in line gets its turn.
     freeSlot(r);
     r.job.end();
-    enqueue({ ...w, waited: true }, true);
-    noteHeard(waitsWords(name));
+    if (!r.stopped) {
+      enqueue({ ...w, waited: true }, true);
+      noteHeard(waitsWords(name));
+    }
     redrawNewest(r);
+    if (r.stopped) void pump();
   } catch (e) {
     turnedAway(r, e instanceof Error ? e.message : String(e));
   }
@@ -170,11 +195,13 @@ const turnedAway = (r: Running, said: string) =>
 // How it ended lands in the build's own prototype whichever board is open, and the status line says it's building
 // until then.
 function land(r: Running, e: End, said?: string) {
-  // wrote: its end reached its board, so she can react to how it went
+  // nothing is left to stop, and Stop mustn't claim to
+  r.off();
+  // wrote: its end reached its board, so she can react to how it went, unless the person stopped it
   const done = (wrote: boolean) => {
     freeSlot(r);
     r.job.end();
-    if (wrote) react(e.type === 'done' ? 'buildDone' : 'buildFailed');
+    if (wrote && !wasStopped(e)) react(e.type === 'done' ? 'buildDone' : 'buildFailed');
     if (wrote && e.type === 'done' && session.board?.id === r.board) offerGuides();
   };
   landOn(r.board, r.name, e, done, b => {

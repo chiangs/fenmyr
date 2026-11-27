@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import type { BuildEvent } from '../shared/build.ts';
+import { type BuildEvent, STOPPED_BY_YOU } from '../shared/build.ts';
 import { windowOf } from '../shared/contextFit.ts';
 import { readBoardGuides } from '../shared/guides.ts';
 import type { Ops } from '../shared/ops.ts';
@@ -60,6 +60,16 @@ const outside = async (repo: string, dir: string) => {
 
 // the repos with a build running: two builds in one folder would write over each other
 const busy = new Set<string>();
+// the way to stop each running build, by the id startBuild answered
+const stops = new Map<string, AbortController>();
+
+/** Kills the Claude Code of the running build with this id. False when none is running. The build ends as a failure
+ *  that says the person stopped it, with the files it changed, so its Undo works. */
+export function stopBuild(id: string): boolean {
+  const stop = stops.get(id);
+  stop?.abort();
+  return stop !== undefined;
+}
 
 /** Runs `op` on a repo unless a build is writing in it, as Undo this build, a commit, a pull or taking GitHub's version
  *  would put back, take or change files under it. The window guards them too, but a window reloaded mid-build doesn't
@@ -88,10 +98,13 @@ export function startBuild(
   const key = path.resolve(root);
   if (busy.has(key)) return { kind: 'busy' } as const;
   busy.add(key);
+  const stop = new AbortController();
+  stops.set(id, stop);
   // The repo is free before the last event goes, so a build asked for as this one ends can start. A build Fenmyr quits
   // during sends no end, which would say it changed nothing, so its record reads stopped next time, with Undo this build.
   const end = (e: Extract<BuildEvent, { type: 'done' | 'error' }>) => {
     busy.delete(key);
+    stops.delete(id);
     if (!quitting()) send(e);
   };
   // Set once the folder is saved, so the end can count what changed since. A build Fenmyr quits during isn't counted:
@@ -126,6 +139,8 @@ export function startBuild(
       windowOf(await listModels(), model),
     );
     send({ id, type: 'start', snapshot: snap, use: fit.use });
+    // a stop that came during the save or the fitting ends the build here, before its pictures are written
+    stop.signal.throwIfAborted();
     // the cards' pictures, saved where only this build reads them
     const shots = path.join(os.tmpdir(), `fenmyr-build-${id}`);
     const pictures = fit.pictures.flatMap((p, i) => {
@@ -153,9 +168,18 @@ export function startBuild(
       pictures: pictures.join('\n'),
     });
     const said = await agent(
-      { cwd: path.join(s.root, dir), prompt, readable: pictures.length ? [shots] : [], access: 'edit', model },
+      {
+        cwd: path.join(s.root, dir),
+        prompt,
+        readable: pictures.length ? [shots] : [],
+        access: 'edit',
+        model,
+        signal: stop.signal,
+      },
       file => send({ id, type: 'edit', file }),
     ).finally(() => fs.rmSync(shots, { recursive: true, force: true }));
+    // Claude Code can finish in the moment before the kill lands. The person was told it stopped, so it did.
+    stop.signal.throwIfAborted();
     const files = await changed(),
       strays = (await outside(s.root, dir)).filter(p => !before.has(p));
     const { text: reply, sources, next } = splitBuildReply(said);
@@ -163,7 +187,7 @@ export function startBuild(
   };
   run().catch(async e => {
     const snapshot = saved?.snapshot ?? null;
-    const why = e instanceof Error ? e.message : String(e);
+    const why = stop.signal.aborted ? STOPPED_BY_YOU : e instanceof Error ? e.message : String(e);
     end({ id, ...named, type: 'error', text: why, snapshot, files: await changed() });
   });
   return { kind: 'started', id } as const;

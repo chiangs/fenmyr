@@ -125,8 +125,10 @@ function markRows(shown: readonly HTMLElement[], cols: number) {
 const MAX_SHARE = 0.45;
 
 /** Tucks tools into ··· in the table's tuck order while the panel is more than PANEL.maxRows rows or MAX_SHARE of the
- *  window tall. Rows come from the groups and the columns, so a tool never tucks for width. One tool always stays. */
-function fitPanel() {
+ *  window tall. Rows come from the groups and the columns, so a tool never tucks for width. One tool always stays.
+ *  It runs a frame after the panel resizes, so a caller that measures the panel straight after changing its room runs
+ *  it first. */
+export function fitPanel() {
   const box = $('tools'),
     more = $('tbMore');
   for (const b of htmlIn(box, ':scope > .tb-over')) b.classList.remove('tb-over');

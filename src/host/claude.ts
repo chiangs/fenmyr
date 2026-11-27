@@ -153,13 +153,14 @@ export const hookArgs = (more: Record<string, unknown> = {}) => [
 // permission mode it runs in. Claude Code enforces this.
 export const FOLDER_ONLY = { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true };
 
-// `cwd`: run there, with file tools kept inside it, so a request never reaches the folder that holds the boards
-type RunOptions = { need?: string; cwd?: string; model?: ModelChoice };
+// `cwd`: run there, with file tools kept inside it, so a request never reaches the folder that holds the boards.
+// `signal`: aborting it kills Claude Code, and the call fails as it does for any run that gave no answer
+type RunOptions = { need?: string; cwd?: string; model?: ModelChoice; signal?: AbortSignal };
 async function runClaude(
   prompt: string,
   tools: string[],
   timeout: number,
-  { need = 'I need Claude Code to do that.', cwd, model }: RunOptions = {},
+  { need = 'I need Claude Code to do that.', cwd, model, signal }: RunOptions = {},
 ) {
   const claude = await claudePath();
   if (!claude) throw new Error(need);
@@ -178,6 +179,7 @@ async function runClaude(
     {},
     cwd,
     prompt,
+    signal,
   );
   const { text, isError } = claudeResult(r.out);
   // a failed answer (not signed in, no plan…) comes back as an error, not as words for Myra to read
@@ -245,6 +247,15 @@ function parsePlan(x: unknown): PlanAsk | undefined {
   };
 }
 const NEED = 'I need Claude Code to think. Set it up (Settings → Helpers shows how), then try again.';
+// the asks that can be stopped, by the id the window gave them, for as long as they run
+const asking = new Map<string, AbortController>();
+/** Kills the Claude Code behind the ask with this id. False when none is running. The ask itself still ends, with an
+ *  error, because no answer came; the window drops what comes back for an ask it stopped. */
+export function askStop(id: string): boolean {
+  const stop = asking.get(id);
+  stop?.abort();
+  return stop !== undefined;
+}
 export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
   const added = parseFiles(a.files);
   const confirmed = Boolean(a.confirmed),
@@ -287,10 +298,15 @@ export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
     files: written?.files ?? [],
     plan: parsePlan(a.plan),
   });
-  const model = await parseChoice(a.myraModel);
+  // listed before the first wait, so a stop that comes while Claude Code is still being found takes it too
+  const id = text(a.id),
+    stop = new AbortController();
+  if (id) asking.set(id, stop);
   try {
-    return await runClaude(prompt, tools, 300, { need: NEED, cwd: ASK_ROOT, model });
+    const model = await parseChoice(a.myraModel);
+    return await runClaude(prompt, tools, 300, { need: NEED, cwd: ASK_ROOT, model, signal: stop.signal });
   } finally {
+    asking.delete(id);
     if (written) fs.rmSync(written.dir, { recursive: true, force: true });
   }
 }

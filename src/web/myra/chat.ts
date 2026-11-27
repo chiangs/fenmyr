@@ -15,6 +15,7 @@ import { aiGrants, gatherVault, gatherVaultTasks, readAdded, type VaultTasksUsed
 import { animIntent, animRequest, pickAnim, playAnim } from './anim.ts';
 import { holdReply, Turn } from './apply.ts';
 import type { Picked } from './applyTypes.ts';
+import { AskRun } from './askRun.ts';
 import { fitBoard } from './boardFit.ts';
 import { clearedCount, initDraft } from './chatDraft.ts';
 import { initExpand, setExpanded } from './chatExpand.ts';
@@ -36,6 +37,7 @@ import { initSeesAdd } from './seesAdd.ts';
 import { takeSees } from './seesStrip.ts';
 import { initSlashMenu, slash } from './slash.ts';
 import { initStatus, noteSignIn, paintStatus, startJob } from './status.ts';
+import { initStop } from './stopWork.ts';
 
 // without AI (switched off, or Claude Code not installed) Myra still helps with the simple stuff, right here on your computer
 export function tidyNotes() {
@@ -165,8 +167,10 @@ export function ask(q: string, confirmed = false, sees?: Sees, typed = false) {
     cleared: clearedCount(),
   };
   if (!chatOpen()) myraOpen(true);
-  if (!confirmed) addMsg('me', q);
-  return Turn.take(turn => answer(turn, asked), session.board.id);
+  const mine = confirmed ? undefined : addMsg('me', q),
+    run = new AskRun(asked.board, mine);
+  // stoppable from now until it ends, whichever way, so one waiting behind another can be stopped too
+  return Turn.take(turn => answer(turn, asked, run).finally(() => run.end()), session.board.id);
 }
 
 // what the app already did for this sentence, so her answer can go with it
@@ -186,18 +190,21 @@ function actOnSentence(q: string) {
   return did;
 }
 
-async function answer(turn: Turn, asked: Asked) {
+async function answer(turn: Turn, asked: Asked, run: AskRun) {
   const { q, confirmed, did, sees } = asked;
   // every way out before her answer arrives gives the message back, so a long one is never lost
   const unsent = () => giveBack({ board: asked.board, words: asked.words, added: sees.added, cleared: asked.cleared });
   const cannot = (why: string) => {
     if (!offlineMyra(q, why)) unsent();
   };
+  // a stopped question leaves everything as it was, the box too, so none of the ways out below says anything
+  if (run.stopped) return;
   if (!turn.stillOpen()) return unsent();
   if (Fenmyr.web) return webMyra(q);
   if (!settings.ai) return cannot('My thinking is switched off in Settings, so I can only do simple tidying.');
   if (appState.haveClaude === false) {
     await showConnections(true);
+    if (run.stopped) return;
     if (appState.haveClaude === false)
       return cannot("I need Claude Code on this computer to think. It's a one-time setup with your Claude account.");
   } // look again first: they may have just set it up
@@ -205,6 +212,7 @@ async function answer(turn: Turn, asked: Asked) {
     return cannot("You're offline, so I can't think with Claude right now. I'll be back when the internet is.");
   if (confirmed) addMsg('myra', 'Making it… this can take a minute ✦');
   const job = startJob({ kind: 'thinking' });
+  run.working(job);
   const ctx: Picked & { tasks: VaultTasksUsed | null; web: boolean } = {
     asked: false,
     used: [],
@@ -239,9 +247,10 @@ async function answer(turn: Turn, asked: Asked) {
   const canVault = !ctx.asked && aiGrants(session.board).length > 0;
   let reached = false;
   try {
+    if (run.stopped) return;
     const { board, use } = fitBoard(new Set(sees.sel), windowOf(modelLists(), settings.myraModel));
     ctx.use = use;
-    const raw = await Fenmyr.ask(
+    const asking = Fenmyr.ask(
       (window.myraName && window.myraName !== 'Myra'
         ? `(The person named you ${window.myraName}. That's your name now; sign off and refer to yourself that way.) `
         : '') +
@@ -260,12 +269,21 @@ async function answer(turn: Turn, asked: Asked) {
         ...(ctx.tasks ? { vaultTasks: { items: ctx.tasks.items, summary: ctx.tasks.summary } } : {}),
         ...(files.length ? { files } : {}),
         ...(plan ? { plan: plan.ask } : {}),
+        id: run.id,
       },
     );
+    run.sent();
+    const raw = await asking;
+    // An answer that was already on its way when Stop was pressed is dropped whole. Once the check is passed, the answer
+    // lands as one and Stop is not offered, so no change is ever half made.
+    if (run.stopped) return;
+    run.end();
     reached = true;
     noteSignIn(false);
     await settle(turn, await holdReply(parse(raw), q, ctx), plan?.id ?? null);
   } catch (err) {
+    // the stop killed the call, which then fails for want of an answer: that is no failure to report
+    if (run.stopped) return;
     const why = err instanceof Error ? err.message : String(err);
     // once her answer is in, a failure is in applying it, and what the person sent has been read
     const cant = (line: string) => (reached ? offlineMyra(q, line) : cannot(line));
@@ -342,6 +360,7 @@ export function init31() {
   };
 
   initChatInput();
+  initStop();
   initDraft();
   initPasted();
   initExpand();

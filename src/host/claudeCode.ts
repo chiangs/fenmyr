@@ -47,7 +47,7 @@ export function stopCodeAgents() {
 /** True once Fenmyr is quitting. A run cut off then didn't fail, so nothing is said of how it ended. */
 export const quitting = () => stopped;
 
-export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, model }, edited) => {
+export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, model, signal }, edited) => {
   const claude = await claudePath();
   if (!claude)
     throw new Error(
@@ -63,6 +63,8 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, mod
     ...modelArgs(model),
   ];
   for (const d of readable) args.push('--add-dir', d);
+  // a stop that came while Claude Code was being found must not start it
+  signal?.throwIfAborted();
   return new Promise((res, rej) => {
     const p = spawn(claude, args, { cwd, env: env(), stdio: ['pipe', 'pipe', 'pipe'] });
     running.add(p);
@@ -74,7 +76,14 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, mod
       said = '',
       failed = '',
       err = '';
-    const late = setTimeout(() => p.kill(), 15 * 60 * 1000);
+    const kill = () => p.kill();
+    const late = setTimeout(kill, 15 * 60 * 1000);
+    signal?.addEventListener('abort', kill, { once: true });
+    const over = () => {
+      clearTimeout(late);
+      signal?.removeEventListener('abort', kill);
+      running.delete(p);
+    };
     // one JSON event per line: tool calls as they happen, and the result at the end
     const hear = (line: string) => {
       let j: unknown;
@@ -104,13 +113,11 @@ export const claudeCode: CodeAgent = async ({ cwd, prompt, readable, access, mod
       err = (err + d.toString('utf8')).slice(-2000);
     });
     p.on('error', e => {
-      clearTimeout(late);
-      running.delete(p);
+      over();
       rej(e);
     });
     p.on('close', () => {
-      clearTimeout(late);
-      running.delete(p);
+      over();
       hear(buf);
       if (failed) rej(new Error(failed.slice(0, 300)));
       else if (said) res(said);

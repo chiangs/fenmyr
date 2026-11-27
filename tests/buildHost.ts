@@ -1,7 +1,7 @@
 // The host's side of a build, with no window: a fake code agent edits a prototype in a temp repo, and the events carry
 // the snapshot as it starts, every changed file with the lines it gained and lost as it ends, the snapshot and files
-// when it fails, and the builder's next steps. One build runs in a repo at a time, and one cut off by Fenmyr quitting
-// sends no end. The renderer's parse keeps what the host sends and drops what is malformed.
+// when it fails, and the builder's next steps. One build runs in a repo at a time, a stopped one ends as a failure that
+// says the person stopped it, and one cut off by Fenmyr quitting sends no end. The renderer's parse keeps what the host sends and drops what is malformed.
 import assert from 'node:assert';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -10,13 +10,13 @@ import path from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import type { CodeAgent } from '../src/host/codeAgent.ts';
 import type { Untrusted } from '../src/host/util.ts';
-import { type BuildEvent, type FileDiff, readBuildEvent } from '../src/shared/build.ts';
+import { type BuildEvent, type FileDiff, readBuildEvent, STOPPED_BY_YOU } from '../src/shared/build.ts';
 import type { Ops } from '../src/shared/ops.ts';
 
 const work = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'fenmyr-build-host-')));
 // the host keeps its own files under XDG_DATA_HOME, read when its modules load
 process.env.XDG_DATA_HOME = work;
-const { startBuild } = await import('../src/host/build.ts');
+const { startBuild, stopBuild } = await import('../src/host/build.ts');
 const { stopCodeAgents } = await import('../src/host/claudeCode.ts');
 
 const repo = path.join(work, 'acme'),
@@ -265,6 +265,77 @@ const many = Array.from({ length: 250 }, (_, i) => ({ kind: 'binary', path: `img
 const capped = readBuildEvent({ id: 'b1', type: 'error', text: 'Stopped.', snapshot: 'nope', files: many });
 assert(capped?.type === 'error', 'a failure lands even with a bad snapshot');
 assert.deepStrictEqual([capped.snapshot, capped.files.length], [null, 200], 'and keeps at most 200 files');
+
+// A stop ends the build as a failure that says the person stopped it, with the snapshot and the files written so far,
+// whether it came before Claude Code ran, while it ran, or as it finished
+const begin = (agent: CodeAgent) => {
+  const events: BuildEvent[] = [],
+    ended = Promise.withResolvers<BuildEvent[]>();
+  const started = startBuild(
+    { root: repo, dir, stack: 'react', request: 'Stop it' },
+    e => {
+      events.push(e);
+      if (e.type === 'done' || e.type === 'error') ended.resolve(events);
+    },
+    agent,
+  );
+  assert(started.kind === 'started', 'the build started');
+  return { id: started.id, events, ended: ended.promise };
+};
+const untilEdit = async (events: BuildEvent[]) => {
+  for (const end = Date.now() + 10000; !events.some(e => e.type === 'edit'); await sleep(20))
+    assert(Date.now() < end, 'the build writes its file');
+};
+let ran = false;
+const early = begin(async () => {
+  ran = true;
+  return 'Built.';
+});
+assert.equal(stopBuild(early.id), true, 'a build is stopped before Claude Code has run');
+const [seenEarly, lateEnd, ...afterEarly] = await early.ended;
+assert(!ran, 'and Claude Code never runs');
+assert(seenEarly?.type === 'start' && lateEnd?.type === 'error' && !afterEarly.length, 'the build ends in its error');
+assert.deepStrictEqual(
+  [lateEnd.text, lateEnd.snapshot, lateEnd.files],
+  [STOPPED_BY_YOU, seenEarly.snapshot, []],
+  'which says the person stopped it, with the snapshot and no files',
+);
+assert.equal(stopBuild(early.id), false, 'a build that has ended has no stop');
+assert.equal(stopBuild('no-such-build'), false, 'nor has one that never ran');
+
+const hangs: CodeAgent = async ({ cwd, signal }, edited) => {
+  assert(signal && !signal.aborted, 'Claude Code is given the build’s signal');
+  fs.writeFileSync(path.join(cwd, 'src/Half.tsx'), 'half\n');
+  edited('src/Half.tsx');
+  await new Promise(done => signal.addEventListener('abort', done));
+  throw new Error('Claude Code stopped before it finished.');
+};
+const during = begin(hangs);
+await untilEdit(during.events);
+assert.equal(stopBuild(during.id), true, 'a build is stopped while Claude Code runs');
+const stopped = (await during.ended).at(-1);
+assert(stopped?.type === 'error', 'it ends in its error');
+assert.equal(stopped.text, STOPPED_BY_YOU, 'with the person’s stop as the reason, not Claude Code’s');
+assert.deepStrictEqual(
+  stopped.files,
+  [{ kind: 'text', path: 'src/Half.tsx', added: 1, removed: 0 }],
+  'and the file it wrote before it was stopped',
+);
+fs.rmSync(path.join(src, 'Half.tsx'));
+
+const finishes: CodeAgent = async ({ cwd, signal }, edited) => {
+  fs.writeFileSync(path.join(cwd, 'src/Late.tsx'), 'late\n');
+  edited('src/Late.tsx');
+  await new Promise(done => signal?.addEventListener('abort', done));
+  return 'I built it.';
+};
+const late = begin(finishes);
+await untilEdit(late.events);
+stopBuild(late.id);
+const lateStopped = (await late.ended).at(-1);
+assert(lateStopped?.type === 'error', 'a build that finishes as the stop lands still ends stopped, not done');
+assert.equal(lateStopped.text, STOPPED_BY_YOU);
+fs.rmSync(path.join(src, 'Late.tsx'));
 
 // Quitting stops Claude Code, and what it had written by then isn't counted. An end would say the build changed
 // nothing, so none goes, and its record reads stopped next time, with Undo this build.
