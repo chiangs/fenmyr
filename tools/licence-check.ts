@@ -38,6 +38,24 @@ expect(notice.includes(`(${ID})`), 'NOTICE', `must name the licence as (${ID})`)
 
 for (const file of ['README.md', 'TRADEMARKS.md', 'CONTRIBUTING.md'])
   expect(read(file).includes(ID), file, `must name the licence as ${ID}`);
+
+// NOTICE grants 1.2 without "only", so Article 5 lets a derivative use a later EUPL; the words people read must agree
+expect(!/1\.2 only/i.test(notice), 'NOTICE', 'must not say "only": the README and TRADEMARKS allow a later EUPL');
+for (const file of ['README.md', 'TRADEMARKS.md'])
+  expect(read(file).includes('or a later version of the EUPL'), file, 'must allow "a later version of the EUPL"');
+// the earlier MIT grant was limited by this paragraph, so the record of it must keep it
+expect(notice.includes("The MIT License above covers Myra's code."), 'NOTICE', 'must keep the old MIT exception');
+
+// a reserved file that was moved or renamed would quietly fall back under the EUPL's wording
+const exists = (p: string) => {
+  if (!p.endsWith('*')) return fs.existsSync(path.join(ROOT, p));
+  const dir = path.dirname(p);
+  const start = path.basename(p).slice(0, -1);
+  return fs.existsSync(path.join(ROOT, dir)) && fs.readdirSync(path.join(ROOT, dir)).some(f => f.startsWith(start));
+};
+for (const file of ['NOTICE', 'TRADEMARKS.md'])
+  for (const m of read(file).matchAll(/\b(?:src|web|tools|assets)\/[\w./*-]*[\w/*]/g))
+    expect(exists(m[0]), file, `names ${m[0]}, which doesn't exist`);
 expect(read('web/index.html').includes(`Free and open source (${ID})`), 'web/index.html', `About must say (${ID})`);
 
 const generated = 'run `npm run notices` and commit both files';

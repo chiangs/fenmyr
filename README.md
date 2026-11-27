@@ -279,9 +279,9 @@ Fenmyr's code grew from [Mochiboard](https://github.com/jessawolfe-ux/mochiboard
 
 ## Licence
 
-The code is open source under the [European Union Public Licence v. 1.2](LICENSE) (EUPL-1.2), and [NOTICE](NOTICE) keeps the notices that go with it. The EUPL is a copyleft licence: if you share the code, changed or not, or make a changed version available to others online, you must do it under the EUPL-1.2 and give them the source, so a derivative stays open. Its compatibility clause lets you use a licence it lists, such as the GPL v3, when you combine the code with code under that licence.
+The code is open source under the [European Union Public Licence v. 1.2](LICENSE) (EUPL-1.2), and [NOTICE](NOTICE) keeps the notices that go with it. The EUPL is a copyleft licence: if you share the code, changed or not, or make a changed version available to others online, you must do it under the EUPL-1.2 or a later version of the EUPL and give them the source, so a derivative stays open. Its compatibility clause lets you use a licence it lists, such as the GPL v3, when you combine the code with code under that licence.
 
-Code published here before the change to the EUPL-1.2 was released under the MIT License. It stays available under the MIT License to anyone who received it then, and NOTICE has the MIT text.
+Code published here before the change to the EUPL-1.2 was released under the MIT License. The repository as it stood at the last commit before the change, tagged `mit-final`, stays available under the MIT License. Fenmyr from the change on is under the EUPL-1.2, and NOTICE keeps the MIT text as a record.
 
 The names **Fenmyr** and **Myra**, Myra the cloudberry, her art, their own icons, the stamps, the logo and the app icon are not part of the code licence. They are all rights reserved by Stephen Chiang; see [TRADEMARKS.md](TRADEMARKS.md). Fenmyr also includes software made by others, including Mochiboard, Electron, Phosphor Icons, Figtree, Shantell Sans and the libraries inside the docs editor. Each is listed with its licence in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), and in the app under **Settings → About → View licences**.
 
