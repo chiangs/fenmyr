@@ -134,7 +134,7 @@ export async function bridge(t: Smoke) {
     };
   });
   const prompt = () => fs.readFileSync(path.join(data, 'prompt.txt'), 'utf8'),
-    args = fs.readFileSync(path.join(data, 'args.txt'), 'utf8').slice(-120),
+    args = fs.readFileSync(path.join(data, 'args.txt'), 'utf8'),
     asked = prompt(),
     wav = fs.readFileSync(path.join(data, 'wav-magic.txt'), 'utf8');
   t.check('native', !!r.native && r.linux);

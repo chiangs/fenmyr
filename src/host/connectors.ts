@@ -6,13 +6,17 @@ import type { Connections } from '../shared/ops.ts';
 // src/shared/ops.ts and a row below with the features that use it. tsc fails until both are there.
 //
 // What Claude Code 2.1.332 does with the flags, from real runs (tests/askTools.ts only keeps what Fenmyr passes):
-// - `--tools` limits the built-in tools and leaves every MCP tool alone, except that "" takes the claude.ai connectors
-//   too, but not a local MCP server.
-// - `--strict-mcp-config` turns off every MCP server, the claude.ai connectors included, so a call with a connection
-//   can't use it.
+// - claude.ai connectors connect after Claude Code starts and are reached through its tool search, which it turns off
+//   for the whole session when it starts with no deferred tool ("Tool search disabled: no deferred tools available to
+//   search" in its debug log). `--tools` removes every deferred tool, so a call that takes it can't reach a connector
+//   (7 of 7 runs), and neither can one left with only tools that aren't deferred (see NEVER). So a call with a
+//   connection takes no `--tools`, and a call without one takes it as a hard limit.
+// - `--strict-mcp-config` turns off every MCP server, the claude.ai connectors included.
 // - `allowedMcpServers` in the settings keeps the servers whose URLs it names and turns off every other connector,
-//   plugin and local server, so a call with a connection uses it.
-// A server offers all its tools, so a feature's list says what is pre-approved, not what is offered.
+//   plugin and local server.
+// - `--permission-mode default` is named so the person's own default, which may skip every permission check, never
+//   applies. A `-p` run can't ask, so a tool that needs approval and isn't in `--allowedTools` is refused, the other
+//   tools of a connector included. Some tools never need approval, and a rule of the person's own can allow others.
 type ConnectorId = Exclude<keyof Connections, 'claude'>;
 type Connector = {
   /** Claude Code's name for the server, which starts each of its tools: mcp__<server>__<tool>. */
@@ -48,9 +52,44 @@ type Builtin = 'Read' | 'WebSearch' | 'WebFetch';
 /** What a call may use: built-in tools, and the features of the connections it takes tools from. */
 export type Offer = { builtin: Builtin[]; grants: Grant[] };
 
-// Claude Code offers no claude.ai connector to a call with no built-in tool, so a call that needs a connector and no
-// built-in tool is given the one that reads, writes and reaches nothing.
-const NOTHING = 'ReportFindings';
+// Claude Code's built-in tools that no call is offered, which a call with a connection must turn down by name since it
+// can't take `--tools`. Measured on 2.1.332 in a `-p` run with `--permission-mode default`, no `--tools` and one
+// connector tool listed: Agent (Task), Bash with a read-only command such as `date`, CronCreate, CronDelete, CronList,
+// DesignSync, ListAgents, McpTaskCheck, Monitor with a read-only command, PushNotification, RemoteTrigger,
+// ReportFindings, ScheduleWakeup, SendMessage and TaskStop all ran without asking. Edit, NotebookEdit, Skill, Workflow,
+// Write and Bash with a command that changes anything were refused, but a rule of the person's own can allow those, so
+// they are named too, with the names of tools that other versions list (EnterWorktree, ExitWorktree, MultiEdit).
+//
+// McpTaskCheck and TaskStop are left out, and ToolSearch with them, so the call starts with a deferred tool (see
+// above). Monitor, ReportFindings, Skill and the file tools aren't deferred: a call left with only one of them reached
+// no connector in 14 of 16 runs, and every call left with a deferred tool reached it. These two can only check or stop
+// a background task of the call, and it has none.
+const NEVER = [
+  'Agent',
+  'Bash',
+  'CronCreate',
+  'CronDelete',
+  'CronList',
+  'DesignSync',
+  'Edit',
+  'EnterWorktree',
+  'ExitWorktree',
+  'ListAgents',
+  'Monitor',
+  'MultiEdit',
+  'NotebookEdit',
+  'PushNotification',
+  'RemoteTrigger',
+  'ReportFindings',
+  'ScheduleWakeup',
+  'SendMessage',
+  'Skill',
+  'Task',
+  'Workflow',
+  'Write',
+];
+// the tools a feature can ask for, which a call with a connection turns down unless it asked
+const OPTIONAL: readonly string[] = ['Read', 'Glob', 'Grep', 'WebSearch', 'WebFetch'];
 
 /** Claude Code's flags for an offer, and the settings that go with them. */
 export function offerArgs({ builtin, grants }: Offer): { args: string[]; settings: Record<string, unknown> } {
@@ -59,17 +98,15 @@ export function offerArgs({ builtin, grants }: Offer): { args: string[]; setting
     const row: Connector = CONNECTORS[connector];
     return (row.uses[use] ?? []).map(tool => `mcp__${row.server}__${tool}`);
   });
-  const tools = connectors.length && !builtin.length ? [NOTHING] : builtin;
   const allowed = [...new Set([...builtin, ...connected])];
+  const common = ['--permission-mode', 'default', ...(allowed.length ? ['--allowedTools', allowed.join(',')] : [])];
+  // with no connection `--tools` is a hard limit, and turning off every MCP server leaves nothing to reach
+  if (!connectors.length)
+    return { args: [...common, '--tools', builtin.join(','), '--strict-mcp-config'], settings: {} };
+  const offered: readonly string[] = builtin;
+  const turnedDown = [...NEVER, ...OPTIONAL.filter(tool => !offered.includes(tool))];
   return {
-    args: [
-      '--tools',
-      tools.join(','),
-      ...(allowed.length ? ['--allowedTools', allowed.join(',')] : []),
-      ...(connectors.length ? [] : ['--strict-mcp-config']),
-    ],
-    settings: connectors.length
-      ? { allowedMcpServers: connectors.flatMap(c => CONNECTORS[c].urls.map(serverUrl => ({ serverUrl }))) }
-      : {},
+    args: [...common, '--disallowedTools', turnedDown.join(',')],
+    settings: { allowedMcpServers: connectors.flatMap(c => CONNECTORS[c].urls.map(serverUrl => ({ serverUrl }))) },
   };
 }

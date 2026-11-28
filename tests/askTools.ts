@@ -1,7 +1,8 @@
 // What each call Myra makes to Claude Code is offered, with no window: a stand-in Claude Code logs the arguments it was
 // run with. A call gets the built-in tools its feature needs, the connector tools of the connections it uses, and no
-// other tool or MCP server. A call with no connection turns every MCP server off. A call with one allows that
-// connection's servers alone, since turning every server off would take the claude.ai connectors too.
+// other tool or MCP server, and never the person's own permission mode. A call with no connection limits the tools
+// itself and turns every MCP server off. A call with one can't limit the tools, since that takes the claude.ai
+// connectors out of reach, so it allows that connection's servers alone and turns down every tool it was not offered.
 import assert from 'node:assert';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -26,10 +27,14 @@ console.log(JSON.stringify({ type: 'result', is_error: false, result: 'ok' }));
 const claude = await import('../src/host/claude.ts');
 
 type Offered = {
+  // the permission mode, which is named so the person's own default never applies
+  mode: string | undefined;
   // the built-in tools; undefined when the call names none, which leaves Claude Code every one of them
   tools: string[] | undefined;
   // what runs without asking, which must never name a tool the call is not offered
   allowed: string[];
+  // the tools turned down by name, for a call that can't limit them
+  denied: string[] | undefined;
   // every MCP server turned off
   strict: boolean;
   // the servers allowed alone, by the URLs their connectors answer on
@@ -53,8 +58,10 @@ async function offered(call: () => Promise<unknown>): Promise<Offered> {
   const servers: unknown = Reflect.get(settings, 'allowedMcpServers');
   assert(servers === undefined || Array.isArray(servers));
   return {
+    mode: after('--permission-mode'),
     tools: list(after('--tools')),
     allowed: list(after('--allowedTools')) ?? [],
+    denied: list(after('--disallowedTools')),
     strict: argv.includes('--strict-mcp-config'),
     servers: servers?.map((s: unknown) => (typeof s === 'object' && s !== null ? Reflect.get(s, 'serverUrl') : s)),
   };
@@ -68,9 +75,37 @@ const make = ['generate_image_batch', 'generate_image', 'jobs_wait', 'models_exp
 );
 const mobbinAt = ['https://mobbin.com/*', 'https://*.mobbin.com/*'];
 const higgsAt = ['https://higgsfield.ai/*', 'https://*.higgsfield.ai/*'];
-// Claude Code offers a connector's tools only when it has a built-in tool too, so a call that needs none is given this
-// one, which reads, writes and reaches nothing
-const NOTHING = 'ReportFindings';
+// Every built-in tool that no call is offered. With a connection a call names them, since it can't take `--tools`.
+// Two are left out on purpose: tool search is turned off for a call that starts with no deferred tool, which would put
+// the connector out of reach, and these two are deferred and harmless.
+const NEVER = [
+  'Agent',
+  'Bash',
+  'CronCreate',
+  'CronDelete',
+  'CronList',
+  'DesignSync',
+  'Edit',
+  'EnterWorktree',
+  'ExitWorktree',
+  'ListAgents',
+  'Monitor',
+  'MultiEdit',
+  'NotebookEdit',
+  'PushNotification',
+  'RemoteTrigger',
+  'ReportFindings',
+  'ScheduleWakeup',
+  'SendMessage',
+  'Skill',
+  'Task',
+  'Workflow',
+  'Write',
+];
+const KEPT = ['TaskStop', 'McpTaskCheck', 'ToolSearch'];
+// the tools a feature asks for, turned down unless its call asked for them
+const OPTIONAL = ['Read', 'Glob', 'Grep', 'WebSearch', 'WebFetch'];
+const turnedDown = (...asked: string[]) => [...NEVER, ...OPTIONAL.filter(t => !asked.includes(t))];
 
 const picture = {
   name: 'a.png',
@@ -81,112 +116,92 @@ const ask =
   () =>
     claude.ask({ prompt: 'Hi', board: {}, ...more });
 
+// a call with no connection limits the tools itself, and turns every MCP server off
+const limited = (tools: string[]): Offered => ({
+  mode: 'default',
+  tools,
+  allowed: tools,
+  denied: undefined,
+  strict: true,
+  servers: undefined,
+});
+// a call with a connection allows its servers alone and turns down every tool it was not offered
+const connected = (builtin: string[], connectorTools: string[], servers: string[]): Offered => ({
+  mode: 'default',
+  tools: undefined,
+  allowed: [...builtin, ...connectorTools],
+  denied: turnedDown(...builtin),
+  strict: false,
+  servers,
+});
+
 const cases: [string, () => Promise<unknown>, Offered][] = [
-  [
-    'a plain question has Mobbin and nothing else',
-    ask(),
-    { tools: [NOTHING], allowed: mobbin, strict: false, servers: mobbinAt },
-  ],
-  [
-    'a question with files can read them',
-    ask({ files: [picture] }),
-    { tools: ['Read'], allowed: ['Read', ...mobbin], strict: false, servers: mobbinAt },
-  ],
+  ['a plain question has Mobbin and nothing else', ask(), connected([], mobbin, mobbinAt)],
+  ['a question with files can read them', ask({ files: [picture] }), connected(['Read'], mobbin, mobbinAt)],
   [
     'a question with the web on can search and open pages',
     ask({ web: true }),
-    {
-      tools: ['WebSearch', 'WebFetch'],
-      allowed: ['WebSearch', 'WebFetch', ...mobbin],
-      strict: false,
-      servers: mobbinAt,
-    },
+    connected(['WebSearch', 'WebFetch'], mobbin, mobbinAt),
   ],
   [
     'a question with files and the web has both',
     ask({ files: [picture], web: true }),
-    {
-      tools: ['Read', 'WebSearch', 'WebFetch'],
-      allowed: ['Read', 'WebSearch', 'WebFetch', ...mobbin],
-      strict: false,
-      servers: mobbinAt,
-    },
+    connected(['Read', 'WebSearch', 'WebFetch'], mobbin, mobbinAt),
   ],
-  [
-    'a question with Mobbin off is offered no tool and no MCP server',
-    ask({ mobbin: false }),
-    { tools: [], allowed: [], strict: true, servers: undefined },
-  ],
+  ['a question with Mobbin off is offered no tool and no MCP server', ask({ mobbin: false }), limited([])],
   [
     'a question with Mobbin off and the web on has the web alone',
     ask({ mobbin: false, web: true }),
-    { tools: ['WebSearch', 'WebFetch'], allowed: ['WebSearch', 'WebFetch'], strict: true, servers: undefined },
+    limited(['WebSearch', 'WebFetch']),
   ],
   [
     'a question the person has not confirmed may not use Higgsfield',
     ask({ mobbin: false, higgs: true, confirmed: false }),
-    { tools: [], allowed: [], strict: true, servers: undefined },
+    limited([]),
   ],
   [
     'a confirmed question may generate with Higgsfield, beside Mobbin',
     ask({ confirmed: true }),
-    {
-      tools: [NOTHING],
-      allowed: [...mobbin, ...generate],
-      strict: false,
-      servers: [...mobbinAt, ...higgsAt],
-    },
+    connected([], [...mobbin, ...generate], [...mobbinAt, ...higgsAt]),
   ],
   [
     'a confirmed question with Higgsfield off may not generate',
     ask({ confirmed: true, higgs: false }),
-    { tools: [NOTHING], allowed: mobbin, strict: false, servers: mobbinAt },
+    connected([], mobbin, mobbinAt),
   ],
   [
     'a confirmed question with Mobbin off has Higgsfield alone',
     ask({ confirmed: true, mobbin: false }),
-    { tools: [NOTHING], allowed: generate, strict: false, servers: higgsAt },
+    connected([], generate, higgsAt),
   ],
   [
     'the price of an image looks things up and cannot generate',
     () => claude.higgsQuote({}),
-    { tools: [NOTHING], allowed: quote, strict: false, servers: higgsAt },
+    connected([], quote, higgsAt),
   ],
   [
     'making images has the generating tools of Higgsfield and no other connection',
     () => claude.higgsMake({ images: [] }),
-    { tools: [NOTHING], allowed: make, strict: false, servers: higgsAt },
+    connected([], make, higgsAt),
   ],
-  [
-    'a rewrite is offered no tool and no MCP server',
-    () => claude.rewrite({ text: 'Hi' }),
-    {
-      tools: [],
-      allowed: [],
-      strict: true,
-      servers: undefined,
-    },
-  ],
-  [
-    'a fill drawn as SVG is offered no tool and no MCP server',
-    () => claude.drawFill({ images: [] }),
-    {
-      tools: [],
-      allowed: [],
-      strict: true,
-      servers: undefined,
-    },
-  ],
+  ['a rewrite is offered no tool and no MCP server', () => claude.rewrite({ text: 'Hi' }), limited([])],
+  ['a fill drawn as SVG is offered no tool and no MCP server', () => claude.drawFill({ images: [] }), limited([])],
 ];
 for (const [what, call, expected] of cases) {
   const got = await offered(call);
   assert.deepStrictEqual(got, expected, what);
   // a call never has both: strict would take the connectors the allowed servers keep
   assert(!(got.strict && got.servers), `${what}: strict and an allowed list together`);
+  // a call that can't limit the tools names what it turns down, and must never turn down what it allows or what keeps
+  // the connector in reach
+  for (const name of got.denied ?? []) {
+    assert(!got.allowed.includes(name), `${what}: ${name} is allowed and turned down`);
+    assert(!KEPT.includes(name), `${what}: ${name} is turned down, which puts the connector out of reach`);
+  }
   // everything that runs without asking is offered
   for (const name of got.allowed)
     assert(
-      name.startsWith('mcp__') || got.tools?.includes(name),
+      name.startsWith('mcp__') || (got.tools ? got.tools.includes(name) : !NEVER.includes(name)),
       `${what}: ${name} runs without asking but is not offered`,
     );
 }
