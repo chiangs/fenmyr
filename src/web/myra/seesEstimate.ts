@@ -17,7 +17,7 @@ import {
 } from '../../shared/contextFit.ts';
 import { guidesOf, isGuide } from '../../shared/guides.ts';
 import { session } from '../core/state.ts';
-import { brief, screensOf } from '../proto/brief.ts';
+import { brief, screensOf, wiresOf } from '../proto/brief.ts';
 import { hasPicture } from '../proto/pictures.ts';
 import { settings } from '../settings/settings.ts';
 import { fitBoard } from './boardFit.ts';
@@ -74,9 +74,10 @@ function buildUse(sel: ReadonlySet<string>, window: number): ContextUse {
     picked = about.filter(c => sel.has(c.id)),
     cards = picked.length ? picked : about,
     screens = screensOf(b.cards),
+    wires = wiresOf(cards, b.links),
     pictures = Math.min(MAX_PICTURES, cards.filter(hasPicture).length),
     // the same charge the host makes for a card: its text and a comma
-    cardTokens = cards.reduce((n, c) => n + tokensOf(JSON.stringify(brief(c, screens)).length + 1), 0),
+    cardTokens = cards.reduce((n, c) => n + tokensOf(JSON.stringify(brief(c, screens, wires)).length + 1), 0),
     before = b.chat?.flatMap(m => m.acts ?? []).findLast((a): a is BuildRecord => a.kind === 'build' && !!a.start?.use)
       ?.start?.use;
   const parts: Part[] = [{ kind: 'cards', tokens: cardTokens, count: cards.length }];

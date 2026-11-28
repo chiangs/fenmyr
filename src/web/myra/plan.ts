@@ -1,6 +1,7 @@
 import type { BoardLists } from '../../shared/changes.ts';
-import type { Card, CardOf } from '../../shared/model.ts';
+import type { Card, CardOf, Link } from '../../shared/model.ts';
 import type { MyraReply } from '../../shared/myraReply.ts';
+import { setArrow } from '../../shared/wireArrow.ts';
 import { boxOf, nearestEmptySpot } from '../canvas/emptySpot.ts';
 import { pullFromTray } from '../canvas/tray.ts';
 import { arrange, COLL } from '../cards/collection.ts';
@@ -166,7 +167,10 @@ export function planBoard(b: BoardLists, held: HeldReply, view: ViewAt): { skipp
   }
   for (const p of r.connect ?? []) {
     const [a, z] = Array.isArray(p) ? p : [p.a, p.b];
-    if (byId(a) && byId(z)) b.links.push({ id: uid(), a, b: z });
+    if (!byId(a) || !byId(z)) continue;
+    const wire: Link = { id: uid(), a, b: z };
+    if (!Array.isArray(p) && p.arrow) setArrow(wire, p.arrow);
+    b.links.push(wire);
   }
   // wireframes: real screens built from the pieces, left to right, with arrows for the flow
   if (r.screens?.length) {

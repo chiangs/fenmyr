@@ -1,6 +1,7 @@
 import { buildLine } from '../../shared/build.ts';
 import type { ChatMsg } from '../../shared/chat.ts';
-import { type Card, swatchName } from '../../shared/model.ts';
+import { type Card, type Link, swatchName } from '../../shared/model.ts';
+import { arrowOf } from '../../shared/wireArrow.ts';
 import { appState, session } from '../core/state.ts';
 import { hasDue } from '../features/due.ts';
 import { myTpls } from '../features/templates.ts';
@@ -61,6 +62,13 @@ export const brief = (c: Card, selected: ReadonlySet<string>, cut: boolean) =>
         cut: (cut && isLong(c)) || undefined,
       };
 
+// A wire is the two cards it joins, and with an arrowhead, which ends have one: "end" at the second card, "both" at
+// each. Without one it stays a pair, which costs her less of her window.
+const wireOf = (l: Link) => {
+  const arrow = arrowOf(l);
+  return arrow === 'none' ? [l.a, l.b] : { a: l.a, b: l.b, arrow };
+};
+
 /** short: the cards whose words go cut short. drop: the cards left out, and the links that touch them. */
 type Trim = { short: ReadonlySet<string>; drop: ReadonlySet<string> };
 const UNTRIMMED: Trim = { short: new Set(), drop: new Set() };
@@ -85,7 +93,7 @@ export function snapshot(selected: ReadonlySet<string> = session.sel, trim: Trim
     boardTags: session.board.tags || [],
     myTemplates: myTpls.map(t => t.name),
     cards: cards.map(c => brief(c, selected, trim.short.has(c.id))),
-    links: session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b)).map(l => [l.a, l.b]),
+    links: session.board.links.filter(l => !gone.has(l.a) && !gone.has(l.b)).map(wireOf),
     unsorted: unsorted.map(c => brief(c, selected, trim.short.has(c.id))),
     cutToFit: trim.short.size || trim.drop.size ? { left: trim.drop.size, shortened } : undefined,
     boardColors: session.board.palette,

@@ -102,7 +102,13 @@ const reply = z.looseObject({
     }),
   ),
   remove: list(words),
-  connect: list(z.union([z.tuple([z.string(), z.string()]), z.looseObject({ a: z.string(), b: z.string() })])),
+  // arrow: "end" for an arrowhead at b, "both" for one at each end; any other value leaves the wire without one
+  connect: list(
+    z.union([
+      z.tuple([z.string(), z.string()]),
+      z.looseObject({ a: z.string(), b: z.string(), arrow: opt(z.enum(['end', 'both'])) }),
+    ]),
+  ),
   screens: list(z.unknown()),
   images: list(z.looseObject({ url: z.string(), x: num, y: num, caption: txt })),
   vaultNotes: list(z.looseObject({ vault: txt, path: txt })),
