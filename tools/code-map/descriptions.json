@@ -91,6 +91,7 @@
     "src/shared/repos.ts": "Repo links: reading them safely, naming repos and spotting two projects that clash on one repo.",
     "src/shared/updateChannel.ts": "The three update channels, Stable, Beta and Every change, and which one a person gets until they choose.",
     "src/shared/version.ts": "Reads and orders versions, a beta before its release, for the updater, the what’s-new card and the build line.",
+    "src/shared/wireArrow.ts": "Which ends of a wire have an arrowhead (none, end or both), read from and written to a link’s arrow, in the words Myra reads and writes.",
     "src/web/app/channelRow.ts": "The Channel row in Settings → About → Updates: which releases an install made from a clone follows, shown only for a clone install.",
     "src/web/app/news.ts": "The what’s-new card shown once the first time a new version opens.",
     "src/web/app/newsItems.ts": "The what’s-new cards, one list per version, which the bridge also reads to name the newest version in a browser.",

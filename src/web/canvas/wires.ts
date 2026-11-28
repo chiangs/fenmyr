@@ -1,4 +1,5 @@
 import type { Card, Link } from '../../shared/model.ts';
+import { arrowOf } from '../../shared/wireArrow.ts';
 import { wires } from '../core/dom.ts';
 import { byId, session } from '../core/state.ts';
 
@@ -62,7 +63,7 @@ export const wireColor = (l: Link) => (/^#[0-9a-f]{3,8}$/i.test(l.color || '') ?
 const O = 5000;
 const shift = (p: Point) => ({ x: p.x + O, y: p.y + O });
 
-// an arrowhead at the end of the curve, sized to the line's weight
+// an arrowhead with its tip at p2, where the curve arrives from c1, sized to the line's weight
 function arrowPath(c1: Point, p2: Point, ww: number) {
   const ux = p2.x - c1.x,
     uy = p2.y - c1.y,
@@ -100,7 +101,10 @@ function wireMarkup(l: Link, a: Card, b: Card, on: boolean) {
     dash = l.dash ? ' dash' : '',
     haloW = ww + 6,
     hitW = Math.max(16, ww + 12),
-    ad = l.arrow ? arrowPath(g.c1, g.p2, ww) : '',
+    // one path holds both heads, so the halo of a selected wire covers them together
+    pointing = arrowOf(l),
+    heads = pointing === 'both' ? [g.p0, g.p2] : pointing === 'end' ? [g.p2] : [],
+    ad = heads.map(tip => arrowPath(g.c1, tip, ww)).join(' '),
     arrow = ad ? `<path class="w-arrow" style="${sty}" d="${ad}"/>` : '',
     // selected: a soft blue glow behind the line, so its real colour stays visible
     lineHalo = on ? `<path class="w-halo" style="stroke-width:${haloW}" d="${d}"/>` : '',

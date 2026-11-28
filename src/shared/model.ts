@@ -179,7 +179,7 @@ export type Link = {
   id: string;
   a: string;
   b: string;
-  arrow?: boolean;
+  arrow?: boolean | 'both'; // true: an arrowhead at b; 'both': at a and b (src/shared/wireArrow.ts)
   pa?: { u: number; v: number };
   pb?: { u: number; v: number };
   bend?: number;
@@ -291,9 +291,9 @@ export function readLinks(x: unknown): Link[] {
   if (!Array.isArray(x)) return [];
   return x
     .filter(isRecord)
-    .flatMap(l =>
+    .flatMap(({ arrow, ...l }) =>
       typeof l.id === 'string' && typeof l.a === 'string' && typeof l.b === 'string'
-        ? [{ ...l, id: l.id, a: l.a, b: l.b, ...(typeof l.arrow === 'boolean' ? { arrow: l.arrow } : {}) }]
+        ? [{ ...l, id: l.id, a: l.a, b: l.b, ...(typeof arrow === 'boolean' || arrow === 'both' ? { arrow } : {}) }]
         : [],
     );
 }
