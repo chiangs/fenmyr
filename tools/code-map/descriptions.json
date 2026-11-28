@@ -466,6 +466,7 @@
     "tests/myraBusyLooks.ts": "Checks each job gives Myra its look and prop, a build its laptop until it ends, and that calm, reduced motion and a narrow docked chat keep the props in check.",
     "tests/chatStop.ts": "Tests the send button turning into Stop while Myra works, and Stop or Ctrl+. ending her Claude Code: the question is marked Stopped, nothing lands, and an answer already on its way is dropped.",
     "tests/buildStop.ts": "Tests that Stop and Ctrl+. end a prototype's running build and its waiting ones together with its questions, in one line of hers, and leave other boards' builds alone.",
+    "tests/savedIndicator.ts": "The top bar says saved only once the board file has every change: a write that was going when a newer change came leaves saving… up.",
     "tests/stopHost.ts": "Tests that askStop and protoBuildStop kill the real Claude Code of a question and of a build, which ends as a failure saying it was stopped, with its files and Undo.",
     "tests/support/appCopy.ts": "A copy of the app’s folders with its own version, so a run can be a release or a beta.",
     "tests/support/guides.ts": "Test helpers for a prototype’s rules and design cards: which cards overlap, and which doc cards have a role.",

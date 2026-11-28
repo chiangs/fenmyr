@@ -132,7 +132,8 @@ async function writeBoard() {
   appState.saveT = undefined;
   session.board.view = session.view;
   await Fenmyr.save(session.board);
-  $('saved').textContent = 'saved';
+  // a change made while this was written is still to come, and "saved" waits for the write that has it
+  if (appState.saveT === undefined) $('saved').textContent = 'saved';
   dueIndex();
   refreshBoardsAfterSave();
 }
