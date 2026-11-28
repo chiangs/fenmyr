@@ -14,6 +14,7 @@ import { type Group, MYRA_GROUPS, type Step } from './visual-myra.ts';
 import { NEW_PROJECT_GROUPS } from './visual-newproject.ts';
 import { openPrototype, PROTO_GROUPS, removeProtoFolders } from './visual-proto.ts';
 import { WIREFRAME_GROUPS } from './visual-wireframe.ts';
+import { WIRE_GROUPS } from './visual-wires.ts';
 
 const FROZEN_MOTION =
   '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }';
@@ -193,6 +194,7 @@ const GROUPS: Record<string, Group> = {
   ...NEW_PROJECT_GROUPS,
   ...HOME_EMPTY_GROUPS,
   ...GUIDES_GROUPS,
+  ...WIRE_GROUPS,
 };
 
 async function shoot(dir: string, out: string) {

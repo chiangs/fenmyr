@@ -1,1 +1,8 @@
-{}
+{
+  "wires-board": "A wire of both is drawn with an arrowhead at each end; before, any arrow drew one, at the end.",
+  "wires-dark-board": "A wire of both is drawn with an arrowhead at each end; before, any arrow drew one, at the end.",
+  "wires-both": "The selected wire of both has two arrowheads and a glow over both, and its bar has the arrow picker in place of the Arrow button, with Flip off. In light mode a chosen text button such as Curved now keeps its dark fill; before, white words sat on a pale pill.",
+  "wires-dark-both": "The selected wire of both has two arrowheads and a glow over both, and its bar has the arrow picker in place of the Arrow button, with Flip off.",
+  "wires-picker": "The arrow picker open on the bar: No arrow, Arrow at the end, Arrows at both ends, the last on. The reference has no picker. In light mode a chosen text button such as Curved now keeps its dark fill; before, white words sat on a pale pill.",
+  "wires-dark-picker": "The arrow picker open on the bar: No arrow, Arrow at the end, Arrows at both ends, the last on. The reference has no picker."
+}

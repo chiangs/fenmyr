@@ -192,7 +192,7 @@ You help designers and creative people plan: you add cards, sort ideas into grou
 
 The person asked you: ${request}
 
-Here is their board as JSON. Positions are in pixels (x grows right, y grows down). A note card is about 220 x 140, a checklist about 240 x 180, a color swatch 120 x 150, a title is one line of big text. "unsorted" holds ideas waiting in the side tray, not yet on the board. Cards marked "selected" are what they have selected right now. "recentChat" is your conversation so far on this board: use it to understand follow-ups like "now make them pink". When they say "this", "these" or "it", they mean the selected cards. They can ask you to change ANY words, labels, colors or list items on any card, including cards you made: use "edit" for that (only send the fields that change), and "remove" only when they ask to delete something. If the board JSON has "cutToFit", the board was too big for your context: "shortened" says how many cards had their words cut short and "left" how many cards were left out. Don't claim a card isn't on the board, and if the answer may depend on cards you weren't shown, say so in a few words. A card with "cut": true shows you only the start of its words: never send its whole "text" or "body" in an "edit", since that would delete the rest; if they ask you to rewrite it, say you can only see the start of it and ask them to select it and ask again, since a selected card always reaches you whole.
+Here is their board as JSON. Positions are in pixels (x grows right, y grows down). A note card is about 220 x 140, a checklist about 240 x 180, a color swatch 120 x 150, a title is one line of big text. "unsorted" holds ideas waiting in the side tray, not yet on the board. Cards marked "selected" are what they have selected right now. "recentChat" is your conversation so far on this board: use it to understand follow-ups like "now make them pink". When they say "this", "these" or "it", they mean the selected cards. They can ask you to change ANY words, labels, colors or list items on any card, including cards you made: use "edit" for that (only send the fields that change), and "remove" only when they ask to delete something. "links" are the wires between cards: a pair [a, b] has no arrowhead, and {"a", "b", "arrow"} has one, "end" at b or "both" at a and b. If the board JSON has "cutToFit", the board was too big for your context: "shortened" says how many cards had their words cut short and "left" how many cards were left out. Don't claim a card isn't on the board, and if the answer may depend on cards you weren't shown, say so in a few words. A card with "cut": true shows you only the start of its words: never send its whole "text" or "body" in an "edit", since that would delete the rest; if they ask you to rewrite it, say you can only see the start of it and ask them to select it and ask again, since a selected card always reaches you whole.
 ${boardJSON}
 ${filesSection(files)}${vaultSection(vaultNotes, canVault)}${tasksSection(vaultTasks)}${planSection(plan)}${commandsSection(commands)}
 Reply with ONLY one JSON object, no other words before or after it. Use only the keys you need:
@@ -216,7 +216,7 @@ Reply with ONLY one JSON object, no other words before or after it. Use only the
  "editTemplate": {"name": "an existing template", "newName": "", "description": "write one in the same way if you edit one that has none", "mode": "add or new"},
  "remove": ["card id"], "dropPlan": true, "doPlan": true,
  "place": [{"id": "an unsorted card id", "x": 0, "y": 0}],
- "connect": [["card id", "card id"]],
+ "connect": [["card id", "card id"], {"a": "card id", "b": "card id", "arrow": "end (an arrowhead at b) or both (at a and b); leave it out for none"}],
  "animate": "optional: one of hop, wiggle, party, sleepy, shook, sigh, happy, love, dizzy, curious",
  "timer": {"minutes": 25, "seconds": 0, "purpose": "optional, a few words"}, "stopTimer": true,
  "projects": {"create": ["project name"], "rename": [{"from": "old name", "to": "new name"}]},
@@ -330,7 +330,7 @@ ${a.request}
 
 WHAT THE PROTOTYPE IS FOR: ${a.purpose || 'not said'}
 
-THE CARDS ON THE BOARD (the ones selected, or all of them, the most important first; a wireframe screen has "size", and each piece on it has "onFrame", the screen's id, and "at", its place and size in px inside that screen):
+THE CARDS ON THE BOARD (the ones selected, or all of them, the most important first; a wireframe screen has "size", and each piece on it has "onFrame", the screen's id, and "at", its place and size in px inside that screen; "wires" on a card lists the wires drawn from it to another card here, each with that card's id as "to" and "arrow": "end" when it points to that card, "both" when it points both ways, "none" when it points nowhere):
 ${a.cards || 'none'}${cardsLeftOut(a.left ?? 0)}
 
 PICTURES OF THEM (read each file to see the sketch, screenshot or wireframe; build what they show):

@@ -714,7 +714,7 @@
     "label 'Connector'",
     "G0: button pop=wcol \"Line colour\" { button wb=col: \"Default (follows the theme)\" [on] ; button wb=col:#3b342d \"Ink\" ; button wb=col:#ffffff \"Snow\" ; button wb=col:#dc4b3e \"Lingonberry\" ; button wb=col:#f0b04a \"Cloudberry\" ; button wb=col:#6fae5a \"Moss\" ; button wb=col:#4f8fc9 \"Fjord\" ; button wb=col:#a98ad6 \"Heather\" ; button wb=col:#c9b49a \"Birch\" ; button wb=colcustom \"Pick another colour…\" } button pop=wwt \"Line weight\" { button wb=w:2 'Regular' [on] ; button wb=w:4 'Medium' ; button wb=w:6 'Bold' }",
     "G1: | button wb=curve \"Curved line (drag the middle dot to bend it)\" 'Curved' [on] button wb=straight \"Straight line\" 'Straight'",
-    "G2: | button wb=dash \"Dashed line\" 'Dashed' button wb=arrow \"Arrow at the end\" 'Arrow' [on] button wb=flip \"Swap which end has the arrow\" 'Flip'",
+    "G2: | button wb=dash \"Dashed line\" 'Dashed' button pop=warr \"Arrowheads\" { button wb=arrow:none 'No arrow' ; button wb=arrow:end 'Arrow at the end' [on] ; button wb=arrow:both 'Arrows at both ends' } button wb=flip \"Swap which end has the arrow\" 'Flip'",
     "| hidden",
     "button pop=more \"More\" [hidden] {  }",
     "|",

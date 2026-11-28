@@ -9,7 +9,7 @@ import { react } from '../myra/react.ts';
 import { noteHeard, noteStatus, startJob } from '../myra/status.ts';
 import { addStoppable } from '../myra/stop.ts';
 import { rootOf } from '../repo/codeFolder.ts';
-import { brief, screensOf } from './brief.ts';
+import { brief, screensOf, wiresOf } from './brief.ts';
 import { refreshPanes } from './buildButtons.ts';
 import { checkComing, checkNewest } from './buildCheck.ts';
 import { asked, ended, endedLost, newestErrors, redrawBlock, redrawNewest, started } from './buildRecord.ts';
@@ -57,7 +57,8 @@ export async function startBuild(
     sel = new Set(cards === null ? session.sel : 'brought' in cards ? cards.brought : cards),
     picked = about.filter(c => sel.has(c.id));
   const ranked = rankCards(picked.length || (cards && 'brought' in cards) ? picked : about, sel, b.links),
-    screens = screensOf(b.cards);
+    screens = screensOf(b.cards),
+    wires = wiresOf(ranked, b.links);
   const { dir, stack, purpose = '', device = '' } = b.proto,
     build = uid();
   const w: Waiting = {
@@ -73,7 +74,7 @@ export async function startBuild(
       request,
       purpose,
       device,
-      cards: ranked.map(c => ({ id: c.id, text: JSON.stringify(brief(c, screens)) })),
+      cards: ranked.map(c => ({ id: c.id, text: JSON.stringify(brief(c, screens, wires)) })),
       guides: guidesOf(b.cards),
       build,
       board: b.id,
