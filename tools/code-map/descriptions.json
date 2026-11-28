@@ -821,6 +821,7 @@
     "tools/visual-newproject.ts": "The New project dialog as a visual state: over the board in light, with a search, in dark and in a phone-width window.",
     "tools/visual-myra.ts": "Myra’s states for the visual diff: a reply in the open chat, what she sees, the chat and doc panels, and a plan with its board preview, before and after Do it.",
     "tools/visual-wireframe.ts": "The wireframe board's states for the visual diff: the screen tool, a selected screen, the Pieces picker and its Icons view, an empty screen's hint, and the picker in dark and on a phone.",
+    "tools/visual-wires.ts": "The wires board’s states for the visual diff: wires with arrowheads at both ends, at the end and none, one selected and its arrow picker open.",
     "tools/visual-proto.ts": "The prototype board’s states for the visual diff: a fresh repo’s board at three widths and in dark, its chat at its narrowest, and its git bar’s More menu open.",
     "web/boot.js": "Sets the native class before the page paints, so the desktop app makes room for its window buttons.",
     "web/sw.js": "Keeps a copy of the app so the website version opens offline.",
