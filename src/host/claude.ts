@@ -13,6 +13,7 @@ import type {
   VaultTaskForMyra,
 } from '../shared/ops.ts';
 import { ASK_ROOT, parseFiles, writeFiles } from './askFiles.ts';
+import { type Offer, offerArgs } from './connectors.ts';
 import { modelArgs, parseChoice } from './models.ts';
 import P from './paths.ts';
 import * as prompts from './prompts.ts';
@@ -153,17 +154,19 @@ export const hookArgs = (more: Record<string, unknown> = {}) => [
 // permission mode it runs in. Claude Code enforces this.
 export const FOLDER_ONLY = { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true };
 
+// `offer`: the tools and connections the call may use, and nothing else (see connectors.ts)
 // `cwd`: run there, with file tools kept inside it, so a request never reaches the folder that holds the boards.
 // `signal`: aborting it kills Claude Code, and the call fails as it does for any run that gave no answer
 type RunOptions = { need?: string; cwd?: string; model?: ModelChoice; signal?: AbortSignal };
 async function runClaude(
   prompt: string,
-  tools: string[],
+  offer: Offer,
   timeout: number,
   { need = 'I need Claude Code to do that.', cwd, model, signal }: RunOptions = {},
 ) {
   const claude = await claudePath();
   if (!claude) throw new Error(need);
+  const { args, settings } = offerArgs(offer);
   // the prompt goes on stdin: one command-line argument can't pass 128 KiB on Linux
   const r = await run(
     claude,
@@ -171,8 +174,8 @@ async function runClaude(
       '-p',
       '--output-format',
       'json',
-      ...(cwd ? hookArgs({ permissions: FOLDER_ONLY }) : hookArgs()),
-      ...(tools.length ? ['--allowedTools', tools.join(',')] : []),
+      ...hookArgs({ ...(cwd ? { permissions: FOLDER_ONLY } : {}), ...settings }),
+      ...args,
       ...modelArgs(model),
     ],
     timeout,
@@ -188,6 +191,8 @@ async function runClaude(
   return text;
 }
 
+// a call that only thinks: no built-in tool, no connection
+const NONE: Offer = { builtin: [], grants: [] };
 const CHATS: readonly Chattiness[] = ['quiet', 'normal', 'chatty'];
 function parseStyle(s: unknown): MyraStyle {
   const r = isRecord(s) ? s : {};
@@ -262,22 +267,12 @@ export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
     mobbin = a.mobbin === undefined || Boolean(a.mobbin),
     higgs = a.higgs === undefined || Boolean(a.higgs),
     web = Boolean(a.web);
-  const tools = mobbin
-    ? [
-        'mcp__claude_ai_Mobbin__search_screens',
-        'mcp__claude_ai_Mobbin__search_flows',
-        'mcp__claude_ai_Mobbin__search_sections',
-      ]
-    : [];
-  if (web) tools.push('WebSearch', 'WebFetch');
+  const offer: Offer = { builtin: [], grants: [] };
+  if (added.length) offer.builtin.push('Read');
+  if (web) offer.builtin.push('WebSearch', 'WebFetch');
+  if (mobbin) offer.grants.push({ connector: 'mobbin', use: 'search' });
   // the generator is only switched on after the person taps "yes" in the app: spending credits needs their say-so
-  if (confirmed && higgs)
-    tools.push(
-      'mcp__claude_ai_higgsfield__generate_image_batch',
-      'mcp__claude_ai_higgsfield__jobs_wait',
-      'mcp__claude_ai_higgsfield__models_explore',
-    );
-  if (added.length) tools.push('Read');
+  if (confirmed && higgs) offer.grants.push({ connector: 'higgsfield', use: 'generate' });
   const written = added.length ? writeFiles(added) : null;
   // her tone settings and slash commands go in the prompt, not in the board data
   const snapshot: Record<string, unknown> = isRecord(a.board) ? a.board : {};
@@ -304,7 +299,7 @@ export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
   if (id) asking.set(id, stop);
   try {
     const model = await parseChoice(a.myraModel);
-    return await runClaude(prompt, tools, 300, { need: NEED, cwd: ASK_ROOT, model, signal: stop.signal });
+    return await runClaude(prompt, offer, 300, { need: NEED, cwd: ASK_ROOT, model, signal: stop.signal });
   } finally {
     asking.delete(id);
     if (written) fs.rmSync(written.dir, { recursive: true, force: true });
@@ -313,36 +308,26 @@ export async function ask(a: Untrusted<Ops['ask']['args']>): Promise<string> {
 export async function rewrite(a: Untrusted<Ops['rewrite']['args']>): Promise<string> {
   const words = { text: text(a.text), how: text(a.how), title: text(a.title), around: text(a.around) };
   const model = await parseChoice(a.myraModel);
-  return (await runClaude(prompts.rewrite(words), [], 180, { need: NEED, model })).trim();
+  return (await runClaude(prompts.rewrite(words), NONE, 180, { need: NEED, model })).trim();
 }
 // Higgsfield in two steps: the quote only looks up the price and balance, and generating is only called after the person taps yes
 export const higgsQuote = async (a: Untrusted<Ops['higgsQuote']['args']>) =>
   runClaude(
     prompts.higgsQuote({ model: text(a.model) }),
-    [
-      'mcp__claude_ai_higgsfield__balance',
-      'mcp__claude_ai_higgsfield__models_explore',
-      'mcp__claude_ai_higgsfield__show_plans_and_credits',
-    ],
+    { builtin: [], grants: [{ connector: 'higgsfield', use: 'quote' }] },
     180,
     { model: await parseChoice(a.myraModel) },
   );
 export const higgsMake = async (a: Untrusted<Ops['higgsMake']['args']>) =>
   runClaude(
     prompts.higgsMake({ model: text(a.model), style: text(a.style) }, jsonSafe(a.images || [])),
-    [
-      'mcp__claude_ai_higgsfield__generate_image_batch',
-      'mcp__claude_ai_higgsfield__generate_image',
-      'mcp__claude_ai_higgsfield__jobs_wait',
-      'mcp__claude_ai_higgsfield__models_explore',
-      'mcp__claude_ai_higgsfield__show_generation_by_ids',
-    ],
+    { builtin: [], grants: [{ connector: 'higgsfield', use: 'make' }] },
     1200,
     { model: await parseChoice(a.myraModel) },
   );
 // without Higgsfield, Claude can still draw simple flat illustrations as SVG, with no credits spent
 export const drawFill = async (a: Untrusted<Ops['drawFill']['args']>) =>
-  runClaude(prompts.drawFill({ style: text(a.style) }, jsonSafe(a.images || [])), [], 600, {
+  runClaude(prompts.drawFill({ style: text(a.style) }, jsonSafe(a.images || [])), NONE, 600, {
     model: await parseChoice(a.myraModel),
   });
 

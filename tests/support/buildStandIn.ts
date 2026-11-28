@@ -5,9 +5,10 @@ import type { Launched } from './launch.ts';
 // A stand-in Claude Code for builds, told before each build what to do: the files it writes in the prototype's folder,
 // reported the way stream-json does, whether it waits for a release after each file but the last (`pause`) and before it
 // ends (`hold`), how many milliseconds more it takes to end (`ms`), and whether it ends with a failure instead of `reply`. It counts each file it has reported, and logs
-// each build's prompt and arguments. A run that can only read, as Explain the code's is, writes nothing and answers what it was last
-// told to. Any other question gets a short answer, or the one it was last told to give after the wait it was told, and
-// its prompt is logged too.
+// each build's prompt and arguments. A run that can only read, as Explain the code's is, writes nothing and answers
+// what it was last told to; it is the streamed run in the default permission mode, which a question names too. Any
+// other question gets a short answer, or the one it was last told to give after the wait it was told, and its prompt is
+// logged too.
 type BuildScript = {
   files: Record<string, string>;
   pause?: boolean;
@@ -42,7 +43,7 @@ const path = require('node:path');
 const say = j => console.log(JSON.stringify(j));
 if (process.argv[2] !== '-p') process.exit(0);
 const prompt = fs.readFileSync(0, 'utf8');
-if (process.argv.join(' ').includes('--permission-mode default')) {
+if (process.argv.includes('stream-json') && process.argv.join(' ').includes('--permission-mode default')) {
   fs.appendFileSync(${JSON.stringify(explained)}, JSON.stringify({ prompt, args: process.argv.slice(3), cwd: process.cwd() }) + '\\n');
   const told = fs.existsSync(${JSON.stringify(explaining)}) ? JSON.parse(fs.readFileSync(${JSON.stringify(explaining)}, 'utf8')) : {};
   const app = process.ppid;
